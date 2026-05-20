@@ -498,10 +498,17 @@ namespace Hecton8.Atmosphere
     [AddComponentMenu("Hecton/Atmosphere Manager")]
     [DefaultExecutionOrder(-6000)]  // v4.3: MUST tick before UnderwaterVisuals(-4000)
     [ExecuteAlways]
-    public class HectonAtmosphereManager : MonoBehaviour, ISlowTickable, IBiomeMatrixEventListener, IMapMagicBiomeEventListener
+    public class HectonAtmosphereManager : MonoBehaviour, ISlowTickable, IBiomeMatrixEventListener, IMapMagicBiomeEventListener, IAtmosphereRenderSettingsBridge
     {
         private const float VisualEnterUnderwaterDepth = 0.01f;
         private const float VisualExitUnderwaterDepth = 0.005f;
+
+        Material IAtmosphereRenderSettingsBridge.Skybox => AtmosphereDirector.Skybox;
+
+        bool IAtmosphereRenderSettingsBridge.SetSkybox(Material material)
+        {
+            return AtmosphereDirector.SetSkybox(material);
+        }
 
         #region ══════════ AtmosphereSnapshot ══════════
 

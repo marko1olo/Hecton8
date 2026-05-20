@@ -76,9 +76,20 @@ namespace Hecton8.Core.Scheduling
                 return arrayLength == 0;
             }
 
-            int safeBatchCount = innerloopBatchCount > 0 ? innerloopBatchCount : 1;
-            IJobAdmissionService service = JobAdmissionSchedulerBridge.Service;
             uint jobHash = JobAdmissionHash<TJob>.Value;
+            int minBatch = innerloopBatchCount > 0 ? innerloopBatchCount : 1;
+            int maxBatch = innerloopBatchCount > 0 ? innerloopBatchCount << 2 : 4;
+            if (JobSchedulingProfileCatalog.TryResolveBatchBounds(jobHash, out int profileMinBatch, out int profileMaxBatch))
+            {
+                minBatch = profileMinBatch;
+                maxBatch = profileMaxBatch;
+            }
+
+            int safeBatchCount = Hecton8.Core.SystemDispatcher.ResolveInnerloopBatchCount(
+                arrayLength,
+                minBatch,
+                maxBatch);
+            IJobAdmissionService service = JobAdmissionSchedulerBridge.Service;
             if (service != null && !service.TryAdmitJob(lane, jobHash, out _))
             {
                 handle = dependsOn;

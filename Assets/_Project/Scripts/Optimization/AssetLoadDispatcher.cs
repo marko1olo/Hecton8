@@ -1,6 +1,5 @@
-using System.Collections.Generic;
 using Hecton8.Core;
-using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 #if UNITY_ADDRESSABLES_EXIST
 using UnityEngine.ResourceManagement.AsyncOperations;
@@ -13,7 +12,7 @@ namespace Hecton8.Optimization
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8011)]
-    public sealed class AssetLoadDispatcher : MonoBehaviour, ITickable, IUpdatable
+    public sealed class AssetLoadDispatcher : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
     {
         private const int Tier01Slots = 8;
         private const int Tier2Slots = 6;
@@ -30,6 +29,10 @@ namespace Hecton8.Optimization
         private const uint UiMipGateRestoreHash = 0xB157A302u;
         private const uint UiTextureContextHash = 0x71C0A11Du;
         private const int AddressableGroupMapCapacity = 512;
+        private const int QueuedRequestCapacity = 128;
+        private const int ReadyTicketCapacity = 32;
+        private const int InflightRequestCapacity = 64;
+        private static AssetLoadDispatcher s_registeredInstance;
 
         [Header("Dispatch Budget")]
         [Tooltip("Main-thread dispatch budget in milliseconds per frame.")]
@@ -40,22 +43,32 @@ namespace Hecton8.Optimization
 
         private bool _registeredTick;
         private bool _registeredService;
+        private bool _registeredHotSwap;
         private int _nextRequestId = 1;
 
-        // COLD ALLOC: List<AssetDispatchRequest>[128] - queued load requests - owner: AssetLoadDispatcher
-        private readonly List<AssetDispatchRequest> _queuedRequests = new List<AssetDispatchRequest>(128);
-        // COLD ALLOC: List<AssetDispatchTicket>[32] - ready-to-dispatch tickets - owner: AssetLoadDispatcher
-        private readonly List<AssetDispatchTicket> _readyTickets = new List<AssetDispatchTicket>(32);
-        // COLD ALLOC: List<AssetDispatchRequest>[64] - active in-flight requests - owner: AssetLoadDispatcher
-        private readonly List<AssetDispatchRequest> _inflightRequests = new List<AssetDispatchRequest>(64);
+        // COLD ALLOC: AssetDispatchRequest[128] - fixed queued load requests - owner: AssetLoadDispatcher
+        private readonly AssetDispatchRequest[] _queuedRequests = new AssetDispatchRequest[QueuedRequestCapacity];
+        private int _queuedRequestCount;
+        // COLD ALLOC: AssetDispatchTicket[32] - fixed ready-to-dispatch tickets - owner: AssetLoadDispatcher
+        private readonly AssetDispatchTicket[] _readyTickets = new AssetDispatchTicket[ReadyTicketCapacity];
+        private int _readyTicketCount;
+        // COLD ALLOC: AssetDispatchRequest[64] - fixed active in-flight requests - owner: AssetLoadDispatcher
+        private readonly AssetDispatchRequest[] _inflightRequests = new AssetDispatchRequest[InflightRequestCapacity];
+        private int _inflightRequestCount;
         // COLD ALLOC: int[4] - tier-band inflight counters - owner: AssetLoadDispatcher
         private readonly int[] _inflightCounts = new int[4];
+        // COLD ALLOC: uint[512]/byte[512] - fixed addressable group cache for UI mip gate - owner: AssetLoadDispatcher
+        private readonly uint[] _addressableGroupKeys = new uint[AddressableGroupMapCapacity];
+        private readonly byte[] _addressableGroupValues = new byte[AddressableGroupMapCapacity];
+        private int _addressableGroupCount;
         private int _baselineGlobalTextureMipLimit;
         private int _activeGlobalTextureMipLimit;
         private long _lastObservedVramBytes;
-        private NativeParallelHashMap<uint, byte> _addressableGroupMap;
         private bool _mipGateInitialized;
         private bool _uiMipBiasGateActive;
+        private VRAMMonitor _vramMonitor;
+        private VRAMPressureMonitor _vramPressure;
+        private AssetLifecycleGovernor _assetLifecycle;
 #if UNITY_ADDRESSABLES_EXIST
         private uint _lastAddressableDependencyGroupHash;
         private int _lastAddressableDependencyOrder;
@@ -66,7 +79,7 @@ namespace Hecton8.Optimization
         {
             get
             {
-                AssetLoadDispatcher dispatcher = GlobalRegistry.AssetLoadDispatcher;
+                AssetLoadDispatcher dispatcher = s_registeredInstance;
                 return dispatcher != null && dispatcher._uiMipBiasGateActive;
             }
         }
@@ -75,21 +88,21 @@ namespace Hecton8.Optimization
         {
             get
             {
-                AssetLoadDispatcher dispatcher = GlobalRegistry.AssetLoadDispatcher;
+                AssetLoadDispatcher dispatcher = s_registeredInstance;
                 return dispatcher != null ? dispatcher._lastObservedVramBytes : 0L;
             }
         }
 
         internal static void ForceEvaluateUiMipBiasGate()
         {
-            AssetLoadDispatcher dispatcher = GlobalRegistry.AssetLoadDispatcher;
+            AssetLoadDispatcher dispatcher = s_registeredInstance;
             if (dispatcher != null)
                 dispatcher.EvaluateUiMipBiasGate();
         }
 
         internal static void RegisterAddressableGroup(uint assetKey, AddressableAssetGroupKind group)
         {
-            AssetLoadDispatcher dispatcher = GlobalRegistry.AssetLoadDispatcher;
+            AssetLoadDispatcher dispatcher = s_registeredInstance;
             if (dispatcher == null || assetKey == 0u)
                 return;
 
@@ -119,33 +132,35 @@ namespace Hecton8.Optimization
 
         private void OnEnable()
         {
+            CacheDependencies();
+            TryRegisterHotSwap();
             if (TryRegisterService())
                 TryRegister();
         }
 
         private void Start()
         {
+            CacheDependencies();
+            TryRegisterHotSwap();
             TryRegister();
         }
 
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterHotSwap();
             TryUnregisterService();
+            ClearCachedDependencies();
         }
 
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterHotSwap();
             TryUnregisterService();
-            _queuedRequests.Clear();
-            _readyTickets.Clear();
-            _inflightRequests.Clear();
-            if (_addressableGroupMap.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeParallelHashMap(nameof(AssetLoadDispatcher), nameof(_addressableGroupMap));
-                _addressableGroupMap.Dispose();
-            }
+            ClearCachedDependencies();
+            ClearDispatchBuffers();
+            ClearAddressableGroupMap();
 
             for (int i = 0; i < _inflightCounts.Length; i++)
                 _inflightCounts[i] = 0;
@@ -165,7 +180,7 @@ namespace Hecton8.Optimization
             if (IsUiIconGroup(assetKey))
                 EvaluateUiMipBiasGate();
 
-            for (int i = 0; i < _queuedRequests.Count; i++)
+            for (int i = 0; i < _queuedRequestCount; i++)
             {
                 if (_queuedRequests[i].AssetKey != assetKey)
                     continue;
@@ -174,7 +189,7 @@ namespace Hecton8.Optimization
                 return true;
             }
 
-            for (int i = 0; i < _inflightRequests.Count; i++)
+            for (int i = 0; i < _inflightRequestCount; i++)
             {
                 if (_inflightRequests[i].AssetKey != assetKey)
                     continue;
@@ -183,44 +198,47 @@ namespace Hecton8.Optimization
                 return true;
             }
 
-            if (_readyTickets.Count >= maxReadyTicketCount)
+            if (_readyTicketCount >= ResolveReadyTicketLimit() ||
+                _queuedRequestCount >= _queuedRequests.Length)
+            {
                 return false;
+            }
 
             requestId = _nextRequestId++;
-            _queuedRequests.Add(new AssetDispatchRequest
+            _queuedRequests[_queuedRequestCount++] = new AssetDispatchRequest
             {
                 RequestId = requestId,
                 AssetKey = assetKey,
                 Priority = priority,
                 IsDistantHlod = isDistantHlod,
                 AgeFrames = 0
-            });
+            };
             return true;
         }
 
         internal bool TryDequeueReadyTicket(out AssetDispatchTicket ticket)
         {
-            if (_readyTickets.Count == 0)
+            if (_readyTicketCount == 0)
             {
                 ticket = default;
                 return false;
             }
 
-            int lastIndex = _readyTickets.Count - 1;
+            int lastIndex = --_readyTicketCount;
             ticket = _readyTickets[lastIndex];
-            _readyTickets.RemoveAt(lastIndex);
+            _readyTickets[lastIndex] = default;
             return true;
         }
 
         internal bool TryConsumeReadyTicketByAssetKey(uint assetKey, out AssetDispatchTicket ticket)
         {
-            for (int i = _readyTickets.Count - 1; i >= 0; i--)
+            for (int i = _readyTicketCount - 1; i >= 0; i--)
             {
                 if (_readyTickets[i].AssetKey != assetKey)
                     continue;
 
                 ticket = _readyTickets[i];
-                RemoveAtSwapBack(_readyTickets, i);
+                RemoveReadyTicketAtSwapBack(i);
                 return true;
             }
 
@@ -230,7 +248,7 @@ namespace Hecton8.Optimization
 
         internal bool AcknowledgeDispatchRequest(int requestId, bool success)
         {
-            for (int i = 0; i < _inflightRequests.Count; i++)
+            for (int i = 0; i < _inflightRequestCount; i++)
             {
                 AssetDispatchRequest request = _inflightRequests[i];
                 if (request.RequestId != requestId)
@@ -240,7 +258,7 @@ namespace Hecton8.Optimization
                 if (_inflightCounts[band] > 0)
                     _inflightCounts[band]--;
 
-                RemoveAtSwapBack(_inflightRequests, i);
+                RemoveInflightRequestAtSwapBack(i);
                 return true;
             }
 
@@ -249,19 +267,19 @@ namespace Hecton8.Optimization
 
         internal void CancelByAssetKey(uint assetKey)
         {
-            for (int i = _queuedRequests.Count - 1; i >= 0; i--)
+            for (int i = _queuedRequestCount - 1; i >= 0; i--)
             {
                 if (_queuedRequests[i].AssetKey == assetKey)
-                    RemoveAtSwapBack(_queuedRequests, i);
+                    RemoveQueuedRequestAtSwapBack(i);
             }
 
-            for (int i = _readyTickets.Count - 1; i >= 0; i--)
+            for (int i = _readyTicketCount - 1; i >= 0; i--)
             {
                 if (_readyTickets[i].AssetKey == assetKey)
-                    RemoveAtSwapBack(_readyTickets, i);
+                    RemoveReadyTicketAtSwapBack(i);
             }
 
-            for (int i = _inflightRequests.Count - 1; i >= 0; i--)
+            for (int i = _inflightRequestCount - 1; i >= 0; i--)
             {
                 if (_inflightRequests[i].AssetKey != assetKey)
                     continue;
@@ -270,13 +288,20 @@ namespace Hecton8.Optimization
                 if (_inflightCounts[band] > 0)
                     _inflightCounts[band]--;
 
-                RemoveAtSwapBack(_inflightRequests, i);
+                RemoveInflightRequestAtSwapBack(i);
             }
         }
 
         internal static void ForceDrainDeferredReleases()
         {
-            AssetLifecycleGovernor governor = GlobalRegistry.AssetLifecycle;
+            AssetLoadDispatcher dispatcher = s_registeredInstance;
+            if (dispatcher != null)
+                dispatcher.ForceDrainDeferredReleasesCached();
+        }
+
+        private void ForceDrainDeferredReleasesCached()
+        {
+            AssetLifecycleGovernor governor = _assetLifecycle;
             if (governor != null)
                 governor.ForceDrainPendingReleaseQueue();
         }
@@ -288,33 +313,62 @@ namespace Hecton8.Optimization
 
             _baselineGlobalTextureMipLimit = QualitySettings.globalTextureMipmapLimit;
             _activeGlobalTextureMipLimit = _baselineGlobalTextureMipLimit;
-            EnsureAddressableGroupMap();
             _mipGateInitialized = true;
-        }
-
-        private void EnsureAddressableGroupMap()
-        {
-            if (_addressableGroupMap.IsCreated)
-                return;
-
-            _addressableGroupMap = new NativeParallelHashMap<uint, byte>(AddressableGroupMapCapacity, Allocator.Persistent); // COLD ALLOC: NativeParallelHashMap<uint,byte>[512] - addressable asset group map for UI mip gate - owner: AssetLoadDispatcher
-            NativeMemorySentinel.RegisterNativeParallelHashMap(_addressableGroupMap, nameof(AssetLoadDispatcher), nameof(_addressableGroupMap), NativeAllocationLifetime.Session);
         }
 
         private void RegisterAddressableGroupInternal(uint assetKey, AddressableAssetGroupKind group)
         {
-            EnsureAddressableGroupMap();
-            if (_addressableGroupMap.ContainsKey(assetKey))
-                _addressableGroupMap.Remove(assetKey);
+            if (assetKey == 0u)
+                return;
 
-            _addressableGroupMap.TryAdd(assetKey, (byte)group);
+            byte groupValue = (byte)group;
+            for (int i = 0; i < _addressableGroupCount; i++)
+            {
+                if (_addressableGroupKeys[i] != assetKey)
+                    continue;
+
+                _addressableGroupValues[i] = groupValue;
+                return;
+            }
+
+            if (_addressableGroupCount < _addressableGroupKeys.Length)
+            {
+                int writeIndex = _addressableGroupCount++;
+                _addressableGroupKeys[writeIndex] = assetKey;
+                _addressableGroupValues[writeIndex] = groupValue;
+                return;
+            }
+
+            if (group != AddressableAssetGroupKind.UIIcons)
+                return;
+
+            for (int i = 0; i < _addressableGroupCount; i++)
+            {
+                if (_addressableGroupValues[i] == (byte)AddressableAssetGroupKind.UIIcons)
+                    continue;
+
+                _addressableGroupKeys[i] = assetKey;
+                _addressableGroupValues[i] = groupValue;
+                return;
+            }
+
+            int replacementIndex = (int)(assetKey % (uint)_addressableGroupKeys.Length);
+            _addressableGroupKeys[replacementIndex] = assetKey;
+            _addressableGroupValues[replacementIndex] = groupValue;
         }
 
         private bool IsUiIconGroup(uint assetKey)
         {
-            EnsureAddressableGroupMap();
-            return _addressableGroupMap.TryGetValue(assetKey, out byte group) &&
-                   group == (byte)AddressableAssetGroupKind.UIIcons;
+            if (assetKey == 0u)
+                return false;
+
+            for (int i = 0; i < _addressableGroupCount; i++)
+            {
+                if (_addressableGroupKeys[i] == assetKey)
+                    return _addressableGroupValues[i] == (byte)AddressableAssetGroupKind.UIIcons;
+            }
+
+            return false;
         }
 
         private void EvaluateUiMipBiasGate()
@@ -329,7 +383,7 @@ namespace Hecton8.Optimization
                 return;
             }
 
-            VRAMMonitor monitor = GlobalRegistry.VRAMMonitor;
+            VRAMMonitor monitor = _vramMonitor;
             if (monitor == null)
                 return;
 
@@ -381,6 +435,7 @@ namespace Hecton8.Optimization
             if (!ReferenceEquals(GlobalRegistry.AssetLoadDispatcher, this))
                 return;
 
+            CacheDependencies();
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
             _registeredTick = GlobalRegistry.Updatables.Contains(this);
         }
@@ -388,7 +443,11 @@ namespace Hecton8.Optimization
         private bool TryRegisterService()
         {
             if (_registeredService)
+            {
+                if (ReferenceEquals(GlobalRegistry.AssetLoadDispatcher, this))
+                    s_registeredInstance = this;
                 return true;
+            }
             if (!Application.isPlaying)
                 return false;
 
@@ -401,6 +460,8 @@ namespace Hecton8.Optimization
 
             GlobalRegistry.RegisterAssetLoadDispatcherRuntime(this);
             _registeredService = ReferenceEquals(GlobalRegistry.AssetLoadDispatcher, this);
+            if (_registeredService)
+                s_registeredInstance = this;
             return _registeredService;
         }
 
@@ -413,18 +474,73 @@ namespace Hecton8.Optimization
             _registeredTick = false;
         }
 
+        private void TryRegisterHotSwap()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwap()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
+        }
+
         private void TryUnregisterService()
         {
             if (!_registeredService)
                 return;
 
             GlobalRegistry.UnregisterAssetLoadDispatcherRuntime(this);
+            if (ReferenceEquals(s_registeredInstance, this))
+                s_registeredInstance = null;
             _registeredService = false;
+        }
+
+        private void CacheDependencies()
+        {
+            if (_vramMonitor == null)
+                _vramMonitor = GlobalRegistry.VRAMMonitor;
+            if (_vramPressure == null)
+                _vramPressure = GlobalRegistry.VRAMPressure;
+            if (_assetLifecycle == null)
+                _assetLifecycle = GlobalRegistry.AssetLifecycle;
+        }
+
+        private void ClearCachedDependencies()
+        {
+            _vramMonitor = null;
+            _vramPressure = null;
+            _assetLifecycle = null;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.VRAMMonitorRuntime:
+                    _vramMonitor = currentService as VRAMMonitor;
+                    break;
+                case GlobalRegistryServiceSlot.VRAMPressureRuntime:
+                    _vramPressure = currentService as VRAMPressureMonitor;
+                    break;
+                case GlobalRegistryServiceSlot.AssetLifecycleRuntime:
+                    _assetLifecycle = currentService as AssetLifecycleGovernor;
+                    break;
+            }
         }
 
         private void AgeQueuedRequests()
         {
-            for (int i = 0; i < _queuedRequests.Count; i++)
+            for (int i = 0; i < _queuedRequestCount; i++)
             {
                 AssetDispatchRequest request = _queuedRequests[i];
                 request.AgeFrames++;
@@ -434,11 +550,19 @@ namespace Hecton8.Optimization
 
         private void DispatchWithinBudget()
         {
-            if (_queuedRequests.Count == 0 || _readyTickets.Count >= maxReadyTicketCount)
+            int readyTicketLimit = ResolveReadyTicketLimit();
+            if (_queuedRequestCount == 0 ||
+                readyTicketLimit <= 0 ||
+                _readyTicketCount >= readyTicketLimit ||
+                _inflightRequestCount >= _inflightRequests.Length)
+            {
                 return;
+            }
 
             float dispatchStart = Time.realtimeSinceStartup;
-            while (_queuedRequests.Count > 0 && _readyTickets.Count < maxReadyTicketCount)
+            while (_queuedRequestCount > 0 &&
+                   _readyTicketCount < readyTicketLimit &&
+                   _inflightRequestCount < _inflightRequests.Length)
             {
                 float elapsedMilliseconds = (Time.realtimeSinceStartup - dispatchStart) * 1000f;
                 if (elapsedMilliseconds >= dispatchBudgetMilliseconds)
@@ -449,17 +573,17 @@ namespace Hecton8.Optimization
                     break;
 
                 AssetDispatchRequest request = _queuedRequests[requestIndex];
-                RemoveAtSwapBack(_queuedRequests, requestIndex);
+                RemoveQueuedRequestAtSwapBack(requestIndex);
 
-                _readyTickets.Add(new AssetDispatchTicket
+                _readyTickets[_readyTicketCount++] = new AssetDispatchTicket
                 {
                     RequestId = request.RequestId,
                     AssetKey = request.AssetKey,
                     Priority = request.Priority,
                     IsDistantHlod = request.IsDistantHlod
-                });
+                };
 
-                _inflightRequests.Add(request);
+                _inflightRequests[_inflightRequestCount++] = request;
                 _inflightCounts[ResolveBand(request.Priority)]++;
             }
         }
@@ -470,7 +594,7 @@ namespace Hecton8.Optimization
             int bestPriority = int.MaxValue;
             int bestAge = -1;
 
-            for (int i = 0; i < _queuedRequests.Count; i++)
+            for (int i = 0; i < _queuedRequestCount; i++)
             {
                 AssetDispatchRequest request = _queuedRequests[i];
                 int band = ResolveBand(request.Priority);
@@ -507,33 +631,87 @@ namespace Hecton8.Optimization
             return 3;
         }
 
-        private static void RemoveAtSwapBack<T>(List<T> list, int index)
+        private int ResolveReadyTicketLimit()
         {
-            int lastIndex = list.Count - 1;
-            list[index] = list[lastIndex];
-            list.RemoveAt(lastIndex);
+            return Mathf.Clamp(maxReadyTicketCount, 0, _readyTickets.Length);
+        }
+
+        private void RemoveQueuedRequestAtSwapBack(int index)
+        {
+            int lastIndex = --_queuedRequestCount;
+            _queuedRequests[index] = _queuedRequests[lastIndex];
+            _queuedRequests[lastIndex] = default;
+        }
+
+        private void RemoveReadyTicketAtSwapBack(int index)
+        {
+            int lastIndex = --_readyTicketCount;
+            _readyTickets[index] = _readyTickets[lastIndex];
+            _readyTickets[lastIndex] = default;
+        }
+
+        private void RemoveInflightRequestAtSwapBack(int index)
+        {
+            int lastIndex = --_inflightRequestCount;
+            _inflightRequests[index] = _inflightRequests[lastIndex];
+            _inflightRequests[lastIndex] = default;
+        }
+
+        private void ClearDispatchBuffers()
+        {
+            System.Array.Clear(_queuedRequests, 0, _queuedRequestCount);
+            System.Array.Clear(_readyTickets, 0, _readyTicketCount);
+            System.Array.Clear(_inflightRequests, 0, _inflightRequestCount);
+            _queuedRequestCount = 0;
+            _readyTicketCount = 0;
+            _inflightRequestCount = 0;
+        }
+
+        private void ClearAddressableGroupMap()
+        {
+            System.Array.Clear(_addressableGroupKeys, 0, _addressableGroupCount);
+            System.Array.Clear(_addressableGroupValues, 0, _addressableGroupCount);
+            _addressableGroupCount = 0;
         }
 
         private int ResolveAllowedConcurrentLoads(AssetPriorityTier priority)
         {
             int band = ResolveBand(priority);
-            VRAMPressureMonitor pressureMonitor = GlobalRegistry.VRAMPressure;
+            VRAMPressureMonitor pressureMonitor = _vramPressure;
             float ramPressure = pressureMonitor != null ? pressureMonitor.RamPressureFactor : 0f;
+            float totalPressure = pressureMonitor != null ? pressureMonitor.PressureFactor : ramPressure;
+            float pressure = math.saturate(math.isfinite(totalPressure) ? totalPressure : 0f);
+            float quality = ResolveGlobalQualityWeight();
 
             switch (band)
             {
                 case 0:
-                    return Tier01Slots;
+                    return ResolveContinuousLoadSlots(Tier01Slots, math.max(1, Tier01Slots >> 1), quality, pressure, 0.90f, 1f);
 
                 case 1:
-                    return Tier2Slots;
+                    return ResolveContinuousLoadSlots(Tier2Slots, 1, quality, pressure, 0.75f, 0.98f);
 
                 case 2:
-                    return ramPressure > 0.85f ? Tier34CriticalSlots : Tier34Slots;
+                    return ResolveContinuousLoadSlots(Tier34Slots, Tier34CriticalSlots, quality, pressure, 0.55f, 0.95f);
 
                 default:
-                    return ramPressure > 0.75f ? Tier56WarningSlots : Tier56Slots;
+                    return ResolveContinuousLoadSlots(Tier56Slots, Tier56WarningSlots, quality, pressure, 0.35f, 0.85f);
             }
+        }
+
+        private static int ResolveContinuousLoadSlots(int maxSlots, int minSlots, float quality, float pressure, float pressureStart, float pressureEnd)
+        {
+            float pressureCollapse = math.smoothstep(pressureStart, pressureEnd, pressure);
+            float qualityCollapse = 1f - math.smoothstep(0.15f, 0.85f, quality);
+            float collapse = math.saturate(math.lerp(pressureCollapse, math.max(pressureCollapse, qualityCollapse), 0.5f));
+            float rawSlots = math.lerp(maxSlots, minSlots, collapse);
+            return math.max(minSlots, (int)math.round(rawSlots));
+        }
+
+        private static float ResolveGlobalQualityWeight()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.isfinite(quality) ? quality : 1f);
         }
     }
 }

@@ -1,0 +1,5 @@
+# formula,degree,max_error
+sin_polynomial,7,0.008
+cos_polynomial,7,0.008
+exp_neg_polynomial01,4,0.015
+hydrodynamic_turbulence,7,0.010

@@ -3,6 +3,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Generated;
 using Hecton8.Core.Memory;
@@ -274,6 +275,8 @@ namespace Hecton8.Gameplay
         private VaultBufferHandle<ScannerSettingsDTO> _settingsHandle;
         private JobHandle _queryHandle;
         private MockScannerInputSignal _lastInput;
+        private IPlayerRuntimeContext _cachedPlayerContext;
+        private HectonPlayerMovement _cachedPlayerMovement;
         private HectonQualityTier _cachedQualityTier = HectonQualityTier.Unknown;
         private float _cachedSystemPressure01;
         private int _lastQueryFrame = -1024;
@@ -401,6 +404,7 @@ namespace Hecton8.Gameplay
             if (!EnsureVaultState())
                 return;
 
+            CachePlayerRuntimeContextCold();
             if (seedMockData)
                 SeedMockGridFromTransform();
 
@@ -412,7 +416,7 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
-            CompleteScheduledQuery();
+            CompleteScheduledQuery(forceComplete: true);
             UnlockQueryBuffers();
 
             if (_registeredFast)
@@ -478,38 +482,55 @@ namespace Hecton8.Gameplay
             if (!_queryScheduled)
                 return;
 
-            if (!_queryHandle.IsCompleted)
+            if (!TryFinalizeScheduledQuery())
                 return;
 
-            CompleteScheduledQuery();
             ProcessCompletedQuery(_lastInput.DeltaTime);
         }
 
         public void SlowTick()
         {
+            if (_cachedPlayerContext == null || !_cachedPlayerContext.IsInitialized)
+                CachePlayerRuntimeContextCold();
+            else if (_cachedPlayerMovement == null)
+                _cachedPlayerMovement = _cachedPlayerContext.PlayerMovement;
+
             _cachedQualityTier = GlobalRegistry.ScalabilityTier;
             ReadOnlySpan<SystemHealthIndexSignal> healthSignals = SignalBus<SystemHealthIndexSignal>.GetFrameSnapshot();
             if (healthSignals.Length > 0)
                 _cachedSystemPressure01 = math.saturate(healthSignals[healthSignals.Length - 1].Pressure01);
         }
 
-        private void CompleteScheduledQuery()
+        private bool TryFinalizeScheduledQuery()
+        {
+            if (!_queryScheduled)
+                return false;
+
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _queryHandle))
+                return false;
+
+            _queryScheduled = false;
+            UnlockQueryBuffers();
+            return true;
+        }
+
+        private void CompleteScheduledQuery(bool forceComplete)
         {
             if (!_queryScheduled)
                 return;
 
-            _queryHandle.Complete();
-            _queryHandle = default;
+            if (!DispatcherJobFence.TryComplete(ref _queryHandle, forceComplete))
+                return;
+
             _queryScheduled = false;
             UnlockQueryBuffers();
         }
 
         private MockScannerInputSignal BuildInputSignal(float deltaTime, int frame, in ScannerSettingsDTO settings)
         {
-            Vector3 runtimePosition = transform.position;
             Vector3 forward = transform.forward;
             float3 direction = math.normalizesafe(new float3(forward.x, forward.y, forward.z), new float3(0f, 0f, 1f));
-            double3 origin = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition);
+            bool hasOrigin = TryResolveToolOriginAup(out double3 origin);
             return new MockScannerInputSignal
             {
                 RayOriginAUP = origin,
@@ -520,8 +541,84 @@ namespace Hecton8.Gameplay
                 ToolHash = ScannerToolHash,
                 Frame = unchecked((uint)frame),
                 ToolLevel = toolLevel,
-                Flags = scanActive ? 1u : 0u
+                Flags = scanActive && hasOrigin ? 1u : 0u
             };
+        }
+
+        private void CachePlayerRuntimeContextCold()
+        {
+            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedPlayerMovement = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerMovement : null;
+        }
+
+        private bool TryResolveToolOriginAup(out double3 originAup)
+        {
+            originAup = default;
+
+            Vector3 toolPosition = transform.position;
+            float3 toolRuntime = new float3(toolPosition.x, toolPosition.y, toolPosition.z);
+            if (!math.all(math.isfinite(toolRuntime)))
+                return false;
+
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext != null)
+            {
+                if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                    (snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                    MathGuard.IsFinite(in snapshot.Aup) &&
+                    math.all(math.isfinite(snapshot.RuntimePosition)))
+                {
+                    return TryOffsetToolOriginFromObserver(
+                        toolRuntime,
+                        snapshot.RuntimePosition,
+                        in snapshot.Aup,
+                        out originAup);
+                }
+
+                HectonPlayerMovement playerMovement = playerContext.PlayerMovement;
+                if (playerMovement != null)
+                    _cachedPlayerMovement = playerMovement;
+            }
+
+            HectonPlayerMovement cachedPlayerMovement = _cachedPlayerMovement;
+            if (cachedPlayerMovement == null)
+                return false;
+
+            AbsoluteUniversePosition playerAup = cachedPlayerMovement.CurrentAup;
+            if (!MathGuard.IsFinite(in playerAup))
+                return false;
+
+            float3 playerRuntime = playerAup.ToRuntimeFloat3();
+            if (!math.all(math.isfinite(playerRuntime)))
+                return false;
+
+            return TryOffsetToolOriginFromObserver(
+                toolRuntime,
+                playerRuntime,
+                in playerAup,
+                out originAup);
+        }
+
+        private static bool TryOffsetToolOriginFromObserver(
+            float3 toolRuntime,
+            float3 observerRuntime,
+            in AbsoluteUniversePosition observerAup,
+            out double3 originAup)
+        {
+            originAup = default;
+            double3 localDelta = new double3(
+                (double)toolRuntime.x - observerRuntime.x,
+                (double)toolRuntime.y - observerRuntime.y,
+                (double)toolRuntime.z - observerRuntime.z);
+            if (!math.all(math.isfinite(localDelta)))
+                return false;
+
+            AbsoluteUniversePosition toolAup = AbsoluteUniversePosition.OffsetMeters(in observerAup, localDelta);
+            if (!MathGuard.IsFinite(in toolAup))
+                return false;
+
+            originAup = toolAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(originAup));
         }
 
         private void ProcessCompletedQuery(float deltaTime)
@@ -709,7 +806,7 @@ namespace Hecton8.Gameplay
                 return;
 
             ScannerVfxDTO vfx = default;
-            vfx.HitAUP = (float3)(result.AUP - HectonFloatingOrigin.CurrentTotalOffsetDouble);
+            vfx.HitAUP = AupPrecisionMath.LocalDeltaFloat3(result.AUP, HectonFloatingOrigin.CurrentTotalOffsetDouble, float3.zero);
             vfx.HitDistance = result.Distance;
             vfx.ScanProgress = result.ScanProgress;
             vfx.TargetHash = result.EntityHash;
@@ -1041,7 +1138,9 @@ namespace Hecton8.Gameplay
                 return;
 
             int count = math.clamp(mockEntityCount, 1, views.Entities.Length);
-            double3 origin = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(transform.position);
+            if (!TryResolveToolOriginAup(out double3 origin))
+                return;
+
             float3 forward = math.normalizesafe(new float3(transform.forward.x, transform.forward.y, transform.forward.z), new float3(0f, 0f, 1f));
             float3 right = math.normalizesafe(new float3(transform.right.x, transform.right.y, transform.right.z), new float3(1f, 0f, 0f));
             ScannerSettingsDTO settings = ResolveCurrentSettings(views.Settings);
@@ -1655,7 +1754,7 @@ namespace Hecton8.Gameplay
                 if ((zone.Flags & 1u) == 0u || zone.Radius <= 0f)
                     continue;
 
-                float3 delta = (float3)(midpoint - zone.CenterAUP);
+                float3 delta = AupPrecisionMath.LocalDeltaFloat3(midpoint, zone.CenterAUP, float3.zero);
                 float sdf = math.length(delta) - zone.Radius + Settings.SdfMidpointClearance + targetRadius * 0.05f;
                 if (sdf < 0f)
                     return true;

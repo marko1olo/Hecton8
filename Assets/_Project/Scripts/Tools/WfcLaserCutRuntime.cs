@@ -18,7 +18,7 @@ namespace Hecton8.Tools
     /// <summary>
     /// Data-oriented WFC sealed-door cut state. Gameplay truth is one float per WFC cell; visuals read globals.
     /// </summary>
-    internal static unsafe class WfcLaserCutRuntime
+    internal static class WfcLaserCutRuntime
     {
         private const int BlackBoxFrameCount = WfcOutpostGridConstants.TelemetryFrames;
         private const uint SourceHash = 0x544C5352u; // TLSR
@@ -38,8 +38,9 @@ namespace Hecton8.Tools
         private static readonly int _CutMoltenId = Shader.PropertyToID("_WfcLaserCutMolten01");
         private static readonly int _CutOverkillId = Shader.PropertyToID("_WfcLaserCutOverkill01");
 
-        private static VaultBufferHandle<float> _cutProgressHandle;
-        private static VaultBufferHandle<WfcLaserCutTelemetryEntry> _blackBoxHandle;
+        private static IDataVault _dataVault;
+        private static VaultGenerationHandle<float> _cutProgressHandle;
+        private static VaultGenerationHandle<WfcLaserCutTelemetryEntry> _blackBoxHandle;
         private static ulong _activeSectorHash;
         private static uint _activeGridHandle;
         private static uint _activeGenerationSequence;
@@ -67,10 +68,8 @@ namespace Hecton8.Tools
             if (door == null ||
                 !door.TryGetWfcOutpostCell(out ulong sectorHash, out ushort cellIndex, out byte currentFlags) ||
                 !TryResolveBuffers(
-                    out float* cutProgress01,
-                    out int cutProgressLength,
-                    out WfcLaserCutTelemetryEntry* blackBox,
-                    out int blackBoxLength) ||
+                    out NativeArray<float> cutProgress01,
+                    out NativeArray<WfcLaserCutTelemetryEntry> blackBox) ||
                 !IsFinite(cutOriginAup) ||
                 !IsFinite(hitAup) ||
                 !IsFinite(runtimeHitPoint))
@@ -78,7 +77,7 @@ namespace Hecton8.Tools
                 return false;
             }
 
-            RefreshActiveGridFromSignals(cutProgress01, cutProgressLength);
+            RefreshActiveGridFromSignals(cutProgress01);
             if (!IsKnownSealedDoorCell(sectorHash, cellIndex))
                 return false;
 
@@ -115,8 +114,7 @@ namespace Hecton8.Tools
                 frame,
                 toolHash,
                 telemetryFlags,
-                blackBox,
-                blackBoxLength);
+                blackBox);
 
             PublishShaderClipGlobals(runtimeHitPoint, progress01, safeHeat, systemStress01);
             PublishReactiveFeedback(hitAup, toolHash, sectorHash, cellIndex, progress01, safePower, safeHeat, systemStress01, frame);
@@ -129,73 +127,121 @@ namespace Hecton8.Tools
         }
 
         private static bool TryResolveBuffers(
-            out float* cutProgress01,
-            out int cutProgressLength,
-            out WfcLaserCutTelemetryEntry* blackBox,
-            out int blackBoxLength)
+            out NativeArray<float> cutProgress01,
+            out NativeArray<WfcLaserCutTelemetryEntry> blackBox)
         {
-            cutProgress01 = null;
-            cutProgressLength = 0;
-            blackBox = null;
-            blackBoxLength = 0;
+            cutProgress01 = default;
+            blackBox = default;
 
             IDataVault vault = GlobalRegistry.DataVault;
             if (vault == null)
+            {
+                ReleaseVaultHandles(_dataVault);
+                ClearVaultHandles();
+                _dataVault = null;
                 return false;
+            }
 
-            if (!EnsureVaultHandle(
+            if (!ReferenceEquals(_dataVault, vault))
+            {
+                ReleaseVaultHandles(_dataVault);
+                ClearVaultHandles();
+                _dataVault = vault;
+            }
+
+            if (!TryResolveOrAcquireVaultBuffer(
                     vault,
-                    ref _cutProgressHandle,
                     BufferID.WfcDoorCutProgress01,
-                    WfcOutpostGridConstants.MaxCellCount))
+                    WfcOutpostGridConstants.MaxCellCount,
+                    ref _cutProgressHandle,
+                    out cutProgress01))
             {
                 return false;
             }
 
-            if (!EnsureVaultHandle(
+            if (!TryResolveOrAcquireVaultBuffer(
                     vault,
-                    ref _blackBoxHandle,
                     BufferID.WfcLaserCutBlackBox,
-                    BlackBoxFrameCount))
+                    BlackBoxFrameCount,
+                    ref _blackBoxHandle,
+                    out blackBox))
             {
                 return false;
             }
 
-            cutProgress01 = (float*)_cutProgressHandle.ptr;
-            cutProgressLength = _cutProgressHandle.Length;
-            blackBox = (WfcLaserCutTelemetryEntry*)_blackBoxHandle.ptr;
-            blackBoxLength = _blackBoxHandle.Length;
-            return cutProgress01 != null &&
-                   cutProgressLength >= WfcOutpostGridConstants.MaxCellCount &&
-                   blackBox != null &&
-                   blackBoxLength >= BlackBoxFrameCount;
+            return cutProgress01.IsCreated &&
+                   cutProgress01.Length >= WfcOutpostGridConstants.MaxCellCount &&
+                   blackBox.IsCreated &&
+                   blackBox.Length >= BlackBoxFrameCount;
         }
 
-        private static bool EnsureVaultHandle<T>(
+        private static bool TryResolveOrAcquireVaultBuffer<T>(
             IDataVault vault,
-            ref VaultBufferHandle<T> handle,
             BufferID bufferId,
-            int requiredLength)
+            int requiredLength,
+            ref VaultGenerationHandle<T> handle,
+            out NativeArray<T> buffer)
             where T : struct
         {
+            buffer = default;
             if (vault == null)
                 return false;
 
-            if (!handle.IsCreated ||
-                !vault.ResolveBuffer(ref handle) ||
-                handle.Length < requiredLength)
+            if (IsVaultHandleCreated(in handle) &&
+                vault.TryResolveHandle(in handle, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= requiredLength)
             {
-                handle = vault.GetBufferHandle<T>(
-                    bufferId,
-                    requiredLength,
-                    SystemID.GameplayTools,
-                    NativeArrayOptions.ClearMemory);
+                return true;
             }
 
-            return handle.IsCreated && handle.ptr != null && handle.Length >= requiredLength;
+            VaultGenerationHandle<T> acquired = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.GameplayTools,
+                NativeArrayOptions.ClearMemory);
+            if (!IsVaultHandleCreated(in acquired) ||
+                !vault.TryResolveHandle(in acquired, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                return false;
+            }
+
+            handle = acquired;
+            return true;
         }
 
-        private static void RefreshActiveGridFromSignals(float* cutProgress01, int cutProgressLength)
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
+        }
+
+        private static void ClearVaultHandles()
+        {
+            _cutProgressHandle = default;
+            _blackBoxHandle = default;
+        }
+
+        private static void ReleaseVaultHandles(IDataVault vault)
+        {
+            if (vault == null)
+                return;
+
+            ReleaseVaultHandle(vault, ref _cutProgressHandle);
+            ReleaseVaultHandle(vault, ref _blackBoxHandle);
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (!IsVaultHandleCreated(in handle))
+                return;
+
+            vault.ReleaseBuffer(in handle);
+            handle = default;
+        }
+
+        private static void RefreshActiveGridFromSignals(NativeArray<float> cutProgress01)
         {
             ReadOnlySpan<WfcOutpostGeneratedSignal> signals = SignalBus<WfcOutpostGeneratedSignal>.GetFrameSnapshot();
             if (signals.Length <= 0)
@@ -224,18 +270,18 @@ namespace Hecton8.Tools
                 return;
             }
 
-            ClearProgress(cutProgress01, cutProgressLength);
+            ClearProgress(cutProgress01);
             _activeSectorHash = latest.SectorHash;
             _activeGridHandle = latest.GridHandle;
             _activeGenerationSequence = latest.GenerationSequence;
         }
 
-        private static void ClearProgress(float* cutProgress01, int cutProgressLength)
+        private static void ClearProgress(NativeArray<float> cutProgress01)
         {
-            if (cutProgress01 == null || cutProgressLength <= 0)
+            if (!cutProgress01.IsCreated || cutProgress01.Length <= 0)
                 return;
 
-            int count = math.min(cutProgressLength, WfcOutpostGridConstants.MaxCellCount);
+            int count = math.min(cutProgress01.Length, WfcOutpostGridConstants.MaxCellCount);
             for (int i = 0; i < count; i++)
                 cutProgress01[i] = 0f;
         }
@@ -296,18 +342,10 @@ namespace Hecton8.Tools
 
         private static float ResolveVisualOverkill01(float systemStress01)
         {
-            if (systemStress01 > StressSparkDropThreshold)
-                return 0f;
-
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            if (tier == HectonQualityTier.Ultra)
-                return 1f;
-            if (tier == HectonQualityTier.High)
-                return 0.7f;
-            if (tier == HectonQualityTier.Mid)
-                return 0.2f;
-
-            return 0f;
+            float quality01 = Clamp01Finite(HomeostasisBrain.GlobalQualityWeight);
+            float stressHeadroom01 = math.saturate((StressSparkDropThreshold - Clamp01Finite(systemStress01)) * math.rcp(StressSparkDropThreshold));
+            float overkillCurve = SmoothStep01((quality01 - 0.35f) * math.rcp(0.65f));
+            return Clamp01Finite(overkillCurve * stressHeadroom01);
         }
 
         private static void PublishReactiveFeedback(
@@ -393,10 +431,9 @@ namespace Hecton8.Tools
             uint frame,
             uint toolHash,
             byte flags,
-            WfcLaserCutTelemetryEntry* blackBox,
-            int blackBoxLength)
+            NativeArray<WfcLaserCutTelemetryEntry> blackBox)
         {
-            if (blackBox == null || blackBoxLength <= 0)
+            if (!blackBox.IsCreated || blackBox.Length <= 0)
                 return;
 
             bool valid = IsFinite(cutOriginAup) &&
@@ -407,7 +444,7 @@ namespace Hecton8.Tools
                          math.isfinite(heat01) &&
                          math.isfinite(systemStress01);
 
-            int index = (int)(_blackBoxCursor % (uint)blackBoxLength);
+            int index = (int)(_blackBoxCursor % (uint)blackBox.Length);
             blackBox[index] = new WfcLaserCutTelemetryEntry
             {
                 CutOriginAup = cutOriginAup,
@@ -427,7 +464,7 @@ namespace Hecton8.Tools
             _blackBoxCursor++;
 
             if (!valid)
-                DumpBlackBox(blackBox, blackBoxLength);
+                DumpBlackBox(blackBox);
         }
 
         private static bool IsFinite(double3 value)
@@ -450,9 +487,15 @@ namespace Hecton8.Tools
             return math.isfinite(value) && value > 0f ? value : 0f;
         }
 
-        private static void DumpBlackBox(WfcLaserCutTelemetryEntry* blackBox, int blackBoxLength)
+        private static float SmoothStep01(float value)
         {
-            if (blackBox == null || blackBoxLength <= 0)
+            float t = math.saturate(value);
+            return t * t * (3f - 2f * t);
+        }
+
+        private static void DumpBlackBox(NativeArray<WfcLaserCutTelemetryEntry> blackBox)
+        {
+            if (!blackBox.IsCreated || blackBox.Length <= 0)
                 return;
 
             try
@@ -468,10 +511,10 @@ namespace Hecton8.Tools
                 using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
-                    writer.Write(blackBoxLength);
+                    writer.Write(blackBox.Length);
                     writer.Write(_blackBoxCursor);
                     writer.Write(_doorsCutCount);
-                    for (int i = 0; i < blackBoxLength; i++)
+                    for (int i = 0; i < blackBox.Length; i++)
                     {
                         WfcLaserCutTelemetryEntry entry = blackBox[i];
                         writer.Write(entry.CutOriginAup.x);
@@ -504,7 +547,7 @@ namespace Hecton8.Tools
         }
     }
 
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 96)]
+    [StructLayout(LayoutKind.Explicit, Size = 96)]
     internal struct WfcLaserCutTelemetryEntry
     {
         [FieldOffset(0)]

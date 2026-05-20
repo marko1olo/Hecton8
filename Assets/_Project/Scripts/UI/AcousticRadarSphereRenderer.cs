@@ -9,6 +9,7 @@ using UnityEngine.Rendering;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
+using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 
 namespace Hecton8.UI
 {
@@ -17,9 +18,10 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Acoustic Radar Sphere Renderer")]
-    public sealed class AcousticRadarSphereRenderer : MonoBehaviour, ILateFrameTickable
+    public sealed class AcousticRadarSphereRenderer : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
     {
         private const int MaxBlips = 64;
+        private const int MinimumQualityBlipCapacity = 16;
 #if UNITY_EDITOR
         private const string VoxelShaderPath = "Assets/_Project/Art/Shaders/Hecton_AcousticRadarVoxel.shader";
 #endif
@@ -59,15 +61,25 @@ namespace Hecton8.UI
         private Material _runtimeMaterial;
         private Mesh _runtimeVoxelMesh;
         private Camera _viewCamera;
+        private SpatialAudioManager _cachedAudioManager;
+        private IPlayerRuntimeContext _cachedPlayerContext;
+        private bool _hotSwapListenerRegistered;
+        private bool _scalabilityListenerRegistered;
+        private int _qualityMatrixCapacity = MaxBlips;
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
+            TryRegisterScalabilityListener();
             EnsureResources();
             TryRegisterTickManager();
         }
 
         private void Start()
         {
+            CacheRegistryServicesCold();
+            TryRegisterScalabilityListener();
             EnsureResources();
             TryRegisterTickManager();
         }
@@ -76,11 +88,15 @@ namespace Hecton8.UI
         {
             _matrixCount = 0;
             TryUnregisterTickManager();
+            TryUnregisterScalabilityListener();
+            TryUnregisterHotSwapListener();
         }
 
         private void OnDestroy()
         {
             TryUnregisterTickManager();
+            TryUnregisterScalabilityListener();
+            TryUnregisterHotSwapListener();
             if (_runtimeMaterial != null)
             {
                 DestroyUnityObject(_runtimeMaterial);
@@ -102,7 +118,8 @@ namespace Hecton8.UI
             if (_runtimeMaterial == null || _runtimeVoxelMesh == null)
                 return;
 
-            if (!(GlobalRegistry.Audio is SpatialAudioManager audioManager))
+            SpatialAudioManager audioManager = _cachedAudioManager;
+            if (audioManager == null)
                 return;
 
             Transform anchor = radarAnchor != null ? radarAnchor : transform;
@@ -134,8 +151,9 @@ namespace Hecton8.UI
             float radius = math.max(0.01f, sphereRadius);
             float baseVoxelSize = math.max(0.001f, voxelSizeMeters);
             float minimumRadius = math.saturate(minimumRadiusFraction);
+            int matrixCapacity = math.clamp(_qualityMatrixCapacity, MinimumQualityBlipCapacity, MaxBlips);
 
-            for (int i = 0; i < sampleCount && _matrixCount < MaxBlips; i++)
+            for (int i = 0; i < sampleCount && _matrixCount < matrixCapacity; i++)
             {
                 SpatialAudioManager.ActiveImpactEmitterSample sample = _samples[i];
                 float amplitude = math.saturate(sample.Amplitude);
@@ -187,7 +205,86 @@ namespace Hecton8.UI
                 : new float3(0f, 0f, 1f);
         }
 
-        private static bool TryResolveListenerAup(Vector3 listenerPosition, out AbsoluteUniversePosition listenerAup)
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Audio:
+                    _cachedAudioManager = currentService as SpatialAudioManager;
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                    _viewCamera = null;
+                    break;
+            }
+        }
+
+        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            RefreshQualityPolicy();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
+        private void TryRegisterScalabilityListener()
+        {
+            if (_scalabilityListenerRegistered || !Application.isPlaying)
+                return;
+
+            ScalabilityEvents.Register(this);
+            _scalabilityListenerRegistered = true;
+        }
+
+        private void TryUnregisterScalabilityListener()
+        {
+            if (!_scalabilityListenerRegistered)
+                return;
+
+            ScalabilityEvents.Unregister(this);
+            _scalabilityListenerRegistered = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            RefreshQualityPolicy();
+            _cachedAudioManager = GlobalRegistry.Audio as SpatialAudioManager;
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (!ReferenceEquals(_cachedPlayerContext, playerContext))
+            {
+                _cachedPlayerContext = playerContext;
+                _viewCamera = null;
+            }
+        }
+
+        private void RefreshQualityPolicy()
+        {
+            float qualityWeight01 = math.saturate(HomeostasisBrain.GlobalQualityWeight);
+            float qualityCurve = SmoothStep01(qualityWeight01);
+            _qualityMatrixCapacity = math.clamp(
+                (int)math.round(math.lerp(MinimumQualityBlipCapacity, MaxBlips, qualityCurve)),
+                MinimumQualityBlipCapacity,
+                MaxBlips);
+        }
+
+        private bool TryResolveListenerAup(Vector3 listenerPosition, out AbsoluteUniversePosition listenerAup)
         {
             if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
             {
@@ -201,7 +298,7 @@ namespace Hecton8.UI
                 }
             }
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             HectonPlayerMovement movement = playerContext != null ? playerContext.PlayerMovement : null;
             if (movement != null)
             {
@@ -259,6 +356,12 @@ namespace Hecton8.UI
             return maxAxis + midAxis * 0.375f + minAxis * 0.125f;
         }
 
+        private static float SmoothStep01(float value)
+        {
+            float t = math.saturate(math.isfinite(value) ? value : 1f);
+            return t * t * (3f - 2f * t);
+        }
+
         /// <inheritdoc />
         public void LateFrameTick()
         {
@@ -293,7 +396,7 @@ namespace Hecton8.UI
 
             if (_viewCamera == null)
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = _cachedPlayerContext;
                 _viewCamera = playerContext != null ? playerContext.PlayerCamera : null;
             }
 
@@ -315,7 +418,7 @@ namespace Hecton8.UI
 
             if (_viewCamera == null)
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = _cachedPlayerContext;
                 _viewCamera = playerContext != null ? playerContext.PlayerCamera : null;
             }
 

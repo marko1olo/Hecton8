@@ -56,7 +56,7 @@ namespace Hecton8.Biolum
             public byte Active;
         }
 
-        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 32)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct BiolumTelemetryEntry
         {
             [FieldOffset(0)]
@@ -323,7 +323,7 @@ namespace Hecton8.Biolum
             TryUnregisterService();
             TryUnregister();
             HectonFloatingOrigin.UnregisterListener(this);
-            CompleteRuntimeJobs(true);
+            CompleteRuntimeJobsForTeardown();
             SpectrumEvents.UnregisterSonarPulseListener(this);
             _sonarPulseBoost = 0f;
 
@@ -335,7 +335,7 @@ namespace Hecton8.Biolum
             TryUnregisterService();
             TryUnregister();
             HectonFloatingOrigin.UnregisterListener(this);
-            CompleteRuntimeJobs(true);
+            CompleteRuntimeJobsForTeardown();
             SpectrumEvents.UnregisterSonarPulseListener(this);
             _sonarPulseBoost = 0f;
 
@@ -477,7 +477,7 @@ namespace Hecton8.Biolum
         public void Tick(float deltaTime)
         {
             float safeDeltaTime = math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f;
-            CompleteRuntimeJobs(false);
+            TryFinalizeRuntimeJobsNoWait();
             EnsureRuntimeResources();
             DrainMovementAcousticSignals();
             UpdateTouchRipples(safeDeltaTime);
@@ -989,38 +989,46 @@ namespace Hecton8.Biolum
             _predatorJobScheduled = true;
         }
 
-        private void CompleteRuntimeJobs(bool forceComplete)
+        private void TryFinalizeRuntimeJobsNoWait()
         {
-            if (_predatorJobScheduled && TryFinalizeRuntimeJob(ref _predatorJobHandle, forceComplete))
-            {
-                _predatorJobScheduled = false;
-                float maxScore = 0f;
-                if (TryResolvePredatorScores(out NativeArray<float> predatorJobScores))
-                {
-                    for (int i = 0; i < _scheduledPredatorCount; i++)
-                        maxScore = math.max(maxScore, predatorJobScores[i]);
-                }
+            if (_predatorJobScheduled && DispatcherJobSwap.TryFinalizeCompleted(ref _predatorJobHandle))
+                FinishPredatorJob();
 
-                _predatorTargetIntensity = math.lerp(1f, PredatorBlackoutMinimumIntensity, math.saturate(maxScore));
-                _scheduledPredatorCount = 0;
-                UnlockPredatorJobBuffers();
-            }
-
-            if (_rippleJobScheduled && TryFinalizeRuntimeJob(ref _rippleJobHandle, forceComplete))
-            {
-                _rippleJobScheduled = false;
-                if (TryResolveRippleDistances(out NativeArray<float> rippleJobDistances))
-                    FinalizeRippleDistanceOrder(rippleJobDistances);
-                _scheduledRippleCount = 0;
-                UnlockRippleJobBuffers();
-            }
+            if (_rippleJobScheduled && DispatcherJobSwap.TryFinalizeCompleted(ref _rippleJobHandle))
+                FinishRippleJob();
         }
 
-        private static bool TryFinalizeRuntimeJob(ref JobHandle handle, bool forceComplete)
+        private void CompleteRuntimeJobsForTeardown()
         {
-            return forceComplete
-                ? DispatcherJobSwap.TryComplete(ref handle, true)
-                : DispatcherJobSwap.TryFinalizeCompleted(ref handle);
+            if (_predatorJobScheduled && DispatcherJobSwap.TryComplete(ref _predatorJobHandle, true))
+                FinishPredatorJob();
+
+            if (_rippleJobScheduled && DispatcherJobSwap.TryComplete(ref _rippleJobHandle, true))
+                FinishRippleJob();
+        }
+
+        private void FinishPredatorJob()
+        {
+            _predatorJobScheduled = false;
+            float maxScore = 0f;
+            if (TryResolvePredatorScores(out NativeArray<float> predatorJobScores))
+            {
+                for (int i = 0; i < _scheduledPredatorCount; i++)
+                    maxScore = math.max(maxScore, predatorJobScores[i]);
+            }
+
+            _predatorTargetIntensity = math.lerp(1f, PredatorBlackoutMinimumIntensity, math.saturate(maxScore));
+            _scheduledPredatorCount = 0;
+            UnlockPredatorJobBuffers();
+        }
+
+        private void FinishRippleJob()
+        {
+            _rippleJobScheduled = false;
+            if (TryResolveRippleDistances(out NativeArray<float> rippleJobDistances))
+                FinalizeRippleDistanceOrder(rippleJobDistances);
+            _scheduledRippleCount = 0;
+            UnlockRippleJobBuffers();
         }
 
         private void FinalizeRippleDistanceOrder(NativeArray<float> rippleJobDistances)
@@ -1348,7 +1356,7 @@ namespace Hecton8.Biolum
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
-            CompleteRuntimeJobs(true);
+            CompleteRuntimeJobsForTeardown();
             Vector3 shiftOffset = shiftData.ShiftOffset;
             float3 shift = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
             if (!math.all(math.isfinite(shift)))
@@ -1790,7 +1798,7 @@ namespace Hecton8.Biolum
             if (_disposed)
                 return;
 
-            CompleteRuntimeJobs(true);
+            CompleteRuntimeJobsForTeardown();
             ReleaseRuntimeResources();
             _disposed = true;
         }

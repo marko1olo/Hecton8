@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
+using Hecton8.Data;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
@@ -21,7 +22,7 @@ using UnityEngine.UIElements;
 namespace Hecton8.Environment
 {
     /// <summary>
-    /// Vault-owned seismic event slot. Size: 40 bytes, default platform packing.
+    /// Vault-owned seismic event slot. Size: 40 bytes, explicit 8-byte-safe layout.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 40)]
     public struct SeismicEventDTO
@@ -258,6 +259,8 @@ namespace Hecton8.Environment
         public const uint PanicShockHash = 0x50414E43u;
         public const uint SeismicShockwaveHash = 0x53485756u;
         public const uint EclipseGameplayHash = 0x45434C50u;
+        public const uint StaticFaultLineSectionId = 0x53464C54u; // SFLT
+        public const uint StaticTectonicFaultSectionId = 0x54464C54u; // TFLT
         public const uint Moon0Hash = 0xA3DE9A50u;
         public const uint SunHash = 0xE04E3F61u;
         public const uint Moon1Hash = 0xA4DE9BE3u;
@@ -605,6 +608,8 @@ namespace Hecton8.Environment
         private const float AbyssDepthY = -500f;
         private const double ShaderShakeLodHysteresisSeconds = 2.5d;
         private const double CelestialMinimumSolveIntervalSeconds = 0.2d;
+        private const float QualityShedPerSecond = 4f;
+        private const float QualityRecoverPerSecond = 1f;
         private const uint DefaultWorldSeed = 0x8E1571D5u;
         private const uint RockfallSpeciesHash = 0x5246434Cu;
         private const uint SubLowRumbleHash = 0x5355424Cu;
@@ -673,6 +678,8 @@ namespace Hecton8.Environment
         private bool _legacyFaultBinaryScanned;
         private bool _emergencyFaultsGenerated;
         private bool _seismicEvaluationJobScheduled;
+        private bool _celestialMechanicsJobScheduled;
+        private bool _celestialMechanicsTelemetryRequested;
         private bool _dumpedSeismicDirectorTelemetry;
         private bool _dumpedInvalidTelemetry;
         private bool _dumpedCelestialTelemetry;
@@ -689,19 +696,23 @@ namespace Hecton8.Environment
         private int _lastScheduledTelemetryIndex = -1;
         private int _tickCount;
         private int _lastCollapseHourBucket = int.MinValue;
+        private long _celestialMechanicsScheduleTimestamp;
         private double _nextCsvPollTime;
         private double _shaderShakeLodSwitchTime;
         private DateTime _lastCsvWriteUtc;
         private JobHandle _seismicEvaluationJob;
+        private JobHandle _celestialMechanicsJob;
         private uint _sequence;
         private uint _seismicEventSequence;
         private uint _celestialSequence;
+        private uint _lastQualityFilterFrame;
         private float _lastCelestialSolverMs;
         private float _globalQualityWeight = 1f;
         private SeismicRuntimeSnapshot _snapshot;
         private TideSolveResult _cachedTide;
         private Vector4 _lastWorldShake;
         private bool _hasCachedTide;
+        private bool _qualityFilterPrimed;
 
         /// <inheritdoc />
         public bool IsInitialized => _isInitialized;
@@ -812,6 +823,7 @@ namespace Hecton8.Environment
         public void LateFrameTick()
         {
             CompleteSeismicEvaluationJob(force: false);
+            CompleteCelestialMechanicsJob(force: false);
         }
 
         private void OnEnable()
@@ -826,6 +838,7 @@ namespace Hecton8.Environment
         private void OnDisable()
         {
             CompleteSeismicEvaluationJob(force: true);
+            CompleteCelestialMechanicsJob(force: true);
             TryUnregisterTickLanes();
             if (_registeredService)
             {
@@ -852,6 +865,7 @@ namespace Hecton8.Environment
         private void ShutdownServiceState()
         {
             CompleteSeismicEvaluationJob(force: true);
+            CompleteCelestialMechanicsJob(force: true);
             TryUnregisterTickLanes();
             if (_registeredService)
             {
@@ -1384,7 +1398,7 @@ namespace Hecton8.Environment
             initJob.Seed = _cachedWorldSeed != 0u ? _cachedWorldSeed : DefaultWorldSeed;
             initJob.TideAmplitudeMeters = math.max(0f, tideAmplitudeMeters);
             initJob.QualityWeight = ResolveGlobalQualityWeight();
-            initJob.Run();
+            initJob.Execute();
             _celestialBuffersInitialized = true;
             _celestialTelemetryWriteIndex = 0;
         }
@@ -1432,6 +1446,9 @@ namespace Hecton8.Environment
             _legacyFaultBinaryScanned = true;
             try
             {
+                if (TryLoadFaultsFromStaticDataArena(events))
+                    return;
+
                 if (!TryLoadLegacyFaultBinary(events))
                     GenerateEmergencyMockFaults(events);
             }
@@ -1443,6 +1460,48 @@ namespace Hecton8.Environment
             {
                 GenerateEmergencyMockFaults(events);
             }
+        }
+
+        private static bool TryLoadFaultsFromStaticDataArena(NativeArray<SeismicEventDTO> events)
+        {
+            if (!events.IsCreated || !H8StaticDataArena.IsLoaded)
+                return false;
+
+            if (TryLoadFaultsFromStaticDataArenaSection(SeismicDirectorConstants.StaticFaultLineSectionId, events))
+                return true;
+
+            return TryLoadFaultsFromStaticDataArenaSection(SeismicDirectorConstants.StaticTectonicFaultSectionId, events);
+        }
+
+        private static bool TryLoadFaultsFromStaticDataArenaSection(uint sectionId, NativeArray<SeismicEventDTO> events)
+        {
+            if (!H8StaticDataArena.TryGetSectionSpan((H8DataSectionId)sectionId, out ReadOnlySpan<SeismicEventDTO> records) || records.Length == 0)
+                return false;
+
+            for (int i = 0; i < events.Length; i++)
+                events[i] = default;
+
+            int writeCount = 0;
+            int sourceCount = math.min(records.Length, events.Length);
+            for (int i = 0; i < sourceCount; i++)
+            {
+                SeismicEventDTO source = records[i];
+                if (!math.all(math.isfinite(source.EpicenterAUP)))
+                    continue;
+
+                SeismicEventDTO fault = default;
+                fault.EpicenterAUP = source.EpicenterAUP;
+                fault.Magnitude = math.max(0f, math.isfinite(source.Magnitude) ? source.Magnitude : 0f);
+                fault.Frequency = math.max(0.1f, math.isfinite(source.Frequency) ? source.Frequency : 0.1f);
+                fault.DecayRate = math.max(0.001f, math.isfinite(source.DecayRate) ? source.DecayRate : 0.16f);
+                fault.EventTypeHash = source.EventTypeHash != 0u
+                    ? source.EventTypeHash
+                    : sectionId ^ unchecked((uint)writeCount);
+                events[writeCount] = fault;
+                writeCount++;
+            }
+
+            return writeCount > 0;
         }
 
         private static bool TryLoadLegacyFaultBinary(NativeArray<SeismicEventDTO> events)
@@ -1502,6 +1561,7 @@ namespace Hecton8.Environment
                     return false;
 
                 int writeCount = math.min(events.Length, count);
+                int validCount = 0;
                 byte[] record = new byte[RecordBytes]; // COLD ALLOC: byte[40] - legacy seismic fault record staging - owner: HectonSeismicTideDirector
                 for (int i = 0; i < writeCount; i++)
                 {
@@ -1524,9 +1584,10 @@ namespace Hecton8.Environment
                     fault.DecayRate = math.max(0.001f, ReadFloatLe(record, 32));
                     fault.EventTypeHash = ReadUInt32Le(record, 36);
                     events[i] = fault;
+                    validCount++;
                 }
 
-                return true;
+                return validCount > 0;
             }
         }
 
@@ -1610,7 +1671,7 @@ namespace Hecton8.Environment
             job.Probability = math.saturate(tuning.MockTriggerProbability);
             job.MinimumMagnitude = math.max(0f, tuning.MinimumMagnitude);
             job.Frame = ResolveSimulationFrame();
-            job.Run();
+            job.Execute();
 
             MockNarrativeTriggerSignal signal = *signalPtr;
             if (signal.Fire == 0u)
@@ -1878,9 +1939,14 @@ namespace Hecton8.Environment
             if (writeState == null || readState == null || flow == null || tuning == null || mockTimeline == null || orbitalParameters == null)
                 return false;
 
+            if (TryCompleteCelestialMechanicsJob(force: false, out state, out flowModifier))
+                return true;
+
+            if (_celestialMechanicsJobScheduled)
+                return false;
+
             GenerateMockTimeAccelerators(mockTimeline, tuning, h8Time, simulationTickDelta);
 
-            long start = Stopwatch.GetTimestamp();
             CelestialMechanicsJob mechanicsJob = default;
             mechanicsJob.WriteState = writeState;
             mechanicsJob.Flow = flow;
@@ -1893,10 +1959,53 @@ namespace Hecton8.Environment
             mechanicsJob.QualityWeight = qualityWeight;
             mechanicsJob.SerializedTideAmplitudeMeters = math.max(0f, tideAmplitudeMeters);
             mechanicsJob.SimulationTickDelta = simulationTickDelta;
-            mechanicsJob.Run();
+            _celestialMechanicsScheduleTimestamp = Stopwatch.GetTimestamp();
+            _celestialMechanicsJob = mechanicsJob.Schedule();
+            _celestialMechanicsJobScheduled = true;
+            _celestialMechanicsTelemetryRequested = writeTelemetry;
+            H8Memory.RegisterActiveJob(SystemID.HabitatAtmosphere, _celestialMechanicsJob);
+            return TryCompleteCelestialMechanicsJob(force: false, out state, out flowModifier);
+        }
+
+        private unsafe void CompleteCelestialMechanicsJob(bool force)
+        {
+            if (TryCompleteCelestialMechanicsJob(force, out CelestialStateDTO state, out CelestialFlowModifierDTO flowModifier))
+            {
+                _cachedTide = BuildTideSolveFromCelestial(in state, in flowModifier);
+                _hasCachedTide = true;
+            }
+        }
+
+        private unsafe bool TryCompleteCelestialMechanicsJob(
+            bool force,
+            out CelestialStateDTO state,
+            out CelestialFlowModifierDTO flowModifier)
+        {
+            state = default;
+            flowModifier = default;
+            if (!_celestialMechanicsJobScheduled)
+                return false;
+
+            bool completed = force
+                ? DispatcherJobFence.TryComplete(ref _celestialMechanicsJob, forceComplete: true)
+                : DispatcherJobFence.TryFinalizeCompleted(ref _celestialMechanicsJob);
+            if (!completed)
+                return false;
+
+            _celestialMechanicsJobScheduled = false;
+            bool telemetryRequested = _celestialMechanicsTelemetryRequested;
+            _celestialMechanicsTelemetryRequested = false;
+
+            CelestialStateDTO* writeState = (CelestialStateDTO*)_celestialStateWriteHandle.ResolvePointer(_dataVault);
+            CelestialStateDTO* readState = (CelestialStateDTO*)_celestialStateReadHandle.ResolvePointer(_dataVault);
+            CelestialFlowModifierDTO* flow = (CelestialFlowModifierDTO*)_celestialFlowModifierHandle.ResolvePointer(_dataVault);
+            CelestialTuningDTO* tuning = (CelestialTuningDTO*)_celestialTuningHandle.ResolvePointer(_dataVault);
+            if (writeState == null || readState == null || flow == null || tuning == null)
+                return false;
+
             UnsafeUtility.MemCpy(readState, writeState, UnsafeUtility.SizeOf<CelestialStateDTO>());
             long end = Stopwatch.GetTimestamp();
-            _lastCelestialSolverMs = (float)((end - start) * 1000d / Stopwatch.Frequency);
+            _lastCelestialSolverMs = (float)((end - _celestialMechanicsScheduleTimestamp) * 1000d / Stopwatch.Frequency);
 
             state = UnsafeUtility.AsRef<CelestialStateDTO>(readState);
             flowModifier = UnsafeUtility.AsRef<CelestialFlowModifierDTO>(flow);
@@ -1908,7 +2017,7 @@ namespace Hecton8.Environment
                 return false;
             }
 
-            if (writeTelemetry)
+            if (telemetryRequested)
                 WriteCelestialTelemetryEntry(_lastCelestialSolverMs, in state, in flowModifier);
             return true;
         }
@@ -1924,7 +2033,7 @@ namespace Hecton8.Environment
             mockJob.RealTimeSeconds = h8Time;
             mockJob.SimulationTickDelta = simulationTickDelta;
             mockJob.TimeScale = math.max(0.01f, UnsafeUtility.AsRef<CelestialTuningDTO>(tuning).MockTimeScale);
-            mockJob.Run();
+            mockJob.Execute();
         }
 
         private unsafe void PublishCelestialSeismicIntensity(float seismicIntensity01, ref CelestialStateDTO state)
@@ -2099,11 +2208,29 @@ namespace Hecton8.Environment
 
         private float ResolveGlobalQualityWeight()
         {
-            float weight = HomeostasisBrain.GlobalQualityWeight;
-            if (!math.isfinite(weight))
-                weight = _globalQualityWeight;
+            float target = HomeostasisBrain.GlobalQualityWeight;
+            if (!math.isfinite(target))
+                target = _globalQualityWeight;
 
-            _globalQualityWeight = math.saturate(weight);
+            target = math.saturate(target);
+            uint frame = ResolveSimulationFrame();
+            if (!_qualityFilterPrimed)
+            {
+                _globalQualityWeight = target;
+                _lastQualityFilterFrame = frame;
+                _qualityFilterPrimed = true;
+                return _globalQualityWeight;
+            }
+
+            if (_lastQualityFilterFrame == frame)
+                return _globalQualityWeight;
+
+            _lastQualityFilterFrame = frame;
+            float current = math.saturate(_globalQualityWeight);
+            float delta = target - current;
+            float rate = delta < 0f ? QualityShedPerSecond : QualityRecoverPerSecond;
+            float maxStep = rate * (1f / 60f);
+            _globalQualityWeight = math.saturate(current + math.clamp(delta, -maxStep, maxStep));
             return _globalQualityWeight;
         }
 
@@ -2161,6 +2288,7 @@ namespace Hecton8.Environment
 
             _lastScheduledTelemetryIndex = telemetryIndex;
             _seismicEvaluationJob = job.Schedule();
+            H8Memory.RegisterActiveJob(SystemID.HabitatAtmosphere, _seismicEvaluationJob);
             _seismicEvaluationJobScheduled = true;
         }
 
@@ -2168,11 +2296,11 @@ namespace Hecton8.Environment
         {
             if (!_seismicEvaluationJobScheduled)
                 return;
-            if (!force && !_seismicEvaluationJob.IsCompleted)
-                return;
 
             long start = Stopwatch.GetTimestamp();
-            _seismicEvaluationJob.Complete();
+            if (!DispatcherJobFence.TryComplete(ref _seismicEvaluationJob, force))
+                return;
+
             long end = Stopwatch.GetTimestamp();
             _seismicEvaluationJobScheduled = false;
 
@@ -2634,6 +2762,8 @@ namespace Hecton8.Environment
             _lastEclipseActive = false;
             _lastScheduledTelemetryIndex = -1;
             _globalQualityWeight = 1f;
+            _lastQualityFilterFrame = 0u;
+            _qualityFilterPrimed = false;
         }
 
         private double ResolveH8TimeSeconds()
@@ -2719,12 +2849,12 @@ namespace Hecton8.Environment
         private static SeismicSolveResult EvaluateSeismicStateBurst(double h8Time, uint seed, float microIntensity, float eventProbability, float qualityWeight)
         {
             float qualityCurve = SmoothStep01(math.saturate(qualityWeight));
-            float hourPhase = (float)(h8Time * HourSecondsRcp);
+            float hourPhase = WrapCycle01(h8Time * HourSecondsRcp);
             float eventRoll = Hash01(seed ^ 0xBADC0DEu);
             float eventGate = eventRoll <= math.saturate(eventProbability) ? math.lerp(0.55f, 1f, Hash01(seed ^ 0xC001D00Du)) : 0f;
             float eventEnvelope = TriangleWave01(hourPhase + Hash01(seed ^ 0x51ED270Bu));
-            float primaryMicro = TriangleWave01((float)(h8Time * 0.071d) + Hash01(seed ^ 0x72E4A13Bu));
-            float highTapMicro = TriangleWave01((float)(h8Time * 0.137d) + Hash01(seed ^ 0x7F4A7C15u));
+            float primaryMicro = TriangleWave01(WrapCycle01(h8Time * 0.071d + Hash01(seed ^ 0x72E4A13Bu)));
+            float highTapMicro = TriangleWave01(WrapCycle01(h8Time * 0.137d + Hash01(seed ^ 0x7F4A7C15u)));
             float micro = math.lerp(primaryMicro, primaryMicro * 0.72f + highTapMicro * 0.28f, qualityCurve) * math.saturate(microIntensity);
             float intensity = math.saturate(eventEnvelope * eventGate + micro * math.lerp(0.75f, 1.15f, qualityCurve));
             float yaw = Hash01(seed ^ 0xA2F2D13Fu) * TwoPi;
@@ -2753,6 +2883,14 @@ namespace Hecton8.Environment
         {
             float wrapped = phase - math.floor(phase);
             return 1f - math.abs(wrapped * 2f - 1f);
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float WrapCycle01(double cycle)
+        {
+            double wrapped = cycle - math.floor(cycle);
+            return math.isfinite(wrapped) ? (float)wrapped : 0f;
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
@@ -2902,8 +3040,7 @@ namespace Hecton8.Environment
                 ref CelestialTuningDTO tuning = ref UnsafeUtility.AsRef<CelestialTuningDTO>(Tuning);
 
                 float quality = math.saturate(math.isfinite(QualityWeight) ? QualityWeight : tuning.GlobalQualityWeight);
-                float qualityCurve = SmoothStep01(quality);
-                int activeHarmonics = math.clamp((int)math.lerp(1f, 4f, qualityCurve), 1, 4);
+                int activeHarmonics = ResolveActiveHarmonicCount(quality);
                 float amplitudeMeters = math.max(0f, tuning.TideAmplitudeMeters > 0f ? tuning.TideAmplitudeMeters : SerializedTideAmplitudeMeters);
                 float speed = math.clamp(math.isfinite(tuning.LunarCycleSpeed) ? tuning.LunarCycleSpeed : 1f, 0.01f, 512f);
                 double time = math.isfinite(*MockTimeline) ? *MockTimeline : state.CurrentSimulationTime;
@@ -2922,9 +3059,11 @@ namespace Hecton8.Environment
                 {
                     CelestialOrbitalParameterDTO parameter = ReadOrbitalParameter(i, capacity);
                     float period = math.max(60f, parameter.OrbitalPeriodSeconds);
-                    float influence = parameter.TidalInfluence;
+                    float influence = parameter.TidalInfluence * ResolveHarmonicBlend(i, quality);
                     float omega = TwoPi / period;
-                    float phase = (float)(time * omega * speed) + parameter.PhaseOffsetRadians;
+                    double cycle = (time * speed) / (double)period;
+                    double wrappedCycle = cycle - math.floor(cycle);
+                    float phase = (float)wrappedCycle * TwoPi + parameter.PhaseOffsetRadians;
                     math.sincos(phase, out float sine, out float cosine);
                     combined += sine * influence;
                     derivative += cosine * omega * speed * influence;
@@ -3007,6 +3146,27 @@ namespace Hecton8.Environment
                 return fallback;
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static int ResolveActiveHarmonicCount(float quality)
+            {
+                float q = math.saturate(quality);
+                float count = 1f + math.step(0.30f, q) + math.step(0.58f, q) + math.step(0.82f, q);
+                return math.clamp((int)count, 1, 4);
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static float ResolveHarmonicBlend(int index, float quality)
+            {
+                if (index <= 0)
+                    return 1f;
+                if (index == 1)
+                    return SmoothStepRange(0.30f, 0.55f, quality);
+                if (index == 2)
+                    return SmoothStepRange(0.58f, 0.78f, quality);
+                return SmoothStepRange(0.82f, 1f, quality);
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private static float SmoothStepRange(float edge0, float edge1, float value)
             {
                 float inv = 1f / math.max(0.0001f, edge1 - edge0);
@@ -3059,6 +3219,12 @@ namespace Hecton8.Environment
             [NoAlias, NativeDisableUnsafePtrRestriction] public float* TurbiditySpike;
             [NoAlias, NativeDisableUnsafePtrRestriction] public SeismicDirectorTelemetryEntry* Telemetry;
             [NoAlias, NativeDisableUnsafePtrRestriction] public MockSiltSignal* MockSilt;
+            // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+            // ShockwaveWriter is a write-only dispatcher signal lane. The job never reads queue state and never aliases the event/shake/turbidity pointers.
+            // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+            // Rejected main-thread shockwave emission because it would force a synchronous scan after seismic solve. Rejected a NativeList handoff because it adds allocator ownership and a second compaction pass.
+            // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+            // The scheduled handle is registered through H8Memory immediately after Schedule(), and LateFrame finalization uses DispatcherJobFence so consumers see this queue only after the swap fence resolves.
             [NativeDisableContainerSafetyRestriction] public NativeQueue<SeismicShockwaveSignal>.ParallelWriter ShockwaveWriter;
             public int EventCapacity;
             public int TelemetryIndex;
@@ -3120,7 +3286,7 @@ namespace Hecton8.Environment
                         float edge = math.saturate(1f - normalizedDistSq);
                         float falloff = math.saturate(inverseSquare * 4f * edge);
                         float3 direction = NormalizeSafe(delta, new float3(1f, 0f, 0f));
-                        float phase = (float)(H8TimeSeconds * math.max(0.1f, seismicEvent.Frequency)) + i * 1.6180339f;
+                        float phase = WrapCycle01(H8TimeSeconds * math.max(0.1f, seismicEvent.Frequency) + i * 1.6180339d);
                         math.sincos(phase * TwoPi, out float sine, out float cosine);
                         float noiseValue = 0f;
                         if (noiseWeight > 0.0001f)
@@ -3213,7 +3379,7 @@ namespace Hecton8.Environment
                     return false;
 
                 float faultRate = math.max(0.0001f, Tuning.MockTriggerProbability);
-                float phase = (float)(H8TimeSeconds * faultRate * 0.017d) + index * 11.731f;
+                float phase = WrapCycle01(H8TimeSeconds * faultRate * 0.017d + index * 11.731d);
                 float stress = noise.snoise(new float2(phase, index * 0.173f)) * 0.5f + 0.5f;
                 float threshold = math.lerp(0.9975f, 0.955f, math.saturate(Tuning.MockTriggerProbability) * math.lerp(0.35f, 1f, qualityCurve));
                 if (!math.isfinite(stress) || stress < threshold)
@@ -3238,6 +3404,13 @@ namespace Hecton8.Environment
                 signal.Flags = 1u;
                 ShockwaveWriter.Enqueue(signal);
                 return true;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static float WrapCycle01(double cycle)
+            {
+                double wrapped = cycle - math.floor(cycle);
+                return math.isfinite(wrapped) ? (float)wrapped : 0f;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -3759,9 +3932,9 @@ namespace Hecton8.Core.Contracts.Signals
     }
 
     /// <summary>
-    /// Seismic-to-debris avalanche request. Size: 72 bytes, explicit 8-byte-safe layout.
+    /// Seismic-to-debris avalanche request. Size: 128 bytes, explicit 8-byte-safe layout.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 72)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public partial struct DebrisAvalancheSignal : ISignal
     {
         [FieldOffset(0)] public AbsoluteUniversePosition CenterAup;
@@ -3771,12 +3944,19 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(60)] public uint Frame;
         [FieldOffset(64)] public uint Flags;
         [FieldOffset(68)] public uint Reserved;
+        [FieldOffset(72)] public ulong Reserved1;
+        [FieldOffset(80)] public ulong Reserved2;
+        [FieldOffset(88)] public ulong Reserved3;
+        [FieldOffset(96)] public ulong Reserved4;
+        [FieldOffset(104)] public ulong Reserved5;
+        [FieldOffset(112)] public ulong Reserved6;
+        [FieldOffset(120)] public ulong Reserved7;
     }
 
     /// <summary>
-    /// Seismic-to-audio low-pass shockwave request. Size: 72 bytes, explicit 8-byte-safe layout.
+    /// Seismic-to-audio low-pass shockwave request. Size: 128 bytes, explicit 8-byte-safe layout.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 72)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public partial struct AcousticShockwaveSignal : ISignal
     {
         [FieldOffset(0)] public AbsoluteUniversePosition CenterAup;
@@ -3786,12 +3966,19 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(60)] public uint SourceHash;
         [FieldOffset(64)] public uint Frame;
         [FieldOffset(68)] public uint Flags;
+        [FieldOffset(72)] public ulong Reserved0;
+        [FieldOffset(80)] public ulong Reserved1;
+        [FieldOffset(88)] public ulong Reserved2;
+        [FieldOffset(96)] public ulong Reserved3;
+        [FieldOffset(104)] public ulong Reserved4;
+        [FieldOffset(112)] public ulong Reserved5;
+        [FieldOffset(120)] public ulong Reserved6;
     }
 
     /// <summary>
-    /// Seismic-to-ecosystem panic broadcast. Size: 72 bytes, explicit 8-byte-safe layout.
+    /// Seismic-to-ecosystem panic broadcast. Size: 128 bytes, explicit 8-byte-safe layout.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 72)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public partial struct GlobalPanicSignal : ISignal
     {
         [FieldOffset(0)] public AbsoluteUniversePosition EpicenterAup;
@@ -3801,5 +3988,12 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(60)] public uint Frame;
         [FieldOffset(64)] public uint Flags;
         [FieldOffset(68)] public uint Reserved;
+        [FieldOffset(72)] public ulong Reserved1;
+        [FieldOffset(80)] public ulong Reserved2;
+        [FieldOffset(88)] public ulong Reserved3;
+        [FieldOffset(96)] public ulong Reserved4;
+        [FieldOffset(104)] public ulong Reserved5;
+        [FieldOffset(112)] public ulong Reserved6;
+        [FieldOffset(120)] public ulong Reserved7;
     }
 }

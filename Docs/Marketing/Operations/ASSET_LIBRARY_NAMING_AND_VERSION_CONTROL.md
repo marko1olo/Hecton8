@@ -40,6 +40,17 @@ MarketingAssets/
   07_Archive/
 ```
 
+## 2026-05-19 Empty Directory Skeleton V0
+
+The empty filesystem skeleton now exists at repo root under `MarketingAssets/` so capture can start without inventing folders during the session. This is directory custody only. It does not imply that any asset exists, any metadata row is captured, or any public proof gate has passed.
+
+Rules:
+
+- do not add placeholder screenshots, fake captures, or `.gitkeep` files just to make folders visible in Git;
+- do not treat an empty folder as an approved asset location;
+- first real files still require `Data/MARKETING_ASSET_METADATA_TEMPLATE.csv` path/build/date/source updates;
+- if large media should live outside Git later, keep this folder as a local working convention and store only metadata/index rows in docs.
+
 ## Filename Format
 
 ```text
@@ -74,7 +85,7 @@ H8_Trailer_Steam_b0150_2026-06-20_v07.mp4
 Track every public asset:
 
 ```csv
-asset_id,type,path,build_id,date,status,hook,shown_features,source_capture,qa_score,co_op_check,performance_claim_check,feature_truth_check,localization_check,owner,rejection_code,creator_rows_unlocked,creator_utility_score,creator_send_gate,notes
+asset_id,type,path,build_id,date,status,hook,shown_features,source_capture,qa_score,multiplayer_scope_check,performance_claim_check,feature_truth_check,localization_check,owner,rejection_code,notes,creator_rows_unlocked,creator_utility_score,creator_send_gate,pain_bucket_answered,pain_proof_score,pain_freshness_source,pain_freshness_checked_at,public_comparison_gate,agency_decision_proof_gate,agency_decision_notes
 ```
 
 ## 2026-05-19 Planned Capture To Metadata Workflow V0
@@ -89,9 +100,44 @@ The current metadata file already contains planned slots. When real captures arr
 | 4 | Fill capture source. | `source_capture` | Use scene/area/tool, not "screenshot". |
 | 5 | Score asset through QA. | `qa_score` | Social minimum 9/12, Steam screenshot minimum 10/12. |
 | 6 | Score creator utility if creator-facing. | `creator_rows_unlocked`, `creator_utility_score`, `creator_send_gate` | Creator-facing use requires 3/4+ and exact CRM row mapping; public social use does not imply creator send readiness. |
-| 7 | Check claims. | `co_op_check`, `performance_claim_check`, `feature_truth_check` | Any failed claim check blocks public use. |
-| 8 | Assign final state. | `status`, `rejection_code`, `notes` | Use fixed rejection codes only. |
-| 9 | Move approved export into target folder. | `path`, `status` | Approved public/press assets must not point to Raw. |
+| 7 | Score private pain proof if SN2/market pain is part of capture priority. | `pain_bucket_answered`, `pain_proof_score`, `pain_freshness_source`, `pain_freshness_checked_at`, `public_comparison_gate` | Minimum 4/5 for first-pack priority after same-day/current-week source proof; always `PRIVATE_ONLY_NO_COMPETITOR_COPY` or stricter. This cannot create public comparison language. |
+| 8 | Score agency/decision proof. | `agency_decision_proof_gate`, `agency_decision_notes` | First packet needs one asset where a cold viewer can name the player choice without caption; mood, anomaly, threat, or machinery alone is not enough. |
+| 9 | Check claims. | `multiplayer_scope_check`, `performance_claim_check`, `feature_truth_check` | Any failed claim check blocks public use. |
+| 10 | Assign final state. | `status`, `rejection_code`, `notes` | Use fixed rejection codes only. |
+| 11 | Move approved export into target folder. | `path`, `status` | Approved public/press assets must not point to Raw. |
+
+### First Real Capture Intake Packet V0
+
+Use this when the first screenshot or clip files exist. Do not wait for a full polished pack; intake the first useful files so weak captures fail fast.
+
+Required facts before a planned row can become `RAW`:
+
+| Field | Required value pattern | Reject if |
+|---|---|---|
+| `asset_id` | Existing `PLAN-*` row unless the capture proves a new hook. | A new ID duplicates an existing planned hook. |
+| `path` | Real file path with build/date/version tokens resolved. | Path still contains `[build]`, `[date]`, or points to concept/reference art. |
+| `build_id` | Exact build label, branch, or captured executable identifier. | `TBD`, "latest", "current", or guessed build. |
+| `date` | Capture date in ISO form. | Capture date is missing or inferred later. |
+| `source_capture` | Scene/route/tool/camera/settings note. | Generic value such as "screenshot" or "clip". |
+| `shown_features` | Only visible current-build features. | Mentions roadmap-only systems. |
+| `multiplayer_scope_check` | `SINGLE_PLAYER_SCOPE_OK`, `UNSUPPORTED_MULTIPLAYER_IMPLIED_FAIL`, or `NOT_APPLICABLE_INTERNAL`. | Any caption, UI, filename, or metadata implies unproved multiplayer scope. |
+| `performance_claim_check` | `NO_PERFORMANCE_CLAIM`, `MEASURED_PROOF_ATTACHED`, or `PERF_CLAIM_UNPROVED_FAIL`. | FPS/Deck/low-end language appears without measured proof. |
+| `feature_truth_check` | `CURRENT_BUILD_PROVEN`, `ACTIVE_WORK_INTERNAL_ONLY`, or `FEATURE_CLAIM_FAIL`. | The asset needs future systems to be honest. |
+| `pain_freshness_source` | Monitoring section/version or source row, for example `Monitoring SN2 Steam API/Page Refresh V5`. | `PENDING_SAME_DAY_REFRESH`, empty, or notes-only source after `pain_proof_score` rises above 0. |
+| `pain_freshness_checked_at` | ISO date of the source check used for pain-proof scoring. | Missing date or older-than-current-week check for first-pack priority. |
+| `public_comparison_gate` | `PRIVATE_ONLY_NO_COMPETITOR_COPY` or stricter. | Metadata creates public competitor-attack copy. |
+| `agency_decision_proof_gate` | `AGENCY_PROOF_CANDIDATE`, `SUPPORTING_AGENCY_SIGNAL`, or explicit non-proof value. | Missing value or mood-only value lets Campaign 01 bypass the player-choice gate. |
+| `agency_decision_notes` | One sentence naming the visible player decision or why this asset cannot prove agency. | Notes are empty or repeat a vibe without a choice. |
+
+Minimum first intake batch:
+
+1. One identity still: `PLAN-SHOT-001` or `REVISION` with exact reject code.
+2. One player-verb still: `PLAN-SHOT-003` or `REVISION` with exact reject code.
+3. One machinery/base still: `PLAN-SHOT-002`, `PLAN-SHOT-004`, or `PLAN-SHOT-005`.
+4. One agency/decision proof candidate: `PLAN-SHOT-006`, `PLAN-CLIP-001`, or `PLAN-CLIP-003` with `agency_decision_proof_gate = AGENCY_PROOF_CANDIDATE` after capture QA.
+5. Dashboard row drafted in `KPI/MARKETING_DASHBOARD_SPEC.md` Asset Gate Table for every captured asset.
+
+If fewer than two assets can receive factual `build_id`, `source_capture`, and `feature_truth_check`, stop marketing intake and fix capture custody before more copy work.
 
 ### Status Promotion Rules
 
@@ -146,7 +192,7 @@ Use fixed rejection codes:
 - `TOO_DARK`;
 - `UI_UNREADABLE`;
 - `CONCEPT_NOT_GAMEPLAY`;
-- `IMPLIES_COOP`;
+- `UNSUPPORTED_MULTIPLAYER_SCOPE`;
 - `PERF_CLAIM_UNPROVED`;
 - `FEATURE_NOT_PUBLIC`;
 - `LICENSE_RISK`;
@@ -168,4 +214,4 @@ Before each campaign:
 
 ## Current HECTON-8 Decision
 
-Create asset library structure when first real screenshots exist. For now, keep this as the naming and metadata authority.
+The empty `MarketingAssets/` directory skeleton exists locally. It is not asset proof. Keep this file as the naming and metadata authority until real captures arrive.

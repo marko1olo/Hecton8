@@ -260,7 +260,7 @@ namespace Hecton8.Graphics.Culling
         {
             float sortStart = Time.realtimeSinceStartup;
             JobHandle handle = ScheduleTBDRProtectionPass(requestedInstanceCount, default);
-            handle.Complete();
+            DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
             CommitCompletedProtectionPass((Time.realtimeSinceStartup - sortStart) * 1000f);
             return true;
         }

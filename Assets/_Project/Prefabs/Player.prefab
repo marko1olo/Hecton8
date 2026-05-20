@@ -239,7 +239,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   m_RenderShadows: 1
   m_RequiresDepthTextureOption: 1
@@ -870,6 +870,7 @@ GameObject:
   - component: {fileID: 6308054762889959174}
   - component: {fileID: 3915202389596888619}
   - component: {fileID: 7467141657224279663}
+  - component: {fileID: 136713600000000136}
   - component: {fileID: 6473731280857570575}
   m_Layer: 6
   m_Name: Player
@@ -1967,7 +1968,7 @@ MonoBehaviour:
   playerToolManager: {fileID: 3954223694506301739}
   playerTransportCoordinator: {fileID: 0}
   swimBlockoutRig: {fileID: 6473731280857570575}
-  swimAnimator: {fileID: 0}
+  kineticMatrixRuntime: {fileID: 136713600000000136}
   viewModelRoot: {fileID: 5991790254714940880}
   leftHandGuide: {fileID: 3756683997080362042}
   rightHandGuide: {fileID: 8803757626452626870}
@@ -2102,8 +2103,8 @@ MonoBehaviour:
   blockedSupportHandPhaseLeadBoost: 0.018
   obstaclePropulsionSuppression: 0.38
   obstaclePropulsionCompensation: 0.16
-  animatorWaveSignalBlendSpeed: 9
-  animatorWaveSlopeNormalization: 1.15
+  proceduralWaveSignalBlendSpeed: 9
+  proceduralWaveSlopeNormalization: 1.15
   activeTraumaImpulseNormalization: 18
   activeTraumaBlendInSpeed: 14
   activeTraumaHoldTime: 0.18
@@ -2136,6 +2137,27 @@ MonoBehaviour:
   _debugLastDrivenFrame: -1
   _debugProfile: 
   _debugProfileSource: 
+--- !u!114 &136713600000000136
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5334833049046775397}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd250538668144e4888c05624ddbaf9f, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Animation.KineticCharacter.KineticCharacterAnimatorRuntime
+  _boneCapacity: 32
+  _gpuSkinningMaterial: {fileID: 0}
+  _publishGlobalBuffer: 1
+  _seedEmergencyMockRig: 1
+  _cameraTransform: {fileID: 0}
+  _sdfDimensions: {x: 64, y: 64, z: 64}
+  _sdfOrigin: {x: -32, y: -32, z: -32}
+  _sdfCellSize: {x: 1, y: 1, z: 1}
+  _sdfRangeMeters: 2
 --- !u!114 &6473731280857570575
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2644,7 +2666,7 @@ MeshRenderer:
   m_DynamicOccludee: 1
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
-  m_LightProbeUsage: 1
+  m_LightProbeUsage: 0
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0

@@ -10,7 +10,7 @@ namespace Hecton8.World.ProceduralCoral
     {
         public static float Smooth01(float value)
         {
-            float t = math.saturate(value);
+            float t = math.isfinite(value) ? math.saturate(value) : 0f;
             return t * t * (3f - (2f * t));
         }
 
@@ -42,6 +42,40 @@ namespace Hecton8.World.ProceduralCoral
         public static float HashToUnit(uint value)
         {
             return (Hash(value) & 0x00FFFFFFu) * (1f / 16777215f);
+        }
+
+        public static float DeterministicRandom01(uint seed)
+        {
+            Unity.Mathematics.Random random = Unity.Mathematics.Random.CreateFromIndex(seed == 0u ? 1u : seed);
+            return random.NextFloat();
+        }
+
+        public static float ResolveEffectiveQuality(float counterQuality, float fallbackQuality)
+        {
+            float fallback = math.isfinite(fallbackQuality) ? fallbackQuality : 0.5f;
+            return math.isfinite(counterQuality) ? math.saturate(counterQuality) : math.saturate(fallback);
+        }
+
+        public static float SafePositive(float value, float fallback, float minimum)
+        {
+            float selected = math.isfinite(value) && value > 0f ? value : fallback;
+            return math.isfinite(selected) ? math.max(selected, minimum) : minimum;
+        }
+
+        public static float SafeSaturate(float value, float fallback)
+        {
+            float selected = math.isfinite(value) ? value : fallback;
+            return math.isfinite(selected) ? math.saturate(selected) : 0f;
+        }
+
+        public static quaternion SafeRotation(quaternion value)
+        {
+            float4 raw = value.value;
+            float lengthSq = math.dot(raw, raw);
+            if (!math.isfinite(lengthSq) || lengthSq <= ProceduralCoralConstants.Epsilon)
+                return quaternion.identity;
+
+            return new quaternion(raw * math.rsqrt(math.max(lengthSq, ProceduralCoralConstants.Epsilon)));
         }
 
         public static bool IsFinite(double3 value)
@@ -118,7 +152,7 @@ namespace Hecton8.World.ProceduralCoral
             CoralTuningDTO tuning = Tuning.IsCreated && Tuning.Length > 0 ? SanitizeTuning(Tuning[0]) : BuildDefaultTuning();
             double3 root = ProceduralCoralMath.IsFinite(MockRootAUP) ? MockRootAUP : double3.zero;
             uint sectorHash = ProceduralCoralMath.HashDouble3(root);
-            uint seed = ProceduralCoralMath.Hash(sectorHash ^ WorldSeed ^ tuning.SeedSalt ^ SimulationFrameCounter);
+            uint seed = ProceduralCoralMath.Hash(sectorHash ^ WorldSeed ^ tuning.SeedSalt);
             if (seed == 0u)
                 seed = 1u;
 
@@ -126,10 +160,10 @@ namespace Hecton8.World.ProceduralCoral
             trigger.RootAUP = root;
             trigger.SectorHash = sectorHash;
             trigger.Seed = seed;
-            trigger.GlobalQualityWeight = math.saturate(tuning.GlobalQualityWeight);
+            trigger.GlobalQualityWeight = ProceduralCoralMath.SafeSaturate(tuning.GlobalQualityWeight, 0.5f);
             trigger.SimulationFrame = SimulationFrameCounter;
-            trigger.BaseStepMeters = math.max(tuning.BaseStepMeters, ProceduralCoralConstants.Epsilon);
-            trigger.BaseRadiusMeters = math.max(tuning.BaseRadiusMeters, ProceduralCoralConstants.Epsilon);
+            trigger.BaseStepMeters = ProceduralCoralMath.SafePositive(tuning.BaseStepMeters, 1.6f, ProceduralCoralConstants.Epsilon);
+            trigger.BaseRadiusMeters = ProceduralCoralMath.SafePositive(tuning.BaseRadiusMeters, 0.32f, ProceduralCoralConstants.Epsilon);
             trigger.MaxDepth = math.clamp(tuning.MaxDepth, 1, 12);
             trigger.SectorRadiusMeters = math.lerp(32f, 220f, ProceduralCoralMath.Smooth01(tuning.GlobalQualityWeight));
             trigger.Flags = 1u;
@@ -139,8 +173,9 @@ namespace Hecton8.World.ProceduralCoral
             if (Counters.IsCreated && Counters.Length > 0)
             {
                 CoralPaddedCounterDTO counter = Counters[0];
-                counter.StateHash = seed ^ sectorHash;
+                counter.StateHash = seed ^ sectorHash ^ SimulationFrameCounter;
                 counter.FaultFlags = 0;
+                counter.EffectiveQualityWeight = trigger.GlobalQualityWeight;
                 Counters[0] = counter;
             }
         }
@@ -169,19 +204,19 @@ namespace Hecton8.World.ProceduralCoral
         private static CoralTuningDTO SanitizeTuning(in CoralTuningDTO tuning)
         {
             CoralTuningDTO safe = tuning;
-            safe.GlobalQualityWeight = math.saturate(tuning.GlobalQualityWeight);
-            safe.BranchAngleRadians = math.clamp(tuning.BranchAngleRadians, 0.05f, 1.35f);
-            safe.AngleVarianceRadians = math.saturate(tuning.AngleVarianceRadians);
-            safe.BaseStepMeters = math.max(tuning.BaseStepMeters, ProceduralCoralConstants.Epsilon);
-            safe.BaseRadiusMeters = math.max(tuning.BaseRadiusMeters, ProceduralCoralConstants.Epsilon);
-            safe.RadiusDecay = math.clamp(tuning.RadiusDecay, 0.35f, 0.98f);
-            safe.SdfAvoidanceWeight = math.saturate(tuning.SdfAvoidanceWeight);
+            safe.GlobalQualityWeight = ProceduralCoralMath.SafeSaturate(tuning.GlobalQualityWeight, 0.5f);
+            safe.BranchAngleRadians = math.clamp(math.isfinite(tuning.BranchAngleRadians) ? tuning.BranchAngleRadians : 0.52f, 0.05f, 1.35f);
+            safe.AngleVarianceRadians = ProceduralCoralMath.SafeSaturate(tuning.AngleVarianceRadians, 0.18f);
+            safe.BaseStepMeters = ProceduralCoralMath.SafePositive(tuning.BaseStepMeters, 1.6f, ProceduralCoralConstants.Epsilon);
+            safe.BaseRadiusMeters = ProceduralCoralMath.SafePositive(tuning.BaseRadiusMeters, 0.32f, ProceduralCoralConstants.Epsilon);
+            safe.RadiusDecay = math.clamp(math.isfinite(tuning.RadiusDecay) ? tuning.RadiusDecay : 0.82f, 0.35f, 0.98f);
+            safe.SdfAvoidanceWeight = ProceduralCoralMath.SafeSaturate(tuning.SdfAvoidanceWeight, 0.55f);
             safe.MaxDepth = math.clamp(tuning.MaxDepth, 1, 12);
             safe.MaxBranches = math.clamp(tuning.MaxBranches, 1, ProceduralCoralConstants.MaxBranches);
             safe.MaxInstructions = math.clamp(tuning.MaxInstructions, 1, ProceduralCoralConstants.MaxInstructions);
-            safe.VisibilityDistanceMin = math.max(tuning.VisibilityDistanceMin, 8f);
-            safe.VisibilityDistanceMax = math.max(tuning.VisibilityDistanceMax, safe.VisibilityDistanceMin);
-            safe.CurrentSwayAmplitude = math.saturate(tuning.CurrentSwayAmplitude);
+            safe.VisibilityDistanceMin = ProceduralCoralMath.SafePositive(tuning.VisibilityDistanceMin, 48f, 8f);
+            safe.VisibilityDistanceMax = ProceduralCoralMath.SafePositive(tuning.VisibilityDistanceMax, 360f, safe.VisibilityDistanceMin);
+            safe.CurrentSwayAmplitude = ProceduralCoralMath.SafeSaturate(tuning.CurrentSwayAmplitude, 0.32f);
             safe.Version = tuning.Version == 0u ? 1u : tuning.Version;
             safe.SeedSalt = tuning.SeedSalt == 0u ? 0xC0A17u : tuning.SeedSalt;
             return safe;
@@ -243,7 +278,9 @@ namespace Hecton8.World.ProceduralCoral
 
             CoralSectorTriggerDTO trigger = SectorTriggers[0];
             CoralTuningDTO tuning = ResolveTuning();
-            float quality = math.saturate(trigger.GlobalQualityWeight > 0f ? trigger.GlobalQualityWeight : tuning.GlobalQualityWeight);
+            float quality = (trigger.Flags & 1u) != 0u
+                ? ProceduralCoralMath.ResolveEffectiveQuality(trigger.GlobalQualityWeight, tuning.GlobalQualityWeight)
+                : ProceduralCoralMath.ResolveEffectiveQuality(tuning.GlobalQualityWeight, 0.5f);
             float qualityCurve = ProceduralCoralMath.Smooth01(quality);
             int activeRuleCount = ResolveActiveRuleCount();
             uint faultFlags = activeRuleCount <= 0 ? ProceduralCoralConstants.FaultNoRules : 0u;
@@ -257,9 +294,7 @@ namespace Hecton8.World.ProceduralCoral
                 1,
                 math.min(Branches.Length, tuning.MaxBranches));
 
-            ClearBranches();
-            ClearDebug();
-
+            // Branch/debug buffers are valid only in [0, BranchCount); stale tail slots are ignored by contract.
             InstructionScratchA[0] = ProceduralCoralConstants.OpGrow;
             int currentLength = 1;
             bool sourceA = true;
@@ -302,8 +337,9 @@ namespace Hecton8.World.ProceduralCoral
             counter.StateHash = trigger.Seed ^ trigger.SectorHash;
             counter.TelemetryCursor = Counters.IsCreated && Counters.Length > 0 ? Counters[0].TelemetryCursor : 0u;
             counter.FaultFlags = (int)faultFlags;
+            counter.EffectiveQualityWeight = quality;
 
-            InterpretStream(finalStream, currentLength, branchLimit, trigger, tuning, quality, ref counter);
+            InterpretStream(finalStream, currentLength, activeRuleCount, branchLimit, trigger, tuning, quality, ref counter);
             if (Counters.IsCreated && Counters.Length > 0)
                 Counters[0] = counter;
 
@@ -334,18 +370,19 @@ namespace Hecton8.World.ProceduralCoral
             }
 
             CoralTuningDTO tuning = Tuning[0];
-            tuning.GlobalQualityWeight = math.saturate(tuning.GlobalQualityWeight);
-            tuning.BranchAngleRadians = math.clamp(tuning.BranchAngleRadians, 0.05f, 1.35f);
-            tuning.AngleVarianceRadians = math.saturate(tuning.AngleVarianceRadians);
-            tuning.BaseStepMeters = math.max(tuning.BaseStepMeters, ProceduralCoralConstants.Epsilon);
-            tuning.BaseRadiusMeters = math.max(tuning.BaseRadiusMeters, ProceduralCoralConstants.Epsilon);
-            tuning.RadiusDecay = math.clamp(tuning.RadiusDecay, 0.35f, 0.98f);
+            tuning.GlobalQualityWeight = ProceduralCoralMath.SafeSaturate(tuning.GlobalQualityWeight, 0.5f);
+            tuning.BranchAngleRadians = math.clamp(math.isfinite(tuning.BranchAngleRadians) ? tuning.BranchAngleRadians : 0.52f, 0.05f, 1.35f);
+            tuning.AngleVarianceRadians = ProceduralCoralMath.SafeSaturate(tuning.AngleVarianceRadians, 0.18f);
+            tuning.BaseStepMeters = ProceduralCoralMath.SafePositive(tuning.BaseStepMeters, 1.6f, ProceduralCoralConstants.Epsilon);
+            tuning.BaseRadiusMeters = ProceduralCoralMath.SafePositive(tuning.BaseRadiusMeters, 0.32f, ProceduralCoralConstants.Epsilon);
+            tuning.RadiusDecay = math.clamp(math.isfinite(tuning.RadiusDecay) ? tuning.RadiusDecay : 0.82f, 0.35f, 0.98f);
+            tuning.SdfAvoidanceWeight = ProceduralCoralMath.SafeSaturate(tuning.SdfAvoidanceWeight, 0.55f);
             tuning.MaxDepth = math.clamp(tuning.MaxDepth, 1, 12);
             tuning.MaxBranches = math.clamp(tuning.MaxBranches, 1, ProceduralCoralConstants.MaxBranches);
             tuning.MaxInstructions = math.clamp(tuning.MaxInstructions, 1, ProceduralCoralConstants.MaxInstructions);
-            tuning.VisibilityDistanceMin = math.max(tuning.VisibilityDistanceMin, 8f);
-            tuning.VisibilityDistanceMax = math.max(tuning.VisibilityDistanceMax, tuning.VisibilityDistanceMin);
-            tuning.CurrentSwayAmplitude = math.saturate(tuning.CurrentSwayAmplitude);
+            tuning.VisibilityDistanceMin = ProceduralCoralMath.SafePositive(tuning.VisibilityDistanceMin, 48f, 8f);
+            tuning.VisibilityDistanceMax = ProceduralCoralMath.SafePositive(tuning.VisibilityDistanceMax, 360f, tuning.VisibilityDistanceMin);
+            tuning.CurrentSwayAmplitude = ProceduralCoralMath.SafeSaturate(tuning.CurrentSwayAmplitude, 0.32f);
             return tuning;
         }
 
@@ -408,6 +445,7 @@ namespace Hecton8.World.ProceduralCoral
         private void InterpretStream(
             NativeArray<uint> stream,
             int streamLength,
+            int activeRuleCount,
             int branchLimit,
             in CoralSectorTriggerDTO trigger,
             in CoralTuningDTO tuning,
@@ -416,13 +454,13 @@ namespace Hecton8.World.ProceduralCoral
         {
             CoralTurtleStateDTO turtle = default;
             turtle.LocalPosition = float3.zero;
-            turtle.Radius = math.max(trigger.BaseRadiusMeters > 0f ? trigger.BaseRadiusMeters : tuning.BaseRadiusMeters, ProceduralCoralConstants.Epsilon);
+            turtle.Radius = ProceduralCoralMath.SafePositive(trigger.BaseRadiusMeters, tuning.BaseRadiusMeters, ProceduralCoralConstants.Epsilon);
             turtle.Rotation = quaternion.identity;
             turtle.ParentIndex = uint.MaxValue;
             turtle.Depth = 0u;
             turtle.StableId = ProceduralCoralMath.Hash(trigger.Seed ^ trigger.SectorHash ^ 0xC010u);
             turtle.RuleHash = 0u;
-            turtle.StepMeters = math.max(trigger.BaseStepMeters > 0f ? trigger.BaseStepMeters : tuning.BaseStepMeters, ProceduralCoralConstants.Epsilon);
+            turtle.StepMeters = ProceduralCoralMath.SafePositive(trigger.BaseStepMeters, tuning.BaseStepMeters, ProceduralCoralConstants.Epsilon);
             turtle.Stiffness = 1f;
 
             int stackCount = 0;
@@ -437,50 +475,81 @@ namespace Hecton8.World.ProceduralCoral
             for (int i = 0; i < streamLength && branchCount < branchLimit; i++)
             {
                 uint opcode = stream[i];
+                bool hasOpcodeRule = TryFindRule(opcode, activeRuleCount, out CoralLSystemRuleDTO opcodeRule);
+                float opcodeAngle = hasOpcodeRule && math.isfinite(opcodeRule.BranchAngleRadians)
+                    ? math.clamp(opcodeRule.BranchAngleRadians, 0.05f, 1.75f)
+                    : baseAngle;
+                float opcodeLengthScale = hasOpcodeRule
+                    ? math.clamp(ProceduralCoralMath.SafePositive(opcodeRule.LengthScale, 1f, 0.08f), 0.08f, 1.5f)
+                    : 1f;
+                float opcodeRadiusScale = hasOpcodeRule
+                    ? math.clamp(ProceduralCoralMath.SafePositive(opcodeRule.RadiusScale, tuning.RadiusDecay, 0.08f), 0.08f, 1.25f)
+                    : tuning.RadiusDecay;
                 uint salt = ProceduralCoralMath.Hash(trigger.Seed ^ (uint)i ^ turtle.StableId);
-                float variance = (ProceduralCoralMath.HashToUnit(salt) - 0.5f) * varianceScale;
+                float variance = (ProceduralCoralMath.DeterministicRandom01(salt) - 0.5f) * varianceScale;
 
                 if (opcode == ProceduralCoralConstants.OpGrow || opcode == ProceduralCoralConstants.OpFork)
                 {
-                    EmitBranch(trigger, tuning, opcode, salt, stepScale, ref turtle, ref counter, ref branchCount, ref tipCount, ref faultFlags);
+                    EmitBranch(
+                        trigger,
+                        tuning,
+                        opcode,
+                        salt,
+                        stepScale * opcodeLengthScale,
+                        opcodeRadiusScale,
+                        ref turtle,
+                        ref counter,
+                        ref branchCount,
+                        ref tipCount,
+                        ref faultFlags);
                     continue;
                 }
 
                 if (opcode == ProceduralCoralConstants.OpTurnLeft)
                 {
-                    turtle.Rotation = math.mul(turtle.Rotation, quaternion.AxisAngle(new float3(0f, 0f, 1f), baseAngle + variance));
+                    turtle.Rotation = ProceduralCoralMath.SafeRotation(math.mul(
+                        ProceduralCoralMath.SafeRotation(turtle.Rotation),
+                        quaternion.AxisAngle(new float3(0f, 0f, 1f), opcodeAngle + variance)));
                     continue;
                 }
 
                 if (opcode == ProceduralCoralConstants.OpTurnRight)
                 {
-                    turtle.Rotation = math.mul(turtle.Rotation, quaternion.AxisAngle(new float3(0f, 0f, 1f), -baseAngle + variance));
+                    turtle.Rotation = ProceduralCoralMath.SafeRotation(math.mul(
+                        ProceduralCoralMath.SafeRotation(turtle.Rotation),
+                        quaternion.AxisAngle(new float3(0f, 0f, 1f), -opcodeAngle + variance)));
                     continue;
                 }
 
                 if (opcode == ProceduralCoralConstants.OpPitchUp)
                 {
-                    turtle.Rotation = math.mul(turtle.Rotation, quaternion.AxisAngle(new float3(1f, 0f, 0f), baseAngle * 0.72f + variance));
+                    turtle.Rotation = ProceduralCoralMath.SafeRotation(math.mul(
+                        ProceduralCoralMath.SafeRotation(turtle.Rotation),
+                        quaternion.AxisAngle(new float3(1f, 0f, 0f), opcodeAngle * 0.72f + variance)));
                     continue;
                 }
 
                 if (opcode == ProceduralCoralConstants.OpPitchDown)
                 {
-                    turtle.Rotation = math.mul(turtle.Rotation, quaternion.AxisAngle(new float3(1f, 0f, 0f), -baseAngle * 0.55f + variance));
+                    turtle.Rotation = ProceduralCoralMath.SafeRotation(math.mul(
+                        ProceduralCoralMath.SafeRotation(turtle.Rotation),
+                        quaternion.AxisAngle(new float3(1f, 0f, 0f), -opcodeAngle * 0.55f + variance)));
                     continue;
                 }
 
                 if (opcode == ProceduralCoralConstants.OpRoll)
                 {
-                    turtle.Rotation = math.mul(turtle.Rotation, quaternion.AxisAngle(new float3(0f, 1f, 0f), (baseAngle * 0.5f) + variance));
+                    turtle.Rotation = ProceduralCoralMath.SafeRotation(math.mul(
+                        ProceduralCoralMath.SafeRotation(turtle.Rotation),
+                        quaternion.AxisAngle(new float3(0f, 1f, 0f), (opcodeAngle * 0.5f) + variance)));
                     continue;
                 }
 
                 if (opcode == ProceduralCoralConstants.OpThin)
                 {
-                    turtle.Radius = math.max(turtle.Radius * tuning.RadiusDecay, 0.018f);
-                    turtle.StepMeters = math.max(turtle.StepMeters * math.lerp(0.82f, 0.94f, qualityCurve), 0.12f);
-                    turtle.Stiffness = math.saturate(turtle.Stiffness * 0.86f);
+                    turtle.Radius = ProceduralCoralMath.SafePositive(turtle.Radius * opcodeRadiusScale, 0.018f, 0.018f);
+                    turtle.StepMeters = ProceduralCoralMath.SafePositive(turtle.StepMeters * opcodeLengthScale * math.lerp(0.82f, 0.94f, qualityCurve), 0.12f, 0.12f);
+                    turtle.Stiffness = ProceduralCoralMath.SafeSaturate(turtle.Stiffness * 0.86f, 1f);
                     continue;
                 }
 
@@ -490,8 +559,8 @@ namespace Hecton8.World.ProceduralCoral
                     {
                         TurtleStack[stackCount++] = turtle;
                         turtle.Depth++;
-                        turtle.Radius = math.max(turtle.Radius * tuning.RadiusDecay, 0.018f);
-                        turtle.Stiffness = math.saturate(turtle.Stiffness * 0.82f);
+                        turtle.Radius = ProceduralCoralMath.SafePositive(turtle.Radius * opcodeRadiusScale, 0.018f, 0.018f);
+                        turtle.Stiffness = ProceduralCoralMath.SafeSaturate(turtle.Stiffness * 0.82f, 1f);
                     }
                     else
                     {
@@ -544,33 +613,39 @@ namespace Hecton8.World.ProceduralCoral
             uint opcode,
             uint salt,
             float stepScale,
+            float radiusScale,
             ref CoralTurtleStateDTO turtle,
             ref CoralPaddedCounterDTO counter,
             ref int branchCount,
             ref int tipCount,
             ref uint faultFlags)
         {
-            float3 start = turtle.LocalPosition;
-            float3 direction = ProceduralCoralMath.SafeNormalize(ProceduralCoralMath.Forward(turtle.Rotation), new float3(0f, 1f, 0f));
-            float step = math.max(turtle.StepMeters * stepScale, 0.08f);
+            float3 start = ProceduralCoralMath.IsFinite(turtle.LocalPosition) ? turtle.LocalPosition : float3.zero;
+            quaternion rotation = ProceduralCoralMath.SafeRotation(turtle.Rotation);
+            float3 direction = ProceduralCoralMath.SafeNormalize(ProceduralCoralMath.Forward(rotation), new float3(0f, 1f, 0f));
+            float step = ProceduralCoralMath.SafePositive(turtle.StepMeters * stepScale, 0.08f, 0.08f);
             if (opcode == ProceduralCoralConstants.OpFork)
-                step *= 0.72f;
+                step = ProceduralCoralMath.SafePositive(step * 0.72f, 0.08f, 0.08f);
 
             float3 end = start + direction * step;
             float3 mid = (start + end) * 0.5f;
             double3 aup = trigger.RootAUP + new double3(mid.x, mid.y, mid.z);
             uint stableId = ProceduralCoralMath.Hash(turtle.StableId ^ salt ^ (uint)branchCount);
-            float radius = math.max(turtle.Radius, 0.012f);
+            float radius = ProceduralCoralMath.SafePositive(turtle.Radius, 0.012f, 0.012f);
             float3 scale = new float3(radius * 2f, step, radius * 2f);
-            float4x4 matrix = float4x4.TRS(mid, turtle.Rotation, scale);
+            float4x4 matrix = float4x4.TRS(mid, rotation, scale);
             uint flags = CoralBranchFlags.Alive;
             if (branchCount == 0)
                 flags |= CoralBranchFlags.Root;
 
             if (!ProceduralCoralMath.IsFinite(matrix) || !ProceduralCoralMath.IsFinite(aup))
             {
-                matrix = float4x4.TRS(float3.zero, quaternion.identity, new float3(0.25f, 0.5f, 0.25f));
-                aup = trigger.RootAUP;
+                start = float3.zero;
+                end = new float3(0f, math.max(step, 0.08f), 0f);
+                mid = (start + end) * 0.5f;
+                matrix = float4x4.TRS(mid, quaternion.identity, new float3(0.25f, math.max(step, 0.08f), 0.25f));
+                aup = trigger.RootAUP + new double3(mid.x, mid.y, mid.z);
+                rotation = quaternion.identity;
                 flags |= CoralBranchFlags.NonFiniteFallback;
                 faultFlags |= ProceduralCoralConstants.FaultNonFinite;
             }
@@ -580,7 +655,7 @@ namespace Hecton8.World.ProceduralCoral
             branch.PrefabHash = SelectPrefabHash(salt, turtle.Depth);
             branch.GenerationDepth = turtle.Depth;
             branch.SectorAUP = aup;
-            branch.Stiffness = math.saturate(turtle.Stiffness);
+            branch.Stiffness = ProceduralCoralMath.SafeSaturate(turtle.Stiffness, 1f);
             branch.Radius = radius;
             branch.StateFlags = flags;
             branch.ParentIndex = turtle.ParentIndex;
@@ -604,8 +679,9 @@ namespace Hecton8.World.ProceduralCoral
             turtle.ParentIndex = (uint)branchCount;
             turtle.StableId = stableId;
             turtle.RuleHash = opcode;
-            turtle.Radius = math.max(radius * tuning.RadiusDecay, 0.018f);
-            turtle.StepMeters = math.max(turtle.StepMeters * 0.96f, 0.12f);
+            turtle.Rotation = rotation;
+            turtle.Radius = ProceduralCoralMath.SafePositive(radius * radiusScale, 0.018f, 0.018f);
+            turtle.StepMeters = ProceduralCoralMath.SafePositive(turtle.StepMeters * 0.96f, 0.12f, 0.12f);
             branchCount++;
             counter.StateHash = (counter.StateHash ^ stableId) * 16777619u;
 
@@ -639,21 +715,6 @@ namespace Hecton8.World.ProceduralCoral
             return ProceduralCoralMath.Hash(0xC012A100u ^ salt ^ depth);
         }
 
-        private void ClearBranches()
-        {
-            for (int i = 0; i < Branches.Length; i++)
-                Branches[i] = default;
-        }
-
-        private void ClearDebug()
-        {
-            if (!DebugSegments.IsCreated)
-                return;
-
-            for (int i = 0; i < DebugSegments.Length; i++)
-                DebugSegments[i] = default;
-        }
-
         private void WriteTelemetry(double3 rootAup, uint sectorHash, float quality, in CoralPaddedCounterDTO counter, uint faultFlags)
         {
             if (!TelemetryRing.IsCreated || TelemetryRing.Length <= 0)
@@ -672,7 +733,7 @@ namespace Hecton8.World.ProceduralCoral
             entry.SectorHash = sectorHash;
             entry.BranchCount = counter.BranchCount;
             entry.DepthReached = counter.DepthReached;
-            entry.EstimatedComputeUs = EstimateComputeUs(counter.BranchCount, counter.InstructionCount, quality);
+            entry.BurstComputeUs = EstimateComputeUs(counter.BranchCount, counter.InstructionCount, quality);
             entry.GlobalQualityWeight = quality;
             entry.StateHash = counter.StateHash;
             entry.FaultFlags = faultFlags;
@@ -707,13 +768,6 @@ namespace Hecton8.World.ProceduralCoral
         [NoAlias]
         public NativeArray<CoralPaddedCounterDTO> Counters;
 
-        [NoAlias]
-        public NativeArray<CoralGenerationTelemetryEntry> TelemetryRing;
-
-        [ReadOnly]
-        [NoAlias]
-        public NativeArray<int> TelemetryCursor;
-
         public void Execute()
         {
             if (!Branches.IsCreated || !Counters.IsCreated || Counters.Length <= 0)
@@ -722,16 +776,11 @@ namespace Hecton8.World.ProceduralCoral
             CoralPaddedCounterDTO counter = Counters[0];
             CoralSectorTriggerDTO trigger = SectorTriggers.IsCreated && SectorTriggers.Length > 0 ? SectorTriggers[0] : default;
             CoralTuningDTO tuning = Tuning.IsCreated && Tuning.Length > 0 ? Tuning[0] : default;
-            float quality = math.saturate(tuning.GlobalQualityWeight);
+            float quality = ProceduralCoralMath.ResolveEffectiveQuality(counter.EffectiveQualityWeight, tuning.GlobalQualityWeight);
             int branchCount = math.clamp(counter.BranchCount, 0, Branches.Length);
             uint faultFlags = (uint)counter.FaultFlags;
             int pruned = 0;
-
-            if (SpatialCells.IsCreated)
-            {
-                for (int i = 0; i < SpatialCells.Length; i++)
-                    SpatialCells[i] = default;
-            }
+            int spatialWrite = 0;
 
             for (int i = 0; i < branchCount; i++)
             {
@@ -739,19 +788,24 @@ namespace Hecton8.World.ProceduralCoral
                 if ((branch.StateFlags & CoralBranchFlags.Alive) == 0)
                     continue;
 
+                branch.Radius = ProceduralCoralMath.SafePositive(branch.Radius, 0.012f, 0.012f);
+                branch.Stiffness = ProceduralCoralMath.SafeSaturate(branch.Stiffness, 1f);
                 float3 local = branch.LocalMatrix.c3.xyz;
                 if (!ProceduralCoralMath.IsFinite(branch.LocalMatrix) || !ProceduralCoralMath.IsFinite(branch.SectorAUP))
                 {
                     branch.LocalMatrix = float4x4.TRS(float3.zero, quaternion.identity, new float3(0.25f, 0.5f, 0.25f));
                     branch.SectorAUP = trigger.RootAUP;
+                    branch.Radius = 0.012f;
+                    branch.Stiffness = 1f;
                     branch.StateFlags |= CoralBranchFlags.NonFiniteFallback;
                     faultFlags |= ProceduralCoralConstants.FaultNonFinite;
+                    local = branch.LocalMatrix.c3.xyz;
                 }
 
                 float seabedClearance = math.lerp(0.02f, 0.34f, quality);
                 if (local.y < seabedClearance)
                 {
-                    local.y = math.lerp(local.y, seabedClearance, math.saturate(tuning.SdfAvoidanceWeight));
+                    local.y = math.lerp(local.y, seabedClearance, ProceduralCoralMath.SafeSaturate(tuning.SdfAvoidanceWeight, 0.55f));
                     branch.LocalMatrix.c3 = new float4(local, 1f);
                     branch.SectorAUP = trigger.RootAUP + new double3(local.x, local.y, local.z);
                     branch.StateFlags |= CoralBranchFlags.CollisionAdjusted;
@@ -763,10 +817,13 @@ namespace Hecton8.World.ProceduralCoral
                     CoralBranchDTO other = Branches[j];
                     if ((other.StateFlags & CoralBranchFlags.Alive) == 0)
                         continue;
+                    if (!ProceduralCoralMath.IsFinite(other.LocalMatrix) || !ProceduralCoralMath.IsFinite(other.SectorAUP))
+                        continue;
 
                     float3 delta = local - other.LocalMatrix.c3.xyz;
                     float distanceSq = math.max(math.dot(delta, delta), ProceduralCoralConstants.Epsilon);
-                    float minDistance = (branch.Radius + other.Radius) * math.lerp(1.25f, 0.78f, quality);
+                    float otherRadius = ProceduralCoralMath.SafePositive(other.Radius, 0.012f, 0.012f);
+                    float minDistance = (branch.Radius + otherRadius) * math.lerp(1.25f, 0.78f, quality);
                     if (distanceSq >= minDistance * minDistance)
                         continue;
 
@@ -782,14 +839,24 @@ namespace Hecton8.World.ProceduralCoral
                         break;
                     }
 
-                    local += normal * overlap * math.lerp(0.45f, 0.9f, quality);
+                    float3 adjusted = local + normal * overlap * math.lerp(0.45f, 0.9f, quality);
+                    if (!ProceduralCoralMath.IsFinite(adjusted))
+                    {
+                        branch.StateFlags |= CoralBranchFlags.NonFiniteFallback;
+                        faultFlags |= ProceduralCoralConstants.FaultNonFinite;
+                        break;
+                    }
+
+                    local = adjusted;
                     branch.LocalMatrix.c3 = new float4(local, 1f);
                     branch.SectorAUP = trigger.RootAUP + new double3(local.x, local.y, local.z);
                     branch.StateFlags |= CoralBranchFlags.CollisionAdjusted;
                 }
 
                 Branches[i] = branch;
-                if (SpatialCells.IsCreated && i < SpatialCells.Length)
+                if (SpatialCells.IsCreated &&
+                    (branch.StateFlags & CoralBranchFlags.Alive) != 0 &&
+                    spatialWrite < SpatialCells.Length)
                 {
                     CoralSpatialCellDTO cell = default;
                     cell.LocalPosition = branch.LocalMatrix.c3.xyz;
@@ -798,11 +865,12 @@ namespace Hecton8.World.ProceduralCoral
                     cell.SectorHash = branch.SectorHash;
                     cell.OccupancyHash = ProceduralCoralMath.Hash(branch.StableId ^ branch.SectorHash);
                     cell.Flags = branch.StateFlags;
-                    SpatialCells[i] = cell;
+                    SpatialCells[spatialWrite++] = cell;
                 }
             }
 
             counter.PrunedCount = (uint)pruned;
+            counter.SpatialCellCount = (uint)spatialWrite;
             counter.FaultFlags = (int)faultFlags;
             Counters[0] = counter;
         }
@@ -819,6 +887,10 @@ namespace Hecton8.World.ProceduralCoral
         [NoAlias]
         public NativeArray<CoralTuningDTO> Tuning;
 
+        [ReadOnly]
+        [NoAlias]
+        public NativeArray<CoralHzbTileDTO> HzbTiles;
+
         [NoAlias]
         public NativeArray<float4x4> RenderMatrices;
 
@@ -831,23 +903,45 @@ namespace Hecton8.World.ProceduralCoral
         [NoAlias]
         public NativeArray<CoralPaddedCounterDTO> Counters;
 
+        [NoAlias]
+        public NativeArray<CoralGenerationTelemetryEntry> TelemetryRing;
+
+        [ReadOnly]
+        [NoAlias]
+        public NativeArray<int> TelemetryCursor;
+
         public double3 CameraAUP;
+        public float4x4 CameraRelativeViewProjection;
+        public int HzbWidth;
+        public int HzbHeight;
         public uint VertexCountPerInstance;
         public uint Frame;
 
         public void Execute()
         {
-            if (!Branches.IsCreated || !RenderMatrices.IsCreated || !IndirectArgs.IsCreated || IndirectArgs.Length <= 0)
+            if (!Branches.IsCreated ||
+                !RenderMatrices.IsCreated ||
+                !IndirectArgs.IsCreated ||
+                !Counters.IsCreated ||
+                IndirectArgs.Length <= 0 ||
+                Counters.Length <= 0)
+            {
                 return;
+            }
 
+            CoralPaddedCounterDTO counter = Counters[0];
             CoralTuningDTO tuning = Tuning.IsCreated && Tuning.Length > 0 ? Tuning[0] : default;
-            float quality = math.saturate(tuning.GlobalQualityWeight);
+            float quality = ProceduralCoralMath.ResolveEffectiveQuality(counter.EffectiveQualityWeight, tuning.GlobalQualityWeight);
             float curve = ProceduralCoralMath.Smooth01(quality);
-            float maxDistance = math.lerp(math.max(tuning.VisibilityDistanceMin, 8f), math.max(tuning.VisibilityDistanceMax, tuning.VisibilityDistanceMin + 1f), curve);
+            float minVisibility = ProceduralCoralMath.SafePositive(tuning.VisibilityDistanceMin, 48f, 8f);
+            float maxVisibility = ProceduralCoralMath.SafePositive(tuning.VisibilityDistanceMax, minVisibility + 1f, minVisibility + 1f);
+            float maxDistance = math.lerp(minVisibility, math.max(maxVisibility, minVisibility + 1f), curve);
             float maxDistanceSq = maxDistance * maxDistance;
-            int branchCount = Counters.IsCreated && Counters.Length > 0 ? math.clamp(Counters[0].BranchCount, 0, Branches.Length) : Branches.Length;
+            int branchCount = math.clamp(counter.BranchCount, 0, Branches.Length);
             int write = 0;
             uint stateHash = 2166136261u;
+            uint sectorHash = 0u;
+            bool sectorHashCaptured = false;
             float density = math.lerp(0.22f, 1f, curve);
             float4x4* dst = (float4x4*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(RenderMatrices);
 
@@ -857,10 +951,21 @@ namespace Hecton8.World.ProceduralCoral
                 if ((branch.StateFlags & CoralBranchFlags.Alive) == 0)
                     continue;
 
-                float stochastic = ProceduralCoralMath.HashToUnit(branch.StableId ^ (uint)i);
+                if (!sectorHashCaptured)
+                {
+                    sectorHash = branch.SectorHash;
+                    sectorHashCaptured = true;
+                }
+
+                float stochastic = ProceduralCoralMath.DeterministicRandom01(branch.StableId ^ (uint)i);
                 if (stochastic > density)
                     continue;
 
+                float4x4 matrix = branch.LocalMatrix;
+                if (!ProceduralCoralMath.IsFinite(matrix))
+                    continue;
+
+                float branchRadius = ProceduralCoralMath.SafePositive(branch.Radius, 0.012f, 0.012f);
                 double3 deltaD = branch.SectorAUP - CameraAUP;
                 if (!ProceduralCoralMath.IsFinite(deltaD))
                     continue;
@@ -870,7 +975,9 @@ namespace Hecton8.World.ProceduralCoral
                 if (!math.isfinite(distSq) || distSq > maxDistanceSq)
                     continue;
 
-                float4x4 matrix = branch.LocalMatrix;
+                if (IsOccluded(delta, branchRadius))
+                    continue;
+
                 matrix.c3 = new float4(delta, 1f);
                 if (!ProceduralCoralMath.IsFinite(matrix))
                     continue;
@@ -892,22 +999,19 @@ namespace Hecton8.World.ProceduralCoral
                 CoralGpuSwayDTO gpu = default;
                 gpu.FlowAndAmplitude = new float4(
                     math.lerp(0.04f, 0.18f, curve),
-                    math.lerp(0.12f, 0.55f, curve) * math.saturate(tuning.CurrentSwayAmplitude),
+                    math.lerp(0.12f, 0.55f, curve) * ProceduralCoralMath.SafeSaturate(tuning.CurrentSwayAmplitude, 0.32f),
                     math.lerp(0.65f, 1.85f, curve),
                     quality);
                 gpu.BoundsAndDensity = new float4(maxDistance, maxDistanceSq, write, RenderMatrices.Length);
-                gpu.FaultAndFrame = new float4(Counters.IsCreated && Counters.Length > 0 ? Counters[0].FaultFlags : 0, Frame, 0f, 0f);
+                gpu.FaultAndFrame = new float4(counter.FaultFlags, Frame, 0f, 0f);
+                gpu.SectorHash = sectorHash;
                 gpu.StateHash = stateHash;
                 GpuSway[0] = gpu;
             }
 
-            if (Counters.IsCreated && Counters.Length > 0)
-            {
-                CoralPaddedCounterDTO counter = Counters[0];
-                counter.RenderMatrixCount = write;
-                counter.StateHash ^= stateHash;
-                Counters[0] = counter;
-            }
+            counter.RenderMatrixCount = write;
+            counter.StateHash ^= stateHash;
+            Counters[0] = counter;
 
             if (TelemetryRing.IsCreated && TelemetryCursor.IsCreated && TelemetryRing.Length > 0 && TelemetryCursor.Length > 0)
             {
@@ -921,6 +1025,32 @@ namespace Hecton8.World.ProceduralCoral
                 entry.StateHash ^= stateHash;
                 TelemetryRing[cursor] = entry;
             }
+        }
+
+        private bool IsOccluded(float3 local, float radius)
+        {
+            if (!HzbTiles.IsCreated || HzbWidth <= 0 || HzbHeight <= 0)
+                return false;
+
+            float4 clip = math.mul(CameraRelativeViewProjection, new float4(local, 1f));
+            if (clip.w <= ProceduralCoralConstants.Epsilon)
+                return false;
+
+            float invW = math.rcp(math.max(math.abs(clip.w), ProceduralCoralConstants.Epsilon));
+            float2 uv = (clip.xy * invW * 0.5f) + 0.5f;
+            if (math.any(uv < 0f) || math.any(uv > 1f))
+                return false;
+
+            int x = math.clamp((int)math.floor(uv.x * HzbWidth), 0, HzbWidth - 1);
+            int y = math.clamp((int)math.floor(uv.y * HzbHeight), 0, HzbHeight - 1);
+            int index = math.clamp(x + (y * HzbWidth), 0, HzbTiles.Length - 1);
+            CoralHzbTileDTO tile = HzbTiles[index];
+            if (tile.Depth01 <= 0f)
+                return false;
+
+            float depth01 = math.saturate(clip.z * invW);
+            float radiusBias = math.saturate(radius * 0.0015f);
+            return depth01 - radiusBias > tile.Depth01 + 0.0025f;
         }
     }
 
@@ -943,16 +1073,15 @@ namespace Hecton8.World.ProceduralCoral
 
         public void Execute()
         {
-            if (!Branches.IsCreated || !SyncPulses.IsCreated)
+            if (!Branches.IsCreated || !SyncPulses.IsCreated || !Counters.IsCreated || Counters.Length <= 0)
                 return;
 
-            for (int i = 0; i < SyncPulses.Length; i++)
-                SyncPulses[i] = default;
-
+            // Pulse buffer is valid only in [0, SyncPulseCount); stale tail slots are ignored by consumers.
+            CoralPaddedCounterDTO counter = Counters[0];
             CoralTuningDTO tuning = Tuning.IsCreated && Tuning.Length > 0 ? Tuning[0] : default;
-            float quality = math.saturate(tuning.GlobalQualityWeight);
+            float quality = ProceduralCoralMath.ResolveEffectiveQuality(counter.EffectiveQualityWeight, tuning.GlobalQualityWeight);
             float density = math.lerp(0.12f, 0.92f, ProceduralCoralMath.Smooth01(quality));
-            int branchCount = Counters.IsCreated && Counters.Length > 0 ? math.clamp(Counters[0].BranchCount, 0, Branches.Length) : Branches.Length;
+            int branchCount = math.clamp(counter.BranchCount, 0, Branches.Length);
             int write = 0;
             for (int i = 0; i < branchCount && write < SyncPulses.Length; i++)
             {
@@ -962,8 +1091,10 @@ namespace Hecton8.World.ProceduralCoral
                 {
                     continue;
                 }
+                if (!ProceduralCoralMath.IsFinite(branch.SectorAUP))
+                    continue;
 
-                if (ProceduralCoralMath.HashToUnit(branch.StableId ^ 0xB10u) > density)
+                if (ProceduralCoralMath.DeterministicRandom01(branch.StableId ^ 0xB10u) > density)
                     continue;
 
                 SyncPulseDTO pulse = default;
@@ -973,12 +1104,8 @@ namespace Hecton8.World.ProceduralCoral
                 SyncPulses[write++] = pulse;
             }
 
-            if (Counters.IsCreated && Counters.Length > 0)
-            {
-                CoralPaddedCounterDTO counter = Counters[0];
-                counter.SyncPulseCount = write;
-                Counters[0] = counter;
-            }
+            counter.SyncPulseCount = write;
+            Counters[0] = counter;
         }
     }
 
@@ -1001,29 +1128,31 @@ namespace Hecton8.World.ProceduralCoral
 
         public void Execute()
         {
-            if (!Branches.IsCreated || !CollisionProxies.IsCreated)
+            if (!Branches.IsCreated || !CollisionProxies.IsCreated || !Counters.IsCreated || Counters.Length <= 0)
                 return;
 
-            for (int i = 0; i < CollisionProxies.Length; i++)
-                CollisionProxies[i] = default;
-
+            // Proxy buffer is valid only in [0, CollisionProxyCount); stale tail slots are ignored by consumers.
+            CoralPaddedCounterDTO counter = Counters[0];
             CoralTuningDTO tuning = Tuning.IsCreated && Tuning.Length > 0 ? Tuning[0] : default;
-            float quality = math.saturate(tuning.GlobalQualityWeight);
+            float quality = ProceduralCoralMath.ResolveEffectiveQuality(counter.EffectiveQualityWeight, tuning.GlobalQualityWeight);
             uint maxProxyDepth = (uint)math.clamp((int)math.round(math.lerp(1f, 4f, quality)), 1, 4);
-            int branchCount = Counters.IsCreated && Counters.Length > 0 ? math.clamp(Counters[0].BranchCount, 0, Branches.Length) : Branches.Length;
+            int branchCount = math.clamp(counter.BranchCount, 0, Branches.Length);
             int write = 0;
             for (int i = 0; i < branchCount && write < CollisionProxies.Length; i++)
             {
                 CoralBranchDTO branch = Branches[i];
                 if ((branch.StateFlags & CoralBranchFlags.Alive) == 0 || branch.GenerationDepth > maxProxyDepth)
                     continue;
+                if (!ProceduralCoralMath.IsFinite(branch.LocalMatrix) || !ProceduralCoralMath.IsFinite(branch.SectorAUP))
+                    continue;
 
                 float3 axis = ProceduralCoralMath.SafeNormalize(branch.LocalMatrix.c1.xyz, new float3(0f, 1f, 0f));
-                float height = math.max(math.length(branch.LocalMatrix.c1.xyz), branch.Radius * 2f);
+                float radius = ProceduralCoralMath.SafePositive(branch.Radius, 0.05f, 0.05f);
+                float height = ProceduralCoralMath.SafePositive(math.length(branch.LocalMatrix.c1.xyz), radius * 2f, radius * 2f);
                 CapsuleColliderDTO proxy = default;
                 proxy.CenterAUP = branch.SectorAUP;
                 proxy.Axis = axis;
-                proxy.Radius = math.max(branch.Radius, 0.05f);
+                proxy.Radius = radius;
                 proxy.Height = height;
                 proxy.BranchIndex = (uint)i;
                 proxy.Flags = 1u;
@@ -1031,12 +1160,8 @@ namespace Hecton8.World.ProceduralCoral
                 CollisionProxies[write++] = proxy;
             }
 
-            if (Counters.IsCreated && Counters.Length > 0)
-            {
-                CoralPaddedCounterDTO counter = Counters[0];
-                counter.CollisionProxyCount = write;
-                Counters[0] = counter;
-            }
+            counter.CollisionProxyCount = write;
+            Counters[0] = counter;
         }
     }
 
@@ -1058,18 +1183,22 @@ namespace Hecton8.World.ProceduralCoral
 
         public void Execute()
         {
-            if (!Branches.IsCreated || !Results.IsCreated || Results.Length <= 0)
+            if (!Branches.IsCreated || !Counters.IsCreated || !Results.IsCreated || Counters.Length <= 0 || Results.Length <= 0)
                 return;
 
-            int branchCount = Counters.IsCreated && Counters.Length > 0 ? math.clamp(Counters[0].BranchCount, 0, Branches.Length) : Branches.Length;
+            CoralPaddedCounterDTO counter = Counters[0];
+            int branchCount = math.clamp(counter.BranchCount, 0, Branches.Length);
             int probeLimit = math.min(branchCount, 256);
             int live = 0;
             int tips = 0;
             int overlapPairs = 0;
             float maxOverlap = 0f;
             uint sectorHash = 0u;
+            bool sectorHashCaptured = false;
             uint stateHash = 2166136261u;
-            uint faultFlags = 0u;
+            uint faultFlags = (uint)counter.FaultFlags;
+            if (!math.isfinite(counter.EffectiveQualityWeight))
+                faultFlags |= ProceduralCoralConstants.FaultNonFinite;
 
             for (int i = 0; i < branchCount; i++)
             {
@@ -1078,13 +1207,22 @@ namespace Hecton8.World.ProceduralCoral
                     continue;
 
                 live++;
-                sectorHash = branch.SectorHash;
+                if (!sectorHashCaptured)
+                {
+                    sectorHash = branch.SectorHash;
+                    sectorHashCaptured = true;
+                }
+
                 stateHash = (stateHash ^ branch.StableId) * 16777619u;
                 if ((branch.StateFlags & CoralBranchFlags.Tip) != 0)
                     tips++;
 
-                if (!ProceduralCoralMath.IsFinite(branch.LocalMatrix) || !ProceduralCoralMath.IsFinite(branch.SectorAUP))
+                if (!ProceduralCoralMath.IsFinite(branch.LocalMatrix) ||
+                    !ProceduralCoralMath.IsFinite(branch.SectorAUP) ||
+                    !math.isfinite(branch.Radius))
+                {
                     faultFlags |= ProceduralCoralConstants.FaultNonFinite;
+                }
             }
 
             for (int a = 0; a < probeLimit; a++)
@@ -1092,17 +1230,23 @@ namespace Hecton8.World.ProceduralCoral
                 CoralBranchDTO branchA = Branches[a];
                 if ((branchA.StateFlags & CoralBranchFlags.Alive) == 0)
                     continue;
+                if (!ProceduralCoralMath.IsFinite(branchA.LocalMatrix))
+                    continue;
 
                 for (int b = a + 1; b < probeLimit; b++)
                 {
                     CoralBranchDTO branchB = Branches[b];
                     if ((branchB.StateFlags & CoralBranchFlags.Alive) == 0)
                         continue;
+                    if (!ProceduralCoralMath.IsFinite(branchB.LocalMatrix))
+                        continue;
 
+                    float radiusA = ProceduralCoralMath.SafePositive(branchA.Radius, 0.012f, 0.012f);
+                    float radiusB = ProceduralCoralMath.SafePositive(branchB.Radius, 0.012f, 0.012f);
                     float3 delta = branchA.LocalMatrix.c3.xyz - branchB.LocalMatrix.c3.xyz;
                     float distanceSq = math.max(math.dot(delta, delta), ProceduralCoralConstants.Epsilon);
                     float distance = math.sqrt(distanceSq);
-                    float overlap = ((branchA.Radius + branchB.Radius) * 0.7f) - distance;
+                    float overlap = ((radiusA + radiusB) * 0.7f) - distance;
                     if (overlap > 0.01f)
                     {
                         overlapPairs++;
@@ -1118,7 +1262,7 @@ namespace Hecton8.World.ProceduralCoral
             result.LiveBranchCount = (uint)live;
             result.TipCount = (uint)tips;
             result.OverlapPairCount = (uint)overlapPairs;
-            result.RenderMatrixCount = Counters.IsCreated && Counters.Length > 0 ? (uint)math.max(0, Counters[0].RenderMatrixCount) : 0u;
+            result.RenderMatrixCount = (uint)math.max(0, counter.RenderMatrixCount);
             result.StateHash = stateHash;
             result.MaxOverlapDepth = maxOverlap;
             result.BranchUtilization = branchCount > 0 ? (float)live / math.max(branchCount, 1) : 0f;

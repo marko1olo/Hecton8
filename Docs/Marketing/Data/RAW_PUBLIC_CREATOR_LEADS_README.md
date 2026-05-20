@@ -83,7 +83,7 @@ For each lead in the 250-row priority shortlist:
 7. Record official contact route only if public and creator-owned.
 8. Assign one real HECTON-8 asset that matches their channel.
 9. Rewrite `personalized_pitch_stub` into a one-sentence custom opener.
-10. Move CRM status from `RAW_PUBLIC_INDEX_NOT_CONTACT_READY` to `VERIFIED_NOT_CONTACTED`.
+10. Keep raw queue rows out of the live CRM until a deliberate promotion occurs. When promoted, use only live CRM statuses from `Data/CREATOR_VERIFICATION_TEMPLATE.csv`: `VERIFY_BEFORE_CONTACT`, `NEEDS_ASSET`, `LOW_PRIORITY_VERIFY_LATER`, or `DO_NOT_CONTACT` before any send. Do not create `VERIFIED_NOT_CONTACTED` or copy raw queue states into the live CRM.
 
 ## Outreach Conversion Rules
 
@@ -104,8 +104,7 @@ Do not hammer public sites. Use staged crawls:
 2. Run `scrape_letsplayindex_public_leads.ps1 -MaxTopPage 300`.
 3. Wait before deeper pages if HTTP 429 appears.
 4. Merge CSVs by `channel_profile_url`.
-5. Verify only the top 250 per week.
-6. Promote no more than 50 leads per week into outreach-ready CRM.
+5. Verify no more than the top 250 in a source-backed sprint, and only after asset proof exposes a segment gap the live CRM cannot cover.
+6. Promote no more than 50 leads per week into gated CRM review states; do not label them outreach-ready until contact, asset, build/demo, and send-log gates pass.
 
 More leads are useless until verification labor catches up.
-

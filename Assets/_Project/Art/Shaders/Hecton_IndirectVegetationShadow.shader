@@ -31,7 +31,6 @@ Shader "Hidden/Hecton8/VegetationIndirectShadowCaster"
             #pragma fragment ShadowFrag
             #pragma multi_compile_instancing
             #pragma instancing_options assumeuniformscaling
-            #pragma multi_compile _ HECTON_GPU_INDIRECT
             #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
 
             #define UNITY_INDIRECT_DRAW_ARGS IndirectDrawIndexedArgs
@@ -43,8 +42,7 @@ Shader "Hidden/Hecton8/VegetationIndirectShadowCaster"
 
             CBUFFER_START(UnityPerMaterial)
                 float _Opacity;
-                float _HectonImpostorWidth;
-                float _HectonImpostorHeight;
+                float4 _HectonVegetationRuntimeDrawParams;
             CBUFFER_END
 
             struct FloraInteractionPointGpuData
@@ -584,10 +582,11 @@ Shader "Hidden/Hecton8/VegetationIndirectShadowCaster"
 #if UNITY_ANY_INSTANCING_ENABLED
                 sourceInstanceIndex = unity_InstanceID;
 #endif
-                #if defined(HECTON_GPU_INDIRECT)
+                if (_HectonVegetationRuntimeDrawParams.w > 0.5)
+                {
                     InitIndirectDrawArgs(0);
                     sourceInstanceIndex = _HectonVisibleInstanceIndices[GetIndirectInstanceID(sourceInstanceIndex)];
-                #endif
+                }
                 float4x4 instanceMatrix = _HectonInstanceMatrices[sourceInstanceIndex];
                 HectonVegetationInstanceGpuData instanceData = _HectonVegetationInstanceData[sourceInstanceIndex];
                 float heightMask = saturate(input.uv.y);

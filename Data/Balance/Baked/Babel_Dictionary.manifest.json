@@ -1,20 +1,28 @@
 {
   "alignmentBytes": 16,
   "binary": "Data/Balance/Baked/Babel_Dictionary.h8bin",
-  "binaryBytes": 1296,
+  "binaryBytes": 1616,
+  "cacheBTree": {
+    "enabled": true,
+    "nodeBytes": 64,
+    "treeBytes": 320,
+    "treeEndOffset": 768,
+    "treeOffset": 448
+  },
   "domain": "DATA/BALANCE",
   "endianness": "little",
+  "flags": "0x101",
   "headerFormat": "<IHHIIIIII",
   "headerLayout": "H8BabelDictionaryHeader: uint32 magic, uint16 version, uint16 headerSize, uint32 entryCount, uint32 indexOffset, uint32 dataOffset, uint32 fileByteLength, uint32 payloadCrc32, uint32 flags",
   "magic": "H8AB",
+  "payloadCrc32": "0xA1084F1D",
   "recordFormat": "<IIII",
   "recordLayout": "H8BabelDictionaryEntry: uint32 hash, uint32 offset, uint32 length, uint32 flags",
   "runtimeContract": "zero-copy UTF8 slice lookup by uint hash; no string table construction on hot path",
-  "sha256": "E15A4465D85A1296AC8D63E5493417A23DDA1AB9B325BBAEA912B1B56D08DB96",
+  "sha256": "9B4C7C0DA39964FEFD5E27043FC078EA4359ED534D39D43826A862495FBE1928",
   "sourceEvidence": [
     "Assets/_Project/Scripts/Core/Data/H8StaticDataContracts.cs:BabelIndexDTO Sequential Size=16",
     "Assets/_Project/Scripts/Core/Data/H8DataBaker.cs:WriteBabelDictionary aligns final file length to 16 bytes"
   ],
-  "status": "BALANCE_BABEL_16B_ALIGNED",
-  "payloadCrc32": "0x199CAC7A"
+  "status": "BALANCE_BABEL_BTREE_VERIFIED_PENDING_UNITY_PROOF"
 }

@@ -42,7 +42,7 @@ namespace Hecton8.Tools
         [FieldOffset(12)] public uint Reserved0;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct EquipmentIntegrationCounters
     {
         [FieldOffset(0)] public float BatteryDrainWattSeconds;
@@ -52,7 +52,11 @@ namespace Hecton8.Tools
         [FieldOffset(16)] public uint SignalCount;
         [FieldOffset(20)] public uint FaultFlags;
         [FieldOffset(24)] public uint LastFaultToolHashID;
-        [FieldOffset(28)] public uint Reserved0;
+        [FieldOffset(28)] public float WearDrainNormalized;
+        [FieldOffset(32)] public ulong Reserved1;
+        [FieldOffset(40)] public ulong Reserved2;
+        [FieldOffset(48)] public ulong Reserved3;
+        [FieldOffset(56)] public ulong Reserved4;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -73,7 +77,7 @@ namespace Hecton8.Tools
         [FieldOffset(48)] public int ThermalGridVersion;
         [FieldOffset(52)] public int ThermalGridCellCount;
         [FieldOffset(56)] public uint SnapshotHash;
-        [FieldOffset(60)] public uint Reserved0;
+        [FieldOffset(60)] public float WearDrainNormalized;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -131,5 +135,27 @@ namespace Hecton8.Tools
                 Flags = 0u
             };
         }
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct EquipmentHardwareSpecDTO
+    {
+        [FieldOffset(0)] public uint ToolHashID;
+        [FieldOffset(4)] public float BatteryCapacity;
+        [FieldOffset(8)] public float ThermalLimit;
+        [FieldOffset(12)] public float PowerDrawRate;
+        [FieldOffset(16)] public float HeatGenerationRate;
+        [FieldOffset(20)] public float CooldownRate;
+        [FieldOffset(24)] public uint Flags;
+        [FieldOffset(28)] public uint Reserved0;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    public struct EquipmentCsvParseResult
+    {
+        [FieldOffset(0)] public int ParsedRows;
+        [FieldOffset(4)] public int SkippedRows;
+        [FieldOffset(8)] public uint LastToolHashID;
+        [FieldOffset(12)] public uint FaultFlags;
     }
 }

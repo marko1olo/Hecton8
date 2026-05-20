@@ -1,9 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
-using System.Text;
+using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Data;
 using Hecton8.Core.Contracts.Signals;
@@ -275,44 +274,65 @@ namespace Hecton.Localization
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct LocalizationEntryDTO
     {
+        [FieldOffset(0)]
         public uint StringHash;
+        [FieldOffset(4)]
         public uint ByteOffset;
+        [FieldOffset(8)]
         public uint ByteLength;
+        [FieldOffset(12)]
         public uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct SubtitleCommandDTO
     {
+        [FieldOffset(0)]
         public uint SpeakerHash;
+        [FieldOffset(4)]
         public uint TextHash;
+        [FieldOffset(8)]
         public float Duration;
+        [FieldOffset(12)]
         public uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct SubtitleStateDTO
     {
+        [FieldOffset(0)]
         public uint SpeakerHash;
+        [FieldOffset(4)]
         public uint TextHash;
+        [FieldOffset(8)]
         public float TimeRemaining;
+        [FieldOffset(12)]
         public ushort VisibleCharacters;
+        [FieldOffset(14)]
         public ushort Flags;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 24)]
+    [StructLayout(LayoutKind.Explicit, Size = 24)]
     public struct BabelFormatArgs
     {
+        [FieldOffset(0)]
         public int Value0;
+        [FieldOffset(4)]
         public int Value1;
+        [FieldOffset(8)]
         public int Value2;
+        [FieldOffset(12)]
         public int Value3;
+        [FieldOffset(16)]
         public byte Count;
+        [FieldOffset(17)]
         public byte _pad0;
+        [FieldOffset(18)]
         public ushort _pad1;
+        [FieldOffset(20)]
         public uint _pad2;
 
         public static BabelFormatArgs None()
@@ -375,32 +395,46 @@ namespace Hecton.Localization
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct MockTranslationRequestSignal
     {
+        [FieldOffset(0)]
         public uint StringHash;
+        [FieldOffset(4)]
         public uint LocaleHash;
+        [FieldOffset(8)]
         public uint OutputHandle;
+        [FieldOffset(12)]
         public uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct MockUiRefreshSignal
     {
+        [FieldOffset(0)]
         public uint PanelHash;
+        [FieldOffset(4)]
         public uint ReasonHash;
+        [FieldOffset(8)]
         public ushort DirtyFlags;
+        [FieldOffset(10)]
         public ushort _pad0;
+        [FieldOffset(12)]
         public uint _pad1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct MockTextMeshProText
     {
+        [FieldOffset(0)]
         public uint InstanceHash;
+        [FieldOffset(4)]
         public uint TextHash;
+        [FieldOffset(8)]
         public ushort MaxVisibleCharacters;
+        [FieldOffset(10)]
         public ushort Flags;
+        [FieldOffset(12)]
         public uint _pad0;
     }
 
@@ -414,16 +448,24 @@ namespace Hecton.Localization
         [FieldOffset(12)] public uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct BabelDictionaryStage
     {
+        [FieldOffset(0)]
         public IntPtr Destination;
+        [FieldOffset(8)]
         public int ByteLength;
+        [FieldOffset(12)]
         public uint Generation;
+        [FieldOffset(16)]
         public int BufferId;
-        public ushort Language;
-        public ushort Flags;
+        [FieldOffset(20)]
         public int SourceByteLength;
+        [FieldOffset(24)]
+        public ushort Language;
+        [FieldOffset(26)]
+        public ushort Flags;
+        [FieldOffset(28)]
         public uint _pad1;
     }
 
@@ -433,7 +475,9 @@ namespace Hecton.Localization
     public static class LocRegistry
     {
         private const string MissingKeyLiteral = "[ERR_MISSING_KEY]";
-        private const int MaxDecodedGlyphs = 1024;
+        private const int MaxDecodedGlyphs = 4096;
+        private const int DecodeBufferSlotCount = 16;
+        private const int DecodeBufferSlotMask = DecodeBufferSlotCount - 1;
         private const int EllipsisGlyphCount = 3;
         private const int BabelTelemetryFrameCapacity = 300;
         private const float SlowDecodeDumpThresholdMs = 0.5f;
@@ -453,16 +497,9 @@ namespace Hecton.Localization
         private static readonly uint _missingKeyWarningHash = unchecked((uint)LocHash.Compute("LocRegistry.MissingKey"));
         private static readonly uint _emergencyMockErrorHash = unchecked((uint)LocHash.Compute("ERROR"));
 
-        // COLD ALLOC: Dictionary[512] — core localization pool keyed by FNV-1a hash — owner: LocRegistry
-        private static readonly LocPool _core = new LocPool(512);
-        // COLD ALLOC: Dictionary[1024] — world localization pool keyed by FNV-1a hash — owner: LocRegistry
-        private static readonly LocPool _world = new LocPool(2048);
-        // COLD ALLOC: Dictionary[2048] — narrative localization pool keyed by FNV-1a hash — owner: LocRegistry
-        private static readonly LocPool _narrative = new LocPool(16384);
-        // COLD ALLOC: HashSet[64] — log-once missing localization key guard — owner: LocRegistry
-        private static readonly HashSet<int> _missingKeysLogged = new HashSet<int>(64);
         // COLD ALLOC: char[17] — static missing localization literal — owner: LocRegistry
         private static readonly char[] _missingKeyChars = MissingKeyLiteral.ToCharArray();
+        private static readonly char[][] _decodeBufferRing = CreateDecodeBufferRing();
         private const int ErrorUtf8Length = 5;
 
         private static GameLanguage _activeLanguage = GameLanguage.English;
@@ -512,8 +549,11 @@ namespace Hecton.Localization
         private static bool _stagedLocaleLocked;
         private static bool _utf8ReaderHandleActive;
         private static bool _languageSignalLaneReady;
-
-        [ThreadStatic] private static char[] _decodeBuffer;
+        private static ulong _missingKeyBloom0;
+        private static ulong _missingKeyBloom1;
+        private static ulong _missingKeyBloom2;
+        private static ulong _missingKeyBloom3;
+        private static int _decodeBufferRingCursor = -1;
 
         /// <summary>
         /// Active language loaded into the runtime hash registry.
@@ -524,10 +564,10 @@ namespace Hecton.Localization
         private static void ResetStaticState()
         {
             _activeLanguage = GameLanguage.English;
-            _core.Clear();
-            _world.Clear();
-            _narrative.Clear();
-            _missingKeysLogged.Clear();
+            _missingKeyBloom0 = 0UL;
+            _missingKeyBloom1 = 0UL;
+            _missingKeyBloom2 = 0UL;
+            _missingKeyBloom3 = 0UL;
             AbortBabelDictionaryStage();
             DisposeUtf8State();
             DisposeErrorUtf8State();
@@ -546,29 +586,13 @@ namespace Hecton.Localization
         }
 
         /// <summary>
-        /// Reload the runtime hash registry from the string-backed localization owner.
+        /// Reload the runtime hash registry from binary/static UTF-8 authority only.
         /// </summary>
-        public static void Reload(Dictionary<GameLanguage, Dictionary<string, string>> tables, GameLanguage activeLanguage)
+        public static void ReloadBinaryOrMock(GameLanguage activeLanguage)
         {
             EnsureTelemetryState();
             _activeLanguage = activeLanguage;
-            _core.Clear();
-            _world.Clear();
-            _narrative.Clear();
-
-            if (tables == null || tables.Count == 0)
-            {
-                RebuildUtf8Lookup(tables, activeLanguage);
-                RecordTelemetry(0u, _utf8ByteLength, _utf8IndexLength, BabelTelemetryFlags.EmptyReload);
-                PublishLanguageChangedSignal(activeLanguage);
-                return;
-            }
-
-            LoadLanguage(tables, activeLanguage);
-            if (activeLanguage != GameLanguage.English)
-                LoadLanguage(tables, GameLanguage.English);
-
-            RebuildUtf8Lookup(tables, activeLanguage);
+            RebuildUtf8LookupFromBinaryOrMock();
             RecordTelemetry(0u, _utf8ByteLength, _utf8IndexLength, BabelTelemetryFlags.Reload);
             PublishLanguageChangedSignal(activeLanguage);
         }
@@ -772,8 +796,8 @@ namespace Hecton.Localization
         /// </summary>
         public static ReadOnlySpan<char> ResolveRaw(int keyHash)
         {
-            return TryResolveEntry(keyHash, out LocEntry entry)
-                ? entry.RawBuffer.AsSpan(0, entry.RawLength)
+            return TryDecodeRawBufferFromUtf8(keyHash, out char[] buffer, out int length)
+                ? buffer.AsSpan(0, length)
                 : _missingKeyChars.AsSpan();
         }
 
@@ -793,8 +817,8 @@ namespace Hecton.Localization
         /// </summary>
         public static int GetLength(int keyHash)
         {
-            return TryResolveEntry(keyHash, out LocEntry entry)
-                ? entry.RawLength
+            return TryDecodeRawBufferFromUtf8(keyHash, out _, out int length)
+                ? length
                 : _missingKeyChars.Length;
         }
 
@@ -811,17 +835,7 @@ namespace Hecton.Localization
         /// </summary>
         public static bool TryGetRawBuffer(int keyHash, out char[] buffer, out int length)
         {
-            if (TryResolveEntry(keyHash, out LocEntry entry))
-            {
-                buffer = entry.RawBuffer;
-                length = entry.RawLength;
-                return true;
-            }
-
-            LogMissingKeyOnce(keyHash);
-            buffer = _missingKeyChars;
-            length = _missingKeyChars.Length;
-            return false;
+            return TryDecodeRawBufferFromUtf8(keyHash, out buffer, out length);
         }
 
         /// <summary>
@@ -829,22 +843,17 @@ namespace Hecton.Localization
         /// </summary>
         public static bool TryGetVisualBuffer(int keyHash, out char[] buffer, out int length)
         {
-            if (!TryResolveEntry(keyHash, out LocEntry entry))
+            if (!TryDecodeRawBufferFromUtf8(keyHash, out buffer, out length))
             {
-                LogMissingKeyOnce(keyHash);
                 buffer = _missingKeyChars;
                 length = _missingKeyChars.Length;
                 return false;
             }
 
             if (!LocalizationManager.IsRightToLeftLanguage(_activeLanguage))
-            {
-                buffer = entry.RawBuffer;
-                length = entry.RawLength;
                 return true;
-            }
 
-            return RTLProcessor.TryGetVisualBuffer(entry.RawBuffer.AsSpan(0, entry.RawLength), out buffer, out length);
+            return RTLProcessor.TryGetVisualBuffer(buffer.AsSpan(0, length), out buffer, out length);
         }
 
         /// <summary>
@@ -978,7 +987,7 @@ namespace Hecton.Localization
         }
 
         /// <summary>
-        /// Decode a localized UTF-8 entry into a thread-local char buffer for TMP SetCharArray.
+        /// Decode a localized UTF-8 entry into a fixed compatibility ring buffer for TMP SetCharArray.
         /// </summary>
         public static bool TryGetVisualBufferFromUtf8(int keyHash, out char[] buffer, out int length)
         {
@@ -1095,6 +1104,20 @@ namespace Hecton.Localization
             }
 
             return TryWriteVisualSpanFromUtf8(keyHash, destination, out length, formatArgs, stripRichText);
+        }
+
+        private static bool TryDecodeRawBufferFromUtf8(int keyHash, out char[] buffer, out int length)
+        {
+            uint hash = unchecked((uint)keyHash);
+            bool found = TryGetLocalizedSpan(hash, out ReadOnlySpan<byte> utf8Bytes);
+            if (!found)
+            {
+                buffer = _missingKeyChars;
+                length = _missingKeyChars.Length;
+                return false;
+            }
+
+            return DecodeUtf8VisualBuffer(hash, true, utf8Bytes, out buffer, out length);
         }
 
         private static bool DecodeUtf8VisualBuffer(
@@ -1464,9 +1487,9 @@ namespace Hecton.Localization
             if (!_utf8ReaderHandleActive || !_utf8ReaderHandle.IsCompleted)
                 return;
 
-            // [BLOCKING_SYNC_POINT] Non-blocking fence clear: IsCompleted was true before Complete().
-            _utf8ReaderHandle.Complete();
-            _utf8ReaderHandle = default;
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _utf8ReaderHandle))
+                return;
+
             _utf8ReaderHandleActive = false;
         }
 
@@ -1669,44 +1692,17 @@ namespace Hecton.Localization
             _languageSignalLaneReady = true;
         }
 
-        private static void LoadLanguage(
-            Dictionary<GameLanguage, Dictionary<string, string>> tables,
-            GameLanguage language)
-        {
-            if (!tables.TryGetValue(language, out Dictionary<string, string> table) || table == null)
-                return;
-
-            Dictionary<string, string>.Enumerator enumerator = table.GetEnumerator();
-            while (enumerator.MoveNext())
-            {
-                string key = enumerator.Current.Key;
-                if (string.IsNullOrWhiteSpace(key))
-                    continue;
-
-                int keyHash = LocHash.Compute(key);
-                LocPool pool = ResolvePool(ClassifyLayer(key));
-                if (pool.ContainsKey(keyHash))
-                    continue;
-
-                string rawValue = enumerator.Current.Value ?? string.Empty;
-                LocEntry entry = CreateEntry(rawValue);
-                pool.Set(keyHash, entry);
-            }
-        }
-
-        private static void RebuildUtf8Lookup(
-            Dictionary<GameLanguage, Dictionary<string, string>> tables,
-            GameLanguage activeLanguage)
+        private static void RebuildUtf8LookupFromBinaryOrMock()
         {
             DisposeUtf8State();
-            int entryCapacity = EstimateUtf8EntryCapacity(tables, activeLanguage);
+            int entryCapacity = EstimateStaticArenaEntryCapacity();
             if (entryCapacity <= 0)
             {
                 GenerateEmergencyMockLocale();
                 return;
             }
 
-            int byteCapacity = EstimateUtf8ByteCapacity(tables, activeLanguage);
+            int byteCapacity = EstimateStaticArenaByteCapacity();
             AcquireUtf8IndexBuffer(entryCapacity);
             AcquireUtf8ByteBuffer(byteCapacity);
             if (!_utf8Index.IsCreated || !_utf8Bytes.IsCreated)
@@ -1717,14 +1713,12 @@ namespace Hecton.Localization
 
             int writeOffset = 0;
             int indexWrite = 0;
-            LoadLanguageUtf8(tables, activeLanguage, ref writeOffset, ref indexWrite);
-            if (activeLanguage != GameLanguage.English)
-                LoadLanguageUtf8(tables, GameLanguage.English, ref writeOffset, ref indexWrite);
-
             TryLoadStaticArenaUtf8(ref writeOffset, ref indexWrite);
             _utf8IndexLength = indexWrite;
             SortUtf8Index(_utf8IndexLength);
             _utf8ByteLength = writeOffset;
+            if (_utf8IndexLength <= 0)
+                GenerateEmergencyMockLocale();
         }
 
         private static void GenerateEmergencyMockLocale()
@@ -2024,102 +2018,15 @@ namespace Hecton.Localization
                 _utf8Bytes = resolved;
         }
 
-        private static int EstimateUtf8EntryCapacity(
-            Dictionary<GameLanguage, Dictionary<string, string>> tables,
-            GameLanguage activeLanguage)
+        private static int EstimateStaticArenaByteCapacity()
         {
-            int count = 0;
-            AddLanguageEntryEstimate(tables, activeLanguage, ref count);
-            if (activeLanguage != GameLanguage.English)
-                AddLanguageEntryEstimate(tables, GameLanguage.English, ref count);
-
-            count = SaturatingAdd(count, EstimateStaticArenaEntryCapacity());
-            return count;
-        }
-
-        private static int EstimateUtf8ByteCapacity(
-            Dictionary<GameLanguage, Dictionary<string, string>> tables,
-            GameLanguage activeLanguage)
-        {
-            int bytes = 0;
-            AddLanguageByteEstimate(tables, activeLanguage, ref bytes);
-            if (activeLanguage != GameLanguage.English)
-                AddLanguageByteEstimate(tables, GameLanguage.English, ref bytes);
-
             H8DataBlobDirectory directory = H8StaticDataArena.Directory;
             if (H8StaticDataArena.IsLoaded && directory.LocalizationBytes > 0u)
-                bytes = SaturatingAdd(bytes, (int)math.min(directory.LocalizationBytes, int.MaxValue));
+                return (int)math.min(directory.LocalizationBytes, int.MaxValue);
 
-            return bytes;
-        }
-
-        private static void AddLanguageEntryEstimate(
-            Dictionary<GameLanguage, Dictionary<string, string>> tables,
-            GameLanguage language,
-            ref int count)
-        {
-            if (tables == null)
-                return;
-
-            if (tables.TryGetValue(language, out Dictionary<string, string> table) && table != null)
-                count = SaturatingAdd(count, table.Count);
-        }
-
-        private static void AddLanguageByteEstimate(
-            Dictionary<GameLanguage, Dictionary<string, string>> tables,
-            GameLanguage language,
-            ref int bytes)
-        {
-            if (tables == null)
-                return;
-
-            if (!tables.TryGetValue(language, out Dictionary<string, string> table) || table == null)
-                return;
-
-            Dictionary<string, string>.Enumerator enumerator = table.GetEnumerator();
-            while (enumerator.MoveNext())
-            {
-                string value = enumerator.Current.Value ?? string.Empty;
-                bytes = SaturatingAdd(bytes, Encoding.UTF8.GetByteCount(value));
-            }
-        }
-
-        private static void LoadLanguageUtf8(
-            Dictionary<GameLanguage, Dictionary<string, string>> tables,
-            GameLanguage language,
-            ref int writeOffset,
-            ref int indexWrite)
-        {
-            if (tables == null)
-                return;
-
-            if (!tables.TryGetValue(language, out Dictionary<string, string> table) || table == null)
-                return;
-
-            Dictionary<string, string>.Enumerator enumerator = table.GetEnumerator();
-            while (enumerator.MoveNext())
-            {
-                string key = enumerator.Current.Key;
-                if (string.IsNullOrWhiteSpace(key))
-                    continue;
-
-                uint keyHash = unchecked((uint)LocHash.Compute(key));
-                if (ContainsUtf8IndexKey(keyHash, indexWrite))
-                    continue;
-
-                string value = enumerator.Current.Value ?? string.Empty;
-                int byteCount = Encoding.UTF8.GetByteCount(value);
-                int offset = writeOffset;
-                if (byteCount > 0 && !TryWriteUtf8(value, offset, byteCount))
-                {
-                    DumpTelemetryForCorruption(keyHash, new int2(offset, byteCount));
-                    continue;
-                }
-
-                if (TryWriteUtf8Index(indexWrite, keyHash, offset, byteCount))
-                    indexWrite++;
-                writeOffset = SaturatingAdd(writeOffset, byteCount);
-            }
+            return H8StaticDataArena.TryGetLocalizedUtf8Block(out ReadOnlySpan<byte> locData)
+                ? locData.Length
+                : 0;
         }
 
         private static void TryLoadStaticArenaUtf8(ref int writeOffset, ref int indexWrite)
@@ -2714,22 +2621,6 @@ namespace Hecton.Localization
             return count;
         }
 
-        private static unsafe bool TryWriteUtf8(string value, int offset, int byteCount)
-        {
-            if (byteCount <= 0)
-                return true;
-
-            if (!_utf8Bytes.IsCreated || offset < 0 || byteCount > _utf8Bytes.Length - offset)
-                return false;
-
-            fixed (char* source = value)
-            {
-                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(_utf8Bytes) + offset;
-                int written = Encoding.UTF8.GetBytes(source, value.Length, destination, byteCount);
-                return written == byteCount;
-            }
-        }
-
         private static unsafe bool TryCopyStaticArenaBytes(ReadOnlySpan<byte> source, int offset)
         {
             if (source.Length <= 0)
@@ -2747,48 +2638,6 @@ namespace Hecton.Localization
             return true;
         }
 
-        private static LocEntry CreateEntry(string value)
-        {
-            string safeValue = value ?? string.Empty;
-            char[] rawChars = safeValue.ToCharArray();
-            return new LocEntry(rawChars, rawChars.Length);
-        }
-
-        private static LocPool ResolvePool(LocLayer layer)
-        {
-            switch (layer)
-            {
-                case LocLayer.World:
-                    return _world;
-
-                case LocLayer.Narrative:
-                    return _narrative;
-
-                default:
-                    return _core;
-            }
-        }
-
-        private static LocLayer ClassifyLayer(string key)
-        {
-            if (key.StartsWith("WORLD_", StringComparison.Ordinal) ||
-                key.StartsWith("DEPTH_ZONE_", StringComparison.Ordinal) ||
-                key.StartsWith("RELAY_", StringComparison.Ordinal))
-            {
-                return LocLayer.World;
-            }
-
-            if (key.StartsWith("AUDIOLOG_", StringComparison.Ordinal) ||
-                key.StartsWith("PDA_", StringComparison.Ordinal) ||
-                key.StartsWith("LORE_", StringComparison.Ordinal) ||
-                key.StartsWith("MADNESS_", StringComparison.Ordinal))
-            {
-                return LocLayer.Narrative;
-            }
-
-            return LocLayer.Core;
-        }
-
         private static bool IsValidUtf8Slice(int2 slice)
         {
             RefreshUtf8BytesFromVault();
@@ -2800,21 +2649,24 @@ namespace Hecton.Localization
                    slice.y <= _utf8Bytes.Length - slice.x;
         }
 
+        private static char[][] CreateDecodeBufferRing()
+        {
+            char[][] ring = new char[DecodeBufferSlotCount][];
+            for (int i = 0; i < ring.Length; i++)
+                ring[i] = new char[MaxDecodedGlyphs]; // COLD ALLOC: char[4096] - prewarmed Babel legacy decode slot - owner: LocRegistry
+
+            return ring;
+        }
+
         private static char[] GetDecodeBuffer(int requiredLength)
         {
-            if (requiredLength <= 0)
-                requiredLength = 1;
+            int safeLength = math.clamp(requiredLength, 1, MaxDecodedGlyphs);
+            int slot = Interlocked.Increment(ref _decodeBufferRingCursor) & DecodeBufferSlotMask;
+            char[] buffer = _decodeBufferRing[slot];
+            if (buffer == null || buffer.Length < safeLength)
+                return _missingKeyChars;
 
-            char[] buffer = _decodeBuffer;
-            if (buffer != null && buffer.Length >= requiredLength)
-                return buffer;
-
-            int capacity = 128;
-            while (capacity < requiredLength)
-                capacity <<= 1;
-
-            _decodeBuffer = new char[capacity]; // COLD ALLOC: char[capacity] - thread-local Babel UTF-8 decode buffer - owner: LocRegistry
-            return _decodeBuffer;
+            return buffer;
         }
 
         private static void TruncateGlyphsWithEllipsis(char[] buffer, ref int length, int maxGlyphs)
@@ -3250,8 +3102,7 @@ namespace Hecton.Localization
             // [BLOCKING_SYNC_POINT] Structural mutation gate for CSV/staged locale writes. Callers must
             // reach this only outside lookup/decryption jobs so the active UTF-8 blob cannot be mutated
             // while reader jobs hold slices.
-            _utf8ReaderHandle.Complete();
-            _utf8ReaderHandle = default;
+            DispatcherJobFence.TryComplete(ref _utf8ReaderHandle, forceComplete: true);
             _utf8ReaderHandleActive = false;
         }
 
@@ -3285,27 +3136,11 @@ namespace Hecton.Localization
             _telemetryWriteIndex = 0;
         }
 
-        private static bool TryResolveEntry(int keyHash, out LocEntry entry)
-        {
-            if (_core.TryGet(keyHash, out entry))
-                return true;
-
-            if (_world.TryGet(keyHash, out entry))
-                return true;
-
-            if (_narrative.TryGet(keyHash, out entry))
-                return true;
-
-            LogMissingKeyOnce(keyHash);
-            entry = default;
-            return false;
-        }
-
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogMissingKeyOnce(int keyHash)
         {
-            if (!_missingKeysLogged.Add(keyHash))
+            if (!TryMarkMissingKeyForLog(unchecked((uint)keyHash)))
                 return;
 
             Hecton8.Core.GlobalTelemetryBus.PublishPerformanceWarning(
@@ -3314,37 +3149,72 @@ namespace Hecton.Localization
                 (float)_activeLanguage);
         }
 
-        private readonly struct LocEntry
+        private static bool TryMarkMissingKeyForLog(uint keyHash)
         {
-            public LocEntry(char[] rawBuffer, int rawLength)
+            uint mixed = math.hash(new uint2(keyHash, 0xBA8E150u));
+            int bit = (int)(mixed & 63u);
+            ulong mask = 1UL << bit;
+            switch ((mixed >> 6) & 3u)
             {
-                RawBuffer = rawBuffer;
-                RawLength = rawLength;
+                case 0u:
+                    if ((_missingKeyBloom0 & mask) != 0UL)
+                        return false;
+                    _missingKeyBloom0 |= mask;
+                    return true;
+                case 1u:
+                    if ((_missingKeyBloom1 & mask) != 0UL)
+                        return false;
+                    _missingKeyBloom1 |= mask;
+                    return true;
+                case 2u:
+                    if ((_missingKeyBloom2 & mask) != 0UL)
+                        return false;
+                    _missingKeyBloom2 |= mask;
+                    return true;
+                default:
+                    if ((_missingKeyBloom3 & mask) != 0UL)
+                        return false;
+                    _missingKeyBloom3 |= mask;
+                    return true;
             }
-
-            public char[] RawBuffer { get; }
-            public int RawLength { get; }
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct BabelTelemetryEntry
         {
+            [FieldOffset(0)]
             public int Frame;
+            [FieldOffset(4)]
             public uint KeyHash;
+            [FieldOffset(8)]
             public int Offset;
+            [FieldOffset(12)]
             public int Length;
+            [FieldOffset(16)]
             public int TranslationsPerFrame;
+            [FieldOffset(20)]
             public int BufferPoolLeasesActive;
+            [FieldOffset(24)]
             public float SpanConversionTimeMs;
+            [FieldOffset(28)]
             public uint DictionaryLookupsPerFrame;
+            [FieldOffset(32)]
             public uint MissingHashCount;
+            [FieldOffset(36)]
             public uint SearchComputeTimeNs;
+            [FieldOffset(40)]
             public ushort Language;
+            [FieldOffset(42)]
             public ushort Flags;
+            [FieldOffset(44)]
             public uint CsvOverrideAppliedCount;
+            [FieldOffset(48)]
             public uint CsvOverrideRejectedCount;
+            [FieldOffset(52)]
             public uint _pad2;
+            [FieldOffset(56)]
             public uint _pad3;
+            [FieldOffset(60)]
             public uint _pad4;
         }
 
@@ -3475,34 +3345,5 @@ namespace Hecton.Localization
             }
         }
 
-        private sealed class LocPool
-        {
-            private readonly Dictionary<int, LocEntry> _entries;
-
-            public LocPool(int capacity)
-            {
-                _entries = new Dictionary<int, LocEntry>(capacity);
-            }
-
-            public bool ContainsKey(int keyHash)
-            {
-                return _entries.ContainsKey(keyHash);
-            }
-
-            public void Set(int keyHash, LocEntry entry)
-            {
-                _entries[keyHash] = entry;
-            }
-
-            public bool TryGet(int keyHash, out LocEntry entry)
-            {
-                return _entries.TryGetValue(keyHash, out entry);
-            }
-
-            public void Clear()
-            {
-                _entries.Clear();
-            }
-        }
     }
 }

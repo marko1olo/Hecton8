@@ -16,10 +16,53 @@ This document is active only where it agrees with:
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
 
-R32 architecture R4/proof-wording correction is the latest artifact-backed local static DOC_GLOBAL boundary for architecture/root documentation. R31 remains the prior current-boundary propagation layer, R30 remains the prior internal-currentness layer, R29 remains the prior stale-gate/global-authority layer, R28 remains the prior interior-boundary layer, and R27 remains the latest source-counter/index snapshot until rerun.
+R45 root/architecture R43/R44 residue/proof-artifact/source-counter correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
+## Source Anchors
+
+Evidence class: STATIC_SOURCE / FILESYSTEM path check. These anchors prove current path visibility only, not tool prefab wiring, input runtime, haptics, save/load, profiler, or player-build proof.
+
+- `Assets/_Project/Scripts/ModularEquipmentEngine.cs`
+- `Assets/_Project/Scripts/Tools/ToolMetadata.cs`
+- `Assets/_Project/Scripts/Tools/EquipmentThermalBatteryContracts.cs`
+- `Assets/_Project/Scripts/Interaction/EquipmentInteractionHandler.cs`
+- `Assets/_Project/Scripts/Interaction/EquipmentInteractionContracts.cs`
+- `Assets/_Project/Scripts/Tools/ToolKinematics/ToolKinematicsRuntime.cs`
+- `Assets/_Project/Scripts/Tools/ToolKinematics/Contracts/ToolKinematicsContracts.cs`
+- `Assets/_Project/Data/Tools`
+
 Verification: PENDING VERIFICATION
+
+## 2026-05-20 SHINOBU_224 Static Refresh
+
+Static source update only; Unity import, Play Mode, profiler, GCMonitor, and player-build proof remain pending.
+
+Current active-equipment additions:
+- `ActiveEquipmentDTO` remains explicit 32 bytes at offsets `0/4/8/12/16/20/24-31`; it is still the rollback/UI snapshot ABI.
+- Active tool battery, heat, and active-use wear now integrate in `ModularEquipmentEngine.EquipmentStateIntegrationJob`.
+- Wear rate is not stored in DTO padding. It is a separate Vault stream: `BufferID.ShinobuActiveEquipmentWearDrainRates = 71316`, `NativeArray<float> _activeEquipmentWearDrainRates`.
+- Service readiness fails closed unless the wear-rate stream exists; there is no private `NativeArray` fallback for active equipment battery/heat/wear truth.
+- Cold buffer acquisition now uses `IDataVault.GetGenerationHandle<T>` plus `TryResolveHandle`; SHINOBU_224 no longer asks the Vault for direct `GetBuffer<T>` external views.
+- Equipped-tool AUP sampling uses `IPlayerRuntimeContext.TryGetPlayerPoseSnapshot`; cached tool transform sampling is fallback-only for detached/non-equipped registered tools.
+- Hardware-spec tuning source is now present at `Assets/_Project/Data/Tools/tool_hardware_specs.csv`; cold ingest uses `ReadOnlySpan<byte>` into `ShinobuActiveEquipmentHardwareSpecs`. Parser rows can use a numeric/hex runtime hash or the lower-case FNV spec hash. Runtime matching checks `PlayerTool.RuntimeToolId` first and cached `PlayerTool.RuntimeToolSpecHashId` second, so name-keyed CSV rows are no longer inert against `Animator.StringToHash` tool IDs.
+- Post-simulation readback remains a blind `UnsafeUtility.MemCpy` from `_activeEquipmentStates` to `_publishedActiveEquipmentStates`.
+- Overheat and depleted signals are written by the Burst integration job directly to typed `SignalBus<EquipmentOverheatSignal>` and `SignalBus<ToolDepletedSignal>` parallel writers; the equipment domain no longer owns private overheat/depletion `NativeQueue` buffers or a post-fence queue-drain loop.
+- Wireless/tool brownout feedback no longer subscribes to `Hecton8.Power` telemetry events. `ModularEquipmentEngine` reads cached Core `IPowerGridService` aggregate generation/consumption/battery snapshot scalars and converts them to the same flicker signal locally.
+- Fault telemetry dumps to `Docs/AgentLogs/Dump_SHINOBU_224.bin`.
+
+Current Vault active-equipment buffer IDs:
+- `71300` active DTO writer
+- `71301` published DTO readback
+- `71302` AUP samples
+- `71303` grid load requests
+- `71304` telemetry ring
+- `71305` telemetry cursor
+- `71306` integration counters
+- `71308` tuning DTO
+- `71309` hardware spec DTOs
+- `71311-71315` tool state/stat/type/status/environment mirrors
+- `71316` wear drain rates
 
 ## 2026-05-11 Historical Override + 2026-05-17 Actuality Pointer
 
@@ -28,7 +71,7 @@ Verification: PENDING VERIFICATION
 - Historical actuality manifest: `Docs/Reports/2026-05-17_ACTIVE_DOCUMENTATION_ACTUALITY_MANIFEST.json` (historical snapshot only; do not use for current counts or proof).
 - Current actuality ledger: `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`.
 - Visual-realistic-fake doctrine snapshot: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`; re-check `.agents-skills` for newer mandates before implementation.
-- Historical May 14/R43 CLI compile wording is stale report text, not current proof. Current static/tool boundary is R32; R31 remains the prior current-boundary propagation layer; R30 remains the prior internal-currentness layer; R29 remains the prior stale-gate/global-authority layer; R28 remains the prior interior-boundary layer; R27 remains the latest source-counter/index snapshot until rerun; AtlasCheck fails `59` missing refs (RealtimeCSG vendor refs plus absent `VaultXRayWindow.cs` and `HectonMapMagicVegetationBridgeFloraCollisionProxies.cs`); Mod API static validation now passes (`Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`) as static-tool orientation only; do not treat PASS as current proof without artifact path, command, timestamp, environment, and output. Unity import, Console, Play Mode, profiler, GCMonitor, player build, scene wiring, save/load, and visual proof remain PENDING VERIFICATION.
+- Historical May 14/R43 CLI compile wording is stale report text, not current proof. Current static/tool boundary is R45 root/architecture R43/R44 residue/proof-artifact/source-counter correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`) (R44 prior internal-residue/exact-route-field/proof-wording correction); R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers; AtlasCheck fails `ATLAS_CHECK_FAIL references=6741 missing=59` (one Dynamic Decals missing vendor asset ref, RealtimeCSG vendor icon/readme image refs, and missing HabitatDamageBakePipeline source ref in the current atlas); Mod API static validation passes (`Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`) as static-tool orientation only; do not treat PASS as current proof without artifact path, command, timestamp, environment, and output. Unity import, Console, Play Mode, profiler, GCMonitor, player build, scene wiring, save/load, and visual proof remain PENDING VERIFICATION.
 - Existing May 4 boundary sections in this file are historical unless they describe local system intent not contradicted by newer reports.
 - Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, and visual quality remain `PENDING VERIFICATION`.
 ## Historical 2026-05-04 Boundary
@@ -47,6 +90,8 @@ Mandates followed:
 - `LOGI_Energy_Networks_Power_Grid_Graph_Flow.txt`
 
 ## Runtime Ownership
+
+Historical note: this section predates the 2026-05-20 SHINOBU_224 static refresh. Treat `_toolIndexById` and O(1) hash-map lookup below as old intent unless current source still contains that field. Current SHINOBU_224 source uses fixed 16-slot owner mirrors plus Vault-backed SoA streams for active local equipment.
 
 Authoritative owner: `ModularEquipmentEngine`
 
@@ -295,8 +340,10 @@ Failure threshold:
 Wireless-tool brownout is runtime-only and does not mutate authored module data.
 
 Owner:
-- `PowerGridTelemetryEvents` publishes aggregate supply telemetry
-- `ModularEquipmentEngine` caches `SupplyRatio`
+- `ModularEquipmentEngine` reads cached Core `IPowerGridService` scalars
+  (`TotalGeneration`, `TotalConsumption`, `BatterySnapshot`) during its dispatcher tick
+- no `Hecton8.Power` telemetry listener or sibling runtime event subscription is part of
+  the equipment runtime boundary
 
 Rule:
 - if `SupplyRatio < 0.40`

@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using Hecton8.World;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
@@ -41,13 +40,13 @@ namespace Hecton8.Core
             RelayUnpowered = 4
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct FlexiblePipeInstanceGpuData
         {
-            public float4 P0Radius;
-            public float4 P1Flags;
-            public float4 P2;
-            public float4 P3;
+            [FieldOffset(0)] public float4 P0Radius;
+            [FieldOffset(16)] public float4 P1Flags;
+            [FieldOffset(32)] public float4 P2;
+            [FieldOffset(48)] public float4 P3;
         }
 
         private sealed class BatchState
@@ -318,7 +317,11 @@ namespace Hecton8.Core
             for (int batchIndex = 0; batchIndex < _batches.Length; batchIndex++)
                 ProcessBatch(_batches[batchIndex]);
 
-            RefreshLateFrameTickRegistration();
+            if (!HasRenderableBatchWork() && _registeredLateFrameTick)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrameTick = false;
+            }
         }
 
         private void OnDestroy()

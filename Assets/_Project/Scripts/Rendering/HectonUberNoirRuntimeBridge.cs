@@ -14,7 +14,7 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Rendering/Uber Noir Runtime Bridge")]
-    public sealed class HectonUberNoirRuntimeBridge : MonoBehaviour, ILateFrameTickable
+    public sealed class HectonUberNoirRuntimeBridge : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int TelemetryCapacity = 300;
         private const int TelemetryEntrySizeBytes = 48;
@@ -32,7 +32,7 @@ namespace Hecton8.Core
         private const uint FeatureAnalyticalCaustics = 1u << 1;
         private const uint FeatureSecondaryCaustics = 1u << 2;
         private const uint FeatureScreenRefraction = 1u << 3;
-        private const uint FeatureLowTier = 1u << 4;
+        private const uint FeatureSurvivalPressure = 1u << 4;
         private const uint FeatureHomeostasisShed = 1u << 5;
         private const uint FeatureHullDents = 1u << 6;
         private const uint FeatureBlueNoiseDither = 1u << 7;
@@ -53,6 +53,7 @@ namespace Hecton8.Core
         private int _recoveryFrames;
         private bool _stressShedLatched;
         private bool _registeredLateFrame;
+        private bool _hotSwapListenerRegistered;
         private bool _dumpedFault;
 
         /// <summary>
@@ -74,7 +75,7 @@ namespace Hecton8.Core
             [FieldOffset(16)]
             public float VisualOverkill01;
             [FieldOffset(20)]
-            public uint QualityTier;
+            public uint QualityWeightByte;
             [FieldOffset(24)]
             public uint Flags;
             [FieldOffset(28)]
@@ -116,6 +117,8 @@ namespace Hecton8.Core
             }
 
             s_runtimeInstance = this;
+            CacheDataVaultCold(forceRefresh: true);
+            TryRegisterHotSwapListener();
             EnsureTelemetryBuffer();
             UploadShaderGlobals(0f, 1f, 0u, 0f, force: true);
         }
@@ -129,6 +132,8 @@ namespace Hecton8.Core
             }
 
             s_runtimeInstance = this;
+            CacheDataVaultCold(forceRefresh: false);
+            TryRegisterHotSwapListener();
             EnsureTelemetryBuffer();
             TryRegisterLateFrameTickable();
         }
@@ -141,6 +146,7 @@ namespace Hecton8.Core
                 _registeredLateFrame = false;
             }
 
+            TryUnregisterHotSwapListener();
             UploadShaderGlobals(0f, 1f, 0u, 0f, force: true);
             _dataVault = null;
             _telemetryHandle = default;
@@ -148,8 +154,22 @@ namespace Hecton8.Core
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             if (ReferenceEquals(s_runtimeInstance, this))
                 s_runtimeInstance = null;
+        }
+
+        /// <inheritdoc />
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
+                return;
+
+            _dataVault = currentService as IDataVault;
+            _telemetryHandle = default;
         }
 
         /// <summary>
@@ -167,10 +187,10 @@ namespace Hecton8.Core
             }
 
             float stress01 = ResolveSystemStress01();
-            bool lowTier = IsLowTier(GlobalRegistry.ScalabilityTier, GlobalRegistry.ScalabilityTierProfileByte);
             bool stressShed = ResolveStressShed(stress01);
             float quality01 = ResolveGlobalQualityWeight01();
-            float hardwareCeiling01 = ResolveHardwareVisualCeiling01(GlobalRegistry.ScalabilityTier, GlobalRegistry.ScalabilityTierProfileByte);
+            float lowTierWeight01 = ResolveLowTierWeight01(quality01);
+            float hardwareCeiling01 = ResolveHardwareVisualCeiling01(quality01);
             float stressAllowance01 = 1f - Smooth01(math.saturate((stress01 - StressRecoveryThreshold) * math.rcp(math.max(0.0001f, StressShedThreshold - StressRecoveryThreshold))));
             float highCostAllowed01 = quality01 * hardwareCeiling01 * stressAllowance01;
             if (stressShed)
@@ -178,7 +198,7 @@ namespace Hecton8.Core
             float visualOverkill01 = Smooth01(math.saturate((quality01 - 0.78f) * math.rcp(0.22f))) *
                                      Smooth01(hardwareCeiling01) *
                                      stressAllowance01;
-            uint featureMask = BuildFeatureMask(lowTier, stressShed, highCostAllowed01, visualOverkill01);
+            uint featureMask = BuildFeatureMask(lowTierWeight01, stressShed, highCostAllowed01, visualOverkill01);
 
             if (!math.isfinite(stress01) || !math.isfinite(highCostAllowed01) || !math.isfinite(visualOverkill01))
             {
@@ -190,7 +210,7 @@ namespace Hecton8.Core
             }
 
             UploadShaderGlobals(stress01, highCostAllowed01, featureMask, visualOverkill01, force: false);
-            PushBlackBox(stress01, highCostAllowed01, visualOverkill01, featureMask);
+            PushBlackBox(stress01, highCostAllowed01, visualOverkill01, lowTierWeight01, quality01, featureMask);
         }
 
         private void TryRegisterLateFrameTickable()
@@ -201,9 +221,39 @@ namespace Hecton8.Core
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
+        private void CacheDataVaultCold(bool forceRefresh)
+        {
+            if (!forceRefresh && _dataVault != null)
+                return;
+
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (!ReferenceEquals(_dataVault, vault))
+            {
+                _dataVault = vault;
+                _telemetryHandle = default;
+            }
+        }
+
         private bool EnsureTelemetryBuffer()
         {
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null || vault.IsCompactionFenceActive)
             {
                 _dataVault = null;
@@ -244,7 +294,13 @@ namespace Hecton8.Core
             return _telemetryHandle.IsCreated && _telemetryHandle.Length >= TelemetryCapacity;
         }
 
-        private void PushBlackBox(float stress01, float highCostAllowed01, float visualOverkill01, uint featureMask)
+        private void PushBlackBox(
+            float stress01,
+            float highCostAllowed01,
+            float visualOverkill01,
+            float lowTierWeight01,
+            float quality01,
+            uint featureMask)
         {
             if (!EnsureTelemetryBuffer())
                 return;
@@ -259,23 +315,24 @@ namespace Hecton8.Core
                 if (!ring.IsCreated || ring.Length < TelemetryCapacity)
                     return;
 
-                uint tier = (uint)GlobalRegistry.ScalabilityTier;
+                uint qualityByte = EncodeQualityWeightByte(quality01);
                 UberNoirShaderTelemetryEntry entry = default;
                 entry.Frame = (uint)math.max(0, Time.frameCount);
                 entry.FeatureMask = featureMask;
                 entry.SystemStress01 = stress01;
                 entry.HighCostAllowed01 = highCostAllowed01;
                 entry.VisualOverkill01 = visualOverkill01;
-                entry.QualityTier = tier;
+                entry.QualityWeightByte = qualityByte;
                 entry.Flags = 0u;
                 uint stressBucket = (uint)math.round(math.saturate(stress01) * 1000f);
                 uint highCostBucket = (uint)math.round(math.saturate(highCostAllowed01) * 1000f);
                 uint overkillBucket = (uint)math.round(math.saturate(visualOverkill01) * 1000f);
-                entry.StateHash = Mix(featureMask ^ (stressBucket << 12) ^ (tier << 24) ^ (highCostBucket << 2) ^ (overkillBucket << 14));
+                uint lowTierBucket = (uint)math.round(math.saturate(lowTierWeight01) * 1000f);
+                entry.StateHash = Mix(featureMask ^ (stressBucket << 12) ^ (qualityByte << 24) ^ (highCostBucket << 2) ^ (overkillBucket << 14) ^ (lowTierBucket << 4));
                 entry.PomEnabled01 = math.saturate(highCostAllowed01);
                 entry.SecondaryCaustics01 = math.saturate(highCostAllowed01);
                 entry.Refraction01 = math.saturate(highCostAllowed01);
-                entry.Reserved0 = 0f;
+                entry.Reserved0 = math.saturate(lowTierWeight01);
                 ring[_telemetryCursor] = entry;
 
                 _telemetryCursor++;
@@ -394,7 +451,7 @@ namespace Hecton8.Core
                 writer.Write(entry.SystemStress01);
                 writer.Write(entry.HighCostAllowed01);
                 writer.Write(entry.VisualOverkill01);
-                writer.Write(entry.QualityTier);
+                writer.Write(entry.QualityWeightByte);
                 writer.Write(entry.Flags);
                 writer.Write(entry.StateHash);
                 writer.Write(entry.PomEnabled01);
@@ -455,11 +512,12 @@ namespace Hecton8.Core
             return _stressShedLatched;
         }
 
-        private static uint BuildFeatureMask(bool lowTier, bool stressShed, float highCostAllowed01, float visualOverkill01)
+        private static uint BuildFeatureMask(float lowTierWeight01, bool stressShed, float highCostAllowed01, float visualOverkill01)
         {
+            lowTierWeight01 = math.saturate(lowTierWeight01);
             uint mask = FeatureAnalyticalCaustics | FeatureHullDents | FeatureWakeSilt;
-            if (lowTier)
-                mask |= FeatureLowTier;
+            if (lowTierWeight01 > FeatureMaskEpsilon)
+                mask |= FeatureSurvivalPressure;
 
             if (stressShed)
                 mask |= FeatureHomeostasisShed;
@@ -467,7 +525,8 @@ namespace Hecton8.Core
             if (highCostAllowed01 > FeatureMaskEpsilon)
             {
                 mask |= FeaturePom | FeatureSecondaryCaustics | FeatureScreenRefraction;
-                if (!lowTier)
+                float ditherAllowance01 = highCostAllowed01 * Smooth01(1f - lowTierWeight01);
+                if (ditherAllowance01 > FeatureMaskEpsilon)
                     mask |= FeatureBlueNoiseDither;
             }
 
@@ -489,21 +548,11 @@ namespace Hecton8.Core
             return math.isfinite(quality01) ? math.saturate(quality01) : 0f;
         }
 
-        private static float ResolveHardwareVisualCeiling01(HectonQualityTier tier, byte profileByte)
+        private static float ResolveHardwareVisualCeiling01(float quality01)
         {
-            if (profileByte == ScalabilityTierProfiles.LowMx350 || tier == HectonQualityTier.Unknown || tier == HectonQualityTier.Low)
-                return 0.24f;
-
-            if (tier == HectonQualityTier.Mx350)
-                return 0.34f;
-
-            if (tier == HectonQualityTier.Mid)
-                return 0.58f;
-
-            if (tier == HectonQualityTier.High)
-                return 0.82f;
-
-            return 1f;
+            float quality = math.saturate(math.isfinite(quality01) ? quality01 : 0f);
+            float visualCurve01 = Smooth01(math.saturate((quality - 0.18f) * 1.2195122f));
+            return math.lerp(0.24f, 1f, visualCurve01);
         }
 
         private static float Smooth01(float value)
@@ -512,12 +561,25 @@ namespace Hecton8.Core
             return value * value * (3f - 2f * value);
         }
 
-        private static bool IsLowTier(HectonQualityTier tier, byte profileByte)
+        private static float ResolveLowTierWeight01(float quality01)
         {
-            return profileByte == ScalabilityTierProfiles.LowMx350 ||
-                   tier == HectonQualityTier.Unknown ||
-                   tier == HectonQualityTier.Low ||
-                   tier == HectonQualityTier.Mx350;
+            float quality = math.saturate(math.isfinite(quality01) ? quality01 : 1f);
+            float qualityDrivenWeight01 = 1f - Smooth01(math.saturate((quality - 0.18f) * 1.2195122f));
+            float hardwareFloor01 = ResolveLowTierFloor01(quality);
+            return math.max(qualityDrivenWeight01, hardwareFloor01);
+        }
+
+        private static float ResolveLowTierFloor01(float quality01)
+        {
+            float quality = math.saturate(math.isfinite(quality01) ? quality01 : 1f);
+            float survivalPressure01 = 1f - Smooth01(math.saturate((quality - 0.12f) * 1.1363636f));
+            return 0.25f * survivalPressure01;
+        }
+
+        private static uint EncodeQualityWeightByte(float quality01)
+        {
+            float quality = math.saturate(math.isfinite(quality01) ? quality01 : 0f);
+            return (uint)math.round(quality * 255f);
         }
 
         private static bool ValidateTelemetryLayout()

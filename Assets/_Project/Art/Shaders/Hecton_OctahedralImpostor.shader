@@ -2,15 +2,17 @@ Shader "Hecton8/Environment/Hecton_OctahedralImpostor"
 {
     Properties
     {
-        [MainTexture] _ImpostorAlbedoDepthAtlas ("Albedo/Alpha Atlas", 2D) = "white" {}
-        _ImpostorNormalDepthAtlas ("Normal/Depth Atlas", 2D) = "bump" {}
+        [MainTexture] _ImpostorAlbedoDepthAtlas ("Albedo/Depth Atlas", 2D) = "white" {}
+        _ImpostorNormalDepthAtlas ("Normal XY Atlas", 2D) = "bump" {}
         [MainColor] _BaseColor ("Base Color", Color) = (1, 1, 1, 1)
-        _AlphaClipThreshold ("Alpha Clip Threshold", Range(0, 1)) = 0.35
+        _AlphaClipThreshold ("Depth Occupancy Threshold", Range(0, 0.05)) = 0.003
         _DepthBias ("Depth Bias", Range(0, 0.01)) = 0.001
         _NormalStrength ("Normal Strength", Range(0, 2)) = 1
         _AmbientFloor ("Ambient Floor", Range(0, 1)) = 0.18
         _HeadlightBoost ("Headlight Boost", Range(0, 4)) = 1.25
-        _HectonImpostorQualityFlags ("Quality Flags", Int) = 0
+        _HectonGlobalQualityWeight ("Global Quality Weight", Range(0, 1)) = 1
+        _HectonImpostorDepthScaleMeters ("Depth Scale Meters", Float) = 1
+        _HectonImpostorAtlasGrid ("Atlas Grid", Vector) = (4, 4, 0.25, 0.25)
     }
 
     SubShader
@@ -40,7 +42,6 @@ Shader "Hecton8/Environment/Hecton_OctahedralImpostor"
             #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHTS _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHT_SHADOWS _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-            #include "Assets/_Project/Art/Shaders/Hecton_Impostor.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
                 half4 _BaseColor;
@@ -49,15 +50,22 @@ Shader "Hecton8/Environment/Hecton_OctahedralImpostor"
                 half _NormalStrength;
                 half _AmbientFloor;
                 half _HeadlightBoost;
-                int _HectonImpostorQualityFlags;
+                float _HectonGlobalQualityWeight;
+                float _HectonImpostorDepthScaleMeters;
+                float4 _HectonImpostorAtlasGrid;
+                float _HectonImpostorTimeSeconds;
+                float _HectonImpostorFadeOutSeconds;
+                int _HectonUseVisibleMatrixStream;
+                float _HectonImpostorRuntimePad0;
+                float4 _GlobalFloatingOffset;
             CBUFFER_END
-
-            float4 _GlobalFloatingOffset;
 
             TEXTURE2D(_ImpostorAlbedoDepthAtlas);
             SAMPLER(sampler_ImpostorAlbedoDepthAtlas);
             TEXTURE2D(_ImpostorNormalDepthAtlas);
             SAMPLER(sampler_ImpostorNormalDepthAtlas);
+
+            #include "Assets/_Project/Art/Shaders/Hecton_Impostor.hlsl"
 
             struct Attributes
             {
@@ -107,19 +115,26 @@ Shader "Hecton8/Environment/Hecton_OctahedralImpostor"
                 float viewBlend;
                 HectonImpostorSelectViews(HectonSafeNormalize(input.viewDirectionWS, float3(0.0, 0.0, 1.0)), primaryView, secondaryView, viewBlend);
 
-                bool lowTier = (_HectonImpostorQualityFlags & 1) != 0;
-                uint selectedView = primaryView;
-                if (!lowTier)
-                {
-                    float dither = HectonInterleavedGradientNoise(input.positionCS.xy);
-                    selectedView = viewBlend > dither ? secondaryView : primaryView;
-                }
-                float2 atlasUv = HectonImpostorAtlasUv(input.uv, selectedView);
+                float quality01 = saturate(_HectonGlobalQualityWeight);
+                float interpolationGate = smoothstep(0.22, 0.55, quality01);
+                float blendWeight = saturate(viewBlend * interpolationGate);
+                float2 primaryUv = HectonImpostorAtlasUv(input.uv, primaryView, _HectonImpostorAtlasGrid);
 
-                half4 albedoDepth = SAMPLE_TEXTURE2D(_ImpostorAlbedoDepthAtlas, sampler_ImpostorAlbedoDepthAtlas, atlasUv);
-                half4 normalDepth = SAMPLE_TEXTURE2D(_ImpostorNormalDepthAtlas, sampler_ImpostorNormalDepthAtlas, atlasUv);
-                half atlasAlpha = albedoDepth.a * _BaseColor.a;
-                clip(atlasAlpha - _AlphaClipThreshold);
+                half4 albedoDepthA = SAMPLE_TEXTURE2D(_ImpostorAlbedoDepthAtlas, sampler_ImpostorAlbedoDepthAtlas, primaryUv);
+                half4 normalDepthA = SAMPLE_TEXTURE2D(_ImpostorNormalDepthAtlas, sampler_ImpostorNormalDepthAtlas, primaryUv);
+                half4 albedoDepth = albedoDepthA;
+                half4 normalDepth = normalDepthA;
+                [branch]
+                if (interpolationGate > 0.001)
+                {
+                    float2 secondaryUv = HectonImpostorAtlasUv(input.uv, secondaryView, _HectonImpostorAtlasGrid);
+                    half4 albedoDepthB = SAMPLE_TEXTURE2D(_ImpostorAlbedoDepthAtlas, sampler_ImpostorAlbedoDepthAtlas, secondaryUv);
+                    half4 normalDepthB = SAMPLE_TEXTURE2D(_ImpostorNormalDepthAtlas, sampler_ImpostorNormalDepthAtlas, secondaryUv);
+                    albedoDepth = lerp(albedoDepthA, albedoDepthB, (half)blendWeight);
+                    normalDepth = lerp(normalDepthA, normalDepthB, (half)blendWeight);
+                }
+                half occupancyDepth = albedoDepth.a;
+                clip(occupancyDepth - _AlphaClipThreshold);
                 if (input.fade01 < 0.999h)
                 {
                     float fadeDither = HectonInterleavedGradientNoise(input.positionCS.xy + _HectonImpostorTimeSeconds);
@@ -133,7 +148,8 @@ Shader "Hecton8/Environment/Hecton_OctahedralImpostor"
                 color = MixFog(color, input.fogFactor);
 
                 float deviceDepth = saturate(input.positionCS.z);
-                float depthOffset = saturate(normalDepth.a) * _DepthBias;
+                float decodedDepthMeters = saturate((float)occupancyDepth) * max(0.01, _HectonImpostorDepthScaleMeters);
+                float depthOffset = saturate(decodedDepthMeters * rcp(max(0.01, _HectonImpostorDepthScaleMeters))) * _DepthBias;
             #if UNITY_REVERSED_Z
                 deviceDepth = saturate(deviceDepth - depthOffset);
             #else

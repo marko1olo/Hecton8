@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Unity.Burst;
@@ -1897,9 +1898,8 @@ namespace Hecton8.Economy
         private void OnDisable()
         {
             bool deferHandleClear = _jobScheduled && !_activeJobHandle.IsCompleted;
-            if (_jobScheduled && _activeJobHandle.IsCompleted)
+            if (_jobScheduled && DispatcherJobFence.TryFinalizeCompleted(ref _activeJobHandle))
             {
-                _activeJobHandle.Complete();
                 _jobScheduled = false;
                 PublishCompletedSignals();
             }
@@ -2084,7 +2084,8 @@ namespace Hecton8.Economy
         {
             _playerAupDouble = playerAup;
             _hasExternalPlayerAup = true;
-            _playerAupMeters = (Vector3)(float3)playerAup;
+            float3 playerLocal = AupPrecisionMath.LocalDeltaFloat3(playerAup, HectonFloatingOrigin.CurrentTotalOffsetDouble, float3.zero);
+            _playerAupMeters = new Vector3(playerLocal.x, playerLocal.y, playerLocal.z);
             _playerVelocityMetersPerSecond = velocityMetersPerSecond;
         }
 
@@ -2092,7 +2093,8 @@ namespace Hecton8.Economy
         {
             _baseAupDouble = baseAup;
             _hasExternalBaseAup = true;
-            _baseAupMeters = (Vector3)(float3)baseAup;
+            float3 baseLocal = AupPrecisionMath.LocalDeltaFloat3(baseAup, HectonFloatingOrigin.CurrentTotalOffsetDouble, float3.zero);
+            _baseAupMeters = new Vector3(baseLocal.x, baseLocal.y, baseLocal.z);
         }
 
         public bool ApplyFactionReputationDelta(uint factionHash, float delta)
@@ -2392,7 +2394,9 @@ namespace Hecton8.Economy
             if (!_jobScheduled || !_activeJobHandle.IsCompleted)
                 return;
 
-            _activeJobHandle.Complete();
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _activeJobHandle))
+                return;
+
             _jobScheduled = false;
             PublishCompletedSignals();
         }

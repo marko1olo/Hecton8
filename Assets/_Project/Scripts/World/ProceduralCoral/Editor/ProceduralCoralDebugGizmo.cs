@@ -39,9 +39,6 @@ namespace Hecton8.World.ProceduralCoral.Editor
             for (int i = 0; i < count; i++)
             {
                 CoralDebugSegmentDTO segment = buffers.DebugSegments[i];
-                if (segment.SectorHash == 0u)
-                    continue;
-
                 Gizmos.color = ResolveColor(segment.StateFlags, segment.GenerationDepth);
                 Vector3 start = new Vector3((float)segment.StartAUP.x, (float)segment.StartAUP.y, (float)segment.StartAUP.z);
                 Vector3 end = new Vector3((float)segment.EndAUP.x, (float)segment.EndAUP.y, (float)segment.EndAUP.z);

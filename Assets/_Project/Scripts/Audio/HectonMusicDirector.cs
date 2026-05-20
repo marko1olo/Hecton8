@@ -42,6 +42,7 @@ namespace Hecton8.Audio
         private const float StormDepthAttenuationInv = 0.008333333f;
         private const float AuthoredPressureRangeInv = 0.25f;
         private const float Random24ToUnit = 0.000000059604648f;
+        private const bool ProceduralSynthOwnsMusicPlayback = true;
         private static readonly int _PredatorThreatLayerMask = HectonLayerMasks.CreatureLayerMask;
 
         private static readonly string[] MenuSceneTokens = { "main_menu" };
@@ -433,6 +434,7 @@ namespace Hecton8.Audio
             if (_musicRandomState == 0u)
                 _musicRandomState = 0xA341316Cu;
 
+            EnsureProceduralSynthRuntime();
             BindAuthoredVoicePool();
             ResolveDependencies();
             RefreshSceneFlags(SceneManager.GetActiveScene());
@@ -493,6 +495,22 @@ namespace Hecton8.Audio
         {
             DrainAcousticZoneSignal();
             DrainDirectorAISignals();
+            PublishDynamicMusicScalars(deltaTime);
+            if (ProceduralSynthOwnsMusicPlayback)
+            {
+                UpdateStingerCooldowns(deltaTime);
+                UpdateLayerRouting(deltaTime);
+                FlushPendingStingers();
+                if (_pendingImmediateSelection)
+                {
+                    _pendingImmediateSelection = false;
+                    _playbackState = PlaybackState.Playing;
+                }
+
+                WriteDebugState();
+                return;
+            }
+
             if (!AreRuntimeVoicesReady())
             {
                 WriteDebugState();
@@ -863,6 +881,12 @@ namespace Hecton8.Audio
                 _musicSources[i] = null;
 
             _stingerSource = null;
+            if (ProceduralSynthOwnsMusicPlayback)
+            {
+                EnsureProceduralSynthRuntime();
+                return;
+            }
+
             ResolveVoicePool();
             if (_voicePool == null)
                 return;
@@ -1219,6 +1243,9 @@ namespace Hecton8.Audio
 
         private bool AreRuntimeVoicesReady()
         {
+            if (ProceduralSynthOwnsMusicPlayback)
+                return true;
+
             if (_musicSources == null || _musicSources.Length < MusicVoiceCount || _stingerSource == null)
                 return false;
 
@@ -1229,6 +1256,84 @@ namespace Hecton8.Audio
             }
 
             return true;
+        }
+
+        private void EnsureProceduralSynthRuntime()
+        {
+            if (!ProceduralSynthOwnsMusicPlayback || !Application.isPlaying)
+                return;
+
+            SignalBus<DynamicMusicScalarSignal>.Configure(
+                expectedCapacity: 32,
+                maxFrameSignals: 64,
+                lowTierFrameSignals: 8,
+                laneHash: DynamicMusicScalarSignal.LaneHash);
+            SignalBus<DynamicMusicScalarSignal>.EnsureInitialized();
+        }
+
+        private void PublishDynamicMusicScalars(float deltaTime)
+        {
+            _ = deltaTime;
+            if (!ProceduralSynthOwnsMusicPlayback || !Application.isPlaying)
+                return;
+
+            EnsureProceduralSynthRuntime();
+
+            float rawDepthMeters = ResolveLayerDepthMeters();
+            float tension01 = math.saturate(math.isfinite(_resolvedTension01) ? _resolvedTension01 : 0f);
+            float depthMeters = math.max(0f, math.isfinite(rawDepthMeters) ? rawDepthMeters : 0f);
+            float quality01 = math.saturate(math.isfinite(HomeostasisBrain.GlobalQualityWeight) ? HomeostasisBrain.GlobalQualityWeight : 1f);
+            float damageImpulse01 = math.saturate((_pendingDangerStinger ? 0.35f : 0f) + (_combatLatched ? 0.12f : 0f));
+            PushDynamicMusicSignal(
+                tension01,
+                depthMeters,
+                quality01,
+                damageImpulse01,
+                0f,
+                0f,
+                DynamicMusicScalarSignal.FlagExternalScalars);
+        }
+
+        private void InjectProceduralStinger(StingerKind kind)
+        {
+            EnsureProceduralSynthRuntime();
+
+            float kind01 = (float)kind * 0.5f;
+            float impulse = math.lerp(0.55f, 1f, math.saturate(kind01));
+            float tension01 = math.saturate(math.isfinite(_resolvedTension01) ? _resolvedTension01 : 0f);
+            float pitchKick = math.lerp(0.35f, 1f, math.saturate(math.max(kind01, tension01)));
+            PushDynamicMusicSignal(
+                tension01,
+                ResolveLayerDepthMeters(),
+                math.saturate(math.isfinite(HomeostasisBrain.GlobalQualityWeight) ? HomeostasisBrain.GlobalQualityWeight : 1f),
+                pitchKick,
+                impulse,
+                pitchKick,
+                DynamicMusicScalarSignal.FlagExternalScalars | DynamicMusicScalarSignal.FlagStingerImpulse);
+            _stingerDuckActive = true;
+            StartDuck(_stingerDuckFactor, _stingerDuckAttackSeconds);
+        }
+
+        private void PushDynamicMusicSignal(
+            float tension01,
+            float depthMeters,
+            float quality01,
+            float damageImpulse01,
+            float stingerImpulse01,
+            float pitchKick01,
+            uint flags)
+        {
+            DynamicMusicScalarSignal signal = default;
+            signal.Frame = (uint)math.max(0, Time.frameCount);
+            signal.Flags = flags;
+            signal.Tension01 = math.saturate(math.isfinite(tension01) ? tension01 : 0f);
+            signal.DepthMeters = math.max(0f, math.isfinite(depthMeters) ? depthMeters : 0f);
+            signal.GlobalQualityWeight = math.saturate(math.isfinite(quality01) ? quality01 : 1f);
+            signal.DamageImpulse01 = math.saturate(math.isfinite(damageImpulse01) ? damageImpulse01 : 0f);
+            signal.StingerImpulse01 = math.saturate(math.isfinite(stingerImpulse01) ? stingerImpulse01 : 0f);
+            signal.PitchKick01 = math.saturate(math.isfinite(pitchKick01) ? pitchKick01 : 0f);
+            signal.SourceHash = DynamicMusicScalarSignal.SourceMusicDirectorHash;
+            SignalBus<DynamicMusicScalarSignal>.TryPush(in signal);
         }
 
         private void RefreshLayerThreatSnapshot()
@@ -1799,6 +1904,16 @@ namespace Hecton8.Audio
 
         private void StartBedCue(HectonMusicBiomeProfile profile, HectonMusicClip cue, float targetVolume, float fadeSeconds, bool forceCrossfade)
         {
+            if (ProceduralSynthOwnsMusicPlayback)
+            {
+                PublishDynamicMusicScalars(0f);
+                _activeVoiceIndex = InvalidVoiceIndex;
+                _scheduleWaitWhenSilent = false;
+                _waitTimerSeconds = 0f;
+                _playbackState = PlaybackState.Playing;
+                return;
+            }
+
             int nextVoiceIndex = GetInactiveVoiceIndex();
             if (nextVoiceIndex < 0)
                 nextVoiceIndex = _activeVoiceIndex == 0 ? 1 : 0;
@@ -1828,6 +1943,9 @@ namespace Hecton8.Audio
 
         private void ConfigureVoice(int voiceIndex, HectonMusicBiomeProfile profile, HectonMusicClip cue, AudioClip clip, float initialVolume, bool loop, bool isOverride)
         {
+            if (ProceduralSynthOwnsMusicPlayback)
+                return;
+
             AudioSource source = _musicSources[voiceIndex];
             source.Stop();
             AudioResidencyCache.TouchClip(clip, AudioResidencyDomain.Music, false);
@@ -2328,6 +2446,14 @@ namespace Hecton8.Audio
 
         private bool TryPlayStinger(HectonMusicBiomeProfile profile, StingerKind kind)
         {
+            if (ProceduralSynthOwnsMusicPlayback)
+            {
+                InjectProceduralStinger(kind);
+                HectonMusicBiomeProfile traceProfile = profile != null ? profile : _fallbackProfile;
+                TraceEvent(ResolveStingerTraceLabel(kind), traceProfile, null);
+                return true;
+            }
+
             if (_stingerSource == null)
                 return false;
 
@@ -2538,6 +2664,26 @@ namespace Hecton8.Audio
             _scheduleWaitWhenSilent = false;
             _waitTimerSeconds = 0f;
 
+            if (ProceduralSynthOwnsMusicPlayback)
+            {
+                EnsureProceduralSynthRuntime();
+                PushDynamicMusicSignal(
+                    math.saturate(math.isfinite(_resolvedTension01) ? _resolvedTension01 : 0f),
+                    ResolveLayerDepthMeters(),
+                    math.saturate(math.isfinite(HomeostasisBrain.GlobalQualityWeight) ? HomeostasisBrain.GlobalQualityWeight : 1f),
+                    math.saturate(volume),
+                    math.saturate(volume),
+                    1f,
+                    DynamicMusicScalarSignal.FlagExternalScalars |
+                    DynamicMusicScalarSignal.FlagStingerImpulse |
+                    DynamicMusicScalarSignal.FlagOverrideImpulse);
+
+                _activeVoiceIndex = InvalidVoiceIndex;
+                _playbackState = PlaybackState.Override;
+                TraceEvent("Override:Start", null, null);
+                return;
+            }
+
             int nextVoiceIndex = GetInactiveVoiceIndex();
             if (nextVoiceIndex < 0)
                 nextVoiceIndex = _activeVoiceIndex == 0 ? 1 : 0;
@@ -2593,6 +2739,13 @@ namespace Hecton8.Audio
             _scheduleWaitWhenSilent = false;
             _waitTimerSeconds = 0f;
             _playbackState = PlaybackState.Silent;
+
+            if (ProceduralSynthOwnsMusicPlayback)
+            {
+                _stingerDuckActive = false;
+                StartDuck(1f, _stingerDuckReleaseSeconds);
+                return;
+            }
 
             if (_stingerSource != null)
             {

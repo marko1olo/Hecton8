@@ -718,7 +718,7 @@ namespace Hecton8.Gameplay
         public bool HasBattery => _installedBattery != null;
 
         /// <summary>Current battery charge level (0-1). Returns 0 if no battery.</summary>
-        public float BatteryCharge => _installedBattery != null ? _batteryCharge : 0f;
+        public float BatteryCharge => _installedBattery != null ? GetRuntimeBatteryNormalized(_batteryCharge) : 0f;
 
         /// <summary>The battery item currently installed (null if none).</summary>
         public ItemData BatteryItem => _installedBattery;
@@ -734,6 +734,7 @@ namespace Hecton8.Gameplay
             ItemData removed = _installedBattery;
             _installedBattery = null;
             _batteryCharge = 0f;
+            SetRuntimeBatteryNormalized(0f);
 
             UpdateBatteryVisuals();
             UpdatePowerIndicator();
@@ -751,6 +752,7 @@ namespace Hecton8.Gameplay
 
             _installedBattery = battery;
             _batteryCharge = Mathf.Clamp01(charge);
+            SetRuntimeBatteryNormalized(_batteryCharge);
 
             UpdateBatteryVisuals();
             UpdatePowerIndicator();
@@ -770,15 +772,16 @@ namespace Hecton8.Gameplay
                 return;
 
             _powerIndicatorRenderer.GetPropertyBlock(_mpb);
+            float currentCharge = BatteryCharge;
             float flickerScalar = 1f;
             if (TryGetToolBrownoutFlicker(out float brownoutFlicker))
                 flickerScalar = Mathf.Clamp(brownoutFlicker, 0f, 1f);
 
-            if (_installedBattery == null || _batteryCharge <= 0f)
+            if (_installedBattery == null || currentCharge <= 0f)
             {
                 _mpb.SetColor(_EmissionColorID, Color.black);
             }
-            else if (_batteryCharge <= 0.2f)
+            else if (currentCharge <= 0.2f)
             {
                 _mpb.SetColor(_EmissionColorID, new Color(1f, 0.3f, 0f) * flickerScalar);
             }
@@ -788,6 +791,11 @@ namespace Hecton8.Gameplay
             }
 
             _powerIndicatorRenderer.SetPropertyBlock(_mpb);
+        }
+
+        internal override float ResolveModularBatteryNormalized()
+        {
+            return _installedBattery != null ? BatteryCharge : 0f;
         }
 
         private void Awake()
@@ -836,6 +844,7 @@ namespace Hecton8.Gameplay
 
         public override void OnUnequip()
         {
+            SyncScannerChargeMirrorFromCentral();
             base.OnUnequip();
             PulseActive = false;
             ResetScientificFocus();
@@ -1118,11 +1127,17 @@ namespace Hecton8.Gameplay
 
         public override void OnDespawn()
         {
+            SyncScannerChargeMirrorFromCentral();
             UnregisterScientificLanes();
             ResetScientificFocus();
             PublishInactiveScannerTuningSignal();
             ClearCachedRuntimeServicesCold();
             base.OnDespawn();
+        }
+
+        private void SyncScannerChargeMirrorFromCentral()
+        {
+            _batteryCharge = _installedBattery != null ? BatteryCharge : 0f;
         }
 
         private void OnApplicationQuit()
@@ -3238,8 +3253,7 @@ namespace Hecton8.Gameplay
                 RangeSq = safeRange * safeRange,
                 MinDot = minDot
             };
-            JobHandle handle = job.Schedule();
-            handle.Complete();
+            job.Execute();
 
             LoreCandidateResult result = _scientificLoreCandidateResult[0];
             if (result.Found == 0 || result.Hash == 0u)

@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System;
 using System.IO;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
@@ -24,11 +25,27 @@ namespace Hecton8.Editor
         private Slider _reelSpeed;
         private SliderInt _iterations;
         private Label _status;
+        private Label _maxTensionReadout;
+        private Label _computeTimeReadout;
+        private Label _nodeIterationReadout;
+        private Label _stateHashReadout;
+        private double _nextTelemetryRefreshTime;
 
         [MenuItem("Hecton8/Physics/SHINOBU 143 Cable Tuner")]
         public static void Open()
         {
             GetWindow<Shinobu143CablePhysicsTunerWindow>("SHINOBU 143 Cable");
+        }
+
+        private void OnEnable()
+        {
+            EditorApplication.update -= RefreshTelemetryReadout;
+            EditorApplication.update += RefreshTelemetryReadout;
+        }
+
+        private void OnDisable()
+        {
+            EditorApplication.update -= RefreshTelemetryReadout;
         }
 
         public void CreateGUI()
@@ -47,6 +64,10 @@ namespace Hecton8.Editor
             _rockFriction = BuildSlider("Rock Friction", 0f, 1f, 0.58f);
             _reelSpeed = BuildSlider("Reel Speed", 0.5f, 40f, 18f);
             _status = new Label("Vault not sampled.");
+            _maxTensionReadout = new Label("Max tension: --");
+            _computeTimeReadout = new Label("Compute us: --");
+            _nodeIterationReadout = new Label("Nodes / iterations: --");
+            _stateHashReadout = new Label("State hash: --");
 
             root.Add(_quality);
             root.Add(_gravity);
@@ -58,11 +79,17 @@ namespace Hecton8.Editor
             root.Add(_reelSpeed);
             root.Add(BuildButton("Apply Tuning", ApplyTuning));
             root.Add(BuildButton("Reload cable_materials.csv", ReloadCsv));
+            root.Add(BuildButton("Dump Cable Surgeon Ring", DumpCableSurgeon));
+            root.Add(_maxTensionReadout);
+            root.Add(_computeTimeReadout);
+            root.Add(_nodeIterationReadout);
+            root.Add(_stateHashReadout);
             root.Add(_status);
 
             _quality.RegisterValueChangedCallback(evt =>
                 HomeostasisBrain.SetForcedGlobalQualityWeightForTuner(math.saturate(evt.newValue), true));
             PullFromVault();
+            RefreshTelemetryReadout();
         }
 
         private static Slider BuildSlider(string label, float low, float high, float value)
@@ -157,8 +184,44 @@ namespace Hecton8.Editor
                 NativeArrayOptions.ClearMemory).Resolve(vault);
             int parsed = CableMaterialCsvParser.Parse(bytes.AsSpan(), legacyMaterials);
             if (shinobuMaterials.IsCreated)
-                CableMaterialCsvParser.Parse(bytes.AsSpan(), shinobuMaterials);
+                CableMaterialCsvParser.ParseHashTable(bytes.AsSpan(), shinobuMaterials);
             _status.text = parsed > 0 ? "CSV materials applied." : "CSV parsed no rows.";
+        }
+
+        private void DumpCableSurgeon()
+        {
+            bool dumped = TetherAupRuntimeIntrospection.TryDumpCableSurgeon(0x5348554Eu);
+            _status.text = dumped ? "Cable surgeon dump written." : "Cable surgeon dump unavailable.";
+        }
+
+        private void RefreshTelemetryReadout()
+        {
+            if (_maxTensionReadout == null ||
+                _computeTimeReadout == null ||
+                _nodeIterationReadout == null ||
+                _stateHashReadout == null)
+            {
+                return;
+            }
+
+            double now = EditorApplication.timeSinceStartup;
+            if (now < _nextTelemetryRefreshTime)
+                return;
+
+            _nextTelemetryRefreshTime = now + 0.25d;
+            if (!TetherAupRuntimeIntrospection.TrySampleLatestTelemetry(out TetherAupTelemetryEntry telemetry))
+            {
+                _maxTensionReadout.text = "Max tension: --";
+                _computeTimeReadout.text = "Compute us: --";
+                _nodeIterationReadout.text = "Nodes / iterations: --";
+                _stateHashReadout.text = "State hash: --";
+                return;
+            }
+
+            _maxTensionReadout.text = "Max tension: " + telemetry.MaxTension.ToString("F2");
+            _computeTimeReadout.text = "Compute us: " + telemetry.CpuMicroseconds.ToString("F2");
+            _nodeIterationReadout.text = "Nodes / iterations: " + telemetry.NodeCount + " / " + telemetry.IterationCount;
+            _stateHashReadout.text = "State hash: 0x" + telemetry.StateHash.ToString("X8");
         }
 
         private static bool TryResolveTuning(out NativeArray<VerletCableTuningDTO> tuning)

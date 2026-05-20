@@ -4,7 +4,6 @@
 using Hecton8.Input;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
-using Hecton8.Physics;
 using System;
 using System.IO;
 #if HECTON8_MMF_AVAILABLE
@@ -123,15 +122,28 @@ namespace Hecton8.Core
         private static readonly QueryParameters XRLookAtDisabledQueryParameters = new QueryParameters(HectonLayerMasks.NoLayers, false, QueryTriggerInteraction.Ignore);
         private static readonly RaycastCommand DisabledXRLookAtRayCommand = new RaycastCommand(Vector3.zero, Vector3.forward, XRLookAtDisabledQueryParameters, 0.01f);
 
-        [StructLayout(LayoutKind.Sequential, Size = BufferedActionEntrySizeBytes)]
+        [StructLayout(LayoutKind.Explicit, Size = BufferedActionEntrySizeBytes)]
         private struct BufferedActionEntry
         {
+            [FieldOffset(0)]
             public int Frame;
+
+            [FieldOffset(4)]
             private uint _pad0;
+
+            [FieldOffset(8)]
             public PlayerBufferedAction Action;
+
+            [FieldOffset(9)]
             private byte _pad1;
+
+            [FieldOffset(10)]
             private byte _pad2;
+
+            [FieldOffset(11)]
             private byte _pad3;
+
+            [FieldOffset(12)]
             private uint _pad4;
         }
 
@@ -177,18 +189,18 @@ namespace Hecton8.Core
         private InputAction _pollVerticalMovementAction;
         private InputAction _pollScrollWheelAction;
         private IDataVault _dataVault;
-        private VaultBufferHandle<InputStateDTO> _currentInputDtoHandle;
-        private VaultBufferHandle<InputStateDTO> _inputJournalHandle;
-        private VaultBufferHandle<InputState> _inputStateBridgeRingHandle;
-        private VaultBufferHandle<uint> _buttonMaskWindowHandle;
-        private VaultBufferHandle<uint> _inputBlockMaskHandle;
-        private VaultBufferHandle<InputProfileDTO> _inputProfileHandle;
-        private VaultBufferHandle<InputTelemetryEntryDTO> _inputTelemetryHandle;
-        private VaultBufferHandle<InputState> _inputReplaySnapshotHandle;
-        private VaultBufferHandle<HapticCommandDTO> _hapticCommandDtoHandle;
-        private VaultBufferHandle<XRInputState> _xrInputStatesHandle;
-        private VaultBufferHandle<RaycastCommand> _xrLookAtRayCommandsHandle;
-        private VaultBufferHandle<byte> _inputProfileCsvScratchHandle;
+        private VaultGenerationHandle<InputStateDTO> _currentInputDtoHandle;
+        private VaultGenerationHandle<InputStateDTO> _inputJournalHandle;
+        private VaultGenerationHandle<InputState> _inputStateBridgeRingHandle;
+        private VaultGenerationHandle<uint> _buttonMaskWindowHandle;
+        private VaultGenerationHandle<uint> _inputBlockMaskHandle;
+        private VaultGenerationHandle<InputProfileDTO> _inputProfileHandle;
+        private VaultGenerationHandle<InputTelemetryEntryDTO> _inputTelemetryHandle;
+        private VaultGenerationHandle<InputState> _inputReplaySnapshotHandle;
+        private VaultGenerationHandle<HapticCommandDTO> _hapticCommandDtoHandle;
+        private VaultGenerationHandle<XRInputState> _xrInputStatesHandle;
+        private VaultGenerationHandle<RaycastCommand> _xrLookAtRayCommandsHandle;
+        private VaultGenerationHandle<byte> _inputProfileCsvScratchHandle;
         private FileStream _inputReplayStream;
         private FileSystemWatcher _inputProfileCsvWatcher;
 #if HECTON8_MMF_AVAILABLE
@@ -548,8 +560,7 @@ namespace Hecton8.Core
 
         public bool TryGetInputState(uint frame, out InputState state)
         {
-            NativeArray<InputState> inputStateRing = _inputStateBridgeRingHandle.Resolve(_dataVault);
-            if (!inputStateRing.IsCreated)
+            if (!TryResolveInputBuffer(in _inputStateBridgeRingHandle, DeterministicInputRingCapacity, out NativeArray<InputState> inputStateRing))
             {
                 state = default;
                 return false;
@@ -571,9 +582,8 @@ namespace Hecton8.Core
             if (_lastDeterministicInputFrame == currentFrame)
                 return;
 
-            NativeArray<InputStateDTO> inputJournal = _inputJournalHandle.Resolve(_dataVault);
-            NativeArray<InputState> inputStateRing = _inputStateBridgeRingHandle.Resolve(_dataVault);
-            if (!inputJournal.IsCreated || !inputStateRing.IsCreated)
+            if (!TryResolveInputBuffer(in _inputJournalHandle, DeterministicInputRingCapacity, out NativeArray<InputStateDTO> inputJournal) ||
+                !TryResolveInputBuffer(in _inputStateBridgeRingHandle, DeterministicInputRingCapacity, out NativeArray<InputState> inputStateRing))
                 return;
 
             _lastDeterministicInputFrame = currentFrame;
@@ -649,16 +659,15 @@ namespace Hecton8.Core
 
         private void WriteCurrentInputDto(in InputStateDTO inputStateDto)
         {
-            if (_dataVault == null || !_currentInputDtoHandle.IsCreated)
+            if (!TryResolveInputBuffer(in _currentInputDtoHandle, 1, out NativeArray<InputStateDTO> currentInputDto))
                 return;
 
-            _currentInputDtoHandle.GetElementAsRef(_dataVault, 0) = inputStateDto;
+            currentInputDto[0] = inputStateDto;
         }
 
         private void WriteButtonMaskWindow(uint buttonMask)
         {
-            NativeArray<uint> window = _buttonMaskWindowHandle.Resolve(_dataVault);
-            if (!window.IsCreated)
+            if (!TryResolveInputBuffer(in _buttonMaskWindowHandle, ButtonMaskWindowCapacity, out NativeArray<uint> window))
                 return;
 
             int writeIndex = _buttonMaskWindowWriteIndex;
@@ -808,7 +817,7 @@ namespace Hecton8.Core
             if (UnsafeUtility.SizeOf<BufferedActionEntry>() != BufferedActionEntrySizeBytes)
                 Debug.LogError("[InputDispatcher] BufferedActionEntry ABI violation; expected 16 bytes with natural ARM64 alignment.");
 #endif
-            if (_deterministicVaultBuffersReady && _dataVault != null)
+            if (_deterministicVaultBuffersReady && ValidateDeterministicInputBuffers())
                 return;
 
             if (_dataVault == null)
@@ -818,68 +827,69 @@ namespace Hecton8.Core
             if (vault == null)
                 return;
 
-            _currentInputDtoHandle = vault.GetBufferHandle<InputStateDTO>(
-                BufferID.ShinobuInputCurrentDto,
-                1,
-                SystemID.CoreDeterminism,
-                NativeArrayOptions.UninitializedMemory);
-            _inputJournalHandle = vault.GetBufferHandle<InputStateDTO>(
-                BufferID.ShinobuInputJournalRing,
-                DeterministicInputRingCapacity,
-                SystemID.CoreDeterminism,
-                NativeArrayOptions.UninitializedMemory);
-            _inputStateBridgeRingHandle = vault.GetBufferHandle<InputState>(
-                BufferID.ShinobuInputStateBridgeRing,
-                DeterministicInputRingCapacity,
-                SystemID.CoreDeterminism,
-                NativeArrayOptions.UninitializedMemory);
-            _buttonMaskWindowHandle = vault.GetBufferHandle<uint>(
-                BufferID.ShinobuInputButtonMaskWindow,
-                ButtonMaskWindowCapacity,
-                SystemID.CoreDeterminism,
-                NativeArrayOptions.UninitializedMemory);
-            _inputBlockMaskHandle = vault.GetBufferHandle<uint>(
-                BufferID.ShinobuInputBlockMask,
-                1,
-                SystemID.CoreDeterminism,
-                NativeArrayOptions.UninitializedMemory);
-            _inputProfileHandle = vault.GetBufferHandle<InputProfileDTO>(
-                BufferID.ShinobuInputProfile,
-                1,
-                SystemID.CoreDeterminism,
-                NativeArrayOptions.UninitializedMemory);
-            _inputTelemetryHandle = vault.GetBufferHandle<InputTelemetryEntryDTO>(
-                BufferID.ShinobuInputTelemetryRing,
-                InputBlackBoxCapacity,
-                SystemID.CoreDeterminism,
-                NativeArrayOptions.UninitializedMemory);
-            _inputReplaySnapshotHandle = vault.GetBufferHandle<InputState>(
-                BufferID.ShinobuInputReplaySnapshot,
-                DeterministicInputRingCapacity,
-                SystemID.CoreDeterminism,
-                NativeArrayOptions.UninitializedMemory);
-            _hapticCommandDtoHandle = vault.GetBufferHandle<HapticCommandDTO>(
-                BufferID.ShinobuInputHapticCommands,
-                HapticCommandDtoCapacity,
-                SystemID.CoreDeterminism,
-                NativeArrayOptions.UninitializedMemory);
-            _inputProfileCsvScratchHandle = vault.GetBufferHandle<byte>(
-                BufferID.ShinobuInputCsvScratch,
-                4096,
-                SystemID.CoreDeterminism,
-                NativeArrayOptions.UninitializedMemory);
+            bool ready =
+                TryResolveOrAcquireInputBuffer(
+                    ref _currentInputDtoHandle,
+                    BufferID.ShinobuInputCurrentDto,
+                    1,
+                    NativeArrayOptions.UninitializedMemory,
+                    out _) &&
+                TryResolveOrAcquireInputBuffer(
+                    ref _inputJournalHandle,
+                    BufferID.ShinobuInputJournalRing,
+                    DeterministicInputRingCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    out _) &&
+                TryResolveOrAcquireInputBuffer(
+                    ref _inputStateBridgeRingHandle,
+                    BufferID.ShinobuInputStateBridgeRing,
+                    DeterministicInputRingCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    out _) &&
+                TryResolveOrAcquireInputBuffer(
+                    ref _buttonMaskWindowHandle,
+                    BufferID.ShinobuInputButtonMaskWindow,
+                    ButtonMaskWindowCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    out _) &&
+                TryResolveOrAcquireInputBuffer(
+                    ref _inputBlockMaskHandle,
+                    BufferID.ShinobuInputBlockMask,
+                    1,
+                    NativeArrayOptions.UninitializedMemory,
+                    out _) &&
+                TryResolveOrAcquireInputBuffer(
+                    ref _inputProfileHandle,
+                    BufferID.ShinobuInputProfile,
+                    1,
+                    NativeArrayOptions.UninitializedMemory,
+                    out _) &&
+                TryResolveOrAcquireInputBuffer(
+                    ref _inputTelemetryHandle,
+                    BufferID.ShinobuInputTelemetryRing,
+                    InputBlackBoxCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    out _) &&
+                TryResolveOrAcquireInputBuffer(
+                    ref _inputReplaySnapshotHandle,
+                    BufferID.ShinobuInputReplaySnapshot,
+                    DeterministicInputRingCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    out _) &&
+                TryResolveOrAcquireInputBuffer(
+                    ref _hapticCommandDtoHandle,
+                    BufferID.ShinobuInputHapticCommands,
+                    HapticCommandDtoCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    out _) &&
+                TryResolveOrAcquireInputBuffer(
+                    ref _inputProfileCsvScratchHandle,
+                    BufferID.ShinobuInputCsvScratch,
+                    4096,
+                    NativeArrayOptions.UninitializedMemory,
+                    out _);
 
-            _deterministicVaultBuffersReady =
-                _currentInputDtoHandle.IsCreated &&
-                _inputJournalHandle.IsCreated &&
-                _inputStateBridgeRingHandle.IsCreated &&
-                _buttonMaskWindowHandle.IsCreated &&
-                _inputBlockMaskHandle.IsCreated &&
-                _inputProfileHandle.IsCreated &&
-                _inputTelemetryHandle.IsCreated &&
-                _inputReplaySnapshotHandle.IsCreated &&
-                _hapticCommandDtoHandle.IsCreated &&
-                _inputProfileCsvScratchHandle.IsCreated;
+            _deterministicVaultBuffersReady = ready;
 
             if (!_deterministicVaultBuffersReady)
                 return;
@@ -902,40 +912,114 @@ namespace Hecton8.Core
 
         private void DisposeDeterministicInputNativeBuffers(JobHandle dependency)
         {
-            _currentInputDtoHandle = default;
-            _inputJournalHandle = default;
-            _inputStateBridgeRingHandle = default;
-            _buttonMaskWindowHandle = default;
-            _inputBlockMaskHandle = default;
-            _inputProfileHandle = default;
-            _inputTelemetryHandle = default;
-            _inputReplaySnapshotHandle = default;
-            _hapticCommandDtoHandle = default;
-            _xrInputStatesHandle = default;
-            _xrLookAtRayCommandsHandle = default;
-            _inputProfileCsvScratchHandle = default;
+            ReleaseInputVaultHandles(_dataVault);
             _dataVault = null;
             _deterministicVaultBuffersReady = false;
             _deterministicVaultBuffersCleared = false;
             _xrVaultBuffersCleared = false;
         }
 
-        private void ClearVaultBuffer<T>(ref VaultBufferHandle<T> handle) where T : struct
+        private bool ValidateDeterministicInputBuffers()
         {
+            return TryResolveInputBuffer(in _currentInputDtoHandle, 1, out _) &&
+                   TryResolveInputBuffer(in _inputJournalHandle, DeterministicInputRingCapacity, out _) &&
+                   TryResolveInputBuffer(in _inputStateBridgeRingHandle, DeterministicInputRingCapacity, out _) &&
+                   TryResolveInputBuffer(in _buttonMaskWindowHandle, ButtonMaskWindowCapacity, out _) &&
+                   TryResolveInputBuffer(in _inputBlockMaskHandle, 1, out _) &&
+                   TryResolveInputBuffer(in _inputProfileHandle, 1, out _) &&
+                   TryResolveInputBuffer(in _inputTelemetryHandle, InputBlackBoxCapacity, out _) &&
+                   TryResolveInputBuffer(in _inputReplaySnapshotHandle, DeterministicInputRingCapacity, out _) &&
+                   TryResolveInputBuffer(in _hapticCommandDtoHandle, HapticCommandDtoCapacity, out _) &&
+                   TryResolveInputBuffer(in _inputProfileCsvScratchHandle, 4096, out _);
+        }
+
+        private bool TryResolveOrAcquireInputBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
+        {
+            if (TryResolveInputBuffer(in handle, requiredLength, out buffer))
+                return true;
+
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
+
             IDataVault vault = _dataVault;
-            void* ptr = handle.ResolvePointer(vault);
-            if (ptr == null)
+            if (vault == null)
+                return false;
+
+            handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.CoreDeterminism,
+                options);
+
+            return TryResolveInputBuffer(in handle, requiredLength, out buffer);
+        }
+
+        private bool TryResolveInputBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                handle.BufferID == 0u ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private void ClearVaultBuffer<T>(ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (!TryResolveInputBuffer(in handle, 1, out NativeArray<T> buffer))
                 return;
 
-            UnsafeUtility.MemClear(ptr, (long)handle.Length * UnsafeUtility.SizeOf<T>());
+            UnsafeUtility.MemClear(
+                NativeArrayUnsafeUtility.GetUnsafePtr(buffer),
+                (long)buffer.Length * UnsafeUtility.SizeOf<T>());
+        }
+
+        private void ReleaseInputVaultHandles(IDataVault vault)
+        {
+            ReleaseVaultHandle(vault, ref _currentInputDtoHandle);
+            ReleaseVaultHandle(vault, ref _inputJournalHandle);
+            ReleaseVaultHandle(vault, ref _inputStateBridgeRingHandle);
+            ReleaseVaultHandle(vault, ref _buttonMaskWindowHandle);
+            ReleaseVaultHandle(vault, ref _inputBlockMaskHandle);
+            ReleaseVaultHandle(vault, ref _inputProfileHandle);
+            ReleaseVaultHandle(vault, ref _inputTelemetryHandle);
+            ReleaseVaultHandle(vault, ref _inputReplaySnapshotHandle);
+            ReleaseVaultHandle(vault, ref _hapticCommandDtoHandle);
+            ReleaseVaultHandle(vault, ref _xrInputStatesHandle);
+            ReleaseVaultHandle(vault, ref _xrLookAtRayCommandsHandle);
+            ReleaseVaultHandle(vault, ref _inputProfileCsvScratchHandle);
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (vault != null && handle.BufferID != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         private void InitializeDefaultInputProfile()
         {
-            if (_dataVault == null || !_inputProfileHandle.IsCreated)
+            if (!TryResolveInputBuffer(in _inputProfileHandle, 1, out NativeArray<InputProfileDTO> profiles))
                 return;
 
-            ref InputProfileDTO profile = ref _inputProfileHandle.GetElementAsRef(_dataVault, 0);
+            InputProfileDTO profile = profiles[0];
             profile.InnerDeadzone = DefaultInnerDeadzone;
             profile.OuterDeadzone = DefaultOuterDeadzone;
             profile.MoveExponent = DefaultMoveExponent;
@@ -945,6 +1029,7 @@ namespace Hecton8.Core
             profile.HapticDispatchIntervalSeconds = ThermalHapticDispatchIntervalSeconds;
             profile.HapticThermalAmplitudeScale = DefaultHapticThermalAmplitudeScale;
             profile.Flags = 0u;
+            profiles[0] = profile;
 
             lock (_inputProfileCsvStageGate)
             {
@@ -1118,7 +1203,7 @@ namespace Hecton8.Core
 
         private bool ApplyStagedInputProfileCsvToVault()
         {
-            if (_dataVault == null || !_inputProfileHandle.IsCreated)
+            if (!TryResolveInputBuffer(in _inputProfileHandle, 1, out NativeArray<InputProfileDTO> profiles))
                 return false;
 
             InputProfileDTO stagedProfile;
@@ -1132,8 +1217,7 @@ namespace Hecton8.Core
                 stagedProfile = _stagedInputProfileCsv;
             }
 
-            ref InputProfileDTO target = ref _inputProfileHandle.GetElementAsRef(_dataVault, 0);
-            target = stagedProfile;
+            profiles[0] = stagedProfile;
             _inputProfileCsvAppliedVersion = stagedVersion;
             return true;
         }
@@ -1274,8 +1358,7 @@ namespace Hecton8.Core
 
         private void WriteDeterministicInputBlackBox(in InputState state, uint currentInputSchemeHash)
         {
-            NativeArray<InputTelemetryEntryDTO> telemetry = _inputTelemetryHandle.Resolve(_dataVault);
-            if (!telemetry.IsCreated)
+            if (!TryResolveInputBuffer(in _inputTelemetryHandle, InputBlackBoxCapacity, out NativeArray<InputTelemetryEntryDTO> telemetry))
                 return;
 
             int writeIndex = _deterministicBlackBoxWriteIndex;
@@ -1316,15 +1399,23 @@ namespace Hecton8.Core
 
         private void StageInputReplaySnapshot()
         {
-            NativeArray<InputState> inputStateRing = _inputStateBridgeRingHandle.Resolve(_dataVault);
-            NativeArray<InputState> inputReplaySnapshot = _inputReplaySnapshotHandle.Resolve(_dataVault);
-            if (!inputStateRing.IsCreated || !inputReplaySnapshot.IsCreated || _inputReplaySignal == null)
+            if (!TryResolveInputBuffer(in _inputStateBridgeRingHandle, DeterministicInputRingCapacity, out NativeArray<InputState> inputStateRing) ||
+                !TryResolveInputBuffer(in _inputReplaySnapshotHandle, DeterministicInputRingCapacity, out NativeArray<InputState> inputReplaySnapshot) ||
+                _inputReplaySignal == null)
                 return;
 
             lock (_inputReplayGate)
             {
                 for (int i = 0; i < DeterministicInputRingCapacity; i++)
                     inputReplaySnapshot[i] = inputStateRing[i];
+
+#if HECTON8_MMF_AVAILABLE
+                if (_inputReplayPointer != null)
+                {
+                    void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(inputReplaySnapshot);
+                    UnsafeUtility.MemCpy(_inputReplayPointer + InputReplayHeaderBytes, source, InputReplayPayloadBytes);
+                }
+#endif
             }
 
             Interlocked.Exchange(ref _inputReplayWritePending, 1);
@@ -1471,11 +1562,8 @@ namespace Hecton8.Core
                     MemoryMappedViewAccessor accessor = _inputReplayAccessor;
                     lock (_inputReplayGate)
                     {
-                        if (_inputReplayPointer == null || !_inputReplaySnapshotHandle.IsCreated || _inputReplaySnapshotHandle.ptr == null)
+                        if (_inputReplayPointer == null)
                             continue;
-
-                        void* source = _inputReplaySnapshotHandle.ptr;
-                        UnsafeUtility.MemCpy(_inputReplayPointer + InputReplayHeaderBytes, source, InputReplayPayloadBytes);
                     }
 
                     accessor?.Flush();
@@ -1491,8 +1579,7 @@ namespace Hecton8.Core
 
         private void DumpDeterministicInputBlackBox()
         {
-            NativeArray<InputTelemetryEntryDTO> telemetry = _inputTelemetryHandle.Resolve(_dataVault);
-            if (!telemetry.IsCreated)
+            if (!TryResolveInputBuffer(in _inputTelemetryHandle, InputBlackBoxCapacity, out NativeArray<InputTelemetryEntryDTO> telemetry))
                 return;
 
             try
@@ -1617,8 +1704,7 @@ namespace Hecton8.Core
             if (buttonBit == 0u)
                 return false;
 
-            NativeArray<uint> window = _buttonMaskWindowHandle.Resolve(_dataVault);
-            if (!window.IsCreated)
+            if (!TryResolveInputBuffer(in _buttonMaskWindowHandle, ButtonMaskWindowCapacity, out NativeArray<uint> window))
                 return false;
 
             int frameCount = math.clamp(frames, 1, ButtonMaskWindowCapacity);
@@ -1641,10 +1727,10 @@ namespace Hecton8.Core
         public bool TryGetCurrentInputStateDto(out InputStateDTO state)
         {
             state = default;
-            if (_dataVault == null || !_currentInputDtoHandle.IsCreated)
+            if (!TryResolveInputBuffer(in _currentInputDtoHandle, 1, out NativeArray<InputStateDTO> currentInputDto))
                 return false;
 
-            state = _currentInputDtoHandle.GetElementAsReadOnlyRef(_dataVault, 0);
+            state = currentInputDto[0];
             return true;
         }
 
@@ -1655,10 +1741,10 @@ namespace Hecton8.Core
 
         public void SetInputBlockMask(uint mask)
         {
-            if (_dataVault == null || !_inputBlockMaskHandle.IsCreated)
+            if (!TryResolveInputBuffer(in _inputBlockMaskHandle, 1, out NativeArray<uint> inputBlockMask))
                 return;
 
-            _inputBlockMaskHandle.GetElementAsRef(_dataVault, 0) = mask;
+            inputBlockMask[0] = mask;
         }
 
         /// <inheritdoc />
@@ -2135,7 +2221,19 @@ namespace Hecton8.Core
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
                 _playerContext = currentService as IPlayerRuntimeContext;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                ReleaseInputVaultHandles(previousService as IDataVault ?? _dataVault);
+                _dataVault = currentService as IDataVault;
+                _deterministicVaultBuffersReady = false;
+                _deterministicVaultBuffersCleared = false;
+                _xrVaultBuffersCleared = false;
+            }
         }
 
         private void RefreshCachedPlayerRuntimeContext()
@@ -2234,10 +2332,10 @@ namespace Hecton8.Core
             fallback.HapticDispatchIntervalSeconds = ThermalHapticDispatchIntervalSeconds;
             fallback.HapticThermalAmplitudeScale = DefaultHapticThermalAmplitudeScale;
 
-            if (_dataVault == null || !_inputProfileHandle.IsCreated)
+            if (!TryResolveInputBuffer(in _inputProfileHandle, 1, out NativeArray<InputProfileDTO> profiles))
                 return fallback;
 
-            InputProfileDTO profile = _inputProfileHandle.GetElementAsReadOnlyRef(_dataVault, 0);
+            InputProfileDTO profile = profiles[0];
             if (!math.isfinite(profile.InnerDeadzone) ||
                 !math.isfinite(profile.OuterDeadzone) ||
                 !math.isfinite(profile.MoveExponent) ||
@@ -2262,10 +2360,10 @@ namespace Hecton8.Core
 
         private uint ReadInputBlockMask()
         {
-            if (_dataVault == null || !_inputBlockMaskHandle.IsCreated)
+            if (!TryResolveInputBuffer(in _inputBlockMaskHandle, 1, out NativeArray<uint> inputBlockMask))
                 return 0u;
 
-            return _inputBlockMaskHandle.GetElementAsReadOnlyRef(_dataVault, 0);
+            return inputBlockMask[0];
         }
 
         private void ApplyInputBlockMask(ref PlayerInputState state, uint blockMask)
@@ -2401,7 +2499,7 @@ namespace Hecton8.Core
 
         private static bool ApplyAutomationOverride(ref PlayerInputState state, uint currentFrame)
         {
-            if (!PhysicsDeterminismSignals.TryConsumeLatestInputOverride(currentFrame, 2u, out InputSignal overrideSignal))
+            if (!CoreDeterminismSignals.TryConsumeLatestInputOverride(currentFrame, 2u, out InputSignal overrideSignal))
                 return false;
 
             state.MoveDelta = new Vector2(overrideSignal.MoveDelta.x, overrideSignal.MoveDelta.y);
@@ -2437,8 +2535,8 @@ namespace Hecton8.Core
 
         private bool HasXRRuntimeStateToClear()
         {
-            return _xrInputStatesHandle.IsCreated ||
-                   _xrLookAtRayCommandsHandle.IsCreated ||
+            return _xrInputStatesHandle.BufferID != 0u ||
+                   _xrLookAtRayCommandsHandle.BufferID != 0u ||
                    (_xrRuntimeFlags & XRRuntimeFlagsAny) != 0u ||
                    _lastXRLookAtPhysicsQueryFrame >= 0 ||
                    _lastXRLookAtHitFrame >= 0 ||
@@ -2457,23 +2555,21 @@ namespace Hecton8.Core
             if (vault == null)
                 return;
 
-            if (!_xrInputStatesHandle.IsCreated)
-            {
-                _xrInputStatesHandle = vault.GetBufferHandle<XRInputState>(
-                    BufferID.ShinobuInputXRInputStates,
-                    XRInputStateCapacity,
-                    SystemID.CoreDeterminism,
-                    NativeArrayOptions.UninitializedMemory);
-            }
+            bool statesReady = TryResolveOrAcquireInputBuffer(
+                ref _xrInputStatesHandle,
+                BufferID.ShinobuInputXRInputStates,
+                XRInputStateCapacity,
+                NativeArrayOptions.UninitializedMemory,
+                out _);
+            bool commandsReady = TryResolveOrAcquireInputBuffer(
+                ref _xrLookAtRayCommandsHandle,
+                BufferID.ShinobuInputXRLookAtRayCommands,
+                XRLookAtCommandCapacity,
+                NativeArrayOptions.UninitializedMemory,
+                out _);
 
-            if (!_xrLookAtRayCommandsHandle.IsCreated)
-            {
-                _xrLookAtRayCommandsHandle = vault.GetBufferHandle<RaycastCommand>(
-                    BufferID.ShinobuInputXRLookAtRayCommands,
-                    XRLookAtCommandCapacity,
-                    SystemID.CoreDeterminism,
-                    NativeArrayOptions.UninitializedMemory);
-            }
+            if (!statesReady || !commandsReady)
+                return;
 
             if (_xrVaultBuffersCleared)
                 return;
@@ -2481,7 +2577,7 @@ namespace Hecton8.Core
             ClearVaultBuffer(ref _xrInputStatesHandle);
             ClearVaultBuffer(ref _xrLookAtRayCommandsHandle);
             _xrVaultBuffersCleared = true;
-            if (_xrLookAtRayCommandsHandle.IsCreated)
+            if (_xrLookAtRayCommandsHandle.BufferID != 0u)
                 DisableXRLookAtRayCommand(forceWrite: true);
         }
 
@@ -2495,11 +2591,12 @@ namespace Hecton8.Core
             if (vault == null)
                 return false;
 
-            if (!_xrInputStatesHandle.IsCreated)
-                EnsureXRNativeBuffers();
-
-            states = _xrInputStatesHandle.Resolve(vault);
-            return states.IsCreated && states.Length >= XRInputStateCapacity;
+            return TryResolveOrAcquireInputBuffer(
+                ref _xrInputStatesHandle,
+                BufferID.ShinobuInputXRInputStates,
+                XRInputStateCapacity,
+                NativeArrayOptions.UninitializedMemory,
+                out states);
         }
 
         private bool TryResolveXRLookAtRayCommands(out NativeArray<RaycastCommand> commands)
@@ -2512,19 +2609,20 @@ namespace Hecton8.Core
             if (vault == null)
                 return false;
 
-            if (!_xrLookAtRayCommandsHandle.IsCreated)
-                EnsureXRNativeBuffers();
-
-            commands = _xrLookAtRayCommandsHandle.Resolve(vault);
-            return commands.IsCreated && commands.Length >= XRLookAtCommandCapacity;
+            return TryResolveOrAcquireInputBuffer(
+                ref _xrLookAtRayCommandsHandle,
+                BufferID.ShinobuInputXRLookAtRayCommands,
+                XRLookAtCommandCapacity,
+                NativeArrayOptions.UninitializedMemory,
+                out commands);
         }
 
         private void DisposeXRNativeBuffers(JobHandle dependency)
         {
             ClearVaultBuffer(ref _xrInputStatesHandle);
             ClearVaultBuffer(ref _xrLookAtRayCommandsHandle);
-            _xrInputStatesHandle = default;
-            _xrLookAtRayCommandsHandle = default;
+            ReleaseVaultHandle(_dataVault, ref _xrInputStatesHandle);
+            ReleaseVaultHandle(_dataVault, ref _xrLookAtRayCommandsHandle);
             _xrVaultBuffersCleared = false;
         }
 
@@ -2830,8 +2928,8 @@ namespace Hecton8.Core
 
         private void ClearXRRuntimeFrameStateIfActive()
         {
-            if (!_xrInputStatesHandle.IsCreated &&
-                !_xrLookAtRayCommandsHandle.IsCreated &&
+            if (_xrInputStatesHandle.BufferID == 0u &&
+                _xrLookAtRayCommandsHandle.BufferID == 0u &&
                 (_xrRuntimeFlags & XRRuntimeFlagsAny) == 0u &&
                 _lastXRLookAtPhysicsQueryFrame < 0 &&
                 _lastXRLookAtHitFrame < 0)
@@ -2841,7 +2939,7 @@ namespace Hecton8.Core
 
             ClearXRInputSnapshotIfActive(forceWrite: true);
 
-            if (_xrLookAtRayCommandsHandle.IsCreated)
+            if (_xrLookAtRayCommandsHandle.BufferID != 0u)
                 DisableXRLookAtRayCommand(forceWrite: true);
 
             _lastXRLookAtHit = default;
@@ -3297,8 +3395,7 @@ namespace Hecton8.Core
 
         private void InsertHapticCommandDto(float lowFreqIntensity, float highFreqIntensity, float decayRate, uint motorMask)
         {
-            NativeArray<HapticCommandDTO> commands = _hapticCommandDtoHandle.Resolve(_dataVault);
-            if (!commands.IsCreated)
+            if (!TryResolveInputBuffer(in _hapticCommandDtoHandle, HapticCommandDtoCapacity, out NativeArray<HapticCommandDTO> commands))
                 return;
 
             HapticCommandDTO command = default;
@@ -3369,8 +3466,7 @@ namespace Hecton8.Core
             ref bool hasLowPriority,
             ref bool hasHighPriority)
         {
-            NativeArray<HapticCommandDTO> commands = _hapticCommandDtoHandle.Resolve(_dataVault);
-            if (!commands.IsCreated)
+            if (!TryResolveInputBuffer(in _hapticCommandDtoHandle, HapticCommandDtoCapacity, out NativeArray<HapticCommandDTO> commands))
                 return 0;
 
             float safeDeltaTime = math.clamp(math.isfinite(deltaTime) ? deltaTime : (float)StandardInputTickIntervalSeconds, 0f, 0.1f);
@@ -3656,7 +3752,7 @@ namespace Hecton8.Core
 
             ClearXRInputSnapshotIfActive(forceWrite: true);
 
-            if (_xrLookAtRayCommandsHandle.IsCreated)
+            if (_xrLookAtRayCommandsHandle.BufferID != 0u)
                 DisableXRLookAtRayCommand(forceWrite: true);
         }
     }

@@ -23,7 +23,7 @@ namespace Hecton8.Construction
         private const float MaxWeldGlowRangeMeters = 8f;
         private const float MaxWeldGlowProxyIntensity = 4f;
 
-        [Header("AUP Corners")]
+        [Header("Weld Corners")]
         [SerializeField] private Transform corner0;
         [SerializeField] private Transform corner1;
         [SerializeField] private Transform corner2;
@@ -52,7 +52,7 @@ namespace Hecton8.Construction
 
         private readonly Transform[] _corners = new Transform[CornerCount]; // COLD ALLOC: Transform[4] - weld corner cache - owner: VRConstructionWeldTarget
         private readonly float[] _cornerProgressSeconds = new float[CornerCount]; // COLD ALLOC: float[4] - weld progress state - owner: VRConstructionWeldTarget
-        private readonly AbsoluteUniversePosition[] _cornerAups = new AbsoluteUniversePosition[CornerCount]; // COLD ALLOC: AUP[4] - stable weld corner coordinates - owner: VRConstructionWeldTarget
+        private readonly Vector3[] _cornerRuntimePositions = new Vector3[CornerCount]; // COLD ALLOC: Vector3[4] - local weld corner presentation positions - owner: VRConstructionWeldTarget
         private Vector3 _weldGlowRuntimePosition;
         private int _weldGlowProxyKey;
         private float _weldGlowClockSeconds;
@@ -72,13 +72,13 @@ namespace Hecton8.Construction
         {
             _weldGlowProxyKey = unchecked((int)EntityId.ToULong(GetEntityId()) ^ 0x56525744);
             BindCorners();
-            CacheCornerAups();
+            CacheCornerRuntimePositions();
         }
 
         private void OnEnable()
         {
             BindCorners();
-            CacheCornerAups();
+            CacheCornerRuntimePositions();
             TryRegisterOriginShiftListener();
         }
 
@@ -97,7 +97,7 @@ namespace Hecton8.Construction
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
-            CacheCornerAups();
+            CacheCornerRuntimePositions();
             if (_weldGlowProxyRegistered)
                 UpdateWeldGlowProxyRegistration();
         }
@@ -112,14 +112,8 @@ namespace Hecton8.Construction
 
         public bool TryGetCornerAup(int index, out AbsoluteUniversePosition aup)
         {
-            if ((uint)index >= CornerCount)
-            {
-                aup = default;
-                return false;
-            }
-
-            aup = _cornerAups[index];
-            return _corners[index] != null && (_validCornerMask & (1 << index)) != 0;
+            aup = default;
+            return false;
         }
 
         public bool ApplyWeldAtPoint(Vector3 runtimeHitPoint, float deliveredPower, float deltaSeconds)
@@ -212,14 +206,13 @@ namespace Hecton8.Construction
 
             float safeWeldRadiusMeters = ResolveSafeWeldRadiusMeters();
             double bestDistanceSq = (double)safeWeldRadiusMeters * safeWeldRadiusMeters;
-            AbsoluteUniversePosition hitAup = AbsoluteUniversePosition.FromRuntimePosition(runtimeHitPoint);
             for (int i = 0; i < CornerCount; i++)
             {
                 Transform corner = _corners[i];
                 if (corner == null || (_validCornerMask & (1 << i)) == 0)
                     continue;
 
-                double distanceSq = AbsoluteUniversePosition.DistanceSq(in hitAup, in _cornerAups[i]);
+                double distanceSq = RuntimeDistanceSq(runtimeHitPoint, _cornerRuntimePositions[i]);
                 if (distanceSq > bestDistanceSq)
                     continue;
 
@@ -316,7 +309,7 @@ namespace Hecton8.Construction
             _corners[3] = corner3;
         }
 
-        private void CacheCornerAups()
+        private void CacheCornerRuntimePositions()
         {
             _validCornerMask = 0;
             for (int i = 0; i < CornerCount; i++)
@@ -325,9 +318,17 @@ namespace Hecton8.Construction
                 if (corner == null || !IsFiniteVector(corner.position))
                     continue;
 
-                _cornerAups[i] = AbsoluteUniversePosition.FromRuntimePosition(corner.position);
+                _cornerRuntimePositions[i] = corner.position;
                 _validCornerMask |= (byte)(1 << i);
             }
+        }
+
+        private static double RuntimeDistanceSq(Vector3 a, Vector3 b)
+        {
+            double dx = (double)a.x - b.x;
+            double dy = (double)a.y - b.y;
+            double dz = (double)a.z - b.z;
+            return (dx * dx) + (dy * dy) + (dz * dz);
         }
 
         private void TriggerWeldGlow(Vector3 runtimePosition)

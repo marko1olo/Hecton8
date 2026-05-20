@@ -1,4 +1,4 @@
-﻿# Community Post Templates
+# Community Post Templates
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
 ## R4 Interior Actuality Boundary
@@ -10,6 +10,10 @@ No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler,
 
 Status: draft copy bank / use only with real screenshots or clips
 Rule: do not spam and do not ask for wishlists in critique posts
+
+Reporting rule: community critique posts default to `route_class = no_link_feedback`. Public replies can be coded as `consent_provenance = public_comment` only. Do not turn subreddit, Steam forum, Discord, or social replies into newsletter, creator CRM, press, or playtest contacts unless the user explicitly opts into that separate route.
+
+Asset gate: visual or clip critique posts need real gameplay capture with metadata/QA state. If the post uses a threat, anomaly, or atmosphere asset, it must also ask whether the player decision reads. `PLAN-SHOT-007` anomaly flavor cannot substitute for the agency/decision proof asset in first-public testing. If the critique post claims gameplay, pressure, route-risk, threat, salvage failure, or first-public agency proof, the owning AB-009/KPI row must have `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision` before the post can advance Campaign 01 or creator/Steam routes.
 
 ## Reddit Critique Posts
 
@@ -28,6 +32,7 @@ I am looking for blunt visual critique:
 - does the image read as industrial deep sea?
 - does the machinery feel believable?
 - is the threat/readability clear?
+- can you tell what decision the player would make here?
 - does it look too close to other underwater survival games?
 
 No wishlist ask. I need signal before we package the page.
@@ -68,6 +73,7 @@ What did you think happened first?
 - creature/threat?
 - machinery failure?
 - player mistake?
+- player choice?
 - unclear?
 
 Trying to see if the clip communicates without UI explanation.
@@ -102,6 +108,8 @@ We are testing the Seed Ship anomaly concept: a deep structure corrupting instru
 
 Does this image/clip communicate systemic corruption, or does it just look like random sci-fi effects?
 
+Use this only after the first packet already has agency/decision proof with AB-009/KPI decision-read fields, or label it internally as anomaly-only feedback that cannot advance Campaign 01.
+
 ## Steam Announcement Templates
 
 ### Screenshot Drop
@@ -114,12 +122,13 @@ Body:
 
 This update shows HECTON-8's current visual direction: industrial underwater spaces, pressure-rated machinery, salvage routes, and deep-sea noir readability.
 
-HECTON-8 remains single-player-first. We are not marketing co-op and not making performance claims without proof.
+HECTON-8 remains single-player-first. Public scope stays inside current build proof, and performance language waits for measured evidence.
 
 Focus for feedback:
 
 - does the world read as hostile?
 - does the machinery look functional?
+- can you name one decision the player has to make?
 - does the tone feel distinct?
 
 ### Systems Update
@@ -155,26 +164,20 @@ Useful feedback:
 
 Title:
 
-What HECTON-8 Is And Is Not
+What HECTON-8 Is
 
 Body:
 
-HECTON-8 is a single-player-first NASA-punk / deep-sea noir survival game.
+HECTON-8 is a single-player-first NASA-punk / deep-sea noir survival game focused on pressure, salvage, machinery, and isolation below the light.
 
-It is not being marketed as a Subnautica killer.
-
-It is not promising co-op.
-
-It is not making performance claims without measurement.
-
-The focus is pressure, salvage, machinery, and isolation below the light.
+Public positioning stays competitor-neutral. Performance language waits for measured build evidence.
 
 ## X / Bluesky Short Posts
 
-- The ocean is not empty. It is infrastructure under pressure.
+- The ocean is infrastructure under pressure.
 - HECTON-8 is underwater survival where the safest room is still trying to fail.
-- No co-op pitch. No clone war. Just pressure, machines, salvage, and black water.
-- A base is not a house down here. It is a machine that has to keep saying no to the ocean.
+- Proof-first scope. No competitor war. Just pressure, machines, salvage, and black water.
+- A base down here is a pressure machine that has to keep saying no to the ocean.
 - One floodlight. Too much depth. Not enough oxygen.
 - Deep-sea noir survival: less wonder, more pressure.
 - The sonar saw it before the player did.
@@ -187,23 +190,23 @@ The focus is pressure, salvage, machinery, and isolation below the light.
 - 0s: warning alarm / pressure spike
 - 1-4s: player looks at failing machine
 - 5-12s: repair/salvage action
-- 13-18s: threat silhouette or flooding consequence
-- 19-20s: title + Steam wishlist
+- 13-18s: player chooses repair, retreat, seal, or continue under threat/flooding consequence
+- 19-20s: title + feedback prompt; Steam CTA only after `Analytics/MEASUREMENT_AND_UTM_PLAN.md` Official CTA Link Activation Gate V0 passes.
 
 ### Format B - Sonar First
 
 - 0s: sonar ping reveals shape
 - 1-5s: silence / instrument noise
 - 6-12s: floodlight catches partial silhouette
-- 13-18s: player retreats / system warning
-- 19-20s: title + Steam wishlist
+- 13-18s: player retreats, reroutes, or accepts the system warning cost
+- 19-20s: title + feedback prompt; Steam CTA only after `Analytics/MEASUREMENT_AND_UTM_PLAN.md` Official CTA Link Activation Gate V0 passes.
 
 ### Format C - Machinery Fantasy
 
 - 0s: heavy mechanism starts
 - 1-8s: gauge/lever/pump/ballast movement
 - 9-15s: vehicle/base responds
-- 16-20s: environment threat proves why the machine matters
+- 16-20s: environment threat forces a visible operate/hold/retreat decision
 
 ## Discord / Community Server Policy
 
@@ -220,7 +223,9 @@ Forbidden:
 
 - wishlist begging;
 - DM spam;
-- arguing with Subnautica fans;
-- dropping Steam links without context;
+- arguing with competitor fans;
+- dropping Steam links without the Official CTA Link Activation Gate V0 and platform context;
 - feature promises;
-- fake "we are building what SN2 failed to do" rhetoric.
+- fake "we are building what the competitor failed to do" rhetoric.
+- summarizing replies as KPI signal without route-specific class plus `consent_provenance` or `reply_consent_provenance`.
+- using community replies as agency proof unless the row records `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`.

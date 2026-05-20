@@ -6,6 +6,7 @@ using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Scheduling;
+using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -159,7 +160,8 @@ namespace Hecton8.Physics.Exosuit
         private void OnEnable()
         {
             _pendingDisableTeardown = false;
-            _dataVault = GlobalRegistry.DataVault;
+            if (_dataVault == null && GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latestVault))
+                _dataVault = latestVault;
             if (EnsureBuffers(true))
                 s_activeRuntime = this;
 
@@ -303,9 +305,12 @@ namespace Hecton8.Physics.Exosuit
 
         private static IDataVault ResolveVault()
         {
-            return s_activeRuntime != null && s_activeRuntime._dataVault != null
-                ? s_activeRuntime._dataVault
-                : GlobalRegistry.DataVault;
+            if (s_activeRuntime != null && s_activeRuntime._dataVault != null)
+                return s_activeRuntime._dataVault;
+
+            return GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest)
+                ? latest
+                : null;
         }
 
         private bool EnsureBuffers(bool allowColdInitialization)
@@ -499,14 +504,15 @@ namespace Hecton8.Physics.Exosuit
                 return;
 
             // Non-blocking: live and teardown paths only reach Complete after IsCompleted.
-            _jobHandle.Complete();
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _jobHandle))
+                return;
+
             _jobScheduled = false;
             float elapsedMs = ResolveElapsedJobMs();
             JobAdmissionScheduleExtensions.ReportAdmittedJobCompleted<Exosuit6DIntegratorJob>(JobAdmissionLane.Lane0_Critical, elapsedMs);
             PatchLastTelemetryElapsed(elapsedMs);
             EmitReadbackSignals();
             UnlockJobBuffers();
-            _jobHandle = default;
         }
 
         private float ResolveElapsedJobMs()

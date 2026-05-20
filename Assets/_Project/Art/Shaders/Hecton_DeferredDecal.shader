@@ -45,7 +45,7 @@ Shader "Hidden/Hecton8/DeferredDecal"
                 float4 LocalToWorldC3;
                 uint MaterialHash;
                 float Opacity01;
-                float BirthTime;
+                float LifetimeSeconds;
                 uint Flags;
             };
 
@@ -95,9 +95,9 @@ Shader "Hidden/Hecton8/DeferredDecal"
                 float3 xAxis = decal.LocalToWorldC0.xyz;
                 float3 yAxis = decal.LocalToWorldC1.xyz;
                 float3 zAxis = decal.LocalToWorldC2.xyz;
-                float xLenSq = max(dot(xAxis, xAxis), 1.0e-5);
-                float yLenSq = max(dot(yAxis, yAxis), 1.0e-5);
-                float zLenSq = max(dot(zAxis, zAxis), 1.0e-5);
+                float xLenSq = max(dot(xAxis, xAxis), 0.0001);
+                float yLenSq = max(dot(yAxis, yAxis), 0.0001);
+                float zLenSq = max(dot(zAxis, zAxis), 0.0001);
                 return float3(
                     dot(relative, xAxis) / xLenSq,
                     dot(relative, yAxis) / yLenSq,
@@ -116,14 +116,19 @@ Shader "Hidden/Hecton8/DeferredDecal"
 
                 float2 centered = projectorUv * 2.0 - 1.0;
                 float radial = saturate(1.0 - dot(centered, centered));
-                float brokenRing = 0.72 + 0.28 * sin((centered.x * 37.0) + (centered.y * 19.0) + decal.MaterialHash * 1.71);
+                float quality = saturate(_HectonDeferredDecalAtlasParams.y);
+                float proceduralNoise = 0.72 + 0.28 * sin((centered.x * 37.0) + (centered.y * 19.0) + decal.MaterialHash * 1.71);
+                float brokenRing = lerp(1.0, proceduralNoise, quality);
                 float alpha = saturate(radial * radial * brokenRing);
                 half3 scorch = half3(0.08h, 0.055h, 0.035h);
                 half3 blood = half3(0.22h, 0.015h, 0.01h);
                 half3 acid = half3(0.18h, 0.32h, 0.08h);
-                half materialT = half((float)(decal.MaterialHash & 3u) * (1.0 / 3.0));
-                half3 tint = lerp(scorch, blood, saturate(materialT * 1.5h));
-                tint = lerp(tint, acid, saturate((materialT - 0.5h) * 2.0h));
+                half dentWeight = saturate(1.0h - abs(half((float)(decal.MaterialHash & 3u)) - 3.0h));
+                half materialT = half((float)(decal.MaterialHash & 3u) * (1.0 / 2.0));
+                half3 dent = half3(0.16h, 0.15h, 0.13h);
+                half3 tint = lerp(scorch, blood, saturate(materialT));
+                tint = lerp(tint, acid, saturate(materialT - 0.5h));
+                tint = lerp(tint, dent, dentWeight);
                 return half4(tint, alpha);
             }
 
@@ -146,7 +151,8 @@ Shader "Hidden/Hecton8/DeferredDecal"
                         continue;
 
                     half4 decalSample = SampleDeferredDecal(decal, localPosition);
-                    half depthFade = saturate(1.0h - abs(localPosition.z) * 2.0h);
+                    half depthWeight = lerp(1.15h, 2.0h, half(saturate(_HectonDeferredDecalAtlasParams.y)));
+                    half depthFade = saturate(1.0h - abs(localPosition.z) * depthWeight);
                     half4 decalTint = half4(_HectonDeferredDecalTint);
                     accumulated += decalSample.rgb * decalTint.rgb * (decalSample.a * decalTint.a * half(decal.Opacity01) * depthFade * _HectonDeferredDecalAtlasParams.z);
                 }

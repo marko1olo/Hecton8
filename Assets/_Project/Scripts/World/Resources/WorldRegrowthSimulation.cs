@@ -36,7 +36,7 @@ namespace Hecton8.World
     /// <summary>
     /// Fixed-point constants for the daily macro regrowth solve.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential)]
     public struct WorldRegrowthConfig
     {
         public int GridWidth;
@@ -101,7 +101,7 @@ namespace Hecton8.World
     /// <summary>
     /// Last-frame state sample for post-mortem regrowth diagnostics.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 48)]
+    [StructLayout(LayoutKind.Sequential, Size = 48)]
     public struct WorldRegrowthTelemetryEntry
     {
         public uint DayIndex;
@@ -901,7 +901,7 @@ namespace Hecton8.World
     /// <summary>
     /// H8_MacroDB binary payload header for regrowth pages.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 80)]
+    [StructLayout(LayoutKind.Sequential, Size = 80)]
     public struct WorldRegrowthPayloadHeader
     {
         public uint Magic;

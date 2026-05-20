@@ -66,7 +66,7 @@ namespace Hecton8.AI
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-5000)]
-    public sealed class FaunaDirector : MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, ISaveable, IAcousticPingEventListener, RuntimeWatchdog.IEmergencyResetTarget, IServiceHeartbeat, IServiceShutdown
+    public sealed class FaunaDirector : MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, ISaveable, IAcousticPingEventListener, RuntimeWatchdog.IEmergencyResetTarget, RuntimeWatchdog.IEmergencyColdTickCullTarget, IServiceHeartbeat, IServiceShutdown
     {
         private const int CreaturePoolMinimumReserve = 8;
         private const int CreaturePoolBurstReserveMultiplier = 2;
@@ -3890,6 +3890,11 @@ namespace Hecton8.AI
             }
 
             return culledCount;
+        }
+
+        int RuntimeWatchdog.IEmergencyColdTickCullTarget.ApplyEmergencyColdTickCull()
+        {
+            return ApplyEmergencyColdTickCull();
         }
 
         internal bool TrySpawnEncounterThreat(

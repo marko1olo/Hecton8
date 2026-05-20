@@ -1,6 +1,6 @@
 using System;
-using Hecton8.Animation.KineticCharacter;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Events;
@@ -87,7 +87,8 @@ namespace Hecton8.Gameplay
         [SerializeField] private PlayerSwimBlockoutRig swimBlockoutRig;
 
         [Tooltip("Procedural Burst/Vault owner that receives Crest-derived wave-slope parameters for spine leaning and IK.")]
-        [SerializeField] private KineticCharacterAnimatorRuntime kineticAnimatorRuntime;
+        [SerializeField] private MonoBehaviour kineticMatrixRuntime;
+        private IKineticCharacterPresentationSink _kineticMatrixSink;
 
         [Tooltip("Future swim viewmodel root driven by this controller.")]
         [SerializeField] private Transform viewModelRoot;
@@ -477,11 +478,11 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(0f, 0.5f)] private float obstaclePropulsionCompensation = 0.16f;
 
         [Header("-- Wave Animation Bridge --------------")]
-        [Tooltip("How quickly Crest-derived wave slope signals blend into animator parameters.")]
-        [SerializeField, Range(1f, 24f)] private float animatorWaveSignalBlendSpeed = 9f;
+        [Tooltip("How quickly Crest-derived wave slope signals blend into procedural matrix parameters.")]
+        [SerializeField, Range(1f, 24f)] private float proceduralWaveSignalBlendSpeed = 9f;
 
-        [Tooltip("Wave slope magnitude that maps to a full animator response of 1.")]
-        [SerializeField, Range(0.1f, 3f)] private float animatorWaveSlopeNormalization = 1.15f;
+        [Tooltip("Wave slope magnitude that maps to a full procedural response of 1.")]
+        [SerializeField, Range(0.1f, 3f)] private float proceduralWaveSlopeNormalization = 1.15f;
 
         [Header("-- Active Trauma Blend ---------------")]
         [Tooltip("World-impulse magnitude treated as full authored trauma pose response.")]
@@ -658,6 +659,7 @@ namespace Hecton8.Gameplay
         private PlayerTransportFeelContract _transportFeelContractCurrent;
         private float _previousCameraYaw;
         private int _lastDrivenFrame = -1;
+        private int _presentationFrameCounter;
         private int _nextReferenceResolveFrame = -1;
         private int _lastWaveSlopeForwardShaderByte = int.MinValue;
         private int _lastWaveSlopeLateralShaderByte = int.MinValue;
@@ -771,6 +773,7 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             AutoResolveReferences();
+            EnsureKineticMatrixRuntimeCold();
             ResolveGuideReferences();
             InitializePoseStateFromCurrentTargets();
 
@@ -784,6 +787,7 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             CacheRegistryServicesCold();
+            EnsureKineticMatrixRuntimeCold();
             TryRegister();
             TryRegisterHotSwapListener();
         }
@@ -873,12 +877,16 @@ namespace Hecton8.Gameplay
             _physicalTraumaLocalImpulseVelocity = Vector3.zero;
             _physicalTraumaBlendTarget = math.max(_physicalTraumaBlendTarget, clampedWeight);
             _physicalTraumaHoldTimer = math.max(_physicalTraumaHoldTimer, activeTraumaHoldTime * math.lerp(0.6f, 1f, clampedWeight));
+            if (TryGetKineticMatrixSinkHot(out IKineticCharacterPresentationSink kineticSink))
+                kineticSink.SubmitDamageImpulse(new float3(normalizedImpulse.x, normalizedImpulse.y, normalizedImpulse.z), clampedWeight);
         }
 
         /// <summary>Drives swim presentation from the authoritative locomotion owner. Safe to call from player movement each render tick.</summary>
         public void SyncFromLocomotion(float dt, bool forceFrame = false)
         {
-            int frame = Time.frameCount;
+            int frame = HectonArenaAllocator.CurrentFrameSequence;
+            if (frame <= 0)
+                frame = unchecked(++_presentationFrameCounter);
             if (!forceFrame && _lastDrivenFrame == frame)
                 return;
 
@@ -1031,15 +1039,53 @@ namespace Hecton8.Gameplay
             if (swimBlockoutRig == null)
                 gameObject.TryGetComponent(out swimBlockoutRig);
 
-            if (kineticAnimatorRuntime == null)
-            {
-                gameObject.TryGetComponent(out kineticAnimatorRuntime);
-                if (kineticAnimatorRuntime == null && Application.isPlaying)
-                    kineticAnimatorRuntime = gameObject.AddComponent<KineticCharacterAnimatorRuntime>(); // COLD ALLOC: runtime component creation during player presentation bootstrap only.
-            }
+            if (kineticMatrixRuntime == null || _kineticMatrixSink == null)
+                TryResolveKineticMatrixSinkCold(out _);
 
             if (allowSingletonAccess && _inputService == null)
                 CacheRegistryServicesCold();
+        }
+
+        private void EnsureKineticMatrixRuntimeCold()
+        {
+            if (TryGetKineticMatrixSinkHot(out _))
+                return;
+
+            TryResolveKineticMatrixSinkCold(out _);
+        }
+
+        private bool TryGetKineticMatrixSinkHot(out IKineticCharacterPresentationSink sink)
+        {
+            sink = _kineticMatrixSink;
+            if (sink != null)
+                return true;
+
+            if (kineticMatrixRuntime is IKineticCharacterPresentationSink typedSink)
+            {
+                _kineticMatrixSink = typedSink;
+                sink = typedSink;
+                return true;
+            }
+
+            sink = null;
+            return false;
+        }
+
+        private bool TryResolveKineticMatrixSinkCold(out IKineticCharacterPresentationSink sink)
+        {
+            if (TryGetKineticMatrixSinkHot(out sink))
+                return true;
+
+            if (gameObject.TryGetComponent(out IKineticCharacterPresentationSink resolvedSink))
+            {
+                _kineticMatrixSink = resolvedSink;
+                kineticMatrixRuntime = resolvedSink as MonoBehaviour;
+                sink = resolvedSink;
+                return true;
+            }
+
+            sink = null;
+            return false;
         }
 
         private void ResolveGuideReferences()
@@ -1338,7 +1384,7 @@ namespace Hecton8.Gameplay
 
         private void UpdateWaveAnimationBridge(bool activeSwimPresentation, float dt)
         {
-            if (swimAnimator == null || playerMovement == null)
+            if (playerMovement == null)
                 return;
 
             float targetWeight = 0f;
@@ -1351,7 +1397,7 @@ namespace Hecton8.Gameplay
             if (activeSwimPresentation && playerMovement.CurrentLocomotionMode == PlayerLocomotionMode.SurfaceSwim)
             {
                 Vector2 waveSlope = playerMovement.GetCurrentLocalWaveSlope();
-                float slopeNormalization = math.max(0.1f, animatorWaveSlopeNormalization);
+                float slopeNormalization = math.max(0.1f, proceduralWaveSlopeNormalization);
                 float shorelineWeight = playerMovement.CurrentShoreBuoyancyBlend01;
                 targetWeight = shorelineWeight;
                 targetForward = math.clamp(waveSlope.y / slopeNormalization, -1f, 1f) * shorelineWeight;
@@ -1361,15 +1407,15 @@ namespace Hecton8.Gameplay
                 targetImmersionDepth = math.max(0f, playerMovement.CurrentDepth) * shorelineWeight;
             }
 
-            float traumaAnimatorScale = 1f - _physicalTraumaBlendCurrent * activeTraumaPresentationSuppression;
-            targetWeight *= traumaAnimatorScale;
-            targetForward *= traumaAnimatorScale;
-            targetLateral *= traumaAnimatorScale;
-            targetCrestReach *= traumaAnimatorScale;
-            targetDescentTuck *= traumaAnimatorScale;
-            targetImmersionDepth *= traumaAnimatorScale;
+            float traumaProceduralScale = 1f - _physicalTraumaBlendCurrent * activeTraumaPresentationSuppression;
+            targetWeight *= traumaProceduralScale;
+            targetForward *= traumaProceduralScale;
+            targetLateral *= traumaProceduralScale;
+            targetCrestReach *= traumaProceduralScale;
+            targetDescentTuck *= traumaProceduralScale;
+            targetImmersionDepth *= traumaProceduralScale;
 
-            float blendT = ResolveDecayBlend(math.max(animatorWaveSignalBlendSpeed, 0.01f), dt);
+            float blendT = ResolveDecayBlend(math.max(proceduralWaveSignalBlendSpeed, 0.01f), dt);
             _waveSlopeForwardCurrent = math.lerp(_waveSlopeForwardCurrent, targetForward, blendT);
             _waveSlopeLateralCurrent = math.lerp(_waveSlopeLateralCurrent, targetLateral, blendT);
             _waveCrestReachCurrent = math.lerp(_waveCrestReachCurrent, targetCrestReach, blendT);
@@ -1377,14 +1423,64 @@ namespace Hecton8.Gameplay
             _waveLeanWeightCurrent = math.lerp(_waveLeanWeightCurrent, targetWeight, blendT);
             _immersionDepthCurrent = math.lerp(_immersionDepthCurrent, targetImmersionDepth, blendT);
 
-            swimAnimator.SetFloat(_WaveSlopeForwardHash, _waveSlopeForwardCurrent);
-            swimAnimator.SetFloat(_WaveSlopeLateralHash, _waveSlopeLateralCurrent);
-            swimAnimator.SetFloat(_WaveSlopeXHash, _waveSlopeLateralCurrent);
-            swimAnimator.SetFloat(_WaveSlopeZHash, _waveSlopeForwardCurrent);
-            swimAnimator.SetFloat(_WaveCrestReachHash, _waveCrestReachCurrent);
-            swimAnimator.SetFloat(_WaveDescentTuckHash, _waveDescentTuckCurrent);
-            swimAnimator.SetFloat(_WaveLeanWeightHash, _waveLeanWeightCurrent);
-            swimAnimator.SetFloat(_ImmersionDepthHash, _immersionDepthCurrent);
+            PublishProceduralWaveSignals();
+        }
+
+        private void PublishProceduralWaveSignals()
+        {
+            PublishQuantizedShaderFloat(_WaveSlopeForwardShaderId, _waveSlopeForwardCurrent, ref _lastWaveSlopeForwardShaderByte, -1f, 1f);
+            PublishQuantizedShaderFloat(_WaveSlopeLateralShaderId, _waveSlopeLateralCurrent, ref _lastWaveSlopeLateralShaderByte, -1f, 1f);
+            PublishQuantizedShaderFloat(_WaveSlopeXShaderId, _waveSlopeLateralCurrent, ref _lastWaveSlopeXShaderByte, -1f, 1f);
+            PublishQuantizedShaderFloat(_WaveSlopeZShaderId, _waveSlopeForwardCurrent, ref _lastWaveSlopeZShaderByte, -1f, 1f);
+            PublishQuantizedShaderFloat(_WaveCrestReachShaderId, _waveCrestReachCurrent, ref _lastWaveCrestReachShaderByte, 0f, 1f);
+            PublishQuantizedShaderFloat(_WaveDescentTuckShaderId, _waveDescentTuckCurrent, ref _lastWaveDescentTuckShaderByte, 0f, 1f);
+            PublishQuantizedShaderFloat(_WaveLeanWeightShaderId, _waveLeanWeightCurrent, ref _lastWaveLeanWeightShaderByte, 0f, 1f);
+            PublishQuantizedShaderFloat(_ImmersionDepthShaderId, _immersionDepthCurrent, ref _lastImmersionDepthShaderByte, 0f, 4f);
+
+            if (TryGetKineticMatrixSinkHot(out IKineticCharacterPresentationSink kineticSink))
+            {
+                kineticSink.SubmitSwimPresentation(
+                    _waveSlopeForwardCurrent,
+                    _waveSlopeLateralCurrent,
+                    _waveCrestReachCurrent,
+                    _waveDescentTuckCurrent,
+                    _waveLeanWeightCurrent,
+                    _immersionDepthCurrent,
+                    _lastBreathingPhaseShaderByte == int.MinValue ? 0f : _lastBreathingPhaseShaderByte * 0.00787401575f,
+                    _equippedToolBlendCurrent);
+            }
+        }
+
+        private void ResetProceduralWaveSignals()
+        {
+            Shader.SetGlobalFloat(_WaveSlopeForwardShaderId, 0f);
+            Shader.SetGlobalFloat(_WaveSlopeLateralShaderId, 0f);
+            Shader.SetGlobalFloat(_WaveSlopeXShaderId, 0f);
+            Shader.SetGlobalFloat(_WaveSlopeZShaderId, 0f);
+            Shader.SetGlobalFloat(_WaveCrestReachShaderId, 0f);
+            Shader.SetGlobalFloat(_WaveDescentTuckShaderId, 0f);
+            Shader.SetGlobalFloat(_WaveLeanWeightShaderId, 0f);
+            Shader.SetGlobalFloat(_ImmersionDepthShaderId, 0f);
+            _lastWaveSlopeForwardShaderByte = int.MinValue;
+            _lastWaveSlopeLateralShaderByte = int.MinValue;
+            _lastWaveSlopeXShaderByte = int.MinValue;
+            _lastWaveSlopeZShaderByte = int.MinValue;
+            _lastWaveCrestReachShaderByte = int.MinValue;
+            _lastWaveDescentTuckShaderByte = int.MinValue;
+            _lastWaveLeanWeightShaderByte = int.MinValue;
+            _lastImmersionDepthShaderByte = int.MinValue;
+        }
+
+        private static void PublishQuantizedShaderFloat(int shaderId, float value, ref int previousByte, float minValue, float maxValue)
+        {
+            float span = math.max(0.0001f, maxValue - minValue);
+            float normalized = math.saturate((value - minValue) * math.rcp(span));
+            int quantized = (int)math.round(normalized * 255f);
+            if (quantized == previousByte)
+                return;
+
+            previousByte = quantized;
+            Shader.SetGlobalFloat(shaderId, minValue + quantized * 0.00392156862745f * span);
         }
 
         private void PublishBreathingPhase(float phase)
@@ -1397,6 +1493,18 @@ namespace Hecton8.Gameplay
 
             _lastBreathingPhaseShaderByte = quantized;
             Shader.SetGlobalFloat(_BreathingPhaseShaderId, quantized * 0.00787401575f);
+            if (TryGetKineticMatrixSinkHot(out IKineticCharacterPresentationSink kineticSink))
+            {
+                kineticSink.SubmitSwimPresentation(
+                    _waveSlopeForwardCurrent,
+                    _waveSlopeLateralCurrent,
+                    _waveCrestReachCurrent,
+                    _waveDescentTuckCurrent,
+                    _waveLeanWeightCurrent,
+                    _immersionDepthCurrent,
+                    quantized * 0.00787401575f,
+                    _equippedToolBlendCurrent);
+            }
         }
 
         private void ApplyRootPose(
@@ -2147,6 +2255,37 @@ namespace Hecton8.Gameplay
                 toolTransitionSmoothTime,
                 dt);
             UpdateToolPoseBiases(toolSwimContract, toolUsing, toolHand, dt);
+            PublishToolPoseToKinetic(toolEquipped, toolUsing, toolHand);
+        }
+
+        private void PublishToolPoseToKinetic(bool toolEquipped, bool toolUsing, PlayerToolSwimHandedness toolHand)
+        {
+            if (!toolEquipped || !TryGetKineticMatrixSinkHot(out IKineticCharacterPresentationSink kineticSink))
+                return;
+
+            bool rightHand = toolHand == PlayerToolSwimHandedness.Right;
+            Vector3 positionBias = rightHand ? _rightGuideToolPositionBiasCurrent : _leftGuideToolPositionBiasCurrent;
+            Vector3 eulerBias = rightHand ? _rightGuideToolEulerBiasCurrent : _leftGuideToolEulerBiasCurrent;
+            float side = rightHand ? 1f : -1f;
+            float3 localPosition = new float3(
+                side * (0.22f + math.abs(positionBias.x)),
+                1.06f + positionBias.y,
+                0.42f + positionBias.z);
+            float3 radians = math.radians(new float3(eulerBias.x, eulerBias.y + side * 4f, eulerBias.z));
+            float activeWeight = math.saturate(_equippedToolBlendCurrent + (toolUsing ? _activeToolUseBlendCurrent * 0.35f : 0f));
+            uint toolHash = ResolveKineticToolHash();
+            kineticSink.SubmitToolPose(
+                float4x4.TRS(localPosition, quaternion.EulerXYZ(radians), new float3(1f, 1f, 1f)),
+                activeWeight,
+                toolHash);
+        }
+
+        private uint ResolveKineticToolHash()
+        {
+            if (playerToolManager == null)
+                return 0u;
+
+            return playerToolManager.CurrentActiveToolHash;
         }
 
         private void UpdateCameraTurnSway(float dt)

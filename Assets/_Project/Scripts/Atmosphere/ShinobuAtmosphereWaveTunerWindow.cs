@@ -1,6 +1,4 @@
 #if UNITY_EDITOR
-using Hecton8.Core;
-using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEditor;
@@ -15,11 +13,15 @@ namespace Hecton8.Atmosphere.Editor
         private float _waveSteepness = 0.52f;
         private float _gasGiantGlow = 1.15f;
         private float _foamThreshold = 0.72f;
+        private float _qualityMin = 0f;
+        private float _qualityMax = 1f;
         private bool _drawGizmo = true;
         private Slider _windSpeedSlider;
         private Slider _waveSteepnessSlider;
         private Slider _gasGiantGlowSlider;
         private Slider _foamThresholdSlider;
+        private Slider _qualityMinSlider;
+        private Slider _qualityMaxSlider;
         private Toggle _drawGizmoToggle;
         private Label _statusLabel;
         private bool _suppressUiCallbacks;
@@ -59,6 +61,8 @@ namespace Hecton8.Atmosphere.Editor
             _waveSteepnessSlider = CreateSlider("Wave Steepness (Choppiness)", 0f, 1f);
             _gasGiantGlowSlider = CreateSlider("Gas Giant Glow Intensity", 0f, 4f);
             _foamThresholdSlider = CreateSlider("Foam Threshold", 0f, 1f);
+            _qualityMinSlider = CreateSlider("Quality Step Min", 0f, 1f);
+            _qualityMaxSlider = CreateSlider("Quality Step Max", 0f, 1f);
             _drawGizmoToggle = new Toggle("Scene Wave Grid");
             _drawGizmoToggle.RegisterValueChangedCallback(evt =>
             {
@@ -77,6 +81,8 @@ namespace Hecton8.Atmosphere.Editor
             root.Add(_waveSteepnessSlider);
             root.Add(_gasGiantGlowSlider);
             root.Add(_foamThresholdSlider);
+            root.Add(_qualityMinSlider);
+            root.Add(_qualityMaxSlider);
             root.Add(_drawGizmoToggle);
             root.Add(_statusLabel);
 
@@ -102,7 +108,7 @@ namespace Hecton8.Atmosphere.Editor
                     return;
 
                 PullValuesFromControls();
-                ShinobuOceanSurfaceAtmosphereRuntime.TryApplyTunerValues(_windSpeed, _waveSteepness, _gasGiantGlow, _foamThreshold);
+                ShinobuOceanSurfaceAtmosphereRuntime.TryApplyTunerValues(_windSpeed, _waveSteepness, _gasGiantGlow, _foamThreshold, _qualityMin, _qualityMax);
                 SceneView.RepaintAll();
                 UpdateStatusLabel();
             });
@@ -120,6 +126,8 @@ namespace Hecton8.Atmosphere.Editor
             _waveSteepnessSlider.SetValueWithoutNotify(_waveSteepness);
             _gasGiantGlowSlider.SetValueWithoutNotify(_gasGiantGlow);
             _foamThresholdSlider.SetValueWithoutNotify(_foamThreshold);
+            _qualityMinSlider.SetValueWithoutNotify(_qualityMin);
+            _qualityMaxSlider.SetValueWithoutNotify(_qualityMax);
             _drawGizmoToggle.SetValueWithoutNotify(_drawGizmo);
             _suppressUiCallbacks = false;
         }
@@ -130,6 +138,8 @@ namespace Hecton8.Atmosphere.Editor
             _waveSteepness = _waveSteepnessSlider.value;
             _gasGiantGlow = _gasGiantGlowSlider.value;
             _foamThreshold = _foamThresholdSlider.value;
+            _qualityMin = _qualityMinSlider.value;
+            _qualityMax = _qualityMaxSlider.value;
         }
 
         private void UpdateStatusLabel()
@@ -138,12 +148,38 @@ namespace Hecton8.Atmosphere.Editor
                 return;
 
             _statusLabel.text = ShinobuOceanSurfaceAtmosphereRuntime.TryGetVaultSnapshot(out _, out _, out _)
-                ? "GlobalDataVault ocean buffers active."
+                ? ResolveReadbackStatusText()
                 : "GlobalDataVault ocean buffers are not active. Enter play mode or enable ShinobuOceanSurfaceAtmosphereRuntime.";
+        }
+
+        private static string ResolveReadbackStatusText()
+        {
+            if (ShinobuOceanSurfaceAtmosphereRuntime.IsWaveParameterMutationLocked)
+                return "GlobalDataVault ocean buffers active. Wave parameter job owns the mutation lease; retry next frame.";
+
+            if (!ShinobuOceanSurfaceAtmosphereRuntime.TryGetReadbackDebugSnapshot(
+                    out _,
+                    out _,
+                    out NativeArray<OceanSurfaceTelemetryEntry> telemetry) ||
+                !telemetry.IsCreated ||
+                telemetry.Length <= 0)
+            {
+                return "GlobalDataVault ocean buffers active. Readback telemetry pending.";
+            }
+
+            OceanSurfaceTelemetryEntry latest = ResolveLatestTelemetry(telemetry);
+            return "GlobalDataVault ocean buffers active. GPU readback latency " +
+                   latest.ReadbackLatencyFrames +
+                   " frames, samples " +
+                   latest.ReadbackSampleCount +
+                   ".";
         }
 
         private void RefreshFromVault()
         {
+            if (ShinobuOceanSurfaceAtmosphereRuntime.IsWaveParameterMutationLocked)
+                return;
+
             if (!ShinobuOceanSurfaceAtmosphereRuntime.TryGetVaultSnapshot(
                     out NativeArray<WaveParametersDTO> waves,
                     out NativeArray<WeatherStateDTO> weather,
@@ -160,10 +196,25 @@ namespace Hecton8.Atmosphere.Editor
             }
 
             if (waves.IsCreated && waves.Length > 0)
-                _waveSteepness = waves[0].DirectionAndSteepness.w;
+                _waveSteepness = HectonOceanSurfaceMath.WaveLaneSteepness(waves[0].Wave1);
 
             if (atmosphere.IsCreated && atmosphere.Length > 0)
                 _gasGiantGlow = atmosphere[0].ScatteringParams.y;
+        }
+
+        private static OceanSurfaceTelemetryEntry ResolveLatestTelemetry(NativeArray<OceanSurfaceTelemetryEntry> telemetry)
+        {
+            OceanSurfaceTelemetryEntry latest = default;
+            if (!telemetry.IsCreated)
+                return latest;
+
+            for (int i = 0; i < telemetry.Length; i++)
+            {
+                if (telemetry[i].Frame >= latest.Frame)
+                    latest = telemetry[i];
+            }
+
+            return latest;
         }
 
         private void OnDrawGizmos(SceneView sceneView)
@@ -182,28 +233,28 @@ namespace Hecton8.Atmosphere.Editor
                 return;
 
             WeatherStateDTO state = weather[0];
-            double3 originAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(camera.transform.position);
-            float quality = math.saturate(HomeostasisBrain.GlobalQualityWeight);
-            if (quality <= 0f)
-                quality = 1f;
-
             Handles.color = new Color(0.1f, 0.45f, 1f, 0.7f);
-            const int halfGrid = 5;
-            const float spacing = 12f;
             float baseY = state.SurfaceScalars.x;
-            for (int z = -halfGrid; z <= halfGrid; z++)
+            if (ShinobuOceanSurfaceAtmosphereRuntime.TryGetReadbackDebugSnapshot(
+                    out NativeArray<float4> queries,
+                    out NativeArray<float4> results,
+                    out NativeArray<OceanSurfaceTelemetryEntry> telemetry) &&
+                queries.IsCreated &&
+                results.IsCreated)
             {
-                for (int x = -halfGrid; x <= halfGrid; x++)
+                int sampleCount = math.min(ResolveLatestTelemetry(telemetry).ReadbackSampleCount, math.min(queries.Length, results.Length));
+                for (int i = 0; i < sampleCount; i++)
                 {
-                    Vector3 runtime = camera.transform.position + new Vector3(x * spacing, 0f, z * spacing);
-                    double3 aup = originAup + new double3(x * spacing, 0.0, z * spacing);
-                    HectonOceanSurfaceMath.EvaluateWaves(aup, (float)EditorApplication.timeSinceStartup, waves, quality, out float relativeHeight, out _);
-                    float surfaceY = baseY + relativeHeight;
-                    Vector3 top = new Vector3(runtime.x, surfaceY, runtime.z);
-                    Vector3 bottom = new Vector3(runtime.x, baseY - 3f, runtime.z);
-                    Handles.DrawLine(bottom, top);
+                    float4 query = queries[i];
+                    float4 result = results[i];
+                    Vector3 point = new Vector3(query.z, baseY + result.x, query.w);
+                    Handles.SphereHandleCap(0, point, Quaternion.identity, 0.35f, EventType.Repaint);
+                    Handles.DrawLine(new Vector3(query.z, baseY - 2f, query.w), point);
                 }
+
+                return;
             }
+
         }
     }
 }

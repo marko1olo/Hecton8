@@ -82,13 +82,33 @@ namespace Hecton8.VFX
                    OffsetOf<VolumetricFogParamsDTO>(nameof(VolumetricFogParamsDTO.FlowAdvection)) == 32 &&
                    OffsetOf<VolumetricFogParamsDTO>(nameof(VolumetricFogParamsDTO.QualityAndLimits)) == 48 &&
                    UnsafeUtility.SizeOf<PointLightDTO>() == VolumetricFogConstants.PointLightStrideBytes &&
+                   OffsetOf<PointLightDTO>(nameof(PointLightDTO.PositionRadius)) == 0 &&
+                   OffsetOf<PointLightDTO>(nameof(PointLightDTO.ColorIntensity)) == 16 &&
                    UnsafeUtility.SizeOf<VolumetricFogTelemetryEntry>() == VolumetricFogConstants.TelemetryEntryStrideBytes &&
-                   UnsafeUtility.SizeOf<WaterExtinctionProfileDTO>() == VolumetricFogConstants.ExtinctionProfileStrideBytes;
+                   OffsetOf<VolumetricFogTelemetryEntry>(nameof(VolumetricFogTelemetryEntry.FrameIndex)) == 0 &&
+                   OffsetOf<VolumetricFogTelemetryEntry>(nameof(VolumetricFogTelemetryEntry.RaySteps)) == 4 &&
+                   OffsetOf<VolumetricFogTelemetryEntry>(nameof(VolumetricFogTelemetryEntry.RenderScale)) == 8 &&
+                   OffsetOf<VolumetricFogTelemetryEntry>(nameof(VolumetricFogTelemetryEntry.EstimatedGpuMicroseconds)) == 12 &&
+                   OffsetOf<VolumetricFogTelemetryEntry>(nameof(VolumetricFogTelemetryEntry.CameraPositionLocalAndQuality)) == 16 &&
+                   OffsetOf<VolumetricFogTelemetryEntry>(nameof(VolumetricFogTelemetryEntry.StateHash)) == 32 &&
+                   OffsetOf<VolumetricFogTelemetryEntry>(nameof(VolumetricFogTelemetryEntry.Flags)) == 36 &&
+                   OffsetOf<VolumetricFogTelemetryEntry>(nameof(VolumetricFogTelemetryEntry.AccumulatedDensity)) == 40 &&
+                   OffsetOf<VolumetricFogTelemetryEntry>(nameof(VolumetricFogTelemetryEntry.MaxRayDistance)) == 44 &&
+                   OffsetOf<VolumetricFogTelemetryEntry>(nameof(VolumetricFogTelemetryEntry.DebugValues)) == 48 &&
+                   UnsafeUtility.SizeOf<WaterExtinctionProfileDTO>() == VolumetricFogConstants.ExtinctionProfileStrideBytes &&
+                   OffsetOf<WaterExtinctionProfileDTO>(nameof(WaterExtinctionProfileDTO.ProfileHash)) == 0 &&
+                   OffsetOf<WaterExtinctionProfileDTO>(nameof(WaterExtinctionProfileDTO.MinDepthMeters)) == 4 &&
+                   OffsetOf<WaterExtinctionProfileDTO>(nameof(WaterExtinctionProfileDTO.MaxDepthMeters)) == 8 &&
+                   OffsetOf<WaterExtinctionProfileDTO>(nameof(WaterExtinctionProfileDTO.DensityMultiplier)) == 12 &&
+                   OffsetOf<WaterExtinctionProfileDTO>(nameof(WaterExtinctionProfileDTO.AbsorptionAndScatter)) == 16 &&
+                   OffsetOf<WaterExtinctionProfileDTO>(nameof(WaterExtinctionProfileDTO.BiomeWeights)) == 32 &&
+                   OffsetOf<WaterExtinctionProfileDTO>(nameof(WaterExtinctionProfileDTO.Reserved)) == 48;
         }
 
         private static int OffsetOf<T>(string fieldName) where T : struct
         {
-            return Marshal.OffsetOf<T>(fieldName).ToInt32();
+            System.Reflection.FieldInfo field = typeof(T).GetField(fieldName);
+            return field == null ? -1 : UnsafeUtility.GetFieldOffset(field);
         }
     }
 
@@ -100,6 +120,80 @@ namespace Hecton8.VFX
             {
                 return ref ((VolumetricFogParamsDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(values))[index];
             }
+        }
+
+        public static float ResolveQualityCurve(float qualityWeight)
+        {
+            float quality = math.isfinite(qualityWeight) ? math.clamp(qualityWeight, 0f, 1f) : 0f;
+            return quality * quality * (3f - 2f * quality);
+        }
+
+        public static int ResolveRayStepsForQuality(float qualityWeight)
+        {
+            float curvedQuality = ResolveQualityCurve(qualityWeight);
+            return math.clamp(
+                (int)math.round(math.lerp((float)VolumetricFogConstants.MinRaySteps, VolumetricFogConstants.MaxRaySteps, curvedQuality)),
+                VolumetricFogConstants.MinRaySteps,
+                VolumetricFogConstants.MaxRaySteps);
+        }
+
+        public static float ResolveProxyBlendForQuality(float qualityWeight)
+        {
+            float quality = math.isfinite(qualityWeight) ? math.clamp(qualityWeight, 0f, 1f) : 0f;
+            float proxyRelease = math.saturate((quality - 0.12f) * (1f / 0.3f));
+            float proxyFade = proxyRelease * proxyRelease * (3f - 2f * proxyRelease);
+            float proxySurvivalFloor = 1f - math.step(0.12f, quality);
+            return math.max(proxySurvivalFloor, math.lerp(1f, 0f, proxyFade));
+        }
+
+        public static VolumetricFogParamsDTO CreateDefaultParams(float qualityWeight)
+        {
+            float quality = math.isfinite(qualityWeight) ? math.clamp(qualityWeight, 0f, 1f) : 0f;
+            return new VolumetricFogParamsDTO
+            {
+                FogColorAndDensity = new float4(0.015f, 0.045f, 0.065f, 0.045f),
+                ScatteringParams = new float4(0.85f, 0.12f, 0.42f, 0.97f),
+                FlowAdvection = new float4(0f, 0f, 0f, 2.25f),
+                QualityAndLimits = new float4(
+                    quality,
+                    ResolveRayStepsForQuality(quality),
+                    70f,
+                    ResolveProxyBlendForQuality(quality))
+            };
+        }
+
+        public static bool IsUsableParams(in VolumetricFogParamsDTO dto)
+        {
+            return math.all(math.isfinite(dto.FogColorAndDensity)) &&
+                   math.all(math.isfinite(dto.ScatteringParams)) &&
+                   math.all(math.isfinite(dto.FlowAdvection)) &&
+                   math.all(math.isfinite(dto.QualityAndLimits)) &&
+                   dto.FogColorAndDensity.x >= 0.0015f &&
+                   dto.FogColorAndDensity.x <= 8f &&
+                   dto.FogColorAndDensity.y >= 0.0023f &&
+                   dto.FogColorAndDensity.y <= 8f &&
+                   dto.FogColorAndDensity.z >= 0.0031f &&
+                   dto.FogColorAndDensity.z <= 8f &&
+                   dto.FogColorAndDensity.w >= 0f &&
+                   dto.FogColorAndDensity.w <= 0.3f &&
+                   dto.ScatteringParams.x >= 0f &&
+                   dto.ScatteringParams.x <= 4f &&
+                   dto.ScatteringParams.y >= 0.0001f &&
+                   dto.ScatteringParams.y <= 2f &&
+                   dto.ScatteringParams.z >= -0.95f &&
+                   dto.ScatteringParams.z <= 0.95f &&
+                   dto.ScatteringParams.w >= 0.25f &&
+                   dto.ScatteringParams.w <= 0.995f &&
+                   dto.FlowAdvection.w >= 0f &&
+                   dto.FlowAdvection.w <= 8f &&
+                   dto.QualityAndLimits.x >= 0f &&
+                   dto.QualityAndLimits.x <= 1f &&
+                   dto.QualityAndLimits.y >= VolumetricFogConstants.MinRaySteps &&
+                   dto.QualityAndLimits.y <= VolumetricFogConstants.MaxRaySteps &&
+                   dto.QualityAndLimits.z >= 0.25f &&
+                   dto.QualityAndLimits.z <= 140f &&
+                   dto.QualityAndLimits.w >= 0f &&
+                   dto.QualityAndLimits.w <= 1f;
         }
 
         public static ref PointLightDTO LightAt(NativeArray<PointLightDTO> values, int index)

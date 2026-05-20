@@ -58,13 +58,13 @@ namespace Hecton8.Physics.Exosuit
     /// <summary>
     /// Blind pressure signal used until hull-integrity pressure authority is wired.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public partial struct MockCrushDepthSignal
     {
-        public float DepthMeters;
-        public float ExternalPressure01;
-        public uint Frame;
-        private uint _pad0;
+        [FieldOffset(0)] public float DepthMeters;
+        [FieldOffset(4)] public float ExternalPressure01;
+        [FieldOffset(8)] public uint Frame;
+        [FieldOffset(12)] private uint _pad0;
     }
 
     /// <summary>

@@ -177,6 +177,12 @@ namespace Hecton8.World
             if (_playerMovement == null)
             {
                 IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                if (playerContext != null && playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
+                {
+                    playerAup = snapshot.Aup;
+                    return MathGuard.IsFinite(in playerAup);
+                }
+
                 if (playerContext != null)
                     _playerMovement = playerContext.PlayerMovement;
             }
@@ -184,12 +190,6 @@ namespace Hecton8.World
             if (_playerMovement != null)
             {
                 playerAup = _playerMovement.CurrentAup;
-                return true;
-            }
-
-            if (playerTransform != null)
-            {
-                playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerTransform.position);
                 return true;
             }
 

@@ -35,6 +35,8 @@ namespace Hecton8.Interaction
         private CanvasGroup _promptCanvasGroup;
         private IInputBindingService _subscribedInputBindingService;
         private InputManager _subscribedInputManager;
+        private LocalizationManager _localizationManager;
+        private bool _localizationColdResolved;
         private bool _hotSwapListenerRegistered;
 
         // COLD ALLOC: char[192] — hover prompt rich-text buffer — owner: InteractionUI
@@ -52,6 +54,7 @@ namespace Hecton8.Interaction
             InteractionEvents.Register(this);
 
             TryRegisterHotSwapListener();
+            CacheLocalizationCold(forceRefresh: true);
             SubscribeInputBindingServiceIfAvailable();
 
             SubscribeInputManagerIfAvailable();
@@ -67,6 +70,7 @@ namespace Hecton8.Interaction
         private void Start()
         {
             TryRegisterHotSwapListener();
+            CacheLocalizationCold(forceRefresh: true);
             SubscribeInputBindingServiceIfAvailable();
             SubscribeInputManagerIfAvailable();
             RefreshInteractPrefixCache();
@@ -197,7 +201,7 @@ namespace Hecton8.Interaction
             if (promptLabel != null)
             {
                 string interactText = target.GetInteractText();
-                LocalizationManager localizationManager = Hecton8.Core.GlobalRegistry.Localization;
+                LocalizationManager localizationManager = ResolveLocalizationManager();
                 if (localizationManager != null && ContainsExpansionToken(interactText))
                     interactText = localizationManager.ExpandText(interactText);
 
@@ -221,7 +225,7 @@ namespace Hecton8.Interaction
         {
             if (!Application.isPlaying)
             {
-                LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+                LocalizationManager manager = ResolveLocalizationManager();
                 string template = manager != null
                     ? manager.GetExpandedOrFallback(manager.CurrentLanguage, LocalizationKeys.INTERACT_DEFAULT_PROMPT_FORMAT, inputPrefix + "{0} {1}")
                     : inputPrefix + "{0} {1}";
@@ -233,7 +237,7 @@ namespace Hecton8.Interaction
             if (_subscribedInputManager != null && CacheInteractBindingMarkup(_subscribedInputManager))
                 return;
 
-            LocalizationManager localizationManager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager localizationManager = ResolveLocalizationManager();
             if (localizationManager != null)
             {
                 string template = localizationManager.GetExpandedOrFallback(
@@ -393,6 +397,11 @@ namespace Hecton8.Interaction
                         SubscribeInputBindingServiceIfAvailable(currentService as IInputBindingService);
                     break;
 
+                case GlobalRegistryServiceSlot.LocalizationRuntime:
+                    _localizationManager = currentService as LocalizationManager;
+                    _localizationColdResolved = _localizationManager != null;
+                    break;
+
                 default:
                     return;
             }
@@ -416,6 +425,21 @@ namespace Hecton8.Interaction
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapListenerRegistered = false;
+        }
+
+        private void CacheLocalizationCold(bool forceRefresh = false)
+        {
+            if (!forceRefresh && _localizationColdResolved && _localizationManager != null)
+                return;
+
+            _localizationManager = Hecton8.Core.GlobalRegistry.Localization;
+            _localizationColdResolved = _localizationManager != null;
+        }
+
+        private LocalizationManager ResolveLocalizationManager()
+        {
+            CacheLocalizationCold();
+            return _localizationManager;
         }
 
         private bool CacheInteractBindingMarkup(InputManager inputManager)

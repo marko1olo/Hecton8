@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
 using Unity.Burst;
@@ -275,15 +276,16 @@ namespace Hecton8.Modding
             {
                 if (!DispatcherJobSwap.TryComplete(ref _projectionHandle, forceComplete: false))
                 {
-                    DispatcherJobSwap.TryComplete(ref _projectionHandle, forceComplete: true);
                     GlobalTelemetryBus.PublishPerformanceWarning(
                         ProjectionJobOverrunWarningHash,
                         ProjectionBridgeContextHash,
                         _queuedProjectedEventCount);
+                    return;
                 }
+
+                _projectionScheduled = false;
             }
 
-            _projectionScheduled = false;
             int dispatchBudget = ResolveProjectionCap();
             int dispatched = 0;
             while (_queuedProjectedEventCount > 0 && dispatched < dispatchBudget)
@@ -617,7 +619,7 @@ namespace Hecton8.Modding
                 for (int i = 0; i < count; i++)
                 {
                     CombatDamageSignal signal = Signals[i];
-                    float3 relativePosition = (float3)(signal.ImpactAup - PlayerAbsolutePosition);
+                    float3 relativePosition = AupPrecisionMath.LocalDeltaFloat3(signal.ImpactAup, PlayerAbsolutePosition, float3.zero);
                     if (!math.all(math.isfinite(relativePosition)))
                         relativePosition = float3.zero;
 
@@ -674,7 +676,7 @@ namespace Hecton8.Modding
                         Scalar1 = math.isfinite(signal.FlowFieldScale) ? math.max(0f, signal.FlowFieldScale) : 0f,
                         Kind = (ushort)ModEventKind.WeatherChanged,
                         Flags = (ushort)(signal.Flags | sampleFlags),
-                        QualityTier = signal.QualityTier,
+                        QualityTier = signal.QualityWeightByte,
                         Sequence = (ushort)math.min(i, ushort.MaxValue)
                     });
                 }

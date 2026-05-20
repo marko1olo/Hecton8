@@ -1,6 +1,5 @@
 using System.Runtime.CompilerServices;
 using Hecton8.Core.Contracts;
-using Hecton8.Gameplay;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
 using Unity.Collections;
@@ -59,7 +58,6 @@ namespace Hecton8.Animation.KineticCharacter
         [ReadOnly, NoAlias] public NativeArray<KineticCharacterFrameInputDTO> Inputs;
         [NoAlias] public NativeArray<ProceduralIKTargetDTO> Targets;
         [ReadOnly, NoAlias] public NativeArray<byte> VoxelSdfTexture3D;
-        [ReadOnly, NoAlias] public NativeArray<PlayerKinematicsHandTarget> PlayerHandTargets;
         public int3 SdfDimensions;
         public float3 SdfOrigin;
         public float3 SdfCellSize;
@@ -94,15 +92,8 @@ namespace Hecton8.Animation.KineticCharacter
 
             ProceduralIKTargetDTO leftHand = BuildDefaultTarget(rootRelative, forward, right, up, -1f, KineticCharacterAnimatorConstants.IkTargetFlagLeftHand);
             ProceduralIKTargetDTO rightHand = BuildDefaultTarget(rootRelative, forward, right, up, 1f, KineticCharacterAnimatorConstants.IkTargetFlagRightHand);
-            bool usedPlayerTargets = TryApplyPlayerHandTargets(input, targetStart, ref leftHand, ref rightHand);
             bool usedSdf = TryApplySdfBrace(input, rootRelative, forward, right, up, -1f, ref leftHand);
             usedSdf |= TryApplySdfBrace(input, rootRelative, forward, right, up, 1f, ref rightHand);
-
-            if (usedPlayerTargets)
-            {
-                leftHand.Flags |= KineticCharacterAnimatorConstants.IkTargetFlagPlayerKinematics;
-                rightHand.Flags |= KineticCharacterAnimatorConstants.IkTargetFlagPlayerKinematics;
-            }
 
             if (usedSdf)
             {
@@ -114,55 +105,6 @@ namespace Hecton8.Animation.KineticCharacter
             Targets[targetStart + 1] = rightHand;
             Targets[targetStart + 2] = default;
             Targets[targetStart + 3] = default;
-        }
-
-        private bool TryApplyPlayerHandTargets(
-            KineticCharacterFrameInputDTO input,
-            int targetStart,
-            ref ProceduralIKTargetDTO leftHand,
-            ref ProceduralIKTargetDTO rightHand)
-        {
-            if (!PlayerHandTargets.IsCreated || PlayerHandTargets.Length < 2)
-                return false;
-
-            bool any = false;
-            PlayerKinematicsHandTarget left = PlayerHandTargets[0];
-            if (left.Hit != 0 && math.all(math.isfinite(left.Position)))
-            {
-                leftHand.LocalPosition = KineticCharacterMath.AupToObserverRelative(
-                    input.RootSectorX,
-                    input.RootSectorY,
-                    input.RootSectorZ,
-                    left.Position,
-                    input.CameraSectorX,
-                    input.CameraSectorY,
-                    input.CameraSectorZ,
-                    input.CameraLocalPosition,
-                    AupSectorSizeMeters);
-                leftHand.PoleOrNormal = KineticCharacterMath.NormalizeSafe(left.Normal, KineticCharacterMath.Float3(0f, 1f, 0f));
-                leftHand.Weight01 = math.saturate(left.Blend);
-                any = leftHand.Weight01 > 0.0001f;
-            }
-
-            PlayerKinematicsHandTarget right = PlayerHandTargets[1];
-            if (right.Hit != 0 && math.all(math.isfinite(right.Position)))
-            {
-                rightHand.LocalPosition = KineticCharacterMath.AupToObserverRelative(
-                    input.RootSectorX,
-                    input.RootSectorY,
-                    input.RootSectorZ,
-                    right.Position,
-                    input.CameraSectorX,
-                    input.CameraSectorY,
-                    input.CameraSectorZ,
-                    input.CameraLocalPosition,
-                    AupSectorSizeMeters);
-                rightHand.PoleOrNormal = KineticCharacterMath.NormalizeSafe(right.Normal, KineticCharacterMath.Float3(0f, 1f, 0f));
-                rightHand.Weight01 = math.saturate(right.Blend);
-                any |= rightHand.Weight01 > 0.0001f;
-            }
-
-            return any;
         }
 
         private bool TryApplySdfBrace(
@@ -189,11 +131,12 @@ namespace Hecton8.Animation.KineticCharacter
                                 forward * 0.62f +
                                 right * (sideSign * 0.28f) +
                                 up * 0.98f;
-            if (!TrySampleSdf(probeLocal, out float distance, out float3 normal))
+            float quality = math.saturate(math.select(0f, input.GlobalQualityWeight, math.isfinite(input.GlobalQualityWeight)));
+            if (!TrySampleSdf(probeLocal, quality, out float distance, out float3 normal))
                 return false;
 
             float braceDistance = math.max(0.05f, WallBraceDistanceMeters);
-            float weight = math.saturate((braceDistance - distance) * math.rcp(braceDistance));
+            float weight = math.saturate((braceDistance - distance) * math.rcp(math.max(braceDistance, 0.0001f)));
             if (weight <= 0.0001f)
                 return false;
 
@@ -215,11 +158,12 @@ namespace Hecton8.Animation.KineticCharacter
             return true;
         }
 
-        private bool TrySampleSdf(float3 sampleLocal, out float distance, out float3 normal)
+        private bool TrySampleSdf(float3 sampleLocal, float quality, out float distance, out float3 normal)
         {
             distance = 0f;
             normal = KineticCharacterMath.Float3(0f, 1f, 0f);
-            float3 grid = (sampleLocal - SdfOrigin) / SdfCellSize;
+            float3 safeCellSize = math.max(math.abs(SdfCellSize), KineticCharacterMath.Float3(0.0001f, 0.0001f, 0.0001f));
+            float3 grid = (sampleLocal - SdfOrigin) * math.rcp(safeCellSize);
             int x = (int)math.round(grid.x);
             int y = (int)math.round(grid.y);
             int z = (int)math.round(grid.z);
@@ -227,10 +171,16 @@ namespace Hecton8.Animation.KineticCharacter
                 return false;
 
             distance = DecodeSdfAt(x, y, z);
-            float dx = DecodeSdfAt(x + 1, y, z) - DecodeSdfAt(x - 1, y, z);
-            float dy = DecodeSdfAt(x, y + 1, z) - DecodeSdfAt(x, y - 1, z);
-            float dz = DecodeSdfAt(x, y, z + 1) - DecodeSdfAt(x, y, z - 1);
-            normal = KineticCharacterMath.NormalizeSafe(new float3(dx, dy, dz), KineticCharacterMath.Float3(0f, 1f, 0f));
+            float gradientGate = math.step(0.24f, quality);
+            if (gradientGate > 0f)
+            {
+                float dx = DecodeSdfAt(x + 1, y, z) - DecodeSdfAt(x - 1, y, z);
+                float dy = DecodeSdfAt(x, y + 1, z) - DecodeSdfAt(x, y - 1, z);
+                float dz = DecodeSdfAt(x, y, z + 1) - DecodeSdfAt(x, y, z - 1);
+                float3 gradientNormal = KineticCharacterMath.NormalizeSafe(new float3(dx, dy, dz), normal);
+                normal = KineticCharacterMath.NormalizeSafe(math.lerp(normal, gradientNormal, KineticCharacterMath.SmoothRange01(quality, 0.24f, 1f)), normal);
+            }
+
             return math.isfinite(distance) && math.all(math.isfinite(normal));
         }
 
@@ -335,7 +285,8 @@ namespace Hecton8.Animation.KineticCharacter
             float3 forward = KineticCharacterMath.NormalizeSafe(math.mul(rootRotation, KineticCharacterMath.Float3(0f, 0f, 1f)), KineticCharacterMath.Float3(0f, 0f, 1f));
             float3 right = KineticCharacterMath.NormalizeSafe(math.mul(rootRotation, KineticCharacterMath.Float3(1f, 0f, 0f)), KineticCharacterMath.Float3(1f, 0f, 0f));
             float3 up = KineticCharacterMath.NormalizeSafe(math.mul(rootRotation, KineticCharacterMath.Float3(0f, 1f, 0f)), KineticCharacterMath.Float3(0f, 1f, 0f));
-            float speed = math.sqrt(math.max(0f, math.lengthsq(KineticCharacterMath.SanitizeFinite(input.VelocityLocal, float3.zero))));
+            float speedSq = math.max(0f, math.lengthsq(KineticCharacterMath.SanitizeFinite(input.VelocityLocal, float3.zero)));
+            float speed = speedSq * math.rsqrt(math.max(speedSq, 0.000001f));
             float frequency = tuning.LocomotionFrequencyHz * (1f + speed * 0.055f);
             rig.Phase += dt * frequency * KineticCharacterAnimatorConstants.TwoPi;
             rig.Phase -= math.floor(rig.Phase * (1f / KineticCharacterAnimatorConstants.TwoPi)) * KineticCharacterAnimatorConstants.TwoPi;
@@ -412,9 +363,20 @@ namespace Hecton8.Animation.KineticCharacter
             leftDefaultHand += right * (input.SwimWaveLateral * 0.045f);
             rightDefaultHand += right * (input.SwimWaveLateral * 0.045f);
 
-            if ((input.Flags & KineticCharacterAnimatorConstants.InputFlagToolActive) != 0u && toolWeight > 0.0001f && KineticCharacterMath.IsFinite(input.ToolPoseMatrix))
+            bool hasToolPose = (input.Flags & KineticCharacterAnimatorConstants.InputFlagToolActive) != 0u &&
+                               toolWeight > 0.0001f &&
+                               KineticCharacterMath.IsFinite(input.ToolPoseMatrix) &&
+                               math.lengthsq(input.ToolPoseMatrix.c3.xyz) > 0.0001f;
+            if (hasToolPose)
             {
                 float3 toolPosition = input.ToolPoseMatrix.c3.xyz;
+                uint toolHash = ((input.Flags & KineticCharacterAnimatorConstants.InputFlagToolHashValid) != 0u) ? input.ActiveToolHash : 0u;
+                float hash01 = (toolHash & 255u) * (1f / 255f);
+                float side = math.select(-1f, 1f, (toolHash & 1u) != 0u);
+                float supportWeight = math.saturate(toolWeight * math.lerp(0.35f, 0.85f, quality) * math.select(0f, 1f, toolHash != 0u));
+                float supportReach = math.lerp(0.18f, 0.34f, hash01);
+                float3 supportGrip = toolPosition - forward * supportReach - right * (0.12f * side) - up * 0.03f;
+                leftDefaultHand = math.lerp(leftDefaultHand, supportGrip, supportWeight);
                 rightDefaultHand = math.lerp(rightDefaultHand, toolPosition, toolWeight);
                 rightDefaultHand = math.lerp(rightDefaultHand, rightShoulder + forward * 0.34f + right * 0.22f - up * 0.16f, tuning.ToolHandSuppression01 * toolWeight);
                 flags |= KineticCharacterAnimatorConstants.TelemetryFlagToolAligned;
@@ -453,7 +415,7 @@ namespace Hecton8.Animation.KineticCharacter
 
             if (rig.ToolSocketIndex >= 0)
             {
-                float4x4 toolMatrix = (input.Flags & KineticCharacterAnimatorConstants.InputFlagToolActive) != 0u && KineticCharacterMath.IsFinite(input.ToolPoseMatrix)
+                float4x4 toolMatrix = hasToolPose
                     ? input.ToolPoseMatrix
                     : KineticCharacterMath.BoneMatrix(rightHand, forward, up);
                 WriteBone(boneStart, rig.ToolSocketIndex, toolMatrix, activeBoneCount, ref invalidCount, ref matricesComputed);
@@ -474,6 +436,7 @@ namespace Hecton8.Animation.KineticCharacter
             hash = KineticCharacterMath.Hash(hash, math.asuint(root.x));
             hash = KineticCharacterMath.Hash(hash, math.asuint(root.y));
             hash = KineticCharacterMath.Hash(hash, math.asuint(root.z));
+            hash = KineticCharacterMath.Hash(hash, input.ActiveToolHash);
             hash = KineticCharacterMath.Hash(hash, flags);
 
             stats.ActiveCharacters = 1;
@@ -590,11 +553,14 @@ namespace Hecton8.Animation.KineticCharacter
             float3 fallbackDirection = KineticCharacterMath.NormalizeSafe(target - root, KineticCharacterMath.Float3(0f, 0f, 1f));
             float maxReach = math.max(0.001f, upperLength + lowerLength - 0.0005f);
             float3 toTarget = target - root;
-            float distance = math.sqrt(math.max(0.000001f, math.lengthsq(toTarget)));
+            float distanceSq = math.lengthsq(toTarget);
+            bool hasTargetDistance = math.isfinite(distanceSq) && distanceSq > 0.000001f;
+            float distance = hasTargetDistance ? distanceSq * math.rsqrt(math.max(distanceSq, 0.000001f)) : 0f;
             float clampedDistance = math.clamp(distance, math.abs(upperLength - lowerLength) + 0.0005f, maxReach);
-            float3 direction = distance > 0.000001f ? toTarget * math.rcp(distance) : fallbackDirection;
+            float3 direction = hasTargetDistance ? toTarget * math.rcp(math.max(distance, 0.000001f)) : fallbackDirection;
             float cosA = math.clamp((upperLength * upperLength + clampedDistance * clampedDistance - lowerLength * lowerLength) * math.rcp(math.max(0.0001f, 2f * upperLength * clampedDistance)), -1f, 1f);
-            float sinA = math.sqrt(math.max(0f, 1f - cosA * cosA));
+            float sinSq = math.max(0f, 1f - cosA * cosA);
+            float sinA = sinSq * math.rsqrt(math.max(sinSq, 0.000001f));
             float3 poleDirection = pole - direction * math.dot(pole, direction);
             poleDirection = KineticCharacterMath.NormalizeSafe(poleDirection, KineticCharacterMath.Float3(0f, 1f, 0f));
             joint = root + direction * (cosA * upperLength) + poleDirection * (sinA * upperLength);
@@ -678,7 +644,7 @@ namespace Hecton8.Animation.KineticCharacter
                 sectorZ = input.RootSectorZ;
             }
 
-            float invActive = active > 0 ? math.rcp(active) : 0f;
+            float invActive = active > 0 ? math.rcp(math.max(active, 1)) : 0f;
             KineticAnimationTelemetryEntry entry = default;
             entry.RootSectorX = sectorX;
             entry.RootSectorY = sectorY;

@@ -17,174 +17,174 @@ using Unity.Mathematics;
 namespace Hecton8.SaveSystem
 {
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal struct MerkleNodeDTO
     {
-        public ulong HashLo;
-        public ulong HashHi;
-        public uint SectorKey;
-        public uint ChildMask;
-        public ulong _pad0;
+        [FieldOffset(0)] public ulong HashLo;
+        [FieldOffset(8)] public ulong HashHi;
+        [FieldOffset(16)] public uint SectorKey;
+        [FieldOffset(20)] public uint ChildMask;
+        [FieldOffset(24)] public ulong _pad0;
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal struct SectorEntryDTO
     {
-        public ulong SectorHash;
-        public ulong ByteOffset;
-        public int CompressedSize;
-        public int DecompressedSize;
-        public uint Checksum;
-        public uint _pad0;
+        [FieldOffset(0)] public ulong SectorHash;
+        [FieldOffset(8)] public ulong ByteOffset;
+        [FieldOffset(16)] public int CompressedSize;
+        [FieldOffset(20)] public int DecompressedSize;
+        [FieldOffset(24)] public uint Checksum;
+        [FieldOffset(28)] public uint _pad0;
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct StateDeltaRecordDTO
     {
-        public ulong PreviousHashLo;
-        public ulong PreviousHashHi;
-        public ulong NewHashLo;
-        public ulong NewHashHi;
-        public int SourceOffsetBytes;
-        public int DataLength;
-        public int DeltaPayloadOffset;
-        public int CompressedOffset;
-        public uint SectorKey;
-        public uint Flags;
-        public uint Crc32;
-        public uint _pad0;
+        [FieldOffset(0)] public ulong PreviousHashLo;
+        [FieldOffset(8)] public ulong PreviousHashHi;
+        [FieldOffset(16)] public ulong NewHashLo;
+        [FieldOffset(24)] public ulong NewHashHi;
+        [FieldOffset(32)] public int SourceOffsetBytes;
+        [FieldOffset(36)] public int DataLength;
+        [FieldOffset(40)] public int DeltaPayloadOffset;
+        [FieldOffset(44)] public int CompressedOffset;
+        [FieldOffset(48)] public uint SectorKey;
+        [FieldOffset(52)] public uint Flags;
+        [FieldOffset(56)] public uint Crc32;
+        [FieldOffset(60)] public uint _pad0;
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal struct StateLeafDescriptor
     {
-        public uint SectorKey;
-        public uint Flags;
-        public int SourceOffsetBytes;
-        public int ByteLength;
-        public int RecordStrideBytes;
-        public int TombstoneOffsetBytes;
-        public uint TombstoneAliveMask;
-        public uint _pad0;
+        [FieldOffset(0)] public uint SectorKey;
+        [FieldOffset(4)] public uint Flags;
+        [FieldOffset(8)] public int SourceOffsetBytes;
+        [FieldOffset(12)] public int ByteLength;
+        [FieldOffset(16)] public int RecordStrideBytes;
+        [FieldOffset(20)] public int TombstoneOffsetBytes;
+        [FieldOffset(24)] public uint TombstoneAliveMask;
+        [FieldOffset(28)] public uint _pad0;
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal struct Lz4SubBlockHeader
     {
-        public uint Magic;
-        public int RawBytes;
-        public int StoredBytes;
-        public int SourceOffsetBytes;
-        public uint Crc32;
-        public uint Flags;
-        public ushort Version;
-        public ushort HeaderBytes;
-        public uint _pad0;
+        [FieldOffset(0)] public uint Magic;
+        [FieldOffset(4)] public int RawBytes;
+        [FieldOffset(8)] public int StoredBytes;
+        [FieldOffset(12)] public int SourceOffsetBytes;
+        [FieldOffset(16)] public uint Crc32;
+        [FieldOffset(20)] public uint Flags;
+        [FieldOffset(24)] public ushort Version;
+        [FieldOffset(26)] public ushort HeaderBytes;
+        [FieldOffset(28)] public uint _pad0;
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct SaveMerkleWalAppendHeader
     {
-        public long LogicalOffset;
-        public long TimestampTicks;
-        public ulong RootHashLo;
-        public ulong RootHashHi;
-        public int RawBytes;
-        public int StoredBytes;
-        public uint Magic;
-        public uint Flags;
-        public uint BlockCount;
-        public uint Frame;
-        public uint RecordCrc32;
-        public ushort Version;
-        public ushort HeaderBytes;
+        [FieldOffset(0)] public long LogicalOffset;
+        [FieldOffset(8)] public long TimestampTicks;
+        [FieldOffset(16)] public ulong RootHashLo;
+        [FieldOffset(24)] public ulong RootHashHi;
+        [FieldOffset(32)] public int RawBytes;
+        [FieldOffset(36)] public int StoredBytes;
+        [FieldOffset(40)] public uint Magic;
+        [FieldOffset(44)] public uint Flags;
+        [FieldOffset(48)] public uint BlockCount;
+        [FieldOffset(52)] public uint Frame;
+        [FieldOffset(56)] public uint RecordCrc32;
+        [FieldOffset(60)] public ushort Version;
+        [FieldOffset(62)] public ushort HeaderBytes;
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct SaveMerkleTelemetryEntry
     {
-        public ulong RootHashLo;
-        public ulong RootHashHi;
-        public int TotalBytesHashed;
-        public int DeltaBytesGenerated;
-        public float TreeComputeTimeMs;
-        public uint Frame;
-        public uint Flags;
-        public uint ChangedLeaves;
-        public uint WalBytesWritten;
-        public uint CrcFailures;
-        public uint IoFailures;
-        public uint _pad0;
-        public ulong _pad1;
+        [FieldOffset(0)] public ulong RootHashLo;
+        [FieldOffset(8)] public ulong RootHashHi;
+        [FieldOffset(16)] public int TotalBytesHashed;
+        [FieldOffset(20)] public int DeltaBytesGenerated;
+        [FieldOffset(24)] public float TreeComputeTimeMs;
+        [FieldOffset(28)] public uint Frame;
+        [FieldOffset(32)] public uint Flags;
+        [FieldOffset(36)] public uint ChangedLeaves;
+        [FieldOffset(40)] public uint WalBytesWritten;
+        [FieldOffset(44)] public uint CrcFailures;
+        [FieldOffset(48)] public uint IoFailures;
+        [FieldOffset(52)] public uint _pad0;
+        [FieldOffset(56)] public ulong _pad1;
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct SaveMerkleEmergencyHeader64
     {
-        public ulong TimestampTicks;
-        public ulong RootHashLo;
-        public ulong RootHashHi;
-        public ulong _pad0;
-        public ulong _pad1;
-        public uint Magic;
-        public uint SectorEntryBytes;
-        public uint MerkleNodeBytes;
-        public uint Flags;
-        public uint Checksum;
-        public ushort Version;
-        public ushort HeaderBytes;
+        [FieldOffset(0)] public ulong TimestampTicks;
+        [FieldOffset(8)] public ulong RootHashLo;
+        [FieldOffset(16)] public ulong RootHashHi;
+        [FieldOffset(24)] public ulong _pad0;
+        [FieldOffset(32)] public ulong _pad1;
+        [FieldOffset(40)] public uint Magic;
+        [FieldOffset(44)] public uint SectorEntryBytes;
+        [FieldOffset(48)] public uint MerkleNodeBytes;
+        [FieldOffset(52)] public uint Flags;
+        [FieldOffset(56)] public uint Checksum;
+        [FieldOffset(60)] public ushort Version;
+        [FieldOffset(62)] public ushort HeaderBytes;
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal struct SaveMerkleRuntimeConfig
     {
-        public int SubBlockBytes;
-        public int WalBytesPerSecond;
-        public int MathLod;
-        public int CosmeticDropThresholdBytes;
-        public uint Version;
-        public uint SchemaHash;
-        public uint Flags;
-        public uint _pad0;
+        [FieldOffset(0)] public int SubBlockBytes;
+        [FieldOffset(4)] public int WalBytesPerSecond;
+        [FieldOffset(8)] public int MathLod;
+        [FieldOffset(12)] public int CosmeticDropThresholdBytes;
+        [FieldOffset(16)] public uint Version;
+        [FieldOffset(20)] public uint SchemaHash;
+        [FieldOffset(24)] public uint Flags;
+        [FieldOffset(28)] public uint _pad0;
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 80)]
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
     internal struct SaveMerkleEditorSnapshot
     {
-        public ulong RootHashLo;
-        public ulong RootHashHi;
-        public ulong ChangedBranchBits0;
-        public ulong ChangedBranchBits1;
-        public ulong ChangedBranchBits2;
-        public ulong ChangedBranchBits3;
-        public uint ChangedLeafCount;
-        public uint LeafCount;
-        public uint LastChangedSectorKey;
-        public uint CorruptBlockCount;
-        public uint StoredBytes;
-        public uint RawBytes;
-        public uint SnapshotFlags;
-        public uint _pad0;
+        [FieldOffset(0)] public ulong RootHashLo;
+        [FieldOffset(8)] public ulong RootHashHi;
+        [FieldOffset(16)] public ulong ChangedBranchBits0;
+        [FieldOffset(24)] public ulong ChangedBranchBits1;
+        [FieldOffset(32)] public ulong ChangedBranchBits2;
+        [FieldOffset(40)] public ulong ChangedBranchBits3;
+        [FieldOffset(48)] public uint ChangedLeafCount;
+        [FieldOffset(52)] public uint LeafCount;
+        [FieldOffset(56)] public uint LastChangedSectorKey;
+        [FieldOffset(60)] public uint CorruptBlockCount;
+        [FieldOffset(64)] public uint StoredBytes;
+        [FieldOffset(68)] public uint RawBytes;
+        [FieldOffset(72)] public uint SnapshotFlags;
+        [FieldOffset(76)] public uint _pad0;
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     internal unsafe partial struct MockInventoryData
     {
-        public uint ItemId;
-        public uint Count;
-        public uint Flags;
-        public uint StableSeed;
-        public fixed byte Payload[112];
+        [FieldOffset(0)] public uint ItemId;
+        [FieldOffset(4)] public uint Count;
+        [FieldOffset(8)] public uint Flags;
+        [FieldOffset(12)] public uint StableSeed;
+        [FieldOffset(16)] public fixed byte Payload[112];
     }
 
     internal struct SaveMerkleVaultBufferSet

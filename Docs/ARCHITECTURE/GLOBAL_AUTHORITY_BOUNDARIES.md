@@ -4,8 +4,7 @@ Date: 2026-05-19
 Status: PENDING VERIFICATION
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-19 R32 Root/Architecture R4/Proof-Wording Boundary
-
+## 2026-05-20 R45 Root/Architecture Actuality Boundary
 This document is active only where it agrees with:
 
 - `Docs/README.md`
@@ -14,11 +13,11 @@ This document is active only where it agrees with:
 - current source files
 - fresh verification logs and artifacts
 
-Current root/architecture boundary is `Docs/Reports/2026-05-19_DOCUMENTATION_R32_ARCHITECTURE_R4_AND_PROOF_WORDING_LOCAL.md`. R31 remains the prior current-boundary propagation correction; R30 remains the prior internal-currentness correction; R29 remains the prior stale-gate/global-authority correction; R28 remains the prior interior-boundary correction; R27 remains the latest source-counter/index snapshot only until a newer counter pass reruns it.
+Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL evidence. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. R42 remains the prior counter/route-boundary/proof-label correction. R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers; runtime proof remains absent.
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
 
-R32 architecture R4/proof-wording correction is the latest artifact-backed local static DOC_GLOBAL boundary for architecture/root documentation. R31 remains the prior current-boundary propagation layer, R30 remains the prior internal-currentness layer, R29 remains the prior stale-gate/global-authority layer, R28 remains the prior interior-boundary layer, and R27 remains the latest source-counter/index snapshot until rerun.
+R45 root/architecture R43/R44 residue/proof-artifact/source-counter correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 This document defines the boundary between `GlobalRegistry`, `SignalBus<T>`,
@@ -59,15 +58,15 @@ These counters are static text/source evidence only:
 
 | Surface | Current Observation |
 |---|---:|
-| Raw `GlobalRegistry.` source lines under `Assets/_Project/Scripts` | 5953 |
-| Top raw `GlobalRegistry.` files | `GameBootstrapper.cs` 161, `CrashTelemetryBuffer.cs` 49, `HectonFloatingOrigin.cs` 44, `FaunaBrain.cs` 41, `SaveManager.cs` 38, `HectonPlayerMovement.cs` 37 |
-| Raw bus publish/subscribe hits for `HectonEventBus`, `GlobalSignals.Publish`, `SignalBus<T>.Push/TryPush` | 585 |
-| `GlobalSignals.cs` raw `NativeQueue<...>` references | 115 |
-| `GlobalSignals.cs` raw `SignalBus<T>.Configure/EnsureInitialized` hits | 265 |
-| Raw native collection type references under `Assets/_Project/Scripts` | 13364 |
-| Latest H-Phi artifact counters from `Docs/Reports/2026-05-19_HFI_AUDIT_H_PHI_AND_PROJECT_RISK.md` | `GlobalRegistrySurface=5552`, `SignalBusPush=495`, `EventPublish=25`, `DataVaultRefs=2359`, `NativeArrayRefs=9206`, `OwnerBlockedNativeArrayRefs=5108` |
+| Raw `GlobalRegistry.` source lines under `Assets/_Project` | 6101 |
+| Top raw `GlobalRegistry.` files | `GameBootstrapper.cs` 162, `AdvancedAcousticsSmokeTester.cs` 88, `CrashTelemetryBuffer.cs` 49, `HectonFloatingOrigin.cs` 44, `FaunaBrain.cs` 40, `SaveManager.cs` 38, `SpatialAudioManager.cs` 38, `HectonPlayerMovement.cs` 37 |
+| Raw bus publish/subscribe hits for `HectonEventBus`, `GlobalSignals.Publish`, `SignalBus<T>.Push/TryPush`, and direct publish/subscribe tokens under `Assets/_Project` | 1200 |
+| `GlobalSignals.cs` raw `NativeQueue<...>` references | 116 |
+| `GlobalSignals.cs` raw `SignalBus<T>.Configure/EnsureInitialized` hits | 271 |
+| Raw native collection line hits under `Assets/_Project` using `NativeArray|NativeList|NativeHashMap|NativeQueue` | 16397 |
+| Historical HFI report H-Phi artifact counters from `Docs/Reports/2026-05-19_HFI_AUDIT_H_PHI_AND_PROJECT_RISK.md` | `GlobalRegistrySurface=5552`, `SignalBusPush=495`, `EventPublish=25`, `DataVaultRefs=2359`, `NativeArrayRefs=9206`, `OwnerBlockedNativeArrayRefs=5108` |
 
-2026-05-19 SHINOBU_02 read-only grep recapture for orientation only: `GlobalRegistry.` line hits `5953`, bus-publish line hits `585`, `GlobalSignals.cs` `NativeQueue<...>` line hits `115`, `SignalBus<T>.Configure/EnsureInitialized` hits `265`, direct `CreateQueue(...)` slots `73`, and typed `SignalBus<T>.EnsureInitialized()` lanes `132`. These are static-source orientation values, not gates, until the exact scan command is locked and rerun before acceptance.
+2026-05-20 DOC_GLOBAL R43 correction to the R42 static grep recapture for orientation only: `GlobalRegistry.` line hits `6101`, bus-publish/subscribe line hits `1200`, native-collection line hits `16397`, `GlobalSignals.cs` `NativeQueue<...>` refs `116`, `SignalBus<T>.Configure/EnsureInitialized` hits `271`, direct `CreateQueue(...)` slots `73`, typed `SignalBus<T>.EnsureInitialized()` lanes inside `GlobalSignals.cs` `135`, and broader script-level typed-lane matches `1328`. These are static-source orientation values, not gates, until the exact scan command is locked and rerun before acceptance.
 
 Interpretation:
 
@@ -120,6 +119,8 @@ line: no new global surface without deleting or migrating old debt.
    name scan.
 8. Every new DataVault buffer needs `BufferID`, `SystemID`, length/capacity,
    generation handling, disposal/release behavior, and stale-handle behavior.
+   Do not add local numeric `(BufferID)N` casts unless an owner/range/lifetime
+   ledger exists.
 9. Every new global route needs a failure mode: drop, coalesce, fail-fast,
    fallback snapshot, or disable-with-telemetry.
 10. H-Phi improvement is not acceptance. Runtime acceptance still requires Unity
@@ -142,6 +143,8 @@ Block new work when any of these appear:
   the traffic.
 - New direct `NativeArray<T>` ownership outside approved memory owners without
   DataVault/H8Memory migration rationale.
+- Duplicate central `BufferID` numeric value, or a new local numeric
+  `(BufferID)N` cast without owner/range/lifetime proof.
 - New catch-all signal such as `RuntimeSignal`, `GameplaySignal`, or a large
   enum/switch payload that hides unrelated traffic in one lane.
 - Signal payload containing Unity objects, strings, managed arrays, delegates, or

@@ -46,8 +46,6 @@ namespace Hecton8.Ecosystem
         private const ushort MigrationCellFlagPopulationSaturated = 1 << 2;
         private const ushort MigrationCellFlagNoPopulation = unchecked((ushort)~MigrationCellFlagPopulation);
         private const ushort MigrationCellFlagNoPopulationSaturated = unchecked((ushort)~MigrationCellFlagPopulationSaturated);
-        private const string NativeMemoryOwner = nameof(MigrationDirector);
-        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private const SystemID NativeMemorySystemId = SystemID.AIEcology;
 
         private bool _registeredToTick;
@@ -68,6 +66,14 @@ namespace Hecton8.Ecosystem
         private int _pendingBloodCloudPoiWriteCount;
         private bool _serviceRegistered;
         private bool _duplicateServiceSuppressed;
+        private bool _migrationFieldBuffersLocked;
+        private IDataVault _migrationVault;
+        private BufferID _migrationFieldWriteBufferId;
+        private BufferID _migrationFieldPoiBufferId;
+        private VaultBufferHandle<MigrationGridCell> _migrationGridFrontHandle;
+        private VaultBufferHandle<MigrationGridCell> _migrationGridBackHandle;
+        private VaultBufferHandle<MigrationBloodCloudPoi> _bloodCloudPoisHandle;
+        private VaultBufferHandle<MigrationSwarmState> _migrationSwarmStatesHandle;
 
         private NativeArray<MigrationGridCell> _migrationGridFront;
         private NativeArray<MigrationGridCell> _migrationGridBack;
@@ -516,7 +522,7 @@ namespace Hecton8.Ecosystem
         private void RegisterPredatorKillPoiInternal(uint uniqueInstanceUid, Vector3 worldPosition, float fallbackRuntimeSeconds)
         {
             AllocateMigrationNativeState();
-            if (!_bloodCloudPois.IsCreated || _bloodCloudPois.Length == 0)
+            if (!RefreshMigrationNativeViews() || !_bloodCloudPois.IsCreated || _bloodCloudPois.Length == 0)
                 return;
 
             float gameTimeSeconds = ResolveTimelineGameSeconds(fallbackRuntimeSeconds);
@@ -646,7 +652,7 @@ namespace Hecton8.Ecosystem
 
         private void RequestMigrationFieldRebuildSoon()
         {
-            _coldTickAccumulator = Mathf.Max(_coldTickAccumulator, migrationFieldColdTickIntervalSeconds);
+            _coldTickAccumulator = Mathf.Max(_coldTickAccumulator, ResolveMigrationFieldColdTickIntervalSeconds());
         }
 
         private void CompactPendingBloodCloudPoiWrites(float gameTimeSeconds)
@@ -676,11 +682,12 @@ namespace Hecton8.Ecosystem
                 return;
 
             AllocateMigrationNativeState();
-            if (!_migrationGridFront.IsCreated || !_migrationGridBack.IsCreated || _migrationFieldScheduled)
+            if (!RefreshMigrationNativeViews() || !_migrationGridFront.IsCreated || !_migrationGridBack.IsCreated || _migrationFieldScheduled)
                 return;
 
-            _coldTickAccumulator += ResolveColdTickDeltaSeconds(Time.unscaledTime);
-            if (_coldTickAccumulator < migrationFieldColdTickIntervalSeconds)
+            float qualityScaledIntervalSeconds = ResolveMigrationFieldColdTickIntervalSeconds();
+            _coldTickAccumulator += ResolveColdTickDeltaSeconds(Time.unscaledTime, qualityScaledIntervalSeconds);
+            if (_coldTickAccumulator < qualityScaledIntervalSeconds)
                 return;
 
             _coldTickAccumulator = 0f;
@@ -689,7 +696,7 @@ namespace Hecton8.Ecosystem
 
         private void ScheduleMigrationFieldBuild()
         {
-            if (!_migrationGridBack.IsCreated || _migrationGridCellCount <= 0)
+            if (!RefreshMigrationNativeViews() || !_migrationGridBack.IsCreated || _migrationGridCellCount <= 0)
                 return;
 
             float timelineSeconds = ResolveTimelineGameSeconds(Time.time);
@@ -698,6 +705,8 @@ namespace Hecton8.Ecosystem
             float seasonalPhase = ResolveSeasonalPhase(timelineSeconds);
             _debugLastSeasonalPhase = seasonalPhase;
             _debugBloodCloudPoiCount = CountActiveBloodCloudPois(timelineSeconds);
+            if (!TryLockMigrationFieldJobBuffers())
+                return;
 
             BuildMigrationVectorFieldJob job = new BuildMigrationVectorFieldJob
             {
@@ -708,7 +717,8 @@ namespace Hecton8.Ecosystem
                 OriginAupLocal = new float3(migrationGridOriginAupLocal.x, migrationGridOriginAupLocal.y, migrationGridOriginAupLocal.z),
                 SeasonalPhase = seasonalPhase,
                 VerticalFlowWeight = Mathf.Clamp01(migrationVerticalFlowWeight),
-                CurrentGameTimeSeconds = timelineSeconds
+                CurrentGameTimeSeconds = timelineSeconds,
+                GlobalQualityWeight = ResolveGlobalQualityWeight01()
             };
 
             _migrationFieldHandle = job.Schedule(_migrationGridCellCount, 64);
@@ -721,12 +731,16 @@ namespace Hecton8.Ecosystem
             if (!_migrationFieldScheduled)
                 return;
 
-            if (!DispatcherJobSwap.TryComplete(ref _migrationFieldHandle, forceComplete))
+            if (!DispatcherJobFence.TryComplete(ref _migrationFieldHandle, forceComplete))
                 return;
 
             NativeArray<MigrationGridCell> swap = _migrationGridFront;
             _migrationGridFront = _migrationGridBack;
             _migrationGridBack = swap;
+            VaultBufferHandle<MigrationGridCell> handleSwap = _migrationGridFrontHandle;
+            _migrationGridFrontHandle = _migrationGridBackHandle;
+            _migrationGridBackHandle = handleSwap;
+            UnlockMigrationFieldJobBuffers();
             _migrationFieldScheduled = false;
             if (_migrationGridFront.IsCreated && _migrationGridFront.Length > 0)
             {
@@ -743,8 +757,13 @@ namespace Hecton8.Ecosystem
         private bool TrySampleMigrationFieldDirection(Vector3 origin, out Vector3 direction)
         {
             direction = Vector3.zero;
-            if (!_migrationGridFront.IsCreated || _migrationGridFront.Length != _migrationGridCellCount || _migrationGridCellCount <= 0)
+            if (!RefreshMigrationNativeViews() ||
+                !_migrationGridFront.IsCreated ||
+                _migrationGridFront.Length != _migrationGridCellCount ||
+                _migrationGridCellCount <= 0)
+            {
                 return false;
+            }
 
             double safeCellSize = Mathf.Max(1f, migrationCellSizeMeters);
             double3 originAupMeters = ResolveAupMeters(origin);
@@ -763,6 +782,21 @@ namespace Hecton8.Ecosystem
             int iy1 = math.clamp(y0 + 1, 0, _migrationGridResolution.y - 1);
             int iz0 = WrapIndex(z0, _migrationGridResolution.z);
             int iz1 = WrapIndex(z0 + 1, _migrationGridResolution.z);
+            float interpolationWeight = Smooth01(math.saturate((ResolveGlobalQualityWeight01() - 0.22f) * 1.2820513f));
+            int nearestX = WrapIndex(x0 + (int)math.step(0.5f, tx), _migrationGridResolution.x);
+            int nearestY = math.clamp(y0 + (int)math.step(0.5f, ty), 0, _migrationGridResolution.y - 1);
+            int nearestZ = WrapIndex(z0 + (int)math.step(0.5f, tz), _migrationGridResolution.z);
+            float3 nearest = _migrationGridFront[BuildMigrationCellIndex(nearestX, nearestY, nearestZ, _migrationGridResolution)].Direction;
+            if (interpolationWeight <= 0.0001f)
+            {
+                float nearestSq = math.lengthsq(nearest);
+                if (nearestSq <= 0.0001f)
+                    return false;
+
+                nearest *= math.rsqrt(nearestSq);
+                direction = new Vector3(nearest.x, nearest.y, nearest.z);
+                return true;
+            }
 
             float3 c000 = _migrationGridFront[BuildMigrationCellIndex(ix0, iy0, iz0, _migrationGridResolution)].Direction;
             float3 c100 = _migrationGridFront[BuildMigrationCellIndex(ix1, iy0, iz0, _migrationGridResolution)].Direction;
@@ -778,7 +812,7 @@ namespace Hecton8.Ecosystem
             float3 c11 = math.lerp(c011, c111, tx);
             float3 c0 = math.lerp(c00, c10, ty);
             float3 c1 = math.lerp(c01, c11, ty);
-            float3 sampled = math.lerp(c0, c1, tz);
+            float3 sampled = math.lerp(nearest, math.lerp(c0, c1, tz), interpolationWeight);
             float sampledSq = math.lengthsq(sampled);
             if (sampledSq <= 0.0001f)
                 return false;
@@ -855,7 +889,7 @@ namespace Hecton8.Ecosystem
 
         private void WriteSwarmPopulationState(int speciesId, Vector3 origin, int populationCount)
         {
-            if (!_migrationSwarmStates.IsCreated || _migrationSwarmStates.Length == 0)
+            if (!RefreshMigrationNativeViews() || !_migrationSwarmStates.IsCreated || _migrationSwarmStates.Length == 0)
                 return;
 
             float gameTimeSeconds = ResolveTimelineGameSeconds(Time.time);
@@ -1300,6 +1334,48 @@ namespace Hecton8.Ecosystem
             vrVatSwayAmplitudeScale = Mathf.Clamp(vrVatSwayAmplitudeScale, 1f, 2f);
         }
 
+        private IDataVault ResolveMigrationDataVault()
+        {
+            if (_migrationVault != null)
+                return _migrationVault;
+
+            if (GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
+            {
+                _migrationVault = latest;
+                return _migrationVault;
+            }
+
+            return null;
+        }
+
+        private bool RefreshMigrationNativeViews()
+        {
+            IDataVault vault = ResolveMigrationDataVault();
+            if (vault == null)
+                return false;
+
+            if (!_migrationGridFrontHandle.IsCreated ||
+                !_migrationGridBackHandle.IsCreated ||
+                !_bloodCloudPoisHandle.IsCreated ||
+                !_migrationSwarmStatesHandle.IsCreated)
+            {
+                return false;
+            }
+
+            _migrationGridFront = _migrationGridFrontHandle.Resolve(vault);
+            _migrationGridBack = _migrationGridBackHandle.Resolve(vault);
+            _bloodCloudPois = _bloodCloudPoisHandle.Resolve(vault);
+            _migrationSwarmStates = _migrationSwarmStatesHandle.Resolve(vault);
+            return IsMigrationNativeStateAllocated;
+        }
+
+        private static bool AreMigrationDtoLayoutsValid()
+        {
+            return UnsafeUtility.SizeOf<MigrationGridCell>() == 32 &&
+                UnsafeUtility.SizeOf<MigrationBloodCloudPoi>() == 80 &&
+                UnsafeUtility.SizeOf<MigrationSwarmState>() == 40;
+        }
+
         private void AllocateMigrationNativeState()
         {
             SanitizeMigrationSettings();
@@ -1315,46 +1391,59 @@ namespace Hecton8.Ecosystem
                 return;
             }
 
+            IDataVault vault = ResolveMigrationDataVault();
+            if (vault == null)
+            {
+                DisposeMigrationNativeState();
+                return;
+            }
+
+            if (!AreMigrationDtoLayoutsValid())
+            {
+                DisposeMigrationNativeState();
+                return;
+            }
+
             DisposeMigrationNativeState();
+            _migrationVault = vault;
             _migrationGridResolution = requiredResolution;
             _migrationGridCellCount = requiredCellCount;
             _debugMigrationGridCellCount = requiredCellCount;
 
-            // COLD ALLOC: NativeArray<MigrationGridCell>[65536 max] — double-buffered global migration flow field — owner: MigrationDirector
-            _migrationGridFront = H8Memory.Allocate<MigrationGridCell>(requiredCellCount, NativeMemorySystemId, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(_migrationGridFront, NativeMemoryOwner, nameof(_migrationGridFront), NativeMemoryLifetime);
-            // COLD ALLOC: NativeArray<MigrationGridCell>[65536 max] — Burst write target for seasonal migration flow updates — owner: MigrationDirector
-            _migrationGridBack = H8Memory.Allocate<MigrationGridCell>(requiredCellCount, NativeMemorySystemId, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-            NativeMemorySentinel.RegisterNativeArray(_migrationGridBack, NativeMemoryOwner, nameof(_migrationGridBack), NativeMemoryLifetime);
-            // COLD ALLOC: NativeArray<MigrationBloodCloudPoi>[8] — kill-site vector distortion sources — owner: MigrationDirector
-            _bloodCloudPois = H8Memory.Allocate<MigrationBloodCloudPoi>(BloodCloudPoiCapacity, NativeMemorySystemId, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(_bloodCloudPois, NativeMemoryOwner, nameof(_bloodCloudPois), NativeMemoryLifetime);
-            // COLD ALLOC: NativeArray<MigrationSwarmState>[128] — O(1) statistical swarm population points — owner: MigrationDirector
-            _migrationSwarmStates = H8Memory.Allocate<MigrationSwarmState>(MigrationSwarmCapacity, NativeMemorySystemId, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(_migrationSwarmStates, NativeMemoryOwner, nameof(_migrationSwarmStates), NativeMemoryLifetime);
+            _migrationGridFrontHandle = vault.GetBufferHandle<MigrationGridCell>(BufferID.ShinobuMigrationGridFront, requiredCellCount, NativeMemorySystemId, NativeArrayOptions.ClearMemory);
+            _migrationGridBackHandle = vault.GetBufferHandle<MigrationGridCell>(BufferID.ShinobuMigrationGridBack, requiredCellCount, NativeMemorySystemId, NativeArrayOptions.UninitializedMemory);
+            _bloodCloudPoisHandle = vault.GetBufferHandle<MigrationBloodCloudPoi>(BufferID.ShinobuMigrationBloodCloudPois, BloodCloudPoiCapacity, NativeMemorySystemId, NativeArrayOptions.ClearMemory);
+            _migrationSwarmStatesHandle = vault.GetBufferHandle<MigrationSwarmState>(BufferID.ShinobuMigrationSwarmStates, MigrationSwarmCapacity, NativeMemorySystemId, NativeArrayOptions.ClearMemory);
+            _migrationGridFront = _migrationGridFrontHandle.Resolve(vault);
+            _migrationGridBack = _migrationGridBackHandle.Resolve(vault);
+            _bloodCloudPois = _bloodCloudPoisHandle.Resolve(vault);
+            _migrationSwarmStates = _migrationSwarmStatesHandle.Resolve(vault);
+
             if (!IsMigrationNativeStateAllocated)
             {
                 DisposeMigrationNativeState();
                 return;
             }
 
+            ClearMigrationNativeStateRows();
             _debugStatisticalSwarmSlotCount = 0;
-            _coldTickAccumulator = migrationFieldColdTickIntervalSeconds;
+            _coldTickAccumulator = ResolveMigrationFieldColdTickIntervalSeconds();
             _lastColdTickRuntimeSeconds = -1f;
         }
 
         private void DisposeMigrationNativeState()
         {
-            bool hadScheduledFieldJob = _migrationFieldScheduled;
-            JobHandle disposeDependency = hadScheduledFieldJob ? _migrationFieldHandle : default;
-            bool scheduledDispose = false;
-            scheduledDispose |= DisposeNativeArrayDeferred(ref _migrationGridFront, disposeDependency);
-            scheduledDispose |= DisposeNativeArrayDeferred(ref _migrationGridBack, disposeDependency);
-            scheduledDispose |= DisposeNativeArrayDeferred(ref _bloodCloudPois, disposeDependency);
-            scheduledDispose |= DisposeNativeArrayDeferred(ref _migrationSwarmStates, disposeDependency);
-            if (scheduledDispose)
-                JobHandle.ScheduleBatchedJobs();
-
+            CompleteMigrationFieldJob(forceComplete: true);
+            UnlockMigrationFieldJobBuffers();
+            _migrationGridFront = default;
+            _migrationGridBack = default;
+            _bloodCloudPois = default;
+            _migrationSwarmStates = default;
+            _migrationGridFrontHandle = default;
+            _migrationGridBackHandle = default;
+            _bloodCloudPoisHandle = default;
+            _migrationSwarmStatesHandle = default;
+            _migrationVault = null;
             _migrationGridCellCount = 0;
             _migrationGridResolution = int3.zero;
             _debugMigrationGridCellCount = 0;
@@ -1371,15 +1460,63 @@ namespace Hecton8.Ecosystem
             _migrationFieldScheduled = false;
         }
 
-        private static bool DisposeNativeArrayDeferred<T>(ref NativeArray<T> array, JobHandle dependency) where T : struct
+        private void ClearMigrationNativeStateRows()
         {
-            if (!array.IsCreated)
+            for (int i = 0; i < _migrationGridCellCount; i++)
+                _migrationGridFront[i] = default;
+
+            for (int i = 0; i < _bloodCloudPois.Length; i++)
+                _bloodCloudPois[i] = default;
+
+            for (int i = 0; i < _migrationSwarmStates.Length; i++)
+                _migrationSwarmStates[i] = default;
+        }
+
+        private bool TryLockMigrationFieldJobBuffers()
+        {
+            IDataVault vault = ResolveMigrationDataVault();
+            if (vault == null ||
+                !_migrationGridBackHandle.IsCreated ||
+                !_bloodCloudPoisHandle.IsCreated)
+            {
+                return false;
+            }
+
+            BufferID writeBufferId = _migrationGridBackHandle.BufferId;
+            BufferID poiBufferId = _bloodCloudPoisHandle.BufferId;
+            if (!vault.TryLockBuffer(writeBufferId, NativeMemorySystemId))
                 return false;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            H8Memory.Release(ref array, dependency, NativeMemorySystemId);
-            array = default;
+            if (!vault.TryLockBuffer(poiBufferId, NativeMemorySystemId))
+            {
+                vault.TryUnlockBuffer(writeBufferId, NativeMemorySystemId);
+                return false;
+            }
+
+            _migrationFieldWriteBufferId = writeBufferId;
+            _migrationFieldPoiBufferId = poiBufferId;
+            _migrationFieldBuffersLocked = true;
             return true;
+        }
+
+        private void UnlockMigrationFieldJobBuffers()
+        {
+            if (!_migrationFieldBuffersLocked)
+                return;
+
+            IDataVault vault = ResolveMigrationDataVault();
+            if (vault != null)
+            {
+                if (_migrationFieldWriteBufferId != BufferID.Unknown)
+                    vault.TryUnlockBuffer(_migrationFieldWriteBufferId, NativeMemorySystemId);
+
+                if (_migrationFieldPoiBufferId != BufferID.Unknown)
+                    vault.TryUnlockBuffer(_migrationFieldPoiBufferId, NativeMemorySystemId);
+            }
+
+            _migrationFieldWriteBufferId = BufferID.Unknown;
+            _migrationFieldPoiBufferId = BufferID.Unknown;
+            _migrationFieldBuffersLocked = false;
         }
 
         private void TryRegisterService()
@@ -1529,7 +1666,25 @@ namespace Hecton8.Ecosystem
             return a.x == b.x && a.y == b.y && a.z == b.z;
         }
 
-        private float ResolveColdTickDeltaSeconds(float runtimeSeconds)
+        private float ResolveMigrationFieldColdTickIntervalSeconds()
+        {
+            float quality = Smooth01(ResolveGlobalQualityWeight01());
+            return migrationFieldColdTickIntervalSeconds * math.lerp(2.4f, 0.2f, quality);
+        }
+
+        private static float ResolveGlobalQualityWeight01()
+        {
+            float weight = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.isfinite(weight) ? weight : 1f);
+        }
+
+        private static float Smooth01(float value)
+        {
+            float x = math.saturate(value);
+            return x * x * (3f - 2f * x);
+        }
+
+        private float ResolveColdTickDeltaSeconds(float runtimeSeconds, float maxDeltaSeconds)
         {
             if (_lastColdTickRuntimeSeconds < 0f)
             {
@@ -1542,7 +1697,7 @@ namespace Hecton8.Ecosystem
             if (!math.isfinite(deltaSeconds) || deltaSeconds <= 0f)
                 return 0f;
 
-            return math.min(deltaSeconds, migrationFieldColdTickIntervalSeconds);
+            return math.min(deltaSeconds, math.max(0.1f, maxDeltaSeconds));
         }
 
         private int3 ResolveMigrationAupCell(Vector3 origin)
@@ -1608,17 +1763,18 @@ namespace Hecton8.Ecosystem
             return HectonXRRuntimeState.IsXRActive;
         }
 
-        [BurstCompile(FloatPrecision.Low, FloatMode.Fast)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildMigrationVectorFieldJob : IJobParallelFor
         {
-            [WriteOnly] public NativeArray<MigrationGridCell> Output;
-            [ReadOnly] public NativeArray<MigrationBloodCloudPoi> BloodCloudPois;
+            [WriteOnly, NoAlias] public NativeArray<MigrationGridCell> Output;
+            [ReadOnly, NoAlias] public NativeArray<MigrationBloodCloudPoi> BloodCloudPois;
             public int3 Resolution;
             public float CellSizeMeters;
             public float3 OriginAupLocal;
             public float SeasonalPhase;
             public float VerticalFlowWeight;
             public float CurrentGameTimeSeconds;
+            public float GlobalQualityWeight;
 
             public void Execute(int index)
             {
@@ -1626,6 +1782,8 @@ namespace Hecton8.Ecosystem
                 int z = (index / Resolution.x) % Resolution.z;
                 int y = index / (Resolution.x * Resolution.z);
                 float safeCellSize = math.max(1f, CellSizeMeters);
+                float quality = Smooth01(math.saturate(GlobalQualityWeight));
+                int poiStride = (int)math.clamp(math.round(math.lerp(4f, 1f, quality)), 1f, 4f);
 
                 float invX = Resolution.x > 0 ? 1f / Resolution.x : 0f;
                 float invY = Resolution.y > 1 ? 1f / (Resolution.y - 1) : 0f;
@@ -1649,7 +1807,8 @@ namespace Hecton8.Ecosystem
 
                 float3 attraction = float3.zero;
                 float attractionWeight = 0f;
-                for (int i = 0; i < BloodCloudPois.Length; i++)
+                int poiStart = index % poiStride;
+                for (int i = poiStart; i < BloodCloudPois.Length; i += poiStride)
                 {
                     MigrationBloodCloudPoi poi = BloodCloudPois[i];
                     if (poi.Flags == 0 || CurrentGameTimeSeconds >= poi.ExpireGameTimeSeconds)
@@ -1667,7 +1826,7 @@ namespace Hecton8.Ecosystem
                         continue;
 
                     float falloff = math.saturate(1f - distSq * invRadiusSq);
-                    float strength = math.max(0f, poi.Strength) * falloff * falloff;
+                    float strength = math.max(0f, poi.Strength) * falloff * falloff * math.lerp(0.55f, 1.35f, quality);
                     attraction += toPoi * (strength * invRadius);
                     attractionWeight += strength;
                 }
@@ -1676,7 +1835,7 @@ namespace Hecton8.Ecosystem
                 MigrationGridCell cell = default;
                 cell.AupCell = (int3)math.floor(cellPosition / safeCellSize);
                 cell.Direction = direction;
-                cell.Magnitude = math.saturate(1f + attractionWeight * 0.18f);
+                cell.Magnitude = math.saturate(1f + attractionWeight * math.lerp(0.06f, 0.22f, quality));
                 cell.PopulationCount = 0;
                 cell.Flags = (ushort)(attractionWeight > 0.0001f ? MigrationCellFlagBloodCloud : 0);
                 Output[index] = cell;
@@ -1694,6 +1853,12 @@ namespace Hecton8.Ecosystem
             {
                 float lengthSq = math.lengthsq(value);
                 return lengthSq > 0.0001f ? value * math.rsqrt(lengthSq) : fallback;
+            }
+
+            private static float Smooth01(float value)
+            {
+                float x = math.saturate(value);
+                return x * x * (3f - 2f * x);
             }
         }
     }

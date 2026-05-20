@@ -37,7 +37,7 @@ This pass rechecked the launch-week baseline through current public web sources.
 | Steam page is extremely strong, not "mixed." | Steam store page fetched 2026-05-19 showed Early Access date 2026-05-14, 36,799 English reviews at 93% positive, 4-player co-op copy, 11 supported languages, and tags including Multiplayer, Survival, Underwater, Horror, Exploration, Co-op, Open World, Atmospheric, Early Access, and Base Building. | Official platform page | Do not frame HECTON-8 as a rescue from a failed launch. We need a narrower identity: machinery, pressure, black water, single-player reliability. |
 | Launch demand is massive. | PC Gamer reported 2M copies in 12 hours and more than 651K peak concurrent players across Steam/Epic/Xbox, with Steam above 467K. | Press report citing press release / SteamDB-style counts | Competitor gravity is real. Creator outreach must assume every underwater-survival creator has already seen SN2. Pitch must offer a different emotional contract, not "another Subnautica-like." |
 | Performance story is mixed, not a clean failure. | PC Gamer settings article says SN2 can run well across hardware but becomes more demanding in asset-heavy areas; anecdotal Reddit reports include both poor and acceptable performance. | Press technical guidance + community signal | HECTON-8 cannot exploit "SN2 performs badly" publicly. Internal target: show stable first route before public clips; public performance claims require hardware/build/settings proof. |
-| Co-op pain exists but is anecdotal and specific. | Reddit posts on 2026-05-18 mention joiner desync, inventory/interact lock, teleporting, and growbed-related lag/bug recovery; other users also report playable co-op. | Community signal | Keep no-coop public stance. Internally, shared persistence remains the scary part if co-op ever enters scope. Do not promise networking as a differentiator. |
+| Co-op pain exists but is anecdotal and specific. | Reddit posts on 2026-05-18 mention joiner desync, inventory/interact lock, teleporting, and growbed-related lag/bug recovery; other users also report playable co-op. | Community signal | Keep single-player-first public scope. Internally, shared persistence remains the scary part if co-op ever enters scope. Do not promise networking as a differentiator. |
 | EULA/privacy concern is a trust signal, not a campaign weapon. | Notebookcheck covered negative Steam reviews focused on EULA/privacy/remote-access concerns while overall reception remained positive. | Press/community signal | HECTON-8 should prepare clean disclosure/creator/key policies, but never moralize against SN2 in public copy. |
 | UE5/shader-stutter claims need strict filtering. | Search surfaced SEO guides claiming UE5 shader stutter as a fix category, but stronger evidence is mixed and often anecdotal. | Low-confidence web/SEO signal | Do not write "UE5 shader stutter" into public or engineering claims without profiler/player-report clusters. Keep only as a monitoring query. |
 
@@ -50,7 +50,7 @@ SN2 currently owns scale, wishlists, co-op attention, review volume, language co
 - Seed Ship anomaly as a system hook;
 - single-player scope honesty;
 - screenshots that show player verbs and machinery in the same frame;
-- no performance claims until measured.
+- performance claims wait for measurement.
 
 ### Next Monitoring Delta
 
@@ -61,6 +61,143 @@ Recheck these before HECTON-8's first screenshot drop:
 3. Positive themes: what players keep praising despite complaints.
 4. Creator titles: whether "worth it", "co-op", "base building", or "performance" dominates.
 5. Patch notes: whether SN2 fixes any pain point HECTON-8 planned to exploit.
+
+## 2026-05-19 Steam Review API Pain-Point Refresh V0
+
+Evidence boundary: public Steam review API sample fetched on 2026-05-19, plus store/appdetails. This is live sentiment telemetry, not a permanent market fact and not permission to quote individual reviewers in public copy.
+
+Steam API snapshot:
+
+| Query | Result | Evidence class | Use |
+|---|---:|---|---|
+| All-language summary | 61,815 positive / 5,415 negative / 67,230 total; `Very Positive`. | Official platform API | Confirms SN2 is broadly loved; do not build HECTON-8 on competitor-collapse theory. |
+| English summary | 37,385 positive / 2,455 negative / 39,840 total; `Very Positive`. | Official platform API | English creator/audience reads still start from competitor strength. |
+| Recent all-language negative sample | 100 reviews sampled; rough term hits: `kill` 11, `eula` 10, `building` 7, `bug` 6, `weapon` 5, `content` 4, `performance` 2, `crash` 2. | Player review sample | Directional pain buckets only. Term hits are not percentages and not statistically complete. |
+| App details | Released 14 May 2026, $29.99 USD, single-player, multiplayer, online co-op, cross-platform multiplayer, Early Access. | Official platform API | HECTON-8 must keep multiplayer-scope, price, and performance proof boundaries explicit. |
+
+### 2026-05-19 Late Steam API Refresh V1
+
+Evidence boundary: public Steam review API summary fetched on 2026-05-19. Counts are volatile and must be rechecked before any public beat, spend, or creator claim.
+
+| Query | Result | Evidence class | Use |
+|---|---:|---|---|
+| All-language summary | 63,769 positive / 5,765 negative / 69,534 total; `Very Positive`. | Official platform API | Confirms the competitor is still broadly liked. Do not write HECTON copy around competitor collapse. |
+| English summary | 38,394 positive / 2,566 negative / 40,960 total; `Very Positive`. | Official platform API | English-language creator outreach must assume high existing audience interest in SN2. |
+
+### 2026-05-19 Steam API / Roadmap Refresh V2
+
+Evidence boundary: public Steam review API fetched on 2026-05-19, Steam appdetails API, Steam store page, and public press roadmap coverage. Counts and roadmap interpretation are volatile. Recheck before any asset drop, public copy, spend, or creator send.
+
+| Query | Result | Evidence class | Use |
+|---|---:|---|---|
+| All-language summary | 63,948 positive / 5,797 negative / 69,745 total; `Very Positive`. | Official platform API: `https://store.steampowered.com/appreviews/1962700?json=1&language=all&purchase_type=all&num_per_page=0` | Competitor strength still increased after V1. Treat pain buckets as prioritization hints, not a collapse signal. |
+| English summary | 38,566 positive / 2,593 negative / 41,159 total; `Very Positive`. | Official platform API: `https://store.steampowered.com/appreviews/1962700?json=1&language=english&purchase_type=all&num_per_page=0` | English creator/audience work must assume SN2 remains the default reference point. |
+| Recent all-language negative sample | 100 recent negatives sampled; rough term hits: `eula` 8, `bug` 4, `content` 3, `performance` 2, `weapon` 2, `base` 2, `building` 2, `crash` 1, `stutter` 1. | Official platform API sample | Directional only. Do not convert term hits into percentages or public claims. |
+| Recent English negative sample | 100 recent negatives sampled; rough term hits: `kill` 22, `eula` 16, `base` 13, `bug` 10, `building` 9, `content` 8, `weapon` 5, `fight` 5, `multiplayer` 4. | Official platform API sample | Useful for capture priority: agency, base readability, content loop, and trust. Not usable as public comparison copy. |
+| Store/appdetails features | Released 14 May 2026; Windows; single-player, multiplayer, co-op, online co-op, cross-platform multiplayer, full controller support, multiple accessibility categories, Steam Cloud, Family Sharing. | Official platform API / Steam store page | HECTON-8 must not fight feature breadth with words. First assets need narrower identity and proof. |
+| Roadmap coverage | Public roadmap coverage says early updates target quality-of-life, co-op polish, base-building/docking/fabrication improvements, more regions/biomes/creatures/resources/tools, and more submersibles; no clear timeframe in that article. | Press coverage: `https://www.pcgamer.com/games/survival-crafting/subnautica-2-roadmap-updates/` | Do not anchor HECTON strategy to pain buckets SN2 may patch quickly. Recheck pain freshness before capture priorities are locked. |
+
+### 2026-05-19 Steam API Refresh V3
+
+Evidence boundary: public Steam appdetails and review API fetched on 2026-05-19. Counts are volatile. This refresh updates capture-priority evidence only; it does not create public comparison copy.
+
+| Query | Result | Evidence class | Use |
+|---|---:|---|---|
+| All-language summary | 64,212 positive / 5,828 negative / 70,040 total; `Very Positive`. | Official platform API: `https://store.steampowered.com/appreviews/1962700?json=1&filter=summary&language=all&purchase_type=all&num_per_page=0` | Competitor strength is still increasing. Do not write HECTON copy around SN2 weakness. |
+| English summary | 38,715 positive / 2,616 negative / 41,331 total; `Very Positive`. | Official platform API: `https://store.steampowered.com/appreviews/1962700?json=1&filter=summary&language=english&purchase_type=all&num_per_page=0` | English creator/audience work still starts from SN2 as the dominant reference point. |
+| Appdetails feature read | Steam appdetails reports 64,900 recommendations and feature categories including single-player, multiplayer, co-op, online co-op, cross-platform multiplayer, full controller support, accessibility options, Steam Cloud, and Family Sharing. | Official platform API: `https://store.steampowered.com/api/appdetails?appids=1962700&filters=basic,categories,genres,release_date,platforms,metacritic,recommendations` | HECTON must not compete by pretending feature breadth. First assets need narrower proof: pressure, machinery, salvage, black-water route risk. |
+| Recent all-language negative sample | 100 recent negatives sampled; rough term hits: `kill` 38, `eula` 21, `base` 21, `weapon` 8, `weapons` 7, `building` 7, `content` 7, `fight` 7, `bug` 3, `fps` 2, `save` 2, `performance` 1, `co-op` 1, `crash` 1. | Official platform API sample | Agency/base/trust/content remain useful private proof buckets. Term hits are not percentages and cannot become public claims. |
+| Recent English negative sample | 100 recent negatives sampled; rough term hits: `kill` 59, `eula` 31, `base` 30, `content` 15, `weapon` 14, `building` 13, `weapons` 13, `fight` 10, `bug` 7, `save` 4, `crash` 3, `fps` 3, `performance` 1, `co-op` 1. | Official platform API sample | Capture priority should keep `PLAN-SHOT-006`, `PLAN-SHOT-002/005`, `PLAN-SHOT-003`, and `PLAN-CLIP-001/003` high if the build can prove them honestly. |
+
+V3 operational read:
+
+- SN2 remains strong; the negative sample is not a weakness thesis.
+- Agency/no-weapon wording is louder in the recent English sample. HECTON threat assets should prove decision-making, not combat superiority.
+- Base-building and EULA/trust terms remain visible. HECTON can answer with machinery readability and clean disclosure policy later, but no public moralizing.
+- Performance/stutter terms are not dominant in this sample. Keep performance claims blocked unless measured.
+
+### 2026-05-20 Steam API Refresh V4
+
+Evidence boundary: public Steam appdetails and review API fetched on 2026-05-20. Counts are volatile. This refresh only updates internal capture-priority evidence; it does not authorize public comparison copy, competitor attack language, or asset metadata claims without HECTON proof.
+
+| Query | Result | Evidence class | Use |
+|---|---:|---|---|
+| All-language summary | 66,106 positive / 5,965 negative / 72,071 total; `Very Positive`. | Official platform API: `https://store.steampowered.com/appreviews/1962700?json=1&filter=summary&language=all&purchase_type=all&num_per_page=0` | Competitor strength increased again since V3. Keep SN2 pain buckets internal and proof-priority only. |
+| English summary | 40,212 positive / 2,708 negative / 42,920 total; `Very Positive`. | Official platform API: `https://store.steampowered.com/appreviews/1962700?json=1&filter=summary&language=english&purchase_type=all&num_per_page=0` | English creator/audience work still starts from SN2 as a strong default reference point. |
+| Appdetails feature read | Steam appdetails reports release on 14 May 2026, 66,642 recommendations, single-player, multiplayer, co-op, online co-op, cross-platform multiplayer, controller support, accessibility categories, Steam Cloud, Family Sharing, and Early Access genres. | Official platform API: `https://store.steampowered.com/api/appdetails?appids=1962700&filters=basic,categories,genres,release_date,recommendations` | HECTON must not answer feature breadth with copy. First assets must prove narrower identity: pressure, machinery, salvage, black-water route risk. |
+| Recent all-language negative sample | 100 recent negatives sampled; rough term hits: `kill` 14, `eula` 9, `bug` 8, `base` 7, `building` 6, `content` 5, `fight` 4, `crash` 4, `multiplayer` 4, `save` 3, `weapon` 2, `weapons` 2, `fps` 1, `co-op` 1. | Official platform API sample | Directional only. Agency/base/trust/content remain useful private proof buckets, but not a public weakness thesis. |
+| Recent English negative sample | 99 recent negatives sampled; rough term hits: `kill` 30, `eula` 22, `base` 20, `building` 10, `fight` 9, `content` 8, `weapon` 8, `weapons` 8, `bug` 6, `save` 2, `crash` 2, `fps` 2, `performance` 2, `co-op` 2. | Official platform API sample | Keep `PLAN-SHOT-006`, `PLAN-SHOT-002/005`, `PLAN-SHOT-003`, and `PLAN-CLIP-001/003` high only if HECTON assets prove the answer visually. |
+
+V4 operational read:
+
+- SN2 remains strong and still gained positive volume; HECTON cannot use competitor weakness as a launch thesis.
+- Recent English negatives still make agency, base readability, trust, and content-loop proof useful for capture planning.
+- Performance/stutter wording remains low in this sample; keep performance claims blocked until profiler receipts exist.
+- Public copy boundary is unchanged: do not mention SN2 pain, do not moralize about EULA, do not imply HECTON has solved unproved systems.
+
+### 2026-05-20 Steam API / Store Page Refresh V5
+
+Evidence boundary: public Steam review API, appdetails API, and Steam store page fetched on 2026-05-20. Counts differ between API summary and public page display because Steam uses filters and display groupings; treat both as volatile official-platform snapshots. This refresh updates review-volume/currentness only; it does not replace V4 recent-negative samples or authorize public comparison copy.
+
+| Query | Result | Evidence class | Use |
+|---|---:|---|---|
+| All-language API summary | 67,378 positive / 6,155 negative / 73,533 total; `Very Positive`. | Official platform API: `https://store.steampowered.com/appreviews/1962700?json=1&filter=summary&language=all&purchase_type=all&num_per_page=0` | Competitor strength still increased after V4. Keep SN2 pain buckets internal and proof-priority only. |
+| English API summary | 41,240 positive / 2,771 negative / 44,011 total; `Very Positive`. | Official platform API: `https://store.steampowered.com/appreviews/1962700?json=1&filter=summary&language=english&purchase_type=all&num_per_page=0` | English creator/audience work still starts from SN2 as a strong default reference point. |
+| Store page visible review split | Public page display showed 73,893 total reviews, 67,737 positive, 6,156 negative, `Very Positive`; Korean visible split remained `Mixed`. | Official platform page: `https://store.steampowered.com/app/1962700/Subnautica_2/` | Regional discontent can inform localization caution, but global launch read is still strong. Do not treat one regional split as public attack material. |
+| Appdetails feature read | Steam appdetails reports release on 14 May 2026, 68,306 recommendations, single-player, multiplayer, co-op, online co-op, cross-platform multiplayer, controller support, accessibility categories, Steam Cloud, Family Sharing, and Early Access genres. | Official platform API: `https://store.steampowered.com/api/appdetails?appids=1962700&filters=basic,categories,genres,release_date,recommendations` | HECTON must not answer feature breadth with copy. First assets must prove narrower identity: pressure, machinery, salvage, black-water route risk. |
+
+V5 operational read:
+
+- SN2 review volume and recommendation count still moved upward; competitor-collapse framing is false.
+- The Korean `Mixed` split is a localization/regional watch item, not proof that public global sentiment is weak.
+- V4 negative-sample buckets remain usable only as private capture-priority hints until refreshed again; V5 did not sample new review text.
+- Public copy boundary is unchanged: do not mention SN2 pain, do not moralize about EULA, do not imply HECTON has solved unproved systems.
+
+### Pain Bucket Freshness Rule
+
+Before a HECTON capture packet uses any SN2-derived pain bucket, run a same-day freshness check:
+
+1. Did SN2 patch or roadmap directly address this pain?
+2. Did review sentiment remain strong despite the pain?
+3. Is the bucket still useful for HECTON identity without naming SN2?
+4. Can the planned asset prove the HECTON answer visually without a caption?
+
+If any answer is weak, downgrade the bucket to `MONITOR_ONLY` and do not prioritize an asset from it.
+
+When an asset receives a nonzero pain-proof score, record the monitoring/source row in `pain_freshness_source` and the check date in `pain_freshness_checked_at` inside `Data/MARKETING_ASSET_METADATA_TEMPLATE.csv`. Notes-only freshness proof is invalid.
+
+Pain buckets from the sample and prior sprint:
+
+| Pain bucket | Current read | Private HECTON-8 proof requirement | Public boundary |
+|---|---|---|---|
+| Short / unfinished EA content | Repeated player concern: some finish the current EA arc in roughly a dozen hours and call it thin. | First HECTON assets must show a repeatable route loop: leave safety, salvage, read danger, return, repair, unlock next route. | Do not promise content hours or use "more complete than SN2." |
+| EULA / publisher trust | Negative-review cluster exists, but total reception remains Very Positive. | Prepare clean disclosure, creator/key, offline/trust language for our own pages later. | Do not moralize against SN2 or mention their EULA in HECTON copy. |
+| Co-op disconnect / desync / shared-state bugs | Anecdotal but recurring enough to monitor. | Keep HECTON public lane single-player reliability and isolation; if future networking R&D happens, persistence is the hard problem. | No "we avoid their co-op bugs" language. No co-op hint. |
+| Launch / DX12 / FOV / input / crash issues | Sample includes launch/DX12/FOV/input sickness/save loss complaints. | HECTON first public clip cannot imply performance comfort unless measured; capture UI should avoid nausea/readability failures. | No zero-stutter, Deck, VR, FOV, or low-end claim without build/hardware/settings/frame-time proof. |
+| Save loss / death loop frustration | Anecdotes include lost progress and unrecoverable-feeling loops. | HECTON future demo copy should show recovery logic and avoid marketing failure states that look unfair. | Do not promise save robustness until Save/QA proof exists. |
+| Defensive agency / no weapons / "can't fight back" | Recent negative sample contains repeated "kill/weapon" wording, not always constructive but clearly a player-expectation cluster. | First threat assets should show a player decision: evade, seal, distract, sonar-read, reroute, tool use. Avoid helpless monster-pose thumbnails. | Do not sell HECTON as a shooter or mock pacifist design. |
+| Base building snap/clunk | Complaints mention clunky snapping and frustration; praise also exists. | Base screenshots must read as pressure-vessel systems with clear affordances, not blank-canvas construction complexity. | Do not claim our builder is smoother until playable proof exists. |
+| Performance variance | Negative sample and press guidance show mixed, not catastrophic, signal. | Use stable capture only; low-spec proof stays internal until profiler receipt exists. | Do not exploit "SN2 runs badly" in public copy. |
+
+### Pain-To-Asset Translation
+
+Use this only as capture priority logic. It cannot override asset QA or creator utility gates.
+
+| Planned proof asset | Pain it answers privately | Must prove without caption |
+|---|---|---|
+| `PLAN-SHOT-001` | Clone/identity and atmosphere-loss fear. | Heavy industrial black-water identity, not bright reef imitation. |
+| `PLAN-SHOT-002` | Base-system readability and trust. | A base is a machine with gauges, seals, pipes, and consequences. |
+| `PLAN-SHOT-003` | Short/thin-content and no-player-verb risk. | A salvage action with target, hazard, and reward reason. |
+| `PLAN-SHOT-005` | Save/death-loop unfairness and base friction. | Failure state has a visible response path. |
+| `PLAN-SHOT-006` | Defensive-agency pain. | Threat creates a decision, not passive victimhood. |
+| `PLAN-CLIP-001` | Gameplay depth and pressure-as-system. | Player chooses under pressure; state changes are readable. |
+| `PLAN-CLIP-002` | Atmosphere and instrumentation. | Sonar/audio warns before visual reveal. |
+| `PLAN-CLIP-003` | Route risk and recovery. | Salvage success creates a new cost or decision. |
+| `PLAN-CLIP-004` | Vehicle/machine-weight gap. | Machinery has mass and consequence, not toy motion. |
+
+### Current Decision
+
+The next SN2-aware task is not another competitor memo. It is to make the first HECTON capture packet answer at least one private pain bucket per public asset while never naming SN2's weakness in public copy. V5 keeps the priority on agency, base/machinery readability, route depth, trust/disclosure, and HECTON-native identity; V4 negative samples remain directional until the next same-day sample refresh. It does not justify public comparison language.
 
 ## Evidence Classes
 

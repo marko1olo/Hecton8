@@ -14,7 +14,7 @@ namespace Hecton8.World.Biomes
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4315)]
-    public sealed class BiomeTransitionManagerRuntime : MonoBehaviour, IFastTickable, ILateFrameTickable, IOriginShiftListener
+    public sealed class BiomeTransitionManagerRuntime : MonoBehaviour, IFastTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         internal static BiomeTransitionManagerRuntime ActiveRuntimeInstance;
 
@@ -22,11 +22,17 @@ namespace Hecton8.World.Biomes
         private const string BlackBoxDumpPath = "Docs/AgentLogs/Dump_BIOME_MANAGER.bin";
         private const uint RuntimeContextHash = 0x42313232u;
         private const uint NonFiniteStateHash = 0x424E414Eu;
+        private const float QualityHysteresisBand = 0.015f;
+        private const float QualityDowngradeStepPerFrame = 1f / 60f;
+        private const float QualityUpgradeStepPerFrame = 1f / 180f;
         private const uint SelfAuditLayoutFault = 1u << 0;
         private const uint SelfAuditSnapshotMissing = 1u << 1;
         private const uint SelfAuditWeightFault = 1u << 2;
         private const uint SelfAuditBlendCountFault = 1u << 3;
+        private const SystemID OwnerSystem = SystemID.WorldStreaming;
+        private const uint MockTraversalPeriodFrames = 600u;
 
+        private static readonly int BiomeTransitionPayloadCBufferId = Shader.PropertyToID("H8BiomeTransitionPayload");
         private static readonly int H8FogColorId = Shader.PropertyToID("_H8FogColor");
         private static readonly int H8FogDensityId = Shader.PropertyToID("_H8FogDensity");
         private static readonly int H8ExtinctionCoefficientsId = Shader.PropertyToID("_H8ExtinctionCoefficients");
@@ -50,6 +56,7 @@ namespace Hecton8.World.Biomes
         [SerializeField] private float _debugWeightSum;
 
         private IDataVault _vault;
+        private IPlayerRuntimeContext _playerContext;
         private VaultBufferHandle<BiomeStateDTO> _statesHandle;
         private VaultBufferHandle<BiomeCenterDTO> _centersHandle;
         private VaultBufferHandle<BiomeInfluenceDTO> _influenceHandle;
@@ -63,9 +70,15 @@ namespace Hecton8.World.Biomes
         private VaultBufferHandle<byte> _csvScratchHandle;
         private VaultBufferHandle<AbsoluteUniversePositionBlit128> _mockCameraAupHandle;
 
+        private GraphicsBuffer _shaderPayloadBufferA;
+        private GraphicsBuffer _shaderPayloadBufferB;
+        private GraphicsBuffer _activeShaderPayloadBuffer;
         private JobHandle _pipelineHandle;
         private JobHandle _seedHandle;
+        private long _pipelineScheduleTicks;
+        private int _shaderPayloadWriteIndex;
         private bool _pipelineScheduled;
+        private bool _pendingShaderPayloadUpload;
         private bool _seedScheduled;
         private bool _seedCsvAttempted;
         private bool _seedFallbackScheduled;
@@ -73,11 +86,15 @@ namespace Hecton8.World.Biomes
         private bool _registeredFastTick;
         private bool _registeredLateFrame;
         private bool _originShiftRegistered;
+        private bool _registeredHotSwapListener;
         private bool _vaultReady;
         private bool _seededBiomeData;
         private uint _lastOriginShiftSequence;
         private uint _simulationFrameCounter;
-        private float _cadenceAccumulator;
+        private uint _lastScheduledFrame;
+        private uint _qualityFilterFrame;
+        private float _filteredQualityWeight;
+        private bool _qualityFilterInitialized;
         private AbsoluteUniversePositionBlit128 _lastPlayerAup;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -91,6 +108,7 @@ namespace Hecton8.World.Biomes
             if (!TryClaimActiveRuntime())
                 return;
 
+            ResolveColdDependencies();
             EnsureVaultBuffers();
         }
 
@@ -99,6 +117,8 @@ namespace Hecton8.World.Biomes
             if (!TryClaimActiveRuntime())
                 return;
 
+            TryRegisterHotSwapListener();
+            ResolveColdDependencies();
             EnsureVaultBuffers();
             TryRegisterTickables();
             TryRegisterOriginShift();
@@ -106,7 +126,10 @@ namespace Hecton8.World.Biomes
 
         private void Start()
         {
+            ResolveColdDependencies();
             EnsureVaultBuffers();
+            TryRegisterTickables();
+            TryRegisterOriginShift();
             TrySeedBiomeData();
         }
 
@@ -114,7 +137,9 @@ namespace Hecton8.World.Biomes
         {
             TryUnregisterTickables();
             TryUnregisterOriginShift();
+            TryUnregisterHotSwapListener();
             CompletePipelineForShutdown();
+            ReleaseShaderPayloadBuffers();
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
@@ -124,7 +149,9 @@ namespace Hecton8.World.Biomes
         {
             TryUnregisterTickables();
             TryUnregisterOriginShift();
+            TryUnregisterHotSwapListener();
             CompletePipelineForShutdown();
+            ReleaseShaderPayloadBuffers();
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
@@ -132,14 +159,17 @@ namespace Hecton8.World.Biomes
 
         public void FastTick(float deltaTime)
         {
-            if (!Application.isPlaying || _pipelineScheduled)
+            if (!Application.isPlaying)
                 return;
 
-            EnsureVaultBuffers();
-            if (!_vaultReady || !TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
+            TryFinalizeCompletedPipeline();
+            if (_pipelineScheduled)
                 return;
 
-            TrySeedBiomeData();
+            if (!_vaultReady)
+                return;
+
+            TryFinalizeSeedBiomeData();
             if (!_seededBiomeData)
                 return;
 
@@ -160,19 +190,53 @@ namespace Hecton8.World.Biomes
             }
 
             BiomeTransitionTuningDTO activeTuning = tuning.Length > 0 ? tuning[0] : CreateDefaultTuning();
-            float quality = ResolveQualityWeight(in activeTuning);
-            _cadenceAccumulator += math.max(0f, deltaTime);
-            float cadenceSeconds = ResolveCadenceSeconds(in activeTuning, quality);
-            if (_cadenceAccumulator < cadenceSeconds)
-                return;
-
-            _cadenceAccumulator = math.max(0f, _cadenceAccumulator - cadenceSeconds);
-            AbsoluteUniversePositionBlit128 playerBlit = playerAup.ToAlignedBlit();
+            float rawQuality = ResolveQualityWeight(in activeTuning);
+            uint frame = ResolveSimulationFrame();
+            float quality = ResolveFilteredQualityWeight(rawQuality, frame);
+            int cadenceFrameStep = ResolveCadenceFrameStep(in activeTuning, quality);
             bool useMockTraversal = forceMockTraversal || activeTuning.MockTraversalEnabled > 0.5f;
+            if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
+            {
+                if (!useMockTraversal)
+                    return;
+
+                playerAup = AbsoluteUniversePosition.FromAbsolutePosition(double3.zero);
+            }
+
+            AbsoluteUniversePositionBlit128 playerBlit = playerAup.ToAlignedBlit();
+            if (_pendingShaderPayloadUpload)
+            {
+                RecordCadenceSkippedTelemetry(
+                    telemetry,
+                    counters,
+                    blendMask,
+                    mockCameraAup,
+                    centers,
+                    in playerBlit,
+                    useMockTraversal,
+                    frame);
+                return;
+            }
+
+            if (_lastScheduledFrame != 0u && unchecked(frame - _lastScheduledFrame) < (uint)cadenceFrameStep)
+            {
+                RecordCadenceSkippedTelemetry(
+                    telemetry,
+                    counters,
+                    blendMask,
+                    mockCameraAup,
+                    centers,
+                    in playerBlit,
+                    useMockTraversal,
+                    frame);
+                return;
+            }
+
+            _lastScheduledFrame = frame;
             JobHandle inputDependency = default;
             if (useMockTraversal)
             {
-                inputDependency = ScheduleMockTraversal(mockCameraAup, centers, counters);
+                inputDependency = ScheduleMockTraversal(mockCameraAup, centers, counters, frame);
             }
 
             _lastPlayerAup = playerBlit;
@@ -191,16 +255,60 @@ namespace Hecton8.World.Biomes
                 in activeTuning,
                 quality,
                 useMockTraversal,
+                frame,
                 inputDependency);
+        }
+
+        private void RecordCadenceSkippedTelemetry(
+            NativeArray<BiomeTransitionTelemetryEntry> telemetry,
+            NativeArray<BiomeTransitionCounterDTO> counters,
+            NativeArray<BiomeBlendMaskDTO> blendMask,
+            NativeArray<AbsoluteUniversePositionBlit128> mockCameraAup,
+            NativeArray<BiomeCenterDTO> centers,
+            in AbsoluteUniversePositionBlit128 playerAup,
+            bool useMockPlayerAup,
+            uint frame)
+        {
+            if (!telemetry.IsCreated || telemetry.Length == 0 || !counters.IsCreated || counters.Length == 0)
+                return;
+
+            BiomeTransitionCounterDTO counter = counters[0];
+            int cursor = math.clamp(counter.TelemetryCursor, 0, telemetry.Length - 1);
+            BiomeBlendMaskDTO mask = blendMask.IsCreated && blendMask.Length > 0 ? blendMask[0] : default;
+            uint stateHash = BiomeTransitionMath.HashState(in mask, frame);
+            AbsoluteUniversePositionBlit128 resolvedPlayerAup = playerAup;
+            if (useMockPlayerAup)
+            {
+                resolvedPlayerAup = ResolveMockTraversalBlit(centers, counters, frame);
+                if (mockCameraAup.IsCreated && mockCameraAup.Length > 0)
+                    mockCameraAup[0] = resolvedPlayerAup;
+            }
+
+            uint dominantBiomeHash = counter.CurrentDominantBiomeHash != 0u
+                ? counter.CurrentDominantBiomeHash
+                : mask.DominantBiomeHash;
+
+            BiomeTransitionTelemetryEntry entry;
+            entry.PlayerAup = BiomeTransitionMath.ToAup(in resolvedPlayerAup);
+            entry.DominantBiomeHash = dominantBiomeHash;
+            entry.BlendedBiomeCount = math.clamp(counter.LastBlendCount, 1, BiomeTransitionConstants.MaxBlendBiomes);
+            entry.CpuMicroseconds = 0f;
+            entry.StateHash = stateHash;
+            telemetry[cursor] = entry;
+
+            counter.TelemetryCursor = cursor + 1 >= telemetry.Length ? 0 : cursor + 1;
+            counter.LastFrameIndex = frame;
+            counter.LastCpuMicroseconds = 0f;
+            counter.LastStateHash = stateHash;
+            counter.LastFlags |= BiomeTransitionConstants.FlagCadenceReused;
+            counters[0] = counter;
         }
 
         public void LateFrameTick()
         {
-            if (!_pipelineScheduled || !_pipelineHandle.IsCompleted)
+            TryFinalizeCompletedPipeline();
+            if (!_pendingShaderPayloadUpload)
                 return;
-
-            _pipelineHandle.Complete();
-            _pipelineScheduled = false;
 
             if (TryReadCounters(out BiomeTransitionCounterDTO counters))
             {
@@ -212,11 +320,47 @@ namespace Hecton8.World.Biomes
                 if ((counters.LastFlags & BiomeTransitionConstants.FlagNonFiniteOutput) != 0u)
                     DumpBlackBox();
             }
+
+            _pendingShaderPayloadUpload = false;
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
             _lastOriginShiftSequence = shiftData.Sequence;
+        }
+
+        public void OnGlobalRegistryServiceRebound(GlobalRegistryServiceSlot serviceSlot, ref object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                if (currentService is IDataVault vault)
+                {
+                    BindVault(vault);
+                    TrySeedBiomeData();
+                }
+                else
+                {
+                    ClearVaultBinding();
+                }
+
+                return;
+            }
+
+            if (serviceSlot != GlobalRegistryServiceSlot.Player)
+                return;
+
+            _playerContext = currentService as IPlayerRuntimeContext;
+            if (_playerContext != null && _playerContext.PlayerTransform != null)
+                playerTransform = _playerContext.PlayerTransform;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player && currentService == null)
+                _playerContext = null;
         }
 
         private bool TryClaimActiveRuntime()
@@ -281,19 +425,86 @@ namespace Hecton8.World.Biomes
             _originShiftRegistered = false;
         }
 
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
+        private void ResolveColdDependencies()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            if (_vault == null || !_vaultReady)
+            {
+                IDataVault vault = GlobalRegistry.DataVault;
+                if (vault == null && GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
+                    vault = latest;
+                if (vault != null)
+                    BindVault(vault);
+            }
+
+            if (_playerContext == null)
+                _playerContext = GlobalRegistry.Player;
+
+            if (_playerContext != null && _playerContext.PlayerTransform != null)
+            {
+                playerTransform = _playerContext.PlayerTransform;
+                return;
+            }
+
+            if (playerTransform == null)
+                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
+        }
+
         private void EnsureVaultBuffers()
         {
             if (_vaultReady && _vault != null)
                 return;
 
-            IDataVault vault = GlobalRegistry.DataVault;
-            if (vault == null && GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
-                vault = latest;
+            IDataVault vault = _vault;
             if (vault == null)
                 return;
 
+            BindVault(vault);
+        }
+
+        private void BindVault(IDataVault vault)
+        {
+            if (vault == null)
+                return;
+
+            if (_vaultReady && ReferenceEquals(_vault, vault))
+                return;
+
             if (!ReferenceEquals(_vault, vault))
+            {
+                if (_vault != null)
+                    CompletePipelineForShutdown();
+
+                ReleaseShaderPayloadBuffers();
                 _tuningInitialized = false;
+                _seededBiomeData = false;
+                _seedScheduled = false;
+                _seedCsvAttempted = false;
+                _seedFallbackScheduled = false;
+                _vaultReady = false;
+                _qualityFilterInitialized = false;
+                _qualityFilterFrame = 0u;
+                _filteredQualityWeight = 0f;
+            }
 
             _vault = vault;
             _statesHandle = vault.GetBufferHandle<BiomeStateDTO>(
@@ -378,6 +589,32 @@ namespace Hecton8.World.Biomes
             EnsureTuningDefaultNoRead();
         }
 
+        private void ClearVaultBinding()
+        {
+            CompletePipelineForShutdown();
+            _pendingShaderPayloadUpload = false;
+            ReleaseShaderPayloadBuffers();
+            _vault = null;
+            _statesHandle = default;
+            _centersHandle = default;
+            _influenceHandle = default;
+            _currentAtmosphereHandle = default;
+            _blendMaskHandle = default;
+            _shaderPayloadHandle = default;
+            _acousticStageHandle = default;
+            _telemetryHandle = default;
+            _countersHandle = default;
+            _tuningHandle = default;
+            _csvScratchHandle = default;
+            _mockCameraAupHandle = default;
+            _vaultReady = false;
+            _seedScheduled = false;
+            _seededBiomeData = false;
+            _seedCsvAttempted = false;
+            _seedFallbackScheduled = false;
+            _tuningInitialized = false;
+        }
+
         private void EnsureTuningDefaultNoRead()
         {
             if (_tuningInitialized || !_vaultReady || _vault == null || !_tuningHandle.IsCreated)
@@ -416,11 +653,10 @@ namespace Hecton8.World.Biomes
             tuning = default;
             mockCameraAup = default;
 
-            IDataVault vault = _vault ?? GlobalRegistry.DataVault;
-            if (vault == null)
+            IDataVault vault = _vault;
+            if (vault == null || !_vaultReady)
                 return false;
 
-            _vault = vault;
             states = _statesHandle.Resolve(vault);
             centers = _centersHandle.Resolve(vault);
             influence = _influenceHandle.Resolve(vault);
@@ -450,19 +686,9 @@ namespace Hecton8.World.Biomes
             if (_seededBiomeData || !_vaultReady)
                 return;
 
-            if (_seedScheduled && !_seedHandle.IsCompleted)
+            TryFinalizeSeedBiomeData();
+            if (_seededBiomeData || _seedScheduled)
                 return;
-
-            if (_seedScheduled)
-            {
-                _seedHandle.Complete();
-                _seedScheduled = false;
-                if (TryReadCounters(out BiomeTransitionCounterDTO seededCounters) && seededCounters.ActiveBiomeCount > 0)
-                {
-                    _seededBiomeData = true;
-                    return;
-                }
-            }
 
             if (!TryResolveRuntimeBuffers(
                     out NativeArray<BiomeStateDTO> states,
@@ -474,7 +700,7 @@ namespace Hecton8.World.Biomes
                     out _,
                     out _,
                     out NativeArray<BiomeTransitionCounterDTO> counters,
-                    out NativeArray<BiomeTransitionTuningDTO> tuning,
+                    out _,
                     out _))
             {
                 return;
@@ -482,19 +708,54 @@ namespace Hecton8.World.Biomes
 
             EnsureTuningDefaultNoRead();
 
-            if (!_seedCsvAttempted && TryScheduleCsvRules(states, centers, counters, out _seedHandle))
+            if (!_seedCsvAttempted && TryScheduleCsvRules(states, centers, counters, out JobHandle csvHandle))
             {
                 _seedCsvAttempted = true;
-                _seedFallbackScheduled = false;
+                if (TryScheduleEmergencyMockBiomes(
+                        states,
+                        centers,
+                        counters,
+                        out _seedHandle,
+                        csvHandle,
+                        onlyWhenCounterEmpty: true))
+                {
+                    _seedFallbackScheduled = true;
+                }
+                else
+                {
+                    _seedHandle = csvHandle;
+                    _seedFallbackScheduled = false;
+                }
+
                 _seedScheduled = true;
+                H8Memory.RegisterActiveJob(OwnerSystem, _seedHandle);
                 return;
             }
 
-            if (!_seedFallbackScheduled && TryScheduleEmergencyMockBiomes(states, centers, counters, tuning, out _seedHandle))
+            if (!_seedFallbackScheduled && TryScheduleEmergencyMockBiomes(states, centers, counters, out _seedHandle))
             {
                 _seedFallbackScheduled = true;
                 _seedScheduled = true;
+                H8Memory.RegisterActiveJob(OwnerSystem, _seedHandle);
             }
+        }
+
+        private void TryFinalizeSeedBiomeData()
+        {
+            if (_seededBiomeData || !_seedScheduled || !_seedHandle.IsCompleted)
+                return;
+
+            if (!DispatcherJobSwap.TryFinalizeCompleted(ref _seedHandle))
+                return;
+
+            _seedScheduled = false;
+            if (TryReadCounters(out BiomeTransitionCounterDTO seededCounters) && seededCounters.ActiveBiomeCount > 0)
+            {
+                _seededBiomeData = true;
+                return;
+            }
+
+            _seedFallbackScheduled = false;
         }
 
         private bool TryScheduleCsvRules(
@@ -535,8 +796,9 @@ namespace Hecton8.World.Biomes
             NativeArray<BiomeStateDTO> states,
             NativeArray<BiomeCenterDTO> centers,
             NativeArray<BiomeTransitionCounterDTO> counters,
-            NativeArray<BiomeTransitionTuningDTO> tuning,
-            out JobHandle handle)
+            out JobHandle handle,
+            JobHandle dependency = default,
+            bool onlyWhenCounterEmpty = false)
         {
             handle = default;
             if (!states.IsCreated || !centers.IsCreated || states.Length < 4 || centers.Length < 4)
@@ -548,35 +810,62 @@ namespace Hecton8.World.Biomes
                 States = states,
                 Centers = centers,
                 Counters = counters,
-                Tuning = tuning,
-                OriginAup = origin
+                OriginAup = origin,
+                OnlyWhenCounterEmpty = onlyWhenCounterEmpty ? (byte)1 : (byte)0
             };
-            handle = mockJob.Schedule();
+            handle = mockJob.Schedule(dependency);
             return true;
         }
 
         private JobHandle ScheduleMockTraversal(
             NativeArray<AbsoluteUniversePositionBlit128> mockCameraAup,
             NativeArray<BiomeCenterDTO> centers,
-            NativeArray<BiomeTransitionCounterDTO> counters)
+            NativeArray<BiomeTransitionCounterDTO> counters,
+            uint frame)
         {
-            int active = counters.IsCreated && counters.Length > 0
-                ? math.clamp(counters[0].ActiveBiomeCount, 1, centers.Length)
-                : centers.Length;
-            double3 start = centers.IsCreated && active > 0 ? centers[0].CenterAup : ResolveMockOriginAup();
-            double3 end = centers.IsCreated && active > 1 ? centers[active - 1].CenterAup : start + new double3(3000d, 0d, 0d);
-            mockTraversalPhase01 += 1f / 600f;
-            if (mockTraversalPhase01 >= 1f)
-                mockTraversalPhase01 -= math.floor(mockTraversalPhase01);
+            ResolveMockTraversalEndpoints(centers, counters, out double3 start, out double3 end);
+            float phase = ResolveMockTraversalPhase(frame);
+            mockTraversalPhase01 = phase;
 
             var mockJob = new MockCameraTraversalJob
             {
                 OutputAup = mockCameraAup,
                 StartAup = start,
                 EndAup = end,
-                Phase01 = mockTraversalPhase01
+                Phase01 = phase
             };
             return mockJob.Schedule();
+        }
+
+        private AbsoluteUniversePositionBlit128 ResolveMockTraversalBlit(
+            NativeArray<BiomeCenterDTO> centers,
+            NativeArray<BiomeTransitionCounterDTO> counters,
+            uint frame)
+        {
+            ResolveMockTraversalEndpoints(centers, counters, out double3 start, out double3 end);
+            float phase = ResolveMockTraversalPhase(frame);
+            mockTraversalPhase01 = phase;
+            float t = BiomeTransitionMath.Smooth01(phase - math.floor(phase));
+            return BiomeTransitionMath.ToBlit(math.lerp(start, end, (double)t));
+        }
+
+        private void ResolveMockTraversalEndpoints(
+            NativeArray<BiomeCenterDTO> centers,
+            NativeArray<BiomeTransitionCounterDTO> counters,
+            out double3 start,
+            out double3 end)
+        {
+            int active = centers.IsCreated ? centers.Length : 0;
+            if (active > 0 && counters.IsCreated && counters.Length > 0)
+                active = math.clamp(counters[0].ActiveBiomeCount, 1, active);
+
+            start = centers.IsCreated && active > 0 ? centers[0].CenterAup : ResolveMockOriginAup();
+            end = centers.IsCreated && active > 1 ? centers[active - 1].CenterAup : start + new double3(3000d, 0d, 0d);
+        }
+
+        private static float ResolveMockTraversalPhase(uint frame)
+        {
+            return (frame % MockTraversalPeriodFrames) * math.rcp((float)MockTraversalPeriodFrames);
         }
 
         private void SchedulePipeline(
@@ -594,9 +883,9 @@ namespace Hecton8.World.Biomes
             in BiomeTransitionTuningDTO tuning,
             float quality,
             bool useMockTraversal,
+            uint frame,
             JobHandle inputDependency)
         {
-            uint frame = ResolveSimulationFrame();
             int activeCount = counters.IsCreated && counters.Length > 0 ? math.max(1, counters[0].ActiveBiomeCount) : 1;
             float cpuMicroseconds = EstimateCpuMicroseconds(activeCount, quality);
             var evaluateJob = new EvaluateBiomeProximityJob
@@ -654,6 +943,7 @@ namespace Hecton8.World.Biomes
                 UseMockPlayerAup = useMockTraversal ? (byte)1 : (byte)0
             };
 
+            _pipelineScheduleTicks = System.Diagnostics.Stopwatch.GetTimestamp();
             JobHandle evaluateHandle = evaluateJob.Schedule(inputDependency);
             JobHandle blendHandle = blendJob.Schedule(evaluateHandle);
             JobHandle publishHandle = publishJob.Schedule(blendHandle);
@@ -661,26 +951,20 @@ namespace Hecton8.World.Biomes
             JobHandle combined = JobHandle.CombineDependencies(publishHandle, acousticHandle);
             _pipelineHandle = telemetryJob.Schedule(combined);
             _pipelineScheduled = true;
+            H8Memory.RegisterActiveJob(OwnerSystem, _pipelineHandle);
         }
 
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
             playerAup = default;
-            IPlayerRuntimeContext player = GlobalRegistry.Player;
+            IPlayerRuntimeContext player = _playerContext;
             if (player != null && player.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
             {
                 playerAup = snapshot.Aup;
                 return true;
             }
 
-            if (playerTransform == null)
-                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
-
-            if (playerTransform == null)
-                return false;
-
-            playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerTransform.position);
-            return true;
+            return false;
         }
 
         private float ResolveQualityWeight(in BiomeTransitionTuningDTO tuning)
@@ -693,12 +977,51 @@ namespace Hecton8.World.Biomes
             return BiomeTransitionMath.Sanitize01(global);
         }
 
-        private static float ResolveCadenceSeconds(in BiomeTransitionTuningDTO tuning, float quality)
+        private float ResolveFilteredQualityWeight(float targetQuality, uint frame)
+        {
+            targetQuality = BiomeTransitionMath.Sanitize01(targetQuality);
+            if (!_qualityFilterInitialized)
+            {
+                _filteredQualityWeight = targetQuality;
+                _qualityFilterFrame = frame;
+                _qualityFilterInitialized = true;
+                return _filteredQualityWeight;
+            }
+
+            if (frame < _qualityFilterFrame)
+            {
+                _filteredQualityWeight = targetQuality;
+                _qualityFilterFrame = frame;
+                return _filteredQualityWeight;
+            }
+
+            uint deltaFrames = frame - _qualityFilterFrame;
+            if (deltaFrames == 0u)
+                deltaFrames = 1u;
+            if (deltaFrames > 180u)
+                deltaFrames = 180u;
+
+            _qualityFilterFrame = frame;
+            float delta = targetQuality - _filteredQualityWeight;
+            float absDelta = math.abs(delta);
+            if (absDelta <= QualityHysteresisBand)
+                return _filteredQualityWeight;
+
+            float direction = math.select(-1f, 1f, delta > 0f);
+            float rate = delta < 0f ? QualityDowngradeStepPerFrame : QualityUpgradeStepPerFrame;
+            float allowedStep = rate * deltaFrames;
+            float hysteresisAdjustedDelta = delta - (direction * QualityHysteresisBand);
+            _filteredQualityWeight = math.saturate(_filteredQualityWeight + math.clamp(hysteresisAdjustedDelta, -allowedStep, allowedStep));
+            return _filteredQualityWeight;
+        }
+
+        private static int ResolveCadenceFrameStep(in BiomeTransitionTuningDTO tuning, float quality)
         {
             float lowHz = math.max(1f, math.select(5f, tuning.LowCadenceHz, math.isfinite(tuning.LowCadenceHz)));
             float ultraHz = math.max(lowHz, math.select(60f, tuning.UltraCadenceHz, math.isfinite(tuning.UltraCadenceHz)));
             float hz = math.lerp(lowHz, ultraHz, BiomeTransitionMath.Smooth01(quality));
-            return math.rcp(math.max(1f, hz));
+            float frames = 60f * math.rcp(math.max(1f, hz));
+            return math.clamp((int)math.round(frames), 1, 60);
         }
 
         private static float EstimateCpuMicroseconds(int activeBiomeCount, float quality)
@@ -759,14 +1082,30 @@ namespace Hecton8.World.Biomes
             return true;
         }
 
+        private bool TryReadCachedTuning(out BiomeTransitionTuningDTO tuning)
+        {
+            tuning = default;
+            if (_vault == null || !_tuningHandle.IsCreated)
+                return false;
+
+            NativeArray<BiomeTransitionTuningDTO> tuningArray = _tuningHandle.Resolve(_vault);
+            if (!tuningArray.IsCreated || tuningArray.Length == 0)
+                return false;
+
+            tuning = tuningArray[0];
+            return true;
+        }
+
         private void PublishShaderPayloadToUnityGlobals()
         {
             if (_vault == null || !_shaderPayloadHandle.IsCreated)
                 return;
 
             NativeArray<float4> payload = _shaderPayloadHandle.Resolve(_vault);
-            if (!payload.IsCreated || payload.Length < 6)
+            if (!payload.IsCreated || payload.Length < BiomeTransitionConstants.ShaderPayloadFloat4Count)
                 return;
+
+            TryUploadShaderPayloadCBuffer(payload);
 
             float4 fog = SanitizePayload(payload[0], new float4(0.006f, 0.014f, 0.022f, 1f));
             float4 absorption = SanitizePayload(payload[1], new float4(0.18f, 0.21f, 0.28f, 0.85f));
@@ -787,6 +1126,82 @@ namespace Hecton8.World.Biomes
             Shader.SetGlobalVector(H8ExtinctionCoefficientsId, ToVector4(absorption));
         }
 
+        private unsafe void TryUploadShaderPayloadCBuffer(NativeArray<float4> payload)
+        {
+            if (!SystemInfo.supportsSetConstantBuffer)
+            {
+                ReleaseShaderPayloadBuffers();
+                return;
+            }
+
+            if (!EnsureShaderPayloadBuffers())
+                return;
+
+            GraphicsBuffer writeBuffer = ResolveNextShaderPayloadBuffer();
+            NativeArray<BiomeTransitionShaderPayloadCBufferDTO> mapped =
+                writeBuffer.LockBufferForWrite<BiomeTransitionShaderPayloadCBufferDTO>(0, 1);
+            try
+            {
+                void* dst = mapped.GetUnsafePtr();
+                void* src = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(payload);
+                UnsafeUtility.MemCpy(dst, src, BiomeTransitionConstants.ShaderPayloadStrideBytes);
+            }
+            finally
+            {
+                writeBuffer.UnlockBufferAfterWrite<BiomeTransitionShaderPayloadCBufferDTO>(1);
+            }
+
+            _activeShaderPayloadBuffer = writeBuffer;
+            Shader.SetGlobalConstantBuffer(
+                BiomeTransitionPayloadCBufferId,
+                _activeShaderPayloadBuffer,
+                0,
+                BiomeTransitionConstants.ShaderPayloadStrideBytes);
+        }
+
+        private bool EnsureShaderPayloadBuffers()
+        {
+            if (_shaderPayloadBufferA != null && _shaderPayloadBufferA.IsValid() &&
+                _shaderPayloadBufferB != null && _shaderPayloadBufferB.IsValid())
+            {
+                return true;
+            }
+
+            ReleaseShaderPayloadBuffers();
+            _shaderPayloadWriteIndex = 0;
+            // COLD ALLOC: GraphicsBuffer[2 x 128B] - biome transition shader payload CBuffer ping-pong - owner: SHINOBU_122.
+            _shaderPayloadBufferA = new GraphicsBuffer(
+                GraphicsBuffer.Target.Constant,
+                GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                1,
+                BiomeTransitionConstants.ShaderPayloadStrideBytes);
+            _shaderPayloadBufferB = new GraphicsBuffer(
+                GraphicsBuffer.Target.Constant,
+                GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                1,
+                BiomeTransitionConstants.ShaderPayloadStrideBytes);
+
+            bool valid = _shaderPayloadBufferA.IsValid() && _shaderPayloadBufferB.IsValid();
+            if (!valid)
+                ReleaseShaderPayloadBuffers();
+            return valid;
+        }
+
+        private GraphicsBuffer ResolveNextShaderPayloadBuffer()
+        {
+            _shaderPayloadWriteIndex ^= 1;
+            return _shaderPayloadWriteIndex == 0 ? _shaderPayloadBufferA : _shaderPayloadBufferB;
+        }
+
+        private void ReleaseShaderPayloadBuffers()
+        {
+            _shaderPayloadBufferA?.Release();
+            _shaderPayloadBufferB?.Release();
+            _shaderPayloadBufferA = null;
+            _shaderPayloadBufferB = null;
+            _activeShaderPayloadBuffer = null;
+        }
+
         private static float4 SanitizePayload(float4 value, float4 fallback)
         {
             return math.select(fallback, value, math.isfinite(value));
@@ -801,15 +1216,78 @@ namespace Hecton8.World.Biomes
         {
             if (_seedScheduled)
             {
-                _seedHandle.Complete();
+                DispatcherJobSwap.TryComplete(ref _seedHandle, forceComplete: true);
                 _seedScheduled = false;
             }
 
             if (!_pipelineScheduled)
+            {
+                _pendingShaderPayloadUpload = false;
+                _pipelineScheduleTicks = 0L;
+                return;
+            }
+
+            DispatcherJobSwap.TryComplete(ref _pipelineHandle, forceComplete: true);
+            _pipelineScheduled = false;
+            _pendingShaderPayloadUpload = false;
+            _pipelineScheduleTicks = 0L;
+        }
+
+        private bool TryFinalizeCompletedPipeline()
+        {
+            if (!_pipelineScheduled || !_pipelineHandle.IsCompleted)
+                return false;
+
+            if (!DispatcherJobSwap.TryFinalizeCompleted(ref _pipelineHandle))
+                return false;
+
+            _pipelineScheduled = false;
+            PatchCompletedPipelineTiming(ResolvePipelineElapsedMicroseconds());
+            _pendingShaderPayloadUpload = true;
+            return true;
+        }
+
+        private float ResolvePipelineElapsedMicroseconds()
+        {
+            if (_pipelineScheduleTicks <= 0L)
+                return 0f;
+
+            long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - _pipelineScheduleTicks;
+            _pipelineScheduleTicks = 0L;
+            if (elapsedTicks <= 0L)
+                return 0f;
+
+            double microseconds = elapsedTicks * 1000000.0 / System.Diagnostics.Stopwatch.Frequency;
+            if (double.IsNaN(microseconds) || double.IsInfinity(microseconds) || microseconds <= 0d)
+                return 0f;
+
+            return (float)System.Math.Min(microseconds, 1000000d);
+        }
+
+        private void PatchCompletedPipelineTiming(float cpuMicroseconds)
+        {
+            if (cpuMicroseconds <= 0f ||
+                _vault == null ||
+                !_telemetryHandle.IsCreated ||
+                !_countersHandle.IsCreated)
+            {
+                return;
+            }
+
+            NativeArray<BiomeTransitionTelemetryEntry> telemetry = _telemetryHandle.Resolve(_vault);
+            NativeArray<BiomeTransitionCounterDTO> counters = _countersHandle.Resolve(_vault);
+            if (!telemetry.IsCreated || telemetry.Length == 0 || !counters.IsCreated || counters.Length == 0)
                 return;
 
-            _pipelineHandle.Complete();
-            _pipelineScheduled = false;
+            BiomeTransitionCounterDTO counter = counters[0];
+            int cursor = math.clamp(counter.TelemetryCursor, 0, telemetry.Length - 1);
+            int latestIndex = cursor == 0 ? telemetry.Length - 1 : cursor - 1;
+            BiomeTransitionTelemetryEntry entry = telemetry[latestIndex];
+            entry.CpuMicroseconds = cpuMicroseconds;
+            telemetry[latestIndex] = entry;
+
+            counter.LastCpuMicroseconds = cpuMicroseconds;
+            counters[0] = counter;
         }
 
         private unsafe int ReadFileIntoNativeScratch(string fullPath, NativeArray<byte> scratch)
@@ -857,11 +1335,11 @@ namespace Hecton8.World.Biomes
 
         private void OnDrawGizmos()
         {
-            bool tuningDrawEnabled = TryReadTuning(out BiomeTransitionTuningDTO tuning) && tuning.DebugDrawEnabled > 0.5f;
+            bool tuningDrawEnabled = TryReadCachedTuning(out BiomeTransitionTuningDTO tuning) && tuning.DebugDrawEnabled > 0.5f;
             if (!drawGizmos && !tuningDrawEnabled)
                 return;
 
-            IDataVault vault = _vault ?? GlobalRegistry.DataVault;
+            IDataVault vault = _vault;
             if (vault == null ||
                 !_centersHandle.IsCreated ||
                 !_blendMaskHandle.IsCreated ||
@@ -944,6 +1422,7 @@ namespace Hecton8.World.Biomes
             ActiveRuntimeInstance._seededBiomeData = false;
             ActiveRuntimeInstance._seedCsvAttempted = false;
             ActiveRuntimeInstance._seedFallbackScheduled = false;
+            ActiveRuntimeInstance.ResolveColdDependencies();
             ActiveRuntimeInstance.EnsureVaultBuffers();
             ActiveRuntimeInstance.TrySeedBiomeData();
             return true;
@@ -1018,10 +1497,16 @@ namespace Hecton8.World.Biomes
 
             float maskSum = math.csum(mask.Weights);
             float atmosphereSum = math.csum(atmosphere.NormalizedWeights);
-            float resolvedSum = math.max(maskSum, atmosphereSum);
-            weightSumError = math.abs(resolvedSum - 1f);
-            if (!math.isfinite(weightSumError) || weightSumError > 0.001f)
+            float maskError = math.abs(maskSum - 1f);
+            float atmosphereError = math.abs(atmosphereSum - 1f);
+            weightSumError = math.max(maskError, atmosphereError);
+            if (!math.isfinite(maskSum) ||
+                !math.isfinite(atmosphereSum) ||
+                !math.isfinite(weightSumError) ||
+                weightSumError > 0.001f)
+            {
                 faultFlags |= SelfAuditWeightFault;
+            }
 
             if (counters.LastBlendCount < 1 || counters.LastBlendCount > BiomeTransitionConstants.MaxBlendBiomes)
                 faultFlags |= SelfAuditBlendCountFault;
@@ -1081,9 +1566,9 @@ namespace Hecton8.World.Biomes
                     Directory.CreateDirectory(directory);
 
                 using FileStream stream = File.Open(fullPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-                using BinaryWriter writer = new BinaryWriter(stream);
                 int count = telemetry.Length;
                 int start = math.clamp(cursor, 0, math.max(0, count - 1));
+                Span<byte> record = stackalloc byte[BiomeTransitionConstants.TelemetryStrideBytes];
                 for (int i = 0; i < count; i++)
                 {
                     int index = start + i;
@@ -1091,16 +1576,9 @@ namespace Hecton8.World.Biomes
                         index -= count;
 
                     BiomeTransitionTelemetryEntry entry = telemetry[index];
-                    writer.Write(entry.PlayerAup.GridX);
-                    writer.Write(entry.PlayerAup.GridY);
-                    writer.Write(entry.PlayerAup.GridZ);
-                    writer.Write(entry.PlayerAup.LocalX);
-                    writer.Write(entry.PlayerAup.LocalY);
-                    writer.Write(entry.PlayerAup.LocalZ);
-                    writer.Write(entry.DominantBiomeHash);
-                    writer.Write(entry.BlendedBiomeCount);
-                    writer.Write(entry.CpuMicroseconds);
-                    writer.Write(entry.StateHash);
+                    record.Clear();
+                    WriteTelemetryRecordLittleEndian(record, in entry);
+                    stream.Write(record);
                 }
 
                 return true;
@@ -1112,6 +1590,55 @@ namespace Hecton8.World.Biomes
 #endif
                 return false;
             }
+        }
+
+        private static void WriteTelemetryRecordLittleEndian(Span<byte> dst, in BiomeTransitionTelemetryEntry entry)
+        {
+            WriteInt64LittleEndian(dst, 0, entry.PlayerAup.GridX);
+            WriteInt64LittleEndian(dst, 8, entry.PlayerAup.GridY);
+            WriteInt64LittleEndian(dst, 16, entry.PlayerAup.GridZ);
+            WriteFloatLittleEndian(dst, 24, entry.PlayerAup.LocalX);
+            WriteFloatLittleEndian(dst, 28, entry.PlayerAup.LocalY);
+            WriteFloatLittleEndian(dst, 32, entry.PlayerAup.LocalZ);
+            WriteUInt32LittleEndian(dst, 48, entry.DominantBiomeHash);
+            WriteInt32LittleEndian(dst, 52, entry.BlendedBiomeCount);
+            WriteFloatLittleEndian(dst, 56, entry.CpuMicroseconds);
+            WriteUInt32LittleEndian(dst, 60, entry.StateHash);
+        }
+
+        private static void WriteFloatLittleEndian(Span<byte> dst, int offset, float value)
+        {
+            WriteUInt32LittleEndian(dst, offset, math.asuint(value));
+        }
+
+        private static void WriteInt32LittleEndian(Span<byte> dst, int offset, int value)
+        {
+            WriteUInt32LittleEndian(dst, offset, (uint)value);
+        }
+
+        private static void WriteInt64LittleEndian(Span<byte> dst, int offset, long value)
+        {
+            WriteUInt64LittleEndian(dst, offset, (ulong)value);
+        }
+
+        private static void WriteUInt32LittleEndian(Span<byte> dst, int offset, uint value)
+        {
+            dst[offset] = (byte)value;
+            dst[offset + 1] = (byte)(value >> 8);
+            dst[offset + 2] = (byte)(value >> 16);
+            dst[offset + 3] = (byte)(value >> 24);
+        }
+
+        private static void WriteUInt64LittleEndian(Span<byte> dst, int offset, ulong value)
+        {
+            dst[offset] = (byte)value;
+            dst[offset + 1] = (byte)(value >> 8);
+            dst[offset + 2] = (byte)(value >> 16);
+            dst[offset + 3] = (byte)(value >> 24);
+            dst[offset + 4] = (byte)(value >> 32);
+            dst[offset + 5] = (byte)(value >> 40);
+            dst[offset + 6] = (byte)(value >> 48);
+            dst[offset + 7] = (byte)(value >> 56);
         }
     }
 }

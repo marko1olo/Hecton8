@@ -380,7 +380,7 @@ namespace Hecton8.Gameplay
                 if (discoveryHash != 0u && _discoveredHashLookup.Contains(discoveryHash))
                     continue;
 
-                AbsoluteUniversePosition poiAup = AbsoluteUniversePosition.FromRuntimePosition(poi.transform.position);
+                AbsoluteUniversePosition poiAup = poi.CachedAup;
                 double sqrDist = DistanceSqAup(in poiAup, in centerAup);
                 if (sqrDist < minSqrDist)
                 {
@@ -477,7 +477,7 @@ namespace Hecton8.Gameplay
         {
             if (_scanJobScheduled)
             {
-                _scanJobHandle.Complete();
+                Hecton8.Core.DispatcherJobFence.TryComplete(ref _scanJobHandle, forceComplete: true);
                 _scanJobScheduled = false;
                 HandleSpatialJobCompletionFaults();
                 if (_triggeredCount.IsCreated)
@@ -656,7 +656,7 @@ namespace Hecton8.Gameplay
             if (!_scanJobScheduled || !_scanJobHandle.IsCompleted)
                 return;
 
-            _scanJobHandle.Complete();
+            Hecton8.Core.DispatcherJobFence.TryFinalizeCompleted(ref _scanJobHandle);
             _scanJobScheduled = false;
             HandleSpatialJobCompletionFaults();
             DispatchTriggeredSpatialResults(in playerAup, playerRuntime);
@@ -675,7 +675,10 @@ namespace Hecton8.Gameplay
             if (!_scanJobScheduled)
                 return;
 
-            _scanJobHandle.Complete();
+            if (!_scanJobHandle.IsCompleted)
+                return;
+
+            Hecton8.Core.DispatcherJobFence.TryFinalizeCompleted(ref _scanJobHandle);
             _scanJobScheduled = false;
             HandleSpatialJobCompletionFaults();
             if (_triggeredCount.IsCreated)
@@ -696,7 +699,10 @@ namespace Hecton8.Gameplay
             if (!_scanJobScheduled)
                 return false;
 
-            _scanJobHandle.Complete();
+            if (!_scanJobHandle.IsCompleted)
+                return false;
+
+            Hecton8.Core.DispatcherJobFence.TryFinalizeCompleted(ref _scanJobHandle);
             _scanJobScheduled = false;
             HandleSpatialJobCompletionFaults();
             return true;

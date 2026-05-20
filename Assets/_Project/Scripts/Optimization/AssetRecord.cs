@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using System.Threading;
+using Hecton8.Core.Contracts;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -90,11 +91,15 @@ namespace Hecton8.Optimization
         [FieldOffset(0)] public uint AssetHash;
         [FieldOffset(4)] public int ReferenceCount;
         [FieldOffset(8)] public ulong HandlePointer;
-        [FieldOffset(16)] public double3 AssetAup;
-        [FieldOffset(40)] public float MaxResidencyRadiusSq;
-        [FieldOffset(44)] public uint Flags;
-        [FieldOffset(48)] private ulong _pad0;
-        [FieldOffset(56)] private ulong _pad1;
+        [FieldOffset(16)] public long AssetSectorX;
+        [FieldOffset(24)] public long AssetSectorY;
+        [FieldOffset(32)] public long AssetSectorZ;
+        [FieldOffset(40)] public float AssetLocalX;
+        [FieldOffset(44)] public float AssetLocalY;
+        [FieldOffset(48)] public float AssetLocalZ;
+        [FieldOffset(52)] public float MaxResidencyRadiusSq;
+        [FieldOffset(56)] public uint Flags;
+        [FieldOffset(60)] public uint AupShiftGeneration;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -157,6 +162,11 @@ namespace Hecton8.Optimization
         public const byte Loading = 1 << 6;
     }
 
+    internal static class AssetTrackerMetaFlags
+    {
+        public const uint UnknownAup = 1u << 8;
+    }
+
     internal static class AssetHandleMapFlags
     {
         public const uint Occupied = 1u << 0;
@@ -198,11 +208,11 @@ namespace Hecton8.Optimization
     internal struct AssetTtlEvaluationJob : IJobParallelFor
     {
         [NoAlias] public NativeArray<AssetTrackerDTO> Trackers;
-        [NoAlias] public NativeArray<float> TimeToLiveSeconds;
         [NoAlias] public NativeArray<AssetHandleMapEntryDTO> HandleMap;
         public double3 PlayerAup;
         public float MaxResidencyRadiusSq;
         public float DeltaSeconds;
+        public float QualityTtlDecayMultiplier;
         public byte ForceVramPanic;
 
         public void Execute(int index)
@@ -210,7 +220,6 @@ namespace Hecton8.Optimization
             float delta = DeltaSeconds > 0f ? DeltaSeconds : 1f;
             if (!HandleMap.IsCreated ||
                 !Trackers.IsCreated ||
-                !TimeToLiveSeconds.IsCreated ||
                 (uint)index >= (uint)HandleMap.Length)
             {
                 return;
@@ -221,8 +230,7 @@ namespace Hecton8.Optimization
                 return;
 
             int slot = entry.PoolSlotIndex;
-            if ((uint)slot >= (uint)Trackers.Length ||
-                (uint)slot >= (uint)TimeToLiveSeconds.Length)
+            if ((uint)slot >= (uint)Trackers.Length)
             {
                 return;
             }
@@ -243,29 +251,37 @@ namespace Hecton8.Optimization
             {
                 tracker.Flags = flags & ~(uint)(AssetHandleFlags.PendingTtl | AssetHandleFlags.Releasable);
                 Trackers[slot] = tracker;
-                TimeToLiveSeconds[slot] = 0f;
                 entry.RefCount = tracker.ReferenceCount;
                 entry.TimeToLive = 0f;
                 HandleMap[index] = entry;
                 return;
             }
 
-            double3 aupDelta = tracker.AssetAup - PlayerAup;
-            float distanceSq = 0f;
-            if (math.all(math.isfinite(aupDelta)))
+            float distancePenalty = 1f;
+            if ((flags & AssetTrackerMetaFlags.UnknownAup) == 0u)
             {
-                float3 localDelta = new float3((float)aupDelta.x, (float)aupDelta.y, (float)aupDelta.z);
-                distanceSq = math.lengthsq(localDelta);
+                double3 assetAup = AssetTrackerAupMath.ToAbsoluteDouble3(in tracker);
+                double3 aupDelta = assetAup - PlayerAup;
+                float distanceSq = float.MaxValue;
+                if (math.all(math.isfinite(aupDelta)))
+                {
+                    float3 localDelta = new float3((float)aupDelta.x, (float)aupDelta.y, (float)aupDelta.z);
+                    float sampledDistanceSq = math.lengthsq(localDelta);
+                    distanceSq = math.isfinite(sampledDistanceSq) ? sampledDistanceSq : float.MaxValue;
+                }
+
+                float safeRadiusSq = MaxResidencyRadiusSq > 0f && math.isfinite(MaxResidencyRadiusSq)
+                    ? MaxResidencyRadiusSq
+                    : tracker.MaxResidencyRadiusSq;
+                distancePenalty = distanceSq > safeRadiusSq ? 5f : 1f;
             }
 
-            float safeRadiusSq = MaxResidencyRadiusSq > 0f && math.isfinite(MaxResidencyRadiusSq)
-                ? MaxResidencyRadiusSq
-                : tracker.MaxResidencyRadiusSq;
-            float distancePenalty = distanceSq > safeRadiusSq ? 5f : 1f;
             float pressurePenalty = ForceVramPanic != 0 ? 3f : 1f;
-            float ttl = TimeToLiveSeconds[slot] - (delta * distancePenalty * pressurePenalty);
+            float qualityDecayPenalty = math.isfinite(QualityTtlDecayMultiplier)
+                ? math.max(0.0001f, QualityTtlDecayMultiplier)
+                : 1f;
+            float ttl = entry.TimeToLive - (delta * distancePenalty * pressurePenalty * qualityDecayPenalty);
             ttl = math.isfinite(ttl) ? ttl : 0f;
-            TimeToLiveSeconds[slot] = ttl;
             entry.RefCount = tracker.ReferenceCount;
             entry.TimeToLive = ttl;
 
@@ -276,6 +292,18 @@ namespace Hecton8.Optimization
             }
 
             HandleMap[index] = entry;
+        }
+    }
+
+    internal static class AssetTrackerAupMath
+    {
+        public static double3 ToAbsoluteDouble3(in AssetTrackerDTO tracker)
+        {
+            const double sectorSize = HectonPhysicsContract.AupSectorSizeMetersDouble;
+            return new double3(
+                (tracker.AssetSectorX * sectorSize) + tracker.AssetLocalX,
+                (tracker.AssetSectorY * sectorSize) + tracker.AssetLocalY,
+                (tracker.AssetSectorZ * sectorSize) + tracker.AssetLocalZ);
         }
     }
 

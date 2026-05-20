@@ -4,8 +4,6 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Hecton.Localization;
-using Hecton8.AI;
-using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Profiling;
@@ -17,11 +15,16 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9490)]
-    public sealed class RuntimeWatchdog : MonoBehaviour, IUpdatable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown
+    public sealed class RuntimeWatchdog : MonoBehaviour, IUpdatable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         public interface IEmergencyResetTarget
         {
             void ServiceEmergencyReset();
+        }
+
+        public interface IEmergencyColdTickCullTarget
+        {
+            int ApplyEmergencyColdTickCull();
         }
 
         public enum RuntimeWatchdogLane : byte
@@ -97,12 +100,14 @@ namespace Hecton8.Core
         private static readonly double[] _lastChangeTimes = new double[LaneCapacity];
         // COLD ALLOC: bool[32] — active liveness lane mask — owner: RuntimeWatchdog
         private static readonly bool[] _activeLanes = new bool[LaneCapacity];
-        // COLD ALLOC: IEmergencyResetTarget[32] — frozen-service recovery callback table — owner: RuntimeWatchdog
-        private static readonly IEmergencyResetTarget[] _emergencyResetTargets = new IEmergencyResetTarget[LaneCapacity];
+        // COLD ALLOC: object[32] - frozen-service recovery callback table, avoids interface arrays - owner: RuntimeWatchdog
+        private static readonly object[] _emergencyResetTargets = new object[LaneCapacity];
         // COLD ALLOC: int[255] - registry service TickCount samples - owner: RuntimeWatchdog
         private static readonly int[] _registryHeartbeatTicks = new int[RegistryHeartbeatSlotCount];
         // COLD ALLOC: byte[255] - active registry heartbeat sample mask - owner: RuntimeWatchdog
         private static readonly byte[] _registryHeartbeatActive = new byte[RegistryHeartbeatSlotCount];
+        // COLD ALLOC: object[255] - boot/hot-swap cached heartbeat services, avoids interface arrays - owner: RuntimeWatchdog
+        private static readonly object[] _registryHeartbeatServices = new object[RegistryHeartbeatSlotCount];
 
         // COLD ALLOC: object[1] — MMF background size result synchronization — owner: RuntimeWatchdog
         private static readonly object _mmfHealthResultLock = new object();
@@ -127,6 +132,8 @@ namespace Hecton8.Core
 
         private bool _registeredUpdatable;
         private bool _registeredLateFrameTick;
+        private bool _registeredHotSwapListener;
+        private IRuntimeWatchdogWorldHealthBridge _persistentWorldRegistry;
         private uint _watchdogStateFlags;
         private int _nextSampleFrame;
         private int _consecutiveOverBudgetFrames;
@@ -163,6 +170,7 @@ namespace Hecton8.Core
             Array.Clear(_emergencyResetTargets, 0, _emergencyResetTargets.Length);
             Array.Clear(_registryHeartbeatTicks, 0, _registryHeartbeatTicks.Length);
             Array.Clear(_registryHeartbeatActive, 0, _registryHeartbeatActive.Length);
+            Array.Clear(_registryHeartbeatServices, 0, _registryHeartbeatServices.Length);
             _hudCanvas = null;
             _lastHudCanvasUpdateTime = 0d;
             _hudDeadlockRecoveryFrame = 0;
@@ -322,9 +330,11 @@ namespace Hecton8.Core
             MathGuard.Initialize();
             BlackBoxHeartbeatThread.Start();
             GlobalRegistry.RegisterRuntimeWatchdogRuntime(this);
+            RefreshRegistryDependenciesCold();
             ResetGcCollectionSentinel();
             ResetMemorySpikeTracker();
             ResetRegistryHeartbeatGuard(Time.realtimeSinceStartupAsDouble);
+            TryRegisterHotSwapListener();
             TryRegisterUpdatable();
             TryRegisterLateFrameTickable();
         }
@@ -377,6 +387,12 @@ namespace Hecton8.Core
                 _registeredUpdatable = false;
             }
 
+            if (_registeredHotSwapListener)
+            {
+                GlobalRegistry.TryUnregisterHotSwapListener(this);
+                _registeredHotSwapListener = false;
+            }
+
             BlackBoxHeartbeatThread.Stop();
         }
 
@@ -401,6 +417,7 @@ namespace Hecton8.Core
             _nextRegistryHeartbeatGuardTime = 0d;
             _lastMemoryBreachFrame = -1;
             _lastInputClockSkewFrame = -1;
+            _persistentWorldRegistry = null;
             ResetGcCollectionSentinel();
             ResetMemorySpikeTracker();
         }
@@ -689,11 +706,12 @@ namespace Hecton8.Core
             if (frame < _nextFaunaEmergencyCullFrame)
                 return;
 
-            FaunaDirector director = FaunaDirector.ActiveRuntimeInstance;
-            if (director == null)
+            IEmergencyColdTickCullTarget target =
+                _emergencyResetTargets[(int)RuntimeWatchdogLane.FaunaDirector] as IEmergencyColdTickCullTarget;
+            if (target == null)
                 return;
 
-            int culledCount = director.ApplyEmergencyColdTickCull();
+            int culledCount = target.ApplyEmergencyColdTickCull();
             if (culledCount <= 0)
             {
                 _nextFaunaEmergencyCullFrame = frame + FaunaEmergencyCullEmptyCooldownFrames;
@@ -794,7 +812,7 @@ namespace Hecton8.Core
             _nextRegistryHeartbeatGuardTime = now + RegistryHeartbeatGuardIntervalSeconds;
             for (int slot = 0; slot < RegistryHeartbeatSlotCount; slot++)
             {
-                object service = GlobalRegistry.ResolveRegisteredServiceForHeartbeat((GlobalRegistryServiceSlot)slot);
+                object service = _registryHeartbeatServices[slot];
                 IServiceHeartbeat heartbeat = service as IServiceHeartbeat;
                 ISystem system = service as ISystem;
                 if (heartbeat == null && system == null)
@@ -832,7 +850,7 @@ namespace Hecton8.Core
             if (now < _nextMmfHealthCheckTime)
                 return;
 
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            IRuntimeWatchdogWorldHealthBridge registry = _persistentWorldRegistry;
             if (registry == null ||
                 !registry.TryGetIndexedSaveHealth(out string savePath, out long sectorHash) ||
                 string.IsNullOrEmpty(savePath))
@@ -1050,7 +1068,7 @@ namespace Hecton8.Core
             if ((uint)laneIndex >= LaneCapacity)
                 return false;
 
-            IEmergencyResetTarget target = _emergencyResetTargets[laneIndex];
+            IEmergencyResetTarget target = _emergencyResetTargets[laneIndex] as IEmergencyResetTarget;
             if (target == null)
                 return false;
 
@@ -1112,6 +1130,56 @@ namespace Hecton8.Core
                 return;
 
             _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
+        }
+
+        private void RefreshRegistryDependenciesCold()
+        {
+            _persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
+            for (int slot = 0; slot < RegistryHeartbeatSlotCount; slot++)
+            {
+                CacheHeartbeatService(
+                    (GlobalRegistryServiceSlot)slot,
+                    GlobalRegistry.ResolveRegisteredServiceForHeartbeat((GlobalRegistryServiceSlot)slot));
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private static void CacheHeartbeatService(GlobalRegistryServiceSlot serviceSlot, object currentService)
+        {
+            int slot = (int)serviceSlot;
+            if ((uint)slot >= RegistryHeartbeatSlotCount)
+                return;
+
+            _registryHeartbeatServices[slot] = currentService;
+        }
+
+        private void RebindRegistryDependency(GlobalRegistryServiceSlot serviceSlot, object currentService)
+        {
+            CacheHeartbeatService(serviceSlot, currentService);
+            if (serviceSlot == GlobalRegistryServiceSlot.PersistentWorldRegistry)
+                _persistentWorldRegistry = currentService as IRuntimeWatchdogWorldHealthBridge;
+        }
+
+        public void OnGlobalRegistryServiceRebound(
+            GlobalRegistryServiceSlot serviceSlot,
+            ref object currentService)
+        {
+            RebindRegistryDependency(serviceSlot, currentService);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            RebindRegistryDependency(serviceSlot, currentService);
         }
     }
 }

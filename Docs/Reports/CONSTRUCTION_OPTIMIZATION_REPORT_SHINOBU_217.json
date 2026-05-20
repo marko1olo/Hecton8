@@ -1,0 +1,96 @@
+{
+  "agent": "SHINOBU_217",
+  "report": "KSP_STYLE_SOCKET_ADAPTOR",
+  "date": "2026-05-20",
+  "status": "PENDING_COMPILE_CORE_MEMORY_ASMDEF",
+  "sharedReportCollision": {
+    "path": "Docs/Reports/CONSTRUCTION_OPTIMIZATION_REPORT.json",
+    "observedAgent": "SHINOBU_220",
+    "action": "preserved concurrent agent report; SHINOBU_217 evidence is stored in this agent-scoped mirror"
+  },
+  "scope": [
+    "Assets/_Project/Scripts/PlayerBuilder.cs",
+    "Assets/_Project/Scripts/Construction",
+    "Assets/_Project/Art/Shaders/Hecton_BlueprintWireInstanced.shader",
+    "Assets/_Project/Shaders/Hecton_ConstructionDearLieHologram.shader"
+  ],
+  "purgedFromActiveSocketRoute": {
+    "PlayerBuilder._socketBuffer": "removed",
+    "PlayerBuilder.Physics.OverlapSphereNonAlloc_socketScan": "removed",
+    "ConstructionRuntimeProxyFactory.ghostSocketSphereColliders": "removed",
+    "ConstructionRuntimeProxyFactory.AddComponent_SphereCollider_for_sockets": "removed",
+    "doorPrefabInstantiationForSnap": "not introduced"
+  },
+  "newRuntime": {
+    "socketDto": "SocketStateDTO explicit 64 bytes",
+    "moduleDto": "ConstructionSocketModuleDTO explicit 96 bytes",
+    "ghostPreview": "GhostPreviewDTO stored in owner-local Vault buffer 70370",
+    "csr": "Owner-local direction CSR buffers 70371 and 70372 bucket open finite target sockets by direction, excluding Connected, CollisionBlocked, non-finite, and invalid-direction rows before fill; PackAllowedConnectionBitmask does not wrap invalid authored directions; ghost rows preserve source SocketDefinitions indices and map to inverse-direction ranges; invalid ghost rows are NonFinite|CollisionBlocked with zero CSR range; invalid CSR target rows consume budget and mark NonFinite instead of aborting the bucket",
+    "matching": "EvaluateSocketSnappingJob deterministic Burst; inspected target-row budget is continuous quality-gated before radius/compatibility/alignment rejection, target rows resolve through CSR indirection, pending/cached poses require scene hash plus ghost query hash with ResolveShinobuModuleHash TemplateHashId fallback, stale cached snap poses are invalidated before DearLieActive can persist across query changes, and SelectBestSocketSnapJob uses a single writable Results handle with a reserved sink row plus finite-result gate",
+    "occupancy": "Target socket rebuild transfers authored ModuleSocket.IsOccupied into SocketStateDTO.ConnectionStatus, and active placement marks the consumed ghost socket on the placed module so Burst skips already consumed sockets; hot solver matching and cold occupancy marking share AreCompatibilityHashesCompatible(); HashCompatibility reserves 0 for wildcard by remapping non-empty folded zero to 1",
+    "adaptation": "AdaptConnectedSocketsJob writes corridor, hatch, and connected flags",
+    "visual": "ConstructionPreviewSignal carries DearLieDampen, GlobalQualityWeight, and DearLieWiggleSpeed at aligned offsets 96/100/104; HectonBlueprintPreviewBatch applies a continuous decaying material envelope; Hecton8/Fabrication/BlueprintWireInstanced and Hecton8/Construction/DearLieHologram both apply scalar dampening and vertex sine wiggle; cold fallback proxy materials initialize _H8SnapDampen to 0 until a snap signal drives the fake",
+    "telemetry": "Active snap path writes 300 entry ConstructionSocketTelemetryEntry ring with Dump_SHINOBU_217.bin non-finite dump; reducer sink aggregates EvaluatedCandidates and NonFinite/CollisionBlocked/CapacityExceeded flags from all ghost rows; optional telemetry job reads clamped BestResultIndex for the reserved reducer sink row; ConstructionPreviewSignal, construction validation payloads, acoustic source fallback, and FloraExclusionSignal module identity use ResolveShinobuModuleHash fallback"
+  },
+  "activeRouteResidualPatternScan": [
+    {
+      "file": "Assets/_Project/Scripts/PlacementGhost.cs",
+      "pattern": "Physics.OverlapBoxNonAlloc",
+      "count": 1,
+      "classification": "adjacent placement volume validation; not the SHINOBU_217 socket adaptor route"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Construction/AutonomousExtractorSystem.cs",
+      "pattern": "Physics.OverlapSphereNonAlloc",
+      "count": 1,
+      "classification": "extractor domain residue; outside socket adaptor route"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Construction/RepairDroneHub.cs",
+      "pattern": "Physics.OverlapSphereNonAlloc",
+      "count": 1,
+      "classification": "repair drone domain residue; outside socket adaptor route"
+    }
+  ],
+  "coldFactoryHits": [
+    {
+      "file": "Assets/_Project/Scripts/Construction/ConstructionRuntimeProxyFactory.cs",
+      "pattern": "new GameObject",
+      "count": 6,
+      "classification": "cold fallback proxy, visual, interior trigger, and socket marker creation; no socket trigger colliders"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Construction/AutonomousExtractorSystem.cs",
+      "pattern": "new GameObject",
+      "count": 1,
+      "classification": "extractor owner root; outside socket adaptor route"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Construction/BulkheadContainmentRuntime.cs",
+      "pattern": "new GameObject",
+      "count": 1,
+      "classification": "SHINOBU_220 bulkhead runtime root; preserved concurrent agent work"
+    }
+  ],
+  "aggregateResiduals": {
+    "physxQueriesOutsideSocketRoute": 3,
+    "coldGameObjectFactoriesOutsideHotSocketRoute": 8,
+    "activeSocketTriggerColliders": 0,
+    "doorPrefabInstantiationsForSnap": 0,
+    "ghostPreviewVaultBufferId": 70370,
+    "socketCsrRangesBufferId": 70371,
+    "socketCsrTargetIndicesBufferId": 70372
+  },
+  "newBurstRuntimeForbiddenPatternScan": {
+    "FloatMode.Fast": 0,
+    "NativeArrayOptions.ClearMemory": 0,
+    ".Complete()": 0,
+    "GlobalRegistry.": 0,
+    "directJobExecuteCallsInActiveBridge": 0,
+    "duplicateReadWriteNativeArrayHandlesInSelectReducer": 0
+  },
+  "verification": {
+    "gitDiffCheck": "passed with existing CRLF normalization warnings for PlayerBuilder.cs and BINARY_PAYLOAD_INTEGRATION_LEDGER.md",
+    "compile": "dotnet build Assembly-CSharp.csproj --no-restore --nologo failed with 121 errors after CPU gate passed at 29.96 percent; former SHINOBU PlayerBuilder missing DTO errors were resolved by project-file inclusion; remaining SHINOBU-local error is stale Hecton8.Core.Memory.dll missing VaultGenerationHandle<T>"
+  }
+}

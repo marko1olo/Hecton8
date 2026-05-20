@@ -46,6 +46,7 @@ Shader "Hecton8/World/ScatterIndirectLit"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
         #include "Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl"
+        #include "Assets/_Project/Art/Shaders/Hecton_CustomLightProbeGrid.hlsl"
 
         struct ScatterInstanceGpuData
         {
@@ -307,7 +308,7 @@ Shader "Hecton8/World/ScatterIndirectLit"
             ambientOcclusion = (half)saturate(HectonScatterFiniteOr(ambientOcclusion, 1.0));
             half caveAmbientFactor = (half)HectonCoreLitEvaluateCaveAmbientFactor(positionWS, normalWS);
             caveAmbientFactor = (half)saturate(HectonScatterFiniteOr(caveAmbientFactor, 1.0));
-            half3 color = SampleSH(normalWS) * albedo * ambientOcclusion * caveAmbientFactor;
+            half3 color = H8CustomLightProbeResolveAmbient(positionWS, normalWS, half3(0.015h, 0.025h, 0.035h)) * albedo * ambientOcclusion * caveAmbientFactor;
             color = all(isfinite(color)) ? color : half3(0.0h, 0.0h, 0.0h);
             half specularStrength = lerp(0.04h, 0.18h, metallic);
 

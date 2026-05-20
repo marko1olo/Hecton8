@@ -1,7 +1,7 @@
 # Compliance And Disclosure Playbook
 
 Status: compliance guardrail / pre-outreach
-Public stance: single-player-first / no co-op promise
+Public stance: single-player-first scope / proof-first public copy
 Runtime impact: none
 
 ## Objective
@@ -35,6 +35,10 @@ Do not ask creators to hide the relationship.
 - Do not send keys to suspicious Gmail-only impersonators.
 - Prefer Steam Curator Connect for curators.
 - Revoke or rotate keys if scam signs appear.
+- Send keys/demo access only when `official_inbox_custody_gate = ALLOW_OFFICIAL_INBOX_USE_VERIFIED` in `Website/ONE_PAGE_SITE_AND_PRESSKIT_PLAN.md`; never from a personal, throwaway, agent-owned, or unrecorded mailbox.
+- Send keys/demo/private preview access only when the exact recipient or batch also has `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED` and access-log fields are ready.
+- If key/demo copy claims gameplay, pressure, route risk, threat, salvage, base failure, or first-public agency proof, it must cite an AB-009/KPI field source: `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`.
+- Record the route-specific class field and `reply_consent_provenance` before using creator, press, curator, or tester replies outside the original access route.
 
 ## Paid Creator Terms
 
@@ -44,9 +48,12 @@ Every paid placement needs written terms:
 - date/window;
 - platform;
 - disclosure language;
+- CRM row `paid_creator_permission_gate = ALLOW_PAID_CREATOR_TEST_VERIFIED`;
 - whether VOD remains public;
 - whether the creator controls opinion;
 - what assets are provided;
+- which AB-009/KPI field supports any gameplay/pressure/route-risk claim;
+- route-specific class field and `reply_consent_provenance`;
 - payment amount and schedule;
 - cancellation terms.
 
@@ -62,7 +69,7 @@ Never pay for or publish:
 - undisclosed sponsorship;
 - "zero stutter" without proof;
 - "runs on low-end PCs" without proof;
-- co-op implication;
+- multiplayer-scope implication;
 - "Subnautica killer" ad copy;
 - competitor asset use;
 - "realistic full ocean simulation" without proof.
@@ -91,11 +98,13 @@ If you cover the build, please disclose that the demo/key was provided by the de
 Before sending a key:
 
 - [ ] contact route matches creator-owned public page;
+- [ ] sender inbox has `official_inbox_custody_gate = ALLOW_OFFICIAL_INBOX_USE_VERIFIED`;
 - [ ] domain/social handle matches official profile;
 - [ ] recent uploads exist;
 - [ ] request is specific to the game;
 - [ ] no pressure for bulk keys;
 - [ ] no reseller language;
 - [ ] no mismatched channel stats;
+- [ ] AB-009/KPI field exists for any gameplay/pressure/route-risk proof claim;
+- [ ] route-specific class field and `reply_consent_provenance` recorded;
 - [ ] key logged.
-

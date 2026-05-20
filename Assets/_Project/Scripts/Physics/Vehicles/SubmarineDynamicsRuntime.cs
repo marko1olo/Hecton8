@@ -68,6 +68,7 @@ namespace Hecton8.Physics.Vehicles
         private VaultBufferHandle<SubmarineKinematicTelemetry> _telemetryHandle;
         private VaultBufferHandle<SubmarineKinematicConfig> _configHandle;
         private VaultBufferHandle<float> _dragLutHandle;
+        private VaultBufferHandle<VehicleDamageStateDTO> _vehicleDamageStateReadHandle;
         private JobHandle _integratorHandle;
         private bool _integratorPending;
         private bool _buffersLocked;
@@ -107,7 +108,7 @@ namespace Hecton8.Physics.Vehicles
         private void OnDisable()
         {
             if (_integratorPending)
-                DispatcherJobSwap.TryComplete(ref _integratorHandle, forceComplete: true);
+                DispatcherJobFence.TryComplete(ref _integratorHandle, forceComplete: true);
 
             _integratorPending = false;
             VehicleCommandSignalBus.Unregister(this);
@@ -210,7 +211,7 @@ namespace Hecton8.Physics.Vehicles
             if (!_integratorPending)
                 return;
 
-            if (!DispatcherJobSwap.TryComplete(ref _integratorHandle, forceComplete: false))
+            if (!DispatcherJobFence.TryComplete(ref _integratorHandle, forceComplete: false))
                 return;
 
             _integratorPending = false;
@@ -443,10 +444,47 @@ namespace Hecton8.Physics.Vehicles
                 ApplyImpactSignal(ref force, mockImpact.LocalPoint, mockImpact.NormalWorld, mockImpact.Magnitude, mockImpact.Frame, mockImpact.TraumaLevel, normalIsLocal: false);
             }
 
+            ApplyVehicleComponentDamageState(ref control, ref mass, ref config);
+
             controls[0] = control;
             masses[0] = mass;
             forces[0] = force;
             configs[0] = config;
+        }
+
+        private void ApplyVehicleComponentDamageState(
+            ref SubmarineKinematicControl control,
+            ref SubmarineMassProperties mass,
+            ref SubmarineKinematicConfig config)
+        {
+            if (_dataVault == null)
+                return;
+
+            if (!_vehicleDamageStateReadHandle.IsCreated &&
+                !_dataVault.TryGetBufferHandle(VehicleDamageConstants.StateReadBuffer, out _vehicleDamageStateReadHandle))
+            {
+                return;
+            }
+
+            if (!_dataVault.ResolveBuffer(ref _vehicleDamageStateReadHandle) ||
+                !_vehicleDamageStateReadHandle.IsCreated ||
+                _vehicleDamageStateReadHandle.Length <= 0)
+            {
+                return;
+            }
+
+            VehicleDamageStateDTO state = _vehicleDamageStateReadHandle.GetElementAsReadOnlyRef(_dataVault, 0);
+            if ((state.Flags & VehicleDamageConstants.StateFlagInitialized) == 0u)
+                return;
+
+            config.MaxThrustN = math.max(0f, maxThrustN) * math.saturate(state.MaxThrustScalar);
+            config.BallastLiftN = math.max(0f, ballastLiftN) * math.saturate(state.BuoyancyScalar);
+            config.DragScale = math.max(0.01f, dragScale) * math.max(1f, state.DragScalar);
+            mass.FloodMassKg = math.max(mass.FloodMassKg, math.max(0f, state.FloodWaterMassKg));
+            control.FloodWaterMassKg = mass.FloodMassKg;
+
+            float sensor01 = math.saturate(state.SensorScalar);
+            config.CavitationThreshold = math.max(0.05f, config.CavitationThreshold * math.lerp(0.72f, 1f, sensor01));
         }
 
         private static void ApplyImpactSignal(

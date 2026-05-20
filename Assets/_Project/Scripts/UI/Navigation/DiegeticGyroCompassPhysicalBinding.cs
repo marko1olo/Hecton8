@@ -102,7 +102,7 @@ namespace Hecton8.UI.Navigation
             runtime.InjectDependencies(
                 GlobalRegistry.Player,
                 GlobalRegistry.DataVault,
-                GlobalRegistry.ScalabilityTier);
+                HomeostasisBrain.GlobalQualityWeight);
         }
 
         private void ApplyBinding()

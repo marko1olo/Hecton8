@@ -13,6 +13,7 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.XR;
 
 namespace Hecton8.UI.VR
@@ -59,8 +60,10 @@ namespace Hecton8.UI.VR
 
         [Header("Fallback")]
         [SerializeField, Min(0.05f)] private float nonVrPullSeconds = 1.5f;
-        [SerializeField, Range(0f, 1f)] private float lowTierIkBlend = 0.35f;
-        [SerializeField, Range(0f, 1f)] private float highTierIkBlend = 0.85f;
+        [FormerlySerializedAs("lowTierIkBlend")]
+        [SerializeField, Range(0f, 1f)] private float minimumQualityIkBlend = 0.35f;
+        [FormerlySerializedAs("highTierIkBlend")]
+        [SerializeField, Range(0f, 1f)] private float maximumQualityIkBlend = 0.85f;
         [SerializeField] private bool emitPrologueComplete = true;
 
         private NativeArray<float> _leverAngles;
@@ -97,7 +100,8 @@ namespace Hecton8.UI.VR
         private bool _dispatcherAvailable;
         private bool _grabbed;
         private bool _latched;
-        private bool _lowTierMath;
+        private float _ikQualityWeight01 = 1f;
+        private float _activeIkBlend = 0.85f;
         private bool _nativeAllocated;
         private bool _projectionSingular;
         private bool _xrActiveThisFrame;
@@ -145,7 +149,7 @@ namespace Hecton8.UI.VR
             _blackBoxDumped = false;
             _inputService = GlobalRegistry.Input;
             _dispatcherAvailable = GlobalRegistry.Dispatcher != null;
-            _lowTierMath = ResolveLowTierMath();
+            RefreshQualityPolicy();
             TryRegisterHotSwapListener();
             TryRegisterScalabilityListener();
             TryRegisterTick();
@@ -353,7 +357,7 @@ namespace Hecton8.UI.VR
             if (!_grabbed || handIkTarget == null || handleAnchor == null)
                 return;
 
-            float blend = _lowTierMath ? lowTierIkBlend : highTierIkBlend;
+            float blend = _activeIkBlend;
             float step = math.saturate(blend * math.saturate(dt * 60f));
             if (step <= 0f)
                 return;
@@ -543,7 +547,7 @@ namespace Hecton8.UI.VR
             if (!isActiveAndEnabled || _latched)
                 return;
 
-            _lowTierMath = payload.CurrentTier == ScalabilityTierProfiles.LowMx350;
+            RefreshQualityPolicy();
         }
 
         private void WriteBlackBoxFrame(float angleDegrees)
@@ -579,7 +583,7 @@ namespace Hecton8.UI.VR
                 flags |= 1 << 0;
             if (_latched)
                 flags |= 1 << 1;
-            if (_lowTierMath)
+            if (_ikQualityWeight01 <= 0.3f)
                 flags |= 1 << 2;
             if (_xrActiveThisFrame)
                 flags |= 1 << 3;
@@ -660,8 +664,8 @@ namespace Hecton8.UI.VR
             springDamping = math.clamp(SanitizeFloat(springDamping, 13f), 0f, 80f);
             maxVelocityDegreesPerSecond = math.clamp(SanitizeFloat(maxVelocityDegreesPerSecond, 360f), 1f, 1440f);
             nonVrPullSeconds = math.clamp(SanitizeFloat(nonVrPullSeconds, 1.5f), 0.05f, 10f);
-            lowTierIkBlend = math.saturate(SanitizeFloat(lowTierIkBlend, 0.35f));
-            highTierIkBlend = math.saturate(SanitizeFloat(highTierIkBlend, 0.85f));
+            minimumQualityIkBlend = math.saturate(SanitizeFloat(minimumQualityIkBlend, 0.35f));
+            maximumQualityIkBlend = math.saturate(SanitizeFloat(maximumQualityIkBlend, 0.85f));
             _referenceLocalVector = ResolveReferenceVector();
             _referenceLocalFloat = ToFloat3(_referenceLocalVector);
             if (_nativeAllocated)
@@ -853,19 +857,26 @@ namespace Hecton8.UI.VR
             _registeredScalabilityListener = false;
         }
 
-        private bool ResolveLowTierMath()
+        private void RefreshQualityPolicy()
         {
-            return IsLowTierMath(GlobalRegistry.ScalabilityTier);
-        }
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            if (!math.isfinite(quality))
+                quality = _ikQualityWeight01;
 
-        private static bool IsLowTierMath(HectonQualityTier tier)
-        {
-            return tier == HectonQualityTier.Unknown || tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350;
+            _ikQualityWeight01 = math.saturate(quality);
+            float curve = SmoothStep01(_ikQualityWeight01);
+            _activeIkBlend = math.saturate(math.lerp(minimumQualityIkBlend, maximumQualityIkBlend, curve));
         }
 
         private float ResolveNormalized01(float angleDegrees)
         {
             return math.saturate((angleDegrees - minAngleDegrees) * math.rcp(math.max(0.001f, maxAngleDegrees - minAngleDegrees)));
+        }
+
+        private static float SmoothStep01(float value)
+        {
+            float t = math.saturate(value);
+            return t * t * (3f - 2f * t);
         }
 
         private float3 WorldToLocal(Vector3 world)
@@ -1027,16 +1038,38 @@ namespace Hecton8.UI.VR
         }
 #endif
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 48)]
         private struct ManualOverrideLeverTelemetryEntry
         {
+            [FieldOffset(0)]
             public float3 HandLocalPosition;
+
+            [FieldOffset(12)]
             public float3 PivotLocalPosition;
+
+            [FieldOffset(24)]
             public float AngleDegrees;
+
+            [FieldOffset(28)]
             public float TargetAngleDegrees;
+
+            [FieldOffset(32)]
             public float VelocityDegreesPerSecond;
+
+            [FieldOffset(36)]
             public uint Frame;
+
+            [FieldOffset(40)]
             public byte Flags;
+
+            [FieldOffset(41)]
+            private byte _pad0;
+
+            [FieldOffset(42)]
+            private ushort _pad1;
+
+            [FieldOffset(44)]
+            private uint _pad2;
         }
 
     }

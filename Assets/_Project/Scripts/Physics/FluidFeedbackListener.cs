@@ -33,9 +33,9 @@ namespace Hecton8.Physics
         // COLD ALLOC: RegistryBucket<IFluidSplashEventListener>[16] - splash feedback listeners drained by SystemDispatcher LateUpdate - owner: FluidFeedbackEvents
         private static readonly RegistryBucket<IFluidSplashEventListener> _listeners = new RegistryBucket<IFluidSplashEventListener>(ListenerCapacity);
 
-        private static int _snapshotReadFrame = -1;
+        private static int _snapshotReadGeneration = -1;
         private static int _snapshotReadCursor;
-        private static int _lastOverflowWarningFrame = -1;
+        private static int _lastOverflowWarningGeneration = -1;
         private static bool _initialized;
 
         /// <summary>
@@ -57,9 +57,9 @@ namespace Hecton8.Physics
         private static void ResetStaticState()
         {
             _listeners.Clear();
-            _snapshotReadFrame = -1;
+            _snapshotReadGeneration = -1;
             _snapshotReadCursor = 0;
-            _lastOverflowWarningFrame = -1;
+            _lastOverflowWarningGeneration = -1;
             _initialized = false;
         }
 
@@ -110,12 +110,12 @@ namespace Hecton8.Physics
 
             EnsureInitialized();
             if (SignalBus<SplashEvent>.DroppedLastFlush > 0)
-                ReportOverflowOncePerFrame();
+                ReportOverflowOncePerSnapshot();
 
-            int currentFrame = Time.frameCount;
-            if (_snapshotReadFrame != currentFrame)
+            int currentGeneration = SignalBus<SplashEvent>.SnapshotGeneration;
+            if (_snapshotReadGeneration != currentGeneration)
             {
-                _snapshotReadFrame = currentFrame;
+                _snapshotReadGeneration = currentGeneration;
                 _snapshotReadCursor = 0;
             }
 
@@ -177,13 +177,13 @@ namespace Hecton8.Physics
             }
         }
 
-        private static void ReportOverflowOncePerFrame()
+        private static void ReportOverflowOncePerSnapshot()
         {
-            int frame = Time.frameCount;
-            if (_lastOverflowWarningFrame == frame)
+            int snapshotGeneration = SignalBus<SplashEvent>.SnapshotGeneration;
+            if (_lastOverflowWarningGeneration == snapshotGeneration)
                 return;
 
-            _lastOverflowWarningFrame = frame;
+            _lastOverflowWarningGeneration = snapshotGeneration;
             GlobalTelemetryBus.PublishPerformanceWarning(_overflowWarningHash, _queueHash, PendingEventCapacity);
         }
 

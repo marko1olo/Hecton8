@@ -10,7 +10,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(ParticleSystem))]
-    public sealed class SargassumDebrisParticleSystem : MonoBehaviour, ITickable
+    public sealed class SargassumDebrisParticleSystem : MonoBehaviour, ITickable, IGlobalRegistryHotSwapListener
     {
         private static readonly int _DryColorId = Shader.PropertyToID("_DryColor");
         private static readonly int _WetColorId = Shader.PropertyToID("_WetColor");
@@ -154,10 +154,13 @@ namespace Hecton8.World
         private float _ambientSpawnAccumulator;
         private uint _emitSeed = 1u;
         private bool _registered;
+        private bool _hotSwapRegistered;
+        private SargassumGlobalDragManager _sargassumDrag;
 
         private void Awake()
         {
             ResolveDependencies();
+            CacheRegistryServicesCold();
             ResolveRuntimeTargets();
             RefreshPaletteFromMaterial();
             ApplyRendererMaterial();
@@ -166,22 +169,33 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             ResolveRuntimeTargets();
             TryRegister();
         }
 
         private void Start()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             TryRegister();
         }
 
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
             _ambientSpawnAccumulator = 0f;
             _debugAmbientDensity01 = 0f;
             _debugAmbientSpawnBudget = 0f;
             _debugAmbientEmissionThisTick = 0;
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregister();
+            TryUnregisterHotSwapListener();
         }
 
         private void OnValidate()
@@ -291,7 +305,7 @@ namespace Hecton8.World
                 return;
             }
 
-            SargassumGlobalDragManager dragManager = Hecton8.Core.GlobalRegistry.SargassumDrag;
+            SargassumGlobalDragManager dragManager = _sargassumDrag;
             if (dragManager == null || !dragManager.HasFieldData)
             {
                 _debugAmbientDensity01 = 0f;
@@ -396,6 +410,45 @@ namespace Hecton8.World
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _registered = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _sargassumDrag = GlobalRegistry.SargassumDrag;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.SargassumDragRuntime:
+                    _sargassumDrag = currentService as SargassumGlobalDragManager;
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (isActiveAndEnabled)
+                        TryRegister();
+                    break;
+            }
         }
 
         private void EmitAmbientParticle(Vector3 centerWS, float densityT, float window01)

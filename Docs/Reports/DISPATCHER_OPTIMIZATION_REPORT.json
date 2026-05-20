@@ -1,0 +1,89 @@
+{
+  "agent": "SHINOBU_206",
+  "status": "PENDING_VERIFICATION",
+  "scope": "Assets/_Project/Scripts",
+  "reportModel": "FAST_RG_GATES_WITH_LAST_COMPLETED_CALL_PROPAGATION_BASELINE",
+  "updatedUtc": "2026-05-20",
+  "fullTreeCallPropagatedScan": {
+    "status": "TIMEOUT",
+    "timeoutMs": 240000,
+    "reason": "PowerShell call-propagation scanner exceeded command budget on current multi-agent worktree. Report keeps the last completed call-propagated baseline and adds fast rg gates for current edits."
+  },
+  "lastCompletedCallPropagatedBaselineBeforeCurrentPass": {
+    "directCompleteTokens": 47,
+    "directCompleteHotPathTokens": 2,
+    "runtimeRunLexicalTokens": 3,
+    "runtimeRunTokens": 0,
+    "forcedFenceTokens": 248,
+    "forcedHotPathTokens": 36
+  },
+  "currentFastGates": {
+    "legacySharedCompleteHelperPatterns": 0,
+    "runtimeIJobRunTokensAfterExclusions": 0,
+    "runtimeScheduleCompleteTokensAfterExclusions": 0,
+    "oldSharedHelperRegex": "CompleteFrameJob|CompletePendingJobs|CompleteScheduledWork|CompleteActiveJob|CompleteScheduledSolver|CompleteScheduledJob|CompletePendingStressJob|CompletePendingFrame|CompletePendingSolver|CompleteDecayJobIfReady|CompleteRuntimeJobs"
+  },
+  "currentFastGateResidue": {
+    "managedTaskRun": [
+      "Assets/_Project/Scripts/Construction/BaseModuleCatalogRuntime.cs:359"
+    ],
+    "editorOrSmokeRunTokens": [
+      "Assets/_Project/Scripts/VFX/Debris/ShinobuVoxelSculptorWindow.cs:136",
+      "Assets/_Project/Scripts/VFX/Debris/ShinobuVoxelSculptorWindow.cs:142",
+      "Assets/_Project/Scripts/VFX/Debris/ShinobuVoxelSculptorWindow.cs:164",
+      "Assets/_Project/Scripts/VFX/Debris/ShinobuVoxelSculptorWindow.cs:170",
+      "Assets/_Project/Scripts/VFX/Debris/ShinobuVoxelSculptorWindow.cs:179",
+      "Assets/_Project/Scripts/VFX/Debris/ShinobuVoxelSculptorWindow.cs:191",
+      "Assets/_Project/Scripts/VFX/Debris/ShinobuVoxelSculptorWindow.cs:202",
+      "Assets/_Project/Scripts/VFX/Debris/ShinobuVoxelSculptorWindow.cs:257",
+      "Assets/_Project/Scripts/VFX/Debris/ShinobuVoxelSculptorWindow.cs:290",
+      "Assets/_Project/Scripts/VFX/Debris/ShinobuVoxelSculptorWindow.cs:297",
+      "Assets/_Project/Scripts/SavePersistenceOmegaSmokeTester.cs:185-188"
+    ],
+    "coldSmokeScheduleComplete": [
+      "Assets/_Project/Scripts/World/BiomeTransitionSmokeTester.cs:142"
+    ]
+  },
+  "patchedThisPass": [
+    "AmbientBiotaDirector split active job completion into TryFinalizeActiveJobNoWait and CompleteActiveJobForTeardown",
+    "SumpPumpPipeGridRuntime split solver finalization and removed cold DrainageMockNetworkJob.Run via Execute",
+    "MacroEcosystemMathematicianRuntime split scheduled job finalization",
+    "BallisticsRuntime split scheduled finalization",
+    "ThermalDynamicResolutionAdapter split stress EWMA finalization",
+    "ToolKinematicsRuntime split pending frame finalization",
+    "DiegeticVisorLensRuntime split scheduled work finalization",
+    "BuoyancyDisplacementRuntime split pending solver finalization",
+    "ProceduralBoneBlenderRuntime split pending solver finalization",
+    "KineticCharacterAnimatorRuntime split pending solver finalization",
+    "ToxicOutgassingChemistryRuntime split scheduled work finalization",
+    "PlayerExplorationTracker moved cartography hard wait to teardown-only method",
+    "ShinobuPhysiologyRuntime split frame job finalization",
+    "RadioisotopeThermalGenerator split decay job finalization",
+    "HectonBiolumManager split predator/ripple job finalization",
+    "SeedShipAnomalyRuntime split frame job finalization",
+    "SubmarineAutopilotSdfNavigator split init/solver pending jobs into no-wait and teardown helpers",
+    "BaseAtmosphereLogisticsRuntime removed cold AtmosphereMockTopologyJob.Run and AtmosphereCsrBuildJob.Run via Execute",
+    "ShinobuFloraFaunaSymbiosisSolver split frame job finalization",
+    "ShinobuEcosystemBalancer split frame job finalization",
+    "EcosystemPopulationBalancer renamed hard completion to teardown-only method",
+    "ShinobuMetabolismRuntime split frame job finalization",
+    "BiolumPulseSyncRuntime renamed hard completion to teardown-only method"
+  ],
+  "knownHardBarrierOrOwnerReviewResidue": [
+    "DispatcherJobFence and DispatcherJobSwap remain the central raw hard-fence surface for teardown, AUP, memory release, and deterministic barriers.",
+    "PersistentWorldRegistry tombstone sweep still requires owner-level snapshot/deferred mutation design before live delta mutation can avoid all hard fences.",
+    "GlobalPhysicsStateManager tracked body mutation still requires owner-level pending body-delta buffer.",
+    "LockstepStateValidator POST_SIM hash validation is an explicit deterministic blocking proof point unless netcode owner accepts delayed validation.",
+    "HectonFloatingOrigin transform shift is an AUP hard barrier.",
+    "WorldChunkResidencyManager teleport/residency barriers remain owner-review because chunk memory can be replaced under readers."
+  ],
+  "verification": {
+    "dotnetBuild": "NOT_RUN_BY_INSTRUCTION",
+    "buildGateRequired": "Do not launch build while CPU > 50 percent or dotnet/csc is active.",
+    "staticGates": [
+      "rg legacy shared helper patterns returned no matches",
+      "rg runtime .Run returned only Task.Run, smoke literal, and UNITY_EDITOR tool-window residue",
+      "rg Schedule().Complete returned only cold smoke tester residue"
+    ]
+  }
+}

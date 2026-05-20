@@ -34,7 +34,7 @@ namespace Hecton8.SaveSystem
         fileName = "ItemCatalog",
         menuName = "Hecton/Item Catalog",
         order    = 100)]
-    public sealed class ItemCatalog : ScriptableObject
+    public sealed class ItemCatalog : ScriptableObject, IGlobalRegistryHotSwapListener
     {
 #if UNITY_ADDRESSABLES_EXIST
         private enum WorldPrefabLoadState : byte
@@ -191,16 +191,27 @@ namespace Hecton8.SaveSystem
 #if UNITY_ADDRESSABLES_EXIST
         private Dictionary<int, AssetReferenceGameObject> _worldPrefabReferenceLookup;
         private Dictionary<int, WorldPrefabRuntimeRecord> _worldPrefabRuntimeLookup;
-        private Queue<int> _pendingWorldPrefabReleaseQueue;
-        private HashSet<int> _pendingWorldPrefabReleaseSet;
-        // COLD ALLOC: List<int>[32] - staged world-prefab dispatch claims from AssetLoadDispatcher - owner: ItemCatalog
-        private List<int> _worldPrefabDispatchScratch;
+        // COLD ALLOC: int[] fixed ring - staged world-prefab releases - owner: ItemCatalog
+        private int[] _pendingWorldPrefabReleaseRing;
+        private int _pendingWorldPrefabReleaseHead;
+        private int _pendingWorldPrefabReleaseTail;
+        private int _pendingWorldPrefabReleaseCount;
+        // COLD ALLOC: int[] fixed scratch - staged world-prefab dispatch claims from AssetLoadDispatcher - owner: ItemCatalog
+        private int[] _worldPrefabDispatchScratch;
+        private int _worldPrefabDispatchScratchCount;
 #endif
         private bool _hasLookupAmbiguity;
         private string _lookupAmbiguitySummary;
         private List<ItemData> _runtimeItems;
+        private bool _registeredHotSwap;
+#if UNITY_ADDRESSABLES_EXIST
+        private AssetLifecycleGovernor _cachedAssetLifecycleGovernor;
+        private AssetLoadDispatcher _cachedAssetLoadDispatcher;
+        private IPlayerRuntimeContext _cachedPlayerContext;
+#endif
         private const int DefaultWorldPrefabLruIdleFrames = 180;
         private const int DeferredWorldPrefabReleaseCapacity = 16;
+        private const int DefaultWorldPrefabDispatchScratchCapacity = 32;
 
         /// <summary>
         /// True when the catalog detected at least one authored or runtime alias collision.
@@ -217,6 +228,21 @@ namespace Hecton8.SaveSystem
         {
             RebuildLookup();
             RebuildWorldPrefabLookup();
+            CacheRuntimeServices();
+            TryRegisterHotSwap();
+        }
+
+        private void OnDisable()
+        {
+#if UNITY_ADDRESSABLES_EXIST
+            if (Application.isPlaying)
+            {
+                ReleaseAllWorldPrefabHandles();
+                DrainDeferredWorldPrefabReleases(0);
+            }
+#endif
+            TryUnregisterHotSwap();
+            ClearCachedRuntimeServices();
         }
 
         /// <summary>
@@ -270,8 +296,8 @@ namespace Hecton8.SaveSystem
             if (hashId == 0)
                 return false;
 
-            if (_worldPrefabReferenceLookup == null || _worldPrefabRuntimeLookup == null)
-                RebuildWorldPrefabLookup();
+            if (!TryEnsureWorldPrefabLookupReady())
+                return TryGetDirectWorldPrefabFallback(hashId, out _);
 
             if (_worldPrefabRuntimeLookup.TryGetValue(hashId, out WorldPrefabRuntimeRecord runtimeRecord))
             {
@@ -300,7 +326,8 @@ namespace Hecton8.SaveSystem
                 return TryGetDirectWorldPrefabFallback(hashId, out _);
             }
 
-            AssetLoadDispatcher dispatcher = Hecton8.Core.GlobalRegistry.AssetLoadDispatcher;
+            CacheRuntimeServices();
+            AssetLoadDispatcher dispatcher = _cachedAssetLoadDispatcher;
             uint dispatchAssetKey = BuildWorldPrefabDispatchKey(hashId);
             if (dispatcher != null &&
                 dispatcher.Enqueue(dispatchAssetKey, AssetPriorityTier.Tier2Proximity, false, out int requestId))
@@ -357,8 +384,8 @@ namespace Hecton8.SaveSystem
             if (hashId == 0)
                 return false;
 
-            if (_worldPrefabRuntimeLookup == null)
-                RebuildWorldPrefabLookup();
+            if (!TryEnsureWorldPrefabLookupReady())
+                return TryGetDirectWorldPrefabFallback(hashId, out prefab);
 
             PumpWorldPrefabDispatchTickets();
 
@@ -408,9 +435,48 @@ namespace Hecton8.SaveSystem
 
         private bool TryGetDirectWorldPrefabFallback(int hashId, out GameObject prefab)
         {
+            prefab = null;
+            if (hashId == 0)
+                return false;
+
+            if (_hashLookup == null && Application.isPlaying)
+                return TryGetDirectWorldPrefabFallbackLinear(hashId, out prefab);
+
             ItemData item = FindByHash(hashId);
             prefab = item != null ? item.worldPrefab : null;
             return prefab != null;
+        }
+
+        private bool TryGetDirectWorldPrefabFallbackLinear(int hashId, out GameObject prefab)
+        {
+            prefab = null;
+            if (allItems != null)
+            {
+                for (int i = 0; i < allItems.Count; i++)
+                {
+                    ItemData item = allItems[i];
+                    if (item != null && item.MatchesPersistentHash(hashId))
+                    {
+                        prefab = item.worldPrefab;
+                        return prefab != null;
+                    }
+                }
+            }
+
+            if (_runtimeItems != null)
+            {
+                for (int i = 0; i < _runtimeItems.Count; i++)
+                {
+                    ItemData item = _runtimeItems[i];
+                    if (item != null && item.MatchesPersistentHash(hashId))
+                    {
+                        prefab = item.worldPrefab;
+                        return prefab != null;
+                    }
+                }
+            }
+
+            return false;
         }
 
         public bool AreWorldPrefabsReadyNonAlloc(List<int> hashIds)
@@ -458,10 +524,7 @@ namespace Hecton8.SaveSystem
             if (_worldPrefabRuntimeLookup == null || !_worldPrefabRuntimeLookup.ContainsKey(hashId))
                 return;
 
-            _pendingWorldPrefabReleaseQueue ??= new Queue<int>(DeferredWorldPrefabReleaseCapacity); // COLD ALLOC: Queue<int>[16] - deferred Addressables release queue for world prefabs - owner: ItemCatalog
-            _pendingWorldPrefabReleaseSet ??= new HashSet<int>(DeferredWorldPrefabReleaseCapacity); // COLD ALLOC: HashSet<int>[16] - dedupe guard for deferred Addressables release queue - owner: ItemCatalog
-            if (_pendingWorldPrefabReleaseSet.Add(hashId))
-                _pendingWorldPrefabReleaseQueue.Enqueue(hashId);
+            TryEnqueuePendingWorldPrefabRelease(hashId);
 #endif
         }
 
@@ -483,24 +546,25 @@ namespace Hecton8.SaveSystem
 #if !UNITY_ADDRESSABLES_EXIST
             return;
 #else
-            if (_pendingWorldPrefabReleaseQueue == null ||
-                _pendingWorldPrefabReleaseSet == null ||
+            if (_pendingWorldPrefabReleaseRing == null ||
                 _worldPrefabRuntimeLookup == null ||
-                _pendingWorldPrefabReleaseQueue.Count <= 0)
+                _pendingWorldPrefabReleaseCount <= 0)
             {
                 return;
             }
 
             int releaseBudget = maxReleaseCount <= 0 ? int.MaxValue : maxReleaseCount;
-            while (releaseBudget-- > 0 && _pendingWorldPrefabReleaseQueue.Count > 0)
+            int initialPendingCount = _pendingWorldPrefabReleaseCount;
+            int processedCount = 0;
+            while (releaseBudget-- > 0 &&
+                   processedCount++ < initialPendingCount &&
+                   TryDequeuePendingWorldPrefabRelease(out int hashId))
             {
-                int hashId = _pendingWorldPrefabReleaseQueue.Dequeue();
-                _pendingWorldPrefabReleaseSet.Remove(hashId);
-
                 if (!_worldPrefabRuntimeLookup.TryGetValue(hashId, out WorldPrefabRuntimeRecord runtimeRecord))
                     continue;
 
-                ReleaseWorldPrefabRuntimeRecord(hashId, runtimeRecord);
+                if (!ReleaseWorldPrefabRuntimeRecord(hashId, runtimeRecord))
+                    TryEnqueuePendingWorldPrefabRelease(hashId);
             }
 #endif
         }
@@ -546,7 +610,9 @@ namespace Hecton8.SaveSystem
                 if (!foundCandidate || !_worldPrefabRuntimeLookup.TryGetValue(candidateHashId, out WorldPrefabRuntimeRecord candidateRecord))
                     break;
 
-                ReleaseWorldPrefabRuntimeRecord(candidateHashId, candidateRecord);
+                if (!ReleaseWorldPrefabRuntimeRecord(candidateHashId, candidateRecord))
+                    break;
+
                 evictedCount++;
             }
 
@@ -598,7 +664,9 @@ namespace Hecton8.SaveSystem
                 if (!foundCandidate || !_worldPrefabRuntimeLookup.TryGetValue(candidateHashId, out WorldPrefabRuntimeRecord candidateRecord))
                     break;
 
-                ReleaseWorldPrefabRuntimeRecord(candidateHashId, candidateRecord);
+                if (!ReleaseWorldPrefabRuntimeRecord(candidateHashId, candidateRecord))
+                    break;
+
                 evictedCount++;
             }
 
@@ -751,6 +819,27 @@ namespace Hecton8.SaveSystem
             else
                 _worldPrefabRuntimeLookup.Clear();
 
+            int fixedScratchCapacity = Math.Max(
+                DeferredWorldPrefabReleaseCapacity,
+                entryCount + _worldPrefabGuidFallbacks.Length);
+
+            if (_pendingWorldPrefabReleaseRing == null || _pendingWorldPrefabReleaseRing.Length < fixedScratchCapacity)
+                _pendingWorldPrefabReleaseRing = new int[fixedScratchCapacity];
+            else
+                Array.Clear(_pendingWorldPrefabReleaseRing, 0, _pendingWorldPrefabReleaseRing.Length);
+
+            _pendingWorldPrefabReleaseHead = 0;
+            _pendingWorldPrefabReleaseTail = 0;
+            _pendingWorldPrefabReleaseCount = 0;
+
+            int dispatchScratchCapacity = Math.Max(DefaultWorldPrefabDispatchScratchCapacity, fixedScratchCapacity);
+            if (_worldPrefabDispatchScratch == null || _worldPrefabDispatchScratch.Length < dispatchScratchCapacity)
+                _worldPrefabDispatchScratch = new int[dispatchScratchCapacity];
+            else
+                Array.Clear(_worldPrefabDispatchScratch, 0, _worldPrefabDispatchScratch.Length);
+
+            _worldPrefabDispatchScratchCount = 0;
+
             for (int i = 0; i < entryCount; i++)
             {
                 WorldPrefabAddressableEntry entry = worldPrefabAddressables[i];
@@ -778,30 +867,59 @@ namespace Hecton8.SaveSystem
         }
 
 #if UNITY_ADDRESSABLES_EXIST
+        private bool TryEnsureWorldPrefabLookupReady()
+        {
+            if (_worldPrefabReferenceLookup != null &&
+                _worldPrefabRuntimeLookup != null &&
+                _pendingWorldPrefabReleaseRing != null &&
+                _worldPrefabDispatchScratch != null)
+            {
+                return true;
+            }
+
+            if (Application.isPlaying)
+                return false;
+
+            RebuildWorldPrefabLookup();
+            return _worldPrefabReferenceLookup != null &&
+                   _worldPrefabRuntimeLookup != null &&
+                   _pendingWorldPrefabReleaseRing != null &&
+                   _worldPrefabDispatchScratch != null;
+        }
+
         public void PumpWorldPrefabDispatchTickets()
         {
             if (_worldPrefabRuntimeLookup == null || _worldPrefabRuntimeLookup.Count <= 0)
                 return;
 
-            AssetLoadDispatcher dispatcher = Hecton8.Core.GlobalRegistry.AssetLoadDispatcher;
+            CacheRuntimeServices();
+            AssetLoadDispatcher dispatcher = _cachedAssetLoadDispatcher;
             if (dispatcher == null)
                 return;
 
-            _worldPrefabDispatchScratch ??= new List<int>(32); // COLD ALLOC: List<int>[32] - staged world-prefab dispatch claims from AssetLoadDispatcher - owner: ItemCatalog
-            _worldPrefabDispatchScratch.Clear();
+            if (_worldPrefabDispatchScratch == null)
+                return;
+
+            _worldPrefabDispatchScratchCount = 0;
 
             Dictionary<int, WorldPrefabRuntimeRecord>.Enumerator enumerator = _worldPrefabRuntimeLookup.GetEnumerator();
             while (enumerator.MoveNext())
             {
                 if (enumerator.Current.Value.LoadState == WorldPrefabLoadState.Queued)
-                    _worldPrefabDispatchScratch.Add(enumerator.Current.Key);
+                {
+                    if (_worldPrefabDispatchScratchCount >= _worldPrefabDispatchScratch.Length)
+                        continue;
+
+                    _worldPrefabDispatchScratch[_worldPrefabDispatchScratchCount++] = enumerator.Current.Key;
+                }
             }
 
             enumerator.Dispose();
 
-            for (int i = 0; i < _worldPrefabDispatchScratch.Count; i++)
+            for (int i = 0; i < _worldPrefabDispatchScratchCount; i++)
             {
                 int hashId = _worldPrefabDispatchScratch[i];
+                _worldPrefabDispatchScratch[i] = 0;
                 if (!_worldPrefabRuntimeLookup.TryGetValue(hashId, out WorldPrefabRuntimeRecord runtimeRecord) ||
                     runtimeRecord.LoadState != WorldPrefabLoadState.Queued ||
                     runtimeRecord.DispatchAssetKey == 0u ||
@@ -827,24 +945,113 @@ namespace Hecton8.SaveSystem
                 _worldPrefabRuntimeLookup[hashId] = runtimeRecord;
             }
 
-            _worldPrefabDispatchScratch.Clear();
+            _worldPrefabDispatchScratchCount = 0;
         }
 
-        private void ReleaseWorldPrefabRuntimeRecord(int hashId, WorldPrefabRuntimeRecord runtimeRecord)
+        private bool ReleaseWorldPrefabRuntimeRecord(int hashId, WorldPrefabRuntimeRecord runtimeRecord)
         {
             uint assetKey = runtimeRecord.DispatchAssetKey;
-            CancelPendingWorldPrefabDispatch(ref runtimeRecord);
             if (runtimeRecord.Handle.IsValid())
             {
-                AssetLifecycleGovernor governor = GlobalRegistry.AssetLifecycle;
+                CacheRuntimeServices();
+                AssetLifecycleGovernor governor = _cachedAssetLifecycleGovernor;
                 if (governor != null && assetKey != 0u)
+                {
                     governor.ReleaseAddressableAsset(assetKey);
-                else
-                    Addressables.Release(runtimeRecord.Handle);
+                }
+                else if (governor == null || !governor.TryStageExternalAddressableRelease(runtimeRecord.Handle))
+                {
+                    _worldPrefabRuntimeLookup[hashId] = runtimeRecord;
+                    return false;
+                }
             }
 
-            _pendingWorldPrefabReleaseSet?.Remove(hashId);
+            CancelPendingWorldPrefabDispatch(ref runtimeRecord);
+            RemovePendingWorldPrefabRelease(hashId);
             _worldPrefabRuntimeLookup.Remove(hashId);
+            return true;
+        }
+
+        private bool TryEnqueuePendingWorldPrefabRelease(int hashId)
+        {
+            if (_pendingWorldPrefabReleaseRing == null ||
+                _pendingWorldPrefabReleaseRing.Length == 0 ||
+                hashId == 0)
+            {
+                return false;
+            }
+
+            int ringLength = _pendingWorldPrefabReleaseRing.Length;
+            for (int i = 0; i < _pendingWorldPrefabReleaseCount; i++)
+            {
+                int readIndex = (_pendingWorldPrefabReleaseHead + i) % ringLength;
+                if (_pendingWorldPrefabReleaseRing[readIndex] == hashId)
+                    return true;
+            }
+
+            if (_pendingWorldPrefabReleaseCount >= ringLength)
+                return false;
+
+            _pendingWorldPrefabReleaseRing[_pendingWorldPrefabReleaseTail] = hashId;
+            _pendingWorldPrefabReleaseTail = (_pendingWorldPrefabReleaseTail + 1) % ringLength;
+            _pendingWorldPrefabReleaseCount++;
+            return true;
+        }
+
+        private bool TryDequeuePendingWorldPrefabRelease(out int hashId)
+        {
+            hashId = 0;
+            if (_pendingWorldPrefabReleaseRing == null ||
+                _pendingWorldPrefabReleaseRing.Length == 0 ||
+                _pendingWorldPrefabReleaseCount <= 0)
+            {
+                return false;
+            }
+
+            int ringLength = _pendingWorldPrefabReleaseRing.Length;
+            hashId = _pendingWorldPrefabReleaseRing[_pendingWorldPrefabReleaseHead];
+            _pendingWorldPrefabReleaseRing[_pendingWorldPrefabReleaseHead] = 0;
+            _pendingWorldPrefabReleaseHead = (_pendingWorldPrefabReleaseHead + 1) % ringLength;
+            _pendingWorldPrefabReleaseCount--;
+
+            if (_pendingWorldPrefabReleaseCount == 0)
+            {
+                _pendingWorldPrefabReleaseHead = 0;
+                _pendingWorldPrefabReleaseTail = 0;
+            }
+
+            return hashId != 0;
+        }
+
+        private void RemovePendingWorldPrefabRelease(int hashId)
+        {
+            if (_pendingWorldPrefabReleaseRing == null ||
+                _pendingWorldPrefabReleaseRing.Length == 0 ||
+                _pendingWorldPrefabReleaseCount <= 0 ||
+                hashId == 0)
+            {
+                return;
+            }
+
+            int ringLength = _pendingWorldPrefabReleaseRing.Length;
+            int originalCount = _pendingWorldPrefabReleaseCount;
+            int writeCount = 0;
+            for (int i = 0; i < originalCount; i++)
+            {
+                int readIndex = (_pendingWorldPrefabReleaseHead + i) % ringLength;
+                int queuedHashId = _pendingWorldPrefabReleaseRing[readIndex];
+                if (queuedHashId == 0 || queuedHashId == hashId)
+                    continue;
+
+                _pendingWorldPrefabReleaseRing[writeCount++] = queuedHashId;
+            }
+
+            for (int i = writeCount; i < originalCount && i < ringLength; i++)
+                _pendingWorldPrefabReleaseRing[i] = 0;
+
+            _pendingWorldPrefabReleaseHead = 0;
+            _pendingWorldPrefabReleaseCount = writeCount;
+            _pendingWorldPrefabReleaseTail = writeCount == ringLength ? 0 : writeCount;
         }
 
         private static uint BuildWorldPrefabDispatchKey(int hashId)
@@ -852,13 +1059,14 @@ namespace Hecton8.SaveSystem
             return unchecked((uint)hashId) ^ 0xA77E0001u;
         }
 
-        private static bool TryAcquireWorldPrefabHandle(
+        private bool TryAcquireWorldPrefabHandle(
             uint dispatchAssetKey,
             AssetReferenceGameObject prefabReference,
             out AsyncOperationHandle<GameObject> handle)
         {
             handle = default;
-            AssetLifecycleGovernor governor = GlobalRegistry.AssetLifecycle;
+            CacheRuntimeServices();
+            AssetLifecycleGovernor governor = _cachedAssetLifecycleGovernor;
             if (governor == null)
                 return false;
 
@@ -874,9 +1082,10 @@ namespace Hecton8.SaveSystem
                 out _);
         }
 
-        private static void MarkWorldPrefabLoaded(ref WorldPrefabRuntimeRecord runtimeRecord)
+        private void MarkWorldPrefabLoaded(ref WorldPrefabRuntimeRecord runtimeRecord)
         {
-            AssetLifecycleGovernor governor = GlobalRegistry.AssetLifecycle;
+            CacheRuntimeServices();
+            AssetLifecycleGovernor governor = _cachedAssetLifecycleGovernor;
             if (governor == null ||
                 runtimeRecord.DispatchAssetKey == 0u ||
                 !runtimeRecord.Handle.IsValid() ||
@@ -893,12 +1102,13 @@ namespace Hecton8.SaveSystem
                 false);
         }
 
-        private static void CancelPendingWorldPrefabDispatch(ref WorldPrefabRuntimeRecord runtimeRecord)
+        private void CancelPendingWorldPrefabDispatch(ref WorldPrefabRuntimeRecord runtimeRecord)
         {
             if (runtimeRecord.DispatchAssetKey == 0u)
                 return;
 
-            AssetLoadDispatcher dispatcher = Hecton8.Core.GlobalRegistry.AssetLoadDispatcher;
+            CacheRuntimeServices();
+            AssetLoadDispatcher dispatcher = _cachedAssetLoadDispatcher;
             if (dispatcher != null)
             {
                 dispatcher.CancelByAssetKey(runtimeRecord.DispatchAssetKey);
@@ -910,19 +1120,20 @@ namespace Hecton8.SaveSystem
             runtimeRecord.DispatchAssetKey = 0u;
         }
 
-        private static void CompleteWorldPrefabDispatch(ref WorldPrefabRuntimeRecord runtimeRecord, bool success)
+        private void CompleteWorldPrefabDispatch(ref WorldPrefabRuntimeRecord runtimeRecord, bool success)
         {
             if (runtimeRecord.DispatchRequestId == 0)
                 return;
 
-            AssetLoadDispatcher dispatcher = Hecton8.Core.GlobalRegistry.AssetLoadDispatcher;
+            CacheRuntimeServices();
+            AssetLoadDispatcher dispatcher = _cachedAssetLoadDispatcher;
             if (dispatcher != null)
                 dispatcher.AcknowledgeDispatchRequest(runtimeRecord.DispatchRequestId, success);
 
             runtimeRecord.DispatchRequestId = 0;
         }
 
-        private static void CaptureCurrentPlayerAup(ref WorldPrefabRuntimeRecord runtimeRecord)
+        private void CaptureCurrentPlayerAup(ref WorldPrefabRuntimeRecord runtimeRecord)
         {
             if (!TryCaptureCurrentPlayerAup(out AbsoluteUniversePosition playerAup))
                 return;
@@ -931,18 +1142,80 @@ namespace Hecton8.SaveSystem
             runtimeRecord.HasLastAccessAup = true;
         }
 
-        private static bool TryCaptureCurrentPlayerAup(out AbsoluteUniversePosition playerAup)
+        private bool TryCaptureCurrentPlayerAup(out AbsoluteUniversePosition playerAup)
         {
             playerAup = default;
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
-            if (playerTransform == null)
+            CacheRuntimeServices();
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext == null || !playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
                 return false;
 
-            playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerTransform.position);
-            return true;
+            playerAup = snapshot.Aup;
+            return MathGuard.IsFinite(in playerAup);
         }
 #endif
+
+        private void TryRegisterHotSwap()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwap()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
+        }
+
+        private void CacheRuntimeServices()
+        {
+            if (!Application.isPlaying)
+                return;
+
+#if UNITY_ADDRESSABLES_EXIST
+            if (_cachedAssetLifecycleGovernor == null)
+                _cachedAssetLifecycleGovernor = GlobalRegistry.AssetLifecycle;
+            if (_cachedAssetLoadDispatcher == null)
+                _cachedAssetLoadDispatcher = GlobalRegistry.AssetLoadDispatcher;
+            if (_cachedPlayerContext == null)
+                _cachedPlayerContext = GlobalRegistry.Player;
+#endif
+        }
+
+        private void ClearCachedRuntimeServices()
+        {
+#if UNITY_ADDRESSABLES_EXIST
+            _cachedAssetLifecycleGovernor = null;
+            _cachedAssetLoadDispatcher = null;
+            _cachedPlayerContext = null;
+#endif
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+#if UNITY_ADDRESSABLES_EXIST
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.AssetLifecycleRuntime:
+                    _cachedAssetLifecycleGovernor = currentService as AssetLifecycleGovernor;
+                    break;
+                case GlobalRegistryServiceSlot.AssetLoadDispatcherRuntime:
+                    _cachedAssetLoadDispatcher = currentService as AssetLoadDispatcher;
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                    break;
+            }
+#endif
+        }
 
         private void AddLookupAlias(string id, ItemData item)
         {

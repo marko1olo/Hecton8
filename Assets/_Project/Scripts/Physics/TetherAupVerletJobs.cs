@@ -1,4 +1,7 @@
+using System.IO;
+using Hecton8.Core;
 using Hecton8.Core.Memory;
+using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -16,9 +19,10 @@ namespace Hecton8.Physics
         public const int MockConstraintCapacity = MockTetherCount * (MockNodesPerTether - 1);
         public const int MockForcePacketCapacity = MockConstraintCapacity * 2;
         public const int MockSplineVertexCapacity = MockTetherCount * MockNodesPerTether;
+        public const int SolverStatsCapacity = 4;
         public const int MaterialCapacity = 16;
         public const int TelemetryCapacity = 300;
-        public const int BootstrapMagic = 0x53483134;
+        public const int BootstrapMagic = 0x53483135;
         public const float SafeLocalAupSpanMeters = 32768f;
     }
 
@@ -35,6 +39,162 @@ namespace Hecton8.Physics
         public const uint EndpointPayload = 1u << 1;
     }
 
+    public static class TetherAupSolverScheduler
+    {
+        public static int ResolveIterationCount(float globalQualityWeight)
+        {
+            float q = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
+            int iterations = (int)math.lerp(2f, 15f, q);
+            return math.clamp(iterations, 2, 15);
+        }
+
+        public static JobHandle Schedule(
+            NativeArray<TetherNodeDTO> nodes,
+            NativeArray<TetherConstraintDTO> constraints,
+            NativeArray<float> segmentTensions,
+            NativeArray<float> solverStats,
+            NativeArray<TetherForcePacketDTO> forcePackets,
+            NativeArray<TetherAupTelemetryEntry> telemetryRing,
+            NativeArray<int> telemetryHead,
+            NativeArray<double3> pinnedAups,
+            NativeArray<byte> pinnedMask,
+            double3 anchorAup,
+            int activeNodeCount,
+            int activeConstraintCount,
+            uint frameIndex,
+            float simulationTickDelta,
+            float3 gravityAcceleration,
+            float3 externalAcceleration,
+            float3 abyssalCurrentAcceleration,
+            float velocityDamping,
+            float maxStepMeters,
+            float tensionScale,
+            float cpuMicroseconds,
+            float globalQualityWeight,
+            JobHandle inputDependency)
+        {
+            if (!nodes.IsCreated || nodes.Length <= 0)
+                return inputDependency;
+
+            int nodeCount = math.clamp(activeNodeCount, 0, nodes.Length);
+            if (nodeCount <= 0)
+                return inputDependency;
+
+            int iterations = ResolveIterationCount(globalQualityWeight);
+            JobHandle integrateHandle = new IntegrateTetherNodesJob
+            {
+                Nodes = nodes,
+                PinnedAUPs = pinnedAups,
+                PinnedMask = pinnedMask,
+                GravityAcceleration = gravityAcceleration,
+                ExternalAcceleration = externalAcceleration,
+                AbyssalCurrentAcceleration = abyssalCurrentAcceleration,
+                SimulationTickDelta = simulationTickDelta,
+                VelocityDamping = velocityDamping,
+                MaxStepMeters = maxStepMeters,
+                GlobalQualityWeight = globalQualityWeight
+            }.Schedule(nodeCount, 32, inputDependency);
+
+            JobHandle solveHandle = new SolveTetherConstraintsJob
+            {
+                Nodes = nodes,
+                Constraints = constraints,
+                SegmentTensions = segmentTensions,
+                SolverStats = solverStats,
+                ForcePackets = forcePackets,
+                ActiveConstraintCount = activeConstraintCount,
+                IterationCount = iterations,
+                TensionScale = tensionScale,
+                FrameIndex = frameIndex
+            }.Schedule(integrateHandle);
+
+            if (!telemetryRing.IsCreated || !telemetryHead.IsCreated)
+                return solveHandle;
+
+            return new RecordTetherAupTelemetryJob
+            {
+                Nodes = nodes,
+                SolverStats = solverStats,
+                TelemetryRing = telemetryRing,
+                TelemetryHead = telemetryHead,
+                AnchorAUP = anchorAup,
+                NodeOffset = 0,
+                NodeCount = nodeCount,
+                IterationCount = iterations,
+                FrameIndex = frameIndex,
+                Flags = 0u,
+                CpuMicroseconds = cpuMicroseconds,
+                GlobalQualityWeight = globalQualityWeight
+            }.Schedule(solveHandle);
+        }
+
+        public static JobHandle ScheduleMock(
+            NativeArray<TetherNodeDTO> nodes,
+            NativeArray<TetherConstraintDTO> constraints,
+            NativeArray<TetherEndpointAupDTO> endpoints,
+            NativeArray<float> segmentTensions,
+            NativeArray<float> solverStats,
+            NativeArray<TetherForcePacketDTO> forcePackets,
+            NativeArray<TetherAupTelemetryEntry> telemetryRing,
+            NativeArray<int> telemetryHead,
+            NativeArray<double3> pinnedAups,
+            NativeArray<byte> pinnedMask,
+            uint frameIndex,
+            uint sectorHash,
+            float simulationTickDelta,
+            float3 gravityAcceleration,
+            float3 externalAcceleration,
+            float velocityDamping,
+            float maxStepMeters,
+            float tensionScale,
+            float cpuMicroseconds,
+            float globalQualityWeight,
+            JobHandle inputDependency)
+        {
+            JobHandle endpointsHandle = new AdvanceMockTetherEndpointsJob
+            {
+                Nodes = nodes,
+                Endpoints = endpoints,
+                PinnedAUPs = pinnedAups,
+                PinnedMask = pinnedMask,
+                FrameIndex = frameIndex,
+                SectorHash = sectorHash,
+                GlobalQualityWeight = globalQualityWeight
+            }.Schedule(inputDependency);
+
+            float q = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
+            float phase = frameIndex * math.lerp(0.017f, 0.047f, q);
+            float3 currentAcceleration = new float3(
+                math.sin(phase) * 0.06f,
+                -0.015f,
+                math.cos(phase * 0.73f) * 0.04f) * math.lerp(0.3f, 1f, q);
+            return Schedule(
+                nodes,
+                constraints,
+                segmentTensions,
+                solverStats,
+                forcePackets,
+                telemetryRing,
+                telemetryHead,
+                pinnedAups,
+                pinnedMask,
+                double3.zero,
+                TetherAupRuntimeConstants.MockNodeCapacity,
+                TetherAupRuntimeConstants.MockConstraintCapacity,
+                frameIndex,
+                simulationTickDelta,
+                gravityAcceleration,
+                externalAcceleration,
+                currentAcceleration,
+                velocityDamping,
+                maxStepMeters,
+                tensionScale,
+                cpuMicroseconds,
+                globalQualityWeight,
+                endpointsHandle);
+        }
+    }
+
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct InitializeMockTetherAupJob : IJob
     {
@@ -43,6 +203,8 @@ namespace Hecton8.Physics
         [NoAlias] public NativeArray<TetherEndpointAupDTO> Endpoints;
         [NoAlias] public NativeArray<CableMaterialDTO> Materials;
         [NoAlias] public NativeArray<int> BootstrapState;
+        [NoAlias] public NativeArray<double3> PinnedAUPs;
+        [NoAlias] public NativeArray<byte> PinnedMask;
 
         public uint FrameIndex;
         public uint SectorHash;
@@ -89,6 +251,11 @@ namespace Hecton8.Physics
                         InverseMass = node == 0 || node == nodesPerTether - 1 ? 0f : 1f,
                         Flags = node == 0 || node == nodesPerTether - 1 ? TetherNodeRuntimeFlags.Pinned : 0u
                     };
+
+                    if (PinnedAUPs.IsCreated && nodeOffset + node < PinnedAUPs.Length)
+                        PinnedAUPs[nodeOffset + node] = aup;
+                    if (PinnedMask.IsCreated && nodeOffset + node < PinnedMask.Length)
+                        PinnedMask[nodeOffset + node] = (byte)(node == 0 || node == nodesPerTether - 1 ? 1 : 0);
                 }
 
                 int constraintOffset = cable * constraintsPerTether;
@@ -117,6 +284,77 @@ namespace Hecton8.Physics
         private static float Sanitize01(float value)
         {
             return math.saturate(math.isfinite(value) ? value : 1f);
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    internal struct AdvanceMockTetherEndpointsJob : IJob
+    {
+        [NoAlias] public NativeArray<TetherNodeDTO> Nodes;
+        [NoAlias] public NativeArray<TetherEndpointAupDTO> Endpoints;
+        [NoAlias] public NativeArray<double3> PinnedAUPs;
+        [NoAlias] public NativeArray<byte> PinnedMask;
+
+        public uint FrameIndex;
+        public uint SectorHash;
+        public float GlobalQualityWeight;
+
+        public void Execute()
+        {
+            int tetherCount = math.min(TetherAupRuntimeConstants.MockTetherCount, Endpoints.IsCreated ? Endpoints.Length : 0);
+            int nodesPerTether = TetherAupRuntimeConstants.MockNodesPerTether;
+            float q = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 1f);
+            float frame = FrameIndex * math.lerp(0.021f, 0.061f, q);
+            uint seed = math.max(1u, (SectorHash ^ (FrameIndex * 747796405u)) | 1u);
+            Unity.Mathematics.Random rng = new Unity.Mathematics.Random(seed);
+
+            for (int cable = 0; cable < tetherCount; cable++)
+            {
+                float randomPhase = rng.NextFloat(0.0f, 6.2831855f);
+                float phase = frame + cable * 1.719f + randomPhase * 0.03125f;
+                double3 baseAnchor = new double3(cable * 3.0, -22.0, cable * 1.5);
+                double3 anchor = baseAnchor + new double3(
+                    math.sin(phase) * 0.35f,
+                    math.sin(phase * 0.7f) * 0.08f,
+                    math.cos(phase * 0.83f) * 0.22f);
+                double3 payload = baseAnchor + new double3(
+                    10.0 + cable * 0.75 + math.sin(phase * 0.47f) * 0.8f,
+                    -1.25 + math.cos(phase * 0.53f) * 0.18f,
+                    5.5 + math.sin(phase * 0.41f) * 0.55f);
+                float3 current = new float3(
+                    math.sin(phase * 0.37f) * 0.08f,
+                    -0.015f * (1f + cable),
+                    math.cos(phase * 0.43f) * 0.06f) * math.lerp(0.3f, 1f, q);
+
+                Endpoints[cable] = new TetherEndpointAupDTO
+                {
+                    AnchorAUP = anchor,
+                    PayloadAUP = payload,
+                    AbyssalCurrentAcceleration = current,
+                    GlobalQualityWeight = q
+                };
+
+                int nodeOffset = cable * nodesPerTether;
+                PinNode(nodeOffset, anchor);
+                PinNode(nodeOffset + nodesPerTether - 1, payload);
+            }
+        }
+
+        private void PinNode(int nodeIndex, double3 aup)
+        {
+            if (PinnedAUPs.IsCreated && (uint)nodeIndex < (uint)PinnedAUPs.Length)
+                PinnedAUPs[nodeIndex] = aup;
+            if (PinnedMask.IsCreated && (uint)nodeIndex < (uint)PinnedMask.Length)
+                PinnedMask[nodeIndex] = 1;
+            if (Nodes.IsCreated && (uint)nodeIndex < (uint)Nodes.Length)
+            {
+                TetherNodeDTO node = Nodes[nodeIndex];
+                node.CurrentAUP = aup;
+                node.PreviousAUP = aup;
+                node.InverseMass = 0f;
+                node.Flags |= TetherNodeRuntimeFlags.Pinned;
+                Nodes[nodeIndex] = node;
+            }
         }
     }
 
@@ -266,6 +504,7 @@ namespace Hecton8.Physics
                         (uint)constraint.NodeB >= (uint)Nodes.Length)
                     {
                         WriteTension(i, 0f);
+                        ClearEndpointForces(i);
                         continue;
                     }
 
@@ -278,6 +517,7 @@ namespace Hecton8.Physics
                     {
                         faultFlags |= (int)TetherNodeRuntimeFlags.ConstraintFault;
                         WriteTension(i, 0f);
+                        ClearEndpointForces(i);
                         continue;
                     }
 
@@ -347,10 +587,20 @@ namespace Hecton8.Physics
             float3 direction,
             float tension)
         {
-            if (!ForcePackets.IsCreated || tension <= 0f || !math.isfinite(tension))
+            if (!ForcePackets.IsCreated)
                 return;
 
             int first = constraintIndex * 2;
+            int second = first + 1;
+            if (tension <= 0f || !math.isfinite(tension) || !math.all(math.isfinite(direction)))
+            {
+                if (first < ForcePackets.Length)
+                    ForcePackets[first] = default;
+                if (second < ForcePackets.Length)
+                    ForcePackets[second] = default;
+                return;
+            }
+
             if (first < ForcePackets.Length)
             {
                 ForcePackets[first] = new TetherForcePacketDTO
@@ -365,7 +615,6 @@ namespace Hecton8.Physics
                 };
             }
 
-            int second = first + 1;
             if (second < ForcePackets.Length)
             {
                 ForcePackets[second] = new TetherForcePacketDTO
@@ -379,6 +628,19 @@ namespace Hecton8.Physics
                     FrameIndex = FrameIndex
                 };
             }
+        }
+
+        private void ClearEndpointForces(int constraintIndex)
+        {
+            if (!ForcePackets.IsCreated)
+                return;
+
+            int first = constraintIndex * 2;
+            if (first < ForcePackets.Length)
+                ForcePackets[first] = default;
+            int second = first + 1;
+            if (second < ForcePackets.Length)
+                ForcePackets[second] = default;
         }
 
         private static float3 LocalDeltaToFloat3(double3 delta, ref uint flags)
@@ -400,7 +662,7 @@ namespace Hecton8.Physics
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct GenerateTetherSplineVerticesJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<TetherNodeDTO> Nodes;
@@ -495,7 +757,7 @@ namespace Hecton8.Physics
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal unsafe struct TetherSplineGpuMemcpyJob : IJob
     {
         [ReadOnly, NoAlias] public NativeArray<TetherSplineVertexDTO> Source;
@@ -565,6 +827,9 @@ namespace Hecton8.Physics
             }
 
             float peakTension = SolverStats.IsCreated && SolverStats.Length > 0 ? SolverStats[0] : 0f;
+            if (SolverStats.IsCreated && SolverStats.Length > 2 && SolverStats[2] > 0f)
+                flags |= (uint)math.max(0, (int)SolverStats[2]);
+
             TelemetryRing[head] = new TetherAupTelemetryEntry
             {
                 FrameIndex = FrameIndex,
@@ -600,8 +865,177 @@ namespace Hecton8.Physics
                 Count = safeCount,
                 DestinationBytes = (long)UnsafeUtility.SizeOf<TetherSplineVertexDTO>() * mapped.Length
             };
-            job.Run();
+            JobHandle handle = job.Schedule();
+            DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
             destination.UnlockBufferAfterWrite<TetherSplineVertexDTO>(safeCount);
+        }
+    }
+
+    public static class TetherAupForcePacketBridge
+    {
+        public static int FlushPacketPair(
+            in TetherForcePacketDTO anchorPacket,
+            in TetherForcePacketDTO payloadPacket,
+            Rigidbody anchorBody,
+            Rigidbody payloadBody,
+            double3 localOriginAUP,
+            float maxForceNewton)
+        {
+            int accepted = 0;
+            if (TryFlushOne(in anchorPacket, anchorBody, localOriginAUP, maxForceNewton))
+                accepted++;
+            if (TryFlushOne(in payloadPacket, payloadBody, localOriginAUP, maxForceNewton))
+                accepted++;
+            return accepted;
+        }
+
+        public static int FlushToPhysics(
+            NativeArray<TetherForcePacketDTO> packets,
+            int packetCount,
+            Rigidbody anchorBody,
+            Rigidbody payloadBody,
+            double3 localOriginAUP,
+            float maxForceNewton,
+            uint frameIndex)
+        {
+            if (!packets.IsCreated || packetCount <= 0)
+                return 0;
+
+            int count = math.min(packetCount, packets.Length);
+            float maxForce = math.isfinite(maxForceNewton) && maxForceNewton > 0f ? maxForceNewton : float.MaxValue;
+            int accepted = 0;
+            for (int i = 0; i < count; i++)
+            {
+                TetherForcePacketDTO packet = packets[i];
+                if (frameIndex != 0u && packet.FrameIndex != frameIndex)
+                    continue;
+                Rigidbody body = packet.BodySlot == 0 ? anchorBody : payloadBody;
+                if (TryFlushOne(in packet, body, localOriginAUP, maxForce))
+                    accepted++;
+            }
+
+            return accepted;
+        }
+
+        private static bool TryFlushOne(
+            in TetherForcePacketDTO packet,
+            Rigidbody body,
+            double3 localOriginAUP,
+            float maxForceNewton)
+        {
+            if (body == null || packet.Tension <= 0f || !math.isfinite(packet.Tension))
+                return false;
+
+            float3 force3 = packet.Force;
+            float forceSq = math.lengthsq(force3);
+            if (!math.isfinite(forceSq) || forceSq <= 0.000001f)
+                return false;
+
+            float maxForce = math.isfinite(maxForceNewton) && maxForceNewton > 0f ? maxForceNewton : float.MaxValue;
+            if (forceSq > maxForce * maxForce)
+                force3 *= maxForce * math.rsqrt(math.max(forceSq, 0.000001f));
+
+            float3 localPoint = AupToLocalFloat3(packet.ApplicationAUP - localOriginAUP);
+            Vector3 force = new Vector3(force3.x, force3.y, force3.z);
+            Vector3 worldPoint = new Vector3(localPoint.x, localPoint.y, localPoint.z);
+            return PhysicsForceRouter.QueueForceAtPosition(body, force, worldPoint, ForceMode.Acceleration);
+        }
+
+        private static float3 AupToLocalFloat3(double3 delta)
+        {
+            if (!math.all(math.isfinite(delta)))
+                return float3.zero;
+
+            double span = TetherAupRuntimeConstants.SafeLocalAupSpanMeters;
+            double3 clamped = math.clamp(delta, new double3(-span), new double3(span));
+            float3 local = new float3((float)clamped.x, (float)clamped.y, (float)clamped.z);
+            return math.all(math.isfinite(local)) ? local : float3.zero;
+        }
+    }
+
+    public static class TetherAupRuntimeIntrospection
+    {
+        public static bool TrySampleLatestTelemetry(out TetherAupTelemetryEntry telemetry)
+        {
+            telemetry = default;
+            return TrySampleLatestTelemetry(GlobalRegistry.DataVault, out telemetry);
+        }
+
+        public static bool TrySampleLatestTelemetry(IDataVault vault, out TetherAupTelemetryEntry telemetry)
+        {
+            telemetry = default;
+            if (vault == null ||
+                !vault.TryGetBufferHandle(BufferID.Shinobu143TetherTelemetryRing, out VaultBufferHandle<TetherAupTelemetryEntry> ringHandle) ||
+                !vault.TryGetBufferHandle(BufferID.Shinobu143TetherTelemetryHead, out VaultBufferHandle<int> headHandle))
+            {
+                return false;
+            }
+
+            NativeArray<TetherAupTelemetryEntry> ring = ringHandle.Resolve(vault);
+            NativeArray<int> head = headHandle.Resolve(vault);
+            if (!ring.IsCreated || ring.Length == 0 || !head.IsCreated || head.Length == 0)
+                return false;
+
+            int capacity = math.min(TetherAupRuntimeConstants.TelemetryCapacity, ring.Length);
+            int index = head[0] - 1;
+            if (index < 0)
+                index = capacity - 1;
+            if ((uint)index >= (uint)capacity)
+                index = 0;
+
+            telemetry = ring[index];
+            return telemetry.NodeCount > 0 || telemetry.FrameIndex != 0u;
+        }
+
+        public static bool TryDumpCableSurgeon(uint reasonFlags)
+        {
+            return TryDumpCableSurgeon(GlobalRegistry.DataVault, reasonFlags);
+        }
+
+        public static bool TryDumpCableSurgeon(IDataVault vault, uint reasonFlags)
+        {
+            DirectoryInfo projectRoot = Directory.GetParent(Application.dataPath);
+            return projectRoot != null && TetherAupBlackBoxDumper.TryDumpLatestVault(vault, projectRoot.FullName, reasonFlags);
+        }
+    }
+
+    public static class TetherAupBlackBoxDumper
+    {
+        private const ulong DumpMagic = 0x3134335F55424F53ul; // SOBU_431
+        private const string LegacyDumpRelativePath = "Docs/AgentLogs/Dump_CABLE_SURGEON.bin";
+        private const string H8DumpRelativePath = "Docs/AgentLogs/Dump_CABLE_SURGEON.h8dump";
+
+        public static bool TryDumpLatestVault(IDataVault vault, string projectRoot, uint reasonFlags)
+        {
+            if (vault == null || string.IsNullOrEmpty(projectRoot))
+                return false;
+            if (!vault.TryGetBufferHandle(BufferID.Shinobu143TetherTelemetryRing, out VaultBufferHandle<TetherAupTelemetryEntry> ringHandle) ||
+                !vault.TryGetBufferHandle(BufferID.Shinobu143TetherTelemetryHead, out VaultBufferHandle<int> headHandle))
+            {
+                return false;
+            }
+
+            NativeArray<TetherAupTelemetryEntry> ring = ringHandle.Resolve(vault);
+            NativeArray<int> head = headHandle.Resolve(vault);
+            if (!ring.IsCreated || ring.Length == 0 || !head.IsCreated || head.Length == 0)
+                return false;
+
+            int capacity = math.min(TetherAupRuntimeConstants.TelemetryCapacity, ring.Length);
+            int normalizedHead = head[0];
+            if ((uint)normalizedHead >= (uint)capacity)
+                normalizedHead = 0;
+
+            string legacyPath = Path.Combine(projectRoot, LegacyDumpRelativePath.Replace('/', Path.DirectorySeparatorChar));
+            string h8Path = Path.Combine(projectRoot, H8DumpRelativePath.Replace('/', Path.DirectorySeparatorChar));
+            NativeArray<TetherAupTelemetryEntry> slice = ring.GetSubArray(0, capacity);
+            TetherBlackBoxDumpWriter.WritePrimaryAndLegacy(
+                h8Path,
+                legacyPath,
+                DumpMagic,
+                slice,
+                normalizedHead,
+                reasonFlags);
+            return true;
         }
     }
 
@@ -646,6 +1080,26 @@ namespace Hecton8.Physics
                 TetherAupRuntimeConstants.MockForcePacketCapacity,
                 SystemID.Physics,
                 NativeArrayOptions.UninitializedMemory).Resolve(vault);
+            NativeArray<float> segmentTensions = vault.GetBufferHandle<float>(
+                BufferID.Shinobu143TetherSegmentTensions,
+                TetherAupRuntimeConstants.MockConstraintCapacity,
+                SystemID.Physics,
+                NativeArrayOptions.UninitializedMemory).Resolve(vault);
+            NativeArray<float> solverStats = vault.GetBufferHandle<float>(
+                BufferID.Shinobu143TetherSolverStats,
+                TetherAupRuntimeConstants.SolverStatsCapacity,
+                SystemID.Physics,
+                NativeArrayOptions.ClearMemory).Resolve(vault);
+            NativeArray<double3> pinnedAups = vault.GetBufferHandle<double3>(
+                BufferID.Shinobu143TetherPinnedAups,
+                TetherAupRuntimeConstants.MockNodeCapacity,
+                SystemID.Physics,
+                NativeArrayOptions.UninitializedMemory).Resolve(vault);
+            NativeArray<byte> pinnedMask = vault.GetBufferHandle<byte>(
+                BufferID.Shinobu143TetherPinnedMask,
+                TetherAupRuntimeConstants.MockNodeCapacity,
+                SystemID.Physics,
+                NativeArrayOptions.UninitializedMemory).Resolve(vault);
             vault.GetBufferHandle<TetherAupTelemetryEntry>(
                 BufferID.Shinobu143TetherTelemetryRing,
                 TetherAupRuntimeConstants.TelemetryCapacity,
@@ -667,8 +1121,18 @@ namespace Hecton8.Physics
                 SystemID.Physics,
                 NativeArrayOptions.UninitializedMemory).Resolve(vault);
 
-            if (!nodes.IsCreated || !constraints.IsCreated || !endpoints.IsCreated || !materials.IsCreated || !state.IsCreated)
+            if (!nodes.IsCreated ||
+                !constraints.IsCreated ||
+                !endpoints.IsCreated ||
+                !materials.IsCreated ||
+                !state.IsCreated ||
+                !segmentTensions.IsCreated ||
+                !solverStats.IsCreated ||
+                !pinnedAups.IsCreated ||
+                !pinnedMask.IsCreated)
+            {
                 return;
+            }
 
             var job = new InitializeMockTetherAupJob
             {
@@ -677,11 +1141,14 @@ namespace Hecton8.Physics
                 Endpoints = endpoints,
                 Materials = materials,
                 BootstrapState = state,
+                PinnedAUPs = pinnedAups,
+                PinnedMask = pinnedMask,
                 FrameIndex = frameIndex,
                 SectorHash = 0x5348494Eu,
                 GlobalQualityWeight = globalQualityWeight
             };
-            job.Run();
+            JobHandle handle = job.Schedule();
+            DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
         }
     }
 }

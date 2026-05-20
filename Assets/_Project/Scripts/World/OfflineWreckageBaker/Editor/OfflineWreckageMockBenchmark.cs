@@ -1,0 +1,210 @@
+using System.Diagnostics;
+using System.Globalization;
+using System.IO;
+using System.Text;
+using Hecton8.World.OfflineWreckageBaker;
+using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
+using UnityEditor;
+using UnityEngine;
+
+namespace Hecton8.World.OfflineWreckageBaker.Editor
+{
+    public static class OfflineWreckageMockBenchmark
+    {
+        private const string ReportPath = "Docs/Reports/WRECKAGE_MOCK_BENCHMARK_SHINOBU_209.json";
+
+        [MenuItem("HECTON-8/Wreckage Forge/Run Mock Benchmark")]
+        public static void RunMenu()
+        {
+            RunAndWriteReport();
+        }
+
+        public static bool RunAndWriteReport()
+        {
+            int3 resolution = new int3(48, 48, 6);
+            int vertexCount = resolution.x * resolution.y * resolution.z;
+            int xyQuadCount = (resolution.x - 1) * (resolution.y - 1);
+            int xzQuadCount = (resolution.x - 1) * (resolution.z - 1);
+            int yzQuadCount = (resolution.y - 1) * (resolution.z - 1);
+            int quadCount = 2 * (xyQuadCount + xzQuadCount + yzQuadCount);
+            int indexCount = quadCount * 6;
+            int vertexCapacity = vertexCount + indexCount;
+
+            NativeArray<OfflineWreckageBakeVertexDTO> baseVertices = default;
+            NativeArray<int> baseIndices = default;
+            NativeArray<OfflineWreckageBakeVertexDTO> workingVertices = default;
+            NativeArray<OfflineWreckageBakeVertexDTO> stateVertices = default;
+            NativeArray<int> stateIndices = default;
+            NativeArray<float> tearWeights = default;
+            NativeArray<OfflineWreckageBakeCounters64> counters = default;
+            NativeArray<float3> hullPoints = default;
+            try
+            {
+                baseVertices = new NativeArray<OfflineWreckageBakeVertexDTO>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                baseIndices = new NativeArray<int>(indexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                workingVertices = new NativeArray<OfflineWreckageBakeVertexDTO>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                stateVertices = new NativeArray<OfflineWreckageBakeVertexDTO>(vertexCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                stateIndices = new NativeArray<int>(indexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                tearWeights = new NativeArray<float>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                counters = new NativeArray<OfflineWreckageBakeCounters64>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                hullPoints = new NativeArray<float3>(OfflineWreckageBakeConstants.MaxCollisionHullVertices, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+
+                Stopwatch stopwatch = Stopwatch.StartNew();
+                GenerateMockStructuralDeformationJob mockVertices = new GenerateMockStructuralDeformationJob
+                {
+                    Vertices = baseVertices,
+                    Resolution = resolution,
+                    CellSize = 0.25f,
+                    GlobalQualityWeight = 0.82f,
+                    ShearTorsion = 2.35f,
+                    BlastRadius = 4.5f,
+                    BlastEpicenter = new float3(0.15f, 0.25f, -0.35f)
+                };
+                GenerateMockGridSurfaceIndicesJob mockIndices = new GenerateMockGridSurfaceIndicesJob
+                {
+                    Output = baseIndices,
+                    Resolution = resolution
+                };
+                JobHandle vertexHandle = mockVertices.Schedule(vertexCount, 128);
+                JobHandle indexHandle = mockIndices.Schedule(quadCount, 128);
+                JobHandle handle = JobHandle.CombineDependencies(vertexHandle, indexHandle);
+
+                CopyBaseVerticesJob copy = new CopyBaseVerticesJob
+                {
+                    Source = baseVertices,
+                    Destination = workingVertices
+                };
+                handle = copy.Schedule(vertexCount, 128, handle);
+
+                ApplyStructuralShearJob shear = new ApplyStructuralShearJob
+                {
+                    Vertices = workingVertices,
+                    ShearAxis = new float3(0.22f, 1f, 0.17f),
+                    ShearTorsion = 2.35f,
+                    CollapseCompression = 0.42f,
+                    GlobalQualityWeight = 0.82f
+                };
+                handle = shear.Schedule(vertexCount, 128, handle);
+
+                ApplyRadialBlastJob blast = new ApplyRadialBlastJob
+                {
+                    Vertices = workingVertices,
+                    TearWeights = tearWeights,
+                    EpicenterLocal = new float3(0.15f, 0.25f, -0.35f),
+                    Radius = 4.5f,
+                    TearThreshold = 0.34f,
+                    DamageScale = 0.92f,
+                    GlobalQualityWeight = 0.82f
+                };
+                handle = blast.Schedule(vertexCount, 128, handle);
+
+                BuildTornTrianglesJob torn = new BuildTornTrianglesJob
+                {
+                    SourceVertices = workingVertices,
+                    SourceIndices = baseIndices,
+                    TearWeights = tearWeights,
+                    OutputVertices = stateVertices,
+                    OutputIndices = stateIndices,
+                    Counters = counters,
+                    TearThreshold = 0.26f,
+                    SplitDistance = 0.16f,
+                    GlobalQualityWeight = 0.82f
+                };
+                handle = torn.Schedule(handle);
+
+                RecalculateDeformedNormalsJob normals = new RecalculateDeformedNormalsJob
+                {
+                    Vertices = stateVertices,
+                    Indices = stateIndices,
+                    Counters = counters
+                };
+                handle = normals.Schedule(handle);
+
+                BakeDamageColorsJob colors = new BakeDamageColorsJob
+                {
+                    Vertices = stateVertices,
+                    Counters = counters,
+                    EpicenterLocal = new float3(0.15f, 0.25f, -0.35f),
+                    BlastRadius = 4.5f,
+                    ScorchIntensity = 1.55f,
+                    GlobalQualityWeight = 0.82f
+                };
+                handle = colors.Schedule(vertexCapacity, 128, handle);
+
+                GenerateConvexHullsJob hull = new GenerateConvexHullsJob
+                {
+                    Vertices = stateVertices,
+                    Counters = counters,
+                    HullPoints = hullPoints
+                };
+                handle = hull.Schedule(handle);
+                handle.Complete();
+                stopwatch.Stop();
+
+                OfflineWreckageBakeCounters64 result = counters[0];
+                WriteReport(result, resolution, vertexCount, indexCount, vertexCapacity, stopwatch.Elapsed.TotalMilliseconds * 1000.0);
+                return result.ActiveVertexCount > 0 && result.HullVertexCount == OfflineWreckageBakeConstants.SupportHullPointCount;
+            }
+            finally
+            {
+                if (hullPoints.IsCreated)
+                    hullPoints.Dispose();
+                if (counters.IsCreated)
+                    counters.Dispose();
+                if (tearWeights.IsCreated)
+                    tearWeights.Dispose();
+                if (stateIndices.IsCreated)
+                    stateIndices.Dispose();
+                if (stateVertices.IsCreated)
+                    stateVertices.Dispose();
+                if (workingVertices.IsCreated)
+                    workingVertices.Dispose();
+                if (baseIndices.IsCreated)
+                    baseIndices.Dispose();
+                if (baseVertices.IsCreated)
+                    baseVertices.Dispose();
+            }
+        }
+
+        private static void WriteReport(
+            in OfflineWreckageBakeCounters64 result,
+            int3 resolution,
+            int sourceVertices,
+            int sourceIndices,
+            int vertexCapacity,
+            double microseconds)
+        {
+            string path = Path.Combine(ProjectRoot(), ReportPath);
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+            StringBuilder json = new StringBuilder(2048); // COLD ALLOC: StringBuilder[2048] - editor mock benchmark report - owner: OfflineWreckageMockBenchmark
+            json.Append("{\n");
+            json.Append("  \"agent\": \"SHINOBU_209\",\n");
+            json.Append("  \"status\": \"PENDING_VERIFICATION\",\n");
+            json.Append("  \"benchmark\": \"offline_wreckage_mock_dense_grid\",\n");
+            json.Append("  \"resolution\": [").Append(resolution.x).Append(", ").Append(resolution.y).Append(", ").Append(resolution.z).Append("],\n");
+            json.Append("  \"sourceVertices\": ").Append(sourceVertices).Append(",\n");
+            json.Append("  \"sourceIndices\": ").Append(sourceIndices).Append(",\n");
+            json.Append("  \"vertexCapacity\": ").Append(vertexCapacity).Append(",\n");
+            json.Append("  \"activeVertices\": ").Append(result.ActiveVertexCount).Append(",\n");
+            json.Append("  \"tornVertices\": ").Append(result.TornVertexCount).Append(",\n");
+            json.Append("  \"degenerateTriangles\": ").Append(result.DegenerateTriangleCount).Append(",\n");
+            json.Append("  \"hullVertices\": ").Append(result.HullVertexCount).Append(",\n");
+            json.Append("  \"microseconds\": ").Append(microseconds.ToString("0.000", CultureInfo.InvariantCulture)).Append("\n");
+            json.Append("}\n");
+            WriteTextAtomic(path, json.ToString());
+            AssetDatabase.Refresh();
+        }
+
+        private static string ProjectRoot()
+        {
+            return Application.dataPath.Substring(0, Application.dataPath.Length - "/Assets".Length);
+        }
+
+        private static void WriteTextAtomic(string path, string text)
+        {
+            OfflineWreckageAtomicFile.WriteTextUtf8(path, text);
+        }
+    }
+}

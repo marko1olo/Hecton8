@@ -115,15 +115,15 @@ namespace Hecton8.Audio.Synthesis
     /// <summary>
     /// Burst mock producer for validating synth response without hull-integrity dependencies.
     /// </summary>
-    [BurstCompile(FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast, CompileSynchronously = true)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct MockHullStressSignalJob : IJob
     {
         /// <summary>Single-element output signal buffer.</summary>
-        public NativeArray<MockHullStressSignal> Output;
+        [NoAlias] public NativeArray<MockHullStressSignal> Output;
         /// <summary>Optional single-element pressure output buffer for literal task validation.</summary>
-        public NativeArray<MockPressureSignal> PressureOutput;
+        [NoAlias] public NativeArray<MockPressureSignal> PressureOutput;
         /// <summary>Optional single-element tension output buffer for literal task validation.</summary>
-        public NativeArray<MockTensionSignal> TensionOutput;
+        [NoAlias] public NativeArray<MockTensionSignal> TensionOutput;
         /// <summary>Elapsed time in seconds.</summary>
         public float ElapsedSeconds;
         /// <summary>Stress oscillator frequency in hertz.</summary>
@@ -159,35 +159,32 @@ namespace Hecton8.Audio.Synthesis
 
             if (hasHullOutput)
             {
-                Output[0] = new MockHullStressSignal
-                {
-                    MockStress = safeStress,
-                    MockTension = safeTension,
-                    MockDepth = safeDepth,
-                    MockSubmarineVelocity = safeVelocity
-                };
+                MockHullStressSignal signal = default;
+                signal.MockStress = safeStress;
+                signal.MockTension = safeTension;
+                signal.MockDepth = safeDepth;
+                signal.MockSubmarineVelocity = safeVelocity;
+                Output[0] = signal;
             }
 
             if (hasPressureOutput)
             {
-                PressureOutput[0] = new MockPressureSignal
-                {
-                    PressureScalar = safeStress,
-                    DepthScalar = safeDepth,
-                    VelocityScalar = safeVelocity,
-                    Sequence = safeSequence
-                };
+                MockPressureSignal signal = default;
+                signal.PressureScalar = safeStress;
+                signal.DepthScalar = safeDepth;
+                signal.VelocityScalar = safeVelocity;
+                signal.Sequence = safeSequence;
+                PressureOutput[0] = signal;
             }
 
             if (hasTensionOutput)
             {
-                TensionOutput[0] = new MockTensionSignal
-                {
-                    TensionScalar = safeTension,
-                    StrainRateScalar = math.saturate(math.abs(safeStress - safeTension)),
-                    PressureCouplingScalar = safeStress,
-                    Sequence = safeSequence
-                };
+                MockTensionSignal signal = default;
+                signal.TensionScalar = safeTension;
+                signal.StrainRateScalar = math.saturate(math.abs(safeStress - safeTension));
+                signal.PressureCouplingScalar = safeStress;
+                signal.Sequence = safeSequence;
+                TensionOutput[0] = signal;
             }
         }
     }
@@ -195,11 +192,11 @@ namespace Hecton8.Audio.Synthesis
     /// <summary>
     /// Precomputes the 512-sample style Hanning window used by grain envelopes.
     /// </summary>
-    [BurstCompile(FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast, CompileSynchronously = true)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct HanningWindowBuildJob : IJobParallelFor
     {
         /// <summary>Destination LUT, typically 512 samples.</summary>
-        public NativeArray<float> HanningLut;
+        [NoAlias] public NativeArray<float> HanningLut;
 
         /// <summary>Writes one Hanning window sample.</summary>
         /// <param name="index">LUT index.</param>
@@ -366,11 +363,11 @@ namespace Hecton8.Audio.Synthesis
         }
     }
 
-    [BurstCompile(FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast, CompileSynchronously = true)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct DepthStressGranularSpawnJob : IJob
     {
-        public NativeArray<DepthStressGranularVoice> Voices;
-        public NativeArray<DepthStressGranularSpawnState> State;
+        [NoAlias] public NativeArray<DepthStressGranularVoice> Voices;
+        [NoAlias] public NativeArray<DepthStressGranularSpawnState> State;
         public int VoiceLimit;
         public int GrainBankLength;
         public int SampleRate;
@@ -421,16 +418,15 @@ namespace Hecton8.Audio.Synthesis
                 int lengthSamples = math.clamp((int)(grainSeconds * safeSampleRate + 0.5f), 1, math.max(1, GrainBankLength - 2));
                 int maxStart = math.max(1, GrainBankLength - lengthSamples - 1);
                 float playbackRate = math.lerp(1.12f, 0.52f, depth) * random.NextFloat(0.92f, 1.08f);
-                Voices[voiceIndex] = new DepthStressGranularVoice
-                {
-                    Active = 1,
-                    StartSample = random.NextInt(0, maxStart),
-                    LengthSamples = lengthSamples,
-                    Cursor = 0f,
-                    PlaybackRate = math.max(0.125f, playbackRate),
-                    Gain = math.saturate(0.18f + drive * 0.72f) * random.NextFloat(0.75f, 1f),
-                    Seed = random.NextUInt()
-                };
+                DepthStressGranularVoice voice = default;
+                voice.Active = 1;
+                voice.StartSample = random.NextInt(0, maxStart);
+                voice.LengthSamples = lengthSamples;
+                voice.Cursor = 0f;
+                voice.PlaybackRate = math.max(0.125f, playbackRate);
+                voice.Gain = math.saturate(0.18f + drive * 0.72f) * random.NextFloat(0.75f, 1f);
+                voice.Seed = random.NextUInt();
+                Voices[voiceIndex] = voice;
             }
 
             state.RandomState = random.state != 0u ? random.state : 0x6D2B79F5u;
@@ -464,13 +460,13 @@ namespace Hecton8.Audio.Synthesis
         }
     }
 
-    [BurstCompile(FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast, CompileSynchronously = true)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct DepthStressGranularSynthesisJob : IJob
     {
-        [ReadOnly] public NativeArray<float> GrainBank;
-        [ReadOnly] public NativeArray<float> HanningLut;
-        public NativeArray<DepthStressGranularVoice> Voices;
-        public NativeArray<float> Output;
+        [ReadOnly] [NoAlias] public NativeArray<float> GrainBank;
+        [ReadOnly] [NoAlias] public NativeArray<float> HanningLut;
+        [NoAlias] public NativeArray<DepthStressGranularVoice> Voices;
+        [NoAlias] public NativeArray<float> Output;
         public int VoiceLimit;
         public float Stress01;
         public float PressureDelta01;
@@ -585,11 +581,11 @@ namespace Hecton8.Audio.Synthesis
 #pragma warning restore 0169
     }
 
-    [BurstCompile(FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast, CompileSynchronously = true)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct KineticImpactSineOscillatorJob : IJob
     {
-        public NativeArray<float> Output;
-        public NativeArray<KineticImpactSineOscillatorState> State;
+        [NoAlias] public NativeArray<float> Output;
+        [NoAlias] public NativeArray<KineticImpactSineOscillatorState> State;
         public int SampleRate;
         public float Amplitude01;
         public float DurationSeconds;

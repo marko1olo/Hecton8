@@ -37,6 +37,7 @@ namespace Hecton8.Gameplay
         private const float HealingReversalToxicityThreshold01 = 0.7f;
         private const float VitalWarningHealthThreshold01 = 0.20f;
         private const float VitalWarningHealthReleaseThreshold01 = 0.28f;
+        private const uint HealthRespawnDamageHash = 0x484C5448u; // HLTH
         private const float CriticalRadiationAdvisoryThresholdSeconds = 90f;
         private const float RadiationAdvisoryStageOneExposure01 = 0.30f;
         private const float RadiationAdvisoryStageTwoExposure01 = 0.70f;
@@ -91,6 +92,7 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(0f, 1f)] private float survivalGraceHeartbeatVolume = 1f;
         [SerializeField] private HazardMutationProfile hazardMutationProfile;
         private bool _vitalWarningSignalIssued;
+        private bool _lastDamageTriggeredRespawnReconciliation;
 
         /// <summary>Event fired when health changes.</summary>
         public event System.Action<float, float> OnHealthChanged;
@@ -439,6 +441,8 @@ namespace Hecton8.Gameplay
         /// <returns>True if damage was applied, false if blocked by invulnerability.</returns>
         public bool TakeDamage(float damage, bool ignoreInvulnerability = false)
         {
+            _lastDamageTriggeredRespawnReconciliation = false;
+
             if (!IsAlive || (!ignoreInvulnerability && IsInvulnerable))
                 return false;
 
@@ -453,15 +457,26 @@ namespace Hecton8.Gameplay
             if (!ignoreInvulnerability && !graceTriggered && _invulnerabilityTimer < invulnerabilityTime)
                 _invulnerabilityTimer = invulnerabilityTime;
 
+            if (currentHealth <= 0)
+            {
+                if (TryApplyRespawnReconciliation(HealthRespawnDamageHash))
+                {
+                    _lastDamageTriggeredRespawnReconciliation = true;
+                    return true;
+                }
+
+                OnHealthChanged?.Invoke(oldHealth, currentHealth);
+                OnDamageTaken?.Invoke(appliedDamage);
+                MarkCombatDamageSyncDirty();
+                TryIssueVitalWarningSignal();
+                PublishLegacyDeathFallback();
+                return true;
+            }
+
             OnHealthChanged?.Invoke(oldHealth, currentHealth);
             OnDamageTaken?.Invoke(appliedDamage);
             MarkCombatDamageSyncDirty();
             TryIssueVitalWarningSignal();
-
-            if (currentHealth <= 0)
-            {
-                Die();
-            }
 
             return true;
         }
@@ -472,6 +487,9 @@ namespace Hecton8.Gameplay
             bool applied = TakeDamage(damage);
             if (!applied)
                 return false;
+
+            if (_lastDamageTriggeredRespawnReconciliation)
+                return true;
 
             TryIssueLeviathanTraumaAdvisory(previousHealth - currentHealth);
             return true;
@@ -513,16 +531,14 @@ namespace Hecton8.Gameplay
 
             _vitalWarningSignalIssued = true;
             PlayerSignalEvents.RaiseTraumaHudSignal(new TraumaHudSignal(1f, 0.85f, 1f, Mathf.Clamp01(HealthPercent), true));
-            VitalWarningSignal signal = new VitalWarningSignal
-            {
-                WarningHash = VocalWarningHashes.OxygenLow,
-                SourceId = 0u,
-                Vital01 = math.saturate(1f - HealthPercent),
-                Severity01 = math.saturate(1f - HealthPercent),
-                Frame = (uint)Mathf.Max(0, Time.frameCount),
-                Priority = (byte)VocalWarningId.OxygenLow,
-                Flags = 0
-            };
+            VitalWarningSignal signal = default;
+            signal.WarningHash = VocalWarningHashes.OxygenLow;
+            signal.SourceId = 0u;
+            signal.Vital01 = math.saturate(1f - HealthPercent);
+            signal.Severity01 = math.saturate(1f - HealthPercent);
+            signal.Frame = TimeSliceScheduler.CurrentFrameId;
+            signal.Priority = (byte)VocalWarningId.OxygenLow;
+            signal.Flags = 0;
             GlobalSignals.Publish(in signal);
         }
 
@@ -535,14 +551,19 @@ namespace Hecton8.Gameplay
         /// <summary>Kills the player instantly.</summary>
         public void Kill()
         {
+            _lastDamageTriggeredRespawnReconciliation = false;
+
             if (!IsAlive) return;
 
             float oldHealth = currentHealth;
             currentHealth = 0;
 
+            if (TryApplyRespawnReconciliation(HealthRespawnDamageHash))
+                return;
+
             OnHealthChanged?.Invoke(oldHealth, currentHealth);
             MarkCombatDamageSyncDirty();
-            Die();
+            PublishLegacyDeathFallback();
         }
 
         /// <summary>Resets health to maximum.</summary>
@@ -605,6 +626,9 @@ namespace Hecton8.Gameplay
                 MarkCombatDamageSyncDirty();
                 return;
             }
+
+            if (_lastDamageTriggeredRespawnReconciliation)
+                return;
 
             float appliedDamage = Mathf.Max(0f, previousHealth - currentHealth);
             if (packet.SourceId == DamageSourceIds.FaunaLeviathanBite)
@@ -684,19 +708,92 @@ namespace Hecton8.Gameplay
             if (_playerMovement != null)
             {
                 float3 runtimePosition = _playerMovement.CurrentAup.ToRuntimeFloat3();
-                _lastKnownRuntimePosition = new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+                if (!math.all(math.isfinite(runtimePosition)))
+                    return _lastKnownRuntimePosition;
+
+                Vector3 resolved = default;
+                resolved.x = runtimePosition.x;
+                resolved.y = runtimePosition.y;
+                resolved.z = runtimePosition.z;
+                _lastKnownRuntimePosition = resolved;
                 return _lastKnownRuntimePosition;
             }
 
             return _lastKnownRuntimePosition;
         }
 
-        /// <summary>Handles player death.</summary>
-        private void Die()
+        internal bool TryResolveRespawnDeathAup(out double3 deathAup)
+        {
+            deathAup = default;
+
+            if (_playerMovement == null)
+            {
+                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                if (playerContext != null)
+                    _playerMovement = playerContext.PlayerMovement;
+            }
+
+            if (_playerMovement != null)
+            {
+                var currentAup = _playerMovement.CurrentAup;
+                if (math.isfinite(currentAup.LocalX) &&
+                    math.isfinite(currentAup.LocalY) &&
+                    math.isfinite(currentAup.LocalZ))
+                {
+                    deathAup = currentAup.ToAbsoluteDouble3();
+                    return math.all(math.isfinite(deathAup));
+                }
+            }
+
+            IPlayerRuntimeContext fallbackContext = GlobalRegistry.Player;
+            if (fallbackContext != null &&
+                fallbackContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
+            {
+                var snapshotAup = snapshot.Aup;
+                if (math.isfinite(snapshotAup.LocalX) &&
+                    math.isfinite(snapshotAup.LocalY) &&
+                    math.isfinite(snapshotAup.LocalZ))
+                {
+                    deathAup = snapshotAup.ToAbsoluteDouble3();
+                    return math.all(math.isfinite(deathAup));
+                }
+            }
+
+            return false;
+        }
+
+        internal void ApplyRespawnReconciliationHealth(float normalizedHealth)
+        {
+            float safeHealth01 = Mathf.Clamp01(math.isfinite(normalizedHealth) ? normalizedHealth : 1f);
+            currentHealth = Mathf.Max(1f, Mathf.Max(MinimumRuntimeMaxHealth, maxHealth) * safeHealth01);
+            currentHealth = Mathf.Min(currentHealth, maxHealth);
+            _invulnerabilityTimer = Mathf.Max(_invulnerabilityTimer, SurvivalGraceInvulnerabilitySeconds);
+            _survivalGraceLockoutTimer = 0f;
+            _nutritionalToxicityTimer = 0f;
+            _nutritionalToxicitySeverity01 = 0f;
+            _vitalWarningSignalIssued = false;
+            _leviathanTraumaAdvisoryIssued = false;
+            MarkCombatDamageSyncDirty();
+            RefreshVitalWarningSignalReset();
+        }
+
+        private bool TryApplyRespawnReconciliation(uint damageHash)
+        {
+            bool reconciled = TryResolveRespawnDeathAup(out double3 deathAup) &&
+                              PlayerDeathReconciliationBridge.RequestRespawn(deathAup, damageHash);
+            if (reconciled)
+            {
+                ApplyRespawnReconciliationHealth(1f);
+                return true;
+            }
+
+            return false;
+        }
+
+        private void PublishLegacyDeathFallback()
         {
             GlobalTelemetryBus.PublishPlayerDeath(ResolvePlayerRuntimePosition());
             OnDeath?.Invoke();
-            // TODO: Trigger death sequence, respawn, etc.
             LogPlayerDied();
         }
 

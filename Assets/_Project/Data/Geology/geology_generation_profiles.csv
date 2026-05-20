@@ -1,0 +1,4 @@
+name,seed,resolution,variations,radius,height,frequency,amplitude,ridged,voronoi,octaves,ao_rays,quality,lod0,lod1,lod2,sector_x,sector_y,sector_z
+Basalt_Pillar,1397242190,36,4,2.4,1.9,1.15,0.28,0.75,0.35,5,32,0.55,15000,7500,1500,0,0,0
+Abyssal_Boulder,1195725856,32,4,2.0,0.85,1.45,0.22,0.62,0.45,5,28,0.45,12000,6000,1200,12000,-3500,64000
+Trench_Wall_Chunk,1668246632,44,2,3.4,1.35,0.85,0.32,0.88,0.25,6,48,0.72,20000,9000,1800,56000,-6200,91000

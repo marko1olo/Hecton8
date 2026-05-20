@@ -72,8 +72,8 @@ namespace Hecton8.Core.Hardware
 #endif
 
         private IDataVault _dataVault;
-        private VaultBufferHandle<byte> _thermalSeverityHandle;
-        private VaultBufferHandle<HardwareThermalTelemetryEntry> _blackBoxHandle;
+        private VaultGenerationHandle<byte> _thermalSeverityHandle;
+        private VaultGenerationHandle<HardwareThermalTelemetryEntry> _blackBoxHandle;
         private HardwareThermalSnapshot _snapshot;
         private uint _sequence;
         private int _blackBoxCursor;
@@ -748,9 +748,14 @@ namespace Hecton8.Core.Hardware
 
         private void DisposeNativeState()
         {
+            IDataVault vault = _dataVault;
+            if (vault != null)
+            {
+                ReleaseVaultHandle(vault, ref _thermalSeverityHandle);
+                ReleaseVaultHandle(vault, ref _blackBoxHandle);
+            }
+
             _dataVault = null;
-            _thermalSeverityHandle = default;
-            _blackBoxHandle = default;
             _blackBoxCursor = 0;
         }
 
@@ -776,16 +781,32 @@ namespace Hecton8.Core.Hardware
             if (vault == null)
                 return false;
 
-            if (!_thermalSeverityHandle.IsCreated || !vault.ResolveBuffer(ref _thermalSeverityHandle))
+            if (_thermalSeverityHandle.BufferID != 0u &&
+                vault.TryResolveHandle(in _thermalSeverityHandle, out severity) &&
+                severity.IsCreated &&
+                severity.Length >= 1)
             {
-                _thermalSeverityHandle = vault.GetBufferHandle<byte>(
-                    BufferID.HardwareThermalSeverity,
-                    1,
-                    SystemID.HardwareHomeostasis,
-                    NativeArrayOptions.ClearMemory);
+                return true;
             }
 
-            severity = _thermalSeverityHandle.Resolve(vault);
+            if (vault.IsAllocationLocked)
+            {
+                severity = default;
+                return false;
+            }
+
+            _thermalSeverityHandle = vault.GetGenerationHandle<byte>(
+                BufferID.HardwareThermalSeverity,
+                1,
+                SystemID.HardwareHomeostasis,
+                NativeArrayOptions.ClearMemory);
+
+            if (!vault.TryResolveHandle(in _thermalSeverityHandle, out severity))
+            {
+                severity = default;
+                return false;
+            }
+
             return severity.IsCreated && severity.Length >= 1;
         }
 
@@ -796,17 +817,42 @@ namespace Hecton8.Core.Hardware
             if (vault == null)
                 return false;
 
-            if (!_blackBoxHandle.IsCreated || !vault.ResolveBuffer(ref _blackBoxHandle))
+            if (_blackBoxHandle.BufferID != 0u &&
+                vault.TryResolveHandle(in _blackBoxHandle, out blackBox) &&
+                blackBox.IsCreated &&
+                blackBox.Length >= BlackBoxFrameCount)
             {
-                _blackBoxHandle = vault.GetBufferHandle<HardwareThermalTelemetryEntry>(
-                    BufferID.HardwareThermalBlackBox,
-                    BlackBoxFrameCount,
-                    SystemID.HardwareHomeostasis,
-                    NativeArrayOptions.ClearMemory);
+                return true;
             }
 
-            blackBox = _blackBoxHandle.Resolve(vault);
+            if (vault.IsAllocationLocked)
+            {
+                blackBox = default;
+                return false;
+            }
+
+            _blackBoxHandle = vault.GetGenerationHandle<HardwareThermalTelemetryEntry>(
+                BufferID.HardwareThermalBlackBox,
+                BlackBoxFrameCount,
+                SystemID.HardwareHomeostasis,
+                NativeArrayOptions.ClearMemory);
+
+            if (!vault.TryResolveHandle(in _blackBoxHandle, out blackBox))
+            {
+                blackBox = default;
+                return false;
+            }
+
             return blackBox.IsCreated && blackBox.Length >= BlackBoxFrameCount;
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (handle.BufferID != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         private void TryRegisterService()
@@ -854,9 +900,8 @@ namespace Hecton8.Core.Hardware
 
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
+                DisposeNativeState();
                 _dataVault = currentService as IDataVault;
-                _thermalSeverityHandle = default;
-                _blackBoxHandle = default;
                 return;
             }
 

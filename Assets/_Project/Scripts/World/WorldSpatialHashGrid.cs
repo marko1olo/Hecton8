@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Hecton8.AI;
 using Hecton8.Construction;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Scavenging;
@@ -1032,7 +1033,8 @@ namespace Hecton8.World
                 Time.unscaledTimeAsDouble,
                 out temperatureDeltaCelsius,
                 out double3 gradientAup);
-            gradient = new Vector3((float)gradientAup.x, (float)gradientAup.y, (float)gradientAup.z);
+            float3 gradientLocal = AupPrecisionMath.DowncastLocalDelta(gradientAup, float3.zero);
+            gradient = new Vector3(gradientLocal.x, gradientLocal.y, gradientLocal.z);
             return hasGradient;
         }
 

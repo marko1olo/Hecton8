@@ -1,3 +1,4 @@
+using Hecton8.Core.Contracts;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -629,8 +630,14 @@ namespace Hecton8.World.VoxelSurfaceNets
                 return;
 
             ChunkMeshingStateDTO state = States[index];
-            float3 localToChunk = (float3)(state.ChunkOriginAup - CameraAup) + state.BoundsCenterLocal;
-            float distanceSq = math.dot(localToChunk, localToChunk);
+            double3 chunkDelta = AupPrecisionMath.LocalDeltaDouble(state.ChunkOriginAup, CameraAup);
+            float3 localToChunk = AupPrecisionMath.DowncastLocalDelta(chunkDelta, float3.zero) + state.BoundsCenterLocal;
+            double3 centerDelta = chunkDelta + new double3(
+                state.BoundsCenterLocal.x,
+                state.BoundsCenterLocal.y,
+                state.BoundsCenterLocal.z);
+            double distanceSqDouble = math.lengthsq(centerDelta);
+            float distanceSq = distanceSqDouble >= float.MaxValue ? float.MaxValue : (float)distanceSqDouble;
             float forwardDot = math.dot(math.normalizesafe(CameraForwardLocal, new float3(0f, 0f, 1f)), math.normalizesafe(localToChunk, new float3(0f, 0f, 1f)));
             float behindPenalty = math.lerp(250000f, 0f, math.saturate(forwardDot * 0.5f + 0.5f));
             float outsidePenalty = 0f;
@@ -783,7 +790,7 @@ namespace Hecton8.World.VoxelSurfaceNets
                 return;
             }
 
-            float3 cameraLocal = (float3)(aabb.CenterAup - CameraAup);
+            float3 cameraLocal = AupPrecisionMath.LocalDeltaFloat3(aabb.CenterAup, CameraAup, float3.zero);
             float3 extents = math.max(aabb.ExtentsLocal, new float3(VoxelSurfaceNetsConstants.Epsilon));
             float3 minNdc = new float3(float.MaxValue);
             float3 maxNdc = new float3(float.MinValue);

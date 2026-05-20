@@ -1,19 +1,35 @@
-# HECTON-8 — FULL MASTER IMMERSIVE RELEASE PLAN v2
+# HECTON-8 - FULL MASTER IMMERSIVE RELEASE PLAN v2
 
 Status: `PENDING VERIFICATION`
 Approved For Use: `2026-04-05`
 Primary Target: `NVIDIA MX350 2 GB VRAM / 12 GB RAM / i5-1135G7`
 Direction: `NASA-Punk + Deep Sea Noir`
 
-## 2026-05-15 Current-State Boundary
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-20 R45 Root/Architecture Actuality Boundary
+This roadmap is active only where it agrees with:
 
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+R45 root/architecture R43/R44 residue/proof-artifact/source-counter correction is the latest local static DOC_GLOBAL boundary for architecture/root documentation: `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
+## 2026-05-20 Current-State Boundary
+
+- Read `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`, then `Docs/Reports/2026-05-20_DOCUMENTATION_R44_ROOT_ARCHITECTURE_INTERNAL_RESIDUE_EXACT_ROUTE_FIELDS_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R43_ROOT_ARCHITECTURE_ROUTE_CARD_AND_COUNTER_RESIDUE_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R42_ROOT_ARCHITECTURE_COUNTER_AND_ROUTE_BOUNDARY_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R41_ROOT_ARCHITECTURE_GLOBAL_AUTHORITY_INTERNAL_RESIDUE_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R40_ROOT_ARCHITECTURE_R38_RESIDUE_AND_COUNTER_REFRESH_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R39_ROOT_ARCHITECTURE_AUTHORITY_COUNTER_AND_PROOF_WORDING_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R38_ROOT_ARCHITECTURE_SOURCE_COUNTER_DRIFT_AND_BOUNDARY_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R37_ROOT_ARCHITECTURE_ARTIFACT_PATHS_AND_COUNTERS_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R36_ROOT_ARCHITECTURE_AUTHORITY_SPINE_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R35_ROOT_ARCHITECTURE_R4_AND_COUNTER_RESIDUE_LOCAL.md`, and `Docs/Reports/2026-05-19_DOCUMENTATION_R34_ROOT_ARCHITECTURE_SOURCE_COUNTER_REFRESH_LOCAL.md` before using this roadmap for current root/architecture/source-counter/proof-wording truth. This roadmap is subordinate to current source and fresh verification artifacts.
 - Read `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` before using this roadmap as current project truth. May 11 reports remain historical where the May 13 DOC_AUDIT override conflicts.
 - This file is a product roadmap and historical working ledger, not a runtime proof document.
+- Dated rows that say compile/pass/returned `0` without a fresh artifact path, command, timestamp, environment, and output are capture-time report text only; they are not current Unity import, Play Mode, profiler, GCMonitor, player build, save/load, platform, analytics, or visual proof.
 - Where this roadmap says "source of truth", treat that as roadmap/product authority only; current source code, active docs indexes, and fresh verification logs win for implementation.
 - 2026-05-13 DOC_AUDIT filesystem check did not find `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt` or `.log`. Treat the May 11 compile-success line as stale report text until the artifact is restored or replaced; it is not current build proof.
-- 2026-05-15 current-disk proof: latest observed `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_224641_CurrentDisk53.log` reports `Hecton8.Core.csproj` CLI compile `EXIT=0`, `Build succeeded`, `0 Warning(s)`, `0 Error(s)`; latest observed `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_224426_CurrentDiskBudgetGate22.json` reports H-Phi static budget `EXIT=0` with all active budget gates passed, `MemoryAlignment=0.506309148`, `RuntimeHPhiRisk=0.000636091`, `DataSovereignty=0.021306032`, and `GlobalRegistrySurface=5060/5060`.
+- 2026-05-15 archived CLI/static evidence exists at `Docs/Archive/Batch007/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_224641_CurrentDisk53.log` and `Docs/Archive/Batch007/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_224426_CurrentDiskBudgetGate22.json`; active `Docs/AgentLogs/...` copies are absent. Treat these as historical CLI/static evidence only, not current build, player-build, live run, Play Mode, profiler, user-playtest, or visual acceptance proof.
 - 2026-05-19 global authority boundary: roadmap tasks that touch `GlobalRegistry`, `SignalBus<T>`, `GlobalSignals`, `HectonEventBus`, or `GlobalDataVault` must read `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md`, `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_OPERATING_MODEL.md`, `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_SETUP_PLAYBOOK.md`, `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_ROUTE_CARD_TEMPLATE.md`, and `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_MIGRATION_LEDGER.md` first. No roadmap item may add global surface only to improve H-Phi or convenience.
-- That May 15 proof is CLI/static only. It does not upgrade any roadmap item to runtime-ready, build-playtest-ready, or visually accepted.
+- 2026-05-19 first-20-minutes product gate: roadmap tasks must obey `Docs/ARCHITECTURE/FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md` and selected route brief `Docs/ARCHITECTURE/FIRST_20_MINUTES_ROUTE_BRIEF.md` until the Copper Wire route is proven. Work that does not improve `boot -> world load -> swim -> resource -> tool -> craft/repair/build -> hazard -> save/load -> return` or remove a blocker is parked.
+- That archived May 15 proof is CLI/static only. It does not upgrade any roadmap item to runtime-ready, build-playtest-ready, or visually accepted.
 - Current visual-realism doctrine is visual fake first; runtime simulation requires gameplay-correctness need plus profiler/GC/memory proof.
 - Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame time, memory retention, scene wiring, and visual quality remain `PENDING VERIFICATION`.
 
@@ -50,6 +66,7 @@ Main working truth:
 - CPU optimization remains required, but it is no longer the whole point by itself.
 - CPU is now a guardrail.
 - Main active track is product truth: menu, pause, build blockers, live world fill, surface truth, caves, life layers, ruins, and progression.
+- Current gating track is the first 20 minutes: the V0 Copper Wire route, one biome, one resource chain, one real starter interaction, one craft action, one hazard response, one save/load return.
 - Player build remains the main quality arbiter.
 - Nothing is done because code exists.
 - Nothing is done because it looked good in editor.
@@ -146,7 +163,7 @@ Status legend:
 - `[ ]` not started
 - `[~]` in progress
 - `[c]` code-fixed; closed for active coding, waiting for build/user proof
-- `[x]` verified and confirmed
+- `[x]` capture-time reported and confirmed
 - `[!]` blocker
 - `[?]` user feedback required
 
@@ -505,7 +522,7 @@ P0 rules:
   - current true spike classes are:
     - `EventSystem -> GameObject.ActivateAwakeRecursively`
     - coroutine / `SlowTickRoutine()` style spikes
-  - current editor `EditorLoop` complaints are not enough to blame gameplay CPU because this project still has many `[ExecuteAlways]` / `EditorApplication.update` preview systems; latest live gameplay logs instead point at `WorldProceduralScatterDirector` startup `SlowTick` spikes (`96.03 ms`, then `12.83 ms`)
+  - current editor `EditorLoop` complaints are not enough to blame gameplay CPU because this project still has many `[ExecuteAlways]` / `EditorApplication.update` preview systems; capture-time live gameplay log text, without a linked profiler/player artifact tuple, pointed at `WorldProceduralScatterDirector` startup `SlowTick` spikes (`96.03 ms`, then `12.83 ms`)
 - [ ] Current confirmed live-log offender:
   - `FaunaDirector` can dominate `SlowTick` and trigger `ObjectPoolManager` on-demand expansion for `SmallPassiveProxy`
   - fauna pool warmup must track live `_runtimeMaxSpawnsPerTick` and reopen after runtime streaming settings grow; a static reserve fixed at scene start is invalid
@@ -988,7 +1005,7 @@ P0 rules:
       - `WorldProceduralFloraFinalVariantAuthoring`
       - `WorldProceduralFloraFinalVariantValidator`
       - `WorldProceduralFloraFinalStatusReport`
-    - verified full rebuild chain:
+    - capture-time reported rebuild chain:
       - `Rebuild World Runtime Stack`
       - `Validate Procedural Flora Final Variants`
       - `Generate Procedural Flora Final Status Report`
@@ -1002,7 +1019,7 @@ P0 rules:
       - `ReefNavigation / Archipelago Needles` -> top/dominant `Kelp Canopy`
       - `ReefNavigation / Sea-Stack Forest` -> top/dominant `Coral Plate`
       - `LandmarkCorridor / Sea-Stack Forest` -> top/dominant `Coral Plate`
-    - existing fauna owner is now verified to support the transferred flora layer instead of leaving reef life abstract:
+    - existing fauna owner was reported to support the transferred flora layer instead of leaving reef life abstract:
       - `Build Fauna Biome Datasets` rebuilt `108` biome datasets
       - `Docs/AI_Fauna/AI_FAUNA_WORLD_INTEGRATION_REPORT.md` now includes a dedicated `Reef And Littoral Flora Biomes` section with `None` warnings
       - representative reef/littoral flora biomes now read with concrete passive/threat mixes rather than empty ecology placeholders
@@ -1025,7 +1042,7 @@ P0 rules:
     - there is still no authored photoreal coral or kelp final in the baked root
     - no build or user swim proof exists yet for this life-layer pass
   - Broke:
-    - no new compile failures were introduced during the verified rebuild/validation chain
+    - no new compile failures were reported during the capture-time rebuild/validation chain
     - this does not yet prove runtime perf safety; GC evidence is still missing
   - Remaining:
     - authored/baked final art replacement for each flora family
@@ -1284,7 +1301,7 @@ P0 rules:
   - `2026-04-07` flora transfer evidence:
     - kelp editor pipeline now owns generated `Base / Detail / Normal / Mask` texture stacks through `WorldProceduralFloraTextureAuthoring`
     - kelp shader/material path is no longer flat-color fallback; `Hecton_KelpMaster.shader` now reads normal/mask data for transmission/spec breakup
-    - verified Unity passes:
+    - capture-time Unity/menu pass text:
       - `Generate Procedural Flora Textures` -> `TouchedTextures=12`
       - `Apply Procedural Flora Materials` -> `TouchedMaterials=3`
       - `Generate Procedural Flora Baked Starters` -> `Prefabs=21, MeshesUpdated=60, RemovedAssets=0, Failures=0`
@@ -1292,21 +1309,21 @@ P0 rules:
     - same validator hardening also exposed and removed a real flora defect:
       - coral starter materials were still shipping with instancing disabled
       - flora material authoring now hardens all 7 flora materials
-      - verified post-fix pass:
+      - capture-time post-fix pass text:
         - `Apply Procedural Flora Materials` -> `TouchedMaterials=7`
         - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
     - `2026-04-08` follow-up hardening:
       - flora validator no longer checks material completeness only on `LOD0`
       - all prefab renderers are now covered by material validation, while budget math still uses the active budget slice only
-      - verified post-fix pass:
+      - capture-time post-fix pass text:
         - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
       - flora status reporting now exposes material/render health instead of only geometry counts
-      - verified post-fix pass:
+      - capture-time post-fix pass text:
         - `Generate Procedural Flora Final Status Report`
       - current readback:
         - all 7 flora families show `Material Ready 3/3`
       - flora validation/reporting now also prove triangle decay across LOD levels, not just nominal `LODGroup` presence
-      - verified post-fix passes:
+      - capture-time post-fix pass text:
         - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
         - `Generate Procedural Flora Final Status Report`
       - current readback:
@@ -1317,7 +1334,7 @@ P0 rules:
         - dedicated shader `Assets/_Project/Art/Shaders/Hecton_CoralMaster.shader`
         - procedural coral `Base / Detail / Normal / Mask` texture generation for all 4 coral families
         - coral materials now bind to the coral shader and full texture stack instead of generic URP hardening only
-        - verified Unity passes on `2026-04-08`:
+        - capture-time Unity/menu pass text on `2026-04-08`:
           - `Generate Procedural Flora Textures` -> `TouchedTextures=28`
           - `Apply Procedural Flora Materials` -> `TouchedMaterials=7`
           - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
@@ -1427,10 +1444,10 @@ P0 rules:
 
 ## Flora Wave 5 Addendum — 2026-04-08 Coral Geometry Ownership
 
-- Verified architecture step:
+- Capture-time architecture step:
   - coral starter geometry now has its own editor-only owner `WorldProceduralCoralMeshBuilder`
   - coral no longer depends only on primitive proxy assembly before entering baked finals
-- Verified outcomes:
+- Reported outcomes:
   - `PROCEDURAL_FLORA_FINAL_STATUS_REPORT.md` after regeneration now shows:
     - `family.coral.low` max budget triangles `1488` (was `3840`)
     - `family.coral.branching` max budget triangles `380` (was `4320`)
@@ -1450,26 +1467,26 @@ P0 rules:
   - `PENDING VERIFICATION`
   - missing proof: in-world beauty pass, profiler/build evidence, authored coral finals
 
-## Flora Wave 5 Addendum â€” 2026-04-08 Underbuilt Coral Follow-Up
+## Flora Wave 5 Addendum - 2026-04-08 Underbuilt Coral Follow-Up
 
-- Verified target:
+- Capture-time validation target:
   - the fidelity-floor validator exposed two real underbuilt starter variants:
     - `family.coral.low__bed`
     - `family.coral.plate__ledge`
 - Implemented only in the correct owner layer:
   - `WorldProceduralCoralMeshBuilder.BuildLow()` now adds extra mound lobes and a shallow top plate for `__bed`
   - `WorldProceduralCoralMeshBuilder.BuildPlate()` now adds a secondary overhang plate and underside buttress for `__ledge`
-- Verified Unity passes on `2026-04-08`:
+- Capture-time Unity/menu pass text on `2026-04-08`:
   - `Generate Procedural Flora Baked Starters` -> `Prefabs=21, MeshesUpdated=60, RemovedAssets=0, Failures=0`
   - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
   - `Generate Procedural Flora Final Status Report`
-- Verified outcomes:
+- Reported outcomes:
   - `GEN_family_coral_low__bed` triangles `824/472 -> 1658/1006`
   - `GEN_family_coral_plate__ledge` triangles `176/144 -> 340/292`
   - both variants now clear the fidelity floor
   - validator warning count drops back from `9` to `7`
   - remaining warnings are only the known `generated-only, no authored photoreal finals yet` warnings
-- Verified visual readback:
+- Historical visual readback references; screenshot paths are absent in the current checkout, so treat readback as report text until restored or replaced:
   - `Assets/Screenshots/coral_low_bed_stage_v2.png`
   - `Assets/Screenshots/coral_plate_ledge_stage_v2.png`
 - Honest verdict:
@@ -1479,39 +1496,39 @@ P0 rules:
   - `PENDING VERIFICATION`
   - missing proof: in-world beauty pass, profiler/build evidence, authored coral finals
 
-## Flora Wave 5 Addendum â€” 2026-04-08 Kelp Blade Realism Pass
+## Flora Wave 5 Addendum - 2026-04-08 Kelp Blade Realism Pass
 
-- Verified target:
+- Capture-time validation target:
   - kelp starter finals still had a plastic-strip failure mode, most obvious on `GEN_family_kelp_tall__ribbon`
 - Implemented only in the correct owner layer:
   - `WorldProceduralSeaweedMeshBuilder.AddRibbon()` now adds a center rib, edge curl, asymmetrical taper, upper-tip split, and stronger droop/bow
   - `WorldProceduralFloraTextureAuthoring` now generates stronger rib/edge/vein breakup for kelp textures
   - `WorldProceduralFloraMaterialAuthoring` now pushes kelp materials further away from plastic read with lower smoothness and stronger transmission/normal/detail response
-- Verified Unity passes on `2026-04-08`:
+- Capture-time Unity/menu pass text on `2026-04-08`:
   - `Generate Procedural Flora Textures` -> `TouchedTextures=28`
   - `Apply Procedural Flora Materials` -> `TouchedMaterials=7`
   - `Generate Procedural Flora Baked Starters` -> `Prefabs=21, MeshesUpdated=60, RemovedAssets=0, Failures=0`
   - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
   - `Generate Procedural Flora Final Status Report`
-- Verified outcomes:
+- Reported outcomes:
   - `family.kelp.tall` max budget triangles `584 -> 728`
   - `family.kelp.patch.dense` max budget triangles `496 -> 696`
   - `family.kelp.canopy` max budget triangles `684 -> 908`
   - all three kelp families still remain comfortably under budget and keep `Fidelity Floor 3/3`
-- Verified readback:
+- Reported readback:
   - `GEN_family_kelp_tall__ribbon` -> `712/368/160/72`
   - `GEN_family_kelp_tall__stalk` -> `728/380/160/60`
   - `GEN_family_kelp_canopy__crown` -> `908/520/260/116`
-  - screenshot evidence:
+  - historical screenshot references; paths are absent in the current checkout:
     - `Assets/Screenshots/kelp_ribbon_stage_before.png`
     - `Assets/Screenshots/kelp_ribbon_stage_after.png`
 - Honest verdict:
   - generated kelp leaves are less toy-like and less mono-green than before
   - authored photoreal kelp finals are still missing and remain the next real quality wall
 
-## Flora Wave 5 Addendum â€” 2026-04-08 Kelp Anatomy Follow-Up
+## Flora Wave 5 Addendum - 2026-04-08 Kelp Anatomy Follow-Up
 
-- Verified target:
+- Capture-time validation target:
   - after the leaf realism pass, kelp still had an anatomical cheap read:
     - blades attached too abruptly to the stipe
     - pneumatocysts still read too much like simple spheres
@@ -1519,52 +1536,52 @@ P0 rules:
   - `WorldProceduralSeaweedMeshBuilder.BuildBlade()` now adds blade stems / petioles before the ribbon leaf
   - `WorldProceduralSeaweedMeshBuilder.BuildBulb()` now adds bulb stems and offset bulb lobes
   - shared `AddTube()` helper now owns those organic connectors
-- Verified Unity passes on `2026-04-08`:
+- Capture-time Unity/menu pass text on `2026-04-08`:
   - `Generate Procedural Flora Baked Starters` -> `Prefabs=21, MeshesUpdated=60, RemovedAssets=0, Failures=0`
   - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
   - `Generate Procedural Flora Final Status Report`
-- Verified outcomes:
+- Reported outcomes:
   - `family.kelp.tall` max budget triangles `728 -> 1018`
   - `family.kelp.patch.dense` max budget triangles `696 -> 954`
   - `family.kelp.canopy` max budget triangles `908 -> 1244`
   - all three kelp families remain under their family triangle limits by a wide margin
-- Verified readback:
+- Reported readback:
   - `GEN_family_kelp_tall__ribbon` -> `1018/448/196/96`
   - `GEN_family_kelp_tall__stalk` -> `1004/444/184/72`
   - `GEN_family_kelp_canopy__crown` -> `1244/616/308/152`
-  - screenshot evidence:
+  - historical screenshot references; paths are absent in the current checkout:
     - `Assets/Screenshots/kelp_ribbon_stage_after_stems.png`
 - Honest verdict:
   - kelp now reads more like connected anatomy and less like leaves glued onto a rod
   - authored photoreal kelp finals are still the next quality wall
 
-## Flora Wave 5 Addendum â€” 2026-04-08 Kelp Silhouette Fullness Pass
+## Flora Wave 5 Addendum - 2026-04-08 Kelp Silhouette Fullness Pass
 
-- Verified target:
+- Capture-time validation target:
   - after leaf/anatomy fixes, some kelp variants still read too sparse because each anchor only carried one dominant blade
 - Implemented only in the correct owner layer:
   - `WorldProceduralSeaweedMeshBuilder.BuildBlade()` now adds secondary companion blades on near LODs for selected anchors
-- Verified Unity passes on `2026-04-08`:
+- Capture-time Unity/menu pass text on `2026-04-08`:
   - `Generate Procedural Flora Baked Starters` -> `Prefabs=21, MeshesUpdated=60, RemovedAssets=0, Failures=0`
   - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
   - `Generate Procedural Flora Final Status Report`
-- Verified outcomes:
+- Reported outcomes:
   - `family.kelp.tall` max budget triangles `1018 -> 1346`
   - `family.kelp.patch.dense` max budget triangles `954 -> 1324`
   - `family.kelp.canopy` max budget triangles `1244 -> 1654`
   - all three kelp families remain well under their family limits
-- Verified readback:
+- Reported readback:
   - `GEN_family_kelp_tall__ribbon` -> `1346/616/196/96`
   - `GEN_family_kelp_tall__stalk` -> `1226/540/184/72`
   - `GEN_family_kelp_patch_dense__patch_tall` -> `1324/638/228/98`
-  - screenshot evidence:
+  - historical screenshot references; paths are absent in the current checkout:
     - `Assets/Screenshots/kelp_stalk_stage_companion_blades.png`
 - Honest verdict:
   - kelp reads fuller and less skeletal than before
   - authored photoreal kelp finals remain the next quality wall
 ## Flora Wave 5 Addendum - 2026-04-08 Kelp Leaf Shader Width-Read Pass
 
-- Verified target:
+- Capture-time validation target:
   - after geometry, texture, and silhouette passes, kelp blades still read too broad and flat across width
   - the material stack needed a clearer center-rib versus edge lighting split
 - Implemented only in the correct owner layer:
@@ -1576,12 +1593,12 @@ P0 rules:
     - `_EdgeWearDarkening`
     - `_EdgeDetailBoost`
   - `WorldProceduralFloraMaterialAuthoring` now binds those controls on all three kelp family materials
-- Verified Unity passes on `2026-04-08`:
+- Capture-time Unity/menu pass text on `2026-04-08`:
   - `Apply Procedural Flora Materials` -> `TouchedMaterials=7`
   - `Generate Procedural Flora Baked Starters` -> `Prefabs=21, MeshesUpdated=60, RemovedAssets=0, Failures=0`
   - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
   - `Generate Procedural Flora Final Status Report`
-- Verified outcomes:
+- Reported outcomes:
   - `MAT_family_kelp_tall.mat` now stores the new width-read shader controls and keeps instancing enabled
   - kelp family report state remains:
     - `Material Ready 3/3`
@@ -1591,7 +1608,7 @@ P0 rules:
     - `family.kelp.tall` -> `1346`
     - `family.kelp.patch.dense` -> `1324`
     - `family.kelp.canopy` -> `1654`
-- Verified visual readback:
+- Historical visual readback references; screenshot paths are absent in the current checkout, so treat readback as report text until restored or replaced:
   - `Assets/Screenshots/kelp_stalk_stage_leaf_shader.png`
 - Honest verdict:
   - width readability improved without pushing runtime or budget risk
@@ -1599,7 +1616,7 @@ P0 rules:
 
 ## Flora Wave 5 Addendum - 2026-04-08 Kelp Curved-Normal Shader Follow-Up
 
-- Verified target:
+- Capture-time validation target:
   - after the width-read shader pass, kelp leaves still preserved a planar-lighting failure mode
   - the next correct step was to improve blade normal response, not to add more geometry blindly
 - Implemented only in the correct owner layer:
@@ -1607,12 +1624,12 @@ P0 rules:
   - kelp fragment shading now bends tangent-space normals across blade width using the existing width/edge masks
   - a small midrib upward normal bias was added so the center rib does not light like a dead flat stripe
   - `WorldProceduralFloraMaterialAuthoring` now binds `_BladeCurveNormalStrength` on kelp materials
-- Verified Unity passes on `2026-04-08`:
+- Capture-time Unity/menu pass text on `2026-04-08`:
   - `Apply Procedural Flora Materials` -> `TouchedMaterials=7`
   - `Generate Procedural Flora Baked Starters` -> `Prefabs=21, MeshesUpdated=60, RemovedAssets=0, Failures=0`
   - `Validate Procedural Flora Final Variants` -> `PASS validatedPrefabs=21, warningCount=7`
   - `Generate Procedural Flora Final Status Report`
-- Verified outcomes:
+- Reported outcomes:
   - `MAT_family_kelp_tall.mat` now stores `_BladeCurveNormalStrength: 0.24`
   - kelp triangle budgets remain unchanged:
     - `family.kelp.tall` -> `1346`
@@ -1622,7 +1639,7 @@ P0 rules:
     - `Material Ready 3/3`
     - `LOD Cascade 3/3`
     - `Fidelity Floor 3/3`
-- Verified visual readback:
+- Historical visual readback references; screenshot paths are absent in the current checkout, so treat readback as report text until restored or replaced:
   - `Assets/Screenshots/kelp_stalk_stage_curved_normals.png`
 - Honest verdict:
   - this improves light volume on blades without touching budgets or runtime
@@ -1663,12 +1680,12 @@ P0 rules:
     - no fresh bake/report/screenshot proof exists yet
   - status:
     - `PENDING VERIFICATION`
-- 2026-04-08 - Giant-frond kelp distribution pass is now live-verified
+- 2026-04-08 - Giant-frond kelp distribution pass was reported live by capture-time automation
   - what changed:
     - giant-frond kelp is no longer distributed with the same upper-compressed logic that made it read like a narrow synthetic broom
     - bulb nodes are now attached closer to the blade/stipe contact instead of reading as floating berries
     - giant-frond kelp specs gained denser bulb/node coverage
-  - verified facts:
+  - capture-time reported facts:
     - Unity automation request `flora-verify-20260408-6` completed successfully
     - fresh report + PNG captures were produced
     - fresh report deltas:
@@ -1687,7 +1704,7 @@ P0 rules:
   - what changed:
     - flora automation previews no longer rely only on tiny `AssetPreview` icons
     - the verification owner now attempts a larger isolated prefab-scene capture first
-  - verified facts:
+  - capture-time reported facts:
     - `GEN_family_kelp_patch_dense__patch_tall` now has a much larger preview that is actually usable for morphology review
     - that preview suggests the dense patch family is moving in the correct direction
   - blocker still open:
@@ -1779,7 +1796,7 @@ P0 rules:
   - status:
     - `PENDING VERIFICATION`
 - 2026-04-08 - Dense kelp patch optimization recovered budget without gutting the family
-  - verified facts:
+  - capture-time reported facts:
     - `family.kelp.patch.dense` is back under its triangle cap:
       - max budget triangles `12344 -> 9000`
       - headroom `-344 -> 3000`
@@ -1866,7 +1883,7 @@ P0 rules:
     - clustered giant-frond logic now injects deterministic morphology variance instead of repeated identical straps
     - clustered blade socket attachment now sits closer to the stipe and biases lower/mid growth bands
     - dense kelp families now mix broad undulate leaves and narrower ribbons inside one patch
-  - verified facts:
+  - capture-time reported facts:
     - fresh report after automation request `flora-verify-20260408-densepass-1` shows:
       - `family.kelp.patch.dense` max budget `8112`
       - `GEN_family_kelp_patch_dense__patch` `5310/2256/688/312`
@@ -1944,7 +1961,7 @@ P0 rules:
   - why it matters:
     - flora form work is no longer blind; contact-sheet previews are good enough to keep iterating on silhouette and continuity without pretending final beauty proof is done
     - `kelp_tall` remains safely under its family cap while moving away from the old “few blades on a pole” read
-  - verified facts:
+  - capture-time reported facts:
     - automation request `flora-verify-20260408-tallpass-5` completed with `success=true`
     - latest flora report:
       - `family.kelp.tall` max budget `5544`
@@ -1966,7 +1983,7 @@ P0 rules:
   - why it matters:
     - moves the project toward the target `5-6` major seaweed archetypes and `10+` variants per archetype while keeping ownership in the editor bake pipeline
     - gives seeded runtime variety more material to select from later, instead of overusing the first `3` kelp forms
-  - verified facts:
+  - capture-time reported facts:
     - automation request `flora-verify-20260408-variety-2` completed with `success=true`
     - report now shows kelp families at `a0/g5`
     - all new kelp variants remain inside current family budgets
@@ -1984,7 +2001,7 @@ P0 rules:
   - why it matters:
     - pushes the project materially closer to the `10+` variants-per-archetype target without inventing a second runtime flora renderer
     - gives seeded runtime variety a real library to choose from later instead of recycling the same first `3` forms
-  - verified facts:
+  - capture-time reported facts:
     - automation request `flora-verify-20260408-variety-3` completed with `success=true`
     - report now shows all kelp families at `a0/g7`
     - new kelp variants still remain within family budgets
@@ -2000,7 +2017,7 @@ P0 rules:
   - why it matters:
     - this establishes the cheap rendering side of deep glowing flora first, which is the correct prerequisite before any zone-driven runtime coupling is added
     - current shallow starter families remain visually stable because emissive strength stays at `0`
-  - verified facts:
+  - capture-time reported facts:
     - Unity material-apply pass completed successfully with `TouchedMaterials=7`
     - proxy material assets now contain the new biolum properties
   - remaining truth:
@@ -2019,7 +2036,7 @@ P0 rules:
   - why it matters:
     - deep glowing flora is no longer only a shader-ready idea; the first abyssal flora/coral families now exist as real linked prefabs in the current pipeline
     - this is the correct owner-layer path for expanding depth bands without inventing a second flora runtime architecture
-  - verified facts:
+  - capture-time reported facts:
     - `Build Procedural Fill Foundations` completed successfully
     - `Generate Procedural Flora Textures` completed with `TouchedTextures=36`
     - `Apply Procedural Flora Materials` completed with `TouchedMaterials=9`
@@ -2044,8 +2061,8 @@ P0 rules:
   - why it matters:
     - the project now has one coherent owner path for deep glowing flora: scene/world biolum -> global shader inputs -> existing deep kelp/coral materials
     - this stays cheap for MX350 because it avoids per-instance responder scripts on every flora object
-  - verified facts:
-    - Unity compile completed without new flora/biolum compile errors
+  - capture-time reported facts:
+    - Unity compile was reported without new flora/biolum compile errors; no current artifact is linked in this line
     - `Rebuild World Runtime Stack` completed successfully
     - scene readback confirms `HectonBiolumManager` now exists on `[MANAGERS]`
   - remaining truth:
@@ -2066,8 +2083,8 @@ P0 rules:
   - why it matters:
     - the deep kelp/coral biolum bridge no longer points at an empty scene
     - deep glowing flora now has a real world-owned source of ocean/floor influence without inventing a second subsystem
-  - verified facts:
-    - Unity compile completed without new flora/biolum errors
+  - capture-time reported facts:
+    - Unity compile was reported without new flora/biolum errors; no current artifact is linked in this line
     - `Rebuild World Runtime Stack` completed successfully
     - scene-instance readback confirms:
       - `--- WORLD ---/Biolum_Deep`
@@ -2093,7 +2110,7 @@ P0 rules:
   - why it matters:
     - hadal/deep bands now have enough library breadth to support seeded runtime selection later without per-boot hero mesh regeneration
     - this moves the flora roadmap forward while the runtime biolum visual proof remains blocked by unstable MCP play-mode cadence
-  - verified facts:
+  - capture-time reported facts:
     - validator logged `PASS validatedPrefabs=43, warningCount=9`
     - report confirms:
       - `family.kelp.abyssal = a0/g5`
@@ -2117,9 +2134,9 @@ P0 rules:
       - `family.kelp.abyssal` from `g5 -> g7`
       - `family.coral.brittle` from `g5 -> g7`
   - why it matters:
-    - runtime truth is now objective instead of guessed: under the current MCP play session, manager and world time stall almost immediately
+    - capture-time MCP readback text suggested manager/world time stalled almost immediately; this is not current runtime, profiler, or visual proof without an artifact tuple
     - editor-owned deep flora work can continue honestly while runtime visual proof remains blocked
-  - verified facts:
+  - capture-time reported facts:
     - play-mode readback shows:
       - `HectonBiolumManager._debugTickInvocations = 2`
       - `HectonBiolumManager._debugLastTickFrame = 2`
@@ -2154,7 +2171,7 @@ P0 rules:
     - the system is no longer locked to one narrow `~3-4m` kelp silhouette
     - HECTON-8 now has an explicit path toward `0.5m -> 50m` flora via editor-baked libraries plus seeded runtime selection, not per-boot hero mesh rebuild
     - this keeps continuity and performance in the correct owner layer
-  - verified facts:
+  - capture-time reported facts:
     - Unity generated `56` baked flora prefabs and relinked `56` final-ready variants
     - validator returned `PASS validatedPrefabs=56, warningCount=9`
     - report confirms:
@@ -2173,7 +2190,7 @@ P0 rules:
     - visual beauty passes for the new giant forms are still pending
   - status:
     - `PENDING VERIFICATION`
-- 2026-04-09 - Paddle-lobed kelp lane verified and petal build failure closed via automation pass
+- 2026-04-09 - Paddle-lobed kelp lane reported and petal build failure closed via automation pass
   - what changed:
     - `WorldProceduralSeaweedMeshBuilder.NormalizeRootToken()` now strips size/weight suffixes more defensively
     - new paddle-lobed starters added across kelp families:
@@ -2181,7 +2198,7 @@ P0 rules:
       - `family.kelp.patch.dense` -> `paddlespray`
       - `family.kelp.canopy` -> `paddlefan`
       - `family.kelp.abyssal` -> `petal`
-  - verified facts:
+  - capture-time reported facts:
     - automation request `flora-verify-paddle-20260409-1` completed and refreshed the report
     - `PROCEDURAL_FLORA_FINAL_STATUS_REPORT.md` shows:
       - `family.kelp.tall = a0/g13`
@@ -2203,7 +2220,7 @@ P0 rules:
     - `WorldProceduralSeaweedMeshBuilder.BuildBlade()` now adds an extra fill/fan lamina for paddle-lobed variants on near LODs
     - crown-canopy paddle variants were widened slightly before ribbon build
     - `WorldProceduralFloraFinalStatusReport` preview framing now biases upward on tall/slender prefabs and uses a longer preview deadline
-  - verified facts:
+  - capture-time reported facts:
     - automation request `flora-verify-paddle-20260409-5` completed with:
       - `previewPaths=4`
       - `previewErrors=[]`
@@ -2286,12 +2303,12 @@ P0 rules:
     - `patch_dense__bladder`
     - `canopy__oar`
     - `abyssal__lantern`
-  - verified library expansion after bake/apply/validate/report:
+  - reported library expansion after bake/apply/validate/report:
     - `family.kelp.tall = a0/g12`
     - `family.kelp.patch.dense = a0/g10`
     - `family.kelp.canopy = a0/g11`
     - `family.kelp.abyssal = a0/g12`
-  - verified new budgets:
+  - reported new budgets:
     - `paddle = 5110/2128/1084/656`
     - `bladder = 8696/4032/1324/776`
     - `oar = 4272/2212/1056/656`
@@ -2326,7 +2343,7 @@ P0 rules:
 - 2026-04-09 - Unfocused editor non-game cameras no longer keep first-party and URP feature paths alive by default
   - `ScreenSpaceAmbientOcclusion`, `ScreenSpaceShadows`, `ShapesRenderFeature`, and `DecalRendererFeature` now all fail-close for non-`Game` cameras while `EditorWindow.focusedWindow == null`
   - scope is intentionally editor-only and non-game only: runtime gameplay cameras, shallow-water visuals, and build settings remain untouched
-  - this targets the proven editor-side RT RED context (`draw_calls = 0`, `batches = 0`, `Game` window offscreen, `Scene` / `Inspector` still open)
+  - this targets the reported editor-side RT RED context (`draw_calls = 0`, `batches = 0`, `Game` window offscreen, `Scene` / `Inspector` still open); no player build/profiler artifact is linked here
   - first live post-reload effect is only partial, not a fix:
     - pre-pass high-water snapshot: `981` render textures, `~2051 MB` graphics driver memory
     - repeated post-pass unfocused snapshot: `978` render textures, `~1687-1714 MB` graphics driver memory

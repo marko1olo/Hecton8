@@ -10,7 +10,7 @@
 //
 // FEATURES:
 //   • Increases swim speed while active and has battery
-//   • Drains battery only while moving
+//   • Requests propulsion draw only while moving; central equipment solver drains battery
 //   • HUD display showing depth and battery %
 // ============================================================================
 
@@ -22,7 +22,6 @@ namespace Hecton8.Gameplay
     using Hecton8.Core;
     using Hecton8.Core.Contracts.Signals;
     using Hecton8.Input;
-    using Hecton8.Inventory;
     using Hecton8.Items;
     using Hecton8.Tools;
     using Hecton8.UI;
@@ -178,9 +177,6 @@ namespace Hecton8.Gameplay
         private bool _isActive;
         private bool _isMoving;
         private float _driveThrottleCurrent;
-        private float _inventoryConditionDrainAccumulator;
-        private int _inventoryConditionAnchorIndex = -1;
-        private int _inventoryConditionAnchorHashId;
         private bool _registeredTick;
         private bool _hotSwapListenerRegistered;
         private bool _hudStateInitialized;
@@ -274,7 +270,7 @@ namespace Hecton8.Gameplay
         public bool HasBattery => _hasBattery;
 
         /// <summary>Current battery charge level (0-1). Returns 0 if no battery.</summary>
-        public float BatteryCharge => _hasBattery ? _currentCharge : 0f;
+        public float BatteryCharge => _hasBattery ? GetRuntimeBatteryNormalized(_currentCharge) : 0f;
 
         /// <summary>The battery item currently installed (null if none).</summary>
         public ItemData BatteryItem => _batteryItem;
@@ -283,16 +279,16 @@ namespace Hecton8.Gameplay
         public string DebugActivationState => _debugActivationState;
 
         /// <summary>True while Manta propulsion is actively engaged.</summary>
-        public bool IsTransportActive => !_isTransportBroken && _isActive && _hasBattery && _currentCharge >= minChargeToActivate;
+        public bool IsTransportActive => !_isTransportBroken && _isActive && _hasBattery && BatteryCharge >= minChargeToActivate;
 
         /// <summary>True when this Manta can currently accept station charge.</summary>
-        public bool CanReceiveTransportCharge => _hasBattery && !_isActive && _currentCharge < 0.999f;
+        public bool CanReceiveTransportCharge => _hasBattery && !_isActive && BatteryCharge < 0.999f;
 
         /// <summary>True when this Manta has failed structurally.</summary>
         public bool IsTransportBroken => _isTransportBroken;
 
         /// <summary>Current normalized battery charge treated as transport charge.</summary>
-        public float TransportChargeNormalized => _hasBattery ? _currentCharge : 0f;
+        public float TransportChargeNormalized => BatteryCharge;
 
         /// <summary>Current normalized transport integrity.</summary>
         public float TransportIntegrityNormalized => ResolveCurrentIntegrityNormalized();
@@ -349,7 +345,7 @@ namespace Hecton8.Gameplay
             _batteryItem = null;
             _currentCharge = 0f;
             _hasBattery = false;
-            ResetInventoryConditionDrainCache();
+            SetRuntimeBatteryNormalized(0f);
 
             UpdateBatteryVisuals();
             UpdatePowerIndicator();
@@ -368,6 +364,7 @@ namespace Hecton8.Gameplay
             _batteryItem = battery;
             _currentCharge = math.saturate(charge);
             _hasBattery = true;
+            SetRuntimeBatteryNormalized(_currentCharge);
 
             UpdateBatteryVisuals();
             UpdatePowerIndicator();
@@ -448,6 +445,7 @@ namespace Hecton8.Gameplay
 
         public override void OnDespawn()
         {
+            SyncMantaChargeMirrorFromCentral();
             DeactivateScooter();
             RestoreHeadlightDefaults();
             ClearHeadlightGlobals();
@@ -472,6 +470,7 @@ namespace Hecton8.Gameplay
 
         public override void OnUnequip()
         {
+            SyncMantaChargeMirrorFromCentral();
             DeactivateScooter();
             RestoreHeadlightDefaults();
             ClearHeadlightGlobals();
@@ -516,7 +515,8 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (_currentCharge < minChargeToActivate)
+            float currentCharge = BatteryCharge;
+            if (currentCharge < minChargeToActivate)
             {
                 if (_isActive)
                     DeactivateScooter();
@@ -558,25 +558,52 @@ namespace Hecton8.Gameplay
 
             if (_isMoving)
             {
-                // Drain battery while moving
-                float chargeDrain = ResolveEffectiveBatteryDrainRate() * driveThrottleOutput * deltaTime;
-                _currentCharge = math.max(0f, _currentCharge - chargeDrain);
-                DrainInventoryCondition(chargeDrain);
+                MarkScooterActiveForCentralSolver(true, driveThrottleOutput);
                 UpdatePowerIndicator();
                 UpdateHUD();
 
-                if (_currentCharge <= 0f)
+                if (BatteryCharge <= 0f)
                 {
                     DeactivateScooter();
                     _debugActivationState = ActivationStateBatteryDepleted;
                     PublishToolWarning(_localizedBatteryDepletedWarning);
                 }
             }
+            else
+            {
+                MarkScooterActiveForCentralSolver(false, 0f);
+            }
         }
 
         public override void UseSecondary(float deltaTime)
         {
             // Secondary does nothing for scooter - could be used for headlight toggle
+        }
+
+        internal override float ResolveModularBatteryNormalized()
+        {
+            return _hasBattery ? BatteryCharge : 0f;
+        }
+
+        protected override void ConfigureModularRuntimeProfile(ref ToolRuntimeProfile profile)
+        {
+            profile.BatteryDrainPerSecond = ResolveEffectiveBatteryDrainRate();
+        }
+
+        private void MarkScooterActiveForCentralSolver(bool active, float driveThrottleOutput)
+        {
+            if (!TryGetModularEquipment(out IModularEquipmentService service) || RuntimeToolId == 0u)
+                return;
+
+            float requestedDrainRate = active
+                ? ResolveEffectiveBatteryDrainRate() * math.saturate(driveThrottleOutput)
+                : 0f;
+            service.SetToolActive(RuntimeToolId, active, requestedDrainRate);
+        }
+
+        private void SyncMantaChargeMirrorFromCentral()
+        {
+            _currentCharge = _hasBattery ? BatteryCharge : 0f;
         }
 
         public override void ToolTick(float deltaTime)
@@ -623,7 +650,7 @@ namespace Hecton8.Gameplay
 
         public override string GetOperationalSummary()
         {
-            int batteryPercent = RoundToIntPositive(_currentCharge * 100f);
+            int batteryPercent = RoundToIntPositive(BatteryCharge * 100f);
             if (!_summaryStateInitialized ||
                 _lastSummaryHasBattery != _hasBattery ||
                 _lastSummaryActive != _isActive ||
@@ -653,13 +680,13 @@ namespace Hecton8.Gameplay
             }
 
             AppendText(ref buffer, _isActive ? "MANTA // ACTIVE // BAT " : "MANTA // STANDBY // BAT ");
-            buffer.AppendInt(math.clamp((int)math.round(_currentCharge * 100f), 0, 100));
+            buffer.AppendInt(math.clamp((int)math.round(BatteryCharge * 100f), 0, 100));
             AppendText(ref buffer, "%");
         }
 
         public override string GetOperationalDirective()
         {
-            bool batteryLow = _hasBattery && _currentCharge < minChargeToActivate;
+            bool batteryLow = _hasBattery && BatteryCharge < minChargeToActivate;
             if (!_directiveStateInitialized ||
                 _lastDirectiveHasBattery != _hasBattery ||
                 _lastDirectiveActive != _isActive ||
@@ -684,7 +711,7 @@ namespace Hecton8.Gameplay
 
         public override void WriteOperationalDirective(ref FixedCharBuffer buffer)
         {
-            bool batteryLow = _hasBattery && _currentCharge < minChargeToActivate;
+            bool batteryLow = _hasBattery && BatteryCharge < minChargeToActivate;
             AppendText(
                 ref buffer,
                 !_hasBattery
@@ -740,8 +767,7 @@ namespace Hecton8.Gameplay
             _isActive = false;
             _isMoving = false;
             _driveThrottleCurrent = 0f;
-            _inventoryConditionDrainAccumulator = 0f;
-            ResetInventoryConditionDrainCache();
+            MarkScooterActiveForCentralSolver(false, 0f);
             _debugActivationState = ActivationStateIdle;
             ResetMisfireState();
 
@@ -782,7 +808,8 @@ namespace Hecton8.Gameplay
         /// </summary>
         public float GetSpeedMultiplier()
         {
-            if (_isTransportBroken || !_isActive || !_hasBattery || _currentCharge < minChargeToActivate)
+            float currentCharge = BatteryCharge;
+            if (_isTransportBroken || !_isActive || !_hasBattery || currentCharge < minChargeToActivate)
                 return 1f;
 
             return math.lerp(1f, ResolveConfiguredTransportSpeedMultiplier(), ResolveEffectiveDriveThrottleOutput());
@@ -794,11 +821,12 @@ namespace Hecton8.Gameplay
         /// </summary>
         public float GetPropulsionForce()
         {
-            if (_isTransportBroken || !_isActive || !_hasBattery || _currentCharge < minChargeToActivate)
+            float currentCharge = BatteryCharge;
+            if (_isTransportBroken || !_isActive || !_hasBattery || currentCharge < minChargeToActivate)
                 return 0f;
 
             // Return additional force based on battery charge
-            return ResolveConfiguredTransportPropulsionForce() * ResolveEffectiveDriveThrottleOutput() * _currentCharge; // Scale force with battery level
+            return ResolveConfiguredTransportPropulsionForce() * ResolveEffectiveDriveThrottleOutput() * currentCharge; // Scale force with battery level
         }
 
         /// <summary>
@@ -822,7 +850,7 @@ namespace Hecton8.Gameplay
         /// </summary>
         public float GetTransportDragCoefficientMultiplier()
         {
-            if (_isTransportBroken || !_isActive || !_hasBattery || _currentCharge < minChargeToActivate)
+            if (_isTransportBroken || !_isActive || !_hasBattery || BatteryCharge < minChargeToActivate)
                 return 1f;
 
             return math.lerp(1f, ResolveConfiguredTransportDragCoefficientMultiplier(), ResolveEffectiveDriveThrottleOutput());
@@ -907,7 +935,8 @@ namespace Hecton8.Gameplay
             if (!_hasBattery || normalizedChargeDelta <= 0f)
                 return;
 
-            _currentCharge = math.saturate(_currentCharge + normalizedChargeDelta * ResolveStationChargeRateScale());
+            _currentCharge = math.saturate(BatteryCharge + normalizedChargeDelta * ResolveStationChargeRateScale());
+            SetRuntimeBatteryNormalized(_currentCharge);
             UpdatePowerIndicator();
             UpdateHUD();
         }
@@ -1027,69 +1056,6 @@ namespace Hecton8.Gameplay
             return math.clamp(transportDragCoefficientMultiplier, 0.01f, 4f);
         }
 
-        private void DrainInventoryCondition(float normalizedDrain)
-        {
-            if (!math.isfinite(normalizedDrain) || normalizedDrain <= 0f)
-                return;
-
-            ItemData itemData = ToolData;
-            int toolHashId = itemData != null ? itemData.PersistentHashId : 0;
-            if (toolHashId == 0)
-                return;
-
-            _inventoryConditionDrainAccumulator += normalizedDrain;
-            if (_inventoryConditionDrainAccumulator < 0.001f)
-                return;
-
-            IPlayerInventoryService inventoryService = GlobalRegistry.PlayerInventory;
-            PlayerInventory inventory = inventoryService != null ? inventoryService.Inventory : GlobalRegistry.PlayerInventoryRuntime;
-            if (inventory == null)
-            {
-                _inventoryConditionDrainAccumulator = math.min(_inventoryConditionDrainAccumulator, 0.01f);
-                return;
-            }
-
-            ushort qualityMilli;
-            if (_inventoryConditionAnchorHashId == toolHashId &&
-                _inventoryConditionAnchorIndex >= 0 &&
-                inventory.TryDrainItemConditionAtAnchor(
-                    _inventoryConditionAnchorIndex,
-                    toolHashId,
-                    _inventoryConditionDrainAccumulator,
-                    out qualityMilli))
-            {
-                ApplyInventoryConditionDrainResult(qualityMilli);
-                return;
-            }
-
-            if (inventory.TryDrainItemConditionByHash(
-                    toolHashId,
-                    _inventoryConditionDrainAccumulator,
-                    out int anchorIndex,
-                    out qualityMilli))
-            {
-                _inventoryConditionAnchorIndex = anchorIndex;
-                _inventoryConditionAnchorHashId = toolHashId;
-                ApplyInventoryConditionDrainResult(qualityMilli);
-                return;
-            }
-
-            ResetInventoryConditionDrainCache();
-            _inventoryConditionDrainAccumulator = math.min(_inventoryConditionDrainAccumulator, 0.01f);
-        }
-
-        private void ApplyInventoryConditionDrainResult(ushort qualityMilli)
-        {
-            _currentCharge = math.min(_currentCharge, qualityMilli * 0.001f);
-            _inventoryConditionDrainAccumulator = 0f;
-        }
-
-        private void ResetInventoryConditionDrainCache()
-        {
-            _inventoryConditionAnchorIndex = -1;
-            _inventoryConditionAnchorHashId = 0;
-        }
-
         private void BindTransportPresetToFeelContract()
         {
             PlayerTransportFeelContract transportFeelContract = TransportFeelContract;
@@ -1110,6 +1076,8 @@ namespace Hecton8.Gameplay
             _driveThrottleCurrent = AdvanceDriveThrottle(_driveThrottleCurrent, 0f, deltaTime);
             if (_driveThrottleCurrent <= 0.0001f)
                 DeactivateScooter();
+            else
+                MarkScooterActiveForCentralSolver(true, ResolveEffectiveDriveThrottleOutput());
         }
 
         private float AdvanceDriveThrottle(float currentThrottle, float targetThrottle, float deltaTime)
@@ -1514,13 +1482,14 @@ namespace Hecton8.Gameplay
                 return;
 
             powerIndicatorRenderer.GetPropertyBlock(_mpb);
+            float currentCharge = BatteryCharge;
 
-            if (!_hasBattery || _currentCharge <= 0f)
+            if (!_hasBattery || currentCharge <= 0f)
             {
                 // No power - dark
                 _mpb.SetColor(_EmissionColorID, Color.black);
             }
-            else if (_currentCharge <= 0.2f)
+            else if (currentCharge <= 0.2f)
             {
                 // Low battery - orange
                 _mpb.SetColor(_EmissionColorID, lowBatteryColor);
@@ -1984,7 +1953,7 @@ namespace Hecton8.Gameplay
             // Update battery display
             if (batteryText != null)
             {
-                int batteryPercent = RoundToIntPositive(_currentCharge * 100f);
+                int batteryPercent = RoundToIntPositive(BatteryCharge * 100f);
                 if (batteryPercent != _lastBatteryPercent)
                 {
                     SetBatteryHudText(batteryPercent);

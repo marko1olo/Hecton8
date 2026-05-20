@@ -18,13 +18,17 @@ This document is active only where it agrees with:
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
 
-R32 architecture R4/proof-wording correction is the latest artifact-backed local static DOC_GLOBAL boundary for architecture/root documentation. R31 remains the prior current-boundary propagation layer, R30 remains the prior internal-currentness layer, R29 remains the prior stale-gate/global-authority layer, R28 remains the prior interior-boundary layer, and R27 remains the latest source-counter/index snapshot until rerun.
+R45 root/architecture R43/R44 residue/proof-artifact/source-counter correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 ## Runtime Contract
 - `ThermalCellDTO` is `[StructLayout(LayoutKind.Explicit, Size = 16)]`.
 - Offsets: temperature `0`, conductivity `4`, convection Y `8`, flags `12`.
+- `ThermalGridTuningDTO` is `[StructLayout(LayoutKind.Explicit, Size = 128)]`; offset `124` is `SimulationTickDeltaSeconds`, reusing the former padding slot without growing the ABI.
 - Main buffers live in `GlobalDataVault` under `BufferID.AbyssalThermal*`.
+- SHINOBU_203 adds owner-local solver-control Vault buffers `70052` (`ThermalSolverConvergenceStateDTO[1]`), `70053` (`ThermalResidualSlot64[128]`), and `70054` (`int[1]` dump latch). These are convergence telemetry/control lanes, not thermal source truth.
+- Each `ThermalResidualSlot64` row is one explicit 64-byte cache line with residual at offset `0` and fault flags at offset `4`; primary jobs write via `[NativeSetThreadIndex]`, and the scalar reduction scans those padded slots instead of the voxel grid.
+- `ThermalSolverConvergenceStateDTO` is `[StructLayout(LayoutKind.Explicit, Size = 16)]` with residuals at `0`/`4`, omega at `8`, iteration count at `12`, and fault flags at `14`; `ThermalCellLayoutValidator` validates the layout on cold enable.
 - Hot solver jobs use raw pointers and `NativeArrayOptions.UninitializedMemory`.
 - Missing boot Vault is a fail-fast error; the abyssal solver and legacy thermodynamics hazard grid do not create private fallback Vaults.
 - Heat producers route through `IThermodynamicsService.TryInjectTransientHeatSource`; the legacy service facade publishes `ThermalSourceSignal` and `HectonHazardManager` is not the heat authority.
@@ -39,11 +43,14 @@ R32 architecture R4/proof-wording correction is the latest artifact-backed local
 - Heat producers write `ThermalSourceSignal`; `AbyssalThermodynamicsSolver` ingests the frame snapshot into Vault `HeatSourceDTO` records before scheduling jobs.
 - Transient signal sources expire after 6 solver frames unless refreshed. Direct authored sources set `HeatSourceDTO.FlagPersistent`; mock volcano sources set `HeatSourceDTO.FlagMock` and are removed when real heat arrives.
 - `ThermalInjectionJob` maps AUP to wrapped grid cells after subtracting `GridOriginAup`.
-- `HeatDiffusionSolverJob` is scheduled as a dependency chain. It preserves Front for audit and rotates writes through Back/ShiftScratch as `GlobalQualityWeight` raises Jacobi pass count.
+- Abyssal heat energy uses fixed deterministic simulation deltas, not dispatcher frame delta. `GlobalQualityWeight` resolves cadence continuously from 12 frames at minimum quality to 1 frame at full quality; `SimulationTickDeltaSeconds = cadenceFrames * 1/60`.
+- `AbyssalThermodynamicsSolver` ingests/refreshes `ThermalSourceSignal` records every dispatcher tick before cadence gating, so low-tier solver throttling does not drop producer data.
+- `HeatDiffusionSolverJob` is scheduled as a dependency chain with `ThermalSolverResidualReductionJob` after each pass. Each scheduled pass performs exactly one SOR relaxation from Front to Back; there is no hidden in-job `JacobiIterations` loop. It sanitizes ambient, max-stable, conductivity, dissipation, and source payload scalars before deriving thermal diffusion or injection math, and cold/editor tuning writes clamp grid resolution, active cell count, quality, cell size, conductivity, convection, and dissipation before they reach the Vault. It preserves Front for audit, rotates writes through Back/ShiftScratch as `GlobalQualityWeight` raises pass count, and terminal convergence makes later ping-pong passes copy forward instead of re-solving.
+- Residual sampling density is continuous: low `GlobalQualityWeight` samples a deterministic sparse mask, while high/ultra quality samples every thermal voxel and tightens the tolerance with stronger SOR omega.
 - `ShiftThermalGridJob` recenters the sliding window asynchronously with `UnsafeUtility.MemMove`.
 - `SampleTemperatureJob` is data-provider only; damage owners consume temperature output. At low `GlobalQualityWeight` it collapses to nearest-cell reads, then blends through a polynomial toward trilinear temperature/convection/conductivity sampling for high-tier perception.
 - Legacy `ThermodynamicsHazardGridRuntime` is also data-provider/updraft-only; direct heat/radiation damage emission was removed from its simulation chain.
-- Thermodynamics code no longer uses Unity `Time.frameCount`/`Time.deltaTime` for its own simulation metadata. The abyssal solver uses its own frame counter; the legacy grid uses `_simulationFrame`; thermal source signals use the core arena frame sequence.
+- Thermodynamics code no longer uses Unity `Time.frameCount`/`Time.deltaTime` for its own simulation metadata or abyssal heat integration. The abyssal solver uses its own frame counter and fixed `SimulationTickDeltaSeconds`; the legacy grid uses `_simulationFrame`; thermal source signals use the core arena frame sequence.
 
 ## Presentation
 - `ConvectionVelocityY` is a scalar fake for heat shimmer.
@@ -51,6 +58,6 @@ R32 architecture R4/proof-wording correction is the latest artifact-backed local
 - `OnDrawGizmos` draws a blue/yellow/white slice for designer validation.
 
 ## Black Box
-- `ThermalTelemetryEntry[300]` records max temperature, source count, iterations, solver time, energy before/after, flags, and NaN cell.
+- `ThermalTelemetryEntry[300]` records max temperature, source count, actual convergence iteration count, solver time, energy before/after, flags, and NaN/divergent cell evidence.
 - Energy audit compares Front+Injection against the final Back/ShiftScratch field and flags non-dissipation drift.
-- NaN detection dumps the ring to `Docs/AgentLogs/Dump_THERMO_SURGEON.bin`.
+- NaN or divergent solver detection dumps the ring immediately to `Docs/AgentLogs/Dump_THERMO_SURGEON.bin` and the SHINOBU_203 alias `Docs/AgentLogs/Dump_SHINOBU_203.bin`; max-iteration exhaustion dumps after five consecutive capped frames. Vault buffer `70054` latches the last dumped fault key and resets after a clean telemetry frame, preventing repeated disk writes for one continuous fault.

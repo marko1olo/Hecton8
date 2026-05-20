@@ -7,7 +7,7 @@ using Unity.Mathematics;
 
 namespace Hecton8.World
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential)]
     internal struct DestroyedOrganicEvent
     {
         public float3 Position;
@@ -21,7 +21,7 @@ namespace Hecton8.World
         public int MaterialClassId;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential)]
     internal struct ItemDropData
     {
         public float3 Position;
@@ -34,7 +34,7 @@ namespace Hecton8.World
         public uint SourceInstanceUid;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential)]
     internal struct EntropyYieldMaterialLutEntry
     {
         public float DensityKgPerM3;
@@ -43,7 +43,7 @@ namespace Hecton8.World
         public float QualityBias;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential)]
     internal struct FractionalDrillingYieldSample
     {
         public float3 Position;
@@ -56,7 +56,7 @@ namespace Hecton8.World
         public uint SourceInstanceUid;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential)]
     internal struct FractionalDrillingYieldResult
     {
         public float3 Position;

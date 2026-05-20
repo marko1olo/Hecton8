@@ -31,7 +31,6 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
             #pragma fragment Frag
             #pragma multi_compile_instancing
             #pragma instancing_options assumeuniformscaling
-            #pragma multi_compile _ HECTON_GPU_INDIRECT
             #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHTS _ADDITIONAL_LIGHT_SHADOWS
 
             #define UNITY_INDIRECT_DRAW_ARGS IndirectDrawIndexedArgs
@@ -43,9 +42,8 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
 
             CBUFFER_START(UnityPerMaterial)
                 float _Opacity;
-                float _HectonLodPassMode;
-                float _HectonImpostorWidth;
-                float _HectonImpostorHeight;
+                float4 _HectonVegetationRuntimeLodParams;
+                float4 _HectonVegetationRuntimeDrawParams;
             CBUFFER_END
 
             struct FloraInteractionPointGpuData
@@ -449,8 +447,8 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
                 float3 cameraForwardXZ = SafeNormalize3(float3(cameraDelta.x, 0.0, cameraDelta.z));
                 float3 billboardRight = SafeNormalize3(float3(cameraForwardXZ.z, 0.0, -cameraForwardXZ.x));
                 float3 billboardUp = float3(0.0, 1.0, 0.0);
-                float widthAtHeight = instanceWidth * lerp(1.0, 0.42, heightMask) * max(_HectonImpostorWidth, 0.25);
-                float heightScale = instanceHeight * max(_HectonImpostorHeight, 0.25);
+                float widthAtHeight = instanceWidth * lerp(1.0, 0.42, heightMask) * max(_HectonVegetationRuntimeDrawParams.y, 0.25);
+                float heightScale = instanceHeight * max(_HectonVegetationRuntimeDrawParams.z, 0.25);
                 return originWS + billboardRight * (localPosition.x * widthAtHeight) + billboardUp * (heightMask * heightScale);
             }
 
@@ -568,7 +566,7 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
                     animatedPositionWS.y -= instanceHeight * bendMask * (0.06 * stateWeights.x + 0.18 * stateWeights.y);
                 }
 
-                if (_HectonLodPassMode >= 0.5)
+                if (_HectonVegetationRuntimeLodParams.x >= 0.5)
                 {
                     animatedPositionWS = ResolveBillboardPositionWS(originWS + driftOffsetWS, localPosition, instanceHeight, instanceWidth, heightMask, cameraPositionWS);
                     animatedPositionWS += flowSynchronyOffset * 0.85;
@@ -608,10 +606,11 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
 #if UNITY_ANY_INSTANCING_ENABLED
                 sourceInstanceIndex = unity_InstanceID;
 #endif
-                #if defined(HECTON_GPU_INDIRECT)
+                if (_HectonVegetationRuntimeDrawParams.w > 0.5)
+                {
                     InitIndirectDrawArgs(0);
                     sourceInstanceIndex = _HectonVisibleInstanceIndices[GetIndirectInstanceID(sourceInstanceIndex)];
-                #endif
+                }
                 float4x4 instanceMatrix = _HectonInstanceMatrices[sourceInstanceIndex];
                 HectonVegetationInstanceGpuData instanceData = _HectonVegetationInstanceData[sourceInstanceIndex];
 

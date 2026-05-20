@@ -1,6 +1,8 @@
 #if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using Unity.Collections;
 using UnityEditor;
 using UnityEngine;
@@ -14,14 +16,16 @@ namespace Hecton8.EditorTools
     {
         private const string AuditMenuPath = "Hecton/Validation/Asset Pipeline/Audit Channel Packing";
         private const string EnforceMenuPath = "Hecton/Validation/Asset Pipeline/Enforce Channel Packing";
-        private const string FirstPartyMaterialRoot = "Assets/_Project/Art/Materials";
+        private const string RenderingScanMenuPath = "Hecton8/Rendering/Texture Channel Packer/Scan Unoptimized PBR Materials";
+        private const string RenderingReportPath = "Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json";
         private const int PackedMaskPreviewResolution = 64;
         private const int MaxConsoleEntries = 32;
         private const byte ChannelDifferenceThreshold = 3;
-        private static readonly string[] MaterialRoots = { FirstPartyMaterialRoot };
+        private static readonly string[] MaterialRoots = { "Assets/_Project/Art/Materials", "Assets/_Project/Materials", "Assets/_Project/Prefabs" };
         private static readonly string[] PackedMaskPropertyNames = { "_MaskMap", "_Mask_Map" };
         private static readonly HashSet<string> TargetShaders = new HashSet<string>(StringComparer.Ordinal)
         {
+            "Hecton8/Rendering/UberNoir",
             "Universal Render Pipeline/Lit",
             "Standard",
             "Hecton8/Environment/Hecton_DryZoneLit",
@@ -49,6 +53,7 @@ namespace Hecton8.EditorTools
         private static void RunFromMenu()
         {
             AuditResult result = RunAudit();
+            WriteRenderingOptimizationReport(result, applyImporterFixes: false);
             Debug.Log(
                 $"[HectonMaterialChannelPackValidator] Scanned={result.ScannedMaterialCount}, " +
                 $"Targeted={result.TargetMaterialCount}, AnalysedMasks={result.AnalysedMaskCount}, " +
@@ -62,6 +67,7 @@ namespace Hecton8.EditorTools
         private static void RunEnforcementFromMenu()
         {
             AuditResult result = RunEnforcement();
+            WriteRenderingOptimizationReport(result, applyImporterFixes: true);
             Debug.Log(
                 $"[HectonMaterialChannelPackValidator] Enforcement complete. Scanned={result.ScannedMaterialCount}, " +
                 $"Targeted={result.TargetMaterialCount}, AnalysedMasks={result.AnalysedMaskCount}, " +
@@ -70,6 +76,16 @@ namespace Hecton8.EditorTools
                 $"Compliant={result.CompliantMaterials.Count}.");
             LogEntries("VRAM violations", result.VramViolations);
             LogEntries("Packed-mask violations", result.PackedMaskViolations);
+        }
+
+        [MenuItem(RenderingScanMenuPath, priority = 203)]
+        private static void RunRenderingOptimizationScanFromMenu()
+        {
+            AuditResult result = RunAudit();
+            WriteRenderingOptimizationReport(result, applyImporterFixes: false);
+            Debug.Log(
+                $"[HectonMaterialChannelPackValidator] Rendering optimization report wrote {RenderingReportPath}. " +
+                $"Scanned={result.ScannedMaterialCount}, LooseStacks={result.VramViolations.Count}, PackedMaskViolations={result.PackedMaskViolations.Count}.");
         }
 
         internal static AuditResult RunAudit()
@@ -113,10 +129,69 @@ namespace Hecton8.EditorTools
                     result.CompliantMaterials.Add(materialPath);
             }
 
+            ScanPrefabMaterials(result, applyImporterFixes, issueBuffer, ref anyImporterChanged);
+
             if (anyImporterChanged)
                 AssetDatabase.SaveAssets();
 
             return result;
+        }
+
+        private static void ScanPrefabMaterials(
+            AuditResult result,
+            bool applyImporterFixes,
+            List<string> issueBuffer,
+            ref bool anyImporterChanged)
+        {
+            string[] prefabGuids = AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/_Project/Prefabs" });
+            for (int prefabIndex = 0; prefabIndex < prefabGuids.Length; prefabIndex++)
+            {
+                string prefabPath = AssetDatabase.GUIDToAssetPath(prefabGuids[prefabIndex]);
+                GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+                if (prefab == null)
+                    continue;
+
+                Renderer[] renderers = prefab.GetComponentsInChildren<Renderer>(true);
+                for (int rendererIndex = 0; rendererIndex < renderers.Length; rendererIndex++)
+                {
+                    Renderer renderer = renderers[rendererIndex];
+                    if (renderer == null)
+                        continue;
+
+                    Material[] materials = renderer.sharedMaterials;
+                    for (int materialIndex = 0; materialIndex < materials.Length; materialIndex++)
+                    {
+                        Material material = materials[materialIndex];
+                        if (material == null || !ShouldAudit(material))
+                            continue;
+
+                        string materialPath = ResolvePrefabMaterialPath(prefabPath, renderer, material, materialIndex);
+                        result.ScannedMaterialCount++;
+                        result.TargetMaterialCount++;
+                        issueBuffer.Clear();
+                        if (applyImporterFixes && ShouldValidatePackedMask(material.shader.name))
+                        {
+                            anyImporterChanged |= TryFixMaskImporter(material, "_MaskMap", result);
+                            anyImporterChanged |= TryFixMaskImporter(material, "_Mask_Map", result);
+                        }
+
+                        InspectMaterial(materialPath, material, issueBuffer, result);
+                        if (issueBuffer.Count <= 0)
+                            result.CompliantMaterials.Add(materialPath);
+                    }
+                }
+            }
+        }
+
+        private static string ResolvePrefabMaterialPath(string prefabPath, Renderer renderer, Material material, int materialIndex)
+        {
+            string materialAssetPath = AssetDatabase.GetAssetPath(material);
+            if (!string.IsNullOrEmpty(materialAssetPath))
+                return materialAssetPath;
+
+            string rendererName = renderer != null ? renderer.name : "Renderer";
+            string materialName = material != null ? material.name : "Material";
+            return prefabPath + "::" + rendererName + "[" + materialIndex.ToString(System.Globalization.CultureInfo.InvariantCulture) + "]::" + materialName;
         }
 
         private static bool ShouldAudit(Material material)
@@ -130,6 +205,8 @@ namespace Hecton8.EditorTools
             return HasTexture(material, "_MetallicGlossMap")
                 || HasTexture(material, "_OcclusionMap")
                 || HasTexture(material, "_SpecGlossMap")
+                || HasTexture(material, "_RoughnessMap")
+                || HasTexture(material, "_RoughnessDirt")
                 || HasTexture(material, "_EmissionMap");
         }
 
@@ -145,6 +222,7 @@ namespace Hecton8.EditorTools
             bool hasLooseMetallic = HasTexture(material, "_MetallicGlossMap");
             bool hasLooseOcclusion = HasTexture(material, "_OcclusionMap");
             bool hasLooseSpecGloss = HasTexture(material, "_SpecGlossMap");
+            bool hasLooseRoughness = HasTexture(material, "_RoughnessMap") || HasTexture(material, "_RoughnessDirt");
             bool hasLooseEmission = HasTexture(material, "_EmissionMap");
 
             if (string.Equals(shaderName, "Hecton8/Environment/Hecton_AbyssalVoxelRock", StringComparison.Ordinal) &&
@@ -154,12 +232,12 @@ namespace Hecton8.EditorTools
                 AddPackedMaskViolation(result, materialPath, "Hecton_AbyssalVoxelRock samples _Mask_Map; assign the packed RGBA mask there, not only _MaskMap.", issueBuffer);
             }
 
-            if (hasLooseMetallic || hasLooseOcclusion || hasLooseSpecGloss || hasLooseEmission)
+            if (hasLooseMetallic || hasLooseOcclusion || hasLooseSpecGloss || hasLooseRoughness || hasLooseEmission)
             {
                 AddVramViolation(
                     result,
                     materialPath,
-                    $"uses loose texture stack: metallic={Bool01(hasLooseMetallic)}, ao={Bool01(hasLooseOcclusion)}, specGloss={Bool01(hasLooseSpecGloss)}, emission={Bool01(hasLooseEmission)}.",
+                    $"uses loose texture stack: metallic={Bool01(hasLooseMetallic)}, ao={Bool01(hasLooseOcclusion)}, roughness={Bool01(hasLooseRoughness)}, specGloss={Bool01(hasLooseSpecGloss)}, emission={Bool01(hasLooseEmission)}.",
                     issueBuffer);
             }
 
@@ -194,8 +272,12 @@ namespace Hecton8.EditorTools
             TextureImporter importer = AssetImporter.GetAtPath(texturePath) as TextureImporter;
             if (importer == null)
             {
-                AddPackedMaskViolation(result, materialPath, $"packed mask '{texture.name}' has no TextureImporter at '{texturePath}'.", issueBuffer);
-                RegisterQuarantineCandidate(result, texturePath);
+                if (!ValidatePackedTextureAsset(materialPath, texturePath, texture, issueBuffer, result))
+                {
+                    AddPackedMaskViolation(result, materialPath, $"packed mask '{texture.name}' has no TextureImporter at '{texturePath}'.", issueBuffer);
+                    RegisterQuarantineCandidate(result, texturePath);
+                }
+
                 return;
             }
 
@@ -228,7 +310,7 @@ namespace Hecton8.EditorTools
 
             if (analysis.RgbChannelsCollapseToGreyscale)
             {
-                AddPackedMaskViolation(result, materialPath, $"packed mask '{texture.name}' collapses to grayscale across RGB; packed metallic/AO/smoothness data is absent.", issueBuffer);
+                AddPackedMaskViolation(result, materialPath, $"packed mask '{texture.name}' collapses to grayscale across RGB; packed AO/Roughness/Metallic data is absent.", issueBuffer);
             }
         }
 
@@ -274,6 +356,40 @@ namespace Hecton8.EditorTools
             importer.SaveAndReimport();
             result.FixedImporterCount++;
             result.FixedImporters.Add(texturePath);
+            return true;
+        }
+
+        private static bool ValidatePackedTextureAsset(
+            string materialPath,
+            string texturePath,
+            Texture texture,
+            List<string> issueBuffer,
+            AuditResult result)
+        {
+            Texture2D texture2D = texture as Texture2D;
+            if (texture2D == null || !texturePath.EndsWith(".asset", StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            if (texture2D.format != TextureFormat.BC7)
+                AddPackedMaskViolation(result, materialPath, $"packed mask asset '{texture.name}' format is {texture2D.format}. Expected BC7.", issueBuffer);
+
+            if (!IsPowerOfTwo(texture2D.width) || !IsPowerOfTwo(texture2D.height))
+                AddPackedMaskViolation(result, materialPath, $"packed mask asset '{texture.name}' is {texture2D.width}x{texture2D.height}. Expected power-of-two dimensions.", issueBuffer);
+
+            if (texture2D.mipmapCount <= 1)
+                AddPackedMaskViolation(result, materialPath, $"packed mask asset '{texture.name}' has no mip chain.", issueBuffer);
+
+            result.AnalysedMaskCount++;
+            if (!TryAnalysePackedMaskTexture(texture, null, out PackedMaskAnalysis analysis, out string failureReason))
+            {
+                AddPackedMaskViolation(result, materialPath, $"packed mask asset '{texture.name}' analysis failed: {failureReason}", issueBuffer);
+                RegisterQuarantineCandidate(result, texturePath);
+                return true;
+            }
+
+            if (analysis.RgbChannelsCollapseToGreyscale)
+                AddPackedMaskViolation(result, materialPath, $"packed mask asset '{texture.name}' collapses to grayscale across RGB; packed AO/Roughness/Metallic data is absent.", issueBuffer);
+
             return true;
         }
 
@@ -323,7 +439,8 @@ namespace Hecton8.EditorTools
                     }
                 }
 
-                analysis = new PackedMaskAnalysis(importer.DoesSourceTextureHaveAlpha(), !hasRgbDifference);
+                bool hasAlpha = importer == null || importer.DoesSourceTextureHaveAlpha();
+                analysis = new PackedMaskAnalysis(hasAlpha, !hasRgbDifference);
                 return true;
             }
             catch (Exception exception)
@@ -427,9 +544,123 @@ namespace Hecton8.EditorTools
         {
             return string.Equals(shaderName, "Hecton8/Environment/Hecton_AbyssalVoxelRock", StringComparison.Ordinal) ||
                    string.Equals(shaderName, "Hecton8/Environment/Hecton_DryZoneLit", StringComparison.Ordinal) ||
+                   string.Equals(shaderName, "Hecton8/Rendering/UberNoir", StringComparison.Ordinal) ||
                    string.Equals(shaderName, "Hecton8/World/WreckIndirectLit", StringComparison.Ordinal) ||
                    string.Equals(shaderName, "Hecton8/World/ScatterIndirectLit", StringComparison.Ordinal) ||
                    string.Equals(shaderName, "Hecton8/Fauna/LeviathanOrganic", StringComparison.Ordinal);
+        }
+
+        private static void WriteRenderingOptimizationReport(AuditResult result, bool applyImporterFixes)
+        {
+            string directory = Path.GetDirectoryName(RenderingReportPath);
+            if (!string.IsNullOrEmpty(directory))
+                Directory.CreateDirectory(directory);
+
+            File.WriteAllText(RenderingReportPath, BuildRenderingOptimizationReportJson(result, applyImporterFixes), Encoding.UTF8);
+        }
+
+        private static string BuildRenderingOptimizationReportJson(AuditResult result, bool applyImporterFixes)
+        {
+            StringBuilder builder = new StringBuilder(4096); // COLD ALLOC: StringBuilder[4096] - editor scanner report - owner: HectonMaterialChannelPackValidator
+            builder.Append("{\n");
+            AppendJson(builder, "schema", "hecton8.rendering_optimization_report.v1", true);
+            AppendJson(builder, "scanner", "HectonMaterialChannelPackValidator", true);
+            AppendJson(builder, "applyImporterFixes", applyImporterFixes, true);
+            AppendJson(builder, "rollbackNetcodeExcluded", true, true);
+            AppendJson(builder, "merkleStateExcluded", true, true);
+            AppendJson(builder, "stateRingBufferExcluded", true, true);
+            AppendJson(builder, "scannedMaterials", result.ScannedMaterialCount, true);
+            AppendJson(builder, "targetMaterials", result.TargetMaterialCount, true);
+            AppendJson(builder, "analysedMasks", result.AnalysedMaskCount, true);
+            AppendJson(builder, "fixedImporters", result.FixedImporterCount, true);
+            AppendJson(builder, "looseSamplerStackCount", result.VramViolations.Count, true);
+            AppendJson(builder, "packedMaskViolationCount", result.PackedMaskViolations.Count, true);
+            AppendJson(builder, "quarantineCandidateCount", result.QuarantineCandidatePaths.Count, true);
+            AppendArray(builder, "looseSamplerStacks", result.VramViolations, true);
+            AppendArray(builder, "packedMaskViolations", result.PackedMaskViolations, true);
+            AppendArray(builder, "fixedImportersList", result.FixedImporters, true);
+            AppendArray(builder, "quarantineCandidates", result.QuarantineCandidatePaths, false);
+            builder.Append("}\n");
+            return builder.ToString();
+        }
+
+        private static void AppendJson(StringBuilder builder, string name, string value, bool trailingComma)
+        {
+            builder.Append("  \"");
+            builder.Append(name);
+            builder.Append("\": \"");
+            AppendEscaped(builder, value);
+            builder.Append('"');
+            if (trailingComma)
+                builder.Append(',');
+            builder.Append('\n');
+        }
+
+        private static void AppendJson(StringBuilder builder, string name, int value, bool trailingComma)
+        {
+            builder.Append("  \"");
+            builder.Append(name);
+            builder.Append("\": ");
+            builder.Append(value);
+            if (trailingComma)
+                builder.Append(',');
+            builder.Append('\n');
+        }
+
+        private static void AppendJson(StringBuilder builder, string name, bool value, bool trailingComma)
+        {
+            builder.Append("  \"");
+            builder.Append(name);
+            builder.Append("\": ");
+            builder.Append(value ? "true" : "false");
+            if (trailingComma)
+                builder.Append(',');
+            builder.Append('\n');
+        }
+
+        private static void AppendArray(StringBuilder builder, string name, List<string> values, bool trailingComma)
+        {
+            builder.Append("  \"");
+            builder.Append(name);
+            builder.Append("\": [\n");
+            int count = values != null ? values.Count : 0;
+            for (int i = 0; i < count; i++)
+            {
+                builder.Append("    \"");
+                AppendEscaped(builder, values[i]);
+                builder.Append('"');
+                if (i + 1 < count)
+                    builder.Append(',');
+                builder.Append('\n');
+            }
+
+            builder.Append("  ]");
+            if (trailingComma)
+                builder.Append(',');
+            builder.Append('\n');
+        }
+
+        private static void AppendEscaped(StringBuilder builder, string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return;
+
+            for (int i = 0; i < value.Length; i++)
+            {
+                char c = value[i];
+                if (c == '\\' || c == '"')
+                    builder.Append('\\');
+                if (c == '\n')
+                {
+                    builder.Append("\\n");
+                    continue;
+                }
+
+                if (c == '\r')
+                    continue;
+
+                builder.Append(c);
+            }
         }
 
         private static bool ShouldValidatePackedMask(string shaderName)

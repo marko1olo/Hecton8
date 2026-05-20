@@ -44,7 +44,7 @@ namespace Hecton8.Global.Contracts
     /// <summary>
     /// Fixed-size payload for cross-assembly SignalBus traffic. Payload body is 112 bytes; total size is 128 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 128, Pack = 8)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct GlobalSignalPayload
     {
         [FieldOffset(0)] public uint TypeHash;
@@ -71,7 +71,7 @@ namespace Hecton8.Global.Contracts
     /// <summary>
     /// Raw DataVault slice handle passed across assembly boundaries. Ownership stays with the allocating assembly.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32, Pack = 8)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct GlobalNativeBufferHandle
     {
         [FieldOffset(0)] public IntPtr Pointer;
@@ -86,7 +86,7 @@ namespace Hecton8.Global.Contracts
     /// <summary>
     /// Raw Burst function pointer slot for non-generic registries and CSV-driven mock swaps.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32, Pack = 8)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct GlobalFunctionPointerHandle
     {
         [FieldOffset(0)] public IntPtr Pointer;
@@ -101,7 +101,7 @@ namespace Hecton8.Global.Contracts
     /// Writable alias contract. A non-zero WriterSystemHash grants exclusive write ownership for the generation.
     /// </summary>
     [NoAlias]
-    [StructLayout(LayoutKind.Explicit, Size = 64, Pack = 8)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct NativeMemoryAliasContract
     {
         [FieldOffset(0)] public GlobalNativeBufferHandle ReadOnlyFront;
@@ -116,7 +116,7 @@ namespace Hecton8.Global.Contracts
     /// <summary>
     /// Compile-time offset record emitted by the vault offset generator.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32, Pack = 8)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct VaultOffsetRecord
     {
         [FieldOffset(0)] public uint TypeHash;
@@ -131,7 +131,7 @@ namespace Hecton8.Global.Contracts
     /// <summary>
     /// CSV-controlled implementation route. Used for mock injection without C# source edits.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64, Pack = 8)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct AssemblyRoutingOverride
     {
         [FieldOffset(0)] public uint ContractHash;
@@ -153,7 +153,7 @@ namespace Hecton8.Global.Contracts
     /// <summary>
     /// Bootstrap registration context passed by the deterministic bootstrapper.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 80, Pack = 8)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct BootstrapRegistryContext
     {
         [FieldOffset(0)] public uint FrameIndex;
@@ -161,12 +161,18 @@ namespace Hecton8.Global.Contracts
         [FieldOffset(8)] public GlobalNativeBufferHandle BufferTable;
         [FieldOffset(40)] public GlobalFunctionPointerHandle RegistryTable;
         [FieldOffset(72)] public ulong Reserved;
+        [FieldOffset(80)] public ulong Reserved1;
+        [FieldOffset(88)] public ulong Reserved2;
+        [FieldOffset(96)] public ulong Reserved3;
+        [FieldOffset(104)] public ulong Reserved4;
+        [FieldOffset(112)] public ulong Reserved5;
+        [FieldOffset(120)] public ulong Reserved6;
     }
 
     /// <summary>
     /// Dependency injection snapshot passed after registration. Runtime nodes cache data from this struct.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 80, Pack = 8)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct BootstrapDependencySnapshot
     {
         [FieldOffset(0)] public uint FrameIndex;
@@ -174,6 +180,12 @@ namespace Hecton8.Global.Contracts
         [FieldOffset(8)] public GlobalNativeBufferHandle ServiceTable;
         [FieldOffset(40)] public GlobalNativeBufferHandle SignalTable;
         [FieldOffset(72)] public ulong Reserved;
+        [FieldOffset(80)] public ulong Reserved1;
+        [FieldOffset(88)] public ulong Reserved2;
+        [FieldOffset(96)] public ulong Reserved3;
+        [FieldOffset(104)] public ulong Reserved4;
+        [FieldOffset(112)] public ulong Reserved5;
+        [FieldOffset(120)] public ulong Reserved6;
     }
 
     /// <summary>
@@ -205,16 +217,27 @@ namespace Hecton8.Global.Contracts
     /// <summary>
     /// Contract facade for synchronous physics calls without a concrete physics assembly reference.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public readonly struct PhysicsFacade
     {
+        [FieldOffset(0)]
         public readonly FunctionPointer<PhysicsApplyForceDelegate> ApplyForceFunction;
+        [FieldOffset(8)]
         public readonly GlobalNativeBufferHandle BodyBuffer;
+        [FieldOffset(40)]
+        private readonly ulong _pad0;
+        [FieldOffset(48)]
+        private readonly ulong _pad1;
+        [FieldOffset(56)]
+        private readonly ulong _pad2;
 
         public PhysicsFacade(FunctionPointer<PhysicsApplyForceDelegate> applyForceFunction, GlobalNativeBufferHandle bodyBuffer)
         {
             ApplyForceFunction = applyForceFunction;
             BodyBuffer = bodyBuffer;
+            _pad0 = 0UL;
+            _pad1 = 0UL;
+            _pad2 = 0UL;
         }
 
         public void ApplyForce(int bodyIndex, float3 force, float deltaTime)

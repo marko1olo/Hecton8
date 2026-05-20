@@ -12,6 +12,7 @@ using Hecton8.Optimization;
 using Hecton8.Visor;
 using Hecton8.Biolum;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -67,7 +68,7 @@ namespace Hecton8.World
         internal static SargassumMicroFaunaBoids ActiveRuntimeInstance => GlobalRegistry.SargassumMicroFauna;
 
         // GPU StructuredBuffer interop: Pack=4 matches HLSL scalar packing; ValidateGpuStructLayouts gates stride and offsets.
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
+        [StructLayout(LayoutKind.Sequential, Size = 32)]
         internal struct BoidData
         {
             // Byte layout proof vs HLSL StructuredBuffer<BoidData>:
@@ -81,53 +82,57 @@ namespace Hecton8.World
             public uint StateFlags;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         internal struct BoidKillSignal
         {
-            public float3 KillPositionWS;
-            public float3 PredatorPositionWS;
-            public int BoidId;
-            public uint PredatorId;
-            public float FearRadiusMeters;
-            public float FearAmount;
+            [FieldOffset(0)] public float3 KillPositionWS;
+            [FieldOffset(12)] public float3 PredatorPositionWS;
+            [FieldOffset(24)] public int BoidId;
+            [FieldOffset(28)] public uint PredatorId;
+            [FieldOffset(32)] public float FearRadiusMeters;
+            [FieldOffset(36)] public float FearAmount;
+            [FieldOffset(40)] private ulong _pad0;
+            [FieldOffset(48)] private ulong _pad1;
+            [FieldOffset(56)] private ulong _pad2;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct FoodChainTelemetryEntry
         {
-            public uint FrameIndex;
-            public uint StateHash;
-            public uint SourceHash;
-            public uint Flags;
-            public int ActiveBoidCount;
-            public int ConsumedBoidCount;
-            public int PendingKillJob;
-            public int LodTier;
-            public float3 FieldCenterWS;
-            public float3 EventPositionWS;
-            public uint AnomalyHash;
-            public float SimulationTime;
+            [FieldOffset(0)] public uint FrameIndex;
+            [FieldOffset(4)] public uint StateHash;
+            [FieldOffset(8)] public uint SourceHash;
+            [FieldOffset(12)] public uint Flags;
+            [FieldOffset(16)] public int ActiveBoidCount;
+            [FieldOffset(20)] public int ConsumedBoidCount;
+            [FieldOffset(24)] public int PendingKillJob;
+            [FieldOffset(28)] public int LodTier;
+            [FieldOffset(32)] public float3 FieldCenterWS;
+            [FieldOffset(44)] public float3 EventPositionWS;
+            [FieldOffset(56)] public uint AnomalyHash;
+            [FieldOffset(60)] public float SimulationTime;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct BoidSensoryBlackBoxEntry
         {
-            public uint FrameIndex;
-            public uint StateHash;
-            public uint Flags;
-            public int ActiveThreatCount;
-            public float4 SubmarineThreat;
-            public float4 FlashlightThreat;
-            public float4 AcousticPingRadii;
+            [FieldOffset(0)] public uint FrameIndex;
+            [FieldOffset(4)] public uint StateHash;
+            [FieldOffset(8)] public uint Flags;
+            [FieldOffset(12)] public int ActiveThreatCount;
+            [FieldOffset(16)] public float4 SubmarineThreat;
+            [FieldOffset(32)] public float4 FlashlightThreat;
+            [FieldOffset(48)] public float4 AcousticPingRadii;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 8)]
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
         internal struct PopulationDensityPoint
         {
-            public int CenterCellId;
-            public ushort Count;
-            public byte Species;
-            public byte RadiusMeters;
+            [FieldOffset(0)] public int CenterCellId;
+            [FieldOffset(4)] public ushort Count;
+            [FieldOffset(6)] public byte Species;
+            [FieldOffset(7)] public byte RadiusMeters;
+            [FieldOffset(8)] private ulong _pad0;
         }
 
         private struct NativeRingBuffer<T> : IDisposable where T : struct
@@ -276,37 +281,37 @@ namespace Hecton8.World
             Sleep = 2
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct FoveatedSimulationInput
         {
-            public float FrameDeltaTime;
-            public float CameraDistanceSq;
-            public float FullDistanceMeters;
-            public float SleepDistanceMeters;
-            public float MaxStepSeconds;
-            public float MinTimeScale;
-            public float PreviousAccumulator;
-            public float Padding;
+            [FieldOffset(0)] public float FrameDeltaTime;
+            [FieldOffset(4)] public float CameraDistanceSq;
+            [FieldOffset(8)] public float FullDistanceMeters;
+            [FieldOffset(12)] public float SleepDistanceMeters;
+            [FieldOffset(16)] public float MaxStepSeconds;
+            [FieldOffset(20)] public float MinTimeScale;
+            [FieldOffset(24)] public float PreviousAccumulator;
+            [FieldOffset(28)] public float Padding;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct FoveatedSimulationDecision
         {
-            public float SimulationDeltaTime;
-            public float Hibernation01;
-            public float Accumulator;
-            public int Tier;
-            public int DispatchSimulation;
-            public float CameraDistanceSq;
-            public float Padding0;
-            public float Padding1;
+            [FieldOffset(0)] public float SimulationDeltaTime;
+            [FieldOffset(4)] public float Hibernation01;
+            [FieldOffset(8)] public float Accumulator;
+            [FieldOffset(12)] public int Tier;
+            [FieldOffset(16)] public int DispatchSimulation;
+            [FieldOffset(20)] public float CameraDistanceSq;
+            [FieldOffset(24)] public float Padding0;
+            [FieldOffset(28)] public float Padding1;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct EvaluateSimulationLodJob : IJob
         {
-            [ReadOnly] public NativeArray<FoveatedSimulationInput> Input;
-            public NativeArray<FoveatedSimulationDecision> Output;
+            [ReadOnly, NoAlias] public NativeArray<FoveatedSimulationInput> Input;
+            [NoAlias] public NativeArray<FoveatedSimulationDecision> Output;
 
             public void Execute()
             {
@@ -360,7 +365,7 @@ namespace Hecton8.World
         }
 
         // GPU StructuredBuffer interop: Pack=4 matches HLSL float/uint field packing.
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
+        [StructLayout(LayoutKind.Sequential, Size = 32)]
         private struct GrazingAnchorData
         {
             public Vector3 Position;
@@ -371,7 +376,7 @@ namespace Hecton8.World
         }
 
         // GPU StructuredBuffer interop: Pack=4 matches HLSL float/uint field packing.
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 48)]
+        [StructLayout(LayoutKind.Sequential, Size = 48)]
         private struct MassiveThreatData
         {
             public Vector3 Position;
@@ -384,7 +389,7 @@ namespace Hecton8.World
         }
 
         // GPU StructuredBuffer interop: Pack=4 matches HLSL float/uint field packing.
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
+        [StructLayout(LayoutKind.Sequential, Size = 32)]
         private struct FormationBeaconData
         {
             public Vector3 Position;
@@ -395,7 +400,7 @@ namespace Hecton8.World
         }
 
         // GPU StructuredBuffer interop: Pack=4 matches HLSL float/uint field packing.
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
+        [StructLayout(LayoutKind.Sequential, Size = 32)]
         private struct FormationObstacleData
         {
             public Vector3 Position;
@@ -404,23 +409,25 @@ namespace Hecton8.World
             public Vector3 Padding;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 28)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private readonly struct StaticObstacleData
         {
-            public readonly float3 Center;
-            public readonly float3 Extents;
-            public readonly float Radius;
+            [FieldOffset(0)] public readonly float3 Center;
+            [FieldOffset(12)] public readonly float3 Extents;
+            [FieldOffset(24)] public readonly float Radius;
+            [FieldOffset(28)] private readonly uint _pad0;
 
             public StaticObstacleData(float3 center, float3 extents, float radius)
             {
                 Center = center;
                 Extents = extents;
                 Radius = radius;
+                _pad0 = 0u;
             }
         }
 
         // GPU StructuredBuffer interop: Pack=4 matches HLSL float/uint field packing.
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
+        [StructLayout(LayoutKind.Sequential, Size = 32)]
         private struct LeviathanNodeData
         {
             public float3 Position;
@@ -542,7 +549,7 @@ namespace Hecton8.World
         }
 
         // GPU frame packet interop: Pack=4 preserves int4/float4 HLSL stride.
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 768)]
+        [StructLayout(LayoutKind.Sequential, Size = 768)]
         private struct SimulationFrameConstants
         {
             public float4 Simulation0;
@@ -617,10 +624,10 @@ namespace Hecton8.World
         private const uint ConsumedBoidStateFlag = (uint)BoidStateFlags.Consumed;
         private const uint BoidVisualMutationMask = (uint)(BoidStateFlags.AggressiveMutation | BoidStateFlags.VisualMutationResolved);
         private const int PredatorKillSignalDrainLimit = 8;
-        private const int BoidKillSignalSizeBytes = 48;
+        private const int BoidKillSignalSizeBytes = 64;
         private const int FoveatedSimulationInputSizeBytes = 32;
         private const int FoveatedSimulationDecisionSizeBytes = 32;
-        private const int StaticObstacleDataSizeBytes = 28;
+        private const int StaticObstacleDataSizeBytes = 32;
         private const float PredatorKillDefaultFearRadiusMeters = 10f;
         private const float PredatorKillFearDurationSeconds = 0.55f;
         private const float PredatorKillFearAmount = 100f;
@@ -2649,11 +2656,12 @@ namespace Hecton8.World
                 return false;
             }
 
-            _ecosystemApexInSector = sample.ApexInSector;
-            ecosystemPopulationCount = math.max(0, sample.ApexInSector ? sample.PreyPopulation >> 2 : sample.PreyPopulation);
+            bool apexInSector = sample.ApexInSector != 0;
+            _ecosystemApexInSector = apexInSector;
+            ecosystemPopulationCount = math.max(0, apexInSector ? sample.PreyPopulation >> 2 : sample.PreyPopulation);
             _ecosystemFitness = math.saturate(sample.Fitness);
-            _ecosystemSpeedMultiplier = math.max(0.25f, sample.SpeedMultiplier) * (sample.ApexInSector ? 1.25f : 1f);
-            _ecosystemCamouflageIndex = math.saturate(sample.CamouflageIndex + (sample.ApexInSector ? 0.35f : 0f));
+            _ecosystemSpeedMultiplier = math.max(0.25f, sample.SpeedMultiplier) * (apexInSector ? 1.25f : 1f);
+            _ecosystemCamouflageIndex = math.saturate(sample.CamouflageIndex + (apexInSector ? 0.35f : 0f));
             _debugEcosystemFitness = _ecosystemFitness;
             _debugEcosystemCamouflageIndex = _ecosystemCamouflageIndex;
             _debugApexInSector = _ecosystemApexInSector;

@@ -113,7 +113,8 @@ class BuildArchitectureAtlasTests(unittest.TestCase):
             True,
         )
 
-        self.assertEqual(analysis["line_count"], source.count("\n") + 1)
+        expected_lines = source.count("\n") + (0 if not source or source.endswith("\n") else 1)
+        self.assertEqual(analysis["line_count"], expected_lines)
         self.assertEqual(analysis["signals"][0]["name"], "CacheProbeSignal")
         self.assertIn("CacheProbeSignal", analysis["signal_uses"])
         self.assertIn("Publish", analysis["signal_uses"]["CacheProbeSignal"]["methods"])
@@ -153,7 +154,9 @@ class BuildArchitectureAtlasTests(unittest.TestCase):
         self.assertIn("## Phi-Resonance Connectivity Model", text)
         self.assertIn("Tools/BuildArchitectureAtlas.py", text)
         self.assertIn("Docs/DEPENDENCY_GRAPH.json", text)
-        self.assertIn("Current DOC_GLOBAL R27 blocker", text)
+        self.assertIn("Current DOC_GLOBAL R45 blocker", text)
+        self.assertIn("Current DOC_GLOBAL boundary (2026-05-20 R45)", text)
+        self.assertIn("ATLAS_CHECK_FAIL references=6741 missing=59", text)
 
 
 if __name__ == "__main__":

@@ -62,7 +62,9 @@ namespace Hecton8.EditorTools
 
             _histogram.style.height = 160f;
             _histogram.style.marginTop = 8f;
+            EditorApplication.update -= Tick;
             EditorApplication.update += Tick;
+            _nextRefreshTime = 0d;
             Tick();
         }
 

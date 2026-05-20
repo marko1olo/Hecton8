@@ -16,6 +16,8 @@ Community posting is for critique and signal, not drive-by promotion.
 
 Every subreddit/forum/Discord must have its rules checked immediately before posting. Rules change. Mods do not care that a strategy doc said something was acceptable.
 
+Agency-proof boundary: community posts can ask whether a player decision reads, but they do not advance first-public, Steam, paid, creator, press, or Discord-open gates unless the resulting row preserves the viewer-named decision in `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`.
+
 ## Post Types That Are Usually Safer
 
 - critique request;
@@ -50,12 +52,14 @@ Ask:
 - Does the survival risk look fair?
 - Does the base look functional?
 - What would make pressure failure readable?
+- What decision do you think the player has here?
 
 Avoid:
 
 - pure beauty shots;
 - heavy lore;
 - Steam link first.
+- claiming gameplay/pressure/route-risk proof before AB-009/KPI decision-read fields exist.
 
 ### Horror / Atmosphere Players
 
@@ -67,6 +71,8 @@ Ask:
 
 - Is it dread or just darkness?
 - Does the threat read before the reveal?
+- What pressure decision would the player make next?
+- Does the player have a readable choice before the danger hits?
 - Did the sound/visual cue work?
 
 Avoid:
@@ -102,6 +108,7 @@ Ask:
 - Does this sell depth?
 - What makes water scary here?
 - Is the scale readable?
+- Is the route or retreat choice readable?
 
 Avoid:
 
@@ -119,6 +126,7 @@ Ask:
 - Does the machinery feel like it could work?
 - Does the failure state read as mechanical?
 - What feedback would make the system more understandable?
+- Which lever/repair/retreat decision is visible?
 
 Avoid:
 
@@ -172,7 +180,7 @@ If someone asks about performance:
 
 Good response:
 
-> We are not making performance claims until we have measured public builds.
+> Performance language waits for measured public builds.
 
 Bad response:
 

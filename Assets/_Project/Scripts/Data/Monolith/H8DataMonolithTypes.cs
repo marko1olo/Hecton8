@@ -578,6 +578,40 @@ namespace Hecton8.Data
     /// </summary>
     public static class H8DataLayoutAudit
     {
+        public static uint GetExpectedRecordSize(H8DataSectionId sectionId)
+        {
+            switch (sectionId)
+            {
+                case H8DataSectionId.Items: return H8DataLayoutConstants.ItemRecordSize;
+                case H8DataSectionId.Creatures: return H8DataLayoutConstants.CreatureTraitRecordSize;
+                case H8DataSectionId.Biomes: return H8DataLayoutConstants.BiomeRecordSize;
+                case H8DataSectionId.Recipes: return (uint)UnsafeUtility.SizeOf<H8RecipeRecord>();
+                case H8DataSectionId.BiomeHeatmap: return (uint)UnsafeUtility.SizeOf<H8BiomeHeatmapCellRecord>();
+                case H8DataSectionId.QuestNodes: return (uint)UnsafeUtility.SizeOf<H8QuestNodeRecord>();
+                case H8DataSectionId.QuestEdges: return (uint)UnsafeUtility.SizeOf<H8QuestEdgeRecord>();
+                case H8DataSectionId.LootCdf: return (uint)UnsafeUtility.SizeOf<H8LootCdfRecord>();
+                case H8DataSectionId.VoxelMaterials: return (uint)UnsafeUtility.SizeOf<H8VoxelMaterialRecord>();
+                case H8DataSectionId.AudioClipRegistry: return (uint)UnsafeUtility.SizeOf<H8AudioClipRegistryRecord>();
+                case H8DataSectionId.VfxScalars: return (uint)UnsafeUtility.SizeOf<H8VfxScalarRecord>();
+                case H8DataSectionId.DepthPressureCurve: return (uint)UnsafeUtility.SizeOf<H8DepthPressureSampleRecord>();
+                case H8DataSectionId.ToolHeatCapacity: return (uint)UnsafeUtility.SizeOf<H8ToolHeatCapacityRecord>();
+                case H8DataSectionId.SubmarineHullConstants: return (uint)UnsafeUtility.SizeOf<H8SubmarineHullConstantRecord>();
+                case H8DataSectionId.NarrativeTriggers: return (uint)UnsafeUtility.SizeOf<H8NarrativeTriggerRecord>();
+                case H8DataSectionId.PhysicsMaterials: return (uint)UnsafeUtility.SizeOf<H8PhysicsMaterialRecord>();
+                case H8DataSectionId.GhostModules: return (uint)UnsafeUtility.SizeOf<H8GhostModuleRecord>();
+                case H8DataSectionId.RadiationIntensityMap: return (uint)UnsafeUtility.SizeOf<H8RadiationIntensityCellRecord>();
+                case H8DataSectionId.SpawnCreditCosts: return (uint)UnsafeUtility.SizeOf<H8SpawnCreditCostRecord>();
+                case H8DataSectionId.LightAttenuationCurve: return (uint)UnsafeUtility.SizeOf<H8LightAttenuationSampleRecord>();
+                case H8DataSectionId.SopErrors: return (uint)UnsafeUtility.SizeOf<H8SopErrorRecord>();
+                case H8DataSectionId.HudLayouts: return (uint)UnsafeUtility.SizeOf<H8HudLayoutRecord>();
+                case H8DataSectionId.LocalizationUtf8: return 1u;
+                case H8DataSectionId.SectorPageDirectory: return (uint)UnsafeUtility.SizeOf<H8SectorPageRecord>();
+                case H8DataSectionId.Economy: return H8DataLayoutConstants.EconomyRecordSize;
+                case H8DataSectionId.PhysicsConstants: return H8DataLayoutConstants.PhysicsConstantsRecordSize;
+                default: return 0u;
+            }
+        }
+
         /// <summary>
         /// Returns true only when all fixed records are 16-byte aligned and sized as specified.
         /// </summary>

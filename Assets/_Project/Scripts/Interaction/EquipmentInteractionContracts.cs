@@ -95,7 +95,7 @@ namespace Hecton8.Interaction
     /// Immutable tool dispatch payload captured before routing into the interaction queue.
     /// All positions are absolute-universe coordinates.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct InteractionPacket
     {
         public InteractionPacket(
@@ -116,34 +116,43 @@ namespace Hecton8.Interaction
             Mode = mode;
             ToolStateFlags = toolStateFlags;
             FrameIndex = frameIndex;
-            _padding0 = (ushort)0;
+            _padding0 = 0;
+            _padding1 = 0u;
+            _padding2 = 0UL;
+            _padding3 = 0UL;
         }
 
         [FieldOffset(0)]
         public uint ToolID;
         [FieldOffset(4)]
-        public float3 Origin;
-        [FieldOffset(16)]
-        public float3 Direction;
-        [FieldOffset(28)]
-        public float Power;
-        [FieldOffset(32)]
-        public float Range;
-        [FieldOffset(36)]
-        public byte Mode;
-        [FieldOffset(37)]
-        public byte ToolStateFlags;
-        [FieldOffset(40)]
         public uint FrameIndex;
+        [FieldOffset(8)]
+        public float3 Origin;
+        [FieldOffset(20)]
+        public float3 Direction;
+        [FieldOffset(32)]
+        public float Power;
+        [FieldOffset(36)]
+        public float Range;
+        [FieldOffset(40)]
+        public byte Mode;
+        [FieldOffset(41)]
+        public byte ToolStateFlags;
+        [FieldOffset(42)]
+        private ushort _padding0;
         [FieldOffset(44)]
-        private uint _padding0;
+        private uint _padding1;
+        [FieldOffset(48)]
+        private ulong _padding2;
+        [FieldOffset(56)]
+        private ulong _padding3;
     }
 
     /// <summary>
     /// Queued interaction event consumed by the authoritative late-frame dispatch owner.
     /// All positions are absolute-universe coordinates.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 88)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct InteractionSignal
     {
         public InteractionSignal(
@@ -164,26 +173,35 @@ namespace Hecton8.Interaction
             PenetrationOccurred = penetrationOccurred;
             _padding0 = 0;
             _padding1 = 0u;
+            _padding2 = 0UL;
+            _padding3 = 0UL;
+            _padding4 = 0UL;
         }
 
         [FieldOffset(0)]
         public InteractionPacket Source;
-        [FieldOffset(48)]
-        public int TargetInstanceID;
-        [FieldOffset(52)]
-        public float3 HitPoint;
         [FieldOffset(64)]
-        public float3 HitNormal;
-        [FieldOffset(76)]
-        public float PowerDelivered;
+        public int TargetInstanceID;
+        [FieldOffset(68)]
+        public float3 HitPoint;
         [FieldOffset(80)]
+        public float3 HitNormal;
+        [FieldOffset(92)]
+        public float PowerDelivered;
+        [FieldOffset(96)]
         public byte EffectType;
-        [FieldOffset(81)]
+        [FieldOffset(97)]
         public byte PenetrationOccurred;
-        [FieldOffset(82)]
+        [FieldOffset(98)]
         private ushort _padding0;
-        [FieldOffset(84)]
+        [FieldOffset(100)]
         private uint _padding1;
+        [FieldOffset(104)]
+        private ulong _padding2;
+        [FieldOffset(112)]
+        private ulong _padding3;
+        [FieldOffset(120)]
+        private ulong _padding4;
     }
 
     /// <summary>

@@ -1,6 +1,6 @@
 # HECTON-8 Project State Static X-Ray
 
-Date: 2026-05-19
+Date: 2026-05-20
 Status: PENDING VERIFICATION
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
@@ -15,6 +15,7 @@ This document is active only where it agrees with:
 - fresh verification logs and artifacts
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+Current DOC_GLOBAL boundary (2026-05-20 R45): `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md` is present and is the latest local static root/architecture R43/R44 residue, proof-artifact wording, and source-counter correction. R44 remains the prior internal-residue/exact-route-field/proof-wording correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R44_ROOT_ARCHITECTURE_INTERNAL_RESIDUE_EXACT_ROUTE_FIELDS_LOCAL.md`; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R43_ROOT_ARCHITECTURE_ROUTE_CARD_AND_COUNTER_RESIDUE_LOCAL.md`; R42 remains the prior counter/route-boundary/proof-label correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R42_ROOT_ARCHITECTURE_COUNTER_AND_ROUTE_BOUNDARY_LOCAL.md`; R41 remains the prior global-authority/internal-residue correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R41_ROOT_ARCHITECTURE_GLOBAL_AUTHORITY_INTERNAL_RESIDUE_LOCAL.md`; R40 remains the prior R38-residue/source-counter correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R40_ROOT_ARCHITECTURE_R38_RESIDUE_AND_COUNTER_REFRESH_LOCAL.md`; R39 remains the prior authority-counter/proof-wording correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R39_ROOT_ARCHITECTURE_AUTHORITY_COUNTER_AND_PROOF_WORDING_LOCAL.md`; R38 remains the prior source-counter drift and boundary correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R38_ROOT_ARCHITECTURE_SOURCE_COUNTER_DRIFT_AND_BOUNDARY_LOCAL.md`; R37 remains the prior artifact-path/proof-wording/source-counter correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R37_ROOT_ARCHITECTURE_ARTIFACT_PATHS_AND_COUNTERS_LOCAL.md`; R36 remains the prior authority-spine/domain-map correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R36_ROOT_ARCHITECTURE_AUTHORITY_SPINE_LOCAL.md`; R35 remains the prior R4/counter-residue correction at `Docs/Reports/2026-05-19_DOCUMENTATION_R35_ROOT_ARCHITECTURE_R4_AND_COUNTER_RESIDUE_LOCAL.md`; R34 remains the older source-counter and physical-line refresh, superseded by R37/R38/R39/R40/R41/R42/R43/R44/R45 where exact counts, route-card fields, AtlasCheck status, or proof wording differ. R33 remains the prior R32-residue/source-anchor correction; R32 remains the prior R4/proof-wording correction; R31 remains the prior current-boundary propagation layer; R30 remains the prior internal-currentness layer; R29 remains the prior stale-gate/global-authority layer; R28 remains the prior interior-boundary layer; and R27 is historical source-counter/index evidence superseded by R34/R37/R38/R39/R40/R41/R42/R43/R44/R45.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 Evidence class: STATIC_SOURCE / STATIC_DOC / FILESYSTEM / PACKAGE_LOCK / CLI_COMPILE_ARCHIVED
@@ -25,7 +26,7 @@ This file is a durable project-state risk register. It is not an AgentLog and mu
 
 User request: ignore easy build bugs, audit deeper project health, and keep documentation current under concurrent agent churn.
 
-Most commands were static filesystem and source scans. DOC_AUDIT R29 reported one Unity `6000.4.1f1` batchmode import/script-compilation artifact at `Library/Codex_DOC_AUDIT_UnityBatchCompile.log`, but the R10 filesystem check did not find that path; treat it as dated report text unless restored or replaced. R40/R41 added controlled external CLI compile evidence through a source-backed generated-project bridge and a serial root `Hecton8*.csproj` sweep; R42 propagated that compile boundary into active reference docs that still carried the older May 13 missing-artifact-only override. The latest same-day Core boundary is archived at `Docs/Archive/Batch007/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_224641_CurrentDisk53.log` (`EXIT=0`, `0 Warning(s)`, `0 Error(s)`) plus archived H-Phi full static budget artifact `Docs/Archive/Batch007/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_224426_CurrentDiskBudgetGate22.json` (`EXIT=0`, `MemoryAlignment=0.506309148`, `RuntimeHPhiRisk=0.000636091`, `GlobalRegistrySurface=5060/5060`). DOC_HONEST_ANALYSIS R3 remains a historical archived same-day Core graph prune slice for transient `Hecton8.World.GPR` asmdef drift; CurrentDisk53/BudgetGate22 supersede R49/R52/R53/R54 only as archived Core build/H-Phi evidence. No Play Mode, profiler, GCMonitor, player build, Memory Profiler, RenderDoc, save/load roundtrip, visual capture, or runtime benchmark was run. DOC_AUDIT R5/R6 added package-lock, BuildSettings, URP asset, PlayerSettings, and script-local docs checks; R8 added the world/scatter/streaming wiring addendum; R17 added the renderer/visor/shader proof boundary; R21 closed the static resource-node catalog/worldPrefab gaps; R22 added the PDA fail-closed guard; R23 hardened editor validation for duplicate item identity/catalog ambiguity.
+Most commands were static filesystem and source scans. DOC_AUDIT R29 reported one Unity `6000.4.1f1` batchmode import/script-compilation artifact at `Library/Codex_DOC_AUDIT_UnityBatchCompile.log`, but the R10 filesystem check did not find that path; treat it as dated report text unless restored or replaced. R40/R41 added controlled external CLI compile evidence through a source-backed generated-project bridge and a serial root `Hecton8*.csproj` sweep; R42 updates active reference docs that still carried stale R40/R41 boundaries and unlinked DOC_AUDIT R42/R43/R45 labels. Archived same-day Core boundary evidence exists at `Docs/Archive/Batch007/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_224641_CurrentDisk53.log` (`EXIT=0`, `0 Warning(s)`, `0 Error(s)`) plus archived H-Phi full static budget artifact `Docs/Archive/Batch007/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_224426_CurrentDiskBudgetGate22.json` (`EXIT=0`, `MemoryAlignment=0.506309148`, `RuntimeHPhiRisk=0.000636091`, `GlobalRegistrySurface=5060/5060`) at capture time only. DOC_HONEST_ANALYSIS R3 remains a historical archived same-day Core graph prune slice for transient `Hecton8.World.GPR` asmdef drift; CurrentDisk53/BudgetGate22 supersede R49/R52/R53/R54 only as archived Core build/H-Phi evidence. No Play Mode, profiler, GCMonitor, player build, Memory Profiler, RenderDoc, save/load roundtrip, visual capture, or runtime benchmark was run. DOC_AUDIT R5/R6 added package-lock, BuildSettings, URP asset, PlayerSettings, and script-local docs checks; R8 added the world/scatter/streaming wiring addendum; R17 added the renderer/visor/shader proof boundary; R21 closed the static resource-node catalog/worldPrefab gaps; R22 added the PDA fail-closed guard; R23 hardened editor validation for duplicate item identity/catalog ambiguity.
 
 Mandates used:
 
@@ -57,7 +58,7 @@ Current static estimate: roughly 70% engineering infrastructure, 30% proven game
 
 Evidence class: `CLI_COMPILE` plus `STATIC_SOURCE_FULL_SCAN`.
 
-- `Docs/Archive/Batch007/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_224641_CurrentDisk53.log` reports `Hecton8.Core.csproj` CLI compile `EXIT=0`, `Build succeeded`, `0 Warning(s)`, and `0 Error(s)` after the later 22:38 source write. Current SHINOBU_02 status later records Current21 Core CLI compile `0` errors / `8` known CS0649 warnings; Current22 source edits remain uncompiled because the CPU guard blocked dotnet.
+- `Docs/Archive/Batch007/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_224641_CurrentDisk53.log` reports `Hecton8.Core.csproj` CLI compile `EXIT=0`, `Build succeeded`, `0 Warning(s)`, and `0 Error(s)` after the later 22:38 source write. Current36 adds a no-build SignalCritical audit rerun. Current37 shields the stale generated `LogisticsPipeEvents.cs` include, but guarded Core compile still fails on external missing contract/source bridge types. Current38 removes Core-owned runtime `Pack = 1` weather/ocean DTOs; Full audit, H-Phi, Unity, and runtime proof remain pending.
 - Failed or superseded same-session artifacts include stale generated-CLI visibility of `MacroDatabasePayloadFlags`, the transient `ScalabilityTierBindingBridge` typo, R50 missing `PlayerKinematicsRuntime` storage helpers, R51 duplicate helper definitions, R52/R53 stale boundaries under later source writes, the historical R49 clean slice, and R54 dirtied by a later 22:38 source write. The later clean CurrentDisk53 artifact supersedes them for archived Core CLI status only.
 - `Docs/Archive/Batch007/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_224426_CurrentDiskBudgetGate22.json` reports H-Phi static budget `EXIT=0`, `MemoryAlignment=0.506309148`, `DataSovereignty=0.021306032`, `RuntimeHPhiRisk=0.000636091`, `GlobalRegistrySurface=5060/5060`, `ManagedFormatSurface=534/534`, `PrimaryManagedRuntimeRisk=147/147`, `DuplicateSignalNames=0`, `UnityUpdateMethods=0`, and Core graph debt `25/10/14/8/6`. That duplicate-name zero is historical capture-time evidence only; SHINOBU_02 current21 trend reports duplicate signal-name debt `10` against `MaxDuplicateSignalNames=0`, so archived zero must not be used as current duplicate status.
 - `Docs/Archive/Batch006/AgentLogs/HPhi_DOC_HONEST_ANALYSIS_R3_20260515_CurrentStaticSummary.json` is the archived equivalent of the previously cited active-path summary. It found static scores still at `HPhiStaticRisk=0.000636091`, `DataSovereignty=0.021306032`, and `MemoryAlignment=0.506309148`, but Core asmdef debt had drifted to `26` because unused `Hecton8.World.GPR` was present in transient Core asmdef state. The active-path `Docs/AgentLogs/HPhi_DOC_HONEST_ANALYSIS_R3_20260515_CurrentStaticSummary.json` is absent in the R11 filesystem check.
@@ -81,18 +82,18 @@ Evidence class: `STATIC_SOURCE` / `STATIC_DOC`.
 
 Evidence class: `STATIC_SOURCE` plus historical `STATIC_SOURCE_CLASSIFIED` audit artifacts.
 
-- Current source scan over `Assets/_Project/Scripts/Core` reports exactly three exact `Pack = 1` declarations: `ContentAssetBinaryRecord`, `GerstnerWaveComponent`, and `WeatherRuntimeSnapshot`.
+- Current source scan over `Assets/_Project/Scripts/Core` reports exactly one exact `Pack = 1` declaration: `ContentAssetBinaryRecord`, a cold file/export ABI record.
 - Scoped source scan over `Core/Signals`, `Core/GlobalSignals.cs`, and `Core/Contracts/HectonSignalLaneContract.cs` reports zero exact `Pack = 1` declarations.
-- Latest artifact-backed SHINOBU_02 SignalCritical audit is current21: files `7`, shaders `62`, errors `0`, warnings `0`, infos `10`, runtime signal `Pack = 1` `0`, transitive runtime signal `Pack = 1` field hits `0`.
-- Latest artifact-backed SHINOBU_02 Full audit is current21: files `1761`, shaders `62`, errors `0`, warnings `432`, infos `454`, confirmed/probable errors `0`, project-wide `Pack = 1` layouts `230`.
-- Current22 source edits reduced Core exact `Pack = 1` from `9` to `3`, but Core compile, SignalCritical re-audit, Full re-audit, and H-Phi trend refresh remain pending because CPU guard blocked dotnet at `95.5-100%`.
-- Owner-deferred layout work remains outside SHINOBU_02: `GerstnerWaveComponent` / `WeatherRuntimeSnapshot` require Fluid/Graphics/Weather owner stride migration and compile/audit sentinels.
+- Archived SHINOBU_02 SignalCritical audit artifact is `Docs/Archive/Batch010/AgentLogs/SignalBusContractAuditCli_SHINOBU_02_signalcritical_current36.md`: files `8`, shaders `66`, errors `0`, warnings `0`, infos `13`, runtime signal `Pack = 1` `0`, transitive runtime signal `Pack = 1` field hits `0`, managed event surface hits `0`.
+- Archived SHINOBU_02 Full audit artifact is `Docs/Archive/Batch010/AgentLogs/SignalBusContractAuditCli_SHINOBU_02_full_current21.md`: files `1761`, shaders `62`, errors `0`, warnings `432`, infos `454`, confirmed/probable errors `0`, project-wide `Pack = 1` layouts `230`.
+- Current22 source edits reduced Core exact `Pack = 1` from `9` to `3`; Current38 reduces it again to `1` by converting `GerstnerWaveComponent` to explicit 32-byte layout and `WeatherRuntimeSnapshot` to explicit 152-byte layout. Current36 added a no-build SignalCritical audit rerun. Current37 Core compile is failed on external missing contract/source bridge types; Full re-audit and H-Phi trend refresh after Current21 remain pending.
+- Owner-deferred layout work remains outside SHINOBU_02 for non-Core packed runtime DTOs; the Core weather/ocean DTOs are no longer owner-deferred `Pack = 1` rows.
 
 ## Static Inventory Findings
 
-- 2026-05-19 SHINOBU_02 read-only source-scale spot check: `Assets/_Project/**/*.cs` = `1865`, `Assets/_Project/Scripts/**/*.cs` = `1807`, non-test C# files excluding `Assets/_Project/Tests*` = `1844`, broad `interface` token hits = `318`, direct interface declaration lines = `268`, direct public interfaces in `GlobalRegistryContracts.cs` = `62`, first-party asmdefs = `125`, direct `GlobalSignals.CreateQueue(...)` slots = `73`, and typed `SignalBus<T>.EnsureInitialized()` calls = `242`. Evidence class: `STATIC_SOURCE`; this is not compile or runtime proof and must be rerun under concurrent source churn.
-- R27 physical line totals (`1204221` project, `1184559` script, `1199376` non-test) were not refreshed in the SHINOBU_02 spot check; rerun the full source-counter pass before using exact line totals.
-- R27 file-count claims (`1761` script C# / `1818` project C#) are historical snapshot values superseded by the SHINOBU_02 spot-check counts above for current orientation.
+- 2026-05-20 R45 source-scale orientation: `2052` first-party C# files under `Assets/_Project`, `1991` under `Assets/_Project/Scripts`, `2026` non-test C# files excluding `Assets/_Project/Tests*`, `1401183` project physical lines, `1380785` script physical lines, `1394758` non-test physical lines, `345` project-wide broad `interface` token hits (`342` under scripts), `280` direct interface declaration hits, `63` direct public interfaces in `GlobalRegistryContracts.cs`, `141` first-party asmdefs (`139` excluding test dirs), `6199` `GlobalRegistry.` text hits, `575` publish/subscribe token hits, `18045` native-collection token hits, `116` `GlobalSignals.cs` `NativeQueue<...>` refs, `73` direct `CreateQueue(...)` slots inside `GlobalSignals.cs`, `135` typed `SignalBus<T>.EnsureInitialized()` lanes inside `GlobalSignals.cs`, `271` `SignalBus<T>.Configure/EnsureInitialized` hits inside `GlobalSignals.cs`, and `1345` broader script-level typed-lane matches. This is STATIC_SOURCE orientation only, not compile or runtime proof.
+- R27 physical line totals (`1204221` project, `1184559` script, `1199376` non-test), R34 physical line totals (`1304459` project, `1284763` script, `1298736` non-test), R37 physical line totals (`1338727` project, `1318650` script, `1332673` non-test), R43 physical line totals (`1394096` project, `1373895` script, `1387908` non-test), and R44 physical line totals (`1399032` project, `1378730` script, `1392642` non-test) are historical and superseded for root/architecture orientation by R45 (`1401183` project, `1380785` script, `1394758` non-test). Rerun before exact use under concurrent source churn.
+- R27 file-count claims (`1761` script C# / `1818` project C#), R34 file-count claims (`1867` script C# / `1924` project C#), and the later SHINOBU_02 spot-check counts are historical snapshot values superseded by the R45 source-counter report for root/architecture documentation orientation (`2052` project C# / `1991` script C# / `2026` non-test C#).
 - BuildSettings contains the normative scene chain:
   - `Assets/_Project/Scenes/00_BOOTSTRAP.unity`
   - `Assets/_Project/Scenes/01_MAIN_MENU.unity`
@@ -114,7 +115,7 @@ Good:
 
 Risk:
 
-- `GlobalRegistry.cs` is about 279 KB / 5763 lines and exposes roughly 150 service slots. This is a functional project OS, but also a massive coupling surface.
+- `GlobalRegistry.cs` is currently 339,610 bytes / 7,615 lines and exposes a broad service surface. This is a functional project OS, but also a massive coupling surface.
 - `GlobalSignals.cs` owns many signal lanes. This reduces direct dependencies, but the global event surface is now broad enough that ownership drift becomes easy.
 - Bootstrap, registry, dispatcher, scene runtime, save, audio, scatter, and player systems are highly interdependent. Runtime proof is mandatory before claiming stability.
 
@@ -124,16 +125,22 @@ Largest first-party runtime files are mostly real code, not empty filler. The pr
 
 Highest pileup risk:
 
-- `Assets/_Project/Scripts/HectonPlayerMovement.cs` - 740,426 bytes / 13,240 lines.
+- `Assets/_Project/Scripts/HectonPlayerMovement.cs` - 758,405 bytes / 13,499 lines.
+- `Assets/_Project/Scripts/UI/Localization/H8LocHashes.cs` - 1,346,443 bytes / 12,895 lines. This is generated localization/hash table pressure, not an integration hub by itself.
 - `Assets/_Project/Scripts/WorldProceduralScatterDirector.cs` - 539,165 bytes / 11,907 lines.
-- `Assets/_Project/Scripts/HectonUnderwaterVisuals.cs` - 355.3 KB.
-- `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs` - 336,953 bytes / 7,041 lines.
-- `Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs` - 315 KB.
-- `Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs` - 308.6 KB.
-- `Assets/_Project/Scripts/Fauna/FaunaBrain.cs` - 277.6 KB.
-- `Assets/_Project/Scripts/Core/GlobalRegistry.cs` - 279.3 KB.
-- `Assets/_Project/Scripts/BaseModule.cs` - 234.2 KB.
-- `Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs` - 200 KB.
+- `Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs` - 533,557 bytes / 10,919 lines.
+- `Assets/_Project/Scripts/Core/GlobalSignals.cs` - 471,967 bytes / 9,886 lines.
+- `Assets/_Project/Scripts/SpatialAudioManager.cs` - 457,092 bytes / 9,872 lines.
+- `Assets/_Project/Scripts/HectonVoxelEngine.cs` - 379,335 bytes / 8,692 lines.
+- `Assets/_Project/Scripts/SaveBinaryStorage.cs` - 361,429 bytes / 8,609 lines.
+- `Assets/_Project/Scripts/World/FloraInteractionManager.cs` - 374,008 bytes / 8,015 lines.
+- `Assets/_Project/Scripts/HectonFluidEngine.cs` - 388,163 bytes / 7,862 lines.
+- `Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs` - 379,617 bytes / 7,776 lines.
+- `Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs` - 370,404 bytes / 7,624 lines.
+- `Assets/_Project/Scripts/Core/GlobalRegistry.cs` - 339,610 bytes / 7,615 lines.
+- `Assets/_Project/Scripts/Fauna/FaunaBrain.cs` - 325,699 bytes / 6,951 lines.
+- `Assets/_Project/Scripts/BaseModule.cs` - 246,135 bytes / 5,469 lines.
+- `Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs` - 232,543 bytes / 5,462 lines.
 
 Large but more justified technical kernels:
 
@@ -180,7 +187,7 @@ Good signs:
 Bad sign:
 
 - ownership is wrong. Player movement owns too many environmental hazards and presentation effects.
-- The file is still too large for safe human reasoning without targeted slices; current state is 740,426 bytes / 13,240 lines.
+- The file is still too large for safe human reasoning without targeted slices; current state is 758,405 bytes / 13,499 lines.
 
 Decision:
 
@@ -213,10 +220,10 @@ Evidence class: STATIC_SOURCE / FILESYSTEM. No Unity scene load, inspector readb
 World runtime code inventory:
 
 - `Assets/_Project/Scripts/WorldProceduralScatterDirector.cs`: `539165` bytes / `11907` lines.
-- `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs`: `336953` bytes / `7041` lines.
+- `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs`: `345583` bytes / `7245` lines.
 - `Assets/_Project/Scripts/WorldProceduralFieldSampler.cs`: `263836` bytes / `5133` lines.
 - `Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs`: `187902` bytes / `4368` lines.
-- `Assets/_Project/Scripts/World/PersistentWorldRegistry.cs`: `273872` bytes / `6159` lines.
+- `Assets/_Project/Scripts/World/PersistentWorldRegistry.cs`: `280676` bytes / `6323` lines.
 - Supporting runtime directors/helpers exist for sampling pipeline, working memory, vegetation residency, slice/streaming, scatter budget, state registry, backend integration, diagnostics, heuristics, and streaming profiles.
 
 Good evidence:
@@ -240,7 +247,7 @@ Wiring risk:
 - Static text scene/prefab/data scans did not find serialized references for the main world runtime components or `WorldChunkStreamingProfile.asset`. This is not absolute proof of absence because `02_HECTON_WORLD.unity` is a large binary-like scene, but it means the current static audit cannot prove the production world scene is wired.
 - `WorldRuntimeBootstrapAuthoring` can create/configure much of the world manager stack in the editor menu `Hecton/Authoring/Rebuild World Runtime Stack`, and `WorldStreamingWiringValidator` can validate/fix profile references if components exist. These are editor authoring guarantees, not runtime guarantees.
 - `WorldRuntimeBootstrapAuthoring` does not appear to create `WorldChunkResidencyManager` or `HectonMapMagicVegetationBridge`; separate scene/authoring proof is needed for those paths.
-- `WorldChunkResidencyManager` can compile Addressables load/release paths through `UNITY_ADDRESSABLES_EXIST`, but the project still has no `Assets/AddressableAssetsData` directory in the static filesystem scan. That keeps chunk-asset streaming readiness unproven.
+- `WorldChunkResidencyManager` can compile Addressables load/release paths through `UNITY_ADDRESSABLES_EXIST`, but `Assets/AddressableAssetsData` currently exists with `0` files in the static filesystem scan. That keeps chunk-asset streaming readiness unproven.
 
 Memory / toaster risk:
 
@@ -251,7 +258,7 @@ Memory / toaster risk:
 Decision:
 
 - World/scatter is one of the strongest signs the project has become a real game architecture, not a random prototype pile.
-- It is also the highest risk area for fake readiness: a serious editor-authored pipeline can still produce no runtime world if the scene was not rebuilt, the profile is unassigned, Addressables data is missing, or the binary scene differs from source assumptions.
+- It is also the highest risk area for fake readiness: a serious editor-authored pipeline can still produce no runtime world if the scene was not rebuilt, the profile is unassigned, Addressables data is empty or unbuilt, or the binary scene differs from source assumptions.
 - Do not call world streaming production-ready until there is an artifact-backed scene ownership capture showing the active `02_HECTON_WORLD` has the scatter/field/streaming/vegetation/MapMagic/chunk managers, the streaming profile assigned, Addressables or fallback payloads present, and a profiler/memory snapshot on the low tier.
 
 ## Asset / Addressables Finding
@@ -263,7 +270,7 @@ Package evidence:
 
 Filesystem evidence:
 
-- No `Assets/AddressableAssetsData` directory was found in the static scan.
+- `Assets/AddressableAssetsData` exists in the static scan, but it contains `0` files.
 
 Risk:
 
@@ -817,10 +824,10 @@ Evidence type: STATIC_SOURCE / FILESYSTEM.
 
 Static inventory:
 
-- `Assets/AddressableAssetsData` is absent in the current tree.
-- `Assets/StreamingAssets` is absent in the current tree.
-- Therefore `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` is also absent.
-- `H8DataLayoutConstants.DefaultStreamingAssetsRelativePath` points to `Hecton8/DataMonolith/static_data.h8bin`.
+- `Assets/AddressableAssetsData` exists in the current tree, but it contains `0` files.
+- `Assets/StreamingAssets` exists in the current tree and contains `signal_tuning_profiles.csv` plus its Unity `.meta`.
+- `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` is absent even though `Assets/StreamingAssets` exists.
+- `H8DataLayoutConstants.DefaultStreamingAssetsRelativePath` points to `Hecton8/DataMonolith/static_data.h8bin`, which resolves under StreamingAssets as the currently absent authoritative payload path `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`.
 - `GameBootstrapper.InitializeBootstrapDataMonolith()` calls `H8StaticDataArena.TryInitializeFromStreamingAssets(..., failIfMissing: false, ...)` and treats `Missing` as acceptable.
 - `H8StaticDataArena` has a 256 MB blob cap, header/directory validation, persistent native arena residency, write-locking after ready, and a boot-only `File.ReadAllBytes` staging copy before native blit.
 - `AsyncLoadHelper` is a deliberate compatibility tombstone: `Instance => null`, load calls return null/failure, and editor builds log that runtime Resources/Addressables loading through that helper is unsupported.
@@ -907,7 +914,7 @@ Risk:
 - The resource-node pickup path no longer has the specific static catalog/worldPrefab break candidate found in R14/R19. Current static recount is `0 / 27` missing primary-harvest `worldPrefab` and `0 / 27` non-catalog primary-harvest refs. This still is not runtime proof: hydration, pooling, interaction, inventory add, quest completion, and Addressables/direct fallback behavior were not run in Unity.
 - The starter copper path is materially cleaner after R19: `ResourceNodeTemplate_CopperVein`, recipes/catalog, R18 provisioner starter material, and three checked barter offers now use cataloged raw `Resources/Raw/Data_Copper.asset`. The root duplicate `Data_Copper.asset` still exists and should be quarantined or removed only after Unity/editor validation.
 - `BarterBootstrapAuthoring` now also loads raw cataloged copper, so the checked authoring rebuild path should not reintroduce root copper. This has not been validated by running the editor menu.
-- `ItemCatalog` now falls back to direct serialized `ItemData.worldPrefab` when Addressables world-prefab entries are missing or fail. This is a small pickup-prefab escape hatch for the current missing `Assets/AddressableAssetsData` state, not proof that Addressables streaming is configured.
+- `ItemCatalog` now falls back to direct serialized `ItemData.worldPrefab` when Addressables world-prefab entries are missing or fail. This is a small pickup-prefab escape hatch for the current empty `Assets/AddressableAssetsData` state, not proof that Addressables streaming is configured.
 - PlayerInventory cannot accept arbitrary hashes; `TryAddItemWithStateInternal()` requires `TryGetRuntimeDescriptor()` from `ItemCatalog`. Any collectible whose hash is not present in the catalog is not inventory-addable by that path.
 - `ItemAcquiredSignal` is not an inventory grant. Static scan found it consumed by radiation hazard logic, while first-hour resource quest completion listens to `InteractionEvents.ItemCollected` and runtime inventory state. Emitting `ItemAcquiredSignal` from ore/resource systems does not itself prove player progression.
 - `ResourceDistributionDirector` and `ProceduralOreSpawner` are serious systems, but not statically proven live in the production scene. The active scene evidence mostly proves placed starter nodes, not the full procedural resource economy.
@@ -923,7 +930,7 @@ Decision:
 - Keep the R21/R23 editor validator strict for `ResourceNodeTemplate.harvestYield[*].item` / `rarityDrops[*].item` active catalog membership, `worldPrefab` availability, pickup prefab contract, duplicate `ItemData.PersistentId`, and catalog lookup ambiguity. The root duplicate `Data_Copper` is now a validator failure candidate, but the validator was not run in Unity.
 - Keep the R26/R27/R28 quest/recipe validators strict for item/craft quest strings, prerequisite quest IDs, `RecipeData` integrity, craft-completion recipe-output routes, and scan-locked recipe unlock routes. Static clean string/result/unlock-warning resolution is not runtime proof of `InteractionEvents.ItemCollected`, `CraftingEvents.CraftCompleted`, scan log unlock, fabricator delivery, quest completion, PDA display, or save/load.
 - Do not spend time hand-polishing pipe GameObjects before the resource acquisition chain is clean. Pipes are deeper vertical-slice content; copper/resource pickup is first-hour progression.
-- Require one bounded runtime route later: mine/collect copper, observe `InteractionEvents.ItemCollected`, inventory contains `Data_Copper`, `quest_copper_sample` completes, craft `Copper Wire`, then save/load that state. Until that exists, gameplay loop readiness remains `PENDING VERIFICATION`.
+- Require one bounded runtime route later: mine/collect copper, observe `InteractionEvents.ItemCollected`, inventory contains `Data_Copper`, `quest_copper_sample` completes, craft `Copper Wire`, then save/load that state. This is now the selected V0 route in `Docs/ARCHITECTURE/FIRST_20_MINUTES_ROUTE_BRIEF.md`. Until that exists, gameplay loop readiness remains `PENDING VERIFICATION`.
 
 ## Tools / PDA / First-Hour Interface Addendum
 
@@ -1029,8 +1036,8 @@ Evidence type: `STATIC_SOURCE`, `FILESYSTEM`, `STATIC_DOC`, plus DOC_AUDIT R29 U
 
 Static inventory:
 
-- `Assets/_Project/Scripts/SaveBinaryStorage.cs`: 334 KB.
-- `Assets/_Project/Scripts/World/PersistentWorldRegistry.cs`: 263.6 KB / 5120 static lines.
+- `Assets/_Project/Scripts/SaveBinaryStorage.cs`: 361,429 bytes / 8,609 lines.
+- `Assets/_Project/Scripts/World/PersistentWorldRegistry.cs`: 280,676 bytes / 6,323 lines.
 - `Assets/_Project/Scripts/SaveManager.cs`: 131 KB.
 - `Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs`: 110.4 KB.
 - `Assets/_Project/Scripts/SaveDataMigration.cs`: 56.5 KB.
@@ -1096,8 +1103,8 @@ Current source facts:
 
 - `WorldChunkResidencyManager` owns HLOD active impostor SOA and exposes the read model through `IStreamingBackpressureService`.
 - `PDAMapTab` consumes active HLOD impostor points into a fixed `16 x float4` GPU buffer for the sonar/cartography overlay.
-- Before R35, `TryResolveHlodImpostorAupBuffer()` uploaded that fixed buffer on every map build whenever active HLOD points existed, even if the streaming point data had not changed.
-- R35 adds `IStreamingBackpressureService.ActiveImpostorVersion` and backs it with a separate `_activeImpostorPointVersion` in `WorldChunkResidencyManager`.
+- Before DOC_AUDIT R35, `TryResolveHlodImpostorAupBuffer()` uploaded that fixed buffer on every map build whenever active HLOD points existed, even if the streaming point data had not changed.
+- DOC_AUDIT R35 adds `IStreamingBackpressureService.ActiveImpostorVersion` and backs it with a separate `_activeImpostorPointVersion` in `WorldChunkResidencyManager`.
 - `PDAMapTab` now caches uploaded HLOD version/count, clamps count to the native point array length, clears trailing fixed slots only when data changes, and skips unchanged HLOD POI uploads.
 - Renderer matrix dirty state remains separate from PDA point dirty state, so PDA fade progress can advance without forcing HLOD matrix re-upload.
 

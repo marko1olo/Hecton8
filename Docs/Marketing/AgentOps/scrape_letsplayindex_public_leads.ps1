@@ -30,8 +30,8 @@ function Get-PitchMeta([string[]]$games, [string[]]$segments) {
         return @{
             Segment = "direct_underwater_survival"
             Angle = "Underwater survival audience already proven."
-            Stub = "Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise."
-            Risk = "May compare directly to Subnautica; send only when screenshots clearly differentiate NASA-punk machinery and black-water pressure."
+            Stub = "Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass."
+            Risk = "May invite direct comparison; send only when screenshots clearly differentiate NASA-punk machinery and black-water pressure, public_comparison_gate stays private-only, and pain freshness fields are filled for pain-backed angles."
         }
     }
     if ($joined -match "barotrauma|iron lung|still wakes|dredge|horror") {
@@ -199,7 +199,7 @@ $md = New-Object System.Collections.Generic.List[string]
 $md.Add("# Raw Lead Scrape Summary - 2026-05-18") | Out-Null
 $md.Add("") | Out-Null
 $md.Add("Status: raw public index extraction / not outreach-ready") | Out-Null
-$md.Add("Public stance: single-player-first / no co-op promise") | Out-Null
+$md.Add("Public stance: single-player-first scope / proof-first creator copy") | Out-Null
 $md.Add("Runtime impact: none") | Out-Null
 $md.Add("") | Out-Null
 $md.Add("## Scope") | Out-Null
@@ -243,7 +243,7 @@ foreach($x in $sample){
 $md.Add("") | Out-Null
 $md.Add("## Verification Gate") | Out-Null
 $md.Add("") | Out-Null
-$md.Add("A lead becomes outreach-ready only after: current channel activity checked, official YouTube/Twitch/site route found, language confirmed, fit confirmed, recent content reviewed, contact route logged, key-scam risk checked, pitch personalized to one real HECTON-8 asset, and no co-op/performance/competitor-war claims remain.") | Out-Null
+$md.Add("A lead becomes outreach-ready only after: current channel activity checked, official YouTube/Twitch/site route found, language confirmed, fit confirmed, recent content reviewed, contact route logged, key-scam risk checked, pitch personalized to one real HECTON-8 asset, and multiplayer-scope, performance, and competitor-war claim checks pass.") | Out-Null
 $md.Add("") | Out-Null
 $md.Add("## Sources") | Out-Null
 $md.Add("") | Out-Null

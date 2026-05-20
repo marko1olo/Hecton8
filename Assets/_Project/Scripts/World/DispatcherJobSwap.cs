@@ -1,5 +1,5 @@
+using Hecton8.Core;
 using Unity.Jobs;
-using UnityEngine;
 
 namespace Hecton8.World
 {
@@ -9,23 +9,12 @@ namespace Hecton8.World
     /// </summary>
     public static class DispatcherJobSwap
     {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        private const float IllegalCompletionWarningIntervalSeconds = 5f;
-        private const string IllegalCompletionWarningMessage =
-            "[DispatcherJobSwap] Non-forced job completion requested outside dispatcher swap window.";
-#endif
-
-        private static int _activeSwapWindowDepth;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        private static float _nextIllegalCompletionWarningTime;
-#endif
-
         /// <summary>
         /// Marks the start of the dispatcher-owned late-frame swap window.
         /// </summary>
         public static void BeginLateFrameSwapWindow()
         {
-            _activeSwapWindowDepth++;
+            DispatcherJobFence.BeginLateFrameSwapWindow();
         }
 
         /// <summary>
@@ -33,8 +22,7 @@ namespace Hecton8.World
         /// </summary>
         public static void EndLateFrameSwapWindow()
         {
-            if (_activeSwapWindowDepth > 0)
-                _activeSwapWindowDepth--;
+            DispatcherJobFence.EndLateFrameSwapWindow();
         }
 
         /// <summary>
@@ -42,7 +30,7 @@ namespace Hecton8.World
         /// </summary>
         public static void BeginPostFixedSwapWindow()
         {
-            _activeSwapWindowDepth++;
+            DispatcherJobFence.BeginPostFixedSwapWindow();
         }
 
         /// <summary>
@@ -50,8 +38,23 @@ namespace Hecton8.World
         /// </summary>
         public static void EndPostFixedSwapWindow()
         {
-            if (_activeSwapWindowDepth > 0)
-                _activeSwapWindowDepth--;
+            DispatcherJobFence.EndPostFixedSwapWindow();
+        }
+
+        /// <summary>
+        /// Marks the start of the dispatcher-owned post-simulation swap window.
+        /// </summary>
+        public static void BeginPostSimulationSwapWindow()
+        {
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+        }
+
+        /// <summary>
+        /// Marks the end of the dispatcher-owned post-simulation swap window.
+        /// </summary>
+        public static void EndPostSimulationSwapWindow()
+        {
+            DispatcherJobFence.EndPostSimulationSwapWindow();
         }
 
         /// <summary>
@@ -62,17 +65,7 @@ namespace Hecton8.World
         /// <returns>True when the handle has been completed and reset.</returns>
         public static bool TryComplete(ref JobHandle handle, bool forceComplete)
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (!forceComplete && _activeSwapWindowDepth <= 0)
-                WarnIllegalNonForcedCompletion();
-#endif
-
-            if (!forceComplete && !handle.IsCompleted)
-                return false;
-
-            handle.Complete();
-            handle = default;
-            return true;
+            return DispatcherJobFence.TryComplete(ref handle, forceComplete);
         }
 
         /// <summary>
@@ -82,24 +75,7 @@ namespace Hecton8.World
         /// <returns>True when the handle was already complete and has been reset.</returns>
         public static bool TryFinalizeCompleted(ref JobHandle handle)
         {
-            if (!handle.IsCompleted)
-                return false;
-
-            handle.Complete();
-            handle = default;
-            return true;
+            return DispatcherJobFence.TryFinalizeCompleted(ref handle);
         }
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        private static void WarnIllegalNonForcedCompletion()
-        {
-            float now = Time.unscaledTime;
-            if (now < _nextIllegalCompletionWarningTime)
-                return;
-
-            _nextIllegalCompletionWarningTime = now + IllegalCompletionWarningIntervalSeconds;
-            Debug.LogWarning(IllegalCompletionWarningMessage);
-        }
-#endif
     }
 }

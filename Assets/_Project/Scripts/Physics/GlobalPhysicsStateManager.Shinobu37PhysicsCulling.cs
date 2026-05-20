@@ -170,9 +170,11 @@ namespace Hecton8.Physics
             new VaultBufferBinding<byte>(BufferID.ShinobuPhysicsCullingCsvScratch, PhysicsCullingCsvScratchCapacity, OwnerSystemId);
         private VaultBufferBinding<byte> _physicsCullingLegacyRadiiScratch =
             new VaultBufferBinding<byte>(BufferID.ShinobuPhysicsCullingLegacyRadiiScratch, PhysicsCullingLegacyRadiiHeaderBytes, OwnerSystemId);
-        private readonly Plane[] _physicsFrustumPlaneScratch = new Plane[6];
+        private readonly Plane[] _physicsFrustumPlaneScratch = new Plane[6]; // COLD ALLOC: Plane[6] - Unity frustum API scratch for GeometryUtility.CalculateFrustumPlanes(Camera, Plane[]) - owner: GlobalPhysicsStateManager
         private int _physicsCullingFrameTelemetryWriteIndex;
         private int _physicsCullingMockBodyCount;
+        private uint _physicsCullingSimulationFrame;
+        private byte _physicsMockSeismicPending;
         private int _physicsSpatialHashLastCount = -1;
         private long _physicsCullingCsvLastWriteTicks;
         private string _physicsCullingCsvAbsolutePath;
@@ -516,6 +518,7 @@ namespace Hecton8.Physics
             ClearPhysicsCullingSpatialHash();
             ClearPhysicsStateChangedQueue();
             ClearPhysicsTargetWakeRequests();
+            _physicsMockSeismicPending = 0;
 
             int clearCount = math.min(MaxTrackedBodies, _physicsCullingDtos.IsCreated ? _physicsCullingDtos.Length : 0);
             for (int i = 0; i < clearCount; i++)
@@ -547,6 +550,7 @@ namespace Hecton8.Physics
 
             _physicsCullingFrameTelemetryWriteIndex = 0;
             _physicsCullingMockBodyCount = 0;
+            _physicsCullingSimulationFrame = 0u;
             _physicsSpatialHashLastCount = -1;
             _physicsSpatialHashRebuildAccumulator = 0f;
             _physicsCullingCsvPollAccumulator = 0f;
@@ -560,8 +564,8 @@ namespace Hecton8.Physics
 
             AbsoluteUniversePosition bodyAup = bodyState.HasLastValidAup
                 ? bodyState.LastValidAup
-                : body != null && IsFinite(body.position)
-                    ? AbsoluteUniversePosition.FromRuntimePosition(body.position)
+                : body != null && TryResolveAupFromRuntimeOrigin(body.position, out AbsoluteUniversePosition resolvedBodyAup)
+                    ? resolvedBodyAup
                     : default;
             WritePhysicsCullingDto(bodyIndex, body, in bodyState, in bodyAup);
             _physicsFrozenVelocities[bodyIndex] = default;
@@ -1270,10 +1274,30 @@ namespace Hecton8.Physics
                 EpicenterAup = playerAup.ToAbsoluteDouble3() + jitter,
                 RadiusMeters = math.clamp(tuning.MockShockwaveRadiusMeters, ImpactWakeMinimumRadiusMeters, ImpactWakeMaximumRadiusMeters),
                 Seed = seed,
-                Frame = unchecked((uint)math.max(0, Time.frameCount)),
+                Frame = ResolvePhysicsCullingSimulationFrame(),
                 Fire = 1
             };
             _physicsMockSeismicSignals[0] = signal;
+            _physicsMockSeismicPending = 1;
+        }
+
+        private bool TrySchedulePendingMockSeismicShockwave(int jobCount)
+        {
+            if (_physicsMockSeismicPending == 0)
+                return false;
+
+            _physicsMockSeismicPending = 0;
+            if (!_physicsMockSeismicSignals.IsCreated ||
+                _physicsMockSeismicSignals.Length <= 0 ||
+                !_physicsCullingDtos.IsCreated ||
+                jobCount <= 0)
+            {
+                return false;
+            }
+
+            MockSeismicShockwaveSignal signal = _physicsMockSeismicSignals[0];
+            if (signal.Fire == 0)
+                return false;
 
             ClearPhysicsStateChangedQueue();
             MockSeismicShockwaveWakeJob job = new MockSeismicShockwaveWakeJob
@@ -1286,9 +1310,15 @@ namespace Hecton8.Physics
                 ChangedIndices = _physicsStateChangedIndices,
                 ChangedCount = _physicsStateChangedCount
             };
-            int jobCount = math.min(MaxTrackedBodies, _trackedBodyCount + _physicsCullingMockBodyCount);
-            job.Schedule(jobCount, 64).Complete();
-            DispatchPhysicsCullingResults(jobCount);
+
+            _physicsCullingJobCount = jobCount;
+            _physicsCullingJobDiscardRequested = false;
+            _physicsCullingJobHandle = job.Schedule(jobCount, 64);
+            _physicsCullingJobScheduled = true;
+            signal.Fire = 0;
+            _physicsMockSeismicSignals[0] = signal;
+            JobHandle.ScheduleBatchedJobs();
+            return true;
         }
 
         private void RecordShinobu37PhysicsCullingFrameTelemetry(float stateSyncTimeMs, int changedIndices)
@@ -1302,13 +1332,14 @@ namespace Hecton8.Physics
             if (!_physicsCullingFrameTelemetry.IsCreated)
                 return;
 
+            uint frame = AdvancePhysicsCullingSimulationFrame();
             int index = _physicsCullingFrameTelemetryWriteIndex;
             if ((uint)index >= PhysicsCullingFrameTelemetryCapacity)
                 index = 0;
 
             _physicsCullingFrameTelemetry[index] = new PhysicsCullingFrameTelemetry
             {
-                FrameIndex = Time.frameCount,
+                FrameIndex = unchecked((int)frame),
                 TotalTrackedBodies = _trackedBodyCount,
                 ActiveBodies = activeBodies,
                 AsleepBodies = asleepBodies,
@@ -1319,6 +1350,21 @@ namespace Hecton8.Physics
 
             int next = index + 1;
             _physicsCullingFrameTelemetryWriteIndex = next >= PhysicsCullingFrameTelemetryCapacity ? 0 : next;
+        }
+
+        private uint AdvancePhysicsCullingSimulationFrame()
+        {
+            uint next = _physicsCullingSimulationFrame + 1u;
+            if (next == 0u)
+                next = 1u;
+
+            _physicsCullingSimulationFrame = next;
+            return next;
+        }
+
+        private uint ResolvePhysicsCullingSimulationFrame()
+        {
+            return _physicsCullingSimulationFrame != 0u ? _physicsCullingSimulationFrame : 1u;
         }
 
         private void WriteShinobu37PhysicsCullingFrameDump(BinaryWriter writer)

@@ -164,9 +164,6 @@ namespace Hecton8.Core
             if (_syncInProgress)
                 return;
 
-            if (!GlobalRegistry.TryBeginResolution(GlobalRegistry.GlobalRegistryResolutionScope.PlayerInventory))
-                return;
-
             _syncInProgress = true;
             try
             {
@@ -201,7 +198,6 @@ namespace Hecton8.Core
             finally
             {
                 _syncInProgress = false;
-                GlobalRegistry.EndResolution(GlobalRegistry.GlobalRegistryResolutionScope.PlayerInventory);
             }
         }
 

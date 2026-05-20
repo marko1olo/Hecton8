@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 
@@ -13,21 +14,21 @@ namespace Hecton8.Physics
         public const int ConstraintNonFinite = 2;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct TetherVerletTelemetryEntry
     {
-        public uint FrameIndex;
-        public int NodeCount;
-        public int IterationCount;
-        public float PeakConstraintDelta;
-        public float PeakCableTension;
-        public float3 AnchorPosition;
-        public float3 PayloadPosition;
-        public uint Flags;
-        public uint Pad0;
-        public uint Pad1;
-        public uint Pad2;
-        public uint Pad3;
+        [FieldOffset(0)] public uint FrameIndex;
+        [FieldOffset(4)] public int NodeCount;
+        [FieldOffset(8)] public int IterationCount;
+        [FieldOffset(12)] public float PeakConstraintDelta;
+        [FieldOffset(16)] public float PeakCableTension;
+        [FieldOffset(20)] public float3 AnchorPosition;
+        [FieldOffset(32)] public float3 PayloadPosition;
+        [FieldOffset(44)] public uint Flags;
+        [FieldOffset(48)] public uint Pad0;
+        [FieldOffset(52)] public uint Pad1;
+        [FieldOffset(56)] public uint Pad2;
+        [FieldOffset(60)] public uint Pad3;
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
@@ -35,13 +36,13 @@ namespace Hecton8.Physics
     {
         private const byte PinnedNodeMask = 1;
 
-        public NativeArray<float3> Positions;
-        public NativeArray<float3> PreviousPositions;
-        public NativeArray<float3> Velocities;
-        public NativeArray<byte> NodeFaultFlags;
+        [NoAlias] public NativeArray<float3> Positions;
+        [NoAlias] public NativeArray<float3> PreviousPositions;
+        [NoAlias] public NativeArray<float3> Velocities;
+        [NoAlias] public NativeArray<byte> NodeFaultFlags;
 
-        [ReadOnly] public NativeArray<float3> PinnedPositions;
-        [ReadOnly] public NativeArray<byte> PinnedMask;
+        [ReadOnly, NoAlias] public NativeArray<float3> PinnedPositions;
+        [ReadOnly, NoAlias] public NativeArray<byte> PinnedMask;
 
         public float3 Acceleration;
         public float DeltaTimeSq;
@@ -86,7 +87,7 @@ namespace Hecton8.Physics
             }
 
             float3 velocity = (position - previous) * VelocityDamping;
-            float maxVelocity = math.isfinite(MaxCableVelocity) ? math.max(0f, MaxCableVelocity) : 0f;
+            float maxVelocity = math.select(0f, math.max(0f, MaxCableVelocity), math.isfinite(MaxCableVelocity));
             float velocityLengthSq = math.lengthsq(velocity);
             if (!math.isfinite(velocityLengthSq))
             {
@@ -96,8 +97,9 @@ namespace Hecton8.Physics
             }
 
             float maxVelocitySq = maxVelocity * maxVelocity;
-            if (maxVelocity > 0f && velocityLengthSq > maxVelocitySq)
-                velocity *= maxVelocity * math.rsqrt(math.max(velocityLengthSq, 0.000001f));
+            float clampMask = math.step(0.000001f, maxVelocity) * math.step(maxVelocitySq, velocityLengthSq);
+            float3 clampedVelocity = velocity * (maxVelocity * math.rsqrt(math.max(velocityLengthSq, 0.000001f)));
+            velocity = math.select(velocity, clampedVelocity, clampMask > 0f);
 
             if (!math.all(math.isfinite(velocity)))
             {
@@ -110,9 +112,9 @@ namespace Hecton8.Physics
                 Velocities[index] = velocity;
 
             float3 acceleration = SanitizeFloat3(Acceleration, float3.zero);
-            if (WorldSamplerEnabled != 0)
-                acceleration = SanitizeFloat3(acceleration + WorldSampler.SampleFlowAcceleration(position), acceleration);
-            float safeDeltaTimeSq = math.isfinite(DeltaTimeSq) && DeltaTimeSq >= 0f ? DeltaTimeSq : 0f;
+            float3 sampledAcceleration = SanitizeFloat3(acceleration + WorldSampler.SampleFlowAcceleration(position), acceleration);
+            acceleration = math.select(acceleration, sampledAcceleration, WorldSamplerEnabled != 0);
+            float safeDeltaTimeSq = math.select(0f, DeltaTimeSq, math.isfinite(DeltaTimeSq) & DeltaTimeSq >= 0f);
             float3 next = position + velocity + (acceleration * safeDeltaTimeSq);
             float floor = FloorY + math.max(0f, NodeRadius);
             if (next.y < floor)
@@ -149,7 +151,7 @@ namespace Hecton8.Physics
 
         private static float3 SanitizeFloat3(float3 value, float3 fallback)
         {
-            return math.all(math.isfinite(value)) ? value : fallback;
+            return math.select(fallback, value, math.isfinite(value));
         }
     }
 
@@ -159,17 +161,17 @@ namespace Hecton8.Physics
         private const float MinLengthSq = 0.000001f;
         private const byte PinnedNodeMask = 1;
 
-        public NativeArray<float3> Positions;
-        public NativeArray<float3> Corrections;
-        public NativeArray<float> CorrectionWeights;
-        public NativeArray<float> SegmentTensions;
-        public NativeArray<float> SolverStats;
-        public NativeArray<int> SolverFlags;
+        [NoAlias] public NativeArray<float3> Positions;
+        [NoAlias] public NativeArray<float3> Corrections;
+        [NoAlias] public NativeArray<float> CorrectionWeights;
+        [NoAlias] public NativeArray<float> SegmentTensions;
+        [NoAlias] public NativeArray<float> SolverStats;
+        [NoAlias] public NativeArray<int> SolverFlags;
 
-        [ReadOnly] public NativeArray<float> SegmentRestLengths;
-        [ReadOnly] public NativeArray<float3> PinnedPositions;
-        [ReadOnly] public NativeArray<byte> PinnedMask;
-        [ReadOnly] public NativeArray<byte> NodeFaultFlags;
+        [ReadOnly, NoAlias] public NativeArray<float> SegmentRestLengths;
+        [ReadOnly, NoAlias] public NativeArray<float3> PinnedPositions;
+        [ReadOnly, NoAlias] public NativeArray<byte> PinnedMask;
+        [ReadOnly, NoAlias] public NativeArray<byte> NodeFaultFlags;
 
         public int NodeCount;
         public int IterationCount;
@@ -243,7 +245,7 @@ namespace Hecton8.Physics
                     }
 
                     float rawRestLength = SegmentRestLengths[segmentIndex];
-                    float restLength = math.isfinite(rawRestLength) ? math.max(0.0001f, rawRestLength) : 0.0001f;
+                    float restLength = math.select(0.0001f, math.max(0.0001f, rawRestLength), math.isfinite(rawRestLength));
                     float delta = distance - restLength;
                     float stretch = math.max(0f, delta);
                     peakDelta = math.max(peakDelta, stretch);
@@ -314,7 +316,7 @@ namespace Hecton8.Physics
         private void WriteStats(float peakDelta, int faultFlags)
         {
             if (SolverStats.IsCreated && SolverStats.Length > 0)
-                SolverStats[0] = math.isfinite(peakDelta) ? math.max(0f, peakDelta) : 0f;
+                SolverStats[0] = math.select(0f, math.max(0f, peakDelta), math.isfinite(peakDelta));
 
             if (SolverFlags.IsCreated && SolverFlags.Length > 0)
                 SolverFlags[0] = faultFlags;
@@ -330,37 +332,12 @@ namespace Hecton8.Physics
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    internal struct TetherVisualGpuSplineCopyJob : IJobParallelFor
-    {
-        [ReadOnly] public NativeArray<float3> Positions;
-        [ReadOnly] public NativeArray<float> SegmentTensions;
-        public NativeArray<GpuCableSplinePointDTO> GpuPoints;
-        public float InvSnapTension;
-
-        public void Execute(int index)
-        {
-            if ((uint)index >= (uint)Positions.Length || (uint)index >= (uint)GpuPoints.Length)
-                return;
-
-            float tension = 0f;
-            if (SegmentTensions.IsCreated && SegmentTensions.Length > 0)
-                tension = SegmentTensions[math.min(index, SegmentTensions.Length - 1)];
-
-            GpuPoints[index] = new GpuCableSplinePointDTO
-            {
-                Position = Positions[index],
-                Tension01 = math.saturate(tension * math.max(0f, InvSnapTension))
-            };
-        }
-    }
-
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct TetherVerletOriginShiftJob : IJobParallelFor
     {
-        public NativeArray<float3> Positions;
-        public NativeArray<float3> PreviousPositions;
-        public NativeArray<float3> PinnedPositions;
+        [NoAlias] public NativeArray<float3> Positions;
+        [NoAlias] public NativeArray<float3> PreviousPositions;
+        [NoAlias] public NativeArray<float3> PinnedPositions;
         public float3 ShiftOffset;
 
         public void Execute(int index)
@@ -368,7 +345,7 @@ namespace Hecton8.Physics
             if ((uint)index >= (uint)Positions.Length)
                 return;
 
-            float3 safeShiftOffset = math.all(math.isfinite(ShiftOffset)) ? ShiftOffset : float3.zero;
+            float3 safeShiftOffset = math.select(float3.zero, ShiftOffset, math.isfinite(ShiftOffset));
             Positions[index] = SanitizeFloat3(Positions[index] - safeShiftOffset);
 
             if (index < PreviousPositions.Length)
@@ -380,23 +357,24 @@ namespace Hecton8.Physics
 
         private static float3 SanitizeFloat3(float3 value)
         {
-            return math.all(math.isfinite(value)) ? value : float3.zero;
+            return math.select(float3.zero, value, math.isfinite(value));
         }
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct TetherVerletTelemetryJob : IJob
     {
-        public NativeArray<TetherVerletTelemetryEntry> TelemetryRing;
-        public NativeArray<int> TelemetryHead;
+        [NoAlias] public NativeArray<TetherVerletTelemetryEntry> TelemetryRing;
+        [NoAlias] public NativeArray<int> TelemetryHead;
 
-        [ReadOnly] public NativeArray<float> SolverStats;
-        [ReadOnly] public NativeArray<int> SolverFlags;
+        [ReadOnly, NoAlias] public NativeArray<float> SolverStats;
+        [ReadOnly, NoAlias] public NativeArray<int> SolverFlags;
 
         public uint FrameIndex;
         public int NodeCount;
         public int IterationCount;
         public float PeakCableTension;
+        public float TensionScale;
         public float3 AnchorPosition;
         public float3 PayloadPosition;
         public uint Flags;
@@ -422,16 +400,21 @@ namespace Hecton8.Physics
             int localIndex = head >= 0 && head < capacity ? head : 0;
             int index = TelemetryOffset + localIndex;
             uint solverFlags = SolverFlags.IsCreated && SolverFlags.Length > 0 ? (uint)SolverFlags[0] : 0u;
+            float peakConstraintDelta = SanitizeNonNegative(SolverStats.IsCreated && SolverStats.Length > 0 ? SolverStats[0] : 0f);
+            float safeTensionScale = SanitizeNonNegative(TensionScale);
+            float peakCableTension = math.isfinite(PeakCableTension) && PeakCableTension > 0f
+                ? math.max(0f, PeakCableTension)
+                : peakConstraintDelta * safeTensionScale;
             TelemetryRing[index] = new TetherVerletTelemetryEntry
             {
                 FrameIndex = FrameIndex,
                 NodeCount = NodeCount,
                 IterationCount = IterationCount,
-                PeakConstraintDelta = SanitizeNonNegative(SolverStats.IsCreated && SolverStats.Length > 0 ? SolverStats[0] : 0f),
-                PeakCableTension = math.isfinite(PeakCableTension) ? math.max(0f, PeakCableTension) : 0f,
+                PeakConstraintDelta = peakConstraintDelta,
+                PeakCableTension = peakCableTension,
                 AnchorPosition = SanitizeFloat3(AnchorPosition),
                 PayloadPosition = SanitizeFloat3(PayloadPosition),
-                Flags = Flags | solverFlags | ResolveTelemetryFaultFlags(AnchorPosition, PayloadPosition, PeakCableTension),
+                Flags = Flags | solverFlags | ResolveTelemetryFaultFlags(AnchorPosition, PayloadPosition, peakCableTension),
                 Pad0 = 0u,
                 Pad1 = 0u,
                 Pad2 = 0u,
@@ -443,12 +426,12 @@ namespace Hecton8.Physics
 
         private static float SanitizeNonNegative(float value)
         {
-            return math.isfinite(value) ? math.max(0f, value) : 0f;
+            return math.select(0f, math.max(0f, value), math.isfinite(value));
         }
 
         private static float3 SanitizeFloat3(float3 value)
         {
-            return math.all(math.isfinite(value)) ? value : float3.zero;
+            return math.select(float3.zero, value, math.isfinite(value));
         }
 
         private static uint ResolveTelemetryFaultFlags(float3 anchorPosition, float3 payloadPosition, float peakCableTension)

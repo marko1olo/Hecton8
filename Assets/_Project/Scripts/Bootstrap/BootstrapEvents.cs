@@ -18,14 +18,18 @@ namespace Hecton8.Bootstrap
     /// <summary>
     /// Deferred unmanaged bootstrap event payload flushed by <see cref="SystemDispatcher"/>.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct BootstrapEventPayload
     {
-        public uint Frame;
-        public ushort EventType;
-        public ushort StatusBits;
+        [FieldOffset(0)] public uint Frame;
+        [FieldOffset(4)] public ushort EventType;
+        [FieldOffset(6)] public ushort StatusBits;
+        [FieldOffset(8)] private ulong _pad0;
 
-        public bool IsComplete => EventType == (ushort)BootstrapEventType.Complete;
+        public static bool IsCompleteEvent(in BootstrapEventPayload payload)
+        {
+            return payload.EventType == (ushort)BootstrapEventType.Complete;
+        }
     }
 
     /// <summary>

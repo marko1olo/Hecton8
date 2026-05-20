@@ -6,7 +6,6 @@ using Hecton8.Interaction;
 using Hecton8.Physics;
 using Hecton8.Tools;
 using Hecton8.UI;
-using Hecton8.World;
 using System.Collections.Generic;
 using Unity.Mathematics;
 using UnityEngine;
@@ -1036,9 +1035,7 @@ namespace Hecton8.Gameplay
                 anchorPosition += _entanglementInstancePositions[i];
 
             anchorPosition /= trackedCount;
-            AbsoluteUniversePosition bodyAup = AbsoluteUniversePosition.FromRuntimePosition(_transportBody.position);
-            AbsoluteUniversePosition anchorAup = AbsoluteUniversePosition.FromRuntimePosition(anchorPosition);
-            float tetherLength = ApproximateAupDistance(in bodyAup, in anchorAup);
+            float tetherLength = ApproximateRuntimeDistance(_transportBody.position, anchorPosition);
             _vehicleMotor.BeginEntanglement(anchorPosition, tetherLength);
             NotifyEntanglementCritical();
 
@@ -1385,9 +1382,15 @@ namespace Hecton8.Gameplay
             return max + (0.375f * min);
         }
 
-        private static float ApproximateAupDistance(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)
+        private static float ApproximateRuntimeDistance(Vector3 a, Vector3 b)
         {
-            double distance = AbsoluteUniversePosition.ApproximateDistanceMetersClamped(in a, in b);
+            double dx = math.abs((double)a.x - b.x);
+            double dy = math.abs((double)a.y - b.y);
+            double dz = math.abs((double)a.z - b.z);
+            double maxAxis = math.max(dx, math.max(dy, dz));
+            double minAxis = math.min(dx, math.min(dy, dz));
+            double midAxis = dx + dy + dz - maxAxis - minAxis;
+            double distance = maxAxis + (midAxis * 0.5d) + (minAxis * 0.25d);
             return distance >= float.MaxValue ? float.MaxValue : (float)distance;
         }
 

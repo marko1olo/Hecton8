@@ -103,7 +103,7 @@ Current source facts:
 
 - `H8DataMonolithCompiler` path is `Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithCompiler.cs`.
 - Output path is `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`.
-- `Assets/_SourceData`, `Assets/StreamingAssets`, and `Assets/AddressableAssetsData` are empty.
+- 2026-05-19 supersession: `Assets/_SourceData` and `Assets/AddressableAssetsData` are empty; `Assets/StreamingAssets` contains `signal_tuning_profiles.csv` plus its Unity `.meta`, but `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` is absent.
 - Current ContentAuthority payload scans found no concrete hash map, VFX prewarm, object batch, or
   visibility proxy production assets.
 

@@ -28,7 +28,7 @@ Forbidden:
 
 - fake "big discount" by inflating base price;
 - promising future scope to justify current price;
-- using co-op as value proposition;
+- using unsupported multiplayer modes as value proposition;
 - "zero-stutter" as commercial claim without receipts;
 - Early Access copy that sells the final fantasy instead of current build;
 - launching with unclear refund-risk content length.
@@ -103,7 +103,7 @@ Use:
 
 Do not use:
 
-- "will include co-op";
+- "will include multiplayer";
 - "massive future ocean";
 - "zero stutter";
 - "fully simulated";

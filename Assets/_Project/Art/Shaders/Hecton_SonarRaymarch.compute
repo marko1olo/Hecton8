@@ -53,6 +53,17 @@ uint DefaultColor(uint materialId)
     return PackColor(40u, 255u, 216u, 185u);
 }
 
+float Smooth01(float value)
+{
+    float t = saturate(value);
+    return t * t * (3.0f - 2.0f * t);
+}
+
+float ResolveWorkCurve(float quality)
+{
+    return Smooth01(saturate((saturate(quality) - 0.1f) / 0.9f));
+}
+
 float3 FibonacciDirection(uint index, uint count, uint seed)
 {
     float safeCount = max(1.0f, (float)count);
@@ -63,11 +74,27 @@ float3 FibonacciDirection(uint index, uint count, uint seed)
     return float3(cos(theta) * radius, z, sin(theta) * radius);
 }
 
+float SingleLookupDistance01(uint index, uint seed)
+{
+    uint hash = index * 747796405u + seed * 2891336453u + 0x9E3779B9u;
+    hash ^= hash >> 16;
+    hash *= 2246822519u;
+    hash ^= hash >> 13;
+    return (float)(hash & 0x00FFFFFFu) / 16777215.0f;
+}
+
 float SampleSdf(float3 runtimePosition)
 {
     float3 grid = (runtimePosition - _VolumeOrigin) / max(_CellSize, 0.0001f.xxx);
     if (any(grid < 0.0f.xxx) || grid.x > _GridDimensions.x - 1 || grid.y > _GridDimensions.y - 1 || grid.z > _GridDimensions.z - 1)
         return -_SdfRange;
+
+    if (step(0.3f, _GlobalQualityWeight) < 0.5f)
+    {
+        int3 nearest = clamp((int3)round(grid), int3(0, 0, 0), _GridDimensions - 1);
+        float encodedNearest = _VoxelSdfTexture3D.Load(int4(nearest, 0)).r;
+        return (encodedNearest * 2.0f - 1.0f) * _SdfRange;
+    }
 
     float3 uvw = grid / max((float3)(_GridDimensions - 1), 1.0f.xxx);
     float normalized = _VoxelSdfTexture3D.SampleLevel(sampler_VoxelSdfTexture3D, uvw, 0).r;
@@ -81,7 +108,6 @@ void CSClearArgs(uint3 id : SV_DispatchThreadID)
     _IndirectArgs.Store(4, 0u);
     _IndirectArgs.Store(8, 0u);
     _IndirectArgs.Store(12, 0u);
-    _IndirectArgs.Store(16, 0u);
 }
 
 [numthreads(128, 1, 1)]
@@ -93,9 +119,37 @@ void CSRaymarch(uint3 id : SV_DispatchThreadID)
 
     float3 direction = FibonacciDirection(rayIndex, (uint)_RayCount, _SequenceSeed);
     float stepMeters = max(0.05f, _StepMeters);
+    float fullStepBudget = min(1024.0f, ceil(max(1.0f, _MaxDistanceMeters) / stepMeters) + 2.0f);
+    uint maxSteps = (uint)clamp(lerp(1.0f, fullStepBudget, ResolveWorkCurve(_GlobalQualityWeight)), 1.0f, 1024.0f);
+    if (maxSteps <= 1u)
+    {
+        float shell01 = SingleLookupDistance01(rayIndex, _SequenceSeed);
+        float minDistance = min(_MaxDistanceMeters, max(stepMeters, _MaxDistanceMeters * 0.08f));
+        float distanceMeters = lerp(minDistance, _MaxDistanceMeters, shell01);
+        float signedDistance = SampleSdf(_PingRuntime + direction * distanceMeters);
+        float acceptance = max(stepMeters, _SdfRange * 0.25f);
+        if (abs(signedDistance) > acceptance)
+            return;
+
+        float resolvedDistance = clamp(distanceMeters - signedDistance, 0.0f, _MaxDistanceMeters);
+        float distance01 = saturate(resolvedDistance / max(0.001f, _MaxDistanceMeters));
+        uint color = _SonarMaterialColorLut[1];
+        if (color == 0u)
+            color = DefaultColor(1u);
+        float density01 = 1.0f - saturate(abs(signedDistance) / max(0.0001f, acceptance));
+        uint alpha = (uint)clamp((float)((color >> 24) & 255u) * _Intensity01 * (0.35f + density01 * 0.65f) * (1.0f - distance01 * 0.45f), 0.0f, 255.0f);
+        uint writeIndex;
+        _IndirectArgs.InterlockedAdd(4, 1u, writeIndex);
+        if (writeIndex < (uint)_RayCount)
+        {
+            _SonarPointBuffer[writeIndex].LocalPosition = direction * resolvedDistance;
+            _SonarPointBuffer[writeIndex].ColorPacked = (color & 0x00FFFFFFu) | (alpha << 24);
+        }
+        return;
+    }
+
     float previous = SampleSdf(_PingRuntime);
     float previousDistance = 0.0f;
-    uint maxSteps = (uint)ceil(_MaxDistanceMeters / stepMeters);
 
     [loop]
     for (uint stepIndex = 1u; stepIndex <= maxSteps; stepIndex++)
@@ -107,13 +161,18 @@ void CSRaymarch(uint3 id : SV_DispatchThreadID)
         {
             float t = saturate(-previous / max(0.0001f, signedDistance - previous));
             float resolvedDistance = lerp(previousDistance, distanceMeters, t);
-            float3 cameraLocal = _PingCameraLocal + direction * resolvedDistance;
             float distance01 = saturate(resolvedDistance / max(0.001f, _MaxDistanceMeters));
-            uint color = DefaultColor(1u);
+            uint color = _SonarMaterialColorLut[1];
+            if (color == 0u)
+                color = DefaultColor(1u);
             uint alpha = (uint)clamp((float)((color >> 24) & 255u) * _Intensity01 * (1.0f - distance01 * 0.45f), 0.0f, 255.0f);
-            _SonarPointBuffer[rayIndex].LocalPosition = cameraLocal;
-            _SonarPointBuffer[rayIndex].ColorPacked = (color & 0x00FFFFFFu) | (alpha << 24);
-            _IndirectArgs.Store(4, (uint)_RayCount);
+            uint writeIndex;
+            _IndirectArgs.InterlockedAdd(4, 1u, writeIndex);
+            if (writeIndex < (uint)_RayCount)
+            {
+                _SonarPointBuffer[writeIndex].LocalPosition = direction * resolvedDistance;
+                _SonarPointBuffer[writeIndex].ColorPacked = (color & 0x00FFFFFFu) | (alpha << 24);
+            }
             return;
         }
 
@@ -121,8 +180,7 @@ void CSRaymarch(uint3 id : SV_DispatchThreadID)
         previousDistance = distanceMeters;
     }
 
-    _SonarPointBuffer[rayIndex].LocalPosition = 0.0f.xxx;
-    _SonarPointBuffer[rayIndex].ColorPacked = 0u;
+    // Misses leave stale slots untouched; indirect instance count fences them out.
 }
 
 [numthreads(128, 1, 1)]

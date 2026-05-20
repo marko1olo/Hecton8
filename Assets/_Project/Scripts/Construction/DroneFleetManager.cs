@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Hecton.Localization;
 using Hecton8.Caves;
 using Hecton8.AI;
@@ -11,6 +10,7 @@ using Hecton8.Power;
 using Hecton8.SaveSystem;
 using Hecton8.Vehicles.Automation;
 using Hecton8.World;
+using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using Unity.Collections;
@@ -465,6 +465,12 @@ namespace Hecton8.Construction
         private const string DroneSpecsCsvFileName = "drone_chassis_specs.csv";
         private const string DroneSpecsCsvLegacyFileName = "drone_specs.csv";
         private const int DroneSpecsCsvMaxBytes = 16 * 1024;
+        private const int DroneChassisSpecCapacity = 8;
+        private const uint DroneChassisSpecValidFlag = 1u;
+        private const uint DroneChassisRepairHash = 0x29520BB4u;
+        private const uint DroneChassisMiningHash = 0x2FF741A1u;
+        private const uint DroneChassisCombatHash = 0x1CE36E21u;
+        private const uint DroneChassisCutParasiteHash = 0x64C86046u;
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private const float MinimumScoreDistanceMeters = 0.75f;
         private const float MinimumScoreDistanceMetersSq = MinimumScoreDistanceMeters * MinimumScoreDistanceMeters;
@@ -505,6 +511,8 @@ namespace Hecton8.Construction
         private const BufferID DroneFleetSpatialBucketHeadsBufferId = (BufferID)70273;
         private const BufferID DroneFleetSpatialNextIndicesBufferId = (BufferID)70274;
         private const BufferID DroneFleetSpatialKeysBufferId = (BufferID)70275;
+        private const BufferID DroneFleetChassisSpecsBufferId = (BufferID)12870276;
+        private const BufferID DroneFleetCsvScratchBufferId = (BufferID)12870277;
         private const float DroneCullRadiusMeters = 1.25f;
         private const float LowTierDroneRenderDistanceMeters = 50f;
         private const float MidTierDroneRenderDistanceMeters = 100f;
@@ -630,6 +638,9 @@ namespace Hecton8.Construction
         private static NativeArray<RaycastCommand> s_DockingRaycastCommands;
         private static NativeArray<RaycastHit> s_DockingRaycastHits;
         private static NativeArray<int> s_DockingRaycastSlots;
+        private static JobHandle s_DockingRaycastHandle;
+        private static int s_DockingRaycastCount;
+        private static bool s_DockingRaycastScheduled;
         private static NativeArray<DroneTaskDTO> s_DroneTaskPriorityHeap;
         private static NativeArray<DroneStateDTO> s_DroneStateDtos;
         private static NativeArray<DroneTargetDTO> s_DroneTargetDtos;
@@ -638,6 +649,8 @@ namespace Hecton8.Construction
         private static NativeArray<int> s_DroneSpatialBucketHeads;
         private static NativeArray<int> s_DroneSpatialNextIndices;
         private static NativeArray<int> s_DroneSpatialKeys;
+        private static NativeArray<DroneChassisSpecDTO> s_DroneChassisSpecs;
+        private static NativeArray<byte> s_DroneSpecsCsvScratch;
         private static VaultBufferHandle<int> s_TaskClaimCountsHandle;
         private static VaultBufferHandle<HeadlessDroneState> s_DroneStatesHandle;
         private static VaultBufferHandle<HeadlessDroneState> s_DroneStateBackBufferHandle;
@@ -673,6 +686,8 @@ namespace Hecton8.Construction
         private static VaultBufferHandle<int> s_DroneSpatialBucketHeadsHandle;
         private static VaultBufferHandle<int> s_DroneSpatialNextIndicesHandle;
         private static VaultBufferHandle<int> s_DroneSpatialKeysHandle;
+        private static VaultBufferHandle<DroneChassisSpecDTO> s_DroneChassisSpecsHandle;
+        private static VaultBufferHandle<byte> s_DroneSpecsCsvScratchHandle;
         private static bool s_DronePositionsSoAVaultBacked;
         private static bool s_DroneStateBytesVaultBacked;
         private static bool s_DroneBlackBoxVaultBacked;
@@ -701,6 +716,8 @@ namespace Hecton8.Construction
         private static bool s_DroneSpatialBucketHeadsVaultBacked;
         private static bool s_DroneSpatialNextIndicesVaultBacked;
         private static bool s_DroneSpatialKeysVaultBacked;
+        private static bool s_DroneChassisSpecsVaultBacked;
+        private static bool s_DroneSpecsCsvScratchVaultBacked;
         private static NativeArray<DroneServiceCommand> s_DroneServiceCommands;
         private static NativeArray<DroneServiceCommandCursor> s_DroneServiceCommandCursor;
         private static RepairDroneHub[] s_DroneHubs;
@@ -720,6 +737,7 @@ namespace Hecton8.Construction
         private static DroneFleetTaskKind[] s_TaskKinds;
         private static PendingDroneLaunch[] s_PendingLaunches;
         private static int s_PendingLaunchCount;
+        private static int s_DroneChassisSpecCount;
         private static int s_HeadlessTaskCount;
         private static int s_HeadlessDroneIdSequence;
         private static int s_HeadlessStasisSlotCount;
@@ -829,8 +847,6 @@ namespace Hecton8.Construction
         private static readonly Vector4[] s_CullingPlaneVectors = new Vector4[6];
         // COLD ALLOC: SpatialQueryHit[16] - drone acoustic relay contact scratch buffer - owner: DroneFleetManager
         private static readonly SpatialQueryHit[] s_DroneRelayContacts = new SpatialQueryHit[MaxDroneRelayContacts];
-        // COLD ALLOC: byte[16KB] - editor/cold CSV parser scratch, never touched by fleet Tick.
-        private static readonly byte[] s_DroneSpecsCsvReadBuffer = new byte[DroneSpecsCsvMaxBytes];
         // COLD ALLOC: SubmarineOsEventBridge[1] - static fleet bridge into deferred submarine OS payloads - owner: DroneFleetManager
         private static readonly SubmarineOsEventBridge s_SubmarineOsEventBridge = new SubmarineOsEventBridge();
         // COLD ALLOC: StorageReservationCommitResolvedBridge[1] - static fleet bridge into deferred command queue acknowledgements - owner: DroneFleetManager
@@ -866,6 +882,7 @@ namespace Hecton8.Construction
             }
 
             TryUnregisterHeadlessDriver();
+            CompleteDockingObstacleAbortsForReset();
             CompletePendingHeadlessJobForReset();
             ReleaseHeadlessNativeMemory();
             ReleaseRenderBuffers();
@@ -1313,6 +1330,8 @@ namespace Hecton8.Construction
 
         private static void AllocateHeadlessNativeMemory()
         {
+            ValidateDroneFleetDtoLayouts();
+
             s_DroneStates = ResolveDroneVaultBuffer<HeadlessDroneState>(BufferID.ShinobuDroneFleetStates, HeadlessDroneCapacity, NativeArrayOptions.UninitializedMemory, ref s_DroneStatesHandle, out s_DroneStatesVaultBacked); // COLD ALLOC: NativeArray<HeadlessDroneState>[512] - authoritative drone state pool - owner: GlobalDataVault/H8Memory fallback
             s_DroneStateBackBuffer = ResolveDroneVaultBuffer<HeadlessDroneState>(BufferID.ShinobuDroneFleetStateBackBuffer, HeadlessDroneCapacity, NativeArrayOptions.UninitializedMemory, ref s_DroneStateBackBufferHandle, out s_DroneStateBackBufferVaultBacked); // COLD ALLOC: NativeArray<HeadlessDroneState>[512] - Burst double-buffer write lane - owner: GlobalDataVault/H8Memory fallback
             s_DroneRenderMatrices = ResolveDroneVaultBuffer<float4x4>(BufferID.ShinobuDroneFleetRenderMatrices, HeadlessDroneCapacity, NativeArrayOptions.UninitializedMemory, ref s_DroneRenderMatricesHandle, out s_DroneRenderMatricesVaultBacked); // COLD ALLOC: NativeArray<float4x4>[512] - indirect render front matrices - owner: GlobalDataVault/H8Memory fallback
@@ -1347,6 +1366,8 @@ namespace Hecton8.Construction
             s_DroneSpatialBucketHeads = ResolveDroneVaultBuffer<int>(DroneFleetSpatialBucketHeadsBufferId, DroneSpatialBucketCapacity, NativeArrayOptions.UninitializedMemory, ref s_DroneSpatialBucketHeadsHandle, out s_DroneSpatialBucketHeadsVaultBacked); // COLD ALLOC: NativeArray<int>[2048] - flat boid spatial hash bucket heads - owner: GlobalDataVault/H8Memory fallback
             s_DroneSpatialNextIndices = ResolveDroneVaultBuffer<int>(DroneFleetSpatialNextIndicesBufferId, HeadlessDroneCapacity, NativeArrayOptions.UninitializedMemory, ref s_DroneSpatialNextIndicesHandle, out s_DroneSpatialNextIndicesVaultBacked); // COLD ALLOC: NativeArray<int>[512] - flat boid spatial hash linked-list next indices - owner: GlobalDataVault/H8Memory fallback
             s_DroneSpatialKeys = ResolveDroneVaultBuffer<int>(DroneFleetSpatialKeysBufferId, HeadlessDroneCapacity, NativeArrayOptions.UninitializedMemory, ref s_DroneSpatialKeysHandle, out s_DroneSpatialKeysVaultBacked); // COLD ALLOC: NativeArray<int>[512] - exact spatial cell keys for bucket collision checks - owner: GlobalDataVault/H8Memory fallback
+            s_DroneChassisSpecs = ResolveDroneVaultBuffer<DroneChassisSpecDTO>(DroneFleetChassisSpecsBufferId, DroneChassisSpecCapacity, NativeArrayOptions.ClearMemory, ref s_DroneChassisSpecsHandle, out s_DroneChassisSpecsVaultBacked); // COLD ALLOC: NativeArray<DroneChassisSpecDTO>[8] - hashed chassis tuning rows from drone_chassis_specs.csv - owner: GlobalDataVault/H8Memory fallback
+            s_DroneSpecsCsvScratch = ResolveDroneVaultBuffer<byte>(DroneFleetCsvScratchBufferId, DroneSpecsCsvMaxBytes, NativeArrayOptions.UninitializedMemory, ref s_DroneSpecsCsvScratchHandle, out s_DroneSpecsCsvScratchVaultBacked); // COLD ALLOC: NativeArray<byte>[16KB] - unmanaged CSV scratch for cold designer reload - owner: GlobalDataVault/H8Memory fallback
             RegisterNativeArrayIfFallback(s_DroneStates, s_DroneStatesVaultBacked, nameof(s_DroneStates));
             RegisterNativeArrayIfFallback(s_DroneStateBackBuffer, s_DroneStateBackBufferVaultBacked, nameof(s_DroneStateBackBuffer));
             RegisterNativeArrayIfFallback(s_DroneRenderMatrices, s_DroneRenderMatricesVaultBacked, nameof(s_DroneRenderMatrices));
@@ -1381,6 +1402,8 @@ namespace Hecton8.Construction
             RegisterNativeArrayIfFallback(s_DroneSpatialBucketHeads, s_DroneSpatialBucketHeadsVaultBacked, nameof(s_DroneSpatialBucketHeads));
             RegisterNativeArrayIfFallback(s_DroneSpatialNextIndices, s_DroneSpatialNextIndicesVaultBacked, nameof(s_DroneSpatialNextIndices));
             RegisterNativeArrayIfFallback(s_DroneSpatialKeys, s_DroneSpatialKeysVaultBacked, nameof(s_DroneSpatialKeys));
+            RegisterNativeArrayIfFallback(s_DroneChassisSpecs, s_DroneChassisSpecsVaultBacked, nameof(s_DroneChassisSpecs));
+            RegisterNativeArrayIfFallback(s_DroneSpecsCsvScratch, s_DroneSpecsCsvScratchVaultBacked, nameof(s_DroneSpecsCsvScratch));
             s_DroneHubs = new RepairDroneHub[HeadlessDroneCapacity]; // COLD ALLOC: RepairDroneHub[512] - managed hub owner lookup for late-frame service commits - owner: DroneFleetManager
             s_DroneSlotDroneIds = new int[HeadlessDroneCapacity]; // COLD ALLOC: int[512] - managed active drone id slots safe during job execution - owner: DroneFleetManager
             s_DroneSlotDestroyed = new bool[HeadlessDroneCapacity]; // COLD ALLOC: bool[512] - permanently consumed suicide-weld slots - owner: DroneFleetManager
@@ -1400,6 +1423,7 @@ namespace Hecton8.Construction
             ClearAllHeadlessSlots();
             if (s_DroneTuningConstants.IsCreated && s_DroneTuningConstants.Length > 0)
                 s_DroneTuningConstants[0] = DroneFleetTuningConstants.CreateDefault();
+            ClearDroneChassisSpecs();
             if (s_DroneMacroWaypointStates.IsCreated)
             {
                 for (int i = 0; i < s_DroneMacroWaypointStates.Length; i++)
@@ -1407,8 +1431,22 @@ namespace Hecton8.Construction
             }
         }
 
+        private static void ValidateDroneFleetDtoLayouts()
+        {
+            if (DroneFleetLayoutSentinel.ValidateDroneStateDTO() &&
+                DroneFleetLayoutSentinel.ValidateDroneTargetDTO() &&
+                DroneFleetLayoutSentinel.ValidateDroneTaskDTO() &&
+                DroneFleetLayoutSentinel.ValidateDroneChassisSpecDTO())
+            {
+                return;
+            }
+
+            throw new InvalidOperationException("SHINOBU_128 drone fleet DTO ABI validation failed.");
+        }
+
         private static void ReleaseHeadlessNativeMemory()
         {
+            CompleteDockingObstacleAbortsForReset();
             ReleaseDroneVaultBuffer(ref s_DroneStates, ref s_DroneStatesHandle, ref s_DroneStatesVaultBacked, nameof(s_DroneStates));
             ReleaseDroneVaultBuffer(ref s_DroneStateBackBuffer, ref s_DroneStateBackBufferHandle, ref s_DroneStateBackBufferVaultBacked, nameof(s_DroneStateBackBuffer));
             ReleaseDroneVaultBuffer(ref s_DroneRenderMatrices, ref s_DroneRenderMatricesHandle, ref s_DroneRenderMatricesVaultBacked, nameof(s_DroneRenderMatrices));
@@ -1443,6 +1481,8 @@ namespace Hecton8.Construction
             ReleaseDroneVaultBuffer(ref s_DroneSpatialBucketHeads, ref s_DroneSpatialBucketHeadsHandle, ref s_DroneSpatialBucketHeadsVaultBacked, nameof(s_DroneSpatialBucketHeads));
             ReleaseDroneVaultBuffer(ref s_DroneSpatialNextIndices, ref s_DroneSpatialNextIndicesHandle, ref s_DroneSpatialNextIndicesVaultBacked, nameof(s_DroneSpatialNextIndices));
             ReleaseDroneVaultBuffer(ref s_DroneSpatialKeys, ref s_DroneSpatialKeysHandle, ref s_DroneSpatialKeysVaultBacked, nameof(s_DroneSpatialKeys));
+            ReleaseDroneVaultBuffer(ref s_DroneChassisSpecs, ref s_DroneChassisSpecsHandle, ref s_DroneChassisSpecsVaultBacked, nameof(s_DroneChassisSpecs));
+            ReleaseDroneVaultBuffer(ref s_DroneSpecsCsvScratch, ref s_DroneSpecsCsvScratchHandle, ref s_DroneSpecsCsvScratchVaultBacked, nameof(s_DroneSpecsCsvScratch));
 
             s_DroneHubs = null;
             s_DroneSlotDroneIds = null;
@@ -1460,6 +1500,7 @@ namespace Hecton8.Construction
             s_TaskVoxelVolumeRefs = null;
             s_TaskKinds = null;
             s_PendingLaunches = null;
+            s_DroneChassisSpecCount = 0;
         }
 
         private static NativeArray<DroneCullingStateGpu> ResolveDroneCullingStatesBuffer()
@@ -1801,6 +1842,181 @@ namespace Hecton8.Construction
             return tuning;
         }
 
+        private static void ClearDroneChassisSpecs()
+        {
+            s_DroneChassisSpecCount = 0;
+            if (!s_DroneChassisSpecs.IsCreated)
+                return;
+
+            for (int i = 0; i < s_DroneChassisSpecs.Length; i++)
+                s_DroneChassisSpecs[i] = default;
+        }
+
+        private static DroneChassisSpecDTO CreateFallbackDroneChassisSpec(uint typeHash, in DroneFleetTuningConstants tuning)
+        {
+            float speedScale = 1f;
+            float drainScale = 1f;
+            float repairScale = 1f;
+            float cargoScale = 1f;
+            float miningHoldScale = 1f;
+
+            if (typeHash == DroneChassisMiningHash)
+            {
+                speedScale = 0.85f;
+                drainScale = 0.9f;
+                cargoScale = 1.5f;
+                miningHoldScale = 0.85f;
+            }
+            else if (typeHash == DroneChassisCombatHash || typeHash == DroneChassisCutParasiteHash)
+            {
+                speedScale = 1.15f;
+                drainScale = 1.25f;
+                repairScale = 0.75f;
+                cargoScale = 0.5f;
+            }
+
+            DroneChassisSpecDTO spec = new DroneChassisSpecDTO
+            {
+                TypeHash = typeHash,
+                Flags = DroneChassisSpecValidFlag,
+                MaxSpeed = tuning.MaxDroneSpeed * speedScale,
+                BatteryCapacity = 100f,
+                BatteryDrainRate = tuning.BatteryDrainRate * drainScale,
+                RepairSpeed = tuning.RepairSpeed * repairScale,
+                CargoCapacity = tuning.CargoCapacity * cargoScale,
+                MiningHoldSeconds = tuning.MiningHoldSeconds * miningHoldScale,
+                SdfRepulsionScale = 1f,
+                Reserved0 = 0f
+            };
+            return SanitizeDroneChassisSpec(spec, in tuning);
+        }
+
+        private static DroneChassisSpecDTO SanitizeDroneChassisSpec(DroneChassisSpecDTO spec, in DroneFleetTuningConstants tuning)
+        {
+            if (spec.TypeHash == 0u)
+                spec.TypeHash = DroneChassisRepairHash;
+
+            if (spec.MaxSpeed <= 0f)
+                spec.MaxSpeed = tuning.MaxDroneSpeed;
+            if (spec.BatteryCapacity <= 0f)
+                spec.BatteryCapacity = 100f;
+            if (spec.BatteryDrainRate <= 0f)
+                spec.BatteryDrainRate = tuning.BatteryDrainRate;
+            if (spec.RepairSpeed <= 0f)
+                spec.RepairSpeed = tuning.RepairSpeed;
+            if (spec.CargoCapacity <= 0f)
+                spec.CargoCapacity = tuning.CargoCapacity;
+            if (spec.MiningHoldSeconds <= 0f)
+                spec.MiningHoldSeconds = tuning.MiningHoldSeconds;
+            if (spec.SdfRepulsionScale <= 0f)
+                spec.SdfRepulsionScale = 1f;
+
+            spec.MaxSpeed = Mathf.Clamp(spec.MaxSpeed, 0.5f, 24f);
+            spec.BatteryCapacity = Mathf.Clamp(spec.BatteryCapacity, 1f, 100f);
+            spec.BatteryDrainRate = Mathf.Clamp(spec.BatteryDrainRate, 0.01f, 25f);
+            spec.RepairSpeed = Mathf.Clamp(spec.RepairSpeed, 0.05f, 8f);
+            spec.CargoCapacity = Mathf.Clamp(spec.CargoCapacity, 1f, 64f);
+            spec.MiningHoldSeconds = Mathf.Clamp(spec.MiningHoldSeconds, 0.01f, 5f);
+            spec.SdfRepulsionScale = Mathf.Clamp(spec.SdfRepulsionScale, 0.1f, 4f);
+            spec.Flags |= DroneChassisSpecValidFlag;
+            spec.Reserved0 = 0f;
+            spec._pad0 = 0ul;
+            spec._pad1 = 0ul;
+            spec._pad2 = 0ul;
+            return spec;
+        }
+
+        private static void CommitDroneChassisSpecs(ReadOnlySpan<DroneChassisSpecDTO> stagedSpecs, int stagedCount)
+        {
+            if (!s_DroneChassisSpecs.IsCreated || s_DroneChassisSpecs.Length <= 0 || stagedCount <= 0)
+                return;
+
+            ClearDroneChassisSpecs();
+            int count = Mathf.Min(stagedCount, s_DroneChassisSpecs.Length);
+            for (int i = 0; i < count; i++)
+                s_DroneChassisSpecs[i] = stagedSpecs[i];
+
+            s_DroneChassisSpecCount = count;
+        }
+
+        private static bool TryUpsertStagedDroneChassisSpec(
+            DroneChassisSpecDTO spec,
+            in DroneFleetTuningConstants tuning,
+            Span<DroneChassisSpecDTO> stagedSpecs,
+            ref int stagedCount)
+        {
+            if (stagedSpecs.Length <= 0)
+                return false;
+
+            spec = SanitizeDroneChassisSpec(spec, in tuning);
+            int count = Mathf.Clamp(stagedCount, 0, stagedSpecs.Length);
+            stagedCount = count;
+            for (int i = 0; i < count; i++)
+            {
+                if ((stagedSpecs[i].Flags & DroneChassisSpecValidFlag) == 0u ||
+                    stagedSpecs[i].TypeHash != spec.TypeHash)
+                {
+                    continue;
+                }
+
+                stagedSpecs[i] = spec;
+                return true;
+            }
+
+            if (count >= stagedSpecs.Length)
+                return false;
+
+            stagedSpecs[count] = spec;
+            stagedCount = count + 1;
+            return true;
+        }
+
+        private static bool TryResolveDroneChassisSpec(uint typeHash, out DroneChassisSpecDTO spec)
+        {
+            spec = default;
+            if (!s_DroneChassisSpecs.IsCreated || s_DroneChassisSpecCount <= 0)
+                return false;
+
+            int count = Mathf.Min(s_DroneChassisSpecCount, s_DroneChassisSpecs.Length);
+            for (int i = 0; i < count; i++)
+            {
+                DroneChassisSpecDTO candidate = s_DroneChassisSpecs[i];
+                if ((candidate.Flags & DroneChassisSpecValidFlag) == 0u || candidate.TypeHash != typeHash)
+                    continue;
+
+                spec = candidate;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static uint ResolveDroneChassisHash(DroneFleetTaskKind kind)
+        {
+            if (kind == DroneFleetTaskKind.MineNode)
+                return DroneChassisMiningHash;
+
+            if (kind == DroneFleetTaskKind.CutParasite)
+                return DroneChassisCombatHash;
+
+            return DroneChassisRepairHash;
+        }
+
+        private static DroneChassisSpecDTO ResolveLaunchDroneChassisSpec(DroneFleetTaskKind kind, in DroneFleetTuningConstants tuning)
+        {
+            uint typeHash = ResolveDroneChassisHash(kind);
+            if (TryResolveDroneChassisSpec(typeHash, out DroneChassisSpecDTO spec))
+                return SanitizeDroneChassisSpec(spec, in tuning);
+
+            if (kind == DroneFleetTaskKind.CutParasite &&
+                TryResolveDroneChassisSpec(DroneChassisCutParasiteHash, out spec))
+            {
+                return SanitizeDroneChassisSpec(spec, in tuning);
+            }
+
+            return CreateFallbackDroneChassisSpec(typeHash, in tuning);
+        }
+
         private static int ResolveDroneSteeringTickModulo(in DroneFleetTuningConstants tuning)
         {
             float quality = ResolveGlobalQualityWeight();
@@ -2114,6 +2330,10 @@ namespace Hecton8.Construction
                 return;
             }
 
+            TryFinalizeDockingObstacleAborts();
+            if (s_DockingRaycastScheduled)
+                return;
+
             int commandCount = 0;
             int segmentCount = ResolveDockingObstacleSegmentCount();
             float invSegmentCount = math.rcp((float)segmentCount);
@@ -2159,8 +2379,41 @@ namespace Hecton8.Construction
 
             NativeArray<RaycastCommand> commandBatch = s_DockingRaycastCommands.GetSubArray(0, commandCount);
             NativeArray<RaycastHit> hitBatch = s_DockingRaycastHits.GetSubArray(0, commandCount);
-            JobHandle raycastHandle = RaycastCommand.ScheduleBatch(commandBatch, hitBatch, DockingRaycastMinCommandsPerJob, default);
-            DispatcherJobSwap.TryComplete(ref raycastHandle, true);
+            s_DockingRaycastHandle = RaycastCommand.ScheduleBatch(commandBatch, hitBatch, DockingRaycastMinCommandsPerJob, default);
+            s_DockingRaycastCount = commandCount;
+            s_DockingRaycastScheduled = true;
+            H8Memory.RegisterActiveJob(SystemID.Construction, s_DockingRaycastHandle);
+            JobHandle.ScheduleBatchedJobs();
+        }
+
+        private static void CompleteDockingObstacleAbortsForReset()
+        {
+            if (!s_DockingRaycastScheduled)
+                return;
+
+            if (!DispatcherJobSwap.TryComplete(ref s_DockingRaycastHandle, true))
+                return;
+
+            FinishDockingObstacleAborts();
+        }
+
+        private static bool TryFinalizeDockingObstacleAborts()
+        {
+            if (!s_DockingRaycastScheduled)
+                return true;
+
+            if (!DispatcherJobSwap.TryFinalizeCompleted(ref s_DockingRaycastHandle))
+                return false;
+
+            FinishDockingObstacleAborts();
+            return true;
+        }
+
+        private static void FinishDockingObstacleAborts()
+        {
+            int commandCount = math.min(s_DockingRaycastCount, DockingRaycastCapacity);
+            s_DockingRaycastScheduled = false;
+            s_DockingRaycastCount = 0;
 
             for (int i = 0; i < commandCount; i++)
             {
@@ -2513,7 +2766,7 @@ namespace Hecton8.Construction
                 }
                 else if (s_DroneTaskKindsBySlot[slot] == DroneFleetTaskKind.MineNode)
                 {
-                    ApplyMockMiningService(ref drone, serviceDt);
+                    ApplyMockMiningService(slot, ref drone, serviceDt);
                 }
                 else if (s_DroneTaskKindsBySlot[slot] == DroneFleetTaskKind.CutParasite)
                 {
@@ -2730,10 +2983,11 @@ namespace Hecton8.Construction
             ConsumeSolderByWork(ref drone, repairAmount, SolderIntegrityUnitsPerPack);
         }
 
-        private static void ApplyMockMiningService(ref HeadlessDroneState drone, float dt)
+        private static void ApplyMockMiningService(int slot, ref HeadlessDroneState drone, float dt)
         {
             DroneFleetTuningConstants tuning = ResolveDroneTuning();
-            float holdSeconds = Mathf.Max(0.01f, tuning.MiningHoldSeconds);
+            DroneChassisSpecDTO chassis = ResolveLaunchDroneChassisSpec(s_DroneTaskKindsBySlot[slot], in tuning);
+            float holdSeconds = Mathf.Max(0.01f, chassis.MiningHoldSeconds);
             drone.RepairAccumulator = Mathf.Min(holdSeconds, drone.RepairAccumulator + Mathf.Max(0f, dt));
             drone.TransactionProgress = Mathf.Clamp01(drone.RepairAccumulator / holdSeconds);
             if (drone.RepairAccumulator < holdSeconds)
@@ -2976,7 +3230,6 @@ namespace Hecton8.Construction
                 return;
 
             DroneFleetTuningConstants tuning = ResolveDroneTuning();
-            int tunedCargoCapacity = Mathf.Max(1, Mathf.RoundToInt(tuning.CargoCapacity));
             for (int i = 0; i < s_PendingLaunchCount; i++)
             {
                 PendingDroneLaunch launch = s_PendingLaunches[i];
@@ -3005,6 +3258,8 @@ namespace Hecton8.Construction
                 double3 homeAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(launch.HomePosition);
                 double3 targetAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(launch.Task.Position);
                 uint launchTaskHash = ComputeDroneTaskHash(launch.Task.Kind, launch.DroneId, GetRuntimeId(target));
+                DroneChassisSpecDTO chassis = ResolveLaunchDroneChassisSpec(launch.Task.Kind, in tuning);
+                int tunedCargoCapacity = Mathf.Max(1, Mathf.RoundToInt(chassis.CargoCapacity));
 
                 HeadlessDroneState state = new HeadlessDroneState
                 {
@@ -3018,16 +3273,16 @@ namespace Hecton8.Construction
                     State = (byte)HeadlessDroneRuntimeState.Travel,
                     FactionBit = (byte)HeadlessDroneFactionBit.Friendly,
                     CorridorTight = ResolveCorridorFlag(launch.HomePosition),
-                    BatteryPercent = 100f,
+                    BatteryPercent = chassis.BatteryCapacity,
                     RepairAccumulator = 0f,
                     DockingElapsed = 0f,
                     RebootElapsed = 0f,
                     AvoidanceHysteresisSeconds = 0f,
                     TransactionProgress = 0f,
                     ServiceRadius = Mathf.Max(HeadlessServiceRadiusMeters, launch.Task.Radius),
-                    MaxSpeed = tuning.MaxDroneSpeed,
-                    BatteryDrainPerSecond = tuning.BatteryDrainRate,
-                    RepairRatePerSecond = Mathf.Max(0.01f, launch.RepairRatePerSecond * tuning.RepairSpeed),
+                    MaxSpeed = chassis.MaxSpeed,
+                    BatteryDrainPerSecond = chassis.BatteryDrainRate,
+                    RepairRatePerSecond = Mathf.Max(0.01f, launch.RepairRatePerSecond * chassis.RepairSpeed),
                     WeldPowerNormalized = HeadlessWeldPowerNormalized,
                     WeldRangeMeters = HeadlessWeldRangeMeters,
                     Position = ToFloat3(launch.HomePosition),
@@ -3060,7 +3315,7 @@ namespace Hecton8.Construction
                         AUP_Position = homeAup,
                         Velocity = float3.zero,
                         CurrentTaskHash = launchTaskHash,
-                        BatteryLevel = 100f,
+                        BatteryLevel = chassis.BatteryCapacity,
                         Flags = ((uint)state.State) | ((uint)state.FactionBit << 8) | ((uint)state.CorridorTight << 16)
                     };
                 }
@@ -3558,11 +3813,25 @@ namespace Hecton8.Construction
         {
             position = Vector3.zero;
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
-            if (playerTransform == null)
+            if (playerContext == null)
                 return false;
 
-            position = playerTransform.position;
+            if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                math.all(math.isfinite(snapshot.RuntimePosition)))
+            {
+                position = new Vector3(snapshot.RuntimePosition.x, snapshot.RuntimePosition.y, snapshot.RuntimePosition.z);
+                return true;
+            }
+
+            var playerMovement = playerContext.PlayerMovement;
+            if (playerMovement == null)
+                return false;
+
+            float3 runtime = playerMovement.CurrentAup.ToRuntimeFloat3();
+            if (!math.all(math.isfinite(runtime)))
+                return false;
+
+            position = new Vector3(runtime.x, runtime.y, runtime.z);
             return true;
         }
 
@@ -4432,9 +4701,11 @@ namespace Hecton8.Construction
                 TasksCompleted = s_DroneTasksCompletedCount,
                 LastAStarStatus = s_LastDroneAStarStatus,
                 SteeringTickModulo = s_LastDroneSteeringTickModulo,
+                ChassisSpecCount = s_DroneChassisSpecCount,
                 AveragePathfindingTimeMs = s_LastDroneAStarAveragePathfindingTimeMs,
                 SdfRepulsionStrength = tuning.SdfRepulsionStrength,
-                AStarCellSize = tuning.AStarCellSize
+                AStarCellSize = tuning.AStarCellSize,
+                AverageBatteryPercent = s_LastFleetStatusSnapshot.AverageBattery
             };
 
             return s_DroneStates.IsCreated;
@@ -4597,53 +4868,74 @@ namespace Hecton8.Construction
             if (!File.Exists(resolvedPath))
                 return false;
 
-            int bytesRead;
-            using (FileStream stream = File.OpenRead(resolvedPath))
-            {
-                bytesRead = stream.Read(s_DroneSpecsCsvReadBuffer, 0, s_DroneSpecsCsvReadBuffer.Length);
-            }
-
-            if (bytesRead <= 0)
+            EnsureInitialized();
+            if (!s_DroneSpecsCsvScratch.IsCreated || s_DroneSpecsCsvScratch.Length <= 0)
                 return false;
 
             DroneFleetTuningConstants tuning = ResolveDroneTuning();
-            int lineStart = 0;
-            for (int i = 0; i <= bytesRead; i++)
+            Span<DroneChassisSpecDTO> stagedChassisSpecs = stackalloc DroneChassisSpecDTO[DroneChassisSpecCapacity];
+            int stagedChassisSpecCount = 0;
+            unsafe
             {
-                if (i < bytesRead && s_DroneSpecsCsvReadBuffer[i] != (byte)'\n')
-                    continue;
+                int bytesRead;
+                byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(s_DroneSpecsCsvScratch);
+                Span<byte> scratch = new Span<byte>(scratchPtr, s_DroneSpecsCsvScratch.Length);
+                using (FileStream stream = File.OpenRead(resolvedPath))
+                {
+                    bytesRead = stream.Read(scratch);
+                }
 
-                if (TryApplyDroneSpecLine(s_DroneSpecsCsvReadBuffer, lineStart, i, ref tuning))
-                    keysApplied++;
-                lineStart = i + 1;
+                if (bytesRead <= 0)
+                    return false;
+
+                ReadOnlySpan<byte> bytes = new ReadOnlySpan<byte>(scratchPtr, bytesRead);
+                int lineStart = 0;
+                for (int i = 0; i <= bytesRead; i++)
+                {
+                    if (i < bytesRead && bytes[i] != (byte)'\n')
+                        continue;
+
+                    if (TryApplyDroneSpecLine(bytes, lineStart, i, ref tuning))
+                        keysApplied++;
+                    lineStart = i + 1;
+                }
+
+                tuning = SanitizeDroneTuning(tuning);
+                lineStart = 0;
+                for (int i = 0; i <= bytesRead; i++)
+                {
+                    if (i < bytesRead && bytes[i] != (byte)'\n')
+                        continue;
+
+                    if (TryApplyDroneChassisSpecLine(bytes, lineStart, i, in tuning, stagedChassisSpecs, ref stagedChassisSpecCount))
+                        keysApplied++;
+                    lineStart = i + 1;
+                }
             }
 
             if (keysApplied <= 0)
                 return false;
 
             ApplyDroneFleetTuningConstants(in tuning);
+            if (stagedChassisSpecCount > 0)
+                CommitDroneChassisSpecs(stagedChassisSpecs, stagedChassisSpecCount);
             return true;
         }
 
-        private static bool TryApplyDroneSpecLine(byte[] bytes, int lineStart, int lineEnd, ref DroneFleetTuningConstants tuning)
+        private static bool TryApplyDroneSpecLine(ReadOnlySpan<byte> bytes, int lineStart, int lineEnd, ref DroneFleetTuningConstants tuning)
         {
             int start = TrimAsciiLeft(bytes, lineStart, lineEnd);
             int end = TrimAsciiRight(bytes, start, lineEnd);
             if (start >= end || bytes[start] == (byte)'#')
                 return false;
 
-            int separator = -1;
-            for (int i = start; i < end; i++)
-            {
-                byte token = bytes[i];
-                if (token == (byte)',' || token == (byte)'=')
-                {
-                    separator = i;
-                    break;
-                }
-            }
+            int separator = FindKeyValueSeparator(bytes, start, end);
 
             if (separator <= start || separator >= end - 1)
+                return false;
+
+            int secondSeparator = FindCsvSeparator(bytes, separator + 1, end);
+            if (secondSeparator > separator)
                 return false;
 
             int keyStart = TrimAsciiLeft(bytes, start, separator);
@@ -4656,7 +4948,124 @@ namespace Hecton8.Construction
             return TryApplyDroneSpecKey(bytes, keyStart, keyEnd, value, ref tuning);
         }
 
-        private static bool TryApplyDroneSpecKey(byte[] bytes, int keyStart, int keyEnd, float value, ref DroneFleetTuningConstants tuning)
+        private static bool TryApplyDroneChassisSpecLine(
+            ReadOnlySpan<byte> bytes,
+            int lineStart,
+            int lineEnd,
+            in DroneFleetTuningConstants tuning,
+            Span<DroneChassisSpecDTO> stagedSpecs,
+            ref int stagedCount)
+        {
+            int typeEnd = FindCsvSeparator(bytes, lineStart, lineEnd);
+            if (typeEnd <= lineStart)
+                return false;
+
+            int secondSeparator = FindCsvSeparator(bytes, typeEnd + 1, lineEnd);
+            if (secondSeparator <= typeEnd)
+                return false;
+
+            int typeStart = TrimAsciiLeft(bytes, lineStart, typeEnd);
+            int trimmedTypeEnd = TrimAsciiRight(bytes, typeStart, typeEnd);
+            if (typeStart >= trimmedTypeEnd ||
+                AsciiEqualsIgnoreCase(bytes, typeStart, trimmedTypeEnd, "Type") ||
+                AsciiEqualsIgnoreCase(bytes, typeStart, trimmedTypeEnd, "DroneType") ||
+                AsciiEqualsIgnoreCase(bytes, typeStart, trimmedTypeEnd, "Chassis"))
+            {
+                return false;
+            }
+
+            if (!IsKnownDroneChassisName(bytes, typeStart, trimmedTypeEnd) &&
+                IsReservedDroneSpecKeyName(bytes, typeStart, trimmedTypeEnd))
+            {
+                return false;
+            }
+
+            uint typeHash = ComputeAsciiFnv1aLower(bytes, typeStart, trimmedTypeEnd);
+            DroneChassisSpecDTO spec = CreateFallbackDroneChassisSpec(typeHash, in tuning);
+            int cursor = typeEnd + 1;
+            bool parsedAnyValue = false;
+
+            if (TryReadDelimitedFloat(bytes, ref cursor, lineEnd, out float maxSpeed))
+            {
+                spec.MaxSpeed = maxSpeed;
+                parsedAnyValue = true;
+            }
+
+            if (TryReadDelimitedFloat(bytes, ref cursor, lineEnd, out float batteryCapacity))
+            {
+                spec.BatteryCapacity = batteryCapacity;
+                parsedAnyValue = true;
+            }
+
+            if (TryReadDelimitedFloat(bytes, ref cursor, lineEnd, out float batteryDrainRate))
+            {
+                spec.BatteryDrainRate = batteryDrainRate;
+                parsedAnyValue = true;
+            }
+
+            if (TryReadDelimitedFloat(bytes, ref cursor, lineEnd, out float repairSpeed))
+            {
+                spec.RepairSpeed = repairSpeed;
+                parsedAnyValue = true;
+            }
+
+            if (TryReadDelimitedFloat(bytes, ref cursor, lineEnd, out float cargoCapacity))
+            {
+                spec.CargoCapacity = cargoCapacity;
+                parsedAnyValue = true;
+            }
+
+            if (TryReadDelimitedFloat(bytes, ref cursor, lineEnd, out float miningHoldSeconds))
+            {
+                spec.MiningHoldSeconds = miningHoldSeconds;
+                parsedAnyValue = true;
+            }
+
+            if (TryReadDelimitedFloat(bytes, ref cursor, lineEnd, out float sdfRepulsionScale))
+            {
+                spec.SdfRepulsionScale = sdfRepulsionScale;
+                parsedAnyValue = true;
+            }
+
+            if (!parsedAnyValue)
+                return false;
+
+            return TryUpsertStagedDroneChassisSpec(spec, in tuning, stagedSpecs, ref stagedCount);
+        }
+
+        private static bool IsKnownDroneChassisName(ReadOnlySpan<byte> bytes, int start, int end)
+        {
+            return AsciiEqualsIgnoreCase(bytes, start, end, "Repair") ||
+                AsciiEqualsIgnoreCase(bytes, start, end, "Mining") ||
+                AsciiEqualsIgnoreCase(bytes, start, end, "Combat") ||
+                AsciiEqualsIgnoreCase(bytes, start, end, "CutParasite");
+        }
+
+        private static bool IsReservedDroneSpecKeyName(ReadOnlySpan<byte> bytes, int start, int end)
+        {
+            return AsciiEqualsIgnoreCase(bytes, start, end, nameof(DroneFleetTuningConstants.MaxDroneSpeed)) ||
+                AsciiEqualsIgnoreCase(bytes, start, end, "Speed") ||
+                AsciiEqualsIgnoreCase(bytes, start, end, nameof(DroneFleetTuningConstants.BatteryDrainRate)) ||
+                AsciiEqualsIgnoreCase(bytes, start, end, "BatteryDrain") ||
+                AsciiEqualsIgnoreCase(bytes, start, end, nameof(DroneFleetTuningConstants.SdfRepulsionStrength)) ||
+                AsciiEqualsIgnoreCase(bytes, start, end, "SDF") ||
+                AsciiEqualsIgnoreCase(bytes, start, end, nameof(DroneFleetTuningConstants.RepairSpeed)) ||
+                AsciiEqualsIgnoreCase(bytes, start, end, "Repair") ||
+                AsciiEqualsIgnoreCase(bytes, start, end, nameof(DroneFleetTuningConstants.CargoCapacity)) ||
+                AsciiEqualsIgnoreCase(bytes, start, end, "Cargo") ||
+                AsciiEqualsIgnoreCase(bytes, start, end, nameof(DroneFleetTuningConstants.MiningHoldSeconds)) ||
+                AsciiEqualsIgnoreCase(bytes, start, end, nameof(DroneFleetTuningConstants.LowTierSteeringHz)) ||
+                AsciiEqualsIgnoreCase(bytes, start, end, nameof(DroneFleetTuningConstants.MidTierSteeringHz)) ||
+                AsciiEqualsIgnoreCase(bytes, start, end, nameof(DroneFleetTuningConstants.HighTierSteeringHz)) ||
+                AsciiEqualsIgnoreCase(bytes, start, end, nameof(DroneFleetTuningConstants.UltraTierSteeringHz)) ||
+                AsciiEqualsIgnoreCase(bytes, start, end, nameof(DroneFleetTuningConstants.AStarCellSize)) ||
+                AsciiEqualsIgnoreCase(bytes, start, end, nameof(DroneFleetTuningConstants.LowTierSolveBudget)) ||
+                AsciiEqualsIgnoreCase(bytes, start, end, nameof(DroneFleetTuningConstants.MidTierSolveBudget)) ||
+                AsciiEqualsIgnoreCase(bytes, start, end, nameof(DroneFleetTuningConstants.HighTierSolveBudget)) ||
+                AsciiEqualsIgnoreCase(bytes, start, end, nameof(DroneFleetTuningConstants.UltraTierSolveBudget));
+        }
+
+        private static bool TryApplyDroneSpecKey(ReadOnlySpan<byte> bytes, int keyStart, int keyEnd, float value, ref DroneFleetTuningConstants tuning)
         {
             if (AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, nameof(DroneFleetTuningConstants.MaxDroneSpeed)) ||
                 AsciiEqualsIgnoreCase(bytes, keyStart, keyEnd, "Speed"))
@@ -4756,7 +5165,59 @@ namespace Hecton8.Construction
             return false;
         }
 
-        private static int TrimAsciiLeft(byte[] bytes, int start, int end)
+        private static int FindKeyValueSeparator(ReadOnlySpan<byte> bytes, int start, int end)
+        {
+            for (int i = start; i < end; i++)
+            {
+                byte token = bytes[i];
+                if (token == (byte)',' || token == (byte)'=' || token == (byte)';' || token == (byte)'\t')
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private static int FindCsvSeparator(ReadOnlySpan<byte> bytes, int start, int end)
+        {
+            for (int i = start; i < end; i++)
+            {
+                byte token = bytes[i];
+                if (token == (byte)',' || token == (byte)';' || token == (byte)'\t')
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private static bool TryReadDelimitedFloat(ReadOnlySpan<byte> bytes, ref int cursor, int end, out float value)
+        {
+            value = 0f;
+            if (cursor >= end)
+                return false;
+
+            int fieldEnd = FindCsvSeparator(bytes, cursor, end);
+            if (fieldEnd < 0)
+                fieldEnd = end;
+
+            int valueStart = TrimAsciiLeft(bytes, cursor, fieldEnd);
+            int valueEnd = TrimAsciiRight(bytes, valueStart, fieldEnd);
+            cursor = fieldEnd < end ? fieldEnd + 1 : end;
+            return valueStart < valueEnd && TryParseAsciiFloat(bytes, valueStart, valueEnd, out value);
+        }
+
+        private static uint ComputeAsciiFnv1aLower(ReadOnlySpan<byte> bytes, int start, int end)
+        {
+            uint hash = 2166136261u;
+            for (int i = start; i < end; i++)
+            {
+                hash ^= ToAsciiLower(bytes[i]);
+                hash *= 16777619u;
+            }
+
+            return hash;
+        }
+
+        private static int TrimAsciiLeft(ReadOnlySpan<byte> bytes, int start, int end)
         {
             while (start < end && IsAsciiWhitespace(bytes[start]))
                 start++;
@@ -4764,7 +5225,7 @@ namespace Hecton8.Construction
             return start;
         }
 
-        private static int TrimAsciiRight(byte[] bytes, int start, int end)
+        private static int TrimAsciiRight(ReadOnlySpan<byte> bytes, int start, int end)
         {
             while (end > start && IsAsciiWhitespace(bytes[end - 1]))
                 end--;
@@ -4772,7 +5233,7 @@ namespace Hecton8.Construction
             return end;
         }
 
-        private static bool TryParseAsciiFloat(byte[] bytes, int start, int end, out float value)
+        private static bool TryParseAsciiFloat(ReadOnlySpan<byte> bytes, int start, int end, out float value)
         {
             value = 0f;
             if (start >= end)
@@ -4854,7 +5315,7 @@ namespace Hecton8.Construction
             return exponent < 0 ? math.rcp(scale) : scale;
         }
 
-        private static bool AsciiEqualsIgnoreCase(byte[] bytes, int start, int end, string expected)
+        private static bool AsciiEqualsIgnoreCase(ReadOnlySpan<byte> bytes, int start, int end, string expected)
         {
             int length = end - start;
             if (length != expected.Length)
@@ -5250,9 +5711,23 @@ namespace Hecton8.Construction
 
         private static double3 ResolveDroneRenderReferenceAup()
         {
-            Camera camera = Camera.main;
-            if (camera != null)
-                return HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(camera.transform.position);
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null)
+            {
+                if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                    MathGuard.IsFinite(in snapshot.Aup))
+                {
+                    return snapshot.Aup.ToAbsoluteDouble3();
+                }
+
+                var playerMovement = playerContext.PlayerMovement;
+                if (playerMovement != null)
+                {
+                    AbsoluteUniversePosition currentAup = playerMovement.CurrentAup;
+                    if (MathGuard.IsFinite(in currentAup))
+                        return currentAup.ToAbsoluteDouble3();
+                }
+            }
 
             if (TryResolvePlayerPosition(out Vector3 playerPosition))
                 return HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(playerPosition);

@@ -9,6 +9,7 @@ using Hecton8.Building;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Power;
 using Hecton8.World;
@@ -34,7 +35,7 @@ namespace Hecton8.Construction
         CascadeFailure = 1 << 6
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential)]
     internal struct HabitatSiegeTargetSnapshot
     {
         public float3 ModuleCenter;
@@ -67,7 +68,7 @@ namespace Hecton8.Construction
         Ruptured = 1 << 1
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential)]
     internal struct HabitatFloodConnection
     {
         public int DestinationIndex;
@@ -76,7 +77,7 @@ namespace Hecton8.Construction
         public uint Reserved0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential)]
     internal struct HabitatFloodBlackBoxEntry
     {
         public int Frame;
@@ -176,7 +177,6 @@ namespace Hecton8.Construction
         private const float CondensationExternalTemperatureCelsius = 5f;
         private const float SupportCaptureRadiusMeters = 3f;
         private const float SupportCaptureRadiusSq = SupportCaptureRadiusMeters * SupportCaptureRadiusMeters;
-        private const int InitialSocketCapacity = 32;
         private const int InitialNodeCapacity = 64;
         private const int InitialEdgeCapacity = 128;
         private const int InitialTemporaryBypassCapacity = 16;
@@ -230,7 +230,6 @@ namespace Hecton8.Construction
             s_latestSiegeTargetCount = 0;
         }
 
-        private readonly List<ModuleSocket> _socketBuffer;
         private readonly List<ModuleRecord> _moduleBuffer;
         private readonly List<EdgeRecord> _edgeBuffer;
         private readonly List<TemporaryBypassRecord> _temporaryBypassBuffer;
@@ -262,6 +261,9 @@ namespace Hecton8.Construction
         private NativeArray<HabitatFloodBlackBoxEntry> _floodBlackBox;
         private NativeArray<HabitatFloodPropagationSummary> _floodPropagationSummary;
         private NativeParallelMultiHashMap<int, HabitatFloodConnection> _roomConnections;
+        private JobHandle _floodPropagationHandle;
+        private bool _floodPropagationPending;
+        private int _pendingFloodPropagationModuleCount;
         private static NativeArray<HabitatSiegeTargetSnapshot> s_latestSiegeTargets;
         private static HabitatGraphManager s_latestSiegeTargetOwner;
         private static int s_latestSiegeTargetCount;
@@ -308,8 +310,6 @@ namespace Hecton8.Construction
         internal HabitatGraphManager(int initialModuleCapacity)
         {
             int safeModuleCapacity = math.max(1, initialModuleCapacity);
-            // COLD ALLOC: List<ModuleSocket>[32] — reusable module socket scan buffer for base graph rebuilds — owner: HabitatGraphManager
-            _socketBuffer = new List<ModuleSocket>(InitialSocketCapacity);
             // COLD ALLOC: List<ModuleRecord>[64] — reusable module staging buffer for CSR rebuilds — owner: HabitatGraphManager
             _moduleBuffer = new List<ModuleRecord>(safeModuleCapacity);
             // COLD ALLOC: List<EdgeRecord>[128] — reusable undirected base-link staging buffer for CSR rebuilds — owner: HabitatGraphManager
@@ -430,6 +430,7 @@ namespace Hecton8.Construction
 
         public void Dispose()
         {
+            TryFinalizeFloodPropagationJob(forceComplete: true);
             PublishAnalyticalStressShader(float3.zero, 0f, 0f, HectonQualityTier.Unknown, true);
             PublishBaseEmergencyState(0, true);
             _habitatVibration01 = 0f;
@@ -1863,6 +1864,10 @@ namespace Hecton8.Construction
 
         private bool RunFloodPropagationJob(int moduleCount, int startNodeIndex, int processNodeCount, float deltaTime)
         {
+            bool finalizedChanged = TryFinalizeFloodPropagationJob(forceComplete: false);
+            if (_floodPropagationPending)
+                return finalizedChanged;
+
             if (moduleCount <= 0 ||
                 deltaTime <= 0f ||
                 !_roomWaterLevels.IsCreated ||
@@ -1896,7 +1901,25 @@ namespace Hecton8.Construction
                 Result = _floodPropagationSummary
             };
 
-            job.Run();
+            _floodPropagationHandle = job.Schedule();
+            _floodPropagationPending = true;
+            _pendingFloodPropagationModuleCount = moduleCount;
+            H8Memory.RegisterActiveJob(SystemID.Construction, _floodPropagationHandle);
+            return finalizedChanged;
+        }
+
+        private bool TryFinalizeFloodPropagationJob(bool forceComplete)
+        {
+            if (!_floodPropagationPending)
+                return false;
+
+            bool finalized = forceComplete
+                ? DispatcherJobFence.TryComplete(ref _floodPropagationHandle, forceComplete: true)
+                : DispatcherJobFence.TryFinalizeCompleted(ref _floodPropagationHandle);
+            if (!finalized)
+                return false;
+
+            _floodPropagationPending = false;
 
             HabitatFloodPropagationSummary summary = _floodPropagationSummary[0];
             if (summary.NonFiniteCount > 0)
@@ -1909,7 +1932,7 @@ namespace Hecton8.Construction
                 WriteFloodBlackBoxSample(FloodBlackBoxTopologyInvalidFlag);
             }
 
-            bool changed = ApplyFloodPropagationDeltas(moduleCount);
+            bool changed = ApplyFloodPropagationDeltas(_pendingFloodPropagationModuleCount);
             return changed || summary.FlowedEdgeCount > 0;
         }
 
@@ -1946,29 +1969,6 @@ namespace Hecton8.Construction
             }
 
             return changed;
-        }
-
-        private bool CanGraphFluidTraverseEdge(int sourceNodeIndex, int destinationNodeIndex, int csrEdgeIndex)
-        {
-            if (csrEdgeIndex < 0 ||
-                csrEdgeIndex >= _edgeDestinations.Length ||
-                csrEdgeIndex >= _edgeResistance.Length ||
-                _edgeDestinations[csrEdgeIndex] < 0 ||
-                _edgeResistance[csrEdgeIndex] <= 0f)
-            {
-                return false;
-            }
-
-            if (IsFloodEdgeSealed(csrEdgeIndex))
-                return false;
-
-            BaseModule sourceModule = _moduleBuffer[sourceNodeIndex].BaseModule;
-            BaseModule destinationModule = _moduleBuffer[destinationNodeIndex].BaseModule;
-            if (sourceModule == null || destinationModule == null)
-                return false;
-
-            return !sourceModule.IsEmergencyBulkheadLockedDown &&
-                   !destinationModule.IsEmergencyBulkheadLockedDown;
         }
 
         private bool IsFloodEdgeSealed(int csrEdgeIndex)
@@ -2367,89 +2367,8 @@ namespace Hecton8.Construction
 
         private void ApplyWaterPumpDrainage(float deltaTime)
         {
-            if (deltaTime <= 0f ||
-                _nodeCount <= 0 ||
-                !_traversalVisited.IsCreated ||
-                !_anchorTraversalQueue.IsCreated ||
-                !_edgeOffsets.IsCreated ||
-                !_edgeDestinations.IsCreated)
-            {
-                return;
-            }
-
-            int pumpCount = WaterPumpModule.ActivePumpCount;
-            for (int pumpIndex = 0; pumpIndex < pumpCount; pumpIndex++)
-            {
-                WaterPumpModule pump = WaterPumpModule.GetActivePump(pumpIndex);
-                int startNodeIndex;
-                if (pump == null || !pump.CanPump || !TryResolveModuleNodeIndex(pump.HostModule, out startNodeIndex))
-                    continue;
-
-                float remainingDrainM3 = pump.ResolveDrainBudgetM3(deltaTime);
-                if (remainingDrainM3 <= 0f)
-                    continue;
-
-                DrainConnectedFloodComponent(startNodeIndex, ref remainingDrainM3);
-            }
-        }
-
-        private void DrainConnectedFloodComponent(int startNodeIndex, ref float remainingDrainM3)
-        {
-            if (remainingDrainM3 <= 0f || startNodeIndex < 0 || startNodeIndex >= _nodeCount)
-                return;
-
-            int safeNodeCount = math.min(
-                math.min(_nodeCount, _moduleBuffer.Count),
-                math.min(_traversalVisited.Length, _anchorTraversalQueue.Length));
-            if (startNodeIndex >= safeNodeCount || safeNodeCount <= 0)
-                return;
-
-            for (int nodeIndex = 0; nodeIndex < safeNodeCount; nodeIndex++)
-                _traversalVisited[nodeIndex] = 0;
-
-            bool traversalOverflowed = false;
-            int queueHead = 0;
-            int queueTail = 0;
-            _traversalVisited[startNodeIndex] = 1;
-            _anchorTraversalQueue[queueTail++] = startNodeIndex;
-
-            while (queueHead < queueTail && remainingDrainM3 > 0f)
-            {
-                int currentNodeIndex = _anchorTraversalQueue[queueHead++];
-                BaseModule baseModule = _moduleBuffer[currentNodeIndex].BaseModule;
-                if (baseModule != null && baseModule.isActiveAndEnabled)
-                    remainingDrainM3 -= baseModule.DrainWaterVolumeM3(remainingDrainM3);
-
-                if (currentNodeIndex + 1 >= _edgeOffsets.Length)
-                    continue;
-
-                int edgeLimit = math.min(_edgeCount, _edgeDestinations.Length);
-                int edgeStart = math.clamp(_edgeOffsets[currentNodeIndex], 0, edgeLimit);
-                int edgeEnd = math.clamp(_edgeOffsets[currentNodeIndex + 1], edgeStart, edgeLimit);
-                for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
-                {
-                    int neighborNodeIndex = _edgeDestinations[edgeIndex];
-                    if (neighborNodeIndex < 0 ||
-                        neighborNodeIndex >= safeNodeCount ||
-                        _traversalVisited[neighborNodeIndex] != 0 ||
-                        !CanGraphFluidTraverseEdge(currentNodeIndex, neighborNodeIndex, edgeIndex))
-                    {
-                        continue;
-                    }
-
-                    if (queueTail >= safeNodeCount)
-                    {
-                        traversalOverflowed = true;
-                        break;
-                    }
-
-                    _traversalVisited[neighborNodeIndex] = 1;
-                    _anchorTraversalQueue[queueTail++] = neighborNodeIndex;
-                }
-            }
-
-            if (traversalOverflowed)
-                WriteFloodBlackBoxSample(FloodBlackBoxTraversalOverflowFlag);
+            // SHINOBU_222: recursive object pump drainage is retired.
+            // SumpPumpPipeGridRuntime consumes Vault pump DTOs and drains Fluid Incursion buffers.
         }
 
         private void ApplyOxygenScrubberFilterConsumption(float deltaTime)
@@ -2596,7 +2515,7 @@ namespace Hecton8.Construction
                 EdgeCount = _edgeCount
             };
 
-            job.Run(); // COLD SYNC JOB: player-triggered deconstruction validation, not a per-frame path.
+            job.Execute(); // COLD SYNC JOB: player-triggered deconstruction validation, not a per-frame path.
             if (dfsResult[0] != 1)
             {
                 rejectReason = 4;
@@ -3315,52 +3234,114 @@ namespace Hecton8.Construction
         private void BuildSocketAdjacency()
         {
             int quantizationScale = math.max(1, (int)math.round(1f / DefaultSocketQuantization));
+            IDataVault catalogVault = GlobalRegistry.DataVault;
             for (int moduleIndex = 0; moduleIndex < _moduleBuffer.Count; moduleIndex++)
-                IndexSockets(moduleIndex, _moduleBuffer[moduleIndex].ModuleObject, quantizationScale);
+                IndexSockets(moduleIndex, _moduleBuffer[moduleIndex], quantizationScale, catalogVault);
         }
 
-        private void IndexSockets(int moduleIndex, GameObject root, int quantizationScale)
+        private void IndexSockets(int moduleIndex, ModuleRecord module, int quantizationScale, IDataVault catalogVault)
         {
-            if (root == null)
+            BuildableData data = module.Marker != null ? module.Marker.Data : null;
+            BaseModuleTemplate template = data != null ? data.ModuleTemplate : null;
+            if (template == null)
                 return;
 
-            _socketBuffer.Clear();
-            root.GetComponentsInChildren(true, _socketBuffer);
-
-            for (int i = 0; i < _socketBuffer.Count; i++)
+            Vector3 rootPosition = module.Position;
+            Quaternion rootRotation = module.ModuleObject != null ? module.ModuleObject.transform.rotation : Quaternion.identity;
+            uint prefabHash = unchecked((uint)template.TemplateHashId);
+            if (BaseModuleCatalogRuntime.TryGetModuleSocketRangeFromVault(
+                    catalogVault,
+                    prefabHash,
+                    out NativeArray<SocketDefinitionDTO> catalogSockets,
+                    out int socketStart,
+                    out int socketCount,
+                    out _))
             {
-                ModuleSocket socket = _socketBuffer[i];
-                if (socket == null)
+                IndexSocketRange(moduleIndex, rootPosition, rootRotation, catalogSockets, socketStart, socketCount, quantizationScale);
+                return;
+            }
+
+            if (Application.isPlaying)
+                return;
+
+            BaseModuleTemplate.SocketDefinition[] definitions = template.SocketDefinitions;
+            if (definitions == null || definitions.Length == 0)
+                return;
+
+            for (int i = 0; i < definitions.Length; i++)
+            {
+                if (!BaseModuleCatalogRuntime.TryBuildSocketFromTemplate(template, i, out SocketDefinitionDTO socket))
                     continue;
 
-                Transform socketTransform = socket.transform;
-                int axis = QuantizeAxis(socketTransform.forward);
-                SocketKey oppositeKey = SocketKey.Create(socketTransform.position, OppositeAxis(axis), quantizationScale);
+                IndexSocket(moduleIndex, rootPosition, rootRotation, socket, quantizationScale);
+            }
+        }
 
-                if (_socketLookup.TryGetValue(oppositeKey, out SocketMatchEntry existing))
+        private void IndexSocketRange(int moduleIndex, Vector3 rootPosition, Quaternion rootRotation, NativeArray<SocketDefinitionDTO> sockets, int socketStart, int socketCount, int quantizationScale)
+        {
+            int end = math.min(socketStart + socketCount, sockets.Length);
+            for (int i = socketStart; i < end; i++)
+                IndexSocket(moduleIndex, rootPosition, rootRotation, sockets[i], quantizationScale);
+        }
+
+        private void IndexSocket(int moduleIndex, Vector3 rootPosition, Quaternion rootRotation, in SocketDefinitionDTO socket, int quantizationScale)
+        {
+            if (!TryResolveSocketPose(rootPosition, rootRotation, in socket, out double3 socketAup, out Vector3 socketPosition, out Vector3 socketForward))
+                return;
+
+            int axis = QuantizeAxis(socketForward);
+            SocketKey oppositeKey = SocketKey.Create(socketAup, OppositeAxis(axis), quantizationScale);
+
+            if (_socketLookup.TryGetValue(oppositeKey, out SocketMatchEntry existing))
+            {
+                if (existing.ModuleIndex != moduleIndex &&
+                    BaseModuleCatalogRuntime.AreSocketMasksCompatible(existing.CompatibilityMask, socket.AllowedConnectionsMask) &&
+                    Vector3.Dot(existing.Forward, socketForward) <= OppositeDirectionDotThreshold)
                 {
-                    if (existing.ModuleIndex != moduleIndex &&
-                        ModuleSocketTopology.AreCompatible(existing.CompatibleType, existing.Direction, socket.CompatibleType, socket.Direction) &&
-                        Vector3.Dot(existing.Forward, socketTransform.forward) <= OppositeDirectionDotThreshold)
+                    _edgeBuffer.Add(new EdgeRecord
                     {
-                        _edgeBuffer.Add(new EdgeRecord
-                        {
-                            SourceIndex = existing.ModuleIndex,
-                            DestinationIndex = moduleIndex,
-                            StartSocketPosition = existing.Position,
-                            EndSocketPosition = socketTransform.position,
-                            StartForward = existing.Forward,
-                            EndForward = socketTransform.forward,
-                            Flags = PipeRenderFlags.None
-                        });
-                    }
-
-                    continue;
+                        SourceIndex = existing.ModuleIndex,
+                        DestinationIndex = moduleIndex,
+                        StartSocketPosition = existing.Position,
+                        EndSocketPosition = socketPosition,
+                        StartForward = existing.Forward,
+                        EndForward = socketForward,
+                        Flags = PipeRenderFlags.None
+                    });
                 }
 
-                SocketKey ownKey = SocketKey.Create(socketTransform.position, axis, quantizationScale);
-                _socketLookup[ownKey] = new SocketMatchEntry(moduleIndex, socket.CompatibleType, socket.Direction, socketTransform.position, socketTransform.forward);
+                return;
             }
+
+            SocketKey ownKey = SocketKey.Create(socketAup, axis, quantizationScale);
+            _socketLookup[ownKey] = new SocketMatchEntry(moduleIndex, socket.AllowedConnectionsMask, socketPosition, socketForward);
+        }
+
+        private static bool TryResolveSocketPose(
+            Vector3 rootPosition,
+            Quaternion rootRotation,
+            in SocketDefinitionDTO socket,
+            out double3 socketAup,
+            out Vector3 runtimePosition,
+            out Vector3 socketForward)
+        {
+            socketAup = default;
+            runtimePosition = Vector3.zero;
+            socketForward = Vector3.forward;
+
+            quaternion rotation = new quaternion(rootRotation.x, rootRotation.y, rootRotation.z, rootRotation.w);
+            float3 worldNormal = math.rotate(rotation, socket.Normal);
+            if (!math.all(math.isfinite(socket.LocalOffset)) || !math.all(math.isfinite(worldNormal)))
+                return false;
+
+            double3 rootAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(rootPosition);
+            socketAup = BaseModuleCatalogRuntime.ResolveSocketAup(rootAup, rotation, in socket);
+            if (!math.all(math.isfinite(socketAup)))
+                return false;
+
+            runtimePosition = HectonFloatingOrigin.ToRuntimePosition(socketAup);
+            socketForward = new Vector3(worldNormal.x, worldNormal.y, worldNormal.z);
+            return true;
         }
 
         private void BuildNodeRecords()
@@ -4780,14 +4761,14 @@ namespace Hecton8.Construction
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        [BurstCompile(FloatPrecision.Low, FloatMode.Fast, CompileSynchronously = false)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct DeconstructionDfsValidationJob : IJob
         {
-            [ReadOnly] public NativeArray<int> EdgeOffsets;
-            [ReadOnly] public NativeArray<int> EdgeDestinations;
-            public NativeList<long> Stack;
-            public NativeParallelHashSet<long> Visited;
-            public NativeArray<int> Result;
+            [ReadOnly] [NoAlias] public NativeArray<int> EdgeOffsets;
+            [ReadOnly] [NoAlias] public NativeArray<int> EdgeDestinations;
+            [NoAlias] public NativeList<long> Stack;
+            [NoAlias] public NativeParallelHashSet<long> Visited;
+            [NoAlias] public NativeArray<int> Result;
             public int NodeCount;
             public int RemovedNodeIndex;
             public int EdgeCount;
@@ -4915,12 +4896,29 @@ namespace Hecton8.Construction
                 _axis = axis;
             }
 
-            public static SocketKey Create(Vector3 position, int axis, int quantizationScale)
+            public static SocketKey Create(double3 socketAup, int axis, int quantizationScale)
             {
-                float scale = quantizationScale > 0 ? quantizationScale : 1f;
-                float3 scaledPosition = (float3)position * scale;
-                int3 quantizedPosition = (int3)math.round(scaledPosition);
+                double scale = quantizationScale > 0 ? quantizationScale : 1d;
+                double3 scaledPosition = socketAup * scale;
+                int3 quantizedPosition = new int3(
+                    QuantizeScaledAup(scaledPosition.x),
+                    QuantizeScaledAup(scaledPosition.y),
+                    QuantizeScaledAup(scaledPosition.z));
                 return new SocketKey(quantizedPosition.x, quantizedPosition.y, quantizedPosition.z, axis);
+            }
+
+            private static int QuantizeScaledAup(double value)
+            {
+                if (!math.isfinite(value))
+                    return 0;
+
+                double rounded = value >= 0d ? math.floor(value + 0.5d) : math.ceil(value - 0.5d);
+                if (rounded > int.MaxValue)
+                    return int.MaxValue;
+                if (rounded < int.MinValue)
+                    return int.MinValue;
+
+                return (int)rounded;
             }
 
             public bool Equals(SocketKey other)
@@ -4952,16 +4950,14 @@ namespace Hecton8.Construction
         private readonly struct SocketMatchEntry
         {
             public readonly int ModuleIndex;
-            public readonly string CompatibleType;
-            public readonly ModuleSocketDirection Direction;
+            public readonly uint CompatibilityMask;
             public readonly float3 Position;
             public readonly float3 Forward;
 
-            public SocketMatchEntry(int moduleIndex, string compatibleType, ModuleSocketDirection direction, float3 position, float3 forward)
+            public SocketMatchEntry(int moduleIndex, uint compatibilityMask, float3 position, float3 forward)
             {
                 ModuleIndex = moduleIndex;
-                CompatibleType = compatibleType;
-                Direction = direction;
+                CompatibilityMask = compatibilityMask;
                 Position = position;
                 Forward = forward;
             }

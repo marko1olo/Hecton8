@@ -2156,7 +2156,7 @@ namespace Hecton8.World
             sample.Fitness = state.Fitness;
             sample.SpeedMultiplier = state.SpeedMultiplier;
             sample.CamouflageIndex = state.CamouflageIndex;
-            sample.ApexInSector = IsApexInSectorState(in state);
+            sample.ApexInSector = IsApexInSectorState(in state) ? (byte)1 : (byte)0;
             if (TryGetBiomassAvailability(worldPosition, out float preyBiomass01, out float predatorBiomass01, out _))
             {
                 sample.PreyBiomass01 = preyBiomass01;
@@ -2217,6 +2217,10 @@ namespace Hecton8.World
                     out NativeArray<MacroEcosystemTuningVaultRecord> tuning))
                 return false;
 
+            MacroEcosystemTuningVaultRecord tune = tuning[0];
+            if (!IsMacroEcosystemSnapshotReadable(tune))
+                return false;
+
             long sectorX = (long)math.floor((double)worldPosition.x / MacroEcosystemVaultContract.SectorSizeMeters);
             long sectorZ = (long)math.floor((double)worldPosition.z / MacroEcosystemVaultContract.SectorSizeMeters);
             ulong hash = MacroEcosystemVaultContract.ComputeSectorHash(sectorX, 0L, sectorZ);
@@ -2226,11 +2230,14 @@ namespace Hecton8.World
                 return false;
             }
 
-            MacroEcosystemTuningVaultRecord tune = tuning[0];
-            if ((tune.Flags & MacroEcosystemVaultContract.TuningFlagSnapshotWriteInFlight) != 0u)
-                return false;
-
             MacroEcosystemSectorVaultRecord sector = sectors[index];
+            MacroEcosystemTuningVaultRecord postReadTune = tuning[0];
+            if (!IsMacroEcosystemSnapshotReadable(postReadTune) ||
+                !MacroEcosystemTuningMatchesForBiomassRead(tune, postReadTune))
+            {
+                return false;
+            }
+
             float preyCapacity = math.max(1f, math.select(
                 MacroEcosystemVaultContract.DefaultCarryingCapacityPrey,
                 tune.CarryingCapacityPrey,
@@ -2245,6 +2252,21 @@ namespace Hecton8.World
             float defaultCapacity = MacroEcosystemVaultContract.DefaultCarryingCapacityPrey + MacroEcosystemVaultContract.DefaultCarryingCapacityPredator;
             carryingCapacity01 = math.saturate((preyCapacity + predatorCapacity) * math.rcp(math.max(1f, defaultCapacity)));
             return true;
+        }
+
+        private static bool IsMacroEcosystemSnapshotReadable(MacroEcosystemTuningVaultRecord tune)
+        {
+            return (tune.Flags & MacroEcosystemVaultContract.TuningFlagSnapshotWriteInFlight) == 0u;
+        }
+
+        private static bool MacroEcosystemTuningMatchesForBiomassRead(
+            MacroEcosystemTuningVaultRecord before,
+            MacroEcosystemTuningVaultRecord after)
+        {
+            return before.Flags == after.Flags &&
+                   before.StateHash == after.StateHash &&
+                   before.CarryingCapacityPrey == after.CarryingCapacityPrey &&
+                   before.CarryingCapacityPredator == after.CarryingCapacityPredator;
         }
 
         private bool TryResolveMacroEcosystemVaultSnapshot(
@@ -2561,7 +2583,7 @@ namespace Hecton8.World
                 Sequence = unchecked((uint)Time.frameCount),
                 Flags = flags
             };
-            return sample.IsFinite;
+            return sample.IsFinite();
         }
 
         /// <inheritdoc />
@@ -5750,9 +5772,8 @@ namespace Hecton8.World
         {
             if (_macroSwarmTravelScheduled)
             {
-                _macroSwarmTravelHandle.Complete();
+                DispatcherJobFence.TryComplete(ref _macroSwarmTravelHandle, forceComplete: true);
                 _macroSwarmTravelScheduled = false;
-                _macroSwarmTravelHandle = default;
             }
 
             if (_macroSwarms.IsCreated)

@@ -28,6 +28,9 @@ namespace Hecton8.Core
         private const int LowTierHysteresisFrames = 150;
         private const int LowTierProbeIntervalFrames = 30;
         private const byte CriticalMemoryPressureSeverity = 2;
+        private const float SurvivalQualityPolicyThreshold01 = 0.65f;
+        private const float ForcedMemoryPressureThreshold01 = 0.85f;
+        private const float ForcedMemoryQualityThreshold01 = 0.12f;
         private const float MassiveImpactSeverity = 1f;
         private const float ReentryHeatStartThreshold01 = 0.001f;
 
@@ -335,7 +338,7 @@ namespace Hecton8.Core
             GlobalSignals.Publish(in mixer);
 
             AcousticPingSignal ping = default;
-            ping.PositionAup = Hecton8.World.AbsoluteUniversePosition.FromRuntimePosition(Vector3.zero);
+            ping.PositionAup = GlobalSignals.CurrentRuntimeOriginAup();
             ping.RadiusMeters = math.max(8f, durationSeconds * 12f);
             ping.Intensity01 = safeIntensity;
             ping.SourceId = MuffledBreathingHash;
@@ -397,7 +400,7 @@ namespace Hecton8.Core
         public void PublishOceanHandoff()
         {
             PrologueCompleteSignal signal = default;
-            signal.CapsuleAup = Hecton8.World.AbsoluteUniversePosition.FromRuntimePosition(Vector3.zero);
+            signal.CapsuleAup = GlobalSignals.CurrentRuntimeOriginAup();
             signal.Frame = CurrentFrame;
             signal.SourceHash = SourceHash;
             signal.Sequence = unchecked(++_sequence);
@@ -419,7 +422,7 @@ namespace Hecton8.Core
             _observedProxySurfaceReady = true;
 
             SectorResidencyHydratedSignal signal = default;
-            signal.CenterAup = Hecton8.World.AbsoluteUniversePosition.FromRuntimePosition(Vector3.zero);
+            signal.CenterAup = GlobalSignals.CurrentRuntimeOriginAup();
             signal.ChunkId = oceanSurfaceChunkId != 0 ? oceanSurfaceChunkId : ShallowWaterChunkHash;
             signal.Frame = CurrentFrame;
             signal.RadiusMetersQ = 64;
@@ -716,12 +719,31 @@ namespace Hecton8.Core
 
         private static bool ReadLowTierPolicy(out bool forcedLowMemory)
         {
-            forcedLowMemory = GlobalRegistry.H8_LOW_MEMORY_PROFILE;
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            return forcedLowMemory ||
-                   tier == HectonQualityTier.Unknown ||
-                   tier == HectonQualityTier.Low ||
-                   tier == HectonQualityTier.Mx350;
+            float qualityWeight01 = ResolveGlobalQualityWeight01();
+            float survivalPressure01 = 1.0f - SmoothStep01(qualityWeight01);
+            float homeostasisPressure01 = ResolveHomeostasisPressure01();
+            float pressure01 = math.max(survivalPressure01, homeostasisPressure01);
+            forcedLowMemory = qualityWeight01 <= ForcedMemoryQualityThreshold01 ||
+                              pressure01 >= ForcedMemoryPressureThreshold01;
+            return forcedLowMemory || pressure01 >= SurvivalQualityPolicyThreshold01;
+        }
+
+        private static float ResolveGlobalQualityWeight01()
+        {
+            float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
+            return math.isfinite(qualityWeight) ? math.saturate(qualityWeight) : 1.0f;
+        }
+
+        private static float ResolveHomeostasisPressure01()
+        {
+            float pressure = HomeostasisBrain.SystemHealthIndex01;
+            return math.isfinite(pressure) ? math.saturate(pressure) : 0.0f;
+        }
+
+        private static float SmoothStep01(float value)
+        {
+            float t = math.saturate(value);
+            return t * t * (3.0f - (2.0f * t));
         }
 
         private async Awaitable RunAutoSequenceAsync(IPrologueSequenceService service, CancellationTokenSource source)

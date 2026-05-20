@@ -182,7 +182,7 @@ namespace Hecton8.Visor
                 Vector4 vrComfortJerkState,
                 Vector4 internalWaterlineParams,
                 Vector4 internalWaterlineDistortion,
-                bool lowTier,
+                float lowTierWeight01,
                 bool depthlessTBDR)
             {
                 VisorPostActive = visorPostActive;
@@ -199,7 +199,7 @@ namespace Hecton8.Visor
                 VrComfortJerkState = vrComfortJerkState;
                 InternalWaterlineParams = internalWaterlineParams;
                 InternalWaterlineDistortion = internalWaterlineDistortion;
-                LowTier = lowTier;
+                LowTierWeight01 = lowTierWeight01;
                 DepthlessTBDR = depthlessTBDR;
             }
 
@@ -217,7 +217,7 @@ namespace Hecton8.Visor
             public readonly Vector4 VrComfortJerkState;
             public readonly Vector4 InternalWaterlineParams;
             public readonly Vector4 InternalWaterlineDistortion;
-            public readonly bool LowTier;
+            public readonly float LowTierWeight01;
             public readonly bool DepthlessTBDR;
         }
 
@@ -524,8 +524,7 @@ namespace Hecton8.Visor
                     _lastParameterMaterial = material;
                 }
 
-                bool lowTier = runtimeState.LowTier;
-                float lowTierWeight01 = ResolveLowTierWeight01(lowTier);
+                float lowTierWeight01 = Sanitize01(runtimeState.LowTierWeight01);
                 SetMaterialFloatIfChanged(material, ShaderConstants.HealthFractionId, Sanitize01(runtimeState.HealthFraction), ref _lastHealthFraction);
                 SetMaterialFloatIfChanged(material, ShaderConstants.LocalTemperatureId, SanitizeFinite(runtimeState.LocalTemperature, 0f), ref _lastLocalTemperature);
                 SetMaterialFloatIfChanged(material, ShaderConstants.AmbientPressureId, math.max(1f, SanitizeFinite(runtimeState.AmbientPressure, 1f)), ref _lastAmbientPressure);
@@ -809,7 +808,7 @@ namespace Hecton8.Visor
         private int _cachedLowTierThresholdMb = int.MinValue;
         private int _cachedGraphicsMemoryMb;
         private int _cachedDepthlessTBDRFrame = int.MinValue;
-        private bool _cachedLowTier;
+        private float _cachedLowTierFloor01;
         private bool _cachedDepthlessTBDR;
         private ICameraHistoryReadAccess _rawColorHistoryReadAccess;
         private bool _rawColorHistoryRequestRegistered;
@@ -857,9 +856,9 @@ namespace Hecton8.Visor
             }
 
             Camera renderCamera = renderingData.cameraData.camera;
-            bool lowTier = ResolveLowTier(settings);
+            float lowTierFloor01 = ResolveLowTierFloor01(settings);
             RefreshFluidBinding(force: false);
-            if (!TryBuildRuntimeState(renderCamera, settings, lowTier, out RuntimeState runtimeState))
+            if (!TryBuildRuntimeState(renderCamera, settings, lowTierFloor01, out RuntimeState runtimeState))
             {
                 ClearRawColorHistoryRequest();
                 return;
@@ -1606,18 +1605,19 @@ namespace Hecton8.Visor
             return false;
         }
 
-        private static float ResolveLowTierWeight01(bool lowTierFallback)
+        private static float ResolveLowTierWeight01(float lowTierFloor01)
         {
-            float qualityWeight01 = ResolveCurrentQualityWeight01(lowTierFallback);
-            return 1f - Smooth01(math.saturate((qualityWeight01 - 0.18f) * 1.2195122f));
+            float qualityWeight01 = ResolveCurrentQualityWeight01(lowTierFloor01);
+            float qualityLowTier01 = 1f - Smooth01(math.saturate((qualityWeight01 - 0.18f) * 1.2195122f));
+            return math.max(Sanitize01(lowTierFloor01), qualityLowTier01);
         }
 
-        private static float ResolveCurrentQualityWeight01(bool lowTierFallback)
+        private static float ResolveCurrentQualityWeight01(float lowTierFloor01)
         {
             ResolutionScaleState state;
             return TryReadResolutionState(out state)
                 ? Sanitize01(state.GlobalQualityWeight01)
-                : (lowTierFallback ? 0.35f : 1f);
+                : math.lerp(1f, 0.35f, Sanitize01(lowTierFloor01));
         }
 
         private static bool ReconstructionConstantsEqual(
@@ -1767,7 +1767,7 @@ namespace Hecton8.Visor
             return math.isfinite(value);
         }
 
-        private bool TryBuildRuntimeState(Camera renderCamera, FeatureSettings settings, bool lowTier, out RuntimeState runtimeState)
+        private bool TryBuildRuntimeState(Camera renderCamera, FeatureSettings settings, float lowTierFloor01, out RuntimeState runtimeState)
         {
             runtimeState = default;
             if (renderCamera == null || settings == null)
@@ -1804,8 +1804,9 @@ namespace Hecton8.Visor
                 Sanitize01(Shader.GetGlobalFloat(ShaderConstants.VrComfortVignette01Id)),
                 Sanitize01(Shader.GetGlobalFloat(ShaderConstants.SomaticComfortVignetteId)));
             Vector4 vrComfortJerkState = SanitizeVrComfortJerkState(Shader.GetGlobalVector(ShaderConstants.VrComfortJerkStateId));
+            float lowTierWeight01 = ResolveLowTierWeight01(lowTierFloor01);
             Vector4 internalWaterlineParams = ResolveInternalWaterlineParams(renderCamera, settings);
-            Vector4 internalWaterlineDistortion = ResolveInternalWaterlineDistortion(lowTier);
+            Vector4 internalWaterlineDistortion = ResolveInternalWaterlineDistortion(lowTierWeight01);
             bool depthlessTBDR = ResolveDepthlessTBDRPath();
             float lightShaftActiveCount = math.max(0f, SanitizeFinite(Shader.GetGlobalVector(ShaderConstants.LightShaftParamsId).x, 0f));
             float maelstromWarp01 = ResolveMaelstromWarp01(renderCamera);
@@ -1815,7 +1816,6 @@ namespace Hecton8.Visor
                 ambientPressure = math.max(ambientPressure, 1f + maelstromWarp01 * invPressureRange);
             }
 
-            float lowTierWeight01 = ResolveLowTierWeight01(lowTier);
             float visualBudget01 = 1f - lowTierWeight01;
             float bulletTimeVisual01 = Sanitize01(GlobalSignals.BulletTimeVisualIntensity01) * visualBudget01;
             float playerStress = math.saturate(math.max(frequencyTuningError01, math.max(globalStress, math.max(hullStress, 1f - healthFraction))));
@@ -1859,7 +1859,7 @@ namespace Hecton8.Visor
                 vrComfortJerkState,
                 internalWaterlineParams,
                 internalWaterlineDistortion,
-                lowTier,
+                lowTierWeight01,
                 depthlessTBDR);
             return true;
         }
@@ -1918,10 +1918,10 @@ namespace Hecton8.Visor
                 pitchY * math.saturate(settings.internalWaterlinePitchScale));
         }
 
-        private static Vector4 ResolveInternalWaterlineDistortion(bool lowTier)
+        private static Vector4 ResolveInternalWaterlineDistortion(float lowTierWeight01)
         {
             Vector4 distortion = Shader.GetGlobalVector(ShaderConstants.InternalWaterlineDistortionId);
-            float lowTierWeight01 = ResolveLowTierWeight01(lowTier);
+            lowTierWeight01 = Sanitize01(lowTierWeight01);
             float visualBudget01 = 1f - lowTierWeight01;
             return new Vector4(
                 math.max(0f, SanitizeFinite(distortion.x, 0f)) * visualBudget01,
@@ -1982,16 +1982,21 @@ namespace Hecton8.Visor
             return false;
         }
 
-        private bool ResolveLowTier(FeatureSettings currentSettings)
+        private float ResolveLowTierFloor01(FeatureSettings currentSettings)
         {
             int thresholdMb = currentSettings != null ? math.max(256, currentSettings.lowTierVideoMemoryMb) : 2048;
             if (_cachedLowTierThresholdMb == thresholdMb)
-                return _cachedLowTier;
+                return _cachedLowTierFloor01;
 
             _cachedGraphicsMemoryMb = SystemInfo.graphicsMemorySize;
             _cachedLowTierThresholdMb = thresholdMb;
-            _cachedLowTier = _cachedGraphicsMemoryMb > 0 && _cachedGraphicsMemoryMb <= thresholdMb;
-            return _cachedLowTier;
+            float memoryMb = math.max(1f, _cachedGraphicsMemoryMb);
+            float softCeilingMb = thresholdMb * 1.25f;
+            float softRangeMb = math.max(1f, thresholdMb * 0.5f);
+            float memoryShortage01 = Smooth01(math.saturate((softCeilingMb - memoryMb) * math.rcp(softRangeMb)));
+            float memoryKnown01 = math.saturate((float)_cachedGraphicsMemoryMb);
+            _cachedLowTierFloor01 = 0.25f * memoryKnown01 * memoryShortage01;
+            return _cachedLowTierFloor01;
         }
 
         private bool ResolveDepthlessTBDRPath()

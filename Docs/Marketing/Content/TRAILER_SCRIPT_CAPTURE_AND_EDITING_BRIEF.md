@@ -13,7 +13,7 @@ The first trailer must make a cold player understand:
 - the player does things, not just watches scenery;
 - there is a base/salvage loop;
 - the Seed Ship creates mystery;
-- Steam CTA is clear.
+- Steam CTA is clear only after `Analytics/MEASUREMENT_AND_UTM_PLAN.md` Official CTA Link Activation Gate V0 passes; otherwise the end card uses no-link feedback copy.
 
 ## Trailer Lengths
 
@@ -37,7 +37,7 @@ The first trailer must make a cold player understand:
 | 35-45s | Threat/failure | environmental danger or hostile ecology |
 | 45-55s | Seed Ship | anomaly signal, impossible silhouette, instrument corruption |
 | 55-65s | Feature proof | fast cuts of real systems |
-| 65-75s | CTA | title, Steam wishlist/demo |
+| 65-75s | CTA | title plus approved Steam/demo CTA after the CTA activation gate; otherwise no-link feedback end card |
 
 ## Opening Rules
 
@@ -118,7 +118,7 @@ Avoid:
 - feature laundry list;
 - "massive world";
 - "zero stutter";
-- "co-op";
+- "multiplayer mode";
 - "Subnautica killer".
 
 ## Trailer QA
@@ -127,7 +127,7 @@ Trailer fails if:
 
 - first 10 seconds have no player verb;
 - viewers ask if it is pre-rendered;
-- the CTA is missing;
+- the required approved CTA or no-link end card is missing;
 - feature cards exceed footage proof;
 - UI/text unreadable;
 - audio mix hides action;

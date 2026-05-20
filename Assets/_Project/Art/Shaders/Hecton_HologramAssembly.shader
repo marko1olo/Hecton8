@@ -15,6 +15,7 @@ Shader "Hecton8/Fabrication/HologramAssembly"
         _FresnelPower("Fresnel Power", Range(0.5, 6)) = 2.2
         _Alpha("Alpha", Range(0, 1)) = 0.72
         _PulseSpeed("Pulse Speed", Range(0, 16)) = 5
+        _ShaderEdgeGlowIntensity("Shader Edge Glow Intensity", Range(0, 4)) = 1
     }
 
     SubShader
@@ -64,13 +65,14 @@ Shader "Hecton8/Fabrication/HologramAssembly"
                 float _FresnelPower;
                 float _Alpha;
                 float _PulseSpeed;
+                float _ShaderEdgeGlowIntensity;
                 float4x4 _AssemblyWorldToFabricator;
             CBUFFER_END
 
             struct H8FabricationAssemblyPayload
             {
                 float4 BoundsProgress;
-                float4 FlagsPause;
+                float4 LocalOffsetPause;
                 float4 WorldToFabricatorRow0;
                 float4 WorldToFabricatorRow1;
                 float4 WorldToFabricatorRow2;
@@ -80,6 +82,7 @@ Shader "Hecton8/Fabrication/HologramAssembly"
             StructuredBuffer<H8FabricationAssemblyPayload> _H8FabricationAssemblyPayloads;
             int _H8FabricationAssemblyPayloadCount;
             float _H8FabricationAssemblyQuality;
+            float _H8FabricationAssemblyEdgeBoost;
 
             struct Attributes
             {
@@ -116,6 +119,7 @@ Shader "Hecton8/Fabrication/HologramAssembly"
                 float progress01 = saturate((_AssemblyHeightY - bottomY) / max(0.001, topY - bottomY));
                 float quality01 = saturate(_AssemblyQuality);
                 float pause01 = saturate(_PowerPause01);
+                float localAupPhase = 0.0;
                 float fabricatorLocalY = mul(_AssemblyWorldToFabricator, float4(positionWS, 1.0)).y;
 
                 if (_H8FabricationAssemblyPayloadCount > 0)
@@ -126,7 +130,8 @@ Shader "Hecton8/Fabrication/HologramAssembly"
                     topY = max(bottomY + 0.001, payload.BoundsProgress.y);
                     progress01 = saturate(payload.BoundsProgress.z);
                     quality01 = saturate(payload.BoundsProgress.w * max(0.001, _H8FabricationAssemblyQuality));
-                    pause01 = saturate(payload.FlagsPause.x);
+                    pause01 = saturate(payload.LocalOffsetPause.w);
+                    localAupPhase = dot(payload.LocalOffsetPause.xyz, float3(0.013, 0.017, 0.011));
                     fabricatorLocalY = dot(payload.WorldToFabricatorRow1, float4(positionWS, 1.0));
                 }
 
@@ -136,7 +141,7 @@ Shader "Hecton8/Fabrication/HologramAssembly"
                 output.positionOS = input.positionOS.xyz;
                 output.positionWS = positionWS;
                 output.normalWS = TransformObjectToWorldNormal(input.normalOS);
-                output.height01 = saturate((fabricatorLocalY - bottomY) / (topY - bottomY));
+                output.height01 = saturate((fabricatorLocalY - bottomY) / (topY - bottomY)) + frac(localAupPhase) * 0.03125 * quality01;
                 output.fabricatorLocalY = fabricatorLocalY;
                 output.clipHeightY = clipHeightY;
                 output.quality01 = quality01;
@@ -160,7 +165,8 @@ Shader "Hecton8/Fabrication/HologramAssembly"
                 clip(input.clipHeightY - fabricatorLocalY);
 
                 float edgeWidth = max(0.001, _AssemblyEdgeWidth);
-                float edgeMask = input.quality01 * (1.0 - smoothstep(0.0, edgeWidth, abs(fabricatorLocalY - input.clipHeightY)));
+                float edgeBoost = _H8FabricationAssemblyEdgeBoost;
+                float edgeMask = edgeBoost * input.quality01 * (1.0 - smoothstep(0.0, edgeWidth, abs(fabricatorLocalY - input.clipHeightY)));
 
                 float3 normalWS = HectonCoreLitSafeNormalize(input.normalWS);
                 float3 viewDirWS = HectonCoreLitSafeNormalize(GetCameraPositionWS() - input.positionWS);

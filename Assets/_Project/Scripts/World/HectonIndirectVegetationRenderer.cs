@@ -41,7 +41,6 @@ namespace Hecton8.World
         private const int MaxVegetationVisibilityPasses = 3;
         private const int MaxVegetationDrawCommands = 7;
         private const float LodTransitionRangeMeters = 2f;
-        private const string GpuIndirectKeyword = "HECTON_GPU_INDIRECT";
         private const byte VisibilityMaskNear = 1 << 0;
         private const byte VisibilityMaskFar = 1 << 1;
         private const byte VisibilityMaskShadow = 1 << 2;
@@ -71,6 +70,10 @@ namespace Hecton8.World
         private const string DepthShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_IndirectVegetationDepthOnly.shader";
         private const string ShadowShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_IndirectVegetationShadow.shader";
         private const string MotionShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_IndirectVegetationMotionVectors.shader";
+        private const string VegetationMaterialAssetPath = "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_HectonIndirectVegetation.mat";
+        private const string DepthMaterialAssetPath = "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_HectonIndirectVegetation_DepthOnly.mat";
+        private const string ShadowMaterialAssetPath = "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_HectonIndirectVegetation_Shadow.mat";
+        private const string MotionMaterialAssetPath = "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_HectonIndirectVegetation_MotionVectors.mat";
 #endif
         private const string VegetationShaderName = "Hecton8/Vegetation/IndirectStrip";
 
@@ -89,6 +92,8 @@ namespace Hecton8.World
         private static readonly int _LodTransitionRangeId = Shader.PropertyToID("_HectonLodTransitionRange");
         private static readonly int _ImpostorWidthId = Shader.PropertyToID("_HectonImpostorWidth");
         private static readonly int _ImpostorHeightId = Shader.PropertyToID("_HectonImpostorHeight");
+        private static readonly int _RuntimeLodParamsId = Shader.PropertyToID("_HectonVegetationRuntimeLodParams");
+        private static readonly int _RuntimeDrawParamsId = Shader.PropertyToID("_HectonVegetationRuntimeDrawParams");
         private static readonly int _SourceInstanceCountId = Shader.PropertyToID("_HectonSourceInstanceCount");
         private static readonly int _ViewProjectionId = Shader.PropertyToID("_HectonViewProjection");
         private static readonly int _ViewMatrixId = Shader.PropertyToID("_HectonViewMatrix");
@@ -143,7 +148,7 @@ namespace Hecton8.World
         private Material _material;
 
         [SerializeField]
-        [Tooltip("Optional first-party vegetation shader fallback used to build a hidden runtime material when the shared material is missing.")]
+        [Tooltip("First-party vegetation shader reference retained for validation; runtime material creation is forbidden for this renderer.")]
         private Shader _vegetationShader;
 
         [SerializeField]
@@ -347,11 +352,17 @@ namespace Hecton8.World
         private bool _legacyDataDirty = true;
         private int _instanceCount;
         private Camera _cachedCullCamera;
+        [SerializeField]
+        [Tooltip("Authored depth-only vegetation pass material. Runtime creation is forbidden for the biolum/vegetation pulse route.")]
         private Material _depthOnlyMaterial;
+
+        [SerializeField]
+        [Tooltip("Authored shadow-caster vegetation pass material. Runtime creation is forbidden for the biolum/vegetation pulse route.")]
         private Material _shadowCasterMaterial;
+
+        [SerializeField]
+        [Tooltip("Authored motion-vector vegetation pass material. Runtime creation is forbidden for the biolum/vegetation pulse route.")]
         private Material _motionVectorMaterial;
-        private Material _runtimeMaterial;
-        private bool _ownsRuntimeMaterial;
         private Vector3 _previousMotionCameraPosition;
         private Camera _previousMotionCamera;
         private bool _hasPreviousMotionCameraPosition;
@@ -389,6 +400,13 @@ namespace Hecton8.World
         private Material _shadowBrgMaterial;
         private Material _motionNearBrgMaterial;
         private Material _motionFarBrgMaterial;
+        private MaterialPropertyBlock _nearIndirectProperties;
+        private MaterialPropertyBlock _farIndirectProperties;
+        private MaterialPropertyBlock _depthNearIndirectProperties;
+        private MaterialPropertyBlock _depthFarIndirectProperties;
+        private MaterialPropertyBlock _shadowIndirectProperties;
+        private MaterialPropertyBlock _motionNearIndirectProperties;
+        private MaterialPropertyBlock _motionFarIndirectProperties;
         private MaterialBindingState _nearMaterialBindingState;
         private MaterialBindingState _farMaterialBindingState;
         private MaterialBindingState _depthNearMaterialBindingState;
@@ -1302,14 +1320,16 @@ namespace Hecton8.World
 
             NativeArray<Matrix4x4> matrices = _mockScatterMatrices.AsArray();
             NativeArray<HectonVegetationInstanceData> instanceData = _mockScatterData.AsArray();
-            new MockMatrixGeneratorJob
+            MockMatrixGeneratorJob job = new MockMatrixGeneratorJob
             {
                 Matrices = matrices,
                 InstanceData = instanceData,
                 CellsX = safeCellsX,
                 Spacing = Mathf.Max(0.25f, spacing),
                 Seed = seed
-            }.Schedule(count, 64).Complete();
+            };
+            for (int i = 0; i < count; i++)
+                job.Execute(i);
 
             float width = (safeCellsX + 2) * Mathf.Max(0.25f, spacing);
             float depth = (safeCellsZ + 2) * Mathf.Max(0.25f, spacing);
@@ -1479,6 +1499,7 @@ namespace Hecton8.World
             _frustumPlaneCache = new Plane[FrustumPlaneCount]; // COLD ALLOC: Plane[6] - cached frustum planes for GPU vegetation culling upload - owner: HectonIndirectVegetationRenderer
             _frustumPlaneVectors = new Vector4[FrustumPlaneCount]; // COLD ALLOC: Vector4[6] - packed frustum planes for compute upload - owner: HectonIndirectVegetationRenderer
             _cullTelemetryClearPayload = new uint[ScatterCullTelemetryCounterCount]; // COLD ALLOC: uint[4] - GPU cull telemetry counter clear payload - owner: HectonIndirectVegetationRenderer
+            EnsureIndirectPropertyBlocks();
             CreateAuxiliaryMaterials();
         }
 
@@ -1513,7 +1534,6 @@ namespace Hecton8.World
             ReleaseMockScatterBuffers();
 #endif
             ReleaseAuxiliaryMaterials();
-            ReleaseRuntimeMaterial();
             ReleaseCpuCullingData();
             ReleaseCpuCullingScratchBuffers(deferActiveJobs: true);
 
@@ -1809,17 +1829,7 @@ namespace Hecton8.World
             if (TryRenderGpuIndirect(cullCamera, nearMesh, farMesh, cullCameraPosition, cullCameraForward, drawBounds))
                 return;
 
-            EnsureBatchRendererGroupResources();
-            if (_batchRendererGroup == null || _batchId.value == 0u)
-                return;
-
-            if (!TryBindBrgMaterials())
-                return;
-
-            SyncBatchRegistration(nearMesh, farMesh);
-            SyncBatchBuffer(_instanceMatrixBuffer);
-            _batchRendererGroup.SetGlobalBounds(drawBounds);
-            UpdateMotionVectorHistory(cullCamera, cullCameraPosition);
+            ReleaseBatchRendererGroupResources();
         }
 
         private void ConsumeScatterRuntimeSignals()
@@ -1892,12 +1902,9 @@ namespace Hecton8.World
                 return null;
 
             if (_material != null)
-            {
-                ReleaseRuntimeMaterial();
                 return _material;
-            }
 
-            return _runtimeMaterial;
+            return null;
         }
 
         private bool EnsureRenderMaterialResolved()
@@ -1909,12 +1916,7 @@ namespace Hecton8.World
             TryAutoAssignAssets();
 #endif
 
-            EnsureRuntimeMaterial();
-            if (_runtimeMaterial != null)
-                return true;
-
-            EnsureRuntimeMaterial();
-            return _runtimeMaterial != null;
+            return _material != null;
         }
 
         private void EnsureBatchRendererGroupResources()
@@ -1934,77 +1936,11 @@ namespace Hecton8.World
             _batchId = _batchRendererGroup.AddBatch(_batchMetadata, _batchHandleBuffer.bufferHandle);
         }
 
-        private bool TryBindBrgMaterials()
-        {
-            GraphicsBuffer activeInstanceDataBuffer = ResolveActiveInstanceDataBuffer();
-            if (activeInstanceDataBuffer == null)
-                return false;
-
-            Material sourceMaterial = ResolveRenderMaterial();
-            if (sourceMaterial == null)
-                return false;
-
-            EnsureBrgMaterialClone(ref _nearBrgMaterial, sourceMaterial, "__HectonVegetationNearBrgMaterial");
-            if (_nearBrgMaterial == null)
-                return false;
-
-            Mesh farMesh = FrameTimeWatchdog.IsDistantFloraRenderingEnabled && _farLodDistance > _nearLodDistance
-                ? ResolveImpostorRenderMesh()
-                : null;
-            if (farMesh != null)
-                EnsureBrgMaterialClone(ref _farBrgMaterial, sourceMaterial, "__HectonVegetationFarBrgMaterial");
-            else
-                ReleaseMaterialClone(ref _farBrgMaterial);
-
-            if (_enableDepthPrepass && _depthOnlyMaterial != null)
-            {
-                EnsureBrgMaterialClone(ref _depthNearBrgMaterial, _depthOnlyMaterial, "__HectonVegetationDepthNearBrgMaterial");
-                if (farMesh != null)
-                    EnsureBrgMaterialClone(ref _depthFarBrgMaterial, _depthOnlyMaterial, "__HectonVegetationDepthFarBrgMaterial");
-                else
-                    ReleaseMaterialClone(ref _depthFarBrgMaterial);
-            }
-            else
-            {
-                ReleaseMaterialClone(ref _depthNearBrgMaterial);
-                ReleaseMaterialClone(ref _depthFarBrgMaterial);
-            }
-
-            if (_enableShadowCasterDraw && _shadowCasterMaterial != null)
-                EnsureBrgMaterialClone(ref _shadowBrgMaterial, _shadowCasterMaterial, "__HectonVegetationShadowBrgMaterial");
-            else
-                ReleaseMaterialClone(ref _shadowBrgMaterial);
-
-            if (_enableMotionVectorDraw && _motionVectorMaterial != null)
-            {
-                EnsureBrgMaterialClone(ref _motionNearBrgMaterial, _motionVectorMaterial, "__HectonVegetationMotionNearBrgMaterial");
-                if (farMesh != null)
-                    EnsureBrgMaterialClone(ref _motionFarBrgMaterial, _motionVectorMaterial, "__HectonVegetationMotionFarBrgMaterial");
-                else
-                    ReleaseMaterialClone(ref _motionFarBrgMaterial);
-            }
-            else
-            {
-                ReleaseMaterialClone(ref _motionNearBrgMaterial);
-                ReleaseMaterialClone(ref _motionFarBrgMaterial);
-            }
-
-            Vector4 globalFloatingOffset = ResolveVegetationFloatingOffset();
-            EnsureAndDispatchFloraSnapFlags(activeInstanceDataBuffer, globalFloatingOffset);
-            ApplyMaterialBindings(ref _nearMaterialBindingState, _nearBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, null, false);
-            ApplyMaterialBindings(ref _farMaterialBindingState, _farBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 1f, null, false);
-            ApplyMaterialBindings(ref _depthNearMaterialBindingState, _depthNearBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, null, false);
-            ApplyMaterialBindings(ref _depthFarMaterialBindingState, _depthFarBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 1f, null, false);
-            ApplyMaterialBindings(ref _shadowMaterialBindingState, _shadowBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, null, false);
-            ApplyMaterialBindings(ref _motionNearMaterialBindingState, _motionNearBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, null, false);
-            ApplyMaterialBindings(ref _motionFarMaterialBindingState, _motionFarBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 1f, null, false);
-            return true;
-        }
-
         private bool TryBindGpuIndirectMaterials(GraphicsBuffer activeInstanceDataBuffer, Mesh farMesh)
         {
             if (activeInstanceDataBuffer == null ||
                 _visibleIndicesLod0Buffer == null ||
+                (farMesh != null && _visibleIndicesLod1Buffer == null) ||
                 (_enableShadowCasterDraw && _visibleIndicesShadowBuffer == null))
             {
                 return false;
@@ -2014,60 +1950,62 @@ namespace Hecton8.World
             if (sourceMaterial == null)
                 return false;
 
-            EnsureBrgMaterialClone(ref _nearBrgMaterial, sourceMaterial, "__HectonVegetationNearIndirectMaterial");
+            EnsureIndirectPropertyBlocks();
+            _nearBrgMaterial = sourceMaterial;
             if (_nearBrgMaterial == null)
                 return false;
 
             if (farMesh != null)
-                EnsureBrgMaterialClone(ref _farBrgMaterial, sourceMaterial, "__HectonVegetationFarIndirectMaterial");
+                _farBrgMaterial = sourceMaterial;
             else
-                ReleaseMaterialClone(ref _farBrgMaterial);
+                ClearPassMaterialReference(ref _farBrgMaterial);
 
             if (_enableDepthPrepass && _depthOnlyMaterial != null)
             {
-                EnsureBrgMaterialClone(ref _depthNearBrgMaterial, _depthOnlyMaterial, "__HectonVegetationDepthNearIndirectMaterial");
+                _depthNearBrgMaterial = _depthOnlyMaterial;
                 if (farMesh != null)
-                    EnsureBrgMaterialClone(ref _depthFarBrgMaterial, _depthOnlyMaterial, "__HectonVegetationDepthFarIndirectMaterial");
+                    _depthFarBrgMaterial = _depthOnlyMaterial;
                 else
-                    ReleaseMaterialClone(ref _depthFarBrgMaterial);
+                    ClearPassMaterialReference(ref _depthFarBrgMaterial);
             }
             else
             {
-                ReleaseMaterialClone(ref _depthNearBrgMaterial);
-                ReleaseMaterialClone(ref _depthFarBrgMaterial);
+                ClearPassMaterialReference(ref _depthNearBrgMaterial);
+                ClearPassMaterialReference(ref _depthFarBrgMaterial);
             }
 
             if (_enableShadowCasterDraw && _shadowCasterMaterial != null)
-                EnsureBrgMaterialClone(ref _shadowBrgMaterial, _shadowCasterMaterial, "__HectonVegetationShadowIndirectMaterial");
+                _shadowBrgMaterial = _shadowCasterMaterial;
             else
-                ReleaseMaterialClone(ref _shadowBrgMaterial);
+                ClearPassMaterialReference(ref _shadowBrgMaterial);
 
             if (_enableMotionVectorDraw && _motionVectorMaterial != null)
             {
-                EnsureBrgMaterialClone(ref _motionNearBrgMaterial, _motionVectorMaterial, "__HectonVegetationMotionNearIndirectMaterial");
+                _motionNearBrgMaterial = _motionVectorMaterial;
                 if (farMesh != null)
-                    EnsureBrgMaterialClone(ref _motionFarBrgMaterial, _motionVectorMaterial, "__HectonVegetationMotionFarIndirectMaterial");
+                    _motionFarBrgMaterial = _motionVectorMaterial;
                 else
-                    ReleaseMaterialClone(ref _motionFarBrgMaterial);
+                    ClearPassMaterialReference(ref _motionFarBrgMaterial);
             }
             else
             {
-                ReleaseMaterialClone(ref _motionNearBrgMaterial);
-                ReleaseMaterialClone(ref _motionFarBrgMaterial);
+                ClearPassMaterialReference(ref _motionNearBrgMaterial);
+                ClearPassMaterialReference(ref _motionFarBrgMaterial);
             }
 
             Vector4 globalFloatingOffset = ResolveVegetationFloatingOffset();
-            ApplyMaterialBindings(ref _nearMaterialBindingState, _nearBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, _visibleIndicesLod0Buffer, true);
-            ApplyMaterialBindings(ref _farMaterialBindingState, _farBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 1f, _visibleIndicesLod1Buffer, true);
-            ApplyMaterialBindings(ref _depthNearMaterialBindingState, _depthNearBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, _visibleIndicesLod0Buffer, true);
-            ApplyMaterialBindings(ref _depthFarMaterialBindingState, _depthFarBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 1f, _visibleIndicesLod1Buffer, true);
-            ApplyMaterialBindings(ref _shadowMaterialBindingState, _shadowBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, _visibleIndicesShadowBuffer, true);
-            ApplyMaterialBindings(ref _motionNearMaterialBindingState, _motionNearBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, _visibleIndicesLod0Buffer, true);
-            ApplyMaterialBindings(ref _motionFarMaterialBindingState, _motionFarBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 1f, _visibleIndicesLod1Buffer, true);
+            ApplyIndirectPropertyBlockBindings(ref _nearIndirectProperties, ref _nearMaterialBindingState, _nearBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, _visibleIndicesLod0Buffer, true);
+            ApplyIndirectPropertyBlockBindings(ref _farIndirectProperties, ref _farMaterialBindingState, _farBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 1f, _visibleIndicesLod1Buffer, true);
+            ApplyIndirectPropertyBlockBindings(ref _depthNearIndirectProperties, ref _depthNearMaterialBindingState, _depthNearBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, _visibleIndicesLod0Buffer, true);
+            ApplyIndirectPropertyBlockBindings(ref _depthFarIndirectProperties, ref _depthFarMaterialBindingState, _depthFarBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 1f, _visibleIndicesLod1Buffer, true);
+            ApplyIndirectPropertyBlockBindings(ref _shadowIndirectProperties, ref _shadowMaterialBindingState, _shadowBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, _visibleIndicesShadowBuffer, true);
+            ApplyIndirectPropertyBlockBindings(ref _motionNearIndirectProperties, ref _motionNearMaterialBindingState, _motionNearBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, _visibleIndicesLod0Buffer, true);
+            ApplyIndirectPropertyBlockBindings(ref _motionFarIndirectProperties, ref _motionFarMaterialBindingState, _motionFarBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 1f, _visibleIndicesLod1Buffer, true);
             return true;
         }
 
-        private void ApplyMaterialBindings(
+        private void ApplyIndirectPropertyBlockBindings(
+            ref MaterialPropertyBlock propertyBlock,
             ref MaterialBindingState state,
             Material material,
             GraphicsBuffer activeInstanceDataBuffer,
@@ -2076,8 +2014,11 @@ namespace Hecton8.World
             GraphicsBuffer visibleIndicesBuffer,
             bool useGpuIndirect)
         {
-            if (material == null || _instanceMatrixBuffer == null || activeInstanceDataBuffer == null)
+            if (material == null || propertyBlock == null || _instanceMatrixBuffer == null || activeInstanceDataBuffer == null)
+            {
+                state = default;
                 return;
+            }
 
             GraphicsBuffer floraAgeBuffer = ResolveFloraAgeBuffer();
             if (MaterialBindingStateMatches(
@@ -2093,43 +2034,23 @@ namespace Hecton8.World
                 return;
             }
 
-            material.enableInstancing = true;
-            material.SetBuffer(_InstanceMatricesId, _instanceMatrixBuffer);
-            material.SetBuffer(_InstanceDataId, activeInstanceDataBuffer);
+            propertyBlock.Clear();
+            propertyBlock.SetBuffer(_InstanceMatricesId, _instanceMatrixBuffer);
+            propertyBlock.SetBuffer(_InstanceDataId, activeInstanceDataBuffer);
             if (floraAgeBuffer != null)
-                material.SetBuffer(_FloraAges01Id, floraAgeBuffer);
-            else if (state.FloraAgeBuffer != null)
-                material.SetBuffer(_FloraAges01Id, (GraphicsBuffer)null);
+                propertyBlock.SetBuffer(_FloraAges01Id, floraAgeBuffer);
             if (_floraPhaseSeedBuffer != null)
-                material.SetBuffer(_FloraPhaseSeedsId, _floraPhaseSeedBuffer);
-            else if (state.FloraPhaseSeedBuffer != null)
-                material.SetBuffer(_FloraPhaseSeedsId, (GraphicsBuffer)null);
+                propertyBlock.SetBuffer(_FloraPhaseSeedsId, _floraPhaseSeedBuffer);
             if (_floraSnapFlagBuffer != null)
-            {
-                material.SetBuffer(_FloraSnapFlagsId, _floraSnapFlagBuffer);
-                material.SetFloat(_FloraSnapFlagsEnabledId, 1f);
-            }
-            else
-            {
-                material.SetFloat(_FloraSnapFlagsEnabledId, 0f);
-            }
-            material.SetVector(_GlobalFloatingOffsetId, globalFloatingOffset);
-            material.SetVector(_ChunkWorldOffsetId, globalFloatingOffset);
-            material.SetFloat(_LodPassModeId, passMode);
-            material.SetFloat(_LodNearDistanceId, _nearLodDistance);
-            material.SetFloat(_LodFarDistanceId, _farLodDistance);
-            material.SetFloat(_LodTransitionRangeId, _lodTransitionRange);
-            material.SetFloat(_ImpostorWidthId, _impostorWidth);
-            material.SetFloat(_ImpostorHeightId, _impostorHeight);
+                propertyBlock.SetBuffer(_FloraSnapFlagsId, _floraSnapFlagBuffer);
             if (useGpuIndirect && visibleIndicesBuffer != null)
-            {
-                material.EnableKeyword(GpuIndirectKeyword);
-                material.SetBuffer(_VisibleInstanceIndicesId, visibleIndicesBuffer);
-            }
-            else
-            {
-                material.DisableKeyword(GpuIndirectKeyword);
-            }
+                propertyBlock.SetBuffer(_VisibleInstanceIndicesId, visibleIndicesBuffer);
+
+            propertyBlock.SetVector(_GlobalFloatingOffsetId, globalFloatingOffset);
+            propertyBlock.SetVector(_ChunkWorldOffsetId, globalFloatingOffset);
+            float snapFlagsEnabled = _floraSnapFlagBuffer != null ? 1f : 0f;
+            propertyBlock.SetVector(_RuntimeLodParamsId, new Vector4(passMode, _nearLodDistance, _farLodDistance, _lodTransitionRange));
+            propertyBlock.SetVector(_RuntimeDrawParamsId, new Vector4(snapFlagsEnabled, _impostorWidth, _impostorHeight, useGpuIndirect && visibleIndicesBuffer != null ? 1f : 0f));
 
             state = new MaterialBindingState
             {
@@ -2338,25 +2259,25 @@ namespace Hecton8.World
             bool depthPyramidReady = BuildDepthPyramid(cullCamera);
             DispatchGpuCulling(cullCamera, activeInstanceDataBuffer, depthPyramidReady, cameraPosition, cameraForward);
 
-            RenderIndirectPass(_nearBrgMaterial, nearMesh, _indirectArgsLod0Buffer, drawBounds, ShadowCastingMode.Off, _receiveShadows, MotionVectorGenerationMode.Camera, cullCamera);
+            RenderIndirectPass(_nearBrgMaterial, _nearIndirectProperties, nearMesh, _indirectArgsLod0Buffer, drawBounds, ShadowCastingMode.Off, _receiveShadows, MotionVectorGenerationMode.Camera, cullCamera);
             if (farMesh != null && _farBrgMaterial != null && _indirectArgsLod1Buffer != null)
-                RenderIndirectPass(_farBrgMaterial, farMesh, _indirectArgsLod1Buffer, drawBounds, ShadowCastingMode.Off, _impostorReceiveShadows, MotionVectorGenerationMode.Camera, cullCamera);
+                RenderIndirectPass(_farBrgMaterial, _farIndirectProperties, farMesh, _indirectArgsLod1Buffer, drawBounds, ShadowCastingMode.Off, _impostorReceiveShadows, MotionVectorGenerationMode.Camera, cullCamera);
 
             if (_enableDepthPrepass)
             {
-                RenderIndirectPass(_depthNearBrgMaterial, nearMesh, _indirectArgsLod0Buffer, drawBounds, ShadowCastingMode.Off, false, MotionVectorGenerationMode.Camera, cullCamera);
+                RenderIndirectPass(_depthNearBrgMaterial, _depthNearIndirectProperties, nearMesh, _indirectArgsLod0Buffer, drawBounds, ShadowCastingMode.Off, false, MotionVectorGenerationMode.Camera, cullCamera);
                 if (farMesh != null && _depthFarBrgMaterial != null && _indirectArgsLod1Buffer != null)
-                    RenderIndirectPass(_depthFarBrgMaterial, farMesh, _indirectArgsLod1Buffer, drawBounds, ShadowCastingMode.Off, false, MotionVectorGenerationMode.Camera, cullCamera);
+                    RenderIndirectPass(_depthFarBrgMaterial, _depthFarIndirectProperties, farMesh, _indirectArgsLod1Buffer, drawBounds, ShadowCastingMode.Off, false, MotionVectorGenerationMode.Camera, cullCamera);
             }
 
             if (_enableShadowCasterDraw && _shadowBrgMaterial != null && _indirectArgsShadowBuffer != null && HasMainDirectionalShadowLight())
-                RenderIndirectPass(_shadowBrgMaterial, nearMesh, _indirectArgsShadowBuffer, drawBounds, ShadowCastingMode.On, false, MotionVectorGenerationMode.Camera, cullCamera);
+                RenderIndirectPass(_shadowBrgMaterial, _shadowIndirectProperties, nearMesh, _indirectArgsShadowBuffer, drawBounds, ShadowCastingMode.On, false, MotionVectorGenerationMode.Camera, cullCamera);
 
             if (_enableMotionVectorDraw)
             {
-                RenderIndirectPass(_motionNearBrgMaterial, nearMesh, _indirectArgsLod0Buffer, drawBounds, ShadowCastingMode.Off, false, MotionVectorGenerationMode.Object, cullCamera);
+                RenderIndirectPass(_motionNearBrgMaterial, _motionNearIndirectProperties, nearMesh, _indirectArgsLod0Buffer, drawBounds, ShadowCastingMode.Off, false, MotionVectorGenerationMode.Object, cullCamera);
                 if (farMesh != null && _motionFarBrgMaterial != null && _indirectArgsLod1Buffer != null)
-                    RenderIndirectPass(_motionFarBrgMaterial, farMesh, _indirectArgsLod1Buffer, drawBounds, ShadowCastingMode.Off, false, MotionVectorGenerationMode.Object, cullCamera);
+                    RenderIndirectPass(_motionFarBrgMaterial, _motionFarIndirectProperties, farMesh, _indirectArgsLod1Buffer, drawBounds, ShadowCastingMode.Off, false, MotionVectorGenerationMode.Object, cullCamera);
             }
 
             return true;
@@ -2364,6 +2285,7 @@ namespace Hecton8.World
 
         private void RenderIndirectPass(
             Material material,
+            MaterialPropertyBlock propertyBlock,
             Mesh mesh,
             GraphicsBuffer argsBuffer,
             Bounds drawBounds,
@@ -2372,11 +2294,12 @@ namespace Hecton8.World
             MotionVectorGenerationMode motionVectorMode,
             Camera cullCamera)
         {
-            if (material == null || mesh == null || argsBuffer == null)
+            if (material == null || propertyBlock == null || mesh == null || argsBuffer == null)
                 return;
 
             RenderParams renderParams = new RenderParams(material)
             {
+                matProps = propertyBlock,
                 worldBounds = drawBounds,
                 layer = gameObject.layer,
                 shadowCastingMode = shadowCastingMode,
@@ -3349,6 +3272,24 @@ namespace Hecton8.World
             buffer = null;
         }
 
+        private void EnsureIndirectPropertyBlocks()
+        {
+            if (_nearIndirectProperties == null)
+                _nearIndirectProperties = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - near indirect vegetation pass property payload - owner: HectonIndirectVegetationRenderer
+            if (_farIndirectProperties == null)
+                _farIndirectProperties = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - far indirect vegetation pass property payload - owner: HectonIndirectVegetationRenderer
+            if (_depthNearIndirectProperties == null)
+                _depthNearIndirectProperties = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - depth near indirect vegetation pass property payload - owner: HectonIndirectVegetationRenderer
+            if (_depthFarIndirectProperties == null)
+                _depthFarIndirectProperties = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - depth far indirect vegetation pass property payload - owner: HectonIndirectVegetationRenderer
+            if (_shadowIndirectProperties == null)
+                _shadowIndirectProperties = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - shadow indirect vegetation pass property payload - owner: HectonIndirectVegetationRenderer
+            if (_motionNearIndirectProperties == null)
+                _motionNearIndirectProperties = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - motion near indirect vegetation pass property payload - owner: HectonIndirectVegetationRenderer
+            if (_motionFarIndirectProperties == null)
+                _motionFarIndirectProperties = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - motion far indirect vegetation pass property payload - owner: HectonIndirectVegetationRenderer
+        }
+
         private void ReleaseDepthPyramidTexture()
         {
             if (_depthPyramidTexture == null)
@@ -3363,39 +3304,13 @@ namespace Hecton8.World
             _depthPyramidTexture = null;
         }
 
-        private void EnsureBrgMaterialClone(ref Material target, Material source, string materialName)
-        {
-            if (source == null)
-            {
-                ReleaseMaterialClone(ref target);
-                return;
-            }
-
-            if (target != null && target.shader == source.shader)
-                return;
-
-            ReleaseMaterialClone(ref target);
-            target = new Material(source)
-            {
-                hideFlags = HideFlags.HideAndDontSave,
-                name = materialName,
-                enableInstancing = true
-            }; // COLD ALLOC: Material[1] - BRG-local vegetation pass material clone for per-renderer buffer binding - owner: HectonIndirectVegetationRenderer
-        }
-
-        private void ReleaseMaterialClone(ref Material target)
+        private void ClearPassMaterialReference(ref Material target)
         {
             if (target == null)
                 return;
 
             ResetMaterialBindingState(target);
             ReleaseRegisteredBrgMaterial(target);
-
-            if (Application.isPlaying)
-                Destroy(target);
-            else
-                DestroyImmediate(target);
-
             target = null;
         }
 
@@ -3540,10 +3455,12 @@ namespace Hecton8.World
                 : currentCameraPosition;
 
             ApplyMotionVectorPreviousCamera(
+                _motionNearIndirectProperties,
                 _motionNearBrgMaterial,
                 ref _motionNearPreviousCameraBindingState,
                 previousCameraPosition);
             ApplyMotionVectorPreviousCamera(
+                _motionFarIndirectProperties,
                 _motionFarBrgMaterial,
                 ref _motionFarPreviousCameraBindingState,
                 previousCameraPosition);
@@ -3554,11 +3471,12 @@ namespace Hecton8.World
         }
 
         private void ApplyMotionVectorPreviousCamera(
+            MaterialPropertyBlock propertyBlock,
             Material material,
             ref MaterialVectorBindingState state,
             Vector3 previousCameraPosition)
         {
-            if (material == null)
+            if (propertyBlock == null || material == null)
                 return;
 
             if (state.IsValid &&
@@ -3570,7 +3488,7 @@ namespace Hecton8.World
                 return;
             }
 
-            material.SetVector(_PreviousCameraPositionId, previousCameraPosition);
+            propertyBlock.SetVector(_PreviousCameraPositionId, previousCameraPosition);
             state = new MaterialVectorBindingState
             {
                 Material = material,
@@ -3636,15 +3554,13 @@ namespace Hecton8.World
         {
             if (_cpuCullingDataDisposeHandleValid && _cpuCullingDataDisposeHandle.IsCompleted)
             {
-                _cpuCullingDataDisposeHandle.Complete();
-                _cpuCullingDataDisposeHandle = default;
+                DispatcherJobFence.TryFinalizeCompleted(ref _cpuCullingDataDisposeHandle);
                 _cpuCullingDataDisposeHandleValid = false;
             }
 
             if (_cpuCullingScratchDisposeHandleValid && _cpuCullingScratchDisposeHandle.IsCompleted)
             {
-                _cpuCullingScratchDisposeHandle.Complete();
-                _cpuCullingScratchDisposeHandle = default;
+                DispatcherJobFence.TryFinalizeCompleted(ref _cpuCullingScratchDisposeHandle);
                 _cpuCullingScratchDisposeHandleValid = false;
             }
         }
@@ -3688,8 +3604,7 @@ namespace Hecton8.World
 
                 if (candidate.ActiveHandleValid)
                 {
-                    candidate.ActiveHandle.Complete();
-                    candidate.ActiveHandle = default;
+                    DispatcherJobFence.TryFinalizeCompleted(ref candidate.ActiveHandle);
                     candidate.ActiveHandleValid = false;
                 }
 
@@ -3773,10 +3688,9 @@ namespace Hecton8.World
                 }
                 else
                 {
-                    scratch.ActiveHandle.Complete();
+                    DispatcherJobFence.TryComplete(ref scratch.ActiveHandle, forceComplete: true);
                 }
 
-                scratch.ActiveHandle = default;
                 scratch.ActiveHandleValid = false;
             }
 
@@ -4463,13 +4377,13 @@ namespace Hecton8.World
                 _batchMetadata.Dispose();
             }
 
-            ReleaseMaterialClone(ref _nearBrgMaterial);
-            ReleaseMaterialClone(ref _farBrgMaterial);
-            ReleaseMaterialClone(ref _depthNearBrgMaterial);
-            ReleaseMaterialClone(ref _depthFarBrgMaterial);
-            ReleaseMaterialClone(ref _shadowBrgMaterial);
-            ReleaseMaterialClone(ref _motionNearBrgMaterial);
-            ReleaseMaterialClone(ref _motionFarBrgMaterial);
+            ClearPassMaterialReference(ref _nearBrgMaterial);
+            ClearPassMaterialReference(ref _farBrgMaterial);
+            ClearPassMaterialReference(ref _depthNearBrgMaterial);
+            ClearPassMaterialReference(ref _depthFarBrgMaterial);
+            ClearPassMaterialReference(ref _shadowBrgMaterial);
+            ClearPassMaterialReference(ref _motionNearBrgMaterial);
+            ClearPassMaterialReference(ref _motionFarBrgMaterial);
         }
 
         private void UnregisterBatchMesh(ref BatchMeshID batchMeshId)
@@ -4847,6 +4761,9 @@ namespace Hecton8.World
 
         private void TryAutoAssignAssets()
         {
+            if (_material == null)
+                _material = AssetDatabase.LoadAssetAtPath<Material>(VegetationMaterialAssetPath);
+
             if (_vegetationShader == null)
                 _vegetationShader = AssetDatabase.LoadAssetAtPath<Shader>(VegetationShaderAssetPath);
 
@@ -4868,6 +4785,15 @@ namespace Hecton8.World
             if (_motionVectorShader == null)
                 _motionVectorShader = AssetDatabase.LoadAssetAtPath<Shader>(MotionShaderAssetPath);
 
+            if (_depthOnlyMaterial == null)
+                _depthOnlyMaterial = AssetDatabase.LoadAssetAtPath<Material>(DepthMaterialAssetPath);
+
+            if (_shadowCasterMaterial == null)
+                _shadowCasterMaterial = AssetDatabase.LoadAssetAtPath<Material>(ShadowMaterialAssetPath);
+
+            if (_motionVectorMaterial == null)
+                _motionVectorMaterial = AssetDatabase.LoadAssetAtPath<Material>(MotionMaterialAssetPath);
+
             _cullFloraKernel = _cullingCompute != null ? _cullingCompute.FindKernel("CullFloraInstances") : -1;
             _cullFloraShadowKernel = _cullingCompute != null ? _cullingCompute.FindKernel("CullFloraShadowInstances") : -1;
             _clearIndirectArgsKernel = _cullingCompute != null ? _cullingCompute.FindKernel("ClearIndirectArgs") : -1;
@@ -4878,86 +4804,20 @@ namespace Hecton8.World
         }
 #endif
 
-        private void EnsureRuntimeMaterial()
-        {
-            if (_runtimeMaterial != null)
-                return;
-
-            Shader vegetationShader = _vegetationShader != null
-                ? _vegetationShader
-                : (_material != null ? _material.shader : null);
-            if (vegetationShader == null)
-                return;
-
-            _runtimeMaterial = new Material(vegetationShader)
-            {
-                hideFlags = HideFlags.HideAndDontSave,
-                name = "__HectonIndirectVegetationRuntimeMaterial",
-                enableInstancing = true
-            }; // COLD ALLOC: Material[1] - hidden fallback vegetation material when the shared authoring material is missing - owner: HectonIndirectVegetationRenderer
-            _ownsRuntimeMaterial = true;
-        }
-
         private void CreateAuxiliaryMaterials()
         {
-            if (_enableDepthPrepass && _depthOnlyMaterial == null && _depthOnlyShader != null)
-            {
-                _depthOnlyMaterial = new Material(_depthOnlyShader)
-                {
-                    hideFlags = HideFlags.HideAndDontSave
-                }; // COLD ALLOC: Material[1] - dedicated depth-only indirect vegetation material - owner: HectonIndirectVegetationRenderer
-            }
-
-            if (_enableShadowCasterDraw && _shadowCasterMaterial == null && _shadowCasterShader != null)
-            {
-                _shadowCasterMaterial = new Material(_shadowCasterShader)
-                {
-                    hideFlags = HideFlags.HideAndDontSave
-                }; // COLD ALLOC: Material[1] - dedicated shadow-only indirect vegetation material - owner: HectonIndirectVegetationRenderer
-            }
-
-            if (_enableMotionVectorDraw && _motionVectorMaterial == null && _motionVectorShader != null)
-            {
-                _motionVectorMaterial = new Material(_motionVectorShader)
-                {
-                    hideFlags = HideFlags.HideAndDontSave
-                }; // COLD ALLOC: Material[1] - dedicated motion-vector indirect vegetation material - owner: HectonIndirectVegetationRenderer
-            }
-        }
-
-        private void ReleaseRuntimeMaterial()
-        {
-            if (!_ownsRuntimeMaterial || _runtimeMaterial == null)
-                return;
-
-            if (Application.isPlaying)
-                Destroy(_runtimeMaterial);
-            else
-                DestroyImmediate(_runtimeMaterial);
-
-            _runtimeMaterial = null;
-            _ownsRuntimeMaterial = false;
+            EnsureIndirectPropertyBlocks();
         }
 
         private void ReleaseAuxiliaryMaterials()
         {
-            if (_depthOnlyMaterial != null)
-            {
-                Destroy(_depthOnlyMaterial);
-                _depthOnlyMaterial = null;
-            }
-
-            if (_shadowCasterMaterial != null)
-            {
-                Destroy(_shadowCasterMaterial);
-                _shadowCasterMaterial = null;
-            }
-
-            if (_motionVectorMaterial != null)
-            {
-                Destroy(_motionVectorMaterial);
-                _motionVectorMaterial = null;
-            }
+            _nearMaterialBindingState = default;
+            _farMaterialBindingState = default;
+            _depthNearMaterialBindingState = default;
+            _depthFarMaterialBindingState = default;
+            _shadowMaterialBindingState = default;
+            _motionNearMaterialBindingState = default;
+            _motionFarMaterialBindingState = default;
         }
 
         private static bool HasMainDirectionalShadowLight()

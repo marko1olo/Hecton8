@@ -200,7 +200,7 @@ namespace Hecton8.Thermodynamics
         [FieldOffset(112)] public float SubmarineHalfExtentX;
         [FieldOffset(116)] public float SubmarineHalfExtentY;
         [FieldOffset(120)] public float SubmarineHalfExtentZ;
-        [FieldOffset(124)] public float _pad0;
+        [FieldOffset(124)] public float SimulationTickDeltaSeconds;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -243,6 +243,36 @@ namespace Hecton8.Thermodynamics
         [FieldOffset(60)] public uint ActiveResolution;
     }
 
+    /// <summary>
+    /// Pass-wide convergence control for abyssal heat diffusion. Size: 16 bytes.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    public struct ThermalSolverConvergenceStateDTO
+    {
+        [FieldOffset(0)] public float MaxResidualFloat;
+        [FieldOffset(4)] public float PreviousResidualFloat;
+        [FieldOffset(8)] public float Omega;
+        [FieldOffset(12)] public ushort IterationCount;
+        [FieldOffset(14)] public ushort FaultFlags;
+    }
+
+    /// <summary>
+    /// Cache-line isolated residual slot for per-worker map-reduce writes. Size: 64 bytes.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct ThermalResidualSlot64
+    {
+        [FieldOffset(0)] public float MaxResidualFloat;
+        [FieldOffset(4)] public uint FaultFlags;
+        [FieldOffset(8)] private ulong _pad0;
+        [FieldOffset(16)] private ulong _pad1;
+        [FieldOffset(24)] private ulong _pad2;
+        [FieldOffset(32)] private ulong _pad3;
+        [FieldOffset(40)] private ulong _pad4;
+        [FieldOffset(48)] private ulong _pad5;
+        [FieldOffset(56)] private ulong _pad6;
+    }
+
     public static class ThermalCellLayoutValidator
     {
         public static bool ValidateThermalCellLayout()
@@ -252,6 +282,19 @@ namespace Hecton8.Thermodynamics
                    Marshal.OffsetOf<ThermalCellDTO>(nameof(ThermalCellDTO.ThermalConductivity)).ToInt32() == 4 &&
                    Marshal.OffsetOf<ThermalCellDTO>(nameof(ThermalCellDTO.ConvectionVelocityY)).ToInt32() == 8 &&
                    Marshal.OffsetOf<ThermalCellDTO>(nameof(ThermalCellDTO.Flags)).ToInt32() == 12;
+        }
+
+        public static bool ValidateThermalSolverConvergenceLayout()
+        {
+            return UnsafeUtility.SizeOf<ThermalSolverConvergenceStateDTO>() == 16 &&
+                   UnsafeUtility.SizeOf<ThermalResidualSlot64>() == 64 &&
+                   Marshal.OffsetOf<ThermalSolverConvergenceStateDTO>(nameof(ThermalSolverConvergenceStateDTO.MaxResidualFloat)).ToInt32() == 0 &&
+                   Marshal.OffsetOf<ThermalSolverConvergenceStateDTO>(nameof(ThermalSolverConvergenceStateDTO.PreviousResidualFloat)).ToInt32() == 4 &&
+                   Marshal.OffsetOf<ThermalSolverConvergenceStateDTO>(nameof(ThermalSolverConvergenceStateDTO.Omega)).ToInt32() == 8 &&
+                   Marshal.OffsetOf<ThermalSolverConvergenceStateDTO>(nameof(ThermalSolverConvergenceStateDTO.IterationCount)).ToInt32() == 12 &&
+                   Marshal.OffsetOf<ThermalSolverConvergenceStateDTO>(nameof(ThermalSolverConvergenceStateDTO.FaultFlags)).ToInt32() == 14 &&
+                   Marshal.OffsetOf<ThermalResidualSlot64>(nameof(ThermalResidualSlot64.MaxResidualFloat)).ToInt32() == 0 &&
+                   Marshal.OffsetOf<ThermalResidualSlot64>(nameof(ThermalResidualSlot64.FaultFlags)).ToInt32() == 4;
         }
     }
 }

@@ -122,8 +122,6 @@ namespace Hecton8.Core.Data
             List<PendingRecord> records = new List<PendingRecord>(128);
             // COLD ALLOC: List<BabelBuildEntry>[256] - flat Babel text pool for cold bake output - owner: H8DataBaker
             List<BabelBuildEntry> stringPool = new List<BabelBuildEntry>(256);
-            // COLD ALLOC: HashSet<uint>[256] - duplicate ID collision gate before runtime lookup map - owner: H8DataBaker
-            HashSet<uint> recordHashes = new HashSet<uint>(256);
             for (int i = 0; i < Schemas.Length; i++)
             {
                 SheetSchema schema = Schemas[i];
@@ -131,7 +129,7 @@ namespace Hecton8.Core.Data
                 if (!File.Exists(path))
                     return Fail("Required balance sheet missing: " + schema.FileName);
 
-                H8DataBakeResult validation = ParseSheet(path, schema, records, stringPool, recordHashes);
+                H8DataBakeResult validation = ParseSheet(path, schema, records, stringPool);
                 if (!validation.Success)
                     return validation;
             }
@@ -177,8 +175,7 @@ namespace Hecton8.Core.Data
             string path,
             SheetSchema schema,
             List<PendingRecord> records,
-            List<BabelBuildEntry> stringPool,
-            HashSet<uint> recordHashes)
+            List<BabelBuildEntry> stringPool)
         {
             H8CsvTable table;
             try
@@ -230,7 +227,7 @@ namespace Hecton8.Core.Data
                     return Fail("[CRITICAL_DATA_COLLISION]: " + ex.Message);
                 }
 
-                if (!recordHashes.Add(record.Hash))
+                if (ContainsRecordHash(records, record.Hash))
                     return Fail("[CRITICAL_DATA_COLLISION]: Duplicate ID hash 0x" + record.Hash.ToString("X8", CultureInfo.InvariantCulture) + " in " + schema.FileName + " row " + (row + 2).ToString(CultureInfo.InvariantCulture) + ".");
 
                 records.Add(record);
@@ -367,6 +364,17 @@ namespace Hecton8.Core.Data
             return false;
         }
 
+        private static bool ContainsRecordHash(List<PendingRecord> records, uint hash)
+        {
+            for (int i = 0; i < records.Count; i++)
+            {
+                if (records[i].Hash == hash)
+                    return true;
+            }
+
+            return false;
+        }
+
         private static PendingRecord BuildRecord(
             H8CsvTable table,
             SheetSchema schema,
@@ -468,7 +476,20 @@ namespace Hecton8.Core.Data
             entries.Sort(CompareBabelHashAscending);
 
             int indexOffset = H8StaticDataFormat.AlignUp16(BabelHeaderSizeBytes);
-            int dataOffset = H8StaticDataFormat.AlignUp16(indexOffset + (entries.Count * UnsafeUtility.SizeOf<BabelIndexDTO>()));
+            int indexBytes = entries.Count * UnsafeUtility.SizeOf<BabelIndexDTO>();
+            int btreeOffset = H8StaticDataFormat.AlignUp64(indexOffset + indexBytes);
+            BTreeBuildRecord[] btreeRecords = new BTreeBuildRecord[entries.Count];
+            for (int i = 0; i < entries.Count; i++)
+            {
+                btreeRecords[i] = new BTreeBuildRecord
+                {
+                    Key = entries[i].Hash,
+                    Value = (uint)i
+                };
+            }
+
+            BTreeNodeDTO[] btreeNodes = BuildCacheBTreeNodes(btreeRecords, (uint)btreeOffset);
+            int dataOffset = H8StaticDataFormat.AlignUp16(btreeOffset + (btreeNodes.Length * UnsafeUtility.SizeOf<BTreeNodeDTO>()));
             int totalBytes = dataOffset;
             for (int i = 0; i < entries.Count; i++)
             {
@@ -495,6 +516,9 @@ namespace Hecton8.Core.Data
                     WriteStruct(basePtr + indexOffset + (i * UnsafeUtility.SizeOf<BabelIndexDTO>()), in entry);
                 }
 
+                for (int i = 0; i < btreeNodes.Length; i++)
+                    WriteStruct(basePtr + btreeOffset + (i * UnsafeUtility.SizeOf<BTreeNodeDTO>()), in btreeNodes[i]);
+
                 uint crc = H8Crc32.Compute(basePtr + BabelHeaderSizeBytes, totalBytes - BabelHeaderSizeBytes);
                 H8BabelDictionaryHeader header = new H8BabelDictionaryHeader
                 {
@@ -506,7 +530,7 @@ namespace Hecton8.Core.Data
                     DataOffset = (uint)dataOffset,
                     FileByteLength = (uint)totalBytes,
                     PayloadCrc32 = crc,
-                    Flags = H8StaticDataFormat.LittleEndianFlag
+                    Flags = H8StaticDataFormat.LittleEndianFlag | H8StaticDataFormat.CacheBTreeFlag
                 };
                 WriteStruct(basePtr, in header);
                 AtomicWrite(outputPath, bytes);
@@ -525,7 +549,20 @@ namespace Hecton8.Core.Data
         {
             int lookupEntrySize = UnsafeUtility.SizeOf<H8StaticDataLookupEntry>();
             int lookupOffset = HeaderSizeBytes;
-            int recordsOffset = H8StaticDataFormat.AlignUp16(lookupOffset + (records.Count * lookupEntrySize));
+            int lookupBytes = records.Count * lookupEntrySize;
+            int btreeOffset = H8StaticDataFormat.AlignUp64(lookupOffset + lookupBytes);
+            BTreeBuildRecord[] btreeRecords = new BTreeBuildRecord[records.Count];
+            for (int i = 0; i < records.Count; i++)
+            {
+                btreeRecords[i] = new BTreeBuildRecord
+                {
+                    Key = records[i].Hash,
+                    Value = (uint)i
+                };
+            }
+
+            BTreeNodeDTO[] btreeNodes = BuildCacheBTreeNodes(btreeRecords, (uint)btreeOffset);
+            int recordsOffset = H8StaticDataFormat.AlignUp64(btreeOffset + (btreeNodes.Length * UnsafeUtility.SizeOf<BTreeNodeDTO>()));
             int currentOffset = recordsOffset;
             int paddingRepairCount = 0;
 
@@ -550,6 +587,9 @@ namespace Hecton8.Core.Data
             {
                 for (int i = 0; i < lookupEntries.Length; i++)
                     WriteStruct(basePtr + lookupOffset + (i * lookupEntrySize), in lookupEntries[i]);
+
+                for (int i = 0; i < btreeNodes.Length; i++)
+                    WriteStruct(basePtr + btreeOffset + (i * UnsafeUtility.SizeOf<BTreeNodeDTO>()), in btreeNodes[i]);
 
                 for (int i = 0; i < records.Count; i++)
                 {
@@ -588,7 +628,7 @@ namespace Hecton8.Core.Data
                     RecordsOffset = (uint)recordsOffset,
                     RecordBytes = (uint)(bytes.Length - recordsOffset),
                     BabelCrc32 = babelCrc32,
-                    Flags = H8StaticDataFormat.LittleEndianFlag,
+                    Flags = H8StaticDataFormat.LittleEndianFlag | H8StaticDataFormat.CacheBTreeFlag,
                     SchemaHash = H8StaticDataFormat.SchemaHash
                 };
                 WriteStruct(basePtr, in header);
@@ -604,6 +644,93 @@ namespace Hecton8.Core.Data
             }
         }
 
+        private static BTreeNodeDTO[] BuildCacheBTreeNodes(BTreeBuildRecord[] records, uint btreeOffset)
+        {
+            if ((btreeOffset & 63u) != 0u)
+                throw new InvalidDataException("B-Tree section offset is not 64-byte aligned.");
+
+            if (records == null || records.Length == 0)
+            {
+                BTreeNodeDTO emptyRoot = default;
+                emptyRoot.Meta = H8CacheBTree.MakeLeafMeta(0);
+                return new[] { emptyRoot };
+            }
+
+            Array.Sort(records, CompareBTreeBuildRecordHashAscending);
+
+            int leafCount = (records.Length + H8StaticDataFormat.BTreeNodeKeyCapacity - 1) / H8StaticDataFormat.BTreeNodeKeyCapacity;
+            int maxNodeCount = (leafCount * 2) + 8;
+            BTreeNodeDTO[] nodes = new BTreeNodeDTO[maxNodeCount];
+            BTreeLevelEntry[] currentLevel = new BTreeLevelEntry[maxNodeCount];
+            BTreeLevelEntry[] nextLevel = new BTreeLevelEntry[maxNodeCount];
+            int nodeCount = 0;
+            int currentCount = 0;
+
+            for (int recordIndex = 0; recordIndex < records.Length;)
+            {
+                BTreeNodeDTO node = default;
+                int keyCount = Math.Min(H8StaticDataFormat.BTreeNodeKeyCapacity, records.Length - recordIndex);
+                for (int key = 0; key < keyCount; key++)
+                {
+                    BTreeBuildRecord record = records[recordIndex + key];
+                    H8CacheBTree.SetKey(ref node, key, record.Key);
+                    H8CacheBTree.SetChild(ref node, key, record.Value);
+                }
+
+                node.Meta = H8CacheBTree.MakeLeafMeta(keyCount);
+                nodes[nodeCount] = node;
+                currentLevel[currentCount] = new BTreeLevelEntry
+                {
+                    NodeIndex = nodeCount,
+                    MaxKey = records[recordIndex + keyCount - 1].Key
+                };
+                nodeCount++;
+                currentCount++;
+                recordIndex += keyCount;
+            }
+
+            while (currentCount > 1)
+            {
+                int nextCount = 0;
+                for (int levelIndex = 0; levelIndex < currentCount;)
+                {
+                    int childCount = Math.Min(H8StaticDataFormat.BTreeNodeChildCapacity, currentCount - levelIndex);
+                    BTreeNodeDTO node = default;
+                    for (int child = 0; child < childCount; child++)
+                    {
+                        BTreeLevelEntry childEntry = currentLevel[levelIndex + child];
+                        H8CacheBTree.SetChild(
+                            ref node,
+                            child,
+                            btreeOffset + ((uint)childEntry.NodeIndex * H8StaticDataFormat.CacheLineBytes));
+
+                        if (child < childCount - 1)
+                            H8CacheBTree.SetKey(ref node, child, childEntry.MaxKey);
+                    }
+
+                    node.Meta = H8CacheBTree.MakeInternalMeta(childCount - 1);
+                    nodes[nodeCount] = node;
+                    nextLevel[nextCount] = new BTreeLevelEntry
+                    {
+                        NodeIndex = nodeCount,
+                        MaxKey = currentLevel[levelIndex + childCount - 1].MaxKey
+                    };
+                    nodeCount++;
+                    nextCount++;
+                    levelIndex += childCount;
+                }
+
+                BTreeLevelEntry[] swap = currentLevel;
+                currentLevel = nextLevel;
+                nextLevel = swap;
+                currentCount = nextCount;
+            }
+
+            BTreeNodeDTO[] compact = new BTreeNodeDTO[nodeCount];
+            Array.Copy(nodes, compact, nodeCount);
+            return compact;
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void WriteStruct<T>(byte* destination, in T value) where T : unmanaged
         {
@@ -613,7 +740,7 @@ namespace Hecton8.Core.Data
 
         private static int AlignOffsetWithRepair(int offset, ref int repairCount)
         {
-            int aligned = H8StaticDataFormat.AlignUp16(offset);
+            int aligned = H8StaticDataFormat.AlignUp64(offset);
             if (aligned != offset)
                 repairCount++;
 
@@ -661,6 +788,36 @@ namespace Hecton8.Core.Data
                 return Fail("Babel index DTO ABI drift: expected 16 bytes.");
             if (UnsafeUtility.SizeOf<BabelLookupResultDTO>() != 16)
                 return Fail("Babel lookup result ABI drift: expected 16 bytes.");
+            if (UnsafeUtility.SizeOf<BTreeNodeDTO>() != H8StaticDataFormat.CacheLineBytes)
+                return Fail("Cache B-Tree node ABI drift: expected 64 bytes.");
+            if (UnsafeUtility.AlignOf<BTreeNodeDTO>() < UnsafeUtility.AlignOf<uint>())
+                return Fail("Cache B-Tree node ABI drift: expected at least uint alignment.");
+            if (UnsafeUtility.SizeOf<DataOffsetLengthDTO>() != 16)
+                return Fail("Cache B-Tree lookup result ABI drift: expected 16 bytes.");
+            if (UnsafeUtility.SizeOf<BTreeTelemetryEntry>() != H8StaticDataFormat.CacheLineBytes)
+                return Fail("Cache B-Tree telemetry ABI drift: expected 64 bytes.");
+            if (UnsafeUtility.AlignOf<BTreeTelemetryEntry>() < UnsafeUtility.AlignOf<uint>())
+                return Fail("Cache B-Tree telemetry ABI drift: expected at least uint alignment.");
+            if (UnsafeUtility.SizeOf<BTreeTelemetryAccumulatorDTO>() != H8StaticDataFormat.CacheLineBytes)
+                return Fail("Cache B-Tree accumulator ABI drift: expected 64 bytes.");
+            if (UnsafeUtility.AlignOf<BTreeTelemetryAccumulatorDTO>() < UnsafeUtility.AlignOf<uint>())
+                return Fail("Cache B-Tree accumulator ABI drift: expected at least uint alignment.");
+            if (UnsafeUtility.SizeOf<BTreeTuningProfileDTO>() != H8StaticDataFormat.CacheLineBytes)
+                return Fail("Cache B-Tree tuning profile ABI drift: expected 64 bytes.");
+            if (UnsafeUtility.AlignOf<BTreeTuningProfileDTO>() < UnsafeUtility.AlignOf<uint>())
+                return Fail("Cache B-Tree tuning profile ABI drift: expected at least uint alignment.");
+            if (UnsafeUtility.SizeOf<MortonBTreeNodeDTO>() != H8StaticDataFormat.CacheLineBytes)
+                return Fail("Spatial Morton B-Tree node ABI drift: expected 64 bytes.");
+            if (UnsafeUtility.AlignOf<MortonBTreeNodeDTO>() < UnsafeUtility.AlignOf<ulong>())
+                return Fail("Spatial Morton B-Tree node ABI drift: expected at least ulong alignment.");
+            if (UnsafeUtility.SizeOf<SpatialMortonBTreeRecordDTO>() != 16)
+                return Fail("Spatial Morton B-Tree record ABI drift: expected 16 bytes.");
+            if (UnsafeUtility.AlignOf<SpatialMortonBTreeRecordDTO>() < UnsafeUtility.AlignOf<ulong>())
+                return Fail("Spatial Morton B-Tree record ABI drift: expected at least ulong alignment.");
+            if (UnsafeUtility.SizeOf<SpatialMortonLevelEntryDTO>() != 16)
+                return Fail("Spatial Morton B-Tree level scratch ABI drift: expected 16 bytes.");
+            if (UnsafeUtility.AlignOf<SpatialMortonLevelEntryDTO>() < UnsafeUtility.AlignOf<ulong>())
+                return Fail("Spatial Morton B-Tree level scratch ABI drift: expected at least ulong alignment.");
             if (UnsafeUtility.SizeOf<H8StaticDataTelemetryEntry>() != 64)
                 return Fail("Static data telemetry ABI drift: expected 64 bytes.");
             if (UnsafeUtility.SizeOf<H8StaticDataDumpHeader>() != H8StaticDataFormat.TelemetryDumpHeaderSizeBytes)
@@ -803,6 +960,11 @@ namespace Hecton8.Core.Data
             return left.Hash.CompareTo(right.Hash);
         }
 
+        private static int CompareBTreeBuildRecordHashAscending(BTreeBuildRecord left, BTreeBuildRecord right)
+        {
+            return left.Key.CompareTo(right.Key);
+        }
+
         private static string ResolveProjectRoot()
         {
 #if UNITY_EDITOR || UNITY_STANDALONE
@@ -911,6 +1073,18 @@ namespace Hecton8.Core.Data
                 Offset = offset;
                 return this;
             }
+        }
+
+        private struct BTreeBuildRecord
+        {
+            public uint Key;
+            public uint Value;
+        }
+
+        private struct BTreeLevelEntry
+        {
+            public int NodeIndex;
+            public uint MaxKey;
         }
     }
 

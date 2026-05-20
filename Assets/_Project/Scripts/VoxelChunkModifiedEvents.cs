@@ -7,22 +7,36 @@ using UnityEngine;
 
 namespace Hecton8.Caves
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct VoxelChunkModifiedEvent
     {
+        [FieldOffset(0)]
         public ulong VolumeInstanceId;
+        [FieldOffset(8)]
         public int3 MinAbsoluteCell;
+        [FieldOffset(20)]
         public int3 MaxAbsoluteCell;
+        [FieldOffset(32)]
         public float VoxelSize;
+        [FieldOffset(36)]
         public uint Frame;
+        [FieldOffset(40)]
         public byte Operation;
+        [FieldOffset(41)]
         public byte Shape;
+        [FieldOffset(42)]
         public byte Flags;
+        [FieldOffset(43)]
         public byte Reserved0;
+        [FieldOffset(44)]
         public uint StateHash;
+        [FieldOffset(48)]
         public uint Reserved1;
+        [FieldOffset(52)]
         public uint Reserved2;
+        [FieldOffset(56)]
         public uint Reserved3;
+        [FieldOffset(60)]
         public uint Reserved4;
     }
 

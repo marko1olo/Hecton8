@@ -177,11 +177,8 @@ namespace Hecton8.Physics
             _debugFarCount    = 0;
             _debugCulledCount = 0;
 
-            // Cache observer position once per tick.
-            // Avoid repeated bridge calls in ShouldUpdate for each object.
-            AbsoluteUniversePosition observerAup = lodObserver != null
-                ? AbsoluteUniversePosition.FromRuntimePosition(lodObserver.position)
-                : default;
+            // Cache observer AUP once per tick; Transform.position is presentation only.
+            bool hasObserverAup = TryResolveObserverAup(out AbsoluteUniversePosition observerAup);
 
             // Distance squares are resolved once per tick.
             for (int i = _objects.Count - 1; i >= 0; i--)
@@ -197,12 +194,13 @@ namespace Hecton8.Physics
                     continue;
                 }
 
-                // Read position once; cache it for ShouldUpdate and ApplyMotion.
-                AbsoluteUniversePosition motionAup = motion.RestAup;
-                float3 runtimeRestPosition = motionAup.ToRuntimeFloat3();
-                Vector3 worldPos = new Vector3(runtimeRestPosition.x, runtimeRestPosition.y, runtimeRestPosition.z);
+                bool hasMotionAup = motion.HasRestAup;
+                AbsoluteUniversePosition motionAup = hasMotionAup ? motion.RestAup : default;
+                Vector3 worldPos = hasMotionAup
+                    ? ResolveRuntimePosition(in motionAup)
+                    : ResolvePresentationRestWorldPosition(motion);
 
-                if (!ShouldUpdateAup(motion, i, motionAup, observerAup,
+                if (!ShouldUpdateAup(motion, i, motionAup, hasMotionAup, observerAup, hasObserverAup,
                                   _nearDistanceSqr, _mediumDistanceSqr, _farDistanceSqr, _cullDistanceSqr))
                     continue;
 
@@ -225,13 +223,15 @@ namespace Hecton8.Physics
             AmbientWaterMotion motion,
             int index,
             in AbsoluteUniversePosition motionAup,
+            bool hasMotionAup,
             in AbsoluteUniversePosition observerAup,
+            bool hasObserverAup,
             float nearSq,
             float mediumSq,
             float farSq,
             float cullSq)
         {
-            if (!motion.AllowDistanceLod || lodObserver == null)
+            if (!motion.AllowDistanceLod || !hasObserverAup || !hasMotionAup)
             {
                 _debugNearCount++;
                 return true;
@@ -262,6 +262,47 @@ namespace Hecton8.Physics
             _debugCulledCount++;
             return distanceSq <= (double)cullSq * biasSq
                 && ((_frameCounter + index) & _cullFrameMask) == 0;
+        }
+
+        private static Vector3 ResolveRuntimePosition(in AbsoluteUniversePosition aup)
+        {
+            float3 runtime = aup.ToRuntimeFloat3();
+            return new Vector3(runtime.x, runtime.y, runtime.z);
+        }
+
+        private static Vector3 ResolvePresentationRestWorldPosition(AmbientWaterMotion motion)
+        {
+            Transform tr = motion.CachedTransform;
+            Transform parent = tr != null ? tr.parent : null;
+            return parent != null
+                ? parent.TransformPoint(motion.RestLocalPosition)
+                : motion.RestLocalPosition;
+        }
+
+        private static bool TryResolveObserverAup(out AbsoluteUniversePosition observerAup)
+        {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null &&
+                playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                MathGuard.IsFinite(in snapshot.Aup))
+            {
+                observerAup = snapshot.Aup;
+                return true;
+            }
+
+            var playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
+            if (playerMovement != null)
+            {
+                AbsoluteUniversePosition currentAup = playerMovement.CurrentAup;
+                if (MathGuard.IsFinite(in currentAup))
+                {
+                    observerAup = currentAup;
+                    return true;
+                }
+            }
+
+            observerAup = default;
+            return false;
         }
 
         private void ApplyMotion(AmbientWaterMotion motion, Vector3 worldPos)

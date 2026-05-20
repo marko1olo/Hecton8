@@ -1,0 +1,22 @@
+# SHINOBU_136 kinetic character rig constraints
+# key,value
+locomotion_frequency_hz,1.2
+locomotion_amplitude_meters,0.11
+breathing_amplitude_meters,0.018
+breathing_frequency_hz,0.22
+ik_tolerance_meters,0.008
+global_quality_weight,1.0
+minimum_ik_iterations,1
+ultra_ik_iterations,6
+wall_brace_distance_meters,0.72
+tool_alignment_weight,1.0
+damage_flinch_radians,0.19
+damage_flinch_seconds,0.34
+arm_upper_length,0.34
+arm_lower_length,0.32
+leg_upper_length,0.46
+leg_lower_length,0.45
+shoulder_width,0.42
+hip_width,0.32
+spine_length,0.54
+neck_length,0.12

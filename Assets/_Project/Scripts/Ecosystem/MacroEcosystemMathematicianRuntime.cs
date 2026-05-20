@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
+using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -193,6 +194,7 @@ namespace Hecton8.Ecosystem
             tuningArray[0] = tuning;
 
             int diffusionSteps = MacroEcosystemMath.ResolveDiffusionSteps(tuning.GlobalQualityWeight);
+            float qualityFlowWeight = MacroEcosystemMath.ResolveQualityFlowWeight(tuning.GlobalQualityWeight);
             _lastDiffusionSteps = diffusionSteps;
             int telemetrySlot = _telemetryCursor % telemetry.Length;
             _lastTelemetrySlot = telemetrySlot;
@@ -235,6 +237,7 @@ namespace Hecton8.Ecosystem
                     Height = GridHeight,
                     SectorSizeMeters = SectorSizeMeters,
                     MigrationRate = tuning.MigrationRate,
+                    QualityFlowWeight = qualityFlowWeight,
                     CarryingCapacityPrey = tuning.CarryingCapacityPrey,
                     CarryingCapacityPredator = tuning.CarryingCapacityPredator,
                     TemperatureOptimum = tuning.TemperatureOptimum,
@@ -278,7 +281,7 @@ namespace Hecton8.Ecosystem
         /// <inheritdoc />
         public void LateFrameTick()
         {
-            CompleteScheduledJob(false);
+            TryFinalizeScheduledJobNoWait();
         }
 
         /// <inheritdoc />
@@ -287,7 +290,7 @@ namespace Hecton8.Ecosystem
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
-            CompleteScheduledJob(true);
+            CompleteScheduledJobForTeardown();
             UnlockJobBuffers();
             _vault = currentService as IDataVault;
             ResetVaultHandles();
@@ -300,7 +303,7 @@ namespace Hecton8.Ecosystem
         /// <inheritdoc />
         public void Dispose()
         {
-            CompleteScheduledJob(true);
+            CompleteScheduledJobForTeardown();
             UnlockJobBuffers();
             TryUnregister();
             ResetVaultHandles();
@@ -314,7 +317,23 @@ namespace Hecton8.Ecosystem
                 return;
 
             TryRegister();
+            TryBindDataVaultCold();
             EnsureVaultState();
+        }
+
+        private void TryBindDataVaultCold()
+        {
+            IDataVault vault = null;
+            if (GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latestVault))
+                vault = latestVault;
+            if (vault == null || ReferenceEquals(_vault, vault))
+                return;
+
+            CompleteScheduledJobForTeardown();
+            UnlockJobBuffers();
+            _vault = vault;
+            ResetVaultHandles();
+            _initialized = false;
         }
 
         private bool EnsureVaultState()
@@ -322,12 +341,6 @@ namespace Hecton8.Ecosystem
             MacroEcosystemLayoutManifest.VerifyColdBoot();
 
             IDataVault vault = _vault;
-            if (vault == null)
-            {
-                vault = GlobalRegistry.DataVault;
-                _vault = vault;
-            }
-
             if (vault == null)
                 return false;
 
@@ -435,7 +448,8 @@ namespace Hecton8.Ecosystem
             // COLD SYNC JOB: first boot writes every uninitialized Vault sector before any reader can observe it.
             JobHandle clearHandle = clearJob.Schedule();
             JobHandle mockHandle = mockJob.Schedule(SectorCapacity, JobBatchSize, clearHandle);
-            indexJob.Schedule(mockHandle).Complete();
+            JobHandle indexHandle = indexJob.Schedule(mockHandle);
+            DispatcherJobFence.TryComplete(ref indexHandle, forceComplete: true);
             _initialized = true;
         }
 
@@ -450,18 +464,33 @@ namespace Hecton8.Ecosystem
             if (_jobScheduled)
                 return false;
 
+            NativeArray<MacroEcosystemTuningDTO> tuning = _tuningHandle.Resolve(vault);
+            if (!tuning.IsCreated || tuning.Length <= 0)
+                return false;
+
+            MacroEcosystemTuningDTO tuneBefore = tuning[0];
+            if (!IsMacroEcosystemSnapshotReadable(tuneBefore))
+                return false;
+
             ulong hash = MacroEcosystemMath.ComputeSectorHash(sectorX, sectorY, sectorZ);
             if (!TryResolveSectorIndex(vault, hash, out int index))
                 return false;
 
             NativeArray<EcosystemSectorDTO> front = _frontHandle.Resolve(vault);
-            NativeArray<MacroEcosystemTuningDTO> tuning = _tuningHandle.Resolve(vault);
-            if (!front.IsCreated || (uint)index >= (uint)front.Length || !tuning.IsCreated || tuning.Length <= 0)
+            if (!front.IsCreated || (uint)index >= (uint)front.Length)
                 return false;
 
             EcosystemSectorDTO sector = front[index];
-            float preyCapacity = math.max(1f, tuning[0].CarryingCapacityPrey);
-            float predatorCapacity = math.max(1f, tuning[0].CarryingCapacityPredator);
+            MacroEcosystemTuningDTO tuneAfter = tuning[0];
+            if (!IsMacroEcosystemSnapshotReadable(tuneAfter) ||
+                !MacroEcosystemTuningMatchesForDirectRead(tuneBefore, tuneAfter))
+            {
+                return false;
+            }
+
+            MacroEcosystemTuningDTO t = MacroEcosystemTuningDTO.Sanitize(tuneBefore);
+            float preyCapacity = math.max(1f, t.CarryingCapacityPrey);
+            float predatorCapacity = math.max(1f, t.CarryingCapacityPredator);
             preyBiomass01 = math.saturate(sector.PreyBiomass * math.rcp(preyCapacity));
             predatorBiomass01 = math.saturate(sector.PredatorBiomass * math.rcp(predatorCapacity));
             MacroEcosystemTuningDTO fallback = MacroEcosystemTuningDTO.CreateDefault();
@@ -507,23 +536,54 @@ namespace Hecton8.Ecosystem
             if (_jobScheduled)
                 return false;
 
+            NativeArray<MacroEcosystemTuningDTO> tuning = _tuningHandle.Resolve(vault);
+            if (!tuning.IsCreated || tuning.Length <= 0)
+                return false;
+
+            MacroEcosystemTuningDTO tuneBefore = tuning[0];
+            if (!IsMacroEcosystemSnapshotReadable(tuneBefore))
+                return false;
+
             ulong hash = MacroEcosystemMath.ComputeSectorHash(sectorX, sectorY, sectorZ);
             if (!TryResolveSectorIndex(vault, hash, out int index))
                 return false;
 
             NativeArray<EcosystemSectorDTO> front = _frontHandle.Resolve(vault);
-            NativeArray<MacroEcosystemTuningDTO> tuning = _tuningHandle.Resolve(vault);
-            if (!front.IsCreated || (uint)index >= (uint)front.Length || !tuning.IsCreated || tuning.Length <= 0)
+            if (!front.IsCreated || (uint)index >= (uint)front.Length)
                 return false;
 
             EcosystemSectorDTO sector = front[index];
-            MacroEcosystemTuningDTO t = MacroEcosystemTuningDTO.Sanitize(tuning[0]);
+            MacroEcosystemTuningDTO tuneAfter = tuning[0];
+            if (!IsMacroEcosystemSnapshotReadable(tuneAfter) ||
+                !MacroEcosystemTuningMatchesForDirectRead(tuneBefore, tuneAfter))
+            {
+                return false;
+            }
+
+            MacroEcosystemTuningDTO t = MacroEcosystemTuningDTO.Sanitize(tuneBefore);
             float predatorMass = sector.PredatorBiomass * math.rcp(math.max(1f, t.CarryingCapacityPredator));
             float tempSuitability = MacroEcosystemMath.ResolveTemperatureSuitability(sector.LocalTemperature, t.TemperatureOptimum, t.TemperatureHalfRange);
             float toxin = math.saturate(sector.ToxinLevel);
             predatorWeight01 = math.saturate(predatorMass * math.lerp(1f, 0.2f, toxin));
             rareResourceWeight01 = math.saturate((1f - tempSuitability) * 0.55f + toxin * 0.45f);
             return true;
+        }
+
+        private static bool IsMacroEcosystemSnapshotReadable(MacroEcosystemTuningDTO tune)
+        {
+            return (tune.Flags & MacroEcosystemMath.TuningFlagSnapshotWriteInFlight) == 0u;
+        }
+
+        private static bool MacroEcosystemTuningMatchesForDirectRead(
+            MacroEcosystemTuningDTO before,
+            MacroEcosystemTuningDTO after)
+        {
+            return before.Flags == after.Flags &&
+                   before.StateHash == after.StateHash &&
+                   before.CarryingCapacityPrey == after.CarryingCapacityPrey &&
+                   before.CarryingCapacityPredator == after.CarryingCapacityPredator &&
+                   before.TemperatureOptimum == after.TemperatureOptimum &&
+                   before.TemperatureHalfRange == after.TemperatureHalfRange;
         }
 
         private void TryRegister()
@@ -606,16 +666,33 @@ namespace Hecton8.Ecosystem
             if (locked >= 1) vault.TryUnlockBuffer(BufferID.ShinobuMacroEcosystemSectorFront, SystemID.AIEcology);
         }
 
-        private void CompleteScheduledJob(bool forceComplete)
+        private void TryFinalizeScheduledJobNoWait()
         {
             if (!_jobScheduled)
                 return;
 
-            if (!forceComplete && !_activeJobHandle.IsCompleted)
+            if (!_activeJobHandle.IsCompleted)
                 return;
 
-            _activeJobHandle.Complete();
-            _jobScheduled = false;
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _activeJobHandle))
+                return;
+
+            FinishCompletedScheduledJob();
+        }
+
+        private void CompleteScheduledJobForTeardown()
+        {
+            if (!_jobScheduled)
+                return;
+
+            if (!DispatcherJobFence.TryComplete(ref _activeJobHandle, forceComplete: true))
+                return;
+
+            FinishCompletedScheduledJob();
+        }
+
+        private void FinishCompletedScheduledJob()
+        {
             long now = Stopwatch.GetTimestamp();
             float micros = Stopwatch.Frequency > 0
                 ? (float)((now - _scheduleTicks) * 1000000.0 / Stopwatch.Frequency)
@@ -628,6 +705,7 @@ namespace Hecton8.Ecosystem
                 PatchCompletedTelemetry(vault, micros);
             }
 
+            _jobScheduled = false;
             UnlockJobBuffers();
         }
 
@@ -1038,8 +1116,24 @@ namespace Hecton8.Ecosystem
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int ResolveDiffusionSteps(float globalQualityWeight)
         {
+            float curve = ResolveQualityCurve(globalQualityWeight);
+            return math.clamp((int)math.lerp(1f, 5.999f, curve), 1, 5);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveQualityFlowWeight(float globalQualityWeight)
+        {
+            float curve = ResolveQualityCurve(globalQualityWeight);
+            return math.lerp(0.25f, 1f, curve);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveQualityCurve(float globalQualityWeight)
+        {
             float q = math.saturate(math.select(1f, globalQualityWeight, math.isfinite(globalQualityWeight)));
-            return math.clamp((int)math.lerp(1f, 5.999f, q), 1, 5);
+            float thermalBand = math.saturate((q - 0.2f) * math.rcp(0.8f));
+            float polynomial = thermalBand * thermalBand * (3f - 2f * thermalBand);
+            return polynomial * math.step(0.0001f, q);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1483,6 +1577,7 @@ namespace Hecton8.Ecosystem
         public int Height;
         public float SectorSizeMeters;
         public float MigrationRate;
+        public float QualityFlowWeight;
         public float CarryingCapacityPrey;
         public float CarryingCapacityPredator;
         public float TemperatureOptimum;
@@ -1527,7 +1622,7 @@ namespace Hecton8.Ecosystem
             EcosystemSectorCoordDTO neighborCoord = Coords[neighborIndex];
             double3 centerAup = new double3((double)centerCoord.SectorX, (double)centerCoord.SectorY, (double)centerCoord.SectorZ) * (double)SectorSizeMeters;
             double3 neighborAup = new double3((double)neighborCoord.SectorX, (double)neighborCoord.SectorY, (double)neighborCoord.SectorZ) * (double)SectorSizeMeters;
-            float3 delta = (float3)(neighborAup - centerAup);
+            float3 delta = AupPrecisionMath.LocalDeltaFloat3(neighborAup, centerAup, float3.zero);
             float invDistance = math.rsqrt(math.max(1f, math.lengthsq(delta)));
             bool hasCenterSpec = MacroEcosystemMath.TryResolveBiomeSpec(BiomeSpecs, BiomeSpecCapacity, centerCoord.BiomeHash, out BiomeEcosystemSpecDTO centerSpec);
             bool hasNeighborSpec = MacroEcosystemMath.TryResolveBiomeSpec(BiomeSpecs, BiomeSpecCapacity, neighborCoord.BiomeHash, out BiomeEcosystemSpecDTO neighborSpec);
@@ -1536,7 +1631,8 @@ namespace Hecton8.Ecosystem
             float resistance = math.saturate(((hasCenterSpec ? centerSpec.MigrationResistance : 0f) + (hasNeighborSpec ? neighborSpec.MigrationResistance : 0f)) * 0.5f);
             float centerSuit = MacroEcosystemMath.ResolveTemperatureSuitability(center.LocalTemperature, centerOptimum, TemperatureHalfRange);
             float neighborSuit = MacroEcosystemMath.ResolveTemperatureSuitability(neighbor.LocalTemperature, neighborOptimum, TemperatureHalfRange);
-            float pairWeight = MigrationRate * (1f - resistance) * math.min(centerSuit, neighborSuit) * math.saturate(invDistance * SectorSizeMeters);
+            float qualityFlow = math.clamp(math.select(0.25f, QualityFlowWeight, math.isfinite(QualityFlowWeight)), 0.25f, 1f);
+            float pairWeight = MigrationRate * qualityFlow * (1f - resistance) * math.min(centerSuit, neighborSuit) * math.saturate(invDistance * SectorSizeMeters);
             preyDelta += (neighbor.PreyBiomass - center.PreyBiomass) * pairWeight;
             predatorDelta += (neighbor.PredatorBiomass - center.PredatorBiomass) * pairWeight * 0.65f;
         }
@@ -1561,8 +1657,8 @@ namespace Hecton8.Ecosystem
     {
         [NoAlias] [NativeDisableUnsafePtrRestriction] public EcosystemSectorDTO* Sectors;
         [NoAlias] [NativeDisableUnsafePtrRestriction] public uint* FaultFlags;
-        [NoAlias] [NativeDisableParallelForRestriction] public NativeArray<MacroEcosystemTelemetryEntry> Telemetry;
-        [NoAlias] [NativeDisableParallelForRestriction] public NativeArray<MacroEcosystemCounterDTO> Counters;
+        [NoAlias] public NativeArray<MacroEcosystemTelemetryEntry> Telemetry;
+        [NoAlias] public NativeArray<MacroEcosystemCounterDTO> Counters;
         public int SectorCount;
         public int TelemetryIndex;
         public uint FrameIndex;

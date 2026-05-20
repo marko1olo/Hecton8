@@ -1001,7 +1001,7 @@ namespace Hecton8.World
         {
             if (_fixedPipelineScheduled)
             {
-                _jobHandle.Complete();
+                DispatcherJobFence.TryComplete(ref _jobHandle, forceComplete: true);
                 _fixedPipelineScheduled = false;
             }
 

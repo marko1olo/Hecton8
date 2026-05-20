@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Hecton8.Core;
-using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -133,13 +132,12 @@ namespace Hecton8.World
             if (forceRefresh || _anchors.Count == 0)
                 RefreshAnchors();
 
-            if (playerTransform == null)
+            if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
             {
                 UpdateDiagnostics(false);
                 return;
             }
 
-            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerTransform.position);
             float resolvedNearDistanceScale =
                 _profileNearDistanceScale *
                 nearDistanceScale *
@@ -156,9 +154,7 @@ namespace Hecton8.World
                 if (anchor == null)
                     continue;
 
-                AbsoluteUniversePosition anchorAup = anchor.AnchorAup;
-                float3 delta = AbsoluteUniversePosition.ToCameraRelativeFloat3(in anchorAup, in playerAup);
-                float planarDistanceSq = (delta.x * delta.x) + (delta.z * delta.z);
+                float planarDistanceSq = anchor.GetPlanarDistanceSq(in playerAup);
                 anchor.ApplyForDistanceSq(
                     planarDistanceSq,
                     resolvedNearDistanceScale,
@@ -207,6 +203,28 @@ namespace Hecton8.World
             _debugApplied = applied;
             _debugProfileNearScale = _profileNearDistanceScale;
             _debugProfileMidScale = _profileMidDistanceScale;
+        }
+
+        private static bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
+        {
+            playerAup = default;
+
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext == null)
+                return false;
+
+            if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
+            {
+                playerAup = snapshot.Aup;
+                return MathGuard.IsFinite(in playerAup);
+            }
+
+            var playerMovement = playerContext.PlayerMovement;
+            if (playerMovement == null)
+                return false;
+
+            playerAup = playerMovement.CurrentAup;
+            return MathGuard.IsFinite(in playerAup);
         }
     }
 }

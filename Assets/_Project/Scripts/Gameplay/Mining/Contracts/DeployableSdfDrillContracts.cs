@@ -2,6 +2,7 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -39,123 +40,136 @@ namespace Hecton8.Gameplay.Mining.Contracts
     /// <summary>
     /// Blittable input consumed by the Burst extraction job.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 68)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct DeployableSdfDrillExtractionInput
     {
-        public long GridX;
-        public long GridY;
-        public long GridZ;
-        public float LocalX;
-        public float LocalY;
-        public float LocalZ;
-        public double ElapsedSeconds;
-        public float CycleSeconds;
-        public uint DrillSeed;
-        public uint SectorHash;
-        public int BiomeId;
-        public ushort MaxCycles;
-        public ushort QuantityPerCycle;
-        public byte SlotCount;
-        public byte MathLod;
-        public ushort Flags;
+        [FieldOffset(0)] public long GridX;
+        [FieldOffset(8)] public long GridY;
+        [FieldOffset(16)] public long GridZ;
+        [FieldOffset(24)] public double ElapsedSeconds;
+        [FieldOffset(32)] public float LocalX;
+        [FieldOffset(36)] public float LocalY;
+        [FieldOffset(40)] public float LocalZ;
+        [FieldOffset(44)] public float CycleSeconds;
+        [FieldOffset(48)] public uint DrillSeed;
+        [FieldOffset(52)] public uint SectorHash;
+        [FieldOffset(56)] public int BiomeId;
+        [FieldOffset(60)] public ushort MaxCycles;
+        [FieldOffset(62)] public ushort QuantityPerCycle;
+        [FieldOffset(64)] public byte SlotCount;
+        [FieldOffset(65)] public byte MathLod;
+        [FieldOffset(66)] public ushort Flags;
+        [FieldOffset(68)] private uint _pad0;
+        [FieldOffset(72)] private ulong _pad1;
+        [FieldOffset(80)] private ulong _pad2;
+        [FieldOffset(88)] private ulong _pad3;
+        [FieldOffset(96)] private ulong _pad4;
+        [FieldOffset(104)] private ulong _pad5;
+        [FieldOffset(112)] private ulong _pad6;
+        [FieldOffset(120)] private ulong _pad7;
     }
 
     /// <summary>
     /// Blittable extraction result. Slot deltas mirror the exact inventory lanes mutated by the job.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 60)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct DeployableSdfDrillExtractionResult
     {
-        public uint NewSeed;
-        public uint LastItemHash;
-        public uint LastOreHash;
-        public ushort CyclesProcessed;
-        public ushort TotalQuantity;
-        public ushort LastSlotIndex;
-        public ushort Flags;
-        public ushort Slot0Delta;
-        public ushort Slot1Delta;
-        public ushort Slot2Delta;
-        public ushort Slot3Delta;
-        public uint Slot0ItemHash;
-        public uint Slot1ItemHash;
-        public uint Slot2ItemHash;
-        public uint Slot3ItemHash;
-        public uint Slot0OreHash;
-        public uint Slot1OreHash;
-        public uint Slot2OreHash;
-        public uint Slot3OreHash;
+        [FieldOffset(0)] public uint NewSeed;
+        [FieldOffset(4)] public uint LastItemHash;
+        [FieldOffset(8)] public uint LastOreHash;
+        [FieldOffset(12)] public uint Slot0ItemHash;
+        [FieldOffset(16)] public uint Slot1ItemHash;
+        [FieldOffset(20)] public uint Slot2ItemHash;
+        [FieldOffset(24)] public uint Slot3ItemHash;
+        [FieldOffset(28)] public uint Slot0OreHash;
+        [FieldOffset(32)] public uint Slot1OreHash;
+        [FieldOffset(36)] public uint Slot2OreHash;
+        [FieldOffset(40)] public uint Slot3OreHash;
+        [FieldOffset(44)] public ushort CyclesProcessed;
+        [FieldOffset(46)] public ushort TotalQuantity;
+        [FieldOffset(48)] public ushort LastSlotIndex;
+        [FieldOffset(50)] public ushort Flags;
+        [FieldOffset(52)] public ushort Slot0Delta;
+        [FieldOffset(54)] public ushort Slot1Delta;
+        [FieldOffset(56)] public ushort Slot2Delta;
+        [FieldOffset(58)] public ushort Slot3Delta;
+        [FieldOffset(60)] private uint _pad0;
     }
 
     /// <summary>
     /// Macro database record used to dehydrate and rehydrate unloaded drills.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 110)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct DeployableSdfDrillMacroRecord
     {
-        public long GridX;
-        public long GridY;
-        public long GridZ;
-        public float LocalX;
-        public float LocalY;
-        public float LocalZ;
-        public double LastUnscaledTimeSeconds;
-        public uint DrillSeed;
-        public uint SectorHash;
-        public float Health;
-        public ushort Flags;
-        public ushort Slot0Quantity;
-        public ushort Slot1Quantity;
-        public ushort Slot2Quantity;
-        public ushort Slot3Quantity;
-        public ushort Slot0Capacity;
-        public ushort Slot1Capacity;
-        public ushort Slot2Capacity;
-        public ushort Slot3Capacity;
-        public uint Slot0ItemHash;
-        public uint Slot1ItemHash;
-        public uint Slot2ItemHash;
-        public uint Slot3ItemHash;
-        public uint Slot0OreHash;
-        public uint Slot1OreHash;
-        public uint Slot2OreHash;
-        public uint Slot3OreHash;
-        public uint OresExtracted;
+        [FieldOffset(0)] public long GridX;
+        [FieldOffset(8)] public long GridY;
+        [FieldOffset(16)] public long GridZ;
+        [FieldOffset(24)] public double LastUnscaledTimeSeconds;
+        [FieldOffset(32)] public float LocalX;
+        [FieldOffset(36)] public float LocalY;
+        [FieldOffset(40)] public float LocalZ;
+        [FieldOffset(44)] public uint DrillSeed;
+        [FieldOffset(48)] public uint SectorHash;
+        [FieldOffset(52)] public float Health;
+        [FieldOffset(56)] public uint OresExtracted;
+        [FieldOffset(60)] public ushort Flags;
+        [FieldOffset(62)] public ushort Slot0Quantity;
+        [FieldOffset(64)] public ushort Slot1Quantity;
+        [FieldOffset(66)] public ushort Slot2Quantity;
+        [FieldOffset(68)] public ushort Slot3Quantity;
+        [FieldOffset(70)] public ushort Slot0Capacity;
+        [FieldOffset(72)] public ushort Slot1Capacity;
+        [FieldOffset(74)] public ushort Slot2Capacity;
+        [FieldOffset(76)] public ushort Slot3Capacity;
+        [FieldOffset(78)] private ushort _pad0;
+        [FieldOffset(80)] public uint Slot0ItemHash;
+        [FieldOffset(84)] public uint Slot1ItemHash;
+        [FieldOffset(88)] public uint Slot2ItemHash;
+        [FieldOffset(92)] public uint Slot3ItemHash;
+        [FieldOffset(96)] public uint Slot0OreHash;
+        [FieldOffset(100)] public uint Slot1OreHash;
+        [FieldOffset(104)] public uint Slot2OreHash;
+        [FieldOffset(108)] public uint Slot3OreHash;
+        [FieldOffset(112)] private ulong _pad1;
+        [FieldOffset(120)] private ulong _pad2;
     }
 
     /// <summary>
     /// Fixed-size blackbox entry written by the drill telemetry ring.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 56)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct DeployableSdfDrillTelemetryEntry
     {
-        public long GridX;
-        public long GridY;
-        public long GridZ;
-        public float LocalX;
-        public float LocalY;
-        public float LocalZ;
-        public uint Frame;
-        public uint ActiveDrills;
-        public uint OresExtracted;
-        public ushort FillPermille;
-        public ushort HealthPermille;
-        public ushort Flags;
-        public ushort JobCycles;
+        [FieldOffset(0)] public long GridX;
+        [FieldOffset(8)] public long GridY;
+        [FieldOffset(16)] public long GridZ;
+        [FieldOffset(24)] public float LocalX;
+        [FieldOffset(28)] public float LocalY;
+        [FieldOffset(32)] public float LocalZ;
+        [FieldOffset(36)] public uint Frame;
+        [FieldOffset(40)] public uint ActiveDrills;
+        [FieldOffset(44)] public uint OresExtracted;
+        [FieldOffset(48)] public ushort FillPermille;
+        [FieldOffset(50)] public ushort HealthPermille;
+        [FieldOffset(52)] public ushort Flags;
+        [FieldOffset(54)] public ushort JobCycles;
+        [FieldOffset(56)] private ulong _pad0;
     }
 
     /// <summary>
     /// Deterministic Burst LCG extraction job for one drill.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct DeployableSdfDrillExtractionJob : IJob
     {
         public DeployableSdfDrillExtractionInput Input;
-        public NativeSlice<ushort> Quantities;
-        [ReadOnly] public NativeSlice<ushort> Capacities;
-        [ReadOnly] public NativeSlice<uint> ItemHashes;
-        [ReadOnly] public NativeSlice<uint> OreHashes;
-        public NativeSlice<DeployableSdfDrillExtractionResult> Result;
+        [NoAlias] public NativeSlice<ushort> Quantities;
+        [ReadOnly, NoAlias] public NativeSlice<ushort> Capacities;
+        [ReadOnly, NoAlias] public NativeSlice<uint> ItemHashes;
+        [ReadOnly, NoAlias] public NativeSlice<uint> OreHashes;
+        [NoAlias] public NativeSlice<DeployableSdfDrillExtractionResult> Result;
 
         public void Execute()
         {

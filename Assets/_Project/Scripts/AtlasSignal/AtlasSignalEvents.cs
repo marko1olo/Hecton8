@@ -16,14 +16,15 @@ namespace Hecton8.AtlasSignal
         Decoded = 3
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct AtlasSignalEventPayload
     {
-        public Vector3 SourcePosition;
-        public float SignalStrength;
-        public uint MessageHash;
-        public ushort EventType;
-        public ushort Reserved;
+        [FieldOffset(0)] public Vector3 SourcePosition;
+        [FieldOffset(12)] public float SignalStrength;
+        [FieldOffset(16)] public uint MessageHash;
+        [FieldOffset(20)] public ushort EventType;
+        [FieldOffset(22)] public ushort Reserved;
+        [FieldOffset(24)] private ulong _pad0;
     }
 
     public interface IAtlasSignalEventListener

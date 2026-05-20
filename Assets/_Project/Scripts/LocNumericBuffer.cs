@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using Hecton8.Core;
 
 namespace Hecton.Localization
@@ -60,24 +61,25 @@ namespace Hecton.Localization
     }
 
     /// <summary>
-    /// Thread-local numeric formatter for HUD templates such as "DEPTH: -{N0:F0} m".
+    /// Fixed-ring numeric formatter for HUD templates such as "DEPTH: -{N0:F0} m".
     /// </summary>
     public static class LocNumericBuffer
     {
         private const int DefaultBufferSlack = 24;
-        private const int MaxWriteAttempts = 8;
-        private const int CapacityGrowthWatchdogLimit = 31;
+        private const int MaxNumericBufferChars = 4096;
+        private const int NumericBufferSlotCount = 16;
+        private const int NumericBufferSlotMask = NumericBufferSlotCount - 1;
 
-        [ThreadStatic] private static char[] _stagingBuffer;
+        private static readonly char[][] _stagingBufferRing = CreateStagingBufferRing();
+        private static int _stagingBufferCursor = -1;
 
         /// <summary>
-        /// Copy a literal template into the thread-local staging buffer without heap allocation.
+        /// Copy a literal template into the fixed-ring staging buffer without heap allocation.
         /// </summary>
         public static void Write(ReadOnlySpan<char> template, out char[] buffer, out int length)
         {
             buffer = GetBuffer(template.Length + 1);
-            template.CopyTo(buffer);
-            length = template.Length;
+            WriteTemplateFallback(template, ref buffer, out length);
         }
 
         /// <summary>
@@ -301,19 +303,8 @@ namespace Hecton.Localization
             out int length)
         {
             buffer = GetBuffer(template.Length + DefaultBufferSlack);
-            for (int attempt = 0; attempt < MaxWriteAttempts; attempt++)
-            {
-                if (TryWriteInternal(template, buffer.AsSpan(), value0, value1, value2, value3, value4, valueCount, out length))
-                    return;
-
-                int currentCapacity = buffer.Length;
-                int nextRequiredLength = currentCapacity > (int.MaxValue >> 1)
-                    ? int.MaxValue
-                    : currentCapacity << 1;
-                EnsureCapacity(ref buffer, nextRequiredLength);
-                if (buffer.Length <= currentCapacity)
-                    break;
-            }
+            if (TryWriteInternal(template, buffer.AsSpan(), value0, value1, value2, value3, value4, valueCount, out length))
+                return;
 
             WriteTemplateFallback(template, ref buffer, out length);
         }
@@ -444,50 +435,50 @@ namespace Hecton.Localization
             }
         }
 
+        private static char[][] CreateStagingBufferRing()
+        {
+            char[][] ring = new char[NumericBufferSlotCount][]; // COLD ALLOC: char[][16] - numeric formatter ring table - owner: LocNumericBuffer
+            for (int i = 0; i < ring.Length; i++)
+                ring[i] = new char[MaxNumericBufferChars]; // COLD ALLOC: char[4096] - prewarmed numeric formatter slot - owner: LocNumericBuffer
+
+            return ring;
+        }
+
         private static char[] GetBuffer(int requiredLength)
         {
-            char[] buffer = _stagingBuffer;
-            if (buffer != null && buffer.Length >= requiredLength)
-                return buffer;
-
-            int capacity = buffer == null ? 128 : buffer.Length;
-            capacity = ResolveExpandedCapacity(capacity, requiredLength);
-
-            _stagingBuffer = new char[capacity]; // COLD ALLOC: char[capacity] — thread-local numeric formatter buffer — owner: LocNumericBuffer
-            return _stagingBuffer;
+            int slot = Interlocked.Increment(ref _stagingBufferCursor) & NumericBufferSlotMask;
+            char[] buffer = _stagingBufferRing[slot];
+            return buffer ?? Array.Empty<char>();
         }
 
         private static void EnsureCapacity(ref char[] buffer, int requiredLength)
         {
-            if (buffer.Length >= requiredLength)
-                return;
-
-            int capacity = ResolveExpandedCapacity(buffer.Length, requiredLength);
-
-            buffer = new char[capacity]; // COLD ALLOC: char[capacity] — expanded thread-local numeric formatter buffer — owner: LocNumericBuffer
-            _stagingBuffer = buffer;
-        }
-
-        private static int ResolveExpandedCapacity(int currentCapacity, int requiredLength)
-        {
-            int capacity = Math.Max(1, currentCapacity);
-            int growthWatchdog = CapacityGrowthWatchdogLimit;
-            while (capacity < requiredLength && growthWatchdog-- > 0)
-            {
-                if (capacity > (int.MaxValue >> 1))
-                    return requiredLength;
-
-                capacity <<= 1;
-            }
-
-            return capacity < requiredLength ? requiredLength : capacity;
+            if (buffer == null || buffer.Length <= 0)
+                buffer = GetBuffer(requiredLength);
         }
 
         private static void WriteTemplateFallback(ReadOnlySpan<char> template, ref char[] buffer, out int length)
         {
             EnsureCapacity(ref buffer, template.Length);
-            template.CopyTo(buffer);
-            length = template.Length;
+            if (buffer == null || buffer.Length <= 0)
+            {
+                length = 0;
+                return;
+            }
+
+            int safeLength = Math.Min(template.Length, buffer.Length);
+            if (safeLength > 0)
+                template.Slice(0, safeLength).CopyTo(buffer);
+
+            if (template.Length > buffer.Length && buffer.Length >= 3)
+            {
+                safeLength = Math.Max(0, buffer.Length - 3);
+                buffer[safeLength++] = '.';
+                buffer[safeLength++] = '.';
+                buffer[safeLength++] = '.';
+            }
+
+            length = safeLength;
         }
     }
 }

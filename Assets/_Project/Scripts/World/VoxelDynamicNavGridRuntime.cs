@@ -521,14 +521,14 @@ namespace Hecton8.World
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct DirtyVolumeRequest
         {
             public int VolumeInstanceId;
             public int RuntimeStamp;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct DeferredDirtyVolumeRequest
         {
             public HectonVoxelVolume Volume;
@@ -536,14 +536,14 @@ namespace Hecton8.World
             public int RemainingSlowTicks;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct DynamicObstacleClearRequest
         {
             public float3 Center;
             public float3 Extents;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct PortalNode
         {
             public uint ChunkId;
@@ -553,7 +553,7 @@ namespace Hecton8.World
             public byte Face;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct RouteNodeState
         {
             public float GScore;
@@ -562,14 +562,14 @@ namespace Hecton8.World
             public byte Flags;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Sequential)]
         internal struct NavObstaclePrimitive
         {
             public float3 Center;
             public float3 Extents;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Sequential)]
         internal struct HybridNavigationSample
         {
             public HybridNavigationMode Mode;

@@ -7,6 +7,9 @@ Shader "Hecton8/Fabrication/BlueprintWireInstanced"
         _LineThickness("Line Thickness", Range(0.001, 0.25)) = 0.055
         _FlickerSpeed("Flicker Speed", Float) = 26
         _FlickerCutoff("Flicker Cutoff", Range(0, 1)) = 0.18
+        _H8SnapDampen("Snap Dampen", Float) = 0
+        _H8SnapWiggleSpeed("Snap Wiggle Speed", Float) = 18
+        _H8GlobalQualityWeight("Global Quality Weight", Float) = 1
     }
 
     SubShader
@@ -46,6 +49,9 @@ Shader "Hecton8/Fabrication/BlueprintWireInstanced"
                 float _LineThickness;
                 float _FlickerSpeed;
                 float _FlickerCutoff;
+                float _H8SnapDampen;
+                float _H8SnapWiggleSpeed;
+                float _H8GlobalQualityWeight;
             CBUFFER_END
 
             struct Attributes
@@ -70,7 +76,14 @@ Shader "Hecton8/Fabrication/BlueprintWireInstanced"
                 HECTON_CORE_LIT_SETUP_INSTANCE_ID(input);
                 HECTON_CORE_LIT_TRANSFER_INSTANCE_ID(input, output);
                 HECTON_CORE_LIT_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
-                output.positionWS = TransformObjectToWorld(input.positionOS.xyz);
+                float q = saturate(_H8GlobalQualityWeight);
+                float smoothQ = q * q * (3.0 - 2.0 * q);
+                float phase = dot(input.positionOS.xyz, float3(19.0, 31.0, 43.0)) + (_Time.y * _H8SnapWiggleSpeed);
+                float wave = sin(phase);
+                float3 normalOS = normalize(input.normalOS + float3(0.0001, 0.0001, 0.0001));
+                float amplitude = max(0.0, _H8SnapDampen) * lerp(0.25, 1.0, smoothQ);
+                float3 positionOS = input.positionOS.xyz - normalOS * amplitude + normalOS * wave * amplitude * 0.35;
+                output.positionWS = TransformObjectToWorld(positionOS);
                 output.normalWS = TransformObjectToWorldNormal(input.normalOS);
                 output.positionCS = TransformWorldToHClip(output.positionWS);
                 return output;

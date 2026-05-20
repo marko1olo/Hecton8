@@ -15,12 +15,13 @@ namespace Hecton8.Core
         AudioLogFound = 2
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct NarrativeEventPayload
     {
-        public uint DiscoveryHash;
-        public ushort EventType;
-        public short DepthTier;
+        [FieldOffset(0)] public uint DiscoveryHash;
+        [FieldOffset(4)] public ushort EventType;
+        [FieldOffset(6)] public short DepthTier;
+        [FieldOffset(8)] private ulong _pad0;
     }
 
     public interface INarrativeEventListener

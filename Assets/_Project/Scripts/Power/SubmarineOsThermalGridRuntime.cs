@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Memory.Layout;
@@ -28,6 +29,56 @@ namespace Hecton8.Power
         public const uint Isolated = 1u << 4;
         public const uint ExternalHeat = 1u << 5;
         public const uint ShortCircuit = 1u << 6;
+        public const uint FaultDivergent = 1u << 7;
+    }
+
+    public static class SolverConvergenceFaultFlags
+    {
+        public const ushort None = 0;
+        public const ushort Converged = 1 << 0;
+        public const ushort Divergent = 1 << 1;
+        public const ushort NonFinite = 1 << 2;
+        public const ushort MaxIterations = 1 << 3;
+    }
+
+    public static class PowerSolverConvergenceMath
+    {
+        private const float Epsilon = 0.0001f;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int ResolvePropagationIterations(float globalQualityWeight)
+        {
+            float weight = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 0f);
+            return math.clamp((int)math.lerp(1f, 8f, weight), 1, 8);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveSolverTargetTolerance(float baseTolerance, float globalQualityWeight)
+        {
+            float weight = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 0f);
+            float curve = weight * weight * (3f - 2f * weight);
+            float safeBase = math.max(Epsilon, math.isfinite(baseTolerance) ? baseTolerance : 0.001f);
+            float survivalTolerance = safeBase * 8f;
+            float overkillTolerance = math.max(Epsilon * 0.25f, safeBase * 0.5f);
+            return math.max(Epsilon * 0.25f, math.lerp(survivalTolerance, overkillTolerance, curve));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveSolverOmega(float globalQualityWeight)
+        {
+            float weight = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 0f);
+            float curve = weight * weight * (3f - 2f * weight);
+            return math.clamp(math.lerp(1f, 1.72f, curve), 1f, 1.85f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int ResolveResidualSampleMask(float globalQualityWeight)
+        {
+            float weight = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 0f);
+            float curve = weight * weight * (3f - 2f * weight);
+            int exponent = math.clamp((int)math.round(math.lerp(3f, 0f, curve)), 0, 3);
+            return (1 << exponent) - 1;
+        }
     }
 
     [BinaryBlittableSafe]
@@ -92,8 +143,8 @@ namespace Hecton8.Power
         [FieldOffset(44)] public float SimulationTickDeltaSeconds;
         [FieldOffset(48)] public uint CsvRevision;
         [FieldOffset(52)] public uint Flags;
-        [FieldOffset(56)] public uint _pad0;
-        [FieldOffset(60)] public uint _pad1;
+        [FieldOffset(56)] public float BaseOmegaFactor;
+        [FieldOffset(60)] public float ToleranceMultiplier;
     }
 
     [BinaryBlittableSafe]
@@ -127,8 +178,34 @@ namespace Hecton8.Power
         [FieldOffset(44)] public int MicroDamageCount;
         [FieldOffset(48)] public int BrownoutCount;
         [FieldOffset(52)] public int ExternalHeatNodeCount;
-        [FieldOffset(56)] public uint _pad0;
-        [FieldOffset(60)] public uint _pad1;
+        [FieldOffset(56)] public float SolverOmega;
+        [FieldOffset(60)] public float TargetTolerance;
+    }
+
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    public struct SolverConvergenceStateDTO
+    {
+        [FieldOffset(0)] public float MaxResidualFloat;
+        [FieldOffset(4)] public float PreviousResidualFloat;
+        [FieldOffset(8)] public float Omega;
+        [FieldOffset(12)] public ushort IterationCount;
+        [FieldOffset(14)] public ushort FaultFlags;
+    }
+
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct SolverResidualSlot64
+    {
+        [FieldOffset(0)] public float MaxResidualFloat;
+        [FieldOffset(4)] public uint FaultFlags;
+        [FieldOffset(8)] private ulong _pad0;
+        [FieldOffset(16)] private ulong _pad1;
+        [FieldOffset(24)] private ulong _pad2;
+        [FieldOffset(32)] private ulong _pad3;
+        [FieldOffset(40)] private ulong _pad4;
+        [FieldOffset(48)] private ulong _pad5;
+        [FieldOffset(56)] private ulong _pad6;
     }
 
     public interface IContinuousPowerComponent
@@ -147,16 +224,21 @@ namespace Hecton8.Power
         public const int CsvSpecCapacity = 256;
         public const int CsvByteCapacity = 16 * 1024;
         public const string DumpRelativePath = "Docs/AgentLogs/Dump_THERMAL_GRID.bin";
+        public const string ShinobuDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_203.bin";
 
         public const int GridNodeSizeBytes = 32;
         public const int PowerEdgeSizeBytes = 8;
         public const int TelemetrySizeBytes = 64;
+        public const int SolverConvergenceStateSizeBytes = 16;
+        public const int SolverResidualSlotSizeBytes = 64;
+        public const int ResidualThreadSlotCount = 128;
         private const int StandaloneVaultBufferCapacity = 32;
         private const long StandaloneVaultArenaBytes = 2L * 1024L * 1024L;
 
         private const uint SourceHash = 0x53313036u; // S106
         private const uint DumpMagic = 0x54484752u; // THGR
         private const uint DumpVersion = 1u;
+        private const uint ResidualSlotFaultNonFinite = 1u;
         private const float Epsilon = 0.0001f;
 
         private const int CounterNodeCount = 0;
@@ -164,6 +246,8 @@ namespace Hecton8.Power
         private const int CounterTelemetryCursor = 2;
         private const int CounterFaultFlags = 3;
         private const int CounterCsvSpecCount = 4;
+        private const int CounterMaxIterationStreak = 5;
+        private const int CounterDumpedFaultMask = 6;
         private const int CounterCount = 8;
 
         private static readonly int s_ThermalGridNodeCountId = Shader.PropertyToID("_H8ThermalGridNodeCount");
@@ -192,6 +276,8 @@ namespace Hecton8.Power
         private static readonly BufferID PendingAnchorsId = (BufferID)731075;
         private static readonly BufferID PendingVisualStateId = (BufferID)731076;
         private static readonly BufferID PendingCountersId = (BufferID)731077;
+        private static readonly BufferID ConvergenceStateId = (BufferID)731078;
+        private static readonly BufferID ResidualSamplesId = (BufferID)731079;
 
         private IDataVault _vault;
         private VaultBufferHandle<GridNodeDTO> _nodesAHandle;
@@ -206,6 +292,8 @@ namespace Hecton8.Power
         private VaultBufferHandle<SubmarineGridSpecDTO> _specsHandle;
         private VaultBufferHandle<byte> _csvBytesHandle;
         private VaultBufferHandle<ThermalGridVisualStateDTO> _visualStateHandle;
+        private VaultBufferHandle<SolverConvergenceStateDTO> _convergenceStateHandle;
+        private VaultBufferHandle<SolverResidualSlot64> _residualSamplesHandle;
         private VaultBufferHandle<GridNodeDTO> _pendingNodesHandle;
         private VaultBufferHandle<PowerEdgeDTO> _pendingEdgesHandle;
         private VaultBufferHandle<float> _pendingInjectionsHandle;
@@ -250,6 +338,8 @@ namespace Hecton8.Power
             public NativeArray<SubmarineGridSpecDTO> Specs;
             public NativeArray<byte> CsvBytes;
             public NativeArray<ThermalGridVisualStateDTO> VisualState;
+            public NativeArray<SolverConvergenceStateDTO> ConvergenceState;
+            public NativeArray<SolverResidualSlot64> ResidualSamples;
             public NativeArray<GridNodeDTO> PendingNodes;
             public NativeArray<PowerEdgeDTO> PendingEdges;
             public NativeArray<float> PendingInjections;
@@ -296,6 +386,8 @@ namespace Hecton8.Power
                 ExternalHeat = (float*)NativeArrayUnsafeUtility.GetUnsafePtr(views.ExternalHeat),
                 Anchors = (ThermalGridAnchorDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(views.Anchors),
                 VisualState = (ThermalGridVisualStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(views.VisualState),
+                ConvergenceState = (SolverConvergenceStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(views.ConvergenceState),
+                ResidualSamples = (SolverResidualSlot64*)NativeArrayUnsafeUtility.GetUnsafePtr(views.ResidualSamples),
                 PendingNodes = (GridNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(views.PendingNodes),
                 PendingEdges = (PowerEdgeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(views.PendingEdges),
                 PendingInjections = (float*)NativeArrayUnsafeUtility.GetUnsafePtr(views.PendingInjections),
@@ -304,10 +396,13 @@ namespace Hecton8.Power
                 PendingCounters = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(views.PendingCounters),
                 Count = MaxNodes,
                 EdgeCount = MaxEdges,
+                ResidualSlotCount = ResidualThreadSlotCount,
                 CounterCount = CounterCount
             };
             // COLD SYNC JOB: one-time vault bootstrap clear before any gameplay tick can observe the buffers.
-            clear.Run(math.max(MaxNodes, MaxEdges));
+            int clearCount = math.max(MaxNodes, MaxEdges);
+            for (int i = 0; i < clearCount; i++)
+                clear.Execute(i);
 
             for (int i = 0; i < CounterCount; i++)
                 views.Counters[i] = 0;
@@ -320,7 +415,7 @@ namespace Hecton8.Power
             if (_topologyRebuildPending)
             {
                 // COLD SYNC JOB: fallback mock must be materialized before the runtime can expose a readback handle.
-                _topologyRebuildHandle.Complete();
+                DispatcherJobFence.TryComplete(ref _topologyRebuildHandle, forceComplete: true);
                 _topologyRebuildPending = false;
                 if (TryLockTopologyCommitTargetBuffers(out int commitLockedCount))
                 {
@@ -367,6 +462,16 @@ namespace Hecton8.Power
 
         public bool ScheduleEmergencyMockGrid(JobHandle dependency)
         {
+            return ScheduleEmergencyMockGridInternal(dependency, 0f);
+        }
+
+        public bool ScheduleEmergencyMockOscillatorGrid(JobHandle dependency)
+        {
+            return ScheduleEmergencyMockGridInternal(dependency, 1f);
+        }
+
+        private bool ScheduleEmergencyMockGridInternal(JobHandle dependency, float oscillator01)
+        {
             if (!EnsureInitialized() || _topologyRebuildPending)
                 return false;
 
@@ -387,7 +492,8 @@ namespace Hecton8.Power
                 VisualState = (ThermalGridVisualStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(views.PendingVisualState),
                 Counters = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(views.PendingCounters),
                 Tuning = views.Tuning[0],
-                NodeCount = EmergencyMockNodeCount
+                NodeCount = EmergencyMockNodeCount,
+                Oscillator01 = math.saturate(FiniteOr(oscillator01, 0f))
             }.Schedule(EmergencyMockNodeCount, 32, dependency);
 
             _topologyRebuildPending = true;
@@ -458,8 +564,12 @@ namespace Hecton8.Power
             if (!TryLockTopologyCommitTargetBuffers(out int commitLockedCount))
                 return false;
 
-            // POST_SIMULATION FENCE: handle is already completed; this only releases the job safety fence.
-            _topologyRebuildHandle.Complete();
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _topologyRebuildHandle))
+            {
+                UnlockTopologyCommitTargetBuffers(commitLockedCount);
+                return false;
+            }
+
             if (!TryCommitPendingTopologySnapshot())
             {
                 UnlockTopologyCommitTargetBuffers(commitLockedCount);
@@ -508,9 +618,9 @@ namespace Hecton8.Power
                 NodeCount = nodeCount,
                 SubmarineBaseAup = submarineBaseAup,
                 HazardAup = hazardAup,
-                HazardTemperatureCelsius = hazardTemperatureCelsius,
-                HazardRadiusMeters = math.max(1f, hazardRadiusMeters),
-                GlobalQualityWeight = math.saturate(globalQualityWeight)
+                HazardTemperatureCelsius = math.isfinite(hazardTemperatureCelsius) ? hazardTemperatureCelsius : 40f,
+                HazardRadiusMeters = math.max(1f, math.isfinite(hazardRadiusMeters) ? hazardRadiusMeters : 1f),
+                GlobalQualityWeight = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 0f)
             }.Schedule(nodeCount, 64, dependency);
             _externalHeatJobHandle = handle;
             _externalHeatPending = true;
@@ -535,7 +645,8 @@ namespace Hecton8.Power
             if (nodeCount <= 0)
                 return false;
 
-            int iterations = ResolvePropagationIterations(globalQualityWeight);
+            float qualityWeight = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 0f);
+            int iterations = ResolvePropagationIterations(qualityWeight);
             if (!TryLockSolveBuffers(out _solveLockedBufferCount))
                 return false;
             if (!TryResolveVaultViews(out VaultViews views))
@@ -546,8 +657,12 @@ namespace Hecton8.Power
 
             SubmarineThermalGridTuningDTO tuning = views.Tuning[0];
             tuning.SimulationTickDeltaSeconds = math.max(Epsilon, simulationTickDeltaSeconds);
-            tuning.VisualOverkillScalar = math.saturate(globalQualityWeight);
-            views.Tuning[0] = SanitizeTuning(in tuning);
+            tuning.VisualOverkillScalar = qualityWeight;
+            tuning = SanitizeTuning(in tuning);
+            float solverTolerance = ResolveSolverTargetTolerance(tuning.JacobiTolerance, qualityWeight) * math.max(Epsilon, tuning.ToleranceMultiplier);
+            float solverOmega = math.clamp(ResolveSolverOmega(qualityWeight) * math.max(0.25f, tuning.BaseOmegaFactor), 1f, 1.85f);
+            int residualSampleMask = ResolveResidualSampleMask(qualityWeight);
+            views.Tuning[0] = tuning;
 
             bool inputIsA = _activeFrontIsA;
             JobHandle chain = dependency;
@@ -560,12 +675,28 @@ namespace Hecton8.Power
                     Anchors = (ThermalGridAnchorDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(views.Anchors),
                     NodeCount = nodeCount,
                     SignalHeat01 = thermalSignalHeat01,
-                    GlobalQualityWeight = math.saturate(globalQualityWeight)
+                    GlobalQualityWeight = qualityWeight
                 }.Schedule(nodeCount, 64, chain);
             }
 
+            SolverConvergenceStateDTO* convergencePtr = (SolverConvergenceStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(views.ConvergenceState);
+            SolverResidualSlot64* residualSamplesPtr = (SolverResidualSlot64*)NativeArrayUnsafeUtility.GetUnsafePtr(views.ResidualSamples);
+            chain = new InitializeSolverConvergenceJob
+            {
+                ConvergenceState = convergencePtr,
+                ResidualSamples = residualSamplesPtr,
+                ResidualSlotCount = ResidualThreadSlotCount,
+                BaseOmega = solverOmega
+            }.Schedule(ResidualThreadSlotCount, 64, chain);
+
             for (int iteration = 0; iteration < iterations; iteration++)
             {
+                chain = new ClearSolverResidualSlotsJob
+                {
+                    ResidualSamples = residualSamplesPtr,
+                    ResidualSlotCount = ResidualThreadSlotCount
+                }.Schedule(ResidualThreadSlotCount, 64, chain);
+
                 GridNodeDTO* readPtr = inputIsA
                     ? (GridNodeDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(views.NodesA)
                     : (GridNodeDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(views.NodesB);
@@ -581,15 +712,29 @@ namespace Hecton8.Power
                     Injections = (float*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(views.Injections),
                     ExternalHeat = (float*)NativeArrayUnsafeUtility.GetUnsafePtr(views.ExternalHeat),
                     VisualState = (ThermalGridVisualStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(views.VisualState),
+                    ConvergenceState = convergencePtr,
+                    ResidualSamples = residualSamplesPtr,
                     Tuning = views.Tuning[0],
                     NodeCount = nodeCount,
                     EdgeCount = edgeCount,
                     DeltaSeconds = simulationTickDeltaSeconds,
                     Frame = simulationFrame,
                     IterationIndex = iteration,
-                    IterationCount = iterations
+                    IterationCount = iterations,
+                    TargetTolerance = solverTolerance,
+                    ResidualSampleMask = residualSampleMask,
+                    ResidualSlotCount = ResidualThreadSlotCount
                 };
                 chain = job.Schedule(nodeCount, 64, chain);
+                chain = new ConvergenceResidualReductionJob
+                {
+                    ConvergenceState = convergencePtr,
+                    ResidualSamples = residualSamplesPtr,
+                    TargetTolerance = solverTolerance,
+                    BaseOmega = solverOmega,
+                    ResidualSlotCount = ResidualThreadSlotCount,
+                    FinalIteration = iteration == iterations - 1 ? (byte)1 : (byte)0
+                }.Schedule(chain);
                 inputIsA = !inputIsA;
             }
 
@@ -613,11 +758,13 @@ namespace Hecton8.Power
                 Edges = (PowerEdgeDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(views.Edges),
                 Injections = (float*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(views.Injections),
                 Telemetry = (ThermalPowerGridTelemetrySnapshot*)NativeArrayUnsafeUtility.GetUnsafePtr(views.Telemetry),
+                ConvergenceState = convergencePtr,
                 Counters = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(views.Counters),
                 NodeCount = nodeCount,
                 EdgeCount = edgeCount,
                 Iterations = iterations,
-                Frame = simulationFrame
+                Frame = simulationFrame,
+                TargetTolerance = solverTolerance
             }.Schedule(chain);
 
             _solveHandle = chain;
@@ -636,16 +783,36 @@ namespace Hecton8.Power
             if (!_solveHandle.IsCompleted)
                 return false;
 
-            // POST_SIMULATION FENCE: handle is already completed; this only releases the job safety fence.
-            _solveHandle.Complete();
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _solveHandle))
+                return false;
+
             _solvePending = false;
             UnlockSolveBuffers();
             _activeFrontIsA = _pendingFrontIsA;
 
-            if (TryResolveCounters(out NativeArray<int> counters) &&
-                (counters[CounterFaultFlags] & (int)(SubmarineThermalGridFaultFlags.CriticalThermalFailure | SubmarineThermalGridFaultFlags.NonFinite)) != 0)
+            const SubmarineThermalGridFaultFlags dumpFaultMask =
+                SubmarineThermalGridFaultFlags.CriticalThermalFailure |
+                SubmarineThermalGridFaultFlags.NonFinite |
+                SubmarineThermalGridFaultFlags.Divergent |
+                SubmarineThermalGridFaultFlags.MaxIterations;
+            NativeArray<int> counters;
+            if (TryResolveCounters(out counters))
             {
-                DumpBlackBox();
+                int activeFaultMask = counters[CounterFaultFlags] & (int)dumpFaultMask;
+                if (activeFaultMask != 0)
+                {
+                    int dumpedFaultMask = counters[CounterDumpedFaultMask];
+                    int newFaultMask = activeFaultMask & ~dumpedFaultMask;
+                    if (newFaultMask != 0)
+                    {
+                        DumpBlackBox();
+                        counters[CounterDumpedFaultMask] = dumpedFaultMask | activeFaultMask;
+                    }
+                }
+                else
+                {
+                    counters[CounterDumpedFaultMask] = 0;
+                }
             }
 
             return true;
@@ -658,8 +825,9 @@ namespace Hecton8.Power
             if (!_externalHeatJobHandle.IsCompleted)
                 return false;
 
-            // POST_SIMULATION FENCE: handle is already completed; this only releases the job safety fence.
-            _externalHeatJobHandle.Complete();
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _externalHeatJobHandle))
+                return false;
+
             _externalHeatPending = false;
             UnlockExternalHeatBuffers();
             return true;
@@ -686,6 +854,24 @@ namespace Hecton8.Power
             visualState = views.VisualState;
             nodeCount = NodeCount;
             return nodes.IsCreated && anchors.IsCreated && visualState.IsCreated && nodeCount > 0;
+        }
+
+        public bool TryGetConvergenceReadback(
+            out SolverConvergenceStateDTO state,
+            out ThermalPowerGridTelemetrySnapshot latestTelemetry)
+        {
+            state = default;
+            latestTelemetry = default;
+            if (!EnsureInitialized() || _solvePending)
+                return false;
+            if (!TryResolveVaultViews(out VaultViews views) || !views.ConvergenceState.IsCreated || !views.Telemetry.IsCreated)
+                return false;
+
+            state = views.ConvergenceState[0];
+            int cursor = views.Counters.IsCreated ? views.Counters[CounterTelemetryCursor] : 0;
+            int readIndex = math.abs(cursor + TelemetryFrameCount - 1) % TelemetryFrameCount;
+            latestTelemetry = views.Telemetry[readIndex];
+            return true;
         }
 
         public bool TryGetTuningPointer(out SubmarineThermalGridTuningDTO* tuning)
@@ -795,7 +981,7 @@ namespace Hecton8.Power
             if (_solvePending)
             {
                 // TEARDOWN FENCE: dispose cannot leave vault buffers locked behind live worker pointers.
-                _solveHandle.Complete();
+                DispatcherJobFence.TryComplete(ref _solveHandle, forceComplete: true);
                 _solvePending = false;
                 UnlockSolveBuffers();
             }
@@ -803,7 +989,7 @@ namespace Hecton8.Power
             if (_topologyRebuildPending)
             {
                 // TEARDOWN FENCE: topology staging buffers must be released before the runtime drops its vault aliases.
-                _topologyRebuildHandle.Complete();
+                DispatcherJobFence.TryComplete(ref _topologyRebuildHandle, forceComplete: true);
                 _topologyRebuildPending = false;
                 UnlockTopologyRebuildBuffers();
             }
@@ -811,7 +997,7 @@ namespace Hecton8.Power
             if (_externalHeatPending)
             {
                 // TEARDOWN FENCE: external heat writes must finish before buffer aliases are cleared.
-                _externalHeatJobHandle.Complete();
+                DispatcherJobFence.TryComplete(ref _externalHeatJobHandle, forceComplete: true);
                 _externalHeatPending = false;
                 UnlockExternalHeatBuffers();
             }
@@ -828,6 +1014,8 @@ namespace Hecton8.Power
             _specsHandle = default;
             _csvBytesHandle = default;
             _visualStateHandle = default;
+            _convergenceStateHandle = default;
+            _residualSamplesHandle = default;
             _pendingNodesHandle = default;
             _pendingEdgesHandle = default;
             _pendingInjectionsHandle = default;
@@ -841,8 +1029,22 @@ namespace Hecton8.Power
 
         public static int ResolvePropagationIterations(float globalQualityWeight)
         {
-            float weight = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 0f);
-            return math.clamp((int)math.lerp(1f, 8f, weight), 1, 8);
+            return PowerSolverConvergenceMath.ResolvePropagationIterations(globalQualityWeight);
+        }
+
+        public static float ResolveSolverTargetTolerance(float baseTolerance, float globalQualityWeight)
+        {
+            return PowerSolverConvergenceMath.ResolveSolverTargetTolerance(baseTolerance, globalQualityWeight);
+        }
+
+        public static float ResolveSolverOmega(float globalQualityWeight)
+        {
+            return PowerSolverConvergenceMath.ResolveSolverOmega(globalQualityWeight);
+        }
+
+        public static int ResolveResidualSampleMask(float globalQualityWeight)
+        {
+            return PowerSolverConvergenceMath.ResolveResidualSampleMask(globalQualityWeight);
         }
 
         public static SubmarineThermalGridTuningDTO CreateDefaultTuning()
@@ -860,7 +1062,9 @@ namespace Hecton8.Power
                 BrownoutVoltageThreshold = 0.2f,
                 FlickerScale = 0.35f,
                 VisualOverkillScalar = 0.5f,
-                SimulationTickDeltaSeconds = 0.05f
+                SimulationTickDeltaSeconds = 0.05f,
+                BaseOmegaFactor = 1f,
+                ToleranceMultiplier = 1f
             };
         }
 
@@ -870,11 +1074,15 @@ namespace Hecton8.Power
             edgeBytes = UnsafeUtility.SizeOf<PowerEdgeDTO>();
             tuningBytes = UnsafeUtility.SizeOf<SubmarineThermalGridTuningDTO>();
             telemetryBytes = UnsafeUtility.SizeOf<ThermalPowerGridTelemetrySnapshot>();
+            int convergenceBytes = UnsafeUtility.SizeOf<SolverConvergenceStateDTO>();
+            int residualSlotBytes = UnsafeUtility.SizeOf<SolverResidualSlot64>();
 
             return nodeBytes == GridNodeSizeBytes &&
                    edgeBytes == PowerEdgeSizeBytes &&
                    tuningBytes == 64 &&
                    telemetryBytes == TelemetrySizeBytes &&
+                   convergenceBytes == SolverConvergenceStateSizeBytes &&
+                   residualSlotBytes == SolverResidualSlotSizeBytes &&
                    UnsafeFieldOffset<GridNodeDTO>(nameof(GridNodeDTO.NodeHash)) == 0 &&
                    UnsafeFieldOffset<GridNodeDTO>(nameof(GridNodeDTO.Potential)) == 4 &&
                    UnsafeFieldOffset<GridNodeDTO>(nameof(GridNodeDTO.Resistance)) == 8 &&
@@ -884,7 +1092,48 @@ namespace Hecton8.Power
                    UnsafeFieldOffset<GridNodeDTO>(nameof(GridNodeDTO.AdjacencyCount)) == 24 &&
                    UnsafeFieldOffset<GridNodeDTO>(nameof(GridNodeDTO._pad0)) == 28 &&
                    UnsafeFieldOffset<PowerEdgeDTO>(nameof(PowerEdgeDTO.TargetIndex)) == 0 &&
-                   UnsafeFieldOffset<PowerEdgeDTO>(nameof(PowerEdgeDTO.Conductance)) == 4;
+                   UnsafeFieldOffset<PowerEdgeDTO>(nameof(PowerEdgeDTO.Conductance)) == 4 &&
+                   UnsafeFieldOffset<SolverConvergenceStateDTO>(nameof(SolverConvergenceStateDTO.MaxResidualFloat)) == 0 &&
+                   UnsafeFieldOffset<SolverConvergenceStateDTO>(nameof(SolverConvergenceStateDTO.PreviousResidualFloat)) == 4 &&
+                   UnsafeFieldOffset<SolverConvergenceStateDTO>(nameof(SolverConvergenceStateDTO.Omega)) == 8 &&
+                   UnsafeFieldOffset<SolverConvergenceStateDTO>(nameof(SolverConvergenceStateDTO.IterationCount)) == 12 &&
+                   UnsafeFieldOffset<SolverConvergenceStateDTO>(nameof(SolverConvergenceStateDTO.FaultFlags)) == 14 &&
+                   UnsafeFieldOffset<SolverResidualSlot64>(nameof(SolverResidualSlot64.MaxResidualFloat)) == 0 &&
+                   UnsafeFieldOffset<SolverResidualSlot64>(nameof(SolverResidualSlot64.FaultFlags)) == 4 &&
+                   UnsafeFieldOffset<SubmarineThermalGridTuningDTO>(nameof(SubmarineThermalGridTuningDTO.BaseOmegaFactor)) == 56 &&
+                   UnsafeFieldOffset<SubmarineThermalGridTuningDTO>(nameof(SubmarineThermalGridTuningDTO.ToleranceMultiplier)) == 60;
+        }
+
+        public static bool SelfAuditArchitecture(out uint auditHash)
+        {
+            bool layoutsValid = ValidateLayouts(out int nodeBytes, out int edgeBytes, out int tuningBytes, out int telemetryBytes);
+            float lowTolerance = ResolveSolverTargetTolerance(0.001f, 0f);
+            float midTolerance = ResolveSolverTargetTolerance(0.001f, 0.5f);
+            float highTolerance = ResolveSolverTargetTolerance(0.001f, 1f);
+            float lowOmega = ResolveSolverOmega(0f);
+            float highOmega = ResolveSolverOmega(1f);
+            auditHash = 2166136261u;
+            auditHash = (auditHash ^ (uint)nodeBytes) * 16777619u;
+            auditHash = (auditHash ^ (uint)edgeBytes) * 16777619u;
+            auditHash = (auditHash ^ (uint)tuningBytes) * 16777619u;
+            auditHash = (auditHash ^ (uint)telemetryBytes) * 16777619u;
+            auditHash = (auditHash ^ (uint)SolverConvergenceStateSizeBytes) * 16777619u;
+            auditHash = (auditHash ^ (uint)SolverResidualSlotSizeBytes) * 16777619u;
+            auditHash = (auditHash ^ (uint)MaxNodes) * 16777619u;
+            auditHash = (auditHash ^ (uint)TelemetryFrameCount) * 16777619u;
+            auditHash = (auditHash ^ (uint)ResolveResidualSampleMask(0f)) * 16777619u;
+            auditHash = (auditHash ^ (uint)ResolveResidualSampleMask(1f)) * 16777619u;
+            return layoutsValid &&
+                   MaxNodes == 512 &&
+                   MaxEdges == MaxNodes * 6 &&
+                   TelemetryFrameCount == 300 &&
+                   SolverConvergenceStateSizeBytes == 16 &&
+                   SolverResidualSlotSizeBytes == 64 &&
+                   lowTolerance > midTolerance &&
+                   midTolerance > highTolerance &&
+                   lowOmega <= highOmega &&
+                   ResolveResidualSampleMask(0f) >= ResolveResidualSampleMask(0.5f) &&
+                   ResolveResidualSampleMask(0.5f) >= ResolveResidualSampleMask(1f);
         }
 
         private bool ResolveVaultBuffers(out VaultViews views)
@@ -903,6 +1152,8 @@ namespace Hecton8.Power
                    ResolveVaultBuffer(vault, ref _specsHandle, SpecsId, CsvSpecCapacity, out views.Specs) &&
                    ResolveVaultBuffer(vault, ref _csvBytesHandle, CsvBytesId, CsvByteCapacity, out views.CsvBytes) &&
                    ResolveVaultBuffer(vault, ref _visualStateHandle, VisualStateId, MaxNodes, out views.VisualState) &&
+                   ResolveVaultBuffer(vault, ref _convergenceStateHandle, ConvergenceStateId, 1, out views.ConvergenceState) &&
+                   ResolveVaultBuffer(vault, ref _residualSamplesHandle, ResidualSamplesId, ResidualThreadSlotCount, out views.ResidualSamples) &&
                    ResolveVaultBuffer(vault, ref _pendingNodesHandle, PendingNodesId, MaxNodes, out views.PendingNodes) &&
                    ResolveVaultBuffer(vault, ref _pendingEdgesHandle, PendingEdgesId, MaxEdges, out views.PendingEdges) &&
                    ResolveVaultBuffer(vault, ref _pendingInjectionsHandle, PendingInjectionsId, MaxNodes, out views.PendingInjections) &&
@@ -955,6 +1206,8 @@ namespace Hecton8.Power
                    TryResolveVaultBuffer(_specsHandle, CsvSpecCapacity, out views.Specs) &&
                    TryResolveVaultBuffer(_csvBytesHandle, CsvByteCapacity, out views.CsvBytes) &&
                    TryResolveVaultBuffer(_visualStateHandle, MaxNodes, out views.VisualState) &&
+                   TryResolveVaultBuffer(_convergenceStateHandle, 1, out views.ConvergenceState) &&
+                   TryResolveVaultBuffer(_residualSamplesHandle, ResidualThreadSlotCount, out views.ResidualSamples) &&
                    TryResolveVaultBuffer(_pendingNodesHandle, MaxNodes, out views.PendingNodes) &&
                    TryResolveVaultBuffer(_pendingEdgesHandle, MaxEdges, out views.PendingEdges) &&
                    TryResolveVaultBuffer(_pendingInjectionsHandle, MaxNodes, out views.PendingInjections) &&
@@ -1040,6 +1293,8 @@ namespace Hecton8.Power
                 !TryLockBuffer(vault, InjectionsId, ref lockedCount) ||
                 !TryLockBuffer(vault, ExternalHeatId, ref lockedCount) ||
                 !TryLockBuffer(vault, VisualStateId, ref lockedCount) ||
+                !TryLockBuffer(vault, ConvergenceStateId, ref lockedCount) ||
+                !TryLockBuffer(vault, ResidualSamplesId, ref lockedCount) ||
                 !TryLockBuffer(vault, TelemetryId, ref lockedCount) ||
                 !TryLockBuffer(vault, CountersId, ref lockedCount))
             {
@@ -1131,8 +1386,10 @@ namespace Hecton8.Power
             if (vault == null || lockedCount <= 0)
                 return;
 
-            if (lockedCount >= 8) vault.TryUnlockBuffer(CountersId, SystemID.Power);
-            if (lockedCount >= 7) vault.TryUnlockBuffer(TelemetryId, SystemID.Power);
+            if (lockedCount >= 10) vault.TryUnlockBuffer(CountersId, SystemID.Power);
+            if (lockedCount >= 9) vault.TryUnlockBuffer(TelemetryId, SystemID.Power);
+            if (lockedCount >= 8) vault.TryUnlockBuffer(ResidualSamplesId, SystemID.Power);
+            if (lockedCount >= 7) vault.TryUnlockBuffer(ConvergenceStateId, SystemID.Power);
             if (lockedCount >= 6) vault.TryUnlockBuffer(VisualStateId, SystemID.Power);
             if (lockedCount >= 5) vault.TryUnlockBuffer(ExternalHeatId, SystemID.Power);
             if (lockedCount >= 4) vault.TryUnlockBuffer(InjectionsId, SystemID.Power);
@@ -1190,6 +1447,8 @@ namespace Hecton8.Power
             views.Counters[CounterNodeCount] = views.PendingCounters[CounterNodeCount];
             views.Counters[CounterEdgeCount] = views.PendingCounters[CounterEdgeCount];
             views.Counters[CounterFaultFlags] = views.PendingCounters[CounterFaultFlags];
+            views.Counters[CounterMaxIterationStreak] = 0;
+            views.Counters[CounterDumpedFaultMask] = 0;
             return true;
         }
 
@@ -1197,47 +1456,55 @@ namespace Hecton8.Power
         {
             try
             {
-                string root = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
-                string path = Path.Combine(root, DumpRelativePath.Replace('/', Path.DirectorySeparatorChar));
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-                using BinaryWriter writer = new BinaryWriter(stream);
-                writer.Write(DumpMagic);
-                writer.Write(DumpVersion);
-                writer.Write(_frame);
-                writer.Write(NodeCount);
-                writer.Write(EdgeCount);
-                writer.Write(_pendingIterations);
-                NativeArray<ThermalPowerGridTelemetrySnapshot> telemetry =
-                    TryResolveVaultBuffer(_telemetryHandle, TelemetryFrameCount, out NativeArray<ThermalPowerGridTelemetrySnapshot> resolvedTelemetry)
-                        ? resolvedTelemetry
-                        : default;
-                int telemetryCount = telemetry.IsCreated ? math.min(telemetry.Length, TelemetryFrameCount) : 0;
-                writer.Write(telemetryCount);
-                for (int i = 0; i < telemetryCount; i++)
-                {
-                    ThermalPowerGridTelemetrySnapshot entry = telemetry[i];
-                    writer.Write(entry.StateHash);
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.TotalGeneratedPower);
-                    writer.Write(entry.TotalLoad);
-                    writer.Write(entry.MaximumThermalStress);
-                    writer.Write(entry.JacobiResidual);
-                    writer.Write(entry.IterationCount);
-                    writer.Write(entry.NodeCount);
-                    writer.Write(entry.EdgeCount);
-                    writer.Write(entry.MicroDamageCount);
-                    writer.Write(entry.BrownoutCount);
-                    writer.Write(entry.ExternalHeatNodeCount);
-                }
+                WriteBlackBoxFile(DumpRelativePath);
+                WriteBlackBoxFile(ShinobuDumpRelativePath);
             }
             catch (Exception exception)
             {
                 GlobalTelemetryBus.PublishPerformanceWarning(0x5331444Du, SourceHash, exception.HResult);
+            }
+        }
+
+        private void WriteBlackBoxFile(string relativePath)
+        {
+            string root = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
+            string path = Path.Combine(root, relativePath.Replace('/', Path.DirectorySeparatorChar));
+            string directory = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(directory))
+                Directory.CreateDirectory(directory);
+
+            using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
+            using BinaryWriter writer = new BinaryWriter(stream);
+            writer.Write(DumpMagic);
+            writer.Write(DumpVersion);
+            writer.Write(_frame);
+            writer.Write(NodeCount);
+            writer.Write(EdgeCount);
+            writer.Write(_pendingIterations);
+            NativeArray<ThermalPowerGridTelemetrySnapshot> telemetry =
+                TryResolveVaultBuffer(_telemetryHandle, TelemetryFrameCount, out NativeArray<ThermalPowerGridTelemetrySnapshot> resolvedTelemetry)
+                    ? resolvedTelemetry
+                    : default;
+            int telemetryCount = telemetry.IsCreated ? math.min(telemetry.Length, TelemetryFrameCount) : 0;
+            writer.Write(telemetryCount);
+            for (int i = 0; i < telemetryCount; i++)
+            {
+                ThermalPowerGridTelemetrySnapshot entry = telemetry[i];
+                writer.Write(entry.StateHash);
+                writer.Write(entry.Frame);
+                writer.Write(entry.Flags);
+                writer.Write(entry.TotalGeneratedPower);
+                writer.Write(entry.TotalLoad);
+                writer.Write(entry.MaximumThermalStress);
+                writer.Write(entry.JacobiResidual);
+                writer.Write(entry.IterationCount);
+                writer.Write(entry.NodeCount);
+                writer.Write(entry.EdgeCount);
+                writer.Write(entry.MicroDamageCount);
+                writer.Write(entry.BrownoutCount);
+                writer.Write(entry.ExternalHeatNodeCount);
+                writer.Write(entry.SolverOmega);
+                writer.Write(entry.TargetTolerance);
             }
         }
 
@@ -1258,7 +1525,9 @@ namespace Hecton8.Power
                 VisualOverkillScalar = math.saturate(FiniteOr(tuning.VisualOverkillScalar, 0.5f)),
                 SimulationTickDeltaSeconds = math.max(Epsilon, FiniteOr(tuning.SimulationTickDeltaSeconds, 0.05f)),
                 CsvRevision = tuning.CsvRevision,
-                Flags = tuning.Flags
+                Flags = tuning.Flags,
+                BaseOmegaFactor = math.clamp(FiniteOr(tuning.BaseOmegaFactor, 1f), 0.25f, 1.1f),
+                ToleranceMultiplier = math.clamp(FiniteOr(tuning.ToleranceMultiplier, 1f), 0.1f, 64f)
             };
         }
 
@@ -1307,7 +1576,9 @@ namespace Hecton8.Power
             None = 0,
             NonFinite = 1 << 0,
             CriticalThermalFailure = 1 << 1,
-            CsvParseFault = 1 << 2
+            CsvParseFault = 1 << 2,
+            Divergent = 1 << 3,
+            MaxIterations = 1 << 4
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
@@ -1320,6 +1591,8 @@ namespace Hecton8.Power
             [NoAlias] [NativeDisableUnsafePtrRestriction] public float* ExternalHeat;
             [NoAlias] [NativeDisableUnsafePtrRestriction] public ThermalGridAnchorDTO* Anchors;
             [NoAlias] [NativeDisableUnsafePtrRestriction] public ThermalGridVisualStateDTO* VisualState;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public SolverConvergenceStateDTO* ConvergenceState;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public SolverResidualSlot64* ResidualSamples;
             [NoAlias] [NativeDisableUnsafePtrRestriction] public GridNodeDTO* PendingNodes;
             [NoAlias] [NativeDisableUnsafePtrRestriction] public PowerEdgeDTO* PendingEdges;
             [NoAlias] [NativeDisableUnsafePtrRestriction] public float* PendingInjections;
@@ -1328,6 +1601,7 @@ namespace Hecton8.Power
             [NoAlias] [NativeDisableUnsafePtrRestriction] public int* PendingCounters;
             public int Count;
             public int EdgeCount;
+            public int ResidualSlotCount;
             public int CounterCount;
 
             public void Execute(int index)
@@ -1346,6 +1620,9 @@ namespace Hecton8.Power
                     PendingVisualState[index] = default;
                 }
 
+                if ((uint)index < (uint)ResidualSlotCount)
+                    ResidualSamples[index] = default;
+
                 if ((uint)index < (uint)EdgeCount)
                 {
                     Edges[index] = default;
@@ -1354,6 +1631,8 @@ namespace Hecton8.Power
 
                 if ((uint)index < (uint)CounterCount)
                     PendingCounters[index] = 0;
+                if (index == 0)
+                    ConvergenceState[0] = default;
             }
         }
 
@@ -1409,6 +1688,8 @@ namespace Hecton8.Power
                     PendingCounters[CounterEdgeCount] = EdgeCount;
                 else if (index == CounterFaultFlags)
                     PendingCounters[CounterFaultFlags] = 0;
+                else if (index == CounterDumpedFaultMask)
+                    PendingCounters[CounterDumpedFaultMask] = 0;
             }
         }
 
@@ -1423,6 +1704,7 @@ namespace Hecton8.Power
             [NoAlias] [NativeDisableUnsafePtrRestriction] public int* Counters;
             public SubmarineThermalGridTuningDTO Tuning;
             public int NodeCount;
+            public float Oscillator01;
 
             public void Execute(int index)
             {
@@ -1431,6 +1713,7 @@ namespace Hecton8.Power
                     return;
 
                 uint hash = HashNode(index);
+                float oscillator = math.saturate(FiniteOr(Oscillator01, 0f));
                 int edgeOffset;
                 int edgeCount;
                 if (index == 0)
@@ -1438,23 +1721,26 @@ namespace Hecton8.Power
                     edgeOffset = 0;
                     edgeCount = nodeCount > 1 ? 1 : 0;
                     if (edgeCount > 0)
-                        Edges[0] = new PowerEdgeDTO { TargetIndex = 1, Conductance = 1f };
+                        Edges[0] = new PowerEdgeDTO { TargetIndex = 1, Conductance = ResolveMockConductance(index, oscillator) };
                 }
                 else if (index + 1 == nodeCount)
                 {
                     edgeOffset = 1 + (index - 1) * 2;
                     edgeCount = 1;
-                    Edges[edgeOffset] = new PowerEdgeDTO { TargetIndex = index - 1, Conductance = 1f };
+                    Edges[edgeOffset] = new PowerEdgeDTO { TargetIndex = index - 1, Conductance = ResolveMockConductance(index, oscillator) };
                 }
                 else
                 {
                     edgeOffset = 1 + (index - 1) * 2;
                     edgeCount = 2;
-                    Edges[edgeOffset] = new PowerEdgeDTO { TargetIndex = index - 1, Conductance = 1f };
-                    Edges[edgeOffset + 1] = new PowerEdgeDTO { TargetIndex = index + 1, Conductance = 1f };
+                    Edges[edgeOffset] = new PowerEdgeDTO { TargetIndex = index - 1, Conductance = ResolveMockConductance(index, oscillator) };
+                    Edges[edgeOffset + 1] = new PowerEdgeDTO { TargetIndex = index + 1, Conductance = ResolveMockConductance(index + 1, oscillator) };
                 }
 
-                float potential = index == 0 ? 1f : math.saturate(1f - index * 0.006f);
+                float parity = (index & 1) == 0 ? 1f : -1f;
+                float stablePotential = index == 0 ? 1f : math.saturate(1f - index * 0.006f);
+                float oscillatorPotential = index == 0 ? 1f : math.saturate(0.5f + parity * 0.45f);
+                float potential = math.lerp(stablePotential, oscillatorPotential, oscillator);
                 uint flags = index == 0 ? SubmarineThermalGridStatusFlags.Source : SubmarineThermalGridStatusFlags.None;
                 GridNodeDTO node = new GridNodeDTO
                 {
@@ -1467,7 +1753,9 @@ namespace Hecton8.Power
                     AdjacencyCount = edgeCount
                 };
                 Nodes[index] = node;
-                Injections[index] = index == 0 ? 0.5f : -0.0025f;
+                float stableInjection = index == 0 ? 0.5f : -0.0025f;
+                float oscillatorInjection = index == 0 ? 1.35f : parity * 0.85f;
+                Injections[index] = math.lerp(stableInjection, oscillatorInjection, oscillator);
                 Anchors[index] = new ThermalGridAnchorDTO
                 {
                     LocalOffset = new float3(index * 1.5f, 0f, 0f),
@@ -1487,6 +1775,8 @@ namespace Hecton8.Power
                     Counters[CounterNodeCount] = nodeCount;
                     Counters[CounterEdgeCount] = math.max(0, (nodeCount - 1) * 2);
                     Counters[CounterFaultFlags] = 0;
+                    Counters[CounterMaxIterationStreak] = 0;
+                    Counters[CounterDumpedFaultMask] = 0;
                 }
             }
 
@@ -1496,6 +1786,12 @@ namespace Hecton8.Power
                 hash = (hash ^ SourceHash) * 16777619u;
                 hash = (hash ^ (uint)index) * 16777619u;
                 return hash;
+            }
+
+            private static float ResolveMockConductance(int index, float oscillator)
+            {
+                float parityConductance = (index & 1) == 0 ? 0.18f : 2.4f;
+                return math.lerp(1f, parityConductance, oscillator);
             }
         }
 
@@ -1527,6 +1823,125 @@ namespace Hecton8.Power
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        private unsafe struct InitializeSolverConvergenceJob : IJobParallelFor
+        {
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public SolverConvergenceStateDTO* ConvergenceState;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public SolverResidualSlot64* ResidualSamples;
+            public int ResidualSlotCount;
+            public float BaseOmega;
+
+            public void Execute(int nodeIndex)
+            {
+                if ((uint)nodeIndex < (uint)ResidualSlotCount)
+                    ResidualSamples[nodeIndex] = default;
+                if (nodeIndex == 0)
+                {
+                    ConvergenceState[0] = new SolverConvergenceStateDTO
+                    {
+                        MaxResidualFloat = float.MaxValue,
+                        PreviousResidualFloat = float.MaxValue,
+                        Omega = math.clamp(FiniteOr(BaseOmega, 1f), 1f, 1.85f),
+                        IterationCount = 0,
+                        FaultFlags = SolverConvergenceFaultFlags.None
+                    };
+                }
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        private unsafe struct ClearSolverResidualSlotsJob : IJobParallelFor
+        {
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public SolverResidualSlot64* ResidualSamples;
+            public int ResidualSlotCount;
+
+            public void Execute(int index)
+            {
+                if ((uint)index < (uint)ResidualSlotCount)
+                    ResidualSamples[index] = default;
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        private unsafe struct ConvergenceResidualReductionJob : IJob
+        {
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public SolverConvergenceStateDTO* ConvergenceState;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public SolverResidualSlot64* ResidualSamples;
+            public float TargetTolerance;
+            public float BaseOmega;
+            public int ResidualSlotCount;
+            public byte FinalIteration;
+
+            public void Execute()
+            {
+                ref SolverConvergenceStateDTO state = ref UnsafeUtility.AsRef<SolverConvergenceStateDTO>(ConvergenceState);
+                ushort flags = state.FaultFlags;
+                const ushort terminalFlags = (ushort)(
+                    SolverConvergenceFaultFlags.Converged |
+                    SolverConvergenceFaultFlags.Divergent |
+                    SolverConvergenceFaultFlags.NonFinite);
+                if ((flags & terminalFlags) != 0)
+                    return;
+
+                float maxResidual = 0f;
+                bool nonFiniteResidual = false;
+                int slotCount = math.max(1, ResidualSlotCount);
+                for (int i = 0; i < slotCount; i++)
+                {
+                    SolverResidualSlot64 slot = ResidualSamples[i];
+                    float residual = slot.MaxResidualFloat;
+                    if ((slot.FaultFlags & ResidualSlotFaultNonFinite) != 0u ||
+                        !math.isfinite(residual) ||
+                        residual >= float.MaxValue * 0.5f)
+                    {
+                        nonFiniteResidual = true;
+                        maxResidual = float.MaxValue;
+                        break;
+                    }
+
+                    maxResidual = math.max(maxResidual, math.max(0f, residual));
+                }
+
+                float tolerance = math.max(Epsilon * 0.25f, FiniteOr(TargetTolerance, 0.001f));
+                float baseOmega = math.clamp(FiniteOr(BaseOmega, 1f), 1f, 1.85f);
+                float previous = FiniteOr(state.PreviousResidualFloat, maxResidual);
+                bool previousValid = state.IterationCount > 0 && previous < float.MaxValue * 0.5f;
+                bool grew = previousValid && maxResidual > math.max(previous + tolerance * 0.25f, previous * 1.08f);
+                bool runaway = previousValid && maxResidual > math.max(0.5f, previous * 2f);
+                float omega = math.clamp(FiniteOr(state.Omega, baseOmega), 1f, 1.85f);
+
+                if (nonFiniteResidual)
+                {
+                    flags = (ushort)(flags | SolverConvergenceFaultFlags.NonFinite | SolverConvergenceFaultFlags.Divergent);
+                    omega = 1f;
+                }
+                else if (runaway)
+                {
+                    flags = (ushort)(flags | SolverConvergenceFaultFlags.Divergent);
+                    omega = 1f;
+                }
+                else if (grew)
+                {
+                    omega = math.max(1f, omega * 0.86f);
+                }
+                else
+                {
+                    omega = math.min(baseOmega, omega + (baseOmega - omega) * 0.125f);
+                }
+
+                if (!nonFiniteResidual && maxResidual <= tolerance)
+                    flags = (ushort)(flags | SolverConvergenceFaultFlags.Converged);
+                else if (FinalIteration != 0)
+                    flags = (ushort)(flags | SolverConvergenceFaultFlags.MaxIterations);
+
+                state.MaxResidualFloat = maxResidual;
+                state.PreviousResidualFloat = maxResidual;
+                state.Omega = omega;
+                state.IterationCount = (ushort)math.min(ushort.MaxValue, state.IterationCount + 1);
+                state.FaultFlags = flags;
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         public unsafe struct PowerGridRelaxationJob : IJobParallelFor
         {
             [NoAlias] [NativeDisableUnsafePtrRestriction] public GridNodeDTO* NodesRead;
@@ -1535,6 +1950,8 @@ namespace Hecton8.Power
             [NoAlias] [NativeDisableUnsafePtrRestriction] public float* Injections;
             [NoAlias] [NativeDisableUnsafePtrRestriction] public float* ExternalHeat;
             [NoAlias] [NativeDisableUnsafePtrRestriction] public ThermalGridVisualStateDTO* VisualState;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public SolverConvergenceStateDTO* ConvergenceState;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public SolverResidualSlot64* ResidualSamples;
             public SubmarineThermalGridTuningDTO Tuning;
             public int NodeCount;
             public int EdgeCount;
@@ -1542,6 +1959,10 @@ namespace Hecton8.Power
             public uint Frame;
             public int IterationIndex;
             public int IterationCount;
+            public float TargetTolerance;
+            public int ResidualSampleMask;
+            public int ResidualSlotCount;
+            [NativeSetThreadIndex] public int ThreadIndex;
 
             public void Execute(int nodeIndex)
             {
@@ -1550,9 +1971,27 @@ namespace Hecton8.Power
 
                 ref GridNodeDTO source = ref UnsafeUtility.AsRef<GridNodeDTO>(NodesRead + nodeIndex);
                 ref GridNodeDTO target = ref UnsafeUtility.AsRef<GridNodeDTO>(NodesWrite + nodeIndex);
+                SolverConvergenceStateDTO convergenceState = ConvergenceState[0];
+                const ushort terminalFlags = (ushort)(
+                    SolverConvergenceFaultFlags.Converged |
+                    SolverConvergenceFaultFlags.Divergent |
+                    SolverConvergenceFaultFlags.NonFinite);
+                if ((convergenceState.FaultFlags & terminalFlags) != 0)
+                {
+                    target = source;
+                    return;
+                }
+
                 float sourcePotential = math.saturate(FiniteOr(source.Potential, 0f));
                 float resistance = math.max(Epsilon, FiniteOr(source.Resistance, Tuning.BaseResistance));
                 float thermalDeltaSeconds = math.max(0f, DeltaSeconds) / math.max(1, IterationCount);
+                float heatGainScale = math.clamp(FiniteOr(Tuning.HeatGainScale, 0.018f), 0f, 10f);
+                float externalHeatScale = math.clamp(FiniteOr(Tuning.ExternalHeatScale, 0.12f), 0f, 10f);
+                float thermalDissipationRate = math.clamp(FiniteOr(Tuning.ThermalDissipationRate, 0.18f), 0f, 10f);
+                float visualOverkill = math.saturate(FiniteOr(Tuning.VisualOverkillScalar, 0.5f));
+                float resistanceDriftRate = math.clamp(FiniteOr(Tuning.ResistanceDriftRate, 0.025f), 0f, 10f);
+                float flickerScale = math.clamp(FiniteOr(Tuning.FlickerScale, 0.35f), 0f, 4f);
+                float brownoutThreshold = math.saturate(FiniteOr(Tuning.BrownoutVoltageThreshold, 0.2f));
                 float weightedPotential = 0f;
                 float conductanceSum = 0f;
                 float thermalLoad = math.max(0f, FiniteOr(source.ThermalLoad, 0f));
@@ -1579,18 +2018,18 @@ namespace Hecton8.Power
                     float neighborPotential = math.saturate(FiniteOr(neighbor.Potential, 0f));
                     float voltageDrop = sourcePotential - neighborPotential;
                     float current = voltageDrop * conductance;
-                    thermalLoad += current * current * resistance * thermalDeltaSeconds * Tuning.HeatGainScale;
+                    thermalLoad += current * current * resistance * thermalDeltaSeconds * heatGainScale;
                     weightedPotential += conductance * neighborPotential;
                     conductanceSum += conductance;
                 }
 
                 float externalHeat = math.max(0f, FiniteOr(ExternalHeat[nodeIndex], 0f));
                 if (IterationIndex == 0)
-                    ExternalHeat[nodeIndex] = externalHeat * math.lerp(0.10f, 0.55f, math.saturate(Tuning.VisualOverkillScalar));
+                    ExternalHeat[nodeIndex] = externalHeat * math.lerp(0.10f, 0.55f, visualOverkill);
                 if (externalHeat > Epsilon)
                     flags |= SubmarineThermalGridStatusFlags.ExternalHeat;
-                thermalLoad += externalHeat * Tuning.ExternalHeatScale * thermalDeltaSeconds;
-                thermalLoad = math.max(0f, thermalLoad - Tuning.ThermalDissipationRate * thermalDeltaSeconds);
+                thermalLoad += externalHeat * externalHeatScale * thermalDeltaSeconds;
+                thermalLoad = math.max(0f, thermalLoad - thermalDissipationRate * thermalDeltaSeconds);
 
                 float nextPotential;
                 if (isolated)
@@ -1608,20 +2047,32 @@ namespace Hecton8.Power
                     nextPotential = (weightedPotential + injection) / denominator;
                 }
 
-                nextPotential = math.saturate(FiniteOr(nextPotential, 0f));
-                float damageThreshold = math.max(Epsilon, Tuning.DamageThreshold);
-                float criticalThreshold = math.max(damageThreshold + Epsilon, Tuning.CriticalThermalThreshold);
+                float omega = math.clamp(FiniteOr(convergenceState.Omega, 1f), 1f, 1.85f);
+                bool sourceAnchored = isolated || (source.Flags & SubmarineThermalGridStatusFlags.Source) != 0;
+                if (!sourceAnchored)
+                    nextPotential = sourcePotential + (nextPotential - sourcePotential) * omega;
+
+                bool potentialFault = !math.isfinite(nextPotential) || math.abs(nextPotential) > 16f;
+                if (potentialFault)
+                {
+                    nextPotential = sourcePotential;
+                    flags |= SubmarineThermalGridStatusFlags.FaultDivergent;
+                }
+
+                nextPotential = math.saturate(FiniteOr(nextPotential, sourcePotential));
+                float damageThreshold = math.max(Epsilon, FiniteOr(Tuning.DamageThreshold, 0.72f));
+                float criticalThreshold = math.max(damageThreshold + Epsilon, FiniteOr(Tuning.CriticalThermalThreshold, 1f));
                 if (thermalLoad >= damageThreshold)
                 {
                     flags |= SubmarineThermalGridStatusFlags.Overheating;
                     float overheat01 = math.saturate((thermalLoad - damageThreshold) / math.max(Epsilon, criticalThreshold - damageThreshold));
-                    resistance = math.min(16f, resistance * (1f + Tuning.ResistanceDriftRate * thermalDeltaSeconds * overheat01));
+                    resistance = math.min(16f, resistance * (1f + resistanceDriftRate * thermalDeltaSeconds * overheat01));
                     nextPotential *= math.lerp(1f, 0.35f, overheat01);
                     if (thermalLoad >= criticalThreshold)
                         flags |= SubmarineThermalGridStatusFlags.MicroDamage | SubmarineThermalGridStatusFlags.ShortCircuit;
                 }
 
-                if (nextPotential < math.saturate(Tuning.BrownoutVoltageThreshold))
+                if (nextPotential < brownoutThreshold)
                     flags |= SubmarineThermalGridStatusFlags.Brownout;
 
                 target = source;
@@ -1630,9 +2081,25 @@ namespace Hecton8.Power
                 target.ThermalLoad = FiniteOr(thermalLoad, 0f);
                 target.Flags = flags;
 
+                float residual = math.abs(nextPotential - sourcePotential);
+                int residualMask = math.max(0, ResidualSampleMask);
+                float sampledResidual = ((nodeIndex & residualMask) == 0)
+                    ? math.max(0f, FiniteOr(residual, float.MaxValue))
+                    : 0f;
+                if (potentialFault)
+                    sampledResidual = float.MaxValue;
+                if (sampledResidual > 0f)
+                {
+                    int slot = math.clamp(ThreadIndex, 0, math.max(1, ResidualSlotCount) - 1);
+                    ref SolverResidualSlot64 slotRef = ref UnsafeUtility.AsRef<SolverResidualSlot64>(ResidualSamples + slot);
+                    slotRef.MaxResidualFloat = math.max(slotRef.MaxResidualFloat, sampledResidual);
+                    if (sampledResidual >= float.MaxValue * 0.5f)
+                        slotRef.FaultFlags |= ResidualSlotFaultNonFinite;
+                }
+
                 float thermal01 = math.saturate(target.ThermalLoad / criticalThreshold);
                 float flicker = Triangle01((Frame * 0.017f) + (nodeIndex * 0.071f) + IterationIndex * 0.013f);
-                flicker *= math.saturate(1f - nextPotential) * math.saturate(Tuning.FlickerScale);
+                flicker *= math.saturate(1f - nextPotential) * flickerScale;
                 VisualState[nodeIndex] = new ThermalGridVisualStateDTO
                 {
                     NodeHash = target.NodeHash,
@@ -1640,7 +2107,7 @@ namespace Hecton8.Power
                     Thermal01 = thermal01,
                     FlickerPhase01 = flicker,
                     Flags = flags,
-                    VisualOverkill01 = math.saturate(Tuning.VisualOverkillScalar)
+                    VisualOverkill01 = visualOverkill
                 };
             }
         }
@@ -1698,15 +2165,17 @@ namespace Hecton8.Power
                     return;
 
                 float3 local = Anchors[nodeIndex].LocalOffset;
-                double3 nodeAup = SubmarineBaseAup + new double3(local);
-                float3 localDelta = (float3)(HazardAup - nodeAup);
-                float distanceSq = math.lengthsq(localDelta);
+                double3 nodeAup = SubmarineBaseAup + new double3(local.x, local.y, local.z);
+                double distanceSqDouble = AupPrecisionMath.DistanceSqSafeDouble(HazardAup, nodeAup);
+                float distanceSq = distanceSqDouble >= float.MaxValue ? float.MaxValue : (float)distanceSqDouble;
                 float radius = math.max(1f, HazardRadiusMeters);
                 float near01 = math.saturate(1f - distanceSq / math.max(Epsilon, radius * radius));
                 float cheapStep = math.step(0.02f, near01);
                 float smooth = near01 * near01 * (3f - 2f * near01);
-                float sample01 = math.lerp(cheapStep, smooth, math.saturate((GlobalQualityWeight - 0.3f) * 1.4285715f));
-                ExternalHeat[nodeIndex] = math.max(0f, HazardTemperatureCelsius - 40f) * 0.01f * sample01;
+                float qualityWeight = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 0f);
+                float sample01 = math.lerp(cheapStep, smooth, math.saturate((qualityWeight - 0.3f) * 1.4285715f));
+                float hazardTemperature = FiniteOr(HazardTemperatureCelsius, 40f);
+                ExternalHeat[nodeIndex] = math.max(0f, hazardTemperature - 40f) * 0.01f * sample01;
             }
         }
 
@@ -1718,11 +2187,13 @@ namespace Hecton8.Power
             [NoAlias] [NativeDisableUnsafePtrRestriction] public PowerEdgeDTO* Edges;
             [NoAlias] [NativeDisableUnsafePtrRestriction] public float* Injections;
             [NoAlias] [NativeDisableUnsafePtrRestriction] public ThermalPowerGridTelemetrySnapshot* Telemetry;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public SolverConvergenceStateDTO* ConvergenceState;
             [NoAlias] [NativeDisableUnsafePtrRestriction] public int* Counters;
             public int NodeCount;
             public int EdgeCount;
             public int Iterations;
             public uint Frame;
+            public float TargetTolerance;
 
             public void Execute()
             {
@@ -1752,9 +2223,34 @@ namespace Hecton8.Power
                         brownout++;
                     if ((node.Flags & SubmarineThermalGridStatusFlags.ExternalHeat) != 0)
                         externalHeat++;
+                    if ((node.Flags & SubmarineThermalGridStatusFlags.FaultDivergent) != 0)
+                        flags |= (uint)SubmarineThermalGridFaultFlags.Divergent;
                     if (!math.isfinite(node.Potential) || !math.isfinite(node.ThermalLoad) || !math.isfinite(node.Resistance))
                         flags |= (uint)SubmarineThermalGridFaultFlags.NonFinite;
                     hash = HashNode(hash, node);
+                }
+
+                SolverConvergenceStateDTO convergenceState = ConvergenceState[0];
+                if (math.isfinite(convergenceState.MaxResidualFloat))
+                    residual = math.max(residual, math.max(0f, convergenceState.MaxResidualFloat));
+                else
+                    flags |= (uint)SubmarineThermalGridFaultFlags.NonFinite;
+                if ((convergenceState.FaultFlags & SolverConvergenceFaultFlags.NonFinite) != 0)
+                    flags |= (uint)SubmarineThermalGridFaultFlags.NonFinite;
+                if ((convergenceState.FaultFlags & SolverConvergenceFaultFlags.Divergent) != 0)
+                    flags |= (uint)SubmarineThermalGridFaultFlags.Divergent;
+                bool maxIterationFault = (convergenceState.FaultFlags & SolverConvergenceFaultFlags.MaxIterations) != 0 &&
+                                         residual > math.max(Epsilon, TargetTolerance);
+                if (maxIterationFault)
+                {
+                    int streak = math.min(1000000, Counters[CounterMaxIterationStreak] + 1);
+                    Counters[CounterMaxIterationStreak] = streak;
+                    if (streak >= 5)
+                        flags |= (uint)SubmarineThermalGridFaultFlags.MaxIterations;
+                }
+                else
+                {
+                    Counters[CounterMaxIterationStreak] = 0;
                 }
 
                 if (maxThermal >= 1f || microDamage > 0)
@@ -1763,9 +2259,14 @@ namespace Hecton8.Power
                     Counters[CounterFaultFlags] |= (int)SubmarineThermalGridFaultFlags.NonFinite;
                 if ((flags & (uint)SubmarineThermalGridFaultFlags.CriticalThermalFailure) != 0)
                     Counters[CounterFaultFlags] |= (int)SubmarineThermalGridFaultFlags.CriticalThermalFailure;
+                if ((flags & (uint)SubmarineThermalGridFaultFlags.Divergent) != 0)
+                    Counters[CounterFaultFlags] |= (int)SubmarineThermalGridFaultFlags.Divergent;
+                if ((flags & (uint)SubmarineThermalGridFaultFlags.MaxIterations) != 0)
+                    Counters[CounterFaultFlags] |= (int)SubmarineThermalGridFaultFlags.MaxIterations;
 
                 int cursor = Counters[CounterTelemetryCursor];
                 int writeIndex = math.abs(cursor) % TelemetryFrameCount;
+                int actualIterations = convergenceState.IterationCount > 0 ? convergenceState.IterationCount : Iterations;
                 Telemetry[writeIndex] = new ThermalPowerGridTelemetrySnapshot
                 {
                     StateHash = hash,
@@ -1775,12 +2276,14 @@ namespace Hecton8.Power
                     TotalLoad = totalLoad,
                     MaximumThermalStress = maxThermal,
                     JacobiResidual = residual,
-                    IterationCount = Iterations,
+                    IterationCount = actualIterations,
                     NodeCount = NodeCount,
                     EdgeCount = EdgeCount,
                     MicroDamageCount = microDamage,
                     BrownoutCount = brownout,
-                    ExternalHeatNodeCount = externalHeat
+                    ExternalHeatNodeCount = externalHeat,
+                    SolverOmega = math.clamp(FiniteOr(convergenceState.Omega, 1f), 1f, 1.85f),
+                    TargetTolerance = math.max(Epsilon * 0.25f, FiniteOr(TargetTolerance, 0.001f))
                 };
                 Counters[CounterTelemetryCursor] = (cursor + 1) % TelemetryFrameCount;
             }
@@ -1861,6 +2364,57 @@ namespace Hecton8.Power
             }
 
             return writeIndex;
+        }
+
+        public static int ParseRelaxationProfilesCsv(
+            ReadOnlySpan<byte> csv,
+            NativeArray<SubmarineThermalGridTuningDTO> tuning,
+            uint systemHash)
+        {
+            if (csv.Length <= 0 || !tuning.IsCreated || tuning.Length <= 0)
+                return 0;
+
+            int applied = 0;
+            int index = 0;
+            while (index < csv.Length)
+            {
+                SkipLineNoise(csv, ref index);
+                if (index >= csv.Length)
+                    break;
+
+                int nameStart = index;
+                int nameLength = ReadToken(csv, ref index);
+                if (nameLength <= 0)
+                {
+                    SkipLine(csv, ref index);
+                    continue;
+                }
+
+                if (IsHeaderName(csv, nameStart, nameLength))
+                {
+                    SkipLine(csv, ref index);
+                    continue;
+                }
+
+                float tolerance = ReadFloat(csv, ref index);
+                float omegaFactor = ReadFloat(csv, ref index);
+                float toleranceMultiplier = ReadFloat(csv, ref index);
+                SkipLine(csv, ref index);
+
+                uint rowHash = HashToken(csv, nameStart, nameLength);
+                if (systemHash != 0u && rowHash != systemHash)
+                    continue;
+
+                SubmarineThermalGridTuningDTO value = tuning[0];
+                value.JacobiTolerance = math.max(0.0001f, tolerance);
+                value.BaseOmegaFactor = math.clamp(omegaFactor <= 0f ? 1f : omegaFactor, 0.25f, 1.1f);
+                value.ToleranceMultiplier = math.clamp(toleranceMultiplier <= 0f ? 1f : toleranceMultiplier, 0.1f, 64f);
+                value.CsvRevision = unchecked(value.CsvRevision + 1u);
+                tuning[0] = value;
+                applied++;
+            }
+
+            return applied;
         }
 
         public static uint HashToken(ReadOnlySpan<byte> bytes, int start, int length)

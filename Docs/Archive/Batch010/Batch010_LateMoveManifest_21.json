@@ -1,0 +1,128 @@
+[
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "CoreBuild_SHINOBU_02_current40.txt",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\CoreBuild_SHINOBU_02_current40__late21.txt",
+        "WasDirectory":  false,
+        "Status":  "LateMoved",
+        "Loop":  21,
+        "Key":  "CoreBuild"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_153.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_153__late21.md",
+        "WasDirectory":  false,
+        "Status":  "LateMoved",
+        "Loop":  21,
+        "Key":  "LOG"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_154.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_154__late21.md",
+        "WasDirectory":  false,
+        "Status":  "LateMoved",
+        "Loop":  21,
+        "Key":  "LOG"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_81.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_81__late21.md",
+        "WasDirectory":  false,
+        "Status":  "LateMoved",
+        "Loop":  21,
+        "Key":  "LOG"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_132.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_132__late21.md",
+        "WasDirectory":  false,
+        "Status":  "LateMoved",
+        "Loop":  21,
+        "Key":  "Rationale"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_153.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_153__late21.md",
+        "WasDirectory":  false,
+        "Status":  "LateMoved",
+        "Loop":  21,
+        "Key":  "Rationale"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_154.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_154__late21.md",
+        "WasDirectory":  false,
+        "Status":  "LateMoved",
+        "Loop":  21,
+        "Key":  "Rationale"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_81.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_81__late21.md",
+        "WasDirectory":  false,
+        "Status":  "LateMoved",
+        "Loop":  21,
+        "Key":  "Rationale"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Unity_SHINOBU_154_Compile.log",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Unity_SHINOBU_154_Compile__late21.log",
+        "WasDirectory":  false,
+        "Status":  "LateMoved",
+        "Loop":  21,
+        "Key":  "Unity"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Route_SHINOBU_154_EntityDeltaCompression.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Route_SHINOBU_154_EntityDeltaCompression__late21.md",
+        "WasDirectory":  false,
+        "Status":  "LateMoved",
+        "Loop":  21,
+        "Key":  "Route"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_132.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_132__late21.md",
+        "WasDirectory":  false,
+        "Status":  "LateMoved",
+        "Loop":  21,
+        "Key":  "Status"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_153.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_153__late21.md",
+        "WasDirectory":  false,
+        "Status":  "LateMoved",
+        "Loop":  21,
+        "Key":  "Status"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_154.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_154__late21.md",
+        "WasDirectory":  false,
+        "Status":  "LateMoved",
+        "Loop":  21,
+        "Key":  "Status"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_81.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_81__late21.md",
+        "WasDirectory":  false,
+        "Status":  "LateMoved",
+        "Loop":  21,
+        "Key":  "Status"
+    }
+]

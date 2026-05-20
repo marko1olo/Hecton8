@@ -1,7 +1,7 @@
 # A-Tier Personalized Pitch Drafts
 
 Status: draft copy / verify current channel fit and official contact route before sending
-Public stance: single-player-first / no co-op promise / no fake performance claim
+Public stance: single-player-first scope / proof-first creator copy / no fake performance claim
 Runtime impact: none
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
@@ -20,8 +20,12 @@ Do not send any of this until:
 
 - current channel activity is verified;
 - public business contact route is verified from the creator's own page;
-- asset link is ready;
-- key policy is ready;
+- approved asset link is ready and matching asset metadata claim checks pass;
+- pain-backed angles have `pain_freshness_source` and `pain_freshness_checked_at` filled;
+- creator utility is 3/4+ for the recipient segment and `creator_send_gate` is open;
+- gameplay/pressure/route-risk pitches include one factual `AGENCY_PROOF_CANDIDATE` asset with `agency_decision_notes` and AB-009/KPI decision-read fields, not only identity, anomaly, or mood;
+- CRM send-log fields are ready to record the real send;
+- any demo/key/private-preview route has `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED`, `official_inbox_custody_gate = ALLOW_OFFICIAL_INBOX_USE_VERIFIED`, and exact access-log fields before it appears in copy;
 - the pitch includes one specific reason their audience fits.
 
 ## Message Skeleton
@@ -32,14 +36,14 @@ Hi [Name],
 
 I am preparing HECTON-8, a single-player-first NASA-punk / deep-sea noir survival game about pressure, salvage, machinery, and black-water exploration.
 
-Your channel fits because [specific reason]. This is not a "Subnautica killer" pitch and not a co-op promise. The angle is [specific angle].
+Your channel fits because [specific reason]. The angle is [specific angle], with scope kept inside what the current build can prove.
 
 Assets:
 
-- Steam: [TBD]
-- trailer/clip: [TBD]
-- screenshots: [TBD]
-- demo/key: [TBD]
+- Steam: [official Steam URL only after `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED` and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`]
+- trailer/clip: [approved asset only]
+- screenshots: [approved asset IDs/links only]
+- demo/key: [only after recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED`, official inbox custody, disclosure, and exact access-log fields]
 
 If it fits your audience, I can send the demo when the slice is ready.
 
@@ -53,12 +57,12 @@ If it fits your audience, I can send the demo when the slice is ready.
 | Z1 Gaming | Survival crafting and progression. | Do not lead with horror only. | Base systems, tools, progression clarity. | "The HECTON-8 angle for your audience is the survival progression: pressure-rated tools, habitat systems, salvage routes, and machines that visibly change what you can survive." |
 | Kage848 | Practical survival/crafting audience. | Do not send a thin atmospheric walking build. | First 60 minutes with resources, danger, and build goals. | "This should fit when the demo can show the actual loop: scavenge, build, repair, descend, return, and understand why the base matters." |
 | GameEdged | Survival base-building audience. | Do not pitch before base systems are visible. | Habitat as survival machine. | "The base is not decoration here; it is a pressure vessel with power, oxygen, seals, and failure states that make a survival episode readable." |
-| Jade PG | Survival news and systems discussion. | Do not use vague roadmap promises. | Transparent scope, no-coop honesty, Steam demo roadmap. | "The story here is an underwater survival project deliberately avoiding fake co-op promises and showing systems only when they are playable." |
+| Jade PG | Survival news and systems discussion. | Do not use vague roadmap promises. | Transparent scope and Steam demo roadmap. | "The story here is an underwater survival project keeping scope proof-first and showing systems only when they are playable." |
 | Broadbent | Survival challenge pacing. | Do not over-explain lore. | First descent challenge and route risk. | "A good video angle is a challenge run: how far can you push a salvage route before oxygen, pressure, and visibility force the return?" |
 | Drae | Sandbox/systems curiosity. | Do not make it too grim without toys. | Strange machines and failure chains. | "The channel fit is machinery under stress: pumps, gauges, seals, tools, and the fun of seeing what fails when you push the system." |
 | Blitz | Broad survival/crafting reach. | Avoid complex lore-first pitch. | Clear survival toybox with strong visual hook. | "The clean hook is simple: single-player underwater survival where every machine matters and the ocean punishes overconfidence." |
 | TheGamingBeaver | Creature/ecosystem audience. | Do not promise a creature zoo. | Predator silhouettes and abyss ecology. | "The creature angle is not a zoo; it is how the player reads threats through sonar, floodlights, behavior, and bad visibility." |
-| Neebs Gaming | Cinematic survival storytelling. | Co-op/group expectation risk. | Survival story beats, not co-op. | "This is single-player-first, but the footage could work as a cinematic survival story: one person, one failing machine, and an ocean that does not care." |
+| Neebs Gaming | Cinematic survival storytelling. | Group expectation risk. | One-person survival story beats. | "This is single-player-first, but the footage could work as a cinematic survival story: one person, one failing machine, and an ocean that does not care." |
 | Markiplier | Massive indie horror reach. | Very low probability; do not cold-spam weak build. | One unforgettable horror sequence. | "If we ever pitch this, the build must open with a strong, self-contained deep-sea dread sequence that needs no lore explanation." |
 | jacksepticeye | Survival/horror/narrative reach. | Very low probability; avoid derivative comparison. | Emotional first descent and big reveal. | "The right angle is a bleak underwater survival experience with a clear first-session arc: descent, wonder turning to pressure, and one memorable wrong signal." |
 | ManlyBadassHero | Indie horror showcase. | Do not send survival grind. | Tight atmospheric demo with mystery. | "The fit is a compact horror-survival slice: minimal exposition, strong atmosphere, readable systems, and an ending beat that makes the abyss feel intelligent." |
@@ -89,7 +93,7 @@ If it fits your audience, I can send the demo when the slice is ready.
 | ImKibitz | Large-scale build/spectacle. | Do not pitch without visual scale. | High-end base/machinery spectacle. | "The angle is visual overkill with purpose: massive pressure-rated machinery and base systems that look spectacular because they are necessary." |
 | Gronkh | German long-form survival/story audience. | Localization/contact verification required. | Atmospheric single-player survival story. | "The German angle is a long-form survival journey: quiet dread, machinery, and a first descent that can carry a full episode." |
 | HandOfBlood | German high-energy gaming. | Tone may turn comic; prepare strong clip. | Brutal, readable survival failures. | "The pitch should lead with a clip where a bad decision creates a funny-but-tense failure chain under pressure." |
-| GameStar | German PC press. | Needs clean factsheet and build. | PC survival/tech identity. | "The press angle is a PC-first survival project with a clear visual identity and honest scope: single-player, pressure, machinery, no co-op promise." |
+| GameStar | German PC press. | Needs clean factsheet and build. | PC survival/tech identity. | "The press angle is a PC-first survival project with a clear visual identity and proof-first scope: single-player, pressure, and machinery." |
 | Kuplinov Play | RU/CIS horror/survival reach. | Localization and regional risks. | Dark underwater survival first-look. | "The fit is simple: a dark single-player underwater survival demo with enough atmosphere and danger to carry a first episode." |
 | StopGame | RU editorial audience. | Requires polish and clear materials. | Design and systems critique. | "The better pitch is not hype; it is a compact preview packet explaining the survival loop, visual identity, and what is playable now." |
 | DTF | RU community/editorial. | Community can be harsh. | Devlog/critique, not wishlist begging. | "Use a devlog asking for visual/system critique: what reads as pressure, what reads as generic sci-fi, and what must be fixed." |

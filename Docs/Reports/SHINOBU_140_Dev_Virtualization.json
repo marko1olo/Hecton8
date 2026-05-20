@@ -1,0 +1,1480 @@
+{
+  "criticalCount": 2,
+  "filesScanned": 1575,
+  "findings": [
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 95,
+      "path": "Assets/_Project/Scripts/AtlasSignal/Atlas6DirectiveSystem.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 97,
+      "path": "Assets/_Project/Scripts/AtlasSignal/Atlas6DirectiveSystem.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 201,
+      "path": "Assets/_Project/Scripts/AtlasSignal/Atlas6DirectiveSystem.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 51,
+      "path": "Assets/_Project/Scripts/AtlasSignal/AtlasSignalEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 53,
+      "path": "Assets/_Project/Scripts/AtlasSignal/AtlasSignalEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 193,
+      "path": "Assets/_Project/Scripts/AtlasSignal/AtlasSignalEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 353,
+      "path": "Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 355,
+      "path": "Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 710,
+      "path": "Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 47,
+      "path": "Assets/_Project/Scripts/AudioLog/AudioLogEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 49,
+      "path": "Assets/_Project/Scripts/AudioLog/AudioLogEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 181,
+      "path": "Assets/_Project/Scripts/AudioLog/AudioLogEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 48,
+      "path": "Assets/_Project/Scripts/BiomeMatrixDirector.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 50,
+      "path": "Assets/_Project/Scripts/BiomeMatrixDirector.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 235,
+      "path": "Assets/_Project/Scripts/BiomeMatrixDirector.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 58,
+      "path": "Assets/_Project/Scripts/Bootstrap/BootstrapEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 60,
+      "path": "Assets/_Project/Scripts/Bootstrap/BootstrapEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 204,
+      "path": "Assets/_Project/Scripts/Bootstrap/BootstrapEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 519,
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 291,
+      "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 275,
+      "path": "Assets/_Project/Scripts/Construction/RepairDroneEntity.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 154,
+      "path": "Assets/_Project/Scripts/Construction/VehicleDockingModule.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 236,
+      "path": "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 267,
+      "path": "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 269,
+      "path": "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 7004,
+      "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 7316,
+      "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 1180,
+      "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 59,
+      "path": "Assets/_Project/Scripts/Core/IPlatformIntegration.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 62,
+      "path": "Assets/_Project/Scripts/Core/IPlatformIntegration.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 168,
+      "path": "Assets/_Project/Scripts/Core/IPlatformIntegration.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 16,
+      "path": "Assets/_Project/Scripts/Core/OceanKinematicsRuntimeService.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 101,
+      "path": "Assets/_Project/Scripts/Core/RuntimeWatchdog.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 351,
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 353,
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 355,
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 396,
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 400,
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 4872,
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 5129,
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 5805,
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 5835,
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 5938,
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 5982,
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 6030,
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 6081,
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 6150,
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 6195,
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 6811,
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 402,
+      "path": "Assets/_Project/Scripts/Core/ThreadSafeCommandQueue.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 112,
+      "path": "Assets/_Project/Scripts/CraftingEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 114,
+      "path": "Assets/_Project/Scripts/CraftingEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 253,
+      "path": "Assets/_Project/Scripts/CraftingEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 45,
+      "path": "Assets/_Project/Scripts/Environment/WeatherEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 46,
+      "path": "Assets/_Project/Scripts/Environment/WeatherEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 150,
+      "path": "Assets/_Project/Scripts/Environment/WeatherEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 257,
+      "path": "Assets/_Project/Scripts/Gameplay/BaseAirlockEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 322,
+      "path": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 1071,
+      "path": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 1085,
+      "path": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 232,
+      "path": "Assets/_Project/Scripts/Gameplay/EclipseGameplaySystem.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 103,
+      "path": "Assets/_Project/Scripts/Gameplay/EndingSystem.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 104,
+      "path": "Assets/_Project/Scripts/Gameplay/EndingSystem.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 238,
+      "path": "Assets/_Project/Scripts/Gameplay/EndingSystem.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 70,
+      "path": "Assets/_Project/Scripts/Gameplay/FirstHourDirector.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 71,
+      "path": "Assets/_Project/Scripts/Gameplay/FirstHourDirector.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 225,
+      "path": "Assets/_Project/Scripts/Gameplay/FirstHourDirector.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 180,
+      "path": "Assets/_Project/Scripts/Gameplay/HabitatIntegrityManager.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 465,
+      "path": "Assets/_Project/Scripts/Gameplay/HectonSubmarineOS.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 253,
+      "path": "Assets/_Project/Scripts/Gameplay/MantaScooter.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 259,
+      "path": "Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 135,
+      "path": "Assets/_Project/Scripts/Gameplay/PlayerExpressionManager.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 419,
+      "path": "Assets/_Project/Scripts/Gameplay/PlayerSignalEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 453,
+      "path": "Assets/_Project/Scripts/Gameplay/PlayerSignalEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 487,
+      "path": "Assets/_Project/Scripts/Gameplay/PlayerSignalEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 551,
+      "path": "Assets/_Project/Scripts/Gameplay/RandomEventSystem.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 585,
+      "path": "Assets/_Project/Scripts/Gameplay/RandomEventSystem.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 619,
+      "path": "Assets/_Project/Scripts/Gameplay/RandomEventSystem.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 187,
+      "path": "Assets/_Project/Scripts/Gameplay/SuitMeshUpdateEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 130,
+      "path": "Assets/_Project/Scripts/Gameplay/ToolEffectEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 52,
+      "path": "Assets/_Project/Scripts/Gameplay/TransportChargingStation.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 118,
+      "path": "Assets/_Project/Scripts/Gameplay/VehicleCommandSignals.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 320,
+      "path": "Assets/_Project/Scripts/GameTickManager.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 2
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 381,
+      "path": "Assets/_Project/Scripts/GameTickManager.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 2
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 445,
+      "path": "Assets/_Project/Scripts/GameTickManager.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 513,
+      "path": "Assets/_Project/Scripts/GameTickManager.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 306,
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 108,
+      "path": "Assets/_Project/Scripts/HectonAtmosphereManager.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 110,
+      "path": "Assets/_Project/Scripts/HectonAtmosphereManager.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 239,
+      "path": "Assets/_Project/Scripts/HectonAtmosphereManager.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 284,
+      "path": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 288,
+      "path": "Assets/_Project/Scripts/HectonDirectorAI.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 1258,
+      "path": "Assets/_Project/Scripts/HectonFloatingOrigin.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 86,
+      "path": "Assets/_Project/Scripts/Interaction/InteractionEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 88,
+      "path": "Assets/_Project/Scripts/Interaction/InteractionEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 217,
+      "path": "Assets/_Project/Scripts/Interaction/InteractionEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 20,
+      "path": "Assets/_Project/Scripts/Interaction/PhysicalHandReceiverRegistry.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 47,
+      "path": "Assets/_Project/Scripts/Interaction/SuitDamageEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 222,
+      "path": "Assets/_Project/Scripts/InventoryEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 136,
+      "path": "Assets/_Project/Scripts/LaserCutter.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 77,
+      "path": "Assets/_Project/Scripts/LocalizationEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 79,
+      "path": "Assets/_Project/Scripts/LocalizationEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 81,
+      "path": "Assets/_Project/Scripts/LocalizationEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 83,
+      "path": "Assets/_Project/Scripts/LocalizationEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 355,
+      "path": "Assets/_Project/Scripts/LocalizationEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 370,
+      "path": "Assets/_Project/Scripts/LocalizationEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 101,
+      "path": "Assets/_Project/Scripts/MapMagicBridge.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 254,
+      "path": "Assets/_Project/Scripts/MapMagicBridge.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 269,
+      "path": "Assets/_Project/Scripts/MapMagicBridge.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 121,
+      "path": "Assets/_Project/Scripts/ModdingAPI/HectonEventBus.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 264,
+      "path": "Assets/_Project/Scripts/ModdingAPI/ModCommandDispatcher.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 196,
+      "path": "Assets/_Project/Scripts/ModdingAPI/ModRegistryEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 181,
+      "path": "Assets/_Project/Scripts/ModuleStatusEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 52,
+      "path": "Assets/_Project/Scripts/NarrativeEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 54,
+      "path": "Assets/_Project/Scripts/NarrativeEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 58,
+      "path": "Assets/_Project/Scripts/NarrativeEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 60,
+      "path": "Assets/_Project/Scripts/NarrativeEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 206,
+      "path": "Assets/_Project/Scripts/NarrativeEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 251,
+      "path": "Assets/_Project/Scripts/NarrativeEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 285,
+      "path": "Assets/_Project/Scripts/NarrativeEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 241,
+      "path": "Assets/_Project/Scripts/ObjectPoolDiagnostics.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 35,
+      "path": "Assets/_Project/Scripts/ObjectPoolManager.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 162,
+      "path": "Assets/_Project/Scripts/PerformanceMonitor.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 161,
+      "path": "Assets/_Project/Scripts/Physics/FluidFeedbackListener.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 1009,
+      "path": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 1032,
+      "path": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 1056,
+      "path": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 1082,
+      "path": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 266,
+      "path": "Assets/_Project/Scripts/PlayerFlashlight.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 192,
+      "path": "Assets/_Project/Scripts/PlayerPDA.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 154,
+      "path": "Assets/_Project/Scripts/Power/PowerGridTelemetryEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 167,
+      "path": "Assets/_Project/Scripts/PowerGrid.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 298,
+      "path": "Assets/_Project/Scripts/PowerGrid.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 717,
+      "path": "Assets/_Project/Scripts/PowerGrid.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 762,
+      "path": "Assets/_Project/Scripts/PowerGrid.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 1242,
+      "path": "Assets/_Project/Scripts/PowerGrid.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 1397,
+      "path": "Assets/_Project/Scripts/PowerGrid.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 1423,
+      "path": "Assets/_Project/Scripts/PowerGrid.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 1468,
+      "path": "Assets/_Project/Scripts/PowerGrid.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 1502,
+      "path": "Assets/_Project/Scripts/PowerGrid.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 85,
+      "path": "Assets/_Project/Scripts/PowerNode.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 120,
+      "path": "Assets/_Project/Scripts/PowerNode.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 227,
+      "path": "Assets/_Project/Scripts/PowerNode.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 254,
+      "path": "Assets/_Project/Scripts/PowerNode.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 62,
+      "path": "Assets/_Project/Scripts/Quest/QuestEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 64,
+      "path": "Assets/_Project/Scripts/Quest/QuestEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 187,
+      "path": "Assets/_Project/Scripts/Quest/QuestEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 60,
+      "path": "Assets/_Project/Scripts/SaveEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 62,
+      "path": "Assets/_Project/Scripts/SaveEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 267,
+      "path": "Assets/_Project/Scripts/SaveEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 141,
+      "path": "Assets/_Project/Scripts/SaveManager.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 107,
+      "path": "Assets/_Project/Scripts/ScanEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 220,
+      "path": "Assets/_Project/Scripts/ScanEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 9802,
+      "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 322,
+      "path": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 585,
+      "path": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 184,
+      "path": "Assets/_Project/Scripts/SubmarineElectrolysisModule.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 28,
+      "path": "Assets/_Project/Scripts/UI/AcousticEcholocationTranslator.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 80,
+      "path": "Assets/_Project/Scripts/UI/BaseIntegrityHUD.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 82,
+      "path": "Assets/_Project/Scripts/UI/BaseIntegrityHUD.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 247,
+      "path": "Assets/_Project/Scripts/UI/BaseIntegrityHUD.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 47,
+      "path": "Assets/_Project/Scripts/UI/NotificationEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 49,
+      "path": "Assets/_Project/Scripts/UI/NotificationEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 169,
+      "path": "Assets/_Project/Scripts/UI/NotificationEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 62,
+      "path": "Assets/_Project/Scripts/UI/PDAIntrusionManager.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 64,
+      "path": "Assets/_Project/Scripts/UI/PDAIntrusionManager.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 201,
+      "path": "Assets/_Project/Scripts/UI/PDAIntrusionManager.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 867,
+      "path": "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 909,
+      "path": "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 951,
+      "path": "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 993,
+      "path": "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 1035,
+      "path": "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 1076,
+      "path": "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 132,
+      "path": "Assets/_Project/Scripts/World/DepthZoneDirector.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 36,
+      "path": "Assets/_Project/Scripts/World/EmergencyServiceRelayEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 37,
+      "path": "Assets/_Project/Scripts/World/EmergencyServiceRelayEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 176,
+      "path": "Assets/_Project/Scripts/World/EmergencyServiceRelayEvents.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 287,
+      "path": "Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 288,
+      "path": "Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 1067,
+      "path": "Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 1104,
+      "path": "Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 73,
+      "path": "Assets/_Project/Scripts/World/SoundscapeSystem.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 74,
+      "path": "Assets/_Project/Scripts/World/SoundscapeSystem.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    },
+    {
+      "detail": "Arrays or collections of interfaces block Burst/IL2CPP devirtualization; use flat concrete arrays or generic unmanaged constraints.",
+      "line": 206,
+      "path": "Assets/_Project/Scripts/World/SoundscapeSystem.cs",
+      "rule": "INTERFACE_CONTAINER_DEVIRTUALIZATION_RISK",
+      "scanner": "Dev_Virtualization",
+      "severity": 1
+    }
+  ],
+  "scanner": "Dev_Virtualization",
+  "warningCount": 182
+}

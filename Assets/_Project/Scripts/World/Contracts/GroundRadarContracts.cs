@@ -35,6 +35,17 @@ namespace Hecton8.World
     }
 
     /// <summary>
+    /// Registry-facing command lane for data-only procedural resource depletion.
+    /// </summary>
+    public interface IWorldResourceSpawnerCommandModel
+    {
+        /// <summary>
+        /// Marks a sparse ore scan index as depleted, emits owner-local depletion side effects, and returns primitive data for interaction/VFX consumers.
+        /// </summary>
+        bool TryMarkOreDepleted(int oreIndex, out uint oreHash, out uint itemHash, out float3 depletedPosition);
+    }
+
+    /// <summary>
     /// Stable ore ids shared by ore authority, GPR filtering, HUD controls, and telemetry.
     /// </summary>
     public static class WorldOreTypeIds

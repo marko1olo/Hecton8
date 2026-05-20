@@ -86,7 +86,7 @@ namespace Hecton8.Gameplay
         private static readonly char[] s_integrityDiagnosticPrefixChars = "INTEGRITY ".ToCharArray();
         private static FixedCharBuffer s_hudBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - repair tool HUD staging buffer - owner: RepairTool
 
-        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = RepairBlackBoxEntrySizeBytes)]
+        [StructLayout(LayoutKind.Explicit, Size = RepairBlackBoxEntrySizeBytes)]
         private struct RepairToolBlackBoxEntry
         {
             [FieldOffset(0)]
@@ -369,6 +369,7 @@ namespace Hecton8.Gameplay
 
         public override void OnDespawn()
         {
+            SyncRepairChargeMirrorFromCentral();
             _isRepairing = false;
             _wasRepairingLastFrame = false;
             _invalidTargetReportedThisUse = false;
@@ -402,6 +403,7 @@ namespace Hecton8.Gameplay
 
         public override void OnUnequip()
         {
+            SyncRepairChargeMirrorFromCentral();
             _isRepairing = false;
             _wasRepairingLastFrame = false;
             _invalidTargetReportedThisUse = false;
@@ -417,7 +419,12 @@ namespace Hecton8.Gameplay
 
         internal override float ResolveModularBatteryNormalized()
         {
-            return _installedBattery != null ? math.saturate(_batteryCharge) : 0f;
+            return _installedBattery != null ? BatteryCharge : 0f;
+        }
+
+        private void SyncRepairChargeMirrorFromCentral()
+        {
+            _batteryCharge = _installedBattery != null ? BatteryCharge : 0f;
         }
 
         private float ResolveRuntimeRepairRange()
@@ -1411,9 +1418,11 @@ namespace Hecton8.Gameplay
             if (!IsFiniteQuaternion(submarineRoot.rotation))
                 return false;
 
-            double3 hitAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPoint);
-            double3 rootAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(submarineRoot.position);
-            double3 relativeWorldDouble = hitAup - rootAup;
+            Vector3 rootPosition = submarineRoot.position;
+            double3 relativeWorldDouble = new double3(
+                (double)worldPoint.x - rootPosition.x,
+                (double)worldPoint.y - rootPosition.y,
+                (double)worldPoint.z - rootPosition.z);
             if (!math.all(math.isfinite(relativeWorldDouble)))
                 return false;
 
@@ -1451,9 +1460,11 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            double3 pointAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPoint);
-            double3 toolAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(toolTransform.position);
-            double3 relativeWorldDouble = pointAup - toolAup;
+            Vector3 toolPosition = toolTransform.position;
+            double3 relativeWorldDouble = new double3(
+                (double)worldPoint.x - toolPosition.x,
+                (double)worldPoint.y - toolPosition.y,
+                (double)worldPoint.z - toolPosition.z);
             if (!math.all(math.isfinite(relativeWorldDouble)))
                 return false;
 

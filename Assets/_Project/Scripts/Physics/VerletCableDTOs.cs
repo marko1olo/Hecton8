@@ -1,7 +1,6 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Reflection;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -24,16 +23,19 @@ namespace Hecton8.Physics
         public const int MockWorldSamplerStrideBytes = 80;
         public const int MockWinchSignalStrideBytes = 32;
         public const int MockSubmarineAnchorStrideBytes = 32;
-        public const int CableSnappedSignalStrideBytes = 48;
+        public const int CableSnappedSignalStrideBytes = 64;
         public const int CableTensionForceStrideBytes = 32;
         public const int CableAabbStrideBytes = 32;
         public const int BlackBoxEntryStrideBytes = 64;
         public const int TetherAupNodeStrideBytes = 64;
+        public const int CableNodeStrideBytes = 64;
         public const int TetherAupConstraintStrideBytes = 32;
         public const int TetherAupEndpointStrideBytes = 64;
         public const int TetherAupForcePacketStrideBytes = 64;
         public const int TetherSplineVertexStrideBytes = 32;
+        public const int TetherSplineIndirectArgsStrideBytes = 16;
         public const int TetherAupTelemetryStrideBytes = 64;
+        public const int TetherTelemetryStrideBytes = 64;
         public const int BlackBoxCapacity = 300;
         public const float MinConstraintLength = 0.0001f;
         public const float MinConstraintLengthSq = MinConstraintLength * MinConstraintLength;
@@ -62,24 +64,37 @@ namespace Hecton8.Physics
         public static bool ValidateTetherAupLayouts()
         {
             return UnsafeUtility.SizeOf<TetherNodeDTO>() == TetherAupNodeStrideBytes &&
+                   UnsafeUtility.SizeOf<CableNodeDTO>() == CableNodeStrideBytes &&
                    OffsetOf<TetherNodeDTO>(nameof(TetherNodeDTO.CurrentAUP)) == 0 &&
                    OffsetOf<TetherNodeDTO>(nameof(TetherNodeDTO.PreviousAUP)) == 24 &&
                    OffsetOf<TetherNodeDTO>(nameof(TetherNodeDTO.InverseMass)) == 48 &&
                    OffsetOf<TetherNodeDTO>(nameof(TetherNodeDTO.Flags)) == 52 &&
                    OffsetOf<TetherNodeDTO>("_pad0") == 56 &&
+                   OffsetOf<CableNodeDTO>(nameof(CableNodeDTO.CurrentAUP)) == 0 &&
+                   OffsetOf<CableNodeDTO>(nameof(CableNodeDTO.PreviousAUP)) == 24 &&
+                   OffsetOf<CableNodeDTO>(nameof(CableNodeDTO.InverseMass)) == 48 &&
+                   OffsetOf<CableNodeDTO>(nameof(CableNodeDTO.Flags)) == 52 &&
+                   OffsetOf<CableNodeDTO>("_pad0") == 56 &&
+                   OffsetOf<CableNodeDTO>("_pad7") == 63 &&
                    UnsafeUtility.SizeOf<TetherConstraintDTO>() == TetherAupConstraintStrideBytes &&
                    UnsafeUtility.SizeOf<TetherEndpointAupDTO>() == TetherAupEndpointStrideBytes &&
                    UnsafeUtility.SizeOf<TetherForcePacketDTO>() == TetherAupForcePacketStrideBytes &&
                    UnsafeUtility.SizeOf<TetherSplineVertexDTO>() == TetherSplineVertexStrideBytes &&
-                   UnsafeUtility.SizeOf<TetherAupTelemetryEntry>() == TetherAupTelemetryStrideBytes;
+                   UnsafeUtility.SizeOf<TetherSplineIndirectArgsDTO>() == TetherSplineIndirectArgsStrideBytes &&
+                   UnsafeUtility.SizeOf<TetherAupTelemetryEntry>() == TetherAupTelemetryStrideBytes &&
+                   UnsafeUtility.SizeOf<TetherTelemetryEntry>() == TetherTelemetryStrideBytes;
         }
 
         private static int OffsetOf<T>(string fieldName) where T : struct
         {
-            FieldInfo field = typeof(T).GetField(
-                fieldName,
-                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-            return field == null ? -1 : UnsafeUtility.GetFieldOffset(field);
+            try
+            {
+                return Marshal.OffsetOf(typeof(T), fieldName).ToInt32();
+            }
+            catch (ArgumentException)
+            {
+                return -1;
+            }
         }
 
         public static int ResolveIterationBudget(byte tier, int requested)
@@ -102,13 +117,13 @@ namespace Hecton8.Physics
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct VerletNodeDTO
     {
-        public float3 Position;
-        public float InvMass;
-        public float3 OldPosition;
-        public float _pad0;
+        [FieldOffset(0)] public float3 Position;
+        [FieldOffset(12)] public float InvMass;
+        [FieldOffset(16)] public float3 OldPosition;
+        [FieldOffset(28)] public float _pad0;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -118,7 +133,24 @@ namespace Hecton8.Physics
         [FieldOffset(24)] public double3 PreviousAUP;
         [FieldOffset(48)] public float InverseMass;
         [FieldOffset(52)] public uint Flags;
-        [FieldOffset(56)] private ulong _pad0;
+        [FieldOffset(56)] public ulong _pad0;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct CableNodeDTO
+    {
+        [FieldOffset(0)] public double3 CurrentAUP;
+        [FieldOffset(24)] public double3 PreviousAUP;
+        [FieldOffset(48)] public float InverseMass;
+        [FieldOffset(52)] public uint Flags;
+        [FieldOffset(56)] public byte _pad0;
+        [FieldOffset(57)] public byte _pad1;
+        [FieldOffset(58)] public byte _pad2;
+        [FieldOffset(59)] public byte _pad3;
+        [FieldOffset(60)] public byte _pad4;
+        [FieldOffset(61)] public byte _pad5;
+        [FieldOffset(62)] public byte _pad6;
+        [FieldOffset(63)] public byte _pad7;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -164,6 +196,15 @@ namespace Hecton8.Physics
         [FieldOffset(28)] public float Tension01;
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    public struct TetherSplineIndirectArgsDTO
+    {
+        [FieldOffset(0)] public uint VertexCountPerInstance;
+        [FieldOffset(4)] public uint InstanceCount;
+        [FieldOffset(8)] public uint StartVertex;
+        [FieldOffset(12)] public uint StartInstance;
+    }
+
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct TetherAupTelemetryEntry
     {
@@ -179,80 +220,95 @@ namespace Hecton8.Physics
         [FieldOffset(56)] private ulong _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct TetherTelemetryEntry
+    {
+        [FieldOffset(0)] public uint FrameIndex;
+        [FieldOffset(4)] public int NodeCount;
+        [FieldOffset(8)] public int IterationCount;
+        [FieldOffset(12)] public float MaxTension;
+        [FieldOffset(16)] public double3 AnchorAUP;
+        [FieldOffset(40)] public uint StateHash;
+        [FieldOffset(44)] public uint Flags;
+        [FieldOffset(48)] public float CpuMicroseconds;
+        [FieldOffset(52)] public float GlobalQualityWeight;
+        [FieldOffset(56)] private ulong _pad0;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct VerletConstraintDTO
     {
-        public int NodeA;
-        public int NodeB;
-        public float RestLength;
-        public float Stiffness;
+        [FieldOffset(0)] public int NodeA;
+        [FieldOffset(4)] public int NodeB;
+        [FieldOffset(8)] public float RestLength;
+        [FieldOffset(12)] public float Stiffness;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct GpuCableSplinePointDTO
     {
-        public float3 Position;
-        public float Tension01;
+        [FieldOffset(0)] public float3 Position;
+        [FieldOffset(12)] public float Tension01;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 80)]
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
     public struct GpuCableDrawParamsDTO
     {
-        public float4 Color;
-        public float4 StressColor;
-        public float4 Params0; // x=global stress, y=segment stress scale, z=point count, w=radius.
-        public float4 Params1; // x=indirect mode, y=visual tier, z=crystal density, w=silt intensity.
-        public float4 Params2; // x=visual clock, yzw reserved for visual-only overkill.
+        [FieldOffset(0)] public float4 Color;
+        [FieldOffset(16)] public float4 StressColor;
+        [FieldOffset(32)] public float4 Params0; // x=global stress, y=segment stress scale, z=point count, w=radius.
+        [FieldOffset(48)] public float4 Params1; // x=indirect mode, y=visual tier, z=crystal density, w=silt intensity.
+        [FieldOffset(64)] public float4 Params2; // x=visual clock, yzw reserved for visual-only overkill.
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct CableSystemDTO
     {
-        public int NodeOffset;
-        public int NodeCount;
-        public int ConstraintOffset;
-        public int ConstraintCount;
-        public int ActiveNodeCount;
-        public int MaterialIndex;
-        public int Flags;
-        public int CableId;
-        public float NodeRadius;
-        public float TargetLength;
-        public float ReelingSpeedMetersPerSecond;
-        public float MaxTension;
-        public float3 LocalOrigin;
-        public float HardwareTier;
+        [FieldOffset(0)] public int NodeOffset;
+        [FieldOffset(4)] public int NodeCount;
+        [FieldOffset(8)] public int ConstraintOffset;
+        [FieldOffset(12)] public int ConstraintCount;
+        [FieldOffset(16)] public int ActiveNodeCount;
+        [FieldOffset(20)] public int MaterialIndex;
+        [FieldOffset(24)] public int Flags;
+        [FieldOffset(28)] public int CableId;
+        [FieldOffset(32)] public float NodeRadius;
+        [FieldOffset(36)] public float TargetLength;
+        [FieldOffset(40)] public float ReelingSpeedMetersPerSecond;
+        [FieldOffset(44)] public float MaxTension;
+        [FieldOffset(48)] public float3 LocalOrigin;
+        [FieldOffset(60)] public float HardwareTier;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct VerletCableTuningDTO
     {
-        public float3 Gravity;
-        public float FluidFriction;
-        public int ConstraintIterations;
-        public float StretchThreshold01;
-        public float BreakForce;
-        public float RockFriction01;
-        public float ReelSpeedMetersPerSecond;
-        public float Reserved0;
-        public float Reserved1;
-        public float Reserved2;
-        public float Reserved3;
-        public float Reserved4;
-        public float Reserved5;
-        public float Reserved6;
+        [FieldOffset(0)] public float3 Gravity;
+        [FieldOffset(12)] public float FluidFriction;
+        [FieldOffset(16)] public int ConstraintIterations;
+        [FieldOffset(20)] public float StretchThreshold01;
+        [FieldOffset(24)] public float BreakForce;
+        [FieldOffset(28)] public float RockFriction01;
+        [FieldOffset(32)] public float ReelSpeedMetersPerSecond;
+        [FieldOffset(36)] public float Reserved0;
+        [FieldOffset(40)] public float Reserved1;
+        [FieldOffset(44)] public float Reserved2;
+        [FieldOffset(48)] public float Reserved3;
+        [FieldOffset(52)] public float Reserved4;
+        [FieldOffset(56)] public float Reserved5;
+        [FieldOffset(60)] public float Reserved6;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct CableMaterialDTO
     {
-        public uint MaterialHash;
-        public float LinearDensity;
-        public float YieldStretch01;
-        public float SnapStretch01;
-        public float4 SolverTuning;
-        public float4 VisualTuning;
-        public float4 LoadTuning;
+        [FieldOffset(0)] public uint MaterialHash;
+        [FieldOffset(4)] public float LinearDensity;
+        [FieldOffset(8)] public float YieldStretch01;
+        [FieldOffset(12)] public float SnapStretch01;
+        [FieldOffset(16)] public float4 SolverTuning;
+        [FieldOffset(32)] public float4 VisualTuning;
+        [FieldOffset(48)] public float4 LoadTuning;
 
         public static void GenerateEmergencyMockCables(NativeArray<CableMaterialDTO> materials)
         {
@@ -275,28 +331,28 @@ namespace Hecton8.Physics
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct SdfSampleDTO
     {
-        public float3 Normal;
-        public float Distance;
+        [FieldOffset(0)] public float3 Normal;
+        [FieldOffset(12)] public float Distance;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct MockSDFSampler
     {
-        public float3 SphereCenter;
-        public float SphereRadius;
-        public float3 SecondarySphereCenter;
-        public float SecondarySphereRadius;
-        public float PlaneY;
-        public float Padding0;
-        public float Padding1;
-        public float Padding2;
-        public float Padding3;
-        public float Padding4;
-        public float Padding5;
-        public float Padding6;
+        [FieldOffset(0)] public float3 SphereCenter;
+        [FieldOffset(12)] public float SphereRadius;
+        [FieldOffset(16)] public float3 SecondarySphereCenter;
+        [FieldOffset(28)] public float SecondarySphereRadius;
+        [FieldOffset(32)] public float PlaneY;
+        [FieldOffset(36)] public float Padding0;
+        [FieldOffset(40)] public float Padding1;
+        [FieldOffset(44)] public float Padding2;
+        [FieldOffset(48)] public float Padding3;
+        [FieldOffset(52)] public float Padding4;
+        [FieldOffset(56)] public float Padding5;
+        [FieldOffset(60)] public float Padding6;
 
         public float SampleDistance(float3 position)
         {
@@ -362,12 +418,12 @@ namespace Hecton8.Physics
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 80)]
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
     public partial struct MockWorldSampler
     {
-        public MockSDFSampler Sdf;
-        public float3 FlowVelocity;
-        public float FlowAccelerationScale;
+        [FieldOffset(0)] public MockSDFSampler Sdf;
+        [FieldOffset(64)] public float3 FlowVelocity;
+        [FieldOffset(76)] public float FlowAccelerationScale;
 
         public float SampleDistance(float3 position)
         {
@@ -397,78 +453,80 @@ namespace Hecton8.Physics
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct MockWinchSignal
     {
-        public int SystemIndex;
-        public int Flags;
-        public float DeltaMeters;
-        public float SpeedMetersPerSecond;
-        public float MinRestLength;
-        public uint Sequence;
-        public uint FrameIndex;
-        public uint Reserved;
+        [FieldOffset(0)] public int SystemIndex;
+        [FieldOffset(4)] public int Flags;
+        [FieldOffset(8)] public float DeltaMeters;
+        [FieldOffset(12)] public float SpeedMetersPerSecond;
+        [FieldOffset(16)] public float MinRestLength;
+        [FieldOffset(20)] public uint Sequence;
+        [FieldOffset(24)] public uint FrameIndex;
+        [FieldOffset(28)] public uint Reserved;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct MockSubmarineAnchor
     {
-        public float3 Position;
-        public uint EntityId;
-        public float3 Velocity;
-        public float InvMass;
+        [FieldOffset(0)] public float3 Position;
+        [FieldOffset(12)] public uint EntityId;
+        [FieldOffset(16)] public float3 Velocity;
+        [FieldOffset(28)] public float InvMass;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct CableSnappedSignal
     {
-        public float3 Position;
-        public float PeakTension;
-        public int CableId;
-        public int ConstraintIndex;
-        public uint FrameIndex;
-        public byte Reason;
-        public byte Flags;
-        public ushort NodeCount;
-        public float SnapThreshold;
-        public float Severity01;
-        public uint Reserved;
-        public uint Reserved1;
+        [FieldOffset(0)] public float3 Position;
+        [FieldOffset(12)] public float PeakTension;
+        [FieldOffset(16)] public int CableId;
+        [FieldOffset(20)] public int ConstraintIndex;
+        [FieldOffset(24)] public uint FrameIndex;
+        [FieldOffset(28)] public byte Reason;
+        [FieldOffset(29)] public byte Flags;
+        [FieldOffset(30)] public ushort NodeCount;
+        [FieldOffset(32)] public float SnapThreshold;
+        [FieldOffset(36)] public float Severity01;
+        [FieldOffset(40)] public uint Reserved;
+        [FieldOffset(44)] public uint Reserved1;
+        [FieldOffset(48)] public ulong Reserved2;
+        [FieldOffset(56)] public ulong Reserved3;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct CableTensionForceDTO
     {
-        public float3 Force;
-        public int CableId;
-        public float3 ApplicationPoint;
-        public float Tension;
+        [FieldOffset(0)] public float3 Force;
+        [FieldOffset(12)] public int CableId;
+        [FieldOffset(16)] public float3 ApplicationPoint;
+        [FieldOffset(28)] public float Tension;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct CableAabbDTO
     {
-        public float3 Min;
-        public int Visible;
-        public float3 Max;
-        public int Dirty;
+        [FieldOffset(0)] public float3 Min;
+        [FieldOffset(12)] public int Visible;
+        [FieldOffset(16)] public float3 Max;
+        [FieldOffset(28)] public int Dirty;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct VerletCableBlackBoxEntry
     {
-        public uint FrameIndex;
-        public int CableId;
-        public int ActiveNodeCount;
-        public int ConstraintCount;
-        public float3 FirstPosition;
-        public float MaxTension;
-        public float3 LastPosition;
-        public float AverageError;
-        public uint Flags;
-        public uint StateHash;
-        public uint Reserved0;
-        public uint Reserved1;
+        [FieldOffset(0)] public uint FrameIndex;
+        [FieldOffset(4)] public int CableId;
+        [FieldOffset(8)] public int ActiveNodeCount;
+        [FieldOffset(12)] public int ConstraintCount;
+        [FieldOffset(16)] public float3 FirstPosition;
+        [FieldOffset(28)] public float MaxTension;
+        [FieldOffset(32)] public float3 LastPosition;
+        [FieldOffset(44)] public float AverageError;
+        [FieldOffset(48)] public uint Flags;
+        [FieldOffset(52)] public uint StateHash;
+        [FieldOffset(56)] public uint Reserved0;
+        [FieldOffset(60)] public uint Reserved1;
     }
 
     public unsafe struct VerletCableNodeBuffer
@@ -491,14 +549,14 @@ namespace Hecton8.Physics
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct VerletNodeIntegrationDTOJob : IJobParallelFor
     {
         private const byte PinnedMask = 1;
 
-        public NativeArray<VerletNodeDTO> Nodes;
-        [ReadOnly] public NativeArray<float3> PinnedPositions;
-        [ReadOnly] public NativeArray<byte> PinnedState;
+        [NoAlias] public NativeArray<VerletNodeDTO> Nodes;
+        [ReadOnly, NoAlias] public NativeArray<float3> PinnedPositions;
+        [ReadOnly, NoAlias] public NativeArray<byte> PinnedState;
         public MockWorldSampler WorldSampler;
         public float3 ExternalAcceleration;
         public float DeltaTime;
@@ -575,16 +633,16 @@ namespace Hecton8.Physics
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct VerletConstraintRelaxationDTOJob : IJob
     {
-        public NativeArray<VerletNodeDTO> Nodes;
-        public NativeArray<VerletConstraintDTO> Constraints;
-        public NativeArray<float> SegmentTensions;
-        public NativeArray<float> SolverStats;
-        public NativeArray<CableTensionForceDTO> TensionForces;
-        public NativeArray<CableSnappedSignal> SnapSignals;
-        public NativeArray<int> SnapSignalCount;
+        [NoAlias] public NativeArray<VerletNodeDTO> Nodes;
+        [NoAlias] public NativeArray<VerletConstraintDTO> Constraints;
+        [NoAlias] public NativeArray<float> SegmentTensions;
+        [NoAlias] public NativeArray<float> SolverStats;
+        [NoAlias] public NativeArray<CableTensionForceDTO> TensionForces;
+        [NoAlias] public NativeArray<CableSnappedSignal> SnapSignals;
+        [NoAlias] public NativeArray<int> SnapSignalCount;
         public int IterationCount;
         public int ActiveConstraintCount;
         public int CableId;
@@ -741,12 +799,12 @@ namespace Hecton8.Physics
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct VerletWinchReelDTOJob : IJob
     {
-        public NativeArray<CableSystemDTO> Systems;
-        public NativeArray<VerletConstraintDTO> Constraints;
-        [ReadOnly] public NativeArray<MockWinchSignal> WinchSignals;
+        [NoAlias] public NativeArray<CableSystemDTO> Systems;
+        [NoAlias] public NativeArray<VerletConstraintDTO> Constraints;
+        [ReadOnly, NoAlias] public NativeArray<MockWinchSignal> WinchSignals;
         public int SystemIndex;
         public int WinchSignalIndex;
         public float DeltaTime;
@@ -801,10 +859,10 @@ namespace Hecton8.Physics
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct VerletCableOriginShiftDTOJob : IJobParallelFor
     {
-        public NativeArray<VerletNodeDTO> Nodes;
+        [NoAlias] public NativeArray<VerletNodeDTO> Nodes;
         public float3 ShiftOffset;
 
         public void Execute(int index)
@@ -822,12 +880,12 @@ namespace Hecton8.Physics
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct VerletGpuSplineCopyJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<VerletNodeDTO> Nodes;
-        [ReadOnly] public NativeArray<float> SegmentTensions;
-        public NativeArray<GpuCableSplinePointDTO> GpuPoints;
+        [ReadOnly, NoAlias] public NativeArray<VerletNodeDTO> Nodes;
+        [ReadOnly, NoAlias] public NativeArray<float> SegmentTensions;
+        [NoAlias] public NativeArray<GpuCableSplinePointDTO> GpuPoints;
         public float3 Origin;
         public float InvSnapTension;
 
@@ -848,12 +906,12 @@ namespace Hecton8.Physics
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct VerletAabbFrustumCullJob : IJob
     {
-        [ReadOnly] public NativeArray<VerletNodeDTO> Nodes;
-        [ReadOnly] public NativeArray<float4> FrustumPlanes;
-        public NativeArray<CableAabbDTO> Aabbs;
+        [ReadOnly, NoAlias] public NativeArray<VerletNodeDTO> Nodes;
+        [ReadOnly, NoAlias] public NativeArray<float4> FrustumPlanes;
+        [NoAlias] public NativeArray<CableAabbDTO> Aabbs;
         public int AabbIndex;
         public float3 Origin;
         public float Radius;
@@ -903,13 +961,13 @@ namespace Hecton8.Physics
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct VerletBlackBoxWriteJob : IJob
     {
-        [ReadOnly] public NativeArray<VerletNodeDTO> Nodes;
-        [ReadOnly] public NativeArray<float> SolverStats;
-        public NativeArray<VerletCableBlackBoxEntry> Ring;
-        public NativeArray<int> Head;
+        [ReadOnly, NoAlias] public NativeArray<VerletNodeDTO> Nodes;
+        [ReadOnly, NoAlias] public NativeArray<float> SolverStats;
+        [NoAlias] public NativeArray<VerletCableBlackBoxEntry> Ring;
+        [NoAlias] public NativeArray<int> Head;
         public int CableId;
         public int ActiveNodeCount;
         public int ConstraintCount;
@@ -988,6 +1046,36 @@ namespace Hecton8.Physics
             return parsed;
         }
 
+        public static int ParseHashTable(ReadOnlySpan<byte> csv, NativeArray<CableMaterialDTO> output)
+        {
+            if (!output.IsCreated || output.Length == 0 || csv.Length == 0)
+                return 0;
+
+            for (int i = 0; i < output.Length; i++)
+                output[i] = default;
+
+            int parsed = 0;
+            int cursor = 0;
+            while (cursor < csv.Length)
+            {
+                int lineStart = cursor;
+                while (cursor < csv.Length && csv[cursor] != (byte)'\n' && csv[cursor] != (byte)'\r')
+                    cursor++;
+
+                ReadOnlySpan<byte> line = csv.Slice(lineStart, cursor - lineStart);
+                if (TryParseLine(line, parsed, out CableMaterialDTO material) &&
+                    TryInsertHashSlot(output, material))
+                {
+                    parsed++;
+                }
+
+                while (cursor < csv.Length && (csv[cursor] == (byte)'\n' || csv[cursor] == (byte)'\r'))
+                    cursor++;
+            }
+
+            return parsed;
+        }
+
         public static int Parse(ReadOnlySpan<char> csv, NativeArray<CableMaterialDTO> output)
         {
             if (!output.IsCreated || output.Length == 0 || csv.Length == 0)
@@ -1013,6 +1101,33 @@ namespace Hecton8.Physics
             }
 
             return parsed;
+        }
+
+        public static bool TryFindHashSlot(NativeArray<CableMaterialDTO> table, uint materialHash, out CableMaterialDTO material)
+        {
+            material = default;
+            if (!table.IsCreated || table.Length == 0 || materialHash == 0u)
+                return false;
+
+            int start = (int)(materialHash % (uint)table.Length);
+            for (int probe = 0; probe < table.Length; probe++)
+            {
+                int index = start + probe;
+                if (index >= table.Length)
+                    index -= table.Length;
+
+                CableMaterialDTO candidate = table[index];
+                if (candidate.MaterialHash == materialHash)
+                {
+                    material = candidate;
+                    return true;
+                }
+
+                if (candidate.MaterialHash == 0u)
+                    return false;
+            }
+
+            return false;
         }
 
         private static bool TryParseLine(ReadOnlySpan<byte> line, int rowIndex, out CableMaterialDTO material)
@@ -1103,6 +1218,29 @@ namespace Hecton8.Physics
                 LoadTuning = new float4(24f, 3f, 5f, 10f)
             };
             return true;
+        }
+
+        private static bool TryInsertHashSlot(NativeArray<CableMaterialDTO> table, CableMaterialDTO material)
+        {
+            if (!table.IsCreated || table.Length == 0 || material.MaterialHash == 0u)
+                return false;
+
+            int start = (int)(material.MaterialHash % (uint)table.Length);
+            for (int probe = 0; probe < table.Length; probe++)
+            {
+                int index = start + probe;
+                if (index >= table.Length)
+                    index -= table.Length;
+
+                uint existingHash = table[index].MaterialHash;
+                if (existingHash == 0u || existingHash == material.MaterialHash)
+                {
+                    table[index] = material;
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static bool TryParseLine(ReadOnlySpan<char> line, int rowIndex, out CableMaterialDTO material)

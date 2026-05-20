@@ -534,8 +534,8 @@ namespace Hecton8.QA.Headless
         {
             if (_navigationPending)
             {
-                _navigationHandle.Complete();
-                _navigationPending = false;
+                if (DispatcherJobFence.TryComplete(ref _navigationHandle, forceComplete: true))
+                    _navigationPending = false;
             }
 
             StopFileWriter(flushPending: true);
@@ -617,10 +617,9 @@ namespace Hecton8.QA.Headless
             if (!_navigationPending)
                 return;
 
-            if (!_navigationHandle.IsCompleted && !Application.isBatchMode)
+            if (!DispatcherJobFence.TryComplete(ref _navigationHandle, forceComplete: Application.isBatchMode))
                 return;
 
-            _navigationHandle.Complete();
             _navigationPending = false;
             ConsumeNavigationResult();
         }
@@ -713,7 +712,7 @@ namespace Hecton8.QA.Headless
             clearHandle = ScheduleClear(fileWriterState, clearHandle);
             clearHandle = ScheduleClear(fileWriterCursor, clearHandle);
             clearHandle = ScheduleClear(waypointIngestState, clearHandle);
-            clearHandle.Complete(); // COLD SYNC JOB: init-only MemClear before first watchdog frame - owner: Shinobu38QaWatchdogRuntime
+            DispatcherJobFence.TryComplete(ref clearHandle, forceComplete: true); // COLD SYNC JOB: init-only MemClear before first watchdog frame - owner: Shinobu38QaWatchdogRuntime
 
             tuningBuffer[0] = tuning;
             GenerateEmergencyMockRoute(stateBuffer, waypoints, mockVault);

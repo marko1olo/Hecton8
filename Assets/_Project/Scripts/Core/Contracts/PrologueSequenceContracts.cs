@@ -56,7 +56,7 @@ namespace Hecton8.Core.Contracts
         public const uint OrbitalRelativityDirector = 0x4F524249u; // ORBI
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public readonly struct PrologueOrbitalSnapshot
     {
         public PrologueOrbitalSnapshot(
@@ -77,16 +77,16 @@ namespace Hecton8.Core.Contracts
             Flags = flags;
         }
 
-        public double3 UniverseVelocity { get; }
-        public double PlanetDistanceMeters { get; }
-        public float ReentryHeat01 { get; }
-        public float CloudWhiteout01 { get; }
-        public uint Sequence { get; }
-        public byte MathLod { get; }
-        public byte Flags { get; }
+        [FieldOffset(0)] public readonly double3 UniverseVelocity;
+        [FieldOffset(24)] public readonly double PlanetDistanceMeters;
+        [FieldOffset(32)] public readonly float ReentryHeat01;
+        [FieldOffset(36)] public readonly float CloudWhiteout01;
+        [FieldOffset(40)] public readonly uint Sequence;
+        [FieldOffset(44)] public readonly byte MathLod;
+        [FieldOffset(45)] public readonly byte Flags;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public readonly struct PrologueAtmosphericReentrySnapshot
     {
         public PrologueAtmosphericReentrySnapshot(
@@ -105,15 +105,15 @@ namespace Hecton8.Core.Contracts
             Flags = flags;
         }
 
-        public float AltitudeMeters { get; }
-        public float UniverseVelocityMetersPerSecond { get; }
-        public float Heat01 { get; }
-        public ushort Sequence { get; }
-        public byte Phase { get; }
-        public byte Flags { get; }
+        [FieldOffset(0)] public readonly float AltitudeMeters;
+        [FieldOffset(4)] public readonly float UniverseVelocityMetersPerSecond;
+        [FieldOffset(8)] public readonly float Heat01;
+        [FieldOffset(12)] public readonly ushort Sequence;
+        [FieldOffset(14)] public readonly byte Phase;
+        [FieldOffset(15)] public readonly byte Flags;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public readonly struct PrologueCompleteSnapshot
     {
         public PrologueCompleteSnapshot(uint frame, float whiteoutHoldSeconds, ushort sequence, byte phase, byte flags)
@@ -125,11 +125,11 @@ namespace Hecton8.Core.Contracts
             Flags = flags;
         }
 
-        public uint Frame { get; }
-        public float WhiteoutHoldSeconds { get; }
-        public ushort Sequence { get; }
-        public byte Phase { get; }
-        public byte Flags { get; }
+        [FieldOffset(0)] public readonly uint Frame;
+        [FieldOffset(4)] public readonly float WhiteoutHoldSeconds;
+        [FieldOffset(8)] public readonly ushort Sequence;
+        [FieldOffset(10)] public readonly byte Phase;
+        [FieldOffset(11)] public readonly byte Flags;
     }
 
     public interface IPrologueSequenceRuntime

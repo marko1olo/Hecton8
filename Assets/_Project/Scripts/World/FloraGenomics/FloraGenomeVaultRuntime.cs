@@ -313,8 +313,8 @@ namespace Hecton8.World
             if (_vault == null || ticket.IsCreated == 0 || !ticket.Handle.IsCompleted)
                 return false;
 
-            // Frame-boundary drain only: IsCompleted is true, so this does not stall gameplay ticks.
-            ticket.Handle.Complete();
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref ticket.Handle))
+                return false;
 
             NativeArray<FloraGenomeJobStats> statsVault = _statsHandle.Resolve(_vault);
             if (!statsVault.IsCreated || statsVault.Length <= FloraGenomeLSystemUtility.StatsDecoderIndex)
@@ -344,13 +344,14 @@ namespace Hecton8.World
             if (!genomes.IsCreated || !stats.IsCreated)
                 return;
 
-            new FloraGenomeDecoderJob
+            FloraGenomeDecoderJob decoderJob = new FloraGenomeDecoderJob
             {
                 RawBytes = rawBytes,
                 RawByteCount = byteCount,
                 Genomes = genomes,
                 Stats = stats
-            }.Run();
+            };
+            decoderJob.Execute();
 
             _genomeCount = stats[0].GenomeCount;
         }

@@ -11,47 +11,83 @@ namespace Hecton8.Thermodynamics
     {
         public const uint CellFlagInjected = 1u << 0;
         public const uint CellFlagHullInsulated = 1u << 1;
+        public const uint CellFlagDivergent = 1u << 30;
         public const uint CellFlagNaN = 1u << 31;
         public const uint TelemetryFlagNaN = 1u << 0;
         public const uint TelemetryFlagShift = 1u << 1;
         public const uint TelemetryFlagMockSources = 1u << 2;
         public const uint TelemetryFlagEnergyDrift = 1u << 3;
+        public const uint TelemetryFlagDivergent = 1u << 4;
+        public const uint TelemetryFlagMaxIterations = 1u << 5;
+        public const ushort SolverFlagConverged = 1 << 0;
+        public const ushort SolverFlagDivergent = 1 << 1;
+        public const ushort SolverFlagNonFinite = 1 << 2;
+        public const ushort SolverFlagMaxIterations = 1 << 3;
         public const int TelemetryCapacity = 300;
+        public const int ResidualThreadSlotCount = 128;
+        public const int MaxThermalSourceCapacity = 128;
+        public const int MaxSafeResolution = 32;
+        public const int MaxSafeCellCount = MaxSafeResolution * MaxSafeResolution * MaxSafeResolution;
+        public const uint ResidualSlotFaultNonFinite = 1u;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float FiniteOr(float value, float fallback)
+        {
+            return math.isfinite(value) ? value : fallback;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int3 SafeResolution(int3 resolution)
+        {
+            return math.clamp(
+                resolution,
+                new int3(1, 1, 1),
+                new int3(MaxSafeResolution, MaxSafeResolution, MaxSafeResolution));
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int Index(int x, int y, int z, int3 resolution)
         {
-            return (z * resolution.y * resolution.x) + (y * resolution.x) + x;
+            int3 safeResolution = SafeResolution(resolution);
+            int ix = math.clamp(x, 0, safeResolution.x - 1);
+            int iy = math.clamp(y, 0, safeResolution.y - 1);
+            int iz = math.clamp(z, 0, safeResolution.z - 1);
+            return (iz * safeResolution.y * safeResolution.x) + (iy * safeResolution.x) + ix;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int3 DecodeIndex(int index, int3 resolution)
         {
-            int xy = resolution.x * resolution.y;
-            int z = index / xy;
-            int rem = index - (z * xy);
-            int y = rem / resolution.x;
-            int x = rem - (y * resolution.x);
+            int3 safeResolution = SafeResolution(resolution);
+            int maxIndex = math.max(0, (safeResolution.x * safeResolution.y * safeResolution.z) - 1);
+            int safeIndex = math.clamp(index, 0, maxIndex);
+            int xy = math.max(1, safeResolution.x * safeResolution.y);
+            int z = math.min(safeResolution.z - 1, safeIndex / xy);
+            int rem = safeIndex - (z * xy);
+            int y = math.min(safeResolution.y - 1, rem / safeResolution.x);
+            int x = rem - (y * safeResolution.x);
             return new int3(x, y, z);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int PositiveModulo(int value, int modulus)
         {
-            int result = value % modulus;
-            return result < 0 ? result + modulus : result;
+            int safeModulus = math.max(1, modulus);
+            int result = value % safeModulus;
+            return result < 0 ? result + safeModulus : result;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int3 MapAupToWrappedCell(double3 sampleAup, double3 originAup, float cellSizeMeters, int3 resolution)
         {
+            int3 safeResolution = SafeResolution(resolution);
             double3 localDouble = sampleAup - originAup;
             float3 local = new float3((float)localDouble.x, (float)localDouble.y, (float)localDouble.z);
             int3 raw = (int3)math.floor(local / math.max(0.001f, cellSizeMeters));
             return new int3(
-                PositiveModulo(raw.x, resolution.x),
-                PositiveModulo(raw.y, resolution.y),
-                PositiveModulo(raw.z, resolution.z));
+                PositiveModulo(raw.x, safeResolution.x),
+                PositiveModulo(raw.y, safeResolution.y),
+                PositiveModulo(raw.z, safeResolution.z));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -65,6 +101,31 @@ namespace Hecton8.Thermodynamics
         {
             float q = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
             return math.clamp((int)math.lerp(1f, 6f, q), 1, 6);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveSolverOmega(float globalQualityWeight)
+        {
+            float q = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
+            float curve = q * q * (3f - (2f * q));
+            return math.clamp(math.lerp(1f, 1.62f, curve), 1f, 1.85f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveSolverTargetTolerance(float globalQualityWeight)
+        {
+            float q = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
+            float curve = q * q * (3f - (2f * q));
+            return math.lerp(0.5f, 0.001f, curve);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int ResolveResidualSampleMask(float globalQualityWeight)
+        {
+            float q = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
+            float curve = q * q * (3f - (2f * q));
+            int exponent = math.clamp((int)math.round(math.lerp(3f, 0f, curve)), 0, 3);
+            return (1 << exponent) - 1;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -119,6 +180,47 @@ namespace Hecton8.Thermodynamics
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public unsafe struct InitializeThermalSolverConvergenceJob : IJobParallelFor
+    {
+        [NativeDisableUnsafePtrRestriction, NoAlias] public ThermalSolverConvergenceStateDTO* SolverState;
+        [NativeDisableUnsafePtrRestriction, NoAlias] public ThermalResidualSlot64* ResidualSamples;
+        public int ResidualSlotCount;
+        public float BaseOmega;
+
+        public void Execute(int index)
+        {
+            int slotCount = math.clamp(ResidualSlotCount, 1, AbyssalThermalMath.ResidualThreadSlotCount);
+            if ((uint)index < (uint)slotCount)
+                ResidualSamples[index] = default;
+            if (index == 0)
+            {
+                SolverState[0] = new ThermalSolverConvergenceStateDTO
+                {
+                    MaxResidualFloat = float.MaxValue,
+                    PreviousResidualFloat = float.MaxValue,
+                    Omega = math.clamp(AbyssalThermalMath.FiniteOr(BaseOmega, 1f), 1f, 1.85f),
+                    IterationCount = 0,
+                    FaultFlags = 0
+                };
+            }
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public unsafe struct ClearThermalSolverResidualSlotsJob : IJobParallelFor
+    {
+        [NativeDisableUnsafePtrRestriction, NoAlias] public ThermalResidualSlot64* ResidualSamples;
+        public int ResidualSlotCount;
+
+        public void Execute(int index)
+        {
+            int slotCount = math.clamp(ResidualSlotCount, 1, AbyssalThermalMath.ResidualThreadSlotCount);
+            if ((uint)index < (uint)slotCount)
+                ResidualSamples[index] = default;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct ThermalGridInitializeJob : IJobParallelFor
     {
         [NativeDisableUnsafePtrRestriction, NoAlias] public ThermalCellDTO* Front;
@@ -130,8 +232,8 @@ namespace Hecton8.Thermodynamics
         public void Execute(int index)
         {
             ThermalCellDTO cell;
-            cell.TemperatureCelsius = AmbientTemperatureCelsius;
-            cell.ThermalConductivity = WaterThermalConductivity;
+            cell.TemperatureCelsius = AbyssalThermalMath.FiniteOr(AmbientTemperatureCelsius, 0f);
+            cell.ThermalConductivity = math.max(0.0001f, AbyssalThermalMath.FiniteOr(WaterThermalConductivity, 0.18f));
             cell.ConvectionVelocityY = 0f;
             cell.Flags = 0u;
 
@@ -154,7 +256,7 @@ namespace Hecton8.Thermodynamics
         {
             ThermalCellDTO cell = Injection[index];
             cell.TemperatureCelsius = 0f;
-            cell.ThermalConductivity = WaterThermalConductivity;
+            cell.ThermalConductivity = math.max(0.0001f, AbyssalThermalMath.FiniteOr(WaterThermalConductivity, 0.18f));
             cell.ConvectionVelocityY = 0f;
             cell.Flags = 0u;
             Injection[index] = cell;
@@ -173,17 +275,20 @@ namespace Hecton8.Thermodynamics
         public void Execute()
         {
             int count = math.clamp(Tuning.MockVolcanoCount, 1, 16);
-            float radius = math.max(Tuning.CellSizeMeters, Tuning.MockVolcanoRadiusMeters);
-            float intensity = math.max(1f, Tuning.MockVolcanoIntensity);
-            float span = math.max(Tuning.CellSizeMeters, Tuning.CellSizeMeters * (Tuning.GridResolution.x - 2));
+            int3 safeResolution = AbyssalThermalMath.SafeResolution(Tuning.GridResolution);
+            float cellSize = math.max(0.001f, AbyssalThermalMath.FiniteOr(Tuning.CellSizeMeters, 8f));
+            float radius = math.max(cellSize, AbyssalThermalMath.FiniteOr(Tuning.MockVolcanoRadiusMeters, 42f));
+            float intensity = math.max(1f, AbyssalThermalMath.FiniteOr(Tuning.MockVolcanoIntensity, 180f));
+            float conductivity = math.max(0.0001f, AbyssalThermalMath.FiniteOr(Tuning.WaterThermalConductivity, 0.18f));
+            float span = math.max(cellSize, cellSize * (safeResolution.x - 2));
             double3 origin = Tuning.GridOriginAup;
 
             for (int i = 0; i < count; i++)
             {
                 float t = (i + 1f) / (count + 1f);
-                float x = (t * span) + (math.sin((Frame * 0.013f) + (i * 3.17f)) * Tuning.CellSizeMeters * 1.5f);
-                float z = ((1f - t) * span) + (math.cos((Frame * 0.011f) + (i * 2.41f)) * Tuning.CellSizeMeters * 1.5f);
-                float y = Tuning.CellSizeMeters * math.lerp(0.35f, 1.75f, math.frac(t * 2.37f));
+                float x = (t * span) + (math.sin((Frame * 0.013f) + (i * 3.17f)) * cellSize * 1.5f);
+                float z = ((1f - t) * span) + (math.cos((Frame * 0.011f) + (i * 2.41f)) * cellSize * 1.5f);
+                float y = cellSize * math.lerp(0.35f, 1.75f, math.frac(t * 2.37f));
 
                 HeatSourceDTO source;
                 source.Aup = origin + new double3(x, y, z);
@@ -193,7 +298,7 @@ namespace Hecton8.Thermodynamics
                 source.ProfileHash = ProfileHash;
                 source.SourceId = 0xAB710000u + (uint)i;
                 source.Flags = HeatSourceDTO.FlagMock;
-                source.ConductivityOverride = Tuning.WaterThermalConductivity;
+                source.ConductivityOverride = conductivity;
                 source.ConvectionGain = 1f;
                 source.Phase01 = math.frac((Frame * 0.001f) + t);
                 source.LastTouchedFrame = Frame;
@@ -214,18 +319,23 @@ namespace Hecton8.Thermodynamics
         public float DeltaTime;
         public uint Frame;
         public uint SourceTtlFrames;
+        public int SourceCapacity;
 
         public void Execute()
         {
-            int count = math.max(0, *SourceCount);
-            int3 resolution = Tuning.GridResolution;
-            float cellSize = math.max(0.001f, Tuning.CellSizeMeters);
+            int sourceCapacity = math.clamp(SourceCapacity, 0, AbyssalThermalMath.MaxThermalSourceCapacity);
+            int count = math.clamp(*SourceCount, 0, sourceCapacity);
+            int3 resolution = AbyssalThermalMath.SafeResolution(Tuning.GridResolution);
+            float cellSize = math.max(0.001f, AbyssalThermalMath.FiniteOr(Tuning.CellSizeMeters, 8f));
+            float safeDeltaTime = math.clamp(math.isfinite(DeltaTime) ? DeltaTime : 1f / 60f, 1f / 60f, 0.2f);
             double3 origin = Tuning.GridOriginAup;
 
             for (int sourceIndex = 0; sourceIndex < count; sourceIndex++)
             {
                 HeatSourceDTO source = Sources[sourceIndex];
-                if (source.RadiusMeters <= 0f || source.IntensityCelsiusPerSecond == 0f)
+                float radiusMeters = math.max(0f, AbyssalThermalMath.FiniteOr(source.RadiusMeters, 0f));
+                float intensity = AbyssalThermalMath.FiniteOr(source.IntensityCelsiusPerSecond, 0f);
+                if (radiusMeters <= 0f || intensity == 0f)
                     continue;
                 if ((source.Flags & HeatSourceDTO.FlagPersistent) == 0u &&
                     SourceTtlFrames > 0u &&
@@ -235,9 +345,12 @@ namespace Hecton8.Thermodynamics
                 }
 
                 int3 centerCell = AbyssalThermalMath.MapAupToWrappedCell(source.Aup, origin, cellSize, resolution);
-                int radiusCells = math.clamp((int)math.ceil(source.RadiusMeters / cellSize), 1, math.max(resolution.x, math.max(resolution.y, resolution.z)));
-                float invRadius = math.rcp(math.max(0.001f, source.RadiusMeters));
-                float falloff = math.max(0.25f, source.FalloffExponent);
+                int radiusCells = math.clamp((int)math.ceil(radiusMeters / cellSize), 1, math.max(resolution.x, math.max(resolution.y, resolution.z)));
+                float invRadius = math.rcp(math.max(0.001f, radiusMeters));
+                float falloff = math.max(0.25f, AbyssalThermalMath.FiniteOr(source.FalloffExponent, 1f));
+                float tuningConductivity = math.max(0.0001f, AbyssalThermalMath.FiniteOr(Tuning.WaterThermalConductivity, 0.18f));
+                float conductivity = math.max(0.0001f, AbyssalThermalMath.FiniteOr(source.ConductivityOverride, tuningConductivity));
+                float convectionGain = AbyssalThermalMath.FiniteOr(source.ConvectionGain, 0f);
 
                 for (int z = -radiusCells; z <= radiusCells; z++)
                 {
@@ -247,7 +360,7 @@ namespace Hecton8.Thermodynamics
                         {
                             float3 offsetMeters = new float3(x, y, z) * cellSize;
                             float distance = math.length(offsetMeters);
-                            if (distance > source.RadiusMeters)
+                            if (distance > radiusMeters)
                                 continue;
 
                             int ix = AbyssalThermalMath.PositiveModulo(centerCell.x + x, resolution.x);
@@ -255,14 +368,14 @@ namespace Hecton8.Thermodynamics
                             int iz = AbyssalThermalMath.PositiveModulo(centerCell.z + z, resolution.z);
                             int index = AbyssalThermalMath.Index(ix, iy, iz, resolution);
                             float weight = math.pow(math.saturate(1f - (distance * invRadius)), falloff);
-                            float heat = source.IntensityCelsiusPerSecond * DeltaTime * weight;
+                            float heat = intensity * safeDeltaTime * weight;
                             if (!math.isfinite(heat) || heat == 0f)
                                 continue;
 
                             ThermalCellDTO* cell = Injection + index;
                             AbyssalThermalMath.AddFinite(&cell->TemperatureCelsius, heat);
-                            cell->ThermalConductivity = math.select(Tuning.WaterThermalConductivity, source.ConductivityOverride, source.ConductivityOverride > 0f);
-                            cell->ConvectionVelocityY = math.max(cell->ConvectionVelocityY, heat * source.ConvectionGain);
+                            cell->ThermalConductivity = conductivity;
+                            cell->ConvectionVelocityY = math.max(cell->ConvectionVelocityY, heat * convectionGain);
                             cell->Flags |= AbyssalThermalMath.CellFlagInjected;
                         }
                     }
@@ -279,18 +392,20 @@ namespace Hecton8.Thermodynamics
 
         public void Execute(int index)
         {
-            int3 cellIndex = AbyssalThermalMath.DecodeIndex(index, Tuning.GridResolution);
-            float3 local = AbyssalThermalMath.CellCenterLocal(cellIndex, Tuning.CellSizeMeters);
-            float3 halfGrid = new float3(Tuning.GridResolution.x, Tuning.GridResolution.y, Tuning.GridResolution.z) * Tuning.CellSizeMeters * 0.5f;
+            int3 resolution = AbyssalThermalMath.SafeResolution(Tuning.GridResolution);
+            float cellSize = math.max(0.001f, AbyssalThermalMath.FiniteOr(Tuning.CellSizeMeters, 8f));
+            int3 cellIndex = AbyssalThermalMath.DecodeIndex(index, resolution);
+            float3 local = AbyssalThermalMath.CellCenterLocal(cellIndex, cellSize);
+            float3 halfGrid = new float3(resolution.x, resolution.y, resolution.z) * cellSize * 0.5f;
             float3 halfHull = new float3(
-                math.max(0f, Tuning.SubmarineHalfExtentX),
-                math.max(0f, Tuning.SubmarineHalfExtentY),
-                math.max(0f, Tuning.SubmarineHalfExtentZ));
+                math.max(0f, AbyssalThermalMath.FiniteOr(Tuning.SubmarineHalfExtentX, 0f)),
+                math.max(0f, AbyssalThermalMath.FiniteOr(Tuning.SubmarineHalfExtentY, 0f)),
+                math.max(0f, AbyssalThermalMath.FiniteOr(Tuning.SubmarineHalfExtentZ, 0f)));
 
             if (math.all(halfHull > 0f) && math.all(math.abs(local - halfGrid) <= halfHull))
             {
                 ThermalCellDTO cell = Cells[index];
-                cell.ThermalConductivity = math.max(0.0001f, Tuning.HullInsulationConductivity);
+                cell.ThermalConductivity = math.max(0.0001f, AbyssalThermalMath.FiniteOr(Tuning.HullInsulationConductivity, 0.0025f));
                 cell.Flags |= AbyssalThermalMath.CellFlagHullInsulated;
                 Cells[index] = cell;
             }
@@ -303,46 +418,98 @@ namespace Hecton8.Thermodynamics
         [NativeDisableUnsafePtrRestriction, NoAlias] public ThermalCellDTO* Front;
         [NativeDisableUnsafePtrRestriction, NoAlias] public ThermalCellDTO* Back;
         [NativeDisableUnsafePtrRestriction, NoAlias] public ThermalCellDTO* Injection;
+        [NativeDisableUnsafePtrRestriction, NoAlias] public ThermalSolverConvergenceStateDTO* SolverState;
+        [NativeDisableUnsafePtrRestriction, NoAlias] public ThermalResidualSlot64* ResidualSamples;
         public ThermalGridTuningDTO Tuning;
+        public int ResidualSampleMask;
+        public int ResidualSlotCount;
         public byte ApplyInjection;
+        [NativeSetThreadIndex] public int ThreadIndex;
 
         public void Execute(int index)
         {
-            int3 resolution = Tuning.GridResolution;
+            int3 resolution = AbyssalThermalMath.SafeResolution(Tuning.GridResolution);
             int3 c = AbyssalThermalMath.DecodeIndex(index, resolution);
             ThermalCellDTO currentCell = Front[index];
-            ThermalCellDTO injected = ApplyInjection != 0 ? Injection[index] : default;
-            float current = currentCell.TemperatureCelsius + injected.TemperatureCelsius;
-            float conductivity = math.max(0.0001f, currentCell.ThermalConductivity);
-            int iterations = math.max(1, Tuning.JacobiIterations);
-
-            for (int i = 0; i < iterations; i++)
+            ThermalSolverConvergenceStateDTO state = SolverState[0];
+            const ushort terminalFlags = (ushort)(
+                AbyssalThermalMath.SolverFlagConverged |
+                AbyssalThermalMath.SolverFlagDivergent |
+                AbyssalThermalMath.SolverFlagNonFinite);
+            if ((state.FaultFlags & terminalFlags) != 0)
             {
-                float weighted = current;
-                float weight = 1f;
-                AccumulateNeighbor(c.x - 1, c.y, c.z, resolution, conductivity, ref weighted, ref weight);
-                AccumulateNeighbor(c.x + 1, c.y, c.z, resolution, conductivity, ref weighted, ref weight);
-                AccumulateNeighbor(c.x, c.y - 1, c.z, resolution, conductivity, ref weighted, ref weight);
-                AccumulateNeighbor(c.x, c.y + 1, c.z, resolution, conductivity, ref weighted, ref weight);
-                AccumulateNeighbor(c.x, c.y, c.z - 1, resolution, conductivity, ref weighted, ref weight);
-                AccumulateNeighbor(c.x, c.y, c.z + 1, resolution, conductivity, ref weighted, ref weight);
-
-                current = weighted / math.max(0.0001f, weight);
+                Back[index] = currentCell;
+                return;
             }
 
-            current = math.lerp(current, Tuning.AmbientTemperatureCelsius, math.saturate(Tuning.DissipationPerStep));
+            ThermalCellDTO injected = ApplyInjection != 0 ? Injection[index] : default;
+            float ambient = AbyssalThermalMath.FiniteOr(Tuning.AmbientTemperatureCelsius, 0f);
+            float waterConductivity = math.max(0.0001f, AbyssalThermalMath.FiniteOr(Tuning.WaterThermalConductivity, 0.18f));
+            float dissipation = math.saturate(AbyssalThermalMath.FiniteOr(Tuning.DissipationPerStep, 0.0025f));
+            float maxStable = math.max(ambient + 1f, AbyssalThermalMath.FiniteOr(Tuning.MaxStableTemperatureCelsius, 200f));
+            float convectionSpeed = math.max(0f, AbyssalThermalMath.FiniteOr(Tuning.ConvectionSpeed, 0f));
+            float current = AbyssalThermalMath.FiniteOr(currentCell.TemperatureCelsius, ambient) + AbyssalThermalMath.FiniteOr(injected.TemperatureCelsius, 0f);
+            float conductivity = math.max(0.0001f, AbyssalThermalMath.FiniteOr(currentCell.ThermalConductivity, waterConductivity));
+            float omega = math.clamp(AbyssalThermalMath.FiniteOr(state.Omega, AbyssalThermalMath.ResolveSolverOmega(Tuning.GlobalQualityWeight)), 1f, 1.85f);
+            bool divergent = false;
+            bool nonFinite = false;
+            float maxResidual = 0f;
+
+            float weighted = current;
+            float weight = 1f;
+            AccumulateNeighbor(c.x - 1, c.y, c.z, resolution, conductivity, ref weighted, ref weight);
+            AccumulateNeighbor(c.x + 1, c.y, c.z, resolution, conductivity, ref weighted, ref weight);
+            AccumulateNeighbor(c.x, c.y - 1, c.z, resolution, conductivity, ref weighted, ref weight);
+            AccumulateNeighbor(c.x, c.y + 1, c.z, resolution, conductivity, ref weighted, ref weight);
+            AccumulateNeighbor(c.x, c.y, c.z - 1, resolution, conductivity, ref weighted, ref weight);
+            AccumulateNeighbor(c.x, c.y, c.z + 1, resolution, conductivity, ref weighted, ref weight);
+
+            float jacobi = weighted / math.max(0.0001f, weight);
+            float next = current + (jacobi - current) * omega;
+            float ambientAbs = math.abs(ambient) + 1f;
+            float stableLimit = math.max(1f, math.max(ambientAbs, maxStable)) * 4f;
+            if (!math.isfinite(next) || math.abs(next) > stableLimit)
+            {
+                nonFinite = !math.isfinite(next);
+                divergent = true;
+                next = current;
+            }
+
+            float residual = math.abs(next - current);
+            maxResidual = math.max(maxResidual, math.max(0f, residual));
+            current = next;
+
+            current = math.lerp(current, ambient, dissipation);
             ThermalCellDTO output = currentCell;
-            output.TemperatureCelsius = math.clamp(current, -273.15f, Tuning.MaxStableTemperatureCelsius);
-            output.ConvectionVelocityY = math.max(0f, (output.TemperatureCelsius - Tuning.AmbientTemperatureCelsius) * Tuning.ConvectionSpeed);
+            output.TemperatureCelsius = math.clamp(current, -273.15f, maxStable);
+            output.ConvectionVelocityY = math.max(0f, (output.TemperatureCelsius - ambient) * convectionSpeed);
             output.Flags = (output.Flags & AbyssalThermalMath.CellFlagHullInsulated) | (injected.Flags & AbyssalThermalMath.CellFlagInjected);
+            if (divergent)
+                output.Flags |= AbyssalThermalMath.CellFlagDivergent;
 
             if (!math.isfinite(output.TemperatureCelsius))
             {
-                output.TemperatureCelsius = Tuning.AmbientTemperatureCelsius;
+                output.TemperatureCelsius = ambient;
                 output.Flags |= AbyssalThermalMath.CellFlagNaN;
+                nonFinite = true;
             }
 
             Back[index] = output;
+            int residualMask = math.max(0, ResidualSampleMask);
+            float sampledResidual = ((index & residualMask) == 0)
+                ? math.max(0f, AbyssalThermalMath.FiniteOr(maxResidual, float.MaxValue))
+                : 0f;
+            if (nonFinite)
+                sampledResidual = float.MaxValue;
+            if (sampledResidual > 0f)
+            {
+                int slotCount = math.clamp(ResidualSlotCount, 1, AbyssalThermalMath.ResidualThreadSlotCount);
+                int slot = math.clamp(ThreadIndex, 0, slotCount - 1);
+                ref ThermalResidualSlot64 slotRef = ref UnsafeUtility.AsRef<ThermalResidualSlot64>(ResidualSamples + slot);
+                slotRef.MaxResidualFloat = math.max(slotRef.MaxResidualFloat, sampledResidual);
+                if (sampledResidual >= float.MaxValue * 0.5f)
+                    slotRef.FaultFlags |= AbyssalThermalMath.ResidualSlotFaultNonFinite;
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -353,9 +520,92 @@ namespace Hecton8.Thermodynamics
 
             int neighborIndex = AbyssalThermalMath.Index(x, y, z, resolution);
             ThermalCellDTO neighbor = Front[neighborIndex];
-            float pairConductivity = math.max(0.0001f, math.min(centerConductivity, neighbor.ThermalConductivity) * Tuning.WaterThermalConductivity);
-            weighted += neighbor.TemperatureCelsius * pairConductivity;
+            float waterConductivity = math.max(0.0001f, AbyssalThermalMath.FiniteOr(Tuning.WaterThermalConductivity, 0.18f));
+            float neighborConductivity = math.max(0.0001f, AbyssalThermalMath.FiniteOr(neighbor.ThermalConductivity, waterConductivity));
+            float pairConductivity = math.max(0.0001f, math.min(centerConductivity, neighborConductivity) * waterConductivity);
+            float ambient = AbyssalThermalMath.FiniteOr(Tuning.AmbientTemperatureCelsius, 0f);
+            weighted += AbyssalThermalMath.FiniteOr(neighbor.TemperatureCelsius, ambient) * pairConductivity;
             weight += pairConductivity;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public unsafe struct ThermalSolverResidualReductionJob : IJob
+    {
+        [NativeDisableUnsafePtrRestriction, NoAlias] public ThermalSolverConvergenceStateDTO* SolverState;
+        [NativeDisableUnsafePtrRestriction, NoAlias] public ThermalResidualSlot64* ResidualSamples;
+        public float TargetTolerance;
+        public float BaseOmega;
+        public int ResidualSlotCount;
+        public byte FinalIteration;
+
+        public void Execute()
+        {
+            ref ThermalSolverConvergenceStateDTO state = ref UnsafeUtility.AsRef<ThermalSolverConvergenceStateDTO>(SolverState);
+            ushort flags = state.FaultFlags;
+            const ushort terminalFlags = (ushort)(
+                AbyssalThermalMath.SolverFlagConverged |
+                AbyssalThermalMath.SolverFlagDivergent |
+                AbyssalThermalMath.SolverFlagNonFinite);
+            if ((flags & terminalFlags) != 0)
+                return;
+
+            float maxResidual = 0f;
+            bool nonFiniteResidual = false;
+            int slotCount = math.clamp(ResidualSlotCount, 1, AbyssalThermalMath.ResidualThreadSlotCount);
+            for (int i = 0; i < slotCount; i++)
+            {
+                ThermalResidualSlot64 slot = ResidualSamples[i];
+                float residual = slot.MaxResidualFloat;
+                if ((slot.FaultFlags & AbyssalThermalMath.ResidualSlotFaultNonFinite) != 0u ||
+                    !math.isfinite(residual) ||
+                    residual >= float.MaxValue * 0.5f)
+                {
+                    nonFiniteResidual = true;
+                    maxResidual = float.MaxValue;
+                    break;
+                }
+
+                maxResidual = math.max(maxResidual, math.max(0f, residual));
+            }
+
+            float tolerance = math.max(0.0001f, AbyssalThermalMath.FiniteOr(TargetTolerance, 0.001f));
+            float baseOmega = math.clamp(AbyssalThermalMath.FiniteOr(BaseOmega, 1f), 1f, 1.85f);
+            float previous = AbyssalThermalMath.FiniteOr(state.PreviousResidualFloat, maxResidual);
+            bool previousValid = state.IterationCount > 0 && previous < float.MaxValue * 0.5f;
+            bool grew = previousValid && maxResidual > math.max(previous + tolerance * 0.25f, previous * 1.08f);
+            bool runaway = previousValid && maxResidual > math.max(2f, previous * 2f);
+            float omega = math.clamp(AbyssalThermalMath.FiniteOr(state.Omega, baseOmega), 1f, 1.85f);
+
+            if (nonFiniteResidual)
+            {
+                flags = (ushort)(flags | AbyssalThermalMath.SolverFlagNonFinite | AbyssalThermalMath.SolverFlagDivergent);
+                omega = 1f;
+            }
+            else if (runaway)
+            {
+                flags = (ushort)(flags | AbyssalThermalMath.SolverFlagDivergent);
+                omega = 1f;
+            }
+            else if (grew)
+            {
+                omega = math.max(1f, omega * 0.86f);
+            }
+            else
+            {
+                omega = math.min(baseOmega, omega + (baseOmega - omega) * 0.125f);
+            }
+
+            if (!nonFiniteResidual && maxResidual <= tolerance)
+                flags = (ushort)(flags | AbyssalThermalMath.SolverFlagConverged);
+            else if (FinalIteration != 0)
+                flags = (ushort)(flags | AbyssalThermalMath.SolverFlagMaxIterations);
+
+            state.MaxResidualFloat = maxResidual;
+            state.PreviousResidualFloat = maxResidual;
+            state.Omega = omega;
+            state.IterationCount = (ushort)math.min(ushort.MaxValue, state.IterationCount + 1);
+            state.FaultFlags = flags;
         }
     }
 
@@ -371,16 +621,19 @@ namespace Hecton8.Thermodynamics
         {
             double3 aup = SampleAups[index];
             double3 localDouble = aup - Tuning.GridOriginAup;
-            float cellSize = math.max(0.001f, Tuning.CellSizeMeters);
+            int3 resolution = AbyssalThermalMath.SafeResolution(Tuning.GridResolution);
+            float cellSize = math.max(0.001f, AbyssalThermalMath.FiniteOr(Tuning.CellSizeMeters, 8f));
+            float ambient = AbyssalThermalMath.FiniteOr(Tuning.AmbientTemperatureCelsius, 0f);
+            float waterConductivity = math.max(0.0001f, AbyssalThermalMath.FiniteOr(Tuning.WaterThermalConductivity, 0.18f));
             float3 local = new float3((float)localDouble.x, (float)localDouble.y, (float)localDouble.z);
             float3 grid = local / cellSize;
             int3 baseCell = (int3)math.floor(grid);
             float3 fraction = math.frac(grid);
             int3 nearestCell = new int3(
-                AbyssalThermalMath.PositiveModulo(baseCell.x, Tuning.GridResolution.x),
-                AbyssalThermalMath.PositiveModulo(baseCell.y, Tuning.GridResolution.y),
-                AbyssalThermalMath.PositiveModulo(baseCell.z, Tuning.GridResolution.z));
-            int cellIndex = AbyssalThermalMath.Index(nearestCell.x, nearestCell.y, nearestCell.z, Tuning.GridResolution);
+                AbyssalThermalMath.PositiveModulo(baseCell.x, resolution.x),
+                AbyssalThermalMath.PositiveModulo(baseCell.y, resolution.y),
+                AbyssalThermalMath.PositiveModulo(baseCell.z, resolution.z));
+            int cellIndex = AbyssalThermalMath.Index(nearestCell.x, nearestCell.y, nearestCell.z, resolution);
             ThermalCellDTO nearest = Cells[cellIndex];
 
             float temperature = nearest.TemperatureCelsius;
@@ -390,7 +643,7 @@ namespace Hecton8.Thermodynamics
             float interpolationWeight = ResolveInterpolationWeight(Tuning.GlobalQualityWeight);
             if (interpolationWeight > 0f)
             {
-                SampleTrilinear(baseCell, fraction, out float triTemperature, out float triConvection, out float triConductivity);
+                SampleTrilinear(baseCell, fraction, resolution, out float triTemperature, out float triConvection, out float triConductivity);
                 temperature = math.lerp(temperature, triTemperature, interpolationWeight);
                 convection = math.lerp(convection, triConvection, interpolationWeight);
                 conductivity = math.lerp(conductivity, triConductivity, interpolationWeight);
@@ -398,7 +651,7 @@ namespace Hecton8.Thermodynamics
 
             if (!math.isfinite(temperature))
             {
-                temperature = Tuning.AmbientTemperatureCelsius;
+                temperature = ambient;
                 flags |= AbyssalThermalMath.CellFlagNaN;
             }
 
@@ -406,7 +659,7 @@ namespace Hecton8.Thermodynamics
                 convection = 0f;
 
             if (!math.isfinite(conductivity))
-                conductivity = Tuning.WaterThermalConductivity;
+                conductivity = waterConductivity;
 
             ThermalSampleResultDTO result;
             result.TemperatureCelsius = temperature;
@@ -428,16 +681,16 @@ namespace Hecton8.Thermodynamics
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void SampleTrilinear(int3 baseCell, float3 fraction, out float temperature, out float convection, out float conductivity)
+        private void SampleTrilinear(int3 baseCell, float3 fraction, int3 resolution, out float temperature, out float convection, out float conductivity)
         {
-            ThermalCellDTO c000 = ReadCell(baseCell.x, baseCell.y, baseCell.z);
-            ThermalCellDTO c100 = ReadCell(baseCell.x + 1, baseCell.y, baseCell.z);
-            ThermalCellDTO c010 = ReadCell(baseCell.x, baseCell.y + 1, baseCell.z);
-            ThermalCellDTO c110 = ReadCell(baseCell.x + 1, baseCell.y + 1, baseCell.z);
-            ThermalCellDTO c001 = ReadCell(baseCell.x, baseCell.y, baseCell.z + 1);
-            ThermalCellDTO c101 = ReadCell(baseCell.x + 1, baseCell.y, baseCell.z + 1);
-            ThermalCellDTO c011 = ReadCell(baseCell.x, baseCell.y + 1, baseCell.z + 1);
-            ThermalCellDTO c111 = ReadCell(baseCell.x + 1, baseCell.y + 1, baseCell.z + 1);
+            ThermalCellDTO c000 = ReadCell(baseCell.x, baseCell.y, baseCell.z, resolution);
+            ThermalCellDTO c100 = ReadCell(baseCell.x + 1, baseCell.y, baseCell.z, resolution);
+            ThermalCellDTO c010 = ReadCell(baseCell.x, baseCell.y + 1, baseCell.z, resolution);
+            ThermalCellDTO c110 = ReadCell(baseCell.x + 1, baseCell.y + 1, baseCell.z, resolution);
+            ThermalCellDTO c001 = ReadCell(baseCell.x, baseCell.y, baseCell.z + 1, resolution);
+            ThermalCellDTO c101 = ReadCell(baseCell.x + 1, baseCell.y, baseCell.z + 1, resolution);
+            ThermalCellDTO c011 = ReadCell(baseCell.x, baseCell.y + 1, baseCell.z + 1, resolution);
+            ThermalCellDTO c111 = ReadCell(baseCell.x + 1, baseCell.y + 1, baseCell.z + 1, resolution);
 
             temperature = Lerp8(
                 c000.TemperatureCelsius,
@@ -472,12 +725,12 @@ namespace Hecton8.Thermodynamics
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private ThermalCellDTO ReadCell(int x, int y, int z)
+        private ThermalCellDTO ReadCell(int x, int y, int z, int3 resolution)
         {
-            int ix = AbyssalThermalMath.PositiveModulo(x, Tuning.GridResolution.x);
-            int iy = AbyssalThermalMath.PositiveModulo(y, Tuning.GridResolution.y);
-            int iz = AbyssalThermalMath.PositiveModulo(z, Tuning.GridResolution.z);
-            return Cells[AbyssalThermalMath.Index(ix, iy, iz, Tuning.GridResolution)];
+            int ix = AbyssalThermalMath.PositiveModulo(x, resolution.x);
+            int iy = AbyssalThermalMath.PositiveModulo(y, resolution.y);
+            int iz = AbyssalThermalMath.PositiveModulo(z, resolution.z);
+            return Cells[AbyssalThermalMath.Index(ix, iy, iz, resolution)];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -503,14 +756,15 @@ namespace Hecton8.Thermodynamics
 
         public void Execute()
         {
-            int3 resolution = Tuning.GridResolution;
-            int cellCount = Tuning.ActiveCellCount;
+            int3 resolution = AbyssalThermalMath.SafeResolution(Tuning.GridResolution);
+            int resolutionCellCount = math.max(1, resolution.x * resolution.y * resolution.z);
+            int cellCount = math.clamp(Tuning.ActiveCellCount, 0, resolutionCellCount);
             long byteCount = (long)cellCount * UnsafeUtility.SizeOf<ThermalCellDTO>();
             UnsafeUtility.MemMove(Scratch, Cells, byteCount);
 
             ThermalCellDTO ambient;
-            ambient.TemperatureCelsius = Tuning.AmbientTemperatureCelsius;
-            ambient.ThermalConductivity = Tuning.WaterThermalConductivity;
+            ambient.TemperatureCelsius = AbyssalThermalMath.FiniteOr(Tuning.AmbientTemperatureCelsius, 0f);
+            ambient.ThermalConductivity = math.max(0.0001f, AbyssalThermalMath.FiniteOr(Tuning.WaterThermalConductivity, 0.18f));
             ambient.ConvectionVelocityY = 0f;
             ambient.Flags = 0u;
 
@@ -539,6 +793,7 @@ namespace Hecton8.Thermodynamics
         [NativeDisableUnsafePtrRestriction, NoAlias] public ThermalCellDTO* Injection;
         [NativeDisableUnsafePtrRestriction, NoAlias] public int* SourceCount;
         [NativeDisableUnsafePtrRestriction, NoAlias] public ThermalTelemetryEntry* Ring;
+        [NativeDisableUnsafePtrRestriction, NoAlias] public ThermalSolverConvergenceStateDTO* SolverState;
         public ThermalGridTuningDTO Tuning;
         public float SolverMicroseconds;
         public uint Frame;
@@ -546,8 +801,12 @@ namespace Hecton8.Thermodynamics
 
         public void Execute()
         {
-            int cellCount = math.max(0, Tuning.ActiveCellCount);
-            float maxTemp = Tuning.AmbientTemperatureCelsius;
+            int3 resolution = AbyssalThermalMath.SafeResolution(Tuning.GridResolution);
+            int resolutionCellCount = math.max(1, resolution.x * resolution.y * resolution.z);
+            int cellCount = math.clamp(Tuning.ActiveCellCount, 0, math.min(AbyssalThermalMath.MaxSafeCellCount, resolutionCellCount));
+            float ambient = AbyssalThermalMath.FiniteOr(Tuning.AmbientTemperatureCelsius, 0f);
+            float dissipation = math.saturate(AbyssalThermalMath.FiniteOr(Tuning.DissipationPerStep, 0.0025f));
+            float maxTemp = ambient;
             float energyBefore = 0f;
             float energyAfter = 0f;
             uint flags = ExtraFlags;
@@ -564,14 +823,19 @@ namespace Hecton8.Thermodynamics
                 {
                     flags |= AbyssalThermalMath.TelemetryFlagNaN;
                     nanIndex = (uint)i;
-                    beforeTemp = Tuning.AmbientTemperatureCelsius;
+                    beforeTemp = ambient;
                 }
 
                 if (!math.isfinite(afterTemp) || (afterCell.Flags & AbyssalThermalMath.CellFlagNaN) != 0u)
                 {
                     flags |= AbyssalThermalMath.TelemetryFlagNaN;
                     nanIndex = (uint)i;
-                    afterTemp = Tuning.AmbientTemperatureCelsius;
+                    afterTemp = ambient;
+                }
+                if ((afterCell.Flags & AbyssalThermalMath.CellFlagDivergent) != 0u)
+                {
+                    flags |= AbyssalThermalMath.TelemetryFlagDivergent;
+                    nanIndex = (uint)i;
                 }
 
                 maxTemp = math.max(maxTemp, afterTemp);
@@ -579,11 +843,18 @@ namespace Hecton8.Thermodynamics
                 energyAfter += afterTemp;
             }
 
-            float ambientEnergy = Tuning.AmbientTemperatureCelsius * cellCount;
-            float dissipatedBudget = math.abs(energyBefore - ambientEnergy) * math.saturate(Tuning.DissipationPerStep) * 1.5f;
+            float ambientEnergy = ambient * cellCount;
+            float dissipatedBudget = math.abs(energyBefore - ambientEnergy) * dissipation * 1.5f;
             float driftTolerance = math.max(1f, dissipatedBudget + (math.abs(energyBefore) * 0.01f));
             if (math.abs(energyAfter - energyBefore) > driftTolerance)
                 flags |= AbyssalThermalMath.TelemetryFlagEnergyDrift;
+            ThermalSolverConvergenceStateDTO solverState = SolverState[0];
+            if ((solverState.FaultFlags & AbyssalThermalMath.SolverFlagNonFinite) != 0)
+                flags |= AbyssalThermalMath.TelemetryFlagNaN;
+            if ((solverState.FaultFlags & AbyssalThermalMath.SolverFlagDivergent) != 0)
+                flags |= AbyssalThermalMath.TelemetryFlagDivergent;
+            if ((solverState.FaultFlags & AbyssalThermalMath.SolverFlagMaxIterations) != 0)
+                flags |= AbyssalThermalMath.TelemetryFlagMaxIterations;
 
             int ringIndex = (int)(Frame % AbyssalThermalMath.TelemetryCapacity);
             ThermalTelemetryEntry entry;
@@ -594,10 +865,10 @@ namespace Hecton8.Thermodynamics
             entry.GridOriginAup = Tuning.GridOriginAup;
             entry.Frame = Frame;
             entry.Flags = flags;
-            entry.ActiveSourceCount = (uint)math.max(0, *SourceCount);
-            entry.JacobiIterations = (uint)math.max(1, Tuning.JacobiIterations);
+            entry.ActiveSourceCount = (uint)math.clamp(*SourceCount, 0, AbyssalThermalMath.MaxThermalSourceCapacity);
+            entry.JacobiIterations = (uint)(solverState.IterationCount > 0 ? solverState.IterationCount : math.max(1, Tuning.JacobiIterations));
             entry.NaNCellIndex = nanIndex;
-            entry.ActiveResolution = (uint)Tuning.GridResolution.x;
+            entry.ActiveResolution = (uint)resolution.x;
             Ring[ringIndex] = entry;
         }
     }

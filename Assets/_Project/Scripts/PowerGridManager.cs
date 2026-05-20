@@ -31,6 +31,12 @@ namespace Hecton8.Power
 
         internal static int RuntimeGridCount => _allGrids != null ? _allGrids.Count : 0;
 
+        internal bool TryGetJacobiPowerVaultHandles(out PowerGridVaultHandles handles)
+        {
+            handles = _jacobiVaultHandles;
+            return _jacobiVaultReady;
+        }
+
         internal static PowerGrid GetRuntimeGridAt(int index)
         {
             return _allGrids != null && index >= 0 && index < _allGrids.Count ? _allGrids[index] : null;
@@ -60,10 +66,14 @@ namespace Hecton8.Power
         private float _pendingWirelessToolDemandWattSeconds;
         private float _nextPowerColdTickTime;
         private float _nextSubmarineThermalGridTickTime;
+        private uint _powerBrownoutSignalFrame;
         private uint _submarineThermalGridSimulationFrame;
         private WfcOutpostPowerBootRuntime _wfcOutpostPowerBoot; // COLD ALLOC: WfcOutpostPowerBootRuntime[1] - WFC outpost signal boot owner - owner: PowerGridManager
         private ShinobuLogisticsRouter _shinobuLogisticsRouter; // COLD ALLOC: ShinobuLogisticsRouter[1] - zero-GC WFC logistics BFS owner - owner: PowerGridManager
         private SubmarineOsThermalGridRuntime _submarineThermalGridRuntime; // COLD ALLOC: SubmarineOsThermalGridRuntime[1] - submarine OS thermal grid owner - owner: PowerGridManager
+        private PowerGridVaultHandles _jacobiVaultHandles;
+        private IDataVault _jacobiVaultOwner;
+        private bool _jacobiVaultReady;
         private const float PowerGridColdTickSeconds = 1f;
         private const float SubmarineThermalGridLowCadenceSeconds = 0.2f;
         private const float SubmarineThermalGridHighCadenceSeconds = 1f / 60f;
@@ -80,7 +90,7 @@ namespace Hecton8.Power
             TotalStoredEnergyWattSeconds = _debugBatteryStoredEnergyWattSeconds,
             TotalCapacityWattSeconds = _debugBatteryCapacityWattSeconds,
             ChargeNormalized = _debugBatteryChargeNormalized,
-            EmergencyReserveActive = _debugEmergencyReserveGridCount > 0
+            EmergencyReserveActive = _debugEmergencyReserveGridCount > 0 ? (byte)1 : (byte)0
         };
 
         /// <summary>
@@ -89,6 +99,7 @@ namespace Hecton8.Power
         public void InitializeService()
         {
             EnsureStorage();
+            EnsureJacobiPowerVaultBuffers();
             EnsureWfcOutpostPowerBoot();
             EnsureShinobuLogisticsRouter();
             EnsureSubmarineThermalGridRuntime();
@@ -138,6 +149,7 @@ namespace Hecton8.Power
             if (_allGrids == null)
                 _allGrids = new List<PowerGrid>(math.max(1, initialGridCapacity));
 
+            EnsureJacobiPowerVaultBuffers();
             EnsureWfcOutpostPowerBoot();
             EnsureShinobuLogisticsRouter();
             EnsureSubmarineThermalGridRuntime();
@@ -146,6 +158,7 @@ namespace Hecton8.Power
         private void OnEnable()
         {
             ActiveRuntimeInstance = this;
+            EnsureJacobiPowerVaultBuffers();
             EnsureWfcOutpostPowerBoot();
             EnsureShinobuLogisticsRouter();
             EnsureSubmarineThermalGridRuntime();
@@ -178,11 +191,13 @@ namespace Hecton8.Power
             _shinobuLogisticsRouter = null;
             _submarineThermalGridRuntime?.Dispose();
             _submarineThermalGridRuntime = null;
+            ReleaseJacobiPowerVaultBuffers(_jacobiVaultOwner ?? GlobalRegistry.DataVault);
             _pendingWirelessToolDemandWattSeconds = 0f;
             _debugPendingWirelessToolDemandWattSeconds = 0f;
             _slowTickFinalizationPending = false;
             _nextPowerColdTickTime = 0f;
             _nextSubmarineThermalGridTickTime = 0f;
+            _powerBrownoutSignalFrame = 0u;
             _submarineThermalGridSimulationFrame = 0u;
         }
 
@@ -271,10 +286,12 @@ namespace Hecton8.Power
                 _shinobuLogisticsRouter = null;
                 _submarineThermalGridRuntime?.Dispose();
                 _submarineThermalGridRuntime = null;
+                ReleaseJacobiPowerVaultBuffers(previousService as IDataVault);
                 _nextSubmarineThermalGridTickTime = 0f;
                 _submarineThermalGridSimulationFrame = 0u;
                 if (currentService is IDataVault)
                 {
+                    EnsureJacobiPowerVaultBuffers();
                     EnsureShinobuLogisticsRouter();
                     EnsureSubmarineThermalGridRuntime();
                 }
@@ -595,7 +612,7 @@ namespace Hecton8.Power
             PublishBrownoutSignal(in telemetrySnapshot);
         }
 
-        private static void PublishBrownoutSignal(in PowerGridTelemetrySnapshot snapshot)
+        private void PublishBrownoutSignal(in PowerGridTelemetrySnapshot snapshot)
         {
             byte flags = 0;
             if (snapshot.HasPowerDeficit)
@@ -603,25 +620,37 @@ namespace Hecton8.Power
             if (snapshot.EmergencyReserveActive)
                 flags |= 1 << 1;
 
+            float supplyRatio = math.saturate(math.isfinite(snapshot.SupplyRatio) ? snapshot.SupplyRatio : 1f);
             float severity01 = snapshot.HighestBrownoutTier != LogisticsBrownoutTier.None ||
                                snapshot.HasPowerDeficit ||
                                snapshot.EmergencyReserveActive
-                ? math.saturate(1f - snapshot.SupplyRatio)
+                ? math.saturate(1f - supplyRatio)
                 : 0f;
             if (snapshot.EmergencyReserveActive)
                 severity01 = math.max(severity01, 0.75f);
+            severity01 = math.saturate(math.isfinite(severity01) ? severity01 : 0f);
+            uint frame = unchecked(_powerBrownoutSignalFrame + 1u);
+            if (frame == 0u)
+                frame = 1u;
+            _powerBrownoutSignalFrame = frame;
 
             BrownoutSignal signal = new BrownoutSignal
             {
                 NetworkId = unchecked((uint)math.max(0, snapshot.GridCount)),
                 NodeId = unchecked((uint)math.max(0, snapshot.DeficitGridCount)),
-                SupplyRatio = math.saturate(snapshot.SupplyRatio),
+                SupplyRatio = supplyRatio,
                 Severity01 = severity01,
-                Frame = unchecked((uint)math.max(0, Time.frameCount)),
+                Frame = frame,
                 Priority = (byte)snapshot.HighestBrownoutTier,
                 Flags = flags
             };
             GlobalSignals.Publish(in signal);
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            HectonShaderGlobalDataVaultBridge.PublishPowerBrownout(new Vector4(
+                supplyRatio,
+                severity01,
+                Time.unscaledTime,
+                math.saturate(math.isfinite(quality) ? quality : 1f)));
         }
 
         private void TryRegister()
@@ -683,6 +712,52 @@ namespace Hecton8.Power
 
             _wfcOutpostPowerBoot = new WfcOutpostPowerBootRuntime();
             _wfcOutpostPowerBoot.Initialize();
+        }
+
+        private void EnsureJacobiPowerVaultBuffers()
+        {
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
+            {
+                ReleaseJacobiPowerVaultBuffers(_jacobiVaultOwner);
+                return;
+            }
+
+            int safeGridCapacity = math.max(1, initialGridCapacity);
+            int nodeCapacity = math.max(1000, safeGridCapacity * 64);
+            int edgeCapacity = math.max(2500, nodeCapacity * 2);
+            if (_jacobiVaultReady &&
+                ReferenceEquals(_jacobiVaultOwner, vault) &&
+                PowerGridVaultRuntime.ValidateCoreBuffers(vault, in _jacobiVaultHandles, nodeCapacity, edgeCapacity))
+            {
+                return;
+            }
+
+            if (_jacobiVaultReady)
+                ReleaseJacobiPowerVaultBuffers(_jacobiVaultOwner);
+
+            _jacobiVaultReady = PowerGridVaultRuntime.EnsureCoreBuffers(
+                vault,
+                nodeCapacity,
+                edgeCapacity,
+                out _jacobiVaultHandles);
+            _jacobiVaultOwner = _jacobiVaultReady ? vault : null;
+            if (!_jacobiVaultReady)
+                _jacobiVaultHandles = default;
+        }
+
+        private void ReleaseJacobiPowerVaultBuffers(IDataVault vault)
+        {
+            if (!_jacobiVaultReady)
+            {
+                _jacobiVaultHandles = default;
+                _jacobiVaultOwner = null;
+                return;
+            }
+
+            PowerGridVaultRuntime.ReleaseCoreBuffers(vault, ref _jacobiVaultHandles);
+            _jacobiVaultReady = false;
+            _jacobiVaultOwner = null;
         }
 
         private void EnsureShinobuLogisticsRouter()

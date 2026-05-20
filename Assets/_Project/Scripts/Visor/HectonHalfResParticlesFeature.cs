@@ -264,7 +264,7 @@ namespace Hecton8.Visor
                 return true;
             }
 
-            [StructLayout(LayoutKind.Sequential, Pack = 4, Size = HalfResParticlesGlobalsStrideBytes)]
+            [StructLayout(LayoutKind.Sequential, Size = HalfResParticlesGlobalsStrideBytes)]
             private struct HalfResParticlesGlobalsDTO
             {
                 internal Vector4 Params;

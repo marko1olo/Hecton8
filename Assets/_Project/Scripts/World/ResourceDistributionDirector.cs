@@ -496,7 +496,9 @@ namespace Hecton8.World
 
             EnsureRuntimePool();
 
-            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerTransform.position);
+            if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
+                return;
+
             int2 playerSector = QuantizeSector(in playerAup);
             _debugPlayerSector = new Vector2Int(playerSector.x, playerSector.y);
 
@@ -1015,6 +1017,28 @@ namespace Hecton8.World
             WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref vegetationBridge);
             WorldRuntimeReferenceUtility.TryResolveVoxelEngine(ref voxelEngine);
             return true;
+        }
+
+        private static bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
+        {
+            playerAup = default;
+
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext == null)
+                return false;
+
+            if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
+            {
+                playerAup = snapshot.Aup;
+                return MathGuard.IsFinite(in playerAup);
+            }
+
+            var playerMovement = playerContext.PlayerMovement;
+            if (playerMovement == null)
+                return false;
+
+            playerAup = playerMovement.CurrentAup;
+            return MathGuard.IsFinite(in playerAup);
         }
 
         private void EnsureRuntimePrefab()

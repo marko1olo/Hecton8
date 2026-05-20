@@ -420,15 +420,16 @@ namespace Hecton8.World
             float halfLength = trenchLength * 0.5f;
             Vector3 trenchDirection = ResolveSeismicTrenchDirection(epicenterAbsoluteDouble);
             double3 trenchDirectionDouble = new double3(trenchDirection.x, trenchDirection.y, trenchDirection.z);
-            double3 absoluteStartDouble = payload.HasAupLineSegment
+            bool hasAupLineSegment = payload.HasAupLineSegment != 0;
+            double3 absoluteStartDouble = hasAupLineSegment
                 ? payload.AupStartDouble
                 : epicenterAbsoluteDouble - trenchDirectionDouble * halfLength;
-            double3 absoluteEndDouble = payload.HasAupLineSegment
+            double3 absoluteEndDouble = hasAupLineSegment
                 ? payload.AupEndDouble
                 : epicenterAbsoluteDouble + trenchDirectionDouble * halfLength;
             Vector3 absoluteStart = ToVector3(absoluteStartDouble);
             Vector3 absoluteEnd = ToVector3(absoluteEndDouble);
-            if (payload.HasAupLineSegment)
+            if (hasAupLineSegment)
             {
                 double segmentLengthSq = math.lengthsq(absoluteEndDouble - absoluteStartDouble);
                 trenchLength = Mathf.Max(0.001f, segmentLengthSq > 0d ? (float)(segmentLengthSq * math.rsqrt(segmentLengthSq)) : 0f);

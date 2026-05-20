@@ -4,18 +4,31 @@ using Unity.Mathematics;
 
 namespace Hecton8.Core
 {
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct NativeBitmask256
     {
+        [FieldOffset(0)]
         public ulong Word0;
+
+        [FieldOffset(8)]
         public ulong Word1;
+
+        [FieldOffset(16)]
         public ulong Word2;
+
+        [FieldOffset(24)]
         public ulong Word3;
 
-        public bool IsEmpty
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool IsEmpty()
         {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => (Word0 | Word1 | Word2 | Word3) == 0UL;
+            return (Word0 | Word1 | Word2 | Word3) == 0UL;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool IsEmpty(in NativeBitmask256 mask)
+        {
+            return (mask.Word0 | mask.Word1 | mask.Word2 | mask.Word3) == 0UL;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

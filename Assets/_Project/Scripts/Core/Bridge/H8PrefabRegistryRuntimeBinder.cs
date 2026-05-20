@@ -25,28 +25,32 @@ namespace Hecton8.Core.Bridge
                 return true;
             }
 
-            VaultBufferHandle<H8PrefabMappingEntry> mapping = vault.GetBufferHandle<H8PrefabMappingEntry>(
+            VaultGenerationHandle<H8PrefabMappingEntry> mappingHandle = vault.GetGenerationHandle<H8PrefabMappingEntry>(
                 BufferID.BridgePrefabMapping,
                 count,
                 SystemID.CoreBridge,
                 NativeArrayOptions.ClearMemory);
-            VaultBufferHandle<H8PrefabLoreLinkEntry> loreLinks = vault.GetBufferHandle<H8PrefabLoreLinkEntry>(
+            VaultGenerationHandle<H8PrefabLoreLinkEntry> loreLinksHandle = vault.GetGenerationHandle<H8PrefabLoreLinkEntry>(
                 BufferID.BridgePrefabLoreLinks,
                 count,
                 SystemID.CoreBridge,
                 NativeArrayOptions.ClearMemory);
 
-            if (!mapping.IsCreated || mapping.Length < count || !loreLinks.IsCreated || loreLinks.Length < count)
+            if (mappingHandle.BufferID == 0u ||
+                loreLinksHandle.BufferID == 0u ||
+                !vault.TryResolveHandle(in mappingHandle, out NativeArray<H8PrefabMappingEntry> mapping) ||
+                !vault.TryResolveHandle(in loreLinksHandle, out NativeArray<H8PrefabLoreLinkEntry> loreLinks) ||
+                !mapping.IsCreated ||
+                !loreLinks.IsCreated ||
+                mapping.Length < count ||
+                loreLinks.Length < count)
+            {
                 return false;
+            }
 
             Thread.MemoryBarrier();
-            H8PrefabMappingEntry* mappingPtr = (H8PrefabMappingEntry*)mapping.ResolvePointer(vault);
-            H8PrefabLoreLinkEntry* loreLinkPtr = (H8PrefabLoreLinkEntry*)loreLinks.ResolvePointer(vault);
-            if (mappingPtr == null || loreLinkPtr == null)
-                return false;
-
-            ClearBuffer(mappingPtr, mapping.Length);
-            ClearBuffer(loreLinkPtr, loreLinks.Length);
+            ClearBuffer(mapping);
+            ClearBuffer(loreLinks);
 
             long totalVramBytes = 0L;
             bool publishRuntimeSignals = Application.isPlaying;
@@ -65,8 +69,8 @@ namespace Hecton8.Core.Bridge
                 if (runtimeRegistry != null && entry.Prefab != null)
                     runtimePrefabId = unchecked((uint)runtimeRegistry.GetOrRegisterPrefab(entry.Prefab));
 
-                mappingPtr[writeIndex] = entry.ToMappingEntry(runtimePrefabId);
-                loreLinkPtr[writeIndex] = entry.ToLoreLinkEntry();
+                mapping[writeIndex] = entry.ToMappingEntry(runtimePrefabId);
+                loreLinks[writeIndex] = entry.ToLoreLinkEntry();
                 totalVramBytes += entry.EstimatedVramBytes > 0L ? entry.EstimatedVramBytes : 0L;
 
                 if (!publishRuntimeSignals)
@@ -113,30 +117,32 @@ namespace Hecton8.Core.Bridge
             if (vault == null)
                 return;
 
-            if (vault.TryGetBufferHandle(BufferID.BridgePrefabMapping, out VaultBufferHandle<H8PrefabMappingEntry> mapping) &&
+            if (vault.TryGetGenerationHandle<H8PrefabMappingEntry>(BufferID.BridgePrefabMapping, out VaultGenerationHandle<H8PrefabMappingEntry> mappingHandle) &&
+                mappingHandle.BufferID != 0u &&
+                vault.TryResolveHandle(in mappingHandle, out NativeArray<H8PrefabMappingEntry> mapping) &&
                 mapping.IsCreated)
             {
-                H8PrefabMappingEntry* mappingPtr = (H8PrefabMappingEntry*)mapping.ResolvePointer(vault);
-                ClearBuffer(mappingPtr, mapping.Length);
+                ClearBuffer(mapping);
             }
 
-            if (vault.TryGetBufferHandle(BufferID.BridgePrefabLoreLinks, out VaultBufferHandle<H8PrefabLoreLinkEntry> loreLinks) &&
+            if (vault.TryGetGenerationHandle<H8PrefabLoreLinkEntry>(BufferID.BridgePrefabLoreLinks, out VaultGenerationHandle<H8PrefabLoreLinkEntry> loreLinksHandle) &&
+                loreLinksHandle.BufferID != 0u &&
+                vault.TryResolveHandle(in loreLinksHandle, out NativeArray<H8PrefabLoreLinkEntry> loreLinks) &&
                 loreLinks.IsCreated)
             {
-                H8PrefabLoreLinkEntry* loreLinkPtr = (H8PrefabLoreLinkEntry*)loreLinks.ResolvePointer(vault);
-                ClearBuffer(loreLinkPtr, loreLinks.Length);
+                ClearBuffer(loreLinks);
             }
         }
 
-        private static void ClearBuffer<T>(T* ptr, int length)
+        private static void ClearBuffer<T>(NativeArray<T> buffer)
             where T : unmanaged
         {
-            if (ptr == null || length <= 0)
+            if (!buffer.IsCreated || buffer.Length <= 0)
                 return;
 
-            long byteCount = (long)length * UnsafeUtility.SizeOf<T>();
+            long byteCount = (long)buffer.Length * UnsafeUtility.SizeOf<T>();
             Thread.MemoryBarrier();
-            UnsafeUtility.MemClear(ptr, byteCount);
+            UnsafeUtility.MemClear(buffer.GetUnsafePtr(), byteCount);
             Thread.MemoryBarrier();
         }
 

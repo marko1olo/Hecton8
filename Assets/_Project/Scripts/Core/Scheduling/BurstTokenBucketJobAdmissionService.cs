@@ -26,7 +26,7 @@ namespace Hecton8.Core.Scheduling
         private const float DefaultEstimatedCostMs = 0.025f;
         private const float OverflowEstimatedCostMs = 0.20f;
         private const float AdmissionCostClampMs = 1000f;
-        private const float LowTierBudgetScalar = 0.60f;
+        private const float SurvivalBudgetScalar = 0.60f;
         private const float MissedFrameRefillScalar = 0.50f;
         private const float TargetFrameMilliseconds = 16.667f;
         private const float TargetFrameMillisecondsRcp = 0.0599988f;
@@ -35,11 +35,11 @@ namespace Hecton8.Core.Scheduling
         private const float LaneDebtFloorMs = -4.0f;
         private const uint KillSwitchDisableVfxMask = 1u << JobAdmissionLanes.Lane4VFX;
 
-        private VaultBufferHandle<float> _laneBudgetsMsHandle;
-        private VaultBufferHandle<float> _baseRefillMsHandle;
-        private VaultBufferHandle<uint> _jobHashesHandle;
-        private VaultBufferHandle<float> _ewmaCostsMsHandle;
-        private VaultBufferHandle<JobAdmissionBlackboxEntry> _blackboxHandle;
+        private VaultGenerationHandle<float> _laneBudgetsMsHandle;
+        private VaultGenerationHandle<float> _baseRefillMsHandle;
+        private VaultGenerationHandle<uint> _jobHashesHandle;
+        private VaultGenerationHandle<float> _ewmaCostsMsHandle;
+        private VaultGenerationHandle<JobAdmissionBlackboxEntry> _blackboxHandle;
         private IDataVault _dataVault;
         private IJobAdmissionTelemetrySink _telemetrySink;
         private int _costSlotCount;
@@ -98,27 +98,27 @@ namespace Hecton8.Core.Scheduling
             }
 
             _dataVault = dataVault;
-            _laneBudgetsMsHandle = dataVault.GetBufferHandle<float>(
+            _laneBudgetsMsHandle = dataVault.GetGenerationHandle<float>(
                 BufferID.JobAdmissionLaneBudgets,
                 LaneCount,
                 SystemID.JobAdmission,
                 NativeArrayOptions.ClearMemory);
-            _baseRefillMsHandle = dataVault.GetBufferHandle<float>(
+            _baseRefillMsHandle = dataVault.GetGenerationHandle<float>(
                 BufferID.JobAdmissionBaseRefill,
                 LaneCount,
                 SystemID.JobAdmission,
                 NativeArrayOptions.ClearMemory);
-            _jobHashesHandle = dataVault.GetBufferHandle<uint>(
+            _jobHashesHandle = dataVault.GetGenerationHandle<uint>(
                 BufferID.JobAdmissionJobHashes,
                 CostSlotCapacity,
                 SystemID.JobAdmission,
                 NativeArrayOptions.ClearMemory);
-            _ewmaCostsMsHandle = dataVault.GetBufferHandle<float>(
+            _ewmaCostsMsHandle = dataVault.GetGenerationHandle<float>(
                 BufferID.JobAdmissionEwmaCosts,
                 CostSlotCapacity,
                 SystemID.JobAdmission,
                 NativeArrayOptions.ClearMemory);
-            _blackboxHandle = dataVault.GetBufferHandle<JobAdmissionBlackboxEntry>(
+            _blackboxHandle = dataVault.GetGenerationHandle<JobAdmissionBlackboxEntry>(
                 BufferID.JobAdmissionBlackBox,
                 BlackboxCapacity,
                 SystemID.JobAdmission,
@@ -168,7 +168,7 @@ namespace Hecton8.Core.Scheduling
         }
 
         /// <inheritdoc />
-        public void Refill(byte scalabilityTierProfile, float deltaTimeSeconds, bool previousFrameMissedBudget)
+        public void Refill(float globalQualityWeight01, float deltaTimeSeconds, bool previousFrameMissedBudget)
         {
             if (!_initialized)
                 return;
@@ -187,9 +187,11 @@ namespace Hecton8.Core.Scheduling
             }
 
             float deltaScale = math.clamp(deltaMilliseconds * TargetFrameMillisecondsRcp, MinDeltaRefillScale, MaxDeltaRefillScale);
-            float tierScale = scalabilityTierProfile == 0 ? LowTierBudgetScalar : 1f;
+            float qualityWeight01 = SanitizeQualityWeight01(globalQualityWeight01);
+            float qualityCurve01 = SmoothStep01(qualityWeight01);
+            float qualityScale = math.lerp(SurvivalBudgetScalar, 1f, qualityCurve01);
             float missScale = previousFrameMissedBudget ? MissedFrameRefillScalar : 1f;
-            float refillScale = deltaScale * tierScale * missScale;
+            float refillScale = deltaScale * qualityScale * missScale;
 
             for (int lane = 0; lane < LaneCount; lane++)
             {
@@ -229,7 +231,7 @@ namespace Hecton8.Core.Scheduling
                     laneBudgetsMs[lane] = current;
                 }
 
-                float cap = baseRefill * MaxDeltaRefillScale * tierScale;
+                float cap = baseRefill * MaxDeltaRefillScale * qualityScale;
                 if (!math.isfinite(cap) || cap < 0f)
                 {
                     ReportNonFinite((JobAdmissionLane)lane, 0u, cap);
@@ -409,37 +411,65 @@ namespace Hecton8.Core.Scheduling
 
         private NativeArray<float> ResolveLaneBudgets()
         {
-            return _laneBudgetsMsHandle.IsCreated && _dataVault != null ? _laneBudgetsMsHandle.Resolve(_dataVault) : default;
+            return _dataVault != null && _laneBudgetsMsHandle.BufferID != 0u && _dataVault.TryResolveHandle(in _laneBudgetsMsHandle, out NativeArray<float> buffer)
+                ? buffer
+                : default;
         }
 
         private NativeArray<float> ResolveBaseRefill()
         {
-            return _baseRefillMsHandle.IsCreated && _dataVault != null ? _baseRefillMsHandle.Resolve(_dataVault) : default;
+            return _dataVault != null && _baseRefillMsHandle.BufferID != 0u && _dataVault.TryResolveHandle(in _baseRefillMsHandle, out NativeArray<float> buffer)
+                ? buffer
+                : default;
         }
 
         private NativeArray<uint> ResolveJobHashes()
         {
-            return _jobHashesHandle.IsCreated && _dataVault != null ? _jobHashesHandle.Resolve(_dataVault) : default;
+            return _dataVault != null && _jobHashesHandle.BufferID != 0u && _dataVault.TryResolveHandle(in _jobHashesHandle, out NativeArray<uint> buffer)
+                ? buffer
+                : default;
         }
 
         private NativeArray<float> ResolveEwmaCosts()
         {
-            return _ewmaCostsMsHandle.IsCreated && _dataVault != null ? _ewmaCostsMsHandle.Resolve(_dataVault) : default;
+            return _dataVault != null && _ewmaCostsMsHandle.BufferID != 0u && _dataVault.TryResolveHandle(in _ewmaCostsMsHandle, out NativeArray<float> buffer)
+                ? buffer
+                : default;
         }
 
         private NativeArray<JobAdmissionBlackboxEntry> ResolveBlackbox()
         {
-            return _blackboxHandle.IsCreated && _dataVault != null ? _blackboxHandle.Resolve(_dataVault) : default;
+            return _dataVault != null && _blackboxHandle.BufferID != 0u && _dataVault.TryResolveHandle(in _blackboxHandle, out NativeArray<JobAdmissionBlackboxEntry> buffer)
+                ? buffer
+                : default;
         }
 
         private void ReleaseVaultHandlesOnly()
         {
+            IDataVault vault = _dataVault;
+            if (vault != null)
+            {
+                ReleaseVaultHandle(vault, ref _laneBudgetsMsHandle);
+                ReleaseVaultHandle(vault, ref _baseRefillMsHandle);
+                ReleaseVaultHandle(vault, ref _jobHashesHandle);
+                ReleaseVaultHandle(vault, ref _ewmaCostsMsHandle);
+                ReleaseVaultHandle(vault, ref _blackboxHandle);
+            }
+
             _laneBudgetsMsHandle = default;
             _baseRefillMsHandle = default;
             _jobHashesHandle = default;
             _ewmaCostsMsHandle = default;
             _blackboxHandle = default;
             _dataVault = null;
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (handle.BufferID != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         private void ResetRuntimeState(bool clearTelemetrySink)
@@ -463,6 +493,19 @@ namespace Hecton8.Core.Scheduling
         {
             int laneIndex = (int)lane;
             return (uint)laneIndex < LaneCount ? laneIndex : JobAdmissionLanes.Lane5IO;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SanitizeQualityWeight01(float qualityWeight01)
+        {
+            return math.isfinite(qualityWeight01) ? math.saturate(qualityWeight01) : 1f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SmoothStep01(float value)
+        {
+            float t = math.saturate(value);
+            return t * t * (3f - (2f * t));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -761,18 +804,37 @@ namespace Hecton8.Core.Scheduling
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = BlackboxEntrySizeBytes)]
+        [StructLayout(LayoutKind.Explicit, Size = BlackboxEntrySizeBytes)]
         private struct JobAdmissionBlackboxEntry
         {
+            [FieldOffset(0)]
             public uint FrameSequence;
+
+            [FieldOffset(4)]
             public uint JobHash;
+
+            [FieldOffset(8)]
             public float EstimatedCostMs;
+
+            [FieldOffset(12)]
             public float RemainingBudgetMs;
+
+            [FieldOffset(16)]
             public int CriticalDebtFrames;
+
+            [FieldOffset(20)]
             public uint KillSwitchMask;
+
+            [FieldOffset(24)]
             public byte Lane;
+
+            [FieldOffset(25)]
             public byte Flags;
+
+            [FieldOffset(26)]
             public ushort Reserved;
+
+            [FieldOffset(28)]
             public uint StateHash;
         }
     }

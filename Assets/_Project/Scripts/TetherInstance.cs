@@ -293,6 +293,13 @@ namespace Hecton8.Physics
         private int _currentSimulationFrameIndex;
         private bool _verletFaultDumpedThisActivation;
         private HectonQualityTier _qualityTier = HectonQualityTier.Unknown;
+        private JobHandle _pendingVerletSolveHandle;
+        private bool _pendingVerletSolveActive;
+        private Vector3 _pendingVerletAnchorPosition;
+        private Vector3 _pendingVerletPayloadPosition;
+        private float _pendingVerletFixedDeltaTime;
+        private float _pendingVerletStretchThreshold01;
+        private int _pendingVerletFrameIndex;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticTetherSlotState()
@@ -340,17 +347,6 @@ namespace Hecton8.Physics
         internal void InitializeManager(TetherManager manager)
         {
             _manager = manager;
-        }
-
-        /// <summary>
-        /// Returns the mutable vault-backed visual staging buffer without a property copy.
-        /// </summary>
-        internal ref NativeArray<float3> GetVisualSegmentPositionsRef()
-        {
-            if (_visualSegmentPositions.IsCreated)
-                return ref _visualSegmentPositions;
-
-            return ref _verletPositions;
         }
 
         /// <summary>
@@ -525,6 +521,7 @@ namespace Hecton8.Physics
             if (_owner.ShouldSuppressTow || !_owner.IsTowPayloadValid(_payloadBody, _payloadCollider))
                 return TetherLifecycleState.Released;
 
+            FinalizePendingVerletSolve(forceComplete: false, publishResults: true);
             _qualityTier = TetherManager.SanitizeQualityTier(qualityTier);
             _currentSimulationFrameIndex = fixedFrameIndex >= 0 ? fixedFrameIndex : 0;
 
@@ -594,6 +591,12 @@ namespace Hecton8.Physics
             _visualCulledThisFrame = false;
             if (!_isActive)
                 return;
+
+            if (_pendingVerletSolveActive)
+            {
+                _visualCulledThisFrame = true;
+                return;
+            }
 
             _qualityTier = TetherManager.SanitizeQualityTier(qualityTier);
             if (VisualSegmentBuffer == null || VisualSegmentTensionBuffer == null || VisualDrawParamsBuffer == null)
@@ -728,6 +731,7 @@ namespace Hecton8.Physics
         /// </summary>
         public void Deactivate()
         {
+            FinalizePendingVerletSolve(forceComplete: true, publishResults: false);
             GlobalPhysicsStateManager.UnregisterTetherConnection(this);
             ReleasePrimaryConstraint();
             DisposeDataVaultCableState();
@@ -812,6 +816,7 @@ namespace Hecton8.Physics
         /// </summary>
         public void DisposeRuntimeResources()
         {
+            FinalizePendingVerletSolve(forceComplete: true, publishResults: false);
             ReleaseVisualBuffers();
 
             DisposeDataVaultCableState();
@@ -923,14 +928,12 @@ namespace Hecton8.Physics
                 return;
 
             int pointCount = math.min(_visualSegmentPositions.Length, _visualSegmentGpuPoints.Length);
-            var copyJob = new TetherVisualGpuSplineCopyJob
-            {
-                Positions = _visualSegmentPositions,
-                SegmentTensions = includeTension ? _verletSegmentTensions : default,
-                GpuPoints = _visualSegmentGpuPoints,
-                InvSnapTension = math.rcp(math.max(ResolveSnapTensionThreshold(), 1f))
-            };
-            copyJob.Run(pointCount);
+            PopulateVisualGpuSplinePoints(
+                _visualSegmentPositions,
+                includeTension ? _verletSegmentTensions : default,
+                _visualSegmentGpuPoints,
+                math.rcp(math.max(ResolveSnapTensionThreshold(), 1f)),
+                pointCount);
 
             GraphicsBufferUploadUtility.UploadNativeArray(
                 positionWriteBuffer,
@@ -950,6 +953,32 @@ namespace Hecton8.Physics
             }
 
             _visualGpuBufferIndex = writeIndex;
+        }
+
+        private static void PopulateVisualGpuSplinePoints(
+            NativeArray<float3> positions,
+            NativeArray<float> segmentTensions,
+            NativeArray<GpuCableSplinePointDTO> gpuPoints,
+            float invSnapTension,
+            int pointCount)
+        {
+            if (!positions.IsCreated || !gpuPoints.IsCreated || pointCount <= 0)
+                return;
+
+            int safeCount = math.min(pointCount, math.min(positions.Length, gpuPoints.Length));
+            float safeInvSnapTension = math.isfinite(invSnapTension) ? math.max(0f, invSnapTension) : 0f;
+            for (int index = 0; index < safeCount; index++)
+            {
+                float tension = 0f;
+                if (segmentTensions.IsCreated && segmentTensions.Length > 0)
+                    tension = segmentTensions[math.min(index, segmentTensions.Length - 1)];
+
+                gpuPoints[index] = new GpuCableSplinePointDTO
+                {
+                    Position = positions[index],
+                    Tension01 = math.saturate(tension * safeInvSnapTension)
+                };
+            }
         }
 
         internal bool UploadVisualDrawParams(
@@ -1746,6 +1775,9 @@ namespace Hecton8.Physics
             Vector3 payloadCurrentAcceleration,
             float fixedDeltaTime)
         {
+            if (!FinalizePendingVerletSolve(forceComplete: false, publishResults: true))
+                return ResolvePrimaryConstraintForceMagnitude();
+
             EnsureDataVaultCableState(_verletNodeCount > 1 ? _verletNodeCount : ResolveVerletPointCount(_qualityTier));
 
             if (!_verletRuntimeInitialized || !_verletPositions.IsCreated || _verletPositions.Length < 2)
@@ -1803,7 +1835,6 @@ namespace Hecton8.Physics
                 WorldSamplerEnabled = 1
             };
 
-            integrationJob.Run(_verletPositions.Length);
             var constraintJob = new VerletCableSolverJob
             {
                 Positions = _verletPositions,
@@ -1821,13 +1852,6 @@ namespace Hecton8.Physics
                 FloorY = VerletFloorY,
                 NodeRadius = VerletNodeRadius
             };
-            constraintJob.Run();
-            ApplyVerletPlasticDeformation(
-                _verletSolverStats.IsCreated && _verletSolverStats.Length > 0 ? _verletSolverStats[0] : 0f,
-                tuning.StretchThreshold01);
-            float peakTension = _verletSolverStats.IsCreated && _verletSolverStats.Length > 0
-                ? _verletSolverStats[0] * math.max(0f, _springStiffness)
-                : 0f;
             var telemetryJob = new TetherVerletTelemetryJob
             {
                 TelemetryRing = _verletTelemetryRing,
@@ -1837,7 +1861,8 @@ namespace Hecton8.Physics
                 FrameIndex = unchecked((uint)_currentSimulationFrameIndex),
                 NodeCount = _verletPositions.Length,
                 IterationCount = iterationCount,
-                PeakCableTension = peakTension,
+                PeakCableTension = 0f,
+                TensionScale = math.max(0f, _springStiffness),
                 AnchorPosition = anchor,
                 PayloadPosition = payload,
                 Flags = 0u,
@@ -1845,17 +1870,70 @@ namespace Hecton8.Physics
                 TelemetryCapacity = ResolveTelemetryCapacity(),
                 TelemetryHeadOffset = ResolveTelemetryHeadIndex()
             };
-            telemetryJob.Run();
+            int integrationBatch = SystemDispatcher.ResolveInnerloopBatchCount(_verletPositions.Length, 16, 64);
+            JobHandle integrationHandle = integrationJob.Schedule(_verletPositions.Length, integrationBatch);
+            JobHandle constraintHandle = constraintJob.Schedule(integrationHandle);
+            _pendingVerletSolveHandle = telemetryJob.Schedule(constraintHandle);
+            _pendingVerletSolveActive = true;
+            H8Memory.RegisterActiveJob(SystemID.Physics, _pendingVerletSolveHandle);
+            _pendingVerletAnchorPosition = anchorPosition;
+            _pendingVerletPayloadPosition = payloadPosition;
+            _pendingVerletFixedDeltaTime = fixedDeltaTime;
+            _pendingVerletStretchThreshold01 = tuning.StretchThreshold01;
+            _pendingVerletFrameIndex = _currentSimulationFrameIndex;
+            JobHandle.ScheduleBatchedJobs();
+            return ResolvePrimaryConstraintForceMagnitude();
+        }
 
+        private bool FinalizePendingVerletSolve(bool forceComplete, bool publishResults)
+        {
+            if (!_pendingVerletSolveActive)
+                return true;
+
+            JobHandle handle = _pendingVerletSolveHandle;
+            bool finalized = forceComplete
+                ? DispatcherJobFence.TryComplete(ref handle, forceComplete: true)
+                : DispatcherJobFence.TryFinalizeCompleted(ref handle);
+            if (!finalized)
+                return false;
+
+            _pendingVerletSolveHandle = default;
+            _pendingVerletSolveActive = false;
+            if (!publishResults)
+                return true;
+
+            int previousFrameIndex = _currentSimulationFrameIndex;
+            _currentSimulationFrameIndex = _pendingVerletFrameIndex;
+            FinalizeVerletSolveResults(
+                _pendingVerletAnchorPosition,
+                _pendingVerletPayloadPosition,
+                _pendingVerletFixedDeltaTime,
+                _pendingVerletStretchThreshold01);
+            _currentSimulationFrameIndex = previousFrameIndex;
+            return true;
+        }
+
+        private void FinalizeVerletSolveResults(
+            Vector3 anchorPosition,
+            Vector3 payloadPosition,
+            float fixedDeltaTime,
+            float stretchThreshold01)
+        {
+            ApplyVerletPlasticDeformation(
+                _verletSolverStats.IsCreated && _verletSolverStats.Length > 0 ? _verletSolverStats[0] : 0f,
+                stretchThreshold01);
+            float peakTension = _verletSolverStats.IsCreated && _verletSolverStats.Length > 0
+                ? _verletSolverStats[0] * math.max(0f, _springStiffness)
+                : 0f;
             _lastVerletPeakDelta = _verletSolverStats.IsCreated && _verletSolverStats.Length > 0 ? _verletSolverStats[0] : 0f;
             if (_verletSolverFlags.IsCreated && _verletSolverFlags.Length > 0 && _verletSolverFlags[0] != TetherVerletFaultFlags.None)
                 DumpVerletTelemetryOnce((uint)_verletSolverFlags[0]);
+
             _primaryConstraintForceMagnitude = peakTension;
             PublishTetherTensionSignal(anchorPosition, payloadPosition, peakTension);
             PublishDataVaultCableState(fixedDeltaTime, peakTension);
             ApplyVerletEndpointForces(anchorPosition, payloadPosition, peakTension);
             EmitTensionCreakIfNeeded(anchorPosition, payloadPosition, peakTension);
-            return peakTension;
         }
 
         private void ApplyVerletRestLengthTarget(float targetCableLength, float fixedDeltaTime, float reelSpeedMetersPerSecond)
@@ -2165,21 +2243,44 @@ namespace Hecton8.Physics
                 return;
 
             Vector3 payloadForce = -direction * scaledForce;
-            PhysicsForceRouter.QueueForceAtPosition(
-                _payloadBody,
-                payloadForce,
-                payloadPosition,
-                ForceMode.Force);
-
+            double3 localOriginAup = AbsoluteUniversePosition.FromRuntimePosition(Vector3.zero).ToAbsoluteDouble3();
+            double3 anchorAup = AbsoluteUniversePosition.FromRuntimePosition(anchorPosition).ToAbsoluteDouble3();
+            double3 payloadAup = AbsoluteUniversePosition.FromRuntimePosition(payloadPosition).ToAbsoluteDouble3();
+            float3 payloadForce3 = new float3(payloadForce.x, payloadForce.y, payloadForce.z);
+            uint frameIndex = unchecked((uint)_currentSimulationFrameIndex);
+            TetherForcePacketDTO anchorPacket = default;
             if (!_playerRigidbody.isKinematic)
             {
                 Vector3 reaction = -payloadForce;
-                PhysicsForceRouter.QueueForceAtPosition(
-                    _playerRigidbody,
-                    reaction,
-                    anchorPosition,
-                    ForceMode.Force);
+                anchorPacket = new TetherForcePacketDTO
+                {
+                    ApplicationAUP = anchorAup,
+                    Force = new float3(reaction.x, reaction.y, reaction.z),
+                    Tension = scaledForce,
+                    CableId = _dataVaultSlot,
+                    BodySlot = 0,
+                    Flags = TetherForcePacketFlags.EndpointAnchor,
+                    FrameIndex = frameIndex
+                };
             }
+
+            TetherForcePacketDTO payloadPacket = new TetherForcePacketDTO
+            {
+                ApplicationAUP = payloadAup,
+                Force = payloadForce3,
+                Tension = scaledForce,
+                CableId = _dataVaultSlot,
+                BodySlot = 1,
+                Flags = TetherForcePacketFlags.EndpointPayload,
+                FrameIndex = frameIndex
+            };
+            TetherAupForcePacketBridge.FlushPacketPair(
+                in anchorPacket,
+                in payloadPacket,
+                _playerRigidbody,
+                _payloadBody,
+                localOriginAup,
+                maxPayloadForce);
         }
 
         private void UpdateVerletVisualUpload(HectonQualityTier qualityTier, Plane[] frustumPlanes)
@@ -3152,6 +3253,9 @@ namespace Hecton8.Physics
                 return false;
             }
 
+            if (!FinalizePendingVerletSolve(forceComplete: true, publishResults: false))
+                return false;
+
             _verletSolverOrigin = SanitizeFinite(_verletSolverOrigin - shiftOffset);
 
             if (_visualSegmentPositions.IsCreated)
@@ -3159,6 +3263,30 @@ namespace Hecton8.Physics
                 for (int pointIndex = 0; pointIndex < _visualSegmentPositions.Length; pointIndex++)
                     _visualSegmentPositions[pointIndex] = SanitizeFinite(_visualSegmentPositions[pointIndex] - shiftOffset);
             }
+
+            return true;
+        }
+
+        internal bool RebaseVisualStagingRuntime(float3 shiftOffset)
+        {
+            if (!_isActive ||
+                !math.all(math.isfinite(shiftOffset)) ||
+                math.lengthsq(shiftOffset) <= MinVectorMagnitudeSq)
+            {
+                return false;
+            }
+
+            if (!FinalizePendingVerletSolve(forceComplete: true, publishResults: false))
+                return false;
+
+            NativeArray<float3> visualPoints = _visualSegmentPositions.IsCreated
+                ? _visualSegmentPositions
+                : _verletPositions;
+            if (!visualPoints.IsCreated || visualPoints.Length == 0)
+                return false;
+
+            for (int pointIndex = 0; pointIndex < visualPoints.Length; pointIndex++)
+                visualPoints[pointIndex] = SanitizeFinite(visualPoints[pointIndex] - shiftOffset);
 
             return true;
         }
@@ -3211,6 +3339,9 @@ namespace Hecton8.Physics
         internal void CommitVisualRebaseUpload()
         {
             if (VisualSegmentBuffer == null)
+                return;
+
+            if (_pendingVerletSolveActive)
                 return;
 
             if (_visualSegmentPositions.IsCreated)
@@ -3354,14 +3485,19 @@ namespace Hecton8.Physics
             }
 
             Vector3 reactionForce = -payloadForce;
-            if (reactionForce.sqrMagnitude <= MinVectorMagnitudeSq)
+            if (reactionForce.sqrMagnitude <= MinVectorMagnitudeSq || !IsFinite(reactionForce))
+                return;
+
+            float playerMass = _playerRigidbody != null ? math.max(_playerRigidbody.mass, 0.0001f) : 1f;
+            Vector3 reactionAcceleration = ClampVector(reactionForce * math.rcp(playerMass), _maxCableAcceleration);
+            if (reactionAcceleration.sqrMagnitude <= MinVectorMagnitudeSq || !IsFinite(reactionAcceleration))
                 return;
 
             PhysicsForceRouter.QueueForceAtPosition(
                 _playerRigidbody,
-                reactionForce,
+                reactionAcceleration,
                 anchorPositionWS,
-                ForceMode.Force);
+                ForceMode.Acceleration);
         }
 
         private void RefreshPrimaryConstraintDrive()

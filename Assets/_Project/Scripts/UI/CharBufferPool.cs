@@ -17,7 +17,7 @@ namespace Hecton8.UI
         private const int SlotCount = 500;
         private const int MaskWordBits = 64;
         private const int MaskWordCount = (SlotCount + MaskWordBits - 1) / MaskWordBits;
-        internal const int RequiredBabelTextCapacity = 128;
+        internal const int RequiredBabelTextCapacity = 512;
         internal const int RequiredVrTextCapacity = 256;
         internal const int EncyclopediaPageCapacity = 32768;
         private const int SlotLength = RequiredVrTextCapacity;
@@ -27,18 +27,15 @@ namespace Hecton8.UI
 
         // COLD ALLOC: char[500][256] - legacy VR HUD TMP staging pool - owner: CharBufferPool
         private static readonly char[][] s_slots = CreateSlots(SlotLength);
-        // COLD ALLOC: char[500][128] - TMP char[] bridge for native Babel arena slots - owner: CharBufferPool
+        // COLD ALLOC: char[500][512] - TMP bridge and no-vault Babel span fallback - owner: CharBufferPool
         private static readonly char[][] s_babelTmpBridges = CreateSlots(RequiredBabelTextCapacity);
         // COLD ALLOC: char[4][32768] - long-form PDA encyclopedia TMP staging pages - owner: CharBufferPool
         private static readonly char[][] s_encyclopediaPages = CreateSlots(EncyclopediaPageSlotCount, EncyclopediaPageCapacity);
         // COLD ALLOC: ulong[8] - fixed free-slot bitmap for CharBufferPool - owner: CharBufferPool
         private static readonly ulong[] s_freeMasks = CreateFreeMasks();
         private static ulong s_encyclopediaFreeMask = CreateEncyclopediaFreeMask();
-        private static NativeArray<char> s_babelArena;
-        private static NativeBitArray s_activeLeases;
         private static IDataVault s_babelArenaVault;
         private static VaultBufferHandle<char> s_babelArenaHandle;
-        private static bool s_babelArenaRegistered;
         private static bool s_babelArenaVaultBacked;
         private static int s_activeLeaseCount;
 
@@ -101,13 +98,10 @@ namespace Hecton8.UI
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            DisposeBabelArena();
-            DisposeActiveLeaseBitset();
+            ClearBabelArenaHandle();
             ResetFreeMasks();
             ResetEncyclopediaFreeMask();
-            EnsureActiveLeaseBitset();
             EnsureBabelArena();
-            s_activeLeases.Clear();
             s_activeLeaseCount = 0;
             LocRegistry.ReportBufferPoolLeasesActive(0);
             Prewarm();
@@ -115,22 +109,23 @@ namespace Hecton8.UI
 
         public static void Prewarm()
         {
-            EnsureActiveLeaseBitset();
-            EnsureBabelArena();
+            bool hasNativeArena = TryResolveBabelArena(out NativeArray<char> babelArena);
             for (int slotIndex = 0; slotIndex < SlotCount; slotIndex++)
             {
                 char[] buffer = s_slots[slotIndex];
                 buffer[0] = '\0';
-                buffer[RequiredBabelTextCapacity - 1] = '\0';
                 buffer[RequiredVrTextCapacity - 1] = '\0';
 
                 char[] babelBridge = s_babelTmpBridges[slotIndex];
                 babelBridge[0] = '\0';
                 babelBridge[RequiredBabelTextCapacity - 1] = '\0';
 
-                int nativeBase = slotIndex * RequiredBabelTextCapacity;
-                s_babelArena[nativeBase] = '\0';
-                s_babelArena[nativeBase + RequiredBabelTextCapacity - 1] = '\0';
+                if (hasNativeArena)
+                {
+                    int nativeBase = slotIndex * RequiredBabelTextCapacity;
+                    babelArena[nativeBase] = '\0';
+                    babelArena[nativeBase + RequiredBabelTextCapacity - 1] = '\0';
+                }
             }
 
             for (int slotIndex = 0; slotIndex < EncyclopediaPageSlotCount; slotIndex++)
@@ -155,7 +150,6 @@ namespace Hecton8.UI
 
         public static bool TryAcquireBabel(out BabelLease lease)
         {
-            EnsureBabelArena();
             if (TryAcquireSlot(out int slotIndex))
             {
                 lease = new BabelLease(slotIndex, s_babelTmpBridges[slotIndex]);
@@ -219,7 +213,6 @@ namespace Hecton8.UI
 
         private static bool TryAcquireSlot(out int slotIndex)
         {
-            EnsureActiveLeaseBitset();
             for (int wordIndex = 0; wordIndex < MaskWordCount; wordIndex++)
             {
                 ulong availableMask = s_freeMasks[wordIndex];
@@ -238,7 +231,6 @@ namespace Hecton8.UI
                         continue;
 
                     s_freeMasks[wordIndex] = availableMask & ~slotBit;
-                    s_activeLeases.Set(candidateSlot, true);
                     s_activeLeaseCount = math.min(SlotCount, s_activeLeaseCount + 1);
                     LocRegistry.ReportBufferPoolLeasesActive(s_activeLeaseCount);
                     slotIndex = candidateSlot;
@@ -252,14 +244,13 @@ namespace Hecton8.UI
 
         private static void ReleaseSlot(int slotIndex)
         {
-            EnsureActiveLeaseBitset();
-            if (!s_activeLeases.IsSet(slotIndex))
-                return;
-
-            s_activeLeases.Set(slotIndex, false);
             int wordIndex = slotIndex / MaskWordBits;
             int bit = slotIndex - (wordIndex * MaskWordBits);
-            s_freeMasks[wordIndex] |= 1UL << bit;
+            ulong slotBit = 1UL << bit;
+            if ((s_freeMasks[wordIndex] & slotBit) != 0UL)
+                return;
+
+            s_freeMasks[wordIndex] |= slotBit;
             s_activeLeaseCount = math.max(0, s_activeLeaseCount - 1);
             LocRegistry.ReportBufferPoolLeasesActive(s_activeLeaseCount);
         }
@@ -301,12 +292,16 @@ namespace Hecton8.UI
             if ((uint)slotIndex >= SlotCount)
                 return Span<char>.Empty;
 
-            EnsureBabelArena();
-            unsafe
+            if (TryResolveBabelArena(out NativeArray<char> babelArena))
             {
-                char* basePtr = (char*)NativeArrayUnsafeUtility.GetUnsafePtr(s_babelArena);
-                return new Span<char>(basePtr + (slotIndex * RequiredBabelTextCapacity), RequiredBabelTextCapacity);
+                unsafe
+                {
+                    char* basePtr = (char*)NativeArrayUnsafeUtility.GetUnsafePtr(babelArena);
+                    return new Span<char>(basePtr + (slotIndex * RequiredBabelTextCapacity), RequiredBabelTextCapacity);
+                }
             }
+
+            return s_babelTmpBridges[slotIndex].AsSpan();
         }
 
         private static int CopyBabelNativeToTmp(int slotIndex, char[] tmpBuffer, int length)
@@ -386,60 +381,44 @@ namespace Hecton8.UI
             return count;
         }
 
-        private static void EnsureActiveLeaseBitset()
-        {
-            if (s_activeLeases.IsCreated)
-                return;
-
-            s_activeLeases = new NativeBitArray(
-                SlotCount,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeBitArray[500] - active CharBufferPool lease tracker - owner: CharBufferPool
-        }
-
-        private static void EnsureBabelArena()
+        private static bool EnsureBabelArena()
         {
             if (s_babelArenaVaultBacked)
             {
-                NativeArray<char> resolved = s_babelArenaHandle.Resolve(s_babelArenaVault);
-                if (resolved.IsCreated && resolved.Length >= BabelArenaLength)
-                {
-                    s_babelArena = resolved;
-                    return;
-                }
+                if (TryResolveCurrentVaultArena(out _))
+                    return true;
 
-                s_babelArena = default;
-                s_babelArenaHandle = default;
-                s_babelArenaVault = null;
-                s_babelArenaVaultBacked = false;
+                ClearBabelArenaHandle();
             }
 
-            if (s_babelArena.IsCreated)
-            {
-                if (!TryResolveBabelVault(out IDataVault vault))
-                    return;
+            if (TryResolveBabelVault(out IDataVault resolvedVault))
+                return TryAcquireVaultBabelArena(resolvedVault);
 
-                DisposeBabelArena();
-                if (TryAcquireVaultBabelArena(vault))
-                    return;
-            }
+            return false;
+        }
 
-            if (TryResolveBabelVault(out IDataVault resolvedVault) &&
-                TryAcquireVaultBabelArena(resolvedVault))
-            {
-                return;
-            }
+        private static bool TryResolveBabelArena(out NativeArray<char> arena)
+        {
+            arena = default;
+            if (!s_babelArenaVaultBacked && !EnsureBabelArena())
+                return false;
 
-            s_babelArena = new NativeArray<char>(
-                BabelArenaLength,
-                Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<char>[64000] - native Babel UTF-16 staging arena - owner: CharBufferPool
-            NativeMemorySentinel.RegisterNativeArray(
-                s_babelArena,
-                nameof(CharBufferPool),
-                nameof(s_babelArena),
-                NativeAllocationLifetime.Session);
-            s_babelArenaRegistered = true;
+            if (TryResolveCurrentVaultArena(out arena))
+                return true;
+
+            ClearBabelArenaHandle();
+            arena = default;
+            return false;
+        }
+
+        private static bool TryResolveCurrentVaultArena(out NativeArray<char> arena)
+        {
+            arena = default;
+            if (!s_babelArenaVaultBacked || s_babelArenaVault == null)
+                return false;
+
+            arena = s_babelArenaHandle.Resolve(s_babelArenaVault);
+            return arena.IsCreated && arena.Length >= BabelArenaLength;
         }
 
         private static bool TryResolveBabelVault(out IDataVault vault)
@@ -475,49 +454,15 @@ namespace Hecton8.UI
             }
 
             s_babelArenaVault = vault;
-            s_babelArena = resolved;
             s_babelArenaVaultBacked = true;
-            s_babelArenaRegistered = false;
             return true;
         }
 
-        private static void DisposeBabelArena()
+        private static void ClearBabelArenaHandle()
         {
-            if (!s_babelArena.IsCreated)
-            {
-                s_babelArenaHandle = default;
-                s_babelArenaVault = null;
-                s_babelArenaVaultBacked = false;
-                return;
-            }
-
-            if (s_babelArenaVaultBacked)
-            {
-                s_babelArena = default;
-                s_babelArenaHandle = default;
-                s_babelArenaVault = null;
-                s_babelArenaVaultBacked = false;
-                s_babelArenaRegistered = false;
-                return;
-            }
-
-            if (s_babelArenaRegistered)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(s_babelArena);
-                s_babelArenaRegistered = false;
-            }
-
-            s_babelArena.Dispose();
-            s_babelArena = default;
-        }
-
-        private static void DisposeActiveLeaseBitset()
-        {
-            if (!s_activeLeases.IsCreated)
-                return;
-
-            s_activeLeases.Dispose();
-            s_activeLeases = default;
+            s_babelArenaHandle = default;
+            s_babelArenaVault = null;
+            s_babelArenaVaultBacked = false;
         }
     }
 }

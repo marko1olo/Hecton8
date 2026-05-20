@@ -24,18 +24,22 @@ namespace Hecton8.Gameplay
         ThermalGenerator = 1UL << 10
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct SuitStats
     {
-        public float MaxO2;
-        public float CrushDepth;
-        public float SwimSpeedMultiplier;
-        public float ThermalResistance;
-        public float MaxEnergy;
-        public float MaxIntegrity;
-        public float MinSafeTemperature;
-        public float MaxSafeTemperature;
-        public float RadiationThreshold;
+        [FieldOffset(0)] public float MaxO2;
+        [FieldOffset(4)] public float CrushDepth;
+        [FieldOffset(8)] public float SwimSpeedMultiplier;
+        [FieldOffset(12)] public float ThermalResistance;
+        [FieldOffset(16)] public float MaxEnergy;
+        [FieldOffset(20)] public float MaxIntegrity;
+        [FieldOffset(24)] public float MinSafeTemperature;
+        [FieldOffset(28)] public float MaxSafeTemperature;
+        [FieldOffset(32)] public float RadiationThreshold;
+        [FieldOffset(36)] private uint _pad0;
+        [FieldOffset(40)] private ulong _pad1;
+        [FieldOffset(48)] private ulong _pad2;
+        [FieldOffset(56)] private ulong _pad3;
     }
 
     public static class SuitUpgradeResolver

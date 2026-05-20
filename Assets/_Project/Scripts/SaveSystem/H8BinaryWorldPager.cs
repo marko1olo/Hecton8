@@ -164,7 +164,7 @@ namespace Hecton8.Core.Persistence.Paging
                     FileAccess.ReadWrite,
                     FileShare.ReadWrite,
                     4096,
-                    FileOptions.WriteThrough | FileOptions.SequentialScan);
+                    FileOptions.Asynchronous | FileOptions.WriteThrough | FileOptions.SequentialScan);
             }
             catch (IOException exception)
             {
@@ -2428,40 +2428,40 @@ namespace Hecton8.Core.Persistence.Paging
             [FieldOffset(0)] public int Value;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 32)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct PageWriteCommand
         {
-            public long SectorHash;
-            public uint PayloadType;
-            public int ByteOffset;
-            public int ByteCount;
-            public uint SourceHash;
-            public uint Frame;
-            public uint Reserved;
+            [FieldOffset(0)] public long SectorHash;
+            [FieldOffset(8)] public uint PayloadType;
+            [FieldOffset(12)] public int ByteOffset;
+            [FieldOffset(16)] public int ByteCount;
+            [FieldOffset(20)] public uint SourceHash;
+            [FieldOffset(24)] public uint Frame;
+            [FieldOffset(28)] public uint Reserved;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 24)]
+        [StructLayout(LayoutKind.Explicit, Size = 24)]
         private struct PageReadCommand
         {
-            public long SectorHash;
-            public uint PayloadType;
-            public uint RequestId;
-            public uint Frame;
-            public uint Reserved;
+            [FieldOffset(0)] public long SectorHash;
+            [FieldOffset(8)] public uint PayloadType;
+            [FieldOffset(12)] public uint RequestId;
+            [FieldOffset(16)] public uint Frame;
+            [FieldOffset(20)] public uint Reserved;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 32)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct PageReadResult
         {
-            public long SectorHash;
-            public uint PayloadType;
-            public uint RequestId;
-            public int SlotIndex;
-            public int ByteCount;
-            public H8WorldPageStatus Status;
-            public byte Reserved0;
-            public ushort Reserved1;
-            public uint Reserved2;
+            [FieldOffset(0)] public long SectorHash;
+            [FieldOffset(8)] public uint PayloadType;
+            [FieldOffset(12)] public uint RequestId;
+            [FieldOffset(16)] public int SlotIndex;
+            [FieldOffset(20)] public int ByteCount;
+            [FieldOffset(24)] public H8WorldPageStatus Status;
+            [FieldOffset(25)] public byte Reserved0;
+            [FieldOffset(26)] public ushort Reserved1;
+            [FieldOffset(28)] public uint Reserved2;
         }
 
         private enum PagerTelemetryOperation : byte
@@ -2474,23 +2474,23 @@ namespace Hecton8.Core.Persistence.Paging
             WalAppendFailed = 6
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct PagerTelemetryEntry
         {
-            public long SectorHash;
-            public long Offset;
-            public uint Frame;
-            public uint RequestId;
-            public uint PayloadType;
-            public int PendingWrites;
-            public int PendingReads;
-            public int PageFaults;
-            public int PayloadBytes;
-            public PagerTelemetryOperation Operation;
-            public H8WorldPageStatus Status;
-            public ushort Flags;
-            public long TicksUtc;
-            public long Reserved;
+            [FieldOffset(0)] public long SectorHash;
+            [FieldOffset(8)] public long Offset;
+            [FieldOffset(16)] public uint Frame;
+            [FieldOffset(20)] public uint RequestId;
+            [FieldOffset(24)] public uint PayloadType;
+            [FieldOffset(28)] public int PendingWrites;
+            [FieldOffset(32)] public int PendingReads;
+            [FieldOffset(36)] public int PageFaults;
+            [FieldOffset(40)] public int PayloadBytes;
+            [FieldOffset(44)] public PagerTelemetryOperation Operation;
+            [FieldOffset(45)] public H8WorldPageStatus Status;
+            [FieldOffset(46)] public ushort Flags;
+            [FieldOffset(48)] public long TicksUtc;
+            [FieldOffset(56)] public long Reserved;
         }
     }
 }

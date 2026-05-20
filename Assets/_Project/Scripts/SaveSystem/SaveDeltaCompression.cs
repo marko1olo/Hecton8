@@ -10,14 +10,14 @@ using Unity.Mathematics;
 namespace Hecton8.SaveSystem
 {
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 8)]
+    [StructLayout(LayoutKind.Explicit, Size = 8)]
     internal readonly struct SaveVoxelDeltaRun5
     {
-        public readonly ushort StartIndex;
-        public readonly ushort RunLength;
-        public readonly byte SdfValue;
-        public readonly byte Reserved0;
-        public readonly ushort Reserved1;
+        [FieldOffset(0)] public readonly ushort StartIndex;
+        [FieldOffset(2)] public readonly ushort RunLength;
+        [FieldOffset(4)] public readonly byte SdfValue;
+        [FieldOffset(5)] public readonly byte Reserved0;
+        [FieldOffset(6)] public readonly ushort Reserved1;
 
         public SaveVoxelDeltaRun5(ushort startIndex, byte sdfValue, ushort runLength)
         {
@@ -30,15 +30,15 @@ namespace Hecton8.SaveSystem
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 8)]
+    [StructLayout(LayoutKind.Explicit, Size = 8)]
     internal readonly struct SaveVoxelDeltaRun8
     {
-        public readonly ushort StartIndex;
-        public readonly ushort RunLength;
-        public readonly sbyte SdfValue;
-        public readonly byte MaterialId;
-        public readonly byte Flags;
-        public readonly byte Reserved0;
+        [FieldOffset(0)] public readonly ushort StartIndex;
+        [FieldOffset(2)] public readonly ushort RunLength;
+        [FieldOffset(4)] public readonly sbyte SdfValue;
+        [FieldOffset(5)] public readonly byte MaterialId;
+        [FieldOffset(6)] public readonly byte Flags;
+        [FieldOffset(7)] public readonly byte Reserved0;
 
         public SaveVoxelDeltaRun8(ushort startIndex, ushort runLength, sbyte sdfValue, byte materialId, byte flags)
         {
@@ -52,11 +52,11 @@ namespace Hecton8.SaveSystem
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 8)]
+    [StructLayout(LayoutKind.Explicit, Size = 8)]
     internal readonly struct PackedEntityState32
     {
-        public readonly uint Value;
-        public readonly uint Reserved0;
+        [FieldOffset(0)] public readonly uint Value;
+        [FieldOffset(4)] public readonly uint Reserved0;
 
         public PackedEntityState32(uint value)
         {
@@ -66,10 +66,10 @@ namespace Hecton8.SaveSystem
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 8)]
+    [StructLayout(LayoutKind.Explicit, Size = 8)]
     internal readonly struct PackedSuitUpgradeState64
     {
-        public readonly ulong Value;
+        [FieldOffset(0)] public readonly ulong Value;
 
         public PackedSuitUpgradeState64(ulong value)
         {
@@ -78,13 +78,13 @@ namespace Hecton8.SaveSystem
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 8)]
+    [StructLayout(LayoutKind.Explicit, Size = 8)]
     internal readonly struct QuantizedLocalHalf3
     {
-        public readonly ushort X;
-        public readonly ushort Y;
-        public readonly ushort Z;
-        public readonly ushort Reserved0;
+        [FieldOffset(0)] public readonly ushort X;
+        [FieldOffset(2)] public readonly ushort Y;
+        [FieldOffset(4)] public readonly ushort Z;
+        [FieldOffset(6)] public readonly ushort Reserved0;
 
         public QuantizedLocalHalf3(float3 localOffsetMeters)
         {
@@ -104,14 +104,14 @@ namespace Hecton8.SaveSystem
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 24)]
+    [StructLayout(LayoutKind.Explicit, Size = 24)]
     internal readonly struct QuantizedAupSectorHalf3
     {
-        public readonly int SectorX;
-        public readonly int SectorY;
-        public readonly int SectorZ;
-        public readonly QuantizedLocalHalf3 LocalOffset;
-        public readonly uint Reserved0;
+        [FieldOffset(0)] public readonly int SectorX;
+        [FieldOffset(4)] public readonly int SectorY;
+        [FieldOffset(8)] public readonly int SectorZ;
+        [FieldOffset(12)] public readonly QuantizedLocalHalf3 LocalOffset;
+        [FieldOffset(20)] public readonly uint Reserved0;
 
         public QuantizedAupSectorHalf3(int3 sectorId, QuantizedLocalHalf3 localOffset)
         {
@@ -124,17 +124,17 @@ namespace Hecton8.SaveSystem
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal readonly struct SaveAupLocalOffset32
     {
-        public readonly uint SectorKey;
-        public readonly uint ShiftFrameId;
-        public readonly float LocalOffsetX;
-        public readonly float LocalOffsetY;
-        public readonly float LocalOffsetZ;
-        public readonly uint Flags;
-        public readonly uint _pad0;
-        public readonly uint _pad1;
+        [FieldOffset(0)] public readonly uint SectorKey;
+        [FieldOffset(4)] public readonly uint ShiftFrameId;
+        [FieldOffset(8)] public readonly float LocalOffsetX;
+        [FieldOffset(12)] public readonly float LocalOffsetY;
+        [FieldOffset(16)] public readonly float LocalOffsetZ;
+        [FieldOffset(20)] public readonly uint Flags;
+        [FieldOffset(24)] public readonly uint _pad0;
+        [FieldOffset(28)] public readonly uint _pad1;
 
         public SaveAupLocalOffset32(uint sectorKey, uint shiftFrameId, float3 localOffsetMeters, uint flags)
         {
@@ -150,49 +150,49 @@ namespace Hecton8.SaveSystem
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal struct MockStatePayload
     {
-        public SaveAupLocalOffset32 LocalAup;
+        [FieldOffset(0)] public SaveAupLocalOffset32 LocalAup;
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct StrictSaveFileHeader64
     {
-        public ulong Magic;
-        public double PlayTimeSeconds;
-        public long AupX;
-        public long AupY;
-        public long AupZ;
-        public ulong Checksum;
-        public uint Version;
-        public uint Reserved0;
-        public uint Reserved1;
-        public uint Reserved2;
+        [FieldOffset(0)] public ulong Magic;
+        [FieldOffset(8)] public double PlayTimeSeconds;
+        [FieldOffset(16)] public long AupX;
+        [FieldOffset(24)] public long AupY;
+        [FieldOffset(32)] public long AupZ;
+        [FieldOffset(40)] public ulong Checksum;
+        [FieldOffset(48)] public uint Version;
+        [FieldOffset(52)] public uint Reserved0;
+        [FieldOffset(56)] public uint Reserved1;
+        [FieldOffset(60)] public uint Reserved2;
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal struct SaveChunkHeader32
     {
-        public ulong ChunkKey;
-        public uint PayloadOffset;
-        public uint PayloadLength;
-        public ulong PayloadHash64;
-        public uint Flags;
-        public uint Reserved;
+        [FieldOffset(0)] public ulong ChunkKey;
+        [FieldOffset(8)] public uint PayloadOffset;
+        [FieldOffset(12)] public uint PayloadLength;
+        [FieldOffset(16)] public ulong PayloadHash64;
+        [FieldOffset(24)] public uint Flags;
+        [FieldOffset(28)] public uint Reserved;
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 264)]
+    [StructLayout(LayoutKind.Explicit, Size = 264)]
     internal unsafe struct SectorPayloadDTO
     {
         public const int FixedPayloadBytes = 256;
 
-        public uint SectorHash;
-        public uint DataLength;
-        public fixed byte Data[FixedPayloadBytes];
+        [FieldOffset(0)] public uint SectorHash;
+        [FieldOffset(4)] public uint DataLength;
+        [FieldOffset(8)] public fixed byte Data[FixedPayloadBytes];
     }
 
     internal static unsafe class SaveDeltaCompression

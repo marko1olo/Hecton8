@@ -5,7 +5,6 @@ using Hecton8.Core.Memory;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
-using Unity.Jobs;
 using Unity.Mathematics;
 
 namespace Hecton8.Tests.Editor
@@ -15,12 +14,16 @@ namespace Hecton8.Tests.Editor
         [Test]
         public void WaveParametersDto_Arm64Layout_IsExact()
         {
-            Assert.AreEqual(32, UnsafeUtility.SizeOf<WaveParametersDTO>());
-            Assert.AreEqual(0, OffsetOf<WaveParametersDTO>(nameof(WaveParametersDTO.DirectionAndSteepness)));
-            Assert.AreEqual(16, OffsetOf<WaveParametersDTO>(nameof(WaveParametersDTO.PhaseSpeed)));
-            Assert.AreEqual(20, OffsetOf<WaveParametersDTO>(nameof(WaveParametersDTO.Amplitude)));
-            Assert.AreEqual(24, OffsetOf<WaveParametersDTO>(nameof(WaveParametersDTO.Wavelength)));
-            Assert.AreEqual(28, OffsetOf<WaveParametersDTO>(nameof(WaveParametersDTO._pad0)));
+            Assert.AreEqual(64, UnsafeUtility.SizeOf<WaveParametersDTO>());
+            Assert.AreEqual(0, OffsetOf<WaveParametersDTO>(nameof(WaveParametersDTO.Wave1)));
+            Assert.AreEqual(16, OffsetOf<WaveParametersDTO>(nameof(WaveParametersDTO.Wave2)));
+            Assert.AreEqual(32, OffsetOf<WaveParametersDTO>(nameof(WaveParametersDTO.Wave3)));
+            Assert.AreEqual(48, OffsetOf<WaveParametersDTO>(nameof(WaveParametersDTO.GlobalWindAndStorm)));
+            Assert.AreEqual(64, UnsafeUtility.SizeOf<OceanWaveAupPhaseDTO>());
+            Assert.AreEqual(0, OffsetOf<OceanWaveAupPhaseDTO>(nameof(OceanWaveAupPhaseDTO.PhaseBase0)));
+            Assert.AreEqual(16, OffsetOf<OceanWaveAupPhaseDTO>(nameof(OceanWaveAupPhaseDTO.PhaseBase1)));
+            Assert.AreEqual(32, OffsetOf<OceanWaveAupPhaseDTO>(nameof(OceanWaveAupPhaseDTO.CameraAupLocalXZ)));
+            Assert.AreEqual(48, OffsetOf<OceanWaveAupPhaseDTO>(nameof(OceanWaveAupPhaseDTO.Frame)));
         }
 
         [Test]
@@ -29,9 +32,8 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(64, UnsafeUtility.SizeOf<AtmosphereDTO>());
             Assert.AreEqual(64, UnsafeUtility.SizeOf<WeatherStateDTO>());
             Assert.AreEqual(64, UnsafeUtility.SizeOf<OceanSurfaceTelemetryEntry>());
-            Assert.AreEqual(64, UnsafeUtility.SizeOf<MockBuoyancyQuery>());
-            Assert.AreEqual(32, UnsafeUtility.SizeOf<MockBuoyancyResult>());
             Assert.AreEqual(64, UnsafeUtility.SizeOf<WaterlineBreachSignal>());
+            Assert.AreEqual(64, UnsafeUtility.SizeOf<BeaufortProfileDTO>());
         }
 
         [Test]
@@ -51,7 +53,7 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void RadialGridLod_ExportsWrappedCameraAupForShaderPhase()
+        public void RadialGridLod_ExportsWrappedCameraAupForLodOnly()
         {
             double3 cameraAup = new double3(50000.0, 12.0, -23000.0);
             OceanSurfaceLodDTO lod = HectonOceanSurfaceMath.ResolveRadialGridLod(cameraAup, 1f);
@@ -66,14 +68,39 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void AupPhaseBase_WrapsProjectedMetersPerLane()
+        {
+            using NativeArray<WaveParametersDTO> waves = CreateSingleWaveArray(Allocator.TempJob);
+            WaveParametersDTO wave = waves[0];
+            float4 lane = HectonOceanSurfaceMath.GetWaveLane(wave, 2);
+            float2 direction = HectonOceanSurfaceMath.WaveLaneDirection(lane);
+            float wavelength = HectonOceanSurfaceMath.WaveLaneWavelength(lane);
+            double3 cameraAup = new double3(50000.0, 0.0, -23000.0);
+            double projected = (cameraAup.x * direction.x) + (cameraAup.z * direction.y);
+
+            float phaseA = HectonOceanSurfaceMath.ResolveAupPhaseBaseRadians(projected, wavelength);
+            float phaseB = HectonOceanSurfaceMath.ResolveAupPhaseBaseRadians(projected + (wavelength * 1024.0), wavelength);
+            OceanWaveAupPhaseDTO phaseDto = HectonOceanSurfaceMath.ResolveAupPhaseBases(cameraAup, waves, 17u, 1f, 6);
+
+            Assert.AreEqual(phaseA, phaseB, 0.0002f);
+            Assert.AreEqual(phaseA, HectonOceanSurfaceMath.GetAupPhaseBase(phaseDto, 2), 0.0002f);
+            Assert.AreEqual(17u, phaseDto.Frame);
+            Assert.AreEqual(1f, phaseDto.GlobalQualityWeight, 0.0001f);
+        }
+
+        [Test]
         public void GlobalQualityWeight_FadesWaveBudgetContinuously()
         {
-            Assert.AreEqual(4f, HectonOceanSurfaceMath.ResolveDesiredWaveCount(0.1f, 16), 0.0001f);
-            Assert.AreEqual(16f, HectonOceanSurfaceMath.ResolveDesiredWaveCount(1f, 16), 0.0001f);
-            Assert.Greater(HectonOceanSurfaceMath.ResolveDesiredWaveCount(0.55f, 16), 4f);
-            Assert.Less(HectonOceanSurfaceMath.ResolveDesiredWaveCount(0.55f, 16), 16f);
-            Assert.AreEqual(0f, HectonOceanSurfaceMath.ResolveWaveContribution(4, 0.1f, 16), 0.0001f);
-            Assert.Greater(HectonOceanSurfaceMath.ResolveWaveContribution(8, 0.55f, 16), 0f);
+            Assert.AreEqual(0f, HectonOceanSurfaceMath.SanitizeQualityWeight(float.NaN), 0.0001f);
+            Assert.AreEqual(1f, HectonOceanSurfaceMath.ResolveDesiredWaveCount(0f, 6), 0.0001f);
+            Assert.AreEqual(1f, HectonOceanSurfaceMath.ResolveDesiredWaveCount(float.NaN, 6), 0.0001f);
+            Assert.GreaterOrEqual(HectonOceanSurfaceMath.ResolveDesiredWaveCount(0.1f, 6), 1f);
+            Assert.AreEqual(6f, HectonOceanSurfaceMath.ResolveDesiredWaveCount(1f, 6), 0.0001f);
+            Assert.Greater(HectonOceanSurfaceMath.ResolveDesiredWaveCount(0.55f, 6), 1f);
+            Assert.Less(HectonOceanSurfaceMath.ResolveDesiredWaveCount(0.55f, 6), 6f);
+            Assert.AreEqual(0f, HectonOceanSurfaceMath.ResolveWaveContribution(1, 0f, 6), 0.0001f);
+            Assert.AreEqual(0f, HectonOceanSurfaceMath.ResolveWaveContribution(2, 0.1f, 6), 0.0001f);
+            Assert.Greater(HectonOceanSurfaceMath.ResolveWaveContribution(2, 0.55f, 6), 0f);
         }
 
         [Test]
@@ -103,53 +130,16 @@ namespace Hecton8.Tests.Editor
             uint originalHash = HectonOceanSurfaceMath.HashWaveState(waves, waves.Length, 1.5f, 1f);
 
             WaveParametersDTO wave = waves[0];
-            wave.DirectionAndSteepness.z += 0.37f;
+            wave.Wave1.x += 0.37f;
             waves[0] = HectonOceanSurfaceMath.SanitizeWave(wave);
             uint phaseHash = HectonOceanSurfaceMath.HashWaveState(waves, waves.Length, 1.5f, 1f);
             Assert.AreNotEqual(originalHash, phaseHash);
 
             wave = waves[0];
-            wave.PhaseSpeed += 0.19f;
+            wave.Wave1.w += 0.19f;
             waves[0] = HectonOceanSurfaceMath.SanitizeWave(wave);
             uint speedHash = HectonOceanSurfaceMath.HashWaveState(waves, waves.Length, 1.5f, 1f);
             Assert.AreNotEqual(phaseHash, speedHash);
-        }
-
-        [Test]
-        public void MockBuoyancyJob_ProcessesTenThousandAupQueries()
-        {
-            using NativeArray<WaveParametersDTO> waves = CreateSingleWaveArray(Allocator.TempJob);
-            using NativeArray<MockBuoyancyQuery> queries = new NativeArray<MockBuoyancyQuery>(
-                OceanSurfaceAtmosphereConstants.MockBuoyancyQueryCount,
-                Allocator.TempJob,
-                NativeArrayOptions.UninitializedMemory);
-            using NativeArray<MockBuoyancyResult> results = new NativeArray<MockBuoyancyResult>(
-                OceanSurfaceAtmosphereConstants.MockBuoyancyQueryCount,
-                Allocator.TempJob,
-                NativeArrayOptions.UninitializedMemory);
-
-            JobHandle hydrate = new MockBuoyancyQueryHydrationJob
-            {
-                Queries = queries,
-                CenterAUP = new double3(50000.0, 0.0, -50000.0),
-                TimeSeconds = 7.5f,
-                GlobalQualityWeight = 1f,
-                SeaLevel = 0f,
-                Seed = 0x53485236u,
-                SectorHash = 0x4F434E36u,
-                SimulationFrame = 240u
-            }.Schedule(queries.Length, 128);
-
-            new MockBuoyancyQueryJob
-            {
-                Queries = queries,
-                Waves = waves,
-                Results = results
-            }.Schedule(results.Length, 128, hydrate).Complete();
-
-            Assert.IsTrue(math.isfinite(results[0].Height));
-            Assert.IsTrue(math.all(math.isfinite(results[0].Normal)));
-            Assert.AreNotEqual(0f, math.lengthsq(results[0].Normal));
         }
 
         [Test]
@@ -160,6 +150,12 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(70762, (int)BufferID.ShinobuOceanWeatherState);
             Assert.AreEqual(70765, (int)BufferID.ShinobuOceanTelemetryRing);
             Assert.AreEqual(70767, (int)BufferID.ShinobuOceanDumpScratch);
+            Assert.AreEqual(70769, (int)BufferID.ShinobuOceanWaveReadbackQueries);
+            Assert.AreEqual(70770, (int)BufferID.ShinobuOceanWaveReadbackResults);
+            Assert.AreEqual(70771, (int)BufferID.ShinobuOceanWaveReadbackCompletedQueries);
+            Assert.AreEqual(70772, (int)BufferID.ShinobuOceanWaveReadbackRingQueries);
+            Assert.AreEqual(70773, (int)BufferID.ShinobuOceanBeaufortProfiles);
+            Assert.AreEqual(70774, (int)BufferID.ShinobuOceanSurfaceSwell);
         }
 
         private static NativeArray<WaveParametersDTO> CreateSingleWaveArray(Allocator allocator)
@@ -170,18 +166,17 @@ namespace Hecton8.Tests.Editor
                 NativeArrayOptions.ClearMemory);
 
             WaveParametersDTO wave = default;
-            wave.DirectionAndSteepness = new float4(1f, 0f, 0.25f, 0.5f);
-            wave.PhaseSpeed = 1.2f;
-            wave.Amplitude = 2f;
-            wave.Wavelength = 32f;
+            wave.Wave1 = HectonOceanSurfaceMath.CreateWaveLane(0f, 0.5f, 32f, 1.2f);
+            wave.Wave2 = HectonOceanSurfaceMath.CreateWaveLane(1.5707964f, 0.2f, 48f, 0.4f);
+            wave.Wave3 = HectonOceanSurfaceMath.CreateWaveLane(0.7853982f, 0.1f, 64f, 0.25f);
+            wave.GlobalWindAndStorm = new float4(1f, 0f, 11f, 0.4f);
             waves[0] = HectonOceanSurfaceMath.SanitizeWave(wave);
 
             for (int i = 1; i < waves.Length; i++)
             {
-                wave.DirectionAndSteepness = new float4(0f, 1f, i * 0.11f, 0.2f);
-                wave.PhaseSpeed = 0.1f;
-                wave.Amplitude = 0f;
-                wave.Wavelength = 48f + i;
+                wave = default;
+                wave.Wave1 = HectonOceanSurfaceMath.CreateWaveLane(1.5707964f, 0.05f, 80f + i, 0.1f);
+                wave.GlobalWindAndStorm = new float4(0f, 1f, 4f, 0.1f);
                 waves[i] = HectonOceanSurfaceMath.SanitizeWave(wave);
             }
 

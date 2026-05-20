@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Caves;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Determinism;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
@@ -916,7 +917,6 @@ namespace Hecton8.Gameplay
         private HectonPlayerMotor _motor;
         private PlayerInventory _inventory;
         private HectonSurvivalSystem _survival;
-        private ContextualPhysicalIkRig _ikRig;
         private IDataVault _dataVault;
         private IGasDynamicsSolver _gasDynamics;
         private HectonFluidEngine _fluid;
@@ -993,14 +993,14 @@ namespace Hecton8.Gameplay
         {
             ClearRollSignal();
             UnregisterRuntime();
-            PumpHandEnvironmentJobs(forceComplete: true, allowFinalizeOutsideSwap: false);
+            CompleteHandEnvironmentJobsForTeardown();
             ClearHandTargets();
         }
 
         private void OnDestroy()
         {
             UnregisterRuntime();
-            PumpHandEnvironmentJobs(forceComplete: true, allowFinalizeOutsideSwap: false);
+            CompleteHandEnvironmentJobsForTeardown();
             ClearHandTargets();
             DisposeNativeState();
         }
@@ -1152,9 +1152,19 @@ namespace Hecton8.Gameplay
                                math.select(0u, BodyFlagMaelstromActive, activeMaelstromCount > 0) |
                               math.select(0u, BodyFlagSdfSqueezeIntervention, SdfSqueezeResult.IsResultActive(in sdfSqueezeResult))
             };
-            bodyJob.Run();
+            // HOT SCALAR CONTROL KERNEL: one-player KCC truth is consumed this fixed tick.
+            // Direct Execute removes IJob.Run scheduler sync without the fake schedule-then-complete anti-pattern.
+            bodyJob.Execute();
             if (rawBodyStateInvalid)
                 AddFaultFlag(FaultNaN);
+
+            float3 bulkheadResolvedPosition = _positions[0];
+            float3 bulkheadResolvedVelocity = _velocities[0];
+            if (TryApplyBulkheadCollisionResult(ref bulkheadResolvedPosition, ref bulkheadResolvedVelocity))
+            {
+                _positions[0] = bulkheadResolvedPosition;
+                _velocities[0] = bulkheadResolvedVelocity;
+            }
 
             float3 resolvedPosition3 = SnapMillimeter(_positions[0]);
             float3 resolvedVelocity3 = SnapMillimeter(_velocities[0]);
@@ -1179,6 +1189,45 @@ namespace Hecton8.Gameplay
             DumpFaultTelemetryIfNeeded();
         }
 
+        private bool TryApplyBulkheadCollisionResult(ref float3 position, ref float3 velocity)
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !vault.TryGetBuffer(BufferID.Shinobu220BulkheadCollisionResults, out NativeArray<BulkheadCollisionResultDTO> collisions) ||
+                !collisions.IsCreated ||
+                collisions.Length == 0)
+            {
+                return false;
+            }
+
+            BulkheadCollisionResultDTO result = collisions[0];
+            uint currentFrame = SystemDispatcher.CurrentFrameId;
+            if ((result.Flags & BulkheadCollisionFlags.Blocked) == 0u ||
+                result.Frame == 0u ||
+                currentFrame == 0u ||
+                result.Frame > currentFrame ||
+                currentFrame - result.Frame > 1u ||
+                !math.isfinite(result.DepthMeters) ||
+                result.DepthMeters <= 0.0001f)
+            {
+                return false;
+            }
+
+            float3 normal = SanitizeFloat3(result.Normal, new float3(0f, 1f, 0f));
+            float lenSq = math.lengthsq(normal);
+            if (lenSq <= 0.0001f || !math.all(math.isfinite(normal)))
+                return false;
+
+            normal *= math.rsqrt(lenSq);
+            float depth = math.min(result.DepthMeters, 0.85f);
+            position = SnapMillimeter(position + normal * depth);
+            float inwardVelocity = math.dot(velocity, normal);
+            if (inwardVelocity < 0f)
+                velocity = SnapMillimeter(velocity - normal * inwardVelocity);
+
+            return true;
+        }
+
         public void PostFixedTick(float fixedDeltaTime)
         {
             ApplyPendingStateCorrections();
@@ -1191,7 +1240,7 @@ namespace Hecton8.Gameplay
             _lastIkDeltaTime = safeDeltaTime;
             ConsumeEnvironmentIkSignals();
             TickEnvironmentIkState(safeDeltaTime);
-            PumpHandEnvironmentJobs(forceComplete: false, allowFinalizeOutsideSwap: true);
+            PumpHandEnvironmentJobs(allowFinalizeOutsideSwap: true);
             ScheduleHandProbes();
             ConsumeSqueezeTelemetrySignal();
 
@@ -1205,7 +1254,7 @@ namespace Hecton8.Gameplay
 
         public void LateFrameTick()
         {
-            PumpHandEnvironmentJobs(forceComplete: false, allowFinalizeOutsideSwap: false);
+            PumpHandEnvironmentJobs(allowFinalizeOutsideSwap: false);
 
             if (!MovementOwnsKinematicAuthority())
                 PushVatScalar();
@@ -1308,7 +1357,7 @@ namespace Hecton8.Gameplay
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
                 _dataVault = currentService as IDataVault;
-                PumpHandEnvironmentJobs(forceComplete: true, allowFinalizeOutsideSwap: false);
+                CompleteHandEnvironmentJobsForTeardown();
                 DisposeNativeState();
                 if (currentService != null)
                 {
@@ -1500,10 +1549,6 @@ namespace Hecton8.Gameplay
                 TryGetComponent(out _inventory);
             if (_survival == null)
                 TryGetComponent(out _survival);
-            // Cold-only child lookup; runtime hot-swap rebinds pass false.
-            if (allowHierarchyLookup && _ikRig == null)
-                _ikRig = GetComponentInChildren<ContextualPhysicalIkRig>(true);
-
         }
 
         private void WarmRuntimeStateOnEnable()
@@ -1860,7 +1905,9 @@ namespace Hecton8.Gameplay
                 SlowCadence = slowCadence ? (byte)1 : (byte)0,
                 Frame = unchecked((uint)Time.frameCount)
             };
-            squeezeJob.Run();
+            // HOT SCALAR CONTROL KERNEL: squeeze intervention is same-tick KCC safety truth.
+            // Direct Execute removes IJob.Run scheduler sync; async staging belongs to the KCC owner rewrite.
+            squeezeJob.Execute();
             result = _sdfSqueezeResults[0];
 
             if ((result.Flags & SdfSqueezeResult.FlagNaNFallback) != 0u)
@@ -2791,26 +2838,45 @@ namespace Hecton8.Gameplay
             _handProbePending = true;
         }
 
-        private void PumpHandEnvironmentJobs(bool forceComplete, bool allowFinalizeOutsideSwap)
+        private void PumpHandEnvironmentJobs(bool allowFinalizeOutsideSwap)
         {
-            if (CompleteHandProbe(forceComplete, allowFinalizeOutsideSwap))
+            if (TryFinalizeHandProbe(allowFinalizeOutsideSwap))
                 ScheduleHandPlacement();
 
-            if (CompleteHandPlacement(forceComplete, allowFinalizeOutsideSwap))
+            if (TryFinalizeHandPlacement(allowFinalizeOutsideSwap))
                 ApplyHandTargets();
         }
 
-        private bool CompleteHandProbe(bool forceComplete, bool allowFinalizeOutsideSwap)
+        private void CompleteHandEnvironmentJobsForTeardown()
+        {
+            if (CompleteHandProbeForTeardown())
+                ScheduleHandPlacement();
+
+            if (CompleteHandPlacementForTeardown())
+                ApplyHandTargets();
+        }
+
+        private bool TryFinalizeHandProbe(bool allowFinalizeOutsideSwap)
         {
             if (!_handProbePending)
                 return false;
 
-            bool completed = forceComplete
-                ? DispatcherJobSwap.TryComplete(ref _handProbeHandle, true)
-                : allowFinalizeOutsideSwap
-                    ? DispatcherJobSwap.TryFinalizeCompleted(ref _handProbeHandle)
-                    : DispatcherJobSwap.TryComplete(ref _handProbeHandle, false);
+            bool completed = allowFinalizeOutsideSwap
+                ? DispatcherJobSwap.TryFinalizeCompleted(ref _handProbeHandle)
+                : DispatcherJobSwap.TryComplete(ref _handProbeHandle, false);
             if (!completed)
+                return false;
+
+            _handProbePending = false;
+            return true;
+        }
+
+        private bool CompleteHandProbeForTeardown()
+        {
+            if (!_handProbePending)
+                return false;
+
+            if (!DispatcherJobSwap.TryComplete(ref _handProbeHandle, true))
                 return false;
 
             _handProbePending = false;
@@ -2854,17 +2920,27 @@ namespace Hecton8.Gameplay
             _handPlacementPending = true;
         }
 
-        private bool CompleteHandPlacement(bool forceComplete, bool allowFinalizeOutsideSwap)
+        private bool TryFinalizeHandPlacement(bool allowFinalizeOutsideSwap)
         {
             if (!_handPlacementPending)
                 return false;
 
-            bool completed = forceComplete
-                ? DispatcherJobSwap.TryComplete(ref _handPlacementHandle, true)
-                : allowFinalizeOutsideSwap
-                    ? DispatcherJobSwap.TryFinalizeCompleted(ref _handPlacementHandle)
-                    : DispatcherJobSwap.TryComplete(ref _handPlacementHandle, false);
+            bool completed = allowFinalizeOutsideSwap
+                ? DispatcherJobSwap.TryFinalizeCompleted(ref _handPlacementHandle)
+                : DispatcherJobSwap.TryComplete(ref _handPlacementHandle, false);
             if (!completed)
+                return false;
+
+            _handPlacementPending = false;
+            return true;
+        }
+
+        private bool CompleteHandPlacementForTeardown()
+        {
+            if (!_handPlacementPending)
+                return false;
+
+            if (!DispatcherJobSwap.TryComplete(ref _handPlacementHandle, true))
                 return false;
 
             _handPlacementPending = false;
@@ -2888,9 +2964,6 @@ namespace Hecton8.Gameplay
                 rightTarget.Hit != 0 ? rightTarget.Blend : 0.0f);
             bool active = activeBlend > 0.025f;
             bool scraped = false;
-
-            if (_ikRig != null)
-                _ikRig.ApplyExternalWallHandTargets(in leftTarget, in rightTarget);
 
             if (active)
             {
@@ -2918,11 +2991,6 @@ namespace Hecton8.Gameplay
             }
 
             _wasBraceActive = false;
-            if (_ikRig == null)
-                return;
-
-            PlayerKinematicsHandTarget empty = default;
-            _ikRig.ApplyExternalWallHandTargets(in empty, in empty);
         }
 
         private void SmoothHandTarget(int index, in PlayerKinematicsHandTarget rawTarget)

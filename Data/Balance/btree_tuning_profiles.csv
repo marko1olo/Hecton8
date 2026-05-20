@@ -1,0 +1,4 @@
+profile,branching_factor,prefetch_aggression,batch_size,max_depth,flags,quality_min,quality_max
+quest3_thermal_guard,7,0.05,16,32,1,0.00,0.30
+steamdeck_mid_band,7,0.45,32,32,0,0.30,0.70
+desktop_visual_overkill,7,1.00,64,32,0,0.70,1.00

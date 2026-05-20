@@ -4,6 +4,7 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 
@@ -31,30 +32,48 @@ namespace Hecton8.Atmosphere
         ActiveCompartment1Hz = 1
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct CompartmentState
     {
+        [FieldOffset(0)]
         public float OxygenKPa;
+        [FieldOffset(4)]
         public float CarbonDioxideKPa;
+        [FieldOffset(8)]
         public float NitrogenKPa;
+        [FieldOffset(12)]
         public float TotalPressureKPa;
+        [FieldOffset(16)]
         public float InvMaxPressureKPa;
+        [FieldOffset(20)]
         public float OxygenBaseConsumptionKPaPerSecond;
+        [FieldOffset(24)]
         public float CarbonDioxideGenerationKPaPerSecond;
+        [FieldOffset(28)]
         public ushort Flags;
+        [FieldOffset(30)]
         public byte Toxicity;
+        [FieldOffset(31)]
         public byte HumidityPercent;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 24)]
     public struct AtmospherePhysiologyHazard
     {
+        [FieldOffset(0)]
         public float HealthDamage;
+        [FieldOffset(4)]
         public float VisualBlur01;
+        [FieldOffset(8)]
         public float NitrogenTissueLoading;
+        [FieldOffset(12)]
         public float StaminaRecoveryMultiplier;
-        public float NarcosisInputOffset;
+        [FieldOffset(16)]
+        public float NarcosisInputDelta;
+        [FieldOffset(20)]
         public ushort Flags;
+        [FieldOffset(22)]
+        public ushort _pad0;
     }
 
     public static class BaseAtmosphereMath
@@ -78,23 +97,39 @@ namespace Hecton8.Atmosphere
         private const uint LcgIncrement = 1013904223u;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool IsHighScalability(HectonQualityTier tier)
+        public static float ResolveColdTickIntervalSeconds(float qualityWeight01)
         {
-            return tier == HectonQualityTier.High || tier == HectonQualityTier.Ultra;
+            float quality = math.saturate(math.isfinite(qualityWeight01) ? qualityWeight01 : 0f);
+            float curve = Smooth01(math.saturate((quality - 0.1f) * 1.1111112f));
+            return math.lerp(LowColdTickSeconds, HighTickSeconds, curve);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float ResolveColdTickIntervalSeconds(HectonQualityTier tier)
+        public static int ResolveCompartmentSolveBudget(int compartmentCount, float qualityWeight01)
         {
-            return IsHighScalability(tier) ? HighTickSeconds : LowColdTickSeconds;
+            int count = math.max(0, compartmentCount);
+            if (count <= 1)
+                return count;
+
+            float quality = math.saturate(math.isfinite(qualityWeight01) ? qualityWeight01 : 0f);
+            float curve = Smooth01(math.saturate((quality - 0.18f) * 1.2195122f));
+            return math.clamp(1 + (int)math.floor((count - 1) * curve + 0.0001f), 1, count);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static BaseAtmosphereSolveMode ResolveSolveMode(HectonQualityTier tier)
+        public static BaseAtmosphereSolveMode ResolveSolveMode(float qualityWeight01, int solveBudget, int compartmentCount)
         {
-            return IsHighScalability(tier)
+            float quality = math.saturate(math.isfinite(qualityWeight01) ? qualityWeight01 : 0f);
+            return solveBudget >= math.max(1, compartmentCount) && quality > 0.92f
                 ? BaseAtmosphereSolveMode.High5Hz
                 : BaseAtmosphereSolveMode.ActiveCompartment1Hz;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveVisualOverkillWeight01(float qualityWeight01)
+        {
+            float quality = math.saturate(math.isfinite(qualityWeight01) ? qualityWeight01 : 0f);
+            return Smooth01(math.saturate((quality - 0.42f) * 1.7241379f));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -170,7 +205,7 @@ namespace Hecton8.Atmosphere
             float suitRuptureDamage,
             float suitRuptureThreshold,
             float suitRuptureDrainPerSecond,
-            bool highScalability)
+            float visualOverkillWeight01)
         {
             float dt = FiniteNonNegative(deltaTime);
             float oxygenConsumption = ResolvePlayerOxygenConsumption(
@@ -217,7 +252,8 @@ namespace Hecton8.Atmosphere
                     (ushort)(BaseAtmosphereFlags.Hypercapnia | BaseAtmosphereFlags.TraumaGlitchRequested));
             }
 
-            if (highScalability && state.HumidityPercent > 90)
+            float fogThreshold = math.lerp(98f, 90f, math.saturate(visualOverkillWeight01));
+            if (state.HumidityPercent > fogThreshold)
                 state.Flags = (ushort)(state.Flags | BaseAtmosphereFlags.RenderFogRequested);
             else
                 state.Flags = ClearFlags(state.Flags, BaseAtmosphereFlags.RenderFogRequested);
@@ -319,7 +355,7 @@ namespace Hecton8.Atmosphere
                 deltaTime,
                 breathingFlags);
             hazard.StaminaRecoveryMultiplier = ResolveStaminaRecoveryMultiplierForCarbonDioxide(carbonDioxideFraction);
-            hazard.NarcosisInputOffset = ResolveNarcosisTriangleOffset(
+            hazard.NarcosisInputDelta = ResolveNarcosisTriangleOffset(
                 currentDepthMeters,
                 timeSeconds,
                 playerSeed,
@@ -402,17 +438,24 @@ namespace Hecton8.Atmosphere
         {
             return math.isfinite(value) && value > 0.0001f ? value : fallback;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float Smooth01(float value)
+        {
+            value = math.saturate(value);
+            return value * value * (3f - (2f * value));
+        }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    [StructLayout(LayoutKind.Sequential, Pack = 16)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct BaseAtmosphereColdTickJob : IJob
     {
-        [ReadOnly] public NativeArray<CompartmentState> Input;
-        [WriteOnly] public NativeArray<CompartmentState> Output;
-        public NativeArray<byte> CarbonDioxideByteLane;
+        [ReadOnly, NoAlias] public NativeArray<CompartmentState> Input;
+        [WriteOnly, NoAlias] public NativeArray<CompartmentState> Output;
+        [NoAlias] public NativeArray<byte> CarbonDioxideByteLane;
         public int CompartmentCount;
         public int ActiveCompartmentIndex;
+        public int CompartmentSolveCount;
         public float DeltaTime;
         public float PlayerStressMultiplier;
         public float LogisticsPowerWatts;
@@ -420,21 +463,27 @@ namespace Hecton8.Atmosphere
         public float SuitRuptureDamage;
         public float SuitRuptureThreshold;
         public float SuitRuptureDrainPerSecond;
-        public byte SolveMode;
+        public float VisualOverkillWeight01;
         public byte ScrubberBytePerColdTick;
-        public byte ScalabilityHigh;
 
         public void Execute()
         {
             int count = math.min(CompartmentCount, math.min(Input.Length, Output.Length));
+            if (count <= 0)
+                return;
+
             int active = math.clamp(ActiveCompartmentIndex, 0, math.max(0, count - 1));
-            bool updateAll = SolveMode == (byte)BaseAtmosphereSolveMode.High5Hz;
-            bool highScalability = ScalabilityHigh != 0;
+            int solveBudget = math.clamp(CompartmentSolveCount, 1, count);
+            float visualOverkillWeight01 = math.saturate(math.isfinite(VisualOverkillWeight01) ? VisualOverkillWeight01 : 0f);
 
             for (int i = 0; i < count; i++)
             {
                 CompartmentState state = Input[i];
-                if (!updateAll && i != active)
+                int relativeIndex = i - active;
+                if (relativeIndex < 0)
+                    relativeIndex += count;
+
+                if (relativeIndex >= solveBudget)
                 {
                     Output[i] = state;
                     continue;
@@ -449,7 +498,7 @@ namespace Hecton8.Atmosphere
                     SuitRuptureDamage,
                     SuitRuptureThreshold,
                     SuitRuptureDrainPerSecond,
-                    highScalability);
+                    visualOverkillWeight01);
 
                 if (i < CarbonDioxideByteLane.Length)
                 {

@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.World;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -21,70 +22,81 @@ namespace Hecton8.Animation.Locomotion
         public const float MinLengthSq = 0.000001f;
         public const uint SourceHash = 0x4C43494Bu; // LCIK
 
-        public const byte FlagActive = 1 << 0;
-        public const byte FlagLowTier = 1 << 1;
-        public const byte FlagVrGrip = 1 << 2;
-        public const byte FlagSlip = 1 << 3;
-        public const byte FlagInvalidInput = 1 << 4;
-        public const byte FlagLeftLocked = 1 << 5;
-        public const byte FlagRightLocked = 1 << 6;
-        public const byte FlagUnreachable = 1 << 7;
+        public const uint FlagActive = 1u << 0;
+        public const uint FlagLowTier = 1u << 1;
+        public const uint FlagVrGrip = 1u << 2;
+        public const uint FlagSlip = 1u << 3;
+        public const uint FlagInvalidInput = 1u << 4;
+        public const uint FlagLeftLocked = 1u << 5;
+        public const uint FlagRightLocked = 1u << 6;
+        public const uint FlagUnreachable = 1u << 7;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     internal struct LadderClimbIkInput
     {
-        public float3 PlayerRoot;
-        public float3 LadderUp;
-        public float3 LadderForward;
-        public float3 LeftShoulder;
-        public float3 RightShoulder;
-        public float3 LeftPole;
-        public float3 RightPole;
-        public float ProgressMeters;
-        public float LadderHeightMeters;
-        public float RungSpacingMeters;
-        public float UpperArmMeters;
-        public float LowerArmMeters;
-        public float Stamina01;
-        public int LadderIndex;
-        public int Frame;
-        public byte Flags;
+        [FieldOffset(0)] public float3 PlayerRoot;
+        [FieldOffset(12)] public float3 LadderUp;
+        [FieldOffset(24)] public float3 LadderForward;
+        [FieldOffset(36)] public float3 LeftShoulder;
+        [FieldOffset(48)] public float3 RightShoulder;
+        [FieldOffset(60)] public float3 LeftPole;
+        [FieldOffset(72)] public float3 RightPole;
+        [FieldOffset(84)] public float ProgressMeters;
+        [FieldOffset(88)] public float LadderHeightMeters;
+        [FieldOffset(92)] public float RungSpacingMeters;
+        [FieldOffset(96)] public float UpperArmMeters;
+        [FieldOffset(100)] public float LowerArmMeters;
+        [FieldOffset(104)] public float Stamina01;
+        [FieldOffset(108)] public int LadderIndex;
+        [FieldOffset(112)] public int Frame;
+        [FieldOffset(116)] public uint Flags;
+        [FieldOffset(120)] private ulong _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     internal struct LadderClimbIkOutput
     {
-        public float3 LeftHandTarget;
-        public float3 RightHandTarget;
-        public float3 LeftElbowTarget;
-        public float3 RightElbowTarget;
-        public float3 LadderBaseRuntime;
-        public float Progress01;
-        public float Stamina01;
-        public int LeftRungIndex;
-        public int RightRungIndex;
-        public byte Flags;
+        [FieldOffset(0)] public float3 LeftHandTarget;
+        [FieldOffset(12)] public float3 RightHandTarget;
+        [FieldOffset(24)] public float3 LeftElbowTarget;
+        [FieldOffset(36)] public float3 RightElbowTarget;
+        [FieldOffset(48)] public float3 LadderBaseRuntime;
+        [FieldOffset(60)] public float Progress01;
+        [FieldOffset(64)] public float Stamina01;
+        [FieldOffset(68)] public int LeftRungIndex;
+        [FieldOffset(72)] public int RightRungIndex;
+        [FieldOffset(76)] public uint Flags;
+        [FieldOffset(80)] private ulong _pad0;
+        [FieldOffset(88)] private ulong _pad1;
+        [FieldOffset(96)] private ulong _pad2;
+        [FieldOffset(104)] private ulong _pad3;
+        [FieldOffset(112)] private ulong _pad4;
+        [FieldOffset(120)] private ulong _pad5;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     internal struct LadderClimbTelemetryEntry
     {
-        public float3 PlayerRoot;
-        public float3 LeftHandTarget;
-        public float3 RightHandTarget;
-        public float3 LeftElbowTarget;
-        public float3 RightElbowTarget;
-        public float ProgressMeters;
-        public float Stamina01;
-        public int LeftRungIndex;
-        public int RightRungIndex;
-        public int Frame;
-        public uint Hash;
-        public byte Flags;
+        [FieldOffset(0)] public float3 PlayerRoot;
+        [FieldOffset(12)] public float3 LeftHandTarget;
+        [FieldOffset(24)] public float3 RightHandTarget;
+        [FieldOffset(36)] public float3 LeftElbowTarget;
+        [FieldOffset(48)] public float3 RightElbowTarget;
+        [FieldOffset(60)] public float ProgressMeters;
+        [FieldOffset(64)] public float Stamina01;
+        [FieldOffset(68)] public int LeftRungIndex;
+        [FieldOffset(72)] public int RightRungIndex;
+        [FieldOffset(76)] public int Frame;
+        [FieldOffset(80)] public uint Hash;
+        [FieldOffset(84)] public uint Flags;
+        [FieldOffset(88)] private ulong _pad0;
+        [FieldOffset(96)] private ulong _pad1;
+        [FieldOffset(104)] private ulong _pad2;
+        [FieldOffset(112)] private ulong _pad3;
+        [FieldOffset(120)] private ulong _pad4;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     internal struct LadderClimbIkVaultViews
     {
         public NativeArray<LadderClimbIkInput> Inputs;
@@ -110,15 +122,15 @@ namespace Hecton8.Animation.Locomotion
         public bool HasTelemetry => TelemetryRing.IsCreated && TelemetryRing.Length > 0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    [BurstCompile(FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [StructLayout(LayoutKind.Sequential)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct LadderClimbIkSolveJob : IJob
     {
-        [ReadOnly] public NativeArray<LadderClimbIkInput> Inputs;
-        [ReadOnly] public NativeArray<AbsoluteUniversePosition> LadderAups;
-        public NativeArray<LadderClimbIkOutput> Outputs;
-        public NativeArray<LadderClimbTelemetryEntry> TelemetryRing;
-        public NativeArray<int> TelemetryCursor;
+        [ReadOnly, NoAlias] public NativeArray<LadderClimbIkInput> Inputs;
+        [ReadOnly, NoAlias] public NativeArray<AbsoluteUniversePosition> LadderAups;
+        [NoAlias] public NativeArray<LadderClimbIkOutput> Outputs;
+        [NoAlias] public NativeArray<LadderClimbTelemetryEntry> TelemetryRing;
+        [NoAlias] public NativeArray<int> TelemetryCursor;
         public double3 CommittedOriginOffset;
 
         public void Execute()
@@ -128,7 +140,7 @@ namespace Hecton8.Animation.Locomotion
 
             LadderClimbIkInput input = Inputs[0];
             LadderClimbIkOutput output = default;
-            byte flags = input.Flags;
+            uint flags = input.Flags;
 
             float spacing = SanitizePositive(input.RungSpacingMeters, LadderClimbIkConstants.DefaultRungSpacingMeters);
             float height = SanitizePositive(input.LadderHeightMeters, spacing);
@@ -191,7 +203,7 @@ namespace Hecton8.Animation.Locomotion
             output.Stamina01 = stamina;
             output.LeftRungIndex = leftRung;
             output.RightRungIndex = rightRung;
-            output.Flags = (byte)(flags | LadderClimbIkConstants.FlagLeftLocked | LadderClimbIkConstants.FlagRightLocked);
+            output.Flags = flags | LadderClimbIkConstants.FlagLeftLocked | LadderClimbIkConstants.FlagRightLocked;
             Outputs[0] = output;
             WriteTelemetry(in input, in output);
         }
@@ -215,7 +227,7 @@ namespace Hecton8.Animation.Locomotion
             float upperArm,
             float lowerArm,
             bool lowTier,
-            ref byte flags)
+            ref uint flags)
         {
             float3 shoulderToHand = handTarget - shoulder;
             float distanceSq = math.lengthsq(shoulderToHand);

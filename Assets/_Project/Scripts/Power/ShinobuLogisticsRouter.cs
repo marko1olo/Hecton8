@@ -109,6 +109,7 @@ namespace Hecton8.Power
         public const ulong LowOxygen = 1UL << 10;
         public const ulong LifeSupport = 1UL << 11;
         public const ulong Fabricator = 1UL << 12;
+        public const ulong Divergent = 1UL << 13;
     }
 
     public static class LogisticsGraphFaultFlags
@@ -122,6 +123,7 @@ namespace Hecton8.Power
         public const int DumpedBlackBox = 1 << 5;
         public const int CsvParseFault = 1 << 6;
         public const int SignalOverflow = 1 << 7;
+        public const int SolverDivergent = 1 << 8;
     }
 
     public sealed unsafe class ShinobuLogisticsRouter : IDisposable
@@ -259,6 +261,7 @@ namespace Hecton8.Power
         private bool _missingVaultWarned;
         private DateTime _csvLastWriteUtc;
         private string _csvPath;
+        private IConnectionSplineBatchRendererService _pipeRenderer;
 
         public static ShinobuLogisticsRouter Active => _active;
 
@@ -317,9 +320,10 @@ namespace Hecton8.Power
 
             ConfigurePublicSignalLanes();
             SignalBus<FluidIncursionSignal>.EnsureInitialized();
+            GlobalRegistry.TryGet(out _pipeRenderer);
 
             _tuning[0] = _offlineTuning;
-            new LogisticsGraphInitializeJob
+            LogisticsGraphInitializeJob initializeJob = new LogisticsGraphInitializeJob
             {
                 Nodes = _nodes,
                 StateFlags = _stateFlags,
@@ -337,7 +341,9 @@ namespace Hecton8.Power
                 ComponentIds = _componentIds,
                 PressureFront = _pressureFront,
                 PressureBack = _pressureBack
-            }.Run(MaxNodes); // COLD SYNC JOB: boot-only deterministic overwrite of Vault-owned lanes before first graph publication.
+            };
+            for (int i = 0; i < MaxNodes; i++)
+                initializeJob.Execute(i);
 
             for (int i = 0; i < _counters.Length; i++)
                 _counters[i] = 0;
@@ -405,10 +411,10 @@ namespace Hecton8.Power
                 Visited = _visited,
                 Counters = _counters,
                 BfsQueueBaseIndex = BfsQueueBase,
-                ReachableBaseIndex = ReachableOrderBase,
-                FaultScratchBaseIndex = ReachableOrderBase
+                ReachableBaseIndex = ReachableOrderBase
             }.Schedule();
 
+            // Residual guard lives inside LogisticsFlowSolverJob; stable nodes copy forward without re-solving.
             for (int iteration = 0; iteration < iterations; iteration++)
             {
                 bool frontToBack = (iteration & 1) == 0;
@@ -468,7 +474,6 @@ namespace Hecton8.Power
                 YieldThresholdKpa = _yieldThresholdKpa,
                 Reinforcement = _reinforcement,
                 Counters = _counters,
-                FaultScratchBaseIndex = ReachableOrderBase,
                 BreachNodeBaseIndex = BreachNodeBase,
                 Tuning = _tuning,
                 BlackBox = _blackBox
@@ -483,13 +488,13 @@ namespace Hecton8.Power
 
             if (_csrRebuildPending && _csrRebuildHandle.IsCompleted)
             {
-                _csrRebuildHandle.Complete();
+                DispatcherJobFence.TryFinalizeCompleted(ref _csrRebuildHandle);
                 _csrRebuildPending = false;
             }
 
             if (_solvePending && _solveHandle.IsCompleted)
             {
-                _solveHandle.Complete();
+                DispatcherJobFence.TryFinalizeCompleted(ref _solveHandle);
                 _solvePending = false;
                 PatchLatestTelemetryMicros();
                 PublishSolveSideEffects();
@@ -512,7 +517,7 @@ namespace Hecton8.Power
 
             if (_localShiftPending && _localShiftHandle.IsCompleted)
             {
-                _localShiftHandle.Complete();
+                DispatcherJobFence.TryFinalizeCompleted(ref _localShiftHandle);
                 _localShiftPending = false;
             }
         }
@@ -902,19 +907,19 @@ namespace Hecton8.Power
         {
             if (_solvePending)
             {
-                _solveHandle.Complete();
+                DispatcherJobFence.TryComplete(ref _solveHandle, forceComplete: true);
                 _solvePending = false;
             }
 
             if (_csrRebuildPending)
             {
-                _csrRebuildHandle.Complete();
+                DispatcherJobFence.TryComplete(ref _csrRebuildHandle, forceComplete: true);
                 _csrRebuildPending = false;
             }
 
             if (_localShiftPending)
             {
-                _localShiftHandle.Complete();
+                DispatcherJobFence.TryComplete(ref _localShiftHandle, forceComplete: true);
                 _localShiftPending = false;
             }
 
@@ -1078,9 +1083,9 @@ namespace Hecton8.Power
                 quality = math.min(quality, math.saturate(health - pressurePenalty));
             }
 
-            float qualityCurve = quality * quality * (3f - (2f * quality));
             _globalQualityWeight = quality;
-            _jacobiIterations = math.clamp((int)math.floor(math.lerp(1f, 10.999f, qualityCurve)), 1, 10);
+            float qualityCurve = quality * quality * (3f - (2f * quality));
+            _jacobiIterations = PowerSolverConvergenceMath.ResolvePropagationIterations(quality);
             _oxygenCadenceDivisor = math.clamp((int)math.round(math.lerp(LowTierOxygenCadence, NormalOxygenCadence, qualityCurve)), NormalOxygenCadence, LowTierOxygenCadence);
             if (_tuning.IsCreated)
             {
@@ -1229,7 +1234,7 @@ namespace Hecton8.Power
             _activeGridHash = 0x4D4F434Bu;
             _activeGenerationSequence = 1u;
 
-            new GenerateMockLogisticsGraphJob
+            GenerateMockLogisticsGraphJob mockTopologyJob = new GenerateMockLogisticsGraphJob
             {
                 SectorHash = _activeSectorHash,
                 Nodes = _nodes,
@@ -1246,7 +1251,8 @@ namespace Hecton8.Power
                 PriorityTier = _priorityTier,
                 CellToNode = _cellToNode,
                 Counters = _counters
-            }.Run(); // COLD SYNC JOB: emergency mock topology is generated once before any solver snapshot can exist.
+            };
+            mockTopologyJob.Execute(); // COLD SYNC JOB: emergency mock topology is generated once before any solver snapshot can exist.
 
             _nodeCount = _counters[CounterNodeCount];
             _edgeCount = _counters[CounterEdgeCount];
@@ -1493,6 +1499,10 @@ namespace Hecton8.Power
             if (!_edges.IsCreated || !_nodes.IsCreated)
                 return;
 
+            IConnectionSplineBatchRendererService renderer = _pipeRenderer;
+            if (renderer == null)
+                return;
+
             int edgeCount = math.min(_edgeCount, _edges.Length);
             for (int i = 0; i < edgeCount; i++)
             {
@@ -1500,9 +1510,9 @@ namespace Hecton8.Power
                 int2 nodes = edge.Nodes;
                 float flow = math.saturate(edge.Flow01);
                 if ((uint)nodes.x < (uint)_nodeCount)
-                    ConnectionSplineBatchRenderer.SetPipeNodeFlow((uint)nodes.x, flow);
+                    renderer.SetPipeNodeFlow((uint)nodes.x, flow);
                 if ((uint)nodes.y < (uint)_nodeCount)
-                    ConnectionSplineBatchRenderer.SetPipeNodeFlow((uint)nodes.y, flow);
+                    renderer.SetPipeNodeFlow((uint)nodes.y, flow);
             }
         }
 
@@ -1568,7 +1578,9 @@ namespace Hecton8.Power
                 (uint)nodeIndex < (uint)_externalPressureKpa.Length &&
                 (uint)nodeIndex < (uint)_internalPressureKpa.Length)
             {
-                pressureDeltaKpa = math.max(0f, _externalPressureKpa[nodeIndex] - _internalPressureKpa[nodeIndex]);
+                float externalPressure = FiniteOr(_externalPressureKpa[nodeIndex], 0f);
+                float internalPressure = FiniteOr(_internalPressureKpa[nodeIndex], externalPressure);
+                pressureDeltaKpa = math.max(0f, externalPressure - internalPressure);
             }
 
             AbsoluteUniversePosition leakAup = AbsoluteUniversePosition.FromAbsolutePosition(_nodeAup[nodeIndex]);
@@ -2025,38 +2037,22 @@ namespace Hecton8.Power
         [BurstCompile(FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard, CompileSynchronously = true)]
         private struct LogisticsGraphInitializeJob : IJobParallelFor
         {
-            [NativeDisableContainerSafetyRestriction] [NoAlias]
-            public NativeArray<LogisticsNodeDTO> Nodes;
-            [NativeDisableContainerSafetyRestriction] [NoAlias]
-            public NativeArray<ulong> StateFlags;
-            [NativeDisableContainerSafetyRestriction] [NoAlias]
-            public NativeArray<float> OxygenFront;
-            [NativeDisableContainerSafetyRestriction] [NoAlias]
-            public NativeArray<float> OxygenBack;
-            [NativeDisableContainerSafetyRestriction] [NoAlias]
-            public NativeArray<float> InternalPressureKpa;
-            [NativeDisableContainerSafetyRestriction] [NoAlias]
-            public NativeArray<float> ExternalPressureKpa;
-            [NativeDisableContainerSafetyRestriction] [NoAlias]
-            public NativeArray<float> YieldThresholdKpa;
-            [NativeDisableContainerSafetyRestriction] [NoAlias]
-            public NativeArray<float> Reinforcement;
-            [NativeDisableContainerSafetyRestriction] [NoAlias]
-            public NativeArray<double3> NodeAup;
-            [NativeDisableContainerSafetyRestriction] [NoAlias]
-            public NativeArray<float3> LocalPositions;
-            [NativeDisableContainerSafetyRestriction] [NoAlias]
-            public NativeArray<byte> PriorityTier;
-            [NativeDisableContainerSafetyRestriction] [NoAlias]
-            public NativeArray<byte> Visited;
-            [NativeDisableContainerSafetyRestriction] [NoAlias]
-            public NativeArray<int> CellToNode;
-            [NativeDisableContainerSafetyRestriction] [NoAlias]
-            public NativeArray<int> ComponentIds;
-            [NativeDisableContainerSafetyRestriction] [NoAlias]
-            public NativeArray<float> PressureFront;
-            [NativeDisableContainerSafetyRestriction] [NoAlias]
-            public NativeArray<float> PressureBack;
+            [NoAlias] public NativeArray<LogisticsNodeDTO> Nodes;
+            [NoAlias] public NativeArray<ulong> StateFlags;
+            [NoAlias] public NativeArray<float> OxygenFront;
+            [NoAlias] public NativeArray<float> OxygenBack;
+            [NoAlias] public NativeArray<float> InternalPressureKpa;
+            [NoAlias] public NativeArray<float> ExternalPressureKpa;
+            [NoAlias] public NativeArray<float> YieldThresholdKpa;
+            [NoAlias] public NativeArray<float> Reinforcement;
+            [NoAlias] public NativeArray<double3> NodeAup;
+            [NoAlias] public NativeArray<float3> LocalPositions;
+            [NoAlias] public NativeArray<byte> PriorityTier;
+            [NoAlias] public NativeArray<byte> Visited;
+            [NoAlias] public NativeArray<int> CellToNode;
+            [NoAlias] public NativeArray<int> ComponentIds;
+            [NoAlias] public NativeArray<float> PressureFront;
+            [NoAlias] public NativeArray<float> PressureBack;
 
             public void Execute(int index)
             {
@@ -2274,7 +2270,7 @@ namespace Hecton8.Power
 
                     int writeA = Counters[EdgeWriteCursorBaseIndex + edge.x]++;
                     int writeB = Counters[EdgeWriteCursorBaseIndex + edge.y]++;
-                    float conductance = edgeDto.Capacity / math.max(0.001f, edgeDto.Resistance);
+                    float conductance = ResolveConductance(edgeDto, edge);
                     if ((uint)writeA < (uint)maxEntries)
                     {
                         Counters[EdgeDestinationsBaseIndex + writeA] = edge.y;
@@ -2301,8 +2297,18 @@ namespace Hecton8.Power
                 if ((uint)edge.x >= (uint)nodeCount || (uint)edge.y >= (uint)nodeCount)
                     return false;
 
-                ulong blocked = LogisticsStateFlags.Destroyed;
-                return (StateFlags[edge.x] & blocked) == 0UL && (StateFlags[edge.y] & blocked) == 0UL;
+                return true;
+            }
+
+            private float ResolveConductance(in LogisticsEdgeDTO edgeDto, int2 edge)
+            {
+                ulong isolated = LogisticsStateFlags.Destroyed | LogisticsStateFlags.Breached | LogisticsStateFlags.DoorLocked;
+                if (((StateFlags[edge.x] | StateFlags[edge.y]) & isolated) != 0UL)
+                    return 0f;
+
+                float capacity = math.max(0f, math.isfinite(edgeDto.Capacity) ? edgeDto.Capacity : 0f);
+                float resistance = math.max(0.001f, math.isfinite(edgeDto.Resistance) ? edgeDto.Resistance : 0.001f);
+                return capacity / resistance;
             }
         }
 
@@ -2322,7 +2328,6 @@ namespace Hecton8.Power
             [NoAlias] public NativeArray<int> Counters;
             public int BfsQueueBaseIndex;
             public int ReachableBaseIndex;
-            public int FaultScratchBaseIndex;
 
             public void Execute()
             {
@@ -2352,7 +2357,6 @@ namespace Hecton8.Power
 
                 for (int i = 0; i < nodeCount; i++)
                 {
-                    Counters[FaultScratchBaseIndex + i] = 0;
                     ref LogisticsNodeDTO node = ref UnsafeUtility.AsRef<LogisticsNodeDTO>(NodesPtr + i);
                     int componentId = ComponentIds[i];
                     if ((uint)componentId >= (uint)componentCount || Visited[componentId] == 0)
@@ -2522,7 +2526,7 @@ namespace Hecton8.Power
 
                 int adjacencyCount = math.clamp(AdjacencyEntryCount, 0, math.min(MaxAdjacencyEntries, CsrEdgeCapacities.Length));
                 ref LogisticsNodeDTO node = ref UnsafeUtility.AsRef<LogisticsNodeDTO>(NodesPtr + index);
-                uint flags = node.Flags;
+                uint flags = node.Flags & ~(uint)LogisticsStateFlags.Divergent;
                 int componentId = ComponentIds[index];
                 if (IsClosed(flags) || (uint)componentId >= (uint)nodeCount || Visited[componentId] == 0)
                 {
@@ -2531,12 +2535,16 @@ namespace Hecton8.Power
                 }
 
                 LogisticsTuningDTO tuning = Tuning[0];
-                float qualityCurve = math.saturate(GlobalQualityWeight);
-                qualityCurve = qualityCurve * qualityCurve * (3f - (2f * qualityCurve));
+                float qualityWeight = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 0f);
+                float qualityCurve = qualityWeight * qualityWeight * (3f - (2f * qualityWeight));
                 float smoothing = math.clamp(FiniteOr(tuning.JacobiSmoothingFactor, DefaultJacobiSmoothing) * math.lerp(0.72f, 1f, qualityCurve), 0.05f, 1f);
+                float omega = PowerSolverConvergenceMath.ResolveSolverOmega(GlobalQualityWeight);
+                float targetTolerance = PowerSolverConvergenceMath.ResolveSolverTargetTolerance(0.001f, GlobalQualityWeight);
                 bool source = IsSource(flags);
-                float sum = source ? 1f : 0f;
-                float weight = source ? 1f : 0f;
+                bool pressureFault = !math.isfinite(ReadPressure[index]);
+                float previousPressure = Sanitize01(ReadPressure[index]);
+                float weightedPotential = 0f;
+                float conductanceSum = 0f;
 
                 int start = math.clamp(Counters[EdgeOffsetsBaseIndex + index], 0, adjacencyCount);
                 int end = math.clamp(Counters[EdgeOffsetsBaseIndex + index + 1], start, adjacencyCount);
@@ -2546,21 +2554,33 @@ namespace Hecton8.Power
                     if ((uint)neighbor >= (uint)nodeCount || ComponentIds[neighbor] != componentId)
                         continue;
 
-                    float conductance = SanitizeNonNegative(CsrEdgeCapacities[edgeCursor]);
-                    sum += conductance * Sanitize01(ReadPressure[neighbor]);
-                    weight += conductance;
+                    float conductanceRaw = CsrEdgeCapacities[edgeCursor];
+                    float neighborPressureRaw = ReadPressure[neighbor];
+                    pressureFault |= !math.isfinite(conductanceRaw) || !math.isfinite(neighborPressureRaw);
+                    float conductance = SanitizeNonNegative(conductanceRaw);
+                    weightedPotential += conductance * Sanitize01(neighborPressureRaw);
+                    conductanceSum += conductance;
                 }
 
-                float relaxed = sum / math.max(weight, 0.0001f);
-                if (!source)
+                float reactorOutput = math.max(1f, FiniteOr(tuning.ReactorOutputWatts, 1000f));
+                float generatorRate = source ? 1f : 0f;
+                float demandRate = source ? 0f : math.saturate(FiniteOr(node.Capacity, 0f) / reactorOutput);
+                float relaxed = (weightedPotential + generatorRate - demandRate) * math.rcp(math.max(conductanceSum + 1f, 1f));
+
+                float jacobiPressure = math.saturate(relaxed);
+                float pressure = previousPressure + (jacobiPressure - previousPressure) * math.clamp(smoothing * omega, 0.05f, 1.85f);
+                pressureFault |= !math.isfinite(pressure);
+                if (pressureFault)
                 {
-                    float reactorOutput = math.max(1f, FiniteOr(tuning.ReactorOutputWatts, 1000f));
-                    float demand01 = math.saturate(FiniteOr(node.Capacity, 0f) / reactorOutput);
-                    relaxed = math.max(0f, relaxed - demand01 * 0.08f);
+                    node.Flags = flags | (uint)LogisticsStateFlags.Divergent;
+                    WritePressure[index] = previousPressure;
+                    return;
                 }
 
-                float pressure = math.lerp(Sanitize01(ReadPressure[index]), math.saturate(relaxed), smoothing);
-                WritePressure[index] = Sanitize01(pressure);
+                float resolvedPressure = math.saturate(pressure);
+                float residual = math.abs(resolvedPressure - previousPressure);
+                WritePressure[index] = residual <= targetTolerance ? previousPressure : resolvedPressure;
+                node.Flags = flags;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -2609,8 +2629,7 @@ namespace Hecton8.Power
                 if ((uint)index >= (uint)nodeCount)
                     return;
 
-                float value = SourcePressure[index];
-                DestinationPressure[index] = math.saturate(math.isfinite(value) ? value : 0f);
+                DestinationPressure[index] = SourcePressure[index];
             }
         }
 
@@ -2643,7 +2662,6 @@ namespace Hecton8.Power
             [ReadOnly] [NoAlias] public NativeArray<float> YieldThresholdKpa;
             [ReadOnly] [NoAlias] public NativeArray<float> Reinforcement;
             [NoAlias] public NativeArray<int> Counters;
-            public int FaultScratchBaseIndex;
             public int BreachNodeBaseIndex;
             [ReadOnly] [NoAlias] public NativeArray<LogisticsTuningDTO> Tuning;
             [NoAlias] public NativeArray<LogisticsGraphTelemetryEntry> BlackBox;
@@ -2654,7 +2672,7 @@ namespace Hecton8.Power
                 int edgeCount = math.clamp(EdgeCount, 0, math.min(MaxDirectedEdges, Edges.Length));
                 int adjacencyCount = math.clamp(AdjacencyEntryCount, 0, math.min(MaxAdjacencyEntries, CsrEdgeCapacities.Length));
                 int componentCount = math.clamp(Counters[CounterComponentCount], 0, nodeCount);
-                int iterations = math.clamp(JacobiIterations, 1, 10);
+                int iterations = math.clamp(JacobiIterations, 1, 8);
                 LogisticsTuningDTO tuning = Tuning[0];
 
                 float totalGenerated = 0f;
@@ -2665,8 +2683,6 @@ namespace Hecton8.Power
 
                 for (int i = 0; i < nodeCount; i++)
                 {
-                    faultFlags |= Counters[FaultScratchBaseIndex + i];
-                    Counters[FaultScratchBaseIndex + i] = 0;
                     float pressure = PressureFront[i];
                     if (!math.isfinite(pressure))
                     {
@@ -2696,6 +2712,8 @@ namespace Hecton8.Power
 
                     if (HasFlag(node.Flags, LogisticsStateFlags.Breached))
                         breachedCount++;
+                    if (HasFlag(node.Flags, LogisticsStateFlags.Divergent))
+                        faultFlags |= LogisticsGraphFaultFlags.SolverDivergent;
 
                     StateFlags[i] = node.Flags;
                     stateHash = (stateHash ^ node.Flags) * 1099511628211UL;

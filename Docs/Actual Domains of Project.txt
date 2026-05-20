@@ -1,4 +1,4 @@
-Date: 2026-05-17
+Date: 2026-05-20
 Status: PENDING VERIFICATION
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
@@ -13,6 +13,8 @@ This document is active only where it agrees with:
 - fresh verification logs and artifacts
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+
+Current DOC_GLOBAL boundary (2026-05-20 R45): `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md` is present and is the latest local static root/architecture R43/R44 residue, proof-artifact wording, source-counter, and atlas-boundary correction. R44 remains the prior internal-residue/exact-route-field/proof-wording correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R44_ROOT_ARCHITECTURE_INTERNAL_RESIDUE_EXACT_ROUTE_FIELDS_LOCAL.md`; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R43_ROOT_ARCHITECTURE_ROUTE_CARD_AND_COUNTER_RESIDUE_LOCAL.md`; R42 remains the prior counter/route-boundary/proof-label correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R42_ROOT_ARCHITECTURE_COUNTER_AND_ROUTE_BOUNDARY_LOCAL.md`; R41 remains the prior global-authority/internal-residue correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R41_ROOT_ARCHITECTURE_GLOBAL_AUTHORITY_INTERNAL_RESIDUE_LOCAL.md`; R40 remains the prior R38-residue/source-counter correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R40_ROOT_ARCHITECTURE_R38_RESIDUE_AND_COUNTER_REFRESH_LOCAL.md`; R39 remains the prior authority-counter/proof-wording correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R39_ROOT_ARCHITECTURE_AUTHORITY_COUNTER_AND_PROOF_WORDING_LOCAL.md`; R38 remains the prior source-counter drift and boundary correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R38_ROOT_ARCHITECTURE_SOURCE_COUNTER_DRIFT_AND_BOUNDARY_LOCAL.md`; R37 remains the prior artifact-path/proof-wording/source-counter correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R37_ROOT_ARCHITECTURE_ARTIFACT_PATHS_AND_COUNTERS_LOCAL.md`; R36 remains the prior authority-spine/domain-map correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R36_ROOT_ARCHITECTURE_AUTHORITY_SPINE_LOCAL.md`; R35 remains the prior R4/counter-residue correction at `Docs/Reports/2026-05-19_DOCUMENTATION_R35_ROOT_ARCHITECTURE_R4_AND_COUNTER_RESIDUE_LOCAL.md`; R34 remains the older source-counter and physical-line refresh, superseded by R37/R38/R39/R40/R41/R42/R43/R44/R45 where exact counts, route-card fields, AtlasCheck status, or proof wording differ. R33 remains the prior R32-residue/source-anchor correction; R32 remains the prior R4/proof-wording correction; R31 remains the prior current-boundary propagation layer; R30 remains the prior internal-currentness layer; R29 remains the prior stale-gate/global-authority layer; R28 remains the prior interior-boundary layer; and R27 is historical source-counter/index evidence superseded by R34/R37/R38/R39/R40/R41/R42/R43/R44/R45.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 ECHELON 1: CORE & MEMORY INFRASTRUCTURE (Engine Foundation)
@@ -30,7 +32,8 @@ NativeArray at startup. No ScriptableObjects in hot paths.
 7. Crash Telemetry (Blackbox): Circular event buffer (32-byte structures).
 Dump to .h8dump during crashes or FPS drops on a background thread.
 8. Scalability Dictator (Hardware): Dynamic switching of Math LODs between MX350 and RTX based on frame profiling.
-9. Platform Abstraction Layer (PAL): IInputProvider. Steam Deck broadcasting of Trackpad/gyro/gamepad inputs without API leaks in Core. 10. Tick Dispatcher & Time Dilation: Cadence control (FastTick 60Hz, SlowTick 10Hz, ColdTick 1Hz, FrostTick 0.2Hz) and Bullet Time effects.
+9. Platform Abstraction Layer (PAL): IInputProvider. Steam Deck broadcasting of Trackpad/gyro/gamepad inputs without API leaks in Core.
+10. Tick Dispatcher & Time Dilation: Cadence control (FastTick 60Hz, SlowTick 10Hz, ColdTick 1Hz, FrostTick 0.2Hz) and Bullet Time effects.
 
 ECHELON 2: WORLD GENERATION & TERRAIN (Topology and Environment)
 
@@ -58,9 +61,10 @@ ECHELON 3: FLORA, FAUNA & BIOTA (Ecosystem and AI)
 of biomass without GameObjects.
 22. Fauna Spatial Hash Grid: O(1) neighbor search. Collision resolution and aggression radii in Burst.
 23. Swarm Compute Director (Boids): GPU simulation of small fish schools. Swarm fragmentation
-during sonic booms. 24. Predator Cognition (Utility AI): Polynomial scoring of hunger, fear, and aggression. 1km headless fast-fail.
+during sonic booms.
+24. Predator Cognition (Utility AI): Polynomial scoring of hunger, fear, and aggression. 1km headless fast-fail.
 25. Predator Steering & Lunge: Octant-aligned navigation, S-curved attacks, obstacle avoidance (SDF raycasts).
-26. A Funnel Smoothing:* 3D voxel-based pathfinding with smoothed "square"
+26. Funnel Smoothing: 3D voxel-based pathfinding with smoothed "square"
 corners (String Pulling).
 27. Leviathan Procedural IK: Boneless VAT body blending + burst calculation of tentacles/tails (Constrained S-Curves).
 28. Flora Procedural Sway: Vertex shaders for algae animation (interactive bending from submarine propellers).

@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Hecton8.Physics;
 using UnityEngine;
 
@@ -12,12 +11,15 @@ namespace Hecton8.Core
     [DefaultExecutionOrder(-9926)]
     public sealed class OceanKinematicsRuntimeService : MonoBehaviour, IHectonOceanKinematicsService, IUpdatable, IServiceHeartbeat, IServiceShutdown
     {
-        // COLD ALLOC: List<IHectonOceanKinematics>[4] - registered ocean-kinematics providers ordered by runtime priority - owner: OceanKinematicsRuntimeService
-        private readonly List<IHectonOceanKinematics> _providers = new List<IHectonOceanKinematics>(4);
+        private const int ProviderCapacity = 4;
+
+        // COLD ALLOC: object[4] - registered ocean-kinematics providers ordered by runtime priority, object-backed to avoid interface collections - owner: OceanKinematicsRuntimeService
+        private readonly object[] _providers = new object[ProviderCapacity];
 
         private bool _isInitialized;
         private bool _registeredUpdatable;
         private bool _registeredService;
+        private int _providerCount;
         private IHectonOceanKinematics _activeProvider;
 
         /// <inheritdoc />
@@ -144,7 +146,8 @@ namespace Hecton8.Core
             TryUnregisterUpdatable();
             TryUnregisterService();
             _isInitialized = false;
-            _providers.Clear();
+            System.Array.Clear(_providers, 0, _providerCount);
+            _providerCount = 0;
             _activeProvider = null;
 
             GlobalRegistry.ClearOceanKinematicsRuntime(this);
@@ -152,10 +155,17 @@ namespace Hecton8.Core
 
         private void RegisterProviderInternal(IHectonOceanKinematics provider)
         {
-            if (provider == null || _providers.Contains(provider))
+            if (provider == null || IndexOfProvider(provider) >= 0)
                 return;
 
-            _providers.Add(provider);
+            if (_providerCount >= ProviderCapacity)
+            {
+                LogProviderCapacityExceeded();
+                return;
+            }
+
+            _providers[_providerCount] = provider;
+            _providerCount++;
             RefreshActiveProvider();
         }
 
@@ -164,9 +174,11 @@ namespace Hecton8.Core
             if (provider == null)
                 return;
 
-            if (!_providers.Remove(provider))
+            int index = IndexOfProvider(provider);
+            if (index < 0)
                 return;
 
+            RemoveProviderAt(index);
             RefreshActiveProvider();
         }
 
@@ -189,12 +201,12 @@ namespace Hecton8.Core
             IHectonOceanKinematics bestFallbackProvider = null;
             int bestFallbackPriority = int.MinValue;
 
-            for (int i = _providers.Count - 1; i >= 0; i--)
+            for (int i = _providerCount - 1; i >= 0; i--)
             {
-                IHectonOceanKinematics candidate = _providers[i];
+                IHectonOceanKinematics candidate = _providers[i] as IHectonOceanKinematics;
                 if (candidate == null)
                 {
-                    _providers.RemoveAt(i);
+                    RemoveProviderAt(i);
                     continue;
                 }
 
@@ -213,6 +225,35 @@ namespace Hecton8.Core
             }
 
             _activeProvider = bestAvailableProvider ?? bestFallbackProvider;
+        }
+
+        private int IndexOfProvider(IHectonOceanKinematics provider)
+        {
+            for (int i = 0; i < _providerCount; i++)
+            {
+                if (ReferenceEquals(_providers[i], provider))
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private void RemoveProviderAt(int index)
+        {
+            _providerCount--;
+            if (index < _providerCount)
+                _providers[index] = _providers[_providerCount];
+
+            _providers[_providerCount] = null;
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogProviderCapacityExceeded()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogError("[OceanKinematicsRuntimeService] Provider capacity exceeded. capacity=" + ProviderCapacity);
+#endif
         }
 
         private void TryRegisterUpdatable()

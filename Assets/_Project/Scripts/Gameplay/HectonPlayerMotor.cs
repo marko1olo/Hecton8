@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
 using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
@@ -1629,7 +1630,7 @@ namespace Hecton8.Gameplay
             if (!math.all(math.isfinite(runtimeFromAup)))
                 return false;
 
-            sample = new float3((float)runtimeFromAup.x, (float)runtimeFromAup.y, (float)runtimeFromAup.z);
+            sample = AupPrecisionMath.DowncastLocalDelta(runtimeFromAup, float3.zero);
             return math.all(math.isfinite(sample));
         }
 

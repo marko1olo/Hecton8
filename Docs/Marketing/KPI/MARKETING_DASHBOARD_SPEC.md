@@ -68,8 +68,14 @@ Kill criteria:
 | lead_id | text | Stable ID. |
 | segment | enum | survival, horror, Subnautica, sim, indie, regional. |
 | priority | enum | A/B/C/RAW. |
-| status | enum | RAW, VERIFY, APPROVED, CONTACTED, REPLIED, COVERED, DNC. |
+| status | enum | Use live CRM values only: `VERIFY_BEFORE_CONTACT`, `NEEDS_ASSET`, `LOW_PRIORITY_VERIFY_LATER`, `DO_NOT_CONTACT`, `CONTACTED`, `REPLIED`, `COVERED`, or `DECLINED`. |
 | contact_date | date | If contacted. |
+| asset_ids_sent | text | Required before a row is counted as asset-backed outreach. |
+| creator_utility_score | int | Required for creator-facing asset sends; 3/4+ for Wave A use. |
+| creator_send_gate | enum | Asset-side send gate from metadata; blocked values are not reportable outreach. |
+| send_route_class | enum | Official route class used for the send; blank or `unknown` blocks reporting. |
+| reply_consent_provenance | enum | Required before a reply is reused outside the original route. |
+| send_gate_source | text | CRM/send/access gate or tracker field that allowed the send. |
 | reply | enum | none, positive, negative, needs_build, covered. |
 | coverage_url | url | If covered. |
 | pitch_angle | enum | one primary angle. |
@@ -81,6 +87,7 @@ Targets:
 - targeted creator reply rate: >5%;
 - broad batch under 2% means poor fit/copy;
 - no mass outreach until assets exist.
+- do not count creator outreach in reply-rate or coverage-rate metrics unless `asset_ids_sent`, `creator_utility_score`, `creator_send_gate`, `send_route_class`, `reply_consent_provenance`, and `send_gate_source` are populated where applicable.
 
 ### Community Feedback
 
@@ -88,6 +95,8 @@ Targets:
 |---|---|---|
 | post_id | text | Stable. |
 | platform | text | Reddit/Steam/etc. |
+| route_class | enum | `public_cta`, `no_link_feedback`, `support_route`, `private_playtest`, `creator_reply`, `press_reply`, or `unknown`. |
+| consent_provenance | enum | `public_comment`, `invited_feedback`, `support_report`, `playtest_consent`, `creator_reply`, `press_reply`, or `unknown`. |
 | asset | text | Screenshot/clip ID. |
 | question | text | One feedback question. |
 | useful_comments | int | Non-meme feedback. |
@@ -103,6 +112,8 @@ Targets:
 - confusion below 20% of useful comments;
 - clone comments declining over asset iterations.
 
+`unknown` route or consent values are import quarantine values only. They cannot be counted in weekly reports, agency-proof reads, creator/press reply rates, public CTA performance, support trends, or owned-audience metrics until the source row is corrected to a specific route and provenance.
+
 ## 2026-05-19 Proof-Gate Dashboard V0
 
 Use this before Steam telemetry exists. It measures whether the project is allowed to move from G0 prep to G1 screenshot drop, then from G1 to Steam page launch.
@@ -115,8 +126,16 @@ Use this before Steam telemetry exists. It measures whether the project is allow
 | build_id | text | Required after capture. |
 | status | enum | `PLANNED_CAPTURE`, `RAW`, `REVISION`, `QA_FAIL`, `APPROVED_INTERNAL`, `APPROVED_PUBLIC`, `DEPRECATED`, `LEGAL_HOLD`. |
 | qa_score | int | 0-12 for screenshots, use clip checklist for clips. |
+| pain_bucket_answered | text | Private proof bucket from asset metadata; not public comparison copy. |
+| pain_proof_score | int | 0-5, from the private pain-proof gate after source/date freshness check. |
+| pain_freshness_source | text | Monitoring refresh/source row used for the private pain proof score. |
+| pain_freshness_checked_at | date | Date when the pain source was checked for the asset score. |
+| public_comparison_gate | enum | `PRIVATE_ONLY_NO_COMPETITOR_COPY`, `INTERNAL_ONLY_NO_PUBLIC_PERFORMANCE_COMPARISON`, or stricter. |
+| agency_decision_proof_gate | enum | Metadata value; first-packet advance needs one `AGENCY_PROOF_CANDIDATE`. |
+| agency_decision_notes | text | One sentence naming the readable player choice or why the asset is not agency proof. |
 | cold_read_genre_correct | int | Count of viewers who identify underwater survival. |
 | cold_read_player_verb | int | Count of viewers who name player action/problem. |
+| cold_read_agency_decision | int | Count of valid blind readers who name the next pressure decision without prompt. |
 | clone_comments | int | Count of clone/derivative comments. |
 | unreadable_comments | int | Count of darkness/clarity failures. |
 | ai_or_concept_comments | int | Count of fake/AI/concept-art suspicion. |
@@ -127,9 +146,57 @@ Minimum to advance Campaign 01:
 
 - at least 6 real assets are no longer `PLANNED_CAPTURE`;
 - at least 4 screenshots score 10/12 or higher;
+- each priority asset has `pain_proof_score` 4/5+ with `pain_freshness_source` and `pain_freshness_checked_at` filled, and no public comparison gate violation;
+- at least one first-pack asset has `agency_decision_proof_gate = AGENCY_PROOF_CANDIDATE` and 60%+ valid blind readers can name the decision without prompt;
 - identity hero or salvage shot passes cold-read genre at 70%;
-- no asset selected for lead use has unresolved co-op/performance/AI-looking risk;
+- no asset selected for lead use has unresolved multiplayer-scope, performance, or AI-looking risk;
 - final decision is `KEEP`, not `REVISE`.
+
+### Capture Intake Join
+
+The dashboard does not replace asset metadata. For first captures, copy only the following facts from `Data/MARKETING_ASSET_METADATA_TEMPLATE.csv` after the metadata row is updated:
+
+| Dashboard field | Metadata source | Gate |
+|---|---|---|
+| `asset_id` | `asset_id` | Must already exist or be justified by a new non-duplicate hook. |
+| `build_id` | `build_id` | Cannot be `TBD`, `latest`, or guessed. |
+| `status` | `status` | Use `RAW`, `REVISION`, `QA_FAIL`, `APPROVED_INTERNAL`, or `APPROVED_PUBLIC`; do not dashboard stale `PLANNED_CAPTURE` rows as proof. |
+| `qa_score` | `qa_score` | Must come from `QA/MARKETING_ASSET_QA_CHECKLIST.md`. |
+| `pain_bucket_answered` | `pain_bucket_answered` | Private priority only; never public copy. |
+| `pain_proof_score` | `pain_proof_score` | 0 until QA assigns it; first-pack priority requires 4/5 after source/date freshness check. |
+| `pain_freshness_source` | `pain_freshness_source` | Must name the monitoring refresh/source row used for nonzero pain proof. |
+| `pain_freshness_checked_at` | `pain_freshness_checked_at` | Must be same-day/current-week for first-pack priority. |
+| `public_comparison_gate` | `public_comparison_gate` | Must stay `PRIVATE_ONLY_NO_COMPETITOR_COPY` or stricter for first-pack use. |
+| `agency_decision_proof_gate` | `agency_decision_proof_gate` | Must be present; first-pack advance needs one `AGENCY_PROOF_CANDIDATE`. |
+| `agency_decision_notes` | `agency_decision_notes` | Must name the readable choice or explain non-proof status; blank notes force `decision=HOLD`. |
+
+If a dashboard row contains a value not present in metadata or QA, mark `decision=HOLD` and fix the source row first.
+
+### Cold-Read Response Table
+
+Use with `Experiments/A_B_TESTING_AND_CREATIVE_EXPERIMENTS.md` Cold-Read Score Sheet V0.
+
+| Field | Type | Notes |
+|---|---|---|
+| response_id | text | Stable anonymous id. |
+| experiment_id | text | `AB-001`, `AB-002`, `AB-004`, `AB-006`, `AB-007`, or `AB-009`. |
+| asset_id | text | Exact `PLAN-*` asset or copy variant. |
+| reader_type | enum | internal, player, creator, press, unknown. |
+| context_exposure | enum | `NONE`, `CONTEXT_EXPOSED`, `PROMPT_ECHO`, `UNKNOWN`. |
+| valid_blind_read | bool | True only when `context_exposure=NONE`. |
+| genre_correct | bool | True only if the reader names survival/underwater/exploration/base-adjacent genre without prompt. |
+| player_verb_correct | bool | True only if the reader names action/problem, not just mood. |
+| what_decision_next | text | Raw answer to the agency prompt; empty answers count as no. |
+| agency_decision_read | bool | True only if the reader names repair, retreat, reroute, scan, operate, abort, recover, or an equivalent pressure decision without prompt. |
+| identity_nouns | text | Pressure, machinery, salvage, base, black water, Seed Ship, etc. |
+| mode_assumption | enum | single-player, unsupported_multiplayer_assumption, multiplayer_question, unknown. |
+| proof_belief | enum | gameplay, concept, AI-looking, unsure. |
+| readability_issue | enum | none, too_dark, too_busy, ui_unclear, unknown. |
+| click_interest | int | 0-4. |
+| kill_reason | text | Verbatim where possible. |
+| decision_impact | enum | keep, revise, kill, ignore_noise. |
+
+Do not merge cold-read response rows into public engagement metrics. Cold-read answers decide whether an asset is allowed to face public traffic at all. Contaminated reads can create fix notes but cannot count toward pass percentages.
 
 ### First Public Beat Table
 
@@ -139,20 +206,28 @@ Minimum to advance Campaign 01:
 | asset_id | text | Exact asset used. |
 | platform | text | X, Bluesky, Reddit, Steam, YouTube. |
 | campaign | text | `screenshot_drop_01`, `steam_page_launch`, etc. |
+| route_class | enum | `no_link_feedback`, `public_cta`, `support_route`, `private_access`, or `unknown`. |
+| cta_packet_id | text | Required when `route_class=public_cta`; blank for no-link feedback. |
+| access_route_class | enum | Required when the beat came from key, private preview, Steam Playtest, tester recruitment, or demo outreach. |
+| reply_consent_provenance | enum | Required before private-access or tester feedback is reused outside its original route; use the same field name as creator, press, and curator trackers. |
+| agency_decision_field_source | text | Required when access/demo/playtest copy claims gameplay/pressure/route-risk proof. |
 | post_url | url | Blank until public. |
 | useful_comments | int | Non-meme feedback. |
 | intended_nouns | int | Comments naming pressure, machine, salvage, base, black water, Seed Ship. |
+| agency_decision_read_comments | int | Comments naming a concrete player choice, not just danger or mood. |
 | confusion_comments | int | Comments asking what the game/action is. |
 | clone_comments | int | Direct derivative comparison. |
-| co_op_comments | int | Assumes or asks for multiplayer. |
+| multiplayer_scope_comments | int | Assumes, asks for, or reads unsupported multiplayer scope into the asset/copy. |
 | decision | enum | `ADVANCE`, `HOLD`, `REVISE`, `KILL`. |
 
 Decision rule:
 
-- `ADVANCE` only if intended nouns outnumber confusion + clone + co-op comments.
+- `ADVANCE` only if intended nouns outnumber confusion + clone + multiplayer-scope comments.
 - `REVISE` if interest exists but confusion repeats.
 - `KILL` if lead asset causes clone, AI-looking, or false-feature damage.
 - raw likes do not affect the decision.
+
+`unknown` route class blocks `ADVANCE`. If the beat used a public link, `cta_packet_id` must point to a destination whose `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`; if the beat came from private access, `access_route_class`, `reply_consent_provenance`, and any required `agency_decision_field_source` must be non-empty before the row is reportable.
 
 ### Weekly Current-State Summary
 
@@ -164,7 +239,10 @@ Assets approved public:
 Campaign 01 decision:
 Steam page status:
 Creator Wave A status:
+Agency proof status:
 Spend status:
+Route/consent gaps:
+Rows excluded for route/permission/provenance gaps:
 Top blocker:
 Next action:
 ```
@@ -182,10 +260,11 @@ Sections:
 3. Worst asset.
 4. Creator pipeline movement.
 5. Community feedback themes.
-6. Competitor signal.
-7. Decisions.
-8. Kill criteria triggered.
-9. Next week work.
+6. Agency-decision read rate.
+7. Competitor signal.
+8. Decisions.
+9. Kill criteria triggered.
+10. Next week work.
 
 ## Dashboard Rules
 
@@ -195,3 +274,8 @@ Sections:
 - Do not treat wishlist total as proof of game quality.
 - Do not celebrate impressions if no wishlist or creator action follows.
 - Do not hide negative "clone" signal; it is the main differentiation warning.
+- Do not merge feedback, form, or support rows without `route_class` and `consent_provenance`; creator/press/curator rows use `send_route_class` and `reply_consent_provenance`; private access rows use `access_route_class` and `reply_consent_provenance`.
+- Do not count support reports, playtest forms, creator replies, or press replies as newsletter, CRM, or public marketing consent.
+- Do not count a gameplay/pressure/route-risk asset as agency proof unless `agency_decision_read`, `agency_decision_read_comments`, or `cold_read_agency_decision` records the decision readers named.
+- Do not count key/access/playtest/demo outreach replies or claims unless `access_route_class`, `reply_consent_provenance`, and `agency_decision_field_source` are present where relevant.
+- Do not count creator, press, curator, support, public CTA, private access, or owned-audience rows whose permission gate/source is blank or whose route/provenance field is `unknown`.

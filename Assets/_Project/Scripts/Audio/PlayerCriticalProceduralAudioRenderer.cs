@@ -10746,7 +10746,7 @@ namespace Hecton8.Audio
                 Output = _mixScratch,
                 NormalizedTime = 0.5f
             };
-            job.Schedule().Complete();
+            job.Execute();
             _mixScratch[0] = 0f;
         }
 

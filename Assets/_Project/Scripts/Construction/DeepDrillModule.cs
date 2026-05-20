@@ -447,14 +447,6 @@ namespace Hecton8.Construction
             hash = FoldExtractionHash(hash, (uint)(entityId >> 32));
             hash = FoldExtractionHash(hash, (uint)_completedCycleCount);
 
-            AbsoluteUniversePosition position = AbsoluteUniversePosition.FromRuntimePosition(transform.position);
-            hash = FoldExtractionHash(hash, (uint)position.GridX);
-            hash = FoldExtractionHash(hash, (uint)((ulong)position.GridX >> 32));
-            hash = FoldExtractionHash(hash, (uint)position.GridY);
-            hash = FoldExtractionHash(hash, (uint)((ulong)position.GridY >> 32));
-            hash = FoldExtractionHash(hash, (uint)position.GridZ);
-            hash = FoldExtractionHash(hash, (uint)((ulong)position.GridZ >> 32));
-
             hash ^= hash >> 16;
             hash *= 0x7FEB352Du;
             hash ^= hash >> 15;

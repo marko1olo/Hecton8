@@ -1,39 +1,42 @@
 {
   "alignment_bytes": 16,
   "blob": "Data/Lore/Encyclopedia.h8bin",
-  "blob_length": 41920,
-  "blob_sha256": "649C2123D884A9E009309A1AC07F29475DAFFEF4DF8B251FC629BD0099A1505A",
+  "blob_length": 43536,
+  "blob_sha256": "007A40E34FFD2218D4DD9D554980C5267E20A7EF05F8B799C94074F305221C7A",
+  "btree_alignment_bytes": 64,
+  "btree_node_struct_format": "<16I",
   "compression": "none/raw-utf8",
   "endianness": "little",
   "entries": [
     {
       "hash": "0xAEC57EAC",
       "id": "Lore_Bible",
-      "length": 25003,
-      "offset": 48,
+      "length": 25771,
+      "offset": 128,
       "pad": 0,
-      "sha256": "6B529A808B25D18DA276747DB9149C61BACDF90A33DCC667FC85375DE13E69CD",
+      "sha256": "41337362680F268078AC6E6BC2385B699DDFC3C2AACE0A2E7008A84BD5759B16",
       "source": "Docs/Lore/Lore_Bible.md"
     },
     {
       "hash": "0xBC52DB39",
       "id": "DeepReach_ColonyFailureArchive",
-      "length": 16861,
-      "offset": 25056,
+      "length": 17617,
+      "offset": 25904,
       "pad": 0,
-      "sha256": "F4F3A50320BA26268F9C97900D12684E3BC7E905A35651779D15B3F0E6C94A37",
+      "sha256": "3893BA13DDB9DE4D0161FB400AD5AC19DAAC56A100B77863DF7A53CC6314B628",
       "source": "Docs/Lore/Archives/DeepReach_ColonyFailureArchive.md"
     }
   ],
   "entry_count": 2,
   "h_phi_audit": {
     "data_sovereignty_static_score": 1.0,
-    "lookup_model": "stateless binary search over sorted 16-byte records; payload is raw UTF-8 slice",
+    "lookup_model": "stateless 64-byte cache-conscious B-Tree over sorted 16-byte records; payload is raw UTF-8 slice",
     "private_runtime_state_required": false,
     "unity_runtime_proof": "PENDING VERIFICATION"
   },
   "hash_algorithm": "FNV-1a 32-bit over filename stem, ASCII A-Z folded to lowercase",
   "header_struct_format": "<4sIII",
+  "lookup_layout": "64-byte cache-conscious B-Tree between record table and payload; leaf values are record indices",
   "lore_audit": {
     "noir_signal_counts": {
       "abyss": 28,
@@ -71,10 +74,10 @@
         "complex_harmonic_noise_tags",
         "noir_signal_density"
       ],
-      "lookup": "prefetch adjacent raw slices"
+      "lookup": "same B-Tree topology with higher prefetch stride and richer presentation outside lookup truth"
     },
     "toaster": {
-      "lookup": "binary-search 16-byte records; stream one raw UTF-8 slice",
+      "lookup": "B-Tree traversal with prefetch weight near zero; stream one raw UTF-8 slice",
       "preview_bytes": 512
     }
   },

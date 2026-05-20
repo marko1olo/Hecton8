@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
 using Unity.Burst;
@@ -26,7 +27,7 @@ namespace Hecton8.UI
         public const int GlyphCount = 256;
         public const int BlackBoxFrameCount = 300;
         public const int MaxQueuedClicks = 64;
-        public const int VirtualButtonCapacity = TerminalCapacity * 2;
+        public const int ButtonAabbCapacity = TerminalCapacity * 2;
         public const uint PlaneFlagActive = 1u << 0;
         public const uint PlaneFlagPowered = 1u << 1;
         public const uint PlaneFlagSubmerged = 1u << 2;
@@ -64,14 +65,6 @@ namespace Hecton8.UI
         public uint FontAtlasUV_Packed;
         public float2 Position;
         public float Scale;
-    }
-
-    [StructLayout(LayoutKind.Sequential, Size = 24)]
-    public struct TerminalVirtualButtonDTO
-    {
-        public uint TerminalHash;
-        public uint CommandHash;
-        public float4 RectUv;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = TerminalOsConstants.ButtonAabbStrideBytes)]
@@ -159,19 +152,25 @@ namespace Hecton8.UI
         public uint Reserved0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public partial struct TerminalClickSignal : Hecton8.Core.Contracts.Signals.ISignal
     {
+        [FieldOffset(0)]
         public uint TerminalHash;
+        [FieldOffset(4)]
         public float2 LocalUv;
+        [FieldOffset(12)]
         public uint Reserved0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public partial struct TerminalCommandSignal : Hecton8.Core.Contracts.Signals.ISignal
     {
+        [FieldOffset(0)]
         public uint TerminalHash;
+        [FieldOffset(4)]
         public uint CommandHash;
+        [FieldOffset(8)]
         public float2 LocalUv;
     }
 
@@ -313,13 +312,63 @@ namespace Hecton8.UI
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    public static class TerminalOsSelfAudit
+    {
+        public static bool ValidateLayoutAndRayPlaneMath()
+        {
+            if (UnsafeUtility.SizeOf<TerminalInteractionDTO>() != TerminalOsConstants.TerminalInteractionStrideBytes ||
+                UnsafeUtility.SizeOf<TerminalPlaneDTO>() != TerminalOsConstants.TerminalPlaneStrideBytes ||
+                UnsafeUtility.SizeOf<GazeRayDTO>() != TerminalOsConstants.GazeRayStrideBytes ||
+                UnsafeUtility.SizeOf<ButtonAABBDTO>() != TerminalOsConstants.ButtonAabbStrideBytes ||
+                UnsafeUtility.SizeOf<TerminalTelemetryEntry>() != 64)
+            {
+                return false;
+            }
+
+            TerminalPlaneDTO plane = new TerminalPlaneDTO
+            {
+                CenterAup = new AbsoluteUniversePosition { LocalZ = 2f },
+                Normal = new float3(0f, 0f, -1f),
+                Up = new float3(0f, 1f, 0f),
+                Right = new float3(1f, 0f, 0f),
+                Width = 2f,
+                Height = 2f,
+                TerminalHash = 1u,
+                Flags = TerminalOsConstants.PlaneFlagActive | TerminalOsConstants.PlaneFlagPowered
+            };
+            GazeRayDTO gaze = new GazeRayDTO
+            {
+                OriginAup = default,
+                Direction = new float3(0f, 0f, 1f)
+            };
+
+            float3 centerFromOrigin = AupPrecisionMath.DowncastLocalDelta(
+                AbsoluteUniversePosition.DeltaMetersClamped(in plane.CenterAup, in gaze.OriginAup),
+                float3.zero);
+            float denom = math.dot(gaze.Direction, plane.Normal);
+            float safeDenom = math.abs(denom) < 0.00001f
+                ? (denom < 0f ? -0.00001f : 0.00001f)
+                : denom;
+            float distance = math.dot(centerFromOrigin, plane.Normal) / safeDenom;
+            float3 local = gaze.Direction * distance - centerFromOrigin;
+            float2 uv = new float2(
+                math.dot(local, plane.Right) / math.max(plane.Width, 0.001f) + 0.5f,
+                math.dot(local, plane.Up) / math.max(plane.Height, 0.001f) + 0.5f);
+
+            return math.all(math.isfinite(uv)) &&
+                   math.abs(distance - 2f) < 0.0001f &&
+                   math.abs(uv.x - 0.5f) < 0.0001f &&
+                   math.abs(uv.y - 0.5f) < 0.0001f;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct UpdateTerminalTextJob : IJobParallelFor
     {
-        [NativeDisableUnsafePtrRestriction] public TerminalStateDTO* States;
-        [ReadOnly] public NativeArray<MockPowerStateSignal> PowerSignals;
-        [ReadOnly] public NativeArray<MockDamageScalarSignal> DamageSignals;
-        [ReadOnly] public NativeArray<MockPowerStatusSignal> PowerStatusSignals;
+        [NativeDisableUnsafePtrRestriction] [NoAlias] public TerminalStateDTO* States;
+        [ReadOnly] [NoAlias] public NativeArray<MockPowerStateSignal> PowerSignals;
+        [ReadOnly] [NoAlias] public NativeArray<MockDamageScalarSignal> DamageSignals;
+        [ReadOnly] [NoAlias] public NativeArray<MockPowerStatusSignal> PowerStatusSignals;
         public int TerminalCount;
         public uint Frame;
 
@@ -351,12 +400,14 @@ namespace Hecton8.UI
             int damagePercent = (int)math.round(damage01 * 100f);
             int previousDamagePercent = (int)math.round(math.saturate(state.Value2) * 100f);
             byte previousPowered = (state.BackgroundColor & 0x00FFFFFFu) == 0u ? (byte)0 : (byte)1;
+            byte pendingDirty = state.IsDirty;
 
             if (!powered)
             {
                 state.Value1 = 0f;
                 state.Value2 = damage01;
                 state.BackgroundColor = 0u;
+                state.IsDirty = pendingDirty;
                 TerminalAsciiFormatter.WritePowerLine(ref state.TextLine, 0, damagePercent, false);
                 if (previousPowered != 0 || previousPercent != 0 || previousDamagePercent != damagePercent)
                     state.IsDirty = 1;
@@ -367,17 +418,18 @@ namespace Hecton8.UI
             state.Value1 = power01;
             state.Value2 = damage01;
             state.BackgroundColor = background;
+            state.IsDirty = pendingDirty;
             TerminalAsciiFormatter.WritePowerLine(ref state.TextLine, powerPercent, damagePercent, true);
             if (previousPowered == 0 || previousPercent != powerPercent || previousDamagePercent != damagePercent)
                 state.IsDirty = 1;
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct TerminalClickResolveJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<TerminalClickSignal>.ReadOnly Clicks;
-        [ReadOnly] public NativeArray<ButtonAABBDTO> Buttons;
+        [ReadOnly] [NoAlias] public NativeArray<TerminalClickSignal>.ReadOnly Clicks;
+        [ReadOnly] [NoAlias] public NativeArray<ButtonAABBDTO> Buttons;
         public int ClickCount;
         public int ButtonCount;
         public NativeQueue<TerminalCommandSignal>.ParallelWriter Commands;
@@ -416,10 +468,10 @@ namespace Hecton8.UI
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct MockGazeRayJob : IJob
     {
-        public NativeArray<GazeRayDTO> GazeRays;
+        [NoAlias] public NativeArray<GazeRayDTO> GazeRays;
         public AbsoluteUniversePosition FallbackOriginAup;
         public float3 FallbackForward;
         public float2 ScrollDelta;
@@ -448,12 +500,12 @@ namespace Hecton8.UI
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct CullTerminalsJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<TerminalPlaneDTO> Planes;
-        [ReadOnly] public NativeArray<GazeRayDTO> GazeRays;
-        public NativeArray<TerminalInteractionDTO> Interactions;
+        [ReadOnly] [NoAlias] public NativeArray<TerminalPlaneDTO> Planes;
+        [ReadOnly] [NoAlias] public NativeArray<GazeRayDTO> GazeRays;
+        [NoAlias] public NativeArray<TerminalInteractionDTO> Interactions;
         public int TerminalCount;
         public float MaxDistanceMeters;
         public float ViewConeCos;
@@ -478,7 +530,9 @@ namespace Hecton8.UI
                 return;
             }
 
-            float3 delta = (float3)AbsoluteUniversePosition.DeltaMetersClamped(in plane.CenterAup, in gaze.OriginAup);
+            float3 delta = AupPrecisionMath.DowncastLocalDelta(
+                AbsoluteUniversePosition.DeltaMetersClamped(in plane.CenterAup, in gaze.OriginAup),
+                float3.zero);
             if (!math.all(math.isfinite(delta)) || !math.all(math.isfinite(gaze.Direction)))
             {
                 result.InteractionFlags = TerminalOsConstants.InteractionFlagNonFinite;
@@ -509,12 +563,12 @@ namespace Hecton8.UI
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct TerminalIntersectionJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<TerminalPlaneDTO> Planes;
-        [ReadOnly] public NativeArray<GazeRayDTO> GazeRays;
-        public NativeArray<TerminalInteractionDTO> Interactions;
+        [ReadOnly] [NoAlias] public NativeArray<TerminalPlaneDTO> Planes;
+        [ReadOnly] [NoAlias] public NativeArray<GazeRayDTO> GazeRays;
+        [NoAlias] public NativeArray<TerminalInteractionDTO> Interactions;
         public int TerminalCount;
         public float MaxDistanceMeters;
 
@@ -533,7 +587,9 @@ namespace Hecton8.UI
             float3 right = math.normalizesafe(plane.Right, new float3(1f, 0f, 0f));
             float3 up = math.normalizesafe(plane.Up, new float3(0f, 1f, 0f));
             float3 direction = math.normalizesafe(gaze.Direction, new float3(0f, 0f, 1f));
-            float3 centerFromOrigin = (float3)AbsoluteUniversePosition.DeltaMetersClamped(in plane.CenterAup, in gaze.OriginAup);
+            float3 centerFromOrigin = AupPrecisionMath.DowncastLocalDelta(
+                AbsoluteUniversePosition.DeltaMetersClamped(in plane.CenterAup, in gaze.OriginAup),
+                float3.zero);
             float denom = math.dot(direction, normal);
 
             current.TerminalHash = plane.TerminalHash;
@@ -585,12 +641,12 @@ namespace Hecton8.UI
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct EvaluateTerminalButtonsJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<TerminalInteractionDTO> Interactions;
-        [ReadOnly] public NativeArray<TerminalPlaneDTO> Planes;
-        [ReadOnly] public NativeArray<ButtonAABBDTO> Buttons;
+        [ReadOnly] [NoAlias] public NativeArray<TerminalInteractionDTO> Interactions;
+        [ReadOnly] [NoAlias] public NativeArray<TerminalPlaneDTO> Planes;
+        [ReadOnly] [NoAlias] public NativeArray<ButtonAABBDTO> Buttons;
         public int TerminalCount;
         public int ButtonCount;
         public uint Frame;
@@ -611,7 +667,13 @@ namespace Hecton8.UI
                 return;
 
             bool clicked = (interaction.InteractionFlags & TerminalOsConstants.InteractionFlagPress) != 0u;
-            for (int i = 0; i < ButtonCount; i++)
+            TerminalPlaneDTO plane = Planes[index];
+            int safeButtonCount = math.max(0, ButtonCount);
+            int firstButton = (int)math.min(plane.LayoutFirstButton, (uint)safeButtonCount);
+            int availableButtons = math.max(0, safeButtonCount - firstButton);
+            int localButtonCount = (int)math.min(plane.LayoutButtonCount, (uint)availableButtons);
+            int buttonEnd = firstButton + localButtonCount;
+            for (int i = firstButton; i < buttonEnd; i++)
             {
                 ButtonAABBDTO button = Buttons[i];
                 if (button.TerminalHash != interaction.TerminalHash ||
@@ -625,6 +687,15 @@ namespace Hecton8.UI
                 if (!inside)
                     continue;
 
+                UiSignals.Enqueue(new InteractionUiSignal
+                {
+                    TargetAup = plane.CenterAup,
+                    TargetHash = interaction.TerminalHash,
+                    ToolHash = button.CommandHash,
+                    State = TerminalOsConstants.InteractionUiStateShow,
+                    Flags = TerminalOsConstants.InteractionUiFlagTerminal
+                });
+
                 if (clicked)
                 {
                     Commands.Enqueue(new TerminalCommandSignal
@@ -632,16 +703,6 @@ namespace Hecton8.UI
                         TerminalHash = interaction.TerminalHash,
                         CommandHash = button.CommandHash,
                         LocalUv = uv
-                    });
-
-                    TerminalPlaneDTO plane = Planes[index];
-                    UiSignals.Enqueue(new InteractionUiSignal
-                    {
-                        TargetAup = plane.CenterAup,
-                        TargetHash = interaction.TerminalHash,
-                        ToolHash = button.CommandHash,
-                        State = TerminalOsConstants.InteractionUiStateShow,
-                        Flags = TerminalOsConstants.InteractionUiFlagTerminal
                     });
                 }
 

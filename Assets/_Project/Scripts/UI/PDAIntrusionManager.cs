@@ -792,9 +792,7 @@ namespace Hecton8.UI
         private AbsoluteUniversePosition ResolveOwnerAup()
         {
             HectonPlayerMovement playerMovement = _playerMovement;
-            return playerMovement != null
-                ? playerMovement.CurrentAup
-                : AbsoluteUniversePosition.FromRuntimePosition(transform.position);
+            return playerMovement != null ? playerMovement.CurrentAup : default;
         }
 
         private void TickVisualCadence(float dt)

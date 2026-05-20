@@ -10,6 +10,16 @@ No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler,
 
 Status: draft matrix / no public page implied
 
+## Steam Page Publish Gate
+
+Current machine gate: `steam_page_publish_permission_gate = HOLD_NO_STEAM_PAGE_PUBLICATION`.
+
+Future allow value: `ALLOW_STEAM_PAGE_PUBLISH_VERIFIED`.
+
+This copy matrix can assemble candidates, but it cannot publish a Steam page. Do not infer publication permission from a winning copy variant, asset draft, Steamworks app shell, CTA packet, announcement draft, or press release gate.
+
+Publication requires exact Steam app/page owner, official rule recheck, Campaign 01 `KEEP`, first-page asset QA and metadata, AB-009/KPI agency-decision fields where gameplay/pressure/route-risk proof is used, official inbox/contact custody, support owner plan, no unsupported scope/performance/date/competitor claims, and separate CTA/announcement/post/press-release/spend/submission gates for downstream traffic.
+
 ## Store Page Mission
 
 The Steam page must convert a cold viewer from "underwater survival?" to "this has a distinct pressure/machinery identity" in one screen.
@@ -21,7 +31,7 @@ The Steam page must convert a cold viewer from "underwater survival?" to "this h
 | SD-01 | HECTON-8 is a single-player-first underwater survival game about pressure, salvage, machinery, and the cost of staying alive below the light. | Strong baseline. |
 | SD-02 | Survive an industrial ocean nightmare where pressure is the enemy, machinery is shelter, and every meter below the light costs oxygen, power, and steel. | More dramatic; verify tone. |
 | SD-03 | NASA-punk underwater survival in black water. Salvage wrecks, maintain pressure-rated habitats, pilot heavy machines, and follow a corrupted signal into the deep. | Good if heavy machines are present. |
-| SD-04 | Not a bright ocean vacation. HECTON-8 is deep-sea noir survival built around pressure, corrosion, machinery, salvage, and isolation. | Strong differentiation, slightly negative. |
+| SD-04 | HECTON-8 is deep-sea noir survival built around pressure, corrosion, machinery, salvage, and isolation below the light. | Strong differentiation without negative-denial framing. |
 | SD-05 | A single-player underwater survival game where the safest room is still under crushing pressure. | Short, good capsule support. |
 | SD-06 | Build below the light, keep failing machines alive, and follow a signal that should have stayed buried. | Good mystery hook. |
 | SD-07 | Industrial underwater survival where pressure, oxygen, power, and black water punish every bad decision. | Systems-forward. |
@@ -41,7 +51,7 @@ Use these three first once real screenshots exist. Do not keep adding variants u
 
 Current default: `A - Pressure/Salvage`.
 
-Reason: HECTON-8 has no public proof assets yet. The first Steam copy must not depend on unproven base failure, vehicle scope, co-op, large world, or performance claims.
+Reason: HECTON-8 has no public proof assets yet. The first Steam copy must not depend on unproven base failure, vehicle scope, multiplayer-scope, large world, or performance claims.
 
 ## 2026-05-19 Steam Page Assembly V0
 
@@ -51,18 +61,35 @@ This is the first assembly decision table. It converts the copy candidates, asse
 
 | Steam surface | Default choice | Required evidence | Switch condition | Kill condition |
 |---|---|---|---|---|
-| Short description | Candidate A - Pressure/Salvage | `PLAN-SHOT-001`, `PLAN-SHOT-003`, and one base/machinery shot score 10/12 for Steam. | Switch to B only if base/machinery failure is visually clear; switch to C only if Seed Ship/anomaly is visible as a system. | Viewers cannot name minute-to-minute action or assume co-op. |
+| Short description | Candidate A - Pressure/Salvage | `PLAN-SHOT-001`, `PLAN-SHOT-003`, one base/machinery shot, and one agency/decision proof asset (`PLAN-SHOT-006`, `PLAN-CLIP-001`, or `PLAN-CLIP-003`) score high enough for their surface and preserve the AB-009/KPI viewer-named decision field. | Switch to B only if base/machinery failure is visually clear; switch to C only if Seed Ship/anomaly is visible as a system after agency proof exists. | Viewers cannot name minute-to-minute action, cannot identify a player decision, or assume multiplayer/co-op. |
 | First screenshot | `PLAN-SHOT-001` Identity hero | Black-water industrial silhouette plus player/light/pressure cue. | Use `PLAN-SHOT-003` if identity hero is beautiful but actionless. | Reads as empty ocean, generic diver shot, or Subnautica clone frame. |
 | Second screenshot | `PLAN-SHOT-003` Salvage contact | Tool/interact target/hazard/reward must be readable. | Use base system shot if salvage interaction is not implemented. | Player verb needs caption. |
 | Third screenshot | `PLAN-SHOT-002` Pressure room | Gauges, seals, pressure door, dirty glass, maintenance surfaces. | Use `PLAN-SHOT-005` if failure state is clearer than room state. | Reads as clean sci-fi lounge. |
-| Fourth screenshot | `PLAN-SHOT-006` Threat silhouette | Threat/scale through instrument/floodlight relation. | Use `PLAN-CLIP-002` as trailer/short instead if still frame is unclear. | Reads as terrain or random monster pose. |
+| Fourth screenshot | `PLAN-SHOT-006` Threat silhouette | Threat/scale through instrument/floodlight relation plus a readable player choice: avoid, reroute, seal, scan, or retreat. | Use `PLAN-CLIP-001` or `PLAN-CLIP-003` as the agency proof if the still frame is unclear. `PLAN-SHOT-007` cannot substitute for agency proof. | Reads as terrain, random monster pose, or passive victim shot. |
 | Fifth screenshot | `PLAN-SHOT-005` Base under stress | Leak/flood/warning plus response path. | Hold if failure system is not honest in build. | Only red UI or fake scripted damage. |
 | Sixth screenshot | `PLAN-SHOT-004` Heavy machine | Real vehicle/tool/pump/ballast mass. | Omit if heavy machine is not playable/visible. | Looks decorative or toy-like. |
 | Seventh screenshot | `PLAN-SHOT-007` Seed Ship signal | Instrument corruption or route pull visible in-world. | Move earlier only if anomaly is the strongest cold-read hook. | Only abstract glow/lore wall. |
 | Eighth screenshot | `PLAN-SHOT-008` Low-spec readability | Internal only until measured context exists. | Replace with scale/interior shot for public page. | Any public FPS/performance implication without receipts. |
 | Steam trailer | 55-75s from `PLAN-CLIP-001` through `PLAN-CLIP-004` plus title card | First 10s must include player verb. | Use 20s teaser first if footage quantity is limited. | Trailer could be any underwater game. |
 | Capsule rough | `PLAN-CAPSULE-001` A/B/C | Must read at small size and avoid one-note blue/black. | Commission/polish only after cold-read winner exists. | Users cannot read title or see HECTON identity. |
-| Tag stack | Survival / Exploration / Base Building / Sci-fi / Singleplayer | First six screenshots prove survival, exploration, base, and single-player read. | Use exploration-heavy or horror-heavy stack only if first demo proves it. | Any top tag implies missing co-op, open-world, procedural, or simulation scope. |
+| Tag stack | Survival / Exploration / Base Building / Sci-fi / Singleplayer | First six screenshots prove survival, exploration, base, and single-player read. | Use exploration-heavy or horror-heavy stack only if first demo proves it. | Any top tag implies missing multiplayer/co-op, open-world, procedural, or simulation scope. |
+
+### Assembly Verdict Boundary
+
+Steam assembly can start only after the first capture session, Campaign 01, and cold-read route produce compatible evidence, including AB-009/KPI agency-decision fields for any gameplay/pressure/route-risk claim. Steam page publication is still blocked until `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED`.
+
+| Upstream state | Steam action |
+|---|---|
+| `KEEP_TESTING` from first capture session and Campaign 01 `KEEP` later, including AB-009/KPI agency-decision fields | Assemble the page draft from the winning assets/copy. |
+| `REVISE_SCENE` | Do not assemble Steam page. Fix capture scene, lighting, UI, or affordance first. |
+| `HOLD_ASSET` | Omit that surface from the first Steam page; do not replace with concept art or lore-only copy. |
+| `KILL_ANGLE` | Remove the angle from first-page copy, screenshot order, tags, and capsule direction. |
+| Cold-read multiplayer-scope confusion | Rewrite copy and asset order before any Steam upload. |
+| Cold-read AI/concept suspicion | Remove the asset from Steam use until real gameplay proof is clear. |
+| Cold-read prompt contamination | Treat the row as qualitative fix notes only; rerun with valid blind readers before Steam assembly. |
+| Missing `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision` for the agency candidate | Hold Steam assembly; mood, threat, monster, darkness, or scenery reads are not page proof. |
+
+Candidate B or C can override Candidate A only when the matching proof asset survives first-session triage, AB-009/KPI decision-read scoring, and cold-read scoring. Good prose is not proof.
 
 ### Steam Page V0 Copy Block
 
@@ -90,21 +117,23 @@ Feature bullets V0:
 
 ### Steam Page V0 Reject Rules
 
-Reject the V0 page draft if any of these happen in a five-person cold read:
+Reject the V0 page draft if any of these happen in valid blind cold reads before copy-stage testing:
 
-- 2+ people think the game is co-op or multiplayer.
+- 2+ people think the game is multiplayer or co-op.
 - 2+ people ask what the player actually does.
 - 2+ people say the screenshots are just dark water.
 - 2+ people identify it only as a Subnautica clone.
+- 3+ people cannot name a pressure decision from the agency candidate while the page claims gameplay/pressure/route-risk proof.
 - 1+ person calls a screenshot AI/concept-looking while it is meant as gameplay proof.
+- Fewer than 15 valid blind human/player reads exist across the lead asset set.
 
 ### Short Description Cold-Test Script
 
-Show copy A/B/C with one screenshot for five seconds. Ask:
+Run only after the blind asset pass. Show copy A/B/C with one screenshot for five seconds. This tests copy fit, not whether the asset works without help. Ask:
 
 1. What do you do in this game?
 2. What makes it different from other underwater survival games?
-3. Does it imply co-op or multiplayer?
+3. Does it imply multiplayer or co-op?
 4. Does it feel like a real game or a mood pitch?
 5. What would make you click away?
 
@@ -159,8 +188,7 @@ Use:
 
 Do not use:
 
-- Co-op.
-- Multiplayer.
+- Multiplayer/co-op as a public feature.
 - Subnautica killer.
 - 100km.
 - Zero-stutter.
@@ -187,18 +215,25 @@ Something at depth is corrupting instruments, wildlife, plant behavior, radar, a
 
 ## Cold Reader Test
 
-Show the short description and first screenshot to 20 people.
+Stage 1: show the first screenshot without title, caption, short description, tags, project explanation, or target nouns. Record `context_exposure` and count only `valid_blind_read=true`.
+
+Stage 1B: show the AB-009 agency candidate (`PLAN-SHOT-006`, `PLAN-CLIP-001`, or `PLAN-CLIP-003`) without caption. Record `what_decision_next`, `agency_decision_read`, and `cold_read_agency_decision`; mood, monster, darkness, or scenery answers do not count as agency proof.
+
+Stage 2: after Stage 1 and Stage 1B pass, show the short description and first screenshot to 20 people. This tests page fit, not raw asset clarity.
 
 Ask:
 
 1. What genre is it?
 2. What makes it different?
 3. What do you think you do minute to minute?
-4. What would make you wishlist or ignore it?
-5. Does it read as a Subnautica clone?
+4. What decision would the player make next under pressure?
+5. What would make you wishlist or ignore it?
+6. Does it read as a Subnautica clone?
 
 Pass condition:
 
-- at least 15/20 identify pressure/machinery/industrial underwater survival;
+- at least 15 valid blind Stage 1 reads exist before copy-stage scoring;
+- at least 60% of valid Stage 1B AB-009 reads can name a pressure decision without caption;
+- at least 15/20 in Stage 2 identify pressure/machinery/industrial underwater survival;
 - fewer than 5/20 say only "Subnautica clone";
 - fewer than 3/20 think it is multiplayer/co-op.

@@ -1,0 +1,5 @@
+name,peak_pressure,max_radius,expansion_speed,visual_intensity,force_scale,acoustic_intensity
+micro_charge,6500,18,150,0.55,0.012,0.45
+depth_charge,18000,42,260,1.10,0.018,0.75
+abyssal_torpedo,36000,74,340,1.65,0.022,0.92
+cave_breacher,24000,36,210,1.35,0.020,0.82

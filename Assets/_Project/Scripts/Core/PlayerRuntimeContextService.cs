@@ -23,6 +23,8 @@ namespace Hecton8.Core
         private bool _registeredContext;
         private bool _syncInProgress;
         private bool _dynamicContextReferencesEnabled;
+        private IPlayerInventoryService _playerInventoryService;
+        private IPlayerSensoryService _playerSensoryService;
         private GameObject _playerRootOverride;
         private GameObject _playerObject;
         private Transform _playerTransform;
@@ -346,6 +348,7 @@ namespace Hecton8.Core
                 return;
 
             _dynamicContextReferencesEnabled = true;
+            RefreshDynamicServiceReferencesCold();
             SyncPlayerContext();
         }
 
@@ -444,6 +447,8 @@ namespace Hecton8.Core
         private void ClearCachedPlayerReferences()
         {
             _playerRootOverride = null;
+            _playerInventoryService = null;
+            _playerSensoryService = null;
             _playerObject = null;
             _playerTransform = null;
             _playerMovement = null;
@@ -474,9 +479,6 @@ namespace Hecton8.Core
             if (_syncInProgress)
                 return;
 
-            if (!GlobalRegistry.TryBeginResolution(GlobalRegistry.GlobalRegistryResolutionScope.PlayerContext))
-                return;
-
             _syncInProgress = true;
             try
             {
@@ -485,7 +487,6 @@ namespace Hecton8.Core
             finally
             {
                 _syncInProgress = false;
-                GlobalRegistry.EndResolution(GlobalRegistry.GlobalRegistryResolutionScope.PlayerContext);
             }
         }
 
@@ -735,7 +736,7 @@ namespace Hecton8.Core
 
         private void RefreshDynamicContextReferences()
         {
-            IPlayerInventoryService playerInventoryService = GlobalRegistry.RegisteredPlayerInventory;
+            IPlayerInventoryService playerInventoryService = _playerInventoryService;
             if (playerInventoryService != null)
             {
                 if (playerInventoryService is PlayerInventoryManager playerInventoryManager)
@@ -768,7 +769,7 @@ namespace Hecton8.Core
                 }
             }
 
-            IPlayerSensoryService playerSensoryService = GlobalRegistry.RegisteredPlayerSensory;
+            IPlayerSensoryService playerSensoryService = _playerSensoryService;
             if (playerSensoryService != null)
             {
                 if (playerSensoryService is PlayerSensoryManager playerSensoryManager)
@@ -842,6 +843,12 @@ namespace Hecton8.Core
 
             if (_playerPda == null)
                 _playerPda = PlayerPDA.ActiveRuntimeInstance;
+        }
+
+        private void RefreshDynamicServiceReferencesCold()
+        {
+            _playerInventoryService = GlobalRegistry.RegisteredPlayerInventory;
+            _playerSensoryService = GlobalRegistry.RegisteredPlayerSensory;
         }
 
         private void ResolvePlayerHierarchyReferencesCold()

@@ -1,4 +1,4 @@
-﻿<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
 ## 2026-05-18 R22 Static Actuality Boundary
 
 This document is active only where it agrees with `Docs/README.md`, `Docs/DOC_GOVERNANCE.md`, `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`, current source files, and fresh verification artifacts.
@@ -8,7 +8,7 @@ No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler,
 # Raw Lead Scrape Summary - 2026-05-18
 
 Status: raw public index extraction / not outreach-ready
-Public stance: single-player-first / no co-op promise
+Public stance: single-player-first scope / proof-first public copy
 Runtime impact: none
 
 ## Scope
@@ -136,7 +136,7 @@ This pass extracted public creator leads from LetsPlayIndex game/category pages 
 
 ## Verification Gate
 
-A lead becomes outreach-ready only after: current channel activity checked, official YouTube/Twitch/site route found, language confirmed, fit confirmed, recent content reviewed, contact route logged, key-scam risk checked, pitch personalized to one real HECTON-8 asset, and no co-op/performance/competitor-war claims remain.
+A lead becomes outreach-ready only after: current channel activity checked, official YouTube/Twitch/site route found, language confirmed, fit confirmed, recent content reviewed, contact route logged, key-scam risk checked, pitch personalized to one real HECTON-8 asset, and multiplayer-scope, performance, and competitor-war claim checks pass.
 
 ## Sources
 

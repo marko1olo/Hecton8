@@ -469,25 +469,8 @@ namespace Hecton8.Construction
 
         private void ApplyPumpInputs(float deltaTime)
         {
-            int pumpCount = WaterPumpModule.ActivePumpCount;
-            for (int i = 0; i < pumpCount; i++)
-            {
-                WaterPumpModule pump = WaterPumpModule.GetActivePump(i);
-                BaseModule host = pump != null ? pump.HostModule : null;
-                if (pump == null || host == null || !pump.CanPump || host.WaterVolumeM3 <= 0f)
-                    continue;
-
-                if (!pump.TryEnsureWaterPipeNode(this, out int waterNode))
-                    continue;
-
-                float budget = pump.ResolveDrainBudgetM3(deltaTime);
-                if (budget <= 0f)
-                    continue;
-
-                float drained = host.DrainWaterVolumeM3(budget);
-                if (drained > 0f)
-                    TryInjectPipeContents(waterNode, drained);
-            }
+            // SHINOBU_222: object/BaseModule pump drainage is retired.
+            // SumpPumpPipeGridRuntime drains Fluid Incursion Vault buffers through CSR/Jacobi math.
         }
 
         private void ApplyElectrolysisInputs(float deltaTime)

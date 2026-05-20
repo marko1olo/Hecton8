@@ -18,6 +18,7 @@
         "Unity.InputSystem",
         "Unity.Mathematics",
         "Unity.Burst",
+        "Unity.Jobs",
         "Unity.TextMeshPro",
         "UnityEngine.UI",
         "Unity.RenderPipelines.Universal.Runtime",

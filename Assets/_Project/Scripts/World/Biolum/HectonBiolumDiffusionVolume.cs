@@ -47,11 +47,11 @@ namespace Hecton8.Biolum
         private static readonly int _GlowPointColorIntensityId = Shader.PropertyToID("_HectonGlowPointColorIntensity");
         private static readonly int _GlowPointParamsId = Shader.PropertyToID("_HectonGlowPointParams");
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct BiolumPointGpuData
         {
-            public Vector4 PositionRange;
-            public Vector4 ColorIntensity;
+            [FieldOffset(0)] public Vector4 PositionRange;
+            [FieldOffset(16)] public Vector4 ColorIntensity;
         }
 
         [Header("Compute")]

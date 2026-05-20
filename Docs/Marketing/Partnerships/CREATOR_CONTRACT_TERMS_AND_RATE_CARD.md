@@ -1,7 +1,7 @@
 # Creator Contract Terms And Rate Card
 
 Status: negotiation prep / not legal advice
-Public stance: single-player-first / no co-op promise
+Public stance: single-player-first scope / proof-first creator copy
 Runtime impact: none
 
 ## Objective
@@ -31,6 +31,18 @@ These are planning ranges, not promises.
 
 If a single placement would consume more than 30% of the total budget, reject unless metrics already prove the channel is unusually aligned.
 
+## 2026-05-20 Paid Creator Permission Boundary V0
+
+Paid creator deal terms are not spend permission.
+
+Use `paid_creator_permission_gate` in the live creator CRM as the only machine-readable field for paid creator spend:
+
+- current rows must stay `BLOCKED_NO_PAID_CREATOR_PROOF`;
+- a paid creator test can proceed only when the selected CRM row is `paid_creator_permission_gate = ALLOW_PAID_CREATOR_TEST_VERIFIED`;
+- `ALLOW_PAID_CREATOR_TEST_VERIFIED` requires verified official contact route, owner-controlled inbox/access route, disclosure line, demo or Steam baseline, matching asset QA, `creator_utility_score` 3/4+, matching asset `creator_send_gate`, `send_route_class`, AB-009/KPI decision-read proof for gameplay/pressure/route-risk claims, written deliverable, capped payment, cancellation rule, and 48h result inspection owner.
+
+Do not infer paid permission from audience fit, rate-card reply, sponsorship policy, organic reply, or a high-value creator name.
+
 ## Deal Terms Checklist
 
 - creator/channel;
@@ -40,9 +52,12 @@ If a single placement would consume more than 30% of the total budget, reject un
 - minimum runtime;
 - disclosure line;
 - whether gameplay footage must be from current build;
+- `paid_creator_permission_gate = ALLOW_PAID_CREATOR_TEST_VERIFIED`;
+- `send_route_class`, official contact route, access/key route, and `reply_consent_provenance`;
+- AB-009/KPI decision-read evidence if the brief uses gameplay, pressure, route-risk, threat, salvage failure, or first-public agency proof;
 - whether talking points are optional;
 - no requirement for positive opinion;
-- Steam/demo link;
+- Steam/demo link only after Official CTA Link Activation Gate V0 for public links or recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED` plus exact access-log fields for private routes;
 - payment amount;
 - invoice/payment method;
 - cancellation;
@@ -56,12 +71,13 @@ Allowed:
 - pressure, machinery, salvage, black-water exploration;
 - base as pressure vessel;
 - Seed Ship anomaly;
-- Steam/demo CTA if live.
+- Steam/demo CTA only after Official CTA Link Activation Gate V0 for public links or recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED` plus exact access-log fields for private routes.
+- gameplay/pressure/route-risk points only if backed by `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`.
 
 Forbidden:
 
-- co-op promise;
-- "Subnautica killer";
+- multiplayer-scope promise;
+- competitor-attack positioning;
 - performance claims without proof;
 - "best survival game";
 - guaranteed release timing;
@@ -73,6 +89,8 @@ Stop paid creator tests if:
 
 - two paid tests produce no Steam movement;
 - creator audience asks "what do you do?" repeatedly;
+- CRM row is not `paid_creator_permission_gate = ALLOW_PAID_CREATOR_TEST_VERIFIED`;
+- paid brief or creator cut claims agency/pressure proof without the matching AB-009/KPI decision-read field;
 - comments fixate on derivative look;
 - demo completion is weak;
 - paid slots cost more than capsule/page fixes would.
@@ -85,10 +103,12 @@ HECTON-8 creator brief
 Game: HECTON-8
 Pitch: single-player-first underwater survival about pressure, machinery, salvage, and black-water exploration.
 Do say: pressure, machinery, salvage, base survival, Seed Ship anomaly.
-Do not say: co-op, Subnautica killer, zero stutter, guaranteed FPS.
+Do not say: multiplayer scope, competitor-attack positioning, zero stutter, guaranteed FPS.
 Disclosure: demo/key/sponsorship provided by developer.
 Link: [Steam/demo]
 Build notes: [version, known issues]
+Route class: [NO_LINK_CREATOR_FEEDBACK / PUBLIC_CTA_CREATOR / PRIVATE_ACCESS_CREATOR]
+Paid creator permission gate: [ALLOW_PAID_CREATOR_TEST_VERIFIED / BLOCKED_*]
+Agency proof source, if claimed: [AB-009/KPI field row]
 Embargo: [none/TBD]
 ```
-

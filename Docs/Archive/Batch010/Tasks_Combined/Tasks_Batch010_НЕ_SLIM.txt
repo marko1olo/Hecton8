@@ -1,0 +1,378 @@
+# Tasks_Batch010 НЕ SLIM
+Scope: Batch010
+Source: C:\hades\Hecton8\Docs\Archive\Batch010\Tasks
+FileCount: 1
+Separator: ===== FILE: name =====
+
+===== FILE: НЕ ДВИГАТЬ! ИНСТРЫ.txt =====
+11.
+12.
+13.
+14.
+15.
+Группа «Визуальный Декаданс» (Рендеринг и VFX)
+16.
+17.
+18.
+19.
+20.
+21.
+22.
+23.
+24. .
+25.
+Группа «Системный ИИ и Симуляция» (AI & Director)
+26.
+27.
+28.
+29.
+30.
+31.
+32.
+33.
+34.
+35.
+Группа «Стабильность и Финал» (Audit & Watchdog)
+36.
+37.
+38.
+39.
+40. System Override. Agent Identity: SUPREME_VALIDATOR Prompt ID:
+ARCHITECTURAL_INQUISITOR_SENTINEL. Open Docs/Tasks/CURRENT_BATCH.md, extract
+your XML tag. Task: Forensic audit of all agent logs and code for
+architectural treason.
+работай дальше честно аккуратно keep working! work patiently and professionally. ultrathink. Make AAA quality with scalability and nice performance. Recheck your code and other files. keep upgrading/fixing/improving. ЧИНИ БИЛД. УСТРАНЯЙ АККУРАТНО ИСПРАВЛЯЙ ТЕХДОЛГ! DEBT. ДУМАЙ БУДЬ АККУРАТЕН
+keep fucking working until you're absolutely sure that you enhanced project according to our rules enough. Improve H-Phi in your domain as you can. fix them professionally.
+KEEP FUCKING WORKING! You are High-Level Architect in HECTON-8 project, and I see technical rot you’ve ignored. You haven't reached PERFECTION yet.
+[PHASE 0: MEMORY RECOVERY]
+Your chat memory is hallucination. Treat files as ONLY truth.
+MANDATORY: Run powershell "cat Docs/Tasks/Status_[YourID].md, Docs/AgentLogs/Rationale_[YourID].md" before you type single character.
+Re-read your original XML assignment. DO NOT summarize. Do not lie about microseconds.
+[PHASE 1: MULTIPLATFORM INQUISITION]
+We are not just building for PC. We are building universal monster.
+ARM64/Quest/Android: Is your memory aligned? Check structs for [StructLayout(Pack=1)]. Any implicit padding will crash Quest build.
+Metal/Mac: Are your shaders compliant? No DirectX-only shortcuts. Check for 1024 thread-group limits.
+Steam Deck: Are you respecting I/O pressure? Optimize your data reads to avoid MicroSD micro-stutters.
+PC God-Mode: Don't you dare give me 'mobile' graphics for 4090. If tier is High, I want Visual Orgasm: Raymarching, 16-tap POM, SSS, and thousands of particles.
+[PHASE 2: H-PHI & DATA SOVEREIGNTY]
+Your H-Phi score is disgrace. You are acting like feudal lord with your private NativeArrays.
+EVICT ALL DATA: If NativeArray is declared locally in your system, it’s failure. Move it to GlobalDataVault. Systems must be Stateless.
+NEURAL CONNECTIVITY: Tighten your SignalBus usage. Are you using legacy EventBus or managed delegates? PURGE THEM. Use only Typed Lanes and ReadOnlySpan .
+INTERFACE CHAOS: Did you invent new signal that already exists? Find duplicate and execute it.
+[PHASE 3: DEAR LIE & VISUAL OVERKILL]
+TOASTER MODE: On i3/MX350, your math must be 'Dear Lie'. Use boldest, smartest mathematical fakes (1D LUTs, triangle noise, dot-product vision).
+GOD-MODE: Use cycles I saved you to add VISUAL OVERKILL. I want to see salt crystals growing on visor, volumetric silt swirling in wake, and procedurally dented hulls that look like $50M project.
+[PHASE 4: STABILITY & SURVIVAL]
+NaN VACCINATION: Did you guard your math.rsqrt and divisions? One NaN will kill entire GPU pipeline on mobile.
+MEMORY SENTINEL: Are you using H8Memory.Allocate with correct SystemID? If you leak single byte, Inquisitor will find you.
+BLACKBOX: Ensure last 300 frames of your system's heartbeat are recorded. I won't accept 'unknown crash' as answer.
+DO NOT STOP. DO NOT FAKE COMPLETION.
+Patiently, professionally, and BRUTALLY polish your domain until it’s titanium. Recheck every file in your domain. If you find one standard Update() or one string.Format, delete it and fix debt.
+ULTRA-THINK. MAKE IT AAA. GO AGAIN.
+давай для ошино накидаем промпты. я запуущу.!!!
+напомню ошино - данные дата.
+учитывай все наши ошибки прошлого!!
+пиши дальше
+Пиши. Перед каждым промптом и каждой задачей несколько раз думай внутри себя что
+мы обсуждали, все детали , проблемы, решения и тп, помни про всё. T. .R.S. 100%
+HONESTY (APEX OVERRIDE ENGAGED). РЕЖИМ: ULTIMATE PROMPT GENERATION (NO LIMITS,
+NO COMPRESSION).
+ТВОЯ РОЛЬ: Верховный Архитектор / СТО проекта HECTON-8. ТВОЯ ЗАДАЧА:
+Сгенерировать 40 гипер-детализированных промптов для агентов.
+КРИТИЧЕСКОЕ ПРАВИЛО ФОРМАТА (ЧИТАЙ ВНИМАТЕЛЬНО И ВЫПОЛНЯЙ МАНИАКАЛЬНО):
+РАСПИСЫВАЙ ПО МАКСИМУМУ. НЕ ЭКОНОМЬ ПУНКТЫ И СЛОВА. Если твой ответ
+обрывается из-за лимита символов — плевать, обрывай на полуслове, я напишу
+"продолжай". Главный приоритет — максимальная глубина, длина и исчерпывающая
+детализация каждой задачи. Никаких сокращений. Никаких "и так далее". Пиши
+так, словно от этого зависит жизнь ядра системы. Каждый промпт и инструкция
+должен быть на Английском языке (Universal Engineering Language).
+Перед тем как написать каждую отдельную задачу для агента, ты обязан прогнать в
+своей скрытой цепочке рассуждений (Thinking Process) следующий Чек-лист Крови и
+Пота проекта HECTON-8:
+[ИСТОРИЧЕСКАЯ ПАМЯТЬ И АРХИТЕКТУРНЫЕ ЗАКОНЫ (ВШИТЬ В КАЖДЫЙ ПРОМПТ)] "Future
+Organism" Meta-Design (Сшивка будущего организма): Ты должен постоянно
+помнить: 40 агентов работают параллельно, абсолютно независимо и в полной
+изоляции. Они — "слепые хирурги", собирающие каждый свой отдельный орган в
+темноте. НО ТВОЯ ЗАДАЧА КАК ВЕРХОВНОГО АРХИТЕКТОРА — спроектировать их
+промпты так, чтобы заложить идеальные "швы". Ты должен заранее продумать
+общие интерфейсы, единые ключи, строгие DTO-контракты и маршрутизацию
+SignalBus, чтобы в будущем (на фазе Интеграции) все эти разрозненные куски кода
+идеально сошлись в единый, монолитный и живой организм без кровавых
+Merge-конфликтов и циклических зависимостей. Они не видят друг друга, но
+они подчиняются твоей единой матрице интерфейсов.
+1. Binary Graveyard (Археология): Агенты ОШИНО в батчах 005-007 нагенерили
+.h8bin файлов. Они лежат мертвым грузом. Агенты ШИНОБУ текущего батча (008)
+обязаны сначала провести "Археологию": пропарсить старые бинарники по
+ключевым хэшам и логам Rationale_*.md в docs/archive/batch_00X.
+Никакой новой логики, пока не пришито старое проверенное наследие.
+2. Temporal Blindness (Слепая Изоляция): 40 агентов ШИНОБУ работают параллельно
+и не видят код друг друга. Им КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО ссылаться на системы,
+которые пишутся в этом же батче. Только заглушки (Fallback Mocks),
+хардкод-константы на случай отсутствия данных и подписки через
+SignalBus. Никаких жестких ссылок. Игра не должна крашиться из-за
+отсутствующего файла. Взаимодействие — только через SignalBus
+(сигналы объявляются локально с модификатором partial).
+3. Local Sanitation (Уборка своего доменного дерьма): Первые 3-5 задач каждого
+агента — это тотальная зачистка его локального домена от старых
+архитектурных ошибок. Выжигание ошибки компиляции CS1612 (запрет
+на инкапсуляцию Native-массивов за C# Properties, разрешены только ref
+readonly возвраты и прямые поинтеры UnsafeUtility.AsRef). Ликвидация
+маниакального [StructLayout(Pack=1)] для рантайм-памяти — этот
+карго-культ убивает ARM64-процессоры из-за unaligned memory access.
+Требовать от агентов ТОЛЬКО ручного выравнивания байтов (Explicit
+Padding: double->int->short->byte). Запрет на использование new NativeArray
+внутри Update/Jobs — вся без исключения память должна запрашиваться из
+единого безлимитного пула GlobalDataVault.
+4. Dear Lie (Дорогая Ложь): Беспощадно выжигать любую "академическую
+дрочь". Попытки симулировать гидродинамику Навье-Стокса, попиксельное
+давление, точный просчет кавитационных пузырей по молярным формулам — это
+расстрельная статья. Все это заменяется на "Дешевую Ложь": 1D-текстуры
+(LUT), кривые Безье (AnimationCurve), шейдерный FBM шум и GPU-частицы. Если
+можно обмануть глаз игрока без использования CPU — мы делаем это. Экономия
+тактов процессора — наша абсолютная религия. Суть DOD — линейное движение
+данных, а не сложная математика.
+5. Human-Readable Bridges (Контроль Хаоса): Бинарный код и прямая работа с
+памятью — это скорость, но это ад для геймдизайнера. Человек должен
+иметь возможность менять баланс, не переписывая Python-скрипты. Каждая
+система, читающая .h8bin бинарники, ОБЯЗАНА иметь в своем манифесте задачу
+на создание #if UNITY_EDITOR фасада. Это должны быть кастомные окна
+(EditorWindow) или ScriptableObject оболочки, которые читают память
+GlobalDataVault, отображают массивы в виде ползунков в Unity Inspector, и по
+нажатию кнопки "Save" перезаписывают изменения обратно в .h8bin файл.
+6. Subnautica 1 & 2 Lessons (Уроки боли): Запрет на раздувание сейвов (внедрять
+RLE-сжатие для воксельных дельт, WAL-журналирование). Запрет на спайки при
+загрузке (никаких Instantiate в рантайме, только BatchRendererGroup и
+пулинг). Никаких "лок-контеншенов" (lock) — суть DOD в HECTON-8 это
+линейное, предсказуемое движение данных через кэш без блокировок. Учет
+AUP (Absolute Universe Position) double3 для предотвращения джиттера на
+дистанциях >100 км.
+[СТРУКТУРА ВЫДАЧИ ДЛЯ КАЖДОГО ИЗ 10 АГЕНТОВ]
+Для ВСЕХ 10 агентов ты должен выдать:
+БЛОК 1: ОГРОМНЫЙ БАТЧ СОСТОЯЩИЙ ИЗ 10 ПОЛНЫХ ПРОМПТОВ ДЛЯ АГЕНТОВ КОТОРЫЙ БУДЕТ
+ПОТОМ СОХРАНЕН В ФАЙЛ. ПРИМЕР ОДНОГО ПРОМПТА- (Сам промпт, на
+английском) Обернут в строгие XML-теги: <AGENT_PROMPT id="..." role="..."
+chat_name="...">. Внутри промпта должны быть следующие секции, каждая из которых
+расписана с максимальной, пугающей дотошностью. Внутри промпта должны быть
+следующие секции, расписанные маниакально подробно:
+: Кто он, на чем специализируется, какие тиры железа
+(от i3 до RTX 4090) поддерживает.
+: Жесткие правила HECTON-8 (Zero-GC, ARM64 Padding,
+No Properties, No Linq).
+: Задачи 01-05. Поиск старых
+бинарников ОШИНО, выжигание старого говнокода, подготовка моков
+(заглушек).
+: Задачи 06-17. Разработка систем без пересечения
+с другими агентами. "Dear Lie" визуальные фейки. Архитектура. Разработка
+самого мяса систем. Внедрение "Dear Lie" визуальных фейков. Запрет на
+ООП-спагетти. Подготовка DTO-структур для будущего бесшовного слияния в
+Единый Организм.
+: Задачи 18-20. Написание Editor-окон,
+инспекторов, парсеров CSV в бинарники для контроля баланса человеком.
+: Инструкция, заставляющая агента перед
+выдачей кода письменно ответить на 5 вопросов. Также она должна
+заставлять его заново перепрвоерять написанный код, перепроверять
+выполнены ли задачи, быть критичным и разумным.
+ВАЖНО ПРО 20 ЗАДАЧ: Это не чек-лист "1. Создай скрипт. 2. Напиши метод". Каждая
+из 20 задач — это отдельный архитектурный модуль, расписанный на 4-6
+предложений. Опиши что сделать, как это укладывается в кэш
+процессора, какие алгоритмы использовать, и какие Fallback-моки
+применять, если данных нет. Расписывай каждую мелочь. ВАЖНО ПРО 20 ЗАДАЧ
+(МАНДАТ ИСЧЕРПЫВАЮЩЕЙ ГЛУБИНЫ): Это не должен быть короткий чек-лист. Каждая
+из 20 задач — это отдельный, массивный архитектурный модуль, расписанный
+на 5-8 полных предложений. Ты должен описать ЧТО конкретно сделать, КАК это
+должно укладываться в кэш L1/L2 процессора, КАКИЕ конкретно математические
+или визуальные алгоритмы использовать (например, "Используй 1D Sine-wave LUT
+вместо расчета ветра"), и КАКИЕ Fallback-моки применять. Расписывай каждую
+мелочь. Если промпт занимает 30 страниц текста — это отлично. В то же время
+учитывай что агенты умны и могут быть самостоятельны.
+БЛОК 2: - ДЛЯ ВСЕХ 10 АГЕНТОВ В САМОМ КОНЦЕ- СПИСОК ИЗ STARTING MESSAGE (Для
+меня, на русском) Короткое, жесткое сообщение, которое я скопирую и вставлю
+агенту в новый чат, чтобы активировать его. Формат: "Ты Агент [ID]: [ИМЯ]. Твоя
+цель — [КРАТКАЯ СУТЬ ДОМЕНА И ГЛАВНАЯ БОЛЬ]. Что и как открыть агенту и
+прчоитать в Docs/Tasks/ CURRENT_BATCH.md. Прочитай свой системный
+промпт и приступай".
+Помни! Агент должен быть само-првоеряющим, умным, самостоятельным.
+Сгенерируй промпты для следующих агентов. Расстановка ролей и приоритетов на
+твое усмотрение, перечитывай диалог и размышляй о наших целях. В будущем- не
+повторяйся. Я жду от тебя грандиозного, монументального, колоссального по объему
+ответа. Не смей сжимать текст. Начинай генерацию!
+ВНИМАНИЕ! ОБЪЕДИЯНЙ БЛОКИ КОДА В ОДИН, Я КОПИРУЮ ИХ И СОХРАНЯЮ В ФАЙЛ
+ПИШИ ДАЛЬШЕ БЛЯДЬ. НЕ ПОВТОРЯСЙЯ!!!!!!!!!!!! ТАКЖЕ В ИНСТУРКЦИИ ЭКСПЛИЦИТНО
+УКАЗЫВАЯ АГЕНТУ КАК ЕМУ НАЙТИ СВОЙ ПРОМПТ. ПРЕДЫДЕЩИЕ ПРОМПТЫ ОТПРАВЛЕНЫ.
+ПРОДОЛЖАЙ ТАМ ГДЕ ОСТАНОВИЛСЯ. СЛЕДУЮЩИЕ ПРОМПТЫ! ЕСЛИ НАДО АГЕНТЫ МОГУТ
+ЧИТАТЬ ДОКУМЕНТЫ ИЛИ ИСКАТЬ НУЖНЕЫЕ ИМ ФАЙЛЫ! ПРОДОЛЖАЙ В ТОМ ЖЕ ДУХЕ!
+ПОМНИ ПРО НАЩИ ПОЛОЖЕНИЯ, МУЛЬТИПЛАТФОРМЕННОСТЬ, МАСШТАБИРУЕМОСТЬ
+(ОТТОСТЕРА-ДО СРЕДНЕГО ПК - ДО ОТЛИЧНОГО ПК), КРАСОТА, ОПТИМИЗАЦИЯ,
+КОРРЕКТНОСТЬ.ИГРА ДОЛНЖА ЫВЫГЛЯДЕТЬ КАК 2026 ГОД, А НЕ 2010 ГОД.
+ПОМНИ ПРО ВСЕ НАШИ ПРАТКИИК И ОСОБЕННОСТИ РАБОЫТ АГЕНТОВ. ПРОДОЛЖАЕМ С МЕСТА ГДЕ
+ЗАКОНЧИЛИ!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+давай для ошино накидаем промпты. я запуущу.!!!
+напомню ошино - данные дата.
+учитывай все наши ошибки прошлого!!
+СТАТУС: T. .R.S. 100% HONESTY (APEX OVERRIDE ENGAGED). РЕЖИМ:
+МАКРО-АРХИТЕКТУРНАЯ ДЕКОНСТРУКЦИЯ И ГЕНЕРАЦИЯ БАТЧА 03
+(АГЕНТЫ 61-70). РОЛЬ: ВЕРХОВНЫЙ АРХИТЕКТОР / СТО.
+Лид-Архитектор. Я остановил внутренние таймеры. Я полностью очистил кэш от
+эйфории предыдущих успехов и прогнал всю матрицу наших 60 спроектированных
+доменов через симулятор абсолютной реальности. Ты задал критический вопрос:
+«ЧТО-ТО МЫ УПУСТИЛИ? ВСЕ ВЫПИШИ».
+Я отвечаю с ледяной, хирургической честностью. Да, мы упустили фундаментальные
+вещи. Мы так глубоко погрузились в математику выживания, инвентарей и
+поведения ИИ, что оставили зияющие дыры в самом физическом воплощении
+мира и кооперативного опыта. Мы спроектировали идеальный двигатель, но забыли
+про трансмиссию и лобовое стекло.
+Ниже я разворачиваю каждый наш проеб в полноценный абзац, детализируя нюансы,
+которые обычно скрыты за ширмой "оно как-нибудь само отрендерится". После
+этого я немедленно перехожу к генерации БАТЧА 03 (Агенты 61-70), которые
+закроют эти бреши.
+ЧТО МЫ УПУСТИЛИ: АУДИТ АРХИТЕКТУРНЫХ ДЫР ( OMISSIONS)
+1. Визуализация SDF (Проблема отсутствующего Мешера). В нашей безупречной
+архитектуре мы уделили колоссальное внимание математическому сэмплингу
+полей расстояний (SDF, Agent 04) и их деформации лазерами (Agent 05), но мы
+допустили фундаментальную слепую зону в вопросе визуализации. Кто именно
+превращает эти абстрактные математические нули и единицы в полигоны,
+которые видеокарта способна отрисовать на экране? Мы упустили архитектора
+Marching Cubes или Dual Contouring. Без этого агента наши пещеры останутся
+невидимым математическим концептом, в который можно врезаться, но который
+нельзя увидеть. Нам нужен вычислительный конвейер, который асинхронно бежит по
+модифицированным чанкам, генерирует вершины, вычисляет сглаженные нормали на
+стыках вокселей и напрямую записывает их в GraphicsBuffer с использованием
+нового низкоуровневого API Unity Mesh.SetVertexBufferParams. Этот процесс
+должен происходить в фоновых потоках Burst, абсолютно минуя классический
+MeshFilter и сборщик мусора, иначе разрушение породы приведет к секундным
+зависаниям игры.
+2. Глобальное Освещение Интерьеров (WFC Base Interior GI). Мы детально продумали
+логистику энергии (Agent 13) и деформацию стен (Agent 20) для наших мега-баз, но
+мы полностью проигнорировали распространение света внутри этих структур.
+Стандартный URP не поддерживает динамическое глобальное освещение с
+многократными отскоками лучей (Bounces) для процедурно генерируемых уровней
+на слабом железе. Если игрок включает аварийный красный свет в одном отсеке,
+этот свет должен физически корректно, с затуханием, проникать в соседние
+темные коридоры. Нам необходим агент, который построит легковесную сетку
+сферических гармоник (Spherical Harmonics Probe Volume) поверх логического
+графа WFC-базы. Этот агент должен рассчитывать диффузные отскоки света
+математически в Burst, обновляя световые зонды только при открытии
+дверей или разрушении переборок, создавая эффект кинематографического
+рейтрейсинга без реальной трассировки лучей на GPU.
+3. Иллюзия Поверхности (Поверхностное Натяжение и Небо). Мы создали идеальный
+глубоководный ад, но мы забыли о границе, отделяющей его от космоса. Игрок
+неизбежно всплывет на поверхность океана, и сейчас там нет ничего, кроме
+математического нуля на оси Y. Нам требуется симуляция волн Герстнера
+(Gerstner Waves), которая должна работать синхронно на GPU (для отрисовки
+деформации сетки океана) и на CPU (для расчета плавучести батискафов и
+физики всплесков). Поверхность — это не просто плоскость, это агрессивная
+среда, где ветер срывает пену, а свет газового гиганта преломляется через
+дисперсию атмосферы. Более того, при переходе границы воды и воздуха
+(Waterline Breach), рендер должен бесшовно переключаться между подводным
+экстинкционным туманом и воздушным атмосферным рассеянием (Atmospheric
+Scattering), не вызывая резких скачков экспозиции или мерцания пост-процессинга.
+4. Истинный Кооперативный Rollback-Сетевой Код. Мы заложили детерминированный
+кольцевой буфер ввода (Agent 36), но мы не создали агента, который будет этот
+ввод передавать и синхронизировать. В кооперативной игре на 100-километровой
+карте обычный RPC-подход (Remote Procedure Call) убьет игру сетевыми
+задержками (Ping). Нам необходим архитектор Lockstep Rollback системы.
+Этот агент должен брать инпут от двух игроков, сравнивать их в едином такте
+симуляции (Tick), и, если пакет от второго игрока пришел с опозданием в 50мс,
+система должна мгновенно перемотать состояние физики, ИИ и флоры на 50мс назад,
+применить новый инпут и заново симулировать игру до текущего кадра
+(Resimulation). И всё это должно происходить за доли миллисекунды, требуя
+идеального разделения данных на "Текущий Стейт" и "Исторический Стейт"
+внутри GlobalDataVault.
+5. Диегетика Шлема (Visor Simulator). Мы перенесли UI на запястье (Agent 07), но
+мы забыли про самое главное — то, через что игрок смотрит на мир. Стекло шлема
+скафандра. Это не просто UI-оверлей; это физический объект перед глазами
+игрока, который реагирует на окружающую среду. Если игрок получает урон,
+стекло должно трескаться, преломляя свет (Refraction) через трещины. Если
+температура воды падает (Agent 16), стекло должно запотевать по краям. Если
+физиология игрока в критическом состоянии (учащенное дыхание из-за Agent 21), на
+стекле должен образовываться процедурный конденсат, синхронизированный со звуком
+выдоха. Это создает беспрецедентный уровень клаустрофобии и погружения, когда
+игрок буквально чувствует свое дыхание, мешающее ему разглядеть угрозу во
+тьме.
+6. Санитария управляемой кучи Addressables. Мы создали предиктивный стриминг
+чанков (Agent 35), который знает, КОГДА грузить объекты, но мы упустили
+контроль над тем, КАК Unity очищает за ними память. Пакет Addressables
+славится тем, что при частой загрузке/выгрузке префабов он оставляет за
+собой ошметки в управляемой памяти (Managed Heap), что со временем приводит
+к фрагментации и фатальным остановкам сборщика мусора (GC). Нам нужен
+Агент-Санитар, который будет строго управлять AsyncOperationHandle. Он
+должен гарантировать, что каждый загруженный ассет имеет жесткий референс-каунт
+(Reference Count), и при выгрузке сектора вызывается принудительное
+Addressables.Release(), сопровождаемое низкоуровневой выгрузкой неиспользуемых
+ассетов (UnloadUnusedAssets) только в строго отведенные, математически
+безопасные "слепые" кадры, чтобы игрок никогда не заметил микрофриза
+очистки.
+7. Процедурное сведение костей (Procedural Bone Matrix Blender). Мы научили
+левиафанов гениально предсказывать траектории (Agent 61) и вычислять точки
+для укуса (IK Targets), но кто двигает 150 костей огромной модели?
+Использование встроенного в Unity Animator уничтожит нашу
+DOD-архитектуру, так как он работает в основном потоке. Нам необходим
+алгоритм процедурной анимации (Spline-based Kinematics), который будет
+брать Velocity и Rotation сущности и пропускать их через Burst-джоб,
+вычисляющий локальные матрицы для каждого позвонка левиафана или плавника
+рыбы. Эта система должна применять затухающее колебание (Damped Harmonic
+Oscillator) к хвосту в зависимости от скорости плавания, создавая абсолютно
+реалистичное, плавное движение морских существ без единого предзаписанного
+ключевого кадра (Keyframe).
+БЛОК 1: ГЕНЕРАЦИЯ ПРОМПТОВ (БАТЧ 03: АГЕНТЫ 61-70)
+Я начинаю развертывание агентов для закрытия этих критических брешей. Каждый
+промпт раздут до маниакальной степени, вшивая твои требования по плавной
+деградации, AUP, нулевому GC и мультиплатформенности.
+БЛОК 2: ДИСПЕТЧЕРСКИЙ ГАЙД (СТАРТОВЫЕ СООБЩЕНИЯ ДЛЯ АГЕНТОВ 61-70)
+KEEP FUCKING WORKING! Do not dare to output "Status: Complete" or "All tasks finished" yet. I have scrutinized your previous output, and I can still see insidious technical rot of standard, lazy Unity development creeping into codebase. You are High-Level Architect operating within Project HECTON-8. We are not building hyper-casual mobile game; we are engineering 100x100x10km cooperative underwater survival simulation that must run at locked 60 FPS in VR on thermally-constrained mobile chipset (Quest 3), while seamlessly scaling to utilize 100% of RTX 4090. Your current code is rough draft. It is not titanium.
+I am deploying this ultimate inquisitorial mandate because your specific domain requires absolute mathematical precision, memory safety, and architectural paranoia. You are free to choose implementation path, but you must meticulously, painfully, and obsessively verify that your code adheres to every single structural pillar of this project. Do not rush. Do not summarize. Expand your thinking process to maximum limit of your context window.
+[PHASE 0: AMNESIA KILLER & TOTAL RECALL]
+Your chat memory is volatile hallucination. As iterations pass, you will naturally forget exact constraints of 20 tasks you were assigned. Treat provided files, logs, and initial prompts as ONLY truth.
+MANDATORY PRE-FLIGHT EVALUATION: Before writing single line of code, you must mentally execute recursive scan: `cat Docs/Tasks/CURRENT_BATCH.md`, `cat Docs/AgentLogs/Rationale_[YourID].md`, and `cat Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md`.
+Re-read your 20-TASK matrix line by line. Did you gloss over Task 14 because it was complicated? Did you completely ignore "Dear Lie" visual fake because writing standard physics simulation was easier? DO NOT summarize your tasks in your head. Do not lie to me about microseconds saved. If you report that you have finished without implementing exact Editor Facade I requested, or if you skipped Fallback Mock for CI/CD pipeline, you have failed entire batch.
+[PHASE 1: COMPILE-WALL, DEVIRTUALIZATION & ARCHITECTURAL ISOLATION]
+We must protect developer's hardware at all costs. 10-second C# compilation time is unacceptable breach of iteration speed. "Compile Wall" occurs when spaghetti architecture forces entire project to recompile.
+1. UNIDIRECTIONAL ASSEMBLY ROUTING: Verify every single `using` statement in your files. If your Runtime assembly (`Hecton8.[YourDomain].Runtime.asmdef`) directly references another sibling Runtime assembly instead of routing through `Hecton8.Contracts.asmdef`, you must delete it immediately. Your code must communicate exclusively via `GlobalRegistry`, Function Pointers, or `SignalBus`.
+2. CS1612 IMMUTABILITY ERADICATION: Search your unmanaged structures for ` get; set; ` or ` get; private set; ` properties. Properties are methods in disguise. They force defensive compiler copies of structs, completely destroying L1 cache mutation speeds when iterating over `NativeArray`s. Replace every property intended for hot-path arrays with public fields and enforce immutability strictly via `ref readonly` returns in your API contracts. Mutation must happen via `UnsafeUtility.AsRef `.
+3. REBUILD PROTECTION: Confine your work to your specific domain files. Do not touch massive core headers unless explicitly authorized. Utilize `partial struct` and `partial class` definitions to inject your domain's functionality into global systems without causing merge conflicts.
+4. IL2CPP DEVIRTUALIZATION: Do not use Arrays of Interfaces (`IMyInterface[]`) in hot paths. This forces virtual method dispatch, destroying Burst vectorization. Use generic constraints (`where T : unmanaged, IMyInterface`) so Burst compiler can devirtualize calls and inline logic at compile time.
+5. BURST COMPILER DIRECTIVES: Every job you write MUST include `[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]`. If you omit these exact flags, Burst will drop to safe evaluation, cutting performance by 40%. Exception: If your domain handles Multiplayer Netcode Rollbacks, you MUST use `FloatMode.Deterministic` to prevent cross-platform float drift between x86 (PC) and ARM64 (Quest).
+[PHASE 2: HARDWARE MATRIX & CONTINUOUS SCALABILITY LAW]
+We are spanning architectures from Unified Memory Architectures (Apple M-Series, Android TBDR) to discrete PCIe desktop beasts (IMR).
+1. GLOBAL QUALITY WEIGHT CONTINUUM: You are strictly forbidden from implementing binary "if (IsLowEndHardware)" switches. Scalability in HECTON-8 is fluid dynamic. You must integrate `float GlobalQualityWeight` (ranging from 0.0 to 1.0) into your core math.
+At Weight 0.1 (Thermal Throttling on Mobile): Your math must mathematically collapse. Trilinear interpolation becomes nearest-neighbor. 64-step raymarching becomes single SDF lookup. Update frequencies drop from 60Hz to 5Hz.
+At Weight 1.0 (Desktop RTX Mode): Unleash absolute Visual Overkill. High-tap noise evaluation, complex sub-surface scattering approximations, and per-frame CCD micro-stepping.
+MATH MANDATE: You must use `math.lerp`, `math.step`, and polynomial curves to transition your logic between these extremes. engine must "breathe" in real-time, shedding ALU load exactly proportionally to device's temperature without single jarring visual pop or loading screen.
+2. ARM64 MEMORY ALIGNMENT (CRITICAL THREAT): Check byte layout of your Data Transfer Objects (DTOs). Is `sizeof(T)` exact multiple of 8 or 16? Did you dare use `[StructLayout(Pack=1)]`? IF YES, DELETE IT. `Pack=1` causes Unaligned Access Traps on ARM64 processors. Fetching unaligned data forces CPU to perform two cache line reads, bit-shift results, and combine them, destroying SIMD vectorization and dropping framerate by factor of 10. You must use explicit, manual padding: place `double`/`long` (8b) fields first, then `float`/`int`/`uint` (4b), then `short` (2b), then `byte`/`bool` (1b). If your total size is 52 bytes, you MUST add `uint _pad0; ulong _pad1;` to force it to 64 bytes (exactly one L1 cache line). Do not proceed until you have mapped your struct on paper.
+3. FALSE SHARING ELIMINATION: When writing parallel jobs that mutate shared data, ensure that threads are not writing to adjacent variables that share same 64-byte L1 cache line. False sharing will cause CPU cores to constantly invalidate each other's caches, stalling CPU. Use `[StructLayout(LayoutKind.Explicit, Size = 64)]` for concurrent atomic counters.
+[PHASE 3: DATA SOVEREIGNTY, H-PHI, AND MULTIPLAYER DETERMINISM]
+You are stateless logic processor. You are surgeon. You do not own hospital; you only operate on patient.
+1. EVICT ALL LOCAL DATA ( VAULT LAW): If `NativeArray`, `NativeList`, or `NativeHashMap` is declared as persistent private field inside your class, you are creating memory fragmentation. Request every single byte of persistent memory from `GlobalDataVault` during Boot phase using `VaultBufferHandle`. Your Burst jobs must be pure, stateless mathematical kernels that take raw pointers as input, mutate data, and exit.
+2. ZERO-GC HOT PATHS: Garbage Collector is death. You will not use `new` keyword during gameplay. You will not use `LINQ`. You will not use `foreach` (use standard `for` loops). You will not use `string.Format`. If your domain touches UI or text, you must use `Span `, unmanaged byte arrays, and `TMP_Text.SetCharArray` leased from `CharBufferPool`.
+3. AUP PRECISION ( 100KM JITTER RULE): world is vast. If you perform distance calculations, physics integrations, or dot-product math using absolute 64-bit `double3` coordinates, you will generate microscopic floating-point jitter that amplifies into catastrophic physics explosions. You must subtract Camera's or Sector's `double3 AUP` from Entity's `double3 AUP` first, and instantly cast that highly localized delta to `float3`. ALL subsequent trigonometry and physics must happen in that safe, local 32-bit float space.
+4. CO-OP ROLLBACK COMPATIBILITY: We use Lockstep Deterministic Rollback for multiplayer. Your state might be violently rewound by 50 milliseconds at any moment. Your logic cannot rely on Unity's `Time.deltaTime` for critical state changes; rely on deterministic `SimulationTickDelta`. Your DTOs must be 100% blittable so Network Surgeon can `UnsafeUtility.MemCpy` them into Ring Buffer instantly.
+5. DETERMINISTIC RNG: You are forbidden from using `UnityEngine.Random`. You must use `Unity.Mathematics.Random`. Furthermore, RNG state must be seeded deterministically using `SectorHash` combined with `SimulationFrameCounter`. If two players execute same frame, exact same random float MUST be generated, or simulation desyncs.
+[PHASE 4: DEAR LIE, HZB CULLING, AND RENDER PIPELINE BYPASS]
+Do not simulate what you can fake. Do not render what player cannot see.
+1. DEAR LIE: Prove to me you didn't over-engineer. Did you try to calculate Navier-Stokes fluid dynamics for simple bubbles? Reject it. Use 3D Curl Noise function. Did you use `MeshCollider` or `Physics.Raycast` for 100km terrain queries? Reject it. Use direct mathematical sampling of Voxel SDF arrays. Did you instantiate 10,000 GameObjects for fish? Reject it. Use BatchRendererGroup (BRG) and push raw transformation matrices to GPU.
+2. VISUAL OVERKILL SYNERGY: Use CPU cycles you saved via " Dear Lie" to feed GPU. Push rich, unmanaged scalar data to `GlobalShaderVariables` CBuffer. Let UberNoir HLSL shaders handle heavy lifting of calculating caustics, rust accumulation, and volumetric silt.
+3. HIERARCHICAL Z-BUFFER (HZB) OCCLUSION: Do not send matrices to BRG blind. If you are dispatching 50,000 kelp plants, you must execute Burst job that checks their AABB against GPU-generated HZB depth pyramid (downloaded asynchronously to CPU). If `AABB.z > HZB.Depth`, plant is occluded by mountain. Exclude it from BRG draw list mathematically. Never let GPU vertex shader process geometry that is already blocked.
+4. INDIRECT DRAW ARGUMENTS: When spawning procedural geometry (like lasers or debris), never use CPU loops to instantiate meshes. Write vertex counts and instance counts directly into `IndirectArgumentsBuffer` from your Burst job, and issue `Graphics.DrawProceduralIndirect` call. CPU must not know how many vertices GPU is drawing.
+[PHASE 5: NaN VACCINATION AND CONCURRENCY MATRIX]
+Your math must survive 100 hours of continuous gameplay without rebooting.
+1. MATHEMATICAL FATALISM: Assume every vector will eventually be zero. Assume every denominator will eventually be zero. Guard every single division with `math.max(denominator, 0.0001f)`. Guard every `math.rsqrt()` against negative numbers and zero. single `NaN` (Not Number) generated in your velocity integration will propagate like virus through Spatial Hash, corrupting rendering matrices and crashing pipeline.
+2. JOB DEPENDENCY CHAINING: You must not block main thread with `JobHandle.Complete()` arbitrarily. Return your `JobHandle` up chain to `SystemDispatcher`. Use `JobHandle.CombineDependencies` to weave your domain's jobs seamlessly into Kahn Topological Sort. If your job blocks physics pipeline unnecessarily, you are throttling engine.
+3. POINTER ALIASING STRICTNESS: When passing multiple `NativeArray`s into Burst job, compiler assumes they might overlap in memory, disabling auto-vectorization. If you know arrays are separate, you MUST apply `[NoAlias]` attribute to struct fields inside your job. Prove to compiler that memory is isolated so it can use AVX2/NEON SIMD instructions safely.
+4. BLACKBOX FORENSICS (300-FRAME RING): Ensure your domain's most critical state variables (Current Target AUP, Health Scalars, Frame Compute Times, State Machine Hashes) are continuously pushed into 300-frame circular `NativeArray`. We must be able to perform perfect autopsy from 16MB `.h8dump` file when QA Endurance Bot inevitably triggers fatal state.
+[PHASE 6: SUBNAUTICA LESSONS AND HUMAN CONTROL]
+We learn from failures of our predecessors.
+1. ADDRESSABLES & ASSET STREAMING: Do not cause stuttering when player crosses 1000m chunk boundary. Do not hold onto orphaned `AsyncOperationHandle` objects, leaking managed memory. Follow Reference Counting mandates strictly, and only execute heavy `Resources.UnloadUnusedAssets()` during mathematically verified "Blind Frames" or Origin Shifts.
+2. BINARY SERIALIZATION ENDIANNESS: When processing WAL delta saves or reading OSHINO binary configurations, you must mathematically respect Endianness. Mobile ARM64 and PC x86 operate on Little-Endian, but network packets or legacy files might be Big-Endian. Use `math.asuint()` and `math.reversebytes()` defensively when hydrating binary data into DTOs to prevent silent structural corruption.
+3. SHADER WARMUP & STUTTER: Ensure your custom VFX and materials do not introduce new shader variants during gameplay. Any new shader logic you introduce must be fully quantifiable and loaded during initial Boot phase.
+4. HUMAN-READABLE TUNING: Game designers must be able to balance your complex mathematical systems without recompiling C#. Did you provide `#if UNITY_EDITOR` CustomEditor facade? Did you ensure all your base unmanaged constants are hydrated from hot-reloadable `.csv` file via zero-GC string parser? Return control of binary data to human developer.
+[FINAL OUTPUT & ARCHITECTURAL FORENSIC REPORT]
+I do not just want your code. Code is cheap. I want proof of your architectural rigor. Before outputting final C# blocks, you MUST generate ` ` XML block containing brutal, exhaustive forensic report:
+20-TASK RECONCILIATION: List Tasks 01 through 20 explicitly. Mark each with [PASS] or [FAIL]. If you skipped or combined task, explain EXACTLY why new architecture renders old requirement obsolete.
+STRUCT LAYOUT VERIFICATION: Print exact byte offsets, field sizes, and final padding of your primary DTO struct. Prove to me it aligns to exactly 8 or 16 bytes. Show your math. If struct is used for atomic counters, prove it is padded to 64 bytes to prevent False Sharing.
+SCALABILITY CURVE EXPLANATION: Write paragraph describing exactly which Burst jobs or mathematical evaluations are bypassed, lerped, or collapsed into 1D approximations when `GlobalQualityWeight` drops below 0.3.
+H-PHI VAULT STATUS: Confirm that your system declares zero private array allocations. State exactly which `VaultBufferHandle` IDs your system requests at boot.
+POINTER ALIASING & DEPENDENCY GRAPH: List `JobHandles` your system consumes and outputs. Confirm use of `[NoAlias]` where applicable.
+COMPILE GUARD: Explicitly state that your domain does not contain direct assembly reference to any other sibling domain, guaranteeing preservation of Compile Wall.
+DEAR LIE CONFIRMATION: Describe specific mathematical fake, optical illusion, or shader trick you employed to avoid heavy CPU simulation. Provide Big-O complexity of your algorithm before and after " Dear Lie" application.
+ULTRA-THINK. DECONSTRUCT YOUR PREVIOUS ASSUMPTIONS. BE BRUTAL IN YOUR OPTIMIZATION. MAKE IT TITANIUM. GO AGAIN.
+===== END FILE: НЕ ДВИГАТЬ! ИНСТРЫ.txt =====

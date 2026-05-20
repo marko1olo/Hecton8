@@ -3,7 +3,6 @@ using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Unity.Collections;
 using Hecton8.Caves;
-using Hecton8.Gameplay;
 using UnityEngine;
 
 namespace Hecton8.Core
@@ -28,15 +27,17 @@ namespace Hecton8.Core
     /// <summary>
     /// Blittable structural command payload authored by jobs and drained in the dispatcher late-frame window.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct EntityCommand
     {
-        public EntityCommandType CommandType;
-        public int TargetToken;
-        public int SecondaryToken;
-        public int IntValue;
-        public float FloatValue;
-        public Vector3 VectorValue;
+        [FieldOffset(0)] public EntityCommandType CommandType;
+        [FieldOffset(1)] private byte _pad0;
+        [FieldOffset(2)] private ushort _pad1;
+        [FieldOffset(4)] public int TargetToken;
+        [FieldOffset(8)] public int SecondaryToken;
+        [FieldOffset(12)] public int IntValue;
+        [FieldOffset(16)] public float FloatValue;
+        [FieldOffset(20)] public Vector3 VectorValue;
 
         public static EntityCommand CreateDespawn(int targetToken, float delaySeconds = 0f)
         {
@@ -168,6 +169,11 @@ namespace Hecton8.Core
         }
     }
 
+    public interface IStorageReservationCommitTarget
+    {
+        bool TryCommitReservation(int reservationId);
+    }
+
     /// <summary>
     /// Dispatcher-owned lock-free structural command queue.
     /// Jobs publish blittable intent only; the main thread resolves targets and applies mutations in LateUpdate.
@@ -181,15 +187,15 @@ namespace Hecton8.Core
         /// <summary>
         /// Storage reservation commit acknowledgement payload emitted after the command has been applied or rejected.
         /// </summary>
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
         public struct StorageReservationCommitResolvedPayload
         {
-            public int RequesterId;
-            public int ReservationId;
-            public byte Committed;
-            private byte _padding0;
-            private byte _padding1;
-            private byte _padding2;
+            [FieldOffset(0)] public int RequesterId;
+            [FieldOffset(4)] public int ReservationId;
+            [FieldOffset(8)] public byte Committed;
+            [FieldOffset(9)] private byte _padding0;
+            [FieldOffset(10)] private ushort _padding1;
+            [FieldOffset(12)] private uint _padding2;
         }
 
         /// <summary>
@@ -209,13 +215,14 @@ namespace Hecton8.Core
         private static readonly Dictionary<ulong, int> _tokensByInstanceId = new Dictionary<ulong, int>(256);
         // COLD ALLOC: List<int>[64] - recycled structural command target tokens - owner: ThreadSafeCommandQueue
         private static readonly List<int> _freeTokens = new List<int>(64);
-        // COLD ALLOC: RegistryBucket<IStorageReservationCommitResolvedListener>[8] - storage reservation acknowledgement listeners drained after command queue - owner: ThreadSafeCommandQueue
-        private static readonly RegistryBucket<IStorageReservationCommitResolvedListener> _storageReservationCommitListeners = new RegistryBucket<IStorageReservationCommitResolvedListener>(StorageReservationCommitListenerCapacity);
+        // COLD ALLOC: object[8] - storage reservation acknowledgement listeners drained after command queue, object-backed to avoid interface arrays - owner: ThreadSafeCommandQueue
+        private static readonly object[] _storageReservationCommitListeners = new object[StorageReservationCommitListenerCapacity];
 
         private static NativeQueue<EntityCommand> _pendingCommands;
         private static NativeQueue<StorageReservationCommitResolvedPayload> _pendingStorageReservationCommitResolved;
         private static int _nextToken = 1;
         private static int _pendingStorageReservationCommitResolvedCount;
+        private static int _storageReservationCommitListenerCount;
         private static int _lastStorageReservationCommitOverflowWarningFrame = -1;
 
         /// <summary>
@@ -253,8 +260,17 @@ namespace Hecton8.Core
             if (listener == null)
                 return;
 
-            if (!_storageReservationCommitListeners.Contains(listener))
-                _storageReservationCommitListeners.Register(listener);
+            if (IndexOfStorageReservationCommitListener(listener) >= 0)
+                return;
+
+            if (_storageReservationCommitListenerCount >= StorageReservationCommitListenerCapacity)
+            {
+                LogStorageReservationCommitListenerCapacityExceeded();
+                return;
+            }
+
+            _storageReservationCommitListeners[_storageReservationCommitListenerCount] = listener;
+            _storageReservationCommitListenerCount++;
         }
 
         public static void Unregister(IStorageReservationCommitResolvedListener listener)
@@ -262,8 +278,15 @@ namespace Hecton8.Core
             if (listener == null)
                 return;
 
-            if (_storageReservationCommitListeners.Contains(listener))
-                _storageReservationCommitListeners.Unregister(listener);
+            int index = IndexOfStorageReservationCommitListener(listener);
+            if (index < 0)
+                return;
+
+            _storageReservationCommitListenerCount--;
+            if (index < _storageReservationCommitListenerCount)
+                _storageReservationCommitListeners[index] = _storageReservationCommitListeners[_storageReservationCommitListenerCount];
+
+            _storageReservationCommitListeners[_storageReservationCommitListenerCount] = null;
         }
 
         public static NativeQueue<EntityCommand>.ParallelWriter AsParallelWriter()
@@ -399,11 +422,10 @@ namespace Hecton8.Core
                 if (_pendingStorageReservationCommitResolvedCount > 0)
                     _pendingStorageReservationCommitResolvedCount--;
 
-                IStorageReservationCommitResolvedListener[] rawArray = _storageReservationCommitListeners.RawArray;
-                int count = _storageReservationCommitListeners.Count;
+                int count = _storageReservationCommitListenerCount;
                 for (int i = count - 1; i >= 0; i--)
                 {
-                    IStorageReservationCommitResolvedListener listener = rawArray[i];
+                    IStorageReservationCommitResolvedListener listener = _storageReservationCommitListeners[i] as IStorageReservationCommitResolvedListener;
                     if (listener != null)
                         listener.OnStorageReservationCommitResolved(in payload);
                 }
@@ -434,7 +456,8 @@ namespace Hecton8.Core
             _targetsByToken.Clear();
             _tokensByInstanceId.Clear();
             _freeTokens.Clear();
-            _storageReservationCommitListeners.Clear();
+            System.Array.Clear(_storageReservationCommitListeners, 0, _storageReservationCommitListenerCount);
+            _storageReservationCommitListenerCount = 0;
             _nextToken = 1;
             _pendingStorageReservationCommitResolvedCount = 0;
             _lastStorageReservationCommitOverflowWarningFrame = -1;
@@ -530,13 +553,13 @@ namespace Hecton8.Core
 
                 case EntityCommandType.CommitStorageReservation:
                 {
-                    if (command.IntValue <= 0 || !instance.TryGetComponent(out StorageCrate crate))
+                    if (command.IntValue <= 0 || !instance.TryGetComponent(out IStorageReservationCommitTarget target))
                     {
                         RaiseStorageReservationCommitResolved(command.SecondaryToken, command.IntValue, false);
                         break;
                     }
 
-                    bool committed = crate.TryCommitReservation(command.IntValue);
+                    bool committed = target.TryCommitReservation(command.IntValue);
                     RaiseStorageReservationCommitResolved(command.SecondaryToken, command.IntValue, committed);
                     break;
                 }
@@ -554,6 +577,17 @@ namespace Hecton8.Core
                 ReservationId = reservationId,
                 Committed = committed ? (byte)1 : (byte)0
             });
+        }
+
+        private static int IndexOfStorageReservationCommitListener(IStorageReservationCommitResolvedListener listener)
+        {
+            for (int i = 0; i < _storageReservationCommitListenerCount; i++)
+            {
+                if (ReferenceEquals(_storageReservationCommitListeners[i], listener))
+                    return i;
+            }
+
+            return -1;
         }
 
         private static void EnsureStorageReservationCommitResolvedQueue()
@@ -610,6 +644,16 @@ namespace Hecton8.Core
                 _storageCommitOverflowWarningHash,
                 _storageCommitQueueHash,
                 StorageReservationCommitEventCapacity);
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogStorageReservationCommitListenerCapacityExceeded()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogError("[ThreadSafeCommandQueue] Storage reservation commit listener capacity exceeded. capacity=" +
+                           StorageReservationCommitListenerCapacity);
+#endif
         }
 
         private static bool RequiresGameObjectTarget(EntityCommandType commandType)

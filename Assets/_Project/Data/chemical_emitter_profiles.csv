@@ -1,0 +1,7 @@
+profile,blood,pheromone,toxin,radius,dissipation,flags
+PlayerBleeding,1.25,0.00,0.00,1.10,1.00,1
+ExhaustTrail,0.00,1.00,0.00,1.35,0.80,2
+FearPheromone,0.00,1.20,0.00,0.85,1.10,2
+ToxinBurst,0.00,0.00,1.00,1.00,0.90,4
+DefoliantBurst,0.00,0.00,1.10,1.20,0.70,8
+DefoliantDeadZone,0.00,0.00,1.40,1.45,0.60,8

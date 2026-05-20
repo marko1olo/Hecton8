@@ -119,7 +119,7 @@ namespace Hecton8.Dev
                 SampleAupXZ = sampleAupXZ
             };
 
-            job.Run();
+            job.Execute();
             sample = result[0];
             return sample.BiomeA != 0 &&
                    math.isfinite(sample.BlendFactor01) &&

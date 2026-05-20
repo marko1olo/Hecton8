@@ -9,7 +9,6 @@ using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChange
 using Hecton8.Core.Memory;
 using Hecton8.UI;
 using Unity.Collections;
-using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -203,12 +202,7 @@ namespace Hecton8.Audio
             if (Volatile.Read(ref _nativeAllocated) == 0)
                 return;
 
-            PlayerCriticalBufferJobs.VwsCooldownDecayJob cooldownJob = new PlayerCriticalBufferJobs.VwsCooldownDecayJob
-            {
-                Cooldowns = _cooldowns,
-                DeltaSeconds = SlowTickDeltaSeconds
-            };
-            cooldownJob.Run();
+            DecayCooldownsInline(SlowTickDeltaSeconds);
 
             DrainPendingIdsIntoQueue();
             SortPriorityQueue();
@@ -603,12 +597,37 @@ namespace Hecton8.Audio
 
         private void SortPriorityQueue()
         {
-            PlayerCriticalBufferJobs.VwsPrioritySortJob sortJob = new PlayerCriticalBufferJobs.VwsPrioritySortJob
+            SortPriorityQueueInline();
+        }
+
+        private void DecayCooldownsInline(float deltaSeconds)
+        {
+            if (!_cooldowns.IsCreated)
+                return;
+
+            float dt = math.max(0f, deltaSeconds);
+            for (int i = 0; i < _cooldowns.Length; i++)
+                _cooldowns[i] = math.max(0f, _cooldowns[i] - dt);
+        }
+
+        private void SortPriorityQueueInline()
+        {
+            if (!_vwsQueue.IsCreated)
+                return;
+
+            int count = math.clamp(_queueCount, 0, math.min(QueueCapacity, _vwsQueue.Length));
+            for (int i = 1; i < count; i++)
             {
-                Queue = _vwsQueue,
-                QueueCount = _queueCount
-            };
-            sortJob.Run();
+                byte value = _vwsQueue[i];
+                int j = i - 1;
+                while (j >= 0 && _vwsQueue[j] > value)
+                {
+                    _vwsQueue[j + 1] = _vwsQueue[j];
+                    j--;
+                }
+
+                _vwsQueue[j + 1] = value;
+            }
         }
 
         private void TryStartOrPreemptWarning()

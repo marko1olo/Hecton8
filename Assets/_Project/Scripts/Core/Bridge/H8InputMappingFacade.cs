@@ -83,21 +83,22 @@ namespace Hecton8.Core.Bridge
                 return true;
             }
 
-            VaultBufferHandle<H8InputFacadeBindingEntry> buffer = vault.GetBufferHandle<H8InputFacadeBindingEntry>(
+            VaultGenerationHandle<H8InputFacadeBindingEntry> handle = vault.GetGenerationHandle<H8InputFacadeBindingEntry>(
                 BufferID.BridgeInputFacadeBindings,
                 count,
                 SystemID.CoreBridge,
                 NativeArrayOptions.ClearMemory);
 
-            if (!buffer.IsCreated || buffer.Length < count)
+            if (handle.BufferID == 0u ||
+                !vault.TryResolveHandle(in handle, out NativeArray<H8InputFacadeBindingEntry> buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < count)
+            {
                 return false;
-
-            H8InputFacadeBindingEntry* bufferPtr = (H8InputFacadeBindingEntry*)buffer.ResolvePointer(vault);
-            if (bufferPtr == null)
-                return false;
+            }
 
             Thread.MemoryBarrier();
-            ClearBuffer(bufferPtr, buffer.Length);
+            ClearBuffer(buffer);
 
             int activeCount = 0;
             for (int i = 0; i < count; i++)
@@ -107,7 +108,7 @@ namespace Hecton8.Core.Bridge
                     continue;
 
                 binding.RebuildHashes();
-                bufferPtr[activeCount++] = binding.ToEntry();
+                buffer[activeCount++] = binding.ToEntry();
             }
 
             Thread.MemoryBarrier();
@@ -119,28 +120,26 @@ namespace Hecton8.Core.Bridge
         private static unsafe void ClearExistingBuffer(IDataVault vault)
         {
             if (vault == null ||
-                !vault.TryGetBufferHandle(BufferID.BridgeInputFacadeBindings, out VaultBufferHandle<H8InputFacadeBindingEntry> buffer) ||
+                !vault.TryGetGenerationHandle<H8InputFacadeBindingEntry>(BufferID.BridgeInputFacadeBindings, out VaultGenerationHandle<H8InputFacadeBindingEntry> handle) ||
+                handle.BufferID == 0u ||
+                !vault.TryResolveHandle(in handle, out NativeArray<H8InputFacadeBindingEntry> buffer) ||
                 !buffer.IsCreated)
             {
                 return;
             }
 
-            H8InputFacadeBindingEntry* bufferPtr = (H8InputFacadeBindingEntry*)buffer.ResolvePointer(vault);
-            if (bufferPtr == null)
-                return;
-
             Thread.MemoryBarrier();
-            ClearBuffer(bufferPtr, buffer.Length);
+            ClearBuffer(buffer);
             Thread.MemoryBarrier();
         }
 
-        private static unsafe void ClearBuffer(H8InputFacadeBindingEntry* bufferPtr, int length)
+        private static unsafe void ClearBuffer(NativeArray<H8InputFacadeBindingEntry> buffer)
         {
-            if (bufferPtr == null || length <= 0)
+            if (!buffer.IsCreated || buffer.Length <= 0)
                 return;
 
-            long byteCount = (long)length * UnsafeUtility.SizeOf<H8InputFacadeBindingEntry>();
-            UnsafeUtility.MemClear(bufferPtr, byteCount);
+            long byteCount = (long)buffer.Length * UnsafeUtility.SizeOf<H8InputFacadeBindingEntry>();
+            UnsafeUtility.MemClear(buffer.GetUnsafePtr(), byteCount);
         }
 
         private static void PublishInputUpdateSignal(int bindingCount)

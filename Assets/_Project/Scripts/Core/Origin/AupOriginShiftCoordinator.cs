@@ -260,14 +260,14 @@ namespace Hecton8.Core
         private const BufferID CounterBuffer = (BufferID)73037;
 
         private static IDataVault _cachedVault;
-        private static VaultBufferHandle<AUP_StateDTO> _statesHandle;
-        private static VaultBufferHandle<float3> _velocitiesHandle;
-        private static VaultBufferHandle<float3> _historicalPointsHandle;
-        private static VaultBufferHandle<AupOriginShiftTelemetryEntry> _telemetryHandle;
-        private static VaultBufferHandle<AupOriginShiftRuntimeState> _runtimeStateHandle;
-        private static VaultBufferHandle<MockCameraAUP> _mockCameraHandle;
-        private static VaultBufferHandle<byte> _csvScratchHandle;
-        private static VaultBufferHandle<AupPaddedAtomicCounter> _counterHandle;
+        private static VaultGenerationHandle<AUP_StateDTO> _statesHandle;
+        private static VaultGenerationHandle<float3> _velocitiesHandle;
+        private static VaultGenerationHandle<float3> _historicalPointsHandle;
+        private static VaultGenerationHandle<AupOriginShiftTelemetryEntry> _telemetryHandle;
+        private static VaultGenerationHandle<AupOriginShiftRuntimeState> _runtimeStateHandle;
+        private static VaultGenerationHandle<MockCameraAUP> _mockCameraHandle;
+        private static VaultGenerationHandle<byte> _csvScratchHandle;
+        private static VaultGenerationHandle<AupPaddedAtomicCounter> _counterHandle;
         private static long _lastCsvWriteTicks;
         private static string _csvPath;
         private static string _dumpPath;
@@ -298,104 +298,82 @@ namespace Hecton8.Core
 
             if (!ReferenceEquals(_cachedVault, vault))
             {
+                ReleaseVaultHandles(_cachedVault);
                 ResetVaultHandles();
                 _cachedVault = vault;
             }
 
-            if (!_statesHandle.IsCreated || _statesHandle.Length < MockEntityCapacity)
-            {
-                _statesHandle = vault.GetBufferHandle<AUP_StateDTO>(
+            if (!TryResolveOrAcquire(
+                    vault,
+                    ref _statesHandle,
                     MockStatesBuffer,
                     MockEntityCapacity,
-                    OwnerSystemId,
-                    NativeArrayOptions.UninitializedMemory);
-            }
-
-            if (!_velocitiesHandle.IsCreated || _velocitiesHandle.Length < MockEntityCapacity)
-            {
-                _velocitiesHandle = vault.GetBufferHandle<float3>(
+                    NativeArrayOptions.UninitializedMemory,
+                    out arrays.States,
+                    out bool statesCreated) ||
+                !TryResolveOrAcquire(
+                    vault,
+                    ref _velocitiesHandle,
                     MockVelocitiesBuffer,
                     MockEntityCapacity,
-                    OwnerSystemId,
-                    NativeArrayOptions.UninitializedMemory);
-            }
-
-            if (!_historicalPointsHandle.IsCreated || _historicalPointsHandle.Length < MockHistoricalPointCapacity)
-            {
-                _historicalPointsHandle = vault.GetBufferHandle<float3>(
+                    NativeArrayOptions.UninitializedMemory,
+                    out arrays.Velocities,
+                    out bool velocitiesCreated) ||
+                !TryResolveOrAcquire(
+                    vault,
+                    ref _historicalPointsHandle,
                     MockHistoricalPointsBuffer,
                     MockHistoricalPointCapacity,
-                    OwnerSystemId,
-                    NativeArrayOptions.UninitializedMemory);
-            }
-
-            if (!_telemetryHandle.IsCreated || _telemetryHandle.Length < TelemetryCapacity)
-            {
-                _telemetryHandle = vault.GetBufferHandle<AupOriginShiftTelemetryEntry>(
+                    NativeArrayOptions.UninitializedMemory,
+                    out arrays.HistoricalPoints,
+                    out bool historicalCreated) ||
+                !TryResolveOrAcquire(
+                    vault,
+                    ref _telemetryHandle,
                     TelemetryRingBuffer,
                     TelemetryCapacity,
-                    OwnerSystemId,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            if (!_runtimeStateHandle.IsCreated || _runtimeStateHandle.Length < RuntimeStateCount)
-            {
-                _runtimeStateHandle = vault.GetBufferHandle<AupOriginShiftRuntimeState>(
+                    NativeArrayOptions.ClearMemory,
+                    out arrays.TelemetryRing,
+                    out _) ||
+                !TryResolveOrAcquire(
+                    vault,
+                    ref _runtimeStateHandle,
                     RuntimeStateBuffer,
                     RuntimeStateCount,
-                    OwnerSystemId,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            if (!_mockCameraHandle.IsCreated || _mockCameraHandle.Length < MockCameraCount)
-            {
-                _mockCameraHandle = vault.GetBufferHandle<MockCameraAUP>(
+                    NativeArrayOptions.ClearMemory,
+                    out arrays.RuntimeState,
+                    out bool runtimeCreated) ||
+                !TryResolveOrAcquire(
+                    vault,
+                    ref _mockCameraHandle,
                     MockCameraBuffer,
                     MockCameraCount,
-                    OwnerSystemId,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            if (!_csvScratchHandle.IsCreated || _csvScratchHandle.Length < CsvScratchCapacity)
-            {
-                _csvScratchHandle = vault.GetBufferHandle<byte>(
+                    NativeArrayOptions.ClearMemory,
+                    out _,
+                    out _) ||
+                !TryResolveOrAcquire(
+                    vault,
+                    ref _csvScratchHandle,
                     CsvScratchBuffer,
                     CsvScratchCapacity,
-                    OwnerSystemId,
-                    NativeArrayOptions.UninitializedMemory);
-            }
-
-            if (!_counterHandle.IsCreated || _counterHandle.Length < CounterCount)
-            {
-                _counterHandle = vault.GetBufferHandle<AupPaddedAtomicCounter>(
+                    NativeArrayOptions.UninitializedMemory,
+                    out _,
+                    out _) ||
+                !TryResolveOrAcquire(
+                    vault,
+                    ref _counterHandle,
                     CounterBuffer,
                     CounterCount,
-                    OwnerSystemId,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            arrays.States = _statesHandle.Resolve(vault);
-            arrays.Velocities = _velocitiesHandle.Resolve(vault);
-            arrays.HistoricalPoints = _historicalPointsHandle.Resolve(vault);
-            arrays.TelemetryRing = _telemetryHandle.Resolve(vault);
-            arrays.RuntimeState = _runtimeStateHandle.Resolve(vault);
-            if (!arrays.States.IsCreated ||
-                !arrays.Velocities.IsCreated ||
-                !arrays.HistoricalPoints.IsCreated ||
-                !arrays.TelemetryRing.IsCreated ||
-                !arrays.RuntimeState.IsCreated ||
-                arrays.States.Length < MockEntityCapacity ||
-                arrays.Velocities.Length < MockEntityCapacity ||
-                arrays.HistoricalPoints.Length < MockHistoricalPointCapacity ||
-                arrays.TelemetryRing.Length < TelemetryCapacity ||
-                arrays.RuntimeState.Length < RuntimeStateCount)
+                    NativeArrayOptions.ClearMemory,
+                    out _,
+                    out _))
             {
                 arrays = default;
                 return false;
             }
 
             AupOriginShiftRuntimeState runtime = arrays.RuntimeState[0];
-            if (runtime.Flags == 0u)
+            if (runtime.Flags == 0u || runtimeCreated || statesCreated || velocitiesCreated || historicalCreated)
             {
                 runtime.RebaseLimitMeters = EmergencyRebaseLimitMeters;
                 runtime.SectorSizeMeters = DefaultSectorSizeMeters;
@@ -405,18 +383,114 @@ namespace Hecton8.Core
                 runtime.Flags = RuntimeFlagEmergencyThresholds;
                 arrays.RuntimeState[0] = runtime;
 
-                new AupMockInitializeJob
+                AupMockInitializeJob mockInitializeJob = new AupMockInitializeJob
                 {
                     States = arrays.States,
                     Velocities = arrays.Velocities,
                     HistoricalPoints = arrays.HistoricalPoints,
                     SectorSizeMeters = DefaultSectorSizeMeters
-                }.Run(MockEntityCapacity);
+                };
+                for (int i = 0; i < MockEntityCapacity; i++)
+                    mockInitializeJob.Execute(i);
             }
 
             arrays.ActiveCount = math.clamp(arrays.RuntimeState[0].ActiveEntityCount, 0, arrays.States.Length);
             arrays.HistoricalCount = math.clamp(arrays.RuntimeState[0].ActiveHistoricalCount, 0, arrays.HistoricalPoints.Length);
             return true;
+        }
+
+        private static bool TryResolveOrAcquire<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer,
+            out bool allocatedOrResized)
+            where T : struct
+        {
+            buffer = default;
+            allocatedOrResized = false;
+            if (vault == null || requiredLength <= 0)
+                return false;
+
+            if (handle.BufferID != 0u &&
+                vault.TryResolveHandle(in handle, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= requiredLength)
+            {
+                return true;
+            }
+
+            if (vault.TryGetGenerationHandle<T>(bufferId, out handle) &&
+                vault.TryResolveHandle(in handle, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= requiredLength)
+            {
+                return true;
+            }
+
+            handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                OwnerSystemId,
+                options);
+            allocatedOrResized = true;
+
+            return handle.BufferID != 0u &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static bool TryResolveMockCamera(IDataVault vault, out NativeArray<MockCameraAUP> camera)
+        {
+            camera = default;
+            return vault != null &&
+                   vault.TryResolveHandle(in _mockCameraHandle, out camera) &&
+                   camera.IsCreated &&
+                   camera.Length >= MockCameraCount;
+        }
+
+        private static bool TryResolveCounter(IDataVault vault, out NativeArray<AupPaddedAtomicCounter> counters)
+        {
+            counters = default;
+            return vault != null &&
+                   vault.TryResolveHandle(in _counterHandle, out counters) &&
+                   counters.IsCreated &&
+                   counters.Length >= CounterCount;
+        }
+
+        private static bool TryResolveCsvScratch(IDataVault vault, out NativeArray<byte> scratch)
+        {
+            scratch = default;
+            return vault != null &&
+                   vault.TryResolveHandle(in _csvScratchHandle, out scratch) &&
+                   scratch.IsCreated &&
+                   scratch.Length >= CsvScratchCapacity;
+        }
+
+        private static void ReleaseVaultHandles(IDataVault vault)
+        {
+            if (vault == null)
+                return;
+
+            if (_statesHandle.BufferID != 0u)
+                vault.ReleaseBuffer(in _statesHandle);
+            if (_velocitiesHandle.BufferID != 0u)
+                vault.ReleaseBuffer(in _velocitiesHandle);
+            if (_historicalPointsHandle.BufferID != 0u)
+                vault.ReleaseBuffer(in _historicalPointsHandle);
+            if (_telemetryHandle.BufferID != 0u)
+                vault.ReleaseBuffer(in _telemetryHandle);
+            if (_runtimeStateHandle.BufferID != 0u)
+                vault.ReleaseBuffer(in _runtimeStateHandle);
+            if (_mockCameraHandle.BufferID != 0u)
+                vault.ReleaseBuffer(in _mockCameraHandle);
+            if (_csvScratchHandle.BufferID != 0u)
+                vault.ReleaseBuffer(in _csvScratchHandle);
+            if (_counterHandle.BufferID != 0u)
+                vault.ReleaseBuffer(in _counterHandle);
         }
 
         private static void ResetVaultHandles()
@@ -447,8 +521,7 @@ namespace Hecton8.Core
 
             ContinueTimeSlicedRebase(vault, arrays);
 
-            NativeArray<MockCameraAUP> camera = _mockCameraHandle.Resolve(vault);
-            if (!camera.IsCreated)
+            if (!TryResolveMockCamera(vault, out NativeArray<MockCameraAUP> camera))
                 return false;
 
             _ = deltaTime;
@@ -525,8 +598,7 @@ namespace Hecton8.Core
             if (!EnsureRuntimeState(vault, out MockEntityArrays arrays))
                 return dependency;
 
-            NativeArray<AupPaddedAtomicCounter> counters = _counterHandle.Resolve(vault);
-            if (!counters.IsCreated || counters.Length < CounterCount)
+            if (!TryResolveCounter(vault, out NativeArray<AupPaddedAtomicCounter> counters))
                 return dependency;
 
             counters[0] = default;
@@ -616,8 +688,7 @@ namespace Hecton8.Core
             if (!EnsureRuntimeState(vault, out MockEntityArrays arrays))
                 return;
 
-            NativeArray<AupPaddedAtomicCounter> counters = _counterHandle.Resolve(vault);
-            int nonFiniteCount = counters.IsCreated && counters.Length > 0 ? counters[0].NonFiniteCount : 0;
+            int nonFiniteCount = TryResolveCounter(vault, out NativeArray<AupPaddedAtomicCounter> counters) ? counters[0].NonFiniteCount : 0;
             AupOriginShiftRuntimeState runtime = arrays.RuntimeState[0];
             runtime.RebaseCount++;
             runtime.LastShiftSequence = info.ShiftSequence;
@@ -692,8 +763,7 @@ namespace Hecton8.Core
             if (!EnsureRuntimeState(vault, out MockEntityArrays arrays))
                 return false;
 
-            NativeArray<MockCameraAUP> camera = _mockCameraHandle.Resolve(vault);
-            if (!camera.IsCreated)
+            if (!TryResolveMockCamera(vault, out NativeArray<MockCameraAUP> camera))
                 return false;
 
             AupOriginShiftRuntimeState runtime = arrays.RuntimeState[0];
@@ -810,8 +880,7 @@ namespace Hecton8.Core
             if (runtime.TimeSliceActive == 0)
                 return;
 
-            NativeArray<AupPaddedAtomicCounter> counters = _counterHandle.Resolve(vault);
-            if (!counters.IsCreated || counters.Length < CounterCount)
+            if (!TryResolveCounter(vault, out NativeArray<AupPaddedAtomicCounter> counters))
                 return;
 
             int activeCount = math.clamp(runtime.ActiveEntityCount, 0, arrays.States.Length);
@@ -841,7 +910,7 @@ namespace Hecton8.Core
 
             if (batchCount > 0)
             {
-                new AupStateRebaseJob
+                AupStateRebaseJob stateRebaseJob = new AupStateRebaseJob
                 {
                     States = (AUP_StateDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(arrays.States),
                     NonFiniteCounter = (AupPaddedAtomicCounter*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(counters),
@@ -851,7 +920,9 @@ namespace Hecton8.Core
                         ? runtime.PendingTimeSliceShiftSequence
                         : (runtime.LastShiftSequence != 0u ? runtime.LastShiftSequence : 1u),
                     StartIndex = startIndex
-                }.Run(batchCount);
+                };
+                for (int i = 0; i < batchCount; i++)
+                    stateRebaseJob.Execute(i);
             }
 
             int hotShifted = RunHotEntityRebaseSlice(
@@ -990,13 +1061,15 @@ namespace Hecton8.Core
             if (batchCount <= 0)
                 return 0;
 
-            new VaultHotEntityRebaseJob
+            VaultHotEntityRebaseJob hotRebaseJob = new VaultHotEntityRebaseJob
             {
                 HotEntities = hotEntities,
                 ShiftDelta = shiftDelta,
                 ShiftFrameId = shiftFrameId,
                 StartIndex = clampedStart
-            }.Run(batchCount);
+            };
+            for (int i = 0; i < batchCount; i++)
+                hotRebaseJob.Execute(i);
             return batchCount;
         }
 
@@ -1039,12 +1112,14 @@ namespace Hecton8.Core
             if (count <= 0)
                 return 0;
 
-            new Float3HistoricalRebaseJob
+            Float3HistoricalRebaseJob historicalRebaseJob = new Float3HistoricalRebaseJob
             {
                 Points = points,
                 ShiftDelta = shiftDelta,
                 StartIndex = clampedStart
-            }.Run(count);
+            };
+            for (int i = 0; i < count; i++)
+                historicalRebaseJob.Execute(i);
             return count;
         }
 
@@ -1102,8 +1177,7 @@ namespace Hecton8.Core
             if (string.IsNullOrEmpty(path) || !File.Exists(path))
                 return false;
 
-            NativeArray<byte> scratch = _csvScratchHandle.Resolve(vault);
-            if (!scratch.IsCreated || scratch.Length <= 0)
+            if (!TryResolveCsvScratch(vault, out NativeArray<byte> scratch))
                 return false;
 
             int bytesRead;

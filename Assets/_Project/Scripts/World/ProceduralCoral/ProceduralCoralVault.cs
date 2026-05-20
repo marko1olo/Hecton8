@@ -29,6 +29,7 @@ namespace Hecton8.World.ProceduralCoral
         public VaultBufferHandle<CoralDebugSegmentDTO> DebugSegments;
         public VaultBufferHandle<CoralGpuSwayDTO> GpuSway;
         public VaultBufferHandle<CoralSelfAuditResultDTO> SelfAudit;
+        public VaultBufferHandle<CoralHzbTileDTO> HzbTiles;
 
         public bool IsCreated()
         {
@@ -50,7 +51,8 @@ namespace Hecton8.World.ProceduralCoral
                    Counters.IsCreated &&
                    DebugSegments.IsCreated &&
                    GpuSway.IsCreated &&
-                   SelfAudit.IsCreated;
+                   SelfAudit.IsCreated &&
+                   HzbTiles.IsCreated;
         }
     }
 
@@ -75,6 +77,7 @@ namespace Hecton8.World.ProceduralCoral
         public NativeArray<CoralDebugSegmentDTO> DebugSegments;
         public NativeArray<CoralGpuSwayDTO> GpuSway;
         public NativeArray<CoralSelfAuditResultDTO> SelfAudit;
+        public NativeArray<CoralHzbTileDTO> HzbTiles;
 
         public bool IsCreated()
         {
@@ -96,7 +99,8 @@ namespace Hecton8.World.ProceduralCoral
                    Counters.IsCreated &&
                    DebugSegments.IsCreated &&
                    GpuSway.IsCreated &&
-                   SelfAudit.IsCreated;
+                   SelfAudit.IsCreated &&
+                   HzbTiles.IsCreated;
         }
     }
 
@@ -220,6 +224,11 @@ namespace Hecton8.World.ProceduralCoral
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
+            handles.HzbTiles = vault.GetBufferHandle<CoralHzbTileDTO>(
+                ProceduralCoralVaultBufferIds.HzbTiles,
+                ProceduralCoralConstants.MaxHzbTiles,
+                SystemID.WorldStreaming,
+                NativeArrayOptions.ClearMemory);
 
             if (!handles.IsCreated())
                 return false;
@@ -254,7 +263,8 @@ namespace Hecton8.World.ProceduralCoral
                    vault.TryGetBufferHandle(ProceduralCoralVaultBufferIds.Counters, out handles.Counters) &&
                    vault.TryGetBufferHandle(ProceduralCoralVaultBufferIds.DebugSegments, out handles.DebugSegments) &&
                    vault.TryGetBufferHandle(ProceduralCoralVaultBufferIds.GpuSway, out handles.GpuSway) &&
-                   vault.TryGetBufferHandle(ProceduralCoralVaultBufferIds.SelfAudit, out handles.SelfAudit);
+                   vault.TryGetBufferHandle(ProceduralCoralVaultBufferIds.SelfAudit, out handles.SelfAudit) &&
+                   vault.TryGetBufferHandle(ProceduralCoralVaultBufferIds.HzbTiles, out handles.HzbTiles);
         }
 
         public static bool TryResolveViews(IDataVault vault, ref ProceduralCoralVaultHandles handles, out ProceduralCoralVaultBuffers buffers)
@@ -282,6 +292,7 @@ namespace Hecton8.World.ProceduralCoral
             buffers.DebugSegments = handles.DebugSegments.Resolve(vault);
             buffers.GpuSway = handles.GpuSway.Resolve(vault);
             buffers.SelfAudit = handles.SelfAudit.Resolve(vault);
+            buffers.HzbTiles = handles.HzbTiles.Resolve(vault);
             return buffers.IsCreated();
         }
 
@@ -311,6 +322,29 @@ namespace Hecton8.World.ProceduralCoral
         public static bool TryScheduleGenerationPipeline(
             in ProceduralCoralVaultBuffers buffers,
             double3 cameraAup,
+            uint frame,
+            uint vertexCountPerInstance,
+            JobHandle inputDependency,
+            out JobHandle outputDependency)
+        {
+            return TryScheduleGenerationPipeline(
+                in buffers,
+                cameraAup,
+                float4x4.identity,
+                0,
+                0,
+                frame,
+                vertexCountPerInstance,
+                inputDependency,
+                out outputDependency);
+        }
+
+        public static bool TryScheduleGenerationPipeline(
+            in ProceduralCoralVaultBuffers buffers,
+            double3 cameraAup,
+            float4x4 cameraRelativeViewProjection,
+            int hzbWidth,
+            int hzbHeight,
             uint frame,
             uint vertexCountPerInstance,
             JobHandle inputDependency,
@@ -360,6 +394,7 @@ namespace Hecton8.World.ProceduralCoral
             ExtractCoralRenderMatricesJob extract = default;
             extract.Branches = buffers.Branches;
             extract.Tuning = buffers.Tuning;
+            extract.HzbTiles = buffers.HzbTiles;
             extract.RenderMatrices = buffers.RenderMatrices;
             extract.IndirectArgs = buffers.IndirectArgs;
             extract.GpuSway = buffers.GpuSway;
@@ -367,6 +402,9 @@ namespace Hecton8.World.ProceduralCoral
             extract.TelemetryRing = buffers.TelemetryRing;
             extract.TelemetryCursor = buffers.TelemetryCursor;
             extract.CameraAUP = cameraAup;
+            extract.CameraRelativeViewProjection = cameraRelativeViewProjection;
+            extract.HzbWidth = hzbWidth;
+            extract.HzbHeight = hzbHeight;
             extract.VertexCountPerInstance = vertexCountPerInstance;
             extract.Frame = frame;
             JobHandle extractHandle = extract.Schedule(collisionHandle);
@@ -420,10 +458,22 @@ namespace Hecton8.World.ProceduralCoral
                 return true;
             }
 
-            foreach (string candidate in Directory.EnumerateFiles(projectRoot, BinaryRulesFileName, SearchOption.AllDirectories))
+            try
             {
-                path = candidate;
-                return true;
+                string[] candidates = Directory.GetFiles(projectRoot, BinaryRulesFileName, SearchOption.AllDirectories);
+                for (int i = 0; i < candidates.Length; i++)
+                {
+                    path = candidates[i];
+                    return true;
+                }
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
             }
 
             return false;
@@ -469,11 +519,42 @@ namespace Hecton8.World.ProceduralCoral
                 return false;
 
             int bytesRead = ReadFileIntoNativeScratch(path, buffers.CsvScratch);
+            uint payloadHash = HashBytes(buffers.CsvScratch, bytesRead);
+            return TryCommitCsvRules(in buffers, bytesRead, payloadHash);
+        }
+
+        public static bool TryPollCsvRules(IDataVault vault, ref ProceduralCoralVaultHandles handles, string projectRoot)
+        {
+            if (!TryResolveViews(vault, ref handles, out ProceduralCoralVaultBuffers buffers) ||
+                !buffers.CsvScratch.IsCreated ||
+                !buffers.Rules.IsCreated ||
+                !buffers.Tuning.IsCreated ||
+                buffers.Tuning.Length <= 0)
+            {
+                return false;
+            }
+
+            string path = ResolveCsvPath(projectRoot);
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+                return false;
+
+            int bytesRead = ReadFileIntoNativeScratch(path, buffers.CsvScratch);
+            uint payloadHash = HashBytes(buffers.CsvScratch, bytesRead);
+            if (payloadHash == buffers.Tuning[0].LastRulePayloadHash)
+                return false;
+
+            return TryCommitCsvRules(in buffers, bytesRead, payloadHash);
+        }
+
+        private static bool TryCommitCsvRules(in ProceduralCoralVaultBuffers buffers, int bytesRead, uint payloadHash)
+        {
+            if (!buffers.Rules.IsCreated || !buffers.CsvScratch.IsCreated)
+                return false;
+
             int loaded = ParseCsvRules(buffers.CsvScratch, bytesRead, buffers.Rules);
             if (loaded <= 0)
                 return false;
 
-            uint payloadHash = HashBytes(buffers.CsvScratch, bytesRead);
             if (buffers.Tuning.IsCreated && buffers.Tuning.Length > 0)
             {
                 CoralTuningDTO tuning = buffers.Tuning[0];
@@ -491,28 +572,6 @@ namespace Hecton8.World.ProceduralCoral
             }
 
             return true;
-        }
-
-        public static bool TryPollCsvRules(IDataVault vault, ref ProceduralCoralVaultHandles handles, string projectRoot)
-        {
-            if (!TryResolveViews(vault, ref handles, out ProceduralCoralVaultBuffers buffers) ||
-                !buffers.CsvScratch.IsCreated ||
-                !buffers.Tuning.IsCreated ||
-                buffers.Tuning.Length <= 0)
-            {
-                return false;
-            }
-
-            string path = ResolveCsvPath(projectRoot);
-            if (string.IsNullOrEmpty(path) || !File.Exists(path))
-                return false;
-
-            int bytesRead = ReadFileIntoNativeScratch(path, buffers.CsvScratch);
-            uint payloadHash = HashBytes(buffers.CsvScratch, bytesRead);
-            if (payloadHash == buffers.Tuning[0].LastRulePayloadHash)
-                return false;
-
-            return TryLoadCsvRules(vault, ref handles, projectRoot);
         }
 
         public static void GenerateEmergencyMockCoralRules(NativeArray<CoralLSystemRuleDTO> rules)
@@ -583,10 +642,21 @@ namespace Hecton8.World.ProceduralCoral
                 return false;
 
             string dir = Path.Combine(projectRoot, "Docs", "AgentLogs");
-            Directory.CreateDirectory(dir);
-            bool primary = TryWriteDumpFile(Path.Combine(dir, DumpFileName), in buffers, reason);
-            bool agent = TryWriteDumpFile(Path.Combine(dir, AgentDumpFileName), in buffers, reason);
-            return primary && agent;
+            try
+            {
+                Directory.CreateDirectory(dir);
+                bool primary = TryWriteDumpFile(Path.Combine(dir, DumpFileName), in buffers, reason);
+                bool agent = TryWriteDumpFile(Path.Combine(dir, AgentDumpFileName), in buffers, reason);
+                return primary && agent;
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
         }
 
         public static bool TryDumpBlackBoxOnFault(in ProceduralCoralVaultBuffers buffers, string projectRoot)
@@ -610,6 +680,36 @@ namespace Hecton8.World.ProceduralCoral
             return TryDumpBlackBox(in buffers, projectRoot, entry.FaultFlags);
         }
 
+        public static bool TryRecordMeasuredBurstTimeUs(ProceduralCoralVaultBuffers buffers, float burstComputeUs)
+        {
+            if (!buffers.TelemetryRing.IsCreated ||
+                !buffers.TelemetryCursor.IsCreated ||
+                buffers.TelemetryRing.Length <= 0 ||
+                buffers.TelemetryCursor.Length <= 0)
+            {
+                return false;
+            }
+
+            int cursor = buffers.TelemetryCursor[0] - 1;
+            if (cursor < 0)
+                cursor = buffers.TelemetryRing.Length - 1;
+
+            cursor = math.clamp(cursor, 0, buffers.TelemetryRing.Length - 1);
+            CoralGenerationTelemetryEntry entry = buffers.TelemetryRing[cursor];
+            if (!math.isfinite(burstComputeUs))
+            {
+                entry.BurstComputeUs = 0f;
+                entry.FaultFlags |= ProceduralCoralConstants.FaultNonFinite;
+            }
+            else
+            {
+                entry.BurstComputeUs = math.max(burstComputeUs, 0f);
+            }
+
+            buffers.TelemetryRing[cursor] = entry;
+            return true;
+        }
+
         public static uint ComputeSectorHash(double3 rootAup)
         {
             return ProceduralCoralMath.HashDouble3(rootAup);
@@ -626,35 +726,105 @@ namespace Hecton8.World.ProceduralCoral
             return record;
         }
 
+        public static bool TryRunArchitectureAudit(ProceduralCoralVaultBuffers buffers, uint frame, out CoralSelfAuditResultDTO result)
+        {
+            result = default;
+            uint flags = 0u;
+            if (!buffers.IsCreated())
+                flags |= ProceduralCoralConstants.FaultAuditVault;
+
+            if (UnsafeUtility.SizeOf<CoralBranchDTO>() != 128 ||
+                UnsafeUtility.SizeOf<CoralPaddedCounterDTO>() != 64 ||
+                UnsafeUtility.SizeOf<CoralGenerationTelemetryEntry>() != 64 ||
+                UnsafeUtility.SizeOf<CapsuleColliderDTO>() != 64)
+            {
+                flags |= ProceduralCoralConstants.FaultAuditLayout;
+            }
+
+            CoralPaddedCounterDTO counter = buffers.Counters.IsCreated && buffers.Counters.Length > 0
+                ? buffers.Counters[0]
+                : default;
+            if (buffers.Counters.IsCreated && buffers.Counters.Length > 0 && !math.isfinite(counter.EffectiveQualityWeight))
+                flags |= ProceduralCoralConstants.FaultNonFinite;
+
+            int branchCount = buffers.Counters.IsCreated && buffers.Counters.Length > 0
+                ? math.max(0, counter.BranchCount)
+                : 0;
+            if (branchCount > ProceduralCoralConstants.MaxBranches ||
+                (buffers.Branches.IsCreated && branchCount > buffers.Branches.Length))
+            {
+                flags |= ProceduralCoralConstants.FaultCapacity;
+            }
+
+            uint stateHash = 2166136261u;
+            uint sectorHash = 0u;
+            bool sectorHashCaptured = false;
+            int live = 0;
+            int tips = 0;
+            int scanCount = buffers.Branches.IsCreated ? math.min(branchCount, buffers.Branches.Length) : 0;
+            for (int i = 0; i < scanCount; i++)
+            {
+                CoralBranchDTO branch = buffers.Branches[i];
+                if ((branch.StateFlags & CoralBranchFlags.Alive) == 0)
+                    continue;
+
+                live++;
+                if (!sectorHashCaptured)
+                {
+                    sectorHash = branch.SectorHash;
+                    sectorHashCaptured = true;
+                }
+
+                if ((branch.StateFlags & CoralBranchFlags.Tip) != 0)
+                    tips++;
+
+                stateHash = (stateHash ^ branch.StableId) * 16777619u;
+                if (!ProceduralCoralMath.IsFinite(branch.LocalMatrix) || !ProceduralCoralMath.IsFinite(branch.SectorAUP))
+                    flags |= ProceduralCoralConstants.FaultNonFinite;
+            }
+
+            result.Frame = frame;
+            result.SectorHash = sectorHash;
+            result.Flags = flags;
+            result.LiveBranchCount = (uint)live;
+            result.TipCount = (uint)tips;
+            result.RenderMatrixCount = buffers.Counters.IsCreated && buffers.Counters.Length > 0 ? (uint)math.max(0, counter.RenderMatrixCount) : 0u;
+            result.StateHash = stateHash;
+            result.BranchUtilization = branchCount > 0
+                ? (float)live / math.max(branchCount, 1)
+                : 0f;
+
+            if (buffers.SelfAudit.IsCreated && buffers.SelfAudit.Length > 0)
+                buffers.SelfAudit[0] = result;
+
+            return flags == 0u;
+        }
+
         private static void HydrateDefaultsIfNeeded(ProceduralCoralVaultBuffers buffers)
         {
             bool firstHydration = buffers.Tuning.IsCreated && buffers.Tuning.Length > 0 && buffers.Tuning[0].Version == 0u;
             if (!firstHydration)
                 return;
 
-            ClearArray(buffers.InstructionScratchA);
-            ClearArray(buffers.InstructionScratchB);
-            ClearArray(buffers.Branches);
-            ClearArray(buffers.TurtleStack);
-            ClearArray(buffers.SpatialCells);
-            ClearArray(buffers.RenderMatrices);
-            ClearArray(buffers.IndirectArgs);
-            ClearArray(buffers.SectorTriggers);
-            ClearArray(buffers.CollisionProxies);
-            ClearArray(buffers.SyncPulses);
-            ClearArray(buffers.TelemetryRing);
-            ClearArray(buffers.TelemetryCursor);
-            ClearArray(buffers.CsvScratch);
-            ClearArray(buffers.Counters);
-            ClearArray(buffers.DebugSegments);
-            ClearArray(buffers.GpuSway);
-            ClearArray(buffers.SelfAudit);
+            if (buffers.IndirectArgs.IsCreated && buffers.IndirectArgs.Length > 0)
+                buffers.IndirectArgs[0] = default;
+            if (buffers.SectorTriggers.IsCreated && buffers.SectorTriggers.Length > 0)
+                buffers.SectorTriggers[0] = default;
+            if (buffers.TelemetryCursor.IsCreated && buffers.TelemetryCursor.Length > 0)
+                buffers.TelemetryCursor[0] = 0;
+            if (buffers.GpuSway.IsCreated && buffers.GpuSway.Length > 0)
+                buffers.GpuSway[0] = default;
+            if (buffers.SelfAudit.IsCreated && buffers.SelfAudit.Length > 0)
+                buffers.SelfAudit[0] = default;
+
             GenerateEmergencyMockCoralRules(buffers.Rules);
-            buffers.Tuning[0] = BuildDefaultTuning();
+            CoralTuningDTO defaultTuning = BuildDefaultTuning();
+            buffers.Tuning[0] = defaultTuning;
             if (buffers.Counters.IsCreated && buffers.Counters.Length > 0)
             {
                 CoralPaddedCounterDTO counter = default;
                 counter.ActiveRuleCount = 3u;
+                counter.EffectiveQualityWeight = defaultTuning.GlobalQualityWeight;
                 buffers.Counters[0] = counter;
             }
         }
@@ -683,19 +853,19 @@ namespace Hecton8.World.ProceduralCoral
         private static CoralTuningDTO SanitizeTuning(in CoralTuningDTO tuning)
         {
             CoralTuningDTO safe = tuning;
-            safe.GlobalQualityWeight = math.saturate(tuning.GlobalQualityWeight);
-            safe.BranchAngleRadians = math.clamp(tuning.BranchAngleRadians, 0.05f, 1.35f);
-            safe.AngleVarianceRadians = math.saturate(tuning.AngleVarianceRadians);
-            safe.BaseStepMeters = math.max(tuning.BaseStepMeters, ProceduralCoralConstants.Epsilon);
-            safe.BaseRadiusMeters = math.max(tuning.BaseRadiusMeters, ProceduralCoralConstants.Epsilon);
-            safe.RadiusDecay = math.clamp(tuning.RadiusDecay, 0.35f, 0.98f);
-            safe.SdfAvoidanceWeight = math.saturate(tuning.SdfAvoidanceWeight);
+            safe.GlobalQualityWeight = ProceduralCoralMath.SafeSaturate(tuning.GlobalQualityWeight, 0.5f);
+            safe.BranchAngleRadians = math.clamp(math.isfinite(tuning.BranchAngleRadians) ? tuning.BranchAngleRadians : 0.52f, 0.05f, 1.35f);
+            safe.AngleVarianceRadians = ProceduralCoralMath.SafeSaturate(tuning.AngleVarianceRadians, 0.18f);
+            safe.BaseStepMeters = ProceduralCoralMath.SafePositive(tuning.BaseStepMeters, 1.6f, ProceduralCoralConstants.Epsilon);
+            safe.BaseRadiusMeters = ProceduralCoralMath.SafePositive(tuning.BaseRadiusMeters, 0.32f, ProceduralCoralConstants.Epsilon);
+            safe.RadiusDecay = math.clamp(math.isfinite(tuning.RadiusDecay) ? tuning.RadiusDecay : 0.82f, 0.35f, 0.98f);
+            safe.SdfAvoidanceWeight = ProceduralCoralMath.SafeSaturate(tuning.SdfAvoidanceWeight, 0.55f);
             safe.MaxDepth = math.clamp(tuning.MaxDepth, 1, 12);
             safe.MaxBranches = math.clamp(tuning.MaxBranches, 1, ProceduralCoralConstants.MaxBranches);
             safe.MaxInstructions = math.clamp(tuning.MaxInstructions, 1, ProceduralCoralConstants.MaxInstructions);
-            safe.VisibilityDistanceMin = math.max(tuning.VisibilityDistanceMin, 8f);
-            safe.VisibilityDistanceMax = math.max(tuning.VisibilityDistanceMax, safe.VisibilityDistanceMin);
-            safe.CurrentSwayAmplitude = math.saturate(tuning.CurrentSwayAmplitude);
+            safe.VisibilityDistanceMin = ProceduralCoralMath.SafePositive(tuning.VisibilityDistanceMin, 48f, 8f);
+            safe.VisibilityDistanceMax = ProceduralCoralMath.SafePositive(tuning.VisibilityDistanceMax, 360f, safe.VisibilityDistanceMin);
+            safe.CurrentSwayAmplitude = ProceduralCoralMath.SafeSaturate(tuning.CurrentSwayAmplitude, 0.32f);
             safe.Version = tuning.Version == 0u ? 1u : tuning.Version;
             safe.SeedSalt = tuning.SeedSalt == 0u ? 0xC0A17u : tuning.SeedSalt;
             return safe;
@@ -735,9 +905,9 @@ namespace Hecton8.World.ProceduralCoral
             rule.Replacement7 = r7;
             rule.ReplacementCount = replacementCount;
             rule.RuleIndex = (byte)index;
-            rule.BranchAngleRadians = math.max(angle, ProceduralCoralConstants.Epsilon);
-            rule.LengthScale = math.max(lengthScale, ProceduralCoralConstants.Epsilon);
-            rule.RadiusScale = math.max(radiusScale, ProceduralCoralConstants.Epsilon);
+            rule.BranchAngleRadians = math.clamp(math.isfinite(angle) ? angle : 0.52f, ProceduralCoralConstants.Epsilon, 1.75f);
+            rule.LengthScale = math.clamp(ProceduralCoralMath.SafePositive(lengthScale, 1f, ProceduralCoralConstants.Epsilon), 0.08f, 1.5f);
+            rule.RadiusScale = math.clamp(ProceduralCoralMath.SafePositive(radiusScale, 1f, ProceduralCoralConstants.Epsilon), 0.08f, 1.25f);
             rule.PrefabHash = prefabHash;
             rule.Flags = flags;
             rule.WeightHash = ProceduralCoralMath.Hash(source ^ prefabHash ^ (uint)index);
@@ -776,19 +946,20 @@ namespace Hecton8.World.ProceduralCoral
             int count = math.min((int)ReadUInt32(bytes, 8, swapEndian), math.min(rules.Length, ProceduralCoralConstants.MaxRules));
             int offset = ProceduralCoralConstants.RuleBinaryHeaderBytes;
             int written = 0;
-            ClearArray(rules);
+            CoralLSystemRuleDTO* parsedRules = stackalloc CoralLSystemRuleDTO[ProceduralCoralConstants.MaxRules];
+            ClearRuleScratch(parsedRules, ProceduralCoralConstants.MaxRules);
             for (int i = 0; i < count; i++)
             {
                 if (offset + ProceduralCoralConstants.RuleBinaryRecordBytes > length)
                     break;
 
                 if (TryReadBinaryRule(bytes, offset, swapEndian, out CoralLSystemRuleDTO rule))
-                    rules[written++] = rule;
+                    parsedRules[written++] = rule;
 
                 offset += ProceduralCoralConstants.RuleBinaryRecordBytes;
             }
 
-            return written;
+            return CommitParsedRules(parsedRules, written, rules);
         }
 
         private static bool TryReadBinaryRule(NativeArray<byte> bytes, int offset, bool swapEndian, out CoralLSystemRuleDTO rule)
@@ -809,9 +980,12 @@ namespace Hecton8.World.ProceduralCoral
             rule.Replacement7 = ReadUInt32(bytes, offset + 32, swapEndian);
             rule.ReplacementCount = (byte)math.clamp(bytes[offset + 36], 0, 8);
             rule.RuleIndex = bytes[offset + 37];
-            rule.BranchAngleRadians = math.max(ReadFloat32(bytes, offset + 40, swapEndian), ProceduralCoralConstants.Epsilon);
-            rule.LengthScale = math.max(ReadFloat32(bytes, offset + 44, swapEndian), ProceduralCoralConstants.Epsilon);
-            rule.RadiusScale = math.max(ReadFloat32(bytes, offset + 48, swapEndian), ProceduralCoralConstants.Epsilon);
+            float angle = ReadFloat32(bytes, offset + 40, swapEndian);
+            float lengthScale = ReadFloat32(bytes, offset + 44, swapEndian);
+            float radiusScale = ReadFloat32(bytes, offset + 48, swapEndian);
+            rule.BranchAngleRadians = math.clamp(math.isfinite(angle) ? angle : 0.52f, ProceduralCoralConstants.Epsilon, 1.75f);
+            rule.LengthScale = math.clamp(ProceduralCoralMath.SafePositive(lengthScale, 1f, ProceduralCoralConstants.Epsilon), 0.08f, 1.5f);
+            rule.RadiusScale = math.clamp(ProceduralCoralMath.SafePositive(radiusScale, 1f, ProceduralCoralConstants.Epsilon), 0.08f, 1.25f);
             rule.PrefabHash = ReadUInt32(bytes, offset + 52, swapEndian);
             rule.Flags = ReadUInt32(bytes, offset + 56, swapEndian);
             rule.WeightHash = ReadUInt32(bytes, offset + 60, swapEndian);
@@ -828,9 +1002,11 @@ namespace Hecton8.World.ProceduralCoral
 
             int index = 0;
             int limit = math.min(length, bytes.Length);
+            int ruleLimit = math.min(rules.Length, ProceduralCoralConstants.MaxRules);
             int written = 0;
-            ClearArray(rules);
-            while (index < limit && written < rules.Length)
+            CoralLSystemRuleDTO* parsedRules = stackalloc CoralLSystemRuleDTO[ProceduralCoralConstants.MaxRules];
+            ClearRuleScratch(parsedRules, ProceduralCoralConstants.MaxRules);
+            while (index < limit && written < ruleLimit)
             {
                 SkipWhitespace(bytes, limit, ref index);
                 if (index >= limit)
@@ -871,19 +1047,46 @@ namespace Hecton8.World.ProceduralCoral
 
                 rule.ReplacementCount = replacementCount;
                 rule.RuleIndex = (byte)written;
-                rule.BranchAngleRadians = TryConsumeFloat(bytes, limit, ref index, out float angle) ? math.max(angle, ProceduralCoralConstants.Epsilon) : 0.52f;
-                rule.LengthScale = TryConsumeFloat(bytes, limit, ref index, out float lengthScale) ? math.max(lengthScale, ProceduralCoralConstants.Epsilon) : 0.9f;
-                rule.RadiusScale = TryConsumeFloat(bytes, limit, ref index, out float radiusScale) ? math.max(radiusScale, ProceduralCoralConstants.Epsilon) : 0.82f;
+                rule.BranchAngleRadians = TryConsumeFloat(bytes, limit, ref index, out float angle)
+                    ? math.clamp(math.isfinite(angle) ? angle : 0.52f, ProceduralCoralConstants.Epsilon, 1.75f)
+                    : 0.52f;
+                rule.LengthScale = TryConsumeFloat(bytes, limit, ref index, out float lengthScale)
+                    ? math.clamp(ProceduralCoralMath.SafePositive(lengthScale, 0.9f, ProceduralCoralConstants.Epsilon), 0.08f, 1.5f)
+                    : 0.9f;
+                rule.RadiusScale = TryConsumeFloat(bytes, limit, ref index, out float radiusScale)
+                    ? math.clamp(ProceduralCoralMath.SafePositive(radiusScale, 0.82f, ProceduralCoralConstants.Epsilon), 0.08f, 1.25f)
+                    : 0.82f;
                 rule.PrefabHash = TryConsumeUInt(bytes, limit, ref index, out uint prefabHash) ? prefabHash : ProceduralCoralMath.Hash(source ^ (uint)written);
                 rule.Flags = TryConsumeUInt(bytes, limit, ref index, out uint flags) ? flags : CoralRuleFlags.EmitsBranch;
                 rule.WeightHash = ProceduralCoralMath.Hash(source ^ rule.PrefabHash ^ (uint)lineStart);
                 if (rule.ReplacementCount > 0)
-                    rules[written++] = rule;
+                    parsedRules[written++] = rule;
 
                 SkipLine(bytes, limit, ref index);
             }
 
-            return written;
+            return CommitParsedRules(parsedRules, written, rules);
+        }
+
+        private static void ClearRuleScratch(CoralLSystemRuleDTO* rules, int length)
+        {
+            for (int i = 0; i < length; i++)
+                rules[i] = default;
+        }
+
+        private static int CommitParsedRules(CoralLSystemRuleDTO* parsedRules, int parsedCount, NativeArray<CoralLSystemRuleDTO> rules)
+        {
+            if (parsedCount <= 0 || !rules.IsCreated || rules.Length <= 0)
+                return 0;
+
+            int count = math.min(parsedCount, rules.Length);
+            for (int i = 0; i < count; i++)
+                rules[i] = parsedRules[i];
+
+            if (count < rules.Length)
+                rules[count] = default;
+
+            return count;
         }
 
         private static void SetReplacement(ref CoralLSystemRuleDTO rule, int index, uint opcode)
@@ -996,12 +1199,23 @@ namespace Hecton8.World.ProceduralCoral
             if (!scratch.IsCreated || string.IsNullOrEmpty(path))
                 return 0;
 
-            using (FileStream stream = File.OpenRead(path))
+            try
             {
-                int length = (int)math.min(stream.Length, scratch.Length);
-                void* ptr = NativeArrayUnsafeUtility.GetUnsafePtr(scratch);
-                Span<byte> span = new Span<byte>(ptr, length);
-                return stream.Read(span);
+                using (FileStream stream = File.OpenRead(path))
+                {
+                    int length = (int)math.min(stream.Length, scratch.Length);
+                    void* ptr = NativeArrayUnsafeUtility.GetUnsafePtr(scratch);
+                    Span<byte> span = new Span<byte>(ptr, length);
+                    return stream.Read(span);
+                }
+            }
+            catch (IOException)
+            {
+                return 0;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return 0;
             }
         }
 
@@ -1194,13 +1408,24 @@ namespace Hecton8.World.ProceduralCoral
             WriteUInt32(header, 24, buffers.TelemetryCursor.IsCreated && buffers.TelemetryCursor.Length > 0 ? (uint)buffers.TelemetryCursor[0] : 0u);
             WriteUInt32(header, 28, 0u);
 
-            using (FileStream stream = File.Create(path))
+            try
             {
-                stream.Write(header);
-                void* ptr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(buffers.TelemetryRing);
-                int byteLength = buffers.TelemetryRing.Length * UnsafeUtility.SizeOf<CoralGenerationTelemetryEntry>();
-                ReadOnlySpan<byte> telemetry = new ReadOnlySpan<byte>(ptr, byteLength);
-                stream.Write(telemetry);
+                using (FileStream stream = File.Create(path))
+                {
+                    stream.Write(header);
+                    void* ptr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(buffers.TelemetryRing);
+                    int byteLength = buffers.TelemetryRing.Length * UnsafeUtility.SizeOf<CoralGenerationTelemetryEntry>();
+                    ReadOnlySpan<byte> telemetry = new ReadOnlySpan<byte>(ptr, byteLength);
+                    stream.Write(telemetry);
+                }
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
             }
 
             return true;

@@ -59,12 +59,13 @@ namespace Hecton8.Bootstrap
         BootstrapFailed = 1
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct GameBootstrapperEventPayload
     {
-        public uint ErrorHash;
-        public ushort EventType;
-        public ushort Reserved;
+        [FieldOffset(0)] public uint ErrorHash;
+        [FieldOffset(4)] public ushort EventType;
+        [FieldOffset(6)] public ushort Reserved;
+        [FieldOffset(8)] private ulong _pad0;
     }
 
     public interface IGameBootstrapperEventListener
@@ -2167,8 +2168,7 @@ namespace Hecton8.Bootstrap
             else
                 Debug.LogError("[GameBootstrapper] Tier Addressables prewarm failed: " + label);
 #endif
-            Addressables.Release(handle);
-            return succeeded;
+            return TryReleaseBootstrapDependencyHandle(handle) && succeeded;
         }
 
 #if UNITY_EDITOR
@@ -2207,15 +2207,25 @@ namespace Hecton8.Bootstrap
 
                 if (handle.Status != AsyncOperationStatus.Succeeded)
                 {
-                    Addressables.Release(handle);
+                    TryReleaseBootstrapDependencyHandle(handle);
                     return false;
                 }
 
                 PublishAddressableDependencyGroupLoaded(i, group.labelString, handle);
-                Addressables.Release(handle);
+                if (!TryReleaseBootstrapDependencyHandle(handle))
+                    return false;
             }
 
             return true;
+        }
+
+        private static bool TryReleaseBootstrapDependencyHandle(AsyncOperationHandle handle)
+        {
+            if (!handle.IsValid())
+                return true;
+
+            AssetLifecycleGovernor lifecycleGovernor = GlobalRegistry.AssetLifecycle;
+            return lifecycleGovernor != null && lifecycleGovernor.TryReleaseExternalAddressableFault(handle);
         }
 
         private static void PublishAddressableDependencyGroupLoaded(

@@ -4,6 +4,7 @@ using Hecton8.AI;
 using Hecton8.Core;
 using Hecton8.Environment;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -3250,32 +3251,32 @@ namespace Hecton8.World
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct NavPortal
         {
-            public float3 Left;
-            public float3 Right;
-            public float WidthSq;
-            public float Reserved;
+            [FieldOffset(0)] public float3 Left;
+            [FieldOffset(12)] public float3 Right;
+            [FieldOffset(24)] public float WidthSq;
+            [FieldOffset(28)] public float Reserved;
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct StringPullPathJob : IJob
         {
             private const float FunnelEpsilon = 0.00001f;
             private const float DdaEpsilon = 0.000001f;
             private const byte SolidThreatVoxel = 255;
 
-            [ReadOnly] public NativeArray<Vector3> InputPath;
-            [ReadOnly] public NativeArray<VegetationDensityChunkRecord> DensityChunks;
-            [ReadOnly] public NativeArray<float3> DensityGrid;
-            [ReadOnly] public NativeArray<TerrainHoleRecord> TerrainHoles;
-            [ReadOnly] public NativeArray<ArtificialStructureRecord> ArtificialStructures;
-            [ReadOnly] public NativeParallelMultiHashMap<int, int> ArtificialStructureHash;
-            [ReadOnly] public NativeArray<byte> NavPassabilityGrid;
-            [ReadOnly] public NativeArray<byte> ThreatVoxelGrid;
-            public NativeList<Vector3> OutputPath;
+            [ReadOnly, NoAlias] public NativeArray<Vector3> InputPath;
+            [ReadOnly, NoAlias] public NativeArray<VegetationDensityChunkRecord> DensityChunks;
+            [ReadOnly, NoAlias] public NativeArray<float3> DensityGrid;
+            [ReadOnly, NoAlias] public NativeArray<TerrainHoleRecord> TerrainHoles;
+            [ReadOnly, NoAlias] public NativeArray<ArtificialStructureRecord> ArtificialStructures;
+            [ReadOnly, NoAlias] public NativeParallelMultiHashMap<int, int> ArtificialStructureHash;
+            [ReadOnly, NoAlias] public NativeArray<byte> NavPassabilityGrid;
+            [ReadOnly, NoAlias] public NativeArray<byte> ThreatVoxelGrid;
+            [NoAlias] public NativeList<Vector3> OutputPath;
             public int ChunkCount;
             public int TerrainHoleCount;
             public float3 ThreatGridCenter;

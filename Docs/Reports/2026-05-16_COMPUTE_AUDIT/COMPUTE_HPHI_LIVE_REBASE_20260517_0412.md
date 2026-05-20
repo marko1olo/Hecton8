@@ -11,9 +11,9 @@ Search keywords: H-Phi; HPhi; hphi; ash-fi; ash_phi; ASh-Fi; HФ; Аш-Фи; int
 | Artifact | Value |
 |---|---|
 | Previous H-Phi artifact | `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_CURRENT_20260517_021429.json` |
-| Current H-Phi artifact | `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_CURRENT_20260517_040910.json` |
+| Capture-time H-Phi artifact | `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_CURRENT_20260517_040910.json` |
 | Previous H-Phi timestamp | 2026-05-17 02:17:05 +04:00 |
-| Current H-Phi timestamp | 2026-05-17 04:11:59 +04:00 |
+| Capture-time H-Phi timestamp | 2026-05-17 04:11:59 +04:00 |
 | Current scan wall time | 170,338 ms |
 | Current artifact size | 153,081 bytes |
 

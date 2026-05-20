@@ -10,7 +10,7 @@ No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler,
 
 Status: seed database / not ready for contact
 Date: 2026-05-18
-Public stance: single-player-first / no co-op promise
+Public stance: single-player-first scope / proof-first public copy
 
 ## Rules
 
@@ -21,7 +21,7 @@ Public stance: single-player-first / no co-op promise
 - Do not pitch co-op.
 - Do not say "Subnautica killer".
 - Do not attack SN2.
-- Do not send keys before a stable demo/key policy exists.
+- Do not send keys/private preview access before a stable demo/build exists and the exact recipient or batch has `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED`, official inbox custody, access-log fields, and disclosure.
 
 ## Priority Meaning
 
@@ -60,7 +60,7 @@ Public stance: single-player-first / no co-op promise
 | Survival crafting | B | Guns Nerds and Steel | YouTube | https://www.youtube.com/@GunsNerdsandSteel | Systems-heavy survival audience | Land-survival bias | Efficient crafting routes and survival optimization. |
 | Survival crafting | B | Skye Storme | YouTube | https://www.youtube.com/@SkyeStorme | Survival/base-builder audience | Availability unknown | Chill-to-deadly exploration progression. |
 | Survival crafting | B | 2DKiri | YouTube | https://www.youtube.com/@2DKiri | Survival crafting and indie gameplay | Availability unknown | First-look survival crafting with atmosphere. |
-| Survival crafting | C | Neebs Gaming | YouTube | https://www.youtube.com/@NeebsGaming | Survival storytelling audience | High bar; group format, avoid co-op promise | Cinematic solo disaster scenarios and machine failure. |
+| Survival crafting | C | Neebs Gaming | YouTube | https://www.youtube.com/@NeebsGaming | Survival storytelling audience | High bar; group-format expectation risk | Cinematic solo disaster scenarios and machine failure. |
 | Horror/atmosphere | C | Markiplier | YouTube | https://www.youtube.com/@markiplier | Horror exploration reach and Subnautica history | Extremely competitive | Fear-of-depth horror with survival stakes. |
 | Horror/atmosphere | C | jacksepticeye | YouTube | https://www.youtube.com/@jacksepticeye | Horror/adventure and Subnautica history | Extremely competitive | Emotional ocean survival and first major scare moments. |
 | Horror/atmosphere | A | ManlyBadassHero | YouTube | https://www.youtube.com/@ManlyBadassHero | Indie horror discovery audience | May prefer concise horror games | Oppressive exploration horror and mystery. |
@@ -130,7 +130,7 @@ Public stance: single-player-first / no co-op promise
 | Russian/EE/multilingual | B | TheBrainDit | YouTube | https://www.youtube.com/@TheBrainDit | Russian gaming audience | Fit needs recent check | Unusual ocean horror first impression. |
 | Russian/EE/multilingual | B | Wycc220 | YouTube | https://www.youtube.com/@Wycc220 | Russian gaming/sandbox fit | Availability unknown | Survival crafting and exploration. |
 | Russian/EE/multilingual | B | Неркин | YouTube | https://www.youtube.com/@Nerkin | Russian-language gaming audience | Fit should be verified | Atmospheric survival with mystery. |
-| Russian/EE/multilingual | C | Coffi Channel | YouTube | https://www.youtube.com/@CoffiChannel | Russian gaming variety audience | Lighter content skew; avoid co-op pitch | Creature scares and survival failure clips. |
+| Russian/EE/multilingual | C | Coffi Channel | YouTube | https://www.youtube.com/@CoffiChannel | Russian gaming variety audience | Lighter content skew; multiplayer-scope expectation risk | Creature scares and survival failure clips. |
 | Russian/EE/multilingual | C | Bratishkinoff | Twitch | https://www.twitch.tv/bratishkinoff | Russian Twitch variety reach | Very competitive | Live first-look with strong scare moments. |
 | Russian/EE/multilingual | B | Hesus | YouTube | https://www.youtube.com/@TheHesus | Russian PC gaming/news audience | Availability unknown | Steam/PC survival news angle. |
 | Russian/EE/multilingual | B | Remigiusz Maciaszek / Rock Alone | YouTube | https://www.youtube.com/@RockAlone2k | Polish gaming commentary/lets-play | Availability unknown | Polish first-look survival exploration. |
@@ -201,12 +201,12 @@ The following public channel names/URLs were extracted as raw Subnautica-related
 | RAW | Noisy Pixel | https://noisypixel.net/ | Manual public seed |
 | RAW | GameGrin | https://www.gamegrin.com/ | Manual public seed |
 
-## Next Expansion Targets
+## Parked Expansion Targets
 
-To reach 300-1000 leads honestly:
+Do not use this section as current work while the active bottleneck is asset proof. Resume only after first capture or demo proof shows a segment gap that the live CRM cannot cover.
 
 1. Expand LetsPlayIndex top pages beyond the first extracted set.
-2. Add Subnautica 2 launch streamers from Twitch tracker pages.
+2. Add Subnautica 2 launch streamers from Twitch tracker pages only after a direct-underwater-survival asset gap is proven and same-day currentness/contact-route verification is planned.
 3. Add Steam Curators for survival, horror, indie, underwater, simulation.
 4. Add YouTube channels covering Barotrauma, Forever Skies, Pacific Drive, The Planet Crafter, Raft, The Forest/Sons of the Forest, The Long Dark, Satisfactory, Stationeers, Space Engineers.
 5. Add Russian, German, French, Spanish, Polish, Portuguese, Japanese, Korean creator cohorts.

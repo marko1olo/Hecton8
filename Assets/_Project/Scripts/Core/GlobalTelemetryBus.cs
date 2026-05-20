@@ -4,7 +4,6 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
-using Hecton8.SaveSystem;
 using Hecton.Localization;
 using Unity.Burst;
 using Unity.Collections;
@@ -49,23 +48,23 @@ namespace Hecton8.Core
         PrologueStage = 29
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct TelemetryEvent
     {
-        public uint FrameIndex;
-        public uint EventType;
-        public uint SubjectHash;
-        public uint ContextHash;
-        public float ScalarValue;
-        public float3 WorldPosition;
-        public uint Reserved0;
-        public uint Reserved1;
-        public uint Reserved2;
-        public uint Reserved3;
-        public uint Reserved4;
-        public uint Reserved5;
-        public uint Reserved6;
-        public uint Reserved7;
+        [FieldOffset(0)] public uint FrameIndex;
+        [FieldOffset(4)] public uint EventType;
+        [FieldOffset(8)] public uint SubjectHash;
+        [FieldOffset(12)] public uint ContextHash;
+        [FieldOffset(16)] public float ScalarValue;
+        [FieldOffset(20)] public float3 WorldPosition;
+        [FieldOffset(32)] public uint Reserved0;
+        [FieldOffset(36)] public uint Reserved1;
+        [FieldOffset(40)] public uint Reserved2;
+        [FieldOffset(44)] public uint Reserved3;
+        [FieldOffset(48)] public uint Reserved4;
+        [FieldOffset(52)] public uint Reserved5;
+        [FieldOffset(56)] public uint Reserved6;
+        [FieldOffset(60)] public uint Reserved7;
     }
 
     public static partial class GlobalTelemetryBus
@@ -740,7 +739,7 @@ namespace Hecton8.Core
                     _snapshotStartIndex = 0;
                     _snapshotTotalCount = 0;
                     _snapshotCopiedCount = 0;
-                    _snapshotBuffer = new NativeArray<TelemetryEvent>(Capacity, Allocator.Persistent); // COLD ALLOC: NativeArray<TelemetryEvent>[1024] — telemetry export snapshot staging buffer — owner: GlobalTelemetryBus
+                    _snapshotBuffer = new NativeArray<TelemetryEvent>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<TelemetryEvent>[1024] — telemetry export snapshot staging buffer — owner: GlobalTelemetryBus
                     NativeMemorySentinel.RegisterNativeArray(
                         _snapshotBuffer,
                         nameof(GlobalTelemetryBus),

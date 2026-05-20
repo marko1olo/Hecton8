@@ -104,13 +104,7 @@ namespace Hecton8.EditorTools
             }
 
             ref VolumetricFogParamsDTO dto = ref VolumetricFogParamsAccess.ElementAt(parameters, 0);
-            if (dto.QualityAndLimits.y <= 0f)
-            {
-                dto.FogColorAndDensity = new float4(0.015f, 0.045f, 0.065f, 0.045f);
-                dto.ScatteringParams = new float4(0.85f, 0.12f, 0.42f, 0.97f);
-                dto.FlowAdvection = new float4(0f, 0f, 0f, 2.25f);
-                dto.QualityAndLimits = new float4(ClampFinite(HomeostasisBrain.GlobalQualityWeight, 0f, 1f, 0f), 4f, 70f, 1f);
-            }
+            EnsureUsableParams(ref dto);
 
             SetSliderWithoutNotify(_density, dto.FogColorAndDensity.w);
             SetSliderWithoutNotify(_scatter, dto.ScatteringParams.x);
@@ -133,12 +127,22 @@ namespace Hecton8.EditorTools
             return math.isfinite(value) ? math.clamp(value, min, max) : fallback;
         }
 
+        private static void EnsureUsableParams(ref VolumetricFogParamsDTO dto)
+        {
+            if (VolumetricFogParamsAccess.IsUsableParams(in dto))
+                return;
+
+            float quality = ClampFinite(HomeostasisBrain.GlobalQualityWeight, 0f, 1f, 0f);
+            dto = VolumetricFogParamsAccess.CreateDefaultParams(quality);
+        }
+
         private void ApplyDensity(float value)
         {
             if (!TryResolveParams(out NativeArray<VolumetricFogParamsDTO> parameters))
                 return;
 
             ref VolumetricFogParamsDTO dto = ref VolumetricFogParamsAccess.ElementAt(parameters, 0);
+            EnsureUsableParams(ref dto);
             dto.FogColorAndDensity.w = ClampFinite(value, 0f, 0.3f, 0.045f);
         }
 
@@ -148,6 +152,7 @@ namespace Hecton8.EditorTools
                 return;
 
             ref VolumetricFogParamsDTO dto = ref VolumetricFogParamsAccess.ElementAt(parameters, 0);
+            EnsureUsableParams(ref dto);
             dto.ScatteringParams.x = ClampFinite(value, 0f, 4f, 0.85f);
         }
 
@@ -157,6 +162,7 @@ namespace Hecton8.EditorTools
                 return;
 
             ref VolumetricFogParamsDTO dto = ref VolumetricFogParamsAccess.ElementAt(parameters, 0);
+            EnsureUsableParams(ref dto);
             dto.ScatteringParams.y = ClampFinite(value, 0.001f, 2f, 0.12f);
         }
 
@@ -166,6 +172,7 @@ namespace Hecton8.EditorTools
                 return;
 
             ref VolumetricFogParamsDTO dto = ref VolumetricFogParamsAccess.ElementAt(parameters, 0);
+            EnsureUsableParams(ref dto);
             dto.ScatteringParams.z = ClampFinite(value, -0.95f, 0.95f, 0.42f);
         }
 
@@ -175,6 +182,7 @@ namespace Hecton8.EditorTools
                 return;
 
             ref VolumetricFogParamsDTO dto = ref VolumetricFogParamsAccess.ElementAt(parameters, 0);
+            EnsureUsableParams(ref dto);
             dto.FlowAdvection.w = ClampFinite(value, 0f, 8f, 2.25f);
         }
 
@@ -186,8 +194,10 @@ namespace Hecton8.EditorTools
                 return;
 
             ref VolumetricFogParamsDTO dto = ref VolumetricFogParamsAccess.ElementAt(parameters, 0);
+            EnsureUsableParams(ref dto);
             dto.QualityAndLimits.x = quality;
-            dto.QualityAndLimits.y = math.round(math.lerp(VolumetricFogConstants.MinRaySteps, VolumetricFogConstants.MaxRaySteps, quality));
+            dto.QualityAndLimits.y = VolumetricFogParamsAccess.ResolveRayStepsForQuality(quality);
+            dto.QualityAndLimits.w = VolumetricFogParamsAccess.ResolveProxyBlendForQuality(quality);
         }
 
         private static bool TryResolveParams(out NativeArray<VolumetricFogParamsDTO> parameters)
@@ -307,21 +317,32 @@ namespace Hecton8.EditorTools
 
             float maxMicroseconds = 2000f;
             for (int i = 0; i < telemetry.Length; i++)
-                maxMicroseconds = math.max(maxMicroseconds, telemetry[i].EstimatedGpuMicroseconds);
+            {
+                float sample = ClampFinite(telemetry[i].EstimatedGpuMicroseconds, 0f, 16000f, 0f);
+                maxMicroseconds = math.max(maxMicroseconds, sample);
+            }
 
             painter.lineWidth = 1.5f;
             painter.strokeColor = new Color(0.15f, 0.86f, 0.72f, 1f);
             painter.BeginPath();
+            bool hasPoint = false;
             for (int i = 0; i < telemetry.Length; i++)
             {
+                float sample = ClampFinite(telemetry[i].EstimatedGpuMicroseconds, 0f, 16000f, 0f);
                 float x = rect.xMin + rect.width * (i / (float)(telemetry.Length - 1));
-                float y = rect.yMax - math.saturate(telemetry[i].EstimatedGpuMicroseconds / maxMicroseconds) * rect.height;
-                if (i == 0)
+                float y = rect.yMax - math.saturate(sample / maxMicroseconds) * rect.height;
+                if (!hasPoint)
+                {
                     painter.MoveTo(new Vector2(x, y));
+                    hasPoint = true;
+                }
                 else
+                {
                     painter.LineTo(new Vector2(x, y));
+                }
             }
-            painter.Stroke();
+            if (hasPoint)
+                painter.Stroke();
 
             float thresholdY = rect.yMax - math.saturate(2000f / maxMicroseconds) * rect.height;
             painter.lineWidth = 1f;

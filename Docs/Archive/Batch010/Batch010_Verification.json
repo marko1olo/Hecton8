@@ -1,0 +1,640 @@
+{
+    "Batch":  "Batch010",
+    "ProtectedActiveTasks":  [
+                                 "CURRENT_BATCH.md"
+                             ],
+    "OriginalMoved":  {
+                          "AgentLogs":  182,
+                          "Tasks":  70
+                      },
+    "LateMoved":  {
+                      "AgentLogs":  91,
+                      "Tasks":  56
+                  },
+    "ArchivedFileTotals":  {
+                               "AgentLogs":  275,
+                               "Tasks":  127
+                           },
+    "HygieneRaceStillActive":  true,
+    "ActiveAgentLogs":  [
+                            "LOG_SHINOBU_02.md",
+                            "LOG_SHINOBU_160.md",
+                            "Rationale_SHINOBU_02.md",
+                            "Rationale_SHINOBU_160.md"
+                        ],
+    "ActiveTasks":  [
+                        "CURRENT_BATCH.md",
+                        "Status_SHINOBU_02.md",
+                        "Status_SHINOBU_160.md"
+                    ],
+    "Combined":  {
+                     "AgentLogs":  [
+                                       {
+                                           "Key":  "AllocationAudit",
+                                           "FileCount":  1,
+                                           "Files":  [
+                                                         "AllocationAudit_SHINOBU_100.md"
+                                                     ],
+                                           "SplitOver3MB":  false,
+                                           "MdOutputs":  [
+                                                             "AgentLogs_Batch010_AllocationAudit_SLIM.md"
+                                                         ],
+                                           "TxtOutputs":  [
+                                                              "AgentLogs_Batch010_AllocationAudit_SLIM.txt"
+                                                          ]
+                                       },
+                                       {
+                                           "Key":  "BufferIDSovereigntyAudit",
+                                           "FileCount":  2,
+                                           "Files":  [
+                                                         "BufferIDSovereigntyAudit_HFI_AUDIT.json",
+                                                         "BufferIDSovereigntyAudit_HFI_AUDIT.md"
+                                                     ],
+                                           "SplitOver3MB":  false,
+                                           "MdOutputs":  [
+                                                             "AgentLogs_Batch010_BufferIDSovereigntyAudit_SLIM.md"
+                                                         ],
+                                           "TxtOutputs":  [
+                                                              "AgentLogs_Batch010_BufferIDSovereigntyAudit_SLIM.txt"
+                                                          ]
+                                       },
+                                       {
+                                           "Key":  "CoreBuild",
+                                           "FileCount":  5,
+                                           "Files":  [
+                                                         "CoreBuild_SHINOBU_02_current40.txt",
+                                                         "CoreBuild_SHINOBU_02_current40__instant99.txt",
+                                                         "CoreBuild_SHINOBU_02_current40__late10.txt",
+                                                         "CoreBuild_SHINOBU_02_current40__late11.txt",
+                                                         "CoreBuild_SHINOBU_02_current40__late21.txt"
+                                                     ],
+                                           "SplitOver3MB":  false,
+                                           "MdOutputs":  [
+                                                             "AgentLogs_Batch010_CoreBuild_SLIM.md"
+                                                         ],
+                                           "TxtOutputs":  [
+                                                              "AgentLogs_Batch010_CoreBuild_SLIM.txt"
+                                                          ]
+                                       },
+                                       {
+                                           "Key":  "DataVaultSovereigntyAudit",
+                                           "FileCount":  1,
+                                           "Files":  [
+                                                         "DataVaultSovereigntyAudit_VAULT_SOVEREIGNTY_ENFORCER.md"
+                                                     ],
+                                           "SplitOver3MB":  false,
+                                           "MdOutputs":  [
+                                                             "AgentLogs_Batch010_DataVaultSovereigntyAudit_SLIM.md"
+                                                         ],
+                                           "TxtOutputs":  [
+                                                              "AgentLogs_Batch010_DataVaultSovereigntyAudit_SLIM.txt"
+                                                          ]
+                                       },
+                                       {
+                                           "Key":  "HPhiTrend",
+                                           "FileCount":  12,
+                                           "Files":  [
+                                                         "HPhiTrend_SHINOBU_02.json",
+                                                         "HPhiTrend_SHINOBU_02.md",
+                                                         "HPhiTrend_SHINOBU_02_current17.json",
+                                                         "HPhiTrend_SHINOBU_02_current17.md",
+                                                         "HPhiTrend_SHINOBU_02_current18.json",
+                                                         "HPhiTrend_SHINOBU_02_current18.md",
+                                                         "HPhiTrend_SHINOBU_02_current19.json",
+                                                         "HPhiTrend_SHINOBU_02_current19.md",
+                                                         "HPhiTrend_SHINOBU_02_current20.json",
+                                                         "HPhiTrend_SHINOBU_02_current20.md",
+                                                         "HPhiTrend_SHINOBU_02_current21.json",
+                                                         "HPhiTrend_SHINOBU_02_current21.md"
+                                                     ],
+                                           "SplitOver3MB":  false,
+                                           "MdOutputs":  [
+                                                             "AgentLogs_Batch010_HPhiTrend_SLIM.md"
+                                                         ],
+                                           "TxtOutputs":  [
+                                                              "AgentLogs_Batch010_HPhiTrend_SLIM.txt"
+                                                          ]
+                                       },
+                                       {
+                                           "Key":  "LOG",
+                                           "FileCount":  104,
+                                           "Files":  [
+                                                         "LOG_ARCHIVE_BATCH_010.md",
+                                                         "LOG_DOC_GLOBAL_DOCS_REFRESH.md",
+                                                         "LOG_DOC_GLOBAL_DOCS_REFRESH__late2.md",
+                                                         "LOG_DOC_GLOBAL_DOCS_REFRESH__late3.md",
+                                                         "LOG_DOC_GLOBAL_DOCS_REFRESH__late9.md",
+                                                         "LOG_HFI_AUDIT.md",
+                                                         "LOG_PAYLOAD_AND_STREAMING_DOC_SCOUT_CURRENT34.md",
+                                                         "LOG_SHINOBU_02.md",
+                                                         "LOG_SHINOBU_02__instant99.md",
+                                                         "LOG_SHINOBU_02__watch27.md",
+                                                         "LOG_SHINOBU_02__watch41.md",
+                                                         "LOG_SHINOBU_100.md",
+                                                         "LOG_SHINOBU_101.md",
+                                                         "LOG_SHINOBU_102.md",
+                                                         "LOG_SHINOBU_103.md",
+                                                         "LOG_SHINOBU_104.md",
+                                                         "LOG_SHINOBU_105.md",
+                                                         "LOG_SHINOBU_106.md",
+                                                         "LOG_SHINOBU_107.md",
+                                                         "LOG_SHINOBU_108.md",
+                                                         "LOG_SHINOBU_109.md",
+                                                         "LOG_SHINOBU_111.md",
+                                                         "LOG_SHINOBU_112.md",
+                                                         "LOG_SHINOBU_113.md",
+                                                         "LOG_SHINOBU_114.md",
+                                                         "LOG_SHINOBU_115.md",
+                                                         "LOG_SHINOBU_116.md",
+                                                         "LOG_SHINOBU_117.md",
+                                                         "LOG_SHINOBU_118.md",
+                                                         "LOG_SHINOBU_119.md",
+                                                         "LOG_SHINOBU_120.md",
+                                                         "LOG_SHINOBU_121.md",
+                                                         "LOG_SHINOBU_122.md",
+                                                         "LOG_SHINOBU_123.md",
+                                                         "LOG_SHINOBU_124.md",
+                                                         "LOG_SHINOBU_125.md",
+                                                         "LOG_SHINOBU_126.md",
+                                                         "LOG_SHINOBU_127.md",
+                                                         "LOG_SHINOBU_128.md",
+                                                         "LOG_SHINOBU_129.md",
+                                                         "LOG_SHINOBU_130.md",
+                                                         "LOG_SHINOBU_131.md",
+                                                         "LOG_SHINOBU_132.md",
+                                                         "LOG_SHINOBU_133.md",
+                                                         "LOG_SHINOBU_134.md",
+                                                         "LOG_SHINOBU_135.md",
+                                                         "LOG_SHINOBU_136.md",
+                                                         "LOG_SHINOBU_137.md",
+                                                         "LOG_SHINOBU_138.md",
+                                                         "LOG_SHINOBU_139.md",
+                                                         "LOG_SHINOBU_140.md",
+                                                         "LOG_SHINOBU_140__late3.md",
+                                                         "LOG_SHINOBU_140__watch22.md",
+                                                         "LOG_SHINOBU_140__watch29.md",
+                                                         "LOG_SHINOBU_141.md",
+                                                         "LOG_SHINOBU_142.md",
+                                                         "LOG_SHINOBU_143.md",
+                                                         "LOG_SHINOBU_144.md",
+                                                         "LOG_SHINOBU_145.md",
+                                                         "LOG_SHINOBU_146.md",
+                                                         "LOG_SHINOBU_147.md",
+                                                         "LOG_SHINOBU_148.md",
+                                                         "LOG_SHINOBU_149.md",
+                                                         "LOG_SHINOBU_150.md",
+                                                         "LOG_SHINOBU_151.md",
+                                                         "LOG_SHINOBU_152.md",
+                                                         "LOG_SHINOBU_153.md",
+                                                         "LOG_SHINOBU_153__instant99.md",
+                                                         "LOG_SHINOBU_153__late21.md",
+                                                         "LOG_SHINOBU_153__watch25.md",
+                                                         "LOG_SHINOBU_154.md",
+                                                         "LOG_SHINOBU_154__final46.md",
+                                                         "LOG_SHINOBU_154__instant99.md",
+                                                         "LOG_SHINOBU_154__late21.md",
+                                                         "LOG_SHINOBU_154__watch22.md",
+                                                         "LOG_SHINOBU_154__watch30.md",
+                                                         "LOG_SHINOBU_154__watch33.md",
+                                                         "LOG_SHINOBU_155.md",
+                                                         "LOG_SHINOBU_155__instant99.md",
+                                                         "LOG_SHINOBU_155__late1.md",
+                                                         "LOG_SHINOBU_155__late11.md",
+                                                         "LOG_SHINOBU_155__late2.md",
+                                                         "LOG_SHINOBU_155__late9.md",
+                                                         "LOG_SHINOBU_155__watch22.md",
+                                                         "LOG_SHINOBU_156.md",
+                                                         "LOG_SHINOBU_157.md",
+                                                         "LOG_SHINOBU_158.md",
+                                                         "LOG_SHINOBU_159.md",
+                                                         "LOG_SHINOBU_160.md",
+                                                         "LOG_SHINOBU_160__final46.md",
+                                                         "LOG_SHINOBU_160__instant100.md",
+                                                         "LOG_SHINOBU_160__watch24.md",
+                                                         "LOG_SHINOBU_160__watch34.md",
+                                                         "LOG_SHINOBU_160__watch41.md",
+                                                         "LOG_SHINOBU_66.md",
+                                                         "LOG_SHINOBU_81.md",
+                                                         "LOG_SHINOBU_81__instant100.md",
+                                                         "LOG_SHINOBU_81__instant99.md",
+                                                         "LOG_SHINOBU_81__late1.md",
+                                                         "LOG_SHINOBU_81__late11.md",
+                                                         "LOG_SHINOBU_81__late2.md",
+                                                         "LOG_SHINOBU_81__late21.md",
+                                                         "LOG_SHINOBU_81__late8.md",
+                                                         "LOG_SHINOBU_81__watch22.md"
+                                                     ],
+                                           "SplitOver3MB":  true,
+                                           "MdOutputs":  [
+                                                             "AgentLogs_Batch010_LOG_SLIM.part001.md",
+                                                             "AgentLogs_Batch010_LOG_SLIM.part002.md"
+                                                         ],
+                                           "TxtOutputs":  [
+                                                              "AgentLogs_Batch010_LOG_SLIM.part001.txt",
+                                                              "AgentLogs_Batch010_LOG_SLIM.part002.txt"
+                                                          ]
+                                       },
+                                       {
+                                           "Key":  "QA",
+                                           "FileCount":  1,
+                                           "Files":  [
+                                                         "QA_Endurance_Log.csv"
+                                                     ],
+                                           "SplitOver3MB":  false,
+                                           "MdOutputs":  [
+                                                             "AgentLogs_Batch010_QA_SLIM.md"
+                                                         ],
+                                           "TxtOutputs":  [
+                                                              "AgentLogs_Batch010_QA_SLIM.txt"
+                                                          ]
+                                       },
+                                       {
+                                           "Key":  "Rationale",
+                                           "FileCount":  109,
+                                           "Files":  [
+                                                         "Rationale_ARCHIVE_BATCH_010.md",
+                                                         "Rationale_DOC_GLOBAL_DOCS_REFRESH.md",
+                                                         "Rationale_DOC_GLOBAL_DOCS_REFRESH__late2.md",
+                                                         "Rationale_DOC_GLOBAL_DOCS_REFRESH__late3.md",
+                                                         "Rationale_DOC_GLOBAL_DOCS_REFRESH__late9.md",
+                                                         "Rationale_HFI_AUDIT.md",
+                                                         "Rationale_PAYLOAD_AND_STREAMING_DOC_SCOUT_CURRENT34.md",
+                                                         "Rationale_SHINOBU_02.md",
+                                                         "Rationale_SHINOBU_02__instant99.md",
+                                                         "Rationale_SHINOBU_02__watch27.md",
+                                                         "Rationale_SHINOBU_02__watch41.md",
+                                                         "Rationale_SHINOBU_100.md",
+                                                         "Rationale_SHINOBU_101.md",
+                                                         "Rationale_SHINOBU_102.md",
+                                                         "Rationale_SHINOBU_103.md",
+                                                         "Rationale_SHINOBU_104.md",
+                                                         "Rationale_SHINOBU_105.md",
+                                                         "Rationale_SHINOBU_106.md",
+                                                         "Rationale_SHINOBU_107.md",
+                                                         "Rationale_SHINOBU_108.md",
+                                                         "Rationale_SHINOBU_109.md",
+                                                         "Rationale_SHINOBU_111.md",
+                                                         "Rationale_SHINOBU_112.md",
+                                                         "Rationale_SHINOBU_113.md",
+                                                         "Rationale_SHINOBU_114.md",
+                                                         "Rationale_SHINOBU_115.md",
+                                                         "Rationale_SHINOBU_116.md",
+                                                         "Rationale_SHINOBU_117.md",
+                                                         "Rationale_SHINOBU_118.md",
+                                                         "Rationale_SHINOBU_119.md",
+                                                         "Rationale_SHINOBU_120.md",
+                                                         "Rationale_SHINOBU_121.md",
+                                                         "Rationale_SHINOBU_122.md",
+                                                         "Rationale_SHINOBU_123.md",
+                                                         "Rationale_SHINOBU_124.md",
+                                                         "Rationale_SHINOBU_125.md",
+                                                         "Rationale_SHINOBU_126.md",
+                                                         "Rationale_SHINOBU_127.md",
+                                                         "Rationale_SHINOBU_128.md",
+                                                         "Rationale_SHINOBU_129.md",
+                                                         "Rationale_SHINOBU_130.md",
+                                                         "Rationale_SHINOBU_131.md",
+                                                         "Rationale_SHINOBU_132.md",
+                                                         "Rationale_SHINOBU_132__instant100.md",
+                                                         "Rationale_SHINOBU_132__late21.md",
+                                                         "Rationale_SHINOBU_132__watch31.md",
+                                                         "Rationale_SHINOBU_132__watch42.md",
+                                                         "Rationale_SHINOBU_133.md",
+                                                         "Rationale_SHINOBU_134.md",
+                                                         "Rationale_SHINOBU_135.md",
+                                                         "Rationale_SHINOBU_136.md",
+                                                         "Rationale_SHINOBU_137.md",
+                                                         "Rationale_SHINOBU_138.md",
+                                                         "Rationale_SHINOBU_139.md",
+                                                         "Rationale_SHINOBU_140.md",
+                                                         "Rationale_SHINOBU_140__late3.md",
+                                                         "Rationale_SHINOBU_140__watch22.md",
+                                                         "Rationale_SHINOBU_140__watch29.md",
+                                                         "Rationale_SHINOBU_141.md",
+                                                         "Rationale_SHINOBU_142.md",
+                                                         "Rationale_SHINOBU_143.md",
+                                                         "Rationale_SHINOBU_144.md",
+                                                         "Rationale_SHINOBU_145.md",
+                                                         "Rationale_SHINOBU_146.md",
+                                                         "Rationale_SHINOBU_147.md",
+                                                         "Rationale_SHINOBU_148.md",
+                                                         "Rationale_SHINOBU_149.md",
+                                                         "Rationale_SHINOBU_150.md",
+                                                         "Rationale_SHINOBU_151.md",
+                                                         "Rationale_SHINOBU_152.md",
+                                                         "Rationale_SHINOBU_153.md",
+                                                         "Rationale_SHINOBU_153__instant99.md",
+                                                         "Rationale_SHINOBU_153__late21.md",
+                                                         "Rationale_SHINOBU_153__watch25.md",
+                                                         "Rationale_SHINOBU_153__watch40.md",
+                                                         "Rationale_SHINOBU_154.md",
+                                                         "Rationale_SHINOBU_154__final46.md",
+                                                         "Rationale_SHINOBU_154__instant100.md",
+                                                         "Rationale_SHINOBU_154__instant99.md",
+                                                         "Rationale_SHINOBU_154__late21.md",
+                                                         "Rationale_SHINOBU_154__watch22.md",
+                                                         "Rationale_SHINOBU_154__watch30.md",
+                                                         "Rationale_SHINOBU_154__watch33.md",
+                                                         "Rationale_SHINOBU_155.md",
+                                                         "Rationale_SHINOBU_155__instant99.md",
+                                                         "Rationale_SHINOBU_155__late1.md",
+                                                         "Rationale_SHINOBU_155__late11.md",
+                                                         "Rationale_SHINOBU_155__late2.md",
+                                                         "Rationale_SHINOBU_155__late9.md",
+                                                         "Rationale_SHINOBU_155__watch22.md",
+                                                         "Rationale_SHINOBU_156.md",
+                                                         "Rationale_SHINOBU_157.md",
+                                                         "Rationale_SHINOBU_158.md",
+                                                         "Rationale_SHINOBU_159.md",
+                                                         "Rationale_SHINOBU_160.md",
+                                                         "Rationale_SHINOBU_160__final46.md",
+                                                         "Rationale_SHINOBU_160__instant100.md",
+                                                         "Rationale_SHINOBU_160__watch24.md",
+                                                         "Rationale_SHINOBU_160__watch34.md",
+                                                         "Rationale_SHINOBU_160__watch41.md",
+                                                         "Rationale_SHINOBU_81.md",
+                                                         "Rationale_SHINOBU_81__instant100.md",
+                                                         "Rationale_SHINOBU_81__instant99.md",
+                                                         "Rationale_SHINOBU_81__late1.md",
+                                                         "Rationale_SHINOBU_81__late11.md",
+                                                         "Rationale_SHINOBU_81__late2.md",
+                                                         "Rationale_SHINOBU_81__late21.md",
+                                                         "Rationale_SHINOBU_81__late8.md",
+                                                         "Rationale_SHINOBU_81__watch22.md"
+                                                     ],
+                                           "SplitOver3MB":  false,
+                                           "MdOutputs":  [
+                                                             "AgentLogs_Batch010_Rationale_SLIM.md"
+                                                         ],
+                                           "TxtOutputs":  [
+                                                              "AgentLogs_Batch010_Rationale_SLIM.txt"
+                                                          ]
+                                       },
+                                       {
+                                           "Key":  "SignalBusContractAuditCli",
+                                           "FileCount":  30,
+                                           "Files":  [
+                                                         "SignalBusContractAuditCli_SHINOBU_02_full_current15.json",
+                                                         "SignalBusContractAuditCli_SHINOBU_02_full_current15.md",
+                                                         "SignalBusContractAuditCli_SHINOBU_02_full_current16.json",
+                                                         "SignalBusContractAuditCli_SHINOBU_02_full_current16.md",
+                                                         "SignalBusContractAuditCli_SHINOBU_02_full_current17.json",
+                                                         "SignalBusContractAuditCli_SHINOBU_02_full_current17.md",
+                                                         "SignalBusContractAuditCli_SHINOBU_02_full_current18.json",
+                                                         "SignalBusContractAuditCli_SHINOBU_02_full_current18.md",
+                                                         "SignalBusContractAuditCli_SHINOBU_02_full_current19.json",
+                                                         "SignalBusContractAuditCli_SHINOBU_02_full_current19.md",
+                                                         "SignalBusContractAuditCli_SHINOBU_02_full_current20.json",
+                                                         "SignalBusContractAuditCli_SHINOBU_02_full_current20.md",
+                                                         "SignalBusContractAuditCli_SHINOBU_02_full_current21.json",
+                                                         "SignalBusContractAuditCli_SHINOBU_02_full_current21.md",
+                                                         "SignalBusContractAuditCli_SHINOBU_02_signalcritical_current15.json",
+                                                         "SignalBusContractAuditCli_SHINOBU_02_signalcritical_current15.md",
+                                                         "SignalBusContractAuditCli_SHINOBU_02_signalcritical_current16.json",
+                                                         "SignalBusContractAuditCli_SHINOBU_02_signalcritical_current16.md",
+                                                         "SignalBusContractAuditCli_SHINOBU_02_signalcritical_current17.json",
+                                                         "SignalBusContractAuditCli_SHINOBU_02_signalcritical_current17.md",
+                                                         "SignalBusContractAuditCli_SHINOBU_02_signalcritical_current18.json",
+                                                         "SignalBusContractAuditCli_SHINOBU_02_signalcritical_current18.md",
+                                                         "SignalBusContractAuditCli_SHINOBU_02_signalcritical_current19.json",
+                                                         "SignalBusContractAuditCli_SHINOBU_02_signalcritical_current19.md",
+                                                         "SignalBusContractAuditCli_SHINOBU_02_signalcritical_current20.json",
+                                                         "SignalBusContractAuditCli_SHINOBU_02_signalcritical_current20.md",
+                                                         "SignalBusContractAuditCli_SHINOBU_02_signalcritical_current21.json",
+                                                         "SignalBusContractAuditCli_SHINOBU_02_signalcritical_current21.md",
+                                                         "SignalBusContractAuditCli_SHINOBU_02_signalcritical_current36.json",
+                                                         "SignalBusContractAuditCli_SHINOBU_02_signalcritical_current36.md"
+                                                     ],
+                                           "SplitOver3MB":  true,
+                                           "MdOutputs":  [
+                                                             "AgentLogs_Batch010_SignalBusContractAuditCli_SLIM.part001.md",
+                                                             "AgentLogs_Batch010_SignalBusContractAuditCli_SLIM.part002.md",
+                                                             "AgentLogs_Batch010_SignalBusContractAuditCli_SLIM.part003.md"
+                                                         ],
+                                           "TxtOutputs":  [
+                                                              "AgentLogs_Batch010_SignalBusContractAuditCli_SLIM.part001.txt",
+                                                              "AgentLogs_Batch010_SignalBusContractAuditCli_SLIM.part002.txt",
+                                                              "AgentLogs_Batch010_SignalBusContractAuditCli_SLIM.part003.txt"
+                                                          ]
+                                       },
+                                       {
+                                           "Key":  "Unity",
+                                           "FileCount":  10,
+                                           "Files":  [
+                                                         "Unity_SHINOBU_154_Compile.log",
+                                                         "Unity_SHINOBU_154_Compile__final46.log",
+                                                         "Unity_SHINOBU_154_Compile__instant99.log",
+                                                         "Unity_SHINOBU_154_Compile__late21.log",
+                                                         "Unity_SHINOBU_154_Compile__watch22.log",
+                                                         "Unity_SHINOBU_154_Compile__watch30.log",
+                                                         "Unity_SHINOBU_154_Compile__watch33.log",
+                                                         "Unity_SHINOBU_160_compile.log",
+                                                         "Unity_SHINOBU_160_compile_after_hotpath.log",
+                                                         "Unity_SHINOBU_38_Run_final_exitprocess.log"
+                                                     ],
+                                           "SplitOver3MB":  true,
+                                           "MdOutputs":  [
+                                                             "AgentLogs_Batch010_Unity_SLIM.part001.md",
+                                                             "AgentLogs_Batch010_Unity_SLIM.part002.md"
+                                                         ],
+                                           "TxtOutputs":  [
+                                                              "AgentLogs_Batch010_Unity_SLIM.part001.txt",
+                                                              "AgentLogs_Batch010_Unity_SLIM.part002.txt"
+                                                          ]
+                                       }
+                                   ],
+                     "Tasks":  [
+                                   {
+                                       "Key":  "POLISH",
+                                       "FileCount":  1,
+                                       "Files":  [
+                                                     "POLISH.txt"
+                                                 ],
+                                       "SplitOver3MB":  false,
+                                       "MdOutputs":  [
+                                                         "Tasks_Batch010_POLISH_SLIM.md"
+                                                     ],
+                                       "TxtOutputs":  [
+                                                          "Tasks_Batch010_POLISH_SLIM.txt"
+                                                      ]
+                                   },
+                                   {
+                                       "Key":  "Route",
+                                       "FileCount":  15,
+                                       "Files":  [
+                                                     "Route_SHINOBU_145_Metabolism.md",
+                                                     "Route_SHINOBU_154_EntityDeltaCompression.md",
+                                                     "Route_SHINOBU_154_EntityDeltaCompression__final46.md",
+                                                     "Route_SHINOBU_154_EntityDeltaCompression__instant99.md",
+                                                     "Route_SHINOBU_154_EntityDeltaCompression__late21.md",
+                                                     "Route_SHINOBU_154_EntityDeltaCompression__watch22.md",
+                                                     "Route_SHINOBU_154_EntityDeltaCompression__watch30.md",
+                                                     "Route_SHINOBU_154_EntityDeltaCompression__watch33.md",
+                                                     "Route_SHINOBU_155_Respawn.md",
+                                                     "Route_SHINOBU_155_Respawn__instant99.md",
+                                                     "Route_SHINOBU_155_Respawn__late1.md",
+                                                     "Route_SHINOBU_155_Respawn__late11.md",
+                                                     "Route_SHINOBU_155_Respawn__late2.md",
+                                                     "Route_SHINOBU_155_Respawn__late9.md",
+                                                     "Route_SHINOBU_155_Respawn__watch22.md"
+                                                 ],
+                                       "SplitOver3MB":  false,
+                                       "MdOutputs":  [
+                                                         "Tasks_Batch010_Route_SLIM.md"
+                                                     ],
+                                       "TxtOutputs":  [
+                                                          "Tasks_Batch010_Route_SLIM.txt"
+                                                      ]
+                                   },
+                                   {
+                                       "Key":  "Status",
+                                       "FileCount":  110,
+                                       "Files":  [
+                                                     "Status_ARCHIVE_BATCH_010.md",
+                                                     "Status_DOC_GLOBAL_DOCS_REFRESH.md",
+                                                     "Status_DOC_GLOBAL_DOCS_REFRESH__late2.md",
+                                                     "Status_DOC_GLOBAL_DOCS_REFRESH__late3.md",
+                                                     "Status_DOC_GLOBAL_DOCS_REFRESH__late9.md",
+                                                     "Status_HFI_AUDIT.md",
+                                                     "Status_PAYLOAD_AND_STREAMING_DOC_SCOUT_CURRENT34.md",
+                                                     "Status_SHINOBU_02.md",
+                                                     "Status_SHINOBU_02__instant99.md",
+                                                     "Status_SHINOBU_02__watch22.md",
+                                                     "Status_SHINOBU_02__watch41.md",
+                                                     "Status_SHINOBU_100.md",
+                                                     "Status_SHINOBU_101.md",
+                                                     "Status_SHINOBU_102.md",
+                                                     "Status_SHINOBU_103.md",
+                                                     "Status_SHINOBU_104.md",
+                                                     "Status_SHINOBU_105.md",
+                                                     "Status_SHINOBU_106.md",
+                                                     "Status_SHINOBU_107.md",
+                                                     "Status_SHINOBU_108.md",
+                                                     "Status_SHINOBU_109.md",
+                                                     "Status_SHINOBU_111.md",
+                                                     "Status_SHINOBU_112.md",
+                                                     "Status_SHINOBU_113.md",
+                                                     "Status_SHINOBU_114.md",
+                                                     "Status_SHINOBU_115.md",
+                                                     "Status_SHINOBU_116.md",
+                                                     "Status_SHINOBU_117.md",
+                                                     "Status_SHINOBU_118.md",
+                                                     "Status_SHINOBU_119.md",
+                                                     "Status_SHINOBU_120.md",
+                                                     "Status_SHINOBU_121.md",
+                                                     "Status_SHINOBU_122.md",
+                                                     "Status_SHINOBU_123.md",
+                                                     "Status_SHINOBU_124.md",
+                                                     "Status_SHINOBU_125.md",
+                                                     "Status_SHINOBU_126.md",
+                                                     "Status_SHINOBU_127.md",
+                                                     "Status_SHINOBU_128.md",
+                                                     "Status_SHINOBU_129.md",
+                                                     "Status_SHINOBU_130.md",
+                                                     "Status_SHINOBU_131.md",
+                                                     "Status_SHINOBU_132.md",
+                                                     "Status_SHINOBU_132__instant100.md",
+                                                     "Status_SHINOBU_132__late21.md",
+                                                     "Status_SHINOBU_132__watch31.md",
+                                                     "Status_SHINOBU_132__watch42.md",
+                                                     "Status_SHINOBU_133.md",
+                                                     "Status_SHINOBU_134.md",
+                                                     "Status_SHINOBU_135.md",
+                                                     "Status_SHINOBU_136.md",
+                                                     "Status_SHINOBU_137.md",
+                                                     "Status_SHINOBU_138.md",
+                                                     "Status_SHINOBU_139.md",
+                                                     "Status_SHINOBU_140.md",
+                                                     "Status_SHINOBU_140__late3.md",
+                                                     "Status_SHINOBU_140__watch22.md",
+                                                     "Status_SHINOBU_140__watch29.md",
+                                                     "Status_SHINOBU_141.md",
+                                                     "Status_SHINOBU_142.md",
+                                                     "Status_SHINOBU_143.md",
+                                                     "Status_SHINOBU_144.md",
+                                                     "Status_SHINOBU_145.md",
+                                                     "Status_SHINOBU_146.md",
+                                                     "Status_SHINOBU_147.md",
+                                                     "Status_SHINOBU_148.md",
+                                                     "Status_SHINOBU_149.md",
+                                                     "Status_SHINOBU_150.md",
+                                                     "Status_SHINOBU_151.md",
+                                                     "Status_SHINOBU_152.md",
+                                                     "Status_SHINOBU_153.md",
+                                                     "Status_SHINOBU_153__instant99.md",
+                                                     "Status_SHINOBU_153__late21.md",
+                                                     "Status_SHINOBU_153__watch25.md",
+                                                     "Status_SHINOBU_153__watch40.md",
+                                                     "Status_SHINOBU_153_TEST.md",
+                                                     "Status_SHINOBU_154.md",
+                                                     "Status_SHINOBU_154__final46.md",
+                                                     "Status_SHINOBU_154__instant100.md",
+                                                     "Status_SHINOBU_154__instant99.md",
+                                                     "Status_SHINOBU_154__late21.md",
+                                                     "Status_SHINOBU_154__watch22.md",
+                                                     "Status_SHINOBU_154__watch30.md",
+                                                     "Status_SHINOBU_154__watch32.md",
+                                                     "Status_SHINOBU_155.md",
+                                                     "Status_SHINOBU_155__instant99.md",
+                                                     "Status_SHINOBU_155__late1.md",
+                                                     "Status_SHINOBU_155__late11.md",
+                                                     "Status_SHINOBU_155__late2.md",
+                                                     "Status_SHINOBU_155__late9.md",
+                                                     "Status_SHINOBU_155__watch22.md",
+                                                     "Status_SHINOBU_156.md",
+                                                     "Status_SHINOBU_157.md",
+                                                     "Status_SHINOBU_158.md",
+                                                     "Status_SHINOBU_159.md",
+                                                     "Status_SHINOBU_160.md",
+                                                     "Status_SHINOBU_160__final46.md",
+                                                     "Status_SHINOBU_160__instant100.md",
+                                                     "Status_SHINOBU_160__watch24.md",
+                                                     "Status_SHINOBU_160__watch34.md",
+                                                     "Status_SHINOBU_160__watch41.md",
+                                                     "Status_SHINOBU_81.md",
+                                                     "Status_SHINOBU_81__instant100.md",
+                                                     "Status_SHINOBU_81__instant99.md",
+                                                     "Status_SHINOBU_81__late1.md",
+                                                     "Status_SHINOBU_81__late11.md",
+                                                     "Status_SHINOBU_81__late2.md",
+                                                     "Status_SHINOBU_81__late21.md",
+                                                     "Status_SHINOBU_81__late8.md",
+                                                     "Status_SHINOBU_81__watch22.md"
+                                                 ],
+                                       "SplitOver3MB":  false,
+                                       "MdOutputs":  [
+                                                         "Tasks_Batch010_Status_SLIM.md"
+                                                     ],
+                                       "TxtOutputs":  [
+                                                          "Tasks_Batch010_Status_SLIM.txt"
+                                                      ]
+                                   },
+                                   {
+                                       "Key":  "НЕ",
+                                       "FileCount":  1,
+                                       "Files":  [
+                                                     "НЕ ДВИГАТЬ! ИНСТРЫ.txt"
+                                                 ],
+                                       "SplitOver3MB":  false,
+                                       "MdOutputs":  [
+                                                         "Tasks_Batch010_НЕ_SLIM.md"
+                                                     ],
+                                       "TxtOutputs":  [
+                                                          "Tasks_Batch010_НЕ_SLIM.txt"
+                                                      ]
+                                   }
+                               ],
+                     "ArchiveRoot":  [
+                                         {
+                                             "Key":  "ROOT_INDEX",
+                                             "SplitOver3MB":  false,
+                                             "MdOutputs":  [
+                                                               "Archive_Batch010_ROOT_INDEX_SLIM.md"
+                                                           ],
+                                             "TxtOutputs":  [
+                                                                "Archive_Batch010_ROOT_INDEX_SLIM.txt"
+                                                            ]
+                                         }
+                                     ]
+                 }
+}

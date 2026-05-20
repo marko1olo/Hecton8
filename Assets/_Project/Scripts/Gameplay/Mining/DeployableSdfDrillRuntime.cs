@@ -811,7 +811,15 @@ namespace Hecton8.Gameplay.Mining
             if (!forceComplete && !_snapHandle.IsCompleted)
                 return;
 
-            _snapHandle.Complete();
+            if (forceComplete)
+            {
+                DispatcherJobFence.TryComplete(ref _snapHandle, forceComplete: true);
+            }
+            else if (!DispatcherJobFence.TryFinalizeCompleted(ref _snapHandle))
+            {
+                return;
+            }
+
             _snapPending = false;
             if (!TryResolveSnapBuffers(out _, out NativeArray<RaycastHit> snapHits))
                 return;
@@ -844,7 +852,7 @@ namespace Hecton8.Gameplay.Mining
             if (!_snapPending)
                 return;
 
-            _snapHandle.Complete();
+            DispatcherJobFence.TryComplete(ref _snapHandle, forceComplete: true);
             _snapPending = false;
             if (TryResolveSnapBuffers(out _, out NativeArray<RaycastHit> snapHits))
                 snapHits[0] = default;
@@ -952,7 +960,15 @@ namespace Hecton8.Gameplay.Mining
             if (!forceComplete && !_extractionHandle.IsCompleted)
                 return;
 
-            _extractionHandle.Complete();
+            if (forceComplete)
+            {
+                DispatcherJobFence.TryComplete(ref _extractionHandle, forceComplete: true);
+            }
+            else if (!DispatcherJobFence.TryFinalizeCompleted(ref _extractionHandle))
+            {
+                return;
+            }
+
             _extractionPending = false;
             CommitExtractionResult(SystemDispatcher.CurrentUnscaledTimeSeconds);
         }
@@ -1038,8 +1054,7 @@ namespace Hecton8.Gameplay.Mining
                 Result = extractionResult
             };
             // COLD SYNC JOB: Macro hydration is an unload/load boundary, not a frame tick; completes once to cap offline inventory.
-            JobHandle handle = job.Schedule();
-            handle.Complete();
+            job.Execute();
             CommitExtractionResult(now);
         }
 

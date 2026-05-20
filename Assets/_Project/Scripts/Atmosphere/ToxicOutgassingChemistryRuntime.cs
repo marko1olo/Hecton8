@@ -166,7 +166,7 @@ namespace Hecton8.Atmosphere
         {
             if (_hasScheduledWork)
             {
-                CompleteScheduledWork(force: true);
+                CompleteScheduledWorkForTeardown();
             }
             ScalabilityEvents.Unregister(this);
             HectonFloatingOrigin.UnregisterListener(this);
@@ -190,7 +190,7 @@ namespace Hecton8.Atmosphere
             _simulationAccumulator += safeDelta;
             _corrosionAccumulator += safeDelta;
 
-            CompleteScheduledWork();
+            TryFinalizeScheduledWorkNoWait();
             if (_hasScheduledWork)
             {
                 return;
@@ -226,7 +226,7 @@ namespace Hecton8.Atmosphere
         {
             if (_hasScheduledWork && _scheduledHandle.IsCompleted)
             {
-                CompleteScheduledWork();
+                TryFinalizeScheduledWorkNoWait();
             }
 
             PublishShaderScalar();
@@ -635,7 +635,7 @@ namespace Hecton8.Atmosphere
 
         private bool TryResizeActiveGrid(int targetResolution)
         {
-            CompleteScheduledWork();
+            TryFinalizeScheduledWorkNoWait();
             if (_hasScheduledWork)
             {
                 return false;
@@ -829,20 +829,42 @@ namespace Hecton8.Atmosphere
             H8Memory.RegisterActiveJob(SystemID.External, dependency);
         }
 
-        private void CompleteScheduledWork(bool force = false)
+        private bool TryFinalizeScheduledWorkNoWait()
         {
             if (!_hasScheduledWork)
             {
-                return;
+                return true;
             }
 
-            if (!force && !_scheduledHandle.IsCompleted)
+            if (!_scheduledHandle.IsCompleted)
             {
-                return;
+                return false;
             }
 
             long completeStart = Stopwatch.GetTimestamp();
-            _scheduledHandle.Complete();
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _scheduledHandle))
+            {
+                return false;
+            }
+
+            FinishScheduledWork(completeStart);
+            return true;
+        }
+
+        private void CompleteScheduledWorkForTeardown()
+        {
+            if (!_hasScheduledWork)
+                return;
+
+            long completeStart = Stopwatch.GetTimestamp();
+            if (!DispatcherJobFence.TryComplete(ref _scheduledHandle, forceComplete: true))
+                return;
+
+            FinishScheduledWork(completeStart);
+        }
+
+        private void FinishScheduledWork(long completeStart)
+        {
             long completeEnd = Stopwatch.GetTimestamp();
             long scheduleStart = _scheduledStartTicks != 0L ? _scheduledStartTicks : completeStart;
             _lastCompleteMs = (float)((completeEnd - scheduleStart) * 1000.0 / Stopwatch.Frequency);
@@ -875,8 +897,7 @@ namespace Hecton8.Atmosphere
                 return false;
             }
 
-            CompleteScheduledWork();
-            return true;
+            return TryFinalizeScheduledWorkNoWait();
         }
 
         private void PublishSignals(NativeArray<ToxicityExposureSignal> exposures, NativeArray<ToxicityCombatDamageSignal> combats, NativeArray<ToxicBioluminescenceSignal> biolums, NativeArray<int> counters)
@@ -906,7 +927,7 @@ namespace Hecton8.Atmosphere
             for (int i = 0; i < combatCount; i++)
             {
                 ToxicityCombatDamageSignal staged = combats[i];
-                float3 local = (float3)(staged.AUP - _gridOriginAup);
+                float3 local = AupPrecisionMath.LocalDeltaFloat3(staged.AUP, _gridOriginAup, float3.zero);
                 if (!math.all(math.isfinite(local)) || !math.isfinite(staged.Magnitude))
                 {
                     continue;
@@ -1029,7 +1050,7 @@ namespace Hecton8.Atmosphere
         {
             try
             {
-                CompleteScheduledWork();
+                CompleteScheduledWorkForTeardown();
                 string path = Path.Combine(ProjectRootPath(), DumpRelativePath);
                 string directory = Path.GetDirectoryName(path);
                 if (!string.IsNullOrEmpty(directory))
@@ -1366,7 +1387,7 @@ namespace Hecton8.Atmosphere
 
         private static float SampleDensityTrilinear(NativeArray<float> density, int resolution, double3 gridOriginAup, float cellSizeMeters, double3 aup)
         {
-            float3 local = (float3)(aup - gridOriginAup);
+            float3 local = AupPrecisionMath.LocalDeltaFloat3(aup, gridOriginAup, float3.zero);
             float invCell = 1f / math.max(cellSizeMeters, NaNEpsilon);
             float3 cell = local * invCell + (resolution * 0.5f);
             float3 baseCell = math.floor(cell);
@@ -1395,7 +1416,7 @@ namespace Hecton8.Atmosphere
 
         private static float SampleDensityNearest(NativeArray<float> density, int resolution, double3 gridOriginAup, float cellSizeMeters, double3 aup)
         {
-            float3 local = (float3)(aup - gridOriginAup);
+            float3 local = AupPrecisionMath.LocalDeltaFloat3(aup, gridOriginAup, float3.zero);
             float invCell = 1f / math.max(cellSizeMeters, NaNEpsilon);
             int3 c = (int3)math.round(local * invCell + resolution * 0.5f);
             c = math.clamp(c, int3.zero, new int3(resolution - 1));
@@ -1464,7 +1485,8 @@ namespace Hecton8.Atmosphere
                 float3 curl = float3.zero;
                 if (detailBlend > 0.0001f)
                 {
-                    float3 p = (float3)GridOriginAup * 0.001f + local * 0.013f;
+                    double3 phase = (GridOriginAup * 0.001d) + (new double3(local.x, local.y, local.z) * 0.013d);
+                    float3 p = AupPrecisionMath.DowncastProceduralPhase(phase, local * 0.013f);
                     float phase = Frame * math.lerp(0.001f, 0.004f, quality);
                     float s0 = math.sin(p.x + p.z * 0.37f + phase);
                     float s1 = math.cos(p.y * 0.61f - p.x * 0.23f + phase * 0.7f);
@@ -1510,7 +1532,8 @@ namespace Hecton8.Atmosphere
                 float flora = 0f;
                 if (detailBlend > 0.0001f)
                 {
-                    float3 p = (float3)GridOriginAup * 0.0007f + local * 0.017f;
+                    double3 phase = (GridOriginAup * 0.0007d) + (new double3(local.x, local.y, local.z) * 0.017d);
+                    float3 p = AupPrecisionMath.DowncastProceduralPhase(phase, local * 0.017f);
                     rib = math.sin(p.x * 1.7f + p.z * 0.9f) * math.lerp(2f, 8f, quality) * detailBlend;
                     float kelpWave = math.sin(p.x * 2.1f) * math.cos(p.z * 1.3f);
                     flora = math.saturate((kelpWave - 0.35f) * 2.2f) * math.saturate((local.y + CellSizeMeters * 8f) / math.max(CellSizeMeters * 16f, NaNEpsilon)) * detailBlend;
@@ -1825,7 +1848,7 @@ namespace Hecton8.Atmosphere
 
             private static float SampleNearest(NativeArray<float> density, int resolution, double3 gridOriginAup, float cellSizeMeters, double3 aup)
             {
-                float3 local = (float3)(aup - gridOriginAup);
+                float3 local = AupPrecisionMath.LocalDeltaFloat3(aup, gridOriginAup, float3.zero);
                 float invCell = 1f / math.max(cellSizeMeters, NaNEpsilon);
                 int3 c = (int3)math.round(local * invCell + resolution * 0.5f);
                 c = math.clamp(c, int3.zero, new int3(resolution - 1));

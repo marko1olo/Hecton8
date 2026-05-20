@@ -146,7 +146,7 @@ namespace Hecton8.World.Biomes
                 SampleAupXZ = new double2(absolute.x, absolute.z)
             };
 
-            job.Run();
+            job.Execute();
 
             BiomeBoundarySdfResult result = _sampleResult[0];
             if (!IsFiniteResult(in result))
@@ -328,14 +328,7 @@ namespace Hecton8.World.Biomes
                 return true;
             }
 
-            if (playerTransform == null)
-                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
-
-            if (playerTransform == null)
-                return false;
-
-            playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerTransform.position);
-            return true;
+            return false;
         }
 
         private bool ResolveLowTierKernel()

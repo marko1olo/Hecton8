@@ -28,7 +28,7 @@ namespace Hecton8.UI
     /// HUD element that displays deployed beacons on screen.
     /// Uses ITickable for updates. Zero GC in hot paths.
     /// </summary>
-    public class BeaconHUDElement : MonoBehaviour, ITickable, IUpdatable, ILocalizationLanguageChangedListener
+    public class BeaconHUDElement : MonoBehaviour, ITickable, IUpdatable, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         private static readonly char[] s_EmptyChars = new char[1]; // COLD ALLOC: char[1] — empty TMP payload sentinel — owner: BeaconHUDElement
         private const int BeaconLabelTextCapacity = 96;
@@ -76,6 +76,8 @@ namespace Hecton8.UI
         private Camera _mainCamera;
         private Transform _cachedTransform;
         private bool _registered;
+        private bool _hotSwapListenerRegistered;
+        private IPlayerRuntimeContext _cachedPlayerContext;
         private GameLanguage _distanceLanguage = GameLanguage.English;
         private float _cameraRetryTimer;
         private float _idlePollTimer;
@@ -130,6 +132,8 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             LocalizationEvents.RegisterLanguageListener(this);
             RebuildLocalizationCache();
             RegisterToTick();
@@ -138,6 +142,7 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             LocalizationEvents.UnregisterLanguageListener(this);
+            TryUnregisterHotSwapListener();
             UnregisterFromTick();
             HideAllIcons();
         }
@@ -231,7 +236,7 @@ namespace Hecton8.UI
 
         private bool TryResolveObserverAup(out AbsoluteUniversePosition observerAup)
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             if (playerContext != null && playerContext.PlayerMovement != null)
             {
                 observerAup = playerContext.PlayerMovement.CurrentAup;
@@ -252,11 +257,48 @@ namespace Hecton8.UI
                 return false;
 
             _cameraRetryTimer = CameraRetryInterval;
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             if (playerContext != null)
                 _mainCamera = playerContext.PlayerCamera;
 
             return _mainCamera != null && _mainCamera.isActiveAndEnabled;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Player)
+                return;
+
+            _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+            _mainCamera = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerCamera : null;
+            _cameraRetryTimer = 0f;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedPlayerContext = GlobalRegistry.Player;
+            if (_mainCamera == null && _cachedPlayerContext != null)
+                _mainCamera = _cachedPlayerContext.PlayerCamera;
         }
 
         private void UpdateBeaconIcon(

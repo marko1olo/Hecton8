@@ -45,7 +45,7 @@ namespace Hecton8.Scavenging
             public byte weight;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 24)]
+        [StructLayout(LayoutKind.Sequential, Size = 24)]
         public struct LootRuntimeEntry
         {
             public int ItemHashId;
@@ -58,7 +58,7 @@ namespace Hecton8.Scavenging
             public uint Reserved3;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 24)]
+        [StructLayout(LayoutKind.Sequential, Size = 24)]
         public struct RuntimeDescriptor
         {
             public int StableHashId;

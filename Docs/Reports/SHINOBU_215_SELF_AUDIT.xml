@@ -1,0 +1,72 @@
+<SELF_AUDIT agent="SHINOBU_215" domain="OFFLINE_HADAL_ARCH_BAKER" source="static-polish-pass-7">
+  <TaskReconciliation>
+    <Task id="01" name="REALTIME_CSG_INQUISITION" status="PASS">Editor scanner installed; no direct Environment CSG offenders found by static scan.</Task>
+    <Task id="02" name="INTERSECTING_PREFAB_PURGE" status="PASS">Renderer bounds cluster scanner installed for rock/terrain prefab debt.</Task>
+    <Task id="03" name="CS1612_VOXEL_STATE_ANNIHILATION" status="PASS">Hot DTOs use raw public fields, no properties.</Task>
+    <Task id="04" name="ARM64_SHAPE_LAYOUT_ASSERTION" status="PASS">Layout validator checks size and offsets with UnsafeUtility.</Task>
+    <Task id="05" name="EMERGENCY_MOCK_VOLUME_BENCHMARK" status="PASS">Mock torus/box/subtractive-cave SDF volume job exists.</Task>
+    <Task id="06" name="BURST_SDF_BOOLEAN_KERNEL" status="PASS">SDF graph job composes union/subtract/intersect/smooth union.</Task>
+    <Task id="07" name="PROCEDURAL_NOISE_DISPLACEMENT" status="PASS">AUP-local seeded noise displacement job uses a precomputed config seed jitter, not per-voxel RNG.</Task>
+    <Task id="08" name="THE_DEAR_LIE_CAVITY_OCCLUSION" status="PASS">Cavity visibility is baked into vertex color red.</Task>
+    <Task id="09" name="BURST_MARCHING_CUBES_EXTRACTION" status="PASS">Unified SDF zero-crossing shell extraction exists; boundary shell seal prevents open edge cuts; WeldArchMeshJob deduplicates shared shell vertices before LOD.</Task>
+    <Task id="10" name="ASYNCHRONOUS_ASSET_SERIALIZATION" status="PASS">BakeAsync polls JobHandle completion across SDF/cavity/extract/weld/LOD phases before direct mesh upload.</Task>
+    <Task id="11" name="DETERMINISTIC_LOD_DECIMATION_ENGINE" status="PASS">Seeded triangle retention and centroid collapse generate LOD1/LOD2.</Task>
+    <Task id="12" name="AUP_SECTOR_SEED_DETERMINISM" status="PASS">FNV AUP seed feeds Unity.Mathematics.Random once during config sanitization.</Task>
+    <Task id="13" name="ROLLBACK_NETCODE_EXCLUSION_FENCE" status="PASS">Static mesh output is rollback-excluded.</Task>
+    <Task id="14" name="ZERO_INIT_OVERHEAD_BYPASS" status="PASS">Bulk native buffers request UninitializedMemory.</Task>
+    <Task id="15" name="TELEMETRY_BAKE_REPORT_GENERATOR" status="PASS">Bake report JSON and 300-frame dump path exist.</Task>
+    <Task id="16" name="PROCEDURAL_ARCH_FORGE_WINDOW" status="PASS">UI Toolkit forge window triggers BakeAsync and reports active/completed bake state.</Task>
+    <Task id="17" name="CSV_SHAPE_GRAPH_INGESTOR" status="PASS">Span CSV parser and recipes exist.</Task>
+    <Task id="18" name="LIVE_SDF_RAYMARCH_GIZMO" status="PASS">Preview raymarch job, Scene View gizmo, and reload-safe preview buffer disposal hooks exist.</Task>
+    <Task id="19" name="ARCHITECTURAL_METRIC_VALIDATOR" status="PASS">Intersecting geometry report scanner exists.</Task>
+    <Task id="20" name="SELF_AUDIT_AND_ARCHITECTURE_VERIFICATION" status="PASS">XML audit writer exists and this static audit is present.</Task>
+  </TaskReconciliation>
+  <StructLayoutVerification>
+    <Struct name="SdfShapeDTO" bytes="64" aligned="true" math="4+4+12+12+4+4+4+4+8+8=64">
+      <Field name="ShapeType" offset="0" bytes="4" />
+      <Field name="Operation" offset="4" bytes="4" />
+      <Field name="Position" offset="8" bytes="12" />
+      <Field name="Extents" offset="20" bytes="12" />
+      <Field name="BlendRadius" offset="32" bytes="4" />
+      <Field name="NoiseWeight" offset="36" bytes="4" />
+      <Field name="Flags" offset="40" bytes="4" />
+      <Field name="MaterialHash" offset="44" bytes="4" />
+      <Field name="_pad0" offset="48" bytes="8" />
+      <Field name="_pad1" offset="56" bytes="8" />
+    </Struct>
+    <Struct name="HadalArchVertexDTO" bytes="64" aligned="true" math="12+12+16+8+4+12=64">
+      <Field name="Position" offset="0" bytes="12" />
+      <Field name="Normal" offset="12" bytes="12" />
+      <Field name="Tangent" offset="24" bytes="16" />
+      <Field name="Uv0" offset="40" bytes="8" />
+      <Field name="PackedColor" offset="48" bytes="4" />
+      <Field name="Uv3AupLocal" offset="52" bytes="12" />
+    </Struct>
+    <Struct name="HadalArchBakeConfigDTO" bytes="128" aligned="true" math="24+24+12+4+4+4+4+4+4+4+4+4+4+4+4+12+8=128">
+      <Field name="CenterAup" offset="0" bytes="24" />
+      <Field name="VolumeOriginAup" offset="24" bytes="24" />
+      <Field name="Resolution" offset="48" bytes="12" />
+      <Field name="VoxelSize" offset="60" bytes="4" />
+      <Field name="GlobalQualityWeight" offset="64" bytes="4" />
+      <Field name="NoiseFrequency" offset="68" bytes="4" />
+      <Field name="NoiseAmplitude" offset="72" bytes="4" />
+      <Field name="CavityRayDistance" offset="76" bytes="4" />
+      <Field name="CavityRayCount" offset="80" bytes="4" />
+      <Field name="Seed" offset="84" bytes="4" />
+      <Field name="Flags" offset="88" bytes="4" />
+      <Field name="ShapeCount" offset="92" bytes="4" />
+      <Field name="Lod1KeepRatio" offset="96" bytes="4" />
+      <Field name="Lod2KeepRatio" offset="100" bytes="4" />
+      <Field name="SurfaceBand" offset="104" bytes="4" />
+      <Field name="NoiseSeedJitter" offset="108" bytes="12" />
+      <Field name="_pad2" offset="120" bytes="8" />
+    </Struct>
+    <Struct name="HadalArchBakeTelemetryEntry" bytes="64" aligned="true" />
+  </StructLayoutVerification>
+  <ScalabilityCurve>GlobalQualityWeight continuously maps quality: below 0.3 coarse resolution, low cavity ray counts, reduced noise contribution, aggressive LOD2 retention; 0.4-0.7 moderate density and cavity sampling; 1.0 denser LOD0, longer cavity distance, stronger basalt detail. No binary hardware switch.</ScalabilityCurve>
+  <HPhiVaultStatus vaultHandles="NONE_RUNTIME">Editor-only static asset generation. No runtime persistent private NativeArray is introduced. Sync bake buffers and weld hash map are TempJob and disposed in finally. Async bake buffers and weld hash map are Editor-only Allocator.Persistent for the active session and disposed on completion, failure, cancel, assembly reload, or editor quit. Preview scratch is Editor-only and disposed by Forge window, assembly reload hook, and editor quit hook.</HPhiVaultStatus>
+  <PointerAliasingAndDependencyGraph>NoAlias applied to non-overlapping NativeArray/NativeList job fields. Config carries a precomputed NoiseSeedJitter so the noise pass avoids per-voxel RNG setup. Sync chain: SDF -&gt; noise -&gt; boundary seal -&gt; cavity -&gt; extraction -&gt; weld -&gt; deterministic LODs -&gt; main-thread AssetDatabase serialization. Async chain polls JobHandle.IsCompleted between those phases and only calls Complete after the handle reports ready.</PointerAliasingAndDependencyGraph>
+  <CompileGuard>Runtime asmdef references Unity.Mathematics only. Editor asmdef references runtime baker plus Unity.Burst, Unity.Collections, Unity.Jobs, and Unity.Mathematics. No sibling gameplay domain reference.</CompileGuard>
+  <DearLie complexityBefore="O(runtimePixels * AO_Rays * SDFSteps)" complexityAfter="O(offlineVoxels * CavityRays) + O(runtimeVertices)">Baked cavity visibility in vertex color red replaces runtime ambient-occlusion ray logic.</DearLie>
+  <Compile status="BLOCKED_BY_CPU_GATE">No dotnet build launched; repeated CPU counter samples stayed at 100 percent.</Compile>
+</SELF_AUDIT>

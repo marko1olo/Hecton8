@@ -440,8 +440,9 @@ public static class CaveGraphGenerator
             {
                 if (tunnelList.Length >= MAX_TUNNELS) return;
 
-                // Skip if rooms are too far apart
-                float dist = math.length(rooms[i].position - rooms[j].position);
+                // Skip if rooms are too far apart. These are local generator coordinates, not Transform authority.
+                float3 roomDelta = rooms[i].position - rooms[j].position;
+                float dist = math.length(roomDelta);
                 float combinedRadii = math.cmax(rooms[i].radii) + math.cmax(rooms[j].radii);
 
                 // Only connect rooms that are within ~3x their combined radii

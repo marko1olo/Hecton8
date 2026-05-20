@@ -35,7 +35,7 @@ namespace Hecton8.Editor
             if (!File.Exists(jsonPath))
                 throw new FileNotFoundException("Localization source JSON was not found.", jsonPath);
 
-            Dictionary<string, string> table = LocalizationManager.ParseFlatJsonTable(File.ReadAllText(jsonPath, Encoding.UTF8));
+            Dictionary<string, string> table = LocalizationEditorJsonTableParser.ParseFlatJsonTable(File.ReadAllText(jsonPath, Encoding.UTF8));
             var keys = new List<string>(table.Keys.Count);
             foreach (KeyValuePair<string, string> entry in table)
             {

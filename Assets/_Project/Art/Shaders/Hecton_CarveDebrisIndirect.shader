@@ -36,6 +36,7 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl"
+            #include "Assets/_Project/Art/Shaders/Hecton_CustomLightProbeGrid.hlsl"
 
             StructuredBuffer<float4> _CarveDebrisRead;
             StructuredBuffer<float4> _CarveDebrisVelocityRead;
@@ -251,7 +252,7 @@ Shader "Hecton8/VFX/CarveDebrisIndirect"
             half3 EvaluateDebrisLighting(float3 positionWS, float4 positionCS, half3 normalWS, half3 viewDirWS, half3 albedo)
             {
                 half caveAmbientFactor = (half)HectonCoreLitEvaluateCaveAmbientFactor(positionWS, normalWS);
-                half3 color = SampleSH(normalWS) * albedo * caveAmbientFactor;
+                half3 color = H8CustomLightProbeResolveAmbient(positionWS, normalWS, half3(0.015h, 0.025h, 0.035h)) * albedo * caveAmbientFactor;
                 Light mainLight;
                 half mainShadow = 1.0h;
                 [branch]

@@ -121,6 +121,7 @@ namespace Hecton8.Editor.Build
 
             bool hasOpenXr = ManifestHas(projectRoot, "com.unity.xr.openxr");
             bool hasXrManagement = ManifestHas(projectRoot, "com.unity.xr.management");
+            bool hasMetaOpenXr = ManifestHas(projectRoot, "com.unity.xr.meta-openxr");
             bool qualityExcludesAndroid = FileContains(projectRoot, "ProjectSettings/QualitySettings.asset", "- Android");
 
             AppendRow(report, "Windows 10/11 x64", windowsModule && windowsSupported ? "PASS" : "BLOCKED",
@@ -132,9 +133,9 @@ namespace Hecton8.Editor.Build
             AppendRow(report, "macOS", macModule && macSupported ? "WARN" : "BLOCKED",
                 macModule ? "Mac Build Support installed" : "Install Mac Build Support in Unity Hub",
                 "Native dylib parity, Metal render validation, notarization/signing path required.");
-            AppendRow(report, "Quest/standalone Android XR", androidModule && androidSupported && hasOpenXr && hasXrManagement && !qualityExcludesAndroid ? "WARN" : "BLOCKED",
+            AppendRow(report, "Quest/standalone Android XR", androidModule && androidSupported && hasOpenXr && hasXrManagement && hasMetaOpenXr && !qualityExcludesAndroid ? "WARN" : "BLOCKED",
                 androidModule ? "Android Build Support installed" : "Install Android Build Support plus SDK/NDK/OpenJDK in Unity Hub",
-                ResolveQuestBlocker(hasOpenXr, hasXrManagement, qualityExcludesAndroid));
+                ResolveQuestBlocker(hasOpenXr, hasXrManagement, hasMetaOpenXr, qualityExcludesAndroid));
             AppendRow(report, "PC VR streaming", windowsModule && windowsSupported && hasOpenXr && hasXrManagement ? "WARN" : "BLOCKED",
                 windowsModule ? "Windows module present" : "Install Windows Build Support",
                 hasOpenXr && hasXrManagement ? "Needs OpenXR provider config and headset runtime smoke test." : "Install XR Management and OpenXR packages, then configure providers.");
@@ -151,6 +152,7 @@ namespace Hecton8.Editor.Build
             bool androidModule = HasPlaybackEngine("AndroidPlayer");
             bool hasOpenXr = ManifestHas(projectRoot, "com.unity.xr.openxr");
             bool hasXrManagement = ManifestHas(projectRoot, "com.unity.xr.management");
+            bool hasMetaOpenXr = ManifestHas(projectRoot, "com.unity.xr.meta-openxr");
 
             report.AppendLine("## Unity Hub And Package Install Guidance");
             report.AppendLine();
@@ -166,6 +168,8 @@ namespace Hecton8.Editor.Build
                 hasXrManagement ? "Manifest contains com.unity.xr.management." : "Required before PC VR or standalone VR claims.");
             AppendRow(report, "OpenXR package", hasOpenXr ? "INSTALLED" : "P0",
                 hasOpenXr ? "Manifest contains com.unity.xr.openxr." : "Required for the first sane PC VR streaming path.");
+            AppendRow(report, "Unity Meta OpenXR package", hasMetaOpenXr ? "INSTALLED" : "P0",
+                hasMetaOpenXr ? "Manifest contains com.unity.xr.meta-openxr." : "Required before claiming Quest-specific OpenXR feature readiness.");
             AppendRow(report, "iOS / visionOS / tvOS Hub modules", "DEFER",
                 "Do not install unless Apple targets are explicitly started; Windows alone cannot provide honest run/sign/notarization proof.");
             AppendRow(report, "UWP / Web / Dedicated Server modules", "DEFER",
@@ -180,12 +184,16 @@ namespace Hecton8.Editor.Build
             bool hasInputSystem = ManifestHas(projectRoot, "com.unity.inputsystem");
             bool hasOpenXr = ManifestHas(projectRoot, "com.unity.xr.openxr");
             bool hasXrManagement = ManifestHas(projectRoot, "com.unity.xr.management");
+            bool hasMetaOpenXr = ManifestHas(projectRoot, "com.unity.xr.meta-openxr");
             bool xrProviderListEmpty = FileContains(projectRoot, "ProjectSettings/XRSettings.asset", "\"m_SettingKeys\"");
             bool androidExcluded = FileContains(projectRoot, "ProjectSettings/QualitySettings.asset", "- Android");
             bool iosExcluded = FileContains(projectRoot, "ProjectSettings/QualitySettings.asset", "- iPhone");
             bool androidTemplateId = FileContains(projectRoot, "ProjectSettings/ProjectSettings.asset", "com.UnityTechnologies.com.unity.template.urpblank");
             bool androidTargetSdkAutomatic = FileContains(projectRoot, "ProjectSettings/ProjectSettings.asset", "AndroidTargetSdkVersion: 0");
             bool noBuildTargetVrSettings = FileContains(projectRoot, "ProjectSettings/ProjectSettings.asset", "m_BuildTargetVRSettings: []");
+            bool customMainManifest = FileContains(projectRoot, "ProjectSettings/ProjectSettings.asset", "useCustomMainManifest: 1");
+            bool customMainGradleTemplate = FileContains(projectRoot, "ProjectSettings/ProjectSettings.asset", "useCustomMainGradleTemplate: 1");
+            bool arm64Only = FileContains(projectRoot, "ProjectSettings/ProjectSettings.asset", "AndroidTargetArchitectures: 2");
             bool hasAndroidVrManifest = HasRelativeFile(projectRoot, "Assets/Plugins/Android/AndroidManifest.xml");
             bool hasAndroidVrHeadtracking = FileContains(projectRoot, "Assets/Plugins/Android/AndroidManifest.xml", "android.hardware.vr.headtracking");
             bool hasAndroidVibratePermission = FileContains(projectRoot, "Assets/Plugins/Android/AndroidManifest.xml", "android.permission.VIBRATE");
@@ -199,11 +207,15 @@ namespace Hecton8.Editor.Build
             AppendRow(report, "Input System package", hasInputSystem ? "PASS" : "BLOCKED", hasInputSystem ? "manifest contains com.unity.inputsystem" : "manifest missing com.unity.inputsystem");
             AppendRow(report, "XR Management package", hasXrManagement ? "PASS" : "BLOCKED", hasXrManagement ? "manifest contains com.unity.xr.management" : "manifest missing com.unity.xr.management");
             AppendRow(report, "OpenXR package", hasOpenXr ? "PASS" : "BLOCKED", hasOpenXr ? "manifest contains com.unity.xr.openxr" : "manifest missing com.unity.xr.openxr");
+            AppendRow(report, "Unity Meta OpenXR package", hasMetaOpenXr ? "PASS" : "WARN", hasMetaOpenXr ? "manifest contains com.unity.xr.meta-openxr" : "Quest-specific provider package is absent");
             AppendRow(report, "Legacy XR settings", xrProviderListEmpty ? "WARN" : "PASS", xrProviderListEmpty ? "XRSettings.asset is legacy/no provider evidence" : "XRSettings.asset has provider evidence");
             AppendRow(report, "Modern XR loader list", noBuildTargetVrSettings ? "BLOCKED" : "PASS", noBuildTargetVrSettings ? "m_BuildTargetVRSettings is empty" : "build-target XR settings are present");
             AppendRow(report, "Android quality inclusion", androidExcluded ? "BLOCKED" : "PASS", androidExcluded ? "QualitySettings excludes Android" : "QualitySettings does not exclude Android");
             AppendRow(report, "Android package identity", androidTemplateId ? "BLOCKED" : "PASS", androidTemplateId ? "ProjectSettings still uses Unity template Android identifier" : "Android identifier is not the Unity template id");
             AppendRow(report, "Android target SDK policy", androidTargetSdkAutomatic ? "BLOCKED" : "PASS", androidTargetSdkAutomatic ? "AndroidTargetSdkVersion is automatic (0)" : "AndroidTargetSdkVersion is explicit");
+            AppendRow(report, "Android custom manifest enabled", customMainManifest ? "PASS" : "BLOCKED", customMainManifest ? "useCustomMainManifest is enabled" : "AndroidManifest.xml exists but ProjectSettings will not use it");
+            AppendRow(report, "Android custom Gradle template enabled", customMainGradleTemplate ? "PASS" : "WARN", customMainGradleTemplate ? "useCustomMainGradleTemplate is enabled" : "mainTemplate.gradle exists but ProjectSettings will not use it");
+            AppendRow(report, "Android ARM64-only target", arm64Only ? "PASS" : "BLOCKED", arm64Only ? "AndroidTargetArchitectures: 2" : "Quest/PICO standalone must be ARM64-only");
             AppendRow(report, "Android VR manifest", hasAndroidVrManifest && hasAndroidVrHeadtracking && hasAndroidVibratePermission ? "PASS" : "BLOCKED", hasAndroidVrManifest ? "manifest present; headtracking=" + hasAndroidVrHeadtracking + ", vibrate=" + hasAndroidVibratePermission : "Assets/Plugins/Android/AndroidManifest.xml missing");
             AppendRow(report, "iOS quality inclusion", iosExcluded ? "WARN" : "PASS", iosExcluded ? "QualitySettings excludes iPhone" : "QualitySettings does not exclude iPhone");
             report.AppendLine();
@@ -280,7 +292,7 @@ namespace Hecton8.Editor.Build
             report.AppendLine();
             report.AppendLine("1. Hub-install Android Build Support with OpenJDK and Android SDK/NDK before Android or standalone headset attempts.");
             report.AppendLine("2. Hub-install Mac Build Support only for compile-only macOS artifacts; real macOS validation still needs Mac hardware/Xcode.");
-            report.AppendLine("3. Add XR Management and OpenXR packages before claiming standalone or streamed VR support.");
+            report.AppendLine("3. Configure XR Plug-in Management/OpenXR provider settings before claiming standalone or streamed VR support.");
             report.AppendLine("4. Create Addressables project data and groups before claiming streaming readiness.");
             report.AppendLine("5. Provide Linux/macOS/Android native plugin equivalents or code-level fallbacks for every Windows-only native dependency.");
             report.AppendLine("6. Run separate player build, launch, Play Mode, profiler, GC, memory, and input-device smoke tests per target.");
@@ -300,12 +312,14 @@ namespace Hecton8.Editor.Build
             report.AppendLine();
         }
 
-        private static string ResolveQuestBlocker(bool hasOpenXr, bool hasXrManagement, bool qualityExcludesAndroid)
+        private static string ResolveQuestBlocker(bool hasOpenXr, bool hasXrManagement, bool hasMetaOpenXr, bool qualityExcludesAndroid)
         {
             if (!hasXrManagement)
                 return "XR Management package missing.";
             if (!hasOpenXr)
                 return "OpenXR package missing.";
+            if (!hasMetaOpenXr)
+                return "Meta OpenXR package missing for Quest-specific provider proof.";
             if (qualityExcludesAndroid)
                 return "QualitySettings excludes Android.";
             return "Needs Android player build, Quest runtime smoke test, input/haptics profile, thermals, and VRAM proof.";

@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine.Scripting;
 
@@ -15,7 +14,7 @@ namespace Hecton8.Core.Contracts.Signals
         private const uint LcgC = 1013904223u;
 
         public static int InjectAcousticBurst(
-            in AbsoluteUniversePosition originAup,
+            in float3 runtimeOrigin,
             int count,
             uint sourceId,
             float radiusMeters,
@@ -28,16 +27,18 @@ namespace Hecton8.Core.Contracts.Signals
             float safeIntensity = math.saturate(math.isfinite(intensity01) ? intensity01 : 0f);
             uint state = seed != 0u ? seed : Mix(sourceId ^ 0xA60057C1u);
             int pushed = 0;
+            if (!math.all(math.isfinite(runtimeOrigin)))
+                return 0;
 
             SignalBus<AcousticPingSignal>.EnsureInitialized();
             for (int i = 0; i < safeCount; i++)
             {
                 float3 offset = ResolveDeterministicOffset(ref state, 1.0f);
-                AbsoluteUniversePosition pingAup = AbsoluteUniversePosition.OffsetMeters(
-                    in originAup,
-                    new double3(offset.x, offset.y, offset.z));
+                float3 runtimePoint = runtimeOrigin + offset;
                 AcousticPingSignal signal = default;
-                signal.PositionAup = pingAup;
+                if (!global::Hecton8.Core.GlobalSignals.TryRuntimePositionToAup(runtimePoint, ref signal.PositionAup))
+                    continue;
+
                 signal.RadiusMeters = safeRadius;
                 signal.Intensity01 = safeIntensity;
                 signal.SourceId = sourceId;

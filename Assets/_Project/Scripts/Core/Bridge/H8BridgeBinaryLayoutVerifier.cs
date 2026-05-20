@@ -53,7 +53,7 @@ namespace Hecton8.Core.Bridge
 
         private static void VerifyPrefabMapping()
         {
-            AssertSize<H8PrefabMappingEntry>(H8BridgeTypeHashes.PrefabMapping, 48);
+            AssertSize<H8PrefabMappingEntry>(H8BridgeTypeHashes.PrefabMapping, 64);
             AssertOffset<H8PrefabMappingEntry>(H8BridgeTypeHashes.PrefabMapping, nameof(H8PrefabMappingEntry.HashID), 0);
             AssertOffset<H8PrefabMappingEntry>(H8BridgeTypeHashes.PrefabMapping, nameof(H8PrefabMappingEntry.AddressHash), 4);
             AssertOffset<H8PrefabMappingEntry>(H8BridgeTypeHashes.PrefabMapping, nameof(H8PrefabMappingEntry.LoreHash), 8);
@@ -91,7 +91,7 @@ namespace Hecton8.Core.Bridge
 
         private static void VerifyFacadeTelemetry()
         {
-            AssertSize<H8FacadeTelemetryEntry>(H8BridgeTypeHashes.FacadeTelemetry, 40);
+            AssertSize<H8FacadeTelemetryEntry>(H8BridgeTypeHashes.FacadeTelemetry, 64);
             AssertOffset<H8FacadeTelemetryEntry>(H8BridgeTypeHashes.FacadeTelemetry, nameof(H8FacadeTelemetryEntry.Frame), 0);
             AssertOffset<H8FacadeTelemetryEntry>(H8BridgeTypeHashes.FacadeTelemetry, nameof(H8FacadeTelemetryEntry.FacadeHash), 4);
             AssertOffset<H8FacadeTelemetryEntry>(H8BridgeTypeHashes.FacadeTelemetry, nameof(H8FacadeTelemetryEntry.FieldHash), 8);

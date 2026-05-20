@@ -544,21 +544,21 @@ namespace Hecton8.SaveSystem
 
     [Serializable]
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct PlayerKinematicStateDTO
     {
-        public float posX;
-        public float posY;
-        public float posZ;
-        public float rotX;
-        public float rotY;
-        public float rotZ;
-        public float rotW;
-        public float velX;
-        public float velY;
-        public float velZ;
-        public int flags;
-        private int _pad0;
+        [FieldOffset(0)] public float posX;
+        [FieldOffset(4)] public float posY;
+        [FieldOffset(8)] public float posZ;
+        [FieldOffset(12)] public float rotX;
+        [FieldOffset(16)] public float rotY;
+        [FieldOffset(20)] public float rotZ;
+        [FieldOffset(24)] public float rotW;
+        [FieldOffset(28)] public float velX;
+        [FieldOffset(32)] public float velY;
+        [FieldOffset(36)] public float velZ;
+        [FieldOffset(40)] public int flags;
+        [FieldOffset(44)] private int _pad0;
 
         public static PlayerKinematicStateDTO FromPlayerStats(in PlayerStatsDTO stats)
         {
@@ -594,19 +594,19 @@ namespace Hecton8.SaveSystem
 
     [Serializable]
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct ExternalScavengerSiteDTO
     {
-        public int chunkX;
-        public int chunkY;
-        public int chunkZ;
-        public sbyte offsetX;
-        public sbyte offsetY;
-        public sbyte offsetZ;
-        public byte quantizedRadius;
-        public float remainingTime;
-        public uint seed;
-        private long _pad0;
+        [FieldOffset(0)] public int chunkX;
+        [FieldOffset(4)] public int chunkY;
+        [FieldOffset(8)] public int chunkZ;
+        [FieldOffset(12)] public sbyte offsetX;
+        [FieldOffset(13)] public sbyte offsetY;
+        [FieldOffset(14)] public sbyte offsetZ;
+        [FieldOffset(15)] public byte quantizedRadius;
+        [FieldOffset(16)] public float remainingTime;
+        [FieldOffset(20)] public uint seed;
+        [FieldOffset(24)] private long _pad0;
 
         public bool IsValid()
         {
@@ -686,22 +686,22 @@ namespace Hecton8.SaveSystem
 
     [Serializable]
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct InventoryShadowDTO
     {
         public const byte FlagHasPayload = 1 << 0;
         public const byte SchemaVersion = 1;
 
-        public int cellCount;
-        public int payloadLength;
-        public uint payloadHash;
-        public int gridColumns;
-        public int gridRows;
-        public float totalWeight;
-        public byte flags;
-        public byte schemaVersion;
-        public ushort reserved0;
-        private int _pad0;
+        [FieldOffset(0)] public int cellCount;
+        [FieldOffset(4)] public int payloadLength;
+        [FieldOffset(8)] public uint payloadHash;
+        [FieldOffset(12)] public int gridColumns;
+        [FieldOffset(16)] public int gridRows;
+        [FieldOffset(20)] public float totalWeight;
+        [FieldOffset(24)] public byte flags;
+        [FieldOffset(25)] public byte schemaVersion;
+        [FieldOffset(26)] public ushort reserved0;
+        [FieldOffset(28)] private int _pad0;
 
         public static InventoryShadowDTO FromInventory(
             in InventoryDTO inventory,
@@ -750,85 +750,85 @@ namespace Hecton8.SaveSystem
 
     [Serializable]
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct ProceduralFaunaStateDTO
     {
         public const byte FlagLargeThreatZone = 1 << 0;
         public const byte FlagBlocked = 1 << 1;
 
-        public long runtimeKey;
-        public float cooldownUntilPlayTime;
-        public byte flags;
-        private byte _pad0;
-        private ushort _pad1;
+        [FieldOffset(0)] public long runtimeKey;
+        [FieldOffset(8)] public float cooldownUntilPlayTime;
+        [FieldOffset(12)] public byte flags;
+        [FieldOffset(13)] private byte _pad0;
+        [FieldOffset(14)] private ushort _pad1;
     }
 
     [Serializable]
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 112)]
+    [StructLayout(LayoutKind.Explicit, Size = 112)]
     public struct HibernatedFaunaStateDTO
     {
         public const byte FlagLargeThreat = 1 << 0;
 
-        public int speciesId;
-        public int biomeIndex;
-        public int creatureTypeIndex;
-        public float health;
-        public AbsoluteUniversePositionBlit128 position;
-        public float rotationX;
-        public float rotationY;
-        public float rotationZ;
-        public float rotationW;
-        public float linearVelocityX;
-        public float linearVelocityY;
-        public float linearVelocityZ;
-        public float angularVelocityX;
-        public float angularVelocityY;
-        public float angularVelocityZ;
-        public uint uniqueInstanceUid;
-        public byte flags;
-        private byte _pad0;
-        private ushort _pad1;
+        [FieldOffset(0)] public int speciesId;
+        [FieldOffset(4)] public int biomeIndex;
+        [FieldOffset(8)] public int creatureTypeIndex;
+        [FieldOffset(12)] public float health;
+        [FieldOffset(16)] public AbsoluteUniversePositionBlit128 position;
+        [FieldOffset(64)] public float rotationX;
+        [FieldOffset(68)] public float rotationY;
+        [FieldOffset(72)] public float rotationZ;
+        [FieldOffset(76)] public float rotationW;
+        [FieldOffset(80)] public float linearVelocityX;
+        [FieldOffset(84)] public float linearVelocityY;
+        [FieldOffset(88)] public float linearVelocityZ;
+        [FieldOffset(92)] public float angularVelocityX;
+        [FieldOffset(96)] public float angularVelocityY;
+        [FieldOffset(100)] public float angularVelocityZ;
+        [FieldOffset(104)] public uint uniqueInstanceUid;
+        [FieldOffset(108)] public byte flags;
+        [FieldOffset(109)] private byte _pad0;
+        [FieldOffset(110)] private ushort _pad1;
     }
 
     [Serializable]
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct ProceduralGeologySeamStateDTO
     {
-        public long runtimeKey;
-        public int chunkX;
-        public int chunkZ;
-        public float absoluteTerrainHeight;
-        public float absoluteSeamHeight;
-        public float seamBlendRadius;
-        public float terrainBlendWeight;
-        public float caveBlendWeight;
-        public float absolutePositionX;
-        public float absolutePositionY;
-        public float absolutePositionZ;
-        public float absoluteVoxelCenterX;
-        public float absoluteVoxelCenterY;
-        public float absoluteVoxelCenterZ;
-        private int _pad0;
+        [FieldOffset(0)] public long runtimeKey;
+        [FieldOffset(8)] public int chunkX;
+        [FieldOffset(12)] public int chunkZ;
+        [FieldOffset(16)] public float absoluteTerrainHeight;
+        [FieldOffset(20)] public float absoluteSeamHeight;
+        [FieldOffset(24)] public float seamBlendRadius;
+        [FieldOffset(28)] public float terrainBlendWeight;
+        [FieldOffset(32)] public float caveBlendWeight;
+        [FieldOffset(36)] public float absolutePositionX;
+        [FieldOffset(40)] public float absolutePositionY;
+        [FieldOffset(44)] public float absolutePositionZ;
+        [FieldOffset(48)] public float absoluteVoxelCenterX;
+        [FieldOffset(52)] public float absoluteVoxelCenterY;
+        [FieldOffset(56)] public float absoluteVoxelCenterZ;
+        [FieldOffset(60)] private int _pad0;
     }
 
     [Serializable]
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct ProceduralGeologyCaveEntranceDTO
     {
-        public long runtimeKey;
-        public float surfacePositionX;
-        public float surfacePositionY;
-        public float surfacePositionZ;
-        public float inwardDirectionX;
-        public float inwardDirectionY;
-        public float inwardDirectionZ;
-        public float radius;
-        public float funnelLength;
-        public float innerRadius;
-        private int _pad0;
+        [FieldOffset(0)] public long runtimeKey;
+        [FieldOffset(8)] public float surfacePositionX;
+        [FieldOffset(12)] public float surfacePositionY;
+        [FieldOffset(16)] public float surfacePositionZ;
+        [FieldOffset(20)] public float inwardDirectionX;
+        [FieldOffset(24)] public float inwardDirectionY;
+        [FieldOffset(28)] public float inwardDirectionZ;
+        [FieldOffset(32)] public float radius;
+        [FieldOffset(36)] public float funnelLength;
+        [FieldOffset(40)] public float innerRadius;
+        [FieldOffset(44)] private int _pad0;
     }
 
     [Serializable]
@@ -915,23 +915,23 @@ namespace Hecton8.SaveSystem
 
     [Serializable]
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct HabitatFloodStateDTO
     {
         public const byte FlagFlooded = 1 << 0;
         public const byte FlagInfested = 1 << 1;
 
-        public int moduleHashId;
-        public float integrity;
-        public float repairIntegrityCap;
-        public float airReserveNormalized;
-        public float co2Normalized;
-        public float floodedReefFloodSeconds;
-        public byte flags;
-        public byte failureMode;
-        public byte health;
-        public byte reserved0;
-        private int _pad0;
+        [FieldOffset(0)] public int moduleHashId;
+        [FieldOffset(4)] public float integrity;
+        [FieldOffset(8)] public float repairIntegrityCap;
+        [FieldOffset(12)] public float airReserveNormalized;
+        [FieldOffset(16)] public float co2Normalized;
+        [FieldOffset(20)] public float floodedReefFloodSeconds;
+        [FieldOffset(24)] public byte flags;
+        [FieldOffset(25)] public byte failureMode;
+        [FieldOffset(26)] public byte health;
+        [FieldOffset(27)] public byte reserved0;
+        [FieldOffset(28)] private int _pad0;
 
         public static HabitatFloodStateDTO FromModule(in ModuleDTO module, int stableModuleHashId)
         {
@@ -956,25 +956,25 @@ namespace Hecton8.SaveSystem
     /// </summary>
     [Serializable]
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct ModuleBlitDTO
     {
-        public int prefabHashId;
-        public int moduleHashId;
-        public long aupGridX;
-        public long aupGridY;
-        public long aupGridZ;
-        public float aupLocalX;
-        public float aupLocalY;
-        public float aupLocalZ;
-        public float rotX;
-        public float rotY;
-        public float rotZ;
-        public float rotW;
-        public byte health;
-        public byte flags;
-        public byte failureMode;
-        public byte reserved;
+        [FieldOffset(0)] public int prefabHashId;
+        [FieldOffset(4)] public int moduleHashId;
+        [FieldOffset(8)] public long aupGridX;
+        [FieldOffset(16)] public long aupGridY;
+        [FieldOffset(24)] public long aupGridZ;
+        [FieldOffset(32)] public float aupLocalX;
+        [FieldOffset(36)] public float aupLocalY;
+        [FieldOffset(40)] public float aupLocalZ;
+        [FieldOffset(44)] public float rotX;
+        [FieldOffset(48)] public float rotY;
+        [FieldOffset(52)] public float rotZ;
+        [FieldOffset(56)] public float rotW;
+        [FieldOffset(60)] public byte health;
+        [FieldOffset(61)] public byte flags;
+        [FieldOffset(62)] public byte failureMode;
+        [FieldOffset(63)] public byte reserved;
     }
 
     [Serializable]
@@ -1308,21 +1308,21 @@ namespace Hecton8.SaveSystem
 
     [Serializable]
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct PDAContextualAdvisoryDTO
     {
-        public int issuedFlags;
-        public int oxygenDeathCount;
-        public int inventoryFullAttemptCount;
-        public int pressureDeathCount;
-        public int baseEmergencyCount;
-        public int staleAirIncidentCount;
-        public int coldStressIncidentCount;
-        public int heatStressIncidentCount;
-        public float deepExposureSeconds;
-        public float coldStressExposureSeconds;
-        public float heatStressExposureSeconds;
-        private int _pad0;
+        [FieldOffset(0)] public int issuedFlags;
+        [FieldOffset(4)] public int oxygenDeathCount;
+        [FieldOffset(8)] public int inventoryFullAttemptCount;
+        [FieldOffset(12)] public int pressureDeathCount;
+        [FieldOffset(16)] public int baseEmergencyCount;
+        [FieldOffset(20)] public int staleAirIncidentCount;
+        [FieldOffset(24)] public int coldStressIncidentCount;
+        [FieldOffset(28)] public int heatStressIncidentCount;
+        [FieldOffset(32)] public float deepExposureSeconds;
+        [FieldOffset(36)] public float coldStressExposureSeconds;
+        [FieldOffset(40)] public float heatStressExposureSeconds;
+        [FieldOffset(44)] private int _pad0;
     }
 
     [Serializable]
@@ -1444,13 +1444,13 @@ namespace Hecton8.SaveSystem
 
     [Serializable]
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct EnvironmentalStrainDTO
     {
-        public float microplasticStrain;
-        public float generalPollution;
-        public int recycledPlasticItemCount;
-        public int discardedItemCount;
+        [FieldOffset(0)] public float microplasticStrain;
+        [FieldOffset(4)] public float generalPollution;
+        [FieldOffset(8)] public int recycledPlasticItemCount;
+        [FieldOffset(12)] public int discardedItemCount;
     }
 
     [Serializable]
@@ -1577,11 +1577,11 @@ namespace Hecton8.SaveSystem
 
     [Serializable]
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct ModuleGraphEdgeDTO
     {
-        public int sourceNodeIndex;
-        public int destinationNodeIndex;
-        private long _pad0;
+        [FieldOffset(0)] public int sourceNodeIndex;
+        [FieldOffset(4)] public int destinationNodeIndex;
+        [FieldOffset(8)] private long _pad0;
     }
 }

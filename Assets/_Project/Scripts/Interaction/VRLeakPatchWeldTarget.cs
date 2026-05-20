@@ -1,7 +1,6 @@
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
-using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -202,30 +201,19 @@ namespace Hecton8.Interaction
             if (safeRadiusMeters <= 0f || !IsFiniteVector(impulseEvent.RuntimePosition))
                 return;
 
-            if (!TryResolveLeakAup(out AbsoluteUniversePosition leakAup))
+            if (!TryResolveLeakRuntimePosition(out Vector3 leakPosition))
                 return;
 
-            float radiusSq = safeRadiusMeters * safeRadiusMeters;
-            float3 toLeak;
-            if (safeRadiusMeters > 50f)
-            {
-                AbsoluteUniversePosition impulseAup = AbsoluteUniversePosition.FromRuntimePosition(impulseEvent.RuntimePosition);
-                double distanceSq = AbsoluteUniversePosition.DistanceSq(in leakAup, in impulseAup);
-                if (distanceSq <= 0.000001d || distanceSq > radiusSq)
-                    return;
+            double radiusSq = (double)safeRadiusMeters * safeRadiusMeters;
+            double3 runtimeDelta = new double3(
+                (double)leakPosition.x - impulseEvent.RuntimePosition.x,
+                (double)leakPosition.y - impulseEvent.RuntimePosition.y,
+                (double)leakPosition.z - impulseEvent.RuntimePosition.z);
+            double lengthSq = math.lengthsq(runtimeDelta);
+            if (lengthSq <= 0.000001d || lengthSq > radiusSq || !math.all(math.isfinite(runtimeDelta)))
+                return;
 
-                toLeak = AbsoluteUniversePosition.ToCameraRelativeFloat3(in leakAup, in impulseAup);
-            }
-            else
-            {
-                Vector3 leakPosition = (Vector3)leakAup.ToRuntimeFloat3();
-                Vector3 runtimeDelta = leakPosition - impulseEvent.RuntimePosition;
-                float lengthSq = runtimeDelta.sqrMagnitude;
-                if (lengthSq <= 0.000001f || lengthSq > radiusSq)
-                    return;
-
-                toLeak = new float3(runtimeDelta.x, runtimeDelta.y, runtimeDelta.z);
-            }
+            float3 toLeak = new float3((float)runtimeDelta.x, (float)runtimeDelta.y, (float)runtimeDelta.z);
 
             float directionLengthSq = math.lengthsq(toLeak);
             if (directionLengthSq <= 0.000001f || !math.all(math.isfinite(toLeak)))
@@ -305,18 +293,17 @@ namespace Hecton8.Interaction
 
             float safeRadius = ResolveSafePatchContactRadiusMeters();
             double radiusSq = (double)safeRadius * safeRadius;
-            AbsoluteUniversePosition pointAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePoint);
-            if (!TryResolveLeakAup(out AbsoluteUniversePosition leakAup))
+            if (!TryResolveLeakRuntimePosition(out Vector3 leakPosition))
                 return false;
 
-            return AbsoluteUniversePosition.DistanceSq(in pointAup, in leakAup) <= radiusSq;
+            return RuntimeDistanceSq(runtimePoint, leakPosition) <= radiusSq;
         }
 
-        private bool TryResolveLeakAup(out AbsoluteUniversePosition leakAup)
+        private bool TryResolveLeakRuntimePosition(out Vector3 leakPosition)
         {
             if (leakAnchor != null && IsFiniteVector(leakAnchor.position))
             {
-                leakAup = AbsoluteUniversePosition.FromRuntimePosition(leakAnchor.position);
+                leakPosition = leakAnchor.position;
                 return true;
             }
 
@@ -325,18 +312,26 @@ namespace Hecton8.Interaction
 
             if (_targetModuleTransform != null && IsFiniteVector(_targetModuleTransform.position))
             {
-                leakAup = AbsoluteUniversePosition.FromRuntimePosition(_targetModuleTransform.position);
+                leakPosition = _targetModuleTransform.position;
                 return true;
             }
 
             if (_cachedTransform != null && IsFiniteVector(_cachedTransform.position))
             {
-                leakAup = AbsoluteUniversePosition.FromRuntimePosition(_cachedTransform.position);
+                leakPosition = _cachedTransform.position;
                 return true;
             }
 
-            leakAup = default;
+            leakPosition = default;
             return false;
+        }
+
+        private static double RuntimeDistanceSq(Vector3 a, Vector3 b)
+        {
+            double dx = (double)a.x - b.x;
+            double dy = (double)a.y - b.y;
+            double dz = (double)a.z - b.z;
+            return (dx * dx) + (dy * dy) + (dz * dz);
         }
 
         private float ResolvePatchFlushDot(Vector3 patchNormal)

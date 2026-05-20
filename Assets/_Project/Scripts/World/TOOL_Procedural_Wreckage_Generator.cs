@@ -13,42 +13,43 @@ namespace Hecton8.World
     /// </summary>
     internal static class TOOL_Procedural_Wreckage_Generator
     {
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
         internal struct GridCell
         {
-            public ushort PossibleModuleMask;
-            public byte CollapsedModuleId;
-            public byte SocketConstraints;
-            public float Entropy;
-            private uint _reserved0;
-            private uint _reserved1;
+            [FieldOffset(0)] public ushort PossibleModuleMask;
+            [FieldOffset(2)] public byte CollapsedModuleId;
+            [FieldOffset(3)] public byte SocketConstraints;
+            [FieldOffset(4)] public float Entropy;
+            [FieldOffset(8)] private uint _reserved0;
+            [FieldOffset(12)] private uint _reserved1;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
         internal struct MeshDataSlice
         {
-            public uint VertexStart;
-            public uint VertexCount;
-            public uint IndexStart;
-            public uint IndexCount;
+            [FieldOffset(0)] public uint VertexStart;
+            [FieldOffset(4)] public uint VertexCount;
+            [FieldOffset(8)] public uint IndexStart;
+            [FieldOffset(12)] public uint IndexCount;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         internal struct ModuleDefinition
         {
-            public ushort NorthSocket;
-            public ushort EastSocket;
-            public ushort SouthSocket;
-            public ushort WestSocket;
-            public ushort TopSocket;
-            public ushort BottomSocket;
-            public MeshDataSlice MeshSlice;
-            public float3 LocalBoundsCenter;
-            public float3 LocalBoundsSize;
-            public byte DrawCallPriority;
-            public byte EmitsGeometry;
-            public byte EmitsNavProxy;
-            public byte UniversalConnector;
+            [FieldOffset(0)] public MeshDataSlice MeshSlice;
+            [FieldOffset(16)] public float3 LocalBoundsCenter;
+            [FieldOffset(28)] public float3 LocalBoundsSize;
+            [FieldOffset(40)] public ushort NorthSocket;
+            [FieldOffset(42)] public ushort EastSocket;
+            [FieldOffset(44)] public ushort SouthSocket;
+            [FieldOffset(46)] public ushort WestSocket;
+            [FieldOffset(48)] public ushort TopSocket;
+            [FieldOffset(50)] public ushort BottomSocket;
+            [FieldOffset(52)] public byte DrawCallPriority;
+            [FieldOffset(53)] public byte EmitsGeometry;
+            [FieldOffset(54)] public byte EmitsNavProxy;
+            [FieldOffset(55)] public byte UniversalConnector;
+            [FieldOffset(56)] private ulong _pad0;
         }
 
         internal struct WfcState : IDisposable
@@ -124,7 +125,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         internal struct XorShift32Kernel
         {
             public uint4 State;

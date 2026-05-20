@@ -12,7 +12,7 @@ namespace Hecton8.World
     /// </summary>
     internal static class ChunkLocalOffsetQuantization
     {
-        [StructLayout(LayoutKind.Sequential, Pack = 2, Size = 6)]
+        [StructLayout(LayoutKind.Sequential, Size = 6)]
         internal struct Short3
         {
             public short X;
@@ -34,7 +34,7 @@ namespace Hecton8.World
             public float3 DecodeStep;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 2, Size = 6)]
+        [StructLayout(LayoutKind.Sequential, Size = 6)]
         internal struct QuantizedLocalOffset
         {
             public Short3 Packed;

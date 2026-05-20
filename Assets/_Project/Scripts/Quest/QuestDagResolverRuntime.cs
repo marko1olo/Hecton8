@@ -381,7 +381,9 @@ namespace Hecton8.Quest
             if (!_hasScheduled)
                 return;
 
-            _scheduledHandle.Complete();
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _scheduledHandle))
+                return;
+
             _hasScheduled = false;
 
             if (!QuestDagVault.TryResolveBuffers(_vault, ref _handles, out QuestDagBuffers buffers))

@@ -200,7 +200,9 @@ namespace Hecton8.Gameplay
 
         private string CreateDeterministicBeaconId()
         {
-            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(_cachedTransform.position);
+            AbsoluteUniversePosition aup = TryResolveAupFromRuntimeOrigin(_cachedTransform.position, out AbsoluteUniversePosition resolvedAup)
+                ? resolvedAup
+                : default;
             ulong hash = BeaconIdFnvOffset;
             hash = MixBeaconIdHash(hash, unchecked((ulong)aup.GridX));
             hash = MixBeaconIdHash(hash, unchecked((ulong)aup.GridY));
@@ -391,7 +393,30 @@ namespace Hecton8.Gameplay
 
         private void RefreshCachedAup()
         {
-            _cachedAup = AbsoluteUniversePosition.FromRuntimePosition(_cachedTransform.position);
+            if (TryResolveAupFromRuntimeOrigin(_cachedTransform.position, out AbsoluteUniversePosition beaconAup))
+                _cachedAup = beaconAup;
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(
+            Vector3 runtimePosition,
+            out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!float.IsFinite(runtimePosition.x) ||
+                !float.IsFinite(runtimePosition.y) ||
+                !float.IsFinite(runtimePosition.z))
+            {
+                return false;
+            }
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!MathGuard.IsFinite(in originAup))
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return MathGuard.IsFinite(in positionAup);
         }
 
         private void TryRegisterBeacon()

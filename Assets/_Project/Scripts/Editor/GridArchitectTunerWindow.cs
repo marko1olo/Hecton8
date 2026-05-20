@@ -5,7 +5,11 @@
 
 #if UNITY_EDITOR
 
+using Hecton8.Construction;
+using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.Power;
+using Unity.Collections;
 using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
@@ -24,18 +28,29 @@ namespace Hecton8.Editor
         private Label _runtimeLabel;
         private Label _countsLabel;
         private Label _solverLabel;
+        private Label _powerTelemetryLabel;
         private Slider _reactorOutput;
         private Slider _lifeSupportDrain;
         private Slider _oxygenDiffusion;
         private Slider _crushDepth;
-        private Slider _basePipeResistance;
+        private Slider _baseWireConductance;
+        private Slider _sumpPumpDraw;
         private Slider _jacobiSmoothing;
+        private VaultGenerationHandle<PowerTelemetryEntry> _powerTelemetryRingHandle;
+        private VaultGenerationHandle<PowerGridCounter64> _powerTelemetryCursorHandle;
+        private IDataVault _powerTelemetryVault;
         private bool _suppressSliderEvents;
 
         [MenuItem("Hecton-8/Base Logistics Tuner")]
         private static void Open()
         {
             GetWindow<GridArchitectTunerWindow>("Base Logistics Tuner");
+        }
+
+        [MenuItem("Hecton-8/Base Power Tuner")]
+        private static void OpenPowerAlias()
+        {
+            GetWindow<GridArchitectTunerWindow>("Base Power Tuner");
         }
 
         public void CreateGUI()
@@ -49,9 +64,11 @@ namespace Hecton8.Editor
             _runtimeLabel = new Label();
             _countsLabel = new Label();
             _solverLabel = new Label();
+            _powerTelemetryLabel = new Label();
             root.Add(_runtimeLabel);
             root.Add(_countsLabel);
             root.Add(_solverLabel);
+            root.Add(_powerTelemetryLabel);
 
             VisualElement graph = new VisualElement();
             graph.style.height = 72;
@@ -77,7 +94,8 @@ namespace Hecton8.Editor
             _lifeSupportDrain = AddSlider(root, "Life Support Drain", 0f, 1000f, OnTuningChanged);
             _oxygenDiffusion = AddSlider(root, "Oxygen Diffusion", 0.01f, 2f, OnTuningChanged);
             _crushDepth = AddSlider(root, "Crush Depth", 0.1f, 10f, OnTuningChanged);
-            _basePipeResistance = AddSlider(root, "Base Pipe Resistance", 0.001f, 8f, OnTuningChanged);
+            _baseWireConductance = AddSlider(root, "Base Wire Conductance", 0.125f, 1000f, OnTuningChanged);
+            _sumpPumpDraw = AddSlider(root, "Sump Pump Draw", 0f, 750f, OnDrainageTuningChanged);
             _jacobiSmoothing = AddSlider(root, "Jacobi Smoothing", 0.05f, 1f, OnTuningChanged);
 
             Button mockGraph = new Button(() => ShinobuLogisticsRouter.Active?.ForceRebuildMockGraph()) { text = "Mock Graph" };
@@ -123,9 +141,21 @@ namespace Hecton8.Editor
             tuning.LifeSupportDrainWatts = _lifeSupportDrain.value;
             tuning.OxygenDiffusionRate = _oxygenDiffusion.value;
             tuning.CrushDepthMultiplier = _crushDepth.value;
-            tuning.BasePipeResistance = _basePipeResistance.value;
+            tuning.BasePipeResistance = ConductanceToResistance(_baseWireConductance.value);
             tuning.JacobiSmoothingFactor = _jacobiSmoothing.value;
             ShinobuLogisticsRouter.SetTuning(in tuning);
+        }
+
+        private void OnDrainageTuningChanged(ChangeEvent<float> evt)
+        {
+            if (_suppressSliderEvents)
+                return;
+
+            if (!SumpPumpPipeGridRuntime.TryGetTuning(out DrainageTuningDTO tuning))
+                return;
+
+            tuning.PumpPowerDraw = Mathf.Max(0f, evt.newValue);
+            SumpPumpPipeGridRuntime.SetTuning(in tuning);
         }
 
         private void RefreshUi()
@@ -143,6 +173,8 @@ namespace Hecton8.Editor
                 PushEfficiencySample(entry.SupplyRatio);
             }
 
+            RefreshPowerTelemetryReadout();
+
             if (ShinobuLogisticsRouter.TryGetTuning(out LogisticsTuningDTO tuning))
             {
                 _suppressSliderEvents = true;
@@ -150,10 +182,131 @@ namespace Hecton8.Editor
                 _lifeSupportDrain.SetValueWithoutNotify(tuning.LifeSupportDrainWatts);
                 _oxygenDiffusion.SetValueWithoutNotify(tuning.OxygenDiffusionRate);
                 _crushDepth.SetValueWithoutNotify(tuning.CrushDepthMultiplier);
-                _basePipeResistance.SetValueWithoutNotify(tuning.BasePipeResistance);
+                _baseWireConductance.SetValueWithoutNotify(ResistanceToConductance(tuning.BasePipeResistance));
                 _jacobiSmoothing.SetValueWithoutNotify(tuning.JacobiSmoothingFactor);
                 _suppressSliderEvents = false;
             }
+
+            if (SumpPumpPipeGridRuntime.TryGetTuning(out DrainageTuningDTO drainageTuning))
+            {
+                _suppressSliderEvents = true;
+                _sumpPumpDraw.SetValueWithoutNotify(drainageTuning.PumpPowerDraw);
+                _suppressSliderEvents = false;
+            }
+        }
+
+        private void RefreshPowerTelemetryReadout()
+        {
+            if (_powerTelemetryLabel == null)
+                return;
+
+            if (!TryGetLatestPowerTelemetry(out PowerTelemetryEntry entry))
+            {
+                _powerTelemetryLabel.text = "Power Telemetry: Offline";
+                return;
+            }
+
+            _powerTelemetryLabel.text =
+                "Power Telemetry: Gen " + entry.TotalGeneration.ToString("0.0") +
+                " W  Load " + entry.TotalLoad.ToString("0.0") +
+                " W  AvgV " + entry.AveragePotential.ToString("0.000") +
+                "  Brownout " + entry.BrownoutCount +
+                "  Solver us " + entry.SolverMicroseconds;
+        }
+
+        private bool TryGetLatestPowerTelemetry(out PowerTelemetryEntry entry)
+        {
+            entry = default;
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null || vault.IsAllocationLocked)
+                return false;
+
+            if (!ReferenceEquals(_powerTelemetryVault, vault))
+            {
+                _powerTelemetryVault = vault;
+                _powerTelemetryRingHandle = default;
+                _powerTelemetryCursorHandle = default;
+            }
+
+            if (!TryResolvePowerTelemetry(vault, out NativeArray<PowerTelemetryEntry> ring, out NativeArray<PowerGridCounter64> cursor))
+                return false;
+
+            PowerGridCounter64 cursorState = cursor[0];
+            int writeCursor = cursorState.Value;
+            if ((uint)writeCursor >= (uint)ring.Length)
+                writeCursor = 0;
+
+            int readIndex = writeCursor - 1;
+            if (readIndex < 0)
+                readIndex = ring.Length - 1;
+
+            entry = ring[readIndex];
+            return entry.FrameIndex != 0u || entry.NodeCount != 0 || entry.EdgeCount != 0 || entry.RuntimeEdgeCount != 0;
+        }
+
+        private bool TryResolvePowerTelemetry(
+            IDataVault vault,
+            out NativeArray<PowerTelemetryEntry> ring,
+            out NativeArray<PowerGridCounter64> cursor)
+        {
+            ring = default;
+            cursor = default;
+            if (!TryResolveTelemetryRing(vault, out ring))
+                return false;
+
+            return TryResolveTelemetryCursor(vault, out cursor);
+        }
+
+        private bool TryResolveTelemetryRing(IDataVault vault, out NativeArray<PowerTelemetryEntry> ring)
+        {
+            if (_powerTelemetryRingHandle.BufferID == 0u ||
+                !vault.TryResolveHandle(in _powerTelemetryRingHandle, out ring) ||
+                !ring.IsCreated ||
+                ring.Length < PowerGridJacobiConstants.TelemetryFrameCount)
+            {
+                if (!vault.TryGetGenerationHandle(PowerGridBufferIds.TelemetryRing, out _powerTelemetryRingHandle) ||
+                    _powerTelemetryRingHandle.BufferID == 0u ||
+                    !vault.TryResolveHandle(in _powerTelemetryRingHandle, out ring) ||
+                    !ring.IsCreated ||
+                    ring.Length < PowerGridJacobiConstants.TelemetryFrameCount)
+                {
+                    ring = default;
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private bool TryResolveTelemetryCursor(IDataVault vault, out NativeArray<PowerGridCounter64> cursor)
+        {
+            if (_powerTelemetryCursorHandle.BufferID == 0u ||
+                !vault.TryResolveHandle(in _powerTelemetryCursorHandle, out cursor) ||
+                !cursor.IsCreated ||
+                cursor.Length <= 0)
+            {
+                if (!vault.TryGetGenerationHandle(PowerGridBufferIds.TelemetryCursor, out _powerTelemetryCursorHandle) ||
+                    _powerTelemetryCursorHandle.BufferID == 0u ||
+                    !vault.TryResolveHandle(in _powerTelemetryCursorHandle, out cursor) ||
+                    !cursor.IsCreated ||
+                    cursor.Length <= 0)
+                {
+                    cursor = default;
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static float ResistanceToConductance(float resistance)
+        {
+            return 1f / math.max(0.001f, math.isfinite(resistance) ? resistance : 0.35f);
+        }
+
+        private static float ConductanceToResistance(float conductance)
+        {
+            return 1f / math.max(0.001f, math.isfinite(conductance) ? conductance : 1f);
         }
 
         private void PushEfficiencySample(float supplyRatio)

@@ -22,8 +22,8 @@ namespace Hecton8.AI.Cognition
     public static class AlphaLeviathanStalkRuntimeFlags
     {
         public const uint Active = 1u << 0;
-        public const uint MathLodLow = 1u << 1;
-        public const uint HighTierSdfContour = 1u << 2;
+        public const uint MathLodSurvival = 1u << 1;
+        public const uint SdfContourRequested = 1u << 2;
         public const uint HasPlayerAnchor = 1u << 3;
         public const uint HasSonarPing = 1u << 4;
         public const uint ShiftFenceActive = 1u << 5;
@@ -34,7 +34,7 @@ namespace Hecton8.AI.Cognition
     /// </summary>
     public static class AlphaLeviathanSteeringIntentFlags
     {
-        public const byte LowTierRadialFallback = 1 << 0;
+        public const byte SurvivalRadialFallback = 1 << 0;
         public const byte SdfContourRequested = 1 << 1;
         public const byte PlayerGazeBreak = 1 << 2;
         public const byte AcousticLure = 1 << 3;
@@ -63,12 +63,12 @@ namespace Hecton8.AI.Cognition
         public const float PlayerGazeBreakDot = 0.75f;
         public const float SonarLureHoldSeconds = 10f;
         public const float MaxDeltaTimeSeconds = 0.25f;
-        public const float LowTierSteeringBlend = 0.2f;
-        public const float HighTierSteeringBlend = 0.55f;
-        public const float LowTierCadenceSeconds = 0.2f;
-        public const float HighTierCadenceSeconds = 0.016666668f;
-        public const float HighTierSdfContourWeight = 0.45f;
-        public const float HighTierVisualOverkill01 = 1f;
+        public const float SurvivalSteeringBlend = 0.2f;
+        public const float PrecisionSteeringBlend = 0.55f;
+        public const float SurvivalCadenceSeconds = 0.2f;
+        public const float PrecisionCadenceSeconds = 0.016666668f;
+        public const float SdfContourWeight = 0.45f;
+        public const float VisualOverkillMax01 = 1f;
         public const float TriangleNoiseInvPeriod = 0.0009765625f;
     }
 

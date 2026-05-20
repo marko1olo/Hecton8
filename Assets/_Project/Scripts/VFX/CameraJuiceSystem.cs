@@ -38,21 +38,21 @@ namespace Hecton8.VFX
     public sealed class CameraJuiceSystem : MonoBehaviour, ICameraJuiceSystem, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, ISaveable, IInteractionEventListener, IPhysicsImpactEventListener, ICombatDamageEventListener, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener, IScalabilityChangedEventListener
     {
         // ═══ CACHED REFERENCES ═══
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = CameraJuiceTelemetryEntrySizeBytes)]
+        [StructLayout(LayoutKind.Explicit, Size = CameraJuiceTelemetryEntrySizeBytes)]
         private struct CameraJuiceTelemetryEntry
         {
-            public int Frame;
-            public uint Flags;
-            public float Trauma;
-            public float FovKick;
-            public float3 Offset;
-            public float3 RotationDegrees;
-            public float RollDegrees;
-            public float DirectionalBiasTimer;
-            public float AdaptiveShakeScale;
-            public float Reserved0;
-            public float Reserved1;
-            public float Reserved2;
+            [FieldOffset(0)] public int Frame;
+            [FieldOffset(4)] public uint Flags;
+            [FieldOffset(8)] public float Trauma;
+            [FieldOffset(12)] public float FovKick;
+            [FieldOffset(16)] public float3 Offset;
+            [FieldOffset(28)] public float3 RotationDegrees;
+            [FieldOffset(40)] public float RollDegrees;
+            [FieldOffset(44)] public float DirectionalBiasTimer;
+            [FieldOffset(48)] public float AdaptiveShakeScale;
+            [FieldOffset(52)] public float Reserved0;
+            [FieldOffset(56)] public float Reserved1;
+            [FieldOffset(60)] public float Reserved2;
         }
 
         private Camera _mainCamera;
@@ -2212,7 +2212,10 @@ namespace Hecton8.VFX
             if (canvasRect == null)
                 return math.max(0.01f, _hudFocusDistance);
 
-            float planeDistance = DotVector(_cameraTransform.forward, canvasRect.position - _cameraTransform.position);
+            Vector3 canvasPosition = canvasRect.position;
+            Vector3 cameraPosition = _cameraTransform.position;
+            Vector3 visualPlaneDelta = canvasPosition - cameraPosition;
+            float planeDistance = DotVector(_cameraTransform.forward, visualPlaneDelta);
             return math.max(0.01f, planeDistance > 0f ? planeDistance : _hudFocusDistance);
         }
 

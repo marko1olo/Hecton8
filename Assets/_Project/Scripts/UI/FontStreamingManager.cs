@@ -306,12 +306,13 @@ namespace Hecton8.UI
             if (!_visiblePrefetchHandle.IsCompleted)
                 return false;
 
-            _visiblePrefetchHandle.Complete();
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _visiblePrefetchHandle))
+                return false;
+
             LocRegistry.MarkVisibleTextOffsetPrefetchComplete();
             if (_visiblePrefetchApplyToQueue && _visiblePrefetchCount > 0)
                 _swapScheduler.ApplyPrefetchSlices(_visibleSlicePrefetch, _visiblePrefetchCount);
 
-            _visiblePrefetchHandle = default;
             _visiblePrefetchCount = 0;
             _visiblePrefetchApplyToQueue = false;
             _visiblePrefetchInFlight = false;
@@ -329,9 +330,8 @@ namespace Hecton8.UI
             if (!_visiblePrefetchInFlight)
                 return;
 
-            _visiblePrefetchHandle.Complete();
+            DispatcherJobFence.TryComplete(ref _visiblePrefetchHandle, forceComplete: true);
             LocRegistry.MarkVisibleTextOffsetPrefetchComplete();
-            _visiblePrefetchHandle = default;
             _visiblePrefetchCount = 0;
             _visiblePrefetchApplyToQueue = false;
             _visiblePrefetchInFlight = false;

@@ -1,5 +1,4 @@
 using System.Runtime.InteropServices;
-using Hecton8.World;
 using Unity.Mathematics;
 
 namespace Hecton8.Core.Contracts.Signals
@@ -54,7 +53,20 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(31)] private byte _pad9;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 96)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
+    public struct PlayerPresentationAup48
+    {
+        [FieldOffset(0)] public long GridX;
+        [FieldOffset(8)] public long GridY;
+        [FieldOffset(16)] public long GridZ;
+        [FieldOffset(24)] public float LocalX;
+        [FieldOffset(28)] public float LocalY;
+        [FieldOffset(32)] public float LocalZ;
+        [FieldOffset(36)] private uint _pad0;
+        [FieldOffset(40)] private ulong _pad1;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct WaterTransitionSignal : ISignal
     {
         [FieldOffset(0)] public uint SourceId;
@@ -70,8 +82,12 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(37)] private byte _pad1;
         [FieldOffset(38)] private byte _pad2;
         [FieldOffset(39)] private byte _pad3;
-        [FieldOffset(40)] public AbsoluteUniversePosition AbsolutePosition;
+        [FieldOffset(40)] public PlayerPresentationAup48 AbsolutePosition;
         [FieldOffset(88)] public ulong Reserved;
+        [FieldOffset(96)] public ulong Reserved1;
+        [FieldOffset(104)] public ulong Reserved2;
+        [FieldOffset(112)] public ulong Reserved3;
+        [FieldOffset(120)] public ulong Reserved4;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 16)]

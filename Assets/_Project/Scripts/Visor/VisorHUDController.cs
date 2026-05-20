@@ -28,7 +28,7 @@ namespace NASAPunk.Visor
     /// </summary>
     [DisallowMultipleComponent]
     [ExecuteAlways]
-    public class VisorHUDController : MonoBehaviour, ITickable, IUpdatable, ISubmarineOsEventListener
+    public class VisorHUDController : MonoBehaviour, ITickable, IUpdatable, ISubmarineOsEventListener, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
     {
         private const float BiosRecoveryClarityThreshold = 0.1f;
         private const float LowPowerBiosThreshold = 0.15f;
@@ -205,6 +205,7 @@ namespace NASAPunk.Visor
         private float _appliedScalableRefractionScale;
         private float _appliedScalableChromaticScale;
         private float _appliedLowTierDitherScale;
+        private HectonQualityTier _runtimeQualityTier = HectonQualityTier.Unknown;
         private HectonQualityTier _cachedScalabilityTier = HectonQualityTier.Unknown;
         private float _cachedScalableRefractionScale;
         private float _cachedScalableChromaticScale;
@@ -273,6 +274,11 @@ namespace NASAPunk.Visor
         private HectonSurvivalSystem _survivalSystem;
         private TraumaDispatcher _traumaDispatcher;
         private HectonPlayerHealth _playerHealth;
+        private IPlayerRuntimeContext _cachedPlayerContext;
+        private IModularEquipmentService _cachedModularEquipment;
+        private VRAMMonitor _cachedVramMonitor;
+        private RenderTexturePool _cachedRenderTexturePool;
+        private RenderTextureLifecycleTracker _cachedRenderTextureLifecycle;
         private HectonSurvivalSystem _subscribedSurvivalSystem;
         private uint _survivalVitalsSourceId;
         private uint _lastSurvivalVitalsSignalSequence;
@@ -301,6 +307,8 @@ namespace NASAPunk.Visor
         private TMP_FontAsset _queuedHudFont;
         private bool _biosFontModeApplied;
         private float _appliedVRBrownoutIntensity = -1f;
+        private bool _hotSwapListenerRegistered;
+        private bool _scalabilityListenerRegistered;
 
         private uint _glitchRngState = 1u;
         private static HectonQualityTier s_fallbackQualityTier = HectonQualityTier.Unknown;
@@ -396,6 +404,9 @@ namespace NASAPunk.Visor
 #endif
 
             RegisterActiveController();
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
+            TryRegisterScalabilityListener();
             EnsurePropertyBlock();
             PrewarmBiosTerminalFont();
             _materialPropertiesDirty = true;
@@ -418,6 +429,8 @@ namespace NASAPunk.Visor
         private void OnDisable()
         {
             UnregisterActiveController();
+            TryUnregisterHotSwapListener();
+            TryUnregisterScalabilityListener();
 
             if (_glitchActive)
             {
@@ -487,6 +500,8 @@ namespace NASAPunk.Visor
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
+            TryUnregisterScalabilityListener();
             HectonSubmarineOsEvents.Unregister(this);
             ReleaseHudPhosphorKeyword();
             DisposeHudScissorCommandBuffers();
@@ -501,6 +516,126 @@ namespace NASAPunk.Visor
 
             _submarinePowerNormalized = Mathf.Clamp01(snapshot.PowerNormalized);
             _hasSubmarinePowerSnapshot = true;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                ApplyCachedPlayerContext();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.ModularEquipment)
+            {
+                _cachedModularEquipment = currentService as IModularEquipmentService;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Submarine)
+            {
+                _submarineRuntimeContext = currentService as ISubmarineRuntimeContext;
+                ApplyCachedSubmarineContext();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.VRAMMonitorRuntime)
+            {
+                _cachedVramMonitor = currentService as VRAMMonitor;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.RenderTexturePoolRuntime)
+            {
+                _cachedRenderTexturePool = currentService as RenderTexturePool;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.RenderTextureLifecycleRuntime)
+                _cachedRenderTextureLifecycle = currentService as RenderTextureLifecycleTracker;
+        }
+
+        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            _runtimeQualityTier = payload.CurrentQualityTier;
+            _cachedScalabilityTier = HectonQualityTier.Unknown;
+            _materialPropertiesDirty = true;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedModularEquipment = GlobalRegistry.ModularEquipment;
+            _submarineRuntimeContext = GlobalRegistry.Submarine;
+            _runtimeQualityTier = GlobalRegistry.QualityTier;
+            _cachedVramMonitor = GlobalRegistry.VRAMMonitor;
+            _cachedRenderTexturePool = GlobalRegistry.RenderTexturePool;
+            _cachedRenderTextureLifecycle = GlobalRegistry.RenderTextureLifecycle;
+            ApplyCachedPlayerContext();
+            ApplyCachedSubmarineContext();
+        }
+
+        private void ApplyCachedPlayerContext()
+        {
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext == null)
+            {
+                RefreshSurvivalSubscription(null);
+                _survivalSystem = null;
+                _traumaDispatcher = null;
+                _playerHealth = null;
+                return;
+            }
+
+            _survivalSystem = playerContext.SurvivalSystem;
+            _traumaDispatcher = playerContext.TraumaDispatcher;
+            _playerHealth = playerContext.PlayerHealth;
+            RefreshSurvivalSubscription(_survivalSystem);
+        }
+
+        private void ApplyCachedSubmarineContext()
+        {
+            ISubmarineRuntimeContext submarineRuntimeContext = _submarineRuntimeContext;
+            _structuralGrid = submarineRuntimeContext != null ? submarineRuntimeContext.StructuralGrid : null;
+        }
+
+        private void TryRegisterScalabilityListener()
+        {
+            if (_scalabilityListenerRegistered || !Application.isPlaying)
+                return;
+
+            ScalabilityEvents.Register(this);
+            _scalabilityListenerRegistered = true;
+        }
+
+        private void TryUnregisterScalabilityListener()
+        {
+            if (!_scalabilityListenerRegistered)
+                return;
+
+            ScalabilityEvents.Unregister(this);
+            _scalabilityListenerRegistered = false;
         }
 
 #if UNITY_EDITOR
@@ -884,7 +1019,7 @@ namespace NASAPunk.Visor
             out float chromaticScale,
             out float lowTierDitherScale)
         {
-            HectonQualityTier tier = GlobalRegistry.QualityTier;
+            HectonQualityTier tier = _runtimeQualityTier;
             if (tier == HectonQualityTier.Unknown)
                 tier = ResolveFallbackQualityTier();
 
@@ -1119,7 +1254,7 @@ namespace NASAPunk.Visor
             return new Vector4(directionToLight.x, directionToLight.y, directionToLight.z, intensity);
         }
 
-        private static void ResolveActiveToolDisplayState(
+        private void ResolveActiveToolDisplayState(
             out float battery01,
             out float heat01,
             out float ammoUnits,
@@ -1146,7 +1281,7 @@ namespace NASAPunk.Visor
             if (currentTool == null)
                 return;
 
-            IModularEquipmentService equipment = GlobalRegistry.ModularEquipment;
+            IModularEquipmentService equipment = _cachedModularEquipment;
             if (equipment != null &&
                 currentTool.RuntimeToolId != 0u &&
                 equipment.TryGetToolState(currentTool.RuntimeToolId, out ToolState state))
@@ -1168,14 +1303,14 @@ namespace NASAPunk.Visor
             ammoUnits = math.clamp((int)math.round(battery01 * 100f), 0, 999);
         }
 
-        private static PlayerTool ResolveActivePlayerTool()
+        private PlayerTool ResolveActivePlayerTool()
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             PlayerToolManager toolManager = playerContext != null ? playerContext.ToolManager : null;
             return toolManager != null ? toolManager.CurrentTool : null;
         }
 
-        private static float ResolveActiveToolBatteryNormalized()
+        private float ResolveActiveToolBatteryNormalized()
         {
             PlayerTool currentTool = ResolveActivePlayerTool();
 
@@ -1291,8 +1426,7 @@ namespace NASAPunk.Visor
             if (!Application.isPlaying)
                 return;
 
-            ISubmarineRuntimeContext submarineRuntimeContext = GlobalRegistry.Submarine;
-            _submarineRuntimeContext = submarineRuntimeContext;
+            ISubmarineRuntimeContext submarineRuntimeContext = _submarineRuntimeContext;
             _structuralGrid = submarineRuntimeContext != null ? submarineRuntimeContext.StructuralGrid : null;
         }
 
@@ -1703,14 +1837,14 @@ namespace NASAPunk.Visor
             if (_subscribedSurvivalSystem != null)
                 return Mathf.Max(0f, _subscribedSurvivalSystem.Depth);
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
             return playerMovement != null ? Mathf.Max(0f, playerMovement.CurrentDepth) : 0f;
         }
 
-        private static float ResolveHullStress01()
+        private float ResolveHullStress01()
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
             return playerMovement != null ? Mathf.Clamp01(playerMovement.CurrentHullStress01) : 0f;
         }
@@ -1880,7 +2014,7 @@ namespace NASAPunk.Visor
             ReleaseOwnedRuntimeTexture();
 
             // Rent RT from pool (zero-GC, O(1) lookup)
-            _hudRT = Hecton8.Core.GlobalRegistry.RenderTexturePool.Rent(targetWidth, targetHeight, RenderTextureFormat.ARGB32, this);
+            _hudRT = _cachedRenderTexturePool.Rent(targetWidth, targetHeight, RenderTextureFormat.ARGB32, this);
             _hudRT.filterMode = _filterMode;
             _hudRT.useMipMap = false;
             _hudRT.name = "VisorHUD_RT_Scaled";
@@ -1924,7 +2058,7 @@ namespace NASAPunk.Visor
             if (!_enableAdaptiveRuntimeRTScaling || !Application.isPlaying)
                 return QuantizeAdaptiveScale(Mathf.Clamp(effectiveScale, 0.1f, 1f));
 
-            VRAMMonitor vramMonitor = Hecton8.Core.GlobalRegistry.VRAMMonitor;
+            VRAMMonitor vramMonitor = _cachedVramMonitor;
             if (vramMonitor != null)
             {
                 switch (vramMonitor.PressureState)
@@ -2166,12 +2300,14 @@ namespace NASAPunk.Visor
                 return;
 
             // Register disposal with lifecycle tracker
-            if (Hecton8.Core.GlobalRegistry.RenderTextureLifecycle != null)
-                Hecton8.Core.GlobalRegistry.RenderTextureLifecycle.RegisterDisposal(_hudRT);
+            RenderTextureLifecycleTracker lifecycle = _cachedRenderTextureLifecycle;
+            if (lifecycle != null)
+                lifecycle.RegisterDisposal(_hudRT);
 
             // Return to pool for reuse (zero-GC)
-            if (Hecton8.Core.GlobalRegistry.RenderTexturePool != null)
-                Hecton8.Core.GlobalRegistry.RenderTexturePool.Return(_hudRT);
+            RenderTexturePool pool = _cachedRenderTexturePool;
+            if (pool != null)
+                pool.Return(_hudRT);
             else
             {
                 // Fallback if pool not available (Editor mode or shutdown)

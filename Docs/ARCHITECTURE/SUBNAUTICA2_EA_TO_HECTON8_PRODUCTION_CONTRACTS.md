@@ -16,12 +16,12 @@ This document is active only where it agrees with:
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
 
-R32 architecture R4/proof-wording correction is the latest artifact-backed local static DOC_GLOBAL boundary for architecture/root documentation. R31 remains the prior current-boundary propagation layer, R30 remains the prior internal-currentness layer, R29 remains the prior stale-gate/global-authority layer, R28 remains the prior interior-boundary layer, and R27 remains the latest source-counter/index snapshot until rerun.
+R45 root/architecture R43/R44 residue/proof-artifact/source-counter correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
-## 2026-05-19 DOC_GLOBAL Current Boundary Note
+## 2026-05-20 DOC_GLOBAL R38 Current Boundary Note
 
-This file remains clean-room public-reference pressure mapped to local source/docs, not product feature proof, Steam Deck proof, co-op runtime proof, or copied implementation authority. Current root/architecture boundary is `Docs/Reports/2026-05-19_DOCUMENTATION_R32_ARCHITECTURE_R4_AND_PROOF_WORDING_LOCAL.md`; R31 remains the prior current-boundary propagation correction. R30 remains the prior internal-currentness correction, R29 remains the prior stale-gate/global-authority correction, R28 remains the prior interior-boundary correction, and R27 source counters are retained until a newer counter pass reruns them. Current static gates: `Tools/AtlasCheck.py` remains red on `59` missing refs (RealtimeCSG vendor refs plus absent `VaultXRayWindow.cs` and `HectonMapMagicVegetationBridgeFloraCollisionProxies.cs`); `Docs/Modding/Validate_Mod_API_Static.ps1` now passes (`Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`) as static-tool orientation only; do not treat PASS as current proof without artifact path, command, timestamp, environment, and output. Unity/runtime/profiler/player-build proof remains absent.
+This file remains clean-room public-reference pressure mapped to local source/docs, not product feature proof, Steam Deck proof, co-op runtime proof, or copied implementation authority. Current DOC_GLOBAL boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`; R44 remains prior at `Docs/Reports/2026-05-20_DOCUMENTATION_R44_ROOT_ARCHITECTURE_INTERNAL_RESIDUE_EXACT_ROUTE_FIELDS_LOCAL.md`; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. Current static gates: `Tools/AtlasCheck.py` remains red on `ATLAS_CHECK_FAIL references=6741 missing=59` (one Dynamic Decals missing vendor asset ref, RealtimeCSG vendor icon/readme image refs, and missing HabitatDamageBakePipeline source ref in the current atlas); `Docs/Modding/Validate_Mod_API_Static.ps1` passes (`Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`) as static-tool orientation only. Runtime proof remains absent.
 
 Owner: SUBNAUTICA_RESEARCHER
 Scope: clean-room public reference research plus current HECTON-8 source audit.
@@ -99,11 +99,12 @@ Relevant source:
   - `SourceFolder = "Assets/_SourceData"`.
   - `BalanceSourceFolder = "Data/Balance"`.
   - output path `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`.
-  - `ValidateCsvRowHashes` requires `id/hash32` pairs for balance rows.
+  - balance rows may omit `hash32`; the compiler injects deterministic FNV-1a hashes and fails only authored hash mismatches.
+  - editor prebuild hook bakes and validates the monolith before player builds.
 - `Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs`
-  - loads `Hecton8/DataMonolith/static_data.h8bin` from `Application.streamingAssetsPath`.
-  - current boot path tolerates missing file through `GameBootstrapper`.
-- Current `Data/Balance/*.csv` headers have `Id` but no `hash32`.
+  - loads `Hecton8/DataMonolith/static_data.h8bin` from `Application.streamingAssetsPath`, staging Android/Quest URI assets to cache before the Vault-backed reader.
+  - player/non-editor boot fails fatal on missing or invalid monolith; editor missing-file tolerance is iteration-only.
+- Current `Data/Balance/*.csv` headers have `Id` but no `hash32`; this is valid input for the compiler-side hash injection route.
 
 Contract gap: HECTON-8 has a monolith reader/compiler shape, but no proved mandatory build artifact. This is the exact equivalent of shipping a Subnautica-style world without its baked sidecars.
 
@@ -133,8 +134,9 @@ Required contract:
 
 - Generate one `SAVE_LIVE_VERSION_LEDGER.md` or generated manifest from code constants.
 - Mark v8 as historical.
-- Mark v9 as current storage.
-- Mark v10 as staged master-state hash header until integrated into storage.
+- Mark v9 as historical storage.
+- Mark current v11 (`0x000B`) storage as the active writer contract.
+- Mark v10 as staged master-state hash helper context until integrated into storage.
 - Add CI/doc gate that fails when `SaveBinaryStorage.CurrentVersion`, header size, or flags drift without ledger update.
 
 ### Sector Paging I/O
@@ -256,11 +258,11 @@ HECTON-8 action:
 
 1. Static data build artifact gate.
    - Build must fail if `static_data.h8bin` is required and missing.
-   - Balance CSVs need generated `hash32` columns or compiler-side deterministic hash emission.
+   - Balance CSVs use compiler-side deterministic hash emission when `hash32` is omitted.
    - Bootstrap must not silently treat missing monolith as acceptable outside editor/dev mode.
 
 2. Save live version ledger.
-   - Resolve v8 docs vs v9 storage vs staged v10 hash header.
+   - Resolve v8/v9 historical docs vs current v11 (`0x000B`) storage vs staged v10 hash helper context.
    - Generate doc/manifest from constants.
    - Add migration/version smoke tests.
 

@@ -5,24 +5,43 @@ using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
 using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
-using Hecton8.World;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Lighting.Shafts
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct LightShaftTelemetryEntry
     {
+        [FieldOffset(0)]
         public uint Frame;
+        [FieldOffset(4)]
         public uint PrimarySourceId;
+        [FieldOffset(8)]
         public float2 PrimaryUv;
+        [FieldOffset(16)]
         public float ActiveLightShafts;
+        [FieldOffset(20)]
         public float PrimaryIntensity;
+        [FieldOffset(24)]
         public float Soot01;
+        [FieldOffset(28)]
         public float Brownout01;
+        [FieldOffset(32)]
         public byte Flags;
+        [FieldOffset(33)]
+        public byte _pad0;
+        [FieldOffset(34)]
+        public ushort _pad1;
+        [FieldOffset(36)]
+        public uint _pad2;
+        [FieldOffset(40)]
+        public ulong _pad3;
+        [FieldOffset(48)]
+        public ulong _pad4;
+        [FieldOffset(56)]
+        public ulong _pad5;
     }
 
     /// <summary>
@@ -396,7 +415,7 @@ namespace Hecton8.Lighting.Shafts
         {
             ClearTopContributions(topContributions);
 
-            AbsoluteUniversePosition cameraAup = AbsoluteUniversePosition.FromRuntimePosition(renderCamera.transform.position);
+            double3 cameraAup = ResolveCameraAup();
             int sourceCount = ScreenSpaceLightShaftSource.RegisteredCount;
             for (int i = 0; i < sourceCount; i++)
             {
@@ -415,6 +434,29 @@ namespace Hecton8.Lighting.Shafts
             }
 
             return activeCount;
+        }
+
+        private static double3 ResolveCameraAup()
+        {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null)
+            {
+                if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                    MathGuard.IsFinite(in snapshot.Aup))
+                {
+                    return snapshot.Aup.ToAbsoluteDouble3();
+                }
+
+                var playerMovement = playerContext.PlayerMovement;
+                if (playerMovement != null)
+                {
+                    AbsoluteUniversePosition currentAup = playerMovement.CurrentAup;
+                    if (MathGuard.IsFinite(in currentAup))
+                        return currentAup.ToAbsoluteDouble3();
+                }
+            }
+
+            return HectonFloatingOrigin.CurrentTotalOffsetDouble;
         }
 
         private void ClearTopContributions(NativeArray<LightShaftContribution> topContributions)

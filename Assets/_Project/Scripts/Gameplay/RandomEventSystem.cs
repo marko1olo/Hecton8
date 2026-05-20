@@ -33,7 +33,6 @@ using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
-using Hecton8.Modding;
 using Hecton8.Physics;
 using Hecton8.UI;
 using Hecton8.World;
@@ -46,35 +45,40 @@ namespace Hecton8.Gameplay
     /// <summary>
     /// Unmanaged Mega-Bus payload fired when a meteor shower enters the world event lane.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct MeteorShowerEvent
     {
-        public float DurationSeconds;
-        public float Intensity;
-        public int Seed;
-        public float3 ObserverRuntimePosition;
-        public long ObserverGridX;
-        public long ObserverGridY;
-        public long ObserverGridZ;
-        public float3 ObserverLocalOffset;
-        public byte HasObserverRuntimePosition;
-        public byte HasObserverAup;
+        [FieldOffset(0)] public long ObserverGridX;
+        [FieldOffset(8)] public long ObserverGridY;
+        [FieldOffset(16)] public long ObserverGridZ;
+        [FieldOffset(24)] public float DurationSeconds;
+        [FieldOffset(28)] public float Intensity;
+        [FieldOffset(32)] public int Seed;
+        [FieldOffset(36)] public float3 ObserverRuntimePosition;
+        [FieldOffset(48)] public float3 ObserverLocalOffset;
+        [FieldOffset(60)] public byte HasObserverRuntimePosition;
+        [FieldOffset(61)] public byte HasObserverAup;
+        [FieldOffset(62)] private ushort _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
-    public readonly struct SeismicShockwaveEvent
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
+    public struct SeismicShockwaveEvent
     {
-        public readonly Vector3 EpicenterWS;
-        public readonly float ImpulseRadiusMeters;
-        public readonly float ImpulseMagnitude;
-        public readonly int AppliedStampCount;
-        public readonly Vector3 AupStart;
-        public readonly Vector3 AupEnd;
-        public readonly double3 AupStartDouble;
-        public readonly double3 AupEndDouble;
-        private readonly byte _hasAupLineSegment;
-
-        public bool HasAupLineSegment => _hasAupLineSegment != 0;
+        [FieldOffset(0)] public double3 AupStartDouble;
+        [FieldOffset(24)] public double3 AupEndDouble;
+        [FieldOffset(48)] public Vector3 EpicenterWS;
+        [FieldOffset(60)] public Vector3 AupStart;
+        [FieldOffset(72)] public Vector3 AupEnd;
+        [FieldOffset(84)] public float ImpulseRadiusMeters;
+        [FieldOffset(88)] public float ImpulseMagnitude;
+        [FieldOffset(92)] public int AppliedStampCount;
+        [FieldOffset(96)] public byte HasAupLineSegment;
+        [FieldOffset(97)] private byte _pad0;
+        [FieldOffset(98)] private ushort _pad1;
+        [FieldOffset(100)] private uint _pad2;
+        [FieldOffset(104)] private ulong _pad3;
+        [FieldOffset(112)] private ulong _pad4;
+        [FieldOffset(120)] private ulong _pad5;
 
         public SeismicShockwaveEvent(
             Vector3 epicenterWS,
@@ -145,7 +149,13 @@ namespace Hecton8.Gameplay
             AupEnd = ToVector3(aupEnd);
             AupStartDouble = aupStart;
             AupEndDouble = aupEnd;
-            _hasAupLineSegment = hasAupLineSegment ? (byte)1 : (byte)0;
+            HasAupLineSegment = hasAupLineSegment ? (byte)1 : (byte)0;
+            _pad0 = 0;
+            _pad1 = 0;
+            _pad2 = 0u;
+            _pad3 = 0ul;
+            _pad4 = 0ul;
+            _pad5 = 0ul;
         }
 
         private static Vector3 ToVector3(double3 value)
@@ -173,13 +183,15 @@ namespace Hecton8.Gameplay
     /// <summary>
     /// Deferred payload for random-event activation.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 8)]
     public struct RandomEventStartedPayload
     {
         /// <summary>Activated random-event type.</summary>
+        [FieldOffset(0)]
         public RandomEventType Type;
 
         /// <summary>Normalized authored event intensity.</summary>
+        [FieldOffset(4)]
         public float Intensity;
     }
 
@@ -757,7 +769,7 @@ namespace Hecton8.Gameplay
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-70)]
-    public sealed class RandomEventSystem : MonoBehaviour, ISlowTickable
+    public sealed class RandomEventSystem : MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         public const int EventTypeCount = 7;
 
@@ -829,6 +841,13 @@ namespace Hecton8.Gameplay
         private readonly Rigidbody[] _seismicBodyBuffer = new Rigidbody[48];
         private bool _registered;
         private bool _registeredRuntime;
+        private bool _hotSwapListenerRegistered;
+        private LocalizationManager _cachedLocalization;
+        private SpatialAudioManager _cachedSpatialAudioManager;
+        private ObjectPoolManager _cachedObjectPool;
+        private IPlayerRuntimeContext _cachedPlayerContext;
+        private HectonVoxelEngine _cachedVoxelEngine;
+        private SargassumGlobalDragManager _cachedSargassumDrag;
         private uint _eventRandomState = 0xA341316Cu;
         private float _meteorSeed = 99173f;
         private int _meteorLastBoomIndex = -1;
@@ -859,6 +878,8 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             TryRegisterRuntime();
             TryRegister();
 
@@ -867,6 +888,7 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             TryUnregister();
             TryUnregisterRuntime();
 
@@ -889,6 +911,7 @@ namespace Hecton8.Gameplay
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             TryUnregister();
             TryUnregisterRuntime();
         }
@@ -1097,7 +1120,6 @@ namespace Hecton8.Gameplay
 
             BeginMeteorShower();
             StartEvent(RandomEventType.MeteorShower, meteorShowerDuration, meteorShowerIntensity);
-            PublishMeteorShowerMegaBus();
             NotificationEvents.PushInfo(ResolveLocalized(
                 LocalizationKeys.RANDOM_EVENT_METEOR_SHOWER,
                 "METEOR SHOWER - SKY FLASHES DETECTED. LOW-FREQUENCY ACOUSTIC BOOMS EXPECTED."));
@@ -1174,9 +1196,69 @@ namespace Hecton8.Gameplay
             return playerTransform.TryGetComponent(out survivalSystem);
         }
 
-        private static string ResolveLocalized(string key, string fallback)
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.LocalizationRuntime:
+                    _cachedLocalization = currentService as LocalizationManager ?? GlobalRegistry.Localization;
+                    break;
+                case GlobalRegistryServiceSlot.Audio:
+                    _cachedSpatialAudioManager = currentService as SpatialAudioManager;
+                    break;
+                case GlobalRegistryServiceSlot.ObjectPool:
+                    _cachedObjectPool = currentService as ObjectPoolManager;
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                    break;
+                case GlobalRegistryServiceSlot.VoxelEngineRuntime:
+                    _cachedVoxelEngine = currentService as HectonVoxelEngine;
+                    if (ReferenceEquals(voxelEngine, previousService) || voxelEngine == null)
+                        voxelEngine = _cachedVoxelEngine;
+                    break;
+                case GlobalRegistryServiceSlot.SargassumDragRuntime:
+                    _cachedSargassumDrag = currentService as SargassumGlobalDragManager;
+                    break;
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedLocalization = GlobalRegistry.Localization;
+            _cachedSpatialAudioManager = GlobalRegistry.Audio as SpatialAudioManager;
+            _cachedObjectPool = GlobalRegistry.ObjectPool;
+            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedVoxelEngine = GlobalRegistry.VoxelEngine;
+            _cachedSargassumDrag = GlobalRegistry.SargassumDrag;
+
+            if (voxelEngine == null)
+                voxelEngine = _cachedVoxelEngine;
+        }
+
+        private string ResolveLocalized(string key, string fallback)
+        {
+            LocalizationManager manager = _cachedLocalization;
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;
@@ -1216,7 +1298,7 @@ namespace Hecton8.Gameplay
             PublishMeteorShowerGlobals(0f, math.saturate(meteorShowerIntensity), 1f);
         }
 
-        private static int ResolveMeteorAupTimeSeed()
+        private int ResolveMeteorAupTimeSeed()
         {
             uint aupSeed = 0u;
             if (TryResolvePlayerEventFrame(out _, out AbsoluteUniversePosition observerAup))
@@ -1253,27 +1335,6 @@ namespace Hecton8.Gameplay
         private static uint NextMeteorLcg(uint state)
         {
             return unchecked((state * 1664525u) + 1013904223u);
-        }
-
-        private void PublishMeteorShowerMegaBus()
-        {
-            MeteorShowerEvent meteorEvent = default;
-            meteorEvent.DurationSeconds = math.max(0f, meteorShowerDuration);
-            meteorEvent.Intensity = math.saturate(meteorShowerIntensity);
-            meteorEvent.Seed = (int)math.round(_meteorSeed);
-
-            if (TryResolvePlayerEventFrame(out Vector3 observerRuntimePosition, out AbsoluteUniversePosition observerAup))
-            {
-                meteorEvent.ObserverRuntimePosition = new float3(observerRuntimePosition.x, observerRuntimePosition.y, observerRuntimePosition.z);
-                meteorEvent.ObserverGridX = observerAup.GridX;
-                meteorEvent.ObserverGridY = observerAup.GridY;
-                meteorEvent.ObserverGridZ = observerAup.GridZ;
-                meteorEvent.ObserverLocalOffset = new float3(observerAup.LocalX, observerAup.LocalY, observerAup.LocalZ);
-                meteorEvent.HasObserverRuntimePosition = 1;
-                meteorEvent.HasObserverAup = 1;
-            }
-
-            HectonEventBus.Publish(in meteorEvent);
         }
 
         private void TickMeteorShowerEvent(float dt)
@@ -1333,7 +1394,8 @@ namespace Hecton8.Gameplay
                 return;
 
             _meteorLastBoomIndex = boomIndex;
-            if (!(GlobalRegistry.Audio is SpatialAudioManager spatialAudioManager))
+            SpatialAudioManager spatialAudioManager = _cachedSpatialAudioManager;
+            if (spatialAudioManager == null)
                 return;
 
             if (!TryResolvePlayerEventFrame(out Vector3 playerRuntimePosition, out AbsoluteUniversePosition playerAup))
@@ -1391,7 +1453,7 @@ namespace Hecton8.Gameplay
             TryApplyMeteorVoxelImpact(impactPosition, radius, impactEnvelope);
             QueueMeteorWaterBoom(impactPosition, in observerAup, impactEnvelope);
 
-            SargassumGlobalDragManager sargassumDrag = GlobalRegistry.SargassumDrag;
+            SargassumGlobalDragManager sargassumDrag = _cachedSargassumDrag;
             if (sargassumDrag != null)
                 sargassumDrag.RegisterMassiveDisplacement(impactPosition, radius, duration);
         }
@@ -1399,7 +1461,7 @@ namespace Hecton8.Gameplay
         private void TryApplyMeteorVoxelImpact(Vector3 impactPosition, float waterImpactRadius, float intensity)
         {
             if (voxelEngine == null)
-                voxelEngine = GlobalRegistry.VoxelEngine;
+                voxelEngine = _cachedVoxelEngine;
             if (voxelEngine == null)
                 return;
             if (!voxelEngine.TryGetNearestActiveVolume(impactPosition, out HectonVoxelVolume targetVolume) ||
@@ -1445,7 +1507,7 @@ namespace Hecton8.Gameplay
             if (meteorWaterSplashPrefab == null)
                 return;
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            ObjectPoolManager pool = _cachedObjectPool;
             if (pool == null)
                 return;
 
@@ -1517,9 +1579,9 @@ namespace Hecton8.Gameplay
             return (float)(distanceMeters / MeteorThunderSoundSpeedMetersPerSecond);
         }
 
-        private static bool TryResolvePlayerEventFrame(out Vector3 runtimePosition, out AbsoluteUniversePosition playerAup)
+        private bool TryResolvePlayerEventFrame(out Vector3 runtimePosition, out AbsoluteUniversePosition playerAup)
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
             if (playerMovement != null)
             {
@@ -1536,7 +1598,7 @@ namespace Hecton8.Gameplay
 
         private void ApplySolarFlareRadiation(float dt)
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             HectonPlayerHealth playerHealth = playerContext != null ? playerContext.PlayerHealth : null;
             if (playerHealth == null)
                 return;
@@ -1570,7 +1632,8 @@ namespace Hecton8.Gameplay
             Vector3 boomPosition = _pendingMeteorWaterBoomPosition;
             float boomIntensity = _pendingMeteorWaterBoomIntensity;
             ClearPendingMeteorWaterBoom();
-            if (!(GlobalRegistry.Audio is SpatialAudioManager spatialAudioManager))
+            SpatialAudioManager spatialAudioManager = _cachedSpatialAudioManager;
+            if (spatialAudioManager == null)
                 return;
 
             spatialAudioManager.PlayMeteorShowerBoom(
@@ -1608,7 +1671,7 @@ namespace Hecton8.Gameplay
             if (!TryResolvePlayerEventFrame(out playerPosition, out _))
                 return false;
             if (voxelEngine == null)
-                voxelEngine = GlobalRegistry.VoxelEngine;
+                voxelEngine = _cachedVoxelEngine;
 
             if (voxelEngine == null || !voxelEngine.TryGetNearestActiveVolume(playerPosition, out targetVolume) || targetVolume == null)
                 return false;

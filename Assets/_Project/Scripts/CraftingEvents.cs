@@ -52,19 +52,21 @@ namespace Hecton8.Crafting
     /// Unmanaged crafting event payload carried by the native queue.
     /// Managed references are resolved through sidecar slots during dispatch only.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct CraftingEventPayload
     {
-        public Vector3 SpawnPosition;
-        public Vector3 VelocityChange;
-        public uint FabricatorHashId;
-        public uint RecipeHashId;
-        public uint ResultItemHashId;
-        public float Progress01;
-        public int Quantity;
-        public int ReferenceSlot;
-        public ushort EventType;
-        public ushort Reserved;
+        [FieldOffset(0)] public Vector3 SpawnPosition;
+        [FieldOffset(12)] public Vector3 VelocityChange;
+        [FieldOffset(24)] public uint FabricatorHashId;
+        [FieldOffset(28)] public uint RecipeHashId;
+        [FieldOffset(32)] public uint ResultItemHashId;
+        [FieldOffset(36)] public float Progress01;
+        [FieldOffset(40)] public int Quantity;
+        [FieldOffset(44)] public int ReferenceSlot;
+        [FieldOffset(48)] public ushort EventType;
+        [FieldOffset(50)] public ushort Reserved;
+        [FieldOffset(52)] private uint _pad0;
+        [FieldOffset(56)] private ulong _pad1;
     }
 
     /// <summary>

@@ -25,56 +25,92 @@ using DebugSignalKind = Hecton8.Core.Contracts.Signals.DebugSignalKind;
 namespace Hecton8.Core.Diagnostics.Visuals
 {
     [Preserve]
-    [StructLayout(LayoutKind.Sequential, Size = 80)]
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
     public struct ArchitectEyeQuadInstance
     {
+        [FieldOffset(0)]
         public float4 CenterHalfX;
+        [FieldOffset(16)]
         public float4 AxisYHalfY;
+        [FieldOffset(32)]
         public float4 Color;
+        [FieldOffset(48)]
         public float4 UvMode;
+        [FieldOffset(64)]
         public float4 Aux;
     }
 
     [Preserve]
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct ArchitectEyeBlackBoxEntry
     {
+        [FieldOffset(0)]
         public uint Frame;
+        [FieldOffset(4)]
         public ushort QuadCount;
+        [FieldOffset(6)]
         public ushort SignalLaneCount;
+        [FieldOffset(8)]
         public float SignalPressure01;
+        [FieldOffset(12)]
         public float VaultPressure01;
+        [FieldOffset(16)]
         public float MemoryFragmentation01;
+        [FieldOffset(20)]
         public float SystemHealth01;
+        [FieldOffset(24)]
         public float FrameTimeMs;
+        [FieldOffset(28)]
         public int NonFiniteCount;
+        [FieldOffset(32)]
         public uint KillSwitchMask;
+        [FieldOffset(36)]
         public uint Flags;
+        [FieldOffset(40)]
         public float3 LastFaultPosition;
+        [FieldOffset(52)]
         public float GasCo201;
+        [FieldOffset(56)]
         public float GasO201;
+        [FieldOffset(60)]
         public float StpScale01;
     }
 
     [Preserve]
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct ArchitectEyeRuntimeState
     {
+        [FieldOffset(0)]
         public int TickPhase;
+        [FieldOffset(4)]
         public int BlackBoxCursor;
+        [FieldOffset(8)]
         public int WaterfallCursor;
+        [FieldOffset(12)]
         public int LastQuadCount;
+        [FieldOffset(16)]
         public uint Flags;
+        [FieldOffset(20)]
         public uint LastFrame;
+        [FieldOffset(24)]
         public float LastBuildMicroseconds;
+        [FieldOffset(28)]
         public float LastHealth01;
+        [FieldOffset(32)]
         public float LastFrameMs;
+        [FieldOffset(36)]
         public float LastStpScale01;
+        [FieldOffset(40)]
         public float LastGasCo201;
+        [FieldOffset(44)]
         public float LastGasO201;
+        [FieldOffset(48)]
         public int LastSignalLaneCount;
+        [FieldOffset(52)]
         public int LastNonFiniteCount;
+        [FieldOffset(56)]
         public int Reserved0;
+        [FieldOffset(60)]
         public int Reserved1;
     }
 
@@ -447,7 +483,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
             for (int i = 0; i < aups.Length && emitted < budget; i += step)
             {
                 AbsoluteUniversePosition aup = aups[i];
-                if (!VaultProbeUtility.IsFinite(in aup))
+                if (!IsFiniteAup(in aup))
                 {
                     nonFiniteCount++;
                     continue;
@@ -702,7 +738,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
             {
                 AbsoluteUniversePosition aup = aups[i];
                 float3 velocity = velocities[i];
-                bool finiteAup = VaultProbeUtility.IsFinite(in aup);
+                bool finiteAup = IsFiniteAup(in aup);
                 if (!finiteAup || !math.all(math.isfinite(velocity)))
                 {
                     nonFiniteCount++;
@@ -861,7 +897,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
             in ArchitectEyeRuntimeState state)
         {
             int history = math.min(blackBox.Length, 300);
-            int step = GlobalRegistry.ScalabilityTier == HectonQualityTier.Ultra ? 2 : 8;
+            int step = math.clamp((int)math.round(math.lerp(8f, 2f, SmoothStep01(ResolveGlobalQualityWeight01()))), 2, 8);
             for (int i = 0; i < history; i += step)
             {
                 int index = state.BlackBoxCursor - 1 - i;
@@ -896,13 +932,13 @@ namespace Hecton8.Core.Diagnostics.Visuals
             float gasCo201,
             float stpStress01)
         {
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            if (tier != HectonQualityTier.High && tier != HectonQualityTier.Ultra)
+            float visualOverkill01 = ResolveVisualOverkillWeight01();
+            if (visualOverkill01 <= 0.001f)
                 return;
 
-            int saltCount = tier == HectonQualityTier.Ultra ? 1024 : 256;
-            int siltCount = tier == HectonQualityTier.Ultra ? 1536 : 384;
-            int dentCount = tier == HectonQualityTier.Ultra ? 768 : 192;
+            int saltCount = (int)math.round(math.lerp(0f, 1024f, visualOverkill01));
+            int siltCount = (int)math.round(math.lerp(0f, 1536f, visualOverkill01));
+            int dentCount = (int)math.round(math.lerp(0f, 768f, visualOverkill01));
             float timePhase = (state.LastFrame & 1023u) * (1f / 1024f);
 
             for (int i = 0; i < saltCount && count < capacity; i++)
@@ -1179,7 +1215,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
                 aups.Length > 0)
             {
                 AbsoluteUniversePosition aup = aups[0];
-                if (VaultProbeUtility.IsFinite(in aup))
+                if (IsFiniteAup(in aup))
                 {
                     float3 position = aup.ToRuntimeFloat3();
                     if (math.all(math.isfinite(position)))
@@ -1197,6 +1233,14 @@ namespace Hecton8.Core.Diagnostics.Visuals
                    math.all(math.isfinite(signal.Vector)) &&
                    math.isfinite(signal.Value0) &&
                    math.isfinite(signal.Value1);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsFiniteAup(in AbsoluteUniversePosition aup)
+        {
+            return math.isfinite(aup.LocalX) &&
+                   math.isfinite(aup.LocalY) &&
+                   math.isfinite(aup.LocalZ);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1254,68 +1298,42 @@ namespace Hecton8.Core.Diagnostics.Visuals
 
         private int ResolveEntityBudget()
         {
-            switch (GlobalRegistry.ScalabilityTier)
-            {
-                case HectonQualityTier.Low:
-                case HectonQualityTier.Mx350:
-                    return math.max(16, _lowTierEntityBudget);
-                case HectonQualityTier.Mid:
-                    return math.max(_lowTierEntityBudget, _midTierEntityBudget);
-                case HectonQualityTier.Ultra:
-                    return math.max(_highTierEntityBudget, _ultraTierEntityBudget);
-                default:
-                    return math.max(_midTierEntityBudget, _highTierEntityBudget);
-            }
+            int lowBudget = math.max(16, _lowTierEntityBudget);
+            int midBudget = math.max(lowBudget, _midTierEntityBudget);
+            int highBudget = math.max(midBudget, _highTierEntityBudget);
+            int ultraBudget = math.max(highBudget, _ultraTierEntityBudget);
+            float quality01 = SmoothStep01(ResolveGlobalQualityWeight01());
+            float lowToMid = math.lerp(lowBudget, midBudget, math.saturate(quality01 * 2f));
+            float midToHigh = math.lerp(midBudget, highBudget, math.saturate((quality01 - 0.5f) * 2.8571429f));
+            float highToUltra = math.lerp(highBudget, ultraBudget, math.saturate((quality01 - 0.85f) * 6.666667f));
+            float budget = math.select(lowToMid, midToHigh, quality01 >= 0.5f);
+            budget = math.select(budget, highToUltra, quality01 >= 0.85f);
+            return math.clamp((int)math.round(budget), lowBudget, ultraBudget);
         }
 
         private int ResolveGasBudget()
         {
-            switch (GlobalRegistry.ScalabilityTier)
-            {
-                case HectonQualityTier.Low:
-                case HectonQualityTier.Mx350:
-                    return 48;
-                case HectonQualityTier.Mid:
-                    return 96;
-                case HectonQualityTier.Ultra:
-                    return 384;
-                default:
-                    return 192;
-            }
+            return math.clamp((int)math.round(math.lerp(48f, 384f, SmoothStep01(ResolveGlobalQualityWeight01()))), 48, 384);
         }
 
         private int ResolveQuadCapacity()
         {
-            switch (GlobalRegistry.ScalabilityTier)
-            {
-                case HectonQualityTier.Low:
-                case HectonQualityTier.Mx350:
-                    return math.min(_maxQuads, 2048);
-                case HectonQualityTier.Mid:
-                    return math.min(_maxQuads, 4096);
-                case HectonQualityTier.Ultra:
-                    return math.max(_maxQuads, DefaultMaxQuads);
-                case HectonQualityTier.High:
-                    return math.max(_maxQuads, DefaultMaxQuads);
-                default:
-                    return math.min(_maxQuads, 8192);
-            }
+            int minimum = math.min(_maxQuads, 2048);
+            int maximum = math.max(_maxQuads, DefaultMaxQuads);
+            float capacity = math.lerp(minimum, maximum, SmoothStep01(ResolveGlobalQualityWeight01()));
+            return math.clamp((int)math.round(capacity), minimum, maximum);
         }
 
         private MacroDatabaseTier ResolveMacroTier()
         {
-            switch (GlobalRegistry.ScalabilityTier)
-            {
-                case HectonQualityTier.Low:
-                case HectonQualityTier.Mx350:
-                    return MacroDatabaseTier.Low;
-                case HectonQualityTier.Ultra:
-                    return MacroDatabaseTier.Ultra;
-                case HectonQualityTier.High:
-                    return MacroDatabaseTier.High;
-                default:
-                    return MacroDatabaseTier.Middle;
-            }
+            float quality01 = SmoothStep01(ResolveGlobalQualityWeight01());
+            if (quality01 >= 0.85f)
+                return MacroDatabaseTier.Ultra;
+            if (quality01 >= 0.62f)
+                return MacroDatabaseTier.High;
+            if (quality01 >= 0.28f)
+                return MacroDatabaseTier.Middle;
+            return MacroDatabaseTier.Low;
         }
 
         private void EmitWorldText(NativeArray<ArchitectEyeQuadInstance> quads, ref int count, int capacity, float3 origin, char[] chars, int length, float size, float4 color)
@@ -1626,17 +1644,24 @@ namespace Hecton8.Core.Diagnostics.Visuals
 
         private static float ResolveVisualTierScalar()
         {
-            switch (GlobalRegistry.ScalabilityTier)
-            {
-                case HectonQualityTier.Ultra:
-                    return 3f;
-                case HectonQualityTier.High:
-                    return 2f;
-                case HectonQualityTier.Mid:
-                    return 1f;
-                default:
-                    return 0f;
-            }
+            return math.lerp(0f, 3f, SmoothStep01(ResolveGlobalQualityWeight01()));
+        }
+
+        private static float ResolveVisualOverkillWeight01()
+        {
+            return SmoothStep01(math.saturate((ResolveGlobalQualityWeight01() - 0.5f) * 2f));
+        }
+
+        private static float ResolveGlobalQualityWeight01()
+        {
+            float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
+            return math.isfinite(qualityWeight) ? math.saturate(qualityWeight) : 1.0f;
+        }
+
+        private static float SmoothStep01(float value)
+        {
+            float t = math.saturate(value);
+            return t * t * (3.0f - (2.0f * t));
         }
 
         private static bool IsDiagnosticsRuntimeAllowed()

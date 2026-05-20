@@ -16,7 +16,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Builder Status Overlay")]
-    public sealed class BuilderStatusOverlay : MonoBehaviour, ILateFrameTickable
+    public sealed class BuilderStatusOverlay : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const float AutoResolveRetryInterval = 1f;
         private const string ModuleIndexTemplate = "MODULE {0}/{1}  //  BUILT {2}";
@@ -80,6 +80,9 @@ namespace Hecton8.UI
         private readonly char[] _hintBuffer = new char[192];
         private readonly char[] _adviceScratchBuffer = new char[192];
         private bool _tickRegistered;
+        private bool _hotSwapListenerRegistered;
+        private IPlayerRuntimeContext _cachedPlayerContext;
+        private IEnvironmentRuntimeContext _cachedEnvironmentContext;
         private uint _inventorySignalHash;
         private uint _lastInventorySignalRevision;
         private uint _toolLoadoutSignalSourceId;
@@ -89,6 +92,8 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             AutoResolve();
             EnsureBuilt();
             Subscribe();
@@ -98,6 +103,7 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             UnregisterTick();
         }
 
@@ -154,25 +160,8 @@ namespace Hecton8.UI
             if (requiresRuntimeResolve &&
                 (!Application.isPlaying || _autoResolveRetryTimer <= 0f))
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-                if (playerContext != null)
-                {
-                    if (toolManager == null)
-                        toolManager = playerContext.ToolManager;
-
-                    if (playerBuilder == null)
-                        playerBuilder = toolManager != null ? toolManager.CurrentTool as PlayerBuilder : null;
-
-                    if (inventory == null)
-                        inventory = playerContext.Inventory;
-                }
-
-                if (constructionManager == null)
-                {
-                    IEnvironmentRuntimeContext environmentContext = GlobalRegistry.Environment;
-                    constructionManager = environmentContext != null ? environmentContext.ConstructionManager : null;
-                }
-
+                ApplyCachedPlayerContext(forceAssign: false);
+                ApplyCachedEnvironmentContext(forceAssign: false);
                 _autoResolveRetryTimer = AutoResolveRetryInterval;
             }
 
@@ -182,6 +171,91 @@ namespace Hecton8.UI
                 numericFont = labelFont;
 
             RefreshSubscriptions();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                ApplyCachedPlayerContext(forceAssign: true);
+                RefreshSubscriptions();
+                EvaluateTickRegistration();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Environment)
+            {
+                _cachedEnvironmentContext = currentService as IEnvironmentRuntimeContext;
+                ApplyCachedEnvironmentContext(forceAssign: true);
+                EvaluateTickRegistration();
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedEnvironmentContext = GlobalRegistry.Environment;
+        }
+
+        private void ApplyCachedPlayerContext(bool forceAssign)
+        {
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext == null)
+            {
+                if (forceAssign)
+                {
+                    playerBuilder = null;
+                    inventory = null;
+                    toolManager = null;
+                }
+
+                return;
+            }
+
+            if (forceAssign || toolManager == null)
+                toolManager = playerContext.ToolManager;
+
+            if (forceAssign || inventory == null)
+                inventory = playerContext.Inventory;
+
+            if (forceAssign || playerBuilder == null)
+                playerBuilder = toolManager != null ? toolManager.CurrentTool as PlayerBuilder : null;
+        }
+
+        private void ApplyCachedEnvironmentContext(bool forceAssign)
+        {
+            IEnvironmentRuntimeContext environmentContext = _cachedEnvironmentContext;
+            if (environmentContext == null)
+            {
+                if (forceAssign)
+                    constructionManager = null;
+
+                return;
+            }
+
+            if (forceAssign || constructionManager == null)
+                constructionManager = environmentContext.ConstructionManager;
         }
 
         private void RefreshSubscriptions()

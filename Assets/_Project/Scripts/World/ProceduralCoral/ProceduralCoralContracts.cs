@@ -15,6 +15,7 @@ namespace Hecton8.World.ProceduralCoral
         public const int MaxCollisionProxies = 1024;
         public const int MaxSyncPulses = 1024;
         public const int MaxDebugSegments = MaxBranches;
+        public const int MaxHzbTiles = 4096;
         public const int TelemetryFrames = 300;
         public const int CsvScratchBytes = 32768;
         public const int RuleBinaryHeaderBytes = 16;
@@ -30,6 +31,8 @@ namespace Hecton8.World.ProceduralCoral
         public const uint FaultCollisionPruned = 0x5052554Eu;
         public const uint FaultStackOverflow = 0x53544B21u;
         public const uint FaultRulePayload = 0x52554C45u;
+        public const uint FaultAuditLayout = 0x4C41594Fu;
+        public const uint FaultAuditVault = 0x56414C54u;
 
         public const uint OpGrow = 0x47524F57u;
         public const uint OpTurnLeft = 0x544C4654u;
@@ -65,6 +68,7 @@ namespace Hecton8.World.ProceduralCoral
         public const BufferID DebugSegments = (BufferID)71406;
         public const BufferID GpuSway = (BufferID)71407;
         public const BufferID SelfAudit = (BufferID)71408;
+        public const BufferID HzbTiles = (BufferID)71409;
     }
 
     public static class CoralBranchFlags
@@ -324,7 +328,7 @@ namespace Hecton8.World.ProceduralCoral
         [FieldOffset(36)]
         public int DepthReached;
         [FieldOffset(40)]
-        public float EstimatedComputeUs;
+        public float BurstComputeUs;
         [FieldOffset(44)]
         public float GlobalQualityWeight;
         [FieldOffset(48)]
@@ -399,9 +403,9 @@ namespace Hecton8.World.ProceduralCoral
         [FieldOffset(52)]
         public uint PrunedCount;
         [FieldOffset(56)]
-        public uint _pad0;
+        public uint SpatialCellCount;
         [FieldOffset(60)]
-        public uint _pad1;
+        public float EffectiveQualityWeight;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -452,5 +456,18 @@ namespace Hecton8.World.ProceduralCoral
         public ulong _pad1;
         [FieldOffset(56)]
         public ulong _pad2;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    public struct CoralHzbTileDTO
+    {
+        [FieldOffset(0)]
+        public float Depth01;
+        [FieldOffset(4)]
+        public uint TileX;
+        [FieldOffset(8)]
+        public uint TileY;
+        [FieldOffset(12)]
+        public uint Flags;
     }
 }

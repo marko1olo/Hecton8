@@ -3,6 +3,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Unity.Burst;
@@ -2446,7 +2447,7 @@ namespace Hecton8.Inventory
                 return;
             }
 
-            float3 localPlayer = (float3)(PlayerAup - SectorOriginAup);
+            float3 localPlayer = AupPrecisionMath.LocalDeltaFloat3(PlayerAup, SectorOriginAup, float3.zero);
             if (!math.all(math.isfinite(localPlayer)))
                 return;
 

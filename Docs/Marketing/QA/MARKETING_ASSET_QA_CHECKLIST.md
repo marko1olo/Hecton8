@@ -13,7 +13,7 @@ This checklist prevents expensive first-impression failure. Every screenshot, cl
 An asset is not publishable if it fails any of these:
 
 - uses concept art while implying gameplay;
-- implies co-op, multiplayer, live service, or MMO;
+- implies unsupported multiplayer scope, live service scope, or MMO scope;
 - claims performance without a build/profiler receipt;
 - needs a paragraph to explain what the player is doing;
 - looks like generic sci-fi plastic;
@@ -62,11 +62,46 @@ Score 0-1 each:
 | Unlocks a named CRM segment | The metadata row names a real `VERIFY_BEFORE_CONTACT` or `NEEDS_ASSET` group that would use the asset. |
 | Matches the creator format | Screenshot for screenshot-tolerant rows; clip/demo for gameplay-first or `NEEDS_ASSET` rows. |
 | Supports one pitch angle | The asset proves exactly one angle: pressure, salvage, base-as-machine, abyss dread, heavy machinery, or Seed Ship signal. |
-| Does not create a new promise | The asset does not imply co-op, performance, world size, feature completeness, or roadmap scope. |
+| Does not create a new promise | The asset does not imply unsupported multiplayer scope, performance, world size, feature completeness, or roadmap scope. |
 
 Minimum creator-utility score for outreach use: 3/4.
 
 Hard rule: a screenshot below 9/12 or a Steam screenshot below 10/12 is not publishable even if it unlocks many creator rows. A clip that fails the clip kill tests is not outreach-usable even if it matches a high-value creator.
+
+### SN2 Pain-Point Proof Gate
+
+Subnautica 2 pain signals are internal capture-priority inputs only. They are not public attack copy.
+
+Freshness check: before scoring a first-pack asset against this gate, confirm the pain bucket is still current in `Monitoring/COMPETITOR_AND_SENTIMENT_MONITORING_QUERIES.md`. Record the exact refresh or source row in `pain_freshness_source` and the check date in `pain_freshness_checked_at`. If a competitor patch, roadmap, or review trend reduces the pain, mark the bucket `MONITOR_ONLY` and do not use it to prioritize the asset.
+
+Score 0-1 each:
+
+| Proof check | Pass condition |
+|---|---|
+| Fresh pain signal | The monitoring file has a same-day or current-week entry showing the bucket is still active, not only historical launch-week noise. |
+| Answers one real audience fear | The asset clearly addresses one private bucket from `Monitoring/COMPETITOR_AND_SENTIMENT_MONITORING_QUERIES.md`: thin loop, trust, no player verb, base friction, defensive agency, performance proof boundary, save/recovery fairness, or clone risk. |
+| Keeps HECTON identity primary | The frame still reads as pressure, machinery, salvage, corrosion, black water, Seed Ship signal, or base-as-machine before it reads as "response to competitor complaint." |
+| Does not quote competitor pain | Caption, pitch, and metadata do not mention SN2 bugs, EULA, multiplayer-scope issues, poor performance, or "we do it better." |
+| Has a proof route | The asset can point to an internal proof field: asset ID, build/source, QA score, creator utility score, reject code, or later profiler/build artifact if performance is involved. |
+
+Minimum pain-point proof score for first screenshot pack priority: 4/5, with `pain_freshness_source` and `pain_freshness_checked_at` filled from the monitoring source. Planned rows stay at `PENDING_SAME_DAY_REFRESH` / `PENDING_CAPTURE` until real capture QA.
+
+Hard rule: this score is a priority modifier only. It cannot make a weak asset publishable, cannot override creator utility, and cannot create a performance, multiplayer-scope, content-hour, save-safety, or feature-completeness claim.
+
+### Agency/Decision Proof Gate
+
+This gate exists because threat, anomaly, darkness, and machinery can look strong while still showing no player choice. It is a first-packet gate, not a vibe score.
+
+Use these metadata values:
+
+| Gate value | Meaning |
+|---|---|
+| `AGENCY_PROOF_CANDIDATE` | A cold viewer should be able to name a player choice such as repair, retreat, reroute, scan, operate, abort, or recover without a caption. |
+| `SUPPORTING_AGENCY_SIGNAL` | The asset contains pressure, route cost, tool use, or hazard context, but it is not enough alone for the first public packet. |
+| `SUPPORTING_PLAYER_VERB_NOT_FIRST_GATE` | The asset shows action, but the consequence or choice is not explicit enough to satisfy the agency gate by itself. |
+| `NOT_AGENCY_PROOF` / stricter non-proof value | Identity, machinery, anomaly, capsule, or internal proof only. It cannot satisfy Campaign 01 agency proof. |
+
+First-packet agency proof must come from `PLAN-SHOT-006`, `PLAN-CLIP-001`, or `PLAN-CLIP-003` unless the control tower is updated with a new planned ID. `PLAN-SHOT-007` Seed Ship/anomaly can raise curiosity, but it cannot substitute for a player decision.
 
 ### First Screenshot Pack Capture Gate
 
@@ -86,11 +121,24 @@ Mandatory first pack composition:
 - 2 identity/gameplay exterior shots;
 - 2 base/interior machinery shots;
 - 1 salvage/player-action shot;
-- 1 threat/scale shot;
+- 1 agency/decision proof: threat/scale shot with a readable choice, pressure-leak decision clip, or salvage-failure decision clip;
 - 1 Seed Ship/anomaly shot only if the build can show it honestly;
 - 1 optional low-spec proof shot only for internal QA until profiler evidence exists.
 
 Hard reject the pack if more than half the shots need captions to explain the player verb.
+
+### First Capture Session QA Verdict
+
+Use after the first capture session from `Content/SCREENSHOT_AND_CLIP_SHOTLIST.md`. This is a triage verdict, not publication approval.
+
+| Verdict | Minimum evidence | Marketing action |
+|---|---|---|
+| `KEEP_TESTING` | 3 stills score 9/12+; one still has a clear player verb; one still proves pressure/machinery; no unsupported multiplayer-scope, performance, or competitor-war implication; metadata fields are factual. | Move into Campaign 01 cold-read testing. |
+| `REVISE_SCENE` | Reject codes are concentrated in fixable issues: `TOO_DARK`, `UI_UNREADABLE`, `BAD_COMPOSITION`, or missing affordance. | Do not post. Send fix notes to capture/build owner. |
+| `HOLD_ASSET` | Planned feature cannot be shown honestly in current build. | Keep metadata `PLANNED_CAPTURE`; do not replace with concept art. |
+| `KILL_ANGLE` | Repeated `GENERIC_VISUAL`, `DERIVATIVE_COMPETITOR_READ`, `CONCEPT_NOT_GAMEPLAY`, or `NO_PLAYER_VERB` after three attempts. | Remove the angle from first pack and choose a smaller proof. |
+
+Session cannot advance if any required metadata field would be guessed: build/source, QA score, creator utility score, pain proof score, pain freshness source/date, public comparison gate, agency decision proof gate, agency decision notes, or reject code.
 
 ## Clip QA
 
@@ -102,7 +150,7 @@ For 10-30 second clips:
 - no debug UI unless the point is a technical proof clip;
 - no camera shake that hides mechanics;
 - subtitles/captions must not cover the action;
-- final frame must have a CTA only if platform/context allows it;
+- final frame must use a public Steam/demo CTA only after the exact Steam page or public demo gate passes and `Analytics/MEASUREMENT_AND_UTM_PLAN.md` records destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`; otherwise use no-link end copy;
 - audio must sell pressure, machinery, or dread.
 
 ### Clip Kill Tests
@@ -149,7 +197,7 @@ Required beats for first trailer:
 3. 15-30s: survival/base/salvage system proof.
 4. 30-45s: danger or failure state.
 5. 45-60s: Seed Ship/anomaly curiosity.
-6. End: Steam wishlist CTA.
+6. End: gated Steam/demo CTA only after the exact Steam page or public demo gate plus destination-specific public CTA gate pass, or no-link title card if any gate has not passed.
 
 Forbidden:
 
@@ -158,16 +206,17 @@ Forbidden:
 - lore text wall;
 - cinematic-only montage;
 - feature list not backed by footage;
-- co-op implication;
-- "coming soon" without Steam page if the goal is wishlist conversion.
+- multiplayer-scope implication;
+- wishlist or "coming soon" CTA without official Steam page and CTA activation proof.
 
 ## Post QA
 
 Every public post needs:
 
+- `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED` for the exact post;
 - one hook;
 - one asset;
-- one CTA or one discussion question, not both if it feels spammy;
+- one approved CTA or one discussion question; no external link if `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` has not passed;
 - platform-native format;
 - no repeated copy across communities;
 - no fake "found this game" framing;
@@ -215,7 +264,7 @@ Press kit must include:
 - logo/key art;
 - trailer link or placeholder date;
 - contact email;
-- Steam link;
+- Steam link only after Official CTA Link Activation Gate V0;
 - disclosure of Early Access/pre-alpha state if relevant;
 - no fake awards, quotes, or metrics.
 
@@ -251,12 +300,19 @@ Owner:
 Use case:
 Build/source:
 Proof type:
-Co-op implication checked:
+Pain bucket answered:
+Pain proof score:
+Pain freshness source:
+Pain freshness checked at:
+Public comparison gate:
+Agency decision proof gate:
+Agency decision notes:
+Multiplayer-scope implication checked:
 Performance claim checked:
 Competitor copy checked:
 Mobile readability checked:
 Localization checked:
-UTM/CTA checked:
+UTM/CTA activation packet checked:
 Decision: Publish / Revise / Kill
 Reason:
 ```

@@ -1,6 +1,5 @@
 using Unity.Mathematics;
 using UnityEngine;
-using Hecton8.World;
 
 namespace Hecton8.AI
 {
@@ -56,10 +55,8 @@ namespace Hecton8.AI
 
         private uint ResolveHandoffSeed()
         {
-            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(transform.position);
-            uint sectorHash = FoldLong(aup.GridX) ^ (FoldLong(aup.GridY) * 0x85EBCA6Bu) ^ (FoldLong(aup.GridZ) * 0xC2B2AE35u);
             uint entityHash = unchecked((uint)EntityId.ToULong(GetEntityId()));
-            return Hash(entityHash ^ sectorHash);
+            return Hash(entityHash ^ 0xD15EA5E5u);
         }
 
         private Vector3 ResolveAngularVelocity(uint handoffSeed, int ordinal)
@@ -89,12 +86,6 @@ namespace Hecton8.AI
                 return new Vector3(0f, math.select(1f, -1f, velocity.y < 0f) * speed, 0f);
 
             return new Vector3(0f, 0f, math.select(1f, -1f, velocity.z < 0f) * speed);
-        }
-
-        private static uint FoldLong(long value)
-        {
-            ulong bits = unchecked((ulong)value);
-            return unchecked((uint)bits ^ (uint)(bits >> 32));
         }
 
         private static uint Hash(uint value)

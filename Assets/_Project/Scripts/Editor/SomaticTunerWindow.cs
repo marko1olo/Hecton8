@@ -1,9 +1,11 @@
 #if UNITY_EDITOR
+using System;
 using System.IO;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -169,21 +171,66 @@ namespace Hecton8.EditorTools
             }
         }
 
-        private static void ImportComfortCsv(IDataVault vault, NativeArray<VrComfortProfileDTO> profiles)
+        private static unsafe void ImportComfortCsv(IDataVault vault, NativeArray<VrComfortProfileDTO> profiles)
         {
-            if (!File.Exists(ComfortCsvPath))
+            if (vault == null ||
+                !profiles.IsCreated ||
+                profiles.Length == 0 ||
+                !File.Exists(ComfortCsvPath) ||
+                !vault.TryGetBuffer(BufferID.ShinobuVRSomaticCsvScratch, out NativeArray<byte> scratch) ||
+                !scratch.IsCreated ||
+                scratch.Length == 0)
                 return;
 
-            byte[] bytes = File.ReadAllBytes(ComfortCsvPath);
-            if (vault != null &&
-                vault.TryGetBuffer(BufferID.ShinobuVRSomaticProfileLookup, out NativeArray<VrComfortProfileLookupSlotDTO> lookup) &&
+            int byteCount = ReadFileIntoScratch(ComfortCsvPath, scratch);
+            if (byteCount <= 0)
+                return;
+
+            void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(scratch);
+            ReadOnlySpan<byte> csv = new ReadOnlySpan<byte>(source, byteCount);
+            if (vault.TryGetBuffer(BufferID.ShinobuVRSomaticProfileLookup, out NativeArray<VrComfortProfileLookupSlotDTO> lookup) &&
                 lookup.IsCreated)
             {
-                VRSomaticProvider.ParseComfortProfilesCsv(bytes, profiles, lookup);
+                VRSomaticProvider.ParseComfortProfilesCsv(csv, profiles, lookup);
                 return;
             }
 
-            VRSomaticProvider.ParseComfortProfilesCsv(bytes, profiles);
+            VRSomaticProvider.ParseComfortProfilesCsv(csv, profiles);
+        }
+
+        private static unsafe int ReadFileIntoScratch(string path, NativeArray<byte> scratch)
+        {
+            try
+            {
+                using (FileStream stream = File.OpenRead(path))
+                {
+                    if (stream.Length <= 0L || stream.Length > scratch.Length || stream.Length > int.MaxValue)
+                        return -1;
+
+                    int length = (int)stream.Length;
+                    void* destination = NativeArrayUnsafeUtility.GetUnsafePtr(scratch);
+                    Span<byte> target = new Span<byte>(destination, length);
+                    int totalRead = 0;
+                    while (totalRead < length)
+                    {
+                        int read = stream.Read(target.Slice(totalRead));
+                        if (read <= 0)
+                            return -1;
+
+                        totalRead += read;
+                    }
+
+                    return totalRead == length ? totalRead : -1;
+                }
+            }
+            catch (IOException)
+            {
+                return -1;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return -1;
+            }
         }
 
         private static void DrawComfortGraph(Rect rect, NativeArray<ComfortTelemetryEntry> telemetry)

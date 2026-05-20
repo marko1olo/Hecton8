@@ -2,7 +2,9 @@
     "name": "Hecton8.Audio.Synthesis",
     "rootNamespace": "Hecton8.Audio.Synthesis",
     "references": [
+        "Hecton8.Core",
         "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
         "Unity.Burst",
         "Unity.Collections",
         "Unity.Jobs",

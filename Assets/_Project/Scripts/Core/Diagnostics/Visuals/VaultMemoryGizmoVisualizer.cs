@@ -40,6 +40,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
             uint frame = unchecked((uint)Time.frameCount);
             ReadOnlySpan<MemoryAddressShiftSignal> shifts = SignalBus<MemoryAddressShiftSignal>.GetFrameSnapshot();
             Vector3 size = new Vector3(wireSizeMeters, wireSizeMeters, wireSizeMeters);
+            DrawLastPointerFault(vault, aups, count, frame);
             for (int i = 0; i < count; i++)
             {
                 VaultHotEntityData hot = hotEntities[i];
@@ -52,6 +53,27 @@ namespace Hecton8.Core.Diagnostics.Visuals
                     : Color.green;
                 Gizmos.DrawWireCube(runtimePosition, size);
             }
+        }
+
+        private static void DrawLastPointerFault(
+            GlobalDataVault vault,
+            NativeArray<VaultAup64> aups,
+            int count,
+            uint frame)
+        {
+            if (count <= 0 ||
+                !vault.TryGetVaultTelemetrySnapshot(0, out VaultTelemetrySnapshot telemetry) ||
+                telemetry.GenerationMismatchCount == 0u ||
+                telemetry.LastFaultBufferID <= 0)
+            {
+                return;
+            }
+
+            int index = math.abs(telemetry.LastFaultBufferID) % count;
+            float pulse = 0.75f + (0.25f * math.sin(frame * 0.21f));
+            Vector3 position = ReconstructRuntimePosition(in aups[index]);
+            Gizmos.color = new Color(1f, 0f, 0f, 0.85f);
+            Gizmos.DrawWireSphere(position, DefaultWireSizeMeters * (2f + pulse));
         }
 
         private static Vector3 ReconstructRuntimePosition(in VaultAup64 aup)

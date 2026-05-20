@@ -117,7 +117,8 @@ namespace Hecton8.World
             RefreshRuntimeStreamingSettings();
 
             IReadOnlyList<WorldProceduralPlacementRule> rules = proceduralFillDirector != null ? proceduralFillDirector.Rules : null;
-            if (playerTransform == null || fieldSampler == null || rules == null || rules.Count == 0)
+            if (fieldSampler == null || rules == null || rules.Count == 0 ||
+                !TryResolvePlayerAup(out AbsoluteUniversePosition centerAup))
             {
                 HandleScatterSamplingUnavailableDependencies();
                 return false;
@@ -132,7 +133,6 @@ namespace Hecton8.World
             int structureBudget = ResolveRuntimeBudget(structurePlacementsPerWindow, WorldStreamingLayer.Construction, 0, 2);
             int spawnStride = math.max(2, spawnCellStride);
             int spawnBudget = ResolveRuntimeBudget(spawnPlacementsPerWindow, WorldStreamingLayer.Fauna, 0, 2);
-            AbsoluteUniversePosition centerAup = AbsoluteUniversePosition.FromRuntimePosition(playerTransform.position);
             float3 runtimeCenter3 = centerAup.ToRuntimeFloat3();
             double3 absoluteCenter3 = centerAup.ToAbsoluteDouble3();
             Vector3 runtimeCenter = new Vector3(runtimeCenter3.x, runtimeCenter3.y, runtimeCenter3.z);
@@ -160,6 +160,28 @@ namespace Hecton8.World
                 spawnStride,
                 spawnBudget);
             return true;
+        }
+
+        private static bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
+        {
+            playerAup = default;
+
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext == null)
+                return false;
+
+            if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
+            {
+                playerAup = snapshot.Aup;
+                return MathGuard.IsFinite(in playerAup);
+            }
+
+            var playerMovement = playerContext.PlayerMovement;
+            if (playerMovement == null)
+                return false;
+
+            playerAup = playerMovement.CurrentAup;
+            return MathGuard.IsFinite(in playerAup);
         }
 
         private void HandleScatterSamplingUnavailableDependencies()

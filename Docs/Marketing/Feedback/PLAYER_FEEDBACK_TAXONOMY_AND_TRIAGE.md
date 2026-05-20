@@ -1,7 +1,7 @@
 # Player Feedback Taxonomy And Triage
 
 Status: feedback operating model / pre-public
-Public stance: single-player-first / no co-op promise
+Public stance: single-player-first scope / proof-first public copy
 Runtime impact: none
 
 ## Objective
@@ -14,6 +14,7 @@ Convert comments, creator coverage, demo notes, Discord posts, and Steam forum t
 |---|---|---|
 | `VISUAL_READ` | Screenshot/capsule/clip clarity. | Tech art / marketing |
 | `PLAYER_VERB` | Viewer cannot tell what player does. | Design / marketing |
+| `AGENCY_DECISION_READ` | Viewer/player cannot name the pressure decision, tradeoff, or consequence. | Design / marketing |
 | `DIFFERENTIATION` | Looks derivative or generic. | Art direction / positioning |
 | `SURVIVAL_LOOP` | Resource, pressure, base, route pacing. | Design |
 | `UX_READABILITY` | UI, warnings, objectives, controls. | UX |
@@ -34,8 +35,20 @@ Convert comments, creator coverage, demo notes, Discord posts, and Steam forum t
 
 ## Triage Table
 
-| Date | Source | Feedback quote/summary | Class | Severity | Product issue | Marketing issue | Owner | Action |
-|---|---|---|---|---|---|---|---|---|
+| Date | Source | Consent/provenance | Route class | Feedback quote/summary | Class | Severity | Product issue | Marketing issue | Owner | Action |
+|---|---|---|---|---|---|---|---|---|---|---|
+
+## Feedback Provenance Gate V0
+
+Every feedback row must state where the feedback came from and whether it was invited, public, support, creator, press, playtest, or private. Do not merge identities or contact details across routes.
+
+| Feedback source | Allowed use | Blocker |
+|---|---|---|
+| Public comments/reviews/forums | Aggregate product/marketing signal. | Adding commenters to CRM/newsletter/tester lists. |
+| Playtest/screening form | Product research for the agreed test route. | Reusing contact for marketing email without separate opt-in. |
+| Creator/press reply | Outreach and asset-fit learning. | Treating as newsletter or playtest consent. |
+| Support/bug report | Repro, support, known-issues update. | Using support email for marketing or creator outreach. |
+| Discord/community post | Community signal under server rules. | Moving private server content into public copy without permission. |
 
 ## Repeat Pattern Rule
 
@@ -48,6 +61,7 @@ One comment is not a mandate. Three independent comments on the same issue are a
 | "Looks like Subnautica" | Color, diver silhouette, reef, UI, or creature framing is too familiar. | Identify visual cue and revise lead asset. |
 | "Too dark" | Readability failed, not atmosphere succeeded. | Increase silhouette, contrast, navigation anchors. |
 | "What do you do?" | Player verb absent. | Show tool, base, salvage, repair, route, or threat decision. |
+| "What choice do I have?" / "Looks like a mood demo" | Agency decision absent; viewer sees atmosphere but not a tradeoff. | Use `AGENCY_DECISION_READ`; hold first-public or demo expansion until one repair/retreat/reroute/scan/operate/recover decision is visible. |
 | "Looks like a walking sim" | Systems are not visible. | Show mechanics and consequences. |
 | "I want co-op" | Audience expectation from genre/SN2. | Restate single-player-first, do not roadmap. |
 | "Will it run well?" | Trust/performance concern. | Do not answer with claims; promise measured proof later. |
@@ -74,9 +88,10 @@ After a creator plays or reviews:
 4. Did pressure/oxygen/power feel fair?
 5. Did the base feel functional?
 6. Did the world feel distinct from other underwater survival games?
-7. Did anything block you from continuing?
-8. Would you wishlist after this demo?
-9. What one screenshot or clip would you show someone else?
+7. What decision did you make under pressure, if any?
+8. Did anything block you from continuing?
+9. Would you wishlist after this demo?
+10. What one screenshot or clip would you show someone else?
 
 ## Weekly Feedback Digest
 
@@ -84,13 +99,14 @@ After a creator plays or reviews:
 ## Feedback Digest - YYYY-MM-DD
 
 - Sources reviewed:
+- Consent/provenance gaps:
 - Top repeated positive:
 - Top repeated negative:
 - P0 issues:
 - P1 issues:
+- Agency decision read gaps:
 - Marketing copy issue:
 - Asset issue:
 - Product issue:
 - Recommended next test:
 ```
-

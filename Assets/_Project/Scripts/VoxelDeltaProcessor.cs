@@ -3665,9 +3665,8 @@ namespace Hecton8.Caves
             // [BLOCKING_SYNC_POINT] OnDisable teardown only: DataVault carve-write memory is persistent,
             // but the component must not leave a live writer lock behind during scene shutdown.
             if (_scheduledCarveRunning)
-                _scheduledCarveHandle.Complete();
+                DispatcherJobFence.TryComplete(ref _scheduledCarveHandle, forceComplete: true);
 
-            _scheduledCarveHandle = default;
             _scheduledCarveRunning = false;
             UnlockScheduledCarveWrites();
             _scheduledCarveWritesHandle = default;

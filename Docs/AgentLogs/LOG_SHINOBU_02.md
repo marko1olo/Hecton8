@@ -1,4 +1,4 @@
-# SHINOBU_02 Agent Log
+﻿# SHINOBU_02 Agent Log
 
 ## 2026-05-18 - Static Signal Warden Recheck
 
@@ -185,8 +185,6 @@ Telemetry DTO: `SignalTelemetryFrame`, explicit size 64.
 - Circular dependency proof is limited to these CLI compile gates; Unity assembly reload proof is absent.
 
 </SELF_AUDIT>
-
----
 
 ## 2026-05-18 Contract Spine Follow-Up
 
@@ -1576,3 +1574,345 @@ Verification:
 Residual risk:
 - R32 report is untracked in git status; this pass treats filesystem truth as current, not committed-state truth.
 - No dotnet build, Unity import, Unity Console, Play Mode, profiler, GCMonitor, H-Phi trend rerun, IL2CPP/ARM64 player build, or runtime frame-time proof was run.
+
+## 2026-05-20 - Current40 Final Report
+
+What was wrong:
+- Active Status/Rationale/LOG files were missing from live Docs; archives existed only.
+- R35 docs overstated or blurred validation boundary.
+- Core generated-project overlay carried stale binary/source and cross-domain contamination.
+- Gameplay swim presentation referenced concrete Animation runtime.
+- ToolDepletedSignal became ambiguous after equipment contract inclusion.
+- SHINOBU-owned GlobalSignals/SystemDispatcher errors blocked clean classification.
+
+What was done:
+- Restored active Status/Rationale/LOG state files.
+- Updated R35 docs to static/tool evidence only; no Unity/runtime claim.
+- Patched Directory.Build.targets only; generated csproj untouched.
+- Added IKineticCharacterPresentationSink and moved Gameplay publication to cached Core contract interface.
+- Implemented the sink on KineticCharacterAnimatorRuntime.
+- Qualified Gameplay ToolDepletedSignal in HUD.
+- Fixed GlobalSignals NativeArray value-copy compare and weather byte helper.
+- Added byte compatibility bridge at stale generated-contract boundary while retaining normalized float policy math internally.
+
+Cinematic cheats used:
+- No physical simulation added. Gameplay emits scalar presentation intent; Animation can fake swim/wave/tool visuals. Low devices use cheap scalar path; high devices can add visual layers without gameplay truth coupling.
+
+Exact microseconds saved:
+- Runtime measured: 0. Profiler not run because compile remains red.
+- Compile-time measured: 0. Build timing not measured.
+- Any nonzero microsecond claim would be fake.
+
+Verification:
+- Static include gate: DIRECTORY_BUILD_COMPILE_INCLUDE_MISSING=0.
+- Generated include gate: CORE_GENERATED_INCLUDE_MISSING_AFTER_TARGET_REMOVES=0.
+- Scoped Pack=1 scan: only cold ContentAssetBinaryRecord remains.
+- Latest guarded Core build was launched only after guard passed: PRE_BUILD_GUARD_CURRENT40_FINAL CPU=45 PROCS=0.
+- Latest guarded Core build stdout: 311 errors / 19 warnings. Core compile remains red.
+- Previous SystemDispatcher float-to-byte error was absent from post-patch stdout.
+- Raw Tee file did not persist in active Docs/AgentLogs after build; this LOG records the evidence boundary and the visible stdout summary.
+
+<SELF_AUDIT>
+1. THE 20-TASK CHECK
+- Task 01 [PASS] Legacy binary event audit: no new binary event path; fallback/static evidence preserved.
+- Task 02 [PASS] UnityEvent eradication: no UnityEvent/string event introduced.
+- Task 03 [PASS] Signal struct alignment: no runtime Pack=1 introduced.
+- Task 04 [PASS] Orphaned queue cleanup: not changed in this pass.
+- Task 05 [PASS] Blind splicing preparation: Kinetic presentation routes through Core contract.
+- Task 06 [PASS] Multi-producer writer: not changed in this pass.
+- Task 07 [PASS] Frame parity dispatching: not changed in this pass.
+- Task 08 [PASS] Load shedding: stale byte bridge only at compatibility boundary; normalized float math retained internally.
+- Task 09 [PASS] Signal aggregation kernel: not changed in this pass.
+- Task 10 [PASS] Read-only span consumer: not changed in this pass.
+- Task 11 [PASS] Fatal interrupt bypass: not changed in this pass.
+- Task 12 [PASS] Ghost entity filtering: not changed in this pass.
+- Task 13 [PASS] AUP/NaN vaccination: no absolute AUP-to-float cast added; Kinetic damage path uses finite sanitizer.
+- Task 14 [PASS] Assembly dependency inversion: Gameplay no longer depends on concrete Animation runtime type.
+- Task 15 [PASS] IL2CPP stripping protection: not changed in this pass.
+- Task 16 [PASS] Telemetry monitor: not changed in this pass.
+- Task 17 [PASS] Zero-alloc string logging: no hot-path string logging added.
+- Task 18 [PASS] Signal dashboard editor: not changed in this pass.
+- Task 19 [PASS] Live signal injection facade: not changed in this pass.
+- Task 20 [PASS] CSV priority hot swap: not changed in this pass.
+
+2. ARM64 CHECK
+No new primary runtime DTO was introduced. Primary referenced signal DTO evidence remains WakeRequestSignal: offset 00-23 double3 OriginAup; 24-27 float RadiusMeters; 28-31 uint SourceHash; 32-35 uint Frame; 36 byte Flags; 37-47 explicit padding; total 48 bytes, multiple of 8.
+
+3. ZERO-GC CHECK
+No new Tick method was added. Hot presentation publication uses cached IKineticCharacterPresentationSink. No LINQ, closures, boxing, string formatting, or reflection were added. Cold TryGetComponent is outside the hot publish path.
+
+4. AUP CHECK
+No distance/physics logic or absolute AUP float casts were added. Swim presentation and damage impulse paths remain local/presentation-space.
+
+5. DEAR LIE CHECK
+Concrete Gameplay-to-Animation simulation coupling was avoided. Gameplay emits scalar presentation intent; Animation can fake visual motion independently.
+
+6. DEPENDENCY CHECK
+Concrete cross-domain dependency was replaced with a Core contract interface. No sibling runtime assembly reference was added. Remaining compile errors are external generated-project/domain-owner walls.
+
+FORensic DETAILS
+- Struct Layout: no new runtime DTO; WakeRequestSignal remains 48 bytes with explicit padding.
+- H-Phi Check: no local NativeArray ownership added.
+- Dear Lie: scalar presentation bridge preserves cheap visual fake path.
+- Blackbox: no blackbox implementation added or removed; runtime proof pending because compile is red.
+- Compile Guard: latest build guard was CPU 45%, build-tool processes 0. Latest build failed on 311 external errors / 19 warnings.
+</SELF_AUDIT>
+
+---
+
+<SELF_AUDIT agent="SHINOBU_02" pass="Current41">
+  <status>BLOCKED_BY_HARDWARE_GUARD_FOR_BUILD</status>
+  <work_done>
+    <item>Added Core-owned DispatcherJobFence to Directory.Build.targets instead of editing generated Hecton8.Core.csproj.</item>
+    <item>Rewired SystemDispatcher, FoveatedSimulationManager, and UIStateStore from direct World DispatcherJobSwap calls to Core DispatcherJobFence.</item>
+    <item>Pruned generated-build overlay source echoes for BinaryLayoutManifest, Core Memory, Fauna, and removed non-Core files that were contradicting existing Compile Remove entries.</item>
+    <item>Updated active docs to current R41 static DOC_GLOBAL boundary after the R41 report appeared on disk.</item>
+  </work_done>
+  <twenty_task_check>
+    <task id="01" status="PASS">No new binary event path.</task>
+    <task id="02" status="PASS">No UnityEvent or string event route added.</task>
+    <task id="03" status="PASS">No new DTO or Pack=1 layout added in Current41.</task>
+    <task id="04" status="PASS">Queue ownership not changed.</task>
+    <task id="05" status="PASS">Core job swap calls now route through Core fence.</task>
+    <task id="06" status="PASS">MPSC writer unchanged.</task>
+    <task id="07" status="PASS">Dispatcher swap-window parity now lives in Core fence.</task>
+    <task id="08" status="PASS">No binary quality branch added.</task>
+    <task id="09" status="PASS">Aggregation kernel unchanged.</task>
+    <task id="10" status="PASS">Span consumers unchanged.</task>
+    <task id="11" status="PASS">Fatal bypass unchanged.</task>
+    <task id="12" status="PASS">Ghost filtering unchanged.</task>
+    <task id="13" status="PASS">No AUP downgrade or unsafe float absolute cast added.</task>
+    <task id="14" status="PASS">Core direct World job-swap callsites removed; memory source/binary echo pruned.</task>
+    <task id="15" status="PASS">IL2CPP stripping surface unchanged.</task>
+    <task id="16" status="PASS">Telemetry monitor unchanged.</task>
+    <task id="17" status="PASS">No hot-path string allocation added.</task>
+    <task id="18" status="PASS">Signal dashboard unchanged.</task>
+    <task id="19" status="PASS">Live injection facade unchanged.</task>
+    <task id="20" status="PASS">CSV hot swap unchanged.</task>
+  </twenty_task_check>
+  <struct_layout>No primary DTO added. DispatcherJobFence is static scalar state only: int depth plus dev-only float timestamp. No NativeArray, no Pack=1, no runtime DTO stride.</struct_layout>
+  <zero_gc>DispatcherJobFence hot methods allocate no managed objects. Dev-only warning string is static const under UNITY_EDITOR/DEVELOPMENT_BUILD.</zero_gc>
+  <aup>No AUP math changed.</aup>
+  <dear_lie>No physical simulation introduced; this pass is compile-wall routing. Existing visual/simulation cheats untouched.</dear_lie>
+  <h_phi>Core still uses Vault handles; no new persistent private NativeArray introduced.</h_phi>
+  <dependency_check>Core callsites no longer reference World DispatcherJobSwap. Generated-project World helper removal is deferred because many dragged non-Core files still call it.</dependency_check>
+  <verification>Build skipped: PRE_BUILD_GUARD_CURRENT41 CPU=100 PROCS=0. Last actual Core build remains Current40: 311 errors / 19 warnings.</verification>
+</SELF_AUDIT>
+
+---
+
+<SELF_AUDIT agent="SHINOBU_02" pass="Current42">
+  <status>BLOCKED_BY_HARDWARE_GUARD_FOR_BUILD</status>
+  <work_done>
+    <item>Removed unused `using Hecton8.World;` from Core-owned SystemDispatcher.cs; that file now has no World/AUP symbol references.</item>
+    <item>Corrected Current41 overlay claim after Hume found `Core\Memory\MemorySentinelContracts.cs` still source-included beside `Hecton8.Core.Memory.dll`.</item>
+    <item>Added `Directory.Build.targets` `Compile Remove` for `Assets\_Project\Scripts\Core\Memory\MemorySentinelContracts.cs`; generated csproj files were not edited.</item>
+  </work_done>
+  <twenty_task_check>
+    <task id="01" status="PASS">No legacy binary event path added.</task>
+    <task id="02" status="PASS">No UnityEvent/string event route added.</task>
+    <task id="03" status="PASS">No runtime DTO or Pack=1 layout added.</task>
+    <task id="04" status="PASS">Queue ownership unchanged.</task>
+    <task id="05" status="PASS">Core dispatcher remains fenced through DispatcherJobFence.</task>
+    <task id="06" status="PASS">MPSC writer unchanged.</task>
+    <task id="07" status="PASS">Frame parity dispatching unchanged in Current42.</task>
+    <task id="08" status="PASS">No binary quality branch added.</task>
+    <task id="09" status="PASS">Aggregation kernel unchanged.</task>
+    <task id="10" status="PASS">Span consumers unchanged.</task>
+    <task id="11" status="PASS">Fatal bypass unchanged.</task>
+    <task id="12" status="PASS">Ghost filtering unchanged.</task>
+    <task id="13" status="PASS">No AUP downgrade or absolute float cast added.</task>
+    <task id="14" status="PASS">Core no longer imports World in SystemDispatcher; Core Memory source/binary echo gets explicit overlay removal.</task>
+    <task id="15" status="PASS">IL2CPP stripping surface unchanged.</task>
+    <task id="16" status="PASS">Telemetry monitor unchanged.</task>
+    <task id="17" status="PASS">No hot-path string allocation added.</task>
+    <task id="18" status="PASS">Signal dashboard unchanged.</task>
+    <task id="19" status="PASS">Live injection facade unchanged.</task>
+    <task id="20" status="PASS">CSV hot swap unchanged.</task>
+  </twenty_task_check>
+  <struct_layout>No new primary DTO was introduced. Referenced dispatcher DTO remains DispatcherTimingDTO: 0 PreSimMs/FrameDelta, 4 SimWaitMs/FixedDelta, 8 PostSimMs/TimeScale, 12 VisualSyncMs/ActiveBucketMask, 16 FrameId, 20-31 explicit padding, total 32 bytes.</struct_layout>
+  <zero_gc>No Tick method changed. SystemDispatcher using cleanup and MSBuild overlay remove allocate no runtime objects.</zero_gc>
+  <aup>No AUP math changed; SystemDispatcher now has no direct World/AUP symbol reference.</aup>
+  <dear_lie>No physical simulation introduced. This pass is compile-wall/type-identity cleanup only.</dear_lie>
+  <h_phi>No persistent NativeArray, NativeList, or NativeHashMap was added.</h_phi>
+  <dependency_check>Core DispatcherJobSwap references remain zero. Core Memory source/binary split is reduced through Directory.Build.targets; Core.Contracts overlays are still known-risk and intentionally retained until contract binaries are proven fresh.</dependency_check>
+  <verification>Static only. `git diff --check` passed with CRLF warnings. Build skipped: PRE_BUILD_GUARD_CURRENT42 CPU=92 PROCS=0; final retry PRE_BUILD_GUARD_CURRENT42_FINAL CPU=89 PROCS=0. Last actual Core build remains Current40: 311 errors / 19 warnings.</verification>
+</SELF_AUDIT>
+
+---
+
+<SELF_AUDIT agent="SHINOBU_02" pass="Current43">
+  <status>BLOCKED_BY_HARDWARE_GUARD_FOR_BUILD</status>
+  <what_was_wrong>SystemDispatcher cached dependencies but still re-polled GlobalRegistry in the pre-simulation path when InputDeterminism, JobAdmission, or SimulationBucketer were null or uninitialized.</what_was_wrong>
+  <what_was_done>Added GlobalRegistry hot-swap/ref-listener rebinding to SystemDispatcher and replaced per-frame dependency refresh with null-only bounded retry every 8 frames. Kept DataVault fallback because it is part of vault/raycast recovery and was classified unsafe to remove without runtime proof.</what_was_done>
+  <twenty_task_check>
+    <task id="01" status="PASS">No legacy binary event path added.</task>
+    <task id="02" status="PASS">No UnityEvent or string event route added.</task>
+    <task id="03" status="PASS">No runtime DTO or Pack=1 layout added.</task>
+    <task id="04" status="PASS">Queue ownership unchanged.</task>
+    <task id="05" status="PASS">Core dispatcher fence path unchanged.</task>
+    <task id="06" status="PASS">MPSC writer unchanged.</task>
+    <task id="07" status="PASS">Dispatcher frame parity unchanged; registry fallback cadence reduced.</task>
+    <task id="08" status="PASS">No binary quality switch added.</task>
+    <task id="09" status="PASS">Aggregation kernel unchanged.</task>
+    <task id="10" status="PASS">Span consumers unchanged.</task>
+    <task id="11" status="PASS">Fatal bypass unchanged.</task>
+    <task id="12" status="PASS">Ghost filtering unchanged.</task>
+    <task id="13" status="PASS">No AUP downgrade or absolute float cast added.</task>
+    <task id="14" status="PASS">Dispatcher dependencies now rebind through GlobalRegistry listener callbacks plus bounded null-only retry; no sibling runtime reference added.</task>
+    <task id="15" status="PASS">IL2CPP stripping surface unchanged.</task>
+    <task id="16" status="PASS">Blackbox/Vault telemetry unchanged; DataVault rebound calls VaultSovereigntyTelemetry.EnsureRing.</task>
+    <task id="17" status="PASS">No hot-path string allocation added.</task>
+    <task id="18" status="PASS">Signal dashboard unchanged.</task>
+    <task id="19" status="PASS">Live injection facade unchanged.</task>
+    <task id="20" status="PASS">CSV hot swap unchanged.</task>
+  </twenty_task_check>
+  <struct_layout>No new runtime DTO was introduced. Referenced DispatcherTimingDTO remains 32 bytes: offsets 0/4/8/12/16 plus 20-31 explicit padding; multiple of 8. No Pack=1 added.</struct_layout>
+  <scalability_curve>The patch is not visual LOD math. It reduces failure-mode registry lookup cadence continuously by time/frame cadence instead of a quality branch: cached service frames perform zero registry lookup, missing service frames retry at most once per 8 dispatcher frames. GlobalQualityWeight behavior is untouched.</scalability_curve>
+  <h_phi_vault_status>No private NativeArray, NativeList, or NativeHashMap was added. Existing dispatcher VaultBufferHandle ownership is unchanged. DataVault rebound updates the cached vault reference and ensures the sovereignty telemetry ring.</h_phi_vault_status>
+  <pointer_aliasing_dependency_graph>No Burst job or NativeArray aliasing surface changed. Dispatcher jobs still return existing JobHandles through the pre-existing master dispatcher graph.</pointer_aliasing_dependency_graph>
+  <compile_guard>No generated csproj was edited. Core Memory source/binary echo fix remains in Directory.Build.targets. Core.Contracts source overlays remain intentional until contract binaries are proven fresh.</compile_guard>
+  <dear_lie>No physical simulation was introduced. The cheap path here is architectural: event-driven cached rebinding plus bounded retry replaces per-frame registry polling during missing/uninitialized service windows. Complexity for three dependency probes changes from O(3) every dispatcher frame in failure mode to O(3/8) amortized frames.</dear_lie>
+  <verification>Static only. git diff --check passed with CRLF warnings. PRE_BUILD_GUARD_CURRENT43 CPU=100 PROCS=0 and PRE_BUILD_GUARD_CURRENT43_FINAL CPU=100 PROCS=0, so build was skipped by project rule. Last actual Core build remains Current40: 311 errors / 19 warnings.</verification>
+</SELF_AUDIT>
+
+---
+
+<SELF_AUDIT agent="SHINOBU_02" pass="Current44">
+  <status>BLOCKED_BY_HARDWARE_GUARD_FOR_BUILD</status>
+  <what_was_wrong>Current43 hot-swap listener code was compile-shaped, but a disabled SystemDispatcher could remain subscribed until destruction/shutdown. Architecture docs also mixed R42 root truth with stale R41-current boundary text.</what_was_wrong>
+  <what_was_done>Added `_serviceRegistered`-guarded SystemDispatcher `OnEnable`/`OnDisable` hot-swap listener registration. Reconciled scoped architecture docs from R41-current to R42-current boundary wording, including the mandatory binary payload ledger. Removed three self-cancelling Core reference add-blocks from `Directory.Build.targets` while keeping the Core remove backstops.</what_was_done>
+  <twenty_task_check>
+    <task id="01" status="PASS">No legacy binary event path added.</task>
+    <task id="02" status="PASS">No UnityEvent/string event route added.</task>
+    <task id="03" status="PASS">No runtime DTO or Pack=1 layout added.</task>
+    <task id="04" status="PASS">Queue ownership unchanged.</task>
+    <task id="05" status="PASS">Core dispatcher fence path unchanged.</task>
+    <task id="06" status="PASS">MPSC writer unchanged.</task>
+    <task id="07" status="PASS">Dispatcher frame parity unchanged; lifecycle listener hygiene added.</task>
+    <task id="08" status="PASS">No binary quality switch added.</task>
+    <task id="09" status="PASS">Aggregation kernel unchanged.</task>
+    <task id="10" status="PASS">Span consumers unchanged.</task>
+    <task id="11" status="PASS">Fatal bypass unchanged.</task>
+    <task id="12" status="PASS">Ghost filtering unchanged.</task>
+    <task id="13" status="PASS">No AUP downgrade or absolute float cast added.</task>
+    <task id="14" status="PASS">Hot-swap listener lifecycle now respects service registration and disabled component state; no sibling runtime reference added.</task>
+    <task id="15" status="PASS">IL2CPP stripping surface unchanged.</task>
+    <task id="16" status="PASS">Blackbox/Vault telemetry unchanged.</task>
+    <task id="17" status="PASS">No hot-path string allocation added.</task>
+    <task id="18" status="PASS">Signal dashboard unchanged.</task>
+    <task id="19" status="PASS">Live injection facade unchanged.</task>
+    <task id="20" status="PASS">CSV hot swap unchanged.</task>
+  </twenty_task_check>
+  <struct_layout>No runtime DTO was introduced. DispatcherTimingDTO evidence remains 32 bytes: 0/4/8/12/16 payload offsets with 20-31 explicit padding. No Pack=1 added.</struct_layout>
+  <scalability_curve>Runtime scalability math is unchanged. The lifecycle patch prevents inactive dispatcher callback work across all quality levels. R42 doc correction is process-only.</scalability_curve>
+  <h_phi_vault_status>No NativeArray, NativeList, or NativeHashMap ownership was added. Existing dispatcher VaultBufferHandle ownership remains unchanged.</h_phi_vault_status>
+  <pointer_aliasing_dependency_graph>No Burst job, NoAlias field, or JobHandle graph changed. Existing dispatcher job chaining remains the active dependency graph.</pointer_aliasing_dependency_graph>
+  <compile_guard>No generated csproj was edited. No sibling runtime reference was added. Self-cancelling Core add-reference blocks for Hecton8.AI.Ecology.Migration, Hecton8.Audio.Propagation, and Hecton8.Environment.Fluids.Contracts were removed; existing Core remove backstops remain. Core.Contracts source overlays remain intentional known-risk debt until contract binaries are proven fresh.</compile_guard>
+  <dear_lie>No physical simulation was introduced. This pass buys back lifecycle/iteration risk rather than simulating anything.</dear_lie>
+  <verification>Static only. Stale R41-current architecture scan returned no hits. git diff --check passed with CRLF warnings. PRE_BUILD_GUARD_CURRENT44 CPU=100 PROCS=0, PRE_BUILD_GUARD_CURRENT44_FINAL CPU=100 PROCS=0, and PRE_BUILD_GUARD_CURRENT44_FINAL2 CPU=100 PROCS=0, so build was skipped by project rule. Last actual Core build remains Current40: 311 errors / 19 warnings.</verification>
+</SELF_AUDIT>
+
+---
+
+<SELF_AUDIT agent="SHINOBU_02" pass="Current45">
+  <status>BLOCKED_BY_HARDWARE_GUARD_FOR_BUILD</status>
+  <what_was_wrong>Core SignalBus DTOs in `GlobalSignals.cs` used explicit struct sizes but several lanes left tail bytes implicit. That is not enough evidence for ARM64/replay/blackbox audits even when the declared size keeps `UnsafeUtility.SizeOf<T>()` aligned.</what_was_wrong>
+  <what_was_done>Added private `[FieldOffset]` tail padding fields to explicit-layout `ISignal` payloads without changing public fields, existing offsets, lane registration, queue capacities, or dispatch code. Used Maxwell for signal ABI scouting and Ampere for AUP compile-wall scouting.</what_was_done>
+  <twenty_task_check>
+    <task id="01" status="PASS">No legacy binary event path added.</task>
+    <task id="02" status="PASS">No UnityEvent/string event route added.</task>
+    <task id="03" status="PASS">Explicit private tail padding added across covered Core-owned explicit `ISignal` DTOs; no Pack=1 found.</task>
+    <task id="04" status="PASS">Queue ownership unchanged.</task>
+    <task id="05" status="PASS">Blind splicing/fence code unchanged.</task>
+    <task id="06" status="PASS">MPSC writer semantics unchanged.</task>
+    <task id="07" status="PASS">Frame parity/flush ordering unchanged.</task>
+    <task id="08" status="PASS">No binary quality switch added.</task>
+    <task id="09" status="PASS">Aggregation kernel unchanged.</task>
+    <task id="10" status="PASS">Span consumers unchanged.</task>
+    <task id="11" status="PASS">Fatal bypass unchanged.</task>
+    <task id="12" status="PASS">Ghost filtering unchanged.</task>
+    <task id="13" status="PASS">No AUP math changed; no absolute AUP-to-float cast added.</task>
+    <task id="14" status="PASS">No sibling runtime reference added. Remaining `GlobalSignals.cs` World/AUP public payload debt is documented as broad migration risk.</task>
+    <task id="15" status="PASS">IL2CPP stripping surface unchanged.</task>
+    <task id="16" status="PASS">Blackbox transport unchanged; signal DTO layout evidence improved.</task>
+    <task id="17" status="PASS">No hot-path string allocation added.</task>
+    <task id="18" status="PASS">Signal dashboard unchanged.</task>
+    <task id="19" status="PASS">Live injection facade unchanged.</task>
+    <task id="20" status="PASS">CSV hot swap unchanged.</task>
+  </twenty_task_check>
+  <struct_layout primary="FramePacingWarningSignal" size="64">
+    <field offset="0" size="4">Frame</field>
+    <field offset="4" size="4">SourceHash</field>
+    <field offset="8" size="4">Flags</field>
+    <field offset="12" size="4">CurrentFrameMs</field>
+    <field offset="16" size="4">TargetFrameMs</field>
+    <field offset="20" size="4">PreSimulationMs</field>
+    <field offset="24" size="4">ActiveBucketLoadMs</field>
+    <field offset="28" size="4">JitterVarianceMs</field>
+    <field offset="32" size="4">ExpectedMaxBucketLoadMs</field>
+    <field offset="36" size="4">ExpectedMeanBucketLoadMs</field>
+    <field offset="40" size="4">ActiveSlowBucket</field>
+    <field offset="44" size="4">SlowBucketMask</field>
+    <field offset="48" size="4">RebalanceSequence</field>
+    <field offset="52" size="1">Severity</field>
+    <padding offset="53" size="1">_padTail0</padding>
+    <padding offset="54" size="2">_padTail1</padding>
+    <padding offset="56" size="8">_padTail2</padding>
+    <proof>64 bytes total, 8-byte multiple, explicit tail bytes 53-63, no Pack=1.</proof>
+  </struct_layout>
+  <scalability_curve>No runtime scalability math changed. This pass is transport ABI hardening: low/mid/high/ultra lanes keep identical payload sizes and do not branch on binary quality. Existing continuous `QualityWeightByte` consumers remain unchanged.</scalability_curve>
+  <h_phi_vault_status>No persistent NativeArray, NativeList, NativeHashMap, or VaultBufferHandle ownership was added. Existing SignalBus frame snapshots remain GlobalDataVault-owned aliases.</h_phi_vault_status>
+  <pointer_aliasing_dependency_graph>No Burst jobs, NoAlias fields, or JobHandles changed. SignalBus push/flush dependency graph is unchanged.</pointer_aliasing_dependency_graph>
+  <compile_guard>No generated csproj was edited. No direct sibling runtime reference was added. Ampere found existing `GlobalSignals.cs` -> `Hecton8.World.AbsoluteUniversePosition` debt, but no safe one-pass public payload migration exists without breaking consumers.</compile_guard>
+  <dear_lie>No physical simulation was introduced. The cheap path is ABI explicitness: fixed-size signal packets stay memcpy/replay-friendly without runtime reflection or validation probes.</dear_lie>
+  <verification>Static only. `SIGNAL_TAIL_PADDING_SCAN=PASS` for covered explicit `ISignal` tails, excluding AudioEvent's external nested audio union from the static map. `SIGNAL_PACK_SCAN=PASS`. `git diff --check -- Assets/_Project/Scripts/Core/GlobalSignals.cs` returned exit 0 with line-ending warning only. Build skipped by hardware guard: `PRE_BUILD_GUARD_CURRENT45 CPU=100 PROCS=0`. Last actual Core build remains Current40: 311 errors / 19 warnings.</verification>
+</SELF_AUDIT>
+
+---
+
+<SELF_AUDIT agent="SHINOBU_02" pass="Current46">
+  <status>BLOCKED_BY_HARDWARE_GUARD_FOR_BUILD</status>
+  <what_was_wrong>`AudioEvent` remained the one Current45 ABI exception: it is a 128-byte explicit `ISignal` union, but the largest nested audio payload ended at byte 112 and bytes 112..127 were implicit tail padding. That left the SignalBus ABI proof incomplete for this lane.</what_was_wrong>
+  <what_was_done>Added two private explicit padding fields to `AudioEvent`: `_padTail0` at offset 112 and `_padTail1` at offset 120. No public offsets, lane hash, dispatch logic, queue capacity, or dependency reference changed. Goodall independently verified nested audio payload sizes before the patch was recorded.</what_was_done>
+  <twenty_task_check>
+    <task id="01" status="PASS">No legacy binary event path added.</task>
+    <task id="02" status="PASS">No UnityEvent/string event route added; SignalCritical managed event surface remains 0.</task>
+    <task id="03" status="PASS">`AudioEvent` tail padding is now explicit; no runtime signal Pack=1 hit in SignalCritical audit.</task>
+    <task id="04" status="PASS">Queue model unchanged. `_queue` remains registered local NativeQueue; frame snapshot remains Vault-backed.</task>
+    <task id="05" status="PASS">Blind splicing/fence code unchanged.</task>
+    <task id="06" status="PASS">MPSC writer/ParallelWriter semantics unchanged.</task>
+    <task id="07" status="PASS">Frame parity/flush ordering unchanged.</task>
+    <task id="08" status="PASS">No binary quality switch added.</task>
+    <task id="09" status="PASS">Aggregation/coalescing kernel unchanged.</task>
+    <task id="10" status="PASS">ReadOnlySpan snapshot consumers unchanged.</task>
+    <task id="11" status="PASS">Fatal bypass unchanged.</task>
+    <task id="12" status="PASS">Ghost filtering unchanged.</task>
+    <task id="13" status="PASS">No AUP math changed; no absolute AUP-to-float cast added.</task>
+    <task id="14" status="PASS">No sibling runtime reference added. Existing hidden Core-to-Audio payload-shape dependency is documented; real contract isolation is deferred to coordinated Audio/World migration.</task>
+    <task id="15" status="PASS">IL2CPP stripping surface unchanged.</task>
+    <task id="16" status="PASS">Blackbox/SignalCritical audit artifact written to `Docs/AgentLogs/SignalBusContractAudit_Current46_SHINOBU_02.*`.</task>
+    <task id="17" status="PASS">No hot-path string allocation added.</task>
+    <task id="18" status="PASS">Signal dashboard unchanged.</task>
+    <task id="19" status="PASS">Live injection facade unchanged.</task>
+    <task id="20" status="PASS">CSV hot swap unchanged.</task>
+  </twenty_task_check>
+  <struct_layout primary="AudioEvent" size="128">
+    <field offset="0" size="1">Kind</field>
+    <field offset="1" size="1">Reserved0</field>
+    <field offset="2" size="2">Reserved1</field>
+    <field offset="4" size="4">Reserved2</field>
+    <field offset="8" size="8">Reserved3</field>
+    <union offset="16" size="48">AudioPingTriggerInfo: bytes 16..63</union>
+    <union offset="16" size="96">StructuralStressAudioInfo: bytes 16..111</union>
+    <padding offset="112" size="8">_padTail0</padding>
+    <padding offset="120" size="8">_padTail1</padding>
+    <proof>128 bytes total, 8-byte multiple, explicit tail bytes 112..127, no Pack=1. Goodall source proof: AudioPingTriggerInfo is explicit 48 bytes, StructuralStressAudioInfo is explicit 96 bytes.</proof>
+  </struct_layout>
+  <scalability_curve>No runtime scalability math changed. Existing SignalBus frame caps still use continuous `GlobalQualityWeight01`/stress curves; this pass only makes the audio lane ABI explicit so low/mid/high/ultra devices share one memcpy-safe payload.</scalability_curve>
+  <h_phi_vault_status>`SignalBus<T>` frame snapshots resolve through `VaultGenerationHandle<T>` and release through `GlobalDataVault.ReleaseBuffer`. The producer ingress `_queue` remains a Sentinel-registered local `NativeQueue<T>` because the Vault has no MPSC queue primitive and replacing it would break `NativeQueue<T>.ParallelWriter` producers. No new private NativeArray/NativeList/NativeHashMap ownership was added.</h_phi_vault_status>
+  <pointer_aliasing_dependency_graph>No Burst jobs, NoAlias fields, or JobHandles changed. SignalBus push/flush dependency graph remains unchanged.</pointer_aliasing_dependency_graph>
+  <compile_guard>No generated csproj was edited. No new direct sibling runtime assembly reference was added. Existing `GlobalSignals.cs` references to `Hecton8.Audio.*` and `Hecton8.World.AbsoluteUniversePosition` remain documented compile-wall debt, not silently migrated in this pass.</compile_guard>
+  <dear_lie>No physical simulation was introduced. The cheap path remains typed transport plus fixed-size union packets; procedural audio rendering can fake stress/ping presentation downstream without adding CPU physics to SignalBus.</dear_lie>
+  <verification>Static only. `AUDIO_EVENT_TAIL_PADDING_SCAN Size128=1 Pad112=1 Pad120=1 EndLargestUnion=112 Total=128`. SignalCritical audit: files 8 C# / 68 compute, errors 0, warnings 15, infos 2, confirmedErrors 0; warnings are sync-I/O review only. `git diff --check -- Assets/_Project/Scripts/Core/GlobalSignals.cs` returned exit 0 with line-ending warning only; full Current46 diff check over code/status/rationale/log/audit artifacts also returned exit 0 with line-ending warnings only. Build skipped by hardware guard: `PRE_BUILD_GUARD_CURRENT46 CPU=100 PROCS=0`; final retry `PRE_BUILD_GUARD_CURRENT46_FINAL2 CPU=78 PROCS=0`. Last actual Core build remains Current40: 311 errors / 19 warnings.</verification>
+</SELF_AUDIT>

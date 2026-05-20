@@ -1,0 +1,42 @@
+<SELF_AUDIT agent="SHINOBU_211" role="OFFLINE_INTERIOR_CLUTTER_FORGE" evidence="STATIC_SOURCE_PENDING_UNITY_IMPORT">
+  <TaskReconciliation>
+    <Task id="01" name="REALTIME_HIERARCHY_BLOAT_INQUISITION" status="PASS">Hierarchy_Bloat_Scanner emits JSON and filters interactive roots.</Task>
+    <Task id="02" name="MULTIPLE_MATERIAL_PURGE" status="PASS">One generated atlas material per baked room/LOD renderer.</Task>
+    <Task id="03" name="CS1612_GEOMETRY_STATE_ANNIHILATION" status="PASS">Burst DTOs use raw public fields and pointer extraction; no hot-path properties.</Task>
+    <Task id="04" name="ARM64_MAPPING_LAYOUT_ASSERTION" status="PASS">Explicit 32/64/160-byte DTO checks and mesh stride validation.</Task>
+    <Task id="05" name="EMERGENCY_MOCK_CLUTTER_BENCHMARK" status="PASS">GenerateMockClutterCombineJob writes 500 box proxies into one raw mesh.</Task>
+    <Task id="06" name="BURST_MESH_TRANSFORMATION_KERNEL" status="PASS">Extract jobs validate MeshData stride windows/source indices before TransformAndAppendVerticesJob consumes native streams.</Task>
+    <Task id="07" name="AUTOMATED_TEXTURE_ATLASING_ALGORITHM" status="PASS">Guillotine rect packer, NativeArray texel staging, Graphics.CopyTexture path.</Task>
+    <Task id="08" name="THE_DEAR_LIE_UV_REMAPPING" status="PASS">UV rect remap preserves material scale/offset while faking many materials as one atlas.</Task>
+    <Task id="09" name="DETERMINISTIC_LOD_DECIMATION_ENGINE" status="PASS">Continuous quality-weight triangle retention/collapse creates LOD1/LOD2.</Task>
+    <Task id="10" name="ASYNCHRONOUS_ASSET_SERIALIZATION" status="PASS">Direct SetVertexBufferData mesh asset serialization under BakedGeometry with dirty-marked replacements, prefab save result checks, and explicit SaveAssets flush.</Task>
+    <Task id="11" name="INTERACTIVE_ELEMENT_PRESERVATION_FILTER" status="PASS">Ancestor exclusion preserves the first interactive hierarchy root once.</Task>
+    <Task id="12" name="AUP_DEPTH_LOCALIZATION_PREPARATION" status="PASS">Root pivot retained; double3 room-relative offset captured per segment.</Task>
+    <Task id="13" name="ROLLBACK_NETCODE_EXCLUSION_FENCE" status="PASS">Generated geometry documented as immutable render data outside StateRingBuffer.</Task>
+    <Task id="14" name="ZERO_INIT_OVERHEAD_BYPASS" status="PASS">TempJob staging arrays use NativeArrayOptions.UninitializedMemory and deterministic overwrite.</Task>
+    <Task id="15" name="TELEMETRY_CONSOLIDATION_REPORT_GENERATOR" status="PASS">JSON report plus per-bake zeroed 300-entry black-box dump path.</Task>
+    <Task id="16" name="PROCEDURAL_CLUTTER_FORGE_WINDOW" status="PASS">UI Toolkit facade with folder/profile/filter/scan/preview/bake controls.</Task>
+    <Task id="17" name="CSV_ATLAS_PROFILES_INGESTOR" status="PASS">CSV profile path feeds continuous atlas/LOD quality parameters.</Task>
+    <Task id="18" name="LIVE_MERGE_PREVIEW_GIZMO" status="PASS">SceneView green/red bounds overlay previews bake/exclusion split.</Task>
+    <Task id="19" name="ARCHITECTURAL_METRIC_VALIDATOR" status="PASS">Static scanner reports prefabs with more than 10 static renderers/material pressure.</Task>
+    <Task id="20" name="SELF_AUDIT_AND_ARCHITECTURE_VERIFICATION" status="PASS">This XML plus layout validator and static forbidden-API scans.</Task>
+  </TaskReconciliation>
+  <StructLayout>
+    <InteriorClutterRawVertex size="32" fields="Position float3 offset0 size12; Normal float3 offset12 size12; Uv0 float2 offset24 size8; padding0" alignment="multiple-of-8" />
+    <InteriorClutterSourceVertex size="64" fields="Position12 Normal12 Tangent16 Uv8 Color4 Pad12" alignment="one-cache-line" />
+    <InteriorClutterSegment size="160" fields="LocalToRoom64 AtlasUvRect16 MaterialUvScaleOffset16 scalar24 RoomRelativeOffset double3 offset120 size24 pad16" alignment="multiple-of-32" />
+    <InteriorClutterAtlasColor size="16" fields="AlbedoRgba offset0; NormalRgba offset4; ArmRgba offset8; pad offset12" alignment="multiple-of-8" />
+    <InteriorClutterTelemetryEntry size="64" fields="frame/hash/counts/warnings 32B; timings 16B; hash 8B; pad 8B" falseSharing="single-row-cache-line" />
+  </StructLayout>
+  <ScalabilityCurve globalQualityWeight="continuous_0_to_1">LOD ratios, mock clutter elongation, small-detail collapse, and atlas tile caps are lerped/clamped from CSV profile values. Below 0.3 the bake keeps atlas indirection but collapses tiny triangles toward centers and emits cheaper LOD2; above 0.7 it retains denser LODs, larger tiles, source texture copy fidelity, and linear normal/ARM atlas data without changing runtime code paths. Overflow materials use a reserved 16px fallback tile instead of corrupting packed atlas regions.</ScalabilityCurve>
+  <HPhiVaultStatus runtimePrivateNativeArrays="0" runtimeVaultHandles="none_required_editor_only" editorSessionNativeArrays="TempJob disposed inside bake transaction">No runtime manager, no private persistent runtime NativeArray, no StateRingBuffer route. Per-bake black-box rings are explicitly reset after uninitialized allocation, use deterministic local frame indices, record failing prefab hashes before exception dumps, dump chronological retained entries after wrap, and include written-entry counts in the reason sidecar. BakeFolder owns one reusable InteriorClutterBakeScratch for static segments, preserved interactives, materials, mesh filters, shared materials, and component probes, then clears it per prefab and after prefab unload. Interactive filter scratch lists are caller-owned transaction locals, not static global buffers; tag/layer filters are fixed token lists instead of string arrays. Atlas texture property lookup avoids params-array allocation in the material loop. Generated atlases receiving GPU copies are synchronized to CPU texture data before asset serialization. Generated asset replacements are marked dirty and flushed once after prefab/mock publication. Generated assets are immutable environment data.</HPhiVaultStatus>
+  <PointerAliasingAndDependencyGraph>
+    <Job name="ExtractClutterUInt16Job/ExtractClutterUInt32Job" consumes="MeshData byte streams, validated attribute windows, bounded index stream" outputs="NativeArray&lt;InteriorClutterSourceVertex&gt;, NativeArray&lt;int&gt;" aliasing="NoAlias pointer/native fields" handle="completed before MeshData disposal inside editor transaction" />
+    <Job name="TransformAndAppendVerticesJob" consumes="source vertices, segments, segment map" outputs="NativeArray&lt;InteriorClutterRawVertex&gt;" aliasing="NoAlias pointer/native fields" handle="completed before LOD jobs" />
+    <Job name="DecimateTriangleSoupJob" consumes="LOD0 raw vertices" outputs="LOD1/LOD2 raw vertices" aliasing="NoAlias" handle="LOD1 and LOD2 scheduled independently then CombineDependencies" />
+    <Job name="FillAtlasSolidJob/FillAtlasRectColorsJob" consumes="rect/color DTOs" outputs="NativeArray&lt;uint&gt; texels" aliasing="NoAlias" handle="rect fill scheduled after solid fill" />
+  </PointerAliasingAndDependencyGraph>
+  <CompileGuard assembly="Hecton8.HabitatInteriorClutterForge.Editor" includePlatforms="Editor" directRuntimeSiblingReference="none" references="Unity.Burst,Unity.Collections,Unity.Jobs,Unity.Mathematics">Domain files are isolated from the broad editor assembly and add no runtime asmdef references or runtime MonoBehaviours.</CompileGuard>
+  <DearLie before="O(props*materials*renderers) runtime hierarchy traversal plus SetPass pressure" after="O(1) renderer/material per visible room LOD plus offline O(vertices) bake">Texture atlas UV remap includes material tiling/offset, overflow materials are contained to a reserved fallback tile, GPU-copied source texture data is committed before asset serialization, and triangle-soup LOD collapse replaces runtime prop logic with immutable presentation geometry.</DearLie>
+  <ProofBoundary compile="PENDING_CPU_BUILD_GUARD" unityImport="PENDING" frameDebugger="PENDING" profiler="PENDING" />
+</SELF_AUDIT>

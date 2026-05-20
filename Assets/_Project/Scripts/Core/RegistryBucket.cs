@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 
 namespace Hecton8.Core
 {
@@ -34,6 +35,7 @@ namespace Hecton8.Core
         /// </summary>
         /// <param name="index">Dense registry index.</param>
         /// <returns>Registered item at the requested index.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T GetAt(int index)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD

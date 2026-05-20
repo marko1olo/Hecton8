@@ -5,18 +5,26 @@ using Unity.Mathematics;
 
 namespace Hecton8.Core
 {
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct HectonAabb
     {
+        [FieldOffset(0)]
         public float3 Min;
+
+        [FieldOffset(12)]
         public float3 Max;
+
+        [FieldOffset(24)]
         public float2 Reserved;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct HectonSphere
     {
+        [FieldOffset(0)]
         public float3 Center;
+
+        [FieldOffset(12)]
         public float Radius;
     }
 

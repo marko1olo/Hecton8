@@ -65,6 +65,7 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
         #include "Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl"
+        #include "Assets/_Project/Art/Shaders/Hecton_CustomLightProbeGrid.hlsl"
 
         TEXTURE2D(_BaseMap);
         SAMPLER(sampler_BaseMap);
@@ -349,7 +350,8 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             int stateIndex = min((int)floor(selector * activeCount), activeCount - 1);
             float4 state = _GlobalBiolumDearLieGroups[stateIndex];
             half strobe = saturate((half)_GlobalBiolumParams.z);
-            half highTier = step(4.0h, (half)_GlobalBiolumParams.y);
+            half qualityCurve = saturate((half)_GlobalBiolumParams.y);
+            qualityCurve = qualityCurve * qualityCurve * (3.0h - 2.0h * qualityCurve);
             int secondaryIndex = stateIndex + 1;
             if (secondaryIndex >= activeCount)
                 secondaryIndex = 0;
@@ -357,14 +359,11 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             half overdrive = 0.0h;
             half godSpark = 0.0h;
             half godHaze = 0.0h;
-            if (highTier > 0.5h)
-            {
-                half overPulse = (half)(1.0 - abs(frac(_GlobalBiolumClock.x * 0.07 + selector * 3.0) * 2.0 - 1.0));
-                half filament = (half)(1.0 - abs(frac(positionWS.x * 0.109 + positionWS.y * 0.151 + positionWS.z * 0.089 + _GlobalBiolumClock.x * 0.17) * 2.0 - 1.0));
-                godHaze = smoothstep(0.48h, 0.94h, overPulse) * (0.48h + filament * 0.52h);
-                godSpark = smoothstep(0.84h, 0.99h, filament) * overPulse;
-                overdrive = saturate(overPulse * 0.35h + godSpark * 0.18h);
-            }
+            half overPulse = (half)(1.0 - abs(frac(_GlobalBiolumClock.x * 0.07 + selector * 3.0) * 2.0 - 1.0));
+            half filament = (half)(1.0 - abs(frac(positionWS.x * 0.109 + positionWS.y * 0.151 + positionWS.z * 0.089 + _GlobalBiolumClock.x * 0.17) * 2.0 - 1.0));
+            godHaze = smoothstep(0.48h, 0.94h, overPulse) * (0.48h + filament * 0.52h) * qualityCurve;
+            godSpark = smoothstep(0.84h, 0.99h, filament) * overPulse * qualityCurve;
+            overdrive = saturate(overPulse * 0.35h + godSpark * 0.18h) * qualityCurve;
             half3 color = lerp((half3)state.rgb, half3(1.0h, 1.0h, 1.0h), strobe);
             half intensity = clamp(max((half)state.w, strobe * 10.0h), 0.0h, 10.0h);
             color = lerp(color, (half3)secondaryState.rgb, overdrive);
@@ -456,7 +455,7 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             output.viewDirWS = NormalizeApprox3D(GetWorldSpaceViewDir(positionWS));
             output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
             output.fogFactor = ComputeFogFactor(output.positionCS.z);
-            output.ambientSH = SampleSH(output.normalWS);
+            output.ambientSH = H8CustomLightProbeResolveAmbient(output.positionWS, output.normalWS, half3(0.015h, 0.025h, 0.035h));
             return output;
         }
 

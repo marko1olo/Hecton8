@@ -76,7 +76,7 @@ namespace Hecton8.Gameplay.Loot.Contracts
         public const uint Acquired = 1u << 2;
     }
 
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 80)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct LootMagnetSignalEvent
     {
         [FieldOffset(0)] public AbsoluteUniversePosition PositionAup;
@@ -86,9 +86,15 @@ namespace Hecton8.Gameplay.Loot.Contracts
         [FieldOffset(68)] public float DistanceSq;
         [FieldOffset(72)] public uint Frame;
         [FieldOffset(76)] public uint Flags;
+        [FieldOffset(80)] private ulong _pad0;
+        [FieldOffset(88)] private ulong _pad1;
+        [FieldOffset(96)] private ulong _pad2;
+        [FieldOffset(104)] private ulong _pad3;
+        [FieldOffset(112)] private ulong _pad4;
+        [FieldOffset(120)] private ulong _pad5;
     }
 
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct LootMagnetTelemetryEntry
     {
         [FieldOffset(0)] public AbsoluteUniversePosition PlayerAup;

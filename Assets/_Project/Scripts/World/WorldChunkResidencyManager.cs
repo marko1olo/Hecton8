@@ -581,7 +581,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4140)] // Streaming must register after dispatcher bootstrap and before world content lanes.
-    public sealed class WorldChunkResidencyManager : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IBaseAirlockEventListener, IStreamingBackpressureService, IDisposable
+    public sealed class WorldChunkResidencyManager : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IBaseAirlockEventListener, IStreamingBackpressureService, IGlobalRegistryHotSwapListener, IDisposable
     {
         private const int DefaultMaxChunkCount = 512;
         private const int DefaultLoadQueueCapacity = 256;
@@ -874,6 +874,7 @@ namespace Hecton8.World
         private bool _registeredLateFrame;
         private bool _registeredAirlockEvents;
         private bool _registeredBackpressureService;
+        private bool _registeredHotSwap;
         private IAsyncPersistenceService _asyncPersistenceService;
         private IDataVault _dataVault;
         private IJobAdmissionService _jobAdmissionService;
@@ -1201,6 +1202,7 @@ namespace Hecton8.World
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterHotSwap();
             CompleteResidencyJobForTeardown();
             ReleaseAllChunks();
             ClearColdServiceCache();
@@ -1223,6 +1225,8 @@ namespace Hecton8.World
                 return;
 
             _disposed = true;
+            TryUnregister();
+            TryUnregisterHotSwap();
             CompleteResidencyJobForTeardown();
 
             if (releaseChunks)
@@ -1690,7 +1694,11 @@ namespace Hecton8.World
 
             NativeArray<ChunkResidencyDTO> residencyDtos = ResolveChunkResidencyDtos();
             if (residencyDtos.IsCreated)
-                new ChunkResidencyDtoInitJob { Chunks = residencyDtos }.Run(residencyDtos.Length);
+            {
+                ChunkResidencyDtoInitJob initJob = new ChunkResidencyDtoInitJob { Chunks = residencyDtos };
+                for (int i = 0; i < residencyDtos.Length; i++)
+                    initJob.Execute(i);
+            }
 
             NativeArray<WorldStreamingRuntimeTuning> tuning = ResolveStreamingTuning();
             if (tuning.IsCreated && tuning.Length > 0)
@@ -1881,6 +1889,7 @@ namespace Hecton8.World
         private void TryRegister()
         {
             RefreshColdServiceCache();
+            TryRegisterHotSwap();
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
@@ -1961,6 +1970,23 @@ namespace Hecton8.World
             }
         }
 
+        private void TryRegisterHotSwap()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwap()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
+        }
+
         private void ClearColdServiceCache()
         {
             _asyncPersistenceService = null;
@@ -1970,6 +1996,41 @@ namespace Hecton8.World
             _assetLifecycleGovernor = null;
             _vramMonitor = null;
             _objectPoolManager = null;
+            _ambientBiotaService = null;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.DataVault:
+                    _dataVault = currentService as IDataVault;
+                    break;
+                case GlobalRegistryServiceSlot.JobAdmissionRuntime:
+                    _jobAdmissionService = currentService as IJobAdmissionService;
+                    break;
+                case GlobalRegistryServiceSlot.MacroDatabase:
+                    _macroDatabaseService = currentService as IMacroDatabaseService;
+                    break;
+                case GlobalRegistryServiceSlot.AssetLifecycleRuntime:
+                    _assetLifecycleGovernor = currentService as AssetLifecycleGovernor;
+                    break;
+                case GlobalRegistryServiceSlot.VRAMMonitorRuntime:
+                    _vramMonitor = currentService as VRAMMonitor;
+                    break;
+                case GlobalRegistryServiceSlot.ObjectPool:
+                    _objectPoolManager = currentService as ObjectPoolManager;
+                    break;
+                case GlobalRegistryServiceSlot.AmbientBiotaRuntime:
+                    _ambientBiotaService = currentService as IAmbientBiotaService;
+                    break;
+                case GlobalRegistryServiceSlot.Save:
+                    _asyncPersistenceService = currentService as IAsyncPersistenceService;
+                    break;
+            }
         }
 
         /// <inheritdoc />
@@ -2056,8 +2117,7 @@ namespace Hecton8.World
             if (!_residencyJobScheduled)
                 return;
 
-            // [BLOCKING_SYNC_POINT] Teleport invalidates queued residency data; complete once, then repopulate the new immediate radius.
-            _residencyJobHandle.Complete();
+            DispatcherJobFence.TryComplete(ref _residencyJobHandle, forceComplete: true);
             _residencyJobScheduled = false;
         }
 
@@ -2235,10 +2295,12 @@ namespace Hecton8.World
 
         private void CompleteResidencyJobIfFinished()
         {
-            if (!_residencyJobScheduled || !_residencyJobHandle.IsCompleted)
+            if (!_residencyJobScheduled)
                 return;
 
-            _residencyJobHandle.Complete();
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _residencyJobHandle))
+                return;
+
             float chainMs = (float)((Stopwatch.GetTimestamp() - _residencyScheduleTimestamp) * _StopwatchMillisecondsPerTick);
             if (_residencySortScheduled)
             {
@@ -2260,7 +2322,7 @@ namespace Hecton8.World
             if (!_residencyJobScheduled)
                 return;
 
-            _residencyJobHandle.Complete();
+            DispatcherJobFence.TryComplete(ref _residencyJobHandle, forceComplete: true);
             _residencySortScheduled = false;
             _residencyJobScheduled = false;
         }
@@ -2533,9 +2595,7 @@ namespace Hecton8.World
                 {
                     RecordAddressableLoadStart(index, predictive ? (byte)0 : (byte)1);
                     uint assetHash = StableHash(definition.addressableAddress, chunkId);
-                    AssetLifecycleGovernor assetLifecycle = _assetLifecycleGovernor != null
-                        ? _assetLifecycleGovernor
-                        : GlobalRegistry.AssetLifecycle;
+                    AssetLifecycleGovernor assetLifecycle = _assetLifecycleGovernor;
                     if (assetLifecycle == null ||
                         !assetLifecycle.TryAcquireAddressableGameObject(
                             assetHash,
@@ -2742,9 +2802,7 @@ namespace Hecton8.World
                 return;
             }
 
-            AssetLifecycleGovernor assetLifecycle = _assetLifecycleGovernor != null
-                ? _assetLifecycleGovernor
-                : GlobalRegistry.AssetLifecycle;
+            AssetLifecycleGovernor assetLifecycle = _assetLifecycleGovernor;
             if (assetLifecycle == null)
                 return;
 
@@ -3529,6 +3587,26 @@ namespace Hecton8.World
             _spawnedCountsByChunk[index] = 0;
         }
 
+#if UNITY_ADDRESSABLES_EXIST
+        private bool TryStageExternalAddressableRelease<TObject>(AsyncOperationHandle<TObject> handle)
+        {
+            if (!handle.IsValid())
+                return true;
+
+            AssetLifecycleGovernor assetLifecycle = _assetLifecycleGovernor;
+            return assetLifecycle != null && assetLifecycle.TryStageExternalAddressableRelease(handle);
+        }
+
+        private bool TryReleaseExternalAddressableFault<TObject>(AsyncOperationHandle<TObject> handle)
+        {
+            if (!handle.IsValid())
+                return true;
+
+            AssetLifecycleGovernor assetLifecycle = _assetLifecycleGovernor;
+            return assetLifecycle != null && assetLifecycle.TryReleaseExternalAddressableFault(handle);
+        }
+#endif
+
         private void ReleaseChunkHandles(int index, bool clearAddressableCache = false)
         {
             bool hasDefinition = chunkDefinitions != null && (uint)index < (uint)chunkDefinitions.Length;
@@ -3546,13 +3624,25 @@ namespace Hecton8.World
                     if (handle.IsValid())
                     {
                         uint assetHash = ResolveAddressableAssetHash(index);
-                        AssetLifecycleGovernor assetLifecycle = _assetLifecycleGovernor != null
-                            ? _assetLifecycleGovernor
-                            : GlobalRegistry.AssetLifecycle;
+                        AssetLifecycleGovernor assetLifecycle = _assetLifecycleGovernor;
+                        bool releaseAccepted = false;
                         if (assetLifecycle != null && assetHash != 0u)
+                        {
                             assetLifecycle.ReleaseAddressableAsset(assetHash);
-                        else
-                            Addressables.Release(handle);
+                            releaseAccepted = true;
+                        }
+                        else if (assetLifecycle != null)
+                        {
+                            releaseAccepted = assetLifecycle.TryStageExternalAddressableRelease(handle);
+                        }
+
+                        if (!releaseAccepted)
+                        {
+                            WriteTelemetrySample(_chunkIdsByDefinitionIndex != null && (uint)index < (uint)_chunkIdsByDefinitionIndex.Length
+                                ? _chunkIdsByDefinitionIndex[index]
+                                : 0L, TelemetryAddressablesFaultFlag);
+                            return;
+                        }
                     }
 
                     _addressableHandles[index] = default;
@@ -3683,7 +3773,9 @@ namespace Hecton8.World
                 if (!handle.IsDone)
                     continue;
 
-                Addressables.Release(handle);
+                if (!TryStageExternalAddressableRelease(handle))
+                    continue;
+
                 _addressableCacheClearHandles[i] = default;
                 _hasAddressableCacheClearHandle[i] = false;
                 _pendingAddressableCacheClearCount = math.max(0, _pendingAddressableCacheClearCount - 1);
@@ -3828,20 +3920,24 @@ namespace Hecton8.World
                 return;
 
             int count = math.min(_hasAddressableCacheClearHandle.Length, _addressableCacheClearHandles.Length);
+            int retainedCount = 0;
             for (int i = 0; i < count; i++)
             {
                 if (!_hasAddressableCacheClearHandle[i])
                     continue;
 
                 AsyncOperationHandle<bool> handle = _addressableCacheClearHandles[i];
-                if (handle.IsValid())
-                    Addressables.Release(handle);
+                if (handle.IsValid() && !TryReleaseExternalAddressableFault(handle))
+                {
+                    retainedCount++;
+                    continue;
+                }
 
                 _addressableCacheClearHandles[i] = default;
                 _hasAddressableCacheClearHandle[i] = false;
             }
 
-            _pendingAddressableCacheClearCount = 0;
+            _pendingAddressableCacheClearCount = retainedCount;
 #endif
         }
 
@@ -3968,15 +4064,10 @@ namespace Hecton8.World
                         return true;
                 }
 
-                if (runtimeContext.PlayerTransform != null)
-                {
-                    playerAup = AbsoluteUniversePosition.FromRuntimePosition(runtimeContext.PlayerTransform.position);
-                    return MathGuard.IsFinite(in playerAup);
-                }
             }
 
-            playerAup = AbsoluteUniversePosition.FromRuntimePosition(transform.position);
-            return MathGuard.IsFinite(in playerAup);
+            playerAup = default;
+            return false;
         }
 
         private bool PredictiveStreamingPausedNow =>
@@ -4519,15 +4610,10 @@ namespace Hecton8.World
                     return MathGuard.IsFinite(in playerAup);
                 }
 
-                if (runtimeContext.PlayerTransform != null)
-                {
-                    playerAup = AbsoluteUniversePosition.FromRuntimePosition(runtimeContext.PlayerTransform.position);
-                    return MathGuard.IsFinite(in playerAup);
-                }
             }
 
-            playerAup = AbsoluteUniversePosition.FromRuntimePosition(transform.position);
-            return MathGuard.IsFinite(in playerAup);
+            playerAup = default;
+            return false;
         }
 
         private void ClearLoadingFlag(long chunkId)
@@ -4733,7 +4819,7 @@ namespace Hecton8.World
                 Operation = add ? (byte)0 : (fadeOut ? (byte)2 : (byte)1)
             };
 
-            job.Run();
+            job.Execute();
             _activeImpostorCount = math.clamp(_activeImpostorCountRef[0], 0, _activeImpostors.Length);
             _activeImpostorFadeOutCount = math.max(0, _activeImpostorFadeOutCountRef[0]);
             _activeImpostorVersion++;
@@ -4780,7 +4866,7 @@ namespace Hecton8.World
                 FadeOutFlag = ActiveImpostorFadeOutFlag
             };
 
-            job.Run();
+            job.Execute();
             _activeImpostorCount = math.clamp(_activeImpostorCountRef[0], 0, _activeImpostors.Length);
             _activeImpostorFadeOutCount = math.max(0, _activeImpostorFadeOutCountRef[0]);
             _debugActiveImpostorLod2Chunks = _activeImpostorCount;
@@ -4816,13 +4902,15 @@ namespace Hecton8.World
                 return;
             }
 
-            new HlodImpostorAupShiftJob
+            HlodImpostorAupShiftJob shiftJob = new HlodImpostorAupShiftJob
             {
                 ActiveImpostors = _activeImpostors,
                 Centers = _activeImpostorCenters,
                 CartographyPoints = _activeImpostorCartographyPoints,
                 ShiftMeters = shiftMeters
-            }.Run(_activeImpostorCount);
+            };
+            for (int i = 0; i < _activeImpostorCount; i++)
+                shiftJob.Execute(i);
             _activeImpostorVersion++;
             _activeImpostorPointVersion++;
             _activeImpostorGpuDirty = true;

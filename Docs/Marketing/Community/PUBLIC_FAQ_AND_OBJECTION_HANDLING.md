@@ -106,16 +106,16 @@ Use one short answer, then stop. If the person asks a concrete follow-up, answer
 
 | Trigger | Safe public reply | Do not say | Internal action |
 |---|---|---|---|
-| "Is this co-op?" | `Current public plan is single-player-first. We are not promising co-op unless it is real in the build.` | "Maybe later", "100km co-op", "we will beat SN2 co-op". | If repeated, check Steam copy and screenshot captions for accidental multiplayer cues. |
+| "Is this co-op?" | `Current public plan is single-player-first. Additional modes are discussed only if they are real in the build.` | "Maybe later", "100km co-op", "we will beat SN2 co-op". | If repeated, check Steam copy and screenshot captions for accidental multiplayer cues. |
 | "Looks like Subnautica." | `The comparison is expected for underwater survival. The lane we are testing is pressure, machinery, salvage, corrosion, and deep-sea noir.` | "Subnautica killer", "better than Subnautica", competitor attack. | Ask internally which frame caused the clone read; kill bright reef/generic diver frames. |
 | "Looks too dark." | `Fair. Darkness has to be readable. We are tuning silhouettes, instrument light, and contrast so danger and machinery are legible.` | "It is supposed to be impossible to see." | Re-score asset for thumbnail readability; reject if it needs explanation. |
 | "Is this AI art?" | `Public gameplay assets should make their source/build clear. If a shot reads as concept art, we need to replace or label it better.` | Defensive denial without build/source proof. | Add build label in asset metadata and replace any concept-looking asset. |
-| "Where is gameplay?" | `The public page should show what you do: salvage, operate machinery, manage pressure, and return alive. If that is not clear, the asset failed.` | Lore-only explanation. | Move `PLAN-SHOT-003` or `PLAN-CLIP-003` earlier; kill actionless beauty shots. |
+| "Where is gameplay?" | `The public page should show what you do: salvage, operate machinery, manage pressure, make a risky choice, and return alive. If that is not clear, the asset failed.` | Lore-only explanation. | Move `PLAN-SHOT-003`, `PLAN-SHOT-006`, `PLAN-CLIP-001`, or `PLAN-CLIP-003` earlier; kill actionless beauty shots. |
 | "Will it run on Steam Deck / low-end PC?" | `We care about scalable quality, but public performance claims need build, hardware, settings, and frame-time context.` | "Runs great", "zero stutter", "Deck verified". | Do not answer platform-performance until measured proof exists. |
 | "Is there base building?" | `Base systems are part of the intended survival lane, but we will show only what the current build proves.` | Future base promises, co-op base talk. | Use `PLAN-SHOT-005` only if the failure/state is honest in build. |
 | "Looks slow/clunky." | `The target is heavy and mechanical, not weightless. Slow is a problem if it becomes tedious, so we are testing that distinction.` | "Realism", "you just do not get it." | Route feedback to movement/vehicle feel notes; use clips to prove responsiveness. |
 | "When Steam/demo?" | `Only when the page/demo can represent the game honestly. We are not putting dates on public material until the build supports them.` | Date hints, Next Fest hints, Early Access promises. | Keep date pressure out of public copy until Steam/demo gates pass. |
-| "Can I wishlist?" | `Not yet, unless the official Steam page is live. We will link only official pages when they exist.` | Unofficial signup pressure, fake Steam URL. | Confirm official handles/Steam link before any CTA. |
+| "Can I wishlist?" | `Not yet, unless the official Steam page is live and the CTA packet is approved. We only link official pages through approved routes.` | Unofficial signup pressure, fake Steam URL. | Confirm official handles, Steam URL custody, and Official CTA Link Activation Gate V0 before a CTA is used. |
 
 ### Reply Cadence
 
@@ -124,6 +124,19 @@ Use one short answer, then stop. If the person asks a concrete follow-up, answer
 - Do not quote competitor bugs or player complaints.
 - If 3+ people ask the same question, update the FAQ/pin instead of repeating replies.
 - If 2+ people misread a feature, the asset/copy failed; revise the source, not the audience.
+
+## 2026-05-19 SN2-Adjacent Question Guard
+
+Use only when someone explicitly brings up Subnautica 2. Do not volunteer the comparison.
+
+| Trigger | Safe reply | Do not say | Internal action |
+|---|---|---|---|
+| "Are you making this because Subnautica 2 disappointed people?" | `No. HECTON-8 has to stand on its own. The focus is pressure, salvage, machinery, black water, and single-player survival decisions.` | Any mention of SN2 EULA, bugs, co-op problems, or review complaints. | Check whether the asset/caption is leaning too hard on competitor contrast. |
+| "Will this have better co-op?" | `The current public plan is single-player-first. Additional modes are discussed only if they are real in the build.` | "We avoid co-op bugs", "maybe later", "better networking." | Recheck copy for accidental multiplayer wording. |
+| "Will it run better than Subnautica 2?" | `We will talk about performance only with build, hardware, settings, and frame-time context.` | "Yes", "optimized", "zero stutter", competitor performance claims. | Route to performance-proof hold; no public claim. |
+| "Will you let players fight back?" | `We are not ready to describe defense systems publicly. The current public focus is survival pressure, tools, routes, and machinery.` | "Unlike SN2", "we have weapons", shooter promise. | Capture threat assets as decision frames, not helpless monster thumbnails. |
+| "Is the base building less clunky?" | `We will show only what the current build proves. Base systems need to read as machinery with clear consequences.` | "Smoother than SN2", "full builder already works." | Require `PLAN-SHOT-002`, `PLAN-SHOT-005`, or `PLAN-CLIP-001` proof before base claims. |
+| "How long is it?" | `We are not selling hours before the build can prove its route loop. First we need a slice that represents the game honestly.` | Hour counts, "more content than...", Early Access superiority. | Push first assets toward route loop clarity, not scenery. |
 
 ## Current HECTON-8 Decision
 

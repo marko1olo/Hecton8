@@ -4,8 +4,10 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
+using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -18,46 +20,49 @@ using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace Hecton8.Lighting
 {
-    [StructLayout(LayoutKind.Explicit, Size = 112)]
-    public struct LightProbeDTO
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
+    public struct CustomLightProbeDTO
     {
-        [FieldOffset(0)] public float R0;
-        [FieldOffset(4)] public float R1;
-        [FieldOffset(8)] public float R2;
-        [FieldOffset(12)] public float R3;
-        [FieldOffset(16)] public float R4;
-        [FieldOffset(20)] public float R5;
-        [FieldOffset(24)] public float R6;
-        [FieldOffset(28)] public float R7;
-        [FieldOffset(32)] public float R8;
-        [FieldOffset(36)] public float G0;
-        [FieldOffset(40)] public float G1;
-        [FieldOffset(44)] public float G2;
-        [FieldOffset(48)] public float G3;
-        [FieldOffset(52)] public float G4;
-        [FieldOffset(56)] public float G5;
-        [FieldOffset(60)] public float G6;
-        [FieldOffset(64)] public float G7;
-        [FieldOffset(68)] public float G8;
-        [FieldOffset(72)] public float B0;
-        [FieldOffset(76)] public float B1;
-        [FieldOffset(80)] public float B2;
-        [FieldOffset(84)] public float B3;
-        [FieldOffset(88)] public float B4;
-        [FieldOffset(92)] public float B5;
-        [FieldOffset(96)] public float B6;
-        [FieldOffset(100)] public float B7;
-        [FieldOffset(104)] public float B8;
-        [FieldOffset(108)] public uint _pad0;
-    }
+        [FieldOffset(0)] public ulong SpatialHash64;
+        [FieldOffset(8)] public uint PackedGridCoord;
+        [FieldOffset(12)] public uint Flags;
 
-    [StructLayout(LayoutKind.Explicit, Size = 8)]
-    public struct InteriorGITextureVoxelDTO
-    {
-        [FieldOffset(0)] public half R;
-        [FieldOffset(2)] public half G;
-        [FieldOffset(4)] public half B;
-        [FieldOffset(6)] public half A;
+        [FieldOffset(16)] public float4 Lane0;
+        [FieldOffset(32)] public float4 Lane1;
+        [FieldOffset(48)] public float4 Lane2;
+        [FieldOffset(64)] public float4 Lane3;
+        [FieldOffset(80)] public float4 Lane4;
+        [FieldOffset(96)] public float4 Lane5;
+        [FieldOffset(112)] public float4 Lane6;
+
+        [FieldOffset(16)] public float R0;
+        [FieldOffset(20)] public float R1;
+        [FieldOffset(24)] public float R2;
+        [FieldOffset(28)] public float R3;
+        [FieldOffset(32)] public float R4;
+        [FieldOffset(36)] public float R5;
+        [FieldOffset(40)] public float R6;
+        [FieldOffset(44)] public float R7;
+        [FieldOffset(48)] public float R8;
+        [FieldOffset(52)] public float G0;
+        [FieldOffset(56)] public float G1;
+        [FieldOffset(60)] public float G2;
+        [FieldOffset(64)] public float G3;
+        [FieldOffset(68)] public float G4;
+        [FieldOffset(72)] public float G5;
+        [FieldOffset(76)] public float G6;
+        [FieldOffset(80)] public float G7;
+        [FieldOffset(84)] public float G8;
+        [FieldOffset(88)] public float B0;
+        [FieldOffset(92)] public float B1;
+        [FieldOffset(96)] public float B2;
+        [FieldOffset(100)] public float B3;
+        [FieldOffset(104)] public float B4;
+        [FieldOffset(108)] public float B5;
+        [FieldOffset(112)] public float B6;
+        [FieldOffset(116)] public float B7;
+        [FieldOffset(120)] public float B8;
+        [FieldOffset(124)] public float Spare0;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 96)]
@@ -122,7 +127,7 @@ namespace Hecton8.Lighting
         [FieldOffset(112)] public float AmbientRetain;
         [FieldOffset(116)] public float TransferDamping;
         [FieldOffset(120)] public int PropagationIterations;
-        [FieldOffset(124)] public uint _pad1;
+        [FieldOffset(124)] public uint PackedBiomeTint;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -159,6 +164,32 @@ namespace Hecton8.Lighting
         [FieldOffset(60)] public uint _pad0;
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct CustomDynamicProbeLightDTO
+    {
+        [FieldOffset(0)] public double3 AUP;
+        [FieldOffset(24)] public float3 Color;
+        [FieldOffset(36)] public float Intensity;
+        [FieldOffset(40)] public float RadiusMeters;
+        [FieldOffset(44)] public uint Flags;
+        [FieldOffset(48)] public float3 Direction;
+        [FieldOffset(60)] public uint _pad0;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct AmbientLightingProfileDTO
+    {
+        [FieldOffset(0)] public ulong ProfileHash64;
+        [FieldOffset(8)] public uint ProfileId;
+        [FieldOffset(12)] public uint Flags;
+        [FieldOffset(16)] public float3 L0Color;
+        [FieldOffset(28)] public float DirectionalWeight;
+        [FieldOffset(32)] public float3 BiomeTint;
+        [FieldOffset(44)] public float L2Weight;
+        [FieldOffset(48)] public float3 WaterAbsorption;
+        [FieldOffset(60)] public uint _pad0;
+    }
+
     [DisallowMultipleComponent]
     [AddComponentMenu("HECTON-8/Lighting/Interior GI Probe Volume Runtime")]
     public sealed unsafe class InteriorGIProbeVolumeRuntime : MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IScalabilityChangedEventListener
@@ -167,6 +198,7 @@ namespace Hecton8.Lighting
         public const int MinResolution = 12;
         public const int MaxCellCount = MaxResolution * MaxResolution * MaxResolution;
         public const int MaxSourceCount = 128;
+        public const int MaxAmbientProfileCount = 64;
         public const int TelemetryCapacity = 300;
         public const int CsvBufferBytes = 32768;
 
@@ -195,15 +227,17 @@ namespace Hecton8.Lighting
         private const BufferID ProbeTuningBuffer = (BufferID)0x630804;
         private const BufferID ProbeTelemetryRingBuffer = (BufferID)0x630805;
         private const BufferID ProbeTelemetryScratchBuffer = (BufferID)0x630806;
-        private const BufferID ProbeTextureUploadBuffer = (BufferID)0x630807;
         private const BufferID ProbeMockPowerBuffer = (BufferID)0x630808;
         private const BufferID ProbeFaultBuffer = (BufferID)0x630809;
         private const BufferID ProbeCsvBytesBuffer = (BufferID)0x63080A;
+        private const BufferID ProbeAmbientProfileBuffer = (BufferID)0x63080B;
+        private const BufferID ProbeAmbientProfileCountBuffer = (BufferID)0x63080C;
 
-        private static readonly int InteriorGITextureId = Shader.PropertyToID("_H8InteriorGIProbeVolume");
+        private static readonly int InteriorGIProbeBufferId = Shader.PropertyToID("_H8CustomLightProbeGrid");
         private static readonly int InteriorGIParamsId = Shader.PropertyToID("_H8InteriorGIProbeParams");
         private static readonly int InteriorGIOriginId = Shader.PropertyToID("_H8InteriorGIProbeOrigin");
         private static readonly int InteriorGIRootAupId = Shader.PropertyToID("_H8InteriorGIProbeRootAup");
+        private static readonly int InteriorGIGpuStateId = Shader.PropertyToID("_H8CustomLightProbeGridState");
 
         [Header("Grid")]
         [SerializeField, Min(1f)] private float cellSizeMeters = 3.5f;
@@ -211,7 +245,7 @@ namespace Hecton8.Lighting
         [SerializeField] private bool forceEditorResolution;
         [SerializeField] private bool enableMockLighting = true;
         [SerializeField] private bool enableMockOcclusion = true;
-        [SerializeField] private bool enableTextureUpload = true;
+        [SerializeField] private bool enableGpuUpload = true;
         [SerializeField] private bool enableCsvOverridePolling;
 
         [Header("Propagation")]
@@ -228,9 +262,9 @@ namespace Hecton8.Lighting
         [SerializeField] private bool drawProbeGizmos;
         [SerializeField, Range(32, 4096)] private int maxEditorGizmoProbes = 512;
         [SerializeField] private string csvOverrideRelativePath = "Docs/lighting_fixtures.csv";
+        [SerializeField] private string ambientProfileCsvRelativePath = "Docs/ambient_lighting_profiles.csv";
 
         private IDataVault _vault;
-        private static GlobalDataVault _standaloneVault;
         private Transform _cachedTransform;
         private double3 _rootAup;
         private int _activeResolution = 16;
@@ -242,6 +276,8 @@ namespace Hecton8.Lighting
         private float _visualUploadAccumulator;
         private float _lastCompleteMs;
         private uint _rootHash;
+        private uint _biomeHash;
+        private float3 _biomeTint = new float3(0.08f, 0.64f, 0.82f);
         private bool _registeredTick;
         private bool _registeredSlowTick;
         private bool _registeredLateFrame;
@@ -253,25 +289,40 @@ namespace Hecton8.Lighting
         private bool _visualDirty;
         private bool _simulationJobActive;
         private bool _scheduledFinalBufferIsBack = true;
+        private bool _scheduledBootClear;
+        private bool _gridClearRequested;
+        private bool _scheduledGridClear;
         private bool _nanDumpWritten;
         private bool _csvReloadRequested;
         private JobHandle _simulationHandle;
-        private Texture3D _stagingTexture;
-        private Texture3D _publishedTexture;
-        private int _textureResolution;
+        private JobHandle _gpuUploadHandle;
+        private GraphicsBuffer _probeBufferA;
+        private GraphicsBuffer _probeBufferB;
+        private int _gpuProbeCapacity;
+        private int _gpuProbeWriteIndex;
+        private int _gpuProbePublishedCount;
+        private int _gpuUploadPendingBufferIndex = -1;
+        private int _gpuUploadPendingCount;
+        private int _gpuUploadPendingFrame = -1;
+        private bool _gpuUploadPending;
+        private Vector4 _gpuUploadPendingParams;
+        private Vector4 _gpuUploadPendingOrigin;
+        private Vector4 _gpuUploadPendingRootAup;
+        private Vector4 _gpuUploadPendingState;
         private HectonQualityTier _cachedQualityTier = HectonQualityTier.Unknown;
 
-        private VaultBufferHandle<LightProbeDTO> _probeFront;
-        private VaultBufferHandle<LightProbeDTO> _probeBack;
+        private VaultBufferHandle<CustomLightProbeDTO> _probeFront;
+        private VaultBufferHandle<CustomLightProbeDTO> _probeBack;
         private VaultBufferHandle<InteriorGISourceDTO> _sources;
         private VaultBufferHandle<InteriorGIOcclusionCellDTO> _occlusion;
         private VaultBufferHandle<InteriorGITuningDTO> _tuning;
         private VaultBufferHandle<InteriorGITelemetryEntry> _telemetryRing;
         private VaultBufferHandle<InteriorGITelemetryEntry> _telemetryScratch;
-        private VaultBufferHandle<InteriorGITextureVoxelDTO> _textureUpload;
         private VaultBufferHandle<MockPowerState> _mockPower;
         private VaultBufferHandle<int> _faults;
         private VaultBufferHandle<byte> _csvBytes;
+        private VaultBufferHandle<AmbientLightingProfileDTO> _ambientProfiles;
+        private VaultBufferHandle<int> _ambientProfileCount;
 
         private int ActiveCellCount => _activeResolution * _activeResolution * _activeResolution;
 
@@ -296,12 +347,15 @@ namespace Hecton8.Lighting
         private void OnDestroy()
         {
             ReleaseRuntimeState(blockingComplete: true);
-            ReleaseTextures();
+            ReleaseGpuBuffers();
         }
 
         public void Tick(float deltaTime)
         {
             EnsureNativeState();
+            if (!_nativeReady)
+                return;
+
             TryRegister();
 
             if (_simulationJobActive)
@@ -309,14 +363,26 @@ namespace Hecton8.Lighting
 
             float quality = ResolveQualityWeight();
             ResolveActiveResolution(quality);
+            UpdateBiomeTintFromSignals();
+            float cadence = ResolveCadenceSeconds(quality);
+            float safeDelta = math.max(0f, deltaTime);
+            _visualUploadAccumulator += safeDelta;
+            if (_gridClearRequested)
+            {
+                InteriorGITuningDTO clearTuning = BuildTuning(quality, 0f, cadence);
+                ref InteriorGITuningDTO storedClear = ref _tuning.GetElementAsRef(EnsureVault(), 0);
+                storedClear = clearTuning;
+                _visualUploadAccumulator = math.max(_visualUploadAccumulator, math.max(0.05f, cadence));
+                ScheduleGridClear();
+                return;
+            }
+
             if (enableMockLighting)
                 EnsureMockSources();
             if (enableMockOcclusion)
                 EnsureMockOcclusionGrid();
 
-            float cadence = ResolveCadenceSeconds(quality);
-            _solverAccumulator += math.max(0f, deltaTime);
-            _visualUploadAccumulator += math.max(0f, deltaTime);
+            _solverAccumulator += safeDelta;
             if (_solverAccumulator < cadence)
                 return;
 
@@ -334,6 +400,9 @@ namespace Hecton8.Lighting
             if (!_nativeReady)
                 EnsureNativeState();
 
+            if (!_nativeReady || _scheduledBootClear || _simulationJobActive)
+                return;
+
             if (!enableCsvOverridePolling)
                 return;
 
@@ -349,15 +418,38 @@ namespace Hecton8.Lighting
 
         public void LateFrameTick()
         {
-            if (!_simulationJobActive || !_simulationHandle.IsCompleted)
+            TryPublishCompletedGpuUpload();
+
+            if (!_simulationJobActive)
+            {
+                TryStartGpuUploadIfDirty();
                 return;
+            }
 
             long start = Stopwatch.GetTimestamp();
-            _simulationHandle.Complete();
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _simulationHandle))
+                return;
             long end = Stopwatch.GetTimestamp();
             _lastCompleteMs = (float)((end - start) * 1000.0 / Stopwatch.Frequency);
-            _simulationHandle = default;
             _simulationJobActive = false;
+
+            if (_scheduledGridClear)
+            {
+                _scheduledGridClear = false;
+                _visualDirty = true;
+                _gridVersion++;
+                TryStartGpuUploadIfDirty();
+                return;
+            }
+
+            if (_scheduledBootClear)
+            {
+                _scheduledBootClear = false;
+                _visualDirty = true;
+                _gridVersion++;
+                TryStartGpuUploadIfDirty();
+                return;
+            }
 
             if (_scheduledFinalBufferIsBack)
                 SwapFrontBack();
@@ -365,7 +457,7 @@ namespace Hecton8.Lighting
                 _visualDirty = true;
             _gridVersion++;
             CommitTelemetryScratch();
-            UploadVisualTextureIfDirty();
+            TryStartGpuUploadIfDirty();
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
@@ -373,8 +465,12 @@ namespace Hecton8.Lighting
             if (_cachedTransform == null)
                 _cachedTransform = transform;
 
-            _rootAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(_cachedTransform.position);
-            _rootHash = HashAup(_rootAup);
+            if (TryResolveAbsoluteAupFromRuntimeOrigin(_cachedTransform.position, out double3 shiftedRootAup))
+            {
+                _rootAup = shiftedRootAup;
+                _rootHash = HashAup(_rootAup);
+            }
+
             _visualDirty = true;
         }
 
@@ -383,14 +479,14 @@ namespace Hecton8.Lighting
             _cachedQualityTier = payload.CurrentQualityTier;
         }
 
-        public bool TryGetProbeGridReadback(out NativeArray<LightProbeDTO> probes, out int resolution, out double3 rootAup, out float cellSize, out int version)
+        public bool TryGetProbeGridReadback(out NativeArray<CustomLightProbeDTO> probes, out int resolution, out double3 rootAup, out float cellSize, out int version)
         {
             probes = default;
             resolution = _activeResolution;
             rootAup = _rootAup;
             cellSize = cellSizeMeters;
             version = _gridVersion;
-            if (_simulationJobActive || !_probeFront.IsCreated)
+            if (_scheduledBootClear || _simulationJobActive || !_probeFront.IsCreated)
                 return false;
 
             probes = ResolveArray(ref _probeFront);
@@ -401,7 +497,7 @@ namespace Hecton8.Lighting
         {
             occlusion = default;
             resolution = _activeResolution;
-            if (_simulationJobActive || !_occlusion.IsCreated)
+            if (_scheduledBootClear || _simulationJobActive || !_occlusion.IsCreated)
                 return false;
 
             occlusion = ResolveArray(ref _occlusion);
@@ -490,6 +586,13 @@ namespace Hecton8.Lighting
 #endif
         }
 
+        public void RequestAmbientProfileCsvReload()
+        {
+#if UNITY_EDITOR
+            TryReloadAmbientProfileCsv();
+#endif
+        }
+
         public void DumpBlackBoxNow()
         {
             DumpTelemetryRing();
@@ -567,45 +670,45 @@ namespace Hecton8.Lighting
                 return;
 
             _vault = ResolveDataVault();
+            if (_vault == null)
+                return;
+
             if (_cachedTransform == null)
                 _cachedTransform = transform;
 
-            _rootAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(_cachedTransform.position);
+            if (!TryResolveAbsoluteAupFromRuntimeOrigin(_cachedTransform.position, out _rootAup))
+                _rootAup = double3.zero;
+
             _rootHash = HashAup(_rootAup);
             _activeResolution = ResolveResolutionFromQuality(ResolveQualityWeight());
 
-            _probeFront = AcquireBuffer<LightProbeDTO>(ProbeFrontBuffer, MaxCellCount);
-            _probeBack = AcquireBuffer<LightProbeDTO>(ProbeBackBuffer, MaxCellCount);
+            _probeFront = AcquireBuffer<CustomLightProbeDTO>(ProbeFrontBuffer, MaxCellCount);
+            _probeBack = AcquireBuffer<CustomLightProbeDTO>(ProbeBackBuffer, MaxCellCount);
             _sources = AcquireBuffer<InteriorGISourceDTO>(ProbeSourcesBuffer, MaxSourceCount);
             _occlusion = AcquireBuffer<InteriorGIOcclusionCellDTO>(ProbeOcclusionBuffer, MaxCellCount);
             _tuning = AcquireBuffer<InteriorGITuningDTO>(ProbeTuningBuffer, 1);
             _telemetryRing = AcquireBuffer<InteriorGITelemetryEntry>(ProbeTelemetryRingBuffer, TelemetryCapacity);
             _telemetryScratch = AcquireBuffer<InteriorGITelemetryEntry>(ProbeTelemetryScratchBuffer, 1);
-            _textureUpload = AcquireBuffer<InteriorGITextureVoxelDTO>(ProbeTextureUploadBuffer, MaxCellCount);
             _mockPower = AcquireBuffer<MockPowerState>(ProbeMockPowerBuffer, 1);
             _faults = AcquireBuffer<int>(ProbeFaultBuffer, MaxCellCount);
             _csvBytes = AcquireBuffer<byte>(ProbeCsvBytesBuffer, CsvBufferBytes);
-
-            MemClearBuffer(ref _probeFront, MaxCellCount);
-            MemClearBuffer(ref _probeBack, MaxCellCount);
-            MemClearBuffer(ref _sources, MaxSourceCount);
-            MemClearBuffer(ref _occlusion, MaxCellCount);
-            MemClearBuffer(ref _telemetryRing, TelemetryCapacity);
-            MemClearBuffer(ref _telemetryScratch, 1);
-            MemClearBuffer(ref _textureUpload, MaxCellCount);
-            MemClearBuffer(ref _mockPower, 1);
-            MemClearBuffer(ref _faults, MaxCellCount);
-            MemClearBuffer(ref _csvBytes, CsvBufferBytes);
+            _ambientProfiles = AcquireBuffer<AmbientLightingProfileDTO>(ProbeAmbientProfileBuffer, MaxAmbientProfileCount);
+            _ambientProfileCount = AcquireBuffer<int>(ProbeAmbientProfileCountBuffer, 1);
 
             ref InteriorGITuningDTO tuning = ref _tuning.GetElementAsRef(EnsureVault(), 0);
-            tuning = BuildTuning(ResolveQualityWeight(), ResolveCadenceSeconds(ResolveQualityWeight()), ResolveCadenceSeconds(ResolveQualityWeight()));
-            if (enableTextureUpload)
-                EnsureTextures(_activeResolution);
+            float bootQuality = ResolveQualityWeight();
+            float bootCadence = ResolveCadenceSeconds(bootQuality);
+            tuning = BuildTuning(bootQuality, bootCadence, bootCadence);
+
+            if (enableGpuUpload)
+                EnsureGpuBuffers(MaxCellCount);
 
             _nativeReady = true;
             _mockSourcesSeeded = false;
             _mockOcclusionSeeded = false;
             _visualDirty = true;
+            _visualUploadAccumulator = math.max(_visualUploadAccumulator, math.max(0.05f, tuning.UploadCadenceSeconds));
+            ScheduleBootClearJob(tuning);
         }
 
         private VaultBufferHandle<T> AcquireBuffer<T>(BufferID bufferId, int length) where T : struct
@@ -621,14 +724,43 @@ namespace Hecton8.Lighting
             return handle;
         }
 
-        private void MemClearBuffer<T>(ref VaultBufferHandle<T> handle, int length) where T : struct
+        private void ScheduleBootClearJob(InteriorGITuningDTO tuning)
         {
-            void* ptr = handle.ResolvePointer(EnsureVault());
-            if (ptr == null)
+            if (_simulationJobActive)
                 return;
 
-            long bytes = (long)UnsafeUtility.SizeOf<T>() * length;
-            UnsafeUtility.MemClear(ptr, bytes);
+            InteriorGIClearStateJob clearJob = new InteriorGIClearStateJob
+            {
+                ProbeFront = ResolveArray(ref _probeFront),
+                ProbeBack = ResolveArray(ref _probeBack),
+                Sources = ResolveArray(ref _sources),
+                Occlusion = ResolveArray(ref _occlusion),
+                TelemetryRing = ResolveArray(ref _telemetryRing),
+                TelemetryScratch = ResolveArray(ref _telemetryScratch),
+                Power = ResolveArray(ref _mockPower),
+                Faults = ResolveArray(ref _faults),
+                CsvBytes = ResolveArray(ref _csvBytes),
+                AmbientProfiles = ResolveArray(ref _ambientProfiles),
+                AmbientProfileCount = ResolveArray(ref _ambientProfileCount)
+            };
+            JobHandle handle = clearJob.Schedule();
+            if (enableMockLighting)
+            {
+                GenerateMockProbeGridJob mockJob = new GenerateMockProbeGridJob
+                {
+                    Front = ResolveArray(ref _probeFront),
+                    Back = ResolveArray(ref _probeBack),
+                    Tuning = tuning
+                };
+                int count = math.clamp(tuning.ActiveProbeCount, 0, MaxCellCount);
+                handle = mockJob.Schedule(count, 64, handle);
+            }
+
+            H8Memory.RegisterActiveJob(MemoryOwner, handle);
+            _simulationHandle = handle;
+            _simulationJobActive = true;
+            _scheduledFinalBufferIsBack = false;
+            _scheduledBootClear = true;
         }
 
         private IDataVault EnsureVault()
@@ -646,16 +778,40 @@ namespace Hecton8.Lighting
             if (vault != null)
                 return vault;
 
-            if (GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
-                return latest;
-
-            _standaloneVault ??= GlobalDataVault.Create(64);
-            return _standaloneVault;
+            return GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest) ? latest : null;
         }
 
         private NativeArray<T> ResolveArray<T>(ref VaultBufferHandle<T> handle) where T : struct
         {
             return handle.Resolve(EnsureVault());
+        }
+
+        public void GenerateMockProbeGrid()
+        {
+            if (_simulationJobActive || !_probeFront.IsCreated || !_probeBack.IsCreated || !_tuning.IsCreated)
+                return;
+
+            GenerateMockProbeGrid(_tuning.GetElementAsRef(EnsureVault(), 0));
+        }
+
+        private void GenerateMockProbeGrid(InteriorGITuningDTO tuning)
+        {
+            NativeArray<CustomLightProbeDTO> front = ResolveArray(ref _probeFront);
+            NativeArray<CustomLightProbeDTO> back = ResolveArray(ref _probeBack);
+            if (!front.IsCreated || !back.IsCreated)
+                return;
+
+            GenerateMockProbeGridJob job = new GenerateMockProbeGridJob
+            {
+                Front = front,
+                Back = back,
+                Tuning = tuning
+            };
+            int count = math.clamp(tuning.ActiveProbeCount, 0, MaxCellCount);
+            JobHandle handle = job.Schedule(count, 64);
+            H8Memory.RegisterActiveJob(MemoryOwner, handle);
+            DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+            _visualDirty = true;
         }
 
         private void TryRegister()
@@ -726,13 +882,16 @@ namespace Hecton8.Lighting
                 if (!blockingComplete && !_simulationHandle.IsCompleted)
                     return false;
 
-                _simulationHandle.Complete();
+                DispatcherJobFence.TryComplete(ref _simulationHandle, blockingComplete);
             }
 
-            _simulationHandle = default;
             _simulationJobActive = false;
             _scheduledFinalBufferIsBack = true;
+            _scheduledBootClear = false;
+            _scheduledGridClear = false;
+            _gridClearRequested = false;
             _nativeReady = false;
+            CompletePendingGpuUpload();
             _probeFront = default;
             _probeBack = default;
             _sources = default;
@@ -740,28 +899,38 @@ namespace Hecton8.Lighting
             _tuning = default;
             _telemetryRing = default;
             _telemetryScratch = default;
-            _textureUpload = default;
             _mockPower = default;
             _faults = default;
             _csvBytes = default;
+            _ambientProfiles = default;
+            _ambientProfileCount = default;
             return true;
         }
 
-        private void ReleaseTextures()
+        private void ReleaseGpuBuffers()
         {
-            if (_stagingTexture != null)
+            CompletePendingGpuUpload();
+
+            if (_probeBufferA != null)
             {
-                Destroy(_stagingTexture);
-                _stagingTexture = null;
+                _probeBufferA.Release();
+                _probeBufferA = null;
             }
 
-            if (_publishedTexture != null)
+            if (_probeBufferB != null)
             {
-                Destroy(_publishedTexture);
-                _publishedTexture = null;
+                _probeBufferB.Release();
+                _probeBufferB = null;
             }
 
-            _textureResolution = 0;
+            _gpuProbeCapacity = 0;
+            _gpuProbeWriteIndex = 0;
+            _gpuProbePublishedCount = 0;
+            _gpuUploadPendingBufferIndex = -1;
+            _gpuUploadPendingCount = 0;
+            _gpuUploadPendingFrame = -1;
+            _gpuUploadPending = false;
+            _gpuUploadHandle = default;
         }
 
         private InteriorGISourceDTO BuildSource(uint sourceHash, double3 aup, float3 color, float intensity, float radiusMeters, uint flags, float3 direction, int ordinal)
@@ -870,11 +1039,10 @@ namespace Hecton8.Lighting
 
         private void ScheduleSimulation(InteriorGITuningDTO tuning)
         {
-            NativeArray<LightProbeDTO> front = ResolveArray(ref _probeFront);
-            NativeArray<LightProbeDTO> back = ResolveArray(ref _probeBack);
+            NativeArray<CustomLightProbeDTO> front = ResolveArray(ref _probeFront);
+            NativeArray<CustomLightProbeDTO> back = ResolveArray(ref _probeBack);
             NativeArray<InteriorGISourceDTO> sources = ResolveArray(ref _sources);
             NativeArray<InteriorGIOcclusionCellDTO> occlusion = ResolveArray(ref _occlusion);
-            NativeArray<InteriorGITextureVoxelDTO> upload = ResolveArray(ref _textureUpload);
             NativeArray<MockPowerState> power = ResolveArray(ref _mockPower);
             NativeArray<int> faults = ResolveArray(ref _faults);
             NativeArray<InteriorGITelemetryEntry> scratch = ResolveArray(ref _telemetryScratch);
@@ -889,9 +1057,9 @@ namespace Hecton8.Lighting
 
             int iterations = math.clamp(tuning.PropagationIterations, 1, 4);
             float iterationDt = tuning.SimulationDelta / math.max(1, iterations);
-            NativeArray<LightProbeDTO> readProbes = front;
-            NativeArray<LightProbeDTO> writeProbes = back;
-            NativeArray<LightProbeDTO> finalProbes = back;
+            NativeArray<CustomLightProbeDTO> readProbes = front;
+            NativeArray<CustomLightProbeDTO> writeProbes = back;
+            NativeArray<CustomLightProbeDTO> finalProbes = back;
             bool finalBufferIsBack = true;
             for (int i = 0; i < iterations; i++)
             {
@@ -903,7 +1071,6 @@ namespace Hecton8.Lighting
                     Back = writeProbes,
                     Sources = sources,
                     Occlusion = occlusion,
-                    TextureUpload = upload,
                     Faults = faults,
                     Power = power,
                     Tuning = iterationTuning
@@ -911,10 +1078,19 @@ namespace Hecton8.Lighting
                 handle = propagationJob.Schedule(tuning.ActiveProbeCount, 64, handle);
                 finalProbes = writeProbes;
                 finalBufferIsBack = (i & 1) == 0;
-                NativeArray<LightProbeDTO> swap = readProbes;
+                NativeArray<CustomLightProbeDTO> swap = readProbes;
                 readProbes = writeProbes;
                 writeProbes = swap;
             }
+
+            UpdateProbeOcclusionJob occlusionJob = new UpdateProbeOcclusionJob
+            {
+                Probes = finalProbes,
+                Occlusion = occlusion,
+                Tuning = tuning,
+                OcclusionStrength = math.saturate(tuning.WallAbsorption)
+            };
+            handle = occlusionJob.Schedule(tuning.ActiveProbeCount, 64, handle);
 
             InteriorGITelemetryScanJob scanJob = new InteriorGITelemetryScanJob
             {
@@ -931,9 +1107,30 @@ namespace Hecton8.Lighting
             _scheduledFinalBufferIsBack = finalBufferIsBack;
         }
 
+        private void ScheduleGridClear()
+        {
+            if (_simulationJobActive || !_probeFront.IsCreated || !_probeBack.IsCreated)
+                return;
+
+            InteriorGIProbeGridClearJob clearJob = new InteriorGIProbeGridClearJob
+            {
+                ProbeFront = ResolveArray(ref _probeFront),
+                ProbeBack = ResolveArray(ref _probeBack),
+                Faults = ResolveArray(ref _faults),
+                TelemetryScratch = ResolveArray(ref _telemetryScratch)
+            };
+            JobHandle handle = clearJob.Schedule();
+            H8Memory.RegisterActiveJob(MemoryOwner, handle);
+            _simulationHandle = handle;
+            _simulationJobActive = true;
+            _scheduledFinalBufferIsBack = false;
+            _scheduledGridClear = true;
+            _gridClearRequested = false;
+        }
+
         private void SwapFrontBack()
         {
-            VaultBufferHandle<LightProbeDTO> swap = _probeFront;
+            VaultBufferHandle<CustomLightProbeDTO> swap = _probeFront;
             _probeFront = _probeBack;
             _probeBack = swap;
             _visualDirty = true;
@@ -961,9 +1158,62 @@ namespace Hecton8.Lighting
             }
         }
 
-        private void UploadVisualTextureIfDirty()
+        private void TryPublishCompletedGpuUpload()
         {
-            if (!enableTextureUpload || !_visualDirty || !_textureUpload.IsCreated)
+            if (!_gpuUploadPending)
+                return;
+
+            if (!_gpuUploadHandle.IsCompleted)
+                return;
+
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _gpuUploadHandle))
+                return;
+
+            GraphicsBuffer completed = _gpuUploadPendingBufferIndex == 0 ? _probeBufferA : _probeBufferB;
+            if (completed != null && _gpuUploadPendingCount > 0)
+            {
+                completed.UnlockBufferAfterWrite<CustomLightProbeDTO>(_gpuUploadPendingCount);
+                if (Time.frameCount > _gpuUploadPendingFrame)
+                {
+                    Shader.SetGlobalBuffer(InteriorGIProbeBufferId, completed);
+                    Shader.SetGlobalVector(InteriorGIParamsId, _gpuUploadPendingParams);
+                    Shader.SetGlobalVector(InteriorGIOriginId, _gpuUploadPendingOrigin);
+                    Shader.SetGlobalVector(InteriorGIRootAupId, _gpuUploadPendingRootAup);
+                    Shader.SetGlobalVector(InteriorGIGpuStateId, _gpuUploadPendingState);
+                    _gpuProbePublishedCount = _gpuUploadPendingCount;
+                }
+                else
+                {
+                    _visualDirty = true;
+                }
+            }
+
+            _gpuUploadPending = false;
+            _gpuUploadPendingBufferIndex = -1;
+            _gpuUploadPendingCount = 0;
+            _gpuUploadPendingFrame = -1;
+        }
+
+        private void CompletePendingGpuUpload()
+        {
+            if (!_gpuUploadPending)
+                return;
+
+            DispatcherJobFence.TryComplete(ref _gpuUploadHandle, forceComplete: true);
+            GraphicsBuffer pending = _gpuUploadPendingBufferIndex == 0 ? _probeBufferA : _probeBufferB;
+            if (pending != null && _gpuUploadPendingCount > 0)
+                pending.UnlockBufferAfterWrite<CustomLightProbeDTO>(_gpuUploadPendingCount);
+
+            _gpuUploadPending = false;
+            _gpuUploadPendingBufferIndex = -1;
+            _gpuUploadPendingCount = 0;
+            _gpuUploadPendingFrame = -1;
+            _visualDirty = true;
+        }
+
+        private void TryStartGpuUploadIfDirty()
+        {
+            if (!enableGpuUpload || !_visualDirty || _gpuUploadPending || !_probeFront.IsCreated)
                 return;
 
             InteriorGITuningDTO tuning = _tuning.GetElementAsRef(EnsureVault(), 0);
@@ -971,45 +1221,54 @@ namespace Hecton8.Lighting
                 return;
 
             _visualUploadAccumulator = 0f;
-            EnsureTextures(_activeResolution);
-            if (_stagingTexture == null || _publishedTexture == null)
+            int activeCount = math.clamp(tuning.ActiveProbeCount, 0, MaxCellCount);
+            if (activeCount <= 0)
                 return;
 
-            NativeArray<InteriorGITextureVoxelDTO> upload = ResolveArray(ref _textureUpload);
-            NativeArray<InteriorGITextureVoxelDTO> active = upload.GetSubArray(0, ActiveCellCount);
-            _stagingTexture.SetPixelData(active, 0);
-            _stagingTexture.Apply(false, false);
-            Graphics.CopyTexture(_stagingTexture, _publishedTexture);
+            EnsureGpuBuffers(MaxCellCount);
+            GraphicsBuffer target = _gpuProbeWriteIndex == 0 ? _probeBufferA : _probeBufferB;
+            if (target == null || target.count < activeCount)
+                return;
 
-            Shader.SetGlobalTexture(InteriorGITextureId, _publishedTexture);
-            Shader.SetGlobalVector(InteriorGIParamsId, new Vector4(_activeResolution, math.max(1f, cellSizeMeters), tuning.GlobalQualityWeight, tuning.DirectionalWeight));
+            NativeArray<CustomLightProbeDTO> source = ResolveArray(ref _probeFront);
+            if (!source.IsCreated || source.Length < activeCount)
+                return;
+
+            NativeArray<CustomLightProbeDTO> mapped = target.LockBufferForWrite<CustomLightProbeDTO>(0, activeCount);
+            CustomLightProbeGpuUploadJob uploadJob = new CustomLightProbeGpuUploadJob
+            {
+                Source = source,
+                Destination = mapped,
+                Count = activeCount
+            };
+            JobHandle uploadHandle = uploadJob.Schedule();
+            H8Memory.RegisterActiveJob(MemoryOwner, uploadHandle);
+            Vector3 runtimeRoot = _cachedTransform != null ? _cachedTransform.position : transform.position;
             float3 rootResidue = ToShaderRootResidue(_rootAup);
-            Shader.SetGlobalVector(InteriorGIOriginId, new Vector4(rootResidue.x, rootResidue.y, rootResidue.z, 1f));
-            Shader.SetGlobalVector(InteriorGIRootAupId, new Vector4(rootResidue.x, rootResidue.y, rootResidue.z, (float)_rootHash));
+            _gpuUploadHandle = uploadHandle;
+            _gpuUploadPendingBufferIndex = _gpuProbeWriteIndex;
+            _gpuUploadPendingCount = activeCount;
+            _gpuUploadPendingFrame = Time.frameCount;
+            _gpuUploadPendingParams = new Vector4(_activeResolution, math.max(1f, cellSizeMeters), tuning.GlobalQualityWeight, tuning.DirectionalWeight);
+            _gpuUploadPendingOrigin = new Vector4(runtimeRoot.x, runtimeRoot.y, runtimeRoot.z, 1f);
+            _gpuUploadPendingRootAup = new Vector4(rootResidue.x, rootResidue.y, rootResidue.z, (float)_rootHash);
+            _gpuUploadPendingState = new Vector4(activeCount, _gridVersion, UnsafeUtility.SizeOf<CustomLightProbeDTO>(), _gpuProbeWriteIndex);
+            _gpuUploadPending = true;
+            _gpuProbeWriteIndex ^= 1;
             _visualDirty = false;
         }
 
-        private void EnsureTextures(int resolution)
+        private void EnsureGpuBuffers(int requiredCount)
         {
-            if (_textureResolution == resolution && _stagingTexture != null && _publishedTexture != null)
+            int safeCount = math.clamp(requiredCount, 1, MaxCellCount);
+            if (_gpuProbeCapacity >= safeCount && _probeBufferA != null && _probeBufferB != null)
                 return;
 
-            ReleaseTextures();
-            _textureResolution = resolution;
-            _stagingTexture = new Texture3D(resolution, resolution, resolution, TextureFormat.RGBAHalf, false)
-            {
-                name = "H8_InteriorGI_Staging",
-                wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Bilinear,
-                hideFlags = HideFlags.DontSave
-            };
-            _publishedTexture = new Texture3D(resolution, resolution, resolution, TextureFormat.RGBAHalf, false)
-            {
-                name = "H8_InteriorGI_Published",
-                wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Bilinear,
-                hideFlags = HideFlags.DontSave
-            };
+            ReleaseGpuBuffers();
+            int stride = UnsafeUtility.SizeOf<CustomLightProbeDTO>();
+            _probeBufferA = new GraphicsBuffer(GraphicsBuffer.Target.Structured, GraphicsBuffer.UsageFlags.LockBufferForWrite, safeCount, stride);
+            _probeBufferB = new GraphicsBuffer(GraphicsBuffer.Target.Structured, GraphicsBuffer.UsageFlags.LockBufferForWrite, safeCount, stride);
+            _gpuProbeCapacity = safeCount;
         }
 
         private InteriorGITuningDTO BuildTuning(float quality, float dt, float cadence)
@@ -1045,14 +1304,62 @@ namespace Hecton8.Lighting
                 SourceSampleLimit = sampleLimit,
                 FrameIndex = _gridVersion + 1,
                 Flags = (uint)math.round(safeQuality * 65535f),
-                RootHash = _rootHash,
+                RootHash = _rootHash ^ _biomeHash,
                 RedOverride01 = math.saturate(emergencyOverride01),
                 UploadCadenceSeconds = uploadCadence,
                 AmbientRetain = math.lerp(0.78f, 0.93f, safeQuality),
                 TransferDamping = math.lerp(0.55f, 1.15f, safeQuality),
                 PropagationIterations = iterations,
-                _pad1 = 0u
+                PackedBiomeTint = InteriorGIProbeMath.PackRgb10(_biomeTint)
             };
+        }
+
+        private void UpdateBiomeTintFromSignals()
+        {
+            ReadOnlySpan<BiomeGradientSignal> signals = SignalBus<BiomeGradientSignal>.GetFrameSnapshot();
+            if (signals.Length <= 0)
+                return;
+
+            BiomeGradientSignal signal = signals[signals.Length - 1];
+            float blend = math.saturate(math.isfinite(signal.BlendFactor01) ? signal.BlendFactor01 : 0f);
+            float3 tintA = ResolveProfileTint(signal.BiomeAHash, signal.BiomeA);
+            float3 tintB = ResolveProfileTint(signal.BiomeBHash, signal.BiomeB);
+            float3 tint = math.lerp(tintA, tintB, blend);
+            if (!math.all(math.isfinite(tint)))
+                return;
+
+            _biomeTint = math.max(new float3(0f), tint);
+            uint rotatedBiomeB = (signal.BiomeBHash << 11) | (signal.BiomeBHash >> 21);
+            _biomeHash = signal.BiomeAHash ^ rotatedBiomeB ^ math.asuint(blend);
+        }
+
+        private float3 ResolveProfileTint(uint biomeHash, byte biomeId)
+        {
+            if (_ambientProfiles.IsCreated && _ambientProfileCount.IsCreated && !_simulationJobActive)
+            {
+                NativeArray<AmbientLightingProfileDTO> profiles = ResolveArray(ref _ambientProfiles);
+                NativeArray<int> profileCount = ResolveArray(ref _ambientProfileCount);
+                if (profiles.IsCreated && profileCount.IsCreated && profileCount.Length > 0)
+                {
+                    int count = math.clamp(profileCount[0], 0, profiles.Length);
+                    ulong hash64 = biomeHash;
+                    for (int i = 0; i < count; i++)
+                    {
+                        AmbientLightingProfileDTO profile = profiles[i];
+                        if (profile.ProfileId == biomeHash || profile.ProfileHash64 == hash64)
+                            return math.max(new float3(0f), profile.BiomeTint);
+                    }
+                }
+            }
+
+            uint hash = biomeHash != 0u ? biomeHash : (uint)(biomeId + 1) * 747796405u;
+            uint r = InteriorGIProbeMath.Hash32(hash ^ 0x9E3779B9u);
+            uint g = InteriorGIProbeMath.Hash32(hash ^ 0x85EBCA6Bu);
+            uint b = InteriorGIProbeMath.Hash32(hash ^ 0xC2B2AE35u);
+            return new float3(
+                0.04f + ((r & 255u) * (1f / 255f)) * 0.18f,
+                0.18f + ((g & 255u) * (1f / 255f)) * 0.62f,
+                0.24f + ((b & 255u) * (1f / 255f)) * 0.66f);
         }
 
         private float ResolveQualityWeight()
@@ -1085,9 +1392,7 @@ namespace Hecton8.Lighting
                 return;
 
             _activeResolution = desired;
-            MemClearBuffer(ref _probeFront, MaxCellCount);
-            MemClearBuffer(ref _probeBack, MaxCellCount);
-            MemClearBuffer(ref _textureUpload, MaxCellCount);
+            _gridClearRequested = true;
             _mockOcclusionSeeded = false;
             _visualDirty = true;
         }
@@ -1138,10 +1443,40 @@ namespace Hecton8.Lighting
 
                 if (rowsRejected > 0)
                     Debug.LogWarning("Interior GI CSV rejected rows: " + rowsRejected);
+
+                TryReloadAmbientProfileCsv();
             }
             catch (Exception ex)
             {
                 Debug.LogWarning("Interior GI CSV reload failed: " + ex.Message);
+            }
+        }
+
+        private void TryReloadAmbientProfileCsv()
+        {
+            if (_simulationJobActive || !_csvBytes.IsCreated || !_ambientProfiles.IsCreated || !_ambientProfileCount.IsCreated)
+                return;
+
+            string path = Path.Combine(Application.dataPath, "..", ambientProfileCsvRelativePath);
+            if (!File.Exists(path))
+                return;
+
+            try
+            {
+                NativeArray<byte> csv = ResolveArray(ref _csvBytes);
+                int count = ReadFileIntoVaultBuffer(path, csv, CsvBufferBytes);
+                NativeArray<AmbientLightingProfileDTO> profiles = ResolveArray(ref _ambientProfiles);
+                int parsedCount = AmbientLightingProfileCsvParser.Parse(csv, count, profiles, MaxAmbientProfileCount, out int rowsRejected);
+                NativeArray<int> profileCount = ResolveArray(ref _ambientProfileCount);
+                if (profileCount.IsCreated && profileCount.Length > 0)
+                    profileCount[0] = parsedCount;
+
+                if (rowsRejected > 0)
+                    Debug.LogWarning("Ambient lighting profile CSV rejected rows: " + rowsRejected);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("Ambient lighting profile CSV reload failed: " + ex.Message);
             }
         }
 
@@ -1172,8 +1507,7 @@ namespace Hecton8.Lighting
                 return;
 
             NativeArray<InteriorGITelemetryEntry> ring = ResolveArray(ref _telemetryRing);
-            WriteTelemetryDump(Path.Combine(Application.dataPath, "..", "Docs/AgentLogs/Dump_LUMEN_SURGEON.bin"), ring);
-            WriteTelemetryDump(Path.Combine(Application.dataPath, "..", "Docs/AgentLogs/Dump_SHINOBU_63.bin"), ring);
+            WriteTelemetryDump(Path.Combine(Application.dataPath, "..", "Docs/AgentLogs/Dump_LIGHTING_SURGEON.bin"), ring);
         }
 
         private void WriteTelemetryDump(string path, NativeArray<InteriorGITelemetryEntry> ring)
@@ -1248,6 +1582,24 @@ namespace Hecton8.Lighting
             return hash;
         }
 
+        private static bool TryResolveAbsoluteAupFromRuntimeOrigin(Vector3 runtimePosition, out double3 absoluteAup)
+        {
+            absoluteAup = default;
+            if (!float.IsFinite(runtimePosition.x) ||
+                !float.IsFinite(runtimePosition.y) ||
+                !float.IsFinite(runtimePosition.z))
+            {
+                return false;
+            }
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!MathGuard.IsFinite(in originAup))
+                return false;
+
+            absoluteAup = originAup.ToAbsoluteDouble3() + new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            return math.all(math.isfinite(absoluteAup));
+        }
+
         private static uint HashCell(int x, int y, int z)
         {
             uint hash = 2166136261u;
@@ -1303,15 +1655,17 @@ namespace Hecton8.Lighting
 
         private void OnDrawGizmosSelected()
         {
-            if (!drawProbeGizmos || !TryGetProbeGridReadback(out NativeArray<LightProbeDTO> probes, out int resolution, out double3 root, out float cell, out _))
+            if (!drawProbeGizmos || !TryGetProbeGridReadback(out NativeArray<CustomLightProbeDTO> probes, out int resolution, out double3 root, out float cell, out _))
                 return;
 
             int count = resolution * resolution * resolution;
             int stride = math.max(1, count / math.max(1, maxEditorGizmoProbes));
             for (int i = 0; i < count; i += stride)
             {
-                LightProbeDTO probe = probes[i];
-                float luma = math.saturate(InteriorGIProbeMath.LuminanceL0(in probe) * 0.25f);
+                CustomLightProbeDTO probe = probes[i];
+                float3 forward = _cachedTransform != null ? (float3)_cachedTransform.forward : new float3(0f, 0f, 1f);
+                float3 forwardColor = InteriorGIProbeMath.EvaluateDirection(in probe, forward);
+                float luma = math.saturate(math.dot(forwardColor, new float3(0.2126f, 0.7152f, 0.0722f)) * 0.25f);
                 if (luma <= 0.01f)
                     continue;
 
@@ -1320,8 +1674,8 @@ namespace Hecton8.Lighting
                     (float)(root.x + (coord.x + 0.5f) * cell - _rootAup.x),
                     (float)(root.y + (coord.y + 0.5f) * cell - _rootAup.y),
                     (float)(root.z + (coord.z + 0.5f) * cell - _rootAup.z)) + (_cachedTransform != null ? _cachedTransform.position : Vector3.zero);
-                Gizmos.color = new Color(math.saturate(probe.R0), math.saturate(probe.G0), math.saturate(probe.B0), math.saturate(luma));
-                Gizmos.DrawCube(pos, Vector3.one * math.max(0.05f, cell * 0.08f));
+                Gizmos.color = new Color(math.saturate(forwardColor.x), math.saturate(forwardColor.y), math.saturate(forwardColor.z), math.saturate(luma));
+                Gizmos.DrawSphere(pos, math.max(0.05f, cell * 0.08f));
             }
         }
 #endif
@@ -1554,6 +1908,261 @@ namespace Hecton8.Lighting
         }
     }
 
+    public static class CustomLightProbeLayoutAudit
+    {
+        public const int ExpectedSize = 128;
+        public const int SpatialHashOffset = 0;
+        public const int PackedCoordOffset = 8;
+        public const int FlagsOffset = 12;
+        public const int Lane0Offset = 16;
+        public const int Lane6Offset = 112;
+        public const int LastCoefficientOffset = 120;
+        public const int SpareOffset = 124;
+
+        public static bool Validate(out int actualSize, out int lane0Offset, out int lane6Offset, out int lastCoefficientOffset)
+        {
+            actualSize = UnsafeUtility.SizeOf<CustomLightProbeDTO>();
+            lane0Offset = Marshal.OffsetOf(typeof(CustomLightProbeDTO), nameof(CustomLightProbeDTO.Lane0)).ToInt32();
+            lane6Offset = Marshal.OffsetOf(typeof(CustomLightProbeDTO), nameof(CustomLightProbeDTO.Lane6)).ToInt32();
+            lastCoefficientOffset = Marshal.OffsetOf(typeof(CustomLightProbeDTO), nameof(CustomLightProbeDTO.B8)).ToInt32();
+            int spareOffset = Marshal.OffsetOf(typeof(CustomLightProbeDTO), nameof(CustomLightProbeDTO.Spare0)).ToInt32();
+            return actualSize == ExpectedSize &&
+                   lane0Offset == Lane0Offset &&
+                   lane6Offset == Lane6Offset &&
+                   lastCoefficientOffset == LastCoefficientOffset &&
+                   spareOffset == SpareOffset;
+        }
+    }
+
+    public static class AmbientLightingProfileCsvParser
+    {
+        public static unsafe int Parse(NativeArray<byte> csv, int byteCount, NativeArray<AmbientLightingProfileDTO> profiles, int maxProfiles, out int rowsRejected)
+        {
+            rowsRejected = 0;
+            if (!csv.IsCreated || !profiles.IsCreated || byteCount <= 0 || maxProfiles <= 0)
+                return 0;
+
+            int safeBytes = math.min(byteCount, csv.Length);
+            void* ptr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(csv);
+            return Parse(new ReadOnlySpan<byte>(ptr, safeBytes), profiles, maxProfiles, out rowsRejected);
+        }
+
+        public static int Parse(ReadOnlySpan<byte> csv, NativeArray<AmbientLightingProfileDTO> profiles, int maxProfiles, out int rowsRejected)
+        {
+            rowsRejected = 0;
+            if (!profiles.IsCreated || csv.Length <= 0 || maxProfiles <= 0)
+                return 0;
+
+            int safeBytes = csv.Length;
+            int safeProfiles = math.min(maxProfiles, profiles.Length);
+            int count = 0;
+            int position = 0;
+            while (position < safeBytes && count < safeProfiles)
+            {
+                int lineStart = position;
+                while (position < safeBytes && csv[position] != (byte)'\n' && csv[position] != (byte)'\r')
+                    position++;
+
+                int lineEnd = position;
+                while (position < safeBytes && (csv[position] == (byte)'\n' || csv[position] == (byte)'\r'))
+                    position++;
+
+                if (lineEnd <= lineStart)
+                    continue;
+
+                int first = SkipWhitespace(csv, lineStart, lineEnd);
+                if (first >= lineEnd || csv[first] == (byte)'#')
+                    continue;
+
+                CsvCursor cursor = new CsvCursor { Start = first, End = lineEnd, Position = first };
+                if (!ReadToken(csv, ref cursor, out int nameStart, out int nameEnd))
+                {
+                    rowsRejected++;
+                    continue;
+                }
+
+                if (LooksLikeHeader(csv, nameStart, nameEnd))
+                    continue;
+
+                float r = 0.05f;
+                float g = 0.08f;
+                float b = 0.12f;
+                float directional = 0.2f;
+                float l2 = 0.1f;
+                float tintR = 1f;
+                float tintG = 1f;
+                float tintB = 1f;
+                float water = 0.8f;
+                if (!ReadFloatOrDefault(csv, ref cursor, ref r) ||
+                    !ReadFloatOrDefault(csv, ref cursor, ref g) ||
+                    !ReadFloatOrDefault(csv, ref cursor, ref b))
+                {
+                    rowsRejected++;
+                    continue;
+                }
+
+                ReadFloatOrDefault(csv, ref cursor, ref directional);
+                ReadFloatOrDefault(csv, ref cursor, ref l2);
+                ReadFloatOrDefault(csv, ref cursor, ref tintR);
+                ReadFloatOrDefault(csv, ref cursor, ref tintG);
+                ReadFloatOrDefault(csv, ref cursor, ref tintB);
+                ReadFloatOrDefault(csv, ref cursor, ref water);
+
+                ulong hash = HashName(csv, nameStart, nameEnd);
+                profiles[count] = new AmbientLightingProfileDTO
+                {
+                    ProfileHash64 = hash,
+                    ProfileId = (uint)hash,
+                    Flags = 0u,
+                    L0Color = math.max(new float3(0f), new float3(SafeFloat(r), SafeFloat(g), SafeFloat(b))),
+                    DirectionalWeight = math.saturate(SafeFloat(directional)),
+                    BiomeTint = math.max(new float3(0f), new float3(SafeFloat(tintR), SafeFloat(tintG), SafeFloat(tintB))),
+                    L2Weight = math.saturate(SafeFloat(l2)),
+                    WaterAbsorption = new float3(math.saturate(SafeFloat(water))),
+                    _pad0 = 0u
+                };
+                count++;
+            }
+
+            return count;
+        }
+
+        private static bool ReadFloatOrDefault(ReadOnlySpan<byte> csv, ref CsvCursor cursor, ref float value)
+        {
+            if (!ReadToken(csv, ref cursor, out int start, out int end))
+                return true;
+
+            if (start >= end)
+                return true;
+
+            return TryParseFloat(csv, start, end, out value);
+        }
+
+        private static bool ReadToken(ReadOnlySpan<byte> csv, ref CsvCursor cursor, out int start, out int end)
+        {
+            start = cursor.Position;
+            end = cursor.Position;
+            if (cursor.Position >= cursor.End)
+                return false;
+
+            start = SkipWhitespace(csv, cursor.Position, cursor.End);
+            int p = start;
+            while (p < cursor.End && csv[p] != (byte)',')
+                p++;
+
+            end = TrimRight(csv, start, p);
+            cursor.Position = p < cursor.End ? p + 1 : cursor.End;
+            return true;
+        }
+
+        private static bool TryParseFloat(ReadOnlySpan<byte> csv, int start, int end, out float value)
+        {
+            value = 0f;
+            int p = SkipWhitespace(csv, start, end);
+            int e = TrimRight(csv, p, end);
+            if (p >= e)
+                return false;
+
+            float sign = 1f;
+            if (csv[p] == (byte)'-')
+            {
+                sign = -1f;
+                p++;
+            }
+            else if (csv[p] == (byte)'+')
+            {
+                p++;
+            }
+
+            float integer = 0f;
+            bool sawDigit = false;
+            while (p < e && csv[p] >= (byte)'0' && csv[p] <= (byte)'9')
+            {
+                sawDigit = true;
+                integer = integer * 10f + (csv[p] - (byte)'0');
+                p++;
+            }
+
+            float fraction = 0f;
+            float scale = 1f;
+            if (p < e && csv[p] == (byte)'.')
+            {
+                p++;
+                while (p < e && csv[p] >= (byte)'0' && csv[p] <= (byte)'9')
+                {
+                    sawDigit = true;
+                    scale *= 0.1f;
+                    fraction += (csv[p] - (byte)'0') * scale;
+                    p++;
+                }
+            }
+
+            if (!sawDigit)
+                return false;
+
+            value = (integer + fraction) * sign;
+            return math.isfinite(value);
+        }
+
+        private static ulong HashName(ReadOnlySpan<byte> csv, int start, int end)
+        {
+            ulong hash = 1469598103934665603UL;
+            for (int i = start; i < end; i++)
+            {
+                byte b = csv[i];
+                if (b >= (byte)'A' && b <= (byte)'Z')
+                    b = (byte)(b + 32);
+
+                hash = (hash ^ b) * 1099511628211UL;
+            }
+
+            return hash;
+        }
+
+        private static bool LooksLikeHeader(ReadOnlySpan<byte> csv, int start, int end)
+        {
+            int len = end - start;
+            return len == 4 &&
+                   ToLower(csv[start]) == (byte)'n' &&
+                   ToLower(csv[start + 1]) == (byte)'a' &&
+                   ToLower(csv[start + 2]) == (byte)'m' &&
+                   ToLower(csv[start + 3]) == (byte)'e';
+        }
+
+        private static byte ToLower(byte value)
+        {
+            return value >= (byte)'A' && value <= (byte)'Z' ? (byte)(value + 32) : value;
+        }
+
+        private static int SkipWhitespace(ReadOnlySpan<byte> csv, int start, int end)
+        {
+            int p = start;
+            while (p < end && (csv[p] == (byte)' ' || csv[p] == (byte)'\t'))
+                p++;
+            return p;
+        }
+
+        private static int TrimRight(ReadOnlySpan<byte> csv, int start, int end)
+        {
+            int p = end;
+            while (p > start && (csv[p - 1] == (byte)' ' || csv[p - 1] == (byte)'\t'))
+                p--;
+            return p;
+        }
+
+        private static float SafeFloat(float value)
+        {
+            return math.isfinite(value) ? value : 0f;
+        }
+
+        private struct CsvCursor
+        {
+            public int Start;
+            public int End;
+            public int Position;
+        }
+    }
+
     public static class InteriorGIProbeMath
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1567,7 +2176,96 @@ namespace Hecton8.Lighting
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void AddScaled(ref LightProbeDTO dst, in LightProbeDTO src, float scale, float l1Weight, float l2Weight)
+        public static uint PackCoord(int3 coord)
+        {
+            return ((uint)(coord.x & 1023)) | ((uint)(coord.y & 1023) << 10) | ((uint)(coord.z & 1023) << 20);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ulong HashCell64(int3 coord, uint rootHash)
+        {
+            ulong hash = 1469598103934665603UL;
+            hash = (hash ^ rootHash) * 1099511628211UL;
+            hash = (hash ^ (uint)coord.x) * 1099511628211UL;
+            hash = (hash ^ (uint)coord.y) * 1099511628211UL;
+            hash = (hash ^ (uint)coord.z) * 1099511628211UL;
+            return hash;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint Hash32(uint value)
+        {
+            value ^= value >> 16;
+            value *= 2246822519u;
+            value ^= value >> 13;
+            value *= 3266489917u;
+            value ^= value >> 16;
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint PackRgb10(float3 color)
+        {
+            float3 c = math.saturate(math.select(new float3(0f), color, math.all(math.isfinite(color))));
+            uint r = (uint)math.round(c.x * 1023f);
+            uint g = (uint)math.round(c.y * 1023f);
+            uint b = (uint)math.round(c.z * 1023f);
+            return (r & 1023u) | ((g & 1023u) << 10) | ((b & 1023u) << 20);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float3 UnpackRgb10(uint packed)
+        {
+            return new float3(
+                (packed & 1023u) * (1f / 1023f),
+                ((packed >> 10) & 1023u) * (1f / 1023f),
+                ((packed >> 20) & 1023u) * (1f / 1023f));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void MultiplyRgb(ref CustomLightProbeDTO probe, float3 tint)
+        {
+            float3 c = math.max(new float3(0f), math.select(new float3(1f), tint, math.all(math.isfinite(tint))));
+            probe.R0 *= c.x;
+            probe.R1 *= c.x;
+            probe.R2 *= c.x;
+            probe.R3 *= c.x;
+            probe.R4 *= c.x;
+            probe.R5 *= c.x;
+            probe.R6 *= c.x;
+            probe.R7 *= c.x;
+            probe.R8 *= c.x;
+            probe.G0 *= c.y;
+            probe.G1 *= c.y;
+            probe.G2 *= c.y;
+            probe.G3 *= c.y;
+            probe.G4 *= c.y;
+            probe.G5 *= c.y;
+            probe.G6 *= c.y;
+            probe.G7 *= c.y;
+            probe.G8 *= c.y;
+            probe.B0 *= c.z;
+            probe.B1 *= c.z;
+            probe.B2 *= c.z;
+            probe.B3 *= c.z;
+            probe.B4 *= c.z;
+            probe.B5 *= c.z;
+            probe.B6 *= c.z;
+            probe.B7 *= c.z;
+            probe.B8 *= c.z;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void WriteProbeMetadata(ref CustomLightProbeDTO probe, int3 coord, uint rootHash, uint flags)
+        {
+            probe.SpatialHash64 = HashCell64(coord, rootHash);
+            probe.PackedGridCoord = PackCoord(coord);
+            probe.Flags = flags;
+            probe.Spare0 = 0f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void AddScaled(ref CustomLightProbeDTO dst, in CustomLightProbeDTO src, float scale, float l1Weight, float l2Weight)
         {
             if (scale <= 0.000001f || !math.isfinite(scale))
                 return;
@@ -1611,7 +2309,7 @@ namespace Hecton8.Lighting
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void AddDirectional(ref LightProbeDTO dst, float3 color, float gain, float3 direction, float l1Weight, float l2Weight)
+        public static void AddDirectional(ref CustomLightProbeDTO dst, float3 color, float gain, float3 direction, float l1Weight, float l2Weight)
         {
             float safeGain = math.max(0f, math.isfinite(gain) ? gain : 0f);
             if (safeGain <= 0.000001f)
@@ -1668,7 +2366,7 @@ namespace Hecton8.Lighting
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void SanitizeAndClamp(ref LightProbeDTO probe, float maxL0)
+        public static void SanitizeAndClamp(ref CustomLightProbeDTO probe, float maxL0)
         {
             probe.R0 = ClampFinite(probe.R0, maxL0);
             probe.G0 = ClampFinite(probe.G0, maxL0);
@@ -1700,27 +2398,28 @@ namespace Hecton8.Lighting
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static InteriorGITextureVoxelDTO PackTexture(in LightProbeDTO probe)
-        {
-            float l1Sq = probe.R1 * probe.R1 + probe.G1 * probe.G1 + probe.B1 * probe.B1 + probe.R2 * probe.R2 + probe.G2 * probe.G2 + probe.B2 * probe.B2 + probe.R3 * probe.R3 + probe.G3 * probe.G3 + probe.B3 * probe.B3;
-            float l1 = l1Sq > 0.000001f ? math.sqrt(math.max(0f, l1Sq)) : 0f;
-            return new InteriorGITextureVoxelDTO
-            {
-                R = (half)math.clamp(probe.R0, 0f, 32f),
-                G = (half)math.clamp(probe.G0, 0f, 32f),
-                B = (half)math.clamp(probe.B0, 0f, 32f),
-                A = (half)math.clamp(l1, 0f, 32f)
-            };
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float LuminanceL0(in LightProbeDTO probe)
+        public static float LuminanceL0(in CustomLightProbeDTO probe)
         {
             return probe.R0 * 0.2126f + probe.G0 * 0.7152f + probe.B0 * 0.0722f;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static uint HashProbe(in LightProbeDTO probe, uint hash)
+        public static float3 EvaluateDirection(in CustomLightProbeDTO probe, float3 direction)
+        {
+            float3 d = math.normalizesafe(direction, new float3(0f, 0f, 1f));
+            float xy = d.x * d.y;
+            float yz = d.y * d.z;
+            float zz = (3f * d.z * d.z) - 1f;
+            float xz = d.x * d.z;
+            float xxmyy = (d.x * d.x) - (d.y * d.y);
+            float r = probe.R0 + probe.R1 * d.y + probe.R2 * d.z + probe.R3 * d.x + probe.R4 * xy + probe.R5 * yz + probe.R6 * zz + probe.R7 * xz + probe.R8 * xxmyy;
+            float g = probe.G0 + probe.G1 * d.y + probe.G2 * d.z + probe.G3 * d.x + probe.G4 * xy + probe.G5 * yz + probe.G6 * zz + probe.G7 * xz + probe.G8 * xxmyy;
+            float b = probe.B0 + probe.B1 * d.y + probe.B2 * d.z + probe.B3 * d.x + probe.B4 * xy + probe.B5 * yz + probe.B6 * zz + probe.B7 * xz + probe.B8 * xxmyy;
+            return math.max(new float3(0f), new float3(ClampFinite(r, 32f), ClampFinite(g, 32f), ClampFinite(b, 32f)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint HashProbe(in CustomLightProbeDTO probe, uint hash)
         {
             hash = (hash ^ math.asuint(probe.R0)) * 16777619u;
             hash = (hash ^ math.asuint(probe.G0)) * 16777619u;
@@ -1732,6 +2431,369 @@ namespace Hecton8.Lighting
         private static float ClampFinite(float value, float maxAbs)
         {
             return math.isfinite(value) ? math.clamp(value, -maxAbs, maxAbs) : 0f;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    public struct InteriorGIClearStateJob : IJob
+    {
+        [NoAlias] public NativeArray<CustomLightProbeDTO> ProbeFront;
+        [NoAlias] public NativeArray<CustomLightProbeDTO> ProbeBack;
+        [NoAlias] public NativeArray<InteriorGISourceDTO> Sources;
+        [NoAlias] public NativeArray<InteriorGIOcclusionCellDTO> Occlusion;
+        [NoAlias] public NativeArray<InteriorGITelemetryEntry> TelemetryRing;
+        [NoAlias] public NativeArray<InteriorGITelemetryEntry> TelemetryScratch;
+        [NoAlias] public NativeArray<MockPowerState> Power;
+        [NoAlias] public NativeArray<int> Faults;
+        [NoAlias] public NativeArray<byte> CsvBytes;
+        [NoAlias] public NativeArray<AmbientLightingProfileDTO> AmbientProfiles;
+        [NoAlias] public NativeArray<int> AmbientProfileCount;
+
+        public void Execute()
+        {
+            for (int i = 0; i < ProbeFront.Length; i++)
+            {
+                ProbeFront[i] = default;
+                ProbeBack[i] = default;
+            }
+
+            for (int i = 0; i < Sources.Length; i++)
+                Sources[i] = default;
+
+            for (int i = 0; i < Occlusion.Length; i++)
+                Occlusion[i] = default;
+
+            for (int i = 0; i < TelemetryRing.Length; i++)
+                TelemetryRing[i] = default;
+
+            for (int i = 0; i < TelemetryScratch.Length; i++)
+                TelemetryScratch[i] = default;
+
+            for (int i = 0; i < Power.Length; i++)
+                Power[i] = default;
+
+            for (int i = 0; i < Faults.Length; i++)
+                Faults[i] = 0;
+
+            for (int i = 0; i < CsvBytes.Length; i++)
+                CsvBytes[i] = 0;
+
+            for (int i = 0; i < AmbientProfiles.Length; i++)
+                AmbientProfiles[i] = default;
+
+            for (int i = 0; i < AmbientProfileCount.Length; i++)
+                AmbientProfileCount[i] = 0;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    public struct InteriorGIProbeGridClearJob : IJob
+    {
+        [NoAlias] public NativeArray<CustomLightProbeDTO> ProbeFront;
+        [NoAlias] public NativeArray<CustomLightProbeDTO> ProbeBack;
+        [NoAlias] public NativeArray<int> Faults;
+        [NoAlias] public NativeArray<InteriorGITelemetryEntry> TelemetryScratch;
+
+        public void Execute()
+        {
+            int probeCount = math.min(ProbeFront.Length, ProbeBack.Length);
+            for (int i = 0; i < probeCount; i++)
+            {
+                ProbeFront[i] = default;
+                ProbeBack[i] = default;
+            }
+
+            for (int i = 0; i < Faults.Length; i++)
+                Faults[i] = 0;
+
+            for (int i = 0; i < TelemetryScratch.Length; i++)
+                TelemetryScratch[i] = default;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    public unsafe struct CustomLightProbeGpuUploadJob : IJob
+    {
+        [ReadOnly, NoAlias] public NativeArray<CustomLightProbeDTO> Source;
+        [WriteOnly, NoAlias] public NativeArray<CustomLightProbeDTO> Destination;
+        public int Count;
+
+        public void Execute()
+        {
+            int safeCount = math.min(Count, math.min(Source.Length, Destination.Length));
+            if (safeCount <= 0)
+                return;
+
+            void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(Source);
+            void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafePtr(Destination);
+            UnsafeUtility.MemCpy(destinationPtr, sourcePtr, (long)safeCount * UnsafeUtility.SizeOf<CustomLightProbeDTO>());
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    public struct GenerateMockProbeGridJob : IJobParallelFor
+    {
+        [WriteOnly, NoAlias] public NativeArray<CustomLightProbeDTO> Front;
+        [WriteOnly, NoAlias] public NativeArray<CustomLightProbeDTO> Back;
+        public InteriorGITuningDTO Tuning;
+
+        public void Execute(int index)
+        {
+            int3 coord = InteriorGIProbeMath.IndexToCoord(index, Tuning.Resolution);
+            float denom = math.max(1f, Tuning.Resolution - 1f);
+            float3 uvw = new float3(coord.x, coord.y, coord.z) / denom;
+            float depth01 = math.saturate(1f - uvw.y);
+            float sideGlow = math.saturate(1f - math.abs(uvw.x - 0.5f) * 2f);
+            float causticLie = 0.85f + 0.15f * math.sin((coord.x * 12.9898f) + (coord.z * 78.233f) + (Tuning.FrameIndex * 0.071f));
+            float3 color = math.lerp(new float3(0.02f, 0.035f, 0.07f), new float3(0.08f, 0.64f, 0.82f), math.saturate(1f - depth01));
+            color += new float3(0.02f, 0.18f, 0.13f) * sideGlow * causticLie * math.saturate(Tuning.GlobalQualityWeight);
+
+            CustomLightProbeDTO probe = default;
+            InteriorGIProbeMath.AddDirectional(
+                ref probe,
+                color,
+                1f,
+                new float3(0f, -0.65f, 0.35f),
+                Tuning.DirectionalWeight,
+                Tuning.L2Weight);
+            InteriorGIProbeMath.WriteProbeMetadata(ref probe, coord, Tuning.RootHash, InteriorGIProbeVolumeRuntime.TelemetryFlagMock);
+            Front[index] = probe;
+            Back[index] = probe;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    public struct EvaluateProbeLightingJob : IJobParallelFor
+    {
+        [ReadOnly, NoAlias] public NativeArray<CustomLightProbeDTO> Probes;
+        [ReadOnly, NoAlias] public NativeArray<double3> EntityAup;
+        [WriteOnly, NoAlias] public NativeArray<CustomLightProbeDTO> Output;
+        public CustomLightProbeDTO GlobalFallback;
+        public InteriorGITuningDTO Tuning;
+        public int EntityCount;
+
+        public void Execute(int index)
+        {
+            if (index >= EntityCount)
+                return;
+
+            float quality = math.saturate(Tuning.GlobalQualityWeight);
+            float fallbackWeight = 1f - Smooth01((quality - 0.04f) * 8.333334f);
+            if (fallbackWeight >= 0.999f)
+            {
+                Output[index] = GlobalFallback;
+                return;
+            }
+
+            double3 deltaAup = AupPrecisionMath.LocalDeltaDouble(EntityAup[index], Tuning.RootAup);
+            float3 local = AupPrecisionMath.DowncastLocalDelta(deltaAup, GlobalFallback);
+            if (!math.all(math.isfinite(local)))
+            {
+                Output[index] = GlobalFallback;
+                return;
+            }
+
+            float invCell = 1f / math.max(0.0001f, Tuning.CellSizeMeters);
+            float3 grid = local * invCell - new float3(0.5f);
+            float3 clamped = math.clamp(grid, new float3(0f), new float3(math.max(0, Tuning.Resolution - 1)));
+            int3 baseCoord = (int3)math.floor(clamped);
+            int3 nextCoord = math.min(baseCoord + 1, new int3(Tuning.Resolution - 1));
+            float3 frac = math.saturate(clamped - baseCoord);
+            float triWeight = Smooth01((quality - 0.22f) * 4.0f);
+            frac *= triWeight;
+
+            CustomLightProbeDTO sample = default;
+            Accumulate(ref sample, baseCoord, new float3(1f - frac.x, 1f - frac.y, 1f - frac.z));
+            Accumulate(ref sample, new int3(nextCoord.x, baseCoord.y, baseCoord.z), new float3(frac.x, 1f - frac.y, 1f - frac.z));
+            Accumulate(ref sample, new int3(baseCoord.x, nextCoord.y, baseCoord.z), new float3(1f - frac.x, frac.y, 1f - frac.z));
+            Accumulate(ref sample, new int3(nextCoord.x, nextCoord.y, baseCoord.z), new float3(frac.x, frac.y, 1f - frac.z));
+            Accumulate(ref sample, new int3(baseCoord.x, baseCoord.y, nextCoord.z), new float3(1f - frac.x, 1f - frac.y, frac.z));
+            Accumulate(ref sample, new int3(nextCoord.x, baseCoord.y, nextCoord.z), new float3(frac.x, 1f - frac.y, frac.z));
+            Accumulate(ref sample, new int3(baseCoord.x, nextCoord.y, nextCoord.z), new float3(1f - frac.x, frac.y, frac.z));
+            Accumulate(ref sample, nextCoord, frac);
+
+            Blend(ref sample, in GlobalFallback, fallbackWeight);
+            InteriorGIProbeMath.WriteProbeMetadata(ref sample, baseCoord, Tuning.RootHash, 0u);
+            Output[index] = sample;
+        }
+
+        private void Accumulate(ref CustomLightProbeDTO sample, int3 coord, float3 weight3)
+        {
+            float weight = weight3.x * weight3.y * weight3.z;
+            if (weight <= 0.000001f)
+                return;
+
+            int probeIndex = coord.x + coord.y * Tuning.Resolution + coord.z * Tuning.Resolution * Tuning.Resolution;
+            if ((uint)probeIndex >= (uint)math.min(Probes.Length, Tuning.ActiveProbeCount))
+                return;
+
+            CustomLightProbeDTO probe = Probes[probeIndex];
+            InteriorGIProbeMath.AddScaled(ref sample, in probe, weight, Tuning.DirectionalWeight, Tuning.L2Weight);
+        }
+
+        private static void Blend(ref CustomLightProbeDTO dst, in CustomLightProbeDTO fallback, float weight)
+        {
+            float w = math.saturate(weight);
+            if (w <= 0.000001f)
+                return;
+
+            float keep = 1f - w;
+            dst.R0 = dst.R0 * keep + fallback.R0 * w;
+            dst.G0 = dst.G0 * keep + fallback.G0 * w;
+            dst.B0 = dst.B0 * keep + fallback.B0 * w;
+            dst.R1 *= keep;
+            dst.R2 *= keep;
+            dst.R3 *= keep;
+            dst.R4 *= keep;
+            dst.R5 *= keep;
+            dst.R6 *= keep;
+            dst.R7 *= keep;
+            dst.R8 *= keep;
+            dst.G1 *= keep;
+            dst.G2 *= keep;
+            dst.G3 *= keep;
+            dst.G4 *= keep;
+            dst.G5 *= keep;
+            dst.G6 *= keep;
+            dst.G7 *= keep;
+            dst.G8 *= keep;
+            dst.B1 *= keep;
+            dst.B2 *= keep;
+            dst.B3 *= keep;
+            dst.B4 *= keep;
+            dst.B5 *= keep;
+            dst.B6 *= keep;
+            dst.B7 *= keep;
+            dst.B8 *= keep;
+        }
+
+        private static float Smooth01(float value)
+        {
+            float x = math.saturate(value);
+            return x * x * (3f - 2f * x);
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    public struct UpdateProbeOcclusionJob : IJobParallelFor
+    {
+        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<CustomLightProbeDTO> Probes;
+        [ReadOnly, NoAlias] public NativeArray<InteriorGIOcclusionCellDTO> Occlusion;
+        public InteriorGITuningDTO Tuning;
+        public float OcclusionStrength;
+
+        public void Execute(int index)
+        {
+            if ((uint)index >= (uint)math.min(Probes.Length, Tuning.ActiveProbeCount))
+                return;
+
+            InteriorGIOcclusionCellDTO cell = index < Occlusion.Length ? Occlusion[index] : default;
+            float sdf = index < Occlusion.Length ? cell.SignedDistanceMeters : Tuning.CellSizeMeters;
+            float safeSdf = math.isfinite(sdf) ? sdf : Tuning.CellSizeMeters;
+            float inside = 1f - math.step(0f, safeSdf);
+            float proximity = 1f - math.saturate(safeSdf / math.max(0.0001f, Tuning.CellSizeMeters));
+            float darken = 1f - math.saturate((inside + proximity * 0.65f) * math.saturate(OcclusionStrength));
+            CustomLightProbeDTO probe = Probes[index];
+            ScaleProbe(ref probe, darken);
+            InteriorGIProbeMath.MultiplyRgb(ref probe, InteriorGIProbeMath.UnpackRgb10(Tuning.PackedBiomeTint));
+            probe.Flags |= cell.Flags;
+            probe.Flags |= inside > 0.5f ? InteriorGIProbeVolumeRuntime.OcclusionFlagSolid : 0u;
+            Probes[index] = probe;
+        }
+
+        private static void ScaleProbe(ref CustomLightProbeDTO probe, float scale)
+        {
+            float s = math.saturate(scale);
+            probe.R0 *= s;
+            probe.R1 *= s;
+            probe.R2 *= s;
+            probe.R3 *= s;
+            probe.R4 *= s;
+            probe.R5 *= s;
+            probe.R6 *= s;
+            probe.R7 *= s;
+            probe.R8 *= s;
+            probe.G0 *= s;
+            probe.G1 *= s;
+            probe.G2 *= s;
+            probe.G3 *= s;
+            probe.G4 *= s;
+            probe.G5 *= s;
+            probe.G6 *= s;
+            probe.G7 *= s;
+            probe.G8 *= s;
+            probe.B0 *= s;
+            probe.B1 *= s;
+            probe.B2 *= s;
+            probe.B3 *= s;
+            probe.B4 *= s;
+            probe.B5 *= s;
+            probe.B6 *= s;
+            probe.B7 *= s;
+            probe.B8 *= s;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    public struct InjectDynamicLightJob : IJob
+    {
+        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<CustomLightProbeDTO> Probes;
+        [ReadOnly, NoAlias] public NativeArray<CustomDynamicProbeLightDTO> Lights;
+        public InteriorGITuningDTO Tuning;
+        public int LightCount;
+
+        public void Execute()
+        {
+            int count = math.min(LightCount, Lights.Length);
+            float bounceWeight = Smooth01(Tuning.GlobalQualityWeight);
+            for (int i = 0; i < count; i++)
+            {
+                CustomDynamicProbeLightDTO light = Lights[i];
+                float3 lightLocal = new float3(
+                    (float)(light.AUP.x - Tuning.RootAup.x),
+                    (float)(light.AUP.y - Tuning.RootAup.y),
+                    (float)(light.AUP.z - Tuning.RootAup.z));
+                if (!math.all(math.isfinite(lightLocal)))
+                    continue;
+
+                float invCell = 1f / math.max(0.0001f, Tuning.CellSizeMeters);
+                float3 grid = lightLocal * invCell - new float3(0.5f);
+                int3 baseCoord = (int3)math.floor(math.clamp(grid, new float3(0f), new float3(math.max(0, Tuning.Resolution - 1))));
+                int3 nextCoord = math.min(baseCoord + 1, new int3(Tuning.Resolution - 1));
+                float3 frac = math.saturate(grid - baseCoord);
+                Inject(baseCoord, new float3(1f - frac.x, 1f - frac.y, 1f - frac.z), light, bounceWeight);
+                Inject(new int3(nextCoord.x, baseCoord.y, baseCoord.z), new float3(frac.x, 1f - frac.y, 1f - frac.z), light, bounceWeight);
+                Inject(new int3(baseCoord.x, nextCoord.y, baseCoord.z), new float3(1f - frac.x, frac.y, 1f - frac.z), light, bounceWeight);
+                Inject(new int3(nextCoord.x, nextCoord.y, baseCoord.z), new float3(frac.x, frac.y, 1f - frac.z), light, bounceWeight);
+                Inject(new int3(baseCoord.x, baseCoord.y, nextCoord.z), new float3(1f - frac.x, 1f - frac.y, frac.z), light, bounceWeight);
+                Inject(new int3(nextCoord.x, baseCoord.y, nextCoord.z), new float3(frac.x, 1f - frac.y, frac.z), light, bounceWeight);
+                Inject(new int3(baseCoord.x, nextCoord.y, nextCoord.z), new float3(1f - frac.x, frac.y, frac.z), light, bounceWeight);
+                Inject(nextCoord, frac, light, bounceWeight);
+            }
+        }
+
+        private void Inject(int3 coord, float3 weights, CustomDynamicProbeLightDTO light, float bounceWeight)
+        {
+            float w = weights.x * weights.y * weights.z * bounceWeight;
+            if (w <= 0.000001f)
+                return;
+
+            int probeIndex = coord.x + coord.y * Tuning.Resolution + coord.z * Tuning.Resolution * Tuning.Resolution;
+            if ((uint)probeIndex >= (uint)math.min(Probes.Length, Tuning.ActiveProbeCount))
+                return;
+
+            CustomLightProbeDTO probe = Probes[probeIndex];
+            float gain = math.max(0f, light.Intensity) * w * math.saturate(Tuning.SimulationDelta) / math.max(0.0001f, light.RadiusMeters);
+            float3 direction = math.normalizesafe(light.Direction, new float3(0f, 1f, 0f));
+            InteriorGIProbeMath.AddDirectional(ref probe, light.Color, gain, direction, Tuning.DirectionalWeight, Tuning.L2Weight);
+            InteriorGIProbeMath.SanitizeAndClamp(ref probe, 32f);
+            Probes[probeIndex] = probe;
+        }
+
+        private static float Smooth01(float value)
+        {
+            float x = math.saturate(value);
+            return x * x * (3f - 2f * x);
         }
     }
 
@@ -1765,11 +2827,10 @@ namespace Hecton8.Lighting
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct InteriorGIPropagationJob : IJobParallelFor
     {
-        [ReadOnly, NoAlias] public NativeArray<LightProbeDTO> Front;
-        [WriteOnly, NoAlias] public NativeArray<LightProbeDTO> Back;
+        [ReadOnly, NoAlias] public NativeArray<CustomLightProbeDTO> Front;
+        [WriteOnly, NoAlias] public NativeArray<CustomLightProbeDTO> Back;
         [ReadOnly, NoAlias] public NativeArray<InteriorGISourceDTO> Sources;
         [ReadOnly, NoAlias] public NativeArray<InteriorGIOcclusionCellDTO> Occlusion;
-        [WriteOnly, NoAlias] public NativeArray<InteriorGITextureVoxelDTO> TextureUpload;
         [WriteOnly, NoAlias] public NativeArray<int> Faults;
         [ReadOnly, NoAlias] public NativeArray<MockPowerState> Power;
         public InteriorGITuningDTO Tuning;
@@ -1779,8 +2840,8 @@ namespace Hecton8.Lighting
             int resolution = Tuning.Resolution;
             int3 coord = InteriorGIProbeMath.IndexToCoord(index, resolution);
             InteriorGIOcclusionCellDTO currentCell = Occlusion[index];
-            LightProbeDTO current = Front[index];
-            LightProbeDTO result = default;
+            CustomLightProbeDTO current = Front[index];
+            CustomLightProbeDTO result = default;
             if ((currentCell.Flags & InteriorGIProbeVolumeRuntime.OcclusionFlagSolid) == 0u && currentCell.SignedDistanceMeters > 0f)
             {
                 InteriorGIProbeMath.AddScaled(ref result, in current, Tuning.AmbientRetain, Tuning.DirectionalWeight, Tuning.L2Weight);
@@ -1800,12 +2861,12 @@ namespace Hecton8.Lighting
             if (fault != 0)
                 result = default;
 
+            InteriorGIProbeMath.WriteProbeMetadata(ref result, coord, Tuning.RootHash, currentCell.Flags);
             Back[index] = result;
-            TextureUpload[index] = InteriorGIProbeMath.PackTexture(in result);
             Faults[index] = fault;
         }
 
-        private void AccumulateNeighbor(ref LightProbeDTO result, int currentIndex, int3 coord, int3 delta, uint wallBit, uint oppositeWallBit, float transferBase)
+        private void AccumulateNeighbor(ref CustomLightProbeDTO result, int currentIndex, int3 coord, int3 delta, uint wallBit, uint oppositeWallBit, float transferBase)
         {
             int3 neighborCoord = coord + delta;
             if (neighborCoord.x < 0 || neighborCoord.y < 0 || neighborCoord.z < 0 ||
@@ -1835,11 +2896,11 @@ namespace Hecton8.Lighting
             if (transfer <= 0.00001f)
                 return;
 
-            LightProbeDTO neighbor = Front[neighborIndex];
+            CustomLightProbeDTO neighbor = Front[neighborIndex];
             InteriorGIProbeMath.AddScaled(ref result, in neighbor, transfer, Tuning.DirectionalWeight, Tuning.L2Weight);
         }
 
-        private void InjectSources(ref LightProbeDTO result, int3 coord, InteriorGIOcclusionCellDTO currentCell)
+        private void InjectSources(ref CustomLightProbeDTO result, int3 coord, InteriorGIOcclusionCellDTO currentCell)
         {
             MockPowerState power = Power[0];
             float3 cellLocal = new float3(coord.x + 0.5f, coord.y + 0.5f, coord.z + 0.5f) * Tuning.CellSizeMeters;
@@ -1886,7 +2947,7 @@ namespace Hecton8.Lighting
             }
         }
 
-        private void InjectOcclusionGlow(ref LightProbeDTO result, InteriorGIOcclusionCellDTO currentCell)
+        private void InjectOcclusionGlow(ref CustomLightProbeDTO result, InteriorGIOcclusionCellDTO currentCell)
         {
             if (currentCell.FloraGlow01 > 0.0001f)
             {
@@ -1899,7 +2960,7 @@ namespace Hecton8.Lighting
                 InteriorGIProbeMath.AddDirectional(ref result, new float3(1.8f, 0.03f, 0.01f), emergencyReflect * Tuning.EmergencyLightIntensity * Tuning.SimulationDelta, new float3(0f, 0f, 1f), Tuning.DirectionalWeight, Tuning.L2Weight);
         }
 
-        private static bool IsProbeFinite(in LightProbeDTO p)
+        private static bool IsProbeFinite(in CustomLightProbeDTO p)
         {
             return math.isfinite(p.R0) && math.isfinite(p.G0) && math.isfinite(p.B0) &&
                    math.isfinite(p.R1) && math.isfinite(p.R2) && math.isfinite(p.R3) &&
@@ -1916,7 +2977,7 @@ namespace Hecton8.Lighting
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct InteriorGITelemetryScanJob : IJob
     {
-        [ReadOnly, NoAlias] public NativeArray<LightProbeDTO> Probes;
+        [ReadOnly, NoAlias] public NativeArray<CustomLightProbeDTO> Probes;
         [ReadOnly, NoAlias] public NativeArray<int> Faults;
         [NoAlias] public NativeArray<InteriorGITelemetryEntry> Scratch;
         public InteriorGITuningDTO Tuning;
@@ -1929,7 +2990,7 @@ namespace Hecton8.Lighting
             uint hash = 2166136261u;
             for (int i = 0; i < Tuning.ActiveProbeCount; i++)
             {
-                LightProbeDTO probe = Probes[i];
+                CustomLightProbeDTO probe = Probes[i];
                 float luma = InteriorGIProbeMath.LuminanceL0(in probe);
                 sum += luma;
                 max = math.max(max, luma);

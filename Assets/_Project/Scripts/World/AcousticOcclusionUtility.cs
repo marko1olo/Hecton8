@@ -599,8 +599,7 @@ namespace Hecton8.World
             result = default;
             Vector3 midpointRuntime = sourcePosition + (listenerPosition - sourcePosition) * 0.5f;
             double3 midpointAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(midpointRuntime);
-            float3 midpointSdfPosition = new float3((float)midpointAup.x, (float)midpointAup.y, (float)midpointAup.z);
-            if (!HectonVoxelVolume.GetSDFDensity(midpointSdfPosition, out float density) || !(density > 0f))
+            if (!HectonVoxelVolume.GetSDFDensity(midpointAup, out float density) || !(density > 0f))
                 return false;
 
             float density01 = math.saturate(density);

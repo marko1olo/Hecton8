@@ -8,13 +8,13 @@ using Unity.Mathematics;
 namespace Hecton8.SaveSystem
 {
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal readonly struct SaveMasterHashV10Result
     {
-        public readonly ulong PlainLo;
-        public readonly ulong PlainHi;
-        public readonly ulong StoredLo;
-        public readonly ulong StoredHi;
+        [FieldOffset(0)] public readonly ulong PlainLo;
+        [FieldOffset(8)] public readonly ulong PlainHi;
+        [FieldOffset(16)] public readonly ulong StoredLo;
+        [FieldOffset(24)] public readonly ulong StoredHi;
 
         public SaveMasterHashV10Result(ulong plainLo, ulong plainHi, ulong storedLo, ulong storedHi)
         {
@@ -26,24 +26,24 @@ namespace Hecton8.SaveSystem
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = SaveMasterHashV10.HeaderSizeBytes)]
+    [StructLayout(LayoutKind.Explicit, Size = SaveMasterHashV10.HeaderSizeBytes)]
     internal struct SaveFileHeaderV10
     {
-        public uint MagicValue;
-        public ushort Version;
-        public byte CompatMask;
-        public byte Flags;
-        public ulong TimestampUnixMs;
-        public uint Checksum;
-        public uint DeltaCount;
-        public uint EntityCount;
-        public uint PlayerOffset;
-        public uint DeltaOffset;
-        public uint EntityOffset;
-        public ulong HashPayload64;
-        public ulong HashHeader64;
-        public ulong MasterStateHashLo;
-        public ulong MasterStateHashHi;
+        [FieldOffset(0)] public uint MagicValue;
+        [FieldOffset(4)] public ushort Version;
+        [FieldOffset(6)] public byte CompatMask;
+        [FieldOffset(7)] public byte Flags;
+        [FieldOffset(8)] public ulong TimestampUnixMs;
+        [FieldOffset(16)] public uint Checksum;
+        [FieldOffset(20)] public uint DeltaCount;
+        [FieldOffset(24)] public uint EntityCount;
+        [FieldOffset(28)] public uint PlayerOffset;
+        [FieldOffset(32)] public uint DeltaOffset;
+        [FieldOffset(36)] public uint EntityOffset;
+        [FieldOffset(40)] public ulong HashPayload64;
+        [FieldOffset(48)] public ulong HashHeader64;
+        [FieldOffset(56)] public ulong MasterStateHashLo;
+        [FieldOffset(64)] public ulong MasterStateHashHi;
     }
 
     internal static unsafe class SaveMasterHashV10

@@ -80,6 +80,7 @@ namespace Hecton8.Graphics.Scalability
         private const float VisualBudgetEpsilon = 0.01f;
         private const float VisualFeatureFeather = 0.14f;
         private const float VisualFeatureFlagEpsilon = 0.001f;
+        private const float FsrEligibilityEpsilon = 0.001f;
         private const int AupShiftLockFrames = 3;
         private const int PressureHysteresisFrames = 3;
         private const int RecoveryHysteresisFrames = 15;
@@ -433,7 +434,7 @@ namespace Hecton8.Graphics.Scalability
             if (!ownsAdapter)
                 return;
 
-            CompletePendingStressJob(true);
+            CompletePendingStressJobForTeardown();
             ClearSystemOverrideRenderScale();
             ReleaseSystemDynamicResolutionScaler();
             UnregisterCameraShield();
@@ -453,7 +454,7 @@ namespace Hecton8.Graphics.Scalability
             TryUnregisterHotSwap();
             TryUnregisterScalabilityListener();
             UnregisterResolutionScalerService();
-            CompletePendingStressJob(true);
+            CompletePendingStressJobForTeardown();
             if (ownsAdapter)
             {
                 ClearSystemOverrideRenderScale();
@@ -471,7 +472,7 @@ namespace Hecton8.Graphics.Scalability
 
         public void Tick(float deltaTime)
         {
-            CompletePendingStressJob();
+            TryFinalizePendingStressJobNoWait();
             if (!ReferenceEquals(s_activeAdapter, this))
                 return;
 
@@ -941,14 +942,14 @@ namespace Hecton8.Graphics.Scalability
 
         private float ResolvePolicyScale(HectonQualityTier tier, float stress01, ref byte flags)
         {
-            bool lowTier = IsLowTier(tier);
+            float lowTierWeight01 = ResolveLowTierWeight01(tier);
             float qualityWeight = ResolveGlobalQualityWeight(stress01);
             float minScaleLimit = ResolveMinScaleLimit(tier);
             float requestedScale = math.lerp(minScaleLimit, PolicyMaxScale, qualityWeight);
 
             float stressCollapse01 = SmoothRange01(stress01, ResolveStressCollapseStart(tier), PolicyMaxScale);
             requestedScale = math.lerp(requestedScale, minScaleLimit, stressCollapse01);
-            if (lowTier && stressCollapse01 > 0.001f)
+            if (stressCollapse01 * lowTierWeight01 > 0.001f)
             {
                 flags |= FlagLowTierEmergency;
             }
@@ -1167,7 +1168,7 @@ namespace Hecton8.Graphics.Scalability
 
         private void RebindDataVault(IDataVault vault)
         {
-            CompletePendingStressJob(true);
+            CompletePendingStressJobForTeardown();
 
             if (ReferenceEquals(_dataVault, vault))
                 return;
@@ -1315,24 +1316,39 @@ namespace Hecton8.Graphics.Scalability
             _stressEwmaBufferLocked = true;
         }
 
-        private void CompletePendingStressJob(bool force = false)
+        private void TryFinalizePendingStressJobNoWait()
         {
             if (!_stressEwmaScheduled)
             {
-                if (_stressEwmaBufferLocked)
-                {
-                    if (_dataVault != null)
-                        _dataVault.TryUnlockBuffer(BufferID.ResolutionScaleState, SystemID.GraphicsScalability);
-                    _stressEwmaBufferLocked = false;
-                }
-
+                UnlockStressEwmaBufferIfNeeded();
                 return;
             }
 
-            if (!force && !_stressEwmaHandle.IsCompleted)
+            if (!_stressEwmaHandle.IsCompleted)
                 return;
 
-            _stressEwmaHandle.Complete();
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _stressEwmaHandle))
+                return;
+
+            FinishPendingStressJob();
+        }
+
+        private void CompletePendingStressJobForTeardown()
+        {
+            if (!_stressEwmaScheduled)
+            {
+                UnlockStressEwmaBufferIfNeeded();
+                return;
+            }
+
+            if (!DispatcherJobFence.TryComplete(ref _stressEwmaHandle, forceComplete: true))
+                return;
+
+            FinishPendingStressJob();
+        }
+
+        private void FinishPendingStressJob()
+        {
             _stressEwmaScheduled = false;
             bool hasState = false;
             ResolutionScaleState state = default;
@@ -1346,12 +1362,7 @@ namespace Hecton8.Graphics.Scalability
                 }
             }
 
-            if (_stressEwmaBufferLocked)
-            {
-                if (_dataVault != null)
-                    _dataVault.TryUnlockBuffer(BufferID.ResolutionScaleState, SystemID.GraphicsScalability);
-                _stressEwmaBufferLocked = false;
-            }
+            UnlockStressEwmaBufferIfNeeded();
 
             if (hasState)
             {
@@ -1368,6 +1379,16 @@ namespace Hecton8.Graphics.Scalability
                     _scaleStateMirrorValid = true;
                 }
             }
+        }
+
+        private void UnlockStressEwmaBufferIfNeeded()
+        {
+            if (!_stressEwmaBufferLocked)
+                return;
+
+            if (_dataVault != null)
+                _dataVault.TryUnlockBuffer(BufferID.ResolutionScaleState, SystemID.GraphicsScalability);
+            _stressEwmaBufferLocked = false;
         }
 
         private void InstallSystemDynamicResolutionScaler()
@@ -2032,22 +2053,41 @@ namespace Hecton8.Graphics.Scalability
             return (int)math.round(scale * 1000f);
         }
 
-        private static bool IsLowTier(HectonQualityTier tier)
+        private static float ResolveHardwareTierWeight01(HectonQualityTier tier)
         {
-            return tier == HectonQualityTier.Unknown ||
-                   tier == HectonQualityTier.Low ||
-                   tier == HectonQualityTier.Mx350;
+            switch (tier)
+            {
+                case HectonQualityTier.Mx350:
+                    return 0.15f;
+                case HectonQualityTier.Mid:
+                    return 0.42f;
+                case HectonQualityTier.High:
+                    return 0.74f;
+                case HectonQualityTier.Ultra:
+                    return 1f;
+                case HectonQualityTier.Low:
+                case HectonQualityTier.Unknown:
+                default:
+                    return 0f;
+            }
+        }
+
+        private static float ResolveLowTierWeight01(HectonQualityTier tier)
+        {
+            return 1f - SmoothRange01(ResolveHardwareTierWeight01(tier), 0.12f, 0.44f);
+        }
+
+        private static float ResolveTierEnvelope(HectonQualityTier tier, float lowValue, float middleValue, float highValue, float ultraValue)
+        {
+            float tierWeight = ResolveHardwareTierWeight01(tier);
+            float lowToMiddle = math.lerp(lowValue, middleValue, SmoothRange01(tierWeight, 0f, 0.42f));
+            float highToUltra = math.lerp(highValue, ultraValue, SmoothRange01(tierWeight, 0.74f, 1f));
+            return math.lerp(lowToMiddle, highToUltra, SmoothRange01(tierWeight, 0.42f, 0.74f));
         }
 
         private static float ResolveStressCollapseStart(HectonQualityTier tier)
         {
-            if (IsLowTier(tier) || tier == HectonQualityTier.Mid)
-                return StressEmergencyThreshold;
-
-            if (tier == HectonQualityTier.Ultra)
-                return 0.94f;
-
-            return 0.90f;
+            return ResolveTierEnvelope(tier, StressEmergencyThreshold, StressEmergencyThreshold, 0.90f, 0.94f);
         }
 
         private static float ResolveThermalPressureCollapse01(byte pressureLevel, byte thermalSeverity)
@@ -2176,20 +2216,19 @@ namespace Hecton8.Graphics.Scalability
 
         private float ResolveMinScaleLimit(HectonQualityTier tier)
         {
-            if (IsLowTier(tier))
-                return math.clamp(_scaleLimits.LowMinScale > 0f ? _scaleLimits.LowMinScale : DefaultLowMinScale, MinScale, PolicyMaxScale);
-            if (tier == HectonQualityTier.Mid)
-                return math.clamp(_scaleLimits.MiddleMinScale > 0f ? _scaleLimits.MiddleMinScale : DefaultMidMinScale, MinScale, PolicyMaxScale);
-            if (tier == HectonQualityTier.Ultra)
-                return math.clamp(_scaleLimits.UltraMinScale > 0f ? _scaleLimits.UltraMinScale : DefaultUltraMinScale, MinScale, PolicyMaxScale);
-
-            return math.clamp(_scaleLimits.HighMinScale > 0f ? _scaleLimits.HighMinScale : DefaultHighMinScale, MinScale, PolicyMaxScale);
+            float low = math.clamp(_scaleLimits.LowMinScale > 0f ? _scaleLimits.LowMinScale : DefaultLowMinScale, MinScale, PolicyMaxScale);
+            float middle = math.clamp(_scaleLimits.MiddleMinScale > 0f ? _scaleLimits.MiddleMinScale : DefaultMidMinScale, MinScale, PolicyMaxScale);
+            float high = math.clamp(_scaleLimits.HighMinScale > 0f ? _scaleLimits.HighMinScale : DefaultHighMinScale, MinScale, PolicyMaxScale);
+            float ultra = math.clamp(_scaleLimits.UltraMinScale > 0f ? _scaleLimits.UltraMinScale : DefaultUltraMinScale, MinScale, PolicyMaxScale);
+            return math.clamp(ResolveTierEnvelope(tier, low, middle, high, ultra), MinScale, PolicyMaxScale);
         }
 
         private void ApplyMinScaleLimitForTier(HectonQualityTier tier, float value)
         {
             float clamped = math.clamp(value, MinScale, PolicyMaxScale);
-            if (IsLowTier(tier))
+            if (tier == HectonQualityTier.Unknown ||
+                tier == HectonQualityTier.Low ||
+                tier == HectonQualityTier.Mx350)
             {
                 _scaleLimits.LowMinScale = clamped;
                 return;
@@ -2257,7 +2296,7 @@ namespace Hecton8.Graphics.Scalability
             if (renderScale >= PolicyMaxScale - ScaleEpsilon)
                 return UpscalerNativeHash;
 
-            if (IsLowTier(tier) || !_fsrUpscalerAllowed)
+            if (ResolveFsrUpscalerEligibility01(tier) <= FsrEligibilityEpsilon || !_fsrUpscalerAllowed)
                 return UpscalerBilateralTaaHash;
 
             return UpscalerFsrTaaHash;
@@ -2265,11 +2304,17 @@ namespace Hecton8.Graphics.Scalability
 
         private static bool ResolveFsrUpscalerAllowed(HectonQualityTier tier)
         {
-            if (IsLowTier(tier) || Application.isMobilePlatform || !SystemInfo.supportsComputeShaders)
+            if (Application.isMobilePlatform || !SystemInfo.supportsComputeShaders)
                 return false;
 
             int graphicsMemoryMb = SystemInfo.graphicsMemorySize;
-            return graphicsMemoryMb <= 0 || graphicsMemoryMb >= 3000 || tier == HectonQualityTier.Ultra;
+            return (graphicsMemoryMb <= 0 || graphicsMemoryMb >= 3000 || tier == HectonQualityTier.Ultra) &&
+                   ResolveFsrUpscalerEligibility01(tier) > FsrEligibilityEpsilon;
+        }
+
+        private static float ResolveFsrUpscalerEligibility01(HectonQualityTier tier)
+        {
+            return SmoothRange01(ResolveHardwareTierWeight01(tier), 0.42f, 0.74f);
         }
 
         private static float ResolveEstimatedUpscalerComputeTimeMs(uint upscalerHash, float renderScale)
@@ -2295,10 +2340,7 @@ namespace Hecton8.Graphics.Scalability
 
         private static bool ResolveStpIntent(HectonQualityTier tier)
         {
-            return IsLowTier(tier) ||
-                   tier == HectonQualityTier.Mid ||
-                   tier == HectonQualityTier.High ||
-                   tier == HectonQualityTier.Ultra;
+            return (byte)tier <= (byte)HectonQualityTier.Ultra;
         }
 
         private byte ResolveHardwareTierByte()
@@ -2394,30 +2436,12 @@ namespace Hecton8.Graphics.Scalability
 
         private static float ResolveDearLieCapacity(HectonQualityTier tier)
         {
-            if (IsLowTier(tier))
-                return 1f;
-
-            if (tier == HectonQualityTier.Mid)
-                return 0.72f;
-
-            if (tier == HectonQualityTier.Ultra)
-                return 0.18f;
-
-            return 0.32f;
+            return ResolveTierEnvelope(tier, 1f, 0.72f, 0.32f, 0.18f);
         }
 
         private static float ResolveVisualOverkillCapacity(HectonQualityTier tier)
         {
-            if (IsLowTier(tier))
-                return 0.04f;
-
-            if (tier == HectonQualityTier.Mid)
-                return 0.32f;
-
-            if (tier == HectonQualityTier.Ultra)
-                return 1f;
-
-            return 0.78f;
+            return ResolveTierEnvelope(tier, 0.04f, 0.32f, 0.78f, 1f);
         }
 
         private static void ResolveVisualFeatureWeights(float visualOverkill01, out Vector4 weights0, out Vector4 weights1)

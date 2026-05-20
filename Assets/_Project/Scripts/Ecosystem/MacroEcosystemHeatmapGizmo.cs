@@ -22,7 +22,9 @@ namespace Hecton8.Ecosystem
 
         private void OnDrawGizmos()
         {
-            IDataVault vault = GlobalRegistry.DataVault;
+            if (!GlobalDataVault.TryGetLatestCreated(out GlobalDataVault vault))
+                return;
+
             if (vault == null ||
                 !vault.TryGetBuffer<EcosystemSectorDTO>(BufferID.ShinobuMacroEcosystemSectorFront, out NativeArray<EcosystemSectorDTO> sectors) ||
                 !vault.TryGetBuffer<EcosystemSectorCoordDTO>(BufferID.ShinobuMacroEcosystemSectorCoords, out NativeArray<EcosystemSectorCoordDTO> coords) ||

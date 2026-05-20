@@ -7,7 +7,7 @@
 // v2.0 ENTERPRISE ADDITIONS:
 //   [ADD] FlashlightEvents — globalnaya shina sobytiy (OnToggled, OnBatteryDepleted)
 //   [ADD] Audio feedback — toggle on/off sounds, low battery warning beep
-//   [ADD] Battery drain system — integratsiya s HectonSurvivalSystem
+//   [ADD] Battery readback — charge is mirrored from the central equipment solver
 //   [ADD] Heat buildup — dlitelnoe ispolzovanie → flickering → auto-shutdown
 //   [ADD] Cooldown period — posle overheat nelzya vklyuchit X sekund
 //   [ADD] Flickering effect — sluchaynye provaly intensivnosti pri low battery/heat
@@ -22,8 +22,8 @@
 //   • Math.Lerp/Exp — struct operations, zero GC
 //
 // ARHITEKTURA:
-//   • Battery drain — optsionalno cherez HectonSurvivalSystem.DrainEnergy()
-//   • Heat buildup — nakaplivaetsya pri vklyuchennom fonare, ostyvaet pri vyklyuchennom
+//   • Battery and heat truth are supplied by ModularEquipmentEngine.
+//   • Heat buildup — mirrored from the centralized equipment thermal solver
 //   • Flickering — triggered by low battery OR high heat
 //   • Overheat shutdown — avtovyklyuchenie + cooldown period
 //   • Screen-space shafts — handled by Hecton8.Lighting.Shafts
@@ -336,7 +336,7 @@ namespace Hecton8.Gameplay
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Player/Player Flashlight")]
-    public sealed class PlayerFlashlight : MonoBehaviour, ITickable, IUpdatable
+    public sealed class PlayerFlashlight : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
 
@@ -355,8 +355,6 @@ namespace Hecton8.Gameplay
         [Tooltip("SpotLight na kamere (docherniy obekt).")]
         [SerializeField] private Light flashlightLight;
 
-        [Tooltip("HectonSurvivalSystem dlya battery drain. Optsionalno.")]
-        [SerializeField] private HectonSurvivalSystem survivalSystem;
         private IBatteryTool _externalBatteryTool;
 
         // ══════════════════════════════════════════════════════════
@@ -378,13 +376,7 @@ namespace Hecton8.Gameplay
         //  INSPECTOR — BATTERY
         // ══════════════════════════════════════════════════════════
 
-        [Header("── Battery ─────────────────────────────────")]
-        [Tooltip("Vklyuchit battery drain. Fonar potreblyaet energiyu.")]
-        [SerializeField] private bool enableBatteryDrain = true;
-
-        [Tooltip("Energiya/sek pri vklyuchennom fonare. 0.2 = 5 sek na 1%.")]
-        [SerializeField, Range(0f, 2f)] private float batteryDrainRate = 0.2f;
-
+        [Header("── Battery Readback ─────────────────────────")]
         [Tooltip("Kriticheskiy uroven energii (%). Nizhe — flickering + auto-shutdown.")]
         [SerializeField, Range(0f, 20f)] private float lowBatteryThreshold = 10f;
 
@@ -475,7 +467,7 @@ namespace Hecton8.Gameplay
         public bool IsFlickering => _isFlickering;
         public BeamMode CurrentBeamMode => _beamMode;
         public float CooldownRemaining => _overheatCooldownTimer;
-        public float EnergyPercent => _externalBatteryTool != null ? _externalBatteryTool.BatteryCharge * 100f : (survivalSystem != null ? survivalSystem.EnergyPercent : 0f);
+        public float EnergyPercent => _externalBatteryTool != null ? math.saturate(_externalBatteryTool.BatteryCharge) * 100f : 0f;
         public string BeamModeLabel =>
             _beamMode == BeamMode.Flood ? "FLOOD" :
             _beamMode == BeamMode.Focus ? "FOCUS" :
@@ -496,13 +488,13 @@ namespace Hecton8.Gameplay
         private Camera _cachedMainCamera;
         private Transform _cachedMainCameraTransform;
         private HectonPlayerMovement _playerMovement;
+        private IPlayerRuntimeContext _playerRuntimeContext;
+        private bool _hotSwapRegistered;
         private float _nextCameraResolveTime;
         private uint _lastPlayerInputSignalSequence;
 
         private const float CameraResolveCooldown = 1f;
 
-        // Battery
-        private float _batteryDrainAccumulator;
         private bool _lowBatteryWarningPlayed;
 
         // Heat
@@ -531,6 +523,7 @@ namespace Hecton8.Gameplay
             _overheatCooldownTimer = 0f;
             _beamMode = defaultBeamMode;
 
+            CachePlayerRuntimeContextCold();
             ResolveReferences();
             EnsureVoxelShadowProvider();
 
@@ -540,8 +533,6 @@ namespace Hecton8.Gameplay
                 flashlightLight.intensity = _currentIntensity;
                 flashlightLight.enabled = _isOn;
             }
-
-            ValidateSurvivalSystemBinding();
         }
 
 #if UNITY_EDITOR
@@ -572,6 +563,8 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            CachePlayerRuntimeContextCold();
+            TryRegisterHotSwap();
             TryRegister();
             if (Application.isPlaying)
                 BaselineFlashlightInputSignalSequence();
@@ -597,6 +590,7 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterHotSwap();
             _externalInterferenceIntensity = 0f;
             _externalInterferenceHoldTimer = 0f;
         }
@@ -604,6 +598,7 @@ namespace Hecton8.Gameplay
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterHotSwap();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -632,8 +627,8 @@ namespace Hecton8.Gameplay
             // ── Overheat cooldown ──
             _overheatCooldownTimer = _isOverheated ? _overheatCooldownTimer : 0f;
 
-            // ── Battery drain ──
-            if (_isOn && _externalBatteryTool == null && EnergyPercent <= 1f)
+            // Battery charge is owned by FlashlightTool/ModularEquipmentEngine.
+            if (_isOn && (_externalBatteryTool == null || EnergyPercent <= 1f))
                 TurnOff();
 
             // ── Flickering ──
@@ -924,8 +919,6 @@ namespace Hecton8.Gameplay
                 if (_playerMovement == null)
                     playerTransform.TryGetComponent(out _playerMovement);
 
-                if (survivalSystem == null && enableBatteryDrain)
-                    survivalSystem = playerTransform.GetComponent<HectonSurvivalSystem>();
             }
         }
 
@@ -1034,17 +1027,6 @@ namespace Hecton8.Gameplay
             flashlightLight.shadows = LightShadows.None;
         }
 
-        private void ValidateSurvivalSystemBinding()
-        {
-            if (_externalBatteryTool != null || survivalSystem != null || !enableBatteryDrain)
-                return;
-
-            Debug.LogWarning(
-                "[PlayerFlashlight] Battery drain enabled but no HectonSurvivalSystem found. " +
-                "Disabling battery drain.");
-            enableBatteryDrain = false;
-        }
-
         private Transform ResolveMainCameraReference(bool force)
         {
             if (_cachedMainCameraTransform != null)
@@ -1058,7 +1040,10 @@ namespace Hecton8.Gameplay
 
             if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
             {
-                Camera playerCamera = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : playerTransform.GetComponent<Camera>());
+                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+                Camera playerCamera = playerContext != null && playerContext.PlayerCamera != null
+                    ? playerContext.PlayerCamera
+                    : playerTransform.GetComponent<Camera>();
                 if (playerCamera != null)
                 {
                     _cachedMainCamera = playerCamera;
@@ -1068,6 +1053,44 @@ namespace Hecton8.Gameplay
             }
 
             return null;
+        }
+
+        private void CachePlayerRuntimeContextCold()
+        {
+            _playerRuntimeContext = GlobalRegistry.Player;
+        }
+
+        private void TryRegisterHotSwap()
+        {
+            if (_hotSwapRegistered)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwap()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        private void ApplyRegistryServiceRebind(GlobalRegistryServiceSlot serviceSlot, object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+                _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+        }
+
+        void IGlobalRegistryHotSwapRefListener.OnGlobalRegistryServiceRebound(GlobalRegistryServiceSlot serviceSlot, ref object currentService)
+        {
+            ApplyRegistryServiceRebind(serviceSlot, currentService);
+        }
+
+        void IGlobalRegistryHotSwapListener.OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
+        {
+            ApplyRegistryServiceRebind(serviceSlot, currentService);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1105,15 +1128,6 @@ namespace Hecton8.Gameplay
         }
 
         // ══════════════════════════════════════════════════════════
-        //  PRIVATE — BATTERY DRAIN
-        // ══════════════════════════════════════════════════════════
-
-        private void ProcessBatteryDrain(float deltaTime)
-        {
-            _batteryDrainAccumulator = 0f;
-        }
-
-        // ══════════════════════════════════════════════════════════
         //  PRIVATE — HEAT / OVERHEAT
         // ══════════════════════════════════════════════════════════
 
@@ -1135,15 +1149,6 @@ namespace Hecton8.Gameplay
             // Trigger flickering on low battery
             if (_externalBatteryTool != null)
             {
-                if (energyPercent <= lowBatteryThreshold)
-                {
-                    shouldFlicker = true;
-                    batteryOrHeatFlicker = true;
-                }
-            }
-            else if (enableBatteryDrain && survivalSystem != null)
-            {
-                energyPercent = survivalSystem.EnergyPercent;
                 if (energyPercent <= lowBatteryThreshold)
                 {
                     shouldFlicker = true;
@@ -1291,7 +1296,7 @@ namespace Hecton8.Gameplay
             _debugIsOn = _isOn;
             _debugCurrentIntensity = _currentIntensity;
             _debugHeatLevel = _heatLevel;
-            _debugBatteryDrainAccum = _batteryDrainAccumulator;
+            _debugBatteryDrainAccum = 0f;
             _debugIsFlickering = _isFlickering;
             _debugIsOverheated = _isOverheated;
             _debugCooldownRemaining = _overheatCooldownTimer;

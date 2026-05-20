@@ -5,6 +5,7 @@ using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.World;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -13,90 +14,105 @@ using UnityEngine.Rendering;
 
 namespace Hecton8.AI
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Explicit, Size = 192)]
     internal struct ProceduralCrabLegEntityState
     {
-        public int IsActive;
-        public int LegStartIndex;
-        public int LegCount;
-        public int GroundLayerMask;
-        public int RaycastBudgetMode;
-        public int FrameIndex;
-        public int Health;
-        public int CorpseState;
-        public int StateFlags;
-        public int LeftStepCursor;
-        public int RightStepCursor;
-        public float DeltaTime;
-        public float StrideLengthSq;
-        public float StepDuration;
-        public float StepHeight;
-        public float RaycastHeight;
-        public float RaycastDistance;
-        public float ContactOffset;
-        public float VelocityLeadSeconds;
-        public float Scale;
-        public float BodyHeight;
-        public float UpperLegLength;
-        public float LowerLegLength;
-        public float SpatialHashAvoidanceStrength;
-        public float SpatialHashAvoidanceMaxOffset;
-        public float3 RootPosition;
-        public float3 Velocity;
-        public float3 SpatialHashAvoidanceOffset;
-        public quaternion RootRotation;
+        [FieldOffset(0)] public int IsActive;
+        [FieldOffset(4)] public int LegStartIndex;
+        [FieldOffset(8)] public int LegCount;
+        [FieldOffset(12)] public int GroundLayerMask;
+        [FieldOffset(16)] public int RaycastBudgetMode;
+        [FieldOffset(20)] public int FrameIndex;
+        [FieldOffset(24)] public int Health;
+        [FieldOffset(28)] public int CorpseState;
+        [FieldOffset(32)] public int StateFlags;
+        [FieldOffset(36)] public int LeftStepCursor;
+        [FieldOffset(40)] public int RightStepCursor;
+        [FieldOffset(44)] public float DeltaTime;
+        [FieldOffset(48)] public float StrideLengthSq;
+        [FieldOffset(52)] public float StepDuration;
+        [FieldOffset(56)] public float StepHeight;
+        [FieldOffset(60)] public float RaycastHeight;
+        [FieldOffset(64)] public float RaycastDistance;
+        [FieldOffset(68)] public float ContactOffset;
+        [FieldOffset(72)] public float VelocityLeadSeconds;
+        [FieldOffset(76)] public float Scale;
+        [FieldOffset(80)] public float BodyHeight;
+        [FieldOffset(84)] public float UpperLegLength;
+        [FieldOffset(88)] public float LowerLegLength;
+        [FieldOffset(92)] public float SpatialHashAvoidanceStrength;
+        [FieldOffset(96)] public float SpatialHashAvoidanceMaxOffset;
+        [FieldOffset(100)] public float3 RootPosition;
+        [FieldOffset(112)] public float3 Velocity;
+        [FieldOffset(124)] public float3 SpatialHashAvoidanceOffset;
+        [FieldOffset(136)] public quaternion RootRotation;
+        [FieldOffset(152)] private ulong _pad0;
+        [FieldOffset(160)] private ulong _pad1;
+        [FieldOffset(168)] private ulong _pad2;
+        [FieldOffset(176)] private ulong _pad3;
+        [FieldOffset(184)] private ulong _pad4;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct ProceduralCrabLegStepState
     {
-        public float3 StepFrom;
-        public float3 StepTo;
-        public float StepTimer;
-        public float StepDuration;
-        public float StepHeight;
-        public byte IsStepping;
-        public byte Side;
-        public byte IsGrounded;
-        public byte Reserved;
+        [FieldOffset(0)] public float3 StepFrom;
+        [FieldOffset(12)] public float3 StepTo;
+        [FieldOffset(24)] public float StepTimer;
+        [FieldOffset(28)] public float StepDuration;
+        [FieldOffset(32)] public float StepHeight;
+        [FieldOffset(36)] public byte IsStepping;
+        [FieldOffset(37)] public byte Side;
+        [FieldOffset(38)] public byte IsGrounded;
+        [FieldOffset(39)] public byte Reserved;
+        [FieldOffset(40)] private ulong _pad0;
+        [FieldOffset(48)] private ulong _pad1;
+        [FieldOffset(56)] private ulong _pad2;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     internal struct ProceduralCrabBodyPose
     {
-        public float4x4 BodyMatrix;
-        public float3 BodyNormal;
-        public int IsActive;
+        [FieldOffset(0)] public float4x4 BodyMatrix;
+        [FieldOffset(64)] public float3 BodyNormal;
+        [FieldOffset(76)] public int IsActive;
+        [FieldOffset(80)] private ulong _pad0;
+        [FieldOffset(88)] private ulong _pad1;
+        [FieldOffset(96)] private ulong _pad2;
+        [FieldOffset(104)] private ulong _pad3;
+        [FieldOffset(112)] private ulong _pad4;
+        [FieldOffset(120)] private ulong _pad5;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Explicit, Size = 192)]
     internal struct ProceduralCrabSolvedJointMatrices
     {
-        public float4x4 UpperJointMatrix;
-        public float4x4 LowerJointMatrix;
-        public float4x4 FootJointMatrix;
+        [FieldOffset(0)] public float4x4 UpperJointMatrix;
+        [FieldOffset(64)] public float4x4 LowerJointMatrix;
+        [FieldOffset(128)] public float4x4 FootJointMatrix;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct ProceduralCrabIkTelemetryEntry
     {
-        public int FrameIndex;
-        public int ActiveEntityCount;
-        public int EntityIndex;
-        public int Flags;
-        public float3 RootPosition;
-        public float3 FirstFootPosition;
-        public float3 BodyNormal;
-        public uint StateHash;
+        [FieldOffset(0)] public int FrameIndex;
+        [FieldOffset(4)] public int ActiveEntityCount;
+        [FieldOffset(8)] public int EntityIndex;
+        [FieldOffset(12)] public int Flags;
+        [FieldOffset(16)] public float3 RootPosition;
+        [FieldOffset(28)] public float3 FirstFootPosition;
+        [FieldOffset(40)] public float3 BodyNormal;
+        [FieldOffset(52)] public uint StateHash;
+        [FieldOffset(56)] private ulong _pad0;
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [StructLayout(LayoutKind.Sequential)]
     internal struct ProceduralCrabGroundRaycastBuildJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<ProceduralCrabLegEntityState> Entities;
-        public NativeArray<RaycastCommand> Commands;
-        public NativeArray<int> RaycastLegMask;
+        [ReadOnly, NoAlias] public NativeArray<ProceduralCrabLegEntityState> Entities;
+        [NoAlias] public NativeArray<RaycastCommand> Commands;
+        [NoAlias] public NativeArray<int> RaycastLegMask;
 
         public void Execute(int index)
         {
@@ -153,15 +169,15 @@ namespace Hecton8.AI
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [StructLayout(LayoutKind.Sequential)]
     internal struct ProceduralCrabGroundTargetResolveJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<ProceduralCrabLegEntityState> Entities;
-        [ReadOnly] public NativeArray<RaycastHit> Hits;
-        [ReadOnly] public NativeArray<int> RaycastLegMask;
-        public NativeArray<float3> TargetFootPositions;
-        public NativeArray<ProceduralCrabLegStepState> StepStates;
+        [ReadOnly, NoAlias] public NativeArray<ProceduralCrabLegEntityState> Entities;
+        [ReadOnly, NoAlias] public NativeArray<RaycastHit> Hits;
+        [ReadOnly, NoAlias] public NativeArray<int> RaycastLegMask;
+        [NoAlias] public NativeArray<float3> TargetFootPositions;
+        [NoAlias] public NativeArray<ProceduralCrabLegStepState> StepStates;
 
         public void Execute(int index)
         {
@@ -208,14 +224,14 @@ namespace Hecton8.AI
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [StructLayout(LayoutKind.Sequential)]
     internal struct ProceduralCrabStepSchedulerJob : IJobParallelFor
     {
-        public NativeArray<ProceduralCrabLegEntityState> Entities;
-        public NativeArray<float3> FootPositions;
-        public NativeArray<float3> TargetFootPositions;
-        public NativeArray<ProceduralCrabLegStepState> StepStates;
+        [NoAlias] public NativeArray<ProceduralCrabLegEntityState> Entities;
+        [NoAlias] public NativeArray<float3> FootPositions;
+        [NoAlias] public NativeArray<float3> TargetFootPositions;
+        [NoAlias] public NativeArray<ProceduralCrabLegStepState> StepStates;
 
         public void Execute(int entityIndex)
         {
@@ -370,13 +386,13 @@ namespace Hecton8.AI
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [StructLayout(LayoutKind.Sequential)]
     internal struct ProceduralCrabLegAupRebaseJob : IJobParallelFor
     {
-        public NativeArray<float3> FootPositions;
-        public NativeArray<float3> TargetFootPositions;
-        public NativeArray<ProceduralCrabLegStepState> StepStates;
+        [NoAlias] public NativeArray<float3> FootPositions;
+        [NoAlias] public NativeArray<float3> TargetFootPositions;
+        [NoAlias] public NativeArray<ProceduralCrabLegStepState> StepStates;
         public float3 ShiftOffset;
 
         public void Execute(int index)
@@ -391,12 +407,12 @@ namespace Hecton8.AI
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [StructLayout(LayoutKind.Sequential)]
     internal struct ProceduralCrabEntityAupRebaseJob : IJobParallelFor
     {
-        public NativeArray<ProceduralCrabLegEntityState> Entities;
-        public NativeArray<ProceduralCrabBodyPose> BodyPoses;
+        [NoAlias] public NativeArray<ProceduralCrabLegEntityState> Entities;
+        [NoAlias] public NativeArray<ProceduralCrabBodyPose> BodyPoses;
         public float3 ShiftOffset;
 
         public void Execute(int index)
@@ -418,13 +434,13 @@ namespace Hecton8.AI
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [StructLayout(LayoutKind.Sequential)]
     internal struct ProceduralCrabBodyTiltJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<ProceduralCrabLegEntityState> Entities;
-        [ReadOnly] public NativeArray<float3> FootPositions;
-        public NativeArray<ProceduralCrabBodyPose> BodyPoses;
+        [ReadOnly, NoAlias] public NativeArray<ProceduralCrabLegEntityState> Entities;
+        [ReadOnly, NoAlias] public NativeArray<float3> FootPositions;
+        [NoAlias] public NativeArray<ProceduralCrabBodyPose> BodyPoses;
         public float BodyVisualScale;
 
         public void Execute(int index)
@@ -461,14 +477,14 @@ namespace Hecton8.AI
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [StructLayout(LayoutKind.Sequential)]
     internal struct ProceduralCrabAnalyticalTwoBoneIkJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<ProceduralCrabLegEntityState> Entities;
-        [ReadOnly] public NativeArray<float3> FootPositions;
-        [ReadOnly] public NativeArray<ProceduralCrabBodyPose> BodyPoses;
-        public NativeArray<ProceduralCrabSolvedJointMatrices> SolvedJointMatrices;
+        [ReadOnly, NoAlias] public NativeArray<ProceduralCrabLegEntityState> Entities;
+        [ReadOnly, NoAlias] public NativeArray<float3> FootPositions;
+        [ReadOnly, NoAlias] public NativeArray<ProceduralCrabBodyPose> BodyPoses;
+        [NoAlias] public NativeArray<ProceduralCrabSolvedJointMatrices> SolvedJointMatrices;
         public float JointVisualScale;
 
         public void Execute(int index)

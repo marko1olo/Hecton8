@@ -31,119 +31,124 @@ namespace Hecton8.Core.Bridge
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct H8PrefabMappingEntry
     {
-        public uint HashID;
-        public uint AddressHash;
-        public uint LoreHash;
-        public uint AcousticSignatureHash;
-        public long EstimatedVramBytes;
-        public uint RuntimePrefabId;
-        public ushort Flags;
-        public ushort Reserved0;
-        public uint OneDimensionalLutHash;
-        public uint HighTierVisualHash;
-        public uint Reserved1;
-        private uint _pad0;
+        [FieldOffset(0)] public uint HashID;
+        [FieldOffset(4)] public uint AddressHash;
+        [FieldOffset(8)] public uint LoreHash;
+        [FieldOffset(12)] public uint AcousticSignatureHash;
+        [FieldOffset(16)] public long EstimatedVramBytes;
+        [FieldOffset(24)] public uint RuntimePrefabId;
+        [FieldOffset(28)] public ushort Flags;
+        [FieldOffset(30)] public ushort Reserved0;
+        [FieldOffset(32)] public uint OneDimensionalLutHash;
+        [FieldOffset(36)] public uint HighTierVisualHash;
+        [FieldOffset(40)] public uint Reserved1;
+        [FieldOffset(44)] private uint _pad0;
+        [FieldOffset(48)] private ulong _pad1;
+        [FieldOffset(56)] private ulong _pad2;
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct H8PrefabLoreLinkEntry
     {
-        public uint PrefabHash;
-        public uint LoreHash;
-        public uint AcousticSignatureHash;
-        public uint OneDimensionalLutHash;
-        public uint HighTierVisualHash;
-        public ushort Flags;
-        public ushort Reserved0;
-        public uint Reserved1;
-        private uint _pad0;
+        [FieldOffset(0)] public uint PrefabHash;
+        [FieldOffset(4)] public uint LoreHash;
+        [FieldOffset(8)] public uint AcousticSignatureHash;
+        [FieldOffset(12)] public uint OneDimensionalLutHash;
+        [FieldOffset(16)] public uint HighTierVisualHash;
+        [FieldOffset(20)] public ushort Flags;
+        [FieldOffset(22)] public ushort Reserved0;
+        [FieldOffset(24)] public uint Reserved1;
+        [FieldOffset(28)] private uint _pad0;
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct H8DesignValueEntry
     {
-        public uint FieldHash;
-        public int OffsetBytes;
-        public float Value;
-        public float SafeDefault;
-        public float MinValue;
-        public float MaxValue;
-        public uint LutSwapHash;
-        public ushort Flags;
-        public ushort Reserved;
+        [FieldOffset(0)] public uint FieldHash;
+        [FieldOffset(4)] public int OffsetBytes;
+        [FieldOffset(8)] public float Value;
+        [FieldOffset(12)] public float SafeDefault;
+        [FieldOffset(16)] public float MinValue;
+        [FieldOffset(20)] public float MaxValue;
+        [FieldOffset(24)] public uint LutSwapHash;
+        [FieldOffset(28)] public ushort Flags;
+        [FieldOffset(30)] public ushort Reserved;
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 40)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct H8FacadeTelemetryEntry
     {
-        public uint Frame;
-        public uint FacadeHash;
-        public uint FieldHash;
-        public int OffsetBytes;
-        public float OldValue;
-        public float NewValue;
-        public float SafeDefault;
-        public uint LutSwapHash;
-        public ushort Flags;
-        public ushort Reserved;
-        private uint _pad0;
+        [FieldOffset(0)] public uint Frame;
+        [FieldOffset(4)] public uint FacadeHash;
+        [FieldOffset(8)] public uint FieldHash;
+        [FieldOffset(12)] public int OffsetBytes;
+        [FieldOffset(16)] public float OldValue;
+        [FieldOffset(20)] public float NewValue;
+        [FieldOffset(24)] public float SafeDefault;
+        [FieldOffset(28)] public uint LutSwapHash;
+        [FieldOffset(32)] public ushort Flags;
+        [FieldOffset(34)] public ushort Reserved;
+        [FieldOffset(36)] private uint _pad0;
+        [FieldOffset(40)] private ulong _pad1;
+        [FieldOffset(48)] private ulong _pad2;
+        [FieldOffset(56)] private ulong _pad3;
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct H8FacadeTelemetryDumpHeader
     {
-        public uint Magic;
-        public uint Version;
-        public uint EntryCount;
-        public uint EntrySizeBytes;
-        public uint Cursor;
-        public uint Capacity;
-        public uint PayloadHash;
-        public uint Reserved;
+        [FieldOffset(0)] public uint Magic;
+        [FieldOffset(4)] public uint Version;
+        [FieldOffset(8)] public uint EntryCount;
+        [FieldOffset(12)] public uint EntrySizeBytes;
+        [FieldOffset(16)] public uint Cursor;
+        [FieldOffset(20)] public uint Capacity;
+        [FieldOffset(24)] public uint PayloadHash;
+        [FieldOffset(28)] public uint Reserved;
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct H8InputFacadeBindingEntry
     {
-        public uint ActionNameHash;
-        public uint ButtonMask;
-        public byte PlayerCommand;
-        public byte Flags;
-        public ushort Reserved0;
-        public uint DisplayGroupHash;
-        public uint Reserved1;
-        public uint Reserved2;
-        public uint Reserved3;
-        private uint _pad0;
+        [FieldOffset(0)] public uint ActionNameHash;
+        [FieldOffset(4)] public uint ButtonMask;
+        [FieldOffset(8)] public byte PlayerCommand;
+        [FieldOffset(9)] public byte Flags;
+        [FieldOffset(10)] public ushort Reserved0;
+        [FieldOffset(12)] public uint DisplayGroupHash;
+        [FieldOffset(16)] public uint Reserved1;
+        [FieldOffset(20)] public uint Reserved2;
+        [FieldOffset(24)] public uint Reserved3;
+        [FieldOffset(28)] private uint _pad0;
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct H8FacadeMacroHeader
     {
-        public uint Magic;
-        public uint Version;
-        public uint FacadeHash;
-        public uint LastChangedFieldHash;
-        public uint FieldCount;
-        public uint PrefabCount;
-        public uint InputBindingCount;
-        public uint Checksum;
-        public uint Frame;
-        public uint Flags;
-        public long EstimatedVramBytes;
-        public uint OneDimensionalLutHash;
-        public uint HighTierVisualHash;
-        public uint Reserved0;
-        public uint Reserved1;
+        [FieldOffset(0)] public uint Magic;
+        [FieldOffset(4)] public uint Version;
+        [FieldOffset(8)] public uint FacadeHash;
+        [FieldOffset(12)] public uint LastChangedFieldHash;
+        [FieldOffset(16)] public uint FieldCount;
+        [FieldOffset(20)] public uint PrefabCount;
+        [FieldOffset(24)] public uint InputBindingCount;
+        [FieldOffset(28)] public uint Checksum;
+        [FieldOffset(32)] public uint Frame;
+        [FieldOffset(36)] public uint Flags;
+        [FieldOffset(40)] public long EstimatedVramBytes;
+        [FieldOffset(48)] public uint OneDimensionalLutHash;
+        [FieldOffset(52)] public uint HighTierVisualHash;
+        [FieldOffset(56)] public uint Reserved0;
+        [FieldOffset(60)] public uint Reserved1;
     }
 
     public static class H8BridgeHashes

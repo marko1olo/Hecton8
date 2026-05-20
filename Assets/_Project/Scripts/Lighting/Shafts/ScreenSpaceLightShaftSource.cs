@@ -1,21 +1,39 @@
-using Hecton8.World;
+using Hecton8.Core;
 using System.Runtime.InteropServices;
 using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Lighting.Shafts
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct LightShaftContribution
     {
+        [FieldOffset(0)]
         public uint SourceId;
+        [FieldOffset(4)]
+        public uint _pad0;
+        [FieldOffset(8)]
         public float2 ScreenUv;
+        [FieldOffset(16)]
         public float3 ColorRgb;
+        [FieldOffset(28)]
         public float Intensity;
+        [FieldOffset(32)]
         public float RadialFalloff;
+        [FieldOffset(36)]
         public float MaxDistanceMeters;
+        [FieldOffset(40)]
         public float Score;
+        [FieldOffset(44)]
         public byte Flags;
+        [FieldOffset(45)]
+        public byte _pad1;
+        [FieldOffset(46)]
+        public ushort _pad2;
+        [FieldOffset(48)]
+        public ulong _pad3;
+        [FieldOffset(56)]
+        public ulong _pad4;
     }
 
     /// <summary>
@@ -86,7 +104,7 @@ namespace Hecton8.Lighting.Shafts
             UnregisterSource(this);
         }
 
-        internal bool TryGetContribution(Camera renderCamera, in AbsoluteUniversePosition cameraAup, out LightShaftContribution contribution)
+        internal bool TryGetContribution(Camera renderCamera, in double3 cameraAup, out LightShaftContribution contribution)
         {
             contribution = default;
 
@@ -98,8 +116,9 @@ namespace Hecton8.Lighting.Shafts
                 return false;
 
             Vector3 sourcePosition = _cachedTransform.position;
-            AbsoluteUniversePosition sourceAup = AbsoluteUniversePosition.FromRuntimePosition(sourcePosition);
-            float aupDistance = (float)math.sqrt(math.max(0.0, AbsoluteUniversePosition.DistanceSq(in sourceAup, in cameraAup)));
+            double3 sourceAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(sourcePosition);
+            double3 aupDelta = sourceAup - cameraAup;
+            float aupDistance = (float)math.sqrt(math.max(0.0, math.lengthsq(aupDelta)));
             Vector3 viewport = renderCamera.WorldToViewportPoint(sourcePosition);
             if (!math.isfinite(viewport.x) || !math.isfinite(viewport.y) || !math.isfinite(viewport.z))
                 return false;

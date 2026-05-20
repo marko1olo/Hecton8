@@ -3,7 +3,6 @@ using Hecton8.Core;
 using Hecton8.Core.Determinism;
 using Hecton8.Core.Memory;
 using Hecton8.Networking;
-using Hecton8.World;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -40,6 +39,7 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(64, UnsafeUtility.SizeOf<VisualStateHistoryDTO>());
             Assert.AreEqual(64, UnsafeUtility.SizeOf<NetTelemetryEntry64>());
             Assert.AreEqual(32, UnsafeUtility.SizeOf<RollbackBlackBoxDumpHeader32>());
+            Assert.AreEqual(48, UnsafeUtility.SizeOf<RollbackAup48>());
             Assert.AreEqual(16, UnsafeUtility.SizeOf<RollbackAudioSuppressionDTO>());
             Assert.AreEqual(32, UnsafeUtility.SizeOf<H8NetMerkleNodeRecord32>());
             Assert.AreEqual(64, UnsafeUtility.SizeOf<H8NetLeafDeltaRecord64>());
@@ -62,6 +62,14 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(68, OffsetOf<LockstepPlayerKinematicState>(nameof(LockstepPlayerKinematicState.InputActions)));
             Assert.AreEqual(72, OffsetOf<LockstepPlayerKinematicState>(nameof(LockstepPlayerKinematicState.StableId)));
             Assert.AreEqual(76, OffsetOf<LockstepPlayerKinematicState>(nameof(LockstepPlayerKinematicState.HashCadenceFrames)));
+            Assert.AreEqual(0, OffsetOf<RollbackAup48>(nameof(RollbackAup48.GridX)));
+            Assert.AreEqual(8, OffsetOf<RollbackAup48>(nameof(RollbackAup48.GridY)));
+            Assert.AreEqual(16, OffsetOf<RollbackAup48>(nameof(RollbackAup48.GridZ)));
+            Assert.AreEqual(24, OffsetOf<RollbackAup48>(nameof(RollbackAup48.LocalX)));
+            Assert.AreEqual(28, OffsetOf<RollbackAup48>(nameof(RollbackAup48.LocalY)));
+            Assert.AreEqual(32, OffsetOf<RollbackAup48>(nameof(RollbackAup48.LocalZ)));
+            Assert.AreEqual(36, OffsetOf<RollbackAup48>(nameof(RollbackAup48._pad0)));
+            Assert.AreEqual(40, OffsetOf<RollbackAup48>(nameof(RollbackAup48._pad1)));
             Assert.AreEqual(0, OffsetOf<LockstepReplayInputFrame>(nameof(LockstepReplayInputFrame.Frame)));
             Assert.AreEqual(8, OffsetOf<LockstepReplayInputFrame>(nameof(LockstepReplayInputFrame.MoveDelta)));
             Assert.AreEqual(16, OffsetOf<LockstepReplayInputFrame>(nameof(LockstepReplayInputFrame.LookDelta)));
@@ -165,15 +173,83 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void RollbackFrameMath_HandlesUintWrap()
+        {
+            Assert.AreEqual(4, RollbackNetcodeMath.ResolveRollbackFrameCount(uint.MaxValue - 2u, 1u));
+            Assert.AreEqual(0, RollbackNetcodeMath.ResolveRollbackFrameCount(10u, 3u));
+            Assert.IsTrue(RollbackNetcodeMath.HasFrameReached(1u, uint.MaxValue - 2u));
+            Assert.IsFalse(RollbackNetcodeMath.HasFrameReached(uint.MaxValue - 2u, 1u));
+            Assert.IsTrue(RollbackNetcodeMath.DidFrameWrap(uint.MaxValue - 1u, 2u));
+            Assert.IsFalse(RollbackNetcodeMath.DidFrameWrap(9u, 2u));
+
+            Assert.IsTrue(RollbackNetcodeMath.TryResolveHistoricalFrame(2u, uint.MaxValue - 1u, 4u, out uint wrappedFrame));
+            Assert.AreEqual(uint.MaxValue - 1u, wrappedFrame);
+            Assert.IsFalse(RollbackNetcodeMath.TryResolveHistoricalFrame(2u, 1u, 4u, out _));
+        }
+
+        [Test]
+        public void DetectInputMismatch_UsesScheduledPreviousFrameAcrossWrap()
+        {
+            NativeArray<InputStateDTO> predicted = new NativeArray<InputStateDTO>(16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            NativeArray<RemoteInputFrameDTO> remote = new NativeArray<RemoteInputFrameDTO>(16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            NativeArray<RollbackInputJournalSlot64> journal = new NativeArray<RollbackInputJournalSlot64>(16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            NativeArray<RollbackRuntimeStateDTO> runtime = new NativeArray<RollbackRuntimeStateDTO>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            try
+            {
+                uint matchingFrame = uint.MaxValue - 1u;
+                uint mismatchFrame = uint.MaxValue;
+                predicted[(int)(matchingFrame % (uint)predicted.Length)] = new InputStateDTO { ButtonMask = 1u };
+                predicted[(int)(mismatchFrame % (uint)predicted.Length)] = new InputStateDTO { ButtonMask = 1u };
+                remote[(int)(matchingFrame % (uint)remote.Length)] = new RemoteInputFrameDTO
+                {
+                    Input = new InputStateDTO { ButtonMask = 1u },
+                    Frame = matchingFrame,
+                    Flags = RemoteInputFlags.Received | RemoteInputFlags.Valid
+                };
+                remote[(int)(mismatchFrame % (uint)remote.Length)] = new RemoteInputFrameDTO
+                {
+                    Input = new InputStateDTO { ButtonMask = 2u },
+                    Frame = mismatchFrame,
+                    Flags = RemoteInputFlags.Received | RemoteInputFlags.Valid
+                };
+
+                new DetectInputMismatchJob
+                {
+                    PredictedJournal = predicted,
+                    RemoteInputRing = remote,
+                    InputJournalRing = journal,
+                    RuntimeState = runtime,
+                    CurrentFrame = 1u,
+                    PreviousFrame = uint.MaxValue,
+                    MaxRollbackFrames = 4,
+                    GlobalQualityWeight = 1f,
+                    MinQualityForLookRollback = 0f,
+                    MoveEpsilon = 0.001f,
+                    LookEpsilon = 0.001f
+                }.Run();
+
+                Assert.AreEqual(mismatchFrame, runtime[0].LastMismatchFrame);
+                Assert.AreNotEqual(0u, runtime[0].Flags & RollbackNetcodeFlags.RollbackRequired);
+            }
+            finally
+            {
+                runtime.Dispose();
+                journal.Dispose();
+                remote.Dispose();
+                predicted.Dispose();
+            }
+        }
+
+        [Test]
         public void SnapshotAndRestore_CopyExactAupBytes()
         {
-            NativeArray<AbsoluteUniversePosition> aups = new NativeArray<AbsoluteUniversePosition>(1, Allocator.TempJob);
+            NativeArray<RollbackAup48> aups = new NativeArray<RollbackAup48>(1, Allocator.TempJob);
             NativeArray<byte> stateRing = new NativeArray<byte>(256, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
             NativeArray<FrameSnapshotDTO> snapshots = new NativeArray<FrameSnapshotDTO>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             NativeArray<RollbackRuntimeStateDTO> runtime = new NativeArray<RollbackRuntimeStateDTO>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             try
             {
-                AbsoluteUniversePosition original = new AbsoluteUniversePosition
+                RollbackAup48 original = new RollbackAup48
                 {
                     GridX = 1234567890123L,
                     GridY = -44L,
@@ -347,7 +423,7 @@ namespace Hecton8.Tests.Editor
                 {
                     Input = input,
                     Frame = 15u,
-                    Flags = RemoteInputFlags.Received
+                    Flags = RemoteInputFlags.Received | RemoteInputFlags.Valid
                 };
 
                 localNodes[RollbackNetcodeConstants.MerkleRootNodeIndex] = new H8NetMerkleNodeRecord32
@@ -432,7 +508,7 @@ namespace Hecton8.Tests.Editor
         [Test]
         public void MerkleRoot_ConsumesExactAupDouble3Bits()
         {
-            NativeArray<AbsoluteUniversePosition> aups = new NativeArray<AbsoluteUniversePosition>(1, Allocator.TempJob);
+            NativeArray<RollbackAup48> aups = new NativeArray<RollbackAup48>(1, Allocator.TempJob);
             NativeArray<RollbackVaultBufferDescriptor32> descriptors = new NativeArray<RollbackVaultBufferDescriptor32>(RollbackNetcodeConstants.MerkleLeafCapacity, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             NativeArray<H8NetMerkleNodeRecord32> nodes = new NativeArray<H8NetMerkleNodeRecord32>(RollbackNetcodeConstants.MerkleNodeCapacity, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             NativeArray<RollbackRuntimeStateDTO> runtime = new NativeArray<RollbackRuntimeStateDTO>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
@@ -447,7 +523,7 @@ namespace Hecton8.Tests.Editor
                     Flags = RollbackMerkleFlags.Authoritative | RollbackMerkleFlags.AupExactDouble3
                 };
 
-                aups[0] = new AbsoluteUniversePosition
+                aups[0] = new RollbackAup48
                 {
                     GridX = 1,
                     GridY = 2,
@@ -476,7 +552,7 @@ namespace Hecton8.Tests.Editor
                 ulong firstRoot = nodes[RollbackNetcodeConstants.MerkleRootNodeIndex].HashLo;
                 Assert.AreNotEqual(0UL, firstRoot);
 
-                AbsoluteUniversePosition changed = aups[0];
+                RollbackAup48 changed = aups[0];
                 changed.LocalX = 0.12500012f;
                 aups[0] = changed;
                 merkle.Run(RollbackNetcodeConstants.MerkleLeafCapacity);
@@ -489,6 +565,98 @@ namespace Hecton8.Tests.Editor
                 }.Run();
 
                 Assert.AreNotEqual(firstRoot, nodes[RollbackNetcodeConstants.MerkleRootNodeIndex].HashLo);
+            }
+            finally
+            {
+                runtime.Dispose();
+                nodes.Dispose();
+                descriptors.Dispose();
+                aups.Dispose();
+            }
+        }
+
+        [Test]
+        public void MerkleRoot_EntityAupDescriptorByteOffsetSelectsSlice()
+        {
+            NativeArray<RollbackAup48> aups = new NativeArray<RollbackAup48>(2, Allocator.TempJob);
+            NativeArray<RollbackVaultBufferDescriptor32> descriptors = new NativeArray<RollbackVaultBufferDescriptor32>(RollbackNetcodeConstants.MerkleLeafCapacity, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            NativeArray<H8NetMerkleNodeRecord32> nodes = new NativeArray<H8NetMerkleNodeRecord32>(RollbackNetcodeConstants.MerkleNodeCapacity, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            NativeArray<RollbackRuntimeStateDTO> runtime = new NativeArray<RollbackRuntimeStateDTO>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            try
+            {
+                descriptors[0] = new RollbackVaultBufferDescriptor32
+                {
+                    BufferId = (uint)BufferID.EntityAUPs,
+                    ByteOffset = (uint)UnsafeUtility.SizeOf<double3>(),
+                    ElementStride = (uint)UnsafeUtility.SizeOf<double3>(),
+                    ElementCount = 1u,
+                    ByteLength = (uint)UnsafeUtility.SizeOf<double3>(),
+                    Flags = RollbackMerkleFlags.Authoritative | RollbackMerkleFlags.AupExactDouble3
+                };
+
+                aups[0] = new RollbackAup48
+                {
+                    GridX = 1,
+                    GridY = 2,
+                    GridZ = 3,
+                    LocalX = 0.125f,
+                    LocalY = -0.25f,
+                    LocalZ = 0.5f
+                };
+                aups[1] = new RollbackAup48
+                {
+                    GridX = 4,
+                    GridY = 5,
+                    GridZ = 6,
+                    LocalX = -0.75f,
+                    LocalY = 0.875f,
+                    LocalZ = -0.375f
+                };
+
+                ComputeMerkleRootJob merkle = new ComputeMerkleRootJob
+                {
+                    LeafDescriptors = descriptors,
+                    MerkleNodes = nodes,
+                    EntityAups = aups,
+                    QualityLeafBudget = 1,
+                    Frame = 23u
+                };
+                merkle.Run(RollbackNetcodeConstants.MerkleLeafCapacity);
+                new FinalizeMerkleRootJob
+                {
+                    MerkleNodes = nodes,
+                    RuntimeState = runtime,
+                    Frame = 23u,
+                    QualityLeafBudget = 1
+                }.Run();
+                ulong selectedSliceRoot = nodes[RollbackNetcodeConstants.MerkleRootNodeIndex].HashLo;
+                Assert.AreEqual((uint)UnsafeUtility.SizeOf<double3>(), nodes[0].ByteLength);
+
+                RollbackAup48 ignoredPrefix = aups[0];
+                ignoredPrefix.LocalX = 42.0f;
+                aups[0] = ignoredPrefix;
+                merkle.Run(RollbackNetcodeConstants.MerkleLeafCapacity);
+                new FinalizeMerkleRootJob
+                {
+                    MerkleNodes = nodes,
+                    RuntimeState = runtime,
+                    Frame = 23u,
+                    QualityLeafBudget = 1
+                }.Run();
+                Assert.AreEqual(selectedSliceRoot, nodes[RollbackNetcodeConstants.MerkleRootNodeIndex].HashLo);
+
+                RollbackAup48 selected = aups[1];
+                selected.LocalX = -0.625f;
+                aups[1] = selected;
+                merkle.Run(RollbackNetcodeConstants.MerkleLeafCapacity);
+                new FinalizeMerkleRootJob
+                {
+                    MerkleNodes = nodes,
+                    RuntimeState = runtime,
+                    Frame = 23u,
+                    QualityLeafBudget = 1
+                }.Run();
+                Assert.AreNotEqual(selectedSliceRoot, nodes[RollbackNetcodeConstants.MerkleRootNodeIndex].HashLo);
             }
             finally
             {
@@ -587,6 +755,7 @@ namespace Hecton8.Tests.Editor
                 Assert.AreEqual(10u, remote[10].Frame);
                 Assert.AreEqual(7u, remote[10].Input.ButtonMask);
                 Assert.AreNotEqual(0u, remote[10].Flags & RemoteInputFlags.Received);
+                Assert.AreNotEqual(0u, remote[10].Flags & RemoteInputFlags.Valid);
             }
             finally
             {
@@ -611,7 +780,7 @@ namespace Hecton8.Tests.Editor
                 {
                     Input = new InputStateDTO { ButtonMask = 9u },
                     Frame = 3u,
-                    Flags = RemoteInputFlags.Received
+                    Flags = RemoteInputFlags.Received | RemoteInputFlags.Valid
                 };
 
                 new GenerateMockNetworkJitterJob
@@ -635,6 +804,136 @@ namespace Hecton8.Tests.Editor
             {
                 state.Dispose();
                 packets.Dispose();
+                remote.Dispose();
+                predicted.Dispose();
+            }
+        }
+
+        [Test]
+        public void MockNetworkJitter_ReleasesAcrossUintWrap()
+        {
+            NativeArray<InputStateDTO> predicted = new NativeArray<InputStateDTO>(16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            NativeArray<RemoteInputFrameDTO> remote = new NativeArray<RemoteInputFrameDTO>(16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            NativeArray<MockNetworkJitterPacket64> packets = new NativeArray<MockNetworkJitterPacket64>(4, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            NativeArray<MockNetworkJitterState64> state = new NativeArray<MockNetworkJitterState64>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            try
+            {
+                uint sourceFrame = uint.MaxValue;
+                predicted[(int)(sourceFrame % (uint)predicted.Length)] = new InputStateDTO { ButtonMask = 13u };
+
+                GenerateMockNetworkJitterJob jitter = new GenerateMockNetworkJitterJob
+                {
+                    PredictedJournal = predicted,
+                    RemoteInputRing = remote,
+                    Packets = packets,
+                    JitterState = state,
+                    CurrentFrame = sourceFrame,
+                    DelayFrames = 2u,
+                    PacketLossPermille = 0u,
+                    DuplicatePermille = 0u,
+                    Seed = 0x99u
+                };
+                jitter.Run();
+                int remoteIndex = (int)(sourceFrame % (uint)remote.Length);
+                Assert.AreEqual(0u, remote[remoteIndex].Flags);
+
+                jitter.CurrentFrame = 1u;
+                jitter.Run();
+                Assert.AreEqual(sourceFrame, remote[remoteIndex].Frame);
+                Assert.AreEqual(13u, remote[remoteIndex].Input.ButtonMask);
+                Assert.AreNotEqual(0u, remote[remoteIndex].Flags & RemoteInputFlags.Received);
+                Assert.AreNotEqual(0u, remote[remoteIndex].Flags & RemoteInputFlags.Valid);
+            }
+            finally
+            {
+                state.Dispose();
+                packets.Dispose();
+                remote.Dispose();
+                predicted.Dispose();
+            }
+        }
+
+        [Test]
+        public void ApplyRemoteInputCorrection_HandlesUintWrap()
+        {
+            NativeArray<InputStateDTO> predicted = new NativeArray<InputStateDTO>(16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            NativeArray<RemoteInputFrameDTO> remote = new NativeArray<RemoteInputFrameDTO>(16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            try
+            {
+                uint start = uint.MaxValue - 1u;
+                for (int offset = 0; offset <= 3; offset++)
+                {
+                    uint frame = start + (uint)offset;
+                    remote[(int)(frame % (uint)remote.Length)] = new RemoteInputFrameDTO
+                    {
+                        Input = new InputStateDTO { ButtonMask = (uint)(20 + offset) },
+                        Frame = frame,
+                        Flags = RemoteInputFlags.Received | RemoteInputFlags.Valid
+                    };
+                }
+
+                new ApplyRemoteInputCorrectionJob
+                {
+                    PredictedJournal = predicted,
+                    RemoteInputRing = remote,
+                    RollbackFrame = start,
+                    CurrentFrame = 1u
+                }.Run();
+
+                for (int offset = 0; offset <= 3; offset++)
+                {
+                    uint frame = start + (uint)offset;
+                    Assert.AreEqual((uint)(20 + offset), predicted[(int)(frame % (uint)predicted.Length)].ButtonMask);
+                }
+            }
+            finally
+            {
+                remote.Dispose();
+                predicted.Dispose();
+            }
+        }
+
+        [Test]
+        public void ApplyRemoteInputCorrection_IgnoresUnsealedRemoteSlot()
+        {
+            NativeArray<InputStateDTO> predicted = new NativeArray<InputStateDTO>(8, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            NativeArray<RemoteInputFrameDTO> remote = new NativeArray<RemoteInputFrameDTO>(8, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            try
+            {
+                predicted[4] = new InputStateDTO { ButtonMask = 1u };
+                remote[4] = new RemoteInputFrameDTO
+                {
+                    Input = new InputStateDTO { ButtonMask = 99u },
+                    Frame = 4u,
+                    Flags = RemoteInputFlags.Received
+                };
+
+                new ApplyRemoteInputCorrectionJob
+                {
+                    PredictedJournal = predicted,
+                    RemoteInputRing = remote,
+                    RollbackFrame = 4u,
+                    CurrentFrame = 4u
+                }.Run();
+
+                Assert.AreEqual(1u, predicted[4].ButtonMask);
+
+                RemoteInputFrameDTO sealedRemote = remote[4];
+                sealedRemote.Flags |= RemoteInputFlags.Valid;
+                remote[4] = sealedRemote;
+
+                new ApplyRemoteInputCorrectionJob
+                {
+                    PredictedJournal = predicted,
+                    RemoteInputRing = remote,
+                    RollbackFrame = 4u,
+                    CurrentFrame = 4u
+                }.Run();
+
+                Assert.AreEqual(99u, predicted[4].ButtonMask);
+            }
+            finally
+            {
                 remote.Dispose();
                 predicted.Dispose();
             }

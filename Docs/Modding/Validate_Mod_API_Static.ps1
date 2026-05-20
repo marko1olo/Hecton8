@@ -15,6 +15,75 @@ function Assert-True([bool]$Condition, [string]$Message) {
     }
 }
 
+function Test-StrictDecimalFloat([string]$Text) {
+    $trimmed = $Text.Trim()
+    if ($trimmed -notmatch '^-?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)$') {
+        return $false
+    }
+
+    $style = [System.Globalization.NumberStyles]::AllowLeadingSign -bor [System.Globalization.NumberStyles]::AllowDecimalPoint
+    $culture = [System.Globalization.CultureInfo]::InvariantCulture
+    [double]$value = 0.0
+    return [double]::TryParse($trimmed, $style, $culture, [ref]$value) -and
+        -not [double]::IsInfinity($value) -and
+        -not [double]::IsNaN($value) -and
+        [math]::Abs($value) -le [single]::MaxValue
+}
+
+function Test-StrictDecimalFloatRange([string]$Text, [double]$MinValue, [double]$MaxValue) {
+    if (-not (Test-StrictDecimalFloat $Text)) {
+        return $false
+    }
+
+    $style = [System.Globalization.NumberStyles]::AllowLeadingSign -bor [System.Globalization.NumberStyles]::AllowDecimalPoint
+    $culture = [System.Globalization.CultureInfo]::InvariantCulture
+    [double]$value = 0.0
+    return [double]::TryParse($Text.Trim(), $style, $culture, [ref]$value) -and
+        $value -ge $MinValue -and
+        $value -le $MaxValue
+}
+
+function Test-StrictInt32([string]$Text) {
+    $trimmed = $Text.Trim()
+    if ($trimmed -notmatch '^-?[0-9]+$') {
+        return $false
+    }
+
+    [long]$value = 0
+    return [long]::TryParse($trimmed, [ref]$value) -and
+        $value -ge -[int]::MaxValue -and
+        $value -le [int]::MaxValue
+}
+
+function Test-StrictInt32Range([string]$Text, [int]$MinValue, [int]$MaxValue) {
+    if (-not (Test-StrictInt32 $Text)) {
+        return $false
+    }
+
+    [long]$value = 0
+    return [long]::TryParse($Text.Trim(), [ref]$value) -and
+        $value -ge $MinValue -and
+        $value -le $MaxValue
+}
+
+function Test-StrictUInt32OrHex([string]$Text) {
+    $trimmed = $Text.Trim()
+    $upper = $trimmed.ToUpperInvariant()
+    if ($upper -match '^0X[0-9A-F]{1,8}$') {
+        [uint64]$hexValue = 0
+        return [uint64]::TryParse($upper.Substring(2), [System.Globalization.NumberStyles]::HexNumber, [System.Globalization.CultureInfo]::InvariantCulture, [ref]$hexValue) -and
+            $hexValue -le [uint32]::MaxValue
+    }
+
+    if ($trimmed -notmatch '^[0-9]+$') {
+        return $false
+    }
+
+    [uint64]$decimalValue = 0
+    return [uint64]::TryParse($trimmed, [ref]$decimalValue) -and
+        $decimalValue -le [uint32]::MaxValue
+}
+
 $schemaPath = Join-Path $RepoRoot 'Docs\Modding\Signal_Schema.json'
 $contractIndexPath = Join-Path $RepoRoot 'Docs\Modding\README.md'
 $specPath = Join-Path $RepoRoot 'Docs\Modding\Mod_API_Specification.md'
@@ -31,6 +100,9 @@ $runtimePlaybookPath = Join-Path $RepoRoot 'Docs\Modding\Runtime_Verification_Pl
 $signalsPath = Join-Path $RepoRoot 'Assets\_Project\Scripts\Core\GlobalSignals.cs'
 $projectionPath = Join-Path $RepoRoot 'Assets\_Project\Scripts\ModdingAPI\ModEventProjectionBridge.cs'
 $commandDispatcherPath = Join-Path $RepoRoot 'Assets\_Project\Scripts\ModdingAPI\ModCommandDispatcher.cs'
+$futureCommandSandboxPath = Join-Path $RepoRoot 'Assets\_Project\Scripts\ModdingAPI\FutureCommandSandboxValidator.cs'
+$allowedOpcodesCsvPath = Join-Path $RepoRoot 'Docs\Modding\allowed_opcodes.csv'
+$kernelTuningProfilesCsvPath = Join-Path $RepoRoot 'Docs\Modding\kernel_tuning_profiles.csv'
 $hectonApiPath = Join-Path $RepoRoot 'Assets\_Project\Scripts\ModdingAPI\HectonAPI.cs'
 $hectonEventBusPath = Join-Path $RepoRoot 'Assets\_Project\Scripts\ModdingAPI\HectonEventBus.cs'
 $eventContractsPath = Join-Path $RepoRoot 'Assets\_Project\Scripts\ModdingAPI\ModEventContracts.cs'
@@ -61,6 +133,9 @@ Assert-True (Test-Path -LiteralPath $runtimePlaybookPath) "Missing runtime verif
 Assert-True (Test-Path -LiteralPath $signalsPath) "Missing signal source: $signalsPath"
 Assert-True (Test-Path -LiteralPath $projectionPath) "Missing projection bridge: $projectionPath"
 Assert-True (Test-Path -LiteralPath $commandDispatcherPath) "Missing command dispatcher: $commandDispatcherPath"
+Assert-True (Test-Path -LiteralPath $futureCommandSandboxPath) "Missing future command sandbox validator: $futureCommandSandboxPath"
+Assert-True (Test-Path -LiteralPath $allowedOpcodesCsvPath) "Missing allowed opcode CSV: $allowedOpcodesCsvPath"
+Assert-True (Test-Path -LiteralPath $kernelTuningProfilesCsvPath) "Missing kernel tuning profiles CSV: $kernelTuningProfilesCsvPath"
 Assert-True (Test-Path -LiteralPath $hectonApiPath) "Missing HectonAPI facade: $hectonApiPath"
 Assert-True (Test-Path -LiteralPath $hectonEventBusPath) "Missing HectonEventBus source: $hectonEventBusPath"
 Assert-True (Test-Path -LiteralPath $eventContractsPath) "Missing event contracts: $eventContractsPath"
@@ -81,6 +156,9 @@ $sampleModSpecText = Get-Content -Raw -LiteralPath $sampleModSpecPath
 $signalSource = Get-Content -Raw -LiteralPath $signalsPath
 $projectionSource = Get-Content -Raw -LiteralPath $projectionPath
 $commandDispatcherSource = Get-Content -Raw -LiteralPath $commandDispatcherPath
+$futureCommandSandboxSource = Get-Content -Raw -LiteralPath $futureCommandSandboxPath
+$allowedOpcodesCsvText = Get-Content -Raw -LiteralPath $allowedOpcodesCsvPath
+$kernelTuningProfilesCsvText = Get-Content -Raw -LiteralPath $kernelTuningProfilesCsvPath
 $hectonApiSource = Get-Content -Raw -LiteralPath $hectonApiPath
 $hectonEventBusSource = Get-Content -Raw -LiteralPath $hectonEventBusPath
 $eventContractsSource = Get-Content -Raw -LiteralPath $eventContractsPath
@@ -186,8 +264,8 @@ $modEventDtoOffsets = @([regex]::Matches($eventContractsSource, 'FieldOffset\((\
 $modCommandSizeMatch = [regex]::Match($commandDispatcherSource, 'StructLayout\(LayoutKind\.(?:Sequential|Explicit),\s*Size\s*=\s*(\d+)\)\]\s*public\s+struct\s+ModCommand', 'Singleline')
 Assert-True $modCommandSizeMatch.Success 'Missing ModCommand 64-byte layout size declaration.'
 $modCommandSize = [int]$modCommandSizeMatch.Groups[1].Value
-$modAupResponseSizeMatch = [regex]::Match($spatialContractsSource, 'StructLayout\(LayoutKind\.Sequential,\s*Size\s*=\s*(\d+)\)\]\s*public\s+struct\s+ModAupResponse', 'Singleline')
-Assert-True $modAupResponseSizeMatch.Success 'Missing ModAupResponse sequential size declaration.'
+$modAupResponseSizeMatch = [regex]::Match($spatialContractsSource, 'StructLayout\(LayoutKind\.(?:Sequential|Explicit),\s*Size\s*=\s*(\d+)\)\]\s*public\s+struct\s+ModAupResponse', 'Singleline')
+Assert-True $modAupResponseSizeMatch.Success 'Missing ModAupResponse size declaration.'
 $modAupResponseSize = [int]$modAupResponseSizeMatch.Groups[1].Value
 $currentApiVersionMatch = [regex]::Match($modLoaderSource, 'internal\s+const\s+int\s+CurrentAPIVersion\s*=\s*(\d+);')
 Assert-True $currentApiVersionMatch.Success 'Missing ModLoader.CurrentAPIVersion.'
@@ -261,7 +339,7 @@ $contentMethodPatterns = [ordered]@{
     'RegisterBuildable' = 'public\s+static\s+bool\s+RegisterBuildable\s*\('
     'TryFindBuildable' = 'public\s+static\s+bool\s+TryFindBuildable\s*\('
     'RegisterBiomeMutation' = 'public\s+static\s+bool\s+RegisterBiomeMutation\s*\('
-    'InjectTable' = 'public\s+static\s+void\s+InjectTable\s*\('
+    'InjectBabelEnvelope' = 'public\s+static\s+void\s+InjectBabelEnvelope\s*\('
     'ShowInfo' = 'public\s+static\s+void\s+ShowInfo\s*\('
     'ShowWarning' = 'public\s+static\s+void\s+ShowWarning\s*\('
     'ShowCritical' = 'public\s+static\s+void\s+ShowCritical\s*\('
@@ -273,6 +351,94 @@ foreach ($entry in $contentMethodPatterns.GetEnumerator()) {
     Assert-True ([regex]::IsMatch($hectonApiSource, $entry.Value, 'Singleline')) "Missing public content method pattern: $($entry.Key)"
     $publicContentMethodNames += $entry.Key
 }
+
+$futureCommandOpcodeBlockMatch = [regex]::Match($futureCommandSandboxSource, 'public\s+static\s+class\s+FutureCommandOpcodes\s*\{(?<body>.*?)\n\s*\}', 'Singleline')
+Assert-True $futureCommandOpcodeBlockMatch.Success 'FutureCommandOpcodes class missing.'
+$futureCommandOpcodeMatches = [regex]::Matches($futureCommandOpcodeBlockMatch.Groups['body'].Value, 'public\s+const\s+uint\s+([A-Za-z0-9_]+)\s*=\s*(0x[0-9A-Fa-f]+)u;')
+Assert-True ($futureCommandOpcodeMatches.Count -gt 0) 'FutureCommandOpcodes constants missing.'
+$futureCommandOpcodeByName = @{}
+foreach ($match in $futureCommandOpcodeMatches) {
+    $futureCommandOpcodeByName[$match.Groups[1].Value] = $match.Groups[2].Value.ToUpperInvariant()
+}
+$futureCommandOpcodeHexes = @($futureCommandOpcodeMatches | ForEach-Object { $_.Groups[2].Value.ToUpperInvariant() } | Sort-Object -Unique)
+$kernelOptionalPriorityMaxMatch = [regex]::Match($futureCommandSandboxSource, 'KernelOptionalPriorityMax\s*=\s*([0-9.]+)f;')
+$kernelSurvivalPriorityMinMatch = [regex]::Match($futureCommandSandboxSource, 'KernelSurvivalPriorityMin\s*=\s*([0-9.]+)f;')
+$kernelMaxProfileCommandsPerFrameMatch = [regex]::Match($futureCommandSandboxSource, 'KernelMaxProfileCommandsPerFrame\s*=\s*([0-9]+);')
+Assert-True $kernelOptionalPriorityMaxMatch.Success 'FutureCommandSandboxConstants.KernelOptionalPriorityMax missing.'
+Assert-True $kernelSurvivalPriorityMinMatch.Success 'FutureCommandSandboxConstants.KernelSurvivalPriorityMin missing.'
+Assert-True $kernelMaxProfileCommandsPerFrameMatch.Success 'FutureCommandSandboxConstants.KernelMaxProfileCommandsPerFrame missing.'
+$kernelOptionalPriorityMax = [double]::Parse($kernelOptionalPriorityMaxMatch.Groups[1].Value, [System.Globalization.CultureInfo]::InvariantCulture)
+$kernelSurvivalPriorityMin = [double]::Parse($kernelSurvivalPriorityMinMatch.Groups[1].Value, [System.Globalization.CultureInfo]::InvariantCulture)
+$kernelMaxProfileCommandsPerFrame = [int]::Parse($kernelMaxProfileCommandsPerFrameMatch.Groups[1].Value, [System.Globalization.CultureInfo]::InvariantCulture)
+$allowedOpcodeCsvRawHexes = @()
+foreach ($line in ($allowedOpcodesCsvText -split "`n")) {
+    $trimmed = $line.Trim()
+    if ($trimmed.Length -eq 0 -or $trimmed.StartsWith('#')) {
+        continue
+    }
+
+    $token = @($trimmed -split '[,\s]', 2)[0].ToUpperInvariant()
+    Assert-True ($token -match '^0X[0-9A-F]{1,8}$') "Allowed opcode CSV contains non-hex token: $token"
+    $allowedOpcodeCsvRawHexes += $token
+}
+
+$allowedOpcodeCsvHexes = @($allowedOpcodeCsvRawHexes | Sort-Object -Unique)
+Assert-True ($allowedOpcodeCsvRawHexes.Count -eq $allowedOpcodeCsvHexes.Count) 'Allowed opcode CSV contains duplicate opcode hashes.'
+$missingFutureCommandOpcodesInCsv = @($futureCommandOpcodeHexes | Where-Object { $allowedOpcodeCsvHexes -notcontains $_ })
+$extraAllowedOpcodeCsvHexes = @($allowedOpcodeCsvHexes | Where-Object { $futureCommandOpcodeHexes -notcontains $_ })
+Assert-True ($missingFutureCommandOpcodesInCsv.Count -eq 0) "FutureCommandOpcodes missing from allowed_opcodes.csv: $($missingFutureCommandOpcodesInCsv -join ', ')"
+Assert-True ($extraAllowedOpcodeCsvHexes.Count -eq 0) "allowed_opcodes.csv contains hashes missing from FutureCommandOpcodes: $($extraAllowedOpcodeCsvHexes -join ', ')"
+
+$expectedKernelTuningProfileNames = @(
+    'SurvivalOverride',
+    'HapticPulse',
+    'SubtitleCue'
+)
+$expectedKernelTuningProfileHexes = @()
+foreach ($name in $expectedKernelTuningProfileNames) {
+    Assert-True ($futureCommandOpcodeByName.ContainsKey($name)) "FutureCommandOpcodes missing expected kernel tuning opcode: $name"
+    $expectedKernelTuningProfileHexes += $futureCommandOpcodeByName[$name]
+}
+$expectedKernelTuningProfileHexes = @($expectedKernelTuningProfileHexes | Sort-Object -Unique)
+$kernelTuningCsvRawHexes = @()
+foreach ($line in ($kernelTuningProfilesCsvText -split "`n")) {
+    $trimmed = $line.Trim()
+    if ($trimmed.Length -eq 0 -or $trimmed.StartsWith('#')) {
+        continue
+    }
+
+    $parts = @($trimmed -split ',')
+    Assert-True ($parts.Count -eq 7) "Kernel tuning CSV row must contain exactly 7 columns: $trimmed"
+
+    $token = $parts[0].Trim().ToUpperInvariant()
+    if ($token -eq 'OPCODE' -or $token -eq 'OPCODEHASH') {
+        continue
+    }
+
+    Assert-True ($token -match '^0X[0-9A-F]{1,8}$') "Kernel tuning CSV contains non-hex opcode token: $token"
+    Assert-True ($futureCommandOpcodeHexes -contains $token) "Kernel tuning CSV contains hash missing from FutureCommandOpcodes: $token"
+    Assert-True (Test-StrictDecimalFloatRange $parts[1] 0.0 1.0) "Kernel tuning CSV priority is outside [0,1] for $token"
+    Assert-True (Test-StrictInt32Range $parts[2] 1 $kernelMaxProfileCommandsPerFrame) "Kernel tuning CSV max_per_frame is outside [1,$kernelMaxProfileCommandsPerFrame] for $token"
+    Assert-True (Test-StrictUInt32OrHex $parts[3]) "Kernel tuning CSV flags are malformed for $token"
+    Assert-True (Test-StrictDecimalFloatRange $parts[4] 1.0 100000.0) "Kernel tuning CSV range is outside [1,100000] for $token"
+    Assert-True (Test-StrictDecimalFloatRange $parts[5] 0.01 30.0) "Kernel tuning CSV max_duration is outside [0.01,30] for $token"
+    Assert-True (Test-StrictDecimalFloatRange $parts[6] 0.0 ([single]::MaxValue)) "Kernel tuning CSV intensity_scale is negative or malformed for $token"
+    $priorityValue = [double]::Parse($parts[1].Trim(), [System.Globalization.CultureInfo]::InvariantCulture)
+    if ($token -eq $futureCommandOpcodeByName['SurvivalOverride']) {
+        Assert-True ($priorityValue -ge $kernelSurvivalPriorityMin) "SurvivalOverride priority must stay in protected bucket. Value=$priorityValue Minimum=$kernelSurvivalPriorityMin"
+    }
+    if ($token -eq $futureCommandOpcodeByName['HapticPulse'] -or $token -eq $futureCommandOpcodeByName['SubtitleCue']) {
+        Assert-True ($priorityValue -le $kernelOptionalPriorityMax) "Optional command priority must stay in optional shed bucket. Token=$token Value=$priorityValue Maximum=$kernelOptionalPriorityMax"
+    }
+    $kernelTuningCsvRawHexes += $token
+}
+
+$kernelTuningCsvHexes = @($kernelTuningCsvRawHexes | Sort-Object -Unique)
+Assert-True ($kernelTuningCsvRawHexes.Count -eq $kernelTuningCsvHexes.Count) 'Kernel tuning CSV contains duplicate opcode hashes.'
+$missingKernelTuningCsvHexes = @($expectedKernelTuningProfileHexes | Where-Object { $kernelTuningCsvHexes -notcontains $_ })
+$extraKernelTuningCsvHexes = @($kernelTuningCsvHexes | Where-Object { $expectedKernelTuningProfileHexes -notcontains $_ })
+Assert-True ($missingKernelTuningCsvHexes.Count -eq 0) "Kernel tuning CSV missing expected command-kernel profiles: $($missingKernelTuningCsvHexes -join ', ')"
+Assert-True ($extraKernelTuningCsvHexes.Count -eq 0) "Kernel tuning CSV contains non-kernel profiles: $($extraKernelTuningCsvHexes -join ', ')"
 
 Assert-True ($schema.status -eq 'MOD_API_DEFINED_STATIC_SOURCE_RUNTIME_PENDING') "Unexpected schema status: $($schema.status)"
 Assert-True ($schema.globalRules.directSignalBusAccessForMods -eq $false) 'Schema allows direct SignalBus access.'
@@ -483,6 +649,8 @@ $requiredChecklistLinks = @(
     'Resource_Content_Audit_Matrix.md',
     'Runtime_Verification_Playbook.md',
     'Sample_InfiniteO2_Mod.md',
+    'allowed_opcodes.csv',
+    'kernel_tuning_profiles.csv',
     'Validate_Mod_API_Static.ps1'
 )
 
@@ -503,6 +671,7 @@ $requiredChecklistPhrases = @(
     'Change mod save payload boundary',
     'Change runtime verification criteria',
     'Change sample mod spec',
+    'Change future command envelope allowlist or kernel tuning CSV',
     'Schema-only expansion is invalid',
     'Markdown-only expansion is invalid',
     'Runtime-verified status is invalid'
@@ -525,7 +694,9 @@ $requiredIndexLinks = @(
     'Payload_Layout_Audit_Matrix.md',
     'Loader_Save_Audit_Matrix.md',
     'Event_Subscription_Audit_Matrix.md',
-    'Resource_Content_Audit_Matrix.md'
+    'Resource_Content_Audit_Matrix.md',
+    'allowed_opcodes.csv',
+    'kernel_tuning_profiles.csv'
 )
 
 foreach ($requiredIndexLink in $requiredIndexLinks) {
@@ -597,6 +768,8 @@ $result = [pscustomobject]@{
     AllowedProjectedSignals = $allowedSignals.Count
     DeniedByDefaultSignals = $uniqueSignals.Count - $allowedSignals.Count
     AcceptedCommandOpcodes = $acceptedOpcodes.Count
+    FutureCommandAllowedOpcodeCount = $allowedOpcodeCsvHexes.Count
+    KernelTuningProfileCount = $kernelTuningCsvHexes.Count
     CommandRejectReasons = $rejectReasonNames.Count
     PublicApiSurfaces = $apiSurfaceNames.Count
     PublicApiMethods = $publicApiMethods.Count

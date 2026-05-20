@@ -11,8 +11,8 @@ namespace Hecton8.Caves
     [DisallowMultipleComponent]
     public sealed class CaveBioRootsGenerator : MonoBehaviour, ITickable, IUpdatable
     {
-        private const string RootNamePrefix = "_BioRoot_";
-        private const int RootNameCacheCapacity = 32;
+        private const int MaxRootCount = 32;
+        private const string LegacyRootNamePrefix = "_BioRoot_";
         private const int SwayLutSize = 1024;
         private const int SwayLutMask = SwayLutSize - 1;
         private const int SwayLutQuarter = SwayLutSize >> 2;
@@ -20,9 +20,8 @@ namespace Hecton8.Caves
         private const float Hash24ToUnit = 1f / 16777216f;
         private const float CeilingAnchorInset = 0.12f;
         private static readonly float[] _SwaySinLut = CreateSwaySinLut(); // COLD ALLOC: float[1024] - visual root sway sine LUT - owner: CaveBioRootsGenerator
-        private static readonly string[] _RootNames = CreateTwoDigitNameCache(RootNamePrefix, RootNameCacheCapacity); // COLD ALLOC: string[32] — bounded bio-root child names — owner: CaveBioRootsGenerator
 
-        [Header("── Runtime Wiring ──────────────────")]
+        [Header("Runtime Wiring")]
         [SerializeField]
         [Tooltip("Voxel volume that owns the cave mesh and local-space bounds.")]
         private HectonVoxelVolume volume;
@@ -48,8 +47,8 @@ namespace Hecton8.Caves
         private Color _glowColor;
         private float _swayTime;
         private bool _registeredTick;
-        private LineRenderer[] _rootRenderers;
-        private Transform[] _rootTransforms;
+        private IConnectionSplineBatchRendererService _splineRenderer;
+        private long[] _rootLinkIds;
         private Vector3[][] _rootPositions;
         private Vector3[] _rootAnchorsLocal;
         private float[] _rootLengths;
@@ -84,17 +83,13 @@ namespace Hecton8.Caves
             _rootCount = Mathf.Clamp(
                 Mathf.RoundToInt(config.maxCount * Mathf.Clamp01(globalIntensity)),
                 0,
-                Mathf.Min(config.maxCount, RootNameCacheCapacity));
+                Mathf.Min(config.maxCount, MaxRootCount));
 
             EnsureBuffers();
-            EnsureRootRenderers();
 
             for (int i = 0; i < _rootCount; i++)
             {
-                ConfigureRenderer(i);
                 ResolveAnchor(i);
-                if (_rootTransforms[i] != null && !_rootTransforms[i].gameObject.activeSelf)
-                    _rootTransforms[i].gameObject.SetActive(true);
             }
 
             DisableUnusedRoots();
@@ -123,9 +118,8 @@ namespace Hecton8.Caves
 
             for (int i = 0; i < _rootCount; i++)
             {
-                LineRenderer renderer = _rootRenderers[i];
                 Vector3[] positions = _rootPositions[i];
-                if (renderer == null || positions == null)
+                if (positions == null)
                     continue;
 
                 Vector3 anchorLocal = _rootAnchorsLocal[i];
@@ -146,7 +140,7 @@ namespace Hecton8.Caves
                     positions[segmentIndex] = anchorLocal + segmentOffset + (Vector3.down * (length * t));
                 }
 
-                renderer.SetPositions(positions);
+                SubmitRootSpline(i, positions, segmentCount);
             }
         }
 
@@ -164,78 +158,34 @@ namespace Hecton8.Caves
 
         private void OnDisable()
         {
+            RemoveAllRootLinks();
             TryUnregister();
         }
 
         private void OnDestroy()
         {
+            RemoveAllRootLinks();
             TryUnregister();
         }
 
         private void EnsureBuffers()
         {
-            if (_rootRenderers == null || _rootRenderers.Length != _rootCount)
+            if (_rootLinkIds == null || _rootLinkIds.Length != _rootCount)
             {
-                _rootRenderers = new LineRenderer[_rootCount]; // COLD ALLOC: LineRenderer[_rootCount] — cached per-root renderers — owner: CaveBioRootsGenerator
-                _rootTransforms = new Transform[_rootCount]; // COLD ALLOC: Transform[_rootCount] — cached per-root transforms — owner: CaveBioRootsGenerator
-                _rootPositions = new Vector3[_rootCount][]; // COLD ALLOC: Vector3[_rootCount][] — cached line position buffers — owner: CaveBioRootsGenerator
-                _rootAnchorsLocal = new Vector3[_rootCount]; // COLD ALLOC: Vector3[_rootCount] — cached local-space root anchors — owner: CaveBioRootsGenerator
-                _rootLengths = new float[_rootCount]; // COLD ALLOC: float[_rootCount] — cached root lengths — owner: CaveBioRootsGenerator
-                _rootPhases = new float[_rootCount]; // COLD ALLOC: float[_rootCount] — cached root sway phase offsets — owner: CaveBioRootsGenerator
+                RemoveAllRootLinks();
+                _rootLinkIds = new long[_rootCount]; // COLD ALLOC: long[_rootCount] - procedural root spline link IDs - owner: CaveBioRootsGenerator
+                _rootPositions = new Vector3[_rootCount][]; // COLD ALLOC: Vector3[_rootCount][] - cached spline position buffers - owner: CaveBioRootsGenerator
+                _rootAnchorsLocal = new Vector3[_rootCount]; // COLD ALLOC: Vector3[_rootCount] - cached local-space root anchors - owner: CaveBioRootsGenerator
+                _rootLengths = new float[_rootCount]; // COLD ALLOC: float[_rootCount] - cached root lengths - owner: CaveBioRootsGenerator
+                _rootPhases = new float[_rootCount]; // COLD ALLOC: float[_rootCount] - cached root sway phase offsets - owner: CaveBioRootsGenerator
             }
 
             for (int i = 0; i < _rootCount; i++)
             {
+                _rootLinkIds[i] = ResolveRootLinkId(i);
                 if (_rootPositions[i] == null || _rootPositions[i].Length != _segmentsPerRoot)
-                    _rootPositions[i] = new Vector3[_segmentsPerRoot]; // COLD ALLOC: Vector3[_segmentsPerRoot] — per-root line positions — owner: CaveBioRootsGenerator
+                    _rootPositions[i] = new Vector3[_segmentsPerRoot]; // COLD ALLOC: Vector3[_segmentsPerRoot] - per-root spline positions - owner: CaveBioRootsGenerator
             }
-        }
-
-        private void EnsureRootRenderers()
-        {
-            for (int i = 0; i < _rootCount; i++)
-            {
-                if (_rootRenderers[i] != null)
-                    continue;
-
-                string rootName = GetCachedRootName(i);
-                Transform child = transform.Find(rootName);
-                if (child == null)
-                {
-                    // COLD ALLOC: GameObject[1] — ceiling root visual child — owner: CaveBioRootsGenerator
-                    GameObject childObject = new GameObject(rootName);
-                    child = childObject.transform;
-                    child.SetParent(transform, false);
-                }
-
-                if (!child.TryGetComponent(out LineRenderer renderer))
-                {
-                    // COLD ALLOC: LineRenderer[1] — procedural cave-root visual — owner: CaveBioRootsGenerator
-                    renderer = child.gameObject.AddComponent<LineRenderer>();
-                }
-
-                _rootTransforms[i] = child;
-                _rootRenderers[i] = renderer;
-            }
-        }
-
-        private void ConfigureRenderer(int rootIndex)
-        {
-            LineRenderer renderer = _rootRenderers[rootIndex];
-            if (renderer == null)
-                return;
-
-            renderer.useWorldSpace = false;
-            renderer.alignment = LineAlignment.View;
-            renderer.textureMode = LineTextureMode.Stretch;
-            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            renderer.receiveShadows = false;
-            renderer.positionCount = _segmentsPerRoot;
-            renderer.widthMultiplier = 1f;
-            renderer.startWidth = _topWidth;
-            renderer.endWidth = _tipWidth;
-            renderer.startColor = _glowColor;
-            renderer.endColor = new Color(_glowColor.r, _glowColor.g, _glowColor.b, 0.18f);
         }
 
         private void DisableUnusedRoots()
@@ -244,18 +194,19 @@ namespace Hecton8.Caves
             for (int i = _rootCount; i < childCount; i++)
             {
                 Transform child = transform.GetChild(i);
-                if (child != null && child.gameObject.activeSelf)
+                if (child != null && HasLegacyRootName(child.name) && child.gameObject.activeSelf)
                     child.gameObject.SetActive(false);
             }
         }
 
         private void DisableAllRoots()
         {
+            RemoveAllRootLinks();
             int childCount = transform.childCount;
             for (int i = 0; i < childCount; i++)
             {
                 Transform child = transform.GetChild(i);
-                if (child != null && child.gameObject.activeSelf)
+                if (child != null && HasLegacyRootName(child.name) && child.gameObject.activeSelf)
                     child.gameObject.SetActive(false);
             }
         }
@@ -272,10 +223,81 @@ namespace Hecton8.Caves
             _rootLengths[rootIndex] = math.lerp(_minLength, _maxLength, Hash01(rootIndex + 1, 101));
             _rootPhases[rootIndex] = Hash01(rootIndex + 1, 149) * Mathf.PI * 2f;
 
-            if (_rootTransforms[rootIndex] != null)
+            return true;
+        }
+
+        private void SubmitRootSpline(int rootIndex, Vector3[] positions, int segmentCount)
+        {
+            if (_volumeTransform == null ||
+                _rootLinkIds == null ||
+                (uint)rootIndex >= (uint)_rootLinkIds.Length ||
+                positions == null ||
+                segmentCount < 2)
             {
-                _rootTransforms[rootIndex].localPosition = Vector3.zero;
-                _rootTransforms[rootIndex].localRotation = Quaternion.identity;
+                return;
+            }
+
+            Vector3 localStart = positions[0];
+            Vector3 localEnd = positions[segmentCount - 1];
+            Vector3 localStartForward = positions[1] - localStart;
+            Vector3 localEndForward = positions[segmentCount - 2] - localEnd;
+            Vector3 start = _volumeTransform.TransformPoint(localStart);
+            Vector3 end = _volumeTransform.TransformPoint(localEnd);
+            Vector3 startForward = ResolveSafeDirection(_volumeTransform.TransformDirection(localStartForward), Vector3.down);
+            Vector3 endForward = ResolveSafeDirection(_volumeTransform.TransformDirection(localEndForward), Vector3.up);
+            float radius = math.max(0.001f, (_topWidth + _tipWidth) * 0.25f);
+            SplineDescriptor descriptor = LogisticsPipeBuilder.CreateSocketDescriptor(
+                start,
+                end,
+                startForward,
+                endForward,
+                radius,
+                PipeRenderFlags.None);
+            if (TryResolveSplineRenderer(out IConnectionSplineBatchRendererService renderer))
+                renderer.SubmitPipeLink(_rootLinkIds[rootIndex], descriptor, _glowColor);
+        }
+
+        private void RemoveAllRootLinks()
+        {
+            if (_rootLinkIds == null)
+                return;
+
+            for (int i = 0; i < _rootLinkIds.Length; i++)
+            {
+                long linkId = _rootLinkIds[i];
+                if (linkId != 0L && TryResolveSplineRenderer(out IConnectionSplineBatchRendererService renderer))
+                    renderer.RemovePipeLink(linkId);
+            }
+        }
+
+        private bool TryResolveSplineRenderer(out IConnectionSplineBatchRendererService renderer)
+        {
+            renderer = _splineRenderer;
+            if (renderer != null)
+                return true;
+
+            if (!GlobalRegistry.TryGet(out renderer) || renderer == null)
+                return false;
+
+            _splineRenderer = renderer;
+            return true;
+        }
+
+        private long ResolveRootLinkId(int rootIndex)
+        {
+            long owner = GetInstanceID();
+            return (owner << 32) ^ (uint)rootIndex;
+        }
+
+        private static bool HasLegacyRootName(string name)
+        {
+            if (string.IsNullOrEmpty(name) || name.Length < LegacyRootNamePrefix.Length)
+                return false;
+
+            for (int i = 0; i < LegacyRootNamePrefix.Length; i++)
+            {
+                if (name[i] != LegacyRootNamePrefix[i])
+                    return false;
             }
 
             return true;
@@ -385,6 +407,18 @@ namespace Hecton8.Caves
             return (int)(radians * (SwayLutSize * InvTau));
         }
 
+        private static Vector3 ResolveSafeDirection(Vector3 value, Vector3 fallback)
+        {
+            float sq = value.sqrMagnitude;
+            if (math.isfinite(sq) && sq > 0.000001f)
+                return value * math.rsqrt(sq);
+
+            float fallbackSq = fallback.sqrMagnitude;
+            return math.isfinite(fallbackSq) && fallbackSq > 0.000001f
+                ? fallback * math.rsqrt(fallbackSq)
+                : Vector3.down;
+        }
+
         private static float[] CreateSwaySinLut()
         {
             float[] values = new float[SwayLutSize];
@@ -394,22 +428,6 @@ namespace Hecton8.Caves
             }
 
             return values;
-        }
-
-        private static string GetCachedRootName(int index)
-        {
-            return (uint)index < (uint)_RootNames.Length
-                ? _RootNames[index]
-                : RootNamePrefix;
-        }
-
-        private static string[] CreateTwoDigitNameCache(string prefix, int count)
-        {
-            string[] names = new string[count];
-            for (int i = 0; i < count; i++)
-                names[i] = i < 10 ? prefix + "0" + i : prefix + i;
-
-            return names;
         }
     }
 }

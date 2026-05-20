@@ -110,6 +110,9 @@ namespace Hecton8.Lighting.Editor
             if (GUILayout.Button("Reload lighting_fixtures.csv"))
                 _target.RequestCsvReload();
 
+            if (GUILayout.Button("Reload ambient_lighting_profiles.csv"))
+                _target.RequestAmbientProfileCsvReload();
+
             if (GUILayout.Button("Dump 300-frame GI Black Box"))
                 _target.DumpBlackBoxNow();
 
@@ -122,7 +125,7 @@ namespace Hecton8.Lighting.Editor
             if (!_drawSceneProbes || _target == null)
                 return;
 
-            if (!_target.TryGetProbeGridReadback(out NativeArray<LightProbeDTO> probes, out int resolution, out double3 rootAup, out float cellSize, out int version))
+            if (!_target.TryGetProbeGridReadback(out NativeArray<CustomLightProbeDTO> probes, out int resolution, out double3 rootAup, out float cellSize, out int version))
                 return;
 
             int count = resolution * resolution * resolution;
@@ -130,14 +133,16 @@ namespace Hecton8.Lighting.Editor
             Vector3 origin = _target.transform.position;
             for (int i = 0; i < count; i += stride)
             {
-                LightProbeDTO probe = probes[i];
-                float luma = math.saturate(InteriorGIProbeMath.LuminanceL0(in probe) * 0.25f);
+                CustomLightProbeDTO probe = probes[i];
+                float3 forward = _target != null ? (float3)_target.transform.forward : new float3(0f, 0f, 1f);
+                float3 forwardColor = InteriorGIProbeMath.EvaluateDirection(in probe, forward);
+                float luma = math.saturate(math.dot(forwardColor, new float3(0.2126f, 0.7152f, 0.0722f)) * 0.25f);
                 if (luma <= 0.015f)
                     continue;
 
                 int3 coord = InteriorGIProbeMath.IndexToCoord(i, resolution);
                 Vector3 local = new Vector3((coord.x + 0.5f) * cellSize, (coord.y + 0.5f) * cellSize, (coord.z + 0.5f) * cellSize);
-                Handles.color = new Color(math.saturate(probe.R0), math.saturate(probe.G0), math.saturate(probe.B0), math.saturate(luma));
+                Handles.color = new Color(math.saturate(forwardColor.x), math.saturate(forwardColor.y), math.saturate(forwardColor.z), math.saturate(luma));
                 Handles.SphereHandleCap(0, origin + local, Quaternion.identity, math.max(0.08f, cellSize * 0.12f), EventType.Repaint);
             }
         }

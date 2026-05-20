@@ -137,12 +137,12 @@ namespace Hecton8.Core
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    [StructLayout(LayoutKind.Sequential, Pack = 16)]
+    [StructLayout(LayoutKind.Sequential)]
     public struct NativeFilterJob<T> : IJob where T : unmanaged
     {
-        [ReadOnly] public NativeArray<T> Source;
+        [ReadOnly, NoAlias] public NativeArray<T> Source;
         public FunctionPointer<NativePredicate<T>> Predicate;
-        public NativeList<T> Output;
+        [NoAlias] public NativeList<T> Output;
 
         public void Execute()
         {
@@ -159,14 +159,14 @@ namespace Hecton8.Core
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    [StructLayout(LayoutKind.Sequential, Pack = 16)]
+    [StructLayout(LayoutKind.Sequential)]
     public struct NativeSelectJob<TSource, TResult> : IJob
         where TSource : unmanaged
         where TResult : unmanaged
     {
-        [ReadOnly] public NativeArray<TSource> Source;
+        [ReadOnly, NoAlias] public NativeArray<TSource> Source;
         public FunctionPointer<NativeSelector<TSource, TResult>> Selector;
-        public NativeArray<TResult> Output;
+        [NoAlias] public NativeArray<TResult> Output;
 
         public void Execute()
         {

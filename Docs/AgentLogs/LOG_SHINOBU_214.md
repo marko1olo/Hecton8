@@ -1,0 +1,211 @@
+# SHINOBU_214 Agent Log
+
+## 2026-05-20 - PBR ARM Texture Channel Packer
+
+What was wrong:
+- Project had legacy M.A.S.K./ORM authoring ambiguity: old editor packer wrote Metallic/AO/Smoothness/Emissive PNG, while current surface doctrine requires ARM `R=AO`, `G=Roughness`, `B=Metallic`.
+- `UberNoir` was still interpreting `_MaskMap` as legacy ORM in the sampled material path.
+- No dedicated UI Toolkit pipeline existed for bulk AO/Roughness/Metallic packing, Sobel normal generation, deterministic roughness mips, macro tiling breakup, profile CSV ingestion, or live channel preview.
+- Existing material validator did not emit the required rendering optimization JSON report and did not explicitly audit roughness loose stacks for the ARM pipeline.
+
+What was done:
+- Added `HectonArmTextureChannelPacker.cs`: Editor-only ARM packer, explicit 16-byte `TexturePackerConfigDTO`, Burst jobs, unsafe pointer packing, Sobel normals, baked macro noise, Toksvig/VSM-style roughness mips, BC7 ARM texture asset output, BC5 generated normal output, layout/mock/packing JSON reports.
+- Added `TextureChannelPackerWindow.cs`: UI Toolkit forge window, folder batch queue, continuous `GlobalQualityWeight`, profile controls, unsafe byte-buffer CSV parser for `texture_packing_profiles.csv`, and ARM channel preview.
+- Replaced legacy `HectonMaskChannelPacker.cs` behavior with a compatibility entrypoint that delegates to ARM packing and rejects the old M.A.S.K. output contract.
+- Updated `Hecton8_UberNoir` shader contract: `_MaskMap` label is ARM; shader now reads AO from R, Roughness from G, Metallic from B, keeps A for emission/bio mask.
+- Extended `HectonMaterialChannelPackValidator.cs`: UberNoir coverage, roughness loose-stack detection, BC7/linear validation, and `Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json` writer with rollback/Merkle/StateRingBuffer exclusion fields.
+- Added `Docs/ARCHITECTURE/ARM_TEXTURE_PACKING_PIPELINE.md`.
+- Installed pending-run JSON artifacts at `Docs/Reports/TEXTURE_PACKING_REPORT.json` and `Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json`; prior SHINOBU_212 rendering report payload was preserved under `previousReport`.
+- Added stable `.meta` files for new Unity editor scripts.
+
+Cinematic Cheats used:
+- Baked deterministic FBM macro noise into AO/Roughness to hide 100-km tiling without adding a runtime macro sampler.
+- Generated Sobel normals offline from albedo luminance instead of synthesizing normals in the runtime material.
+- Preserved roughness variance in mipmaps offline to reduce shimmer without per-frame shader cost.
+
+Exact Microseconds saved:
+- Measured exact GPU microseconds: NOT AVAILABLE. Compiler/profiler execution was blocked by CPU gate; CPU sampled at 100/94/100 percent and project rules forbid `dotnet build` above 50 percent.
+- Exact CPU runtime cost added by new systems: 0 us; all new C# is Editor-only and wrapped in `#if UNITY_EDITOR`.
+- Static GPU model: each remediated material replaces AO + Roughness + Metallic loose sampling with one ARM sampler, saving two texture sampler reads per material. Exact frame microseconds require Unity import, material conversion, Frame Debugger, and GPU Profiler capture.
+
+Verification:
+- `git diff --check` on edited files: PASS, line-ending warnings only.
+- Static scan on owned new/edited path: no old M.A.S.K. menu, no old ORM label, no `ormSample`, no `GetPixels`, no `SetPixels`, no `EncodeToPNG`.
+- Compile check: BLOCKED BY CPU GATE. `dotnet/csc` absent; CPU remained above 50 percent. Build was not launched.
+- Unity import, Burst Inspector, asset packing run, material scan run, Frame Debugger, profiler, and GCMonitor proof: PENDING.
+
+## 2026-05-20 - Ultra Polish Pass
+
+What was wrong:
+- The previous pack job used safe NativeArray indexing after cleanup, which was safer but failed the original raw-pointer/`UnsafeUtility.AsRef` mandate.
+- Non-overlapping job arrays did not all carry `[NoAlias]`, leaving Burst alias analysis weaker than required.
+- Normal generation and mip normalization still used `math.normalize`; finite/zero guards were implicit instead of explicit.
+- The scanner rejected packer-owned `.asset` Texture2D ARM masks because they do not have a `TextureImporter`.
+- Prefab renderer material slots were not scanned explicitly.
+
+What was done:
+- `PackArmTextureJob` now receives raw `Color32*` inputs/outputs with `[ReadOnly/WriteOnly, NoAlias, NativeDisableUnsafePtrRestriction]`, uses `UnsafeUtility.AsRef`, and packs channels through `Unity.Burst.Intrinsics.v128`.
+- All non-overlapping NativeArray job fields in the packer now carry `[NoAlias]`.
+- Added guarded `SafeNormalize` and removed scanned `math.normalize` usage from owned packer jobs.
+- `TexturePackingProfile` is now explicit 96 bytes: 64-byte fixed string plus eight 4-byte scalar fields.
+- Material validator now accepts packer-owned `.asset` BC7 Texture2D masks, validates POT/mips/channel variance, and scans prefab renderer materials under `Assets/_Project/Prefabs`.
+
+Cinematic Cheats used:
+- Same Dear Lie: offline macro-noise in AO/Roughness replaces a runtime macro sampler.
+- Same offline Sobel normals and roughness-variance mips; no runtime physics/simulation added.
+
+Exact Microseconds saved:
+- Runtime CPU added: 0 us.
+- Exact GPU microseconds: still pending profiler proof.
+- Static sampler model remains two texture samples saved per remediated material by replacing loose AO/Roughness/Metallic reads with one ARM mask read.
+
+Verification:
+- Current `Docs/Tasks/CURRENT_BATCH.md` extraction succeeded with `<AGENT_PROMPT id="SHINOBU_214" role="PBR_TEXTURE_CHANNEL_PACKER" chat_name="SHINOBU_214">`.
+- Static scans pass for old ORM/M.A.S.K./pixel APIs in owned files.
+- `git diff --check` passes with line-ending warnings only.
+- Compile remains blocked by CPU gate: `dotnet/csc` absent, CPU sampled at 100 percent.
+
+<SELF_AUDIT agent_id="SHINOBU_214">
+  <TASK_RECONCILIATION>
+    <TASK id="01" status="PASS">Rendering/Environment texture manipulation scan completed; unrelated weather/cold LUTs left outside domain.</TASK>
+    <TASK id="02" status="PASS">UberNoir ARM contract corrected; loose sampler scanner installed.</TASK>
+    <TASK id="03" status="PASS">Pack job uses raw Color32 pointers and UnsafeUtility.AsRef; no properties in packing DTOs.</TASK>
+    <TASK id="04" status="PASS">TexturePackerConfigDTO explicit 16B layout installed and reportable.</TASK>
+    <TASK id="05" status="PASS">GenerateMockTexturePackJob installed for 4K stress path.</TASK>
+    <TASK id="06" status="PASS">PackArmTextureJob packs AO/Roughness/Metallic into ARM using Burst v128 lane packing.</TASK>
+    <TASK id="07" status="PASS">Sobel normal generation job installed with guarded normalization.</TASK>
+    <TASK id="08" status="PASS">Offline Dear Lie macro-noise job installed.</TASK>
+    <TASK id="09" status="PASS">Variance-preserving roughness mip chain installed.</TASK>
+    <TASK id="10" status="PASS">SetPixelData Texture2D `.asset` serialization into BakedGeometry path installed.</TASK>
+    <TASK id="11" status="PASS">InvertRoughness flag in config and pack kernel installed.</TASK>
+    <TASK id="12" status="PASS">Macro frequency consumes tile meters, macro span meters, and GlobalQualityWeight.</TASK>
+    <TASK id="13" status="PASS">Rollback/Merkle/StateRingBuffer exclusion documented and reported.</TASK>
+    <TASK id="14" status="PASS">Dense NativeArray buffers use UninitializedMemory; no MemClear path added.</TASK>
+    <TASK id="15" status="PASS">TEXTURE_PACKING_REPORT.json installed/written by pipeline.</TASK>
+    <TASK id="16" status="PASS">UI Toolkit Texture Channel Packer window installed.</TASK>
+    <TASK id="17" status="PASS">Unsafe byte-buffer CSV profile parser installed.</TASK>
+    <TASK id="18" status="PASS">ARM channel preview job/window installed.</TASK>
+    <TASK id="19" status="PASS">Material and prefab scanner writes RENDERING_OPTIMIZATION_REPORT.json.</TASK>
+    <TASK id="20" status="PASS">Static self-audit scans pass; Unity proof pending CPU gate.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT>
+    <TexturePackerConfigDTO size="16" alignment="16">
+      <field name="NormalIntensity" offset="0" size="4" />
+      <field name="RoughnessScale" offset="4" size="4" />
+      <field name="MetallicScale" offset="8" size="4" />
+      <field name="Flags" offset="12" size="4" />
+      <padding bytes="0" />
+    </TexturePackerConfigDTO>
+    <TexturePackingProfile size="96" alignment="32">
+      <field name="Name" offset="0" size="64" />
+      <field name="NormalIntensity" offset="64" size="4" />
+      <field name="RoughnessScale" offset="68" size="4" />
+      <field name="MetallicScale" offset="72" size="4" />
+      <field name="MacroNoiseStrength" offset="76" size="4" />
+      <field name="TileSizeMeters" offset="80" size="4" />
+      <field name="MacroWorldSpanMeters" offset="84" size="4" />
+      <field name="GlobalQualityWeight" offset="88" size="4" />
+      <field name="Flags" offset="92" size="4" />
+    </TexturePackingProfile>
+  </STRUCT_LAYOUT>
+  <SCALABILITY_CURVE>GlobalQualityWeight is continuous. Macro strength uses cubic smooth polynomial shaping, and FBM octave 1/2 weights fade through smoothstep gates before normalization; texture profiles scale macro strength/span and max resolution; Toksvig mips preserve roughness as thermal pressure forces lower mip sampling. No runtime binary hardware switch was introduced.</SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>No runtime system or persistent gameplay memory owner was created. VaultBufferHandle IDs requested: none. Editor-only Temp/TempJob NativeArrays are disposed in finally blocks; generated texture assets are excluded from rollback state.</H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>Pack path: PrepareSource AO/Roughness/Metallic jobs -> CombineDependencies -> PackArmTextureJob -> optional InjectMacroNoiseJob -> optional GenerateSobelNormalsJob dependency -> SetPixelData serialization. PackArmTextureJob pointer lanes use NoAlias; non-overlapping NativeArray job fields use NoAlias.</POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No runtime asmdef or sibling domain reference was added. All new C# is under Editor path and #if UNITY_EDITOR. dotnet build was not launched because CPU gate sampled 100 percent.</COMPILE_GUARD>
+  <DEAR_LIE>Before: runtime macro texture/noise sampler per material, O(pixels per frame across visible surfaces). After: offline O(texels) bake once, runtime O(1) existing ARM sampler. Macro variation is baked into AO/Roughness.</DEAR_LIE>
+</SELF_AUDIT>
+
+## 2026-05-20 - Blackbox Forensics Pass
+
+What was wrong:
+- JSON reports recorded the latest batch outcome, but the packer had no fixed 300-entry binary forensic ring for exception/NaN investigation.
+- Without a dump artifact, a failed editor import would leave only console text and partial JSON, which does not satisfy the local blackbox rule.
+
+What was done:
+- Added `TexturePackerTelemetryEntry` as `[StructLayout(LayoutKind.Explicit, Size = 64)]`.
+- Added `TexturePackerBlackBox`: Editor-only 300-entry `NativeArray<TexturePackerTelemetryEntry>` ring, disposed on assembly reload/editor quit.
+- Added automatic dump on pack exception and non-finite timing, plus manual menu `Hecton8/Rendering/Texture Channel Packer/Dump Black Box`.
+- Added dump target `Docs/AgentLogs/Dump_SHINOBU_214.bin` and reason sidecar `Docs/AgentLogs/Dump_SHINOBU_214.bin.reason.txt`.
+- Updated status, rationale, architecture doc, and reports to name the blackbox path.
+
+Cinematic Cheats used:
+- No new simulation. The visual cheat remains the offline baked macro-noise in AO/Roughness, preserving the runtime one-sampler ARM path.
+
+Exact Microseconds saved:
+- Runtime CPU/GPU added: 0 us. The blackbox exists only under `#if UNITY_EDITOR`.
+- Forensic memory: 300 * 64 = 19200 bytes persistent Editor memory.
+- Sampler model unchanged: two texture reads saved per remediated material when AO/Roughness/Metallic collapse into one ARM mask.
+
+Verification:
+- Static install proof: `TexturePackerTelemetryEntry` uses explicit 64-byte layout and the dump path is reachable from menu/exception/non-finite metrics.
+- Unity import/dump execution proof: PENDING because compile/import remains gated by CPU policy.
+
+<SELF_AUDIT agent_id="SHINOBU_214" revision="blackbox">
+  <STRUCT_LAYOUT_VERIFICATION>
+    <TexturePackerTelemetryEntry size="64" cacheLine="1">
+      <field name="FrameHash" offset="0" size="4" />
+      <field name="Flags" offset="4" size="4" />
+      <field name="Width" offset="8" size="4" />
+      <field name="Height" offset="12" size="4" />
+      <field name="PixelCount" offset="16" size="4" />
+      <field name="QueueIndex" offset="20" size="4" />
+      <field name="JobMilliseconds" offset="24" size="4" />
+      <field name="TotalMilliseconds" offset="28" size="4" />
+      <field name="OutputHash" offset="32" size="4" />
+      <field name="FaultCode" offset="36" size="4" />
+      <field name="TimestampTicks" offset="40" size="8" />
+      <field name="PathHash" offset="48" size="8" />
+      <field name="Reserved" offset="56" size="8" />
+      <padding bytes="0" />
+    </TexturePackerTelemetryEntry>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <H_PHI_VAULT_STATUS>Runtime still owns zero persistent arrays. The only new persistent NativeArray is an Editor-only 300-entry diagnostic ring required by the local blackbox rule and disposed on editor reload/quit.</H_PHI_VAULT_STATUS>
+  <COMPILE_GUARD>Build remains intentionally unlaunched: dotnet/csc absent, CPU sampled at 100 percent, local rule forbids build above 50 percent.</COMPILE_GUARD>
+</SELF_AUDIT>
+
+## 2026-05-20 - Struct Request Safety Pass
+
+What was wrong:
+- `TexturePackerRequest` is a struct, but `ValidateRequest` accepted it by value. Default `OutputName`, `OutputFolder`, and `MaxSize` mutations were discarded for fallback callers.
+- Pack dimension resolution used texture width only. A 1024x4096 source could be collapsed to a 1024 output before the max-size clamp.
+- The UI batch report could overwrite the pending report JSON without the blackbox fields added by the packer report generator.
+
+What was done:
+- Changed `ValidateRequest(TexturePackerRequest)` to `ValidateRequest(ref TexturePackerRequest)`.
+- Changed dimension selection to use max(width,height) for AO, Roughness, Metallic, and Albedo.
+- Added blackbox dump path, 64-byte entry size, and 300-entry ring length to the Forge Window batch JSON writer.
+
+Cinematic Cheats used:
+- No new runtime work. The Dear Lie remains offline macro-variation baked into ARM channels.
+
+Exact Microseconds saved:
+- Runtime added: 0 us.
+- Bake correctness impact: prevents accidental undersized outputs and invalid root asset paths; exact bake-time impact is negligible.
+
+Verification:
+- Static call surface confirms `TryPackArmAsset` now calls `ValidateRequest(ref request)`.
+- Static report surface confirms both single-pack and batch report writers emit blackbox fields.
+- Forbidden-pattern scan stayed clean for old ORM/M.A.S.K., managed pixel loops, LINQ/foreach, Random/Time, and MemClear in owned new/edited files.
+- Build remains gated: dotnet/csc absent, CPU sampled at 96 percent.
+
+## 2026-05-20 - Continuous Quality Curve Pass
+
+What was wrong:
+- Macro-noise amplitude respected `GlobalQualityWeight`, but FBM octave composition was fixed. That weakened the proof that q below 0.3 collapses toward the cheapest acceptable visual approximation.
+
+What was done:
+- `InjectMacroNoiseJob` now sends `GlobalQualityWeight` into `Fbm`.
+- `Fbm` keeps the base low-frequency octave and fades octave 1/2 weights with `math.smoothstep`, then normalizes by total weight.
+- Macro strength uses a cubic smooth polynomial quality curve instead of raw linear q.
+
+Cinematic Cheats used:
+- Same offline Dear Lie: the macro detail lives inside AO/Roughness channels, not in a runtime world-noise sampler.
+
+Exact Microseconds saved:
+- Runtime added: 0 us.
+- Runtime saved model unchanged: one macro sampler avoided and two loose PBR sampler reads removed per converted material.
+- Editor bake ALU remains cold; quality curve affects offline output only.
+
+Verification:
+- Static source surface confirms `Fbm(float2,uint,float)` consumes `GlobalQualityWeight` and uses `math.smoothstep`.
+- Build remains gated: dotnet/csc absent, CPU sampled at 99 percent.

@@ -56,7 +56,7 @@ Source-backed facade facts:
 | `Construction` | `RegisterBuildable`, `TryFindBuildable` | cold buildable overlay | Catalog injection is not scene spawning. |
 | `Ecosystem` | `RegisterBiomeMutation` | deterministic overlay | Mods provide biome mutation data, not live fauna handles. |
 | `Assets` | none public | internal forbidden Unity object accessors | Direct Unity asset references are intentionally blocked. |
-| `Localization` | `InjectTable` | cold localization overlay | Dictionary/string use is cold only. |
+| `Localization` | `InjectBabelEnvelope` | rejected binary Babel envelope seam | Runtime dictionary/string localization injection is disabled. |
 | `UI` | `ShowInfo`, `ShowWarning`, `ShowCritical`, `RegisterSetting` | presentation/settings | UI must not imply unaccepted gameplay authority. |
 | `World` | `IsGameReady`, `TryGetPlayerEntityHash` | read-only hash state | No `GameObject`, `Transform`, spawn, or despawn access. |
 | `SaveState` | `SetModString`, `GetModString` | mod-owned cold save text | JSON/text is allowed here only, never as hot-path event transport. |
@@ -69,7 +69,7 @@ GetButtonMask
 GetLoadedMods
 GetModString
 HasButtonMask
-InjectTable
+InjectBabelEnvelope
 OnBiomeChanged
 OnPlayerSpawned
 ProcessRecycle

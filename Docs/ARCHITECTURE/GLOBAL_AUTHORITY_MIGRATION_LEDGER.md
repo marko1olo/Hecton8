@@ -4,8 +4,7 @@ Date: 2026-05-19
 Status: PENDING VERIFICATION
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-19 R32 Root/Architecture R4/Proof-Wording Boundary
-
+## 2026-05-20 R45 Root/Architecture Actuality Boundary
 This document is active only where it agrees with:
 
 - `Docs/README.md`
@@ -14,11 +13,11 @@ This document is active only where it agrees with:
 - current source files
 - fresh verification logs and artifacts
 
-Current root/architecture boundary is `Docs/Reports/2026-05-19_DOCUMENTATION_R32_ARCHITECTURE_R4_AND_PROOF_WORDING_LOCAL.md`. R31 remains the prior current-boundary propagation correction; R30 remains the prior internal-currentness correction; R29 remains the prior stale-gate/global-authority correction; R28 remains the prior interior-boundary correction; R27 remains the latest source-counter/index snapshot only until a newer counter pass reruns it.
+Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL evidence. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. R42 remains the prior counter/route-boundary/proof-label correction. R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers; runtime proof remains absent.
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
 
-R32 architecture R4/proof-wording correction is the latest artifact-backed local static DOC_GLOBAL boundary for architecture/root documentation. R31 remains the prior current-boundary propagation layer, R30 remains the prior internal-currentness layer, R29 remains the prior stale-gate/global-authority layer, R28 remains the prior interior-boundary layer, and R27 remains the latest source-counter/index snapshot until rerun.
+R45 root/architecture R43/R44 residue/proof-artifact/source-counter correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 Evidence class: `STATIC_SOURCE` + `STATIC_DOC`. This ledger is not compile,
@@ -52,25 +51,19 @@ follow-up grep. Rerun before using them as gates.
 
 | Surface | Snapshot |
 |---|---:|
-| Raw `GlobalRegistry.` source lines under `Assets/_Project/Scripts` | 5953 |
-| Raw `HectonEventBus` / `GlobalSignals.Publish` / `SignalBus<T>.Push/TryPush` hits | 585 |
-| Raw `GlobalSignals.cs` `NativeQueue<...>` references | 115 |
-| Raw `GlobalSignals.cs` `SignalBus<T>.Configure/EnsureInitialized` hits | 265 |
-| Raw native collection type references under `Assets/_Project/Scripts` | 13364 |
-| Latest artifact `GlobalRegistrySurface` | 5552 |
-| Latest artifact `SignalBusPush` | 495 |
-| Latest artifact `EventPublish` | 25 |
-| Latest artifact `DataVaultRefs` | 2359 |
-| Latest artifact `NativeArrayRefs` | 9206 |
-| Latest artifact `OwnerBlockedNativeArrayRefs` | 5108 |
+| Raw `GlobalRegistry.` source lines under `Assets/_Project` | 6101 |
+| Raw `HectonEventBus` / `GlobalSignals.Publish` / `SignalBus<T>.Push/TryPush` plus direct publish/subscribe token hits under `Assets/_Project` | 1200 |
+| Raw `GlobalSignals.cs` `NativeQueue<...>` references | 116 |
+| Raw `GlobalSignals.cs` `SignalBus<T>.Configure/EnsureInitialized` hits | 271 |
+| Raw native collection line hits under `Assets/_Project` using `NativeArray|NativeList|NativeHashMap|NativeQueue` | 16397 |
+| Historical HFI artifact `GlobalRegistrySurface` | 5552 |
+| Historical HFI artifact `SignalBusPush` | 495 |
+| Historical HFI artifact `EventPublish` | 25 |
+| Historical HFI artifact `DataVaultRefs` | 2359 |
+| Historical HFI artifact `NativeArrayRefs` | 9206 |
+| Historical HFI artifact `OwnerBlockedNativeArrayRefs` | 5108 |
 
-2026-05-19 SHINOBU_02 read-only grep recapture for orientation only:
-`GlobalRegistry.` line hits `5953`, bus-publish line hits `585`,
-`GlobalSignals.cs` `NativeQueue<...>` line hits `115`,
-`SignalBus<T>.Configure/EnsureInitialized` hits `265`, direct
-`CreateQueue(...)` slots `73`, and typed `SignalBus<T>.EnsureInitialized()`
-lanes `132`. These are static-source orientation values, not gates, until the
-exact scan command is locked and rerun before acceptance.
+2026-05-20 DOC_GLOBAL R43 correction to the R42 static grep recapture for orientation only: `GlobalRegistry.` line hits `6101`, bus-publish/subscribe line hits `1200`, `GlobalSignals.cs` `NativeQueue<...>` refs `116`, native-collection line hits `16397`, `SignalBus<T>.Configure/EnsureInitialized` hits `271`, direct `CreateQueue(...)` slots `73`, typed `SignalBus<T>.EnsureInitialized()` lanes inside `GlobalSignals.cs` `135`, and broader script-level typed-lane matches `1328`. These are static-source orientation values, not gates, until the exact scan command is locked and rerun before acceptance.
 
 Interpretation: static HFI evidence does not prove global terminal failure, but
 global-authority growth is a controlled migration risk.
@@ -164,6 +157,36 @@ Native collection ownership:
 rg -n "\\bNative(Array|List|HashMap|ParallelHashMap|Queue)<" Assets/_Project/Scripts -g "*.cs"
 ```
 
+Unified read-only global authority gate:
+
+```powershell
+python Tools/GlobalAuthorityGate.py
+```
+
+Prioritized architecture hotlist:
+
+```powershell
+python Tools/ArchitectureRiskHotlistAudit.py
+```
+
+Current domain burn-down plan:
+
+```text
+Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BURN_DOWN_PLAN.md
+```
+
+HFI R26 hotlist schema `hecton8.architecture_risk_hotlist.v2` adds domain
+pressure. Current first burn-down slices are `Root`, `World`, `Core`,
+`Gameplay`, `Construction`, `UI`, `Audio`, `Atmosphere`, and `Power`, in that
+order unless a route blocker for the first-20-minutes slice demands otherwise.
+Domain pressure is a review-order input only; it does not authorize broad file
+moves, baseline resets, asmdef rewrites, or runtime readiness claims.
+
+R26 note: generic `GlobalRegistry.Get/TryGet<T>` hard-gate hits were reduced
+back to `0` by replacing cold Core bridge lookups with typed registry slots.
+DataVault candidate no-regression still fails on forbidden field declaration
+growth (`5125 -> 5130`), so the Vault baseline remains unapproved.
+
 H-Phi static audit:
 
 ```powershell
@@ -175,6 +198,37 @@ DataVault sovereignty gate:
 ```powershell
 python Tools/DataVaultSovereigntyAudit.py --fail-on-regression
 ```
+
+Current HFI candidate baseline, not official approval:
+
+```powershell
+python Tools/DataVaultSovereigntyAudit.py --baseline Docs/AgentLogs/DataVaultSovereigntyBaselineCandidate_HFI_AUDIT.json --report Docs/AgentLogs/DataVaultSovereigntyAudit_HFI_AUDIT_candidate.md --write-baseline
+```
+
+The candidate proves current counters only. Do not replace the official active
+baseline unless the integrator explicitly accepts the debt or schedules a
+burn-down.
+
+BufferID sovereignty gate:
+
+```powershell
+python Tools/BufferIDSovereigntyAudit.py --fail-on-duplicates
+```
+
+Use `--fail-on-local-casts` only after the current migration debt is burned down
+or an explicit owner/range ledger exists for every retained local numeric cast.
+
+Assembly dependency / compile-wall gate:
+
+```powershell
+python Tools/AssemblyDependencyAudit.py
+python Tools/AssemblyDependencyAudit.py --fail-on-cycles
+```
+
+Use `--fail-on-core-concrete-sibling-refs` for new Core sibling runtime refs and
+for planned burn-down slices. Do not remove existing asmdef references without
+source call-site classification, `.Contracts` or owner-interface route, and
+Unity import proof.
 
 Do not run compile/profiler commands in a busy multi-agent machine without the
 current compile-owner/CPU checks required by `AGENTS.md` and `QUALITY_GATES.md`.
@@ -190,6 +244,17 @@ This migration is not complete until all are true:
   owned bridge lanes with telemetry.
 - Owner-blocked NativeArray/native collection debt decreases by domain without
   moving local scratch into a fake global heap.
+- Central `BufferID` values have no numeric duplicates, and retained local
+  numeric `(BufferID)N` casts have owner/range/lifetime proof.
+- `Tools/GlobalAuthorityGate.py` passes its hard checks, and any warnings that
+  touch changed files are either reduced or linked to route-carded migration
+  work.
+- `Tools/ArchitectureRiskHotlistAudit.py` is used to order broad owner-domain
+  burn-down work; high-score files are reviewed, not mass-refactored blindly.
+  Domain pressure is tracked through
+  `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BURN_DOWN_PLAN.md`.
+- `Tools/AssemblyDependencyAudit.py --fail-on-cycles` passes, and Core concrete
+  sibling runtime references do not grow.
 - H-Phi static scores improve without violating `GLOBAL_AUTHORITY_BOUNDARIES.md`.
 - Runtime proof exists: Unity Console, Play Mode, profiler, GC, Memory Profiler,
   signal overflow telemetry, DataVault stale-handle tests, and scene unload soak.

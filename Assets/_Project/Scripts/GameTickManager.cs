@@ -317,12 +317,11 @@ namespace Hecton8.Core
 
             _tickables.BeginIteration();
 
-            List<ITickable> items = _tickables.Items;
-            int count = items.Count;
+            int count = _tickables.Count;
 
             for (int i = 0; i < count; i++)
             {
-                var item = items[i];
+                ITickable item = _tickables.GetAt(i);
 
                 if (item == null)
                 {
@@ -378,12 +377,11 @@ namespace Hecton8.Core
 
             _fixedTickables.BeginIteration();
 
-            List<IFixedTickable> items = _fixedTickables.Items;
-            int count = items.Count;
+            int count = _fixedTickables.Count;
 
             for (int i = 0; i < count; i++)
             {
-                var item = items[i];
+                IFixedTickable item = _fixedTickables.GetAt(i);
 
                 if (item == null)
                 {
@@ -442,8 +440,7 @@ namespace Hecton8.Core
         {
             _slowTickables.BeginIteration();
 
-            List<ISlowTickable> items = _slowTickables.Items;
-            int count = items.Count;
+            int count = _slowTickables.Count;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (!_loggedFirstSlowTickExecution && enableSlowTickProfiling)
                 _loggedFirstSlowTickExecution = true;
@@ -459,7 +456,7 @@ namespace Hecton8.Core
 
             for (int i = 0; i < count; i++)
             {
-                var item = items[i];
+                ISlowTickable item = _slowTickables.GetAt(i);
 
                 if (item == null)
                 {
@@ -510,15 +507,14 @@ namespace Hecton8.Core
 
                 _slowTickables.BeginIteration();
 
-                List<ISlowTickable> items = _slowTickables.Items;
-                int count = items.Count;
+                int count = _slowTickables.Count;
                 long loopStartTimestamp = enableSlowTickProfiling ? Stopwatch.GetTimestamp() : 0L;
                 if (enableSlowTickProfiling)
                     ResetSlowTickProfilerFrame();
 
                 for (int i = 0; i < count; i++)
                 {
-                    var item = items[i];
+                    ISlowTickable item = _slowTickables.GetAt(i);
 
                     if (item == null)
                     {
@@ -786,14 +782,13 @@ namespace Hecton8.Core
             //  PUBLIC ACCESSORS
             // ─────────────────────────────────────────────────────
 
-            /// <summary>
-            /// Pryamoy dostup k vnutrennemu spisku dlya for-tsikla.
-            /// TOLKO DLYa ChTENIYa vo vremya iteratsii!
-            /// </summary>
-            public List<T> Items => _items;
-
             /// <summary>Tekuschee kol-vo elementov.</summary>
             public int Count => _items.Count;
+
+            public T GetAt(int index)
+            {
+                return _items[index];
+            }
 
             public void Clear()
             {

@@ -1383,7 +1383,7 @@ STATUS: HISTORICAL AUDIT SNAPSHOT / CURRENT RUNTIME PENDING.
 
 ## 2026-05-16 H-Phi Correlation
 
-Current H-Phi scan: 2026-05-16T17:18:57+04:00.
+Capture-time H-Phi scan: 2026-05-16T17:18:57+04:00.
 
 | Metric | Value |
 |---|---:|

@@ -1,0 +1,9 @@
+{
+    "Bucket":  "AgentLogs",
+    "Name":  "CoreBuild_SHINOBU_02_current40.txt",
+    "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\CoreBuild_SHINOBU_02_current40__late10.txt",
+    "WasDirectory":  false,
+    "Status":  "LateMoved",
+    "Loop":  10,
+    "Key":  "CoreBuild"
+}

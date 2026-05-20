@@ -149,7 +149,7 @@ namespace Hecton8.Environment
             public uint CommandSequence;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildVehicleWakeSignalJob : IJob
         {
             public float4 WashSphere;
@@ -194,7 +194,7 @@ namespace Hecton8.Environment
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildMockWakeSignalJob : IJob
         {
             public NativeArray<DynamicWakeDTO> Wakes;
@@ -243,7 +243,7 @@ namespace Hecton8.Environment
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildMockFlowFieldJob : IJob
         {
             public NativeArray<MockFlowField> FlowField;
@@ -1329,7 +1329,8 @@ namespace Hecton8.Environment
                 WakeStrength = math.max(0.01f, vehicleWakeStrength),
                 Result = vehicleWakeJobResult
             };
-            job.Run();
+            // Presentation signal is read immediately below; execute the scalar builder directly to avoid synchronous job-runner overhead.
+            job.Execute();
 
             VehicleWakeJobResult result = vehicleWakeJobResult[0];
             if ((result.Flags & 1u) == 0u)
@@ -1621,19 +1622,21 @@ namespace Hecton8.Environment
             int activeCount = enableMockWakeSignals && _underwaterActive && targetCamera != null ? MockWakeCapacity : 0;
             if (TryResolveMockFlowField(out NativeArray<MockFlowField> mockFlowField))
             {
-                new BuildMockFlowFieldJob
+                BuildMockFlowFieldJob mockFlowJob = new BuildMockFlowFieldJob
                 {
                     FlowField = mockFlowField,
                     CameraPositionWS = targetCamera != null ? targetCamera.position : Vector3.zero,
                     TimeSeconds = _simulationTime,
                     CurlStrength = ResolveFlowParams().z
-                }.Run();
+                };
+                // Dear Lie flow proxy: one DTO row feeds shader globals, so direct Execute avoids a fake job fence.
+                mockFlowJob.Execute();
                 _cachedMockFlowField = mockFlowField[0];
             }
 
             if (TryResolveDynamicWakeDtos(out NativeArray<DynamicWakeDTO> wakes))
             {
-                new BuildMockWakeSignalJob
+                BuildMockWakeSignalJob mockWakeJob = new BuildMockWakeSignalJob
                 {
                     Wakes = wakes,
                     CameraPositionWS = targetCamera != null ? targetCamera.position : Vector3.zero,
@@ -1641,7 +1644,9 @@ namespace Hecton8.Environment
                     CameraUpWS = targetCamera != null ? targetCamera.up : Vector3.up,
                     TimeSeconds = _simulationTime,
                     ActiveCount = activeCount
-                }.Run();
+                };
+                // Mock wake field is a visual fake uploaded immediately; execute directly instead of running a synchronous job.
+                mockWakeJob.Execute();
 
                 UploadMockWakeGpuBuffers(wakes, activeCount);
             }

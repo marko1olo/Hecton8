@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
-using Hecton8.World;
+using Hecton8.Core.Memory;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -100,7 +100,8 @@ namespace Hecton8.Power
         Damaged = 1 << 2,
         Offline = 1 << 3,
         Flooded = 1 << 4,
-        Source = 1 << 5
+        Source = 1 << 5,
+        Divergent = 1 << 6
     }
 
     /// <summary>
@@ -147,27 +148,6 @@ namespace Hecton8.Power
             public LogisticsBrownoutTier BrownoutTier;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 64)]
-        private struct PowerGridBlackBoxEntry
-        {
-            public uint FrameIndex;
-            public uint StateHash;
-            public uint ReasonFlags;
-            public int NodeCount;
-            public int EdgeCount;
-            public int RuntimeEdgeCount;
-            public int SolveStartNode;
-            public int SolveNodeCount;
-            public float TotalGeneration;
-            public float TotalConsumption;
-            public float SupplyRatio;
-            public float Balance;
-            public float MinPotential;
-            public float MaxPotential;
-            public int BrownoutCount;
-            public int OverloadedCount;
-        }
-
         private struct TopologyEdgeRecord
         {
             public int SourceNodeIndex;
@@ -192,12 +172,13 @@ namespace Hecton8.Power
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         public struct JacobiPowerGridSolverJob : IJob
         {
-            public const int FixedIterationCount = 3;
+            public const int FixedIterationCount = 8;
             public const float BrownoutPotentialThreshold = 0.2f;
             public const float FloodedShortCircuitPotentialThreshold = 0.5f;
 
             public int NodeCount;
             public int BaseAwakeIndex;
+            public float GlobalQualityWeight;
 
             [ReadOnly] public NativeParallelMultiHashMap<int, int> Connections;
             [ReadOnly] public NativeArray<float> PowerCapacities;
@@ -228,8 +209,15 @@ namespace Hecton8.Power
 
                 NativeArray<float> input = PowerPotentials;
                 NativeArray<float> output = NextPowerPotentials;
-                for (int iteration = 0; iteration < FixedIterationCount; iteration++)
+                float qualityWeight = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 0f);
+                int iterationBudget = math.clamp(PowerSolverConvergenceMath.ResolvePropagationIterations(qualityWeight), 1, FixedIterationCount);
+                float targetTolerance = PowerSolverConvergenceMath.ResolveSolverTargetTolerance(0.001f, qualityWeight);
+                float omega = PowerSolverConvergenceMath.ResolveSolverOmega(qualityWeight);
+                float previousResidual = float.MaxValue;
+                for (int iteration = 0; iteration < iterationBudget; iteration++)
                 {
+                    float maxResidual = 0f;
+                    bool divergenceFault = false;
                     for (int nodeIndex = 0; nodeIndex < safeNodeCount; nodeIndex++)
                     {
                         byte flags = NodeFlags[nodeIndex];
@@ -245,7 +233,7 @@ namespace Hecton8.Power
                             continue;
                         }
 
-                        float potentialSum = ClampPotential(input[nodeIndex], PowerCapacities[nodeIndex]);
+                        float weightedPotential = 0f;
                         int neighborCount = 0;
                         if (Connections.TryGetFirstValue(nodeIndex, out int neighborIndex, out NativeParallelMultiHashMapIterator<int> iterator))
                         {
@@ -258,19 +246,39 @@ namespace Hecton8.Power
                                 if ((neighborFlags & (byte)(PowerGridNodeFlags.Offline | PowerGridNodeFlags.Damaged)) != 0)
                                     continue;
 
-                                potentialSum += ClampPotential(input[neighborIndex], PowerCapacities[neighborIndex]);
+                                weightedPotential += ClampPotential(input[neighborIndex], PowerCapacities[neighborIndex]);
                                 neighborCount++;
                             }
                             while (Connections.TryGetNextValue(out neighborIndex, ref iterator));
                         }
 
-                        float nextPotential = potentialSum * math.rcp(1 + neighborCount);
-                        output[nodeIndex] = ClampPotential(nextPotential, PowerCapacities[nodeIndex]);
+                        float sourcePotential = ClampPotential(input[nodeIndex], PowerCapacities[nodeIndex]);
+                        float nextPotential = weightedPotential * math.rcp(math.max(1f + neighborCount, 1f));
+                        nextPotential = sourcePotential + (nextPotential - sourcePotential) * omega;
+                        bool potentialFault = !math.isfinite(nextPotential) || math.abs(nextPotential) > 16f;
+                        if (potentialFault)
+                        {
+                            nextPotential = sourcePotential;
+                            flags |= (byte)PowerGridNodeFlags.Divergent;
+                            divergenceFault = true;
+                        }
+
+                        float resolvedPotential = ClampPotential(nextPotential, PowerCapacities[nodeIndex]);
+                        output[nodeIndex] = resolvedPotential;
+                        NodeFlags[nodeIndex] = flags;
+                        maxResidual = math.max(maxResidual, math.abs(resolvedPotential - sourcePotential));
                     }
 
                     NativeArray<float> swap = input;
                     input = output;
                     output = swap;
+                    if (maxResidual <= targetTolerance || divergenceFault)
+                        break;
+
+                    bool residualGrew = previousResidual < float.MaxValue * 0.5f &&
+                                        maxResidual > math.max(previousResidual + targetTolerance * 0.25f, previousResidual * 1.08f);
+                    omega = residualGrew ? math.max(1f, omega * 0.86f) : omega;
+                    previousResidual = maxResidual;
                 }
 
                 for (int nodeIndex = 0; nodeIndex < safeNodeCount; nodeIndex++)
@@ -392,6 +400,7 @@ namespace Hecton8.Power
             public int SolveNodeCount;
             public int BaseAwakeIndex;
             public byte RelaxationSliceOnly;
+            public float GlobalQualityWeight;
 
             public NativeArray<LogisticsNode> Nodes;
 
@@ -872,9 +881,15 @@ namespace Hecton8.Power
 
                 NativeArray<float> input = PotentialFront;
                 NativeArray<float> output = PotentialBack;
-                int iterationBudget = SubmarineOsThermalGridRuntime.ResolvePropagationIterations(HomeostasisBrain.GlobalQualityWeight);
+                float qualityWeight = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 0f);
+                int iterationBudget = PowerSolverConvergenceMath.ResolvePropagationIterations(qualityWeight);
+                float targetTolerance = PowerSolverConvergenceMath.ResolveSolverTargetTolerance(0.001f, qualityWeight);
+                float omega = PowerSolverConvergenceMath.ResolveSolverOmega(qualityWeight);
+                float previousResidual = float.MaxValue;
                 for (int iteration = 0; iteration < iterationBudget; iteration++)
                 {
+                    float maxResidual = 0f;
+                    bool divergenceFault = false;
                     for (int nodeIndex = solveStartNode; nodeIndex < solveEndNode; nodeIndex++)
                     {
                         LogisticsNode node = Nodes[nodeIndex];
@@ -916,13 +931,38 @@ namespace Hecton8.Power
                             conductanceSum += conductance;
                         }
 
-                        float nextPotential = (weightedPotential + NodeNetInjection[nodeIndex]) * math.rcp(math.max(conductanceSum, Epsilon));
-                        output[nodeIndex] = math.isfinite(nextPotential) ? math.saturate(nextPotential) : 0f;
+                        float sourcePotential = math.saturate(input[nodeIndex]);
+                        float nodeCapacity = math.max(Epsilon, math.isfinite(node.Capacity) ? node.Capacity : 0f);
+                        float normalizedNetInjection = math.clamp(
+                            (math.isfinite(NodeNetInjection[nodeIndex]) ? NodeNetInjection[nodeIndex] : 0f) * math.rcp(nodeCapacity),
+                            -1f,
+                            1f);
+                        float nextPotential = (weightedPotential + normalizedNetInjection) * math.rcp(math.max(conductanceSum + 1f, 1f));
+                        nextPotential = sourcePotential + (nextPotential - sourcePotential) * omega;
+                        bool potentialFault = !math.isfinite(nextPotential) || math.abs(nextPotential) > 16f;
+                        if (potentialFault)
+                        {
+                            nextPotential = sourcePotential;
+                            divergenceFault = true;
+                            if (PowerNodeFlags.IsCreated && nodeIndex < PowerNodeFlags.Length)
+                                PowerNodeFlags[nodeIndex] = (byte)(PowerNodeFlags[nodeIndex] | (byte)PowerGridNodeFlags.Divergent);
+                        }
+
+                        float resolvedPotential = math.saturate(math.isfinite(nextPotential) ? nextPotential : sourcePotential);
+                        output[nodeIndex] = resolvedPotential;
+                        maxResidual = math.max(maxResidual, math.abs(resolvedPotential - sourcePotential));
                     }
 
                     NativeArray<float> swap = input;
                     input = output;
                     output = swap;
+                    if (maxResidual <= targetTolerance || divergenceFault)
+                        break;
+
+                    bool residualGrew = previousResidual < float.MaxValue * 0.5f &&
+                                        maxResidual > math.max(previousResidual + targetTolerance * 0.25f, previousResidual * 1.08f);
+                    omega = residualGrew ? math.max(1f, omega * 0.86f) : omega;
+                    previousResidual = maxResidual;
                 }
 
                 for (int nodeIndex = solveStartNode; nodeIndex < solveEndNode; nodeIndex++)
@@ -1348,7 +1388,7 @@ namespace Hecton8.Power
         private const uint PowerBlackBoxBrownoutFlag = 1u << 2;
         private const uint PowerBlackBoxOverloadFlag = 1u << 3;
         private const uint PowerBlackBoxHibernatingFlag = 1u << 4;
-        private const string PowerBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_LOGI_POWER_ROUTING.bin";
+        private const string PowerBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_223.bin";
         private const string NativeMemoryOwner = nameof(LogisticsNetworkGraph);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
 
@@ -1404,7 +1444,8 @@ namespace Hecton8.Power
         private NativeArray<DistributionSummary> _scheduledDistributionSummary;
         private NativeArray<ushort> _publishedNodeStates;
         private NativeArray<ushort> _publishedNodeStatesBack;
-        private NativeArray<PowerGridBlackBoxEntry> _powerBlackBox;
+        private VaultGenerationHandle<PowerTelemetryEntry> _powerBlackBoxHandle;
+        private VaultGenerationHandle<PowerGridCounter64> _powerBlackBoxCursorHandle;
         private NativeParallelHashMap<uint, ushort> _publishedNodeStateMap;
         private NativeParallelHashMap<uint, ushort> _publishedNodeStateBackMap;
         private NativeQueue<int> _bfsQueue;
@@ -1422,7 +1463,6 @@ namespace Hecton8.Power
         private int _lastPowerBlackBoxSolveStartNode;
         private int _lastPowerBlackBoxSolveNodeCount;
         private int _baseAwakeIndex;
-        private int _powerBlackBoxCursor;
         private bool _scheduledAdaptiveSolveSlice;
         private bool _powerBlackBoxDumped;
         private bool _buildOpen;
@@ -1494,8 +1534,6 @@ namespace Hecton8.Power
             // COLD ALLOC: NativeArray<ushort>[nodeCapacity] — back-buffer node-state bitmasks for async publish — owner: LogisticsNetworkGraph
             _publishedNodeStatesBack = new NativeArray<ushort>(safeNodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             RegisterNativeArray(_publishedNodeStatesBack, nameof(_publishedNodeStatesBack));
-            _powerBlackBox = new NativeArray<PowerGridBlackBoxEntry>(PowerBlackBoxCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<PowerGridBlackBoxEntry>[300] - fixed power routing black-box ring - owner: LogisticsNetworkGraph
-            RegisterNativeArray(_powerBlackBox, nameof(_powerBlackBox));
             // COLD ALLOC: NativeParallelHashMap<uint,ushort>[nodeCapacity] — published node-state lookup by stable node id — owner: LogisticsNetworkGraph
             _publishedNodeStateMap = new NativeParallelHashMap<uint, ushort>(safeNodeCapacity, Allocator.Persistent);
             RegisterNativeParallelHashMap(_publishedNodeStateMap, nameof(_publishedNodeStateMap));
@@ -1742,7 +1780,8 @@ namespace Hecton8.Power
             DisposeNativeArray(ref _scheduledDistributionSummary, disposeDependency);
             DisposeNativeArray(ref _publishedNodeStates, disposeDependency);
             DisposeNativeArray(ref _publishedNodeStatesBack, disposeDependency);
-            DisposeNativeArray(ref _powerBlackBox, disposeDependency);
+            _powerBlackBoxHandle = default;
+            _powerBlackBoxCursorHandle = default;
             DisposeNativeParallelHashMap(ref _publishedNodeStateMap, disposeDependency, nameof(_publishedNodeStateMap));
             DisposeNativeParallelHashMap(ref _publishedNodeStateBackMap, disposeDependency, nameof(_publishedNodeStateBackMap));
 
@@ -2369,6 +2408,7 @@ namespace Hecton8.Power
                 SolveNodeCount = solveNodeCount,
                 BaseAwakeIndex = _baseAwakeIndex,
                 RelaxationSliceOnly = relaxationSliceOnly ? (byte)1 : (byte)0,
+                GlobalQualityWeight = math.saturate(math.isfinite(HomeostasisBrain.GlobalQualityWeight) ? HomeostasisBrain.GlobalQualityWeight : 0f),
                 Nodes = _nodeBuffer,
                 EdgeOffsets = _edgeOffsets,
                 EdgeDestinations = _edgeDestinations,
@@ -2435,7 +2475,7 @@ namespace Hecton8.Power
             if (_adaptiveSolveRemainingNodes <= 0 || _adaptiveSolveRemainingNodes > _nodeCount)
                 _adaptiveSolveRemainingNodes = _nodeCount;
 
-            int solveBudget = ResolveAdaptiveSolveNodesPerFrame(GlobalRegistry.ScalabilityTier);
+            int solveBudget = ResolveAdaptiveSolveNodesPerFrame(HomeostasisBrain.GlobalQualityWeight);
             int contiguousNodeCount = _nodeCount - _adaptiveSolveCursor;
             solveStartNode = _adaptiveSolveCursor;
             solveNodeCount = math.min(
@@ -2451,22 +2491,17 @@ namespace Hecton8.Power
             _scheduledSolveNodeCount = solveNodeCount;
         }
 
-        private static int ResolveAdaptiveSolveNodesPerFrame(HectonQualityTier scalabilityTier)
+        private static int ResolveAdaptiveSolveNodesPerFrame(float globalQualityWeight)
         {
-            switch (scalabilityTier)
-            {
-                case HectonQualityTier.Low:
-                    return LowAdaptiveSolveNodesPerFrame;
-                case HectonQualityTier.Mx350:
-                case HectonQualityTier.Unknown:
-                    return Mx350AdaptiveSolveNodesPerFrame;
-                case HectonQualityTier.High:
-                    return HighAdaptiveSolveNodesPerFrame;
-                case HectonQualityTier.Ultra:
-                    return UltraAdaptiveSolveNodesPerFrame;
-                default:
-                    return MidAdaptiveSolveNodesPerFrame;
-            }
+            float q = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 0f);
+            float lowToMx350 = math.lerp(LowAdaptiveSolveNodesPerFrame, Mx350AdaptiveSolveNodesPerFrame, math.smoothstep(0f, 0.25f, q));
+            float mx350ToMid = math.lerp(Mx350AdaptiveSolveNodesPerFrame, MidAdaptiveSolveNodesPerFrame, math.smoothstep(0.15f, 0.5f, q));
+            float midToHigh = math.lerp(MidAdaptiveSolveNodesPerFrame, HighAdaptiveSolveNodesPerFrame, math.smoothstep(0.4f, 0.75f, q));
+            float highToUltra = math.lerp(HighAdaptiveSolveNodesPerFrame, UltraAdaptiveSolveNodesPerFrame, math.smoothstep(0.7f, 1f, q));
+            float lowBand = math.lerp(lowToMx350, mx350ToMid, math.smoothstep(0.1f, 0.45f, q));
+            float highBand = math.lerp(midToHigh, highToUltra, math.smoothstep(0.55f, 0.9f, q));
+            float budget = math.lerp(lowBand, highBand, math.smoothstep(0.35f, 0.7f, q));
+            return math.clamp((int)math.round(budget), LowAdaptiveSolveNodesPerFrame, UltraAdaptiveSolveNodesPerFrame);
         }
 
         private void CommitNoEdgeEvaluation()
@@ -2572,7 +2607,7 @@ namespace Hecton8.Power
             if (!_evaluateGraphPending)
                 return true;
 
-            if (!DispatcherJobSwap.TryComplete(ref _evaluateGraphJobHandle, forceComplete: false))
+            if (!DispatcherJobFence.TryComplete(ref _evaluateGraphJobHandle, forceComplete: false))
                 return false;
 
             _evaluateGraphJobHandle = default;
@@ -2623,9 +2658,54 @@ namespace Hecton8.Power
             WritePowerBlackBoxSample(0u);
         }
 
+        private bool TryResolvePowerBlackBox(out NativeArray<PowerTelemetryEntry> ring, out NativeArray<PowerGridCounter64> cursor)
+        {
+            ring = default;
+            cursor = default;
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null || vault.IsAllocationLocked)
+                return false;
+
+            if (_powerBlackBoxHandle.BufferID == 0u ||
+                !vault.TryResolveHandle(in _powerBlackBoxHandle, out ring) ||
+                !ring.IsCreated ||
+                ring.Length < PowerBlackBoxCapacity)
+            {
+                if (!vault.TryGetGenerationHandle<PowerTelemetryEntry>(
+                        PowerGridBufferIds.TelemetryRing,
+                        out _powerBlackBoxHandle) ||
+                    _powerBlackBoxHandle.BufferID == 0u ||
+                    !vault.TryResolveHandle(in _powerBlackBoxHandle, out ring) ||
+                    !ring.IsCreated ||
+                    ring.Length < PowerBlackBoxCapacity)
+                {
+                    return false;
+                }
+            }
+
+            if (_powerBlackBoxCursorHandle.BufferID == 0u ||
+                !vault.TryResolveHandle(in _powerBlackBoxCursorHandle, out cursor) ||
+                !cursor.IsCreated ||
+                cursor.Length <= 0)
+            {
+                if (!vault.TryGetGenerationHandle<PowerGridCounter64>(
+                        PowerGridBufferIds.TelemetryCursor,
+                        out _powerBlackBoxCursorHandle) ||
+                    _powerBlackBoxCursorHandle.BufferID == 0u ||
+                    !vault.TryResolveHandle(in _powerBlackBoxCursorHandle, out cursor) ||
+                    !cursor.IsCreated ||
+                    cursor.Length <= 0)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         private void WritePowerBlackBoxSample(uint reasonFlags)
         {
-            if (!_powerBlackBox.IsCreated || _powerBlackBox.Length <= 0)
+            if (!TryResolvePowerBlackBox(out NativeArray<PowerTelemetryEntry> powerBlackBox, out NativeArray<PowerGridCounter64> powerBlackBoxCursor))
                 return;
 
             uint flags = reasonFlags;
@@ -2718,45 +2798,57 @@ namespace Hecton8.Power
             if (overloadedCount > 0)
                 flags |= PowerBlackBoxOverloadFlag;
 
-            int cursor = _powerBlackBoxCursor;
-            if ((uint)cursor >= (uint)_powerBlackBox.Length)
+            PowerGridCounter64 cursorState = powerBlackBoxCursor[0];
+            int cursor = cursorState.Value;
+            if ((uint)cursor >= (uint)powerBlackBox.Length)
                 cursor = 0;
+            uint frameIndex = unchecked(cursorState.Flags + 1u);
+            if (frameIndex == 0u)
+                frameIndex = 1u;
 
-            _powerBlackBox[cursor] = new PowerGridBlackBoxEntry
-            {
-                FrameIndex = (uint)Time.frameCount,
-                StateHash = stateHash,
-                ReasonFlags = flags,
-                NodeCount = _committedTopologySummary.NodeCount,
-                EdgeCount = _committedTopologySummary.EdgeCount,
-                RuntimeEdgeCount = runtimeEdgeCount,
-                SolveStartNode = _lastPowerBlackBoxSolveStartNode,
-                SolveNodeCount = _lastPowerBlackBoxSolveNodeCount,
-                TotalGeneration = _committedDistributionSummary.TotalGeneration,
-                TotalConsumption = _committedDistributionSummary.TotalConsumption,
-                SupplyRatio = _committedDistributionSummary.SupplyRatio,
-                Balance = _committedDistributionSummary.Balance,
-                MinPotential = hasPotential ? minPotential : 0f,
-                MaxPotential = hasPotential ? maxPotential : 0f,
-                BrownoutCount = brownoutCount,
-                OverloadedCount = overloadedCount
-            };
+            PowerTelemetryEntry entry = default;
+            entry.FrameIndex = frameIndex;
+            entry.StateHash = stateHash;
+            entry.ReasonFlags = flags;
+            entry.NodeCount = _committedTopologySummary.NodeCount;
+            entry.EdgeCount = _committedTopologySummary.EdgeCount;
+            entry.RuntimeEdgeCount = runtimeEdgeCount;
+            entry.SolveStartNode = _lastPowerBlackBoxSolveStartNode;
+            entry.SolveNodeCount = _lastPowerBlackBoxSolveNodeCount;
+            entry.TotalGeneration = _committedDistributionSummary.TotalGeneration;
+            entry.TotalConsumption = _committedDistributionSummary.TotalConsumption;
+            entry.SupplyRatio = _committedDistributionSummary.SupplyRatio;
+            entry.Balance = _committedDistributionSummary.Balance;
+            entry.MinPotential = hasPotential ? minPotential : 0f;
+            entry.MaxPotential = hasPotential ? maxPotential : 0f;
+            entry.BrownoutCount = brownoutCount;
+            entry.OverloadedCount = overloadedCount;
+            powerBlackBox[cursor] = entry;
 
-            _powerBlackBoxCursor = (cursor + 1) % _powerBlackBox.Length;
+            int nextCursor = (cursor + 1) % powerBlackBox.Length;
+            cursorState.Value = nextCursor;
+            cursorState.Flags = frameIndex;
+            powerBlackBoxCursor[0] = cursorState;
             if ((flags & PowerBlackBoxNonFiniteFlag) != 0)
                 DumpPowerBlackBoxOnce(flags);
         }
 
         private void DumpPowerBlackBoxOnce(uint reasonFlags)
         {
-            if (_powerBlackBoxDumped || !_powerBlackBox.IsCreated)
+            if (_powerBlackBoxDumped ||
+                !TryResolvePowerBlackBox(out NativeArray<PowerTelemetryEntry> powerBlackBox, out NativeArray<PowerGridCounter64> powerBlackBoxCursor))
+            {
                 return;
+            }
 
             _powerBlackBoxDumped = true;
-            DumpPowerBlackBox(reasonFlags);
+            int cursor = powerBlackBoxCursor[0].Value;
+            if ((uint)cursor >= (uint)powerBlackBox.Length)
+                cursor = 0;
+            DumpPowerBlackBox(reasonFlags, powerBlackBox, cursor);
         }
 
-        private void DumpPowerBlackBox(uint reasonFlags)
+        private void DumpPowerBlackBox(uint reasonFlags, NativeArray<PowerTelemetryEntry> powerBlackBox, int cursor)
         {
             try
             {
@@ -2770,23 +2862,23 @@ namespace Hecton8.Power
                     writer.Write(PowerBlackBoxMagic);
                     writer.Write(PowerBlackBoxVersion);
                     writer.Write((uint)PowerBlackBoxCapacity);
-                    writer.Write((uint)Marshal.SizeOf<PowerGridBlackBoxEntry>());
-                    writer.Write((uint)_powerBlackBoxCursor);
+                    writer.Write((uint)Marshal.SizeOf<PowerTelemetryEntry>());
+                    writer.Write((uint)cursor);
                     writer.Write(reasonFlags);
-                    for (int entryOffset = 0; entryOffset < _powerBlackBox.Length; entryOffset++)
+                    for (int entryOffset = 0; entryOffset < powerBlackBox.Length; entryOffset++)
                     {
-                        int entryIndex = (_powerBlackBoxCursor + entryOffset) % _powerBlackBox.Length;
-                        WritePowerBlackBoxEntry(writer, _powerBlackBox[entryIndex]);
+                        int entryIndex = (cursor + entryOffset) % powerBlackBox.Length;
+                        WritePowerBlackBoxEntry(writer, powerBlackBox[entryIndex]);
                     }
                 }
             }
-            catch (Exception exception)
+            catch (Exception)
             {
-                Debug.LogError($"Power grid black-box dump failed: {exception.Message}");
+                Debug.LogError("Power grid black-box dump failed.");
             }
         }
 
-        private static void WritePowerBlackBoxEntry(BinaryWriter writer, PowerGridBlackBoxEntry entry)
+        private static void WritePowerBlackBoxEntry(BinaryWriter writer, PowerTelemetryEntry entry)
         {
             writer.Write(entry.FrameIndex);
             writer.Write(entry.StateHash);
@@ -2849,7 +2941,7 @@ namespace Hecton8.Power
             if (!_publishNodeStatesPending)
                 return true;
 
-            if (!DispatcherJobSwap.TryComplete(ref _publishNodeStatesJobHandle, forceComplete: false))
+            if (!DispatcherJobFence.TryComplete(ref _publishNodeStatesJobHandle, forceComplete: false))
                 return false;
 
             _publishNodeStatesJobHandle = default;

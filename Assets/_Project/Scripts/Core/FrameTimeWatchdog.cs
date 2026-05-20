@@ -17,6 +17,9 @@ namespace Hecton8.Core
         private const float CriticalAverageThresholdSeconds = 0.018f;
         private const float CriticalSustainSeconds = 3f;
         private const float ScalabilityCooldownSeconds = 10f;
+        private const float MathLodPrecisionWeightThreshold01 = 0.5f;
+        private const float DistantFloraDisableWeightThreshold01 = 0.2f;
+        private const float VoxelAoEnableWeightThreshold01 = 0.5f;
         private const float ThermalParticleSpawnScale = 0.5f;
         private const float FullParticleSpawnScale = 1f;
         private const uint DefaultSubsystemHash = 0x46545744u;
@@ -28,6 +31,13 @@ namespace Hecton8.Core
         private const uint DegradeMathLodHighMask = 1u << 3;
         private const uint DegradeMathLodLowMask = 1u << 4;
         private const uint DegradeCriticalLevelMask = 1u << 31;
+
+        private delegate void MathPrecisionLevelWriter(MathPrecisionLevel precisionLevel);
+        private delegate void MathPrecisionDegradationWriter(int frame);
+
+        // COLD ALLOC: delegates[2] - boot-bound GlobalRegistry writers; hot code invokes cached routes, not registry lookups - owner: FrameTimeWatchdog
+        private static readonly MathPrecisionLevelWriter s_registerMathPrecisionLevel = GlobalRegistry.RegisterMathPrecisionLevel;
+        private static readonly MathPrecisionDegradationWriter s_beginMathPrecisionDegradation = GlobalRegistry.BeginMathPrecisionDegradation;
 
         private static NativeRingBuffer<float> _frameTimeSamples;
 
@@ -135,7 +145,9 @@ namespace Hecton8.Core
             EnsureFrameTimeSamples();
 
             if (!_shaderLodPushed)
-                PushInitialScalabilityFromHardwareTier();
+                PushInitialScalabilityFromGlobalQuality();
+
+            RefreshContinuousQualityOutputs();
 
             if (GlobalSignals.SimulationPaused)
                 return;
@@ -275,13 +287,11 @@ namespace Hecton8.Core
             _mathLodMode = targetMode;
             _shaderLodPushed = true;
             _lastScalabilitySwitchTimeSeconds = now;
-            _systemDegradationActive = lowMode;
-            _particleEmissionScale = math.select(FullParticleSpawnScale, ThermalParticleSpawnScale, lowMode);
-            _voxelAoEnabled = !lowMode;
+            ApplyContinuousQualityState(ResolveGlobalQualityWeight01(), lowMode);
             if (lowMode)
-                GlobalRegistry.BeginMathPrecisionDegradation(Time.frameCount);
+                s_beginMathPrecisionDegradation(Time.frameCount);
             else
-                GlobalRegistry.RegisterMathPrecisionLevel(MathPrecisionLevel.High);
+                s_registerMathPrecisionLevel(MathPrecisionLevel.High);
             DistanceMath.PushShaderMathLod(targetMode);
             PerformanceEvents.RaiseSystemDegradation(
                 frameTimeMilliseconds,
@@ -291,23 +301,50 @@ namespace Hecton8.Core
             GlobalTelemetryBus.PublishSystemDegradation(reasonHash, actionMask, frameTimeMilliseconds);
         }
 
-        private static void PushInitialScalabilityFromHardwareTier()
+        private static void PushInitialScalabilityFromGlobalQuality()
         {
-            MathLodMode targetMode = ResolveHardwareMathLodMode();
+            float qualityWeight01 = ResolveGlobalQualityWeight01();
+            MathLodMode targetMode = ResolveQualityMathLodMode(qualityWeight01);
             bool lowMode = targetMode == MathLodMode.Low;
             _mathLodMode = targetMode;
             _shaderLodPushed = true;
             _lastScalabilitySwitchTimeSeconds = Time.unscaledTime;
-            _systemDegradationActive = lowMode;
-            _particleEmissionScale = math.select(FullParticleSpawnScale, ThermalParticleSpawnScale, lowMode);
-            _voxelAoEnabled = !lowMode;
-            GlobalRegistry.RegisterMathPrecisionLevel(lowMode ? MathPrecisionLevel.Low : MathPrecisionLevel.High);
+            ApplyContinuousQualityState(qualityWeight01, lowMode);
+            s_registerMathPrecisionLevel(lowMode ? MathPrecisionLevel.Low : MathPrecisionLevel.High);
             DistanceMath.PushShaderMathLod(targetMode);
         }
 
-        private static MathLodMode ResolveHardwareMathLodMode()
+        private static void RefreshContinuousQualityOutputs()
         {
-            return DistanceMath.ResolveMathLodMode(GlobalRegistry.ScalabilityTier);
+            ApplyContinuousQualityState(ResolveGlobalQualityWeight01(), _mathLodMode == MathLodMode.Low);
+        }
+
+        private static void ApplyContinuousQualityState(float qualityWeight01, bool forcedLowMathLod)
+        {
+            float effectiveQuality01 = math.select(qualityWeight01, 0.0f, forcedLowMathLod);
+            float curvedQuality01 = SmoothStep01(effectiveQuality01);
+            _systemDegradationActive = forcedLowMathLod || curvedQuality01 <= DistantFloraDisableWeightThreshold01;
+            _particleEmissionScale = math.lerp(ThermalParticleSpawnScale, FullParticleSpawnScale, curvedQuality01);
+            _voxelAoEnabled = !forcedLowMathLod && curvedQuality01 >= VoxelAoEnableWeightThreshold01;
+        }
+
+        private static MathLodMode ResolveQualityMathLodMode(float qualityWeight01)
+        {
+            return SmoothStep01(qualityWeight01) >= MathLodPrecisionWeightThreshold01
+                ? MathLodMode.High
+                : MathLodMode.Low;
+        }
+
+        private static float ResolveGlobalQualityWeight01()
+        {
+            float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
+            return math.isfinite(qualityWeight) ? math.saturate(qualityWeight) : 1.0f;
+        }
+
+        private static float SmoothStep01(float value)
+        {
+            float t = math.saturate(value);
+            return t * t * (3.0f - (2.0f * t));
         }
 
         private static void PublishDrawCallEstimateIfPresent()

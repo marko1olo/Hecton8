@@ -1,0 +1,727 @@
+﻿{
+    "generated_utc":  "2026-05-20T10:36:18.0262107Z",
+    "scanner":  "Structural_Integrity_Scanner",
+    "summary":  "Physics-Based Integrity Purged",
+    "authority":  "StructuralIntegrityCalculatorRuntime: Burst CSR depth-pressure solver over GlobalDataVault buffers 70488-70497",
+    "blocked_findings":  0,
+    "unity_joint_sites":  0,
+    "rigidbody_mass_review_sites":  4,
+    "legacy_scalar_review_sites":  98,
+    "verdict":  "PASS: no Unity joint structural authority found; remaining mass/scalar hits are compatibility surfaces or non-authoritative review sites.",
+    "findings":  [
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+                         "line":  2961,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "review",
+                         "snippet":  "if (target.CurrentIntegrity \u003e= recoverableIntegrity \u0026\u0026 !target.IsFlooded \u0026\u0026 !target.HasCascadeFailure)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+                         "line":  3104,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "review",
+                         "snippet":  "float requestedRepair = Mathf.Max(0f, recoverableIntegrity - target.CurrentIntegrity);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+                         "line":  5386,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "review",
+                         "snippet":  "float integrity01 = Mathf.Clamp01(module.CurrentIntegrity * math.rcp(recoverableIntegrity));"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+                         "line":  5396,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "review",
+                         "snippet":  "return module.CurrentIntegrity \u003c recoverableIntegrity || module.IsFlooded || module.HasCascadeFailure || graphRuptured;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+                         "line":  5414,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "review",
+                         "snippet":  "float integrity01 = Mathf.Clamp01(module.CurrentIntegrity * math.rcp(recoverableIntegrity));"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs",
+                         "line":  31,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "review",
+                         "snippet":  "private const float DefaultIntegrityBudget = 240f;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs",
+                         "line":  315,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "review",
+                         "snippet":  "float integrityBudget,"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs",
+                         "line":  339,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "review",
+                         "snippet":  "IntegrityBudget = integrityBudget \u003e 0f ? integrityBudget : DefaultIntegrityBudget,"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs",
+                         "line":  963,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "review",
+                         "snippet":  "public float IntegrityBudget;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs",
+                         "line":  976,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "review",
+                         "snippet":  "float integrity = IntegrityBudget;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+                         "line":  525,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "EvaluateAnalyticalIntegrityStress(scalabilityTier);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+                         "line":  607,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "private void EvaluateAnalyticalIntegrityStress(HectonQualityTier scalabilityTier)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+                         "line":  640,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "float moduleIntegrity = math.max(1f, baseModule.MaxIntegrity);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+                         "line":  647,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "integritySum += moduleIntegrity;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+                         "line":  676,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "integritySum += math.max(1f, baseModule.MaxIntegrity);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+                         "line":  1178,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "float maxIntegrity = baseModule.MaxIntegrity;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+                         "line":  1179,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "float currentIntegrity = baseModule.CurrentIntegrity;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+                         "line":  1181,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "if (math.isfinite(maxIntegrity) \u0026\u0026 maxIntegrity \u003e 0.01f \u0026\u0026 math.isfinite(currentIntegrity))"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+                         "line":  1182,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "integrity01 = math.saturate(currentIntegrity * math.rcp(maxIntegrity));"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+                         "line":  1183,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "else if (!math.isfinite(maxIntegrity) || !math.isfinite(currentIntegrity))"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+                         "line":  1714,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "baseModule.CurrentIntegrity,"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+                         "line":  2428,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "baseModule.CurrentIntegrity \u003e 0f)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+                         "line":  4228,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "capacity += math.max(0f, baseModule.MaxIntegrity * 0.05f);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+                         "line":  4378,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "if (baseModule != null \u0026\u0026 baseModule.CurrentIntegrity \u003c baseModule.MaxIntegrity)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/ModuleIntegrityComponent.cs",
+                         "line":  38,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "private float _maxIntegrity;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/ModuleIntegrityComponent.cs",
+                         "line":  39,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "private float _currentIntegrity;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/ModuleIntegrityComponent.cs",
+                         "line":  48,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "public float MaxIntegrity =\u003e _maxIntegrity;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/ModuleIntegrityComponent.cs",
+                         "line":  49,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "public float CurrentIntegrity =\u003e _currentIntegrity;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/ModuleIntegrityComponent.cs",
+                         "line":  59,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "float maxIntegrity,"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/ModuleIntegrityComponent.cs",
+                         "line":  60,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "float currentIntegrity,"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/ModuleIntegrityComponent.cs",
+                         "line":  68,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "_maxIntegrity = math.max(1f, maxIntegrity);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/ModuleIntegrityComponent.cs",
+                         "line":  72,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "_maxRecoverableIntegrity = maxRecoverableIntegrity \u003c= 0f ? _maxIntegrity : maxRecoverableIntegrity;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/ModuleIntegrityComponent.cs",
+                         "line":  73,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "_currentIntegrity = currentIntegrity;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/ModuleIntegrityComponent.cs",
+                         "line":  76,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "_currentIntegrity = math.clamp(_currentIntegrity, 0f, GetRepairIntegrityCap());"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/ModuleIntegrityComponent.cs",
+                         "line":  85,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "_currentIntegrity = math.clamp(_currentIntegrity, 0f, GetRepairIntegrityCap());"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/ModuleIntegrityComponent.cs",
+                         "line":  95,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "_maxRecoverableIntegrity = _maxIntegrity;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/ModuleIntegrityComponent.cs",
+                         "line":  96,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "_currentIntegrity = _maxIntegrity;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/ModuleIntegrityComponent.cs",
+                         "line":  103,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "_maxRecoverableIntegrity = math.clamp(repairIntegrityCap, _maxIntegrity * _minimumRecoverableIntegrityRatio, _maxIntegrity);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/ModuleIntegrityComponent.cs",
+                         "line":  104,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "_currentIntegrity = math.clamp(integrity, 0f, GetRepairIntegrityCap());"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/ModuleIntegrityComponent.cs",
+                         "line":  112,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "public void SetCurrentIntegrity(float value)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/ModuleIntegrityComponent.cs",
+                         "line":  114,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "_currentIntegrity = math.clamp(value, 0f, GetRepairIntegrityCap());"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/ModuleIntegrityComponent.cs",
+                         "line":  124,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "return math.clamp(_maxRecoverableIntegrity, ResolveMinimumRepairIntegrityCap(), _maxIntegrity);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/ModuleIntegrityComponent.cs",
+                         "line":  155,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "return _currentIntegrity \u003c GetRepairIntegrityCap() \u0026\u0026 _currentIntegrity \u003e 0f;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/ModuleIntegrityComponent.cs",
+                         "line":  185,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "float nextCap = math.clamp(repairIntegrityCap, ResolveMinimumRepairIntegrityCap(), _maxIntegrity);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/ModuleIntegrityComponent.cs",
+                         "line":  190,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "if (_currentIntegrity \u003e _maxRecoverableIntegrity)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/ModuleIntegrityComponent.cs",
+                         "line":  191,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "_currentIntegrity = _maxRecoverableIntegrity;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/ModuleIntegrityComponent.cs",
+                         "line":  206,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "_maxIntegrity);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/ModuleIntegrityComponent.cs",
+                         "line":  216,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "if (amount \u003c= 0f || _currentIntegrity \u003c= 0f)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/ModuleIntegrityComponent.cs",
+                         "line":  219,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "_currentIntegrity -= amount;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/ModuleIntegrityComponent.cs",
+                         "line":  220,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "if (_currentIntegrity \u003e 0f)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/ModuleIntegrityComponent.cs",
+                         "line":  223,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "_currentIntegrity = 0f;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/ModuleIntegrityComponent.cs",
+                         "line":  233,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "if (_currentIntegrity \u003e= repairCap \u0026\u0026 !IsFlooded)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/ModuleIntegrityComponent.cs",
+                         "line":  236,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "_currentIntegrity += amount;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/ModuleIntegrityComponent.cs",
+                         "line":  237,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "if (_currentIntegrity \u003c repairCap)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/ModuleIntegrityComponent.cs",
+                         "line":  240,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "_currentIntegrity = repairCap;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/ModuleIntegrityComponent.cs",
+                         "line":  290,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "if (!IsFlooded || _currentIntegrity \u003c GetRepairIntegrityCap())"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/ModuleIntegrityComponent.cs",
+                         "line":  349,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "float minimumCap = _maxIntegrity * _minimumRecoverableIntegrityRatio;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/ModuleIntegrityComponent.cs",
+                         "line":  372,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "_maxRecoverableIntegrity = _maxIntegrity;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/RepairDroneHub.cs",
+                         "line":  839,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "review",
+                         "snippet":  "float missingIntegrity = Mathf.Max(0f, recoverableIntegrity - target.CurrentIntegrity);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  286,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "[SerializeField] private float maxIntegrity = 100f;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  289,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "[SerializeField] private float currentIntegrity = 100f;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  749,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "public float MaxIntegrity =\u003e maxIntegrity;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  760,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "public float CurrentIntegrity"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  762,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "get =\u003e _integrityComponent.CurrentIntegrity;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  763,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "set =\u003e _integrityComponent.SetCurrentIntegrity(value);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  781,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "public bool IsBreached =\u003e _integrityComponent.CurrentIntegrity \u003c= 0f;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  820,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "public float IntegrityStateNormalized =\u003e _integrityComponent.MaxIntegrity \u003e 0.01f"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  821,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "? Mathf.Clamp01(_integrityComponent.CurrentIntegrity / _integrityComponent.MaxIntegrity)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  1166,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "_integrityComponent.CurrentIntegrity \u003e 0f \u0026\u0026"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  1167,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "_integrityComponent.CurrentIntegrity \u003c repairCap)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  1173,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "if (passiveDegradationRate \u003e 0f \u0026\u0026 _integrityComponent.CurrentIntegrity \u003e 0f)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  1213,
+                         "kind":  "RIGIDBODY_MASS_STRUCTURAL_REVIEW",
+                         "severity":  "compatible_non_authoritative",
+                         "snippet":  "_moduleRigidbody.mass = effectiveMass;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  1410,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "float previousIntegrityNormalized = _integrityComponent.MaxIntegrity \u003e 0.01f"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  1411,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "? Mathf.Clamp01(_integrityComponent.CurrentIntegrity / _integrityComponent.MaxIntegrity)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  1413,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "bool wasBreached = _integrityComponent.CurrentIntegrity \u003c= 0f;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  1418,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "float nextIntegrityNormalized = _integrityComponent.MaxIntegrity \u003e 0.01f"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  1419,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "? Mathf.Clamp01(_integrityComponent.CurrentIntegrity / _integrityComponent.MaxIntegrity)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  1464,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "if (!wasBreached \u0026\u0026 _integrityComponent.CurrentIntegrity \u003c= 0f)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  1510,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "if (_integrityComponent.CurrentIntegrity \u003e 0f)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  1945,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "float damageAmount = damageFraction * Mathf.Max(1f, _integrityComponent.MaxIntegrity);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  1955,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "if (deltaTime \u003c= 0f || !float.IsFinite(deltaTime) || _integrityComponent.CurrentIntegrity \u003c= 0f)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  2010,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "float ruptureDamage = Mathf.Max(1f, CurrentIntegrity);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  2035,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "bool wasBreached = _integrityComponent.CurrentIntegrity \u003c= 0f;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  2038,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "float resolvedIntegrity = normalizedIntegrity * Mathf.Max(0f, _integrityComponent.MaxIntegrity);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  2039,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "_integrityComponent.SetCurrentIntegrity(resolvedIntegrity);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  2113,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "normalizedIntegrity * Mathf.Max(0f, _integrityComponent.MaxIntegrity),"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  2116,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "maxIntegrity,"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  2143,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "SetState(integrity, flooded, BaseModuleFailureMode.None, maxIntegrity);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  2151,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "SetState(integrity, flooded, cascadeFailure, maxIntegrity);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  2215,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "_breachLatched = _integrityComponent.CurrentIntegrity \u003c= 0f;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  2777,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "if (_integrityComponent.CurrentIntegrity \u003c _integrityComponent.MaxRecoverableIntegrity)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  3359,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "float fatigueCap = Mathf.Max(0f, _integrityComponent.MaxIntegrity * fatigueCapRatio);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  3743,
+                         "kind":  "RIGIDBODY_MASS_STRUCTURAL_REVIEW",
+                         "severity":  "compatible_non_authoritative",
+                         "snippet":  "_moduleRigidbody.mass = Mathf.Max(MinimumMassKilograms, ResolveDryMassKilograms());"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  3752,
+                         "kind":  "RIGIDBODY_MASS_STRUCTURAL_REVIEW",
+                         "severity":  "compatible_non_authoritative",
+                         "snippet":  "_moduleRigidbody.mass = _defaultBodyMass;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  4364,
+                         "kind":  "RIGIDBODY_MASS_STRUCTURAL_REVIEW",
+                         "severity":  "compatible_non_authoritative",
+                         "snippet":  "_moduleRigidbody.mass = Mathf.Max("
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  5318,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "maxIntegrity,"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  5319,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "currentIntegrity,"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  5387,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "if (maxIntegrity \u003c 1f) maxIntegrity = 1f;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  5388,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "if (currentIntegrity \u003c 0f) currentIntegrity = 0f;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  5391,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "if (maxRecoverableIntegrity \u003c= 0f) maxRecoverableIntegrity = maxIntegrity;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  5392,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "if (maxRecoverableIntegrity \u003e maxIntegrity) maxRecoverableIntegrity = maxIntegrity;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/BaseModule.cs",
+                         "line":  5393,
+                         "kind":  "LEGACY_SCALAR_INTEGRITY_REVIEW",
+                         "severity":  "legacy_compatibility_surface",
+                         "snippet":  "if (currentIntegrity \u003e maxRecoverableIntegrity) currentIntegrity = maxRecoverableIntegrity;"
+                     }
+                 ]
+}

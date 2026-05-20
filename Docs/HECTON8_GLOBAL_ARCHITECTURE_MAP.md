@@ -1,6 +1,6 @@
 # HECTON-8 Global Architecture Map
 
-Date: 2026-05-19
+Date: 2026-05-20
 Status: PENDING VERIFICATION
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
@@ -15,7 +15,7 @@ This document is active only where it agrees with:
 - fresh verification logs and artifacts
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-R32 architecture R4/proof-wording correction is the latest artifact-backed local static DOC_GLOBAL boundary for architecture/root documentation. R31 remains the prior current-boundary propagation layer, R30 remains the prior internal-currentness layer, R29 remains the prior stale-gate/global-authority layer, R28 remains the prior interior-boundary layer, and R27 remains the latest source-counter/index snapshot until rerun.
+Current DOC_GLOBAL boundary (2026-05-20 R45): `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md` is present and is the latest local static root/architecture R43/R44 residue, proof-artifact wording, and source-counter correction. R44 remains the prior internal-residue/exact-route-field/proof-wording correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R44_ROOT_ARCHITECTURE_INTERNAL_RESIDUE_EXACT_ROUTE_FIELDS_LOCAL.md`; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R43_ROOT_ARCHITECTURE_ROUTE_CARD_AND_COUNTER_RESIDUE_LOCAL.md`; R42 remains the prior counter/route-boundary/proof-label correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R42_ROOT_ARCHITECTURE_COUNTER_AND_ROUTE_BOUNDARY_LOCAL.md`; R41 remains the prior global-authority/internal-residue correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R41_ROOT_ARCHITECTURE_GLOBAL_AUTHORITY_INTERNAL_RESIDUE_LOCAL.md`; R40 remains the prior R38-residue/source-counter correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R40_ROOT_ARCHITECTURE_R38_RESIDUE_AND_COUNTER_REFRESH_LOCAL.md`; R39 remains the prior authority-counter/proof-wording correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R39_ROOT_ARCHITECTURE_AUTHORITY_COUNTER_AND_PROOF_WORDING_LOCAL.md`; R38 remains the prior source-counter drift and boundary correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R38_ROOT_ARCHITECTURE_SOURCE_COUNTER_DRIFT_AND_BOUNDARY_LOCAL.md`; R37 remains the prior artifact-path/proof-wording/source-counter correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R37_ROOT_ARCHITECTURE_ARTIFACT_PATHS_AND_COUNTERS_LOCAL.md`; R36 remains the prior authority-spine/domain-map correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R36_ROOT_ARCHITECTURE_AUTHORITY_SPINE_LOCAL.md`; R35 remains the prior R4/counter-residue correction at `Docs/Reports/2026-05-19_DOCUMENTATION_R35_ROOT_ARCHITECTURE_R4_AND_COUNTER_RESIDUE_LOCAL.md`; R34 remains the older source-counter and physical-line refresh, superseded by R37/R38/R39/R40/R41/R42/R43/R44/R45 where exact counts, route-card fields, AtlasCheck status, or proof wording differ. R33 remains the prior R32-residue/source-anchor correction; R32 remains the prior R4/proof-wording correction; R31 remains the prior current-boundary propagation layer; R30 remains the prior internal-currentness layer; R29 remains the prior stale-gate/global-authority layer; R28 remains the prior interior-boundary layer; and R27 is historical source-counter/index evidence superseded by R34/R37/R38/R39/R40/R41/R42/R43/R44/R45.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 Scope: source-backed architecture map only, not a profiler capture and not a build-certification report
@@ -26,26 +26,26 @@ Read `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` before trusting older numeric c
 
 Current static audit corrections:
 
-- first-party asmdefs under `Assets/_Project`: R27 volatile static snapshot `123`
+- first-party asmdefs under `Assets/_Project`: R44 static source note `141` (`139` excluding test dirs); R42/R43/R44 reports are present in `Docs/Reports`
 - previously unindexed current asmdefs include `Hecton8.Core.Memory` and `Hecton8.Physics.Determinism`
 - cited May 11 build artifacts `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt` and `.log` are absent from the current filesystem
-- latest R27 static source spot-check counters: `1818` project C# files, `1761` script C# files, `1797` non-test C# files excluding `Assets/_Project/Tests*`, `1204221` project physical lines, `1184559` script physical lines, `1199376` non-test physical lines, `342` broad interface token hits, `267` direct interface declaration lines, `62` direct public interfaces in `GlobalRegistryContracts.cs`, and `123` first-party asmdefs. Evidence class: `STATIC_SOURCE`; volatile under concurrent agents; rerun before exact use.
+- 2026-05-20 R45 source-scale orientation: `2052` first-party C# files under `Assets/_Project`, `1991` under `Assets/_Project/Scripts`, `2026` non-test C# files excluding `Assets/_Project/Tests*`, `1401183` project physical lines, `1380785` script physical lines, `1394758` non-test physical lines, `345` project-wide broad `interface` token hits (`342` under scripts), `280` direct interface declaration hits, `63` direct public interfaces in `GlobalRegistryContracts.cs`, `141` first-party asmdefs (`139` excluding test dirs), `6199` `GlobalRegistry.` text hits, `575` publish/subscribe token hits, `18045` native-collection token hits, `116` `GlobalSignals.cs` `NativeQueue<...>` refs, `73` direct `CreateQueue(...)` slots inside `GlobalSignals.cs`, `135` typed `SignalBus<T>.EnsureInitialized()` lanes inside `GlobalSignals.cs`, `271` `SignalBus<T>.Configure/EnsureInitialized` hits inside `GlobalSignals.cs`, and `1345` broader script-level typed-lane matches. This is STATIC_SOURCE orientation only, not compile or runtime proof.
 - latest R5/R6 package/config scan: Unity pin `6000.4.1f1`; URP `17.4.0`; Addressables `2.7.6`; Input System `1.19.0`; AI Navigation `2.0.11`; forbidden UPM IDs absent; physical Astar/Easy Save/Demigiant/DarkTonic folders still present; live `DOTWEEN` and heavy Standalone vendor scripting defines remain contamination; embedded Crest/MicroSplat/ShaderGraph package drift needs import/build proof
 - R5 URP mapping correction: Low quality uses `URP_Low` with `Mobile_Renderer`, not `PC_Renderer`
 - R7 authority correction: `AGENTS.md` and `.codexrules/AGENTS.md` now carry the same Low mapping and no-new-ES3 wording
 - R8 world/scatter correction: world runtime code and data are substantial, but `GameBootstrapper` only creates `PersistentWorldRegistry`; scatter/field/chunk/MapMagic/vegetation/streaming managers still require scene/editor-authoring proof and runtime validation
-- R9 root/atlas correction: root authority is only `AGENTS.md`, `MASTER_RELEASE_WORK_PLAN.md`, and `BUILD_PLAYTEST_ISSUES.md`; root `PROJECT_ATLAS.md` is a compatibility mirror and atlas data is asmdef graph evidence only, not package/config/runtime proof
+- R9/R39 root/atlas correction: root authority is only `AGENTS.md`, `MASTER_RELEASE_WORK_PLAN.md`, and `BUILD_PLAYTEST_ISSUES.md`; root `PROJECT_ATLAS.md` is absent after the May 15 cleanup, `Docs/PROJECT_ATLAS.md` is the current asmdef graph snapshot, and atlas data is asmdef graph evidence only, not package/config/runtime proof
 - R14/R19/R20/R21/R23/R26/R27/R28 gameplay/economy correction: item/catalog/recipe/inventory/fabricator/scarcity/logistics code is real, but resource acquisition is not runtime-proven; R14 found `23 / 27` resource-node harvest items lacking `worldPrefab` and duplicate copper authority, R19 reduced the primary-harvest `worldPrefab` gap to `16 / 27`, R20/R21 extended `ContentSanityValidator` and reduced current resource-node primary-harvest gaps to `0 / 27` missing `worldPrefab` and `0 / 27` non-catalog, R23 added duplicate `ItemData.PersistentId` / catalog ambiguity validation, R26 added quest item/prerequisite route validation, R27 added recipe/result/ingredient/catalog plus craft-quest recipe-output validation, and R28 added scan-gate warnings for scan-locked recipes without known generic/prefab unlock routes while runtime pickup/craft/quest proof remains pending
 - R15 AI/Fauna correction: fauna archetype/template/biome/proxy data is real, but static scans did not prove production-scene `FaunaDirector` or `WorldFaunaSpawnRegistry` wiring; `GameBootstrapper` can register `DemiurgeFaunaSimulationService.Shared` as a ready `IFaunaSim` fallback with `ResidentSlotCapacity = 0`, so `IFaunaSim.IsReady` alone is not visible-fauna proof
 - R16/R18/R22/R24/R25 tools/PDA/first-hour correction: tool/scan/interaction architecture is real (`12` tool items, `12` held prefabs, `12` world prefabs, non-null tool worldPrefab refs, real scanner/scan-log/interaction/quest paths); R16 found enabled `ToolLoadoutProvisioner` startup grants on `Player.prefab`, R18 disabled/gated that dev provisioning, R22 made headless `PlayerPDA.Open()` fail closed, R24 added editor validation for active tool metadata -> held prefab -> ItemData/catalog/worldPrefab routes, and R25 added a player-prefab dev-provisioner startup flag gate; visible `DiegeticPDAController` bridge placement remains unproven
 - R17 rendering/visor/shader correction: active renderer assets contain real custom post/noir/SSDO/shaft features and `21` visor renderer-feature files implement `RecordRenderGraph`, but GPU Resident Drawer/GPU occlusion are disabled in scanned URP tier assets, `16` visor feature files still use `AddUnsafePass`, and source-ready GPR/light-shaft/instance-culling runtimes are not proven serialized in `_Project` scenes/prefabs/assets
 - R29/R30/R31/R32/R33/R36/R37/R38 compile/persistence correction: DOC_AUDIT reported Unity `6000.4.1f1` batchmode import/script compilation at `Library/Codex_DOC_AUDIT_UnityBatchCompile.log`, but the R10 filesystem check did not find that path. R37 added local Unity Bee/Roslyn temp-output probes for `Hecton8.Core.Memory` and `Hecton8.Core`, both exit code `0`; R38 demoted that full-Core success as stale under then-current churn. R43 later superseded the compile-blocked note with a clean external root `Hecton8*.csproj` no-restore CLI recheck. Unity MCP Console is currently unavailable, so this is compile/source boundary only; runtime save/load, profiler, player build, and PlayMode remain unproven. `SaveManager` / `H8BinaryWorldPager` now fail-close locked `world_data.h8bin` page persistence instead of throwing through bootstrap; R30/R31/R32/R33/R36/R37/R38 tighten it to single-writer file sharing, joinable pager worker shutdown, no stale pending counters after unexpected pager command faults, no false sparse-sector corruption, no per-chunk global voxel snapshot write, lazy pager file open outside `InitializeNativeBuffers()`, first-use allocation for large save buffers, pager-fault staging guard, Core.Memory asmdef boundary hygiene, WFC outpost MacroDB bitmask persist/restore contract coverage, and no orphaned chunk-load voxel prefetch.
-- R39/R40/R41/R42/R43/R45 generated-project correction: R39 found `Hecton8.Core.asmdef` references `23` first-party assemblies absent from generated `Hecton8.Core.csproj`, and `HectonComplianceValidator` now emits `CSPROJ001` for this mismatch. R40 attempted non-destructive Unity batchmode project refresh, found root generated projects still stale, then added a source-backed `Directory.Build.targets` bridge instead of editing generated `.csproj` files. R43 rechecked all eight root projects as single-project no-restore builds: `Hecton8.Core`, `Hecton8.Editor`, `Hecton8.PlayModeTests`, `Hecton8.World.Contracts`, `Hecton8.World.Dots`, `Hecton8.Bootstrap.Contracts`, `Hecton8.Input.Generated`, and `Hecton8.Input` each returned `0 Warning(s)` / `0 Error(s)` with `LASTEXITCODE=0`. Missing `Temp\obj` restore assets can still cause `NETSDK1004`, missing referenced `Temp\bin\Debug` DLLs can stop no-restore Editor/Core checks, and shared `Temp\obj` locks can create transient `CS2012` evidence noise until restore/build and build-server cleanup are rerun. Full restore graphs still carry vendor/package warnings outside the isolated root no-restore surface. R45 reapplied this boundary after stale R41/R38 wording reappeared in active docs. This is CLI compile evidence only; Unity Console, Play Mode, profiler, GCMonitor, player build, and scene wiring remain unproven.
-- 2026-05-15 current-disk correction: latest observed archived artifact `Docs/Archive/Batch007/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_224641_CurrentDisk53.log` exits `0` for `Hecton8.Core.csproj` with `Build succeeded`, `0 Warning(s)`, and `0 Error(s)`; earlier same-session failed or stale build artifacts are superseded by the later clean CurrentDisk53 artifact for archived Core CLI status only.
-- 2026-05-19 HFI/H-Phi correction: `Docs/Reports/2026-05-19_HFI_AUDIT_H_PHI_AND_PROJECT_RISK.md` and `Docs/Archive/Batch009/AgentLogs/HPhi_SHINOBU_02_current2.json` are the latest static numeric orientation, with `DataSovereignty=0.203977518`, `MemoryAlignment=0.586269524`, `HPhiStaticNarrow=0.119585803`, and `HPhiStaticRisk=0.009214659`; runtime proof remains absent.
-- 2026-05-15 H-Phi correction: archived artifact `Docs/Archive/Batch007/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_224426_CurrentDiskBudgetGate22.json` exits `0`; static scores include `DataSovereignty=0.021306032`, `MemoryAlignment=0.506309148`, `RuntimeHPhiRisk=0.000636091`, `GlobalRegistrySurface=5060/5060`, `ManagedFormatSurface=534/534`, `PrimaryManagedRuntimeRisk=147/147`, `DuplicateSignalNames=0`, `UnityUpdateMethods=0`, and Core graph debt `25/10/14/8/6`. This supersedes earlier same-day MemoryAlignment failure artifacts, the interim R47 `GlobalRegistrySurface=5076 > 5075` failure, R49, R52, R53, and R54 only for archived static H-Phi status.
+- R39/R40/R41 generated-project correction plus unlinked R42/R43/R45 labels: R39 found `Hecton8.Core.asmdef` references `23` first-party assemblies absent from generated `Hecton8.Core.csproj`, and `HectonComplianceValidator` now emits `CSPROJ001` for this mismatch. R40 attempted non-destructive Unity batchmode project refresh, found root generated projects still stale, then added a source-backed `Directory.Build.targets` bridge instead of editing generated `.csproj` files. R43 report text records all eight root projects as single-project no-restore builds: `Hecton8.Core`, `Hecton8.Editor`, `Hecton8.PlayModeTests`, `Hecton8.World.Contracts`, `Hecton8.World.Dots`, `Hecton8.Bootstrap.Contracts`, `Hecton8.Input.Generated`, and `Hecton8.Input` each returned `0 Warning(s)` / `0 Error(s)` with `LASTEXITCODE=0`. This file does not embed a fresh artifact path, full command, timestamp, environment, and output tuple for the active dirty workspace, so treat those values as historical CLI report text until rerun. Missing `Temp\obj` restore assets can still cause `NETSDK1004`, missing referenced `Temp\bin\Debug` DLLs can stop no-restore Editor/Core checks, and shared `Temp\obj` locks can create transient `CS2012` evidence noise until restore/build and build-server cleanup are rerun. Full restore graphs still carry vendor/package warnings outside the isolated root no-restore surface. R45 reapplied this boundary after stale R41/R38 wording reappeared in active docs. This is CLI compile evidence only; Unity Console, Play Mode, profiler, GCMonitor, player build, and scene wiring remain unproven.
+- 2026-05-15 current-disk correction: archived artifact `Docs/Archive/Batch007/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_224641_CurrentDisk53.log` exited `0` for `Hecton8.Core.csproj` with `Build succeeded`, `0 Warning(s)`, and `0 Error(s)` at capture time; earlier same-session failed or stale build artifacts are superseded by the later clean CurrentDisk53 artifact for archived Core CLI status only.
+- 2026-05-19 HFI/H-Phi correction: `Docs/Reports/2026-05-19_HFI_AUDIT_H_PHI_AND_PROJECT_RISK.md` and `Docs/Archive/Batch009/AgentLogs/HPhi_SHINOBU_02_current2.json` are historical static numeric orientation, with `DataSovereignty=0.203977518`, `MemoryAlignment=0.586269524`, `HPhiStaticNarrow=0.119585803`, and `HPhiStaticRisk=0.009214659`; runtime proof remains absent.
+- 2026-05-15 H-Phi correction: archived artifact `Docs/Archive/Batch007/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_224426_CurrentDiskBudgetGate22.json` exits `0`; static scores include `DataSovereignty=0.021306032`, `MemoryAlignment=0.506309148`, `RuntimeHPhiRisk=0.000636091`, `GlobalRegistrySurface=5060/5060`, `ManagedFormatSurface=534/534`, `PrimaryManagedRuntimeRisk=147/147`, `DuplicateSignalNames=0`, `UnityUpdateMethods=0`, and Core graph debt `25/10/14/8/6`. This supersedes earlier same-day MemoryAlignment failure artifacts, the interim R47 `GlobalRegistrySurface=5076 > 5075` failure, R49, R52, R53, and R54 only for archived static H-Phi status; the duplicate-name zero is not current source proof, and SHINOBU_02 current21 trend still reports duplicate signal-name debt `10`.
 - 2026-05-15 DOC_HONEST_ANALYSIS R3 correction: archived static H-Phi summary artifact `Docs/Archive/Batch006/AgentLogs/HPhi_DOC_HONEST_ANALYSIS_R3_20260515_CurrentStaticSummary.json` found Core asmdef debt had drifted to `26` because `Hecton8.World.GPR` appeared as an unused Core reference candidate in transient workspace/index state. The archived post-prune artifact `Docs/Archive/Batch006/AgentLogs/HPhi_DOC_HONEST_ANALYSIS_R3_20260515_CoreGraphAfterGprPrune.json` exits `0`, returned Core graph debt to `25/10/14/8/6`, and reported no unused Core asmdef candidates. Follow-up archived Core CLI compile `Docs/Archive/Batch006/AgentLogs/Build_DOC_HONEST_ANALYSIS_R3_20260515_AfterGprAsmdefPrune_Hecton8Core.log` exits `0` with `0 Warning(s)` and `0 Error(s)`.
-- R35 world-streaming/PDA correction: `WorldChunkResidencyManager` exposes a separate HLOD point/read-model version through `IStreamingBackpressureService.ActiveImpostorVersion`, and `PDAMapTab` uses it to skip unchanged fixed HLOD POI GPU uploads while keeping renderer matrix dirty state separate. Runtime PDA map/profiler proof remains unproven.
+- DOC_AUDIT R35 world-streaming/PDA correction: `WorldChunkResidencyManager` exposes a separate HLOD point/read-model version through `IStreamingBackpressureService.ActiveImpostorVersion`, and `PDAMapTab` uses it to skip unchanged fixed HLOD POI GPU uploads while keeping renderer matrix dirty state separate. This is separate from DOC_GLOBAL R35. Runtime PDA map/profiler proof remains unproven.
 - source counts are volatile during active multi-agent work; exact counts are snapshot data, not permanent truth
 - runtime proof remains absent
 
@@ -64,18 +64,18 @@ This section supersedes older numeric and bus-model claims in this file.
 
 | Scan | Current Value |
 |---|---:|
-| first-party C# files under `Assets/_Project` | 1,818 |
-| first-party C# physical lines under `Assets/_Project` | 1,204,221 |
-| first-party non-test C# files excluding `Assets/_Project/Tests*` | 1,797 |
-| first-party non-test C# physical lines | 1,199,376 |
-| broad `interface` token hits under `Assets/_Project` | 342 |
-| direct interface declaration lines under `Assets/_Project` | 267 |
-| direct public interfaces in `GlobalRegistryContracts.cs` | 62 |
+| first-party C# files under `Assets/_Project` | 2052 |
+| first-party C# physical lines under `Assets/_Project` | 1401183 |
+| first-party non-test C# files excluding `Assets/_Project/Tests*` | 2026 |
+| first-party non-test C# physical lines | 1394758 |
+| broad `interface` token hits under `Assets/_Project` | 345 |
+| direct interface declaration hits under `Assets/_Project` | 280 |
+| direct public interfaces in `GlobalRegistryContracts.cs` | 63 |
 | authoritative domain ids | 85 |
-| `GlobalSignals` typed lanes | 133 |
+| `GlobalSignals` typed lanes | 135 |
 | `GlobalSignals` direct queue slots | 73 |
-| `[StructLayout(... Size = 32/64/128)]` hits | 127 |
-| first-party asmdefs under `Assets/_Project` | 123 |
+| `[StructLayout(... Size = 32/64/128)]` hits | 1288 |
+| first-party asmdefs under `Assets/_Project` | 141 |
 
 Current architecture authority addenda:
 
@@ -316,29 +316,31 @@ Bootstrap
 | 84 | QA Watchdog Bot | long-run validation |
 | 85 | Tech Researcher | mandate evolution |
 
-## 2026-05-19 R32 Current-State Boundary
+## 2026-05-20 R45 Current-State Boundary
 
 - This stable map is the architecture authority. Dated reports are evidence/counter snapshots only.
-- Read `Docs/README.md`, `.agents-skills/README.md`, `Docs/ARCHITECTURE/README.md`, `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/README.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R32_ARCHITECTURE_R4_AND_PROOF_WORDING_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R31_ARCHITECTURE_CURRENT_BOUNDARY_PROPAGATION_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R30_ROOT_ARCHITECTURE_INTERNAL_CURRENTNESS_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R29_ROOT_ARCHITECTURE_STALE_GATE_GLOBAL_AUTHORITY_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R28_ROOT_ARCHITECTURE_INTERIOR_BOUNDARY_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R27_ROOT_ARCHITECTURE_INDEX_COUNTER_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R26_ROOT_ARCHITECTURE_HFI_PROMOTION_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R25_ROOT_ARCHITECTURE_LONGTAIL_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R24_ROOT_ARCHITECTURE_ACTUALITY_LOCAL.md`, `Docs/Reports/2026-05-19_HFI_AUDIT_H_PHI_AND_PROJECT_RISK.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R23_SUBAGENT_RESIDUE_AND_STATUS_JSON_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R22_COUNTER_DRIFT_AND_VALIDATION_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R21_COUNTERS_REPORTS_MARKETING_BOUNDARIES_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ARCHIVARIUS_DESIGN_PROOF_RESIDUE_R20_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_MARKETING_EVENTBUS_COUNTERS_R19_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R4_ARCHIVARIUS_FORENSIC_LONGTAIL_R18_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_REPORT_VAULT_AND_NAVIGATION_R17_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R15_NAVIGATION_SUPERSESSION_R16_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_ENTRYPOINT_NAVIGATION_R15_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_BATCH008_BINARY_HYGIENE_R14_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_GENERIC_REPORT_BOUNDARIES_R13_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_REMAINDER_R11_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_LONGTAIL_INTERIOR_R10_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_EVIDENCE_LANGUAGE_AND_COUNTERS_R9_LOCAL.md`, `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`, and then older dated evidence reports before using this map as current architecture orientation. R32 is present in this checkout and leads this read order; recapture before changing exact source counters or runtime gates.
+- Read `Docs/README.md`, `.agents-skills/README.md`, `Docs/ARCHITECTURE/README.md`, `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/README.md`, then `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R44_ROOT_ARCHITECTURE_INTERNAL_RESIDUE_EXACT_ROUTE_FIELDS_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R43_ROOT_ARCHITECTURE_ROUTE_CARD_AND_COUNTER_RESIDUE_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R42_ROOT_ARCHITECTURE_COUNTER_AND_ROUTE_BOUNDARY_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R41_ROOT_ARCHITECTURE_GLOBAL_AUTHORITY_INTERNAL_RESIDUE_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R40_ROOT_ARCHITECTURE_R38_RESIDUE_AND_COUNTER_REFRESH_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R39_ROOT_ARCHITECTURE_AUTHORITY_COUNTER_AND_PROOF_WORDING_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R38_ROOT_ARCHITECTURE_SOURCE_COUNTER_DRIFT_AND_BOUNDARY_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R37_ROOT_ARCHITECTURE_ARTIFACT_PATHS_AND_COUNTERS_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R36_ROOT_ARCHITECTURE_AUTHORITY_SPINE_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R35_ROOT_ARCHITECTURE_R4_AND_COUNTER_RESIDUE_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R34_ROOT_ARCHITECTURE_SOURCE_COUNTER_REFRESH_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R33_ROOT_ARCHITECTURE_R32_RESIDUE_SOURCE_ANCHORS_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R32_ARCHITECTURE_R4_AND_PROOF_WORDING_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R31_ARCHITECTURE_CURRENT_BOUNDARY_PROPAGATION_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R30_ROOT_ARCHITECTURE_INTERNAL_CURRENTNESS_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R29_ROOT_ARCHITECTURE_STALE_GATE_GLOBAL_AUTHORITY_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R28_ROOT_ARCHITECTURE_INTERIOR_BOUNDARY_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R27_ROOT_ARCHITECTURE_INDEX_COUNTER_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R26_ROOT_ARCHITECTURE_HFI_PROMOTION_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R25_ROOT_ARCHITECTURE_LONGTAIL_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R24_ROOT_ARCHITECTURE_ACTUALITY_LOCAL.md`, `Docs/Reports/2026-05-19_HFI_AUDIT_H_PHI_AND_PROJECT_RISK.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R23_SUBAGENT_RESIDUE_AND_STATUS_JSON_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R22_COUNTER_DRIFT_AND_VALIDATION_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R21_COUNTERS_REPORTS_MARKETING_BOUNDARIES_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ARCHIVARIUS_DESIGN_PROOF_RESIDUE_R20_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_MARKETING_EVENTBUS_COUNTERS_R19_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R4_ARCHIVARIUS_FORENSIC_LONGTAIL_R18_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_REPORT_VAULT_AND_NAVIGATION_R17_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R15_NAVIGATION_SUPERSESSION_R16_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_ENTRYPOINT_NAVIGATION_R15_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_BATCH008_BINARY_HYGIENE_R14_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_GENERIC_REPORT_BOUNDARIES_R13_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_REMAINDER_R11_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_LONGTAIL_INTERIOR_R10_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_EVIDENCE_LANGUAGE_AND_COUNTERS_R9_LOCAL.md`, `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`, and then older dated evidence reports before using this map as current architecture orientation. The R45 validation tuple is static/tool-only and AtlasCheck remains red until rerun after the R45 report/atlas refresh; recapture before changing exact source counters or runtime gates.
 - This map is source-backed architecture orientation, not Play Mode proof, profiler proof, console certification, or scene/prefab wiring proof.
 - Line counts and interface counts are orientation data only; source files and fresh verification logs win.
 
 ## 1. Scope
 
 - Audit target: `Assets/_Project/**/*.cs`
-- R27 first-party `.cs` inventory under `Assets/_Project`: `1818`
-- R27 first-party `.cs` inventory under `Assets/_Project/Scripts`: `1761`
-- R27 project physical line count under `Assets/_Project`: `1204221`
-- R27 script physical line count under `Assets/_Project/Scripts`: `1184559`
-- Average physical lines per script from the May 19 R27 snapshot: `672.66`
-- Scripts still living directly in `Assets/_Project/Scripts` root: `337`
+- R45 first-party `.cs` inventory under `Assets/_Project`: `2052`
+- R45 first-party `.cs` inventory under `Assets/_Project/Scripts`: `1991`
+- R45 first-party non-test `.cs` inventory excluding `Assets/_Project/Tests*`: `2026`
+- R45 project physical line count under `Assets/_Project`: `1401183`
+- R45 script physical line count under `Assets/_Project/Scripts`: `1380785`
+- R45 non-test physical line count excluding `Assets/_Project/Tests*`: `1394758`
+- Average physical lines per script from the May 20 R45 snapshot: `693.51`
+- Scripts still living directly in `Assets/_Project/Scripts` root: previous R42 snapshot `338`; recapture before using as current exact proof.
 
 This file replaces the older generated map whose `808`-script snapshot and some interface conclusions are no longer true.
 
 2026-05-17 R8 correction:
 - Counts above supersede the April 30 `1038/998/444135`, earlier May 1 `1060/1020/466768`, May 1 `1020/544728`, earlier May 2 `489893`, May 2 `1087/1047/571562/317`, May 6 `651121/552119`, and earlier May 7 `651253/559502`, `651810/560025`, `652238/560372`, `652787/560848`, `655363/563210`, and `667771` snapshots.
-- Counts above also supersede the May 13 R4 `1411 / 1365 / 1401 / 869871 / 852315 / 867132 / 215 / 51 / 24` source-scale snapshot and the May 18 R10 `1739 / 1686 / 1722 / 1134113 / 1115245 / 1130062 / 296 / 63 / 107` source-scale snapshot where exact counts differ.
-- R27 broad first-party source scan found `342` broad `interface` token hits and `267` direct interface declaration lines. `GlobalRegistryContracts.cs` direct public interface count is now `62` and remains a narrower owner-file metric, not the whole interface surface.
+- Counts above also supersede the May 13 R4 `1411 / 1365 / 1401 / 869871 / 852315 / 867132 / 215 / 51 / 24`, the May 18 R10 `1739 / 1686 / 1722 / 1134113 / 1115245 / 1130062 / 296 / 63 / 107`, the May 20 R37 `1962 / 1903 / 1938 / 1338727 / 1318650 / 1332673 / 322 / 319 / 271`, the May 20 R42 `2029 / 1970 / 2003 / 1382236 / 1362107 / 1375742 / 325 / 322 / 272`, and the May 20 R43 `2047 / 1986 / 2021 / 1394096 / 1373895 / 1387908 / 375 / 370 / 272` source-scale snapshots where exact counts differ.
+- R44 broad first-party source scan found `345` project-wide broad `interface` token hits (`342` under scripts) and `279` direct interface declaration lines. `GlobalRegistryContracts.cs` direct public interface count is still `62` and remains a narrower owner-file metric, not the whole interface surface.
 - Older interface coverage ratios in this document are stale orientation only; re-open `GlobalRegistryContracts.cs` and implementors before making interface-completion claims.
 - The May 11 green Core dependency build is historical evidence only. The May 12 DOC_CHRONOS compile gate failed with `111` C# errors and `3` warnings in external platform/native/voxel missing-symbol families; that blocker is historical unless a current compile rerun reproduces it.
 - Current Unity MCP proof was not run in the May 11 continuation; older MCP readbacks are historical only.
@@ -348,10 +350,10 @@ This file replaces the older generated map whose `808`-script snapshot and some 
 
 Representative structure visible in current source:
 
-1. `Bootstrap/GameBootstrapper.cs` initializes registry-owned services and dependency edges.
-2. `SceneBootstrap.cs` separately owns scene warmup, readiness gates, and bootstrap event flow.
-3. `Core/GlobalRegistry.cs` exposes shared service slots.
-4. `Core/SystemDispatcher.cs` and `GameTickManager.cs` drive central runtime cadence.
+1. `Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs` initializes registry-owned services, scene activation/readiness gates, and dependency edges.
+2. `Assets/_Project/Scripts/Bootstrap/SceneGuard.cs` protects non-bootstrap scene entry; `Assets/_Project/Scripts/World/WorldLODSceneBootstrap.cs` owns authored LODGroup scene registration. No first-party `SceneBootstrap.cs` exists in the current source scan.
+3. `Assets/_Project/Scripts/Core/GlobalRegistry.cs` exposes shared service slots.
+4. `Assets/_Project/Scripts/Core/SystemDispatcher.cs` and `Assets/_Project/Scripts/GameTickManager.cs` drive central runtime cadence.
 5. feature owners in gameplay, world, UI, audio, quest, and submarine layers consume those services through mixed direct references, interfaces, and event lanes.
 
 Meaning:
@@ -406,18 +408,18 @@ Current direct damage contract owners confirmed by source scan:
 - `Hecton8.Core.IDamageReceiver` -> `Gameplay/HectonPlayerHealth`
 
 This is materially different from older documents that claimed `IAudioService` was ghost, `IUIService` was directly multi-owned, or `IDamageReceiver` was an unresolved shadow-conflict.
-It also supersedes older interface-count claims. Current direct public interface count is `62`; coverage must be rechecked from source before being used as proof.
+It also supersedes older interface-count claims. Current direct public interface count in `GlobalRegistryContracts.cs` is `62`; coverage must be rechecked from source before being used as proof.
 
 ## 4. Event Architecture
 
-Current source authority is `Assets/_Project/Scripts/Core/GlobalSignals.cs`.
+Current source authority is `Assets/_Project/Scripts/Core/GlobalSignals.cs` when present in the active source tree; R43 confirms it exists and remains a static orientation surface, not runtime proof.
 
 The old five-bucket signal classification is historical shorthand only. It is not the current EventBus truth.
 
 Current source-backed facts:
 
-- R27 static source scan of `GlobalSignals.InitializeAllQueues()` sees `73` direct `CreateQueue(...)` native queue slots
-- R27 static source scan of `GlobalSignals.cs` sees `133` `SignalBus<T>.EnsureInitialized()` typed lanes, including `ConfigureDebugSignalLane()` for `DebugSignal`
+- R44 static source scan of `GlobalSignals.InitializeAllQueues()` sees `73` direct `CreateQueue(...)` native queue slots.
+- R44 static source scan of `GlobalSignals.cs` sees `135` `SignalBus<T>.EnsureInitialized()` typed lanes, `271` `SignalBus<T>.Configure/EnsureInitialized` hits, and `116` `NativeQueue<...>` refs; broader scripts contain `1345` `SignalBus<T>` typed-lane matches.
 - R30 reported the Mod API static validator pass (`Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`); this line links no standalone artifact tuple, so treat it as static schema/input-surface orientation only, not runtime-lane, profiler, mod-smoke, or current rerun proof.
 - signal payloads are unmanaged structs; sizes are source-validated by `ValidateSignalSize`/`ValidateSignalPayload` calls, not profiler proof
 - `SpscSignalRingBuffer<T>` exists for SPSC-only cases
@@ -434,7 +436,7 @@ Current rule:
 
 Current documentation pass status:
 
-- Current DOC_GLOBAL documentation boundary starts at `Reports/2026-05-19_DOCUMENTATION_R32_ARCHITECTURE_R4_AND_PROOF_WORDING_LOCAL.md`; R31 remains the prior current-boundary propagation correction, R30 remains the prior internal-currentness correction, R29 remains the prior stale-gate/global-authority correction, R28 remains the prior root/architecture interior-boundary correction, R27 remains the latest source-counter/index boundary, R26, R25, and R24 remain prior root/architecture boundaries, `Reports/2026-05-19_HFI_AUDIT_H_PHI_AND_PROJECT_RISK.md` is the current static HFI/H-Phi/global-authority risk snapshot, R23 remains the proof-language/navigation residue boundary, R22 remains a prior source-counter/validation boundary, then R21, R20, R19, R18, R17, R16, R15, R14, R13, R12, R11, R10, and R9 remain subordinate correction layers.
+- Current DOC_GLOBAL documentation boundary starts at disk-backed R45: `Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34/R33/R32/R31/R30/R29/R28/R27 remain subordinate root/architecture correction layers. `Reports/2026-05-19_HFI_AUDIT_H_PHI_AND_PROJECT_RISK.md` is historical static HFI/H-Phi/global-authority risk orientation, not runtime proof.
 - `Reports/2026-05-13_DOC_AUDIT_XRAY.md` is a historical documentation counter/missing-artifact override
 - `Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json` is a historical machine-readable active documentation manifest; its counters are superseded where newer DOC_GLOBAL or DOC_AUDIT passes reran them
 - `Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md` is a historical `.agents-skills` visual-fake doctrine boundary; stable doctrine now lives in `AGENTS.md` and `.agents-skills`
@@ -470,23 +472,23 @@ It is not proof of stable play-mode behavior, shipping build health, or zero-GC 
 
 Largest current first-party owners by line count:
 
-- `WorldProceduralScatterDirector.cs` - `11778`
-- `HectonPlayerMovement.cs` - `13240`
-- `HectonVoxelEngine.cs` - `6751`
-- `World/HectonMapMagicVegetationBridge.cs` - `6640`
-- `HectonUnderwaterVisuals.cs` - `6553`
-- `UI/SuitHUDV4CanvasOverlay.cs` - `6220`
-- `Audio/PlayerCriticalProceduralAudioRenderer.cs` - `6047`
-- `SaveBinaryStorage.cs` - `5743`
-- `World/PersistentWorldRegistry.cs` - `5646`
-- `WorldProceduralFieldSampler.cs` - `5100`
+- `HectonPlayerMovement.cs` - `13499`
+- `UI/Localization/H8LocHashes.cs` - `12895`
+- `WorldProceduralScatterDirector.cs` - `11907`
+- `Audio/PlayerCriticalProceduralAudioRenderer.cs` - `10919`
+- `Core/GlobalSignals.cs` - `9886`
+- `SpatialAudioManager.cs` - `9872`
+- `HectonVoxelEngine.cs` - `8692`
+- `SaveBinaryStorage.cs` - `8609`
+- `World/FloraInteractionManager.cs` - `8015`
+- `HectonFluidEngine.cs` - `7862`
 
 These are not cosmetic complaints.
 They are risk multipliers because runtime ownership, visuals, simulation, and integration pressure accumulate inside very large files.
 
 ## 7. Proven Tensions
 
-- bootstrap ownership is split between `GameBootstrapper` and `SceneBootstrap`
+- bootstrap ownership is centered on `GameBootstrapper`; scene-entry protection is `SceneGuard`, while `WorldLODSceneBootstrap` is a LOD scene-registration bridge. No first-party `SceneBootstrap.cs` exists in the current source scan
 - event architecture is mixed between queue-backed and direct static buses
 - root-folder ownership is still noisy with `342` scripts in `Assets/_Project/Scripts`
 - codebase health is stronger than some old reports claimed, but file-size concentration and ownership spread remain real

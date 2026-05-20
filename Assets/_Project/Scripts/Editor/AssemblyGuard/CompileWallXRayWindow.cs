@@ -86,7 +86,7 @@ namespace Hecton8.Editor
         public int CycleAssemblies;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32, Pack = 8)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal struct CompileWallLegacyGraphHeader
     {
         [FieldOffset(0)] public uint Magic;
@@ -1577,7 +1577,7 @@ namespace Hecton8.Editor
 
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 64, Pack = 8)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct CompileWallBlackBoxEntry
     {
         [FieldOffset(0)] public double Seconds;
@@ -2117,29 +2117,37 @@ namespace Hecton8.Editor
             writer.WriteLine("        public const int AssemblyRoutingOverride_MinQualityWeight = 20;");
             writer.WriteLine("        public const int AssemblyRoutingOverride_MaxQualityWeight = 24;");
             writer.WriteLine("        public const int AssemblyRoutingOverride_QualityCurveHash = 28;");
-            writer.WriteLine("        public const int BootstrapRegistryContext_Size = 80;");
+            writer.WriteLine("        public const int BootstrapRegistryContext_Size = 128;");
             writer.WriteLine("        public const int BootstrapRegistryContext_BufferTable = 8;");
             writer.WriteLine("        public const int BootstrapRegistryContext_RegistryTable = 40;");
-            writer.WriteLine("        public const int BootstrapDependencySnapshot_Size = 80;");
+            writer.WriteLine("        public const int BootstrapDependencySnapshot_Size = 128;");
             writer.WriteLine("        public const int BootstrapDependencySnapshot_ServiceTable = 8;");
             writer.WriteLine("        public const int BootstrapDependencySnapshot_SignalTable = 40;");
-            writer.WriteLine("        public const int PhysicsFacade_Size = 40;");
+            writer.WriteLine("        public const int PhysicsFacade_Size = 64;");
             writer.WriteLine("        public const int MockDomainState_Size = 32;");
             writer.WriteLine("    }");
             writer.WriteLine("}");
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32, Pack = 8)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal struct AssemblyRoutingCsvRow
     {
+        [FieldOffset(0)]
         public uint ContractHash;
+        [FieldOffset(4)]
         public uint ImplementationHash;
+        [FieldOffset(8)]
         public uint MockImplementationHash;
+        [FieldOffset(12)]
         public uint Flags;
+        [FieldOffset(16)]
         public float MinQualityWeight;
+        [FieldOffset(20)]
         public float MaxQualityWeight;
+        [FieldOffset(24)]
         public uint QualityCurveHash;
+        [FieldOffset(28)]
         public uint Reserved;
     }
 

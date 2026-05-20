@@ -531,8 +531,8 @@ namespace Hecton8.Vehicles.Automation
 
         private void RefreshDataVaultReferenceCold()
         {
-            if (_dataVault == null)
-                _dataVault = GlobalRegistry.DataVault;
+            if (_dataVault == null && GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latestVault))
+                _dataVault = latestVault;
         }
 
         private unsafe bool TryResolveActiveSplines(out ActiveSplineData* activeSplines, out int length, bool allowEnsure = true)

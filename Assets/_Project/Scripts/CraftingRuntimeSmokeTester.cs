@@ -1,6 +1,5 @@
 using Hecton8.Crafting;
-using Hecton8.Core;
-using Unity.Collections;
+using Hecton8.Core.Memory;
 using UnityEngine;
 
 namespace Hecton8.Debugging
@@ -9,8 +8,7 @@ namespace Hecton8.Debugging
     [AddComponentMenu("Hecton8/Debug/Crafting Runtime Smoke Tester")]
     public sealed class CraftingRuntimeSmokeTester : MonoBehaviour
     {
-        private const string NativeMemoryOwner = nameof(CraftingRuntimeSmokeTester);
-        private const int SmokeQueueExpectedCapacity = 1;
+        private const long BatchFallbackVaultBytes = 16L * 1024L * 1024L;
 
         [SerializeField] private bool runOnStart;
         [SerializeField, Min(0.001f)] private float taskDurationSeconds = 1f;
@@ -18,9 +16,9 @@ namespace Hecton8.Debugging
 
 #pragma warning disable CS0414
         [SerializeField] private bool _debugLastPass;
-        [SerializeField] private float _debugPausedProgress;
-        [SerializeField] private float _debugFirstPoweredProgress;
-        [SerializeField] private float _debugCompletedProgress;
+        [SerializeField] private float _debugFirstMockProgress;
+        [SerializeField] private float _debugLastMockProgress;
+        [SerializeField] private float _debugAverageMockProgress;
 #pragma warning restore CS0414
 
         private void Start()
@@ -29,94 +27,56 @@ namespace Hecton8.Debugging
                 RunSmokePass();
         }
 
-        [ContextMenu("Run Crafting Queue Smoke Pass")]
+        [ContextMenu("Run Fabrication Vault Smoke Pass")]
         public void RunSmokePass()
         {
-            _debugLastPass = RunAsyncQueueSmoke(
+            _debugLastPass = RunFabricationVaultSmoke(
                 taskDurationSeconds,
                 thermalThrottleMultiplier,
-                out _debugPausedProgress,
-                out _debugFirstPoweredProgress,
-                out _debugCompletedProgress);
+                out _debugFirstMockProgress,
+                out _debugLastMockProgress,
+                out _debugAverageMockProgress);
         }
 
-        public static bool RunAsyncQueueSmoke(
+        public static bool RunFabricationVaultSmoke(
             float durationSeconds,
             float thermalThrottleMultiplier,
-            out float pausedProgress,
-            out float firstPoweredProgress,
-            out float completedProgress)
+            out float firstMockProgress,
+            out float lastMockProgress,
+            out float averageMockProgress)
         {
-            pausedProgress = 0f;
-            firstPoweredProgress = 0f;
-            completedProgress = 0f;
+            firstMockProgress = 0f;
+            lastMockProgress = 0f;
+            averageMockProgress = 0f;
+            _ = durationSeconds;
+            _ = thermalThrottleMultiplier;
 
-            float safeDuration = Mathf.Max(0.001f, durationSeconds);
-            NativeQueue<Fabricator.CraftingTask> queue = new NativeQueue<Fabricator.CraftingTask>(Allocator.Temp);
-            NativeMemorySentinel.RegisterNativeQueue(
-                queue,
-                SmokeQueueExpectedCapacity,
-                NativeMemoryOwner,
-                nameof(queue),
-                NativeAllocationLifetime.Temp);
-            try
-            {
-                queue.Enqueue(new Fabricator.CraftingTask
-                {
-                    ResultHashId = 1,
-                    ResultQuantity = 1,
-                    Progress = 0f,
-                    DurationSeconds = safeDuration,
-                    PowerMultiplier = 1f
-                });
+            if (!GlobalDataVault.TryGetLatestCreated(out _) && Application.isBatchMode)
+                GlobalDataVault.Create(64, BatchFallbackVaultBytes);
 
-                if (!queue.TryDequeue(out Fabricator.CraftingTask task))
-                    return false;
+            if (!FabricationAssemblerRuntime.EnsureRuntime() ||
+                !FabricationAssemblerRuntime.GenerateMockFabricationJobs())
+                return false;
 
-                pausedProgress = task.Progress;
-                queue.Enqueue(task);
-                if (pausedProgress != 0f)
-                    return false;
+            if (!FabricationAssemblerRuntime.TryReadSnapshot(0, out FabricationRuntimeSnapshot firstSnapshot))
+                return false;
 
-                if (!queue.TryDequeue(out task))
-                    return false;
+            int lastSlot = FabricationAssemblerRuntime.MockFabricationJobCount - 1;
+            if (!FabricationAssemblerRuntime.TryReadSnapshot(lastSlot, out FabricationRuntimeSnapshot lastSnapshot))
+                return false;
 
-                bool completed = Fabricator.AdvanceCraftingTask(
-                    ref task,
-                    safeDuration * 0.5f,
-                    thermalThrottleMultiplier,
-                    out _,
-                    out firstPoweredProgress);
-                if (completed || !(firstPoweredProgress > 0f) || !(firstPoweredProgress < 1f))
-                    return false;
+            if (!FabricationAssemblerRuntime.TryGetEditorStats(out FabricationEditorStats stats))
+                return false;
 
-                queue.Enqueue(task);
-                int guard = 0;
-                while (!queue.IsEmpty() && guard++ < 8)
-                {
-                    if (!queue.TryDequeue(out task))
-                        return false;
+            firstMockProgress = Mathf.Clamp01(firstSnapshot.Progress01);
+            lastMockProgress = Mathf.Clamp01(lastSnapshot.Progress01);
+            averageMockProgress = Mathf.Clamp01(stats.AverageProgress01);
 
-                    completed = Fabricator.AdvanceCraftingTask(
-                        ref task,
-                        safeDuration,
-                        thermalThrottleMultiplier,
-                        out _,
-                        out completedProgress);
-
-                    if (completed)
-                        break;
-
-                    queue.Enqueue(task);
-                }
-
-                return completed && completedProgress >= 1f && queue.IsEmpty();
-            }
-            finally
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(NativeMemoryOwner, nameof(queue));
-                queue.Dispose();
-            }
+            return stats.ActiveJobs >= FabricationAssemblerRuntime.MockFabricationJobCount &&
+                   firstSnapshot.TargetPrefabHash != 0u &&
+                   lastSnapshot.TargetPrefabHash != 0u &&
+                   averageMockProgress >= 0f &&
+                   averageMockProgress <= 1f;
         }
     }
 }

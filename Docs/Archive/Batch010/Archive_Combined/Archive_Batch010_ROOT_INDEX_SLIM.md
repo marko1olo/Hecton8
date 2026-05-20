@@ -1,0 +1,18 @@
+# Archive Batch010 ROOT_INDEX SLIM
+Scope: Docs/Archive top-level names only
+No recursive old-batch content included
+
+Batch_GIT_SYNC_REBASE
+Batch001
+Batch002
+Batch003
+Batch004
+Batch005
+Batch006
+Batch007
+Batch008
+Batch009
+Batch009_Reentry_SHINOBU_69_SaveSystem
+Batch009_Reentry_SHINOBU_69_SaveSystem_StaleAfterVfx
+Batch009_Reentry_SHINOBU_69_VFX_Contamination_20260519_011534
+Batch010

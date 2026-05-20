@@ -43,7 +43,9 @@ Shader "Hecton8/AbyssalSwarmProcedural"
 
             StructuredBuffer<BoidMatrixDTO> _H8ShinobuBoidMatrices;
             StructuredBuffer<float4> _H8ShinobuBoidCustomData;
+            StructuredBuffer<uint> _H8ShinobuBoidVisibleIndices;
             int _H8ShinobuBoidActiveCount;
+            int _H8ShinobuBoidUseVisibleIndices;
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseColor;
@@ -78,8 +80,12 @@ Shader "Hecton8/AbyssalSwarmProcedural"
             Varyings Vert(uint vertexID : SV_VertexID, uint instanceID : SV_InstanceID)
             {
                 Varyings output;
-                uint safeInstance = min(instanceID, max((uint)_H8ShinobuBoidActiveCount, 1u) - 1u);
-                float alive = step((float)instanceID + 0.5, (float)_H8ShinobuBoidActiveCount);
+                uint sourceInstance = instanceID;
+                if (_H8ShinobuBoidUseVisibleIndices != 0)
+                    sourceInstance = _H8ShinobuBoidVisibleIndices[instanceID];
+
+                uint safeInstance = min(sourceInstance, max((uint)_H8ShinobuBoidActiveCount, 1u) - 1u);
+                float alive = step((float)safeInstance + 0.5, (float)_H8ShinobuBoidActiveCount);
                 BoidMatrixDTO matrixDto = _H8ShinobuBoidMatrices[safeInstance];
                 float4 custom = _H8ShinobuBoidCustomData[safeInstance];
                 float quality = saturate(custom.w);

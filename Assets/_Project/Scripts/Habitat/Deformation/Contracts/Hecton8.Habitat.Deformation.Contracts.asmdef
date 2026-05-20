@@ -2,11 +2,12 @@
     "name": "Hecton8.Habitat.Deformation.Contracts",
     "rootNamespace": "Hecton8.Habitat.Deformation.Contracts",
     "references": [
+        "Unity.Collections",
         "Unity.Mathematics"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
-    "allowUnsafeCode": false,
+    "allowUnsafeCode": true,
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": false,

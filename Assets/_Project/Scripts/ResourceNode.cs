@@ -22,26 +22,15 @@ namespace Hecton8.Scavenging
     {
         private static readonly int _MeltCenterId = Shader.PropertyToID("_MeltCenter");
         private static readonly int _MeltRadiusId = Shader.PropertyToID("_MeltRadius");
-        private const int DebrisPoolWarmupCount = 96;
-        private const int MinimumImpactDebrisCount = 3;
-        private const int MaximumImpactDebrisCount = 5;
-        private const float ImpactDebrisLifetimeSeconds = 4f;
-        private const float ImpactDebrisSinkDurationSeconds = 1.15f;
-        private const float ImpactDebrisSinkDepthMultiplier = 1.6f;
+        private const uint ImpactDebrisRockSpeciesHash = 0x524E4442u; // RNDB
+        private const uint ImpactDebrisSedimentSpeciesHash = 0x53454442u; // SEDB
         private const float DefaultFirstYieldSampleSeconds = 0.12f;
         private const float MinimumYieldSampleSeconds = 0.016f;
-        private const float MaximumYieldSampleSeconds = 0.35f;
         private const int DepletionLockFree = 0;
         private const int DepletionLockOwned = 1;
         private static readonly int _SteamExplosionLayerMask = HectonLayerMasks.MountedSweepLayerMask;
         private static readonly Collider[] _steamExplosionOverlapBuffer = new Collider[16];
         private static readonly Rigidbody[] _steamExplosionBodyBuffer = new Rigidbody[16];
-        private static GameObject s_runtimeDebrisPrefab;
-        private static Mesh s_runtimeDebrisMesh;
-        private static Material s_runtimeDebrisMaterial;
-        private static PhysicsMaterial s_runtimeSedimentDebrisPhysicsMaterial;
-        private static PhysicsMaterial s_runtimeBasaltDebrisPhysicsMaterial;
-        private static bool s_runtimeDebrisPoolReady;
         // COLD ALLOC: RegistryBucket<ResourceNode>[4096] — authored/persistent resource node registry for legacy world-state compatibility — owner: ResourceNode
         private static readonly RegistryBucket<ResourceNode> _worldStateRegistry = new RegistryBucket<ResourceNode>(4096);
 
@@ -49,12 +38,6 @@ namespace Hecton8.Scavenging
         private static void ResetStaticState()
         {
             _worldStateRegistry.Clear();
-            s_runtimeDebrisPrefab = null;
-            s_runtimeDebrisMesh = null;
-            s_runtimeDebrisMaterial = null;
-            s_runtimeSedimentDebrisPhysicsMaterial = null;
-            s_runtimeBasaltDebrisPhysicsMaterial = null;
-            s_runtimeDebrisPoolReady = false;
         }
 
         [Header("Identity")]
@@ -135,7 +118,6 @@ namespace Hecton8.Scavenging
         private AbsoluteUniversePosition _persistentAup;
         private bool _hasPersistentAup;
         private HectonVoxelEngine _cachedVoxelEngine;
-        private float _lastYieldSampleTimeSeconds;
         private float _pressureMetamorphismProgressSeconds;
         private long _fractionalYieldRemainderGrams;
         private int _yieldDropCount;
@@ -394,8 +376,8 @@ namespace Hecton8.Scavenging
 
         private void ResolvePersistentIdentity()
         {
-            _persistentAup = AbsoluteUniversePosition.FromRuntimePosition(_cachedTransform.position);
-            _hasPersistentAup = IsFiniteAup(in _persistentAup);
+            Vector3 runtimePosition = _cachedTransform != null ? _cachedTransform.position : transform.position;
+            _hasPersistentAup = TryResolveAupFromRuntimeOrigin(runtimePosition, out _persistentAup);
             _persistentTombstoneId = _hasPersistentAup
                 ? PersistentWorldRegistry.ComputeResourceNodeTombstoneId(in _persistentAup)
                 : 0UL;
@@ -409,6 +391,50 @@ namespace Hecton8.Scavenging
             return math.isfinite(position.LocalX) &&
                    math.isfinite(position.LocalY) &&
                    math.isfinite(position.LocalZ);
+        }
+
+        private static bool IsFiniteRuntimePosition(Vector3 position)
+        {
+            return float.IsFinite(position.x) &&
+                   float.IsFinite(position.y) &&
+                   float.IsFinite(position.z);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(
+            Vector3 runtimePosition,
+            out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!IsFiniteRuntimePosition(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!IsFiniteAup(in originAup))
+                return false;
+
+            double3 localDelta = new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            positionAup = AbsoluteUniversePosition.OffsetMeters(in originAup, localDelta);
+            return IsFiniteAup(in positionAup);
+        }
+
+        private bool TryResolveAupFromPersistentRuntimeDelta(
+            Vector3 runtimePosition,
+            out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!_hasPersistentAup || !IsFiniteAup(in _persistentAup) || !IsFiniteRuntimePosition(runtimePosition))
+                return false;
+
+            Vector3 anchorRuntime = _cachedTransform != null ? _cachedTransform.position : transform.position;
+            if (!IsFiniteRuntimePosition(anchorRuntime))
+                return false;
+
+            double3 localDelta = new double3(
+                (double)runtimePosition.x - anchorRuntime.x,
+                (double)runtimePosition.y - anchorRuntime.y,
+                (double)runtimePosition.z - anchorRuntime.z);
+            positionAup = AbsoluteUniversePosition.OffsetMeters(in _persistentAup, localDelta);
+            return IsFiniteAup(in positionAup);
         }
 
         private bool ShouldSuppressSpawn()
@@ -431,7 +457,7 @@ namespace Hecton8.Scavenging
         {
             PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
             if (registry != null)
-                registry.TryRegisterDestroyedResourceNode(_persistentTombstoneId, _cachedTransform.position);
+                registry.TryRegisterDestroyedResourceNode(_persistentTombstoneId, in _persistentAup);
 
             if (!string.IsNullOrEmpty(uniqueId))
             {
@@ -464,21 +490,19 @@ namespace Hecton8.Scavenging
                 return false;
             }
 
-            AbsoluteUniversePosition aup = _hasPersistentAup
-                ? _persistentAup
-                : AbsoluteUniversePosition.FromRuntimePosition(_cachedTransform != null ? _cachedTransform.position : transform.position);
-            if (!IsFiniteAup(in aup))
+            if (!_hasPersistentAup || !IsFiniteAup(in _persistentAup))
                 return false;
 
             var inventory = GlobalRegistry.PlayerInventoryRuntime;
-            int quantityForCapacity = quantity > int.MaxValue ? int.MaxValue : (int)quantity;
+            uint signalQuantity = ScavengingLootOracleRuntime.ClampItemSignalQuantity(quantity);
+            int quantityForCapacity = (int)signalQuantity;
             bool capacityAvailable = inventory == null ||
                                      inventory.CanAcceptItemQuantity(unchecked((int)itemHash), quantityForCapacity);
             bool accepted = ScavengingLootOracleRuntime.TryQueueResourceNodeLoot(
-                in aup,
+                in _persistentAup,
                 itemHash,
                 0u,
-                quantity,
+                signalQuantity,
                 _lastLootOracleToolMask,
                 capacityAvailable);
             if (!accepted && capacityAvailable && !_lootSpawnBlockedLogged)
@@ -513,7 +537,7 @@ namespace Hecton8.Scavenging
             if (_cachedLootOraclePrefab == lootPrefab && _cachedLootOracleItemHash != 0u && _cachedLootOracleUnitQuantity != 0u)
             {
                 itemHash = _cachedLootOracleItemHash;
-                quantity = (uint)Mathf.Max(1, lootCount) * _cachedLootOracleUnitQuantity;
+                quantity = MultiplyLootQuantitySaturated(lootCount, _cachedLootOracleUnitQuantity);
                 return true;
             }
 
@@ -552,7 +576,7 @@ namespace Hecton8.Scavenging
         {
             itemHash = resolvedItemHash;
             uint safeUnitQuantity = (uint)Mathf.Max(1, unitQuantity);
-            quantity = (uint)Mathf.Max(1, lootCount) * safeUnitQuantity;
+            quantity = MultiplyLootQuantitySaturated(lootCount, safeUnitQuantity);
             if (itemHash == 0u)
                 return false;
 
@@ -560,6 +584,14 @@ namespace Hecton8.Scavenging
             _cachedLootOracleItemHash = itemHash;
             _cachedLootOracleUnitQuantity = safeUnitQuantity;
             return true;
+        }
+
+        private static uint MultiplyLootQuantitySaturated(int authoredLootCount, uint unitQuantity)
+        {
+            uint safeLootCount = (uint)Mathf.Max(1, authoredLootCount);
+            uint safeUnitQuantity = math.max(1u, unitQuantity);
+            ulong total = (ulong)safeLootCount * safeUnitQuantity;
+            return (uint)math.min(total, (ulong)uint.MaxValue);
         }
 
         private static uint ResolveLootOracleToolMask(InteractionEffectType effectType)
@@ -725,7 +757,6 @@ namespace Hecton8.Scavenging
             _despawnRequested = false;
             _lootSpawnBlockedLogged = false;
             _lastLootOracleToolMask = ScavengingLootOracleConstants.ToolMaskAny;
-            _lastYieldSampleTimeSeconds = -1f;
             _pressureMetamorphismProgressSeconds = 0f;
             _fractionalYieldRemainderGrams = 0L;
             _yieldDropCount = 0;
@@ -840,16 +871,12 @@ namespace Hecton8.Scavenging
                 return;
             }
 
-            int emittedCount = 0;
+            int unitsToQueue = math.min(wholeUnits, ushort.MaxValue);
             uint seed = unchecked((uint)_persistentTombstoneId) ^ ((uint)_yieldDropCount * 0x9E3779B9u);
-            for (int i = 0; i < wholeUnits; i++)
-            {
-                if (!TryDropYieldItem(primaryYieldItem, hitPoint, hitNormal, seed ^ (uint)i))
-                    break;
-
-                emittedCount++;
-                _yieldDropCount++;
-            }
+            int emittedCount = TryQueueIncrementalYieldItems(primaryYieldItem, unitsToQueue, hitPoint, hitNormal, seed)
+                ? unitsToQueue
+                : 0;
+            _yieldDropCount += emittedCount;
 
             if (emittedCount > 0)
             {
@@ -862,178 +889,62 @@ namespace Hecton8.Scavenging
             }
         }
 
-        private bool TryDropYieldItem(ItemData itemData, Vector3 hitPoint, Vector3 hitNormal, uint seed)
+        private bool TryQueueIncrementalYieldItems(ItemData itemData, int quantity, Vector3 hitPoint, Vector3 hitNormal, uint seed)
         {
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
-            if (registry == null || itemData == null)
+            if (itemData == null || quantity <= 0 || itemData.PersistentHashId == 0)
                 return false;
 
             Vector3 outwardNormal = hitNormal.sqrMagnitude > 0.0001f ? ResolveDominantAxis(hitNormal) : ResolveFallbackNormal(hitPoint);
             Vector3 tangent = ResolveTangent(outwardNormal, seed);
-            Vector3 spawnPosition = hitPoint + (outwardNormal * 0.12f) + (tangent * 0.05f);
-            Vector3 impulse = (outwardNormal * 0.8f) + (tangent * 0.25f);
-            bool registered = registry.TryRegisterDroppedItem(itemData, 1, spawnPosition, impulse);
-            if (registered)
-            {
-                ItemAcquiredSignal signal = new ItemAcquiredSignal
-                {
-                    PositionAup = AbsoluteUniversePosition.FromRuntimePosition(spawnPosition),
-                    ItemHash = unchecked((uint)itemData.PersistentHashId),
-                    OreHash = unchecked((uint)_persistentTombstoneId ^ (uint)(_persistentTombstoneId >> 32)),
-                    Quantity = 1,
-                    SourceKind = 1,
-                    Flags = 0,
-                    Frame = unchecked((uint)Time.frameCount)
-                };
-                GlobalSignals.Push(in signal);
-            }
+            Vector3 signalPosition = hitPoint + (outwardNormal * 0.12f) + (tangent * 0.05f);
+            if (!TryResolveAupFromPersistentRuntimeDelta(signalPosition, out AbsoluteUniversePosition aup))
+                return false;
 
-            return registered;
+            uint itemHash = unchecked((uint)itemData.PersistentHashId);
+            uint signalQuantity = ScavengingLootOracleRuntime.ClampItemSignalQuantity((uint)quantity);
+            var inventory = GlobalRegistry.PlayerInventoryRuntime;
+            bool capacityAvailable = inventory == null || inventory.CanAcceptItemQuantity(unchecked((int)itemHash), (int)signalQuantity);
+            return ScavengingLootOracleRuntime.TryQueueResourceNodeLoot(
+                in aup,
+                itemHash,
+                itemHash,
+                signalQuantity,
+                _lastLootOracleToolMask,
+                capacityAvailable,
+                emitDepletionDelta: false);
         }
 
         private void SpawnImpactDebris(Vector3 hitPoint, Vector3 hitNormal, float toolPower)
         {
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
-            if (pool == null || !EnsureRuntimeDebrisPool(pool))
-                return;
-
-            Material debrisMaterial = ResolveDebrisMaterial();
-            Mesh debrisMesh = _meshFilter != null && _meshFilter.sharedMesh != null ? _meshFilter.sharedMesh : s_runtimeDebrisMesh;
-            if (debrisMesh == null)
-                return;
-
-            ResourceNodeTemplate.DebrisPhysicalProfile debrisProfile = ResolveDebrisPhysicalProfile();
-            PhysicsMaterial debrisPhysicsMaterial = ResolveDebrisPhysicsMaterial(debrisProfile);
-            uint state = unchecked((uint)_persistentTombstoneId) ^ ((uint)(_yieldDropCount + 1) * 0x85EBCA6Bu);
-            int debrisCount = MinimumImpactDebrisCount + (int)Mathf.Floor(Next01(ref state) * (MaximumImpactDebrisCount - MinimumImpactDebrisCount + 1));
-            debrisCount = Mathf.Clamp(debrisCount, MinimumImpactDebrisCount, MaximumImpactDebrisCount);
             Vector3 outwardNormal = hitNormal.sqrMagnitude > 0.0001f ? ResolveDominantAxis(hitNormal) : ResolveFallbackNormal(hitPoint);
-            float impulseScale = Mathf.Clamp(toolPower, 0.4f, 3.5f);
+            Vector3 signalPosition = hitPoint + outwardNormal * 0.08f;
+            if (!TryResolveAupFromPersistentRuntimeDelta(signalPosition, out AbsoluteUniversePosition aup))
+                return;
 
-            for (int i = 0; i < debrisCount; i++)
-            {
-                Quaternion rotation = NextCardinalRotation(ref state);
-                Vector3 tangent = ResolveTangent(outwardNormal, state ^ (uint)i);
-                Vector3 spawnPosition = hitPoint + (outwardNormal * 0.08f) + (tangent * (0.04f + (0.03f * Next01(ref state))));
-                GameObject debris = pool.Spawn(s_runtimeDebrisPrefab, spawnPosition, rotation);
-                if (debris == null)
-                    return;
+            float safeToolPower = math.select(0.4f, toolPower, math.isfinite(toolPower));
+            float power01 = math.saturate(safeToolPower * 0.2857143f);
+            float quality = ScavengingLootOracleMath.SanitizeQualityWeight(HomeostasisBrain.GlobalQualityWeight);
+            float qualityCurve = quality * quality * (3f - (2f * quality));
+            int requestedParticles = (int)math.round(math.lerp(4f, 64f, qualityCurve) * math.lerp(0.75f, 1.25f, power01));
+            ResourceNodeTemplate.DebrisPhysicalProfile debrisProfile = ResolveDebrisPhysicalProfile();
+            uint seed = unchecked((uint)_persistentTombstoneId) ^
+                        unchecked((uint)((ulong)_persistentTombstoneId >> 32)) ^
+                        ((uint)(_yieldDropCount + 1) * 0x85EBCA6Bu);
+            seed ^= debrisProfile == ResourceNodeTemplate.DebrisPhysicalProfile.Sediment
+                ? ImpactDebrisSedimentSpeciesHash
+                : ImpactDebrisRockSpeciesHash;
 
-                if (debris.TryGetComponent(out MeshFilter debrisFilter))
-                    debrisFilter.sharedMesh = debrisMesh;
-
-                if (debris.TryGetComponent(out MeshRenderer debrisRenderer) && debrisMaterial != null)
-                    debrisRenderer.sharedMaterial = debrisMaterial;
-
-                debris.transform.localScale = Vector3.one * (0.08f + 0.1f * Next01(ref state));
-                if (debris.TryGetComponent(out RuntimeDebrisShard shard))
-                {
-                    float sinkDepth = Mathf.Max(0.08f, debris.transform.localScale.y * ImpactDebrisSinkDepthMultiplier);
-                    shard.ConfigureRuntime(
-                        pool,
-                        debrisProfile,
-                        debrisPhysicsMaterial,
-                        ImpactDebrisLifetimeSeconds,
-                        ImpactDebrisSinkDurationSeconds,
-                        sinkDepth);
-                }
-
-                if (debris.TryGetComponent(out Rigidbody body))
-                {
-                    body.isKinematic = false;
-                    body.useGravity = true;
-                    body.linearVelocity = Vector3.zero;
-                    body.angularVelocity = Vector3.zero;
-                    body.WakeUp();
-
-                    Vector3 velocityChange = ((outwardNormal * (0.65f + 0.55f * Next01(ref state))) +
-                                              (tangent * (0.12f + 0.28f * Next01(ref state)))) * impulseScale;
-                    PhysicsForceRouter.QueueForce(body, velocityChange, ForceMode.VelocityChange);
-                    PhysicsForceRouter.QueueTorque(body, tangent * (0.12f + 0.16f * Next01(ref state)), ForceMode.VelocityChange);
-                }
-            }
-        }
-
-        private static bool EnsureRuntimeDebrisPool(ObjectPoolManager pool)
-        {
-            if (pool == null)
-                return false;
-
-            if (s_runtimeDebrisPrefab == null)
-                s_runtimeDebrisPrefab = BuildRuntimeDebrisPrefab();
-
-            if (s_runtimeDebrisPrefab == null)
-                return false;
-
-            if (!pool.HasPool(s_runtimeDebrisPrefab))
-                pool.Warmup(s_runtimeDebrisPrefab, DebrisPoolWarmupCount);
-
-            s_runtimeDebrisPoolReady = pool.HasPool(s_runtimeDebrisPrefab);
-            return s_runtimeDebrisPoolReady;
-        }
-
-        private static GameObject BuildRuntimeDebrisPrefab()
-        {
-            if (s_runtimeDebrisMesh == null || s_runtimeDebrisMaterial == null)
-            {
-                // COLD ALLOC: GameObject[1] - temporary primitive source used to capture the built-in cube mesh/material for runtime mineral debris - owner: ResourceNode
-                GameObject primitive = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                if (primitive.TryGetComponent(out MeshFilter primitiveFilter))
-                    s_runtimeDebrisMesh = primitiveFilter.sharedMesh;
-
-                if (primitive.TryGetComponent(out MeshRenderer primitiveRenderer))
-                    s_runtimeDebrisMaterial = primitiveRenderer.sharedMaterial;
-
-                if (Application.isPlaying)
-                    Destroy(primitive);
-                else
-                    DestroyImmediate(primitive);
-            }
-
-            EnsureRuntimeDebrisPhysicsMaterials();
-
-            if (s_runtimeDebrisMesh == null)
-                return null;
-
-            // COLD ALLOC: GameObject[1] - pooled mineral debris runtime prefab - owner: ResourceNode
-            GameObject prefab = new GameObject("[RuntimeMineralDebrisShard]");
-            prefab.SetActive(false);
-            prefab.hideFlags = HideFlags.HideAndDontSave;
-
-            MeshFilter filter = prefab.AddComponent<MeshFilter>();
-            filter.sharedMesh = s_runtimeDebrisMesh;
-
-            MeshRenderer renderer = prefab.AddComponent<MeshRenderer>();
-            if (s_runtimeDebrisMaterial != null)
-                renderer.sharedMaterial = s_runtimeDebrisMaterial;
-            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            renderer.receiveShadows = false;
-
-            BoxCollider collider = prefab.AddComponent<BoxCollider>();
-            collider.size = Vector3.one;
-
-            Rigidbody body = prefab.AddComponent<Rigidbody>();
-            body.mass = 0.08f;
-            body.useGravity = true;
-            body.linearDamping = 0.45f;
-            body.angularDamping = 0.35f;
-            body.collisionDetectionMode = CollisionDetectionMode.Discrete;
-            body.interpolation = RigidbodyInterpolation.Interpolate;
-            body.isKinematic = false;
-
-            prefab.AddComponent<RuntimeDebrisShard>();
-            return prefab;
-        }
-
-        private Material ResolveDebrisMaterial()
-        {
-            if (_meshRenderer != null && _meshRenderer.sharedMaterial != null)
-                return _meshRenderer.sharedMaterial;
-
-            if (targetRenderer != null && targetRenderer.sharedMaterial != null)
-                return targetRenderer.sharedMaterial;
-
-            return s_runtimeDebrisMaterial;
+            DebrisSpawnSignal signal = default;
+            signal.PositionAup = aup;
+            signal.SpeciesHash = debrisProfile == ResourceNodeTemplate.DebrisPhysicalProfile.Sediment
+                ? ImpactDebrisSedimentSpeciesHash
+                : ImpactDebrisRockSpeciesHash;
+            signal.SourceEntityId = seed != 0u ? seed : ImpactDebrisRockSpeciesHash;
+            signal.Intensity01 = power01;
+            signal.DebrisKind = DebrisSpawnSignal.DebrisKindRockShard;
+            signal.Flags = DebrisSpawnSignal.FlagComputeShard;
+            signal.Quantity = (ushort)math.clamp(requestedParticles, 1, 96);
+            SignalBus<DebrisSpawnSignal>.Push(in signal);
         }
 
         private ResourceNodeTemplate.DebrisPhysicalProfile ResolveDebrisPhysicalProfile()
@@ -1043,69 +954,9 @@ namespace Hecton8.Scavenging
                 : ResourceNodeTemplate.DebrisPhysicalProfile.Basalt;
         }
 
-        private PhysicsMaterial ResolveDebrisPhysicsMaterial(ResourceNodeTemplate.DebrisPhysicalProfile profile)
+        private static float ResolveYieldSampleDeltaSeconds()
         {
-            if (resourceTemplate != null)
-            {
-                PhysicsMaterial authoredMaterial = resourceTemplate.ResolveDebrisPhysicsMaterial(profile);
-                if (authoredMaterial != null)
-                    return authoredMaterial;
-            }
-
-            EnsureRuntimeDebrisPhysicsMaterials();
-            return profile == ResourceNodeTemplate.DebrisPhysicalProfile.Sediment
-                ? s_runtimeSedimentDebrisPhysicsMaterial
-                : s_runtimeBasaltDebrisPhysicsMaterial;
-        }
-
-        private static void EnsureRuntimeDebrisPhysicsMaterials()
-        {
-            if (s_runtimeSedimentDebrisPhysicsMaterial == null)
-                s_runtimeSedimentDebrisPhysicsMaterial = BuildRuntimeDebrisPhysicsMaterial(
-                    "RuntimeSedimentShardPhysics",
-                    dynamicFriction: 0.92f,
-                    staticFriction: 0.96f,
-                    bounciness: 0.01f);
-
-            if (s_runtimeBasaltDebrisPhysicsMaterial == null)
-                s_runtimeBasaltDebrisPhysicsMaterial = BuildRuntimeDebrisPhysicsMaterial(
-                    "RuntimeBasaltShardPhysics",
-                    dynamicFriction: 0.58f,
-                    staticFriction: 0.64f,
-                    bounciness: 0.03f);
-        }
-
-        private static PhysicsMaterial BuildRuntimeDebrisPhysicsMaterial(
-            string materialName,
-            float dynamicFriction,
-            float staticFriction,
-            float bounciness)
-        {
-            // COLD ALLOC: PhysicsMaterial[1] - shared pooled shard collision response profile - owner: ResourceNode
-            PhysicsMaterial material = new PhysicsMaterial(materialName)
-            {
-                dynamicFriction = dynamicFriction,
-                staticFriction = staticFriction,
-                bounciness = bounciness,
-                frictionCombine = PhysicsMaterialCombine.Maximum,
-                bounceCombine = PhysicsMaterialCombine.Minimum
-            };
-            material.hideFlags = HideFlags.HideAndDontSave;
-            return material;
-        }
-
-        private float ResolveYieldSampleDeltaSeconds()
-        {
-            float currentTimeSeconds = Time.time;
-            if (_lastYieldSampleTimeSeconds < 0f)
-            {
-                _lastYieldSampleTimeSeconds = currentTimeSeconds;
-                return DefaultFirstYieldSampleSeconds;
-            }
-
-            float deltaSeconds = Mathf.Clamp(currentTimeSeconds - _lastYieldSampleTimeSeconds, MinimumYieldSampleSeconds, MaximumYieldSampleSeconds);
-            _lastYieldSampleTimeSeconds = currentTimeSeconds;
-            return deltaSeconds;
+            return DefaultFirstYieldSampleSeconds;
         }
 
         private static Vector3 ResolveTangent(Vector3 normal, uint seed)
@@ -1130,63 +981,6 @@ namespace Hecton8.Scavenging
                     return (-tangent + bitangent) * 0.70710678f;
                 default:
                     return (-tangent - bitangent) * 0.70710678f;
-            }
-        }
-
-        private static float Next01(ref uint state)
-        {
-            state ^= state << 13;
-            state ^= state >> 17;
-            state ^= state << 5;
-            return (state & 0x00FFFFFFu) * (1f / 16777215f);
-        }
-
-        private uint BuildDeterministicScatterSeed(uint salt)
-        {
-            uint hash = unchecked((uint)_persistentTombstoneId) ^ salt;
-            hash ^= (uint)((ulong)_persistentTombstoneId >> 32);
-            hash ^= (uint)(_yieldDropCount + 1) * 0x9E3779B9u;
-            ulong ownerEntityId = _cachedTransform != null
-                ? EntityId.ToULong(_cachedTransform.GetEntityId())
-                : EntityId.ToULong(GetEntityId());
-            hash ^= unchecked((uint)ownerEntityId);
-            hash ^= hash >> 16;
-            hash *= 0x7FEB352Du;
-            hash ^= hash >> 15;
-            hash *= 0x846CA68Bu;
-            hash ^= hash >> 16;
-            return hash != 0u ? hash : 0xA341316Cu;
-        }
-
-        private static Vector3 NextScatterVector(ref uint state)
-        {
-            return new Vector3(
-                (Next01(ref state) * 2f) - 1f,
-                (Next01(ref state) * 2f) - 1f,
-                (Next01(ref state) * 2f) - 1f);
-        }
-
-        private static Quaternion NextCardinalRotation(ref uint state)
-        {
-            uint lane = (uint)(Next01(ref state) * 8f) & 7u;
-            switch (lane)
-            {
-                case 0u:
-                    return Quaternion.identity;
-                case 1u:
-                    return new Quaternion(0f, 0.70710678f, 0f, 0.70710678f);
-                case 2u:
-                    return new Quaternion(0f, 1f, 0f, 0f);
-                case 3u:
-                    return new Quaternion(0f, -0.70710678f, 0f, 0.70710678f);
-                case 4u:
-                    return new Quaternion(0.38268343f, 0f, 0f, 0.9238795f);
-                case 5u:
-                    return new Quaternion(-0.38268343f, 0f, 0f, 0.9238795f);
-                case 6u:
-                    return new Quaternion(0f, 0f, 0.38268343f, 0.9238795f);
-                default:
-                    return new Quaternion(0f, 0f, -0.38268343f, 0.9238795f);
             }
         }
 
@@ -1336,189 +1130,6 @@ namespace Hecton8.Scavenging
         private bool IsPooledInstance()
         {
             return TryGetComponent(out ObjectPoolManager.PoolItemMarker _);
-        }
-
-        [DisallowMultipleComponent]
-        [AddComponentMenu("")]
-        private sealed class RuntimeDebrisShard : MonoBehaviour, IPoolable, IUpdatable
-        {
-            private Transform _cachedTransform;
-            private Rigidbody _rigidbody;
-            private Collider _collider;
-            private ObjectPoolManager _owningPool;
-            private bool _registeredToDispatcher;
-            private bool _active;
-            private bool _sinking;
-            private float _lifetimeSeconds;
-            private float _sinkDurationSeconds;
-            private float _sinkStartTimeSeconds;
-            private float _sinkDepthMeters;
-            private float _ageSeconds;
-            private Vector3 _sinkStartPosition;
-            private Vector3 _sinkEndPosition;
-
-            private void Awake()
-            {
-                _cachedTransform = transform;
-                TryGetComponent(out _rigidbody);
-                TryGetComponent(out _collider);
-            }
-
-            public void OnSpawn()
-            {
-                ResetRuntimeState();
-                TryRegisterToDispatcher();
-            }
-
-            public void OnDespawn()
-            {
-                TryUnregisterFromDispatcher();
-                ResetPhysicsState();
-                ResetRuntimeState();
-                _owningPool = null;
-            }
-
-            public void Tick(float deltaTime)
-            {
-                if (!_active)
-                    return;
-
-                _ageSeconds += math.max(0f, deltaTime);
-                if (!_sinking && _ageSeconds >= _sinkStartTimeSeconds)
-                    BeginSinkPhase();
-
-                if (_sinking)
-                {
-                    float sinkElapsedSeconds = _ageSeconds - _sinkStartTimeSeconds;
-                    float sinkT = _sinkDurationSeconds > 0.0001f
-                        ? math.saturate(sinkElapsedSeconds / _sinkDurationSeconds)
-                        : 1f;
-                    _cachedTransform.position = _sinkStartPosition + (_sinkEndPosition - _sinkStartPosition) * sinkT;
-                }
-
-                if (_ageSeconds >= _lifetimeSeconds)
-                    RequestDespawn();
-            }
-
-            public void ConfigureRuntime(
-                ObjectPoolManager owningPool,
-                ResourceNodeTemplate.DebrisPhysicalProfile profile,
-                PhysicsMaterial physicsMaterial,
-                float lifetimeSeconds,
-                float sinkDurationSeconds,
-                float sinkDepthMeters)
-            {
-                if (_cachedTransform == null)
-                    _cachedTransform = transform;
-
-                _owningPool = owningPool;
-                _active = true;
-                _sinking = false;
-                _ageSeconds = 0f;
-                _lifetimeSeconds = Mathf.Max(0.1f, lifetimeSeconds);
-                _sinkDurationSeconds = Mathf.Clamp(sinkDurationSeconds, 0.05f, _lifetimeSeconds);
-                _sinkStartTimeSeconds = Mathf.Max(0f, _lifetimeSeconds - _sinkDurationSeconds);
-                _sinkDepthMeters = Mathf.Max(0.05f, sinkDepthMeters);
-
-                if (_collider != null)
-                    _collider.sharedMaterial = physicsMaterial;
-
-                if (_rigidbody != null)
-                {
-                    _rigidbody.linearVelocity = Vector3.zero;
-                    _rigidbody.angularVelocity = Vector3.zero;
-                    _rigidbody.isKinematic = false;
-                    _rigidbody.useGravity = true;
-
-                    if (profile == ResourceNodeTemplate.DebrisPhysicalProfile.Sediment)
-                    {
-                        _rigidbody.mass = 0.07f;
-                        _rigidbody.linearDamping = 0.6f;
-                        _rigidbody.angularDamping = 0.3f;
-                    }
-                    else
-                    {
-                        _rigidbody.mass = 0.14f;
-                        _rigidbody.linearDamping = 0.22f;
-                        _rigidbody.angularDamping = 0.1f;
-                    }
-
-                    _rigidbody.WakeUp();
-                }
-
-                TryRegisterToDispatcher();
-            }
-
-            private void BeginSinkPhase()
-            {
-                _sinking = true;
-                _sinkStartPosition = _cachedTransform.position;
-                _sinkEndPosition = _sinkStartPosition + (Vector3.down * _sinkDepthMeters);
-
-                if (_rigidbody != null)
-                {
-                    _rigidbody.linearVelocity = Vector3.zero;
-                    _rigidbody.angularVelocity = Vector3.zero;
-                    _rigidbody.isKinematic = true;
-                    _rigidbody.useGravity = false;
-                }
-            }
-
-            private void RequestDespawn()
-            {
-                _active = false;
-
-                ObjectPoolManager pool = _owningPool != null ? _owningPool : GlobalRegistry.ObjectPool;
-                if (pool != null && TryGetComponent(out ObjectPoolManager.PoolItemMarker _))
-                {
-                    pool.Despawn(gameObject);
-                    return;
-                }
-
-                gameObject.SetActive(false);
-            }
-
-            private void TryRegisterToDispatcher()
-            {
-                if (_registeredToDispatcher || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
-                    return;
-
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _registeredToDispatcher = GlobalRegistry.Updatables.Contains(this);
-            }
-
-            private void TryUnregisterFromDispatcher()
-            {
-                if (!_registeredToDispatcher)
-                    return;
-
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-                _registeredToDispatcher = false;
-            }
-
-            private void ResetPhysicsState()
-            {
-                if (_rigidbody == null)
-                    return;
-
-                _rigidbody.linearVelocity = Vector3.zero;
-                _rigidbody.angularVelocity = Vector3.zero;
-                _rigidbody.isKinematic = false;
-                _rigidbody.useGravity = true;
-            }
-
-            private void ResetRuntimeState()
-            {
-                _active = false;
-                _sinking = false;
-                _ageSeconds = 0f;
-                _lifetimeSeconds = 0f;
-                _sinkDurationSeconds = 0f;
-                _sinkStartTimeSeconds = 0f;
-                _sinkDepthMeters = 0f;
-                _sinkStartPosition = Vector3.zero;
-                _sinkEndPosition = Vector3.zero;
-            }
         }
 
 #if UNITY_EDITOR

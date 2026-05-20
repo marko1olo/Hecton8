@@ -1,3 +1,4 @@
+using System.Text;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Unity.Mathematics;
@@ -22,7 +23,10 @@ namespace Hecton8.World.ProceduralCoral.Editor
         private IntegerField _maxBranchesField;
         private IntegerField _maxInstructionsField;
         private Label _telemetryLabel;
+        private readonly StringBuilder _telemetryBuilder = new StringBuilder(256);
+        private uint _lastTelemetryHash;
         private double _nextCsvPollTime;
+        private string _projectRoot;
 
         [MenuItem("HECTON-8/Procedural Coral/Procedural Coral Tuner")]
         public static void Open()
@@ -169,8 +173,8 @@ namespace Hecton8.World.ProceduralCoral.Editor
             tuning.AngleVarianceRadians = _varianceSlider.value;
             tuning.SdfAvoidanceWeight = _avoidanceSlider.value;
             tuning.CurrentSwayAmplitude = _swaySlider.value;
-            tuning.BaseStepMeters = math.max(_stepField.value, ProceduralCoralConstants.Epsilon);
-            tuning.BaseRadiusMeters = math.max(_radiusField.value, ProceduralCoralConstants.Epsilon);
+            tuning.BaseStepMeters = SafePositive(_stepField.value, 1.6f, ProceduralCoralConstants.Epsilon);
+            tuning.BaseRadiusMeters = SafePositive(_radiusField.value, 0.32f, ProceduralCoralConstants.Epsilon);
             tuning.MaxDepth = math.clamp(_maxDepthField.value, 1, 12);
             tuning.MaxBranches = math.clamp(_maxBranchesField.value, 1, ProceduralCoralConstants.MaxBranches);
             tuning.MaxInstructions = math.clamp(_maxInstructionsField.value, 1, ProceduralCoralConstants.MaxInstructions);
@@ -180,13 +184,13 @@ namespace Hecton8.World.ProceduralCoral.Editor
 
         private void SetFieldsWithoutNotify(in CoralTuningDTO tuning)
         {
-            _qualitySlider?.SetValueWithoutNotify(math.saturate(tuning.GlobalQualityWeight));
-            _angleSlider?.SetValueWithoutNotify(math.clamp(tuning.BranchAngleRadians, 0.05f, 1.35f));
-            _varianceSlider?.SetValueWithoutNotify(math.saturate(tuning.AngleVarianceRadians));
-            _avoidanceSlider?.SetValueWithoutNotify(math.saturate(tuning.SdfAvoidanceWeight));
-            _swaySlider?.SetValueWithoutNotify(math.saturate(tuning.CurrentSwayAmplitude));
-            _stepField?.SetValueWithoutNotify(math.max(tuning.BaseStepMeters, ProceduralCoralConstants.Epsilon));
-            _radiusField?.SetValueWithoutNotify(math.max(tuning.BaseRadiusMeters, ProceduralCoralConstants.Epsilon));
+            _qualitySlider?.SetValueWithoutNotify(SafeSaturate(tuning.GlobalQualityWeight, 0.5f));
+            _angleSlider?.SetValueWithoutNotify(math.clamp(math.isfinite(tuning.BranchAngleRadians) ? tuning.BranchAngleRadians : 0.52f, 0.05f, 1.35f));
+            _varianceSlider?.SetValueWithoutNotify(SafeSaturate(tuning.AngleVarianceRadians, 0.18f));
+            _avoidanceSlider?.SetValueWithoutNotify(SafeSaturate(tuning.SdfAvoidanceWeight, 0.55f));
+            _swaySlider?.SetValueWithoutNotify(SafeSaturate(tuning.CurrentSwayAmplitude, 0.32f));
+            _stepField?.SetValueWithoutNotify(SafePositive(tuning.BaseStepMeters, 1.6f, ProceduralCoralConstants.Epsilon));
+            _radiusField?.SetValueWithoutNotify(SafePositive(tuning.BaseRadiusMeters, 0.32f, ProceduralCoralConstants.Epsilon));
             _maxDepthField?.SetValueWithoutNotify(math.clamp(tuning.MaxDepth, 1, 12));
             _maxBranchesField?.SetValueWithoutNotify(math.clamp(tuning.MaxBranches, 1, ProceduralCoralConstants.MaxBranches));
             _maxInstructionsField?.SetValueWithoutNotify(math.clamp(tuning.MaxInstructions, 1, ProceduralCoralConstants.MaxInstructions));
@@ -213,23 +217,99 @@ namespace Hecton8.World.ProceduralCoral.Editor
                 : 0;
             CoralGenerationTelemetryEntry telemetry = buffers.TelemetryRing[cursor];
             CoralPaddedCounterDTO counters = buffers.Counters[0];
-            _telemetryLabel.text =
-                "Sector 0x" + telemetry.SectorHash.ToString("X8") +
-                " | Branches " + counters.BranchCount +
-                " | Render " + counters.RenderMatrixCount +
-                " | Tips " + counters.TipCount +
-                " | Pulses " + counters.SyncPulseCount +
-                " | Proxies " + counters.CollisionProxyCount +
-                " | Rules " + counters.ActiveRuleCount +
-                " | H8BIN " + counters.BinaryRuleCount +
-                " | CSV " + counters.CsvRuleCount +
-                " | Depth " + telemetry.DepthReached +
-                " | Est. Burst us " + telemetry.EstimatedComputeUs.ToString("0.00");
+            uint telemetryHash = 2166136261u;
+            telemetryHash = (telemetryHash ^ telemetry.SectorHash) * 16777619u;
+            telemetryHash = (telemetryHash ^ (uint)counters.BranchCount) * 16777619u;
+            telemetryHash = (telemetryHash ^ (uint)counters.RenderMatrixCount) * 16777619u;
+            telemetryHash = (telemetryHash ^ counters.TipCount) * 16777619u;
+            telemetryHash = (telemetryHash ^ (uint)counters.SyncPulseCount) * 16777619u;
+            telemetryHash = (telemetryHash ^ (uint)counters.CollisionProxyCount) * 16777619u;
+            telemetryHash = (telemetryHash ^ counters.ActiveRuleCount) * 16777619u;
+            telemetryHash = (telemetryHash ^ counters.BinaryRuleCount) * 16777619u;
+            telemetryHash = (telemetryHash ^ counters.CsvRuleCount) * 16777619u;
+            telemetryHash = (telemetryHash ^ (uint)telemetry.DepthReached) * 16777619u;
+            telemetryHash = (telemetryHash ^ math.asuint(telemetry.BurstComputeUs)) * 16777619u;
+            if (telemetryHash == _lastTelemetryHash)
+                return;
+
+            _lastTelemetryHash = telemetryHash;
+            _telemetryBuilder.Length = 0;
+            _telemetryBuilder.Append("Sector 0x");
+            AppendHex8(_telemetryBuilder, telemetry.SectorHash);
+            _telemetryBuilder.Append(" | Branches ");
+            _telemetryBuilder.Append(counters.BranchCount);
+            _telemetryBuilder.Append(" | Render ");
+            _telemetryBuilder.Append(counters.RenderMatrixCount);
+            _telemetryBuilder.Append(" | Tips ");
+            _telemetryBuilder.Append(counters.TipCount);
+            _telemetryBuilder.Append(" | Pulses ");
+            _telemetryBuilder.Append(counters.SyncPulseCount);
+            _telemetryBuilder.Append(" | Proxies ");
+            _telemetryBuilder.Append(counters.CollisionProxyCount);
+            _telemetryBuilder.Append(" | Rules ");
+            _telemetryBuilder.Append(counters.ActiveRuleCount);
+            _telemetryBuilder.Append(" | H8BIN ");
+            _telemetryBuilder.Append(counters.BinaryRuleCount);
+            _telemetryBuilder.Append(" | CSV ");
+            _telemetryBuilder.Append(counters.CsvRuleCount);
+            _telemetryBuilder.Append(" | Depth ");
+            _telemetryBuilder.Append(telemetry.DepthReached);
+            _telemetryBuilder.Append(" | Burst us ");
+            AppendFixed2(_telemetryBuilder, telemetry.BurstComputeUs);
+            _telemetryLabel.text = _telemetryBuilder.ToString();
         }
 
-        private static string ProjectRoot()
+        private string ProjectRoot()
         {
-            return Application.dataPath.Substring(0, Application.dataPath.Length - "/Assets".Length);
+            if (string.IsNullOrEmpty(_projectRoot))
+                _projectRoot = Application.dataPath.Substring(0, Application.dataPath.Length - "/Assets".Length);
+
+            return _projectRoot;
+        }
+
+        private static float SafePositive(float value, float fallback, float minimum)
+        {
+            float selected = math.isfinite(value) && value > 0f ? value : fallback;
+            return math.isfinite(selected) ? math.max(selected, minimum) : minimum;
+        }
+
+        private static float SafeSaturate(float value, float fallback)
+        {
+            float selected = math.isfinite(value) ? value : fallback;
+            return math.isfinite(selected) ? math.saturate(selected) : 0f;
+        }
+
+        private static void AppendHex8(StringBuilder builder, uint value)
+        {
+            for (int shift = 28; shift >= 0; shift -= 4)
+            {
+                int nibble = (int)((value >> shift) & 0xFu);
+                builder.Append((char)(nibble < 10 ? '0' + nibble : 'A' + (nibble - 10)));
+            }
+        }
+
+        private static void AppendFixed2(StringBuilder builder, float value)
+        {
+            if (!math.isfinite(value))
+            {
+                builder.Append("NaN");
+                return;
+            }
+
+            if (value < 0f)
+            {
+                builder.Append('-');
+                value = -value;
+            }
+
+            int scaled = (int)math.round(value * 100f);
+            int whole = scaled / 100;
+            int fraction = scaled - (whole * 100);
+            builder.Append(whole);
+            builder.Append('.');
+            if (fraction < 10)
+                builder.Append('0');
+            builder.Append(fraction);
         }
     }
 }

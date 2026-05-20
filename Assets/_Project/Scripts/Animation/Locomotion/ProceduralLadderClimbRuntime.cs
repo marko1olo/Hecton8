@@ -36,7 +36,7 @@ namespace Hecton8.Animation.Locomotion
         private const SystemID OwnerSystemId = SystemID.AnimationLocomotion;
         private const string BlackBoxDumpDirectory = "Docs/AgentLogs";
         private const string BlackBoxDumpPath = "Docs/AgentLogs/Dump_LADDER_CLIMB_IK.bin";
-        private const int BlackBoxDumpEntryBytes = 85;
+        private const int BlackBoxDumpEntryBytes = 128;
 
         [Header("IK Targets")]
         [SerializeField] private Transform leftHandIkTarget;
@@ -274,10 +274,9 @@ namespace Hecton8.Animation.Locomotion
                 return;
             }
 
-            if (!_solveHandle.IsCompleted)
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _solveHandle))
                 return;
 
-            _solveHandle.Complete();
             _solveScheduled = false;
             if (!TryReadOutput(out LadderClimbIkOutput output))
             {
@@ -351,7 +350,8 @@ namespace Hecton8.Animation.Locomotion
             ResolveLadderFrame(entryPoint.position, exitPoint.position, ladderTransform);
             InitializePresentationAnchors(entryPoint.position, exitPoint.position);
             _climbProgressMeters = goingUp ? 0f : _climbHeightMeters;
-            if (!TryWriteLadderAup(AbsoluteUniversePosition.FromRuntimePosition(entryPoint.position)))
+            if (!TryResolveEntryPointAup(entryPoint.position, out AbsoluteUniversePosition entryAup) ||
+                !TryWriteLadderAup(entryAup))
                 return false;
 
             if (!TryRegisterTickables())
@@ -462,6 +462,66 @@ namespace Hecton8.Animation.Locomotion
             return true;
         }
 
+        private bool TryResolveEntryPointAup(Vector3 entryRuntimePosition, out AbsoluteUniversePosition entryAup)
+        {
+            entryAup = default;
+            float3 entryRuntime = ToFloat3(entryRuntimePosition);
+            if (!IsFinite(entryRuntime))
+                return false;
+
+            IPlayerRuntimeContext playerContext = _playerContext;
+            if (playerContext == null)
+                return false;
+
+            if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                (snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                MathGuard.IsFinite(in snapshot.Aup) &&
+                IsFinite(snapshot.RuntimePosition))
+            {
+                return TryOffsetAupByRuntimeDelta(
+                    in snapshot.Aup,
+                    snapshot.RuntimePosition,
+                    entryRuntime,
+                    out entryAup);
+            }
+
+            var playerMovement = playerContext.PlayerMovement;
+            if (playerMovement == null)
+                return false;
+
+            AbsoluteUniversePosition playerAup = playerMovement.CurrentAup;
+            if (!MathGuard.IsFinite(in playerAup))
+                return false;
+
+            float3 playerRuntime = playerAup.ToRuntimeFloat3();
+            return TryOffsetAupByRuntimeDelta(
+                in playerAup,
+                playerRuntime,
+                entryRuntime,
+                out entryAup);
+        }
+
+        private static bool TryOffsetAupByRuntimeDelta(
+            in AbsoluteUniversePosition referenceAup,
+            float3 referenceRuntimePosition,
+            float3 targetRuntimePosition,
+            out AbsoluteUniversePosition resolvedAup)
+        {
+            resolvedAup = default;
+            if (!IsFinite(referenceRuntimePosition) || !IsFinite(targetRuntimePosition))
+                return false;
+
+            double3 localDelta = new double3(
+                (double)targetRuntimePosition.x - referenceRuntimePosition.x,
+                (double)targetRuntimePosition.y - referenceRuntimePosition.y,
+                (double)targetRuntimePosition.z - referenceRuntimePosition.z);
+            if (!math.all(math.isfinite(localDelta)))
+                return false;
+
+            resolvedAup = AbsoluteUniversePosition.OffsetMeters(in referenceAup, localDelta);
+            return MathGuard.IsFinite(in resolvedAup);
+        }
+
         private bool TryReadLadderAup(out AbsoluteUniversePosition aup)
         {
             aup = default;
@@ -518,7 +578,7 @@ namespace Hecton8.Animation.Locomotion
 
             float3 playerRoot = SanitizeFinite(ToFloat3(_playerRoot.position), float3.zero);
             BuildShoulders(playerRoot, out float3 leftShoulder, out float3 rightShoulder, out float3 leftPole, out float3 rightPole);
-            byte flags = LadderClimbIkConstants.FlagActive;
+            uint flags = LadderClimbIkConstants.FlagActive;
             if (_lowTierCameraSlide)
                 flags |= LadderClimbIkConstants.FlagLowTier;
             if (_vrGripRequired)
@@ -937,7 +997,7 @@ namespace Hecton8.Animation.Locomotion
             if (!_solveScheduled)
                 return;
 
-            _solveHandle.Complete();
+            DispatcherJobFence.TryComplete(ref _solveHandle, forceComplete: true);
             _solveScheduled = false;
         }
 
@@ -1071,7 +1131,7 @@ namespace Hecton8.Animation.Locomotion
             BinaryPrimitives.WriteInt32LittleEndian(entryBytes.Slice(72, 4), entry.RightRungIndex);
             BinaryPrimitives.WriteInt32LittleEndian(entryBytes.Slice(76, 4), entry.Frame);
             BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(80, 4), entry.Hash);
-            entryBytes[84] = entry.Flags;
+            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(84, 4), entry.Flags);
         }
 
         private static void WriteFloat3LittleEndian(Span<byte> destination, float3 value)

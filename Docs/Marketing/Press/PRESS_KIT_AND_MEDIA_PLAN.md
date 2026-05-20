@@ -1,4 +1,4 @@
-﻿# Press Kit And Media Plan
+# Press Kit And Media Plan
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
 ## R4 Interior Actuality Boundary
@@ -16,48 +16,57 @@ The press kit exists so creators and journalists can understand the game in 30 s
 
 ## Required Press Kit Files
 
-- `factsheet.md`
-- `short_description.txt`
-- `long_description.md`
+- factsheet packet
+- short-description packet
+- long-description packet
 - `screenshots/`
 - `trailer/`
 - `logo/`
 - `capsules/`
-- `contact.txt`
-- `key_request_policy.md`
-- `feature_boundaries.md`
-- `performance_claims.md`
+- contact packet
+- key-request policy packet
+- feature-boundaries packet
+- performance-claims packet
 
 ## 2026-05-19 Press Kit Build Ticket V0
 
 Status: not buildable yet / asset-gated / do not send.
 
-The press kit becomes buildable only after the Steam page assembly and screenshot campaign produce a `KEEP` decision.
+The press kit becomes buildable only after the Steam page assembly and screenshot campaign produce a `KEEP` decision. That decision must include identity, player verb, base/machinery, and one agency/decision proof asset from `PLAN-SHOT-006`, `PLAN-CLIP-001`, or `PLAN-CLIP-003` with AB-009/KPI viewer-named decision fields; `PLAN-SHOT-007` anomaly flavor cannot substitute.
 
 | Press kit item | Source now | Required proof before publish | Reject condition |
 |---|---|---|---|
-| `factsheet.md` | Factsheet fields below | Contact, Steam URL, presskit URL, build/demo state are real. | Any TBD in public-facing fields. |
-| `short_description.txt` | `Steam/STORE_PAGE_COPY_MATRIX.md` | Candidate selected by cold read and no co-op/performance/large-world claim. | Viewers cannot name player verb. |
-| `long_description.md` | Steam copy matrix + feature boundaries | Only current-build or clearly scoped public facts. | Future roadmap sold as current feature. |
-| `screenshots/` | `PLAN-SHOT-001` through `PLAN-SHOT-007` | Public shots pass QA and have build IDs. | AI/concept-looking, unreadable, or generic clone frame. |
-| `trailer/` | `PLAN-CLIP-001` through `PLAN-CLIP-004` | First 3 seconds show player verb or system problem. | Beauty footage with no gameplay read. |
+| Factsheet packet | Factsheet fields below | Contact, Steam URL, presskit URL, build/demo state are real. | Any TBD in public-facing fields. |
+| Short-description packet | `Steam/STORE_PAGE_COPY_MATRIX.md` | Candidate selected by cold read and no unsupported multiplayer/performance/large-world claim. | Viewers cannot name player verb. |
+| Long-description packet | Steam copy matrix + feature boundaries | Only current-build or clearly scoped public facts. | Future roadmap sold as current feature. |
+| `screenshots/` | `PLAN-SHOT-001` through `PLAN-SHOT-007` | Public shots pass QA, have build IDs, and the lead set includes one readable player decision recorded in AB-009/KPI fields. | AI/concept-looking, unreadable, generic clone frame, or passive anomaly-only set. |
+| `trailer/` | `PLAN-CLIP-001` through `PLAN-CLIP-004` | First 3 seconds show player verb or system problem; one beat shows a player choice under pressure. | Beauty footage with no gameplay read or no decision pressure. |
 | `logo/` | Brand asset source | Readable mark on dark/light backgrounds. | Tiny-size unreadable. |
 | `capsules/` | `PLAN-CAPSULE-001` winner | AB-002/cold-read winner exists. | Title unreadable or one-note blue/black. |
-| `contact.txt` | Owner-controlled email only | Project email and response owner exist. | Personal/orphan email or no owner. |
-| `key_request_policy.md` | Review-key protocol | Current Steamworks key rules rechecked. | Implies keys are available before approval. |
-| `feature_boundaries.md` | FAQ/roadmap policy | No co-op, no false performance, no unsupported scope. | Any vague "planned soon" promise. |
-| `performance_claims.md` | Profiler/hardware proof only | Build/settings/hardware/frame-time context exists. | Empty "runs well" language. |
+| Contact packet | Owner-controlled email only | Project email and response owner exist. | Personal/orphan email or no owner. |
+| Key-request policy packet | Review-key protocol | Current Steamworks key rules rechecked. | Implies keys are available before approval. |
+| Feature-boundaries packet | FAQ/roadmap policy | Multiplayer-scope boundary, performance proof boundary, and unsupported-scope boundary. | Any vague "planned soon" promise. |
+| Performance-claims packet | Profiler/hardware proof only | Build/settings/hardware/frame-time context exists. | Empty "runs well" language. |
 
 ### Press Kit Publish Gate
+
+Machine gate:
+
+- current value: `press_release_permission_gate = HOLD_NO_PRESS_RELEASE_PUBLICATION`;
+- future allow value: `ALLOW_PRESS_RELEASE_PUBLISH_VERIFIED`;
+- applies to presskit publish, "presskit is live" announcements, public media one-pagers, press release reuse, and presskit links placed into Steam news, social posts, emails, site pages, or distribution copy.
 
 Do not publish or link a press kit until:
 
 - Campaign 01 is `KEEP`;
 - Steam page launch gate is passed or the kit clearly says Steam URL is not live;
-- at least 6 screenshots have asset metadata, QA score, and build ID;
-- contact route is owner-controlled;
-- review-key policy is included even if no keys exist;
-- every file says single-player-first and avoids competitor-war language.
+- `press_release_permission_gate = ALLOW_PRESS_RELEASE_PUBLISH_VERIFIED` for the exact surface;
+- `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` for every public presskit, Steam, demo, support, Discord, or signup link;
+- at least 6 screenshots have asset metadata, QA score, build ID, and claim-check fields passed;
+- at least one public media asset proves a readable player decision under threat, leak, route cost, sonar pressure, or salvage failure, with `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision` recorded where the proof comes from first-page assets;
+- contact route is owner-controlled through `official_inbox_custody_gate = ALLOW_OFFICIAL_INBOX_USE_VERIFIED`;
+- private access/key policy is included even if no keys exist;
+- every file says single-player-first, passes Promise Lint, and avoids competitor-war language.
 
 ## Factsheet Fields
 
@@ -69,7 +78,7 @@ Do not publish or link a press kit until:
 | Platform | PC / Steam target unless changed |
 | Engine | Unity 6 URP |
 | Core hook | Pressure, salvage, machinery, and isolation below the light |
-| Co-op | Not part of current public plan |
+| Multiplayer modes | Outside current public scope |
 | Current state | In development |
 | Contact | TBD |
 | Website | TBD |
@@ -83,14 +92,14 @@ Use:
 - "A darker, industrial take on underwater survival."
 - "Survival where pressure, machinery, and oxygen are readable systems."
 - "Deep-sea noir instead of bright alien wonder."
-- "A single-player-first survival game with no co-op promise."
+- "A single-player-first survival game with proof-first public scope."
 - "Seed Ship anomaly as systemic corruption, not cutscene lore."
 
 Avoid:
 
 - "Subnautica killer."
 - "Better than Subnautica."
-- "100km co-op."
+- "100km multiplayer."
 - "Zero-stutter" unless measured.
 - "Realistic ocean simulation" unless scoped and proven.
 
@@ -100,7 +109,7 @@ Until a demo exists, do not distribute keys.
 
 When keys exist:
 
-- issue small batches;
+- issue small batches only after the exact recipient or batch has `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED`, official inbox custody, access-log fields, and disclosure;
 - tag every key batch by purpose;
 - do not give keys to gray-market request spam;
 - require disclosure for paid/sponsored/free-key content where applicable;
@@ -124,14 +133,14 @@ Hi [Name],
 
 HECTON-8 is a single-player-first underwater survival game about pressure, salvage, heavy machinery, and industrial deep-sea isolation.
 
-The short version: not a bright ocean vacation, not a co-op promise, not a "Subnautica killer" pitch. The hook is survival below the light where every base, machine, and route is under pressure.
+The short version: survival below the light where every base, machine, and route is under pressure. The public angle stays proof-first and competitor-neutral.
 
 Useful assets:
 
-- Steam page: [TBD]
-- trailer: [TBD]
-- screenshots: [TBD]
-- press kit: [TBD]
+- Steam page: [official Steam URL only after `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED` and `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` for that URL]
+- trailer: [approved asset ID/link only after asset metadata claim checks; public link only after destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`]
+- screenshots: [approved asset IDs/links only]
+- press kit: [public link only after `press_release_permission_gate = ALLOW_PRESS_RELEASE_PUBLISH_VERIFIED` and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`]
 
 Best angle for your audience: [one sentence customized to outlet].
 
@@ -153,7 +162,7 @@ Use embargoes only for:
 
 Q: Is HECTON-8 multiplayer?
 
-A: HECTON-8 is single-player-first. Co-op is not part of the current public plan.
+A: HECTON-8 is single-player-first. Additional modes are outside current public scope unless they become real in the build.
 
 Q: Is this trying to be Subnautica?
 

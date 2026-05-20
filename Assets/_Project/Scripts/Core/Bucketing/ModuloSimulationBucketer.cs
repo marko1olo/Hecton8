@@ -26,22 +26,22 @@ namespace Hecton8.Core.Bucketing
         private const float CatastrophicCostClampMs = 1000f;
         private const float EwmaWeight = 0.10f;
 
-        private VaultBufferHandle<int> _entityBucketsHandle;
-        private VaultBufferHandle<int> _entityBucketsWorkHandle;
-        private VaultBufferHandle<float> _entityCostEwmaHandle;
-        private VaultBufferHandle<float> _bucketLoadEwmaHandle;
-        private VaultBufferHandle<float> _rebalanceBucketLoadsHandle;
-        private VaultBufferHandle<SimulationBucketRebalanceResult> _rebalanceResultHandle;
-        private VaultBufferHandle<SimulationBucketFrameState> _frameStateHandle;
-        private VaultBufferHandle<SimulationBucketBlackBoxEntry> _blackBoxHandle;
+        private VaultGenerationHandle<int> _entityBucketsHandle;
+        private VaultGenerationHandle<int> _entityBucketsWorkHandle;
+        private VaultGenerationHandle<float> _entityCostEwmaHandle;
+        private VaultGenerationHandle<float> _bucketLoadEwmaHandle;
+        private VaultGenerationHandle<float> _rebalanceBucketLoadsHandle;
+        private VaultGenerationHandle<SimulationBucketRebalanceResult> _rebalanceResultHandle;
+        private VaultGenerationHandle<SimulationBucketFrameState> _frameStateHandle;
+        private VaultGenerationHandle<SimulationBucketBlackBoxEntry> _blackBoxHandle;
         private IDataVault _dataVault;
         private JobHandle _rebalanceHandle;
         private int _entityCapacity;
         private int _entityMask;
         private int _currentFrameCount;
-        private int _slowBucketCount = SimulationBucketConstants.StandardSlowBucketCount;
-        private int _slowBucketMask = SimulationBucketConstants.StandardSlowBucketMask;
-        private int _slowBucketGroupMask = SimulationBucketConstants.StandardSlowBucketMask;
+        private int _slowBucketCount = SimulationBucketConstants.SurvivalSlowBucketCount;
+        private int _slowBucketMask = SimulationBucketConstants.SurvivalSlowBucketMask;
+        private int _slowBucketGroupMask = SimulationBucketConstants.SurvivalSlowBucketMask;
         private int _activeSlowBucketGroup;
         private int _activeSlowBucketShift;
         private int _activeFastBucket;
@@ -63,6 +63,8 @@ namespace Hecton8.Core.Bucketing
         private float _expectedMeanBucketLoadMs;
         private float _preSimulationCostMs;
         private float _simulationBucketInterpolationAlpha;
+        private float _qualityWeight01 = 1f;
+        private float _survivalDistributionPressure01;
         private bool _aupBarrierActive;
         private bool _rebalancePending;
         private bool _nonFiniteCostObserved;
@@ -152,42 +154,42 @@ namespace Hecton8.Core.Bucketing
             _entityCapacity = capacity;
             _entityMask = capacity - 1;
 
-            _entityBucketsHandle = dataVault.GetBufferHandle<int>(
+            _entityBucketsHandle = dataVault.GetGenerationHandle<int>(
                 BufferID.SimulationBucketEntityFront,
                 capacity,
                 SystemID.SimulationBucketer,
                 NativeArrayOptions.UninitializedMemory);
-            _entityBucketsWorkHandle = dataVault.GetBufferHandle<int>(
+            _entityBucketsWorkHandle = dataVault.GetGenerationHandle<int>(
                 BufferID.SimulationBucketEntityWork,
                 capacity,
                 SystemID.SimulationBucketer,
                 NativeArrayOptions.UninitializedMemory);
-            _entityCostEwmaHandle = dataVault.GetBufferHandle<float>(
+            _entityCostEwmaHandle = dataVault.GetGenerationHandle<float>(
                 BufferID.SimulationBucketEntityCostEwma,
                 capacity,
                 SystemID.SimulationBucketer,
                 NativeArrayOptions.ClearMemory);
-            _bucketLoadEwmaHandle = dataVault.GetBufferHandle<float>(
+            _bucketLoadEwmaHandle = dataVault.GetGenerationHandle<float>(
                 BufferID.SimulationBucketLoadEwma,
-                SimulationBucketConstants.LowSlowBucketCount,
+                SimulationBucketConstants.SurvivalSlowBucketCount,
                 SystemID.SimulationBucketer,
                 NativeArrayOptions.ClearMemory);
-            _rebalanceBucketLoadsHandle = dataVault.GetBufferHandle<float>(
+            _rebalanceBucketLoadsHandle = dataVault.GetGenerationHandle<float>(
                 BufferID.SimulationBucketRebalanceLoads,
-                SimulationBucketConstants.LowSlowBucketCount,
+                SimulationBucketConstants.SurvivalSlowBucketCount,
                 SystemID.SimulationBucketer,
                 NativeArrayOptions.ClearMemory);
-            _rebalanceResultHandle = dataVault.GetBufferHandle<SimulationBucketRebalanceResult>(
+            _rebalanceResultHandle = dataVault.GetGenerationHandle<SimulationBucketRebalanceResult>(
                 BufferID.SimulationBucketRebalanceResult,
                 RebalanceResultLength,
                 SystemID.SimulationBucketer,
                 NativeArrayOptions.ClearMemory);
-            _frameStateHandle = dataVault.GetBufferHandle<SimulationBucketFrameState>(
+            _frameStateHandle = dataVault.GetGenerationHandle<SimulationBucketFrameState>(
                 BufferID.SimulationBucketFrameState,
                 FrameStateLength,
                 SystemID.SimulationBucketer,
                 NativeArrayOptions.ClearMemory);
-            _blackBoxHandle = dataVault.GetBufferHandle<SimulationBucketBlackBoxEntry>(
+            _blackBoxHandle = dataVault.GetGenerationHandle<SimulationBucketBlackBoxEntry>(
                 BufferID.SimulationBucketBlackBox,
                 BlackBoxFrameCount,
                 SystemID.SimulationBucketer,
@@ -205,7 +207,7 @@ namespace Hecton8.Core.Bucketing
             UpdateFrameStateBuffer();
         }
 
-        public void AdvanceFrame(byte scalabilityTierProfile, float unscaledDeltaTime, int criticalDebtFrames, bool aupBarrierActive)
+        public void AdvanceFrame(float globalQualityWeight01, float unscaledDeltaTime, int criticalDebtFrames, bool aupBarrierActive)
         {
             if (!IsInitialized)
                 return;
@@ -213,30 +215,32 @@ namespace Hecton8.Core.Bucketing
             CompleteRebalanceIfReady();
 
             _currentFrameCount = _currentFrameCount == int.MaxValue ? 0 : _currentFrameCount + 1;
-            bool lowTier = scalabilityTierProfile == 0;
-            _slowBucketCount = lowTier
-                ? SimulationBucketConstants.LowSlowBucketCount
-                : SimulationBucketConstants.StandardSlowBucketCount;
+            _qualityWeight01 = SanitizeQualityWeight01(globalQualityWeight01);
+            float precisionCurve01 = SmoothStep01(_qualityWeight01);
+            _survivalDistributionPressure01 = 1f - precisionCurve01;
+            _slowBucketCount = SimulationBucketConstants.SurvivalSlowBucketCount;
             _slowBucketMask = _slowBucketCount - 1;
             _activeFastBucket = _currentFrameCount & SimulationBucketConstants.FastBucketMask;
             _activeColdBucket = _currentFrameCount & SimulationBucketConstants.ColdBucketMask;
             _criticalDebtFrames = math.max(0, criticalDebtFrames);
             _aupBarrierActive = aupBarrierActive;
-            _activeSlowBucketCount = ResolveActiveSlowBucketCount(lowTier, unscaledDeltaTime, _criticalDebtFrames, aupBarrierActive);
+            _activeSlowBucketCount = ResolveActiveSlowBucketCount(_qualityWeight01, unscaledDeltaTime, _criticalDebtFrames, aupBarrierActive, _currentFrameCount);
             _activeSlowBucketShift = ResolveActiveSlowBucketShift(_activeSlowBucketCount);
             _slowBucketGroupMask = (_slowBucketCount >> _activeSlowBucketShift) - 1;
             _activeSlowBucketGroup = _currentFrameCount & _slowBucketGroupMask;
             _activeSlowBucket = (_activeSlowBucketGroup << _activeSlowBucketShift) & _slowBucketMask;
             _simulationBucketInterpolationAlpha = ResolveGlobalInterpolationAlpha();
 
-            if (lowTier)
-                _rebalanceCountdown = SimulationBucketConstants.RebalanceCadenceFrames;
-            else
-                ScheduleRebalanceIfDue();
+            ScheduleRebalanceIfDue(ResolveRebalanceCadenceFrames(_qualityWeight01));
 
-            UpdatePacingFlags(lowTier);
+            UpdatePacingFlags();
             UpdateFrameStateBuffer();
             WriteBlackBoxEntry();
+        }
+
+        public void AdvanceFrame(byte globalQualityWeightByte, float unscaledDeltaTime, int criticalDebtFrames, bool aupBarrierActive)
+        {
+            AdvanceFrame(globalQualityWeightByte * 0.00392156862745f, unscaledDeltaTime, criticalDebtFrames, aupBarrierActive);
         }
 
         public void ReportActiveBucketLoadMs(float milliseconds)
@@ -260,7 +264,7 @@ namespace Hecton8.Core.Bucketing
                 bucketLoads[_activeSlowBucket] = math.lerp(seed, sanitized, EwmaWeight);
             }
 
-            UpdatePacingFlags(_slowBucketCount == SimulationBucketConstants.LowSlowBucketCount);
+            UpdatePacingFlags();
             UpdateFrameStateBuffer();
             WriteBlackBoxEntry();
         }
@@ -268,7 +272,7 @@ namespace Hecton8.Core.Bucketing
         public void ReportPreSimulationCostMs(float milliseconds)
         {
             _preSimulationCostMs = SanitizeCost(milliseconds);
-            UpdatePacingFlags(_slowBucketCount == SimulationBucketConstants.LowSlowBucketCount);
+            UpdatePacingFlags();
             UpdateFrameStateBuffer();
         }
 
@@ -421,9 +425,9 @@ namespace Hecton8.Core.Bucketing
                    costs.IsCreated &&
                    costs.Length >= _entityCapacity &&
                    bucketLoads.IsCreated &&
-                   bucketLoads.Length >= SimulationBucketConstants.LowSlowBucketCount &&
+                   bucketLoads.Length >= SimulationBucketConstants.SurvivalSlowBucketCount &&
                    rebalanceLoads.IsCreated &&
-                   rebalanceLoads.Length >= SimulationBucketConstants.LowSlowBucketCount &&
+                   rebalanceLoads.Length >= SimulationBucketConstants.SurvivalSlowBucketCount &&
                    result.IsCreated &&
                    result.Length >= RebalanceResultLength &&
                    frameState.IsCreated &&
@@ -434,51 +438,77 @@ namespace Hecton8.Core.Bucketing
 
         private NativeArray<int> ResolveEntityBuckets()
         {
-            return _entityBucketsHandle.IsCreated && _dataVault != null ? _entityBucketsHandle.Resolve(_dataVault) : default;
+            return TryResolveVaultBuffer(in _entityBucketsHandle, out NativeArray<int> buffer) ? buffer : default;
         }
 
         private NativeArray<int> ResolveEntityBucketsWork()
         {
-            return _entityBucketsWorkHandle.IsCreated && _dataVault != null ? _entityBucketsWorkHandle.Resolve(_dataVault) : default;
+            return TryResolveVaultBuffer(in _entityBucketsWorkHandle, out NativeArray<int> buffer) ? buffer : default;
         }
 
         private NativeArray<float> ResolveEntityCostEwma()
         {
-            return _entityCostEwmaHandle.IsCreated && _dataVault != null ? _entityCostEwmaHandle.Resolve(_dataVault) : default;
+            return TryResolveVaultBuffer(in _entityCostEwmaHandle, out NativeArray<float> buffer) ? buffer : default;
         }
 
         private NativeArray<float> ResolveBucketLoadEwma()
         {
-            return _bucketLoadEwmaHandle.IsCreated && _dataVault != null ? _bucketLoadEwmaHandle.Resolve(_dataVault) : default;
+            return TryResolveVaultBuffer(in _bucketLoadEwmaHandle, out NativeArray<float> buffer) ? buffer : default;
         }
 
         private NativeArray<float> ResolveRebalanceBucketLoads()
         {
-            return _rebalanceBucketLoadsHandle.IsCreated && _dataVault != null ? _rebalanceBucketLoadsHandle.Resolve(_dataVault) : default;
+            return TryResolveVaultBuffer(in _rebalanceBucketLoadsHandle, out NativeArray<float> buffer) ? buffer : default;
         }
 
         private NativeArray<SimulationBucketRebalanceResult> ResolveRebalanceResult()
         {
-            return _rebalanceResultHandle.IsCreated && _dataVault != null ? _rebalanceResultHandle.Resolve(_dataVault) : default;
+            return TryResolveVaultBuffer(in _rebalanceResultHandle, out NativeArray<SimulationBucketRebalanceResult> buffer) ? buffer : default;
         }
 
         private NativeArray<SimulationBucketFrameState> ResolveFrameStateBuffer()
         {
-            return _frameStateHandle.IsCreated && _dataVault != null ? _frameStateHandle.Resolve(_dataVault) : default;
+            return TryResolveVaultBuffer(in _frameStateHandle, out NativeArray<SimulationBucketFrameState> buffer) ? buffer : default;
         }
 
         private NativeArray<SimulationBucketBlackBoxEntry> ResolveBlackBoxBuffer()
         {
-            return _blackBoxHandle.IsCreated && _dataVault != null ? _blackBoxHandle.Resolve(_dataVault) : default;
+            return TryResolveVaultBuffer(in _blackBoxHandle, out NativeArray<SimulationBucketBlackBoxEntry> buffer) ? buffer : default;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool TryResolveVaultBuffer<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer)
+            where T : struct
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || handle.BufferID == 0u)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return vault.TryResolveHandle(in handle, out buffer) && buffer.IsCreated;
         }
 
         private void ReleaseHandlesOnly()
         {
             if (_rebalancePending)
             {
-                _rebalanceHandle.Complete();
+                Hecton8.Core.DispatcherJobFence.TryComplete(ref _rebalanceHandle, forceComplete: true);
                 _rebalancePending = false;
-                _rebalanceHandle = default;
+            }
+
+            IDataVault vault = _dataVault;
+            if (vault != null)
+            {
+                ReleaseVaultHandle(vault, ref _entityBucketsHandle);
+                ReleaseVaultHandle(vault, ref _entityBucketsWorkHandle);
+                ReleaseVaultHandle(vault, ref _entityCostEwmaHandle);
+                ReleaseVaultHandle(vault, ref _bucketLoadEwmaHandle);
+                ReleaseVaultHandle(vault, ref _rebalanceBucketLoadsHandle);
+                ReleaseVaultHandle(vault, ref _rebalanceResultHandle);
+                ReleaseVaultHandle(vault, ref _frameStateHandle);
+                ReleaseVaultHandle(vault, ref _blackBoxHandle);
             }
 
             _entityBucketsHandle = default;
@@ -494,6 +524,15 @@ namespace Hecton8.Core.Bucketing
             _entityMask = 0;
             _blackBoxCursor = 0;
             _lastBlackBoxFrame = -1;
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (handle.BufferID != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         private void ClearEntityState()
@@ -536,7 +575,7 @@ namespace Hecton8.Core.Bucketing
             }
         }
 
-        private void ScheduleRebalanceIfDue()
+        private void ScheduleRebalanceIfDue(int cadenceFrames)
         {
             if (_rebalancePending)
                 return;
@@ -561,7 +600,7 @@ namespace Hecton8.Core.Bucketing
                 return;
             }
 
-            _rebalanceCountdown = SimulationBucketConstants.RebalanceCadenceFrames;
+            _rebalanceCountdown = math.max(1, cadenceFrames);
             LoadBalancingJob job = new LoadBalancingJob
             {
                 EntityCostsMs = costs,
@@ -586,8 +625,9 @@ namespace Hecton8.Core.Bucketing
             if (!_rebalancePending || !_rebalanceHandle.IsCompleted)
                 return;
 
-            _rebalanceHandle.Complete();
-            _rebalanceHandle = default;
+            if (!Hecton8.Core.DispatcherJobFence.TryFinalizeCompleted(ref _rebalanceHandle))
+                return;
+
             _rebalancePending = false;
 
             if (_rebalanceMutationVersion == _mutationVersion)
@@ -620,11 +660,11 @@ namespace Hecton8.Core.Bucketing
             }
         }
 
-        private void UpdatePacingFlags(bool lowTier)
+        private void UpdatePacingFlags()
         {
             uint flags = 0u;
-            if (lowTier)
-                flags |= SimulationBucketPacingFlags.LowTierStaticDistribution;
+            if (_activeSlowBucketCount <= SimulationBucketConstants.MinimumActiveSlowBucketCount)
+                flags |= SimulationBucketPacingFlags.SurvivalStaticDistribution;
             if (_rebalancePending)
                 flags |= SimulationBucketPacingFlags.RebalancePending;
             if (_nonFiniteCostObserved)
@@ -644,14 +684,21 @@ namespace Hecton8.Core.Bucketing
                 expectedFrameMs = CatastrophicCostClampMs;
             }
 
+            float precisionCurve01 = SmoothStep01(_qualityWeight01);
+            float visualHeadroomThresholdMs = math.lerp(
+                SimulationBucketConstants.TargetFrameMilliseconds * 0.35f,
+                SimulationBucketConstants.TargetFrameMilliseconds * 0.5f,
+                precisionCurve01);
             if (expectedFrameMs > SimulationBucketConstants.TargetFrameMilliseconds)
             {
                 flags |= SimulationBucketPacingFlags.Impossible60Fps;
                 flags |= SimulationBucketPacingFlags.HomeostasisKillRequested;
             }
-            else if (!lowTier && !_rebalancePending && !_nonFiniteCostObserved &&
+            else if (_activeSlowBucketCount > SimulationBucketConstants.MinimumActiveSlowBucketCount &&
+                     !_rebalancePending &&
+                     !_nonFiniteCostObserved &&
                      expectedFrameMs > 0f &&
-                     expectedFrameMs <= SimulationBucketConstants.TargetFrameMilliseconds * 0.5f)
+                     expectedFrameMs <= visualHeadroomThresholdMs)
             {
                 flags |= SimulationBucketPacingFlags.VisualOverkillBudgetAvailable;
             }
@@ -717,6 +764,8 @@ namespace Hecton8.Core.Bucketing
                 hash = (hash ^ (uint)_activeSlowBucket) * 16777619u;
                 hash = (hash ^ (uint)_activeColdBucket) * 16777619u;
                 hash = (hash ^ _framePacingFlags) * 16777619u;
+                hash = (hash ^ math.asuint(_qualityWeight01)) * 16777619u;
+                hash = (hash ^ math.asuint(_survivalDistributionPressure01)) * 16777619u;
                 hash = (hash ^ math.asuint(_lastActiveBucketLoadMs)) * 16777619u;
                 hash = (hash ^ math.asuint(_jitterVarianceMs)) * 16777619u;
                 return hash;
@@ -831,73 +880,134 @@ namespace Hecton8.Core.Bucketing
             _blackBoxCursor = 0;
             _lastBlackBoxFrame = -1;
             _activeSlowBucketCount = SimulationBucketConstants.MinimumActiveSlowBucketCount;
-            _slowBucketCount = SimulationBucketConstants.StandardSlowBucketCount;
-            _slowBucketMask = SimulationBucketConstants.StandardSlowBucketMask;
-            _slowBucketGroupMask = SimulationBucketConstants.StandardSlowBucketMask;
+            _slowBucketCount = SimulationBucketConstants.SurvivalSlowBucketCount;
+            _slowBucketMask = SimulationBucketConstants.SurvivalSlowBucketMask;
+            _slowBucketGroupMask = SimulationBucketConstants.SurvivalSlowBucketMask;
             _activeSlowBucketGroup = 0;
             _activeSlowBucketShift = 0;
             _activeFastBucket = 0;
             _activeSlowBucket = 0;
             _activeColdBucket = 0;
             _rebalanceCountdown = SimulationBucketConstants.RebalanceCadenceFrames;
+            _qualityWeight01 = 1f;
+            _survivalDistributionPressure01 = 0f;
             _nonFiniteCostObserved = false;
             _pendingBlackBoxDump = false;
         }
 
-        private static byte ResolveActiveSlowBucketCount(bool lowTier, float unscaledDeltaTime, int criticalDebtFrames, bool aupBarrierActive)
+        private static byte ResolveActiveSlowBucketCount(float qualityWeight01, float unscaledDeltaTime, int criticalDebtFrames, bool aupBarrierActive, int frameCount)
         {
-            if (lowTier || aupBarrierActive || criticalDebtFrames > 0 || !math.isfinite(unscaledDeltaTime) || unscaledDeltaTime <= 0f)
+            if (aupBarrierActive || criticalDebtFrames > 0 || !math.isfinite(unscaledDeltaTime) || unscaledDeltaTime <= 0f)
                 return SimulationBucketConstants.MinimumActiveSlowBucketCount;
 
-            return SimulationBucketConstants.HighTierActiveSlowBucketCount;
+            float curve = SmoothStep01(SanitizeQualityWeight01(qualityWeight01));
+            float targetExponent = math.lerp(0f, 2f, curve);
+            int lowerExponent = (int)math.floor(targetExponent);
+            float fractional = targetExponent - lowerExponent;
+            uint phase = DeterministicFramePhase01(frameCount);
+            int exponent = lowerExponent + math.select(0, 1, phase < (uint)math.round(fractional * 65535f));
+            int activeCount = 1 << math.clamp(exponent, 0, 2);
+            return (byte)math.clamp(
+                activeCount,
+                (int)SimulationBucketConstants.MinimumActiveSlowBucketCount,
+                (int)SimulationBucketConstants.PrecisionActiveSlowBucketCount);
         }
 
         private static int ResolveActiveSlowBucketShift(byte activeSlowBucketCount)
         {
-            return activeSlowBucketCount >= SimulationBucketConstants.HighTierActiveSlowBucketCount ? 1 : 0;
+            int clampedCount = math.clamp(
+                (int)activeSlowBucketCount,
+                (int)SimulationBucketConstants.MinimumActiveSlowBucketCount,
+                (int)SimulationBucketConstants.PrecisionActiveSlowBucketCount);
+            int shift = 0;
+            int capacity = 1;
+            while (capacity < clampedCount)
+            {
+                capacity <<= 1;
+                shift++;
+            }
+
+            return shift;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 24)]
+        private static int ResolveRebalanceCadenceFrames(float qualityWeight01)
+        {
+            float curve = SmoothStep01(SanitizeQualityWeight01(qualityWeight01));
+            return math.max(
+                1,
+                (int)math.round(math.lerp(
+                    SimulationBucketConstants.RebalanceCadenceFrames * 4f,
+                    SimulationBucketConstants.RebalanceCadenceFrames,
+                    curve)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint DeterministicFramePhase01(int frameCount)
+        {
+            unchecked
+            {
+                uint hash = (uint)frameCount;
+                hash ^= 0x9E3779B9u;
+                hash *= 0x85EBCA6Bu;
+                hash ^= hash >> 16;
+                return hash & 0xFFFFu;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SanitizeQualityWeight01(float qualityWeight01)
+        {
+            return math.isfinite(qualityWeight01) ? math.saturate(qualityWeight01) : 1f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SmoothStep01(float value)
+        {
+            float t = math.saturate(value);
+            return t * t * (3f - (2f * t));
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = 24)]
         internal struct SimulationBucketRebalanceResult
         {
-            public float MaxBucketLoadMs;
-            public float MeanBucketLoadMs;
-            public float TotalLoadMs;
-            public uint FramePacingFlags;
-            public int ActiveEntityCount;
-            private uint _pad0;
+            [FieldOffset(0)] public float MaxBucketLoadMs;
+            [FieldOffset(4)] public float MeanBucketLoadMs;
+            [FieldOffset(8)] public float TotalLoadMs;
+            [FieldOffset(12)] public uint FramePacingFlags;
+            [FieldOffset(16)] public int ActiveEntityCount;
+            [FieldOffset(20)] private uint _pad0;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = BlackBoxEntrySizeBytes)]
+        [StructLayout(LayoutKind.Explicit, Size = BlackBoxEntrySizeBytes)]
         internal struct SimulationBucketBlackBoxEntry
         {
-            public int CurrentFrameCount;
-            public int ActiveFastBucket;
-            public int ActiveSlowBucket;
-            public int ActiveColdBucket;
-            public int SlowBucketCount;
-            public int CriticalDebtFrames;
-            public uint FramePacingFlags;
-            public uint RebalanceSequence;
-            public float ActiveBucketLoadMs;
-            public float JitterVarianceMs;
-            public float ExpectedMaxBucketLoadMs;
-            public float ExpectedMeanBucketLoadMs;
-            public float PreSimulationCostMs;
-            public float SimulationBucketInterpolationAlpha;
-            public byte ActiveSlowBucketCount;
-            public byte AupBarrierActive;
-            public ushort ReservedPadding;
-            public uint StateHash;
+            [FieldOffset(0)] public int CurrentFrameCount;
+            [FieldOffset(4)] public int ActiveFastBucket;
+            [FieldOffset(8)] public int ActiveSlowBucket;
+            [FieldOffset(12)] public int ActiveColdBucket;
+            [FieldOffset(16)] public int SlowBucketCount;
+            [FieldOffset(20)] public int CriticalDebtFrames;
+            [FieldOffset(24)] public uint FramePacingFlags;
+            [FieldOffset(28)] public uint RebalanceSequence;
+            [FieldOffset(32)] public float ActiveBucketLoadMs;
+            [FieldOffset(36)] public float JitterVarianceMs;
+            [FieldOffset(40)] public float ExpectedMaxBucketLoadMs;
+            [FieldOffset(44)] public float ExpectedMeanBucketLoadMs;
+            [FieldOffset(48)] public float PreSimulationCostMs;
+            [FieldOffset(52)] public float SimulationBucketInterpolationAlpha;
+            [FieldOffset(56)] public byte ActiveSlowBucketCount;
+            [FieldOffset(57)] public byte AupBarrierActive;
+            [FieldOffset(58)] public ushort ReservedPadding;
+            [FieldOffset(60)] public uint StateHash;
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         internal struct LoadBalancingJob : IJob
         {
-            [ReadOnly] public NativeArray<float> EntityCostsMs;
-            public NativeArray<int> EntityBucketsWork;
-            public NativeArray<float> BucketLoadsMs;
-            public NativeArray<SimulationBucketRebalanceResult> Result;
+            [ReadOnly, NoAlias] public NativeArray<float> EntityCostsMs;
+            [NoAlias] public NativeArray<int> EntityBucketsWork;
+            [NoAlias] public NativeArray<float> BucketLoadsMs;
+            [NoAlias] public NativeArray<SimulationBucketRebalanceResult> Result;
             public int EntityCount;
             public int BucketCount;
             public float DefaultCostMs;

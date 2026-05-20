@@ -879,10 +879,15 @@ namespace Hecton8.Core
         public readonly struct NativeArenaSlice<T> where T : unmanaged
         {
             public readonly void* Ptr;
+
             public readonly int Length;
+
             public readonly int Stride;
+
             public readonly int ByteCount;
+
             public readonly int FrameSequence;
+
             private readonly long _pad0;
 
             public NativeArenaSlice(void* ptr, int length, int stride, int byteCount, int frameSequence)
@@ -895,7 +900,10 @@ namespace Hecton8.Core
                 _pad0 = 0L;
             }
 
-            public bool IsCreated => Ptr != null && Length > 0;
+            public bool IsCreated()
+            {
+                return Ptr != null && Length > 0;
+            }
 
             public ref T GetElementAsRef(int index)
             {
@@ -909,14 +917,26 @@ namespace Hecton8.Core
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 24)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         internal readonly struct ArenaAllocation
         {
+            [FieldOffset(0)]
             public readonly void* Ptr;
+
+            [FieldOffset(8)]
             public readonly int ByteCount;
+
+            [FieldOffset(12)]
             public readonly int ArenaIndex;
+
+            [FieldOffset(16)]
             public readonly int SlabIndex;
+
+            [FieldOffset(20)]
             public readonly int FrameSequence;
+
+            [FieldOffset(24)]
+            private readonly long _pad0;
 
             public ArenaAllocation(void* ptr, int byteCount, int arenaIndex, int slabIndex, int frameSequence)
             {
@@ -925,6 +945,7 @@ namespace Hecton8.Core
                 ArenaIndex = arenaIndex;
                 SlabIndex = slabIndex;
                 FrameSequence = frameSequence;
+                _pad0 = 0L;
             }
         }
     }

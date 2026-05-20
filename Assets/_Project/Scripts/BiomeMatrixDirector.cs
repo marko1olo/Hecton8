@@ -21,13 +21,15 @@ namespace Hecton8.Environment
 
     public static class BiomeMatrixEvents
     {
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
         private struct BiomeMatrixEventPayload
         {
-            public byte EventType;
-            public int ProfileSlot;
-            public int DepthTier;
-            public float DepthMeters;
+            [FieldOffset(0)] public byte EventType;
+            [FieldOffset(1)] private byte _pad0;
+            [FieldOffset(2)] private ushort _pad1;
+            [FieldOffset(4)] public int ProfileSlot;
+            [FieldOffset(8)] public int DepthTier;
+            [FieldOffset(12)] public float DepthMeters;
         }
 
         private const byte MatrixBiomeChangedEventType = 1;

@@ -20,9 +20,9 @@ Recheck before requesting keys or sending access. Platform limits and disclosure
 | Access type | Use | HECTON-8 stance |
 |---|---|---|
 | Steam Curator Connect | Steam curator review copies | Preferred for curators. |
-| Release State Override keys | Small press/influencer/beta access before release | Only after key request approval and strict log. |
+| Release State Override keys | Small press/influencer/beta access before release | Only after key request approval, recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED`, and strict log. |
 | Steam Playtest | Larger public testing if needed | Consider for scale; separate from press keys. |
-| Private build link | Emergency press preview only | Avoid unless secure and revocable. |
+| Private build link | Emergency press preview only | Avoid unless secure, revocable, and recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED`. |
 | Default release keys | Post-release review/press access | Later. |
 | Dev comp keys | Internal developer access | Never distribute to press/customers. |
 
@@ -31,10 +31,32 @@ Recheck before requesting keys or sending access. Platform limits and disclosure
 - Never sell pre-release/access keys.
 - Never promise keys before Valve approval.
 - Never send keys to unverified contacts.
+- Never send access from a personal, throwaway, agent-owned, or unrecorded mailbox.
 - Never use raw keys for Steam curators if Curator Connect works.
 - Never send multiple keys because someone asks casually.
+- Never use a private access link as a public CTA, bio link, showcase CTA, or presskit download link.
 - Every key/access must have a reason, recipient, source, and status.
 - Paid/sponsored coverage must disclose relationship.
+
+## Private Access Permission Gate V0
+
+Machine gate: `private_access_permission_gate = HOLD_NO_PRIVATE_ACCESS`. The only future allow value is `ALLOW_PRIVATE_ACCESS_VERIFIED`, and it is recipient/batch-specific: approving one creator, outlet, curator, tester, or batch does not approve another route.
+
+Allow requires:
+
+- stable build or explicit technical-test build state;
+- known-issues copy ready;
+- access type chosen;
+- recipient or batch owner row exists;
+- `verified_contact_route` recorded;
+- `official_inbox_custody_gate = ALLOW_OFFICIAL_INBOX_USE_VERIFIED`;
+- `access_route_class` recorded as private access, not public CTA;
+- `reply_status_after_send` and `reply_consent_provenance` fields ready;
+- revocation/disable path known where possible;
+- disclosure requirement identified;
+- `agency_decision_field_source` recorded when access copy claims gameplay, pressure, route-risk, threat, salvage, base failure, or first-public agency proof.
+
+If any field is missing, keep the access as protocol-only and do not send keys, links, Steam Playtest invites, preview access, or Curator Connect copies.
 
 ## Release State Override Boundary
 
@@ -45,7 +67,7 @@ Recommended HECTON-8 allocation before launch:
 | Purpose | Max before reassessment |
 |---|---:|
 | Press previews | 30 |
-| Verified creators | 50 |
+| Send-verified creators | 50 |
 | Technical QA/playtest | 50 |
 | Emergency replacements | 10 |
 | Total first request | 140 or less |
@@ -54,16 +76,23 @@ If the team needs hundreds/thousands of players, evaluate Steam Playtest instead
 
 ## Access Approval Flow
 
-1. Recipient verified.
-2. Fit score recorded.
-3. Contact route verified from recipient-owned source.
-4. Build route verified by QA.
-5. Disclosure requirement identified.
-6. Access type chosen.
-7. Key/access logged.
-8. Message sent.
-9. Follow-up status tracked.
-10. Unused/suspicious access reviewed.
+1. `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED` for the exact recipient or batch.
+2. Recipient verified.
+3. Fit score recorded.
+4. Contact route verified from recipient-owned source.
+5. Build route verified by QA.
+6. Official project inbox custody verified.
+7. Asset metadata claim checks pass for any asset/link in the message.
+8. Any gameplay, pressure, route-risk, threat, salvage failure, or first-public proof claim has AB-009/KPI decision-read fields (`what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`) unless the access is purely technical QA.
+9. Press tracker has `send_permission_gate = ALLOW_PRESS_SEND_VERIFIED` or curator tracker has `send_permission_gate = ALLOW_CURATOR_SEND_VERIFIED` when the recipient is from either tracker.
+10. Public/private route class chosen and recorded.
+11. Creator or press send-log row is ready.
+12. Disclosure requirement identified.
+13. Access type chosen.
+14. Key/access logged.
+15. Message sent.
+16. Follow-up status tracked.
+17. Unused/suspicious access reviewed.
 
 ## Verification Requirements
 
@@ -126,7 +155,7 @@ Please disclose any free review access according to your platform rules.
 ## No-Embargo Template
 
 ```text
-There is no embargo for this HECTON-8 preview access. You may publish whenever ready.
+For this already approved and logged HECTON-8 preview access, there is no embargo. You may publish whenever ready.
 
 Please note the build state honestly:
 [build state]
@@ -145,7 +174,7 @@ Current build includes:
 - [Feature 3]
 
 Current build does not include:
-- co-op/multiplayer;
+- unsupported multiplayer modes;
 - [Feature not present];
 - final performance profile;
 - final balance/content.
@@ -154,8 +183,10 @@ Current build does not include:
 ## Key Log CSV Schema
 
 ```csv
-key_id,batch_id,key_type,recipient_name,recipient_url,contact_route,purpose,region,language,build_version,sent_at,status,coverage_url,disclosure_required,notes
+key_id,batch_id,key_type,recipient_name,recipient_url,verified_contact_route,access_route_class,purpose,region,language,build_version,sent_at,status,reply_status_after_send,reply_consent_provenance,coverage_url,disclosure_required,agency_decision_field_source,notes
 ```
+
+Access rows are not valid if `verified_contact_route`, `access_route_class`, or `reply_consent_provenance` are collapsed into `notes`. `agency_decision_field_source` is required when the access message claims gameplay, pressure, route-risk, threat, salvage, base-failure, or first-public agency proof.
 
 ## 2026-05-19 Preview Access Batch V0
 
@@ -165,10 +196,10 @@ Use this as the first access batch design after a stable preview/demo build exis
 
 | Batch | Max size | Access type | Recipients | Required gates | Stop condition |
 |---|---:|---|---|---|---|
-| ACC-001 | 10 | Private preview or Steam Playtest invite | Wave A verified creators from CRM | Playtest decision gate passes, contact routes verified, build known issues ready. | Any recipient route cannot be verified or build has first-route blocker. |
-| ACC-002 | 10 | Release State Override or approved preview access | Press rows marked ready after presskit | Press kit publish gate passes and route rechecked same day. | Any outlet asks for extra raw keys or route mismatch appears. |
-| ACC-003 | 8 | Steam Curator Connect | Curator tracker first-copy candidates | Public Steam page/build exists; Curator Connect used, not raw keys. | Curator asks for external keys or page is stale/formulaic. |
-| ACC-004 | 10 | Technical QA/playtest | Low/mid-spec testers selected by score | Hardware specs collected; feedback tags ready. | Performance blocks all content feedback. |
+| ACC-001 | 10 | Private preview or Steam Playtest invite | Wave A send-verified creators from CRM | Playtest decision gate passes, recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED`, first human-send packet gates pass, AB-009/KPI decision-read fields exist for any gameplay/pressure/route-risk pitch, contact routes verified, build known issues ready. | Any recipient route cannot be verified or build has first-route blocker. |
+| ACC-002 | 10 | Release State Override or approved preview access | Press tracker candidates after presskit gate | Press kit publish gate passes, asset claim checks pass, AB-009/KPI decision-read fields exist for first-page gameplay/pressure proof, official inbox custody exists, route rechecked same day, and press tracker `send_permission_gate = ALLOW_PRESS_SEND_VERIFIED`. | Any outlet asks for extra raw keys or route mismatch appears. |
+| ACC-003 | 8 | Steam Curator Connect | Curator tracker first-copy candidates | Public Steam page/build exists, first screenshots pass asset claim checks, AB-009/KPI decision-read fields exist for the agency proof asset, Curator Connect used, not raw keys, and curator tracker `send_permission_gate = ALLOW_CURATOR_SEND_VERIFIED`. | Curator asks for external keys or page is stale/formulaic. |
+| ACC-004 | 10 | Technical QA/playtest | Low/mid-spec testers selected by score | Hardware specs collected, feedback tags ready, and recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED` if access is private rather than public Playtest. | Performance blocks all content feedback. |
 
 ### Access Message Must Include
 
@@ -182,6 +213,8 @@ Current build does not include:
 Disclosure requirement:
 Feedback route:
 Support contact:
+access_route_class: private access only / not a public CTA
+reply_consent_provenance: press/creator/curator reply only unless explicit separate opt-in exists
 ```
 
 ### Access Stop Rules
@@ -189,10 +222,12 @@ Support contact:
 Stop sending access if:
 
 - 2 recipients report a build blocker in the first route;
-- key/access route leaks outside verified contacts;
+- key/access route leaks outside send-verified contacts;
+- press/creator/curator replies are copied into newsletter, playtest, or public-audience lists without explicit separate opt-in;
 - recipient asks for false talking points;
 - disclosure language is rejected;
-- feedback is dominated by co-op expectation caused by our copy;
+- feedback is dominated by multiplayer-scope expectation caused by our copy;
+- access copy claims gameplay/pressure/route-risk proof while AB-009/KPI decision-read fields are missing;
 - Steam/Curator/YouTube/FTC rules have not been rechecked that week.
 
 ## Scam Red Flags
@@ -214,4 +249,4 @@ Thanks for reaching out. We are only distributing HECTON-8 preview access throug
 
 ## Current HECTON-8 Decision
 
-No keys yet. Prepare log and policy only. Actual key/access distribution waits for Steam page, playable build, verified recipient list, and QA route.
+No keys yet. Prepare log and policy only. Actual key/access distribution waits for Steam page, playable build, verified recipient list, QA route, official inbox custody, recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED`, and exact access-log fields.

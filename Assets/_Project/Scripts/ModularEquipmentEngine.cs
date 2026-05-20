@@ -3,20 +3,21 @@ namespace Hecton8.Tools
     using System;
     using System.Diagnostics;
     using System.IO;
-    using System.Runtime.InteropServices;
+    using System.Runtime.CompilerServices;
     using Unity.Burst;
     using Hecton8.Core;
     using Hecton8.Core.Memory;
     using Hecton8.Core.Contracts.Signals;
     using Hecton8.Gameplay;
-    using Hecton8.Power;
-    using Hecton8.World;
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
     using Unity.Jobs;
     using Unity.Mathematics;
     using UnityEngine;
     using UnityEngine.SceneManagement;
+#if UNITY_EDITOR
+    using UnityEditor;
+#endif
 
     /// <summary>
     /// Authoritative runtime owner for active handheld-tool state.
@@ -24,7 +25,7 @@ namespace Hecton8.Tools
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9918)]
-    public sealed class ModularEquipmentEngine : MonoBehaviour, IModularEquipmentService, IUpdatable, ILateFrameTickable, IPowerGridTelemetryListener, IServiceHeartbeat, IServiceShutdown
+    public sealed class ModularEquipmentEngine : MonoBehaviour, IModularEquipmentService, IUpdatable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         private const int MaxTrackedTools = 16;
         private const float OverchargePowerMultiplier = 3f;
@@ -36,16 +37,10 @@ namespace Hecton8.Tools
         private const float InvTau = 0.15915494f;
         private const float WirelessBrownoutPulseCycles = 18f * InvTau;
         private const float ToolBrownoutPulseCycles = 8f * InvTau;
-        private const float ActiveToolHeatWindowSeconds = 0.075f;
-        private const float MinimumCoolingDenominator = 0.125f;
-        private const float DepthCoolingScale = 0.0025f;
-        private const float ThermalVentHeatScale = 0.35f;
-        private const float ThermalProbeRadiusMeters = 1.25f;
         private const float StandardDepthFailureMeters = 500f;
         private const float HeatWarningThreshold = 0.90f;
         private const float HeatWarningResetThreshold = 0.85f;
         private const float OverheatRecoveryThreshold = 0.15f;
-        private const int ThermalProbeFrameMask = 0x03;
         private const float ToolSignalLowTierFloatDelta = 0.02f;
         private const float ToolSignalMidTierFloatDelta = 0.01f;
         private const float ToolSignalHighTierFloatDelta = 0.005f;
@@ -53,13 +48,17 @@ namespace Hecton8.Tools
         private const float ToolSignalDistanceDeltaMeters = 0.5f;
         private const int EquipmentTelemetryRingLength = 300;
         private const int EquipmentSignalQueueCapacity = 32;
+        private const int EquipmentHardwareSpecCapacity = 64;
         private const float EquipmentFallbackAmbientCelsius = 6f;
         private const float EquipmentDefaultCellSizeMeters = 1f;
+        private const float EquipmentMockRootOffsetMeters = 0.35f;
         private const uint EquipmentFaultNonFinite = 1u << 0;
         private const uint EquipmentFaultThermalGridInvalid = 1u << 1;
+        private const uint EquipmentFaultCsvOverflow = 1u << 2;
         private const uint EquipmentOverheatLaneHash = 0xE1480A01u;
         private const uint ToolDepletedLaneHash = 0xE1480A02u;
-        private const string EquipmentFaultDumpPath = "Docs/AgentLogs/Dump_SHINOBU_148.bin";
+        private const uint EquipmentMockBaseToolHash = 0x53483148u;
+        private const string EquipmentFaultDumpPath = "Docs/AgentLogs/Dump_SHINOBU_224.bin";
 
         // COLD ALLOC: PlayerTool[16] — managed owner mirror for native tool slots — owner: ModularEquipmentEngine
         private readonly PlayerTool[] _toolOwners = new PlayerTool[MaxTrackedTools];
@@ -70,52 +69,40 @@ namespace Hecton8.Tools
         // COLD ALLOC: ToolModuleData[4] — cold-path scratch buffer for one tool registration — owner: ModularEquipmentEngine
         private readonly ToolModuleData[] _registrationModules = new ToolModuleData[ToolUpgradeSystem.MaxModuleSlots];
 
-        private NativeArray<ToolState> _toolStates;
-        private NativeArray<ToolRuntimeStats> _toolStats;
-        private NativeArray<byte> _toolTypes;
-        private NativeArray<float> _currentHeat;
-        private NativeArray<float> _batteryCharge;
-        private NativeArray<uint> _statusMasks;
-        private NativeArray<float> _environmentHeat01;
-        private NativeArray<float> _batteryDrainRates;
-        private NativeArray<float> _batteryDrainDeltaSeconds;
-        private NativeArray<ActiveEquipmentDTO> _activeEquipmentStates;
-        private NativeArray<ActiveEquipmentDTO> _publishedActiveEquipmentStates;
-        private NativeArray<double3> _activeEquipmentAupSamples;
-        private NativeArray<EquipmentGridLoadRequest> _activeEquipmentGridLoadRequests;
-        private NativeArray<EquipmentTelemetryEntry> _equipmentTelemetryRing;
-        private NativeArray<int> _equipmentTelemetryCursor;
-        private NativeArray<EquipmentIntegrationCounters> _equipmentIntegrationCounters;
-        private NativeHashMap<uint, int> _toolIndexById;
-        private NativeQueue<EquipmentOverheatSignal> _equipmentOverheatSignals;
-        private NativeQueue<ToolDepletedSignal> _toolDepletedSignals;
-        private bool _currentHeatFromDataVault;
-        private bool _batteryChargeFromDataVault;
-        private bool _activeEquipmentStatesFromDataVault;
-        private bool _publishedActiveEquipmentStatesFromDataVault;
-        private bool _activeEquipmentAupSamplesFromDataVault;
-        private bool _activeEquipmentGridLoadRequestsFromDataVault;
-        private bool _equipmentTelemetryRingFromDataVault;
-        private bool _equipmentTelemetryCursorFromDataVault;
-        private bool _equipmentIntegrationCountersFromDataVault;
+        private VaultGenerationHandle<ToolState> _toolStatesHandle;
+        private VaultGenerationHandle<ToolRuntimeStats> _toolStatsHandle;
+        private VaultGenerationHandle<byte> _toolTypesHandle;
+        private VaultGenerationHandle<float> _currentHeatHandle;
+        private VaultGenerationHandle<float> _batteryChargeHandle;
+        private VaultGenerationHandle<uint> _statusMasksHandle;
+        private VaultGenerationHandle<float> _environmentHeat01Handle;
+        private VaultGenerationHandle<ActiveEquipmentDTO> _activeEquipmentStatesHandle;
+        private VaultGenerationHandle<ActiveEquipmentDTO> _publishedActiveEquipmentStatesHandle;
+        private VaultGenerationHandle<double3> _activeEquipmentAupSamplesHandle;
+        private VaultGenerationHandle<EquipmentGridLoadRequest> _activeEquipmentGridLoadRequestsHandle;
+        private VaultGenerationHandle<float> _activeEquipmentWearDrainRatesHandle;
+        private VaultGenerationHandle<EquipmentTelemetryEntry> _equipmentTelemetryRingHandle;
+        private VaultGenerationHandle<int> _equipmentTelemetryCursorHandle;
+        private VaultGenerationHandle<EquipmentIntegrationCounters> _equipmentIntegrationCountersHandle;
+        private VaultGenerationHandle<EquipmentTuningDTO> _equipmentTuningHandle;
+        private VaultGenerationHandle<EquipmentHardwareSpecDTO> _equipmentHardwareSpecsHandle;
         private bool _isInitialized;
         private bool _registeredService;
         private bool _registeredUpdatable;
         private bool _registeredLateFrame;
-        private bool _telemetrySubscribed;
+        private bool _registeredHotSwap;
+        private bool _equipmentSignalLanesReady;
         private bool _equipmentIntegrationScheduled;
         private bool _equipmentFaultDumped;
-        private uint _pendingBatteryDrainMask;
         private uint _lastPublishedEquippedMask;
         private uint _externalActiveToolMask;
         private uint _lastTelemetryActiveMask;
-        private int _thermalProbeFrameIndex;
         private int _thermalGridWidth;
         private int _thermalGridHeight;
         private int _thermalGridDepth;
         private int _thermalGridVersion;
+        private int _thermalGridCellCount;
         private uint _equipmentTickIndex;
-        private float _latestSupplyRatio = 1f;
         private bool _wirelessBrownoutActive;
         private float _brownoutPulseTime;
         private float _equipmentCadenceAccumulator;
@@ -123,8 +110,35 @@ namespace Hecton8.Tools
         private float _lastGlobalQualityWeight = 1f;
         private float _thermalGridCellSizeMeters = EquipmentDefaultCellSizeMeters;
         private double3 _thermalGridRootAup;
-        private NativeArray<float> _thermalGridReadback;
+        private IDataVault _dataVault;
+        private IThermodynamicsService _thermodynamicsService;
+        private IPowerGridService _powerGridService;
+        private ToolDurabilitySystem _toolDurabilityService;
+        private IPlayerRuntimeContext _playerRuntimeContext;
+        private ISubmarineRuntimeContext _submarineRuntimeContext;
+        private HectonQualityTier _cachedScalabilityTier = HectonQualityTier.Unknown;
         private JobHandle _equipmentIntegrationHandle;
+
+        private struct EquipmentVaultViews
+        {
+            public NativeArray<ToolState> ToolStates;
+            public NativeArray<ToolRuntimeStats> ToolStats;
+            public NativeArray<byte> ToolTypes;
+            public NativeArray<float> CurrentHeat;
+            public NativeArray<float> BatteryCharge;
+            public NativeArray<uint> StatusMasks;
+            public NativeArray<float> EnvironmentHeat01;
+            public NativeArray<ActiveEquipmentDTO> ActiveEquipmentStates;
+            public NativeArray<ActiveEquipmentDTO> PublishedActiveEquipmentStates;
+            public NativeArray<double3> ActiveEquipmentAupSamples;
+            public NativeArray<EquipmentGridLoadRequest> ActiveEquipmentGridLoadRequests;
+            public NativeArray<float> ActiveEquipmentWearDrainRates;
+            public NativeArray<EquipmentTelemetryEntry> EquipmentTelemetryRing;
+            public NativeArray<int> EquipmentTelemetryCursor;
+            public NativeArray<EquipmentIntegrationCounters> EquipmentIntegrationCounters;
+            public NativeArray<EquipmentTuningDTO> EquipmentTuning;
+            public NativeArray<EquipmentHardwareSpecDTO> EquipmentHardwareSpecs;
+        }
 
         public bool IsInitialized => _isInitialized;
         public ServiceHeartbeatState HeartbeatState => IsServiceReady ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
@@ -132,25 +146,8 @@ namespace Hecton8.Tools
             _isInitialized &&
             _registeredService &&
             ReferenceEquals(GlobalRegistry.ModularEquipment, this) &&
-            _toolStates.IsCreated &&
-            _toolStats.IsCreated &&
-            _toolTypes.IsCreated &&
-            _currentHeat.IsCreated &&
-            _batteryCharge.IsCreated &&
-            _statusMasks.IsCreated &&
-            _environmentHeat01.IsCreated &&
-            _toolIndexById.IsCreated &&
-            _batteryDrainRates.IsCreated &&
-            _batteryDrainDeltaSeconds.IsCreated &&
-            _activeEquipmentStates.IsCreated &&
-            _publishedActiveEquipmentStates.IsCreated &&
-            _activeEquipmentAupSamples.IsCreated &&
-            _activeEquipmentGridLoadRequests.IsCreated &&
-            _equipmentTelemetryRing.IsCreated &&
-            _equipmentTelemetryCursor.IsCreated &&
-            _equipmentIntegrationCounters.IsCreated &&
-            _equipmentOverheatSignals.IsCreated &&
-            _toolDepletedSignals.IsCreated;
+            AreEquipmentBuffersReady() &&
+            _equipmentSignalLanesReady;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -173,6 +170,9 @@ namespace Hecton8.Tools
 
         public void InitializeService()
         {
+            CacheRegistryDependenciesCold();
+            TryRegisterHotSwap();
+
             if (_isInitialized)
             {
                 TryRegisterService();
@@ -184,145 +184,17 @@ namespace Hecton8.Tools
             if (!CanOwnServiceSlot())
                 return;
 
-            if (!_toolStates.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<ToolState>[16] — active modular tool state buffer — owner: ModularEquipmentEngine
-                _toolStates = new NativeArray<ToolState>(MaxTrackedTools, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _toolStates,
-                    nameof(ModularEquipmentEngine),
-                    nameof(_toolStates),
-                    NativeAllocationLifetime.Scene);
-            }
-
-            if (!_toolStats.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<ToolRuntimeStats>[16] — active compiled tool-stat buffer — owner: ModularEquipmentEngine
-                _toolStats = new NativeArray<ToolRuntimeStats>(MaxTrackedTools, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _toolStats,
-                    nameof(ModularEquipmentEngine),
-                    nameof(_toolStats),
-                    NativeAllocationLifetime.Scene);
-            }
-
-            if (!_toolTypes.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<byte>[16] - SOA tool type ids mirrored by active equipment slot - owner: ModularEquipmentEngine
-                _toolTypes = new NativeArray<byte>(MaxTrackedTools, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _toolTypes,
-                    nameof(ModularEquipmentEngine),
-                    nameof(_toolTypes),
-                    NativeAllocationLifetime.Scene);
-            }
-
-            if (!_currentHeat.IsCreated)
-            {
-                IDataVault dataVault = GlobalRegistry.DataVault;
-                if (dataVault != null)
-                {
-                    _currentHeat = dataVault.GetBuffer<float>(
-                        BufferID.ToolRuntimeHeat01,
-                        MaxTrackedTools,
-                        SystemID.GameplayTools,
-                        NativeArrayOptions.ClearMemory);
-                    _currentHeatFromDataVault = _currentHeat.IsCreated && _currentHeat.Length >= MaxTrackedTools;
-                }
-
-                if (!_currentHeatFromDataVault)
-                {
-                    // COLD ALLOC: NativeArray<float>[16] - fallback SOA current heat values mirrored by active equipment slot - owner: ModularEquipmentEngine
-                    _currentHeat = new NativeArray<float>(MaxTrackedTools, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                    NativeMemorySentinel.RegisterNativeArray(
-                        _currentHeat,
-                        nameof(ModularEquipmentEngine),
-                        nameof(_currentHeat),
-                        NativeAllocationLifetime.Scene);
-                }
-            }
-
-            if (!_batteryCharge.IsCreated)
-            {
-                IDataVault dataVault = GlobalRegistry.DataVault;
-                if (dataVault != null)
-                {
-                    _batteryCharge = dataVault.GetBuffer<float>(
-                        BufferID.ToolRuntimeBatteryCharge,
-                        MaxTrackedTools,
-                        SystemID.GameplayTools,
-                        NativeArrayOptions.ClearMemory);
-                    _batteryChargeFromDataVault = _batteryCharge.IsCreated && _batteryCharge.Length >= MaxTrackedTools;
-                }
-
-                if (!_batteryChargeFromDataVault)
-                {
-                    // COLD ALLOC: NativeArray<float>[16] - fallback SOA absolute battery charge values mirrored by active equipment slot - owner: ModularEquipmentEngine
-                    _batteryCharge = new NativeArray<float>(MaxTrackedTools, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                    NativeMemorySentinel.RegisterNativeArray(
-                        _batteryCharge,
-                        nameof(ModularEquipmentEngine),
-                        nameof(_batteryCharge),
-                        NativeAllocationLifetime.Scene);
-                }
-            }
-
-            if (!_statusMasks.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<uint>[16] - SOA runtime status masks mirrored by active equipment slot - owner: ModularEquipmentEngine
-                _statusMasks = new NativeArray<uint>(MaxTrackedTools, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _statusMasks,
-                    nameof(ModularEquipmentEngine),
-                    nameof(_statusMasks),
-                    NativeAllocationLifetime.Scene);
-            }
-
-            if (!_environmentHeat01.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<float>[16] - SOA thermal vent heat cache sampled at tier-gated cadence - owner: ModularEquipmentEngine
-                _environmentHeat01 = new NativeArray<float>(MaxTrackedTools, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _environmentHeat01,
-                    nameof(ModularEquipmentEngine),
-                    nameof(_environmentHeat01),
-                    NativeAllocationLifetime.Scene);
-            }
-
-            if (!_toolIndexById.IsCreated)
-            {
-                // COLD ALLOC: NativeHashMap<uint,int>[16] — tool-id to slot index table — owner: ModularEquipmentEngine
-                _toolIndexById = new NativeHashMap<uint, int>(MaxTrackedTools, Allocator.Persistent);
-                NativeMemorySentinel.RegisterNativeHashMap(
-                    _toolIndexById,
-                    nameof(ModularEquipmentEngine),
-                    nameof(_toolIndexById),
-                    NativeAllocationLifetime.Scene);
-            }
-
-            if (!_batteryDrainRates.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<float>[16] — deferred battery drain rates batched for late-frame job — owner: ModularEquipmentEngine
-                _batteryDrainRates = new NativeArray<float>(MaxTrackedTools, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _batteryDrainRates,
-                    nameof(ModularEquipmentEngine),
-                    nameof(_batteryDrainRates),
-                    NativeAllocationLifetime.Scene);
-            }
-
-            if (!_batteryDrainDeltaSeconds.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<float>[16] — deferred battery drain delta seconds batched for late-frame job — owner: ModularEquipmentEngine
-                _batteryDrainDeltaSeconds = new NativeArray<float>(MaxTrackedTools, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _batteryDrainDeltaSeconds,
-                    nameof(ModularEquipmentEngine),
-                    nameof(_batteryDrainDeltaSeconds),
-                    NativeAllocationLifetime.Scene);
-            }
-
             InitializeActiveEquipmentNativeState();
+            if (!TryResolveEquipmentViews(out EquipmentVaultViews views))
+                return;
+
+            ClearNativeArray(views.ToolStates);
+            ClearNativeArray(views.ToolStats);
+            ClearNativeArray(views.ToolTypes);
+            ClearNativeArray(views.CurrentHeat);
+            ClearNativeArray(views.BatteryCharge);
+            ClearNativeArray(views.StatusMasks);
+            ClearNativeArray(views.EnvironmentHeat01);
 
             if (Application.isPlaying && transform.parent != null)
                 transform.SetParent(null, true);
@@ -333,19 +205,27 @@ namespace Hecton8.Tools
             TryRegisterLateFrame();
         }
 
+        private bool AreEquipmentBuffersReady()
+        {
+            return TryResolveEquipmentViews(out _);
+        }
+
         public void Tick(float deltaTime)
         {
             if (!_isInitialized)
                 return;
 
             if (_equipmentIntegrationScheduled)
-                CompleteActiveEquipmentJob();
+                return;
+
+            if (!TryResolveEquipmentViews(out EquipmentVaultViews views))
+                return;
 
             float safeDeltaTime = math.max(0f, deltaTime);
+            RefreshWirelessBrownoutFromPowerSnapshot();
             if (_wirelessBrownoutActive)
                 _brownoutPulseTime += safeDeltaTime;
 
-            _thermalProbeFrameIndex++;
             _lastGlobalQualityWeight = ResolveGlobalQualityWeight();
             _lastEquipmentTickInterval = ResolveEquipmentTickInterval(_lastGlobalQualityWeight);
             _equipmentCadenceAccumulator += safeDeltaTime;
@@ -356,24 +236,12 @@ namespace Hecton8.Tools
                 if (!_slotUsed[i] || owner == null)
                     continue;
 
-                ToolState state = _toolStates[i];
-                state.Durability = math.saturate(owner.DurabilityNormalized);
-                if (IsOverchargeRequested(i))
-                {
-                    float runtimeHeatRate = math.max(0.05f, _toolStats[i].HeatGenerationRate);
-                    float heatGrowth = EstimateOverchargeHeatGrowth(state.InternalHeat);
-                    state.InternalHeat = math.max(0f, state.InternalHeat + (runtimeHeatRate * OverchargeHeatScale * heatGrowth * safeDeltaTime));
-                    if (state.InternalHeat > OverchargeExplosionHeatThreshold)
-                    {
-                        state.StatusMask |= ToolRuntimeStatusMasks.Disabled | ToolRuntimeStatusMasks.Overheated;
-                        _toolStates[i] = state;
-                        WriteSlotMirrors(i, in state);
-                        TriggerOverchargeExplosion(i);
-                        continue;
-                    }
-                }
-
-                _toolStates[i] = state;
+                ToolState state = views.ToolStates[i];
+                uint slotBit = 1u << i;
+                bool centralActive = owner.HasRuntimeActiveIntent || (_externalActiveToolMask & slotBit) != 0u;
+                if (!centralActive)
+                    state.Durability = math.saturate(owner.DurabilityNormalized);
+                views.ToolStates[i] = state;
             }
 
             if (_equipmentCadenceAccumulator < _lastEquipmentTickInterval)
@@ -381,9 +249,9 @@ namespace Hecton8.Tools
 
             float integrationDelta = _equipmentCadenceAccumulator;
             _equipmentCadenceAccumulator = 0f;
-            RefreshThermalGridReadback();
-            RefreshActiveEquipmentInputs();
-            ScheduleActiveEquipmentIntegration(integrationDelta);
+            RefreshThermalGridReadback(out NativeArray<float> thermalGridReadback);
+            RefreshActiveEquipmentInputs(ref views);
+            ScheduleActiveEquipmentIntegration(integrationDelta, ref views, thermalGridReadback);
         }
 
         public void LateFrameTick()
@@ -392,9 +260,6 @@ namespace Hecton8.Tools
                 return;
 
             CompleteActiveEquipmentJob();
-
-            if (_pendingBatteryDrainMask != 0u)
-                ApplyPendingBatteryDrain();
         }
 
         public uint RegisterTool(PlayerTool tool)
@@ -413,6 +278,8 @@ namespace Hecton8.Tools
             int slotIndex = ResolveOrAllocateSlot(profile.ToolId);
             if (slotIndex < 0)
                 return 0u;
+            if (!TryResolveEquipmentViews(out EquipmentVaultViews views))
+                return 0u;
 
             int moduleSlotCount = tool.CopyAuthoredModules(_registrationModules);
             uint upgradeMask;
@@ -422,7 +289,7 @@ namespace Hecton8.Tools
                 Mathf.Min(moduleSlotCount, (int)profile.ModuleSlotCount),
                 out upgradeMask);
 
-            ToolState nextState = _toolStates[slotIndex];
+            ToolState nextState = views.ToolStates[slotIndex];
             nextState.CurrentBattery = math.saturate(tool.ResolveModularBatteryNormalized()) * math.max(0.1f, compiledStats.BatteryCapacity);
             nextState.InternalHeat = math.max(0f, tool.ResolveModularHeatNormalized());
             nextState.Durability = math.saturate(tool.DurabilityNormalized);
@@ -435,13 +302,14 @@ namespace Hecton8.Tools
 
             _toolOwners[slotIndex] = tool;
             _slotUsed[slotIndex] = true;
-            _toolStates[slotIndex] = nextState;
-            _toolStats[slotIndex] = compiledStats;
-            _toolIndexById[profile.ToolId] = slotIndex;
+            views.ToolStates[slotIndex] = nextState;
+            views.ToolStats[slotIndex] = compiledStats;
+            WriteActiveEquipmentWearRate(ref views, slotIndex, tool, in compiledStats, requestedActive: false);
             WriteModuleMirror(slotIndex, _registrationModules, moduleSlotCount);
-            SetBatteryAbsolute(slotIndex, nextState.CurrentBattery);
-            WriteActiveEquipmentSlot(slotIndex, in nextState, in compiledStats);
-            WriteSlotMirrors(slotIndex, in nextState);
+            SetBatteryAbsolute(ref views, slotIndex, nextState.CurrentBattery);
+            WriteActiveEquipmentSlot(ref views, slotIndex, in nextState, in compiledStats);
+            WriteSlotMirrors(ref views, slotIndex, in nextState);
+            RegisterDurabilityMirror(tool);
             return profile.ToolId;
         }
 
@@ -450,48 +318,55 @@ namespace Hecton8.Tools
             if (!_isInitialized || tool == null || toolId == 0u)
                 return;
 
-            if (!_toolIndexById.TryGetValue(toolId, out int slotIndex))
+            if (!TryResolveSlot(toolId, out int slotIndex))
+                return;
+            if (!TryResolveEquipmentViews(out EquipmentVaultViews views))
                 return;
 
             if (!ReferenceEquals(_toolOwners[slotIndex], tool))
                 return;
 
-            ToolState previousState = _toolStates[slotIndex];
-            PublishToolStateChanged(slotIndex, in previousState, forceHolstered: true);
-            _toolIndexById.Remove(toolId);
+            ToolState previousState = views.ToolStates[slotIndex];
+            PublishToolStateChanged(ref views, slotIndex, in previousState, forceHolstered: true);
             _toolOwners[slotIndex] = null;
             _slotUsed[slotIndex] = false;
-            _toolStates[slotIndex] = default;
-            _toolStats[slotIndex] = default;
-            ClearActiveEquipmentSlot(slotIndex);
-            ClearSlotMirrors(slotIndex);
+            views.ToolStates[slotIndex] = default;
+            views.ToolStats[slotIndex] = default;
+            if (views.ActiveEquipmentWearDrainRates.IsCreated && slotIndex < views.ActiveEquipmentWearDrainRates.Length)
+                views.ActiveEquipmentWearDrainRates[slotIndex] = 0f;
+            ClearActiveEquipmentSlot(ref views, slotIndex);
+            ClearSlotMirrors(ref views, slotIndex);
             ClearModuleMirror(slotIndex);
         }
 
         public bool TryGetToolState(uint toolId, out ToolState state)
         {
             state = default;
-            if (!_isInitialized || !_toolIndexById.TryGetValue(toolId, out int slotIndex))
+            if (!_isInitialized || !TryResolveSlot(toolId, out int slotIndex))
+                return false;
+            if (!TryResolveEquipmentViews(out EquipmentVaultViews views))
                 return false;
 
-            state = _toolStates[slotIndex];
-            state.CurrentBattery = ReadBatteryAbsolute(slotIndex);
+            state = views.ToolStates[slotIndex];
+            state.CurrentBattery = ReadBatteryAbsolute(ref views, slotIndex);
             return true;
         }
 
         public bool TryGetToolStats(uint toolId, out ToolRuntimeStats stats)
         {
             stats = default;
-            if (!_isInitialized || !_toolIndexById.TryGetValue(toolId, out int slotIndex))
+            if (!_isInitialized || !TryResolveSlot(toolId, out int slotIndex))
+                return false;
+            if (!TryResolveEquipmentViews(out EquipmentVaultViews views))
                 return false;
 
-            stats = _toolStats[slotIndex];
+            stats = views.ToolStats[slotIndex];
             return true;
         }
 
         public bool TryInstallModule(uint toolId, ToolModuleData module)
         {
-            if (!_isInitialized || module == null || !_toolIndexById.TryGetValue(toolId, out int slotIndex))
+            if (!_isInitialized || module == null || !TryResolveSlot(toolId, out int slotIndex))
                 return false;
 
             PlayerTool owner = _toolOwners[slotIndex];
@@ -511,7 +386,7 @@ namespace Hecton8.Tools
 
         public bool TryRemoveModule(uint toolId, string moduleId)
         {
-            if (!_isInitialized || string.IsNullOrWhiteSpace(moduleId) || !_toolIndexById.TryGetValue(toolId, out int slotIndex))
+            if (!_isInitialized || string.IsNullOrWhiteSpace(moduleId) || !TryResolveSlot(toolId, out int slotIndex))
                 return false;
 
             PlayerTool owner = _toolOwners[slotIndex];
@@ -546,7 +421,7 @@ namespace Hecton8.Tools
             if (!TryGetToolStats(toolId, out ToolRuntimeStats stats))
                 return fallback;
 
-            if (!_toolIndexById.TryGetValue(toolId, out int slotIndex))
+            if (!TryResolveSlot(toolId, out int slotIndex))
                 return stats.PowerScalar;
 
             return IsOverchargeRequested(slotIndex)
@@ -599,25 +474,29 @@ namespace Hecton8.Tools
 
         public void SetBattery(uint toolId, float normalizedBattery)
         {
-            if (!_isInitialized || !_toolIndexById.TryGetValue(toolId, out int slotIndex))
+            if (!_isInitialized || !TryResolveSlot(toolId, out int slotIndex))
+                return;
+            if (!TryResolveEquipmentViews(out EquipmentVaultViews views))
                 return;
 
-            float capacity = math.max(0.1f, _toolStats[slotIndex].BatteryCapacity);
-            SetBatteryAbsolute(slotIndex, math.saturate(normalizedBattery) * capacity);
+            float capacity = math.max(0.1f, views.ToolStats[slotIndex].BatteryCapacity);
+            SetBatteryAbsolute(ref views, slotIndex, math.saturate(normalizedBattery) * capacity);
         }
 
         public float GetBatteryNormalized(uint toolId, float fallback)
         {
-            if (!_isInitialized || !_toolIndexById.TryGetValue(toolId, out int slotIndex))
+            if (!_isInitialized || !TryResolveSlot(toolId, out int slotIndex))
+                return fallback;
+            if (!TryResolveEquipmentViews(out EquipmentVaultViews views))
                 return fallback;
 
-            float capacity = math.max(0.1f, _toolStats[slotIndex].BatteryCapacity);
-            return math.saturate(ReadBatteryAbsolute(slotIndex) / capacity);
+            float capacity = math.max(0.1f, views.ToolStats[slotIndex].BatteryCapacity);
+            return math.saturate(ReadBatteryAbsolute(ref views, slotIndex) / capacity);
         }
 
         public void ConsumeBattery(uint toolId, float normalizedBatteryDelta)
         {
-            if (!_isInitialized || !_toolIndexById.TryGetValue(toolId, out int slotIndex))
+            if (!_isInitialized || !TryResolveSlot(toolId, out int slotIndex))
                 return;
 
             MarkSlotActive(slotIndex, math.max(0f, normalizedBatteryDelta) > 0f);
@@ -625,7 +504,7 @@ namespace Hecton8.Tools
 
         public void ConsumeBattery(uint toolId, float normalizedBatteryDrainRate, float deltaSeconds)
         {
-            if (!_isInitialized || !_toolIndexById.TryGetValue(toolId, out int slotIndex))
+            if (!_isInitialized || !TryResolveSlot(toolId, out int slotIndex))
                 return;
 
             MarkSlotActive(slotIndex, math.max(0f, normalizedBatteryDrainRate) > 0f && math.max(0f, deltaSeconds) > 0f);
@@ -633,72 +512,259 @@ namespace Hecton8.Tools
 
         public void SetHeat(uint toolId, float normalizedHeat)
         {
-            if (!_isInitialized || !_toolIndexById.TryGetValue(toolId, out int slotIndex))
+            if (!_isInitialized || !TryResolveSlot(toolId, out int slotIndex))
+                return;
+            if (!TryResolveEquipmentViews(out EquipmentVaultViews views))
                 return;
 
-            ToolState state = _toolStates[slotIndex];
+            ToolState state = views.ToolStates[slotIndex];
             float sanitizedHeat = math.max(0f, normalizedHeat);
             state.InternalHeat = IsOverchargeRequested(slotIndex)
                 ? math.max(state.InternalHeat, sanitizedHeat)
                 : sanitizedHeat;
-            ToolRuntimeStats stats = _toolStats[slotIndex];
+            ToolRuntimeStats stats = views.ToolStats[slotIndex];
             state.StatusMask = ResolveStatusMask(
                 state.StatusMask,
                 in state,
                 in stats,
                 ResolveDepthMeters(_toolOwners[slotIndex]),
                 (state.StatusMask & ToolRuntimeStatusMasks.Active) != 0u);
-            _toolStates[slotIndex] = state;
-            WriteActiveEquipmentSlot(slotIndex, in state, in stats);
-            WriteSlotMirrors(slotIndex, in state);
+            views.ToolStates[slotIndex] = state;
+            WriteActiveEquipmentSlot(ref views, slotIndex, in state, in stats);
+            WriteSlotMirrors(ref views, slotIndex, in state);
         }
 
         public void SetToolActive(uint toolId, bool active)
         {
-            if (!_isInitialized || !_toolIndexById.TryGetValue(toolId, out int slotIndex))
+            if (!_isInitialized || !TryResolveSlot(toolId, out int slotIndex))
                 return;
 
             MarkSlotActive(slotIndex, active);
+        }
+
+        public void SetToolActive(uint toolId, bool active, float batteryDrainPerSecond)
+        {
+            if (!_isInitialized || !TryResolveSlot(toolId, out int slotIndex))
+                return;
+            if (!TryResolveEquipmentViews(out EquipmentVaultViews views))
+                return;
+
+            ToolRuntimeStats stats = views.ToolStats[slotIndex];
+            if (active)
+            {
+                stats.BatteryDrainPerSecond = math.max(0f, math.isfinite(batteryDrainPerSecond)
+                    ? batteryDrainPerSecond
+                    : stats.BatteryDrainPerSecond);
+                views.ToolStats[slotIndex] = stats;
+            }
+
+            MarkSlotActive(slotIndex, active);
+            WriteActiveEquipmentSlot(ref views, slotIndex, in views.ToolStates[slotIndex], in stats);
         }
 
         public bool TryGetPublishedActiveEquipmentState(uint toolId, out ActiveEquipmentDTO state)
         {
             state = default;
             if (!_isInitialized ||
-                !_publishedActiveEquipmentStates.IsCreated ||
-                !_toolIndexById.TryGetValue(toolId, out int slotIndex) ||
-                (uint)slotIndex >= (uint)_publishedActiveEquipmentStates.Length)
+                !TryResolveEquipmentViews(out EquipmentVaultViews views) ||
+                !TryResolveSlot(toolId, out int slotIndex) ||
+                (uint)slotIndex >= (uint)views.PublishedActiveEquipmentStates.Length)
             {
                 return false;
             }
 
-            state = _publishedActiveEquipmentStates[slotIndex];
+            state = views.PublishedActiveEquipmentStates[slotIndex];
             return state.ToolHashID != 0u;
+        }
+
+        public bool TryGetActiveEquipmentSlot(int slotIndex, out ActiveEquipmentDTO state)
+        {
+            state = default;
+            if (!_isInitialized ||
+                !TryResolveEquipmentViews(out EquipmentVaultViews views) ||
+                (uint)slotIndex >= (uint)views.PublishedActiveEquipmentStates.Length)
+            {
+                return false;
+            }
+
+            state = views.PublishedActiveEquipmentStates[slotIndex];
+            return state.ToolHashID != 0u;
+        }
+
+        public bool TryGetLatestEquipmentTelemetry(out EquipmentTelemetryEntry entry)
+        {
+            entry = default;
+            if (!TryResolveEquipmentViews(out EquipmentVaultViews views) ||
+                views.EquipmentTelemetryRing.Length <= 0 ||
+                views.EquipmentTelemetryCursor.Length <= 0)
+            {
+                return false;
+            }
+
+            int cursor = views.EquipmentTelemetryCursor[0] - 1;
+            if (cursor < 0)
+                cursor = views.EquipmentTelemetryRing.Length - 1;
+
+            entry = views.EquipmentTelemetryRing[cursor];
+            return entry.TickIndex != 0u || entry.Frame != 0u;
+        }
+
+        public bool TryGetEquipmentTelemetryEntry(int historyIndex, out EquipmentTelemetryEntry entry)
+        {
+            entry = default;
+            if (!TryResolveEquipmentViews(out EquipmentVaultViews views) ||
+                views.EquipmentTelemetryRing.Length <= 0 ||
+                (uint)historyIndex >= (uint)views.EquipmentTelemetryRing.Length)
+            {
+                return false;
+            }
+
+            int cursor = views.EquipmentTelemetryCursor.IsCreated && views.EquipmentTelemetryCursor.Length > 0
+                ? views.EquipmentTelemetryCursor[0]
+                : 0;
+            int index = cursor - 1 - historyIndex;
+            while (index < 0)
+                index += views.EquipmentTelemetryRing.Length;
+
+            entry = views.EquipmentTelemetryRing[index];
+            return entry.TickIndex != 0u || entry.Frame != 0u;
+        }
+
+        public bool TryGetEquipmentTuning(out EquipmentTuningDTO tuning)
+        {
+            tuning = default;
+            if (!TryResolveEquipmentViews(out EquipmentVaultViews views) ||
+                views.EquipmentTuning.Length <= 0)
+                return false;
+
+            tuning = views.EquipmentTuning[0];
+            return true;
+        }
+
+        public void SetEquipmentTuning(in EquipmentTuningDTO tuning)
+        {
+            if (!TryResolveEquipmentViews(out EquipmentVaultViews views) ||
+                views.EquipmentTuning.Length <= 0)
+                return;
+
+            views.EquipmentTuning[0] = SanitizeEquipmentTuning(tuning);
+        }
+
+        public bool SetEquipmentSlotRatesForEditor(int slotIndex, float powerDrawRate, float heatGenerationRate)
+        {
+            if (!TryResolveEquipmentViews(out EquipmentVaultViews views) ||
+                (uint)slotIndex >= (uint)views.ActiveEquipmentStates.Length)
+                return false;
+
+            ActiveEquipmentDTO dto = views.ActiveEquipmentStates[slotIndex];
+            if (dto.ToolHashID == 0u && !_slotUsed[slotIndex])
+                return false;
+
+            float safePower = math.max(0f, math.isfinite(powerDrawRate) ? powerDrawRate : dto.PowerDrawRate);
+            float safeHeat = math.max(0f, math.isfinite(heatGenerationRate) ? heatGenerationRate : dto.HeatGenerationRate);
+            dto.PowerDrawRate = safePower;
+            dto.HeatGenerationRate = safeHeat;
+            views.ActiveEquipmentStates[slotIndex] = dto;
+
+            if (views.PublishedActiveEquipmentStates.IsCreated && (uint)slotIndex < (uint)views.PublishedActiveEquipmentStates.Length)
+                views.PublishedActiveEquipmentStates[slotIndex] = dto;
+
+            if (views.ToolStats.IsCreated && (uint)slotIndex < (uint)views.ToolStats.Length && _slotUsed[slotIndex])
+            {
+                ToolRuntimeStats stats = views.ToolStats[slotIndex];
+                float capacity = math.max(0.1f, stats.BatteryCapacity);
+                stats.BatteryDrainPerSecond = safePower * math.rcp(capacity);
+                stats.HeatGenerationRate = safeHeat * math.rcp(math.max(0.0001f, stats.PowerScalar));
+                views.ToolStats[slotIndex] = stats;
+            }
+
+            return true;
+        }
+
+        public unsafe void GenerateMockEquipmentState()
+        {
+            if (!_isInitialized ||
+                !TryResolveEquipmentViews(out EquipmentVaultViews views))
+            {
+                return;
+            }
+
+            if (_equipmentIntegrationScheduled)
+                CompleteActiveEquipmentJob();
+
+            if (!TryResolvePlayerEquipmentAup(out double3 rootAup))
+                rootAup = double3.zero;
+            GenerateMockEquipmentStateJob job = new GenerateMockEquipmentStateJob
+            {
+                Equipment = (ActiveEquipmentDTO*)views.ActiveEquipmentStates.GetUnsafePtr(),
+                ToolAups = (double3*)views.ActiveEquipmentAupSamples.GetUnsafePtr(),
+                ToolCount = math.min(5, views.ActiveEquipmentStates.Length),
+                RootAup = rootAup,
+                BaseToolHash = EquipmentMockBaseToolHash
+            };
+            for (int i = 0; i < MaxTrackedTools; i++)
+                job.Execute(i);
+
+            PublishActiveEquipmentReadback(ref views);
         }
 
         public void SetDurability(uint toolId, float normalizedDurability)
         {
-            if (!_isInitialized || !_toolIndexById.TryGetValue(toolId, out int slotIndex))
+            if (!_isInitialized || !TryResolveSlot(toolId, out int slotIndex))
+                return;
+            if (!TryResolveEquipmentViews(out EquipmentVaultViews views))
                 return;
 
-            ToolState state = _toolStates[slotIndex];
+            ToolState state = views.ToolStates[slotIndex];
             state.Durability = math.saturate(normalizedDurability);
-            ToolRuntimeStats stats = _toolStats[slotIndex];
+            ToolRuntimeStats stats = views.ToolStats[slotIndex];
             state.StatusMask = ResolveStatusMask(
                 state.StatusMask,
                 in state,
                 in stats,
                 ResolveDepthMeters(_toolOwners[slotIndex]),
                 (state.StatusMask & ToolRuntimeStatusMasks.Active) != 0u);
-            _toolStates[slotIndex] = state;
-            WriteActiveEquipmentSlot(slotIndex, in state, in stats);
-            WriteSlotMirrors(slotIndex, in state);
+            views.ToolStates[slotIndex] = state;
+            WriteActiveEquipmentSlot(ref views, slotIndex, in state, in stats);
+            WriteSlotMirrors(ref views, slotIndex, in state);
+            SyncDurabilityMirror(slotIndex, in state);
         }
+
+#if UNITY_EDITOR
+        private void OnDrawGizmos()
+        {
+            if (Selection.activeGameObject != gameObject ||
+                !TryResolveEquipmentViews(out EquipmentVaultViews views))
+            {
+                return;
+            }
+
+            int count = math.min(MaxTrackedTools, views.PublishedActiveEquipmentStates.Length);
+            Vector3 root = transform.position;
+            for (int i = 0; i < count; i++)
+            {
+                ActiveEquipmentDTO state = views.PublishedActiveEquipmentStates[i];
+                if (state.ToolHashID == 0u)
+                    continue;
+
+                float heat = math.saturate(state.ThermalLoad);
+                Vector3 position = root + (Vector3.up * (1.25f + (i * 0.14f))) + (Vector3.right * (i * 0.08f));
+                Gizmos.color = Color.Lerp(Color.blue, Color.red, heat);
+                Gizmos.DrawWireSphere(position, 0.10f + (heat * 0.12f));
+                Handles.Label(
+                    position + Vector3.up * 0.10f,
+                    "0x" + state.ToolHashID.ToString("X8") +
+                    " B " + state.CurrentBattery.ToString("0.0") +
+                    " H " + state.ThermalLoad.ToString("0.000"));
+            }
+        }
+#endif
 
         private void OnEnable()
         {
+            CacheRegistryDependenciesCold();
+            TryRegisterHotSwap();
             SceneManager.sceneUnloaded += HandleSceneUnloaded;
-            TryRegisterTelemetry();
 
             if (_isInitialized)
             {
@@ -711,7 +777,7 @@ namespace Hecton8.Tools
         private void OnDisable()
         {
             SceneManager.sceneUnloaded -= HandleSceneUnloaded;
-            TryUnregisterTelemetry();
+            TryUnregisterHotSwap();
             TryUnregisterService();
             TryUnregisterUpdatable();
             TryUnregisterLateFrame();
@@ -730,7 +796,7 @@ namespace Hecton8.Tools
         private void ShutdownServiceState()
         {
             SceneManager.sceneUnloaded -= HandleSceneUnloaded;
-            TryUnregisterTelemetry();
+            TryUnregisterHotSwap();
             TryUnregisterService();
             TryUnregisterUpdatable();
             TryUnregisterLateFrame();
@@ -753,151 +819,114 @@ namespace Hecton8.Tools
         {
             EquipmentLayoutVerifier.Validate();
 
-            IDataVault dataVault = GlobalRegistry.DataVault;
-            if (!_activeEquipmentStates.IsCreated)
-            {
-                _activeEquipmentStates = AcquireEquipmentBuffer<ActiveEquipmentDTO>(
-                    dataVault,
-                    BufferID.ShinobuActiveEquipmentState,
-                    MaxTrackedTools,
-                    NativeArrayOptions.UninitializedMemory,
-                    ref _activeEquipmentStatesFromDataVault,
-                    nameof(_activeEquipmentStates));
-            }
+            if (!TryResolveEquipmentViews(out EquipmentVaultViews views))
+                return;
 
-            if (!_publishedActiveEquipmentStates.IsCreated)
-            {
-                _publishedActiveEquipmentStates = AcquireEquipmentBuffer<ActiveEquipmentDTO>(
-                    dataVault,
-                    BufferID.ShinobuActiveEquipmentPublishedState,
-                    MaxTrackedTools,
-                    NativeArrayOptions.UninitializedMemory,
-                    ref _publishedActiveEquipmentStatesFromDataVault,
-                    nameof(_publishedActiveEquipmentStates));
-            }
+            ClearActiveEquipmentNativeState(ref views);
+            InitializeEquipmentTuningBuffer(ref views);
 
-            if (!_activeEquipmentAupSamples.IsCreated)
-            {
-                _activeEquipmentAupSamples = AcquireEquipmentBuffer<double3>(
-                    dataVault,
-                    BufferID.ShinobuActiveEquipmentAupSamples,
-                    MaxTrackedTools,
-                    NativeArrayOptions.UninitializedMemory,
-                    ref _activeEquipmentAupSamplesFromDataVault,
-                    nameof(_activeEquipmentAupSamples));
-            }
+            EnsureEquipmentSignalLanes();
+        }
 
-            if (!_activeEquipmentGridLoadRequests.IsCreated)
-            {
-                _activeEquipmentGridLoadRequests = AcquireEquipmentBuffer<EquipmentGridLoadRequest>(
-                    dataVault,
-                    BufferID.ShinobuActiveEquipmentGridLoadRequests,
-                    MaxTrackedTools,
-                    NativeArrayOptions.UninitializedMemory,
-                    ref _activeEquipmentGridLoadRequestsFromDataVault,
-                    nameof(_activeEquipmentGridLoadRequests));
-            }
+        private void EnsureEquipmentSignalLanes()
+        {
+            if (_equipmentSignalLanesReady)
+                return;
 
-            if (!_equipmentTelemetryRing.IsCreated)
-            {
-                _equipmentTelemetryRing = AcquireEquipmentBuffer<EquipmentTelemetryEntry>(
-                    dataVault,
-                    BufferID.ShinobuActiveEquipmentTelemetryRing,
-                    EquipmentTelemetryRingLength,
-                    NativeArrayOptions.UninitializedMemory,
-                    ref _equipmentTelemetryRingFromDataVault,
-                    nameof(_equipmentTelemetryRing));
-            }
-
-            if (!_equipmentTelemetryCursor.IsCreated)
-            {
-                _equipmentTelemetryCursor = AcquireEquipmentBuffer<int>(
-                    dataVault,
-                    BufferID.ShinobuActiveEquipmentTelemetryCursor,
-                    1,
-                    NativeArrayOptions.UninitializedMemory,
-                    ref _equipmentTelemetryCursorFromDataVault,
-                    nameof(_equipmentTelemetryCursor));
-            }
-
-            if (!_equipmentIntegrationCounters.IsCreated)
-            {
-                _equipmentIntegrationCounters = AcquireEquipmentBuffer<EquipmentIntegrationCounters>(
-                    dataVault,
-                    BufferID.ShinobuActiveEquipmentIntegrationCounters,
-                    1,
-                    NativeArrayOptions.UninitializedMemory,
-                    ref _equipmentIntegrationCountersFromDataVault,
-                    nameof(_equipmentIntegrationCounters));
-            }
-
-            ClearNativeArray(_activeEquipmentStates);
-            ClearNativeArray(_publishedActiveEquipmentStates);
-            ClearNativeArray(_activeEquipmentAupSamples);
-            ClearNativeArray(_activeEquipmentGridLoadRequests);
-            ClearNativeArray(_equipmentTelemetryRing);
-            ClearNativeArray(_equipmentTelemetryCursor);
-            ClearNativeArray(_equipmentIntegrationCounters);
-
-            if (!_equipmentOverheatSignals.IsCreated)
-            {
-                _equipmentOverheatSignals = new NativeQueue<EquipmentOverheatSignal>(Allocator.Persistent);
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _equipmentOverheatSignals,
-                    EquipmentSignalQueueCapacity,
-                    nameof(ModularEquipmentEngine),
-                    nameof(_equipmentOverheatSignals),
-                    NativeAllocationLifetime.Scene);
-                PrewarmQueue(ref _equipmentOverheatSignals, EquipmentSignalQueueCapacity);
-            }
-
-            if (!_toolDepletedSignals.IsCreated)
-            {
-                _toolDepletedSignals = new NativeQueue<ToolDepletedSignal>(Allocator.Persistent);
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _toolDepletedSignals,
-                    EquipmentSignalQueueCapacity,
-                    nameof(ModularEquipmentEngine),
-                    nameof(_toolDepletedSignals),
-                    NativeAllocationLifetime.Scene);
-                PrewarmQueue(ref _toolDepletedSignals, EquipmentSignalQueueCapacity);
-            }
+            if (_dataVault == null)
+                return;
 
             SignalBus<EquipmentOverheatSignal>.Configure(EquipmentSignalQueueCapacity, 128, 16, EquipmentOverheatLaneHash);
             SignalBus<ToolDepletedSignal>.Configure(EquipmentSignalQueueCapacity, 128, 16, ToolDepletedLaneHash);
             SignalBus<EquipmentOverheatSignal>.EnsureInitialized();
             SignalBus<ToolDepletedSignal>.EnsureInitialized();
+            _equipmentSignalLanesReady = true;
         }
 
-        private static NativeArray<T> AcquireEquipmentBuffer<T>(
-            IDataVault dataVault,
+        private void InitializeEquipmentTuningBuffer(ref EquipmentVaultViews views)
+        {
+            if (!views.EquipmentTuning.IsCreated || views.EquipmentTuning.Length <= 0)
+                return;
+
+            views.EquipmentTuning[0] = EquipmentTuningDTO.CreateDefault(_lastGlobalQualityWeight);
+        }
+
+        private bool TryResolveEquipmentViews(out EquipmentVaultViews views)
+        {
+            views = default;
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            return TryResolveOrAcquireEquipmentBuffer(vault, ref _toolStatesHandle, BufferID.ShinobuActiveEquipmentToolStates, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, out views.ToolStates) &&
+                   TryResolveOrAcquireEquipmentBuffer(vault, ref _toolStatsHandle, BufferID.ShinobuActiveEquipmentToolStats, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, out views.ToolStats) &&
+                   TryResolveOrAcquireEquipmentBuffer(vault, ref _toolTypesHandle, BufferID.ShinobuActiveEquipmentToolTypes, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, out views.ToolTypes) &&
+                   TryResolveOrAcquireEquipmentBuffer(vault, ref _currentHeatHandle, BufferID.ToolRuntimeHeat01, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, out views.CurrentHeat) &&
+                   TryResolveOrAcquireEquipmentBuffer(vault, ref _batteryChargeHandle, BufferID.ToolRuntimeBatteryCharge, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, out views.BatteryCharge) &&
+                   TryResolveOrAcquireEquipmentBuffer(vault, ref _statusMasksHandle, BufferID.ShinobuActiveEquipmentStatusMasks, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, out views.StatusMasks) &&
+                   TryResolveOrAcquireEquipmentBuffer(vault, ref _environmentHeat01Handle, BufferID.ShinobuActiveEquipmentEnvironmentHeat01, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, out views.EnvironmentHeat01) &&
+                   TryResolveOrAcquireEquipmentBuffer(vault, ref _activeEquipmentStatesHandle, BufferID.ShinobuActiveEquipmentState, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, out views.ActiveEquipmentStates) &&
+                   TryResolveOrAcquireEquipmentBuffer(vault, ref _publishedActiveEquipmentStatesHandle, BufferID.ShinobuActiveEquipmentPublishedState, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, out views.PublishedActiveEquipmentStates) &&
+                   TryResolveOrAcquireEquipmentBuffer(vault, ref _activeEquipmentAupSamplesHandle, BufferID.ShinobuActiveEquipmentAupSamples, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, out views.ActiveEquipmentAupSamples) &&
+                   TryResolveOrAcquireEquipmentBuffer(vault, ref _activeEquipmentGridLoadRequestsHandle, BufferID.ShinobuActiveEquipmentGridLoadRequests, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, out views.ActiveEquipmentGridLoadRequests) &&
+                   TryResolveOrAcquireEquipmentBuffer(vault, ref _activeEquipmentWearDrainRatesHandle, BufferID.ShinobuActiveEquipmentWearDrainRates, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, out views.ActiveEquipmentWearDrainRates) &&
+                   TryResolveOrAcquireEquipmentBuffer(vault, ref _equipmentTelemetryRingHandle, BufferID.ShinobuActiveEquipmentTelemetryRing, EquipmentTelemetryRingLength, NativeArrayOptions.UninitializedMemory, out views.EquipmentTelemetryRing) &&
+                   TryResolveOrAcquireEquipmentBuffer(vault, ref _equipmentTelemetryCursorHandle, BufferID.ShinobuActiveEquipmentTelemetryCursor, 1, NativeArrayOptions.UninitializedMemory, out views.EquipmentTelemetryCursor) &&
+                   TryResolveOrAcquireEquipmentBuffer(vault, ref _equipmentIntegrationCountersHandle, BufferID.ShinobuActiveEquipmentIntegrationCounters, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, out views.EquipmentIntegrationCounters) &&
+                   TryResolveOrAcquireEquipmentBuffer(vault, ref _equipmentTuningHandle, BufferID.ShinobuActiveEquipmentTuning, 1, NativeArrayOptions.UninitializedMemory, out views.EquipmentTuning) &&
+                   TryResolveOrAcquireEquipmentBuffer(vault, ref _equipmentHardwareSpecsHandle, BufferID.ShinobuActiveEquipmentHardwareSpecs, EquipmentHardwareSpecCapacity, NativeArrayOptions.UninitializedMemory, out views.EquipmentHardwareSpecs);
+        }
+
+        private static bool TryResolveOrAcquireEquipmentBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredLength,
             NativeArrayOptions options,
-            ref bool fromDataVault,
-            string label)
-            where T : unmanaged
+            out NativeArray<T> buffer)
+            where T : struct
         {
-            fromDataVault = false;
-            if (dataVault != null)
+            if (TryResolveEquipmentBuffer(vault, in handle, requiredLength, out buffer))
+                return true;
+
+            buffer = default;
+            if (vault == null || requiredLength <= 0)
             {
-                NativeArray<T> vaultBuffer = dataVault.GetBuffer<T>(
-                    bufferId,
-                    requiredLength,
-                    SystemID.GameplayTools,
-                    options);
-                fromDataVault = vaultBuffer.IsCreated && vaultBuffer.Length >= requiredLength;
-                if (fromDataVault)
-                    return vaultBuffer;
+                handle = default;
+                return false;
             }
 
-            NativeArray<T> fallback = new NativeArray<T>(requiredLength, Allocator.Persistent, options);
-            NativeMemorySentinel.RegisterNativeArray(
-                fallback,
-                nameof(ModularEquipmentEngine),
-                label,
-                NativeAllocationLifetime.Scene);
-            return fallback;
+            ReleaseEquipmentVaultHandle(vault, ref handle);
+            handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.GameplayTools,
+                options);
+
+            return TryResolveEquipmentBuffer(vault, in handle, requiredLength, out buffer);
+        }
+
+        private static bool TryResolveEquipmentBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   requiredLength > 0 &&
+                   IsVaultGenerationHandleCreated(in handle) &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsVaultGenerationHandleCreated<T>(in VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
         }
 
         private static unsafe void ClearNativeArray<T>(NativeArray<T> array)
@@ -909,23 +938,55 @@ namespace Hecton8.Tools
             UnsafeUtility.MemClear(array.GetUnsafePtr(), (long)array.Length * UnsafeUtility.SizeOf<T>());
         }
 
-        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int expectedCount)
-            where T : unmanaged
+        private unsafe void ClearActiveEquipmentNativeState(ref EquipmentVaultViews views)
         {
-            if (!queue.IsCreated)
+            int jobLength = 0;
+            jobLength = math.max(jobLength, GetCreatedLength(views.ActiveEquipmentStates));
+            jobLength = math.max(jobLength, GetCreatedLength(views.PublishedActiveEquipmentStates));
+            jobLength = math.max(jobLength, GetCreatedLength(views.ActiveEquipmentAupSamples));
+            jobLength = math.max(jobLength, GetCreatedLength(views.ActiveEquipmentGridLoadRequests));
+            jobLength = math.max(jobLength, GetCreatedLength(views.ActiveEquipmentWearDrainRates));
+            jobLength = math.max(jobLength, GetCreatedLength(views.EquipmentTelemetryRing));
+            jobLength = math.max(jobLength, GetCreatedLength(views.EquipmentTelemetryCursor));
+            jobLength = math.max(jobLength, GetCreatedLength(views.EquipmentIntegrationCounters));
+            jobLength = math.max(jobLength, GetCreatedLength(views.EquipmentHardwareSpecs));
+            if (jobLength <= 0)
                 return;
 
-            T value = default;
-            for (int i = 0; i < expectedCount; i++)
-                queue.Enqueue(value);
+            ClearActiveEquipmentNativeStateJob job = new ClearActiveEquipmentNativeStateJob
+            {
+                ActiveEquipment = views.ActiveEquipmentStates.IsCreated ? (ActiveEquipmentDTO*)views.ActiveEquipmentStates.GetUnsafePtr() : null,
+                PublishedEquipment = views.PublishedActiveEquipmentStates.IsCreated ? (ActiveEquipmentDTO*)views.PublishedActiveEquipmentStates.GetUnsafePtr() : null,
+                AupSamples = views.ActiveEquipmentAupSamples.IsCreated ? (double3*)views.ActiveEquipmentAupSamples.GetUnsafePtr() : null,
+                GridLoadRequests = views.ActiveEquipmentGridLoadRequests.IsCreated ? (EquipmentGridLoadRequest*)views.ActiveEquipmentGridLoadRequests.GetUnsafePtr() : null,
+                WearDrainRates = views.ActiveEquipmentWearDrainRates.IsCreated ? (float*)views.ActiveEquipmentWearDrainRates.GetUnsafePtr() : null,
+                TelemetryRing = views.EquipmentTelemetryRing.IsCreated ? (EquipmentTelemetryEntry*)views.EquipmentTelemetryRing.GetUnsafePtr() : null,
+                TelemetryCursor = views.EquipmentTelemetryCursor.IsCreated ? (int*)views.EquipmentTelemetryCursor.GetUnsafePtr() : null,
+                IntegrationCounters = views.EquipmentIntegrationCounters.IsCreated ? (EquipmentIntegrationCounters*)views.EquipmentIntegrationCounters.GetUnsafePtr() : null,
+                HardwareSpecs = views.EquipmentHardwareSpecs.IsCreated ? (EquipmentHardwareSpecDTO*)views.EquipmentHardwareSpecs.GetUnsafePtr() : null,
+                ActiveLength = GetCreatedLength(views.ActiveEquipmentStates),
+                PublishedLength = GetCreatedLength(views.PublishedActiveEquipmentStates),
+                AupLength = GetCreatedLength(views.ActiveEquipmentAupSamples),
+                GridLoadRequestLength = GetCreatedLength(views.ActiveEquipmentGridLoadRequests),
+                WearDrainLength = GetCreatedLength(views.ActiveEquipmentWearDrainRates),
+                TelemetryLength = GetCreatedLength(views.EquipmentTelemetryRing),
+                CursorLength = GetCreatedLength(views.EquipmentTelemetryCursor),
+                CounterLength = GetCreatedLength(views.EquipmentIntegrationCounters),
+                HardwareSpecLength = GetCreatedLength(views.EquipmentHardwareSpecs)
+            };
+            for (int i = 0; i < jobLength; i++)
+                job.Execute(i);
+        }
 
-            for (int i = 0; i < expectedCount; i++)
-                queue.TryDequeue(out _);
+        private static int GetCreatedLength<T>(NativeArray<T> array)
+            where T : unmanaged
+        {
+            return array.IsCreated ? array.Length : 0;
         }
 
         private int ResolveOrAllocateSlot(uint toolId)
         {
-            if (_toolIndexById.TryGetValue(toolId, out int existingIndex))
+            if (TryResolveSlot(toolId, out int existingIndex))
                 return existingIndex;
 
             for (int i = 0; i < MaxTrackedTools; i++)
@@ -935,6 +996,36 @@ namespace Hecton8.Tools
             }
 
             return -1;
+        }
+
+        private bool TryResolveSlot(uint toolId, out int slotIndex)
+        {
+            slotIndex = -1;
+            if (toolId == 0u)
+                return false;
+
+            for (int i = 0; i < MaxTrackedTools; i++)
+            {
+                if (!_slotUsed[i])
+                    continue;
+
+                PlayerTool owner = _toolOwners[i];
+                if (owner != null && owner.RuntimeToolId == toolId)
+                {
+                    slotIndex = i;
+                    return true;
+                }
+
+                if (TryResolveEquipmentViews(out EquipmentVaultViews views) &&
+                    (uint)i < (uint)views.ActiveEquipmentStates.Length &&
+                    views.ActiveEquipmentStates[i].ToolHashID == toolId)
+                {
+                    slotIndex = i;
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void WriteModuleMirror(int slotIndex, ToolModuleData[] modules, int moduleSlotCount)
@@ -966,47 +1057,37 @@ namespace Hecton8.Tools
             return Mathf.Clamp(owner.RuntimeMetadata.maxUpgradeSlots, 0, ToolUpgradeSystem.MaxModuleSlots);
         }
 
-        private float ReadBatteryAbsolute(int slotIndex)
+        private static float ReadBatteryAbsolute(ref EquipmentVaultViews views, int slotIndex)
         {
-            if (!_toolStates.IsCreated || (uint)slotIndex >= (uint)_toolStates.Length)
+            if (!views.ToolStates.IsCreated || (uint)slotIndex >= (uint)views.ToolStates.Length)
                 return 0f;
 
-            return math.max(0f, _toolStates[slotIndex].CurrentBattery);
+            return math.max(0f, views.ToolStates[slotIndex].CurrentBattery);
         }
 
-        private void SetBatteryAbsolute(int slotIndex, float absoluteBattery)
+        private void SetBatteryAbsolute(ref EquipmentVaultViews views, int slotIndex, float absoluteBattery)
         {
-            if (!_toolStates.IsCreated || (uint)slotIndex >= (uint)_toolStates.Length)
+            if (!views.ToolStates.IsCreated || (uint)slotIndex >= (uint)views.ToolStates.Length)
                 return;
 
-            ToolState state = _toolStates[slotIndex];
+            ToolState state = views.ToolStates[slotIndex];
             state.CurrentBattery = math.max(0f, absoluteBattery);
-            ToolRuntimeStats stats = _toolStats[slotIndex];
+            ToolRuntimeStats stats = views.ToolStats[slotIndex];
             state.StatusMask = ResolveStatusMask(
                 state.StatusMask,
                 in state,
                 in stats,
                 ResolveDepthMeters(_toolOwners[slotIndex]),
                 (state.StatusMask & ToolRuntimeStatusMasks.Active) != 0u);
-            _toolStates[slotIndex] = state;
-            WriteSlotMirrors(slotIndex, in state);
-        }
-
-        private void ConsumeBatteryAbsolute(int slotIndex, float absoluteBatteryDrainRate, float deltaSeconds)
-        {
-            if (absoluteBatteryDrainRate <= 0f || deltaSeconds <= 0f || !_toolStates.IsCreated || !_batteryDrainRates.IsCreated || !_batteryDrainDeltaSeconds.IsCreated || (uint)slotIndex >= (uint)_toolStates.Length)
-                return;
-
-            float existingAmount = _batteryDrainRates[slotIndex] * _batteryDrainDeltaSeconds[slotIndex];
-            float nextAmount = existingAmount + (absoluteBatteryDrainRate * deltaSeconds);
-            _batteryDrainRates[slotIndex] = nextAmount;
-            _batteryDrainDeltaSeconds[slotIndex] = 1f;
-            _pendingBatteryDrainMask |= 1u << slotIndex;
+            views.ToolStates[slotIndex] = state;
+            WriteSlotMirrors(ref views, slotIndex, in state);
         }
 
         private void RebuildCompiledState(int slotIndex, PlayerTool owner, uint toolId)
         {
             if (owner == null)
+                return;
+            if (!TryResolveEquipmentViews(out EquipmentVaultViews views))
                 return;
 
             ToolRuntimeProfile profile = owner.BuildModularRuntimeProfile();
@@ -1014,7 +1095,7 @@ namespace Hecton8.Tools
             ReadModuleMirror(slotIndex, slotCount, _registrationModules);
 
             float normalizedBattery = GetBatteryNormalized(toolId, owner.ResolveModularBatteryNormalized());
-            ToolState state = _toolStates[slotIndex];
+            ToolState state = views.ToolStates[slotIndex];
             state.CurrentBattery = math.saturate(normalizedBattery);
 
             uint upgradeMask;
@@ -1029,11 +1110,17 @@ namespace Hecton8.Tools
                 in compiledStats,
                 ResolveDepthMeters(owner),
                 (state.StatusMask & ToolRuntimeStatusMasks.Active) != 0u);
-            _toolStats[slotIndex] = compiledStats;
-            _toolStates[slotIndex] = state;
-            SetBatteryAbsolute(slotIndex, state.CurrentBattery);
-            WriteActiveEquipmentSlot(slotIndex, in state, in compiledStats);
-            WriteSlotMirrors(slotIndex, in state);
+            views.ToolStats[slotIndex] = compiledStats;
+            views.ToolStates[slotIndex] = state;
+            WriteActiveEquipmentWearRate(
+                ref views,
+                slotIndex,
+                owner,
+                in compiledStats,
+                owner.HasRuntimeActiveIntent || (_externalActiveToolMask & (1u << slotIndex)) != 0u);
+            SetBatteryAbsolute(ref views, slotIndex, state.CurrentBattery);
+            WriteActiveEquipmentSlot(ref views, slotIndex, in state, in compiledStats);
+            WriteSlotMirrors(ref views, slotIndex, in state);
         }
 
         private void MarkSlotActive(int slotIndex, bool active)
@@ -1048,17 +1135,17 @@ namespace Hecton8.Tools
                 _externalActiveToolMask &= ~slotBit;
         }
 
-        private void WriteActiveEquipmentSlot(int slotIndex, in ToolState state, in ToolRuntimeStats stats)
+        private void WriteActiveEquipmentSlot(ref EquipmentVaultViews views, int slotIndex, in ToolState state, in ToolRuntimeStats stats)
         {
-            if (!_activeEquipmentStates.IsCreated || (uint)slotIndex >= (uint)_activeEquipmentStates.Length)
+            if (!views.ActiveEquipmentStates.IsCreated || (uint)slotIndex >= (uint)views.ActiveEquipmentStates.Length)
                 return;
 
             PlayerTool owner = _toolOwners[slotIndex];
-            uint existingFlags = _activeEquipmentStates[slotIndex].StateFlags;
+            uint existingFlags = views.ActiveEquipmentStates[slotIndex].StateFlags;
             uint stateFlags = BuildActiveEquipmentFlags(state.StatusMask, existingFlags);
             float capacity = math.max(0.1f, stats.BatteryCapacity);
 
-            _activeEquipmentStates[slotIndex] = new ActiveEquipmentDTO
+            views.ActiveEquipmentStates[slotIndex] = new ActiveEquipmentDTO
             {
                 ToolHashID = owner != null ? owner.RuntimeToolId : 0u,
                 CurrentBattery = math.max(0f, state.CurrentBattery),
@@ -1077,6 +1164,69 @@ namespace Hecton8.Tools
             };
         }
 
+        private void WriteActiveEquipmentWearRate(ref EquipmentVaultViews views, int slotIndex, PlayerTool owner, in ToolRuntimeStats stats, bool requestedActive)
+        {
+            if (!views.ActiveEquipmentWearDrainRates.IsCreated || (uint)slotIndex >= (uint)views.ActiveEquipmentWearDrainRates.Length)
+                return;
+
+            float wearRate = 0f;
+            if (requestedActive && owner != null)
+            {
+                wearRate = owner.ResolveActiveDurabilityDrainRateNormalized();
+                float multiplier = math.max(0f, math.isfinite(stats.DurabilityDrainMultiplier) ? stats.DurabilityDrainMultiplier : 0f);
+                ToolDurabilitySystem durability = _toolDurabilityService;
+                if (owner.TryGetDurabilityMirror(out _, out uint itemHashId, out _) && durability != null)
+                    multiplier *= durability.ResolveCentralizedEquipmentWearMultiplier(itemHashId);
+                wearRate *= multiplier;
+            }
+
+            views.ActiveEquipmentWearDrainRates[slotIndex] = math.isfinite(wearRate) ? math.max(0f, wearRate) : 0f;
+        }
+
+        private void RegisterDurabilityMirror(PlayerTool owner)
+        {
+            if (owner == null || !owner.TryGetDurabilityMirror(out string toolId, out uint itemHashId, out float maxDurability))
+                return;
+
+            ToolDurabilitySystem durability = _toolDurabilityService;
+            if (durability == null)
+                return;
+
+            _toolDurabilityService = durability;
+            durability.RegisterCentralizedEquipmentMirror(toolId, itemHashId, maxDurability);
+        }
+
+        private void RegisterDurabilityMirrorsCold()
+        {
+            if (_toolDurabilityService == null)
+                return;
+
+            for (int i = 0; i < MaxTrackedTools; i++)
+            {
+                PlayerTool owner = _toolOwners[i];
+                if (!_slotUsed[i] || owner == null)
+                    continue;
+
+                RegisterDurabilityMirror(owner);
+            }
+        }
+
+        private void SyncDurabilityMirror(int slotIndex, in ToolState state)
+        {
+            if ((uint)slotIndex >= MaxTrackedTools)
+                return;
+
+            PlayerTool owner = _toolOwners[slotIndex];
+            if (owner == null || !owner.TryGetDurabilityMirror(out string toolId, out uint itemHashId, out float maxDurability))
+                return;
+
+            ToolDurabilitySystem durability = _toolDurabilityService;
+            if (durability == null)
+                return;
+
+            durability.SetDurabilityNormalizedFromEquipment(toolId, itemHashId, math.saturate(state.Durability), maxDurability);
+        }
+
         private static uint BuildActiveEquipmentFlags(uint runtimeStatusMask, uint existingFlags)
         {
             uint flags = existingFlags & (ActiveEquipmentStateFlags.InWater | ActiveEquipmentStateFlags.GridPowered);
@@ -1089,7 +1239,7 @@ namespace Hecton8.Tools
             return flags;
         }
 
-        private void ClearActiveEquipmentSlot(int slotIndex)
+        private void ClearActiveEquipmentSlot(ref EquipmentVaultViews views, int slotIndex)
         {
             if ((uint)slotIndex >= MaxTrackedTools)
                 return;
@@ -1098,27 +1248,30 @@ namespace Hecton8.Tools
             _externalActiveToolMask &= ~slotBit;
             _lastTelemetryActiveMask &= ~slotBit;
 
-            if (_activeEquipmentStates.IsCreated && slotIndex < _activeEquipmentStates.Length)
-                _activeEquipmentStates[slotIndex] = default;
-            if (_publishedActiveEquipmentStates.IsCreated && slotIndex < _publishedActiveEquipmentStates.Length)
-                _publishedActiveEquipmentStates[slotIndex] = default;
-            if (_activeEquipmentAupSamples.IsCreated && slotIndex < _activeEquipmentAupSamples.Length)
-                _activeEquipmentAupSamples[slotIndex] = default;
-            if (_activeEquipmentGridLoadRequests.IsCreated && slotIndex < _activeEquipmentGridLoadRequests.Length)
-                _activeEquipmentGridLoadRequests[slotIndex] = default;
+            if (views.ActiveEquipmentStates.IsCreated && slotIndex < views.ActiveEquipmentStates.Length)
+                views.ActiveEquipmentStates[slotIndex] = default;
+            if (views.PublishedActiveEquipmentStates.IsCreated && slotIndex < views.PublishedActiveEquipmentStates.Length)
+                views.PublishedActiveEquipmentStates[slotIndex] = default;
+            if (views.ActiveEquipmentAupSamples.IsCreated && slotIndex < views.ActiveEquipmentAupSamples.Length)
+                views.ActiveEquipmentAupSamples[slotIndex] = default;
+            if (views.ActiveEquipmentGridLoadRequests.IsCreated && slotIndex < views.ActiveEquipmentGridLoadRequests.Length)
+                views.ActiveEquipmentGridLoadRequests[slotIndex] = default;
+            if (views.ActiveEquipmentWearDrainRates.IsCreated && slotIndex < views.ActiveEquipmentWearDrainRates.Length)
+                views.ActiveEquipmentWearDrainRates[slotIndex] = 0f;
         }
 
-        private void RefreshThermalGridReadback()
+        private void RefreshThermalGridReadback(out NativeArray<float> thermalGridReadback)
         {
-            _thermalGridReadback = default;
+            thermalGridReadback = default;
             _thermalGridWidth = 0;
             _thermalGridHeight = 0;
             _thermalGridDepth = 0;
             _thermalGridVersion = 0;
+            _thermalGridCellCount = 0;
             _thermalGridCellSizeMeters = EquipmentDefaultCellSizeMeters;
             _thermalGridRootAup = default;
 
-            IThermodynamicsService thermodynamics = GlobalRegistry.ThermodynamicsService;
+            IThermodynamicsService thermodynamics = _thermodynamicsService;
             if (thermodynamics == null ||
                 !thermodynamics.TryGetThermalGridReadback(
                     out NativeArray<float> grid,
@@ -1136,50 +1289,61 @@ namespace Hecton8.Tools
                 return;
             }
 
-            _thermalGridReadback = grid;
+            thermalGridReadback = grid;
             _thermalGridWidth = width;
             _thermalGridHeight = height;
             _thermalGridDepth = depth;
             _thermalGridVersion = version;
+            _thermalGridCellCount = grid.Length;
             _thermalGridCellSizeMeters = math.isfinite(cellSizeMeters) && cellSizeMeters > 0f
                 ? cellSizeMeters
                 : EquipmentDefaultCellSizeMeters;
             _thermalGridRootAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(originWS);
         }
 
-        private void RefreshActiveEquipmentInputs()
+        private void RefreshActiveEquipmentInputs(ref EquipmentVaultViews views)
         {
-            if (!_activeEquipmentStates.IsCreated || !_activeEquipmentAupSamples.IsCreated)
+            if (!views.ActiveEquipmentStates.IsCreated || !views.ActiveEquipmentAupSamples.IsCreated || !views.ActiveEquipmentWearDrainRates.IsCreated)
                 return;
 
             _lastTelemetryActiveMask = 0u;
             bool gridAvailable = ResolveGridPowerAvailable();
+            bool hasPlayerAup = TryResolvePlayerEquipmentAup(out double3 playerAup);
 
             for (int i = 0; i < MaxTrackedTools; i++)
             {
                 if (!_slotUsed[i] || _toolOwners[i] == null)
                 {
-                    ClearActiveEquipmentSlot(i);
+                    ClearActiveEquipmentSlot(ref views, i);
                     continue;
                 }
 
                 PlayerTool owner = _toolOwners[i];
-                ToolState state = _toolStates[i];
-                ToolRuntimeStats stats = _toolStats[i];
+                ToolState state = views.ToolStates[i];
+                ToolRuntimeStats stats = views.ToolStats[i];
+                if (TryResolveHardwareSpec(ref views, owner.RuntimeToolId, owner.RuntimeToolSpecHashId, out EquipmentHardwareSpecDTO hardwareSpec))
+                {
+                    stats = ApplyHardwareSpec(stats, in hardwareSpec);
+                    views.ToolStats[i] = stats;
+                }
+
                 uint slotBit = 1u << i;
-                bool requestedActive = owner.WasRecentlyUsed(ActiveToolHeatWindowSeconds) || (_externalActiveToolMask & slotBit) != 0u;
+                bool requestedActive = owner.HasRuntimeActiveIntent || (_externalActiveToolMask & slotBit) != 0u;
+                WriteActiveEquipmentWearRate(ref views, i, owner, in stats, requestedActive);
                 bool gridPowered = requestedActive &&
                     gridAvailable &&
                     (state.UpgradeBitmask & (uint)ToolUpgradeBits.WirelessCharging) != 0u;
                 float depthMeters = ResolveDepthMeters(owner);
-                state.Durability = math.saturate(owner.DurabilityNormalized);
+                state.Durability = !requestedActive && owner != null
+                    ? math.saturate(owner.DurabilityNormalized)
+                    : math.saturate(math.isfinite(state.Durability) ? state.Durability : 0f);
                 state.StatusMask = ResolveStatusMask(state.StatusMask, in state, in stats, depthMeters, requestedActive, gridPowered);
                 bool active = requestedActive && (state.StatusMask & ToolRuntimeStatusMasks.Disabled) == 0u;
                 if (active)
                     _lastTelemetryActiveMask |= slotBit;
 
                 state.StatusMask = ResolveStatusMask(state.StatusMask, in state, in stats, depthMeters, active, gridPowered);
-                _toolStates[i] = state;
+                views.ToolStates[i] = state;
 
                 float capacity = math.max(0.1f, stats.BatteryCapacity);
                 float heatRate = math.max(0f, stats.HeatGenerationRate * stats.PowerScalar);
@@ -1201,7 +1365,7 @@ namespace Hecton8.Tools
                 if (gridPowered)
                     flags |= ActiveEquipmentStateFlags.GridPowered;
 
-                _activeEquipmentStates[i] = new ActiveEquipmentDTO
+                views.ActiveEquipmentStates[i] = new ActiveEquipmentDTO
                 {
                     ToolHashID = owner.RuntimeToolId,
                     CurrentBattery = math.max(0f, state.CurrentBattery),
@@ -1219,26 +1383,141 @@ namespace Hecton8.Tools
                     _pad7 = 0
                 };
 
-                Vector3 position = owner.transform.position;
-                _activeEquipmentAupSamples[i] = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(position);
+                views.ActiveEquipmentAupSamples[i] = TryResolveToolAup(owner, hasPlayerAup, in playerAup, out double3 toolAup)
+                    ? toolAup
+                    : (hasPlayerAup ? playerAup : double3.zero);
             }
         }
 
-        private static bool ResolveGridPowerAvailable()
+        public EquipmentCsvParseResult IngestToolHardwareSpecsCsv(ReadOnlySpan<byte> csv)
         {
-            return GlobalRegistry.Submarine != null &&
-                   GlobalRegistry.Submarine.AtmosphereSystem != null &&
-                   GlobalRegistry.PowerGrid != null;
+            if (!TryResolveEquipmentViews(out EquipmentVaultViews views))
+            {
+                return new EquipmentCsvParseResult
+                {
+                    ParsedRows = 0,
+                    SkippedRows = 0,
+                    LastToolHashID = 0u,
+                    FaultFlags = EquipmentFaultCsvOverflow
+                };
+            }
+
+            return EquipmentHardwareSpecsCsvParser.Parse(csv, views.EquipmentHardwareSpecs);
         }
 
-        private static bool ResolveToolInWater(PlayerTool owner)
+        private static bool TryResolveHardwareSpec(ref EquipmentVaultViews views, uint runtimeToolId, uint specToolId, out EquipmentHardwareSpecDTO spec)
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            spec = default;
+            if (!views.EquipmentHardwareSpecs.IsCreated || (runtimeToolId == 0u && specToolId == 0u))
+                return false;
+
+            int count = math.min(views.EquipmentHardwareSpecs.Length, EquipmentHardwareSpecCapacity);
+            for (int i = 0; i < count; i++)
+            {
+                EquipmentHardwareSpecDTO candidate = views.EquipmentHardwareSpecs[i];
+                if (candidate.ToolHashID == runtimeToolId ||
+                    (specToolId != 0u && candidate.ToolHashID == specToolId))
+                {
+                    spec = candidate;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static ToolRuntimeStats ApplyHardwareSpec(ToolRuntimeStats stats, in EquipmentHardwareSpecDTO spec)
+        {
+            float capacity = spec.BatteryCapacity > 0f && math.isfinite(spec.BatteryCapacity)
+                ? spec.BatteryCapacity
+                : stats.BatteryCapacity;
+            stats.BatteryCapacity = math.max(0.1f, capacity);
+
+            if (spec.PowerDrawRate > 0f && math.isfinite(spec.PowerDrawRate))
+                stats.BatteryDrainPerSecond = spec.PowerDrawRate * math.rcp(stats.BatteryCapacity);
+
+            if (spec.HeatGenerationRate > 0f && math.isfinite(spec.HeatGenerationRate))
+            {
+                float thermalLimit = spec.ThermalLimit > 0f && math.isfinite(spec.ThermalLimit) ? spec.ThermalLimit : 1f;
+                stats.HeatGenerationRate = spec.HeatGenerationRate * math.rcp(math.max(0.0001f, thermalLimit));
+            }
+
+            if (spec.CooldownRate > 0f && math.isfinite(spec.CooldownRate))
+                stats.CooldownRate = spec.CooldownRate;
+
+            return stats;
+        }
+
+        private bool ResolveGridPowerAvailable()
+        {
+            return _submarineRuntimeContext != null &&
+                   _submarineRuntimeContext.AtmosphereSystem != null &&
+                   _powerGridService != null;
+        }
+
+        private bool ResolveToolInWater(PlayerTool owner)
+        {
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             HectonPlayerMovement movement = playerContext != null ? playerContext.PlayerMovement : null;
             if (movement != null)
                 return movement.IsPlayerSubmerged;
 
-            return owner != null && owner.transform.position.y < -0.15f;
+            return owner != null &&
+                   owner.TryResolveCachedRuntimePosition(out float3 runtimePosition) &&
+                   runtimePosition.y < -0.15f;
+        }
+
+        private bool TryResolvePlayerEquipmentAup(out double3 aup)
+        {
+            aup = default;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext == null)
+                return false;
+
+            if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
+            {
+                aup = snapshot.Aup.ToAbsoluteDouble3();
+                if (math.all(math.isfinite(aup)))
+                    return true;
+            }
+
+            HectonPlayerMovement movement = playerContext.PlayerMovement;
+            if (movement != null)
+            {
+                aup = movement.CurrentAup.ToAbsoluteDouble3();
+                if (math.all(math.isfinite(aup)))
+                    return true;
+            }
+
+            Transform playerTransform = playerContext.PlayerTransform;
+            if (playerTransform == null)
+                return false;
+
+            Vector3 position = playerTransform.position;
+            if (!math.isfinite(position.x) || !math.isfinite(position.y) || !math.isfinite(position.z))
+                return false;
+
+            aup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(position);
+            return math.all(math.isfinite(aup));
+        }
+
+        private static bool TryResolveToolAup(
+            PlayerTool owner,
+            bool hasPlayerAup,
+            in double3 playerAup,
+            out double3 toolAup)
+        {
+            toolAup = default;
+            if (owner == null)
+                return false;
+
+            if (owner.IsEquipped && hasPlayerAup)
+            {
+                toolAup = playerAup;
+                return math.all(math.isfinite(toolAup));
+            }
+
+            return owner.TryResolveCachedAup(out toolAup);
         }
 
         private static float ResolveGlobalQualityWeight()
@@ -1247,22 +1526,30 @@ namespace Hecton8.Tools
             return math.saturate(math.isfinite(quality) ? quality : 1f);
         }
 
-        private static float ResolveEquipmentTickInterval(float globalQualityWeight)
+        private float ResolveEquipmentTickInterval(float globalQualityWeight)
         {
             float q = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
-            return math.lerp(0.016f, 0.2f, 1f - q);
+            EquipmentTuningDTO tuning = TryResolveEquipmentViews(out EquipmentVaultViews views) && views.EquipmentTuning.Length > 0
+                ? SanitizeEquipmentTuning(views.EquipmentTuning[0])
+                : EquipmentTuningDTO.CreateDefault(q);
+            return math.lerp(tuning.MinimumTickInterval, tuning.MaximumTickInterval, 1f - q);
         }
 
-        private unsafe void ScheduleActiveEquipmentIntegration(float deltaSeconds)
+        private unsafe void ScheduleActiveEquipmentIntegration(
+            float deltaSeconds,
+            ref EquipmentVaultViews views,
+            NativeArray<float> thermalGridReadback)
         {
             if (_equipmentIntegrationScheduled ||
-                !_activeEquipmentStates.IsCreated ||
-                !_activeEquipmentAupSamples.IsCreated ||
-                !_toolStats.IsCreated ||
-                !_activeEquipmentGridLoadRequests.IsCreated ||
-                !_equipmentIntegrationCounters.IsCreated ||
-                !_equipmentOverheatSignals.IsCreated ||
-                !_toolDepletedSignals.IsCreated)
+                !views.ActiveEquipmentStates.IsCreated ||
+                !views.ActiveEquipmentAupSamples.IsCreated ||
+                !views.ToolStats.IsCreated ||
+                !views.ToolStates.IsCreated ||
+                !views.ActiveEquipmentWearDrainRates.IsCreated ||
+                !views.ActiveEquipmentGridLoadRequests.IsCreated ||
+                !views.EquipmentIntegrationCounters.IsCreated ||
+                !views.EquipmentTuning.IsCreated ||
+                !_equipmentSignalLanesReady)
             {
                 return;
             }
@@ -1271,20 +1558,26 @@ namespace Hecton8.Tools
             if (safeDelta <= 0f)
                 return;
 
-            ActiveEquipmentDTO* equipment = (ActiveEquipmentDTO*)_activeEquipmentStates.GetUnsafePtr();
-            ToolRuntimeStats* stats = (ToolRuntimeStats*)_toolStats.GetUnsafeReadOnlyPtr();
-            double3* aupSamples = (double3*)_activeEquipmentAupSamples.GetUnsafeReadOnlyPtr();
-            EquipmentGridLoadRequest* gridRequests = (EquipmentGridLoadRequest*)_activeEquipmentGridLoadRequests.GetUnsafePtr();
-            EquipmentIntegrationCounters* counters = (EquipmentIntegrationCounters*)_equipmentIntegrationCounters.GetUnsafePtr();
-            float* thermalGrid = _thermalGridReadback.IsCreated && _thermalGridReadback.Length > 0
-                ? (float*)_thermalGridReadback.GetUnsafeReadOnlyPtr()
+            ActiveEquipmentDTO* equipment = (ActiveEquipmentDTO*)views.ActiveEquipmentStates.GetUnsafePtr();
+            ToolState* toolStates = (ToolState*)views.ToolStates.GetUnsafePtr();
+            ToolRuntimeStats* stats = (ToolRuntimeStats*)views.ToolStats.GetUnsafeReadOnlyPtr();
+            double3* aupSamples = (double3*)views.ActiveEquipmentAupSamples.GetUnsafeReadOnlyPtr();
+            float* wearDrainRates = (float*)views.ActiveEquipmentWearDrainRates.GetUnsafeReadOnlyPtr();
+            EquipmentGridLoadRequest* gridRequests = (EquipmentGridLoadRequest*)views.ActiveEquipmentGridLoadRequests.GetUnsafePtr();
+            EquipmentIntegrationCounters* counters = (EquipmentIntegrationCounters*)views.EquipmentIntegrationCounters.GetUnsafePtr();
+            float* thermalGrid = thermalGridReadback.IsCreated && thermalGridReadback.Length > 0
+                ? (float*)thermalGridReadback.GetUnsafeReadOnlyPtr()
                 : null;
+            EquipmentTuningDTO tuning = ResolveEquipmentTuningForJob(ref views, _lastGlobalQualityWeight);
 
-            EquipmentThermalBatteryJob job = new EquipmentThermalBatteryJob
+            _equipmentTickIndex++;
+            EquipmentStateIntegrationJob job = new EquipmentStateIntegrationJob
             {
                 Equipment = equipment,
+                ToolStates = toolStates,
                 Stats = stats,
                 ToolAups = aupSamples,
+                WearDrainRates = wearDrainRates,
                 ThermalGrid = thermalGrid,
                 GridLoadRequests = gridRequests,
                 Counters = counters,
@@ -1292,22 +1585,55 @@ namespace Hecton8.Tools
                 ThermalWidth = _thermalGridWidth,
                 ThermalHeight = _thermalGridHeight,
                 ThermalDepth = _thermalGridDepth,
+                ThermalGridLength = thermalGridReadback.IsCreated ? thermalGridReadback.Length : 0,
                 ThermalVersion = _thermalGridVersion,
                 ThermalCellSizeMeters = _thermalGridCellSizeMeters,
                 ThermalGridRootAup = _thermalGridRootAup,
                 DeltaSeconds = safeDelta,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = _equipmentTickIndex,
                 AmbientFallbackCelsius = EquipmentFallbackAmbientCelsius,
-                Tuning = EquipmentTuningDTO.CreateDefault(_lastGlobalQualityWeight),
+                Tuning = tuning,
                 FaultNonFiniteMask = EquipmentFaultNonFinite,
                 FaultGridInvalidMask = EquipmentFaultThermalGridInvalid,
-                OverheatWriter = _equipmentOverheatSignals.AsParallelWriter(),
-                DepletedWriter = _toolDepletedSignals.AsParallelWriter()
+                OverheatWriter = SignalBus<EquipmentOverheatSignal>.ParallelWriter,
+                DepletedWriter = SignalBus<ToolDepletedSignal>.ParallelWriter
             };
 
-            _equipmentIntegrationHandle = job.Schedule();
+            _equipmentIntegrationHandle = job.Schedule(MaxTrackedTools, 4);
+            H8Memory.RegisterActiveJob(SystemID.GameplayTools, _equipmentIntegrationHandle);
             _equipmentIntegrationScheduled = true;
-            _equipmentTickIndex++;
+        }
+
+        private static EquipmentTuningDTO ResolveEquipmentTuningForJob(ref EquipmentVaultViews views, float globalQualityWeight)
+        {
+            EquipmentTuningDTO tuning = views.EquipmentTuning.IsCreated && views.EquipmentTuning.Length > 0
+                ? views.EquipmentTuning[0]
+                : EquipmentTuningDTO.CreateDefault(globalQualityWeight);
+            tuning = SanitizeEquipmentTuning(tuning);
+            tuning.GlobalQualityWeight = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : tuning.GlobalQualityWeight);
+            if (views.EquipmentTuning.IsCreated && views.EquipmentTuning.Length > 0)
+                views.EquipmentTuning[0] = tuning;
+            return tuning;
+        }
+
+        private static EquipmentTuningDTO SanitizeEquipmentTuning(in EquipmentTuningDTO source)
+        {
+            EquipmentTuningDTO tuning = source;
+            tuning.GlobalQualityWeight = math.saturate(math.isfinite(tuning.GlobalQualityWeight) ? tuning.GlobalQualityWeight : 1f);
+            tuning.MinimumTickInterval = math.max(0.001f, SanitizeTuningFloat(tuning.MinimumTickInterval, 0.016f));
+            tuning.MaximumTickInterval = math.max(tuning.MinimumTickInterval, SanitizeTuningFloat(tuning.MaximumTickInterval, 0.2f));
+            tuning.CoolingGain = math.max(0f, SanitizeTuningFloat(tuning.CoolingGain, 0.82f));
+            tuning.WaterCoolingMultiplier = math.max(1f, SanitizeTuningFloat(tuning.WaterCoolingMultiplier, 2.75f));
+            tuning.AmbientHeatFloorCelsius = SanitizeTuningFloat(tuning.AmbientHeatFloorCelsius, -2f);
+            tuning.AmbientHeatCeilingCelsius = math.max(
+                tuning.AmbientHeatFloorCelsius + 1f,
+                SanitizeTuningFloat(tuning.AmbientHeatCeilingCelsius, 70f));
+            return tuning;
+        }
+
+        private static float SanitizeTuningFloat(float value, float fallback)
+        {
+            return math.isfinite(value) ? value : fallback;
         }
 
         private unsafe void CompleteActiveEquipmentJob()
@@ -1315,28 +1641,32 @@ namespace Hecton8.Tools
             if (!_equipmentIntegrationScheduled)
                 return;
 
-            long startTicks = Stopwatch.GetTimestamp();
-            _equipmentIntegrationHandle.Complete();
-            _equipmentIntegrationScheduled = false;
+            if (!_equipmentIntegrationHandle.IsCompleted)
+                return;
 
-            PublishActiveEquipmentReadback();
-            ProcessGridLoadRequests();
-            DrainEquipmentSignalQueues();
+            long startTicks = Stopwatch.GetTimestamp();
+            Hecton8.Core.DispatcherJobFence.TryFinalizeCompleted(ref _equipmentIntegrationHandle);
+            _equipmentIntegrationScheduled = false;
+            if (!TryResolveEquipmentViews(out EquipmentVaultViews views))
+                return;
+
+            PublishActiveEquipmentReadback(ref views);
+            ProcessGridLoadRequests(ref views);
 
             long endTicks = Stopwatch.GetTimestamp();
             float microseconds = (float)((endTicks - startTicks) * 1000000.0 / Stopwatch.Frequency);
-            RecordEquipmentTelemetry(microseconds);
+            RecordEquipmentTelemetry(ref views, microseconds);
         }
 
-        private unsafe void PublishActiveEquipmentReadback()
+        private unsafe void PublishActiveEquipmentReadback(ref EquipmentVaultViews views)
         {
-            if (!_activeEquipmentStates.IsCreated || !_publishedActiveEquipmentStates.IsCreated)
+            if (!views.ActiveEquipmentStates.IsCreated || !views.PublishedActiveEquipmentStates.IsCreated)
                 return;
 
-            int count = math.min(_activeEquipmentStates.Length, _publishedActiveEquipmentStates.Length);
+            int count = math.min(views.ActiveEquipmentStates.Length, views.PublishedActiveEquipmentStates.Length);
             UnsafeUtility.MemCpy(
-                _publishedActiveEquipmentStates.GetUnsafePtr(),
-                _activeEquipmentStates.GetUnsafeReadOnlyPtr(),
+                views.PublishedActiveEquipmentStates.GetUnsafePtr(),
+                views.ActiveEquipmentStates.GetUnsafeReadOnlyPtr(),
                 (long)count * UnsafeUtility.SizeOf<ActiveEquipmentDTO>());
 
             for (int i = 0; i < MaxTrackedTools; i++)
@@ -1344,14 +1674,15 @@ namespace Hecton8.Tools
                 if (!_slotUsed[i] || _toolOwners[i] == null)
                     continue;
 
-                ActiveEquipmentDTO dto = _activeEquipmentStates[i];
-                ToolState state = _toolStates[i];
-                ToolRuntimeStats stats = _toolStats[i];
+                ActiveEquipmentDTO dto = views.ActiveEquipmentStates[i];
+                ToolState state = views.ToolStates[i];
+                ToolRuntimeStats stats = views.ToolStats[i];
                 bool active = (dto.StateFlags & ActiveEquipmentStateFlags.Active) != 0u;
                 bool gridPowered = (dto.StateFlags & ActiveEquipmentStateFlags.GridPowered) != 0u;
 
                 state.CurrentBattery = math.max(0f, dto.CurrentBattery);
                 state.InternalHeat = math.max(0f, dto.ThermalLoad);
+                state.Durability = math.saturate(state.Durability);
                 state.StatusMask = ResolveStatusMask(
                     state.StatusMask,
                     in state,
@@ -1360,35 +1691,36 @@ namespace Hecton8.Tools
                     active,
                     gridPowered);
                 state.StatusMask = ResolveHeatWarningHaptic(state.StatusMask, state.InternalHeat);
-                _toolStates[i] = state;
+                views.ToolStates[i] = state;
 
                 if (IsOverchargeRequested(i) && state.InternalHeat > OverchargeExplosionHeatThreshold)
                 {
-                    WriteSlotMirrors(i, in state);
-                    TriggerOverchargeExplosion(i);
+                    WriteSlotMirrors(ref views, i, in state);
+                    TriggerOverchargeExplosion(ref views, i);
                     continue;
                 }
 
-                WriteSlotMirrors(i, in state);
+                WriteSlotMirrors(ref views, i, in state);
+                SyncDurabilityMirror(i, in state);
             }
         }
 
-        private void ProcessGridLoadRequests()
+        private void ProcessGridLoadRequests(ref EquipmentVaultViews views)
         {
-            if (!_activeEquipmentGridLoadRequests.IsCreated)
+            if (!views.ActiveEquipmentGridLoadRequests.IsCreated)
                 return;
 
             float requestedEnergy = 0f;
-            for (int i = 0; i < math.min(MaxTrackedTools, _activeEquipmentGridLoadRequests.Length); i++)
+            for (int i = 0; i < math.min(MaxTrackedTools, views.ActiveEquipmentGridLoadRequests.Length); i++)
             {
-                EquipmentGridLoadRequest request = _activeEquipmentGridLoadRequests[i];
+                EquipmentGridLoadRequest request = views.ActiveEquipmentGridLoadRequests[i];
                 requestedEnergy += math.max(0f, request.EnergyWattSeconds);
             }
 
             if (requestedEnergy <= 0.0001f)
                 return;
 
-            IPowerGridService powerGrid = GlobalRegistry.PowerGrid;
+            IPowerGridService powerGrid = _powerGridService;
             if (powerGrid == null)
             {
                 _wirelessBrownoutActive = true;
@@ -1400,37 +1732,22 @@ namespace Hecton8.Tools
                 _wirelessBrownoutActive = true;
         }
 
-        private void DrainEquipmentSignalQueues()
+        private void RecordEquipmentTelemetry(ref EquipmentVaultViews views, float cpuMicroseconds)
         {
-            if (_equipmentOverheatSignals.IsCreated)
-            {
-                while (_equipmentOverheatSignals.TryDequeue(out EquipmentOverheatSignal signal))
-                    SignalBus<EquipmentOverheatSignal>.TryPush(in signal);
-            }
-
-            if (_toolDepletedSignals.IsCreated)
-            {
-                while (_toolDepletedSignals.TryDequeue(out ToolDepletedSignal signal))
-                    SignalBus<ToolDepletedSignal>.TryPush(in signal);
-            }
-        }
-
-        private void RecordEquipmentTelemetry(float cpuMicroseconds)
-        {
-            if (!_equipmentTelemetryRing.IsCreated ||
-                !_equipmentTelemetryCursor.IsCreated ||
-                !_equipmentIntegrationCounters.IsCreated ||
-                _equipmentTelemetryRing.Length == 0 ||
-                _equipmentTelemetryCursor.Length == 0)
+            if (!views.EquipmentTelemetryRing.IsCreated ||
+                !views.EquipmentTelemetryCursor.IsCreated ||
+                !views.EquipmentIntegrationCounters.IsCreated ||
+                views.EquipmentTelemetryRing.Length == 0 ||
+                views.EquipmentTelemetryCursor.Length == 0)
             {
                 return;
             }
 
-            EquipmentIntegrationCounters counters = _equipmentIntegrationCounters[0];
-            int index = math.clamp(_equipmentTelemetryCursor[0], 0, _equipmentTelemetryRing.Length - 1);
+            EquipmentIntegrationCounters counters = AggregateIntegrationCounters(ref views);
+            int index = math.clamp(views.EquipmentTelemetryCursor[0], 0, views.EquipmentTelemetryRing.Length - 1);
             EquipmentTelemetryEntry entry = new EquipmentTelemetryEntry
             {
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = _equipmentTickIndex,
                 TickIndex = _equipmentTickIndex,
                 BatteryDrainWattSeconds = counters.BatteryDrainWattSeconds,
                 GridDrawWattSeconds = counters.GridDrawWattSeconds,
@@ -1443,27 +1760,51 @@ namespace Hecton8.Tools
                 GlobalQualityWeight = _lastGlobalQualityWeight,
                 TickIntervalSeconds = _lastEquipmentTickInterval,
                 ThermalGridVersion = _thermalGridVersion,
-                ThermalGridCellCount = _thermalGridReadback.IsCreated ? _thermalGridReadback.Length : 0,
-                SnapshotHash = ComputeActiveEquipmentSnapshotHash(),
-                Reserved0 = 0u
+                ThermalGridCellCount = _thermalGridCellCount,
+                SnapshotHash = ComputeActiveEquipmentSnapshotHash(ref views),
+                WearDrainNormalized = counters.WearDrainNormalized
             };
 
-            _equipmentTelemetryRing[index] = entry;
-            _equipmentTelemetryCursor[0] = (index + 1) % _equipmentTelemetryRing.Length;
+            views.EquipmentTelemetryRing[index] = entry;
+            views.EquipmentTelemetryCursor[0] = (index + 1) % views.EquipmentTelemetryRing.Length;
             if (entry.FaultFlags != 0u && !_equipmentFaultDumped)
-                DumpEquipmentTelemetry();
+                DumpEquipmentTelemetry(ref views);
         }
 
-        private uint ComputeActiveEquipmentSnapshotHash()
+        private static EquipmentIntegrationCounters AggregateIntegrationCounters(ref EquipmentVaultViews views)
         {
-            if (!_publishedActiveEquipmentStates.IsCreated)
+            EquipmentIntegrationCounters aggregate = default;
+            if (!views.EquipmentIntegrationCounters.IsCreated)
+                return aggregate;
+
+            int count = math.min(MaxTrackedTools, views.EquipmentIntegrationCounters.Length);
+            for (int i = 0; i < count; i++)
+            {
+                EquipmentIntegrationCounters item = views.EquipmentIntegrationCounters[i];
+                aggregate.BatteryDrainWattSeconds += item.BatteryDrainWattSeconds;
+                aggregate.GridDrawWattSeconds += item.GridDrawWattSeconds;
+                aggregate.WearDrainNormalized += item.WearDrainNormalized;
+                aggregate.PeakThermal01 = math.max(aggregate.PeakThermal01, item.PeakThermal01);
+                aggregate.ActiveCount += item.ActiveCount;
+                aggregate.SignalCount += item.SignalCount;
+                aggregate.FaultFlags |= item.FaultFlags;
+                if (item.LastFaultToolHashID != 0u)
+                    aggregate.LastFaultToolHashID = item.LastFaultToolHashID;
+            }
+
+            return aggregate;
+        }
+
+        private static uint ComputeActiveEquipmentSnapshotHash(ref EquipmentVaultViews views)
+        {
+            if (!views.PublishedActiveEquipmentStates.IsCreated)
                 return 0u;
 
             uint hash = 2166136261u;
-            int count = math.min(MaxTrackedTools, _publishedActiveEquipmentStates.Length);
+            int count = math.min(MaxTrackedTools, views.PublishedActiveEquipmentStates.Length);
             for (int i = 0; i < count; i++)
             {
-                ActiveEquipmentDTO dto = _publishedActiveEquipmentStates[i];
+                ActiveEquipmentDTO dto = views.PublishedActiveEquipmentStates[i];
                 hash = MixFnv(hash, dto.ToolHashID);
                 hash = MixFnv(hash, math.asuint(dto.CurrentBattery));
                 hash = MixFnv(hash, math.asuint(dto.ThermalLoad));
@@ -1479,10 +1820,10 @@ namespace Hecton8.Tools
             return hash * 16777619u;
         }
 
-        private unsafe void DumpEquipmentTelemetry()
+        private unsafe void DumpEquipmentTelemetry(ref EquipmentVaultViews views)
         {
             _equipmentFaultDumped = true;
-            if (!_equipmentTelemetryRing.IsCreated)
+            if (!views.EquipmentTelemetryRing.IsCreated)
                 return;
 
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
@@ -1494,43 +1835,25 @@ namespace Hecton8.Tools
             using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
             {
                 uint header = 0x45515448u; // H8TE
-                byte[] headerBytes = BitConverter.GetBytes(header);
-                stream.Write(headerBytes, 0, headerBytes.Length);
-                byte[] countBytes = BitConverter.GetBytes(_equipmentTelemetryRing.Length);
-                stream.Write(countBytes, 0, countBytes.Length);
-                byte[] strideBytes = BitConverter.GetBytes(UnsafeUtility.SizeOf<EquipmentTelemetryEntry>());
-                stream.Write(strideBytes, 0, strideBytes.Length);
+                Span<byte> headerBytes = stackalloc byte[16];
+                WriteUInt32LE(headerBytes, 0, header);
+                WriteUInt32LE(headerBytes, 4, unchecked((uint)views.EquipmentTelemetryRing.Length));
+                WriteUInt32LE(headerBytes, 8, unchecked((uint)UnsafeUtility.SizeOf<EquipmentTelemetryEntry>()));
+                WriteUInt32LE(headerBytes, 12, _equipmentTickIndex);
+                stream.Write(headerBytes);
 
-                void* source = _equipmentTelemetryRing.GetUnsafeReadOnlyPtr();
-                int byteLength = _equipmentTelemetryRing.Length * UnsafeUtility.SizeOf<EquipmentTelemetryEntry>();
-                byte[] scratch = new byte[byteLength];
-                fixed (byte* destination = scratch)
-                    UnsafeUtility.MemCpy(destination, source, byteLength);
-                stream.Write(scratch, 0, scratch.Length);
+                void* source = views.EquipmentTelemetryRing.GetUnsafeReadOnlyPtr();
+                int byteLength = views.EquipmentTelemetryRing.Length * UnsafeUtility.SizeOf<EquipmentTelemetryEntry>();
+                stream.Write(new ReadOnlySpan<byte>(source, byteLength));
             }
         }
 
-        private void ApplyRuntimeHeatAndStatus(int slotIndex, PlayerTool owner, float deltaTime, HectonQualityTier scalabilityTier)
+        private static void WriteUInt32LE(Span<byte> buffer, int offset, uint value)
         {
-            if ((uint)slotIndex >= MaxTrackedTools || owner == null)
-                return;
-
-            ToolState state = _toolStates[slotIndex];
-            ToolRuntimeStats stats = _toolStats[slotIndex];
-            float depthMeters = ResolveDepthMeters(owner);
-            bool active = owner.WasRecentlyUsed(ActiveToolHeatWindowSeconds);
-            float activePower = active ? math.max(0f, stats.HeatGenerationRate * stats.PowerScalar) : 0f;
-            float coolingDenominator = ResolveCoolingDenominator(depthMeters);
-            float ambientCooling = math.max(0f, stats.CooldownRate) * math.rcp(coolingDenominator);
-            float environmentHeat01 = ResolveEnvironmentHeat01(slotIndex, owner, depthMeters, scalabilityTier);
-            _environmentHeat01[slotIndex] = environmentHeat01;
-            float ventHeat = environmentHeat01 * ThermalVentHeatScale * math.max(0.05f, stats.HeatGenerationRate);
-            float nextHeat = state.InternalHeat + ((activePower + ventHeat - ambientCooling) * deltaTime);
-            state.InternalHeat = math.isfinite(nextHeat) ? math.max(0f, nextHeat) : 0f;
-            state.StatusMask = ResolveStatusMask(state.StatusMask, in state, in stats, depthMeters, active);
-            state.StatusMask = ResolveHeatWarningHaptic(state.StatusMask, state.InternalHeat);
-            _toolStates[slotIndex] = state;
-            WriteSlotMirrors(slotIndex, in state);
+            buffer[offset] = (byte)value;
+            buffer[offset + 1] = (byte)(value >> 8);
+            buffer[offset + 2] = (byte)(value >> 16);
+            buffer[offset + 3] = (byte)(value >> 24);
         }
 
         private static uint ResolveStatusMask(uint currentStatus, in ToolState state, in ToolRuntimeStats stats, float depthMeters, bool active, bool gridPowered = false)
@@ -1589,36 +1912,9 @@ namespace Hecton8.Tools
             return status;
         }
 
-        private float ResolveEnvironmentHeat01(int slotIndex, PlayerTool owner, float depthMeters, HectonQualityTier scalabilityTier)
+        private float ResolveDepthMeters(PlayerTool owner)
         {
-            if (!DistanceMath.IsHighQualityTier(scalabilityTier))
-            {
-                float depth01 = math.saturate((depthMeters - 450f) * 0.00125f);
-                return depth01 * depth01 * (3f - 2f * depth01) * 0.25f;
-            }
-
-            if (((_thermalProbeFrameIndex + slotIndex) & ThermalProbeFrameMask) != 0)
-                return _environmentHeat01[slotIndex];
-
-            AbyssalThermalManager thermodynamics = GlobalRegistry.Thermodynamics;
-            if (thermodynamics == null || owner == null)
-                return 0f;
-
-            if (!thermodynamics.SampleThermalFlow(owner.transform.position, ThermalProbeRadiusMeters, out AbyssalThermalManager.ThermalFlowSample sample))
-                return 0f;
-
-            return math.saturate(sample.Heat01);
-        }
-
-        private static float ResolveCoolingDenominator(float depthMeters)
-        {
-            float inverseDepthCooling = math.rcp(1f + math.max(0f, depthMeters) * DepthCoolingScale);
-            return math.max(MinimumCoolingDenominator, inverseDepthCooling);
-        }
-
-        private static float ResolveDepthMeters(PlayerTool owner)
-        {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             if (playerContext != null)
             {
                 HectonSurvivalSystem survivalSystem = playerContext.SurvivalSystem;
@@ -1630,7 +1926,9 @@ namespace Hecton8.Tools
                     return math.max(0f, movement.CurrentDepth);
             }
 
-            return owner != null ? math.max(0f, -owner.transform.position.y) : 0f;
+            return owner != null && owner.TryResolveCachedRuntimePosition(out float3 runtimePosition)
+                ? math.max(0f, -runtimePosition.y)
+                : 0f;
         }
 
         private static byte ResolveToolTypeId(uint toolId)
@@ -1639,36 +1937,36 @@ namespace Hecton8.Tools
             return typeId != 0 ? typeId : (byte)1;
         }
 
-        private void WriteSlotMirrors(int slotIndex, in ToolState state)
+        private void WriteSlotMirrors(ref EquipmentVaultViews views, int slotIndex, in ToolState state)
         {
             if ((uint)slotIndex >= MaxTrackedTools)
                 return;
 
-            _toolTypes[slotIndex] = state.ToolTypeId;
-            _currentHeat[slotIndex] = state.InternalHeat;
-            _batteryCharge[slotIndex] = state.CurrentBattery;
-            _statusMasks[slotIndex] = state.StatusMask;
-            _environmentHeat01[slotIndex] = math.saturate(_environmentHeat01[slotIndex]);
-            PublishToolStateChanged(slotIndex, in state, forceHolstered: false);
+            views.ToolTypes[slotIndex] = state.ToolTypeId;
+            views.CurrentHeat[slotIndex] = state.InternalHeat;
+            views.BatteryCharge[slotIndex] = state.CurrentBattery;
+            views.StatusMasks[slotIndex] = state.StatusMask;
+            views.EnvironmentHeat01[slotIndex] = math.saturate(views.EnvironmentHeat01[slotIndex]);
+            PublishToolStateChanged(ref views, slotIndex, in state, forceHolstered: false);
         }
 
-        private void ClearSlotMirrors(int slotIndex)
+        private void ClearSlotMirrors(ref EquipmentVaultViews views, int slotIndex)
         {
             if ((uint)slotIndex >= MaxTrackedTools)
                 return;
 
-            ToolState previousState = _toolStates.IsCreated ? _toolStates[slotIndex] : default;
-            PublishToolStateChanged(slotIndex, in previousState, forceHolstered: true);
+            ToolState previousState = views.ToolStates.IsCreated ? views.ToolStates[slotIndex] : default;
+            PublishToolStateChanged(ref views, slotIndex, in previousState, forceHolstered: true);
 
-            _toolTypes[slotIndex] = 0;
-            _currentHeat[slotIndex] = 0f;
-            _batteryCharge[slotIndex] = 0f;
-            _statusMasks[slotIndex] = 0u;
-            _environmentHeat01[slotIndex] = 0f;
+            views.ToolTypes[slotIndex] = 0;
+            views.CurrentHeat[slotIndex] = 0f;
+            views.BatteryCharge[slotIndex] = 0f;
+            views.StatusMasks[slotIndex] = 0u;
+            views.EnvironmentHeat01[slotIndex] = 0f;
             _lastPublishedEquippedMask &= ~(1u << slotIndex);
         }
 
-        private void PublishToolStateChanged(int slotIndex, in ToolState state, bool forceHolstered)
+        private void PublishToolStateChanged(ref EquipmentVaultViews views, int slotIndex, in ToolState state, bool forceHolstered)
         {
             if ((uint)slotIndex >= MaxTrackedTools)
                 return;
@@ -1691,7 +1989,7 @@ namespace Hecton8.Tools
                 holsterTransition = true;
             }
 
-            ToolRuntimeStats stats = _toolStats[slotIndex];
+            ToolRuntimeStats stats = views.ToolStats[slotIndex];
             float capacity = math.max(0.1f, stats.BatteryCapacity);
             float battery01 = math.saturate(state.CurrentBattery * math.rcp(capacity));
             float heat01 = math.saturate(state.InternalHeat);
@@ -1707,7 +2005,7 @@ namespace Hecton8.Tools
                 statusMask &= ~ToolRuntimeStatusMasks.Active;
             }
 
-            HectonQualityTier qualityTier = GlobalRegistry.ScalabilityTier;
+            HectonQualityTier qualityTier = _cachedScalabilityTier;
             bool lowTier = qualityTier == HectonQualityTier.Low ||
                 qualityTier == HectonQualityTier.Mx350 ||
                 qualityTier == HectonQualityTier.Unknown;
@@ -1780,6 +2078,111 @@ namespace Hecton8.Tools
             }
         }
 
+        private void CacheRegistryDependenciesCold()
+        {
+            _dataVault = GlobalRegistry.DataVault;
+            _thermodynamicsService = GlobalRegistry.ThermodynamicsService;
+            _powerGridService = GlobalRegistry.PowerGrid;
+            _toolDurabilityService = GlobalRegistry.ToolDurability;
+            _playerRuntimeContext = GlobalRegistry.Player;
+            _submarineRuntimeContext = GlobalRegistry.Submarine;
+            _cachedScalabilityTier = GlobalRegistry.ScalabilityTier;
+        }
+
+        private void ApplyRegistryServiceRebind(GlobalRegistryServiceSlot serviceSlot, object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.DataVault:
+                    ApplyDataVaultRebind(currentService as IDataVault);
+                    break;
+                case GlobalRegistryServiceSlot.ThermodynamicsService:
+                    _thermodynamicsService = currentService as IThermodynamicsService;
+                    break;
+                case GlobalRegistryServiceSlot.PowerGrid:
+                    _powerGridService = currentService as IPowerGridService;
+                    break;
+                case GlobalRegistryServiceSlot.ToolDurabilityRuntime:
+                    _toolDurabilityService = currentService as ToolDurabilitySystem;
+                    RegisterDurabilityMirrorsCold();
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    break;
+                case GlobalRegistryServiceSlot.Submarine:
+                    _submarineRuntimeContext = currentService as ISubmarineRuntimeContext;
+                    break;
+            }
+        }
+
+        private void ApplyDataVaultRebind(IDataVault nextVault)
+        {
+            if (ReferenceEquals(_dataVault, nextVault))
+                return;
+
+            if (_equipmentIntegrationScheduled)
+            {
+                DispatcherJobFence.TryComplete(ref _equipmentIntegrationHandle, forceComplete: true);
+                _equipmentIntegrationScheduled = false;
+            }
+
+            ReleaseEquipmentVaultHandles(_dataVault);
+            ClearEquipmentVaultHandles();
+            _dataVault = nextVault;
+            _isInitialized = false;
+            _equipmentSignalLanesReady = false;
+            _lastPublishedEquippedMask = 0u;
+            _lastTelemetryActiveMask = 0u;
+            _thermalGridCellCount = 0;
+
+            if (nextVault == null || !CanOwnServiceSlot())
+                return;
+
+            InitializeActiveEquipmentNativeState();
+            if (!TryResolveEquipmentViews(out EquipmentVaultViews views))
+                return;
+
+            ClearNativeArray(views.ToolStates);
+            ClearNativeArray(views.ToolStats);
+            ClearNativeArray(views.ToolTypes);
+            ClearNativeArray(views.CurrentHeat);
+            ClearNativeArray(views.BatteryCharge);
+            ClearNativeArray(views.StatusMasks);
+            ClearNativeArray(views.EnvironmentHeat01);
+
+            _isInitialized = true;
+            TryRegisterService();
+            TryRegisterUpdatable();
+            TryRegisterLateFrame();
+        }
+
+        void IGlobalRegistryHotSwapRefListener.OnGlobalRegistryServiceRebound(GlobalRegistryServiceSlot serviceSlot, ref object currentService)
+        {
+            ApplyRegistryServiceRebind(serviceSlot, currentService);
+        }
+
+        void IGlobalRegistryHotSwapListener.OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
+        {
+            ApplyRegistryServiceRebind(serviceSlot, currentService);
+        }
+
+        private void TryRegisterHotSwap()
+        {
+            if (_registeredHotSwap)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwap()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
+        }
+
         private void TryRegisterService()
         {
             if (_registeredService)
@@ -1792,13 +2195,15 @@ namespace Hecton8.Tools
             _registeredService = ReferenceEquals(GlobalRegistry.ModularEquipment, this);
         }
 
-        internal bool TryGetWirelessBrownoutFeedback(uint toolId, out float flickerScalar)
+        public bool TryGetWirelessBrownoutFeedback(uint toolId, out float flickerScalar)
         {
             flickerScalar = 0f;
-            if (!_wirelessBrownoutActive || !_isInitialized || !_toolIndexById.TryGetValue(toolId, out int slotIndex))
+            if (!_wirelessBrownoutActive || !_isInitialized || !TryResolveSlot(toolId, out int slotIndex))
+                return false;
+            if (!TryResolveEquipmentViews(out EquipmentVaultViews views))
                 return false;
 
-            if ((_toolStates[slotIndex].UpgradeBitmask & (uint)ToolUpgradeBits.WirelessCharging) == 0u)
+            if ((views.ToolStates[slotIndex].UpgradeBitmask & (uint)ToolUpgradeBits.WirelessCharging) == 0u)
                 return false;
 
             float pulse = 0.35f + (0.65f * math.abs(FastTriangleSigned(_brownoutPulseTime * WirelessBrownoutPulseCycles)));
@@ -1806,10 +2211,10 @@ namespace Hecton8.Tools
             return true;
         }
 
-        internal bool TryGetToolBrownoutFeedback(uint toolId, out float flickerScalar)
+        public bool TryGetToolBrownoutFeedback(uint toolId, out float flickerScalar)
         {
             flickerScalar = 0f;
-            if (!_wirelessBrownoutActive || !_isInitialized || !_toolIndexById.TryGetValue(toolId, out int slotIndex))
+            if (!_wirelessBrownoutActive || !_isInitialized || !TryResolveSlot(toolId, out int slotIndex))
                 return false;
 
             if (slotIndex < 0 || slotIndex >= MaxTrackedTools || !_slotUsed[slotIndex])
@@ -1832,24 +2237,6 @@ namespace Hecton8.Tools
 
             GlobalRegistry.UnregisterModularEquipmentService(this);
             _registeredService = false;
-        }
-
-        private void TryRegisterTelemetry()
-        {
-            if (_telemetrySubscribed)
-                return;
-
-            PowerGridTelemetryEvents.Register(this);
-            _telemetrySubscribed = true;
-        }
-
-        private void TryUnregisterTelemetry()
-        {
-            if (!_telemetrySubscribed)
-                return;
-
-            PowerGridTelemetryEvents.Unregister(this);
-            _telemetrySubscribed = false;
         }
 
         private void TryRegisterUpdatable()
@@ -1902,24 +2289,22 @@ namespace Hecton8.Tools
             ShutdownServiceState();
         }
 
-        /// <summary>
-        /// Receives deferred aggregate power telemetry snapshots.
-        /// </summary>
-        /// <param name="snapshot">Aggregate power telemetry snapshot.</param>
-        public void OnPowerGridTelemetryUpdated(in PowerGridTelemetrySnapshot snapshot)
+        private void RefreshWirelessBrownoutFromPowerSnapshot()
         {
-            ApplyPowerGridTelemetry(in snapshot);
-        }
+            IPowerGridService powerGrid = _powerGridService;
+            if (powerGrid == null)
+                return;
 
-        void Hecton8.Power.IPowerGridTelemetryListener.OnPowerGridTelemetryUpdated(in Hecton8.Power.PowerGridTelemetrySnapshot snapshot)
-        {
-            ApplyPowerGridTelemetry(in snapshot);
-        }
+            float totalConsumption = math.max(0f, powerGrid.TotalConsumption);
+            float totalGeneration = math.max(0f, powerGrid.TotalGeneration);
+            float supplyRatio = totalConsumption > 0.0001f
+                ? math.saturate(totalGeneration * math.rcp(math.max(totalConsumption, 0.0001f)))
+                : 1f;
+            BatteryRuntimeSnapshot battery = powerGrid.BatterySnapshot;
+            if (battery.EmergencyReserveActive != 0)
+                supplyRatio = math.min(supplyRatio, math.saturate(battery.ChargeNormalized));
 
-        private void ApplyPowerGridTelemetry(in PowerGridTelemetrySnapshot snapshot)
-        {
-            _latestSupplyRatio = math.saturate(snapshot.SupplyRatio);
-            _wirelessBrownoutActive = _latestSupplyRatio < 0.40f;
+            _wirelessBrownoutActive = supplyRatio < 0.40f;
             if (!_wirelessBrownoutActive)
                 _brownoutPulseTime = 0f;
         }
@@ -1930,7 +2315,7 @@ namespace Hecton8.Tools
             return owner != null && owner.IsRuntimeOverchargeRequested();
         }
 
-        private void TriggerOverchargeExplosion(int slotIndex)
+        private void TriggerOverchargeExplosion(ref EquipmentVaultViews views, int slotIndex)
         {
             if (slotIndex < 0 || slotIndex >= MaxTrackedTools)
                 return;
@@ -1942,17 +2327,14 @@ namespace Hecton8.Tools
             owner.HandleRuntimeOverchargeFailure(OverchargeExplosionPlayerDamage);
 
             uint runtimeToolId = owner.RuntimeToolId;
-            ToolState failedState = _toolStates[slotIndex];
-            PublishToolStateChanged(slotIndex, in failedState, forceHolstered: true);
-            if (runtimeToolId != 0u && _toolIndexById.IsCreated)
-                _toolIndexById.Remove(runtimeToolId);
-
+            ToolState failedState = views.ToolStates[slotIndex];
+            PublishToolStateChanged(ref views, slotIndex, in failedState, forceHolstered: true);
             _toolOwners[slotIndex] = null;
             _slotUsed[slotIndex] = false;
-            _toolStates[slotIndex] = default;
-            _toolStats[slotIndex] = default;
-            ClearActiveEquipmentSlot(slotIndex);
-            ClearSlotMirrors(slotIndex);
+            views.ToolStates[slotIndex] = default;
+            views.ToolStats[slotIndex] = default;
+            ClearActiveEquipmentSlot(ref views, slotIndex);
+            ClearSlotMirrors(ref views, slotIndex);
             ClearModuleMirror(slotIndex);
         }
 
@@ -1960,7 +2342,7 @@ namespace Hecton8.Tools
         {
             if (_equipmentIntegrationScheduled)
             {
-                _equipmentIntegrationHandle.Complete();
+                DispatcherJobFence.TryComplete(ref _equipmentIntegrationHandle, forceComplete: true);
                 _equipmentIntegrationScheduled = false;
             }
 
@@ -1973,164 +2355,197 @@ namespace Hecton8.Tools
             for (int i = 0; i < _moduleSlots.Length; i++)
                 _moduleSlots[i] = null;
 
-            if (_toolStates.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_toolStates);
-                _toolStates.Dispose();
-            }
-
-            if (_toolStats.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_toolStats);
-                _toolStats.Dispose();
-            }
-
-            if (_toolTypes.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_toolTypes);
-                _toolTypes.Dispose();
-            }
-
-            if (_currentHeat.IsCreated)
-            {
-                if (!_currentHeatFromDataVault)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(_currentHeat);
-                    _currentHeat.Dispose();
-                }
-            }
-
-            if (_batteryCharge.IsCreated)
-            {
-                if (!_batteryChargeFromDataVault)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(_batteryCharge);
-                    _batteryCharge.Dispose();
-                }
-            }
-
-            if (_statusMasks.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_statusMasks);
-                _statusMasks.Dispose();
-            }
-
-            if (_environmentHeat01.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_environmentHeat01);
-                _environmentHeat01.Dispose();
-            }
-
-            if (_toolIndexById.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeHashMap(nameof(ModularEquipmentEngine), nameof(_toolIndexById));
-                _toolIndexById.Dispose();
-            }
-
-            if (_batteryDrainRates.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_batteryDrainRates);
-                _batteryDrainRates.Dispose();
-            }
-
-            if (_batteryDrainDeltaSeconds.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_batteryDrainDeltaSeconds);
-                _batteryDrainDeltaSeconds.Dispose();
-            }
-
-            DisposeEquipmentArray(ref _activeEquipmentStates, _activeEquipmentStatesFromDataVault, nameof(_activeEquipmentStates));
-            DisposeEquipmentArray(ref _publishedActiveEquipmentStates, _publishedActiveEquipmentStatesFromDataVault, nameof(_publishedActiveEquipmentStates));
-            DisposeEquipmentArray(ref _activeEquipmentAupSamples, _activeEquipmentAupSamplesFromDataVault, nameof(_activeEquipmentAupSamples));
-            DisposeEquipmentArray(ref _activeEquipmentGridLoadRequests, _activeEquipmentGridLoadRequestsFromDataVault, nameof(_activeEquipmentGridLoadRequests));
-            DisposeEquipmentArray(ref _equipmentTelemetryRing, _equipmentTelemetryRingFromDataVault, nameof(_equipmentTelemetryRing));
-            DisposeEquipmentArray(ref _equipmentTelemetryCursor, _equipmentTelemetryCursorFromDataVault, nameof(_equipmentTelemetryCursor));
-            DisposeEquipmentArray(ref _equipmentIntegrationCounters, _equipmentIntegrationCountersFromDataVault, nameof(_equipmentIntegrationCounters));
-
-            if (_equipmentOverheatSignals.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(ModularEquipmentEngine), nameof(_equipmentOverheatSignals));
-                _equipmentOverheatSignals.Dispose();
-            }
-
-            if (_toolDepletedSignals.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(ModularEquipmentEngine), nameof(_toolDepletedSignals));
-                _toolDepletedSignals.Dispose();
-            }
+            ReleaseEquipmentVaultHandles(_dataVault);
+            ClearEquipmentVaultHandles();
 
             _isInitialized = false;
-            _toolStates = default;
-            _toolStats = default;
-            _toolTypes = default;
-            _currentHeat = default;
-            _batteryCharge = default;
-            _statusMasks = default;
-            _environmentHeat01 = default;
-            _activeEquipmentStates = default;
-            _publishedActiveEquipmentStates = default;
-            _activeEquipmentAupSamples = default;
-            _activeEquipmentGridLoadRequests = default;
-            _equipmentTelemetryRing = default;
-            _equipmentTelemetryCursor = default;
-            _equipmentIntegrationCounters = default;
-            _toolIndexById = default;
-            _equipmentOverheatSignals = default;
-            _toolDepletedSignals = default;
-            _batteryDrainRates = default;
-            _batteryDrainDeltaSeconds = default;
-            _currentHeatFromDataVault = false;
-            _batteryChargeFromDataVault = false;
-            _activeEquipmentStatesFromDataVault = false;
-            _publishedActiveEquipmentStatesFromDataVault = false;
-            _activeEquipmentAupSamplesFromDataVault = false;
-            _activeEquipmentGridLoadRequestsFromDataVault = false;
-            _equipmentTelemetryRingFromDataVault = false;
-            _equipmentTelemetryCursorFromDataVault = false;
-            _equipmentIntegrationCountersFromDataVault = false;
-            _pendingBatteryDrainMask = 0u;
+            _equipmentSignalLanesReady = false;
             _lastPublishedEquippedMask = 0u;
             _externalActiveToolMask = 0u;
             _lastTelemetryActiveMask = 0u;
-            _thermalProbeFrameIndex = 0;
-            _thermalGridReadback = default;
             _thermalGridWidth = 0;
             _thermalGridHeight = 0;
             _thermalGridDepth = 0;
             _thermalGridVersion = 0;
+            _thermalGridCellCount = 0;
             _equipmentTickIndex = 0u;
+            _toolDurabilityService = null;
         }
 
-        private static void DisposeEquipmentArray<T>(ref NativeArray<T> array, bool fromDataVault, string label)
-            where T : unmanaged
+        private void ReleaseEquipmentVaultHandles(IDataVault vault)
         {
-            if (!array.IsCreated)
+            if (vault == null)
                 return;
 
-            if (!fromDataVault)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(array);
-                array.Dispose();
-            }
+            ReleaseEquipmentVaultHandle(vault, ref _toolStatesHandle);
+            ReleaseEquipmentVaultHandle(vault, ref _toolStatsHandle);
+            ReleaseEquipmentVaultHandle(vault, ref _toolTypesHandle);
+            ReleaseEquipmentVaultHandle(vault, ref _currentHeatHandle);
+            ReleaseEquipmentVaultHandle(vault, ref _batteryChargeHandle);
+            ReleaseEquipmentVaultHandle(vault, ref _statusMasksHandle);
+            ReleaseEquipmentVaultHandle(vault, ref _environmentHeat01Handle);
+            ReleaseEquipmentVaultHandle(vault, ref _activeEquipmentStatesHandle);
+            ReleaseEquipmentVaultHandle(vault, ref _publishedActiveEquipmentStatesHandle);
+            ReleaseEquipmentVaultHandle(vault, ref _activeEquipmentAupSamplesHandle);
+            ReleaseEquipmentVaultHandle(vault, ref _activeEquipmentGridLoadRequestsHandle);
+            ReleaseEquipmentVaultHandle(vault, ref _activeEquipmentWearDrainRatesHandle);
+            ReleaseEquipmentVaultHandle(vault, ref _equipmentTelemetryRingHandle);
+            ReleaseEquipmentVaultHandle(vault, ref _equipmentTelemetryCursorHandle);
+            ReleaseEquipmentVaultHandle(vault, ref _equipmentIntegrationCountersHandle);
+            ReleaseEquipmentVaultHandle(vault, ref _equipmentTuningHandle);
+            ReleaseEquipmentVaultHandle(vault, ref _equipmentHardwareSpecsHandle);
+        }
 
-            array = default;
+        private void ClearEquipmentVaultHandles()
+        {
+            _toolStatesHandle = default;
+            _toolStatsHandle = default;
+            _toolTypesHandle = default;
+            _currentHeatHandle = default;
+            _batteryChargeHandle = default;
+            _statusMasksHandle = default;
+            _environmentHeat01Handle = default;
+            _activeEquipmentStatesHandle = default;
+            _publishedActiveEquipmentStatesHandle = default;
+            _activeEquipmentAupSamplesHandle = default;
+            _activeEquipmentGridLoadRequestsHandle = default;
+            _activeEquipmentWearDrainRatesHandle = default;
+            _equipmentTelemetryRingHandle = default;
+            _equipmentTelemetryCursorHandle = default;
+            _equipmentIntegrationCountersHandle = default;
+            _equipmentTuningHandle = default;
+            _equipmentHardwareSpecsHandle = default;
+        }
+
+        private static void ReleaseEquipmentVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (!IsVaultGenerationHandleCreated(in handle))
+                return;
+
+            vault.ReleaseBuffer(in handle);
+            handle = default;
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-        private unsafe struct EquipmentThermalBatteryJob : IJob
+        private unsafe struct ClearActiveEquipmentNativeStateJob : IJobParallelFor
         {
-            [NativeDisableUnsafePtrRestriction] public ActiveEquipmentDTO* Equipment;
-            [NativeDisableUnsafePtrRestriction] public ToolRuntimeStats* Stats;
-            [NativeDisableUnsafePtrRestriction] public double3* ToolAups;
-            [NativeDisableUnsafePtrRestriction] public float* ThermalGrid;
-            [NativeDisableUnsafePtrRestriction] public EquipmentGridLoadRequest* GridLoadRequests;
-            [NativeDisableUnsafePtrRestriction] public EquipmentIntegrationCounters* Counters;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public ActiveEquipmentDTO* ActiveEquipment;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public ActiveEquipmentDTO* PublishedEquipment;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public double3* AupSamples;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public EquipmentGridLoadRequest* GridLoadRequests;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public float* WearDrainRates;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public EquipmentTelemetryEntry* TelemetryRing;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public int* TelemetryCursor;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public EquipmentIntegrationCounters* IntegrationCounters;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public EquipmentHardwareSpecDTO* HardwareSpecs;
+            public int ActiveLength;
+            public int PublishedLength;
+            public int AupLength;
+            public int GridLoadRequestLength;
+            public int WearDrainLength;
+            public int TelemetryLength;
+            public int CursorLength;
+            public int CounterLength;
+            public int HardwareSpecLength;
+
+            public void Execute(int index)
+            {
+                if (ActiveEquipment != null && (uint)index < (uint)ActiveLength)
+                    ActiveEquipment[index] = default;
+                if (PublishedEquipment != null && (uint)index < (uint)PublishedLength)
+                    PublishedEquipment[index] = default;
+                if (AupSamples != null && (uint)index < (uint)AupLength)
+                    AupSamples[index] = default;
+                if (GridLoadRequests != null && (uint)index < (uint)GridLoadRequestLength)
+                    GridLoadRequests[index] = default;
+                if (WearDrainRates != null && (uint)index < (uint)WearDrainLength)
+                    WearDrainRates[index] = 0f;
+                if (TelemetryRing != null && (uint)index < (uint)TelemetryLength)
+                    TelemetryRing[index] = default;
+                if (TelemetryCursor != null && (uint)index < (uint)CursorLength)
+                    TelemetryCursor[index] = 0;
+                if (IntegrationCounters != null && (uint)index < (uint)CounterLength)
+                    IntegrationCounters[index] = default;
+                if (HardwareSpecs != null && (uint)index < (uint)HardwareSpecLength)
+                    HardwareSpecs[index] = default;
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        private unsafe struct GenerateMockEquipmentStateJob : IJobParallelFor
+        {
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public ActiveEquipmentDTO* Equipment;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public double3* ToolAups;
+            public int ToolCount;
+            public double3 RootAup;
+            public uint BaseToolHash;
+
+            public void Execute(int index)
+            {
+                if ((uint)index >= (uint)math.max(0, ToolCount))
+                {
+                    Equipment[index] = default;
+                    ToolAups[index] = default;
+                    return;
+                }
+
+                float rank = index + 1f;
+                Equipment[index] = new ActiveEquipmentDTO
+                {
+                    ToolHashID = BaseToolHash + (uint)index,
+                    CurrentBattery = 95f - (rank * 7f),
+                    ThermalLoad = 0.08f * rank,
+                    StateFlags = ActiveEquipmentStateFlags.Active | ActiveEquipmentStateFlags.InWater,
+                    PowerDrawRate = 6f + (rank * 2.5f),
+                    HeatGenerationRate = 0.06f + (rank * 0.035f),
+                    _pad0 = 0,
+                    _pad1 = 0,
+                    _pad2 = 0,
+                    _pad3 = 0,
+                    _pad4 = 0,
+                    _pad5 = 0,
+                    _pad6 = 0,
+                    _pad7 = 0
+                };
+
+                ToolAups[index] = RootAup + new double3(
+                    EquipmentMockRootOffsetMeters * index,
+                    0.0,
+                    EquipmentMockRootOffsetMeters * (index & 1));
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        private unsafe struct EquipmentStateIntegrationJob : IJobParallelFor
+        {
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public ActiveEquipmentDTO* Equipment;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public ToolState* ToolStates;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public ToolRuntimeStats* Stats;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public double3* ToolAups;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public float* WearDrainRates;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public float* ThermalGrid;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public EquipmentGridLoadRequest* GridLoadRequests;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public EquipmentIntegrationCounters* Counters;
+            // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+            // SignalBus<T>.ParallelWriter is write-only and externally lane-owned; Unity's safety cannot prove the registry flushes it after this job fence.
+            // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+            // Rejected main-thread signal emission because it would scan all tools after the job. Rejected per-tool managed events because they allocate and break Burst.
+            // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+            // ModularEquipmentEngine schedules exactly one EquipmentStateIntegrationJob at a time, registers its JobHandle with H8Memory, and the typed lane is flushed by SignalBusRegistry after producer completion.
             [NativeDisableContainerSafetyRestriction] public NativeQueue<EquipmentOverheatSignal>.ParallelWriter OverheatWriter;
+            // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+            // SignalBus<T>.ParallelWriter safety is intentionally suppressed only for the depleted-tool signal lane; the queue is not snapshotted while the producer handle is live.
+            // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+            // Rejected duplicating depletion state in a second NativeArray because it adds a write stream and stale cleanup. Rejected SignalBus writes on the main thread because it blocks readback.
+            // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+            // Single equipment producer per frame, SignalBusRegistry snapshot consumer after dispatcher fencing; no other equipment job writes this lane in the same frame.
             [NativeDisableContainerSafetyRestriction] public NativeQueue<ToolDepletedSignal>.ParallelWriter DepletedWriter;
             public int ToolCount;
             public int ThermalWidth;
             public int ThermalHeight;
             public int ThermalDepth;
+            public int ThermalGridLength;
             public int ThermalVersion;
             public float ThermalCellSizeMeters;
             public double3 ThermalGridRootAup;
@@ -2141,130 +2556,161 @@ namespace Hecton8.Tools
             public uint FaultNonFiniteMask;
             public uint FaultGridInvalidMask;
 
-            public void Execute()
+            public void Execute(int i)
             {
+                if ((uint)i >= (uint)math.max(0, ToolCount))
+                    return;
+
                 EquipmentIntegrationCounters counters = default;
-                float safeDelta = math.max(0f, DeltaSeconds);
-                int count = math.max(0, ToolCount);
+                GridLoadRequests[i] = default;
 
-                for (int i = 0; i < count; i++)
+                ref ActiveEquipmentDTO dto = ref UnsafeUtility.AsRef<ActiveEquipmentDTO>(Equipment + i);
+                if (dto.ToolHashID == 0u)
                 {
-                    GridLoadRequests[i] = default;
-                    ref ActiveEquipmentDTO dto = ref UnsafeUtility.AsRef<ActiveEquipmentDTO>(Equipment + i);
-                    if (dto.ToolHashID == 0u)
-                        continue;
+                    Counters[i] = counters;
+                    return;
+                }
 
-                    ToolRuntimeStats stats = Stats[i];
-                    uint previousFlags = dto.StateFlags;
-                    uint flags = previousFlags & (ActiveEquipmentStateFlags.InWater | ActiveEquipmentStateFlags.GridPowered);
-                    bool requestedActive = (previousFlags & ActiveEquipmentStateFlags.Active) != 0u;
-                    bool gridPowered = (previousFlags & ActiveEquipmentStateFlags.GridPowered) != 0u;
-                    bool inWater = (previousFlags & ActiveEquipmentStateFlags.InWater) != 0u;
-                    float battery = SanitizeNonNegative(dto.CurrentBattery, ref counters, dto.ToolHashID);
-                    float heat = SanitizeNonNegative(dto.ThermalLoad, ref counters, dto.ToolHashID);
-                    float drawRate = SanitizeNonNegative(dto.PowerDrawRate, ref counters, dto.ToolHashID);
-                    float heatRate = SanitizeNonNegative(dto.HeatGenerationRate, ref counters, dto.ToolHashID);
-                    float ambientCelsius = SampleAmbientCelsius(i, ref counters, dto.ToolHashID);
-                    float requestedEnergy = requestedActive ? drawRate * safeDelta : 0f;
+                ref ToolState toolState = ref UnsafeUtility.AsRef<ToolState>(ToolStates + i);
+                ToolRuntimeStats stats = Stats[i];
+                float safeDelta = math.max(0f, DeltaSeconds);
+                uint previousFlags = dto.StateFlags;
+                uint flags = previousFlags & (ActiveEquipmentStateFlags.InWater | ActiveEquipmentStateFlags.GridPowered);
+                bool requestedActive = (previousFlags & ActiveEquipmentStateFlags.Active) != 0u;
+                bool gridPowered = (previousFlags & ActiveEquipmentStateFlags.GridPowered) != 0u;
+                bool inWater = (previousFlags & ActiveEquipmentStateFlags.InWater) != 0u;
+                float battery = SanitizeNonNegative(dto.CurrentBattery, ref counters, dto.ToolHashID);
+                float heat = SanitizeNonNegative(dto.ThermalLoad, ref counters, dto.ToolHashID);
+                float drawRate = SanitizeNonNegative(dto.PowerDrawRate, ref counters, dto.ToolHashID);
+                float heatRate = SanitizeNonNegative(dto.HeatGenerationRate, ref counters, dto.ToolHashID);
+                float ambientCelsius = SampleAmbientCelsius(i, ref counters, dto.ToolHashID);
+                float requestedEnergy = requestedActive ? drawRate * safeDelta : 0f;
+                float durability = toolState.Durability;
+                if (IsFinite(durability))
+                    durability = math.saturate(durability);
+                else
+                {
+                    counters.FaultFlags |= FaultNonFiniteMask;
+                    counters.LastFaultToolHashID = dto.ToolHashID;
+                    durability = 0f;
+                }
 
-                    if (requestedActive && requestedEnergy > 0f)
+                if (requestedActive && requestedEnergy > 0f)
+                {
+                    if (gridPowered)
                     {
-                        if (gridPowered)
+                        GridLoadRequests[i] = new EquipmentGridLoadRequest
                         {
-                            GridLoadRequests[i] = new EquipmentGridLoadRequest
-                            {
-                                ToolHashID = dto.ToolHashID,
-                                EnergyWattSeconds = requestedEnergy,
-                                Flags = ActiveEquipmentStateFlags.GridPowered,
-                                Reserved0 = 0u
-                            };
-                            counters.GridDrawWattSeconds += requestedEnergy;
-                        }
-                        else
+                            ToolHashID = dto.ToolHashID,
+                            EnergyWattSeconds = requestedEnergy,
+                            Flags = ActiveEquipmentStateFlags.GridPowered,
+                            Reserved0 = 0u
+                        };
+                        counters.GridDrawWattSeconds += requestedEnergy;
+                    }
+                    else
+                    {
+                        float previousBattery = battery;
+                        battery = math.max(0f, battery - requestedEnergy);
+                        counters.BatteryDrainWattSeconds += math.min(previousBattery, requestedEnergy);
+                        if (previousBattery > 0.0001f && battery <= 0.0001f)
                         {
-                            float previousBattery = battery;
-                            battery = math.max(0f, battery - requestedEnergy);
-                            counters.BatteryDrainWattSeconds += math.min(previousBattery, requestedEnergy);
-                            if (previousBattery > 0.0001f && battery <= 0.0001f)
+                            flags |= ActiveEquipmentStateFlags.Depleted;
+                            if ((previousFlags & ActiveEquipmentStateFlags.Depleted) == 0u)
                             {
-                                flags |= ActiveEquipmentStateFlags.Depleted;
-                                if ((previousFlags & ActiveEquipmentStateFlags.Depleted) == 0u)
+                                DepletedWriter.Enqueue(new ToolDepletedSignal
                                 {
-                                    DepletedWriter.Enqueue(new ToolDepletedSignal
-                                    {
-                                        ToolHashID = dto.ToolHashID,
-                                        Frame = Frame,
-                                        Battery01 = 0f,
-                                        RequestedPower = drawRate,
-                                        StateFlags = flags,
-                                        GridPowered = 0,
-                                        Reserved0 = 0,
-                                        Reserved1 = 0,
-                                        Reserved2 = 0ul
-                                    });
-                                    counters.SignalCount++;
-                                }
+                                    ToolHashID = dto.ToolHashID,
+                                    Frame = Frame,
+                                    Battery01 = 0f,
+                                    RequestedPower = drawRate,
+                                    StateFlags = flags,
+                                    GridPowered = 0,
+                                    Reserved0 = 0,
+                                    Reserved1 = 0,
+                                    Reserved2 = 0ul
+                                });
+                                counters.SignalCount++;
                             }
                         }
                     }
-
-                    bool hasEnergy = gridPowered || battery > 0.0001f || drawRate <= 0.0001f;
-                    bool active = requestedActive && hasEnergy;
-                    if (active)
-                        flags |= ActiveEquipmentStateFlags.Active;
-                    if (!gridPowered && battery <= 0.0001f)
-                        flags |= ActiveEquipmentStateFlags.Depleted;
-
-                    float ambient01 = ResolveAmbientHeat01(ambientCelsius, in Tuning);
-                    float cooldownRate = math.max(0.05f, stats.CooldownRate);
-                    float waterMultiplier = inWater ? math.max(1f, Tuning.WaterCoolingMultiplier) : 1f;
-                    float exchange = (ambient01 - heat) * cooldownRate * math.max(0f, Tuning.CoolingGain) * waterMultiplier * safeDelta;
-                    float generatedHeat = active ? heatRate * safeDelta : 0f;
-                    heat = math.max(0f, heat + generatedHeat + exchange);
-
-                    bool wasOverheated = (previousFlags & ActiveEquipmentStateFlags.Overheated) != 0u;
-                    if (heat >= 1f || (wasOverheated && heat > OverheatRecoveryThreshold))
-                    {
-                        flags |= ActiveEquipmentStateFlags.Overheated;
-                        flags &= ~ActiveEquipmentStateFlags.Active;
-                        if (!wasOverheated)
-                        {
-                            OverheatWriter.Enqueue(new EquipmentOverheatSignal
-                            {
-                                ToolHashID = dto.ToolHashID,
-                                Frame = Frame,
-                                Heat01 = math.saturate(heat),
-                                AmbientCelsius = ambientCelsius,
-                                Severity01 = math.saturate((heat - 0.85f) * 6.666667f),
-                                StateFlags = flags,
-                                VisualOnly = 1,
-                                Reserved0 = 0,
-                                Reserved1 = 0,
-                                Reserved2 = 0u
-                            });
-                            counters.SignalCount++;
-                        }
-                    }
-
-                    if (!IsFinite(battery) || !IsFinite(heat))
-                    {
-                        counters.FaultFlags |= FaultNonFiniteMask;
-                        counters.LastFaultToolHashID = dto.ToolHashID;
-                        flags |= ActiveEquipmentStateFlags.Faulted;
-                        battery = 0f;
-                        heat = 0f;
-                    }
-
-                    dto.CurrentBattery = battery;
-                    dto.ThermalLoad = heat;
-                    dto.StateFlags = flags;
-                    dto.PowerDrawRate = drawRate;
-                    dto.HeatGenerationRate = heatRate;
-                    counters.PeakThermal01 = math.max(counters.PeakThermal01, math.saturate(heat));
-                    counters.ActiveCount += (flags & ActiveEquipmentStateFlags.Active) != 0u ? 1u : 0u;
                 }
 
-                Counters[0] = counters;
+                bool hasEnergy = gridPowered || battery > 0.0001f || drawRate <= 0.0001f;
+                bool active = requestedActive && hasEnergy;
+                if (active)
+                    flags |= ActiveEquipmentStateFlags.Active;
+                if (!gridPowered && battery <= 0.0001f)
+                    flags |= ActiveEquipmentStateFlags.Depleted;
+
+                if (active && WearDrainRates != null)
+                {
+                    float wearRate = SanitizeNonNegative(WearDrainRates[i], ref counters, dto.ToolHashID);
+                    if (wearRate > 0f)
+                    {
+                        float previousDurability = durability;
+                        durability = math.saturate(durability - (wearRate * safeDelta));
+                        counters.WearDrainNormalized += math.max(0f, previousDurability - durability);
+                    }
+                }
+
+                if (durability <= 0f)
+                    flags &= ~ActiveEquipmentStateFlags.Active;
+
+                float ambient01 = ResolveAmbientHeat01(ambientCelsius, in Tuning);
+                float cooldownRate = math.max(0.05f, stats.CooldownRate);
+                float waterMultiplier = inWater ? math.max(1f, Tuning.WaterCoolingMultiplier) : 1f;
+                float quality = math.saturate(IsFinite(Tuning.GlobalQualityWeight) ? Tuning.GlobalQualityWeight : 1f);
+                float coolingLod = math.lerp(0.70f, 1.0f, quality * quality * (3f - 2f * quality));
+                float exchange = (ambient01 - heat) * cooldownRate * math.max(0f, Tuning.CoolingGain) * waterMultiplier * coolingLod * safeDelta;
+                float generatedHeat = active ? heatRate * safeDelta : 0f;
+                heat = math.max(0f, heat + generatedHeat + exchange);
+
+                bool wasOverheated = (previousFlags & ActiveEquipmentStateFlags.Overheated) != 0u;
+                if (heat >= 1f || (wasOverheated && heat > OverheatRecoveryThreshold))
+                {
+                    flags |= ActiveEquipmentStateFlags.Overheated;
+                    flags &= ~ActiveEquipmentStateFlags.Active;
+                    if (!wasOverheated)
+                    {
+                        OverheatWriter.Enqueue(new EquipmentOverheatSignal
+                        {
+                            ToolHashID = dto.ToolHashID,
+                            Frame = Frame,
+                            Heat01 = math.saturate(heat),
+                            AmbientCelsius = ambientCelsius,
+                            Severity01 = math.saturate((heat - 0.85f) * 6.666667f),
+                            StateFlags = flags,
+                            VisualOnly = 1,
+                            Reserved0 = 0,
+                            Reserved1 = 0,
+                            Reserved2 = 0u
+                        });
+                        counters.SignalCount++;
+                    }
+                }
+
+                if (!IsFinite(battery) || !IsFinite(heat))
+                {
+                    counters.FaultFlags |= FaultNonFiniteMask;
+                    counters.LastFaultToolHashID = dto.ToolHashID;
+                    flags |= ActiveEquipmentStateFlags.Faulted;
+                    battery = 0f;
+                    heat = 0f;
+                    durability = 0f;
+                }
+
+                toolState.CurrentBattery = battery;
+                toolState.InternalHeat = heat;
+                toolState.Durability = durability;
+                dto.CurrentBattery = battery;
+                dto.ThermalLoad = heat;
+                dto.StateFlags = flags;
+                dto.PowerDrawRate = drawRate;
+                dto.HeatGenerationRate = heatRate;
+                counters.PeakThermal01 = math.max(counters.PeakThermal01, math.saturate(heat));
+                counters.ActiveCount += (flags & ActiveEquipmentStateFlags.Active) != 0u ? 1u : 0u;
+                Counters[i] = counters;
             }
 
             private float SampleAmbientCelsius(int slotIndex, ref EquipmentIntegrationCounters counters, uint toolHash)
@@ -2272,7 +2718,7 @@ namespace Hecton8.Tools
                 if (ThermalGrid == null)
                     return AmbientFallbackCelsius;
 
-                if (ThermalWidth <= 0 || ThermalHeight <= 0 || ThermalDepth <= 0 || !IsFinite(ThermalCellSizeMeters) || ThermalCellSizeMeters <= 0f)
+                if (ThermalWidth <= 0 || ThermalHeight <= 0 || ThermalDepth <= 0 || ThermalGridLength <= 0 || !IsFinite(ThermalCellSizeMeters) || ThermalCellSizeMeters <= 0f)
                 {
                     counters.FaultFlags |= FaultGridInvalidMask;
                     counters.LastFaultToolHashID = toolHash;
@@ -2289,18 +2735,57 @@ namespace Hecton8.Tools
                 }
 
                 float invCell = math.rcp(ThermalCellSizeMeters);
-                int3 cell = (int3)math.floor(local * invCell);
+                float3 gridPosition = local * invCell;
+                int3 cell = (int3)math.floor(gridPosition);
                 if (cell.x < 0 || cell.y < 0 || cell.z < 0 || cell.x >= ThermalWidth || cell.y >= ThermalHeight || cell.z >= ThermalDepth)
                     return AmbientFallbackCelsius;
 
+                float nearest = ReadThermalCell(cell, ref counters, toolHash);
+                if (!IsFinite(nearest))
+                    return AmbientFallbackCelsius;
+
+                float quality = math.saturate(IsFinite(Tuning.GlobalQualityWeight) ? Tuning.GlobalQualityWeight : 1f);
+                float trilinearWeight = math.saturate((quality - 0.25f) * 1.3333334f);
+                trilinearWeight = math.step(0.25f, quality) * trilinearWeight * trilinearWeight * (3f - (2f * trilinearWeight));
+                if (trilinearWeight <= 0.0001f)
+                    return nearest;
+
+                int3 cell1 = new int3(
+                    math.min(cell.x + 1, ThermalWidth - 1),
+                    math.min(cell.y + 1, ThermalHeight - 1),
+                    math.min(cell.z + 1, ThermalDepth - 1));
+                float3 t = math.saturate(gridPosition - cell);
+                float c000 = nearest;
+                float c100 = ReadThermalCell(new int3(cell1.x, cell.y, cell.z), ref counters, toolHash);
+                float c010 = ReadThermalCell(new int3(cell.x, cell1.y, cell.z), ref counters, toolHash);
+                float c110 = ReadThermalCell(new int3(cell1.x, cell1.y, cell.z), ref counters, toolHash);
+                float c001 = ReadThermalCell(new int3(cell.x, cell.y, cell1.z), ref counters, toolHash);
+                float c101 = ReadThermalCell(new int3(cell1.x, cell.y, cell1.z), ref counters, toolHash);
+                float c011 = ReadThermalCell(new int3(cell.x, cell1.y, cell1.z), ref counters, toolHash);
+                float c111 = ReadThermalCell(cell1, ref counters, toolHash);
+                float c00 = math.lerp(c000, c100, t.x);
+                float c10 = math.lerp(c010, c110, t.x);
+                float c01 = math.lerp(c001, c101, t.x);
+                float c11 = math.lerp(c011, c111, t.x);
+                float c0 = math.lerp(c00, c10, t.y);
+                float c1 = math.lerp(c01, c11, t.y);
+                float trilinear = math.lerp(c0, c1, t.z);
+                return IsFinite(trilinear) ? math.lerp(nearest, trilinear, trilinearWeight) : nearest;
+            }
+
+            private float ReadThermalCell(int3 cell, ref EquipmentIntegrationCounters counters, uint toolHash)
+            {
                 int index = cell.x + (cell.y * ThermalWidth) + (cell.z * ThermalWidth * ThermalHeight);
-                float ambient = ThermalGrid[index];
-                if (IsFinite(ambient))
-                    return ambient;
+                if ((uint)index < (uint)ThermalGridLength)
+                {
+                    float ambient = ThermalGrid[index];
+                    if (IsFinite(ambient))
+                        return ambient;
+                }
 
                 counters.FaultFlags |= FaultNonFiniteMask;
                 counters.LastFaultToolHashID = toolHash;
-                return AmbientFallbackCelsius;
+                return float.NaN;
             }
 
             private float SanitizeNonNegative(float value, ref EquipmentIntegrationCounters counters, uint toolHash)
@@ -2345,10 +2830,14 @@ namespace Hecton8.Tools
                 AssertOffset<ActiveEquipmentDTO>(nameof(ActiveEquipmentDTO.HeatGenerationRate), 20);
                 AssertOffset<ActiveEquipmentDTO>(nameof(ActiveEquipmentDTO._pad0), 24);
                 AssertSize<EquipmentGridLoadRequest>(16);
-                AssertSize<EquipmentIntegrationCounters>(32);
+                AssertSize<EquipmentIntegrationCounters>(64);
                 AssertSize<EquipmentTelemetryEntry>(64);
                 AssertSize<EquipmentOverheatSignal>(32);
                 AssertSize<ToolDepletedSignal>(32);
+                AssertSize<EquipmentTuningDTO>(32);
+                AssertSize<EquipmentHardwareSpecDTO>(32);
+                AssertSize<ToolState>(32);
+                AssertSize<ToolRuntimeStats>(40);
                 _validated = true;
             }
 
@@ -2357,15 +2846,18 @@ namespace Hecton8.Tools
             {
                 int observed = UnsafeUtility.SizeOf<T>();
                 if (observed != expected)
-                    throw new InvalidOperationException($"[SHINOBU_148] Layout size mismatch for {typeof(T).Name}: {observed} != {expected}");
+                    throw new InvalidOperationException($"[SHINOBU_224] Layout size mismatch for {typeof(T).Name}: {observed} != {expected}");
             }
 
             private static void AssertOffset<T>(string fieldName, int expected)
                 where T : unmanaged
             {
-                int observed = Marshal.OffsetOf<T>(fieldName).ToInt32();
+                var fieldInfo = typeof(T).GetField(fieldName);
+                if (fieldInfo == null)
+                    throw new InvalidOperationException($"[SHINOBU_224] Layout field missing for {typeof(T).Name}.{fieldName}");
+                int observed = (int)UnsafeUtility.GetFieldOffset(fieldInfo);
                 if (observed != expected)
-                    throw new InvalidOperationException($"[SHINOBU_148] Layout offset mismatch for {typeof(T).Name}.{fieldName}: {observed} != {expected}");
+                    throw new InvalidOperationException($"[SHINOBU_224] Layout offset mismatch for {typeof(T).Name}.{fieldName}: {observed} != {expected}");
             }
         }
 
@@ -2378,36 +2870,5 @@ namespace Hecton8.Tools
             return numerator * math.rcp(denominator);
         }
 
-        private void ApplyPendingBatteryDrain()
-        {
-            uint pendingMask = _pendingBatteryDrainMask;
-            _pendingBatteryDrainMask = 0u;
-
-            for (int i = 0; i < MaxTrackedTools; i++)
-            {
-                uint slotBit = 1u << i;
-                if ((pendingMask & slotBit) == 0u)
-                    continue;
-
-                float drainAmount = math.max(0f, _batteryDrainRates[i]) * math.max(0f, _batteryDrainDeltaSeconds[i]);
-                if (drainAmount > 0f)
-                {
-                    ToolState state = _toolStates[i];
-                    state.CurrentBattery = math.max(0f, state.CurrentBattery - drainAmount);
-                    ToolRuntimeStats stats = _toolStats[i];
-                    state.StatusMask = ResolveStatusMask(
-                        state.StatusMask,
-                        in state,
-                        in stats,
-                        ResolveDepthMeters(_toolOwners[i]),
-                        (state.StatusMask & ToolRuntimeStatusMasks.Active) != 0u);
-                    _toolStates[i] = state;
-                    WriteSlotMirrors(i, in state);
-                }
-
-                _batteryDrainRates[i] = 0f;
-                _batteryDrainDeltaSeconds[i] = 0f;
-            }
-        }
     }
 }

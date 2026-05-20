@@ -1,8 +1,8 @@
 using System;
 using System.IO;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.World;
 using Unity.Burst;
@@ -61,11 +61,42 @@ namespace Hecton8.Crafting
     internal struct FabricationGpuPayloadDTO
     {
         [FieldOffset(0)] public float4 BoundsProgress;
-        [FieldOffset(16)] public float4 FlagsPause;
+        [FieldOffset(16)] public float4 LocalOffsetPause;
         [FieldOffset(32)] public float4 WorldToFabricatorRow0;
         [FieldOffset(48)] public float4 WorldToFabricatorRow1;
         [FieldOffset(64)] public float4 WorldToFabricatorRow2;
         [FieldOffset(80)] public float4 WorldToFabricatorRow3;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct FabricationCompletedSignal : ISignal
+    {
+        [FieldOffset(0)] public double3 TargetAUP;
+        [FieldOffset(24)] public uint TargetPrefabHash;
+        [FieldOffset(28)] public uint FabricatorHash;
+        [FieldOffset(32)] public uint Frame;
+        [FieldOffset(36)] public uint RollbackHash;
+        [FieldOffset(40)] public float Progress01;
+        [FieldOffset(44)] public byte Flags;
+        [FieldOffset(45)] public byte Slot;
+        [FieldOffset(46)] public ushort Reserved0;
+        [FieldOffset(48)] public ulong Sequence;
+        [FieldOffset(56)] public ulong Reserved1;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct FabricationTickSignal : ISignal
+    {
+        [FieldOffset(0)] public double3 TargetAUP;
+        [FieldOffset(24)] public float Progress01;
+        [FieldOffset(28)] public float EmissionMultiplier;
+        [FieldOffset(32)] public float PowerPotential01;
+        [FieldOffset(36)] public float GlobalQualityWeight;
+        [FieldOffset(40)] public uint TargetPrefabHash;
+        [FieldOffset(44)] public uint FabricatorHash;
+        [FieldOffset(48)] public uint Frame;
+        [FieldOffset(52)] public uint Flags;
+        [FieldOffset(56)] public ulong Sequence;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -88,6 +119,31 @@ namespace Hecton8.Crafting
         [FieldOffset(56)] public ulong Reserved0;
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    internal struct FabricationTuningDTO
+    {
+        [FieldOffset(0)] public float BaseBuildSpeedMultiplier;
+        [FieldOffset(4)] public float PowerDrawMultiplier;
+        [FieldOffset(8)] public float ShaderEdgeGlowIntensity;
+        [FieldOffset(12)] public float ReservedFloat0;
+        [FieldOffset(16)] public uint CsvTimingsVersion;
+        [FieldOffset(20)] public uint Flags;
+        [FieldOffset(24)] public ulong Reserved0;
+        [FieldOffset(32)] public ulong Reserved1;
+        [FieldOffset(40)] public ulong Reserved2;
+        [FieldOffset(48)] public ulong Reserved3;
+        [FieldOffset(56)] public ulong Reserved4;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    internal struct FabricationTimingDTO
+    {
+        [FieldOffset(0)] public uint PrefabHash;
+        [FieldOffset(4)] public float DurationSeconds;
+        [FieldOffset(8)] public float PowerDrawMultiplier;
+        [FieldOffset(12)] public uint Flags;
+    }
+
     public struct FabricationRuntimeSnapshot
     {
         public float Progress01;
@@ -95,6 +151,27 @@ namespace Hecton8.Crafting
         public uint TargetPrefabHash;
         public uint Flags;
         public uint RollbackHash;
+    }
+
+    public struct FabricationEditorStats
+    {
+        public int ActiveJobs;
+        public int CompletedJobs;
+        public float AverageProgress01;
+        public float GlobalQualityWeight;
+        public uint RollbackHash;
+        public uint FaultFlags;
+    }
+
+    public struct FabricationEditorJobDebug
+    {
+        public double3 TargetAUP;
+        public float Progress01;
+        public float BoundsMinY;
+        public float BoundsMaxY;
+        public uint TargetPrefabHash;
+        public uint FabricatorHash;
+        public uint Flags;
     }
 
     internal static class FabricationAssemblerFlags
@@ -109,18 +186,25 @@ namespace Hecton8.Crafting
         public const uint Dirty = 1u << 7;
     }
 
-    internal sealed class FabricationAssemblerRuntime
+    public sealed class FabricationAssemblerRuntime
     {
         public const int MaxFabricationJobs = 128;
         public const int TelemetryFrameCount = 300;
         public const int MockFabricationJobCount = 50;
+        public const int TimingLookupCapacity = 256;
+        public const int CsvScratchByteCapacity = 65536;
         public const uint SystemHash = 0x53483142u; // SH1B
 
         private const SystemID OwnerSystemId = SystemID.Construction;
-        private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_142.bin";
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_FABRICATION_ASSEMBLER.bin";
+        private const uint FabricationCompletedLaneHash = 0x4631434Fu; // F1CO
+        private const uint FabricationTickLaneHash = 0x46315449u; // F1TI
+        private const uint FnvOffset = 2166136261u;
+        private const uint FnvPrime = 16777619u;
         private static readonly int AssemblyPayloadsId = Shader.PropertyToID("_H8FabricationAssemblyPayloads");
         private static readonly int AssemblyPayloadCountId = Shader.PropertyToID("_H8FabricationAssemblyPayloadCount");
         private static readonly int AssemblyQualityId = Shader.PropertyToID("_H8FabricationAssemblyQuality");
+        private static readonly int AssemblyEdgeBoostId = Shader.PropertyToID("_H8FabricationAssemblyEdgeBoost");
 
         private static FabricationAssemblerRuntime s_active;
 
@@ -135,6 +219,9 @@ namespace Hecton8.Crafting
         private VaultBufferHandle<FabricationRuntimeDTO> _runtimeHandle;
         private VaultBufferHandle<FabricationGpuPayloadDTO> _gpuPayloadHandle;
         private VaultBufferHandle<FabricationTelemetryEntry> _telemetryHandle;
+        private VaultBufferHandle<FabricationTuningDTO> _tuningHandle;
+        private VaultBufferHandle<FabricationTimingDTO> _timingHandle;
+        private VaultBufferHandle<byte> _csvScratchHandle;
         private VaultBufferHandle<ScalabilityStateDTO> _scalabilityHandle;
 
         private GraphicsBuffer _gpuPayloadBufferA;
@@ -145,6 +232,7 @@ namespace Hecton8.Crafting
         private bool _registeredVisualSync;
         private bool _vaultInitialized;
         private bool _shutdown;
+        private bool _payloadDirty;
         private int _gpuWriteIndex;
         private int _telemetryCursor;
         private int _activeUploadCount;
@@ -152,6 +240,7 @@ namespace Hecton8.Crafting
         private uint _lastRollbackHash;
         private uint _lastFaultFlags;
         private float _lastQualityWeight = 1f;
+        private float _lastShaderEdgeGlowIntensity = 1f;
         private float _lastVisualUploadMicroseconds;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -205,17 +294,21 @@ namespace Hecton8.Crafting
                 return false;
 
             int targetSlot = -1;
-            for (int i = 0; i < states.Length; i++)
+            unsafe
             {
-                FabricationRuntimeDTO state = states[i];
-                if ((state.Flags & FabricationAssemblerFlags.Active) != 0u && state.FabricatorHash == fabricatorHash)
+                void* statesPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(states);
+                for (int i = 0; i < states.Length; i++)
                 {
-                    targetSlot = i;
-                    break;
-                }
+                    ref FabricationRuntimeDTO state = ref UnsafeUtility.ArrayElementAsRef<FabricationRuntimeDTO>(statesPtr, i);
+                    if ((state.Flags & FabricationAssemblerFlags.Active) != 0u && state.FabricatorHash == fabricatorHash)
+                    {
+                        targetSlot = i;
+                        break;
+                    }
 
-                if (targetSlot < 0 && (state.Flags & FabricationAssemblerFlags.Active) == 0u)
-                    targetSlot = i;
+                    if (targetSlot < 0 && (state.Flags & FabricationAssemblerFlags.Active) == 0u)
+                        targetSlot = i;
+                }
             }
 
             if (targetSlot < 0 || targetSlot >= jobs.Length || targetSlot >= payloads.Length)
@@ -223,42 +316,57 @@ namespace Hecton8.Crafting
 
             float quality = runtime.ResolveGlobalQualityWeight();
             float safeDuration = math.max(0.001f, math.isfinite(durationSeconds) ? durationSeconds : 0.001f);
+            if (runtime.TryResolveTimingDuration(targetPrefabHash, out float authoredDuration))
+                safeDuration = authoredDuration;
+
             float safeSpeed = math.max(0.0001f, math.isfinite(buildSpeedMultiplier) ? buildSpeedMultiplier : 1f);
             float minY = math.isfinite(boundsMinY) ? boundsMinY : 0f;
             float maxY = math.max(minY + 0.001f, math.isfinite(boundsMaxY) ? boundsMaxY : minY + 1f);
+            FabricationTuningDTO tuning = runtime.ResolveTuning();
             uint flags = FabricationAssemblerFlags.Active | FabricationAssemblerFlags.Dirty;
             if (deconstruct)
                 flags |= FabricationAssemblerFlags.Deconstruct;
 
-            jobs[targetSlot] = new FabricationJobDTO
+            float3 localOffset = ResolveLocalAupOffset(targetAup, fabricatorAup);
+            FabricationGpuPayloadDTO payload = CreateGpuPayload(minY, maxY, deconstruct ? 1f : 0f, quality, deconstruct ? 1f : 0f, localOffset, worldToFabricator);
+            unsafe
             {
-                TargetAUP = math.all(math.isfinite(targetAup)) ? targetAup : double3.zero,
-                Progress01 = deconstruct ? 1f : 0f,
-                TargetPrefabHash = targetPrefabHash
-            };
+                ref FabricationJobDTO job = ref UnsafeUtility.ArrayElementAsRef<FabricationJobDTO>(
+                    NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(jobs),
+                    targetSlot);
+                ref FabricationRuntimeDTO state = ref UnsafeUtility.ArrayElementAsRef<FabricationRuntimeDTO>(
+                    NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(states),
+                    targetSlot);
+                ref FabricationGpuPayloadDTO targetPayload = ref UnsafeUtility.ArrayElementAsRef<FabricationGpuPayloadDTO>(
+                    NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payloads),
+                    targetSlot);
+                uint nextSequence = unchecked(state.Sequence + 1u);
 
-            states[targetSlot] = new FabricationRuntimeDTO
-            {
-                FabricatorAUP = math.all(math.isfinite(fabricatorAup)) ? fabricatorAup : targetAup,
-                DurationSeconds = safeDuration,
-                BuildSpeedMultiplier = safeSpeed,
-                PowerPotential01 = 1f,
-                BoundsMinY = minY,
-                BoundsMaxY = maxY,
-                GlobalQualityWeight = quality,
-                ThermalThrottle01 = 1f,
-                FabricatorHash = fabricatorHash,
-                Flags = flags,
-                FrameBegan = runtime._lastFrame,
-                FrameCompleted = 0u,
-                Sequence = unchecked(states[targetSlot].Sequence + 1u),
-                RollbackHash = HashSlot(targetSlot, targetPrefabHash, deconstruct ? 1f : 0f),
-                PowerDrainWatts = math.max(0f, math.isfinite(powerDrainWatts) ? powerDrainWatts : 0f),
-                LastDelta01 = 0f
-            };
+                job.TargetAUP = math.all(math.isfinite(targetAup)) ? targetAup : double3.zero;
+                job.Progress01 = deconstruct ? 1f : 0f;
+                job.TargetPrefabHash = targetPrefabHash;
 
-            payloads[targetSlot] = CreateGpuPayload(minY, maxY, deconstruct ? 1f : 0f, quality, deconstruct ? 1f : 0f, worldToFabricator);
+                state.FabricatorAUP = math.all(math.isfinite(fabricatorAup)) ? fabricatorAup : targetAup;
+                state.DurationSeconds = safeDuration;
+                state.BuildSpeedMultiplier = safeSpeed;
+                state.PowerPotential01 = 1f;
+                state.BoundsMinY = minY;
+                state.BoundsMaxY = maxY;
+                state.GlobalQualityWeight = quality;
+                state.ThermalThrottle01 = 1f;
+                state.FabricatorHash = fabricatorHash;
+                state.Flags = flags;
+                state.FrameBegan = runtime._lastFrame;
+                state.FrameCompleted = 0u;
+                state.Sequence = nextSequence;
+                state.RollbackHash = HashSlot(targetSlot, targetPrefabHash, deconstruct ? 1f : 0f);
+                state.PowerDrainWatts = math.max(0f, math.isfinite(powerDrainWatts) ? powerDrainWatts : 0f) * tuning.PowerDrawMultiplier;
+                state.LastDelta01 = 0f;
+
+                targetPayload = payload;
+            }
             runtime._activeUploadCount = math.max(runtime._activeUploadCount, targetSlot + 1);
+            runtime._payloadDirty = true;
             slot = targetSlot;
             return true;
         }
@@ -280,30 +388,43 @@ namespace Hecton8.Crafting
             NativeArray<FabricationJobDTO> jobs = runtime._jobsHandle.Resolve(vault);
             NativeArray<FabricationRuntimeDTO> states = runtime._runtimeHandle.Resolve(vault);
             NativeArray<FabricationGpuPayloadDTO> payloads = runtime._gpuPayloadHandle.Resolve(vault);
-            if (!jobs.IsCreated || !states.IsCreated || !payloads.IsCreated || (uint)slot >= (uint)states.Length)
+            if (!jobs.IsCreated || !states.IsCreated || !payloads.IsCreated ||
+                (uint)slot >= (uint)jobs.Length || (uint)slot >= (uint)states.Length || (uint)slot >= (uint)payloads.Length)
                 return false;
 
-            FabricationRuntimeDTO state = states[slot];
-            if ((state.Flags & FabricationAssemblerFlags.Active) == 0u)
-                return false;
+            unsafe
+            {
+                ref FabricationRuntimeDTO state = ref UnsafeUtility.ArrayElementAsRef<FabricationRuntimeDTO>(
+                    NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(states),
+                    slot);
+                if ((state.Flags & FabricationAssemblerFlags.Active) == 0u)
+                    return false;
 
-            float minY = math.isfinite(boundsMinY) ? boundsMinY : state.BoundsMinY;
-            float maxY = math.max(minY + 0.001f, math.isfinite(boundsMaxY) ? boundsMaxY : state.BoundsMaxY);
-            state.PowerPotential01 = paused ? 0f : math.saturate(math.isfinite(powerPotential01) ? powerPotential01 : 0f);
-            state.ThermalThrottle01 = math.saturate(math.isfinite(thermalThrottle01) ? thermalThrottle01 : 1f);
-            state.BoundsMinY = minY;
-            state.BoundsMaxY = maxY;
-            state.GlobalQualityWeight = runtime.ResolveGlobalQualityWeight();
-            state.Flags = paused
-                ? (state.Flags | FabricationAssemblerFlags.Paused | FabricationAssemblerFlags.Dirty)
-                : ((state.Flags & ~FabricationAssemblerFlags.Paused) | FabricationAssemblerFlags.Dirty);
-            states[slot] = state;
+                ref FabricationJobDTO job = ref UnsafeUtility.ArrayElementAsRef<FabricationJobDTO>(
+                    NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(jobs),
+                    slot);
+                ref FabricationGpuPayloadDTO payload = ref UnsafeUtility.ArrayElementAsRef<FabricationGpuPayloadDTO>(
+                    NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payloads),
+                    slot);
 
-            FabricationJobDTO job = jobs[slot];
-            float progress = math.saturate(math.isfinite(job.Progress01) ? job.Progress01 : 0f);
-            float pause01 = paused ? 1f : 0f;
-            payloads[slot] = CreateGpuPayload(minY, maxY, progress, state.GlobalQualityWeight, pause01, worldToFabricator);
+                float minY = math.isfinite(boundsMinY) ? boundsMinY : state.BoundsMinY;
+                float maxY = math.max(minY + 0.001f, math.isfinite(boundsMaxY) ? boundsMaxY : state.BoundsMaxY);
+                state.PowerPotential01 = paused ? 0f : math.saturate(math.isfinite(powerPotential01) ? powerPotential01 : 0f);
+                state.ThermalThrottle01 = math.saturate(math.isfinite(thermalThrottle01) ? thermalThrottle01 : 1f);
+                state.BoundsMinY = minY;
+                state.BoundsMaxY = maxY;
+                state.GlobalQualityWeight = runtime.ResolveGlobalQualityWeight();
+                state.Flags = paused
+                    ? (state.Flags | FabricationAssemblerFlags.Paused | FabricationAssemblerFlags.Dirty)
+                    : ((state.Flags & ~FabricationAssemblerFlags.Paused) | FabricationAssemblerFlags.Dirty);
+
+                float progress = math.saturate(math.isfinite(job.Progress01) ? job.Progress01 : 0f);
+                float pause01 = paused ? 1f : 0f;
+                float3 localOffset = ResolveLocalAupOffset(job.TargetAUP, state.FabricatorAUP);
+                payload = CreateGpuPayload(minY, maxY, progress, state.GlobalQualityWeight, pause01, localOffset, worldToFabricator);
+            }
             runtime._activeUploadCount = math.max(runtime._activeUploadCount, slot + 1);
+            runtime._payloadDirty = true;
             return true;
         }
 
@@ -320,16 +441,23 @@ namespace Hecton8.Crafting
             if (!jobs.IsCreated || !states.IsCreated || (uint)slot >= (uint)jobs.Length || (uint)slot >= (uint)states.Length)
                 return false;
 
-            FabricationRuntimeDTO state = states[slot];
-            if ((state.Flags & FabricationAssemblerFlags.Active) == 0u)
-                return false;
+            unsafe
+            {
+                ref FabricationRuntimeDTO state = ref UnsafeUtility.ArrayElementAsRef<FabricationRuntimeDTO>(
+                    NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(states),
+                    slot);
+                if ((state.Flags & FabricationAssemblerFlags.Active) == 0u)
+                    return false;
 
-            FabricationJobDTO job = jobs[slot];
-            snapshot.Progress01 = math.saturate(math.isfinite(job.Progress01) ? job.Progress01 : 0f);
-            snapshot.DurationSeconds = math.max(0.001f, state.DurationSeconds);
-            snapshot.TargetPrefabHash = job.TargetPrefabHash;
-            snapshot.Flags = state.Flags;
-            snapshot.RollbackHash = state.RollbackHash;
+                ref FabricationJobDTO job = ref UnsafeUtility.ArrayElementAsRef<FabricationJobDTO>(
+                    NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(jobs),
+                    slot);
+                snapshot.Progress01 = math.saturate(math.isfinite(job.Progress01) ? job.Progress01 : 0f);
+                snapshot.DurationSeconds = math.max(0.001f, state.DurationSeconds);
+                snapshot.TargetPrefabHash = job.TargetPrefabHash;
+                snapshot.Flags = state.Flags;
+                snapshot.RollbackHash = state.RollbackHash;
+            }
             return true;
         }
 
@@ -343,13 +471,27 @@ namespace Hecton8.Crafting
             NativeArray<FabricationJobDTO> jobs = runtime._jobsHandle.Resolve(vault);
             NativeArray<FabricationRuntimeDTO> states = runtime._runtimeHandle.Resolve(vault);
             NativeArray<FabricationGpuPayloadDTO> payloads = runtime._gpuPayloadHandle.Resolve(vault);
-            if (!jobs.IsCreated || !states.IsCreated || !payloads.IsCreated || (uint)slot >= (uint)states.Length)
+            if (!jobs.IsCreated || !states.IsCreated || !payloads.IsCreated ||
+                (uint)slot >= (uint)jobs.Length || (uint)slot >= (uint)states.Length || (uint)slot >= (uint)payloads.Length)
                 return;
 
-            jobs[slot] = default;
-            states[slot] = default;
-            payloads[slot] = default;
+            unsafe
+            {
+                ref FabricationJobDTO job = ref UnsafeUtility.ArrayElementAsRef<FabricationJobDTO>(
+                    NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(jobs),
+                    slot);
+                ref FabricationRuntimeDTO state = ref UnsafeUtility.ArrayElementAsRef<FabricationRuntimeDTO>(
+                    NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(states),
+                    slot);
+                ref FabricationGpuPayloadDTO payload = ref UnsafeUtility.ArrayElementAsRef<FabricationGpuPayloadDTO>(
+                    NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payloads),
+                    slot);
+                job = default;
+                state = default;
+                payload = default;
+            }
             runtime._activeUploadCount = ResolveActiveUploadCount(states);
+            runtime._payloadDirty = true;
         }
 
         public static bool GenerateMockFabricationJobs()
@@ -368,7 +510,8 @@ namespace Hecton8.Crafting
             if (!jobs.IsCreated || !states.IsCreated || !payloads.IsCreated)
                 return false;
 
-            JobHandle handle = new GenerateMockFabricationJobsJob
+            // COLD SYNC JOB: editor/CI mock injection must be visible immediately to the tuner/profiler.
+            GenerateMockFabricationJobsJob job = new GenerateMockFabricationJobsJob
             {
                 Jobs = jobs,
                 Runtime = states,
@@ -376,11 +519,13 @@ namespace Hecton8.Crafting
                 MockCount = MockFabricationJobCount,
                 Frame = runtime._lastFrame,
                 GlobalQualityWeight = runtime.ResolveGlobalQualityWeight()
-            }.Schedule(MockFabricationJobCount, 16);
+            };
 
-            H8Memory.RegisterActiveJob(OwnerSystemId, handle);
-            handle.Complete();
+            for (int i = 0; i < MockFabricationJobCount; i++)
+                job.Execute(i);
+
             runtime._activeUploadCount = MockFabricationJobCount;
+            runtime._payloadDirty = true;
             return true;
         }
 
@@ -389,6 +534,158 @@ namespace Hecton8.Crafting
             FabricationAssemblerRuntime runtime = s_active;
             hash = runtime != null ? runtime._lastRollbackHash : 0u;
             return runtime != null;
+        }
+
+        public static bool TryGetEditorStats(out FabricationEditorStats stats)
+        {
+            stats = default;
+            FabricationAssemblerRuntime runtime = s_active;
+            if (runtime == null || !runtime.EnsureVaultState())
+                return false;
+
+            IDataVault vault = runtime.ResolveVault();
+            NativeArray<FabricationJobDTO> jobs = runtime._jobsHandle.Resolve(vault);
+            NativeArray<FabricationRuntimeDTO> states = runtime._runtimeHandle.Resolve(vault);
+            if (!jobs.IsCreated || !states.IsCreated)
+                return false;
+
+            float sum = 0f;
+            unsafe
+            {
+                void* jobsPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(jobs);
+                void* statesPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(states);
+                int count = math.min(jobs.Length, states.Length);
+                for (int i = 0; i < count; i++)
+                {
+                    ref FabricationRuntimeDTO state = ref UnsafeUtility.ArrayElementAsRef<FabricationRuntimeDTO>(statesPtr, i);
+                    if ((state.Flags & FabricationAssemblerFlags.Active) == 0u)
+                        continue;
+
+                    ref FabricationJobDTO job = ref UnsafeUtility.ArrayElementAsRef<FabricationJobDTO>(jobsPtr, i);
+                    float progress = math.saturate(math.isfinite(job.Progress01) ? job.Progress01 : 0f);
+                    stats.ActiveJobs++;
+                    if ((state.Flags & FabricationAssemblerFlags.Completed) != 0u)
+                        stats.CompletedJobs++;
+                    stats.FaultFlags |= state.Flags & FabricationAssemblerFlags.Fault;
+                    sum += progress;
+                }
+            }
+
+            stats.AverageProgress01 = stats.ActiveJobs > 0 ? sum / stats.ActiveJobs : 0f;
+            stats.GlobalQualityWeight = runtime._lastQualityWeight;
+            stats.RollbackHash = runtime._lastRollbackHash;
+            return true;
+        }
+
+        public static bool TryGetEditorJobDebug(int slot, out FabricationEditorJobDebug debug)
+        {
+            debug = default;
+            FabricationAssemblerRuntime runtime = s_active;
+            if (runtime == null || !runtime.EnsureVaultState())
+                return false;
+
+            IDataVault vault = runtime.ResolveVault();
+            NativeArray<FabricationJobDTO> jobs = runtime._jobsHandle.Resolve(vault);
+            NativeArray<FabricationRuntimeDTO> states = runtime._runtimeHandle.Resolve(vault);
+            if (!jobs.IsCreated || !states.IsCreated || (uint)slot >= (uint)jobs.Length || (uint)slot >= (uint)states.Length)
+                return false;
+
+            unsafe
+            {
+                ref FabricationRuntimeDTO state = ref UnsafeUtility.ArrayElementAsRef<FabricationRuntimeDTO>(
+                    NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(states),
+                    slot);
+                if ((state.Flags & FabricationAssemblerFlags.Active) == 0u)
+                    return false;
+
+                ref FabricationJobDTO job = ref UnsafeUtility.ArrayElementAsRef<FabricationJobDTO>(
+                    NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(jobs),
+                    slot);
+                debug.TargetAUP = job.TargetAUP;
+                debug.Progress01 = math.saturate(math.isfinite(job.Progress01) ? job.Progress01 : 0f);
+                debug.BoundsMinY = state.BoundsMinY;
+                debug.BoundsMaxY = state.BoundsMaxY;
+                debug.TargetPrefabHash = job.TargetPrefabHash;
+                debug.FabricatorHash = state.FabricatorHash;
+                debug.Flags = state.Flags;
+            }
+            return true;
+        }
+
+        public static bool TryGetTuning(out float baseBuildSpeedMultiplier, out float powerDrawMultiplier, out float shaderEdgeGlowIntensity)
+        {
+            baseBuildSpeedMultiplier = 1f;
+            powerDrawMultiplier = 1f;
+            shaderEdgeGlowIntensity = 1f;
+            FabricationAssemblerRuntime runtime = s_active;
+            if (runtime == null || !runtime.EnsureVaultState())
+                return false;
+
+            FabricationTuningDTO tuning = runtime.ResolveTuning();
+            baseBuildSpeedMultiplier = tuning.BaseBuildSpeedMultiplier;
+            powerDrawMultiplier = tuning.PowerDrawMultiplier;
+            shaderEdgeGlowIntensity = tuning.ShaderEdgeGlowIntensity;
+            return true;
+        }
+
+        public static bool TrySetTuning(float baseBuildSpeedMultiplier, float powerDrawMultiplier, float shaderEdgeGlowIntensity)
+        {
+            FabricationAssemblerRuntime runtime = s_active;
+            if (runtime == null || !runtime.EnsureVaultState())
+                return false;
+
+            IDataVault vault = runtime.ResolveVault();
+            NativeArray<FabricationTuningDTO> tuning = runtime._tuningHandle.Resolve(vault);
+            if (!tuning.IsCreated || tuning.Length == 0)
+                return false;
+
+            FabricationTuningDTO next = tuning[0];
+            next.BaseBuildSpeedMultiplier = math.clamp(math.isfinite(baseBuildSpeedMultiplier) ? baseBuildSpeedMultiplier : 1f, 0.05f, 16f);
+            next.PowerDrawMultiplier = math.clamp(math.isfinite(powerDrawMultiplier) ? powerDrawMultiplier : 1f, 0f, 8f);
+            next.ShaderEdgeGlowIntensity = math.clamp(math.isfinite(shaderEdgeGlowIntensity) ? shaderEdgeGlowIntensity : 1f, 0f, 8f);
+            tuning[0] = next;
+            runtime._payloadDirty = true;
+            return true;
+        }
+
+        public static unsafe bool TryIngestFabricationTimingsCsv(string absolutePath, out int parsedRows)
+        {
+            parsedRows = 0;
+            if (string.IsNullOrEmpty(absolutePath) || !File.Exists(absolutePath))
+                return false;
+
+            if (!EnsureRuntime())
+                return false;
+
+            FabricationAssemblerRuntime runtime = s_active;
+            if (runtime == null || !runtime.EnsureVaultState())
+                return false;
+
+            IDataVault vault = runtime.ResolveVault();
+            NativeArray<byte> scratch = runtime._csvScratchHandle.Resolve(vault);
+            NativeArray<FabricationTimingDTO> timings = runtime._timingHandle.Resolve(vault);
+            NativeArray<FabricationTuningDTO> tuning = runtime._tuningHandle.Resolve(vault);
+            if (!scratch.IsCreated || !timings.IsCreated || scratch.Length == 0 || timings.Length == 0)
+                return false;
+
+            int readLength;
+            using (FileStream stream = new FileStream(absolutePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                long streamLength = stream.Length;
+                int cappedLength = streamLength > scratch.Length ? scratch.Length : (int)streamLength;
+                Span<byte> span = new Span<byte>(scratch.GetUnsafePtr(), cappedLength);
+                readLength = stream.Read(span);
+            }
+
+            bool parsed = ParseTimingCsv(scratch, readLength, timings, out parsedRows);
+            if (parsed && tuning.IsCreated && tuning.Length > 0)
+            {
+                FabricationTuningDTO next = tuning[0];
+                next.CsvTimingsVersion++;
+                tuning[0] = next;
+            }
+
+            return parsed;
         }
 
         private FabricationAssemblerRuntime()
@@ -407,7 +704,13 @@ namespace Hecton8.Crafting
         {
             _shutdown = false;
             _vault = ResolveVault();
-            EnsureGraphicsBuffers();
+            ConfigureSignalLanes();
+            if (!Application.isBatchMode)
+            {
+                EnsureGraphicsBuffers();
+                Shader.SetGlobalFloat(AssemblyEdgeBoostId, 1f);
+            }
+
             EnsureVaultState();
             RegisterDispatcherPhases();
             Application.quitting -= ShutdownActive;
@@ -495,7 +798,9 @@ namespace Hecton8.Crafting
             if (_vaultInitialized)
                 return true;
 
+#if UNITY_EDITOR
             FabricationLayoutValidator.ThrowIfInvalid();
+#endif
             IDataVault vault = ResolveVault();
             if (vault == null)
                 return false;
@@ -504,6 +809,9 @@ namespace Hecton8.Crafting
             _runtimeHandle = vault.GetBufferHandle<FabricationRuntimeDTO>(BufferID.ShinobuFabricationRuntime, MaxFabricationJobs, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
             _gpuPayloadHandle = vault.GetBufferHandle<FabricationGpuPayloadDTO>(BufferID.ShinobuFabricationGpuPayload, MaxFabricationJobs, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
             _telemetryHandle = vault.GetBufferHandle<FabricationTelemetryEntry>(BufferID.ShinobuFabricationTelemetryRing, TelemetryFrameCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _tuningHandle = vault.GetBufferHandle<FabricationTuningDTO>(BufferID.ShinobuFabricationTuning, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _timingHandle = vault.GetBufferHandle<FabricationTimingDTO>(BufferID.ShinobuFabricationTimingLookup, TimingLookupCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+            _csvScratchHandle = vault.GetBufferHandle<byte>(BufferID.ShinobuFabricationCsvScratch, CsvScratchByteCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
             if (vault.TryGetBufferHandle(BufferID.ShinobuScalabilityState, out VaultBufferHandle<ScalabilityStateDTO> scalability))
                 _scalabilityHandle = scalability;
 
@@ -511,23 +819,39 @@ namespace Hecton8.Crafting
             NativeArray<FabricationRuntimeDTO> states = _runtimeHandle.Resolve(vault);
             NativeArray<FabricationGpuPayloadDTO> payloads = _gpuPayloadHandle.Resolve(vault);
             NativeArray<FabricationTelemetryEntry> telemetry = _telemetryHandle.Resolve(vault);
-            if (!jobs.IsCreated || !states.IsCreated || !payloads.IsCreated || !telemetry.IsCreated)
+            NativeArray<FabricationTuningDTO> tuning = _tuningHandle.Resolve(vault);
+            NativeArray<FabricationTimingDTO> timings = _timingHandle.Resolve(vault);
+            NativeArray<byte> csvScratch = _csvScratchHandle.Resolve(vault);
+            if (!jobs.IsCreated || !states.IsCreated || !payloads.IsCreated || !telemetry.IsCreated ||
+                !tuning.IsCreated || !timings.IsCreated || !csvScratch.IsCreated)
                 return false;
 
-            JobHandle clearHandle = new ClearFabricationJobsJob
+            // COLD SYNC JOB: first-use Vault sanitation before dispatcher systems can read fabrication slots.
+            ClearFabricationJobsJob clearJob = new ClearFabricationJobsJob
             {
                 Jobs = jobs,
                 Runtime = states,
                 GpuPayload = payloads
-            }.Schedule(MaxFabricationJobs, 32);
-            H8Memory.RegisterActiveJob(OwnerSystemId, clearHandle);
-            clearHandle.Complete();
+            };
+            for (int i = 0; i < MaxFabricationJobs; i++)
+                clearJob.Execute(i);
+
+            // COLD SYNC JOB: first-use timing lookup clear before any editor/runtime CSV ingestion can mutate the table.
+            ClearFabricationTimingLookupJob timingClearJob = new ClearFabricationTimingLookupJob
+            {
+                Timings = timings
+            };
+            for (int i = 0; i < timings.Length; i++)
+                timingClearJob.Execute(i);
 
             for (int i = 0; i < telemetry.Length; i++)
                 telemetry[i] = default;
 
+            tuning[0] = CreateDefaultTuning();
+
             _vaultInitialized = true;
             _activeUploadCount = 1;
+            _payloadDirty = true;
             return true;
         }
 
@@ -553,18 +877,31 @@ namespace Hecton8.Crafting
 
             _lastFrame = context.Frame;
             float safeDelta = math.max(0f, timing.FrameDelta);
-            JobHandle handle = new AdvanceFabricationProgressJob
+            FabricationTuningDTO tuning = ResolveTuning();
+            JobHandle progressHandle = new AdvanceFabricationProgressJob
             {
                 Jobs = jobs,
                 Runtime = states,
                 GpuPayload = payloads,
                 DeltaSeconds = safeDelta,
                 Frame = context.Frame,
-                GlobalQualityWeight = _lastQualityWeight
+                GlobalQualityWeight = _lastQualityWeight,
+                GlobalBuildSpeedMultiplier = tuning.BaseBuildSpeedMultiplier
             }.Schedule(MaxFabricationJobs, 32, dependsOn);
 
-            H8Memory.RegisterActiveJob(OwnerSystemId, handle);
-            return handle;
+            JobHandle signalHandle = new EmitFabricationSignalsJob
+            {
+                Jobs = jobs,
+                Runtime = states,
+                Frame = context.Frame,
+                GlobalQualityWeight = _lastQualityWeight,
+                FabricationCompletedSignalWriter = SignalBus<FabricationCompletedSignal>.ParallelWriter,
+                FabricationTickSignalWriter = SignalBus<FabricationTickSignal>.ParallelWriter,
+                DeconstructResultWriter = GlobalSignals.DeconstructResultSignalWriter
+            }.Schedule(progressHandle);
+
+            H8Memory.RegisterActiveJob(OwnerSystemId, signalHandle);
+            return signalHandle;
         }
 
         private void PostSimulationTick(in DispatcherTimingDTO timing)
@@ -590,31 +927,38 @@ namespace Hecton8.Crafting
             float max = 0f;
             float power = 0f;
 
-            for (int i = 0; i < states.Length; i++)
+            unsafe
             {
-                FabricationRuntimeDTO state = states[i];
-                if ((state.Flags & FabricationAssemblerFlags.Active) == 0u)
-                    continue;
+                void* jobsPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(jobs);
+                void* statesPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(states);
+                int count = math.min(jobs.Length, states.Length);
+                for (int i = 0; i < count; i++)
+                {
+                    ref FabricationRuntimeDTO state = ref UnsafeUtility.ArrayElementAsRef<FabricationRuntimeDTO>(statesPtr, i);
+                    if ((state.Flags & FabricationAssemblerFlags.Active) == 0u)
+                        continue;
 
-                FabricationJobDTO job = jobs[i];
-                float progress = math.saturate(math.isfinite(job.Progress01) ? job.Progress01 : 0f);
-                active++;
-                completed += (state.Flags & FabricationAssemblerFlags.Completed) != 0u ? 1u : 0u;
-                faultFlags |= state.Flags & FabricationAssemblerFlags.Fault;
-                lastHash = job.TargetPrefabHash;
-                lastFabricator = state.FabricatorHash;
-                sum += progress;
-                min = math.min(min, progress);
-                max = math.max(max, progress);
-                power += state.PowerPotential01;
-                rollback = HashCombine(rollback, state.RollbackHash);
+                    ref FabricationJobDTO job = ref UnsafeUtility.ArrayElementAsRef<FabricationJobDTO>(jobsPtr, i);
+                    float progress = math.saturate(math.isfinite(job.Progress01) ? job.Progress01 : 0f);
+                    active++;
+                    completed += (state.Flags & FabricationAssemblerFlags.Completed) != 0u ? 1u : 0u;
+                    faultFlags |= state.Flags & FabricationAssemblerFlags.Fault;
+                    lastHash = job.TargetPrefabHash;
+                    lastFabricator = state.FabricatorHash;
+                    sum += progress;
+                    min = math.min(min, progress);
+                    max = math.max(max, progress);
+                    power += state.PowerPotential01;
+                    rollback = HashCombine(rollback, state.RollbackHash);
+                }
             }
 
             _lastRollbackHash = rollback;
             _lastFaultFlags = faultFlags;
             _activeUploadCount = ResolveActiveUploadCount(states);
+            _payloadDirty |= active > 0u;
             float activeF = math.max(1f, active);
-            telemetry[_telemetryCursor % telemetry.Length] = new FabricationTelemetryEntry
+            FabricationTelemetryEntry entry = new FabricationTelemetryEntry
             {
                 Frame = _lastFrame,
                 ActiveJobs = active,
@@ -631,6 +975,13 @@ namespace Hecton8.Crafting
                 LastTargetPrefabHash = lastHash,
                 LastFabricatorHash = lastFabricator
             };
+            unsafe
+            {
+                ref FabricationTelemetryEntry telemetryEntry = ref UnsafeUtility.ArrayElementAsRef<FabricationTelemetryEntry>(
+                    NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(telemetry),
+                    _telemetryCursor % telemetry.Length);
+                telemetryEntry = entry;
+            }
             _telemetryCursor = (_telemetryCursor + 1) % telemetry.Length;
 
             if (faultFlags != 0u)
@@ -645,11 +996,20 @@ namespace Hecton8.Crafting
             if (!EnsureGraphicsBuffers())
                 return;
 
+            if (!_payloadDirty)
+                return;
+
+            int uploadStride = ResolveVisualUploadStride(_lastQualityWeight);
+            if (uploadStride > 1 && (_lastFrame % (uint)uploadStride) != 0u)
+                return;
+
             IDataVault vault = ResolveVault();
             NativeArray<FabricationGpuPayloadDTO> payloads = _gpuPayloadHandle.Resolve(vault);
             if (!payloads.IsCreated)
                 return;
 
+            FabricationTuningDTO tuning = ResolveTuning();
+            _lastShaderEdgeGlowIntensity = tuning.ShaderEdgeGlowIntensity;
             int uploadCount = math.clamp(ResolveVisualUploadCount(_activeUploadCount, _lastQualityWeight), 1, math.min(payloads.Length, MaxFabricationJobs));
             GraphicsBuffer target = _gpuWriteIndex == 0 ? _gpuPayloadBufferA : _gpuPayloadBufferB;
             long start = System.Diagnostics.Stopwatch.GetTimestamp();
@@ -660,7 +1020,9 @@ namespace Hecton8.Crafting
             Shader.SetGlobalBuffer(AssemblyPayloadsId, target);
             Shader.SetGlobalInt(AssemblyPayloadCountId, uploadCount);
             Shader.SetGlobalFloat(AssemblyQualityId, _lastQualityWeight);
+            Shader.SetGlobalFloat(AssemblyEdgeBoostId, _lastShaderEdgeGlowIntensity);
             _gpuWriteIndex ^= 1;
+            _payloadDirty = false;
         }
 
         private bool EnsureGraphicsBuffers()
@@ -678,6 +1040,15 @@ namespace Hecton8.Crafting
             }
 
             return _gpuPayloadBufferA != null && _gpuPayloadBufferB != null;
+        }
+
+        private static void ConfigureSignalLanes()
+        {
+            SignalBus<FabricationCompletedSignal>.Configure(128, maxFrameSignals: 128, lowTierFrameSignals: 32, laneHash: FabricationCompletedLaneHash);
+            SignalBus<FabricationCompletedSignal>.EnsureInitialized();
+            SignalBus<FabricationTickSignal>.Configure(128, maxFrameSignals: 128, lowTierFrameSignals: 24, laneHash: FabricationTickLaneHash);
+            SignalBus<FabricationTickSignal>.EnsureInitialized();
+            GlobalSignals.InitializeAllQueues();
         }
 
         private void DumpTelemetry(IDataVault vault, NativeArray<FabricationTelemetryEntry> telemetry, uint reasonFlags)
@@ -740,22 +1111,237 @@ namespace Hecton8.Crafting
             return math.saturate(math.isfinite(fallback) ? fallback : 1f);
         }
 
+        private FabricationTuningDTO ResolveTuning()
+        {
+            FabricationTuningDTO tuning = CreateDefaultTuning();
+            IDataVault vault = ResolveVault();
+            NativeArray<FabricationTuningDTO> buffer = _tuningHandle.IsCreated && vault != null ? _tuningHandle.Resolve(vault) : default;
+            if (buffer.IsCreated && buffer.Length > 0)
+                tuning = buffer[0];
+
+            tuning.BaseBuildSpeedMultiplier = math.clamp(math.isfinite(tuning.BaseBuildSpeedMultiplier) ? tuning.BaseBuildSpeedMultiplier : 1f, 0.05f, 16f);
+            tuning.PowerDrawMultiplier = math.clamp(math.isfinite(tuning.PowerDrawMultiplier) ? tuning.PowerDrawMultiplier : 1f, 0f, 8f);
+            tuning.ShaderEdgeGlowIntensity = math.clamp(math.isfinite(tuning.ShaderEdgeGlowIntensity) ? tuning.ShaderEdgeGlowIntensity : 1f, 0f, 8f);
+            return tuning;
+        }
+
+        private bool TryResolveTimingDuration(uint targetPrefabHash, out float durationSeconds)
+        {
+            durationSeconds = 0f;
+            IDataVault vault = ResolveVault();
+            NativeArray<FabricationTimingDTO> timings = _timingHandle.IsCreated && vault != null ? _timingHandle.Resolve(vault) : default;
+            if (!timings.IsCreated || timings.Length == 0 || targetPrefabHash == 0u)
+                return false;
+
+            int start = (int)(targetPrefabHash % (uint)timings.Length);
+            for (int probe = 0; probe < timings.Length; probe++)
+            {
+                FabricationTimingDTO entry = timings[(start + probe) % timings.Length];
+                if (entry.PrefabHash == 0u)
+                    return false;
+                if (entry.PrefabHash != targetPrefabHash)
+                    continue;
+
+                float seconds = entry.DurationSeconds;
+                if (!math.isfinite(seconds) || seconds <= 0f)
+                    return false;
+
+                durationSeconds = math.max(0.001f, seconds);
+                return true;
+            }
+
+            return false;
+        }
+
+        private static FabricationTuningDTO CreateDefaultTuning()
+        {
+            return new FabricationTuningDTO
+            {
+                BaseBuildSpeedMultiplier = 1f,
+                PowerDrawMultiplier = 1f,
+                ShaderEdgeGlowIntensity = 1f
+            };
+        }
+
+        private static bool ParseTimingCsv(
+            NativeArray<byte> bytes,
+            int length,
+            NativeArray<FabricationTimingDTO> timings,
+            out int parsedRows)
+        {
+            parsedRows = 0;
+            if (!bytes.IsCreated || !timings.IsCreated || length <= 0)
+                return false;
+
+            for (int i = 0; i < timings.Length; i++)
+                timings[i] = default;
+
+            int index = 0;
+            while (index < length)
+            {
+                SkipLineBreaks(bytes, length, ref index);
+                if (index >= length)
+                    break;
+
+                uint hash = FnvOffset;
+                bool hasName = false;
+                while (index < length)
+                {
+                    byte b = bytes[index++];
+                    if (b == (byte)',' || b == (byte)'\n' || b == (byte)'\r')
+                        break;
+
+                    if (b == (byte)' ' || b == (byte)'\t' || b == (byte)'"')
+                        continue;
+
+                    if (b >= (byte)'A' && b <= (byte)'Z')
+                        b = (byte)(b + 32);
+
+                    hash ^= b;
+                    hash *= FnvPrime;
+                    hasName = true;
+                }
+
+                bool hasDuration = TryParsePositiveFloat(bytes, length, ref index, out float duration);
+                SkipToNextLine(bytes, length, ref index);
+                if (!hasName || !hasDuration)
+                    continue;
+
+                InsertTiming(timings, hash, duration);
+                parsedRows++;
+            }
+
+            return parsedRows > 0;
+        }
+
+        private static void InsertTiming(NativeArray<FabricationTimingDTO> timings, uint prefabHash, float durationSeconds)
+        {
+            if (prefabHash == 0u || !math.isfinite(durationSeconds) || durationSeconds <= 0f)
+                return;
+
+            int start = (int)(prefabHash % (uint)timings.Length);
+            for (int probe = 0; probe < timings.Length; probe++)
+            {
+                int slot = (start + probe) % timings.Length;
+                FabricationTimingDTO existing = timings[slot];
+                if (existing.PrefabHash != 0u && existing.PrefabHash != prefabHash)
+                    continue;
+
+                timings[slot] = new FabricationTimingDTO
+                {
+                    PrefabHash = prefabHash,
+                    DurationSeconds = math.max(0.001f, durationSeconds),
+                    PowerDrawMultiplier = 1f,
+                    Flags = 1u
+                };
+                return;
+            }
+        }
+
+        private static bool TryParsePositiveFloat(NativeArray<byte> bytes, int length, ref int index, out float value)
+        {
+            value = 0f;
+            while (index < length && (bytes[index] == (byte)' ' || bytes[index] == (byte)'\t' || bytes[index] == (byte)','))
+                index++;
+
+            float integer = 0f;
+            bool hasDigit = false;
+            while (index < length)
+            {
+                byte b = bytes[index];
+                if (b < (byte)'0' || b > (byte)'9')
+                    break;
+
+                integer = integer * 10f + (b - (byte)'0');
+                hasDigit = true;
+                index++;
+            }
+
+            float fractional = 0f;
+            if (index < length && bytes[index] == (byte)'.')
+            {
+                index++;
+                float scale = 0.1f;
+                while (index < length)
+                {
+                    byte b = bytes[index];
+                    if (b < (byte)'0' || b > (byte)'9')
+                        break;
+
+                    fractional += (b - (byte)'0') * scale;
+                    scale *= 0.1f;
+                    hasDigit = true;
+                    index++;
+                }
+            }
+
+            value = integer + fractional;
+            return hasDigit && math.isfinite(value) && value > 0f;
+        }
+
+        private static void SkipLineBreaks(NativeArray<byte> bytes, int length, ref int index)
+        {
+            while (index < length && (bytes[index] == (byte)'\n' || bytes[index] == (byte)'\r'))
+                index++;
+        }
+
+        private static void SkipToNextLine(NativeArray<byte> bytes, int length, ref int index)
+        {
+            while (index < length)
+            {
+                byte b = bytes[index++];
+                if (b == (byte)'\n')
+                    break;
+            }
+        }
+
         private static FabricationGpuPayloadDTO CreateGpuPayload(
             float minY,
             float maxY,
             float progress01,
             float quality01,
             float pause01,
+            float3 localOffset,
             Matrix4x4 worldToFabricator)
         {
             return new FabricationGpuPayloadDTO
             {
                 BoundsProgress = new float4(minY, math.max(minY + 0.001f, maxY), math.saturate(progress01), math.saturate(quality01)),
-                FlagsPause = new float4(pause01, 0f, 0f, 0f),
+                LocalOffsetPause = new float4(localOffset, math.saturate(pause01)),
                 WorldToFabricatorRow0 = new float4(worldToFabricator.m00, worldToFabricator.m01, worldToFabricator.m02, worldToFabricator.m03),
                 WorldToFabricatorRow1 = new float4(worldToFabricator.m10, worldToFabricator.m11, worldToFabricator.m12, worldToFabricator.m13),
                 WorldToFabricatorRow2 = new float4(worldToFabricator.m20, worldToFabricator.m21, worldToFabricator.m22, worldToFabricator.m23),
                 WorldToFabricatorRow3 = new float4(worldToFabricator.m30, worldToFabricator.m31, worldToFabricator.m32, worldToFabricator.m33)
+            };
+        }
+
+        private static float3 ResolveLocalAupOffset(double3 targetAup, double3 fabricatorAup)
+        {
+            double3 delta = targetAup - fabricatorAup;
+            if (!math.all(math.isfinite(delta)))
+                return float3.zero;
+
+            delta = math.clamp(delta, new double3(-100000.0), new double3(100000.0));
+            return new float3((float)delta.x, (float)delta.y, (float)delta.z);
+        }
+
+        private static AbsoluteUniversePosition ToAbsoluteUniversePosition(double3 absolutePosition)
+        {
+            if (!math.all(math.isfinite(absolutePosition)))
+                absolutePosition = double3.zero;
+
+            double cellSize = AbsoluteUniversePosition.CellSizeMeters;
+            long gridX = (long)math.floor(absolutePosition.x / cellSize);
+            long gridY = (long)math.floor(absolutePosition.y / cellSize);
+            long gridZ = (long)math.floor(absolutePosition.z / cellSize);
+            return new AbsoluteUniversePosition
+            {
+                GridX = gridX,
+                GridY = gridY,
+                GridZ = gridZ,
+                LocalX = (float)(absolutePosition.x - (gridX * cellSize)),
+                LocalY = (float)(absolutePosition.y - (gridY * cellSize)),
+                LocalZ = (float)(absolutePosition.z - (gridZ * cellSize))
             };
         }
 
@@ -765,10 +1351,15 @@ namespace Hecton8.Crafting
             if (!states.IsCreated)
                 return count;
 
-            for (int i = 0; i < states.Length; i++)
+            unsafe
             {
-                if ((states[i].Flags & FabricationAssemblerFlags.Active) != 0u)
-                    count = i + 1;
+                void* statesPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(states);
+                for (int i = 0; i < states.Length; i++)
+                {
+                    ref FabricationRuntimeDTO state = ref UnsafeUtility.ArrayElementAsRef<FabricationRuntimeDTO>(statesPtr, i);
+                    if ((state.Flags & FabricationAssemblerFlags.Active) != 0u)
+                        count = i + 1;
+                }
             }
 
             return math.clamp(count, 1, MaxFabricationJobs);
@@ -777,8 +1368,19 @@ namespace Hecton8.Crafting
         private static int ResolveVisualUploadCount(int activeCount, float quality)
         {
             float q = math.saturate(math.isfinite(quality) ? quality : 1f);
-            int budget = (int)math.round(math.lerp(16f, MaxFabricationJobs, q));
+            float activeQualityGate = math.step(0.0001f, q);
+            float curved = q * q * (3f - (2f * q));
+            int budget = (int)math.round(math.lerp(1f, math.lerp(16f, MaxFabricationJobs, curved), activeQualityGate));
             return math.clamp(math.max(1, activeCount), 1, math.max(1, budget));
+        }
+
+        private static int ResolveVisualUploadStride(float quality)
+        {
+            float q = math.saturate(math.isfinite(quality) ? quality : 1f);
+            float activeQualityGate = math.step(0.0001f, q);
+            float curved = q * q * (3f - (2f * q));
+            float stride = math.lerp(60f, math.lerp(12f, 1f, curved), activeQualityGate);
+            return math.clamp((int)math.round(stride), 1, 60);
         }
 
         private static uint HashSlot(int slot, uint targetHash, float progress01)
@@ -867,18 +1469,11 @@ namespace Hecton8.Crafting
         }
     }
 
+#if UNITY_EDITOR
     internal static class FabricationLayoutValidator
     {
-#if UNITY_EDITOR
         [InitializeOnLoadMethod]
         private static void ValidateOnEditorLoad()
-        {
-            ThrowIfInvalid();
-        }
-#endif
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ValidateOnSubsystemRegistration()
         {
             ThrowIfInvalid();
         }
@@ -892,7 +1487,11 @@ namespace Hecton8.Crafting
             AssertSize<FabricationJobSnapshotDTO>(32);
             AssertSize<FabricationRuntimeDTO>(96);
             AssertSize<FabricationGpuPayloadDTO>(96);
+            AssertSize<FabricationCompletedSignal>(64);
+            AssertSize<FabricationTickSignal>(64);
             AssertSize<FabricationTelemetryEntry>(64);
+            AssertSize<FabricationTuningDTO>(64);
+            AssertSize<FabricationTimingDTO>(16);
         }
 
         private static void AssertSize<T>(int expectedSize) where T : struct
@@ -904,12 +1503,12 @@ namespace Hecton8.Crafting
 
         private static void AssertOffset<T>(string fieldName, int expectedOffset) where T : struct
         {
-            FieldInfo field = typeof(T).GetField(fieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-            int actualOffset = field != null ? UnsafeUtility.GetFieldOffset(field) : -1;
+            int actualOffset = Marshal.OffsetOf<T>(fieldName).ToInt32();
             if (actualOffset != expectedOffset)
                 throw new InvalidOperationException(typeof(T).Name + "." + fieldName + " offset mismatch. Expected " + expectedOffset + ", got " + actualOffset + ".");
         }
     }
+#endif
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct ClearFabricationJobsJob : IJobParallelFor
@@ -918,14 +1517,38 @@ namespace Hecton8.Crafting
         [NoAlias] public NativeArray<FabricationRuntimeDTO> Runtime;
         [NoAlias] public NativeArray<FabricationGpuPayloadDTO> GpuPayload;
 
-        public void Execute(int index)
+        public unsafe void Execute(int index)
         {
             if (!Jobs.IsCreated || !Runtime.IsCreated || !GpuPayload.IsCreated)
                 return;
 
-            Jobs[index] = default;
-            Runtime[index] = default;
-            GpuPayload[index] = default;
+            ref FabricationJobDTO job = ref UnsafeUtility.ArrayElementAsRef<FabricationJobDTO>(
+                NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(Jobs),
+                index);
+            job.Progress01 = 0f;
+            job.TargetPrefabHash = 0u;
+            ref FabricationRuntimeDTO state = ref UnsafeUtility.ArrayElementAsRef<FabricationRuntimeDTO>(
+                NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(Runtime),
+                index);
+            ref FabricationGpuPayloadDTO payload = ref UnsafeUtility.ArrayElementAsRef<FabricationGpuPayloadDTO>(
+                NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(GpuPayload),
+                index);
+            state = default;
+            payload = default;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    internal struct ClearFabricationTimingLookupJob : IJobParallelFor
+    {
+        [NoAlias] public NativeArray<FabricationTimingDTO> Timings;
+
+        public void Execute(int index)
+        {
+            if (!Timings.IsCreated)
+                return;
+
+            Timings[index] = default;
         }
     }
 
@@ -939,7 +1562,7 @@ namespace Hecton8.Crafting
         public uint Frame;
         public float GlobalQualityWeight;
 
-        public void Execute(int index)
+        public unsafe void Execute(int index)
         {
             if (!Jobs.IsCreated || !Runtime.IsCreated || !GpuPayload.IsCreated || index >= MockCount)
                 return;
@@ -947,38 +1570,42 @@ namespace Hecton8.Crafting
             float lane = (float)index - (float)(MockCount - 1) * 0.5f;
             float progress = math.frac((Frame * 0.00625f) + (index * 0.0375f));
             uint targetHash = unchecked(0x46414200u + (uint)index);
-            Jobs[index] = new FabricationJobDTO
-            {
-                TargetAUP = new double3(lane * 2.0f, -80.0 + index * 0.125, 12.0 + index),
-                Progress01 = progress,
-                TargetPrefabHash = targetHash
-            };
+            float maxY = 0.5f + (index & 3) * 0.15f;
+            float quality = math.saturate(GlobalQualityWeight);
+            ref FabricationJobDTO job = ref UnsafeUtility.ArrayElementAsRef<FabricationJobDTO>(
+                NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(Jobs),
+                index);
+            ref FabricationRuntimeDTO state = ref UnsafeUtility.ArrayElementAsRef<FabricationRuntimeDTO>(
+                NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(Runtime),
+                index);
+            ref FabricationGpuPayloadDTO payload = ref UnsafeUtility.ArrayElementAsRef<FabricationGpuPayloadDTO>(
+                NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(GpuPayload),
+                index);
 
-            Runtime[index] = new FabricationRuntimeDTO
-            {
-                FabricatorAUP = new double3(lane * 2.0f, -80.0, 12.0),
-                DurationSeconds = 5f + (index & 7),
-                BuildSpeedMultiplier = 1f,
-                PowerPotential01 = 1f,
-                BoundsMinY = -0.5f,
-                BoundsMaxY = 0.5f + (index & 3) * 0.15f,
-                GlobalQualityWeight = math.saturate(GlobalQualityWeight),
-                ThermalThrottle01 = 1f,
-                FabricatorHash = unchecked(0x53483100u + (uint)index),
-                Flags = FabricationAssemblerFlags.Active | FabricationAssemblerFlags.Mock | FabricationAssemblerFlags.Dirty,
-                FrameBegan = Frame,
-                RollbackHash = unchecked(targetHash ^ (uint)index * 2654435761u)
-            };
+            job.TargetAUP = new double3(lane * 2.0f, -80.0 + index * 0.125, 12.0 + index);
+            job.Progress01 = progress;
+            job.TargetPrefabHash = targetHash;
 
-            GpuPayload[index] = new FabricationGpuPayloadDTO
-            {
-                BoundsProgress = new float4(-0.5f, 0.5f + (index & 3) * 0.15f, progress, math.saturate(GlobalQualityWeight)),
-                FlagsPause = new float4(0f, 0f, 0f, 0f),
-                WorldToFabricatorRow0 = new float4(1f, 0f, 0f, 0f),
-                WorldToFabricatorRow1 = new float4(0f, 1f, 0f, 0f),
-                WorldToFabricatorRow2 = new float4(0f, 0f, 1f, 0f),
-                WorldToFabricatorRow3 = new float4(0f, 0f, 0f, 1f)
-            };
+            state = default;
+            state.FabricatorAUP = new double3(lane * 2.0f, -80.0, 12.0);
+            state.DurationSeconds = 5f + (index & 7);
+            state.BuildSpeedMultiplier = 1f;
+            state.PowerPotential01 = 1f;
+            state.BoundsMinY = -0.5f;
+            state.BoundsMaxY = maxY;
+            state.GlobalQualityWeight = quality;
+            state.ThermalThrottle01 = 1f;
+            state.FabricatorHash = unchecked(0x53483100u + (uint)index);
+            state.Flags = FabricationAssemblerFlags.Active | FabricationAssemblerFlags.Mock | FabricationAssemblerFlags.Dirty;
+            state.FrameBegan = Frame;
+            state.RollbackHash = unchecked(targetHash ^ (uint)index * 2654435761u);
+
+            payload.BoundsProgress = new float4(-0.5f, maxY, progress, quality);
+            payload.LocalOffsetPause = new float4(0f, (float)(index * 0.125f), (float)index, 0f);
+            payload.WorldToFabricatorRow0 = new float4(1f, 0f, 0f, 0f);
+            payload.WorldToFabricatorRow1 = new float4(0f, 1f, 0f, 0f);
+            payload.WorldToFabricatorRow2 = new float4(0f, 0f, 1f, 0f);
+            payload.WorldToFabricatorRow3 = new float4(0f, 0f, 0f, 1f);
         }
     }
 
@@ -991,20 +1618,26 @@ namespace Hecton8.Crafting
         public float DeltaSeconds;
         public uint Frame;
         public float GlobalQualityWeight;
+        public float GlobalBuildSpeedMultiplier;
 
-        public void Execute(int index)
+        public unsafe void Execute(int index)
         {
             if (!Jobs.IsCreated || !Runtime.IsCreated || !GpuPayload.IsCreated)
                 return;
 
-            FabricationRuntimeDTO state = Runtime[index];
+            ref FabricationRuntimeDTO state = ref UnsafeUtility.ArrayElementAsRef<FabricationRuntimeDTO>(
+                NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(Runtime),
+                index);
             if ((state.Flags & FabricationAssemblerFlags.Active) == 0u)
                 return;
 
-            FabricationJobDTO job = Jobs[index];
+            ref FabricationJobDTO job = ref UnsafeUtility.ArrayElementAsRef<FabricationJobDTO>(
+                NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(Jobs),
+                index);
             float previousProgress = math.saturate(math.isfinite(job.Progress01) ? job.Progress01 : 0f);
             float duration = math.max(0.001f, math.isfinite(state.DurationSeconds) ? state.DurationSeconds : 0.001f);
-            float speed = math.max(0.0001f, math.isfinite(state.BuildSpeedMultiplier) ? state.BuildSpeedMultiplier : 1f);
+            float globalSpeed = math.max(0.0001f, math.isfinite(GlobalBuildSpeedMultiplier) ? GlobalBuildSpeedMultiplier : 1f);
+            float speed = math.max(0.0001f, math.isfinite(state.BuildSpeedMultiplier) ? state.BuildSpeedMultiplier : 1f) * globalSpeed;
             float power = math.saturate(math.isfinite(state.PowerPotential01) ? state.PowerPotential01 : 0f);
             float thermal = math.saturate(math.isfinite(state.ThermalThrottle01) ? state.ThermalThrottle01 : 1f);
             bool paused = (state.Flags & FabricationAssemblerFlags.Paused) != 0u || power <= 0.0001f;
@@ -1023,10 +1656,12 @@ namespace Hecton8.Crafting
             }
 
             bool completed = deconstruct ? progress <= 0.0001f : progress >= 0.9999f;
+            bool wasCompleted = (state.Flags & FabricationAssemblerFlags.Completed) != 0u;
             if (completed)
             {
                 flags |= FabricationAssemblerFlags.Completed;
-                state.FrameCompleted = Frame;
+                if (!wasCompleted)
+                    state.FrameCompleted = Frame;
             }
             else
             {
@@ -1034,37 +1669,151 @@ namespace Hecton8.Crafting
             }
 
             job.Progress01 = progress;
-            Jobs[index] = job;
 
             float quality = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : state.GlobalQualityWeight);
+            uint rollbackHash = HashSlot(index, job.TargetPrefabHash, progress);
+            state.RollbackHash = rollbackHash;
+
             state.Flags = flags | FabricationAssemblerFlags.Dirty;
             state.GlobalQualityWeight = quality;
             state.LastDelta01 = progress - previousProgress;
-            state.RollbackHash = HashSlot(index, job.TargetPrefabHash, progress);
-            Runtime[index] = state;
 
-            FabricationGpuPayloadDTO payload = GpuPayload[index];
+            ref FabricationGpuPayloadDTO payload = ref UnsafeUtility.ArrayElementAsRef<FabricationGpuPayloadDTO>(
+                NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(GpuPayload),
+                index);
             payload.BoundsProgress.x = state.BoundsMinY;
             payload.BoundsProgress.y = math.max(state.BoundsMinY + 0.001f, state.BoundsMaxY);
             payload.BoundsProgress.z = progress;
             payload.BoundsProgress.w = quality;
-            payload.FlagsPause.x = paused ? 1f : 0f;
-            payload.FlagsPause.y = deconstruct ? 1f : 0f;
-            payload.FlagsPause.z = completed ? 1f : 0f;
-            payload.FlagsPause.w = (flags & FabricationAssemblerFlags.Fault) != 0u ? 1f : 0f;
-            GpuPayload[index] = payload;
+            float3 localOffset = ResolveLocalAupOffset(job.TargetAUP, state.FabricatorAUP);
+            payload.LocalOffsetPause = new float4(localOffset, paused ? 1f : 0f);
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    internal struct EmitFabricationSignalsJob : IJob
+    {
+        [NoAlias] public NativeArray<FabricationJobDTO> Jobs;
+        [NoAlias] public NativeArray<FabricationRuntimeDTO> Runtime;
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // ParallelWriter safety is suppressed because SignalBus owns the queue lifetime and the job only appends completed fabrication events.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // Rejected main-thread event emission because it would force a second scan of all fabrication jobs. Rejected managed callbacks because they allocate and break Burst isolation.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The job is scheduled once from the dispatcher SIMULATION phase and its returned handle is registered through H8Memory before any lane drain can consume the writer output.
+        [NativeDisableContainerSafetyRestriction] public NativeQueue<FabricationCompletedSignal>.ParallelWriter FabricationCompletedSignalWriter;
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Tick signal writes are producer-only and do not read queue state; Unity's container safety cannot see the dispatcher-owned consumer phase.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // Rejected splitting tick events into a NativeArray because sparse event compaction would add another job. Rejected immediate UI writes because UI belongs to VISUAL_SYNC.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // Signal consumption is phase-separated after the combined simulation handle; this field has no second producer in EmitFabricationSignalsJob.
+        [NativeDisableContainerSafetyRestriction] public NativeQueue<FabricationTickSignal>.ParallelWriter FabricationTickSignalWriter;
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Deconstruct results are emitted through the legacy GlobalSignals bridge; the safety restriction is limited to write-only enqueue.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // Rejected direct owner callbacks because deconstruction crosses construction/inventory/UI domains. Rejected a managed event because it violates zero-GC hot path rules.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The returned signalHandle chains after progressHandle and is registered with H8Memory; the late-frame bridge drains only after dispatcher fence resolution.
+        [NativeDisableContainerSafetyRestriction] public NativeQueue<DeconstructResultSignal>.ParallelWriter DeconstructResultWriter;
+        public uint Frame;
+        public float GlobalQualityWeight;
+
+        public unsafe void Execute()
+        {
+            if (!Jobs.IsCreated || !Runtime.IsCreated)
+                return;
+
+            int count = math.min(Jobs.Length, Runtime.Length);
+            for (int index = 0; index < count; index++)
+            {
+                ref FabricationRuntimeDTO state = ref UnsafeUtility.ArrayElementAsRef<FabricationRuntimeDTO>(
+                    NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(Runtime),
+                    index);
+                if ((state.Flags & FabricationAssemblerFlags.Active) == 0u)
+                    continue;
+
+                ref FabricationJobDTO job = ref UnsafeUtility.ArrayElementAsRef<FabricationJobDTO>(
+                    NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(Jobs),
+                    index);
+                uint flags = state.Flags;
+                float progress = math.saturate(math.isfinite(job.Progress01) ? job.Progress01 : 0f);
+                float quality = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : state.GlobalQualityWeight);
+                float emissionMultiplier = math.lerp(0f, 1f, quality);
+                bool completed = (flags & FabricationAssemblerFlags.Completed) != 0u;
+                bool observed = (flags & FabricationAssemblerFlags.CompletionObserved) != 0u;
+                bool deconstruct = (flags & FabricationAssemblerFlags.Deconstruct) != 0u;
+
+                if (completed && !observed)
+                {
+                    EmitCompletionSignals(index, in job, in state, flags, progress, state.RollbackHash, deconstruct);
+                    flags |= FabricationAssemblerFlags.CompletionObserved | FabricationAssemblerFlags.Dirty;
+                    state.Flags = flags;
+                }
+
+                EmitTickSignal(in job, in state, flags, progress, quality, emissionMultiplier);
+            }
         }
 
-        private static uint HashSlot(int slot, uint targetHash, float progress01)
+        private void EmitCompletionSignals(
+            int slot,
+            in FabricationJobDTO job,
+            in FabricationRuntimeDTO state,
+            uint flags,
+            float progress01,
+            uint rollbackHash,
+            bool deconstruct)
         {
-            uint hash = 2166136261u;
-            hash ^= (uint)slot;
-            hash *= 16777619u;
-            hash ^= targetHash;
-            hash *= 16777619u;
-            hash ^= math.asuint(math.saturate(progress01));
-            hash *= 16777619u;
-            return hash;
+            if (deconstruct)
+            {
+                DeconstructResultWriter.Enqueue(new DeconstructResultSignal
+                {
+                    TargetAup = ToAbsoluteUniversePosition(job.TargetAUP),
+                    TargetEntityId = job.TargetPrefabHash,
+                    RequesterEntityId = state.FabricatorHash,
+                    RefundItemCount = 0,
+                    Result = 1,
+                    Reason = 0,
+                    Frame = Frame
+                });
+                return;
+            }
+
+            FabricationCompletedSignalWriter.Enqueue(new FabricationCompletedSignal
+            {
+                TargetAUP = job.TargetAUP,
+                TargetPrefabHash = job.TargetPrefabHash,
+                FabricatorHash = state.FabricatorHash,
+                Frame = Frame,
+                RollbackHash = rollbackHash,
+                Progress01 = progress01,
+                Flags = (byte)(flags & 0xFFu),
+                Slot = (byte)math.clamp(slot, 0, 255),
+                Sequence = state.Sequence
+            });
+        }
+
+        private void EmitTickSignal(
+            in FabricationJobDTO job,
+            in FabricationRuntimeDTO state,
+            uint flags,
+            float progress01,
+            float quality01,
+            float emissionMultiplier)
+        {
+            FabricationTickSignalWriter.Enqueue(new FabricationTickSignal
+            {
+                TargetAUP = job.TargetAUP,
+                Progress01 = progress01,
+                EmissionMultiplier = emissionMultiplier,
+                PowerPotential01 = math.saturate(state.PowerPotential01),
+                GlobalQualityWeight = quality01,
+                TargetPrefabHash = job.TargetPrefabHash,
+                FabricatorHash = state.FabricatorHash,
+                Frame = Frame,
+                Flags = flags,
+                Sequence = state.Sequence
+            });
         }
     }
 }

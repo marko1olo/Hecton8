@@ -1,8 +1,8 @@
 {
   "all_source": {
     "counters": {
-      "files": 4901,
-      "lines": 1704372
+      "files": 5289,
+      "lines": 2060052
     }
   },
   "artifacts": {
@@ -1967,7 +1967,7 @@
   "domain_index_count": 85,
   "elapsed_seconds": 484.917,
   "evidence_class": "STATIC_SOURCE/STATIC_DOC/PY_TOOL",
-  "generated_at": "2026-05-17T13:10:49",
+  "generated_at": "2026-05-20T06:23:00",
   "graph": {
     "edges": 158,
     "engine": "networkx/matplotlib",
@@ -1988,6 +1988,411 @@
     "mathematical_state": "H-Phi is a static product of typed signal density, dispatcher/job purity, DataVault/native ownership visibility, and struct layout explicitness. Low values mean architecture pressure remains concentrated in direct calls, Unity loop debt, local native surfaces, or unmanaged-layout debt. This is not runtime proof.",
     "middle_tier": "Keep full gameplay snapshots bounded and avoid new Core gravity.",
     "ultra_tier": "Attach visual overkill through read-only snapshots and quality gates without mutating simulation truth."
+  },
+  "master_integration_static_gates": {
+    "evidence_class": "STATIC_SOURCE/PY_TOOL",
+    "gate_passed": false,
+    "owner_map": {
+      "present": true,
+      "source": "Docs/Reports/SHINOBU_140_STATIC_GATE_OWNER_MAP.json",
+      "top_owner_totals": [
+        {
+          "criticalCount": 564,
+          "domainHint": "RootScripts",
+          "warningCount": 66
+        },
+        {
+          "criticalCount": 504,
+          "domainHint": "World",
+          "warningCount": 11
+        },
+        {
+          "criticalCount": 188,
+          "domainHint": "Core",
+          "warningCount": 28
+        },
+        {
+          "criticalCount": 148,
+          "domainHint": "Gameplay",
+          "warningCount": 26
+        },
+        {
+          "criticalCount": 96,
+          "domainHint": "Fauna",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 83,
+          "domainHint": "Physics",
+          "warningCount": 1
+        },
+        {
+          "criticalCount": 82,
+          "domainHint": "UI",
+          "warningCount": 10
+        },
+        {
+          "criticalCount": 58,
+          "domainHint": "Construction",
+          "warningCount": 3
+        },
+        {
+          "criticalCount": 56,
+          "domainHint": "Visor",
+          "warningCount": 6
+        },
+        {
+          "criticalCount": 51,
+          "domainHint": "Power",
+          "warningCount": 1
+        },
+        {
+          "criticalCount": 46,
+          "domainHint": "SaveSystem",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 44,
+          "domainHint": "Atmosphere",
+          "warningCount": 0
+        }
+      ]
+    },
+    "regression": {
+      "critical_count": 2,
+      "findings": [
+        {
+          "detail": "Burst_Job_Directives critical count 653 exceeds baseline 645.",
+          "line": 1,
+          "path": "Docs/Reports/SHINOBU_140_STATIC_GATE_BASELINE.json",
+          "rule": "STATIC_GATE_CRITICAL_REGRESSION",
+          "scanner": "Static_Gate_Regression",
+          "severity": 2
+        },
+        {
+          "detail": "Hot_Helper_Registry_Polling critical count 256 exceeds baseline 253.",
+          "line": 1,
+          "path": "Docs/Reports/SHINOBU_140_STATIC_GATE_BASELINE.json",
+          "rule": "STATIC_GATE_CRITICAL_REGRESSION",
+          "scanner": "Static_Gate_Regression",
+          "severity": 2
+        }
+      ],
+      "present": true,
+      "source": "Docs/Reports/SHINOBU_140_Static_Gate_Regression.json",
+      "warning_count": 0
+    },
+    "regression_attribution": {
+      "present": true,
+      "regressions": [
+        {
+          "critical_delta": 8,
+          "scanner": "Burst_Job_Directives",
+          "top_domains": [
+            {
+              "criticalCount": 156,
+              "domainHint": "World",
+              "warningCount": 0
+            },
+            {
+              "criticalCount": 82,
+              "domainHint": "Physics",
+              "warningCount": 0
+            },
+            {
+              "criticalCount": 72,
+              "domainHint": "RootScripts",
+              "warningCount": 0
+            },
+            {
+              "criticalCount": 46,
+              "domainHint": "SaveSystem",
+              "warningCount": 0
+            },
+            {
+              "criticalCount": 37,
+              "domainHint": "Construction",
+              "warningCount": 0
+            },
+            {
+              "criticalCount": 21,
+              "domainHint": "Gameplay",
+              "warningCount": 0
+            },
+            {
+              "criticalCount": 20,
+              "domainHint": "Power",
+              "warningCount": 0
+            },
+            {
+              "criticalCount": 20,
+              "domainHint": "Inventory",
+              "warningCount": 0
+            }
+          ],
+          "top_paths": [
+            {
+              "criticalCount": 18,
+              "domainHint": "RootScripts",
+              "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+              "warningCount": 0
+            },
+            {
+              "criticalCount": 17,
+              "domainHint": "SaveSystem",
+              "path": "Assets/_Project/Scripts/SaveSystem/EntityDeltaCompressionArchitecture.cs",
+              "warningCount": 0
+            },
+            {
+              "criticalCount": 16,
+              "domainHint": "Cartography",
+              "path": "Assets/_Project/Scripts/Cartography/CartographyGridJobs.cs",
+              "warningCount": 0
+            },
+            {
+              "criticalCount": 15,
+              "domainHint": "Inventory",
+              "path": "Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs",
+              "warningCount": 0
+            },
+            {
+              "criticalCount": 13,
+              "domainHint": "SaveSystem",
+              "path": "Assets/_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs",
+              "warningCount": 0
+            },
+            {
+              "criticalCount": 13,
+              "domainHint": "Physics",
+              "path": "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+              "warningCount": 0
+            },
+            {
+              "criticalCount": 12,
+              "domainHint": "Thermodynamics",
+              "path": "Assets/_Project/Scripts/Thermodynamics/AbyssalThermodynamicsJobs.cs",
+              "warningCount": 0
+            },
+            {
+              "criticalCount": 11,
+              "domainHint": "World",
+              "path": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs",
+              "warningCount": 0
+            }
+          ],
+          "warning_delta": 0
+        },
+        {
+          "critical_delta": 3,
+          "scanner": "Hot_Helper_Registry_Polling",
+          "top_domains": [
+            {
+              "criticalCount": 49,
+              "domainHint": "UI",
+              "warningCount": 0
+            },
+            {
+              "criticalCount": 37,
+              "domainHint": "RootScripts",
+              "warningCount": 0
+            },
+            {
+              "criticalCount": 33,
+              "domainHint": "World",
+              "warningCount": 0
+            },
+            {
+              "criticalCount": 27,
+              "domainHint": "Atmosphere",
+              "warningCount": 0
+            },
+            {
+              "criticalCount": 18,
+              "domainHint": "Gameplay",
+              "warningCount": 0
+            },
+            {
+              "criticalCount": 12,
+              "domainHint": "Fauna",
+              "warningCount": 0
+            },
+            {
+              "criticalCount": 11,
+              "domainHint": "Tools",
+              "warningCount": 0
+            },
+            {
+              "criticalCount": 11,
+              "domainHint": "Core",
+              "warningCount": 0
+            }
+          ],
+          "top_paths": [
+            {
+              "criticalCount": 19,
+              "domainHint": "Atmosphere",
+              "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
+              "warningCount": 0
+            },
+            {
+              "criticalCount": 8,
+              "domainHint": "Tools",
+              "path": "Assets/_Project/Scripts/Tools/ToolHapticsRuntime.cs",
+              "warningCount": 0
+            },
+            {
+              "criticalCount": 6,
+              "domainHint": "RootScripts",
+              "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+              "warningCount": 0
+            },
+            {
+              "criticalCount": 6,
+              "domainHint": "Fauna",
+              "path": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
+              "warningCount": 0
+            },
+            {
+              "criticalCount": 5,
+              "domainHint": "World",
+              "path": "Assets/_Project/Scripts/World/ImpostorSystem.cs",
+              "warningCount": 0
+            },
+            {
+              "criticalCount": 5,
+              "domainHint": "UI",
+              "path": "Assets/_Project/Scripts/UI/AcousticEcholocationTranslator.cs",
+              "warningCount": 0
+            },
+            {
+              "criticalCount": 4,
+              "domainHint": "VFX",
+              "path": "Assets/_Project/Scripts/VFX/PlasmaBeam/ShinobuPlasmaBeamRuntime.cs",
+              "warningCount": 0
+            },
+            {
+              "criticalCount": 4,
+              "domainHint": "UI",
+              "path": "Assets/_Project/Scripts/UI/SubtitleManager.cs",
+              "warningCount": 0
+            }
+          ],
+          "warning_delta": 0
+        }
+      ],
+      "source": "Docs/Reports/SHINOBU_140_STATIC_GATE_REGRESSION_ATTRIBUTION.json"
+    },
+    "scanner_count": 14,
+    "scanner_self_tests": {
+      "present": true,
+      "source": "Docs/Reports/SHINOBU_140_SCANNER_SELF_TESTS.json",
+      "status": "PASS",
+      "test_count": 4,
+      "tests": [
+        {
+          "name": "test_regression_attribution_excludes_self_gate",
+          "status": "PASS"
+        },
+        {
+          "name": "test_core_violation_fixture_trips_scanners",
+          "status": "PASS"
+        },
+        {
+          "name": "test_live_self_audit_contract_stays_parseable",
+          "status": "PASS"
+        },
+        {
+          "name": "test_live_self_audit_counts_match_static_summary",
+          "status": "PASS"
+        }
+      ]
+    },
+    "scanners": {
+      "AUP_Compliance": {
+        "criticalCount": 25,
+        "filesScanned": 1575,
+        "warningCount": 0
+      },
+      "Burst_Job_Directives": {
+        "criticalCount": 653,
+        "filesScanned": 1575,
+        "warningCount": 0
+      },
+      "Compile_Wall": {
+        "criticalCount": 118,
+        "filesScanned": 1776,
+        "warningCount": 0
+      },
+      "Dev_Virtualization": {
+        "criticalCount": 2,
+        "filesScanned": 1575,
+        "warningCount": 182
+      },
+      "Hot_Helper_Complete": {
+        "criticalCount": 13,
+        "filesScanned": 1575,
+        "warningCount": 0
+      },
+      "Hot_Helper_Registry_Polling": {
+        "criticalCount": 256,
+        "filesScanned": 1575,
+        "warningCount": 0
+      },
+      "Hot_Registry_Polling": {
+        "criticalCount": 0,
+        "filesScanned": 1575,
+        "warningCount": 0
+      },
+      "Mid_Frame_Complete": {
+        "criticalCount": 0,
+        "filesScanned": 1575,
+        "warningCount": 0
+      },
+      "Rollback_Fence_Compliance": {
+        "criticalCount": 0,
+        "filesScanned": 1575,
+        "warningCount": 0
+      },
+      "Runtime_Struct_Layout": {
+        "criticalCount": 570,
+        "filesScanned": 1575,
+        "warningCount": 0
+      },
+      "Self_Audit_Proof": {
+        "criticalCount": 0,
+        "filesScanned": 1,
+        "warningCount": 0
+      },
+      "Signal_Bus_Topology": {
+        "criticalCount": 0,
+        "filesScanned": 1575,
+        "warningCount": 0
+      },
+      "Static_Gate_Regression": {
+        "criticalCount": 2,
+        "filesScanned": 13,
+        "warningCount": 0
+      },
+      "Vault_Sovereignty": {
+        "criticalCount": 664,
+        "filesScanned": 1575,
+        "warningCount": 0
+      }
+    },
+    "self_audit": {
+      "agent": "SHINOBU_140",
+      "declared_task_count": 20,
+      "domain": "Echelon 9 / Global Architecture Integration",
+      "present": true,
+      "source": "Docs/Reports/SHINOBU_140_SELF_AUDIT.xml",
+      "status": "PENDING_VERIFICATION",
+      "task_count": 20
+    },
+    "source": "Docs/Reports/SHINOBU_140_STATIC_GATE_SUMMARY.json",
+    "status": "PENDING VERIFICATION",
+    "total_critical": 2303,
+    "total_warnings": 182,
+    "unity_invoked": false
   },
   "omega_polish_status": "VERIFIED MASTER GRADE STATIC_SOURCE ONLY",
   "residual_risk": [

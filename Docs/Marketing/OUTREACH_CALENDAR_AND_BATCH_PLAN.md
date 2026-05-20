@@ -1,7 +1,7 @@
 # Outreach Calendar And Batch Plan
 
 Status: future campaign calendar / no dates committed
-Rule: no public push before proof assets
+Rule: no public push before proof assets, AB-009/KPI decision-read proof, and route-specific class / `reply_consent_provenance` custody
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
 ## 2026-05-17 R4 Interior Actuality Boundary
@@ -16,16 +16,26 @@ This document is active only where it agrees with:
 No Steam page, Next Fest, demo approval, creator outreach, ad performance, runtime build, Unity import, profiler, player-build, or visual proof is implied unless this document links a fresh evidence artifact. Historical campaign timing assumptions inside this file are subordinate to current project authority docs and current platform/event policy pages.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
+## 2026-05-19 Calendar Gate Override
+
+Batch sizes below are ceilings, not instructions. Any phase that uses gameplay, pressure, route-risk, threat, salvage, base failure, or first-public agency proof requires:
+
+- one factual agency candidate asset, not only planned metadata;
+- `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision` from AB-009/KPI;
+- `creator_send_gate` open when the batch is creator-facing;
+- `send_route_class` and `reply_consent_provenance` before replies count as KPI signal;
+- user-approved copy, target list, spend/key count, and compliance pass.
+
 ## Phase Gates
 
 | Phase | Trigger | Main Asset | Outreach Scope |
 |---|---|---|---|
 | P0 Prep | Now | docs, lead base, pitch bank | No external outreach except private critique. |
-| P1 Screenshot Proof | 6-10 real screenshots | Steam draft + screenshot pack | 10-20 high-fit creators for feedback. |
-| P2 Clip Proof | 3-5 20s clips | vertical/16:9 clips | 20-40 creators + community critique. |
-| P3 Steam Page Live | public Coming Soon page | Steam link + page assets | 50-100 leads, mostly feedback/wishlist funnel. |
-| P4 Demo Locked | stable public demo | demo + press kit | 100-200 leads, keys only with tracking. |
-| P5 Next Fest | after current Steamworks eligibility recheck, registered/demo-approved state, and page/demo proof assets | demo + trailer + livestream assets | 200+ segmented contacts. |
+| P1 Screenshot Proof | 6-10 real screenshots plus AB-009/KPI decision-read proof for any agency claim | Steam draft + screenshot pack | 10-20 high-fit critique asks only after `send_route_class` / `reply_consent_provenance` fields are ready for creator sends. |
+| P2 Clip Proof | 3-5 20s clips plus AB-009/KPI decision-read proof if the clip sells pressure/route risk | vertical/16:9 clips | 20-40 creators/community critique only with route-specific class and `reply_consent_provenance` logging. |
+| P3 Steam Page Live | public Coming Soon page plus official CTA/UTM activation and AB-009/KPI proof for first-page agency claims | CTA packet + page assets | 50-100 leads, mostly feedback/wishlist funnel, only through verified route classes. |
+| P4 Demo Locked | stable public demo plus access logs, known-issues copy, and `access_route_class` / `reply_consent_provenance` custody | demo + press kit | 100-200 leads; keys/private access only after recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED`, official inbox custody, tracking, and disclosure. |
+| P5 Next Fest | after current Steamworks eligibility recheck, registered/demo-approved state, page/demo proof assets, and route/consent reporting | demo + trailer + livestream assets | 200+ segmented contacts only from verified database. |
 | P6 EA Launch | current-state EA build | launch trailer + key policy | press/creators, no future promises. |
 
 ## P0 - Prep Only
@@ -52,7 +62,7 @@ Forbidden:
 
 Batch size:
 
-- 10-20 A-priority leads.
+- 10-20 A-priority leads only if the asset has a factual QA row and `send_route_class` / `reply_consent_provenance` fields are ready.
 
 Targets:
 
@@ -65,13 +75,18 @@ Ask:
 
 > Does this visual direction read as industrial deep-sea survival, or still too close to existing underwater survival games?
 
+Gate:
+
+- if the screenshot claims gameplay/pressure/route-risk agency proof, do not send unless AB-009/KPI stores `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`;
+- creator-facing sends also require `creator_send_gate`, `send_route_class`, and `reply_consent_provenance`.
+
 No key. No demo promise unless true.
 
 ## P2 - Clip Proof Batch
 
 Batch size:
 
-- 20-40 leads.
+- 20-40 leads only after clip QA and route-specific class / `reply_consent_provenance` fields are ready.
 
 Targets:
 
@@ -84,6 +99,11 @@ Ask:
 
 > Would this 15-20 second format fit your audience when a demo exists?
 
+Gate:
+
+- if the clip sells pressure, route risk, threat, salvage failure, or base failure, AB-009/KPI must show that cold viewers named a player decision;
+- do not count replies beyond creator-route signal unless `send_route_class` and `reply_consent_provenance` are filled.
+
 Measure:
 
 - replies;
@@ -95,7 +115,7 @@ Measure:
 
 Batch size:
 
-- 50-100 leads.
+- 50-100 leads only after Steam page, official CTA/UTM activation, AB-009/KPI proof for first-page agency claims, and verified route classes exist.
 
 Targets:
 
@@ -111,6 +131,7 @@ Ask:
 Optional CTA:
 
 - Wishlist only if they already show interest. Do not beg.
+- Do not ask for wishlist traffic from gameplay/pressure/route-risk copy unless the AB-009/KPI decision-read field exists.
 
 ## P4 - Demo Locked Batch
 
@@ -132,8 +153,9 @@ Required:
 - embargo if needed;
 - known demo length;
 - known demo content;
-- known no-coop public answer;
-- known performance answer.
+- known multiplayer-scope public answer;
+- known performance answer;
+- `access_route_class`, disclosure state, and `reply_consent_provenance`.
 
 Ask:
 
@@ -149,6 +171,7 @@ Daily actions:
 
 - send no more than one update per target unless requested;
 - track coverage;
+- record the route-specific class field and `reply_consent_provenance` before using replies as KPI signal;
 - clip best moments;
 - answer Steam discussions;
 - fix only critical demo blockers;
@@ -160,17 +183,17 @@ Rules:
 
 - sell current state;
 - no future feature promises;
-- no co-op promise;
+- single-player-first scope only;
 - no fake performance claim;
 - launch discount only if pricing strategy supports it;
-- review keys in small batches.
+- review keys only in small batches after recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED`, official inbox custody, access-log fields, and disclosure pass.
 
 ## Weekly Agent Cadence
 
 Monday:
 
-- verify 20 raw leads;
-- update competitor/sentiment watch.
+- update asset-to-CRM gate status for existing rows, or run a raw-lead sprint only if explicitly opened;
+- update competitor/sentiment watch only when it changes asset criteria, FAQ, source ledger, or risk register.
 
 Tuesday:
 
@@ -202,3 +225,5 @@ Before any batch:
 - user approves target list;
 - user approves spend/key count;
 - compliance pass done.
+- AB-009/KPI field exists for gameplay/pressure/route-risk agency proof;
+- route-specific class field and `reply_consent_provenance` are ready for every reply route.

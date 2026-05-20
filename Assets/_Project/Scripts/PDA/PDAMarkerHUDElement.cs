@@ -15,7 +15,7 @@ namespace Hecton8.PDA
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/PDA/PDA Marker HUD Element")]
-    public sealed class PDAMarkerHUDElement : MonoBehaviour, ITickable, IUpdatable, IPDAEventListener
+    public sealed class PDAMarkerHUDElement : MonoBehaviour, ITickable, IUpdatable, IPDAEventListener, IGlobalRegistryHotSwapListener
     {
         private sealed class MarkerIconDisplay
         {
@@ -84,6 +84,11 @@ namespace Hecton8.PDA
         private int _markerCount;
         private int _activeDisplayCount;
         private float _cameraRetryTimer;
+        private PDAMarkerRegistry _cachedMarkerRegistry;
+        private IPlayerRuntimeContext _cachedPlayerContext;
+        private bool _hotSwapListenerRegistered;
+        private bool _markerRegistryColdResolved;
+        private bool _playerContextColdResolved;
 
         private void Awake()
         {
@@ -92,6 +97,8 @@ namespace Hecton8.PDA
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold(forceRefresh: true);
+            TryRegisterHotSwapListener();
             TryRegisterWithTickManager();
             TryRegisterWithPDAEvents();
             _markersDirty = true;
@@ -102,6 +109,7 @@ namespace Hecton8.PDA
         {
             UnregisterFromPDAEvents();
             UnregisterFromTickManager();
+            TryUnregisterHotSwapListener();
             HideAllDisplays();
         }
 
@@ -109,6 +117,7 @@ namespace Hecton8.PDA
         {
             UnregisterFromPDAEvents();
             UnregisterFromTickManager();
+            TryUnregisterHotSwapListener();
             PDAEvents.AssertUnregistered(this, nameof(PDAMarkerHUDElement));
         }
 
@@ -118,7 +127,7 @@ namespace Hecton8.PDA
             float safeDeltaTime = math.max(0f, deltaTime);
             _cameraRetryTimer = math.max(0f, _cameraRetryTimer - safeDeltaTime);
 
-            PDAMarkerRegistry markerRegistry = GlobalRegistry.PDAMarkers;
+            PDAMarkerRegistry markerRegistry = _cachedMarkerRegistry;
             if (markerRegistry == null)
             {
                 HideAllDisplays();
@@ -184,6 +193,34 @@ namespace Hecton8.PDA
             }
         }
 
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.PDAMarkerRuntime:
+                    _cachedMarkerRegistry = currentService as PDAMarkerRegistry;
+                    _markerRegistryColdResolved = true;
+                    _markersDirty = true;
+                    if (_cachedMarkerRegistry == null)
+                    {
+                        _markerCount = 0;
+                        HideAllDisplays();
+                    }
+                    break;
+
+                case GlobalRegistryServiceSlot.Player:
+                    _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                    _playerContextColdResolved = true;
+                    _mainCamera = null;
+                    _cameraRetryTimer = 0f;
+                    _markersDirty = true;
+                    break;
+            }
+        }
+
         private void BuildIconPool()
         {
             if (markerIconPrefab == null || iconContainer == null)
@@ -232,7 +269,7 @@ namespace Hecton8.PDA
                 return false;
 
             _cameraRetryTimer = CameraRetryInterval;
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             if (playerContext != null)
                 _mainCamera = playerContext.PlayerCamera;
 
@@ -241,7 +278,7 @@ namespace Hecton8.PDA
 
         private bool TryResolveObserverAup(out AbsoluteUniversePosition observerAup)
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             if (playerContext != null && playerContext.PlayerMovement != null)
             {
                 observerAup = playerContext.PlayerMovement.CurrentAup;
@@ -543,6 +580,39 @@ namespace Hecton8.PDA
 
             PDAEvents.Unregister(this);
             _registeredToPDAEvents = false;
+        }
+
+        private void CacheRegistryServicesCold(bool forceRefresh = false)
+        {
+            if (forceRefresh || !_markerRegistryColdResolved || _cachedMarkerRegistry == null)
+            {
+                _cachedMarkerRegistry = GlobalRegistry.PDAMarkers;
+                _markerRegistryColdResolved = _cachedMarkerRegistry != null;
+            }
+
+            if (forceRefresh || !_playerContextColdResolved || _cachedPlayerContext == null)
+            {
+                _cachedPlayerContext = GlobalRegistry.Player;
+                _playerContextColdResolved = _cachedPlayerContext != null;
+                _mainCamera = null;
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
     }
 }

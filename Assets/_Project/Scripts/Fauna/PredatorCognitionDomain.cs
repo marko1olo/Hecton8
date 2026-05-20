@@ -375,6 +375,7 @@ namespace Hecton8.AI
         private const int MesofaunaVisualSyncDtoSizeBytes = MesofaunaBehaviorConstants.VisualSyncDtoSizeBytes;
         private const int MesofaunaTelemetryEntrySizeBytes = MesofaunaBehaviorConstants.TelemetryEntrySizeBytes;
         private const int MesofaunaTuningDtoSizeBytes = MesofaunaBehaviorConstants.TuningDtoSizeBytes;
+        private const int MesofaunaSpeciesProfileDtoSizeBytes = MesofaunaBehaviorConstants.SpeciesProfileDtoSizeBytes;
         private const int ApexCortexTuningFloat4Capacity = 1;
         internal static readonly int CognitionCoreAlignmentBytes = UnsafeUtility.AlignOf<CognitionCore>();
 
@@ -519,6 +520,16 @@ namespace Hecton8.AI
         private const int PredatorTargetSpatialHashBucketMask = PredatorTargetSpatialHashBucketCount - 1;
         private const int MesofaunaTargetSpatialHashBucketCount = MesofaunaBehaviorConstants.TargetSpatialHashBucketCount;
         private const int MesofaunaTargetSpatialHashBucketMask = MesofaunaTargetSpatialHashBucketCount - 1;
+        private const BufferID MesofaunaStateDTOsBufferId = (BufferID)71180;
+        private const BufferID MesofaunaMockPreyTargetsBufferId = (BufferID)71181;
+        private const BufferID MesofaunaVisualSyncBufferId = (BufferID)71182;
+        private const BufferID MesofaunaTelemetryRingBufferId = (BufferID)71183;
+        private const BufferID MesofaunaTuningBufferId = (BufferID)71184;
+        private const BufferID MesofaunaTargetHashBucketHeadsBufferId = (BufferID)71185;
+        private const BufferID MesofaunaTargetHashNextBufferId = (BufferID)71186;
+        private const BufferID MesofaunaSpeciesProfilesBufferId = (BufferID)71187;
+        private const BufferID MesofaunaSpeciesProfileCountBufferId = (BufferID)71188;
+        private const BufferID MesofaunaCsvScratchBufferId = (BufferID)71189;
         private const string ApexCortexBehaviorCsvName = "ai_behavior_overrides.csv";
         private const string MesofaunaSpeciesProfilesCsvName = "mesofauna_species_profiles.csv";
 
@@ -637,6 +648,9 @@ namespace Hecton8.AI
         private static VaultArray<MesofaunaVisualSyncDTO> _mesofaunaVisualSync;
         private static VaultArray<MesofaunaTelemetryEntry> _mesofaunaTelemetryRing;
         private static VaultArray<MesofaunaTuningDTO> _mesofaunaTuning;
+        private static VaultArray<MesofaunaSpeciesProfileDTO> _mesofaunaSpeciesProfiles;
+        private static VaultArray<int> _mesofaunaSpeciesProfileCount;
+        private static VaultArray<byte> _mesofaunaCsvScratch;
         private static VaultArray<int> _mesofaunaTargetHashBucketHeads;
         private static VaultArray<int> _mesofaunaTargetHashNext;
         private static BorrowedArray<byte> _threatVoxelGrid;
@@ -645,6 +659,11 @@ namespace Hecton8.AI
         private static float3 _threatVoxelCellSize;
         private static byte _threatVoxelSolidThreshold = SolidThreatVoxel;
         private static bool _threatVoxelUsesSignedDistanceEncoding;
+        private static BorrowedArray<float4> _chemicalFrontGrid;
+        private static BorrowedArray<float4> _chemicalOverlayGrid;
+        private static int3 _chemicalGridDimensions;
+        private static float3 _chemicalGridOrigin;
+        private static float3 _chemicalGridCellSize = new float3(1f, 1f, 1f);
         private static BorrowedArray<ChemicalInfluenceGrid.ChemicalBreadcrumbWaypoint> _chemicalBreadcrumbs;
         private static int _chemicalBreadcrumbCount;
         private static float _chemicalBreadcrumbFollowStepMeters = 12f;
@@ -928,6 +947,166 @@ namespace Hecton8.AI
             _controls[slot] = control;
         }
 
+        private static void ProcessMesofaunaDamageSignals(int frameId)
+        {
+            if (!_activeSlots.IsCreated ||
+                !_inputs.IsCreated ||
+                !_controls.IsCreated ||
+                !_mesofaunaStates.IsCreated ||
+                _activeSlotCount <= 0)
+            {
+                return;
+            }
+
+            System.ReadOnlySpan<CombatDamageSignal> damageSignals = SignalBus<CombatDamageSignal>.GetFrameSnapshot();
+            if (damageSignals.Length <= 0)
+                return;
+
+            for (int signalIndex = 0; signalIndex < damageSignals.Length; signalIndex++)
+            {
+                CombatDamageSignal signal = damageSignals[signalIndex];
+                if (signal.TargetHash == 0u && signal.TargetId == 0)
+                    continue;
+
+                for (int i = 0; i < _activeSlotCount; i++)
+                {
+                    int slot = _activeSlots[i];
+                    if ((uint)slot >= (uint)_inputs.Length || (uint)slot >= (uint)_mesofaunaStates.Length)
+                        continue;
+
+                    CognitionInput input = _inputs[slot];
+                    if (!IsMesofaunaPredator(in input))
+                        continue;
+
+                    uint predatorHash = BuildMesofaunaSlotHash(slot, input.SpeciesId);
+                    ushort predatorShortId = unchecked((ushort)(predatorHash & 0xFFFFu));
+                    if (signal.TargetHash != predatorHash &&
+                        (signal.TargetId == 0 || signal.TargetId != predatorShortId))
+                    {
+                        continue;
+                    }
+
+                    MesofaunaStateDTO state = _mesofaunaStates[slot];
+                    state.PreviousState = state.CurrentState;
+                    state.CurrentState = MesofaunaBehaviorConstants.StateFlee;
+                    state.TargetHashID = signal.SourceHash != 0u ? signal.SourceHash : signal.DamageType;
+                    state.StateTimerTicks = 0;
+                    _mesofaunaStates[slot] = state;
+
+                    if (_chosenStates.IsCreated && (uint)slot < (uint)_chosenStates.Length)
+                        _chosenStates[slot] = MesofaunaBehaviorConstants.StateFlee;
+                    if (_evaluationDueFlags.IsCreated && (uint)slot < (uint)_evaluationDueFlags.Length)
+                        _evaluationDueFlags[slot] = 1;
+                    if (_nextEvaluationTimes.IsCreated && (uint)slot < (uint)_nextEvaluationTimes.Length)
+                        _nextEvaluationTimes[slot] = 0f;
+
+                    CognitionControl control = _controls[slot];
+                    control.OverrideStateFlags = (uint)PredatorUtilityState.Fleeing;
+                    control.Flags &= ~(int)CognitionControlFlags.HasOverrideThreatPosition;
+                    control.OverrideThreatPosition = default;
+                    if (CombatDamageSignalCodec.TryToRuntimePoint(in signal, out float3 runtimeThreat) &&
+                        MathGuard.IsFinite(runtimeThreat))
+                    {
+                        control.OverrideThreatPosition = runtimeThreat;
+                        control.Flags |= (int)CognitionControlFlags.HasOverrideThreatPosition;
+                    }
+                    control.OverrideUntilTime = input.CurrentTime + 2.5f;
+                    _controls[slot] = control;
+                }
+            }
+        }
+
+        private static void ProcessMesofaunaRespawnSignals(int frameId)
+        {
+            if (!_activeSlots.IsCreated ||
+                !_inputs.IsCreated ||
+                !_controls.IsCreated ||
+                !_mesofaunaStates.IsCreated ||
+                _activeSlotCount <= 0)
+            {
+                return;
+            }
+
+            System.ReadOnlySpan<PlayerRespawnSignal> respawnSignals = SignalBus<PlayerRespawnSignal>.GetFrameSnapshot();
+            if (respawnSignals.Length <= 0)
+                return;
+
+            for (int signalIndex = 0; signalIndex < respawnSignals.Length; signalIndex++)
+            {
+                PlayerRespawnSignal signal = respawnSignals[signalIndex];
+                uint signalFlags = signal.Flags;
+                bool requestPacket = signal.Phase == PlayerRespawnSignalPhase.Request &&
+                                     (signalFlags & PlayerRespawnSignalFlags.Requested) != 0u &&
+                                     (signalFlags & PlayerRespawnSignalFlags.Committed) == 0u;
+                bool committedPacket = signal.Phase == PlayerRespawnSignalPhase.Committed &&
+                                       (signalFlags & PlayerRespawnSignalFlags.Committed) != 0u;
+                if (!requestPacket && !committedPacket)
+                {
+                    continue;
+                }
+
+                if (signal.Sequence == 0u ||
+                    (signalFlags & PlayerRespawnSignalFlags.InvalidDeathAup) != 0u)
+                    continue;
+
+                uint playerHash = signal.PlayerHash != 0u ? signal.PlayerHash : 0x504C5952u;
+                for (int i = 0; i < _activeSlotCount; i++)
+                {
+                    int slot = _activeSlots[i];
+                    if ((uint)slot >= (uint)_inputs.Length ||
+                        (uint)slot >= (uint)_controls.Length ||
+                        (uint)slot >= (uint)_mesofaunaStates.Length)
+                    {
+                        continue;
+                    }
+
+                    CognitionInput input = _inputs[slot];
+                    if (!IsMesofaunaPredator(in input))
+                        continue;
+
+                    MesofaunaStateDTO state = _mesofaunaStates[slot];
+                    bool targetsPlayer = (input.Flags & (int)CognitionInputFlags.HasPlayerTarget) != 0 ||
+                                         state.TargetHashID == playerHash;
+                    if (!targetsPlayer)
+                        continue;
+
+                    state.PreviousState = state.CurrentState;
+                    state.CurrentState = MesofaunaBehaviorConstants.StateIdle;
+                    state.TargetHashID = 0u;
+                    state.StateTimerTicks = 0;
+                    state.AggressionScalar = math.min(state.AggressionScalar, 0.12f);
+                    state.Velocity = float3.zero;
+                    _mesofaunaStates[slot] = state;
+
+                    if (_chosenStates.IsCreated && (uint)slot < (uint)_chosenStates.Length)
+                        _chosenStates[slot] = MesofaunaBehaviorConstants.StateIdle;
+                    if (_evaluationDueFlags.IsCreated && (uint)slot < (uint)_evaluationDueFlags.Length)
+                        _evaluationDueFlags[slot] = 1;
+                    if (_nextEvaluationTimes.IsCreated && (uint)slot < (uint)_nextEvaluationTimes.Length)
+                        _nextEvaluationTimes[slot] = 0f;
+                    if (_outputs.IsCreated && (uint)slot < (uint)_outputs.Length)
+                        _outputs[slot] = BuildDefaultPackedOutput(new float3(0f, 0f, 1f));
+                    if (_mesofaunaVisualSync.IsCreated && (uint)slot < (uint)_mesofaunaVisualSync.Length)
+                        _mesofaunaVisualSync[slot] = default;
+
+                    CognitionControl control = _controls[slot];
+                    control.OverrideStateFlags = 0u;
+                    control.OverrideThreatPosition = float3.zero;
+                    control.OverrideUntilTime = 0f;
+                    control.Flags &= ~(int)CognitionControlFlags.HasOverrideThreatPosition;
+                    _controls[slot] = control;
+                }
+            }
+        }
+
+        private static bool IsMesofaunaPredator(in CognitionInput input)
+        {
+            return (input.Flags & (int)CognitionInputFlags.Active) != 0 &&
+                   (input.Flags & (int)CognitionInputFlags.PredatorRole) != 0 &&
+                   (input.Flags & (int)CognitionInputFlags.IsApexPredator) == 0 &&
+                   (input.Flags & (int)CognitionInputFlags.UseAlphaLeviathanCognition) == 0;
+        }
+
         internal static void ForceSated(int slot, float currentTime, float duration)
         {
             if (!IsValidSlot(slot))
@@ -1070,6 +1249,8 @@ namespace Hecton8.AI
 
             EnsureRetinalVaultBuffers();
             ProcessSubmarineLightSignals(frameId);
+            ProcessMesofaunaDamageSignals(frameId);
+            ProcessMesofaunaRespawnSignals(frameId);
             EmitFearPheromones();
             ChemicalInfluenceGrid.BeginAiFrame(frameId);
             RefreshThreatVoxelSnapshot(frameId);
@@ -1138,20 +1319,8 @@ namespace Hecton8.AI
             float mesofaunaVisionRadiusMeters = ResolveMesofaunaVisionRadius(mesofaunaQualityWeight);
             MesofaunaTuningDTO mesofaunaTuning = ResolveMesofaunaRuntimeTuning(mesofaunaQualityWeight);
             RebuildPredatorTargetSpatialHash(swarmBoundsMin);
-            RebuildMesofaunaTargetSpatialHash(swarmBoundsMin);
             NativeArray<int> targetHashBucketHeads = ResolvePredatorTargetHashBucketHeads();
             NativeArray<int> targetHashNext = ResolvePredatorTargetHashNext();
-            NativeArray<int> mesofaunaTargetHashBucketHeads = ResolveMesofaunaTargetHashBucketHeads();
-            NativeArray<int> mesofaunaTargetHashNext = ResolveMesofaunaTargetHashNext();
-            var mesofaunaMockJob = new GenerateMesofaunaMockTargetsJob
-            {
-                ActiveSlots = _activeSlots,
-                Inputs = _inputs,
-                MockTargets = _mesofaunaMockTargets,
-                FrameId = frameId,
-                GlobalQualityWeight = mesofaunaQualityWeight
-            };
-            JobHandle mesofaunaMockHandle = mesofaunaMockJob.Schedule(_activeSlotCount, EvaluationJobBatchSize, default);
             var swarmJob = new SwarmAnalysisJob
             {
                 ActiveSlots = _activeSlots,
@@ -1192,7 +1361,6 @@ namespace Hecton8.AI
                     default,
                     out _scheduledSwarmHandle))
             {
-                mesofaunaMockHandle.Complete();
                 _lastScheduledFrame = frameId;
                 return;
             }
@@ -1266,12 +1434,40 @@ namespace Hecton8.AI
                 _scheduledEvaluationHandle = _scheduledSwarmHandle;
             }
 
-            JobHandle mesofaunaDependency = JobHandle.CombineDependencies(_scheduledEvaluationHandle, mesofaunaMockHandle);
-            var mesofaunaJob = new MesofaunaBehaviorJob
+            NativeArray<int> mesofaunaTargetHashBucketHeads = ResolveMesofaunaTargetHashBucketHeads();
+            NativeArray<int> mesofaunaTargetHashNext = ResolveMesofaunaTargetHashNext();
+            var mesofaunaMockJob = new GenerateMesofaunaMockTargetsJob
             {
                 ActiveSlots = _activeSlots,
                 Inputs = _inputs,
                 MockTargets = _mesofaunaMockTargets,
+                FrameId = frameId,
+                GlobalQualityWeight = mesofaunaQualityWeight
+            };
+            JobHandle mesofaunaMockHandle = mesofaunaMockJob.Schedule(_activeSlotCount, EvaluationJobBatchSize, default);
+            var mesofaunaHashJob = new BuildMesofaunaTargetSpatialHashJob
+            {
+                ActiveSlots = _activeSlots,
+                Inputs = _inputs,
+                MockTargets = _mesofaunaMockTargets,
+                TargetHashBucketHeads = mesofaunaTargetHashBucketHeads,
+                TargetHashNext = mesofaunaTargetHashNext,
+                ActiveSlotCount = _activeSlotCount,
+                SwarmBoundsMin = swarmBoundsMin,
+                CellSizeMeters = SwarmBucketCellSize,
+                BucketMask = MesofaunaTargetSpatialHashBucketMask
+            };
+            JobHandle mesofaunaHashHandle = mesofaunaHashJob.Schedule(mesofaunaMockHandle);
+            JobHandle mesofaunaDependency = JobHandle.CombineDependencies(
+                _scheduledEvaluationHandle,
+                mesofaunaHashHandle);
+            var mesofaunaJob = new MesofaunaBehaviorJob
+            {
+                ActiveSlots = _activeSlots,
+                Inputs = _inputs,
+                Controls = _controls,
+                MockTargets = _mesofaunaMockTargets,
+                SpeciesProfiles = _mesofaunaSpeciesProfiles,
                 States = _mesofaunaStates,
                 VisualSync = _mesofaunaVisualSync,
                 Outputs = _outputs,
@@ -1288,6 +1484,7 @@ namespace Hecton8.AI
                 ChemicalBreadcrumbCount = _chemicalBreadcrumbCount,
                 ChemicalBreadcrumbFollowStepMeters = _chemicalBreadcrumbFollowStepMeters,
                 SwarmBoundsMin = swarmBoundsMin,
+                TargetHashCellSizeMeters = SwarmBucketCellSize,
                 TargetHashBucketMask = MesofaunaTargetSpatialHashBucketMask,
                 FrameId = frameId,
                 SliceModulo = mesofaunaSliceModulo,
@@ -1322,7 +1519,7 @@ namespace Hecton8.AI
             JobHandle releaseDependency = _evaluationScheduled
                 ? JobHandle.CombineDependencies(_scheduledSwarmHandle, _scheduledEvaluationHandle)
                 : _scheduledSwarmHandle;
-            releaseDependency.Complete();
+            DispatcherJobFence.TryComplete(ref releaseDependency, forceComplete: true);
             ReleaseVaultHandle(ref _cores);
             ReleaseVaultHandle(ref _controls);
             ReleaseVaultHandle(ref _inputs);
@@ -1378,6 +1575,9 @@ namespace Hecton8.AI
             ReleaseVaultHandle(ref _mesofaunaVisualSync);
             ReleaseVaultHandle(ref _mesofaunaTelemetryRing);
             ReleaseVaultHandle(ref _mesofaunaTuning);
+            ReleaseVaultHandle(ref _mesofaunaSpeciesProfiles);
+            ReleaseVaultHandle(ref _mesofaunaSpeciesProfileCount);
+            ReleaseVaultHandle(ref _mesofaunaCsvScratch);
             _mesofaunaTargetHashBucketHeads = default;
             _mesofaunaTargetHashNext = default;
 
@@ -1436,6 +1636,9 @@ namespace Hecton8.AI
             _mesofaunaVisualSync = default;
             _mesofaunaTelemetryRing = default;
             _mesofaunaTuning = default;
+            _mesofaunaSpeciesProfiles = default;
+            _mesofaunaSpeciesProfileCount = default;
+            _mesofaunaCsvScratch = default;
             _mesofaunaTargetHashBucketHeads = default;
             _mesofaunaTargetHashNext = default;
             _threatVoxelGrid = default;
@@ -1551,6 +1754,9 @@ namespace Hecton8.AI
                 _mesofaunaVisualSync.IsCreated &&
                 _mesofaunaTelemetryRing.IsCreated &&
                 _mesofaunaTuning.IsCreated &&
+                _mesofaunaSpeciesProfiles.IsCreated &&
+                _mesofaunaSpeciesProfileCount.IsCreated &&
+                _mesofaunaCsvScratch.IsCreated &&
                 _mesofaunaTargetHashBucketHeads.IsCreated &&
                 _mesofaunaTargetHashNext.IsCreated)
             {
@@ -1783,37 +1989,52 @@ namespace Hecton8.AI
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
             _mesofaunaStates = vault.GetBufferHandle<MesofaunaStateDTO>(
-                BufferID.MesofaunaStateDTOs,
+                MesofaunaStateDTOsBufferId,
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.UninitializedMemory);
             _mesofaunaMockTargets = vault.GetBufferHandle<MesofaunaTargetDTO>(
-                BufferID.MesofaunaMockPreyTargets,
+                MesofaunaMockPreyTargetsBufferId,
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.UninitializedMemory);
             _mesofaunaVisualSync = vault.GetBufferHandle<MesofaunaVisualSyncDTO>(
-                BufferID.MesofaunaVisualSync,
+                MesofaunaVisualSyncBufferId,
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
             _mesofaunaTelemetryRing = vault.GetBufferHandle<MesofaunaTelemetryEntry>(
-                BufferID.MesofaunaTelemetryRing,
+                MesofaunaTelemetryRingBufferId,
                 MesofaunaBehaviorConstants.TelemetryCapacity,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
             _mesofaunaTuning = vault.GetBufferHandle<MesofaunaTuningDTO>(
-                BufferID.MesofaunaTuning,
+                MesofaunaTuningBufferId,
                 1,
                 SystemID.AICognition,
                 NativeArrayOptions.ClearMemory);
+            _mesofaunaSpeciesProfiles = vault.GetBufferHandle<MesofaunaSpeciesProfileDTO>(
+                MesofaunaSpeciesProfilesBufferId,
+                MesofaunaBehaviorConstants.SpeciesProfileCapacity,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _mesofaunaSpeciesProfileCount = vault.GetBufferHandle<int>(
+                MesofaunaSpeciesProfileCountBufferId,
+                1,
+                SystemID.AICognition,
+                NativeArrayOptions.ClearMemory);
+            _mesofaunaCsvScratch = vault.GetBufferHandle<byte>(
+                MesofaunaCsvScratchBufferId,
+                MesofaunaBehaviorConstants.CsvScratchBytes,
+                SystemID.AICognition,
+                NativeArrayOptions.UninitializedMemory);
             _mesofaunaTargetHashBucketHeads = vault.GetBufferHandle<int>(
-                BufferID.MesofaunaTargetHashBucketHeads,
+                MesofaunaTargetHashBucketHeadsBufferId,
                 MesofaunaTargetSpatialHashBucketCount,
                 SystemID.AICognition,
                 NativeArrayOptions.UninitializedMemory);
             _mesofaunaTargetHashNext = vault.GetBufferHandle<int>(
-                BufferID.MesofaunaTargetHashNext,
+                MesofaunaTargetHashNextBufferId,
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.UninitializedMemory);
@@ -1868,6 +2089,9 @@ namespace Hecton8.AI
                 _mesofaunaVisualSync.IsCreated &&
                 _mesofaunaTelemetryRing.IsCreated &&
                 _mesofaunaTuning.IsCreated &&
+                _mesofaunaSpeciesProfiles.IsCreated &&
+                _mesofaunaSpeciesProfileCount.IsCreated &&
+                _mesofaunaCsvScratch.IsCreated &&
                 ResolveMesofaunaTargetHashBucketHeads().IsCreated &&
                 ResolveMesofaunaTargetHashNext().IsCreated;
             if (!resolvedAll)
@@ -1879,6 +2103,7 @@ namespace Hecton8.AI
 
             ClearCoreCognitionVaultBuffers();
             InitializeMesofaunaVaultBuffersCold();
+            TryLoadMesofaunaSpeciesProfilesCsvCold();
             _activeSlotCount = 0;
             return true;
         }
@@ -1935,6 +2160,9 @@ namespace Hecton8.AI
             ReleaseVaultHandle(ref _mesofaunaVisualSync);
             ReleaseVaultHandle(ref _mesofaunaTelemetryRing);
             ReleaseVaultHandle(ref _mesofaunaTuning);
+            ReleaseVaultHandle(ref _mesofaunaSpeciesProfiles);
+            ReleaseVaultHandle(ref _mesofaunaSpeciesProfileCount);
+            ReleaseVaultHandle(ref _mesofaunaCsvScratch);
             _mesofaunaTargetHashBucketHeads = default;
             _mesofaunaTargetHashNext = default;
         }
@@ -2043,6 +2271,9 @@ namespace Hecton8.AI
             NativeArray<MesofaunaVisualSyncDTO> visualSync = _mesofaunaVisualSync.Resolve();
             NativeArray<MesofaunaTelemetryEntry> telemetry = _mesofaunaTelemetryRing.Resolve();
             NativeArray<MesofaunaTuningDTO> tuning = _mesofaunaTuning.Resolve();
+            NativeArray<MesofaunaSpeciesProfileDTO> speciesProfiles = _mesofaunaSpeciesProfiles.Resolve();
+            NativeArray<int> speciesProfileCount = _mesofaunaSpeciesProfileCount.Resolve();
+            NativeArray<byte> csvScratch = _mesofaunaCsvScratch.Resolve();
             NativeArray<int> bucketHeads = ResolveMesofaunaTargetHashBucketHeads();
             NativeArray<int> next = ResolveMesofaunaTargetHashNext();
             if (!states.IsCreated ||
@@ -2050,6 +2281,9 @@ namespace Hecton8.AI
                 !visualSync.IsCreated ||
                 !telemetry.IsCreated ||
                 !tuning.IsCreated ||
+                !speciesProfiles.IsCreated ||
+                !speciesProfileCount.IsCreated ||
+                !csvScratch.IsCreated ||
                 !bucketHeads.IsCreated ||
                 !next.IsCreated)
             {
@@ -2059,8 +2293,10 @@ namespace Hecton8.AI
             int initCount = math.max(
                 Capacity,
                 math.max(
-                    MesofaunaBehaviorConstants.TelemetryCapacity,
-                    MesofaunaTargetSpatialHashBucketCount));
+                    MesofaunaBehaviorConstants.CsvScratchBytes,
+                    math.max(
+                        MesofaunaBehaviorConstants.TelemetryCapacity,
+                        MesofaunaTargetSpatialHashBucketCount)));
             var initJob = new InitializeMesofaunaStateJob
             {
                 States = states,
@@ -2068,12 +2304,16 @@ namespace Hecton8.AI
                 VisualSync = visualSync,
                 TelemetryRing = telemetry,
                 Tuning = tuning,
+                SpeciesProfiles = speciesProfiles,
+                SpeciesProfileCount = speciesProfileCount,
+                CsvScratch = csvScratch,
                 TargetHashBucketHeads = bucketHeads,
                 TargetHashNext = next,
                 DefaultTuning = MesofaunaTuningDTO.CreateDefault(ResolveMesofaunaGlobalQualityWeight())
             };
             // COLD SYNC JOB: Uninitialized mesofauna vault lanes are fully overwritten once before dispatch locks.
-            initJob.Schedule(initCount, EvaluationJobBatchSize).Complete();
+            for (int i = 0; i < initCount; i++)
+                initJob.Execute(i);
         }
 
         private static void ResetMesofaunaSlot(int slot, float3 runtimePosition, int speciesId, int stateCode)
@@ -2352,6 +2592,111 @@ namespace Hecton8.AI
 
             visual = _mesofaunaVisualSync[slot];
             return true;
+        }
+
+        internal static bool TryGetMesofaunaState(int slot, out MesofaunaStateDTO state)
+        {
+            EnsureInitialized();
+            state = default;
+            if (!_mesofaunaStates.IsCreated ||
+                slot < 0 ||
+                slot >= _mesofaunaStates.Length)
+            {
+                return false;
+            }
+
+            state = _mesofaunaStates[slot];
+            return true;
+        }
+
+        internal static bool TryReloadMesofaunaSpeciesProfiles()
+        {
+            EnsureInitialized();
+            return TryLoadMesofaunaSpeciesProfilesCsvCold();
+        }
+
+        internal static bool TryGetMesofaunaSpeciesProfileCount(out int count)
+        {
+            EnsureInitialized();
+            count = 0;
+            if (!_mesofaunaSpeciesProfileCount.IsCreated || _mesofaunaSpeciesProfileCount.Length <= 0)
+                return false;
+
+            count = math.max(0, _mesofaunaSpeciesProfileCount[0]);
+            return true;
+        }
+
+        internal static int CopyMesofaunaDebugGizmos(
+            Vector3[] origins,
+            Vector3[] desiredVelocities,
+            Vector3[] targetVectors,
+            byte[] states,
+            uint[] targetHashes,
+            int maxCount)
+        {
+            if (origins == null ||
+                desiredVelocities == null ||
+                targetVectors == null ||
+                states == null ||
+                targetHashes == null)
+            {
+                return 0;
+            }
+
+            EnsureInitialized();
+            if (!_activeSlots.IsCreated ||
+                !_inputs.IsCreated ||
+                !_mesofaunaStates.IsCreated ||
+                !_mesofaunaVisualSync.IsCreated)
+            {
+                return 0;
+            }
+
+            int capacity = math.min(
+                math.max(0, maxCount),
+                math.min(origins.Length, math.min(desiredVelocities.Length, math.min(targetVectors.Length, math.min(states.Length, targetHashes.Length)))));
+            int count = 0;
+            for (int i = 0; i < _activeSlotCount && count < capacity; i++)
+            {
+                int slot = _activeSlots[i];
+                if ((uint)slot >= (uint)_inputs.Length ||
+                    (uint)slot >= (uint)_mesofaunaStates.Length ||
+                    (uint)slot >= (uint)_mesofaunaVisualSync.Length)
+                {
+                    continue;
+                }
+
+                CognitionInput input = _inputs[slot];
+                bool midPredator = (input.Flags & (int)CognitionInputFlags.Active) != 0 &&
+                                   (input.Flags & (int)CognitionInputFlags.PredatorRole) != 0 &&
+                                   (input.Flags & (int)CognitionInputFlags.IsApexPredator) == 0 &&
+                                   (input.Flags & (int)CognitionInputFlags.UseAlphaLeviathanCognition) == 0;
+                if (!midPredator)
+                    continue;
+
+                MesofaunaStateDTO state = _mesofaunaStates[slot];
+                MesofaunaVisualSyncDTO visual = _mesofaunaVisualSync[slot];
+                Vector3 origin = HectonFloatingOrigin.ToRuntimePosition(state.AUP_Position);
+                origins[count] = origin;
+                desiredVelocities[count] = new Vector3(visual.DesiredVelocity.x, visual.DesiredVelocity.y, visual.DesiredVelocity.z);
+                if ((visual.TargetFlags & MesofaunaBehaviorConstants.VisualTargetFlagValid) != 0 && math.all(math.isfinite(visual.TargetAup)))
+                {
+                    targetVectors[count] = HectonFloatingOrigin.ToRuntimePosition(visual.TargetAup) - origin;
+                }
+                else
+                {
+                    float3 targetVector = (input.Flags & (int)CognitionInputFlags.HasPreyTarget) != 0 && MathGuard.IsFinite(input.PreyPosition)
+                        ? input.PreyPosition - input.Position
+                        : visual.DesiredVelocity;
+                    targetVectors[count] = new Vector3(targetVector.x, targetVector.y, targetVector.z);
+                }
+
+                states[count] = state.CurrentState;
+                targetHashes[count] = state.TargetHashID;
+                count++;
+            }
+
+            return count;
         }
 
         internal static bool TryReloadApexCortexBehaviorOverrides()
@@ -2727,6 +3072,400 @@ namespace Hecton8.AI
             return float.IsFinite(value);
         }
 
+        private static unsafe bool TryLoadMesofaunaSpeciesProfilesCsvCold()
+        {
+            if (!_mesofaunaSpeciesProfiles.IsCreated ||
+                !_mesofaunaSpeciesProfileCount.IsCreated ||
+                !_mesofaunaCsvScratch.IsCreated ||
+                _mesofaunaSpeciesProfileCount.Length <= 0)
+            {
+                return false;
+            }
+
+            NativeArray<MesofaunaSpeciesProfileDTO> profiles = _mesofaunaSpeciesProfiles.Resolve();
+            if (!profiles.IsCreated)
+                return false;
+
+            _mesofaunaSpeciesProfileCount[0] = 0;
+            for (int i = 0; i < profiles.Length; i++)
+                profiles[i] = default;
+
+            string path = ResolveMesofaunaSpeciesProfilesPathCold();
+            if (string.IsNullOrEmpty(path))
+                return false;
+
+            NativeArray<byte> scratch = _mesofaunaCsvScratch.Resolve();
+            int byteCount = ReadMesofaunaSpeciesProfilesFileCold(path, scratch);
+            if (byteCount <= 0)
+                return false;
+
+            void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(scratch);
+            System.ReadOnlySpan<byte> csvBytes = new System.ReadOnlySpan<byte>(source, byteCount);
+            int profileCount = ParseMesofaunaSpeciesProfilesCsv(csvBytes, profiles);
+            if (profileCount <= 0)
+                return false;
+
+            _mesofaunaSpeciesProfileCount[0] = profileCount;
+            return true;
+        }
+
+        private static string ResolveMesofaunaSpeciesProfilesPathCold()
+        {
+            DirectoryInfo dataDirectory = Directory.GetParent(Application.dataPath);
+            string projectRoot = dataDirectory != null ? dataDirectory.FullName : Application.dataPath;
+            string path = Path.Combine(projectRoot, MesofaunaSpeciesProfilesCsvName);
+            if (File.Exists(path))
+                return path;
+
+            path = Path.Combine(Application.streamingAssetsPath, MesofaunaSpeciesProfilesCsvName);
+            if (File.Exists(path))
+                return path;
+
+            path = Path.Combine(projectRoot, "Data", "AI", MesofaunaSpeciesProfilesCsvName);
+            return File.Exists(path) ? path : null;
+        }
+
+        private static unsafe int ReadMesofaunaSpeciesProfilesFileCold(string path, NativeArray<byte> scratch)
+        {
+            if (!scratch.IsCreated || scratch.Length <= 0)
+                return 0;
+
+            try
+            {
+                using (FileStream stream = File.OpenRead(path))
+                {
+                    if (stream.Length <= 0L || stream.Length > scratch.Length)
+                        return -1;
+
+                    int length = (int)stream.Length;
+                    void* destination = NativeArrayUnsafeUtility.GetUnsafePtr(scratch);
+                    System.Span<byte> target = new System.Span<byte>(destination, length);
+                    int totalRead = 0;
+                    while (totalRead < length)
+                    {
+                        int read = stream.Read(target.Slice(totalRead));
+                        if (read <= 0)
+                            break;
+
+                        totalRead += read;
+                    }
+
+                    return totalRead;
+                }
+            }
+            catch (IOException)
+            {
+                return 0;
+            }
+            catch (System.UnauthorizedAccessException)
+            {
+                return 0;
+            }
+            catch (System.ArgumentException)
+            {
+                return 0;
+            }
+        }
+
+        internal static int ParseMesofaunaSpeciesProfilesCsv(
+            System.ReadOnlySpan<byte> csv,
+            NativeArray<MesofaunaSpeciesProfileDTO> profiles)
+        {
+            if (!profiles.IsCreated || profiles.Length <= 0 || csv.Length <= 0)
+                return 0;
+
+            for (int i = 0; i < profiles.Length; i++)
+                profiles[i] = default;
+
+            int profileCount = 0;
+            int lineStart = 0;
+            while (lineStart < csv.Length)
+            {
+                int lineEnd = lineStart;
+                while (lineEnd < csv.Length && csv[lineEnd] != (byte)'\n' && csv[lineEnd] != (byte)'\r')
+                    lineEnd++;
+
+                System.ReadOnlySpan<byte> line = TrimCsvToken(csv.Slice(lineStart, lineEnd - lineStart));
+                if (TryParseMesofaunaSpeciesProfileLine(line, out MesofaunaSpeciesProfileDTO profile))
+                    profileCount += UpsertMesofaunaSpeciesProfile(profiles, profile);
+
+                lineStart = lineEnd + 1;
+                while (lineStart < csv.Length && (csv[lineStart] == (byte)'\n' || csv[lineStart] == (byte)'\r'))
+                    lineStart++;
+            }
+
+            return math.min(profileCount, profiles.Length);
+        }
+
+        private static bool TryParseMesofaunaSpeciesProfileLine(
+            System.ReadOnlySpan<byte> line,
+            out MesofaunaSpeciesProfileDTO profile)
+        {
+            profile = default;
+            line = TrimCsvToken(line);
+            if (line.Length <= 0 || line[0] == (byte)'#')
+                return false;
+
+            int cursor = 0;
+            if (!TryReadCsvByteField(line, ref cursor, out System.ReadOnlySpan<byte> speciesToken) ||
+                !TryParseSpeciesHash(speciesToken, out uint speciesHash) ||
+                speciesHash == 0u)
+            {
+                return false;
+            }
+
+            if (!TryReadCsvFloatField(line, ref cursor, out float speedMultiplier) ||
+                !TryReadCsvFloatField(line, ref cursor, out float aggressionMultiplier))
+            {
+                return false;
+            }
+
+            float scentMultiplier = TryReadCsvFloatField(line, ref cursor, out float parsedScent) ? parsedScent : 1f;
+            float visionMultiplier = TryReadCsvFloatField(line, ref cursor, out float parsedVision) ? parsedVision : 1f;
+            float huntBias = TryReadCsvFloatField(line, ref cursor, out float parsedHunt) ? parsedHunt : 1f;
+
+            profile = MesofaunaSpeciesProfileDTO.CreateDefault(speciesHash);
+            profile.SpeedMultiplier = math.clamp(SanitizeCsvScalar(speedMultiplier), 0.1f, 4f);
+            profile.AggressionMultiplier = math.clamp(SanitizeCsvScalar(aggressionMultiplier), 0.1f, 4f);
+            profile.ScentSensitivityMultiplier = math.clamp(SanitizeCsvScalar(scentMultiplier), 0.05f, 4f);
+            profile.VisionRadiusMultiplier = math.clamp(SanitizeCsvScalar(visionMultiplier), 0.25f, 3f);
+            profile.HuntBias = math.clamp(SanitizeCsvScalar(huntBias), 0.1f, 4f);
+            return true;
+        }
+
+        private static int UpsertMesofaunaSpeciesProfile(
+            NativeArray<MesofaunaSpeciesProfileDTO> profiles,
+            in MesofaunaSpeciesProfileDTO profile)
+        {
+            int start = (int)(profile.SpeciesHash % (uint)profiles.Length);
+            for (int probe = 0; probe < profiles.Length; probe++)
+            {
+                int index = start + probe;
+                if (index >= profiles.Length)
+                    index -= profiles.Length;
+
+                MesofaunaSpeciesProfileDTO existing = profiles[index];
+                if (existing.SpeciesHash != 0u && existing.SpeciesHash != profile.SpeciesHash)
+                    continue;
+
+                profiles[index] = profile;
+                return existing.SpeciesHash == 0u ? 1 : 0;
+            }
+
+            return 0;
+        }
+
+        private static bool TryReadCsvFloatField(System.ReadOnlySpan<byte> line, ref int cursor, out float value)
+        {
+            value = 0f;
+            return TryReadCsvByteField(line, ref cursor, out System.ReadOnlySpan<byte> token) &&
+                   TryParseFloatInvariant(token, out value);
+        }
+
+        private static bool TryReadCsvByteField(
+            System.ReadOnlySpan<byte> line,
+            ref int cursor,
+            out System.ReadOnlySpan<byte> token)
+        {
+            token = default;
+            while (cursor < line.Length && (line[cursor] == (byte)',' || line[cursor] == (byte)';' || IsWhitespace(line[cursor])))
+                cursor++;
+
+            if (cursor >= line.Length)
+                return false;
+
+            int start = cursor;
+            bool quoted = line[cursor] == (byte)'"';
+            if (quoted)
+                cursor++;
+
+            while (cursor < line.Length)
+            {
+                byte b = line[cursor];
+                if (quoted)
+                {
+                    if (b == (byte)'"')
+                    {
+                        cursor++;
+                        break;
+                    }
+                }
+                else if (b == (byte)',' || b == (byte)';')
+                {
+                    break;
+                }
+
+                cursor++;
+            }
+
+            int end = cursor;
+            while (cursor < line.Length && line[cursor] != (byte)',' && line[cursor] != (byte)';')
+                cursor++;
+            if (cursor < line.Length)
+                cursor++;
+
+            token = TrimCsvToken(line.Slice(start, end - start));
+            return token.Length > 0;
+        }
+
+        private static bool TryParseSpeciesHash(System.ReadOnlySpan<byte> token, out uint hash)
+        {
+            hash = 0u;
+            token = TrimCsvToken(token);
+            if (token.Length <= 0)
+                return false;
+
+            if (token.Length > 2 &&
+                token[0] == (byte)'0' &&
+                (token[1] == (byte)'x' || token[1] == (byte)'X'))
+            {
+                return TryParseHexUint(token.Slice(2), out hash);
+            }
+
+            if (TryParseUint(token, out hash))
+                return true;
+
+            hash = Fnv1aLower(token);
+            return hash != 0u;
+        }
+
+        private static bool TryParseUint(System.ReadOnlySpan<byte> token, out uint value)
+        {
+            value = 0u;
+            token = TrimCsvToken(token);
+            if (token.Length <= 0)
+                return false;
+
+            for (int i = 0; i < token.Length; i++)
+            {
+                byte b = token[i];
+                if (b < (byte)'0' || b > (byte)'9')
+                    return false;
+
+                uint next = (value * 10u) + (uint)(b - (byte)'0');
+                value = next < value ? uint.MaxValue : next;
+            }
+
+            return true;
+        }
+
+        private static bool TryParseHexUint(System.ReadOnlySpan<byte> token, out uint value)
+        {
+            value = 0u;
+            if (token.Length <= 0)
+                return false;
+
+            for (int i = 0; i < token.Length; i++)
+            {
+                byte b = token[i];
+                uint digit;
+                if (b >= (byte)'0' && b <= (byte)'9')
+                    digit = (uint)(b - (byte)'0');
+                else if (b >= (byte)'a' && b <= (byte)'f')
+                    digit = (uint)(10 + b - (byte)'a');
+                else if (b >= (byte)'A' && b <= (byte)'F')
+                    digit = (uint)(10 + b - (byte)'A');
+                else
+                    return false;
+
+                value = (value << 4) | digit;
+            }
+
+            return true;
+        }
+
+        private static bool TryParseFloatInvariant(System.ReadOnlySpan<byte> token, out float value)
+        {
+            value = 0f;
+            token = TrimCsvToken(token);
+            if (token.Length <= 0)
+                return false;
+
+            int index = 0;
+            float sign = 1f;
+            if (token[index] == (byte)'-')
+            {
+                sign = -1f;
+                index++;
+            }
+            else if (token[index] == (byte)'+')
+            {
+                index++;
+            }
+
+            double result = 0d;
+            bool hasDigits = false;
+            while (index < token.Length && token[index] >= (byte)'0' && token[index] <= (byte)'9')
+            {
+                result = (result * 10d) + (token[index] - (byte)'0');
+                index++;
+                hasDigits = true;
+            }
+
+            if (index < token.Length && token[index] == (byte)'.')
+            {
+                index++;
+                double scale = 0.1d;
+                while (index < token.Length && token[index] >= (byte)'0' && token[index] <= (byte)'9')
+                {
+                    result += (token[index] - (byte)'0') * scale;
+                    scale *= 0.1d;
+                    index++;
+                    hasDigits = true;
+                }
+            }
+
+            if (!hasDigits)
+                return false;
+
+            value = (float)(result * sign);
+            return float.IsFinite(value);
+        }
+
+        private static System.ReadOnlySpan<byte> TrimCsvToken(System.ReadOnlySpan<byte> token)
+        {
+            int start = 0;
+            int end = token.Length - 1;
+            while (start <= end && IsWhitespace(token[start]))
+                start++;
+            while (end >= start && IsWhitespace(token[end]))
+                end--;
+            if (end >= start && token[start] == (byte)'"' && token[end] == (byte)'"')
+            {
+                start++;
+                end--;
+            }
+
+            return start <= end ? token.Slice(start, end - start + 1) : default;
+        }
+
+        private static bool IsWhitespace(byte value)
+        {
+            return value == (byte)' ' || value == (byte)'\t';
+        }
+
+        private static uint Fnv1aLower(System.ReadOnlySpan<byte> token)
+        {
+            unchecked
+            {
+                uint hash = 2166136261u;
+                for (int i = 0; i < token.Length; i++)
+                {
+                    byte b = token[i];
+                    if (b >= (byte)'A' && b <= (byte)'Z')
+                        b = (byte)(b + 32);
+                    hash = (hash ^ b) * 16777619u;
+                }
+
+                return hash == 0u ? 2166136261u : hash;
+            }
+        }
+
+        private static float SanitizeCsvScalar(float value)
+        {
+            return float.IsFinite(value) && value > 0f ? value : 1f;
+        }
+
         private static void ValidateAbiLayout()
         {
             if (UnsafeUtility.SizeOf<CognitionCore>() != CognitionCoreSizeBytes ||
@@ -2743,6 +3482,7 @@ namespace Hecton8.AI
                 UnsafeUtility.SizeOf<MesofaunaVisualSyncDTO>() != MesofaunaVisualSyncDtoSizeBytes ||
                 UnsafeUtility.SizeOf<MesofaunaTelemetryEntry>() != MesofaunaTelemetryEntrySizeBytes ||
                 UnsafeUtility.SizeOf<MesofaunaTuningDTO>() != MesofaunaTuningDtoSizeBytes ||
+                UnsafeUtility.SizeOf<MesofaunaSpeciesProfileDTO>() != MesofaunaSpeciesProfileDtoSizeBytes ||
                 !MesofaunaBehaviorConstants.ValidateLayout())
             {
                 FatalMemoryException.ThrowAbiLayoutMismatch();
@@ -3477,11 +4217,13 @@ namespace Hecton8.AI
 
             int activePredators = 0;
             int huntPredators = 0;
+            int fleePredators = 0;
             int nonFiniteFallbacks = 0;
             uint stateHash = MesofaunaBehaviorConstants.TelemetryContextHash;
             uint targetHash = 0u;
             double3 probeAup = double3.zero;
             bool foundFault = false;
+            bool overBudget = false;
             for (int i = 0; i < _activeSlotCount; i++)
             {
                 int slot = _activeSlots[i];
@@ -3505,10 +4247,15 @@ namespace Hecton8.AI
                 MesofaunaVisualSyncDTO visual = _mesofaunaVisualSync[slot];
                 if (state.CurrentState == MesofaunaBehaviorConstants.StateHunt)
                     huntPredators++;
+                if (state.CurrentState == MesofaunaBehaviorConstants.StateFlee)
+                    fleePredators++;
 
+                bool targetAupFinite = (visual.TargetFlags & MesofaunaBehaviorConstants.VisualTargetFlagValid) == 0 || math.all(math.isfinite(visual.TargetAup));
                 if (!math.all(math.isfinite(state.AUP_Position)) ||
                     !MathGuard.IsFinite(visual.DesiredVelocity) ||
-                    !float.IsFinite(visual.SpeedScalar))
+                    !float.IsFinite(visual.SpeedScalar) ||
+                    !float.IsFinite(visual.TargetDistanceMeters) ||
+                    !targetAupFinite)
                 {
                     foundFault = true;
                     nonFiniteFallbacks++;
@@ -3519,7 +4266,7 @@ namespace Hecton8.AI
                 stateHash ^= BuildMesofaunaTelemetryHash(slot, state.CurrentState, visual.Flags);
                 stateHash = (stateHash << 5) | (stateHash >> 27);
                 targetHash ^= state.TargetHashID;
-                probeAup = state.AUP_Position;
+                probeAup = (visual.TargetFlags & MesofaunaBehaviorConstants.VisualTargetFlagValid) != 0 ? visual.TargetAup : state.AUP_Position;
             }
 
             MesofaunaTelemetryEntry entry = default;
@@ -3532,21 +4279,30 @@ namespace Hecton8.AI
             entry.FsmMicroseconds = activePredators > 0
                 ? math.max(0.01f, _mesofaunaLastChainMicroseconds / math.max(1, activePredators) * 0.32f)
                 : 0f;
+            overBudget = _mesofaunaLastChainMicroseconds > 1000f;
             entry.GlobalQualityWeight = _mesofaunaLastQualityWeight;
             entry.SliceModulo = (byte)math.clamp(_mesofaunaLastSliceModulo, 1, byte.MaxValue);
-            entry.Flags = (byte)(foundFault ? 1 : 0);
+            byte telemetryFlags = 0;
+            if (foundFault)
+                telemetryFlags |= MesofaunaBehaviorConstants.TelemetryFlagFault;
+            if (overBudget)
+                telemetryFlags |= MesofaunaBehaviorConstants.TelemetryFlagOverBudget;
+            entry.Flags = telemetryFlags;
             entry.NonFiniteFallbackCount = (ushort)math.min(nonFiniteFallbacks, ushort.MaxValue);
             entry.StateHash = stateHash == 0u ? MesofaunaBehaviorConstants.TelemetryContextHash : stateHash;
             entry.TargetHash = targetHash;
             entry.ProbeAup = probeAup;
-            entry.DumpReasonHash = foundFault ? MesofaunaBehaviorConstants.DumpReasonFaultHash : 0u;
+            entry.DumpReasonHash = foundFault
+                ? MesofaunaBehaviorConstants.DumpReasonFaultHash
+                : overBudget ? MesofaunaBehaviorConstants.DumpReasonOverBudgetHash : 0u;
+            entry.FleeingPredators = (ushort)math.min(fleePredators, ushort.MaxValue);
             _mesofaunaTelemetryRing[_mesofaunaTelemetryCursor] = entry;
             _mesofaunaTelemetryCursor = (_mesofaunaTelemetryCursor + 1) % MesofaunaBehaviorConstants.TelemetryCapacity;
             _mesofaunaLastActiveCount = activePredators;
             _mesofaunaLastHuntCount = huntPredators;
             _mesofaunaLastNonFiniteFallbackCount = nonFiniteFallbacks;
 
-            if (foundFault)
+            if (foundFault || overBudget)
                 DumpMesofaunaBlackBoxCold(frameId);
 
             if (activePredators > 0 && (frameId & 31) == 0)
@@ -3619,6 +4375,7 @@ namespace Hecton8.AI
                     writer.Write(entry.ProbeAup.y);
                     writer.Write(entry.ProbeAup.z);
                     writer.Write(entry.DumpReasonHash);
+                    writer.Write(entry.FleeingPredators);
                     writer.Write(entry.Reserved0);
                 }
             }
@@ -3670,6 +4427,28 @@ namespace Hecton8.AI
                 return;
 
             _lastChemicalGridBindFrame = frameId;
+            if (ChemicalInfluenceGrid.TryGetPublishedSnapshot(
+                    out NativeArray<float4> frontGrid,
+                    out NativeArray<float4> overlayGrid,
+                    out int3 dimensions,
+                    out float3 origin,
+                    out float3 cellSize))
+            {
+                _chemicalFrontGrid = frontGrid;
+                _chemicalOverlayGrid = overlayGrid;
+                _chemicalGridDimensions = dimensions;
+                _chemicalGridOrigin = origin;
+                _chemicalGridCellSize = cellSize;
+            }
+            else
+            {
+                _chemicalFrontGrid = default;
+                _chemicalOverlayGrid = default;
+                _chemicalGridDimensions = int3.zero;
+                _chemicalGridOrigin = float3.zero;
+                _chemicalGridCellSize = new float3(1f, 1f, 1f);
+            }
+
             if (ChemicalInfluenceGrid.TryGetPublishedBreadcrumbs(
                 out NativeArray<ChemicalInfluenceGrid.ChemicalBreadcrumbWaypoint> breadcrumbs,
                 out int count,
@@ -4034,7 +4813,7 @@ namespace Hecton8.AI
             return job.Schedule(dtos.Length, EvaluationJobBatchSize, dependency);
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private unsafe struct MockPredatorStimulusJob : IJobParallelFor
         {
             [NativeDisableParallelForRestriction] public NativeArray<PredatorCognitionDTO> Dtos;
@@ -4050,19 +4829,23 @@ namespace Hecton8.AI
                 ref PredatorCognitionDTO dto = ref PredatorCognitionDTO.AsMutableRef(dtoPtr);
                 uint localSeed = math.max(1u, Seed ^ ((uint)index * 0x9E3779B9u));
                 Unity.Mathematics.Random random = new Unity.Mathematics.Random(localSeed);
-                float3 current = new float3((float)dto.CurrentAUP.x, (float)dto.CurrentAUP.y, (float)dto.CurrentAUP.z);
+                double3 currentAup = dto.CurrentAUP;
+                float3 current = AupPrecisionMath.DowncastProceduralPhase(currentAup, float3.zero);
                 float3 forward = ResolveDominantAxis(dto.ForwardVector, new float3(0f, 0f, 1f));
 
                 if (random.NextFloat() < 0.25f)
                 {
                     float3 noiseOffset = ResolveDominantAxis(new float3(random.NextFloat(-1f, 1f), random.NextFloat(-0.4f, 0.4f), random.NextFloat(-1f, 1f)), forward);
+                    float acousticDistance = random.NextFloat(4f, 24f);
+                    float3 acousticOffset = noiseOffset * acousticDistance;
+                    double3 acousticAup = currentAup + new double3(acousticOffset.x, acousticOffset.y, acousticOffset.z);
                     PredatorMockAcousticSignal acoustic = default;
-                    acoustic.Position = current + (noiseOffset * random.NextFloat(4f, 24f));
+                    acoustic.Position = current + acousticOffset;
                     acoustic.Timestamp = CurrentTime;
                     acoustic.Intensity = random.NextFloat(0.35f, 1f);
                     acoustic.SourceId = unchecked((uint)index + 1u);
                     AcousticSignals.Enqueue(acoustic);
-                    dto.TargetAUP = new double3(acoustic.Position.x, acoustic.Position.y, acoustic.Position.z);
+                    dto.TargetAUP = math.all(math.isfinite(acousticAup)) ? acousticAup : currentAup;
                 }
 
                 float fearSpike = 0f;
@@ -4545,6 +5328,11 @@ namespace Hecton8.AI
             public float3 ThreatVoxelCellSize;
             public byte ThreatVoxelSolidThreshold;
             public int ThreatVoxelUsesSignedDistanceEncoding;
+            [ReadOnly] public NativeArray<float4> ChemicalFrontGrid;
+            [ReadOnly] public NativeArray<float4> ChemicalOverlayGrid;
+            public int3 ChemicalGridDimensions;
+            public float3 ChemicalGridOrigin;
+            public float3 ChemicalGridCellSize;
             [ReadOnly] public NativeArray<ChemicalInfluenceGrid.ChemicalBreadcrumbWaypoint> ChemicalBreadcrumbs;
             public int ChemicalBreadcrumbCount;
             public float ChemicalBreadcrumbFollowStepMeters;
@@ -6124,6 +6912,9 @@ namespace Hecton8.AI
                 attractantSignal = 0f;
                 fearSignal = 0f;
                 gradient = float3.zero;
+                if (TrySampleChemicalGrid(worldPosition, out attractantSignal, out fearSignal, out gradient))
+                    return true;
+
                 if (!ChemicalBreadcrumbs.IsCreated ||
                     ChemicalBreadcrumbs.Length <= 0 ||
                     ChemicalBreadcrumbCount <= 0)
@@ -6158,6 +6949,62 @@ namespace Hecton8.AI
                 }
 
                 return attractantSignal > DdaEpsilon || fearSignal > DdaEpsilon || math.lengthsq(gradient) > DdaEpsilon;
+            }
+
+            private bool TrySampleChemicalGrid(float3 worldPosition, out float attractantSignal, out float fearSignal, out float3 gradient)
+            {
+                attractantSignal = 0f;
+                fearSignal = 0f;
+                gradient = float3.zero;
+                if (!ChemicalFrontGrid.IsCreated ||
+                    ChemicalFrontGrid.Length <= 0 ||
+                    ChemicalGridDimensions.x <= 0 ||
+                    ChemicalGridDimensions.y <= 0 ||
+                    ChemicalGridDimensions.z <= 0)
+                {
+                    return false;
+                }
+
+                float3 invCell = math.rcp(math.max(ChemicalGridCellSize, new float3(0.0001f)));
+                float3 gridPosition = (worldPosition - ChemicalGridOrigin) * invCell;
+                if (gridPosition.x < 0f ||
+                    gridPosition.y < 0f ||
+                    gridPosition.z < 0f ||
+                    gridPosition.x > ChemicalGridDimensions.x - 1 ||
+                    gridPosition.y > ChemicalGridDimensions.y - 1 ||
+                    gridPosition.z > ChemicalGridDimensions.z - 1)
+                {
+                    return false;
+                }
+
+                float4 center = SampleChemicalGridNearest(gridPosition);
+                attractantSignal = math.saturate(center.x + center.y);
+                fearSignal = math.saturate(center.z);
+
+                float4 plusX = SampleChemicalGridNearest(gridPosition + new float3(1f, 0f, 0f));
+                float4 minusX = SampleChemicalGridNearest(gridPosition - new float3(1f, 0f, 0f));
+                float4 plusZ = SampleChemicalGridNearest(gridPosition + new float3(0f, 0f, 1f));
+                float4 minusZ = SampleChemicalGridNearest(gridPosition - new float3(0f, 0f, 1f));
+                float gx = (plusX.x + plusX.y) - (minusX.x + minusX.y);
+                float gz = (plusZ.x + plusZ.y) - (minusZ.x + minusZ.y);
+                gradient = new float3(gx, 0f, gz);
+                return attractantSignal > DdaEpsilon || fearSignal > DdaEpsilon || math.lengthsq(gradient) > DdaEpsilon;
+            }
+
+            private float4 SampleChemicalGridNearest(float3 gridPosition)
+            {
+                int x = math.clamp((int)math.round(gridPosition.x), 0, ChemicalGridDimensions.x - 1);
+                int y = math.clamp((int)math.round(gridPosition.y), 0, ChemicalGridDimensions.y - 1);
+                int z = math.clamp((int)math.round(gridPosition.z), 0, ChemicalGridDimensions.z - 1);
+                int index = x + z * ChemicalGridDimensions.x + y * ChemicalGridDimensions.x * ChemicalGridDimensions.z;
+                if ((uint)index >= (uint)ChemicalFrontGrid.Length)
+                    return float4.zero;
+
+                float4 sample = ChemicalFrontGrid[index];
+                if (ChemicalOverlayGrid.IsCreated && (uint)index < (uint)ChemicalOverlayGrid.Length)
+                    sample.w = math.min(sample.w, ChemicalOverlayGrid[index].w);
+
+                return sample;
             }
 
             private static float SmoothStep01(float value)

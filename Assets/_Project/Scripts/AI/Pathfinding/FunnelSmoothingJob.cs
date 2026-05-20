@@ -11,14 +11,14 @@ namespace Hecton8.AI.Pathfinding
     /// <summary>
     /// Burst string-pulling funnel over sector-local portal edges.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct FunnelSmoothingJob : IJob
     {
-        [ReadOnly] public NativeArray<NavPortal> Portals;
-        [ReadOnly] public NativeArray<byte> WfcGridBitmasks;
-        public NativeArray<float3> Waypoints;
-        public NativeArray<AbsoluteUniversePositionBlit> WaypointAups;
-        public NativeArray<PathFunnelResult> Result;
+        [ReadOnly, NoAlias] public NativeArray<NavPortal> Portals;
+        [ReadOnly, NoAlias] public NativeArray<byte> WfcGridBitmasks;
+        [NoAlias] public NativeArray<float3> Waypoints;
+        [NoAlias] public NativeArray<AbsoluteUniversePositionBlit> WaypointAups;
+        [NoAlias] public NativeArray<PathFunnelResult> Result;
         public float3 StartPosition;
         public float3 GoalPosition;
         public double3 SectorOriginAbsoluteMeters;

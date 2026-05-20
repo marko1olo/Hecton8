@@ -14,10 +14,10 @@
 //   1. Igrok navoditsya → OnHoverStart → HUD pokazyvaet prompt
 //   2. [E] → Interact → CraftingEvents.RaiseFabricatorOpened
 //   3. UI vyzyvaet StartCraft(recipe) → CanCraft proverka
-//   4. Resursy spisyvayutsya SRAZU → taymer zapuskaetsya
+//   4. Resursy spisyvayutsya SRAZU -> Vault FabricationJobDTO zapuskaetsya
 //      → NotifyGridBalanceChanged() — set pereschityvaet s -100W
-//   5. Tick(dt): esli HasPower → _craftTimer prodvigaetsya
-//               esli !HasPower → PAUZA (taymer ne tikaet)
+//   5. SIMULATION: esli HasPower -> Vault Progress01 prodvigaetsya Burst job
+//               esli !HasPower -> PAUZA (Vault Progress01 ne tikaet)
 //   6. Zavershenie → rezultat v inventar → OnCraftCompleted
 //      → NotifyGridBalanceChanged() — set pereschityvaet bez -100W
 //   7. Otmena → resursy vozvraschayutsya → OnCraftCancelled
@@ -239,7 +239,7 @@ namespace Hecton8.Crafting
         private bool       _isCrafting;
         private bool       _runningExothermicHeatInjected;
         private RecipeData _activeRecipe;
-        private float      _craftTimer;
+        private float      _craftProgressSecondsMirror;
         private float      _lastPublishedProgress;
 
         // ── Power State ──
@@ -258,7 +258,6 @@ namespace Hecton8.Crafting
 
         private const int MaxLocalCraftReservations = 64;
         private const int MaxNetworkCraftCosts = 32;
-        private const int MaxQueuedCraftingTasks = 1;
         private const int MaxUnlockedRecipeWords = 8;
         private const int RecipeUnlockWordShift = 6;
         private const int RecipeUnlockBitMask = 63;
@@ -286,7 +285,8 @@ namespace Hecton8.Crafting
         private NativeArray<byte> _craftRecipeEvaluationResult;
         private NativeArray<int2> _deconstructionRecipeOutputs;
         private NativeArray<int> _deconstructionOutputCount;
-        private NativeQueue<CraftingTask> _craftingTaskQueue;
+        private CraftingTask _activeCraftingTask;
+        private bool _hasActiveCraftingTask;
         private NativeArray<int2> _complexRecipeGraphNodes;
         private NativeArray<int2> _complexRecipeGraphEdges;
         private NativeArray<int> _complexRecipeGraphInDegrees;
@@ -334,7 +334,7 @@ namespace Hecton8.Crafting
                 return Mathf.Clamp01(snapshot.Progress01);
             }
 
-            return Mathf.Clamp01(_craftTimer / Mathf.Max(0.001f, _activeRecipe.craftTime * Mathf.Max(1, _activeCraftMultiplier)));
+            return _assemblyPreviewActive ? Mathf.Clamp01(_assemblyProgress01) : 0f;
         }
 
         /// <summary>Aktivnyy retsept (null esli ne kraftim).</summary>
@@ -404,7 +404,7 @@ namespace Hecton8.Crafting
         /// Uvedomlenie ot PowerGrid ob izmenenii pitaniya.
         ///
         /// Pri potere pitaniya:
-        ///   • Kraft ZAMORAZhIVAETSYa (taymer ne tikaet).
+        ///   • Kraft ZAMORAZhIVAETSYa (Vault Progress01 ne prodvigaetsya).
         ///   • Kraft NE otmenyaetsya — resursy uzhe spisany.
         ///   • Pri vosstanovlenii — kraft prodolzhitsya.
         ///
@@ -711,12 +711,12 @@ namespace Hecton8.Crafting
             }
 
             _activeCraftPowerMultiplier = ResolveCraftPowerMultiplier(this, recipe);
-            _craftTimer   = 0f;
+            _craftProgressSecondsMirror = 0f;
             _isCrafting   = true;
             _runningExothermicHeatInjected = false;
             _lastPublishedProgress = -1f;
             FabricationAssemblerRuntime.EnsureRuntime();
-            EnqueueCraftingTask(recipe, _activeCraftPowerMultiplier, safeMultiplier);
+            CreateCraftingTaskSlot(recipe, _activeCraftPowerMultiplier, safeMultiplier);
             BeginAssemblyVisual(recipe);
             SetFabricationSparksActive(true);
 
@@ -755,10 +755,10 @@ namespace Hecton8.Crafting
 
             _isCrafting   = false;
             _activeRecipe = null;
-            _craftTimer   = 0f;
+            _craftProgressSecondsMirror = 0f;
             _activeCraftPowerMultiplier = 1f;
             _activeCraftMultiplier = 1;
-            ClearCraftingTaskQueue();
+            ClearCraftingTaskSlot();
             SetFabricationSparksActive(false);
             EndAssemblyVisual();
 
@@ -830,14 +830,16 @@ namespace Hecton8.Crafting
             }
 
             // ═══════════════════════════════════════════════════
-            //  POWER PAUSE: net pitaniya → taymer zamorozhen
+            //  POWER PAUSE: net pitaniya -> Vault Progress01 zamorozhen
             // ═══════════════════════════════════════════════════
-            if (!_craftingTaskQueue.IsCreated || !_craftingTaskQueue.TryDequeue(out CraftingTask task))
+            if (!_hasActiveCraftingTask)
             {
                 CancelCraft();
                 return;
             }
 
+            CraftingTask task = _activeCraftingTask;
+            _hasActiveCraftingTask = false;
             if (task.ResultHashId == 0 || task.ResultQuantity <= 0)
             {
                 CancelCraft();
@@ -850,7 +852,7 @@ namespace Hecton8.Crafting
 
             if (!TryReadFabricationProgress(ref task, out float durationSeconds, out float progress, out bool craftCompleted))
             {
-                _craftingTaskQueue.Enqueue(task);
+                StoreActiveCraftingTask(in task);
                 SetFabricationSparksActive(false);
                 ApplyAssemblyVisualProgress(task.Progress, true);
                 return;
@@ -858,8 +860,8 @@ namespace Hecton8.Crafting
 
             if (pausedByPower)
             {
-                _craftTimer = progress * durationSeconds;
-                _craftingTaskQueue.Enqueue(task);
+                _craftProgressSecondsMirror = progress * durationSeconds;
+                StoreActiveCraftingTask(in task);
                 SetFabricationSparksActive(false);
                 ApplyAssemblyVisualProgress(progress, true);
                 return;
@@ -868,7 +870,7 @@ namespace Hecton8.Crafting
             _activeCraftPowerMultiplier = Mathf.Max(1f, task.PowerMultiplier);
             SetFabricationSparksActive(true);
             ApplyRunningExothermicHeatIfNeeded();
-            _craftTimer = task.Progress * durationSeconds;
+            _craftProgressSecondsMirror = task.Progress * durationSeconds;
             ApplyAssemblyVisualProgress(progress, false);
             PublishPowerDrainSignal((progress - previousProgress) / SlowTickDeltaSeconds, progress, false);
             if (progress < 1f)
@@ -893,22 +895,7 @@ namespace Hecton8.Crafting
                 return;
             }
 
-            _craftingTaskQueue.Enqueue(task);
-        }
-
-        internal static bool AdvanceCraftingTask(
-            ref CraftingTask task,
-            float deltaSeconds,
-            float thermalThrottleMultiplier,
-            out float durationSeconds,
-            out float progress)
-        {
-            durationSeconds = Mathf.Max(0.001f, task.DurationSeconds);
-            float safeDelta = Mathf.Max(0f, deltaSeconds);
-            float throttle = Mathf.Clamp(thermalThrottleMultiplier, 0.05f, 1f);
-            task.Progress = math.saturate(task.Progress + ((safeDelta * throttle) / durationSeconds));
-            progress = task.Progress;
-            return progress >= 1f;
+            StoreActiveCraftingTask(in task);
         }
 
         private bool TryReadFabricationProgress(
@@ -958,7 +945,7 @@ namespace Hecton8.Crafting
                 return 0f;
 
             IPowerGridService powerGrid = GlobalRegistry.PowerGrid;
-            if (powerGrid != null && powerGrid.BatterySnapshot.EmergencyReserveActive)
+            if (powerGrid != null && powerGrid.BatterySnapshot.EmergencyReserveActive != 0)
                 return 0f;
 
             PowerGrid grid = CurrentPowerGrid;
@@ -977,33 +964,33 @@ namespace Hecton8.Crafting
         /// Posle smeny _isCrafting → PowerRating menyaetsya s -craftPowerDraw na 0.
         /// NotifyGridBalanceChanged() zastavlyaet set mgnovenno pereschitat balans.
         /// </summary>
-        private void EnqueueCraftingTask(RecipeData recipe, float powerMultiplier, int multiplier)
+        private void CreateCraftingTaskSlot(RecipeData recipe, float powerMultiplier, int multiplier)
         {
-            EnsureCraftingScratch();
-            ClearCraftingTaskQueue();
-            if (!_craftingTaskQueue.IsCreated || recipe == null)
+            ClearCraftingTaskSlot();
+            if (recipe == null)
                 return;
 
             int safeMultiplier = Mathf.Max(1, multiplier);
-            _craftingTaskQueue.Enqueue(new CraftingTask
-            {
-                ResultHashId = ComputeItemHash(recipe.resultItem),
-                ResultQuantity = ResolveCraftOutputQuantity(recipe, safeMultiplier),
-                Progress = 0f,
-                DurationSeconds = Mathf.Max(0.001f, recipe.craftTime * safeMultiplier),
-                PowerMultiplier = Mathf.Max(1f, powerMultiplier),
-                Multiplier = safeMultiplier
-            });
+            CraftingTask task = default;
+            task.ResultHashId = ComputeItemHash(recipe.resultItem);
+            task.ResultQuantity = ResolveCraftOutputQuantity(recipe, safeMultiplier);
+            task.Progress = 0f;
+            task.DurationSeconds = Mathf.Max(0.001f, recipe.craftTime * safeMultiplier);
+            task.PowerMultiplier = Mathf.Max(1f, powerMultiplier);
+            task.Multiplier = safeMultiplier;
+            StoreActiveCraftingTask(in task);
         }
 
-        private void ClearCraftingTaskQueue()
+        private void ClearCraftingTaskSlot()
         {
-            if (!_craftingTaskQueue.IsCreated)
-                return;
+            _activeCraftingTask = default;
+            _hasActiveCraftingTask = false;
+        }
 
-            while (_craftingTaskQueue.TryDequeue(out _))
-            {
-            }
+        private void StoreActiveCraftingTask(in CraftingTask task)
+        {
+            _activeCraftingTask = task;
+            _hasActiveCraftingTask = true;
         }
 
         private static int ResolveCraftOutputQuantity(RecipeData recipe, int multiplier)
@@ -1021,7 +1008,7 @@ namespace Hecton8.Crafting
                 return false;
 
             IPowerGridService powerGrid = GlobalRegistry.PowerGrid;
-            if (powerGrid != null && powerGrid.BatterySnapshot.EmergencyReserveActive)
+            if (powerGrid != null && powerGrid.BatterySnapshot.EmergencyReserveActive != 0)
                 return false;
 
             PowerGrid grid = CurrentPowerGrid;
@@ -1042,11 +1029,11 @@ namespace Hecton8.Crafting
 
                 _isCrafting = false;
                 _runningExothermicHeatInjected = false;
-                _craftTimer = 0f;
+                _craftProgressSecondsMirror = 0f;
                 _lastPublishedProgress = 0f;
                 _activeCraftPowerMultiplier = 1f;
                 _activeCraftMultiplier = 1;
-                ClearCraftingTaskQueue();
+                ClearCraftingTaskSlot();
                 SetFabricationSparksActive(false);
                 EndAssemblyVisual();
                 NotifyGridBalanceChanged();
@@ -1062,10 +1049,10 @@ namespace Hecton8.Crafting
             _isCrafting   = false;
             _runningExothermicHeatInjected = false;
             _activeRecipe = null;
-            _craftTimer   = 0f;
+            _craftProgressSecondsMirror = 0f;
             _activeCraftPowerMultiplier = 1f;
             _activeCraftMultiplier = 1;
-            ClearCraftingTaskQueue();
+            ClearCraftingTaskSlot();
             SetFabricationSparksActive(false);
 
             if (_playerInventory != null && !_playerInventory.CommitCraftReservations(_localCraftReservations, _localCraftReservationCount))
@@ -1249,10 +1236,14 @@ namespace Hecton8.Crafting
         {
             if (!_thermalHostAupCached || !ReferenceEquals(_thermalHostAupSource, thermalHostModule))
             {
-                _thermalHostAup = AbsoluteUniversePosition.FromRuntimePosition(thermalHostModule.transform.position);
-                _thermalHostAupSource = thermalHostModule;
-                _thermalHostAupCached = true;
+                _thermalHostAupCached = TryResolveAupFromRuntimeOrigin(
+                    thermalHostModule.transform.position,
+                    out _thermalHostAup);
+                _thermalHostAupSource = _thermalHostAupCached ? thermalHostModule : null;
             }
+
+            if (!_thermalHostAupCached)
+                return thermalHostModule.transform.position;
 
             float3 runtime = _thermalHostAup.ToRuntimeFloat3();
             return new Vector3(runtime.x, runtime.y, runtime.z);
@@ -1385,20 +1376,6 @@ namespace Hecton8.Crafting
                 RegisterTrackedNativeArray(_deconstructionOutputCount, nameof(_deconstructionOutputCount));
             }
 
-            if (!_craftingTaskQueue.IsCreated)
-            {
-                // COLD ALLOC: NativeQueue<CraftingTask>[1] - asynchronous fabrication task lane - owner: Fabricator
-                _craftingTaskQueue = new NativeQueue<CraftingTask>(Allocator.Persistent);
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _craftingTaskQueue,
-                    MaxQueuedCraftingTasks,
-                    NativeMemoryOwner,
-                    nameof(_craftingTaskQueue),
-                    NativeMemoryLifetime);
-                _craftingTaskQueue.Enqueue(default);
-                _craftingTaskQueue.Dequeue();
-            }
-
             if (!_complexRecipeGraphNodes.IsCreated)
             {
                 _complexRecipeGraphNodes = new NativeArray<int2>(CraftingSystem.MaxComplexRecipeNodeCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
@@ -1468,13 +1445,6 @@ namespace Hecton8.Crafting
             DisposeTrackedNativeArray(ref _craftRecipeEvaluationResult);
             DisposeTrackedNativeArray(ref _deconstructionRecipeOutputs);
             DisposeTrackedNativeArray(ref _deconstructionOutputCount);
-            if (_craftingTaskQueue.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(NativeMemoryOwner, nameof(_craftingTaskQueue));
-                _craftingTaskQueue.Dispose();
-                _craftingTaskQueue = default;
-            }
-
             DisposeTrackedNativeArray(ref _complexRecipeGraphNodes);
             DisposeTrackedNativeArray(ref _complexRecipeGraphEdges);
             DisposeTrackedNativeArray(ref _complexRecipeGraphInDegrees);
@@ -1850,8 +1820,54 @@ namespace Hecton8.Crafting
             if (_fabricatorAupCached)
                 return;
 
-            _fabricatorAup = AbsoluteUniversePosition.FromRuntimePosition(transform.position);
-            _fabricatorAupCached = true;
+            _fabricatorAupCached = TryResolveAupFromRuntimeOrigin(transform.position, out _fabricatorAup);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(
+            Vector3 runtimePosition,
+            out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!IsFiniteRuntimePosition(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!MathGuard.IsFinite(in originAup))
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return MathGuard.IsFinite(in positionAup);
+        }
+
+        private static bool TryOffsetAupByRuntimeDelta(
+            in AbsoluteUniversePosition referenceAup,
+            Vector3 referenceRuntimePosition,
+            Vector3 targetRuntimePosition,
+            out AbsoluteUniversePosition targetAup)
+        {
+            targetAup = default;
+            if (!MathGuard.IsFinite(in referenceAup) ||
+                !IsFiniteRuntimePosition(referenceRuntimePosition) ||
+                !IsFiniteRuntimePosition(targetRuntimePosition))
+            {
+                return false;
+            }
+
+            double3 localDelta = new double3(
+                (double)targetRuntimePosition.x - referenceRuntimePosition.x,
+                (double)targetRuntimePosition.y - referenceRuntimePosition.y,
+                (double)targetRuntimePosition.z - referenceRuntimePosition.z);
+            targetAup = AbsoluteUniversePosition.OffsetMeters(in referenceAup, localDelta);
+            return MathGuard.IsFinite(in targetAup);
+        }
+
+        private static bool IsFiniteRuntimePosition(Vector3 position)
+        {
+            return float.IsFinite(position.x) &&
+                   float.IsFinite(position.y) &&
+                   float.IsFinite(position.z);
         }
 
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
@@ -2025,8 +2041,14 @@ namespace Hecton8.Crafting
                 return;
 
             Transform target = outputSocket != null ? outputSocket : transform;
-            AbsoluteUniversePosition targetAup = AbsoluteUniversePosition.FromRuntimePosition(target.position);
-            AbsoluteUniversePosition fabricatorAup = AbsoluteUniversePosition.FromRuntimePosition(transform.position);
+            CacheFabricatorAup();
+            if (!_fabricatorAupCached ||
+                !TryOffsetAupByRuntimeDelta(in _fabricatorAup, transform.position, target.position, out AbsoluteUniversePosition targetAup))
+            {
+                return;
+            }
+
+            AbsoluteUniversePosition fabricatorAup = _fabricatorAup;
             float duration = Mathf.Max(0.001f, recipe.craftTime * Mathf.Max(1, _activeCraftMultiplier));
             float powerDrainWatts = Mathf.Max(0f, craftPowerDraw * Mathf.Max(1f, _activeCraftPowerMultiplier));
 

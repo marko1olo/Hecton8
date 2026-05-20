@@ -88,7 +88,7 @@ namespace Hecton8.Scavenging
             public ushort amount;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 16)]
+        [StructLayout(LayoutKind.Sequential, Size = 16)]
         public struct YieldRuntimeEntry
         {
             public int ItemHashId;
@@ -100,7 +100,7 @@ namespace Hecton8.Scavenging
             public uint Reserved2;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 16)]
+        [StructLayout(LayoutKind.Sequential, Size = 16)]
         public struct RarityDropRuntimeEntry
         {
             public int ItemHashId;
@@ -111,7 +111,7 @@ namespace Hecton8.Scavenging
             public uint Reserved1;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 48)]
+        [StructLayout(LayoutKind.Sequential, Size = 48)]
         public struct RuntimeDescriptor
         {
             public int StableHashId;

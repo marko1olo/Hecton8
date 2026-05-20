@@ -54,6 +54,8 @@ The human-facing modding answer is documented in [SDK_Authoring_Interface_Plan.m
 - `Sample_InfiniteO2_Mod.md` - safe sample mod spec with no current survival mutation authority.
 - `Future_Command_Kernel_Reservations.md` - non-public reservations for future engine-owned command kernels; no enum/runtime expansion by itself.
 - `Mod_API_Sandbox_Quarantine.md` - current envelope-only runtime quarantine and validator boundary.
+- `allowed_opcodes.csv` - editor-reload allowlist source for `FutureCommandEnvelope` opcode hashes.
+- `kernel_tuning_profiles.csv` - editor-reload priority/budget/range/duration source for command kernels.
 - `SDK_Authoring_Interface_Plan.md` - planned human SDK/workbench/CLI/graph workflow for modders.
 - `SDK_Product_Blueprint.md` - product-level SDK screens, CLI, package format, graph compiler rules, Workshop/moderation model, and MVP backlog.
 

@@ -28,20 +28,21 @@ namespace Hecton8.Core.Content
     }
 
     [Serializable]
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct ContentAssetBinaryRecord
     {
-        public uint Hash;
-        public long EstimatedVramBytes;
-        public uint DependencyOffset;
-        public ushort DependencyCount;
-        public ContentAssetKind Kind;
-        public ContentTier Tier;
-        public byte BiomeId;
-        public byte LodLevel;
-        public byte Flags;
-        public byte Reserved0;
-        public uint Reserved1;
+        [FieldOffset(0)] public long EstimatedVramBytes;
+        [FieldOffset(8)] public uint Hash;
+        [FieldOffset(12)] public uint DependencyOffset;
+        [FieldOffset(16)] public ushort DependencyCount;
+        [FieldOffset(18)] public ContentAssetKind Kind;
+        [FieldOffset(19)] public ContentTier Tier;
+        [FieldOffset(20)] public byte BiomeId;
+        [FieldOffset(21)] public byte LodLevel;
+        [FieldOffset(22)] public byte Flags;
+        [FieldOffset(23)] public byte Reserved0;
+        [FieldOffset(24)] public uint Reserved1;
+        [FieldOffset(28)] public uint Reserved2;
     }
 
     /// <summary>

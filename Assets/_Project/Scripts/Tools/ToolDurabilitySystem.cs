@@ -9,7 +9,6 @@ using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.SaveSystem;
-using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -20,7 +19,7 @@ namespace Hecton8.Tools
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Tools/Tool Durability System")]
-    public sealed class ToolDurabilitySystem : MonoBehaviour, ISaveable, ISlowTickable, IUpdatable, ILateFrameTickable
+    public sealed class ToolDurabilitySystem : MonoBehaviour, ISaveable, ISlowTickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         private const int MaxTrackedTools = 32;
         private const int MaxQueuedDurabilityCommands = 32;
@@ -79,11 +78,11 @@ namespace Hecton8.Tools
         private readonly bool[] _slotUsed = new bool[MaxTrackedTools];
         // COLD ALLOC: PendingDurabilityCommand[32] - one-frame native-job mutation queue - owner: ToolDurabilitySystem
         private readonly PendingDurabilityCommand[] _queuedDurabilityCommands = new PendingDurabilityCommand[MaxQueuedDurabilityCommands];
-        private VaultBufferHandle<ItemState> _itemStatesHandle;
-        private VaultBufferHandle<float> _pendingDecayDtHandle;
-        private VaultBufferHandle<float> _wearMultipliersHandle;
-        private VaultBufferHandle<byte> _slotActiveHandle;
-        private VaultBufferHandle<byte> _breakdownFlagsHandle;
+        private VaultGenerationHandle<ItemState> _itemStatesHandle;
+        private VaultGenerationHandle<float> _pendingDecayDtHandle;
+        private VaultGenerationHandle<float> _wearMultipliersHandle;
+        private VaultGenerationHandle<byte> _slotActiveHandle;
+        private VaultGenerationHandle<byte> _breakdownFlagsHandle;
         private JobHandle _scheduledDecayHandle;
         private int _queuedDurabilityCommandCount;
         private bool _decayScheduled;
@@ -97,6 +96,10 @@ namespace Hecton8.Tools
         private bool _saveRegistered;
         private bool _serviceRegistered;
         private bool _managedMirrorDirty;
+        private bool _registeredHotSwap;
+        private IDataVault _dataVault;
+        private ISaveService _saveService;
+        private IPlayerRuntimeContext _playerRuntimeContext;
 
         public int SavePriority => 20;
         public int LoadPriority => 20;
@@ -106,14 +109,14 @@ namespace Hecton8.Tools
         {
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct DurabilityDecayJob : IJobParallelFor
         {
-            public NativeArray<ItemState> States;
-            public NativeArray<float> PendingDecayDt;
-            [ReadOnly] public NativeArray<float> WearMultipliers;
-            [ReadOnly] public NativeArray<byte> SlotActive;
-            public NativeArray<byte> BreakdownFlags;
+            [NoAlias] public NativeArray<ItemState> States;
+            [NoAlias] public NativeArray<float> PendingDecayDt;
+            [NoAlias] [ReadOnly] public NativeArray<float> WearMultipliers;
+            [NoAlias] [ReadOnly] public NativeArray<byte> SlotActive;
+            [NoAlias] public NativeArray<byte> BreakdownFlags;
 
             public void Execute(int index)
             {
@@ -173,7 +176,7 @@ namespace Hecton8.Tools
         }
 
 #pragma warning disable 0649 // Assigned through object initializers before queued drain; compiler does not track array-backed command staging.
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct PendingDurabilityCommand
         {
             public string ToolId;
@@ -185,7 +188,7 @@ namespace Hecton8.Tools
 #pragma warning restore 0649
 
 #pragma warning disable 0649 // Reserved padding keeps native item-state layout stable for future flags.
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct ItemState
         {
             public float durability;
@@ -204,11 +207,14 @@ namespace Hecton8.Tools
                 return;
             }
 
+            CacheRegistryDependenciesCold();
             EnsureNativeState();
         }
 
         private void OnEnable()
         {
+            CacheRegistryDependenciesCold();
+            TryRegisterHotSwap();
             TryRegisterService();
             TryRegisterSlowTick();
             TryRegisterUpdate();
@@ -217,6 +223,8 @@ namespace Hecton8.Tools
 
         private void Start()
         {
+            CacheRegistryDependenciesCold();
+            TryRegisterHotSwap();
             TryRegisterService();
             TryRegisterSlowTick();
             TryRegisterUpdate();
@@ -230,11 +238,13 @@ namespace Hecton8.Tools
             TryUnregisterSlowTick();
             TryUnregisterSaveService();
             TryUnregisterService();
+            TryUnregisterHotSwap();
         }
 
         private void OnDestroy()
         {
             TryUnregisterService();
+            TryUnregisterHotSwap();
             DisposeNativeState();
         }
 
@@ -384,6 +394,78 @@ namespace Hecton8.Tools
             }
 
             ApplyDrainDurabilityByTime(toolID, itemHashId, safeScaledDeltaTime, safeMaxDurability);
+        }
+
+        public void RegisterCentralizedEquipmentMirror(string toolID, uint itemHashId, float maxDurability)
+        {
+            if (string.IsNullOrEmpty(toolID))
+                return;
+
+            if (!TryCompleteDecayJobIfScheduled(forceComplete: false))
+                return;
+
+            EnsureToolRegistered(toolID, itemHashId, ResolveSafeMaxDurability(maxDurability));
+        }
+
+        public float ResolveCentralizedEquipmentWearMultiplier(uint itemHashId)
+        {
+            if (!enableDurabilityDrain)
+                return 0f;
+
+            return math.max(0.1f, globalDurabilityMultiplier) * ResolveWearMultiplier(itemHashId);
+        }
+
+        public void SetDurabilityNormalizedFromEquipment(string toolID, uint itemHashId, float normalizedDurability, float maxDurability)
+        {
+            if (string.IsNullOrEmpty(toolID))
+                return;
+
+            if (!TryCompleteDecayJobIfScheduled(forceComplete: false))
+                return;
+
+            ApplySetDurabilityNormalizedFromEquipment(toolID, itemHashId, normalizedDurability, maxDurability);
+        }
+
+        private void ApplySetDurabilityNormalizedFromEquipment(string toolID, uint itemHashId, float normalizedDurability, float maxDurability)
+        {
+            float safeMaxDurability = ResolveSafeMaxDurability(maxDurability);
+            int slotIndex = EnsureToolRegistered(toolID, itemHashId, safeMaxDurability);
+            if (slotIndex < 0 ||
+                !TryResolveItemStates(out NativeArray<ItemState> itemStates) ||
+                !TryResolvePendingDecay(out NativeArray<float> pendingDecayDt))
+            {
+                return;
+            }
+
+            ItemState state = itemStates[slotIndex];
+            float previousNormalized = math.isfinite(state.durability) ? math.saturate(state.durability) : 1f;
+            bool previousBroken = (state.flags & BrokenFlag) != 0;
+            float safeNormalized = math.saturate(math.isfinite(normalizedDurability) ? normalizedDurability : previousNormalized);
+            pendingDecayDt[slotIndex] = 0f;
+            if (math.abs(previousNormalized - safeNormalized) <= 0.0001f)
+                return;
+
+            state.durability = safeNormalized;
+            if (state.durability < DegradedThreshold)
+                state.flags |= DegradedFlag;
+            else
+                state.flags &= unchecked((ushort)~DegradedFlag);
+
+            if (autoBreakOnZero && state.durability <= 0f)
+                state.flags |= BrokenFlag;
+            else
+                state.flags &= unchecked((ushort)~BrokenFlag);
+
+            itemStates[slotIndex] = state;
+
+            float currentDurability = state.durability * safeMaxDurability;
+            _durabilityMap[toolID] = currentDurability;
+            _brokenMap[toolID] = (state.flags & BrokenFlag) != 0;
+
+            byte reason = !previousBroken && _brokenMap[toolID]
+                ? ItemDurabilityChangedSignal.ReasonBreak
+                : (safeNormalized > previousNormalized ? ItemDurabilityChangedSignal.ReasonRepair : ItemDurabilityChangedSignal.ReasonCorrosion);
+            PublishDurabilityChangedSignal(slotIndex, currentDurability, safeMaxDurability, reason);
         }
 
         private void ApplyDrainDurabilityByTime(string toolID, uint itemHashId, float scaledDeltaTime, float maxDurability)
@@ -692,8 +774,9 @@ namespace Hecton8.Tools
 
             if (_playerToolManager == null)
             {
-                _playerToolManager = GlobalRegistry.Player != null && GlobalRegistry.Player.ToolManager != null
-                    ? GlobalRegistry.Player.ToolManager
+                IPlayerRuntimeContext playerRuntimeContext = _playerRuntimeContext;
+                _playerToolManager = playerRuntimeContext != null
+                    ? playerRuntimeContext.ToolManager
                     : null;
                 if (_playerToolManager == null)
                     _playerRoot.TryGetComponent(out _playerToolManager);
@@ -713,6 +796,7 @@ namespace Hecton8.Tools
             if (_decayScheduled)
                 DispatcherJobSwap.TryComplete(ref _scheduledDecayHandle, forceComplete: true);
 
+            ReleaseDurabilityHandles(_dataVault);
             _itemStatesHandle = default;
             _pendingDecayDtHandle = default;
             _wearMultipliersHandle = default;
@@ -720,6 +804,9 @@ namespace Hecton8.Tools
             _breakdownFlagsHandle = default;
             _scheduledDecayHandle = default;
             _decayScheduled = false;
+            _dataVault = null;
+            _saveService = null;
+            _playerRuntimeContext = null;
         }
 
         private void ClearRuntimeState()
@@ -904,30 +991,45 @@ namespace Hecton8.Tools
             return TryResolveBuffer(ref _breakdownFlagsHandle, BufferID.ToolDurabilityBreakdownFlags, out breakdownFlags);
         }
 
-        private static bool TryResolveBuffer<T>(
-            ref VaultBufferHandle<T> handle,
+        private bool TryResolveBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
             out NativeArray<T> buffer)
             where T : struct
         {
             buffer = default;
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
-            if (!handle.IsCreated ||
-                !vault.ResolveBuffer(ref handle) ||
-                handle.Length < MaxTrackedTools)
+            if (IsGenerationHandleCreated(in handle) &&
+                vault.TryResolveHandle(in handle, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= MaxTrackedTools)
             {
-                handle = vault.GetBufferHandle<T>(
-                    bufferId,
-                    MaxTrackedTools,
-                    SystemID.GameplayTools,
-                    NativeArrayOptions.ClearMemory);
+                return true;
             }
 
-            buffer = handle.Resolve(vault);
+            handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                MaxTrackedTools,
+                SystemID.GameplayTools,
+                NativeArrayOptions.ClearMemory);
+
+            if (!IsGenerationHandleCreated(in handle) ||
+                !vault.TryResolveHandle(in handle, out buffer))
+            {
+                buffer = default;
+                return false;
+            }
+
             return buffer.IsCreated && buffer.Length >= MaxTrackedTools;
+        }
+
+        private static bool IsGenerationHandleCreated<T>(in VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
         }
 
         private bool HasPendingDecay()
@@ -1309,20 +1411,120 @@ namespace Hecton8.Tools
 
         private void TryRegisterSaveService()
         {
-            if (_saveRegistered || GlobalRegistry.Save == null)
+            ISaveService saveService = _saveService;
+            if (_saveRegistered || saveService == null)
                 return;
 
-            GlobalRegistry.Save.Register(this);
+            saveService.Register(this);
             _saveRegistered = true;
         }
 
         private void TryUnregisterSaveService()
         {
-            if (!_saveRegistered || GlobalRegistry.Save == null)
+            ISaveService saveService = _saveService;
+            if (!_saveRegistered || saveService == null)
                 return;
 
-            GlobalRegistry.Save.Unregister(this);
+            saveService.Unregister(this);
             _saveRegistered = false;
+        }
+
+        private void CacheRegistryDependenciesCold()
+        {
+            _dataVault = GlobalRegistry.DataVault;
+            _saveService = GlobalRegistry.Save;
+            _playerRuntimeContext = GlobalRegistry.Player;
+        }
+
+        private void ApplyRegistryServiceRebind(GlobalRegistryServiceSlot serviceSlot, object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.DataVault:
+                    RebindDataVault(currentService as IDataVault);
+                    break;
+                case GlobalRegistryServiceSlot.Save:
+                    RebindSaveService(currentService as ISaveService);
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    _playerToolManager = _playerRuntimeContext != null ? _playerRuntimeContext.ToolManager : null;
+                    break;
+            }
+        }
+
+        private void RebindDataVault(IDataVault dataVault)
+        {
+            if (ReferenceEquals(_dataVault, dataVault))
+                return;
+
+            TryCompleteDecayJobIfScheduled(forceComplete: true);
+            ReleaseDurabilityHandles(_dataVault);
+            _dataVault = dataVault;
+            _itemStatesHandle = default;
+            _pendingDecayDtHandle = default;
+            _wearMultipliersHandle = default;
+            _slotActiveHandle = default;
+            _breakdownFlagsHandle = default;
+        }
+
+        private void ReleaseDurabilityHandles(IDataVault dataVault)
+        {
+            if (dataVault == null)
+                return;
+
+            ReleaseDurabilityHandle(dataVault, ref _itemStatesHandle);
+            ReleaseDurabilityHandle(dataVault, ref _pendingDecayDtHandle);
+            ReleaseDurabilityHandle(dataVault, ref _wearMultipliersHandle);
+            ReleaseDurabilityHandle(dataVault, ref _slotActiveHandle);
+            ReleaseDurabilityHandle(dataVault, ref _breakdownFlagsHandle);
+        }
+
+        private static void ReleaseDurabilityHandle<T>(IDataVault dataVault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (!IsGenerationHandleCreated(in handle))
+                return;
+
+            dataVault.ReleaseBuffer(in handle);
+            handle = default;
+        }
+
+        private void RebindSaveService(ISaveService saveService)
+        {
+            if (ReferenceEquals(_saveService, saveService))
+                return;
+
+            TryUnregisterSaveService();
+            _saveService = saveService;
+            TryRegisterSaveService();
+        }
+
+        void IGlobalRegistryHotSwapRefListener.OnGlobalRegistryServiceRebound(GlobalRegistryServiceSlot serviceSlot, ref object currentService)
+        {
+            ApplyRegistryServiceRebind(serviceSlot, currentService);
+        }
+
+        void IGlobalRegistryHotSwapListener.OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
+        {
+            ApplyRegistryServiceRebind(serviceSlot, currentService);
+        }
+
+        private void TryRegisterHotSwap()
+        {
+            if (_registeredHotSwap)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwap()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
         }
 
         private void TryRegisterService()

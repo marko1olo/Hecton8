@@ -30,6 +30,22 @@ The first playtesters must not be random hype traffic. They need to expose wheth
 
 Do not recruit via fake scarcity posts.
 
+## Recruitment Permission Gate V0
+
+Do not treat a visible email, Discord user, Steam commenter, or creator CRM row as consent to recruit.
+
+| Source | Allowed only if | Blocker |
+|---|---|---|
+| Email waitlist | The person opted into the matching playtest/waitlist mode and `owned_audience_permission_gate = ALLOW_OWNED_AUDIENCE_VERIFIED` for that mode. | Imported CRM/contact rows, scraped emails, vague newsletter consent, or a held owned-audience gate. |
+| Discord/community | The server/channel rules allow tester recruitment and the invite points to an approved signup route. | DM recruitment, mod-disallowed posts, or public invite before Discord custody/open gate. |
+| Steam Playtest signup | Steam page/Playtest route is live, `demo_public_access_permission_gate = ALLOW_PUBLIC_DEMO_ACCESS_VERIFIED` for public signup/tranche, and route class is recorded. | Treating Playtest signup as newsletter, creator, press consent, or public access approval from build existence. |
+| Verified lead/direct invite | The relationship or public route makes a one-off invite appropriate. | Mass direct messages or creator/press rows with no tester opt-in. |
+| Personal network | Bias is disclosed and feedback is tagged as biased. | Counting friends/family as cold read or external validation. |
+
+Every recruited tester row needs source, consent class, route class, segment, and feedback obligation. Do not merge tester contacts into newsletter, creator CRM, press list, or Discord roles unless they explicitly opt into that separate route.
+
+If recruitment copy claims gameplay, pressure, route risk, threat, salvage, base failure, or first-public agency proof, it also needs an AB-009/KPI field source: `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`. Playtesters can generate new product feedback, but recruitment cannot use unmeasured marketing proof as the hook.
+
 ## Screening Questions
 
 Use 8 questions max:
@@ -47,13 +63,19 @@ Use 8 questions max:
 
 Use this exact structure for the first private form. Keep it short. The goal is segment quality, not hype collection.
 
+Private screening forms are not public CTA destinations. Do not place a screening form in a social bio, trailer end card, showcase CTA, or public presskit unless `owned_audience_permission_gate = ALLOW_OWNED_AUDIENCE_VERIFIED` and `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` both authorize the signup route. The default first-wave form is invite-only or low-visibility direct recruitment.
+
 ```text
 Title: HECTON-8 Private Playtest Screening
 
 Intro:
-HECTON-8 is a single-player deep-sea survival game in development. This form is for private playtest selection only. It is not a promise of access, launch timing, co-op, or final features.
+HECTON-8 is a single-player deep-sea survival game in development. This form is for private playtest selection only. It is not a promise of access, launch timing, multiplayer-scope, or final features.
 
 1. Email/contact route:
+1a. Consent source: waitlist / direct invite / Steam Playtest / community permission / personal network
+1b. `route_class` if public signup after CTA activation; `access_route_class` if private screening or Steam Playtest
+1b-1. If access is private: record `verified_contact_route`, `access_route_class`, and later `reply_status_after_send`
+1c. `reply_consent_provenance`: tester feedback route only unless separate opt-in exists
 2. Preferred language:
 3. Country/time zone:
 4. PC specs: CPU / GPU / RAM / storage / monitor refresh rate:
@@ -67,7 +89,7 @@ HECTON-8 is a single-player deep-sea survival game in development. This form is 
 
 Auto-reject for first wave:
 
-- expects co-op;
+- expects multiplayer/co-op as the core reason to test;
 - wants only free early access with no feedback;
 - refuses bug/feedback form;
 - cannot share hardware specs;
@@ -85,7 +107,7 @@ Priority for first 25 external testers:
 
 Status: form-ready / recruitment blocked until first route is playable.
 
-Use this to select testers without filling the wave with hype traffic or co-op requests.
+Use this to select testers without filling the wave with hype traffic or unsupported multiplayer-scope requests.
 
 | Signal | Points | Notes |
 |---|---:|---|
@@ -96,7 +118,7 @@ Use this to select testers without filling the wave with hype traffic or co-op r
 | Will submit the 6-question feedback form after one session. | +3 | Non-negotiable for first external wave. |
 | Can record or screenshot if asked. | +1 | Useful, not required. |
 | Comfortable with unfinished build and missing content. | +2 | Reduces support friction. |
-| Expects co-op/multiplayer as a core reason to test. | -5 | Reject for first wave. |
+| Expects multiplayer/co-op as a core reason to test. | -5 | Reject for first wave. |
 | Wants only free early access/content and refuses feedback. | -5 | Reject for first wave. |
 | Cannot share hardware specs. | -3 | Hold unless non-performance segment is needed. |
 | Mainly wants streamable public content before permission. | -3 | Hold until public demo. |
@@ -127,6 +149,7 @@ CLARITY_PLAYER_VERB
 CLONE_RISK
 DARKNESS_READABILITY
 PRESSURE_SYSTEM_READ
+AGENCY_DECISION_READ
 BASE_SYSTEM_READ
 SALVAGE_TEDIUM
 INVENTORY_FRICTION
@@ -135,10 +158,10 @@ THREAT_READ
 SEED_SHIP_CURIOSITY
 LOW_SPEC_PERF
 CONTROL_ACCESSIBILITY
-COOP_EXPECTATION
+MULTIPLAYER_SCOPE_EXPECTATION
 ```
 
-If `COOP_EXPECTATION`, `CLONE_RISK`, or `DARKNESS_READABILITY` appears repeatedly, stop expanding the wave and revise page/assets/onboarding.
+If `MULTIPLAYER_SCOPE_EXPECTATION`, `CLONE_RISK`, `DARKNESS_READABILITY`, or missing `AGENCY_DECISION_READ` appears repeatedly, stop expanding the wave and revise page/assets/onboarding.
 
 ## Tester Wave Plan
 
@@ -153,12 +176,20 @@ If `COOP_EXPECTATION`, `CLONE_RISK`, or `DARKNESS_READABILITY` appears repeatedl
 ## Feedback Form
 
 ```text
+Consent/source:
+route_class if public / access_route_class if private:
+verified_contact_route if private:
+access_route_class if private:
+reply_status_after_send:
+reply_consent_provenance:
 Session length:
 Did you finish the route?
 Where did you get stuck?
 What did you think the game was about after 5 minutes?
 Most interesting moment:
 Most annoying moment:
+What decision did you make under pressure, if any?
+If this answer is used as agency proof, record the owner-local field as `agency_decision_read` or `cold_read_agency_decision`; do not treat the raw quote as public proof by itself.
 Did resource collection feel tense or tedious?
 Did pressure/machinery feel important?
 Would you wishlist/follow?
@@ -172,8 +203,9 @@ Before access:
 - current build state;
 - known issues;
 - what feedback is needed;
+- `verified_contact_route`, `access_route_class`, `reply_status_after_send`, `reply_consent_provenance`, and whether feedback may be quoted, summarized, or kept internal;
 - what not to expect;
-- no co-op;
+- multiplayer-scope boundary;
 - how to report bugs.
 
 After access:

@@ -1,0 +1,12 @@
+recipe,type,operation,px,py,pz,ex,ey,ez,blend,noise
+Abyssal_Lava_Arch,box,add,0,-18,0,70,9,70,0,0
+Abyssal_Lava_Arch,torus,smooth,0,0,0,24,5.5,0,1.4,1
+Abyssal_Lava_Arch,sphere,subtract,-12,-5,0,8,1,1,0,0
+Abyssal_Lava_Arch,sphere,subtract,13,-4,-6,7.5,1,1,0,0
+Abyssal_Lava_Arch,sphere,subtract,0,7,8,5,1,1,0,0
+Kraken_Ribcage,box,add,0,-16,0,62,8,54,0,0
+Kraken_Ribcage,torus,smooth,0,2,0,20,4,0,1.0,1
+Kraken_Ribcage,cylinder,subtract,-10,2,0,2.2,20,0,0,0
+Kraken_Ribcage,cylinder,subtract,-5,3,0,2.0,20,0,0,0
+Kraken_Ribcage,cylinder,subtract,5,3,0,2.0,20,0,0,0
+Kraken_Ribcage,cylinder,subtract,10,2,0,2.2,20,0,0,0

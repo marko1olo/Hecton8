@@ -26,7 +26,7 @@ namespace Hecton8.UI
     /// HUD controller for survival stat bars.
     /// Reads directly from HectonSurvivalSystem. Zero GC in hot paths.
     /// </summary>
-    public class SurvivalHUDController : MonoBehaviour, ILateFrameTickable
+    public class SurvivalHUDController : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -87,7 +87,9 @@ namespace Hecton8.UI
         // ══════════════════════════════════════════════════════════
 
         private HectonSurvivalSystem _survivalSystem;
+        private IPlayerRuntimeContext _cachedPlayerContext;
         private bool _registered;
+        private bool _hotSwapListenerRegistered;
         private int _nextSurvivalResolveFrame;
 
         // Cached previous values to avoid unnecessary UI updates
@@ -112,12 +114,21 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             ResolveSurvivalSystem(true);
             RegisterToTick();
         }
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
+            UnregisterFromTick();
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregisterHotSwapListener();
             UnregisterFromTick();
         }
 
@@ -267,7 +278,7 @@ namespace Hecton8.UI
 
             _nextSurvivalResolveFrame = frame + SurvivalResolveRetryFrames;
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             if (playerContext != null && playerContext.SurvivalSystem != null)
             {
                 _survivalSystem = playerContext.SurvivalSystem;
@@ -280,6 +291,48 @@ namespace Hecton8.UI
             {
                 _survivalSystem = survival;
             }
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Player)
+                return;
+
+            _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+            ApplyCachedPlayerContext();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedPlayerContext = GlobalRegistry.Player;
+            ApplyCachedPlayerContext();
+        }
+
+        private void ApplyCachedPlayerContext()
+        {
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            _survivalSystem = playerContext != null ? playerContext.SurvivalSystem : null;
+            _nextSurvivalResolveFrame = 0;
         }
 
         private void RegisterToTick()

@@ -9,6 +9,8 @@ using System.IO.MemoryMappedFiles;
 #endif
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Hecton8.Core;
+using Hecton8.Core.Data;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
@@ -53,7 +55,15 @@ namespace Hecton8.UI
         private byte* _basePointer;
         private int _mappedBytes;
         private int _entryCount;
+        private uint _btreeOffset;
+        private uint _btreeRootOffset;
+        private uint _btreeEndOffset;
+        private uint _btreeNodeCount;
+        private uint _lastTreeDepth;
+        private uint _lastTreeKeysProcessed;
+        private uint _lastPrefetchTouchCount;
         private bool _vaultMirrorBacked;
+        private bool _btreeAvailable;
 
         public bool IsOpen => _basePointer != null && _mappedBytes >= HeaderSizeBytes && _entryCount > 0;
         public int EntryCount => _entryCount;
@@ -104,28 +114,32 @@ namespace Hecton8.UI
             if (!IsOpen || hash == 0u)
                 return false;
 
-            int lo = 0;
-            int hi = _entryCount - 1;
-            while (lo <= hi)
+            if (!_btreeAvailable ||
+                !H8CacheBTree.TryFindValue(
+                    _basePointer,
+                    _btreeOffset,
+                    _btreeRootOffset,
+                    _btreeEndOffset,
+                    hash,
+                    ResolveGlobalQualityWeight(),
+                    out uint recordIndex,
+                    out uint depth,
+                    out uint keysProcessed,
+                    out uint prefetchTouchCount) ||
+                recordIndex >= _entryCount)
             {
-                int mid = lo + ((hi - lo) >> 1);
-                PdaH8lrRecordDTO record = ReadRecord(mid);
-                if (record.Hash == hash)
-                {
-                    if (!IsRecordInBounds(in record))
-                        return false;
-
-                    utf8 = new ReadOnlySpan<byte>(_basePointer + record.ByteOffset, (int)record.ByteLength);
-                    return true;
-                }
-
-                if (record.Hash < hash)
-                    lo = mid + 1;
-                else
-                    hi = mid - 1;
+                return false;
             }
 
-            return false;
+            _lastTreeDepth = depth;
+            _lastTreeKeysProcessed = keysProcessed;
+            _lastPrefetchTouchCount = prefetchTouchCount;
+            PdaH8lrRecordDTO record = ReadRecord((int)recordIndex);
+            if (record.Hash != hash || !IsRecordInBounds(in record))
+                return false;
+
+            utf8 = new ReadOnlySpan<byte>(_basePointer + record.ByteOffset, (int)record.ByteLength);
+            return true;
         }
 
         public bool TryGetRecord(int index, out PdaH8lrRecordDTO record)
@@ -166,7 +180,15 @@ namespace Hecton8.UI
             _basePointer = null;
             _mappedBytes = 0;
             _entryCount = 0;
+            _btreeOffset = 0u;
+            _btreeRootOffset = 0u;
+            _btreeEndOffset = 0u;
+            _btreeNodeCount = 0u;
+            _lastTreeDepth = 0u;
+            _lastTreeKeysProcessed = 0u;
+            _lastPrefetchTouchCount = 0u;
             _vaultMirrorBacked = false;
+            _btreeAvailable = false;
         }
 
 #if HECTON8_PDA_H8LR_MMF_AVAILABLE
@@ -277,12 +299,13 @@ namespace Hecton8.UI
                 return false;
 
             uint previousHash = 0u;
+            uint payloadStart = uint.MaxValue;
             for (int i = 0; i < count; i++)
             {
                 PdaH8lrRecordDTO record = ReadRecordUnchecked(i);
                 if (record.Reserved0 != 0u ||
                     record.Hash == 0u ||
-                    (i > 0 && record.Hash < previousHash) ||
+                    (i > 0 && record.Hash <= previousHash) ||
                     (record.ByteOffset & 15u) != 0u ||
                     record.ByteLength == 0u ||
                     !IsRecordInBounds(in record))
@@ -290,11 +313,60 @@ namespace Hecton8.UI
                     return false;
                 }
 
+                payloadStart = math.min(payloadStart, record.ByteOffset);
                 previousHash = record.Hash;
             }
 
+            if (!H8CacheBTree.TryResolveTree(
+                    H8StaticDataFormat.CacheBTreeFlag,
+                    HeaderSizeBytes,
+                    (uint)count,
+                    RecordSizeBytes,
+                    payloadStart,
+                    out _btreeOffset,
+                    out _btreeRootOffset,
+                    out _btreeNodeCount))
+            {
+                return false;
+            }
+
+            _btreeEndOffset = payloadStart;
             _entryCount = count;
+            if (!ValidateBTreeEdge())
+                return false;
+
+            _btreeAvailable = true;
             return true;
+        }
+
+        private bool ValidateBTreeEdge()
+        {
+            PdaH8lrRecordDTO first = ReadRecordUnchecked(0);
+            PdaH8lrRecordDTO last = ReadRecordUnchecked(_entryCount - 1);
+            return H8CacheBTree.TryFindValue(
+                    _basePointer,
+                    _btreeOffset,
+                    _btreeRootOffset,
+                    _btreeEndOffset,
+                    first.Hash,
+                    0f,
+                    out uint firstIndex,
+                    out _,
+                    out _,
+                    out _) &&
+                firstIndex == 0u &&
+                H8CacheBTree.TryFindValue(
+                    _basePointer,
+                    _btreeOffset,
+                    _btreeRootOffset,
+                    _btreeEndOffset,
+                    last.Hash,
+                    0f,
+                    out uint lastIndex,
+                    out _,
+                    out _,
+                    out _) &&
+                lastIndex == (uint)(_entryCount - 1);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -338,6 +410,13 @@ namespace Hecton8.UI
                           (bytes[offset + 1] << 8) |
                           (bytes[offset + 2] << 16) |
                           (bytes[offset + 3] << 24));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveGlobalQualityWeight()
+        {
+            float weight = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.select(1f, weight, math.isfinite(weight)));
         }
     }
 }

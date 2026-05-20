@@ -6,9 +6,9 @@ namespace Hecton8.Core.Contracts.Signals
     /// <summary>
     /// Deferred physics-culling wake pulse. Absolute AUP is stored as double3 to avoid
     /// truncating a 100 km world-space event origin to float before culling math.
-    /// Size: 48 bytes.
+    /// Size: 64 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct WakeRequestSignal : ISignal
     {
         [FieldOffset(0)] public double3 OriginAup;
@@ -27,5 +27,7 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(45)] private byte _pad8;
         [FieldOffset(46)] private byte _pad9;
         [FieldOffset(47)] private byte _pad10;
+        [FieldOffset(48)] private ulong _pad11;
+        [FieldOffset(56)] private ulong _pad12;
     }
 }

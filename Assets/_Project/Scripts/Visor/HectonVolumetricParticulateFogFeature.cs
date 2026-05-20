@@ -54,8 +54,7 @@ namespace Hecton8.Visor
 
         private static float ResolveQualityCurve(float quality)
         {
-            float q = ResolveFiniteSaturated(quality);
-            return q * q * (3f - 2f * q);
+            return VolumetricFogParamsAccess.ResolveQualityCurve(quality);
         }
 
         [Serializable]
@@ -111,11 +110,7 @@ namespace Hecton8.Visor
 
             internal int ResolveRaySteps(float quality)
             {
-                float curved = ResolveQualityCurve(quality);
-                return math.clamp(
-                    (int)math.round(math.lerp((float)VolumetricFogConstants.MinRaySteps, VolumetricFogConstants.MaxRaySteps, curved)),
-                    VolumetricFogConstants.MinRaySteps,
-                    VolumetricFogConstants.MaxRaySteps);
+                return VolumetricFogParamsAccess.ResolveRayStepsForQuality(quality);
             }
 
             internal float ResolveInternalScale(float quality)
@@ -131,11 +126,7 @@ namespace Hecton8.Visor
 
             internal float ResolveProxyBlend(float quality)
             {
-                float q = ResolveFiniteSaturated(quality);
-                float t = math.saturate((q - 0.12f) * (1f / 0.3f));
-                float fade = t * t * (3f - 2f * t);
-                float survivalFloor = 1f - math.step(0.12f, q);
-                return math.max(survivalFloor, math.lerp(1f, 0f, fade));
+                return VolumetricFogParamsAccess.ResolveProxyBlendForQuality(quality);
             }
 
             internal int ResolvePointLightCount(float quality)
@@ -152,7 +143,7 @@ namespace Hecton8.Visor
             private const int RenderTextureBucketSize = 64;
             private const int ConstantBufferCount = 1;
             private const int DumpThresholdMicroseconds = 2000;
-            private const string DumpRelativePath = "Docs/AgentLogs/Dump_VOLUMETRIC_SURGEON.bin";
+            private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_120.bin";
 
             private sealed class RaymarchPassData
             {
@@ -214,6 +205,8 @@ namespace Hecton8.Visor
             private GraphicsBuffer _pointLightBufferA;
             private GraphicsBuffer _pointLightBufferB;
             private VolumetricFogParamsDTO _lastUploadedParams;
+            private VolumetricFogParamsDTO _lastAuthoredParams;
+            private VolumetricFogParamsDTO _externalOverrideParams;
             private uint _lastUploadedParamsHash;
             private uint _lastUploadedPointLightsHash;
             private Texture _marineFogDensityTextureHandleSource;
@@ -236,12 +229,17 @@ namespace Hecton8.Visor
             private int _activePointLightBufferIndex;
             private int _lastUploadedPointLightCount;
             private int _pendingPointLightCount;
+            private int _lastScheduledPointLightCount;
+            private uint _lastScheduledPointLightHash;
             private JobHandle _mockLightsJobHandle;
             private bool _mockLightsJobPending;
             private bool _dumpedThisSession;
             private bool _extinctionProfilesSeeded;
             private bool _hasUploadedParams;
             private bool _hasUploadedPointLights;
+            private bool _hasScheduledPointLightJob;
+            private bool _hasAuthoredParams;
+            private bool _hasExternalOverrideParams;
 
             public VolumetricFogPass()
             {
@@ -276,7 +274,7 @@ namespace Hecton8.Visor
                 _paramsBuffer?.Release();
                 if (_mockLightsJobPending)
                 {
-                    _mockLightsJobHandle.Complete(); // COLD SYNC JOB: render-feature teardown cannot leave a vault writer running.
+                    DispatcherJobFence.TryComplete(ref _mockLightsJobHandle, forceComplete: true); // COLD SYNC JOB: render-feature teardown cannot leave a vault writer running.
                     _mockLightsJobPending = false;
                 }
 
@@ -295,12 +293,16 @@ namespace Hecton8.Visor
                 _activePointLightBufferIndex = 0;
                 _lastUploadedPointLightCount = 0;
                 _pendingPointLightCount = 0;
+                _lastScheduledPointLightCount = 0;
+                _lastScheduledPointLightHash = 0u;
                 _extinctionProfilesSeeded = false;
                 _hasUploadedParams = false;
                 _lastUploadedParams = default;
                 _lastUploadedParamsHash = 0u;
+                ResetAuthoredOverrideState();
                 _hasUploadedPointLights = false;
                 _lastUploadedPointLightsHash = 0u;
+                _hasScheduledPointLightJob = false;
                 ReleaseFallbackTextures();
                 _raymarchKernel = -1;
                 _compositeKernel = -1;
@@ -331,8 +333,8 @@ namespace Hecton8.Visor
                     return;
 
                 TextureDesc sourceDesc = renderGraph.GetTextureDesc(sourceTexture);
-                int fullWidth = QuantizeDimension(Mathf.Max(1, sourceDesc.width));
-                int fullHeight = QuantizeDimension(Mathf.Max(1, sourceDesc.height));
+                int fullWidth = Mathf.Max(1, sourceDesc.width);
+                int fullHeight = Mathf.Max(1, sourceDesc.height);
                 float renderScale = _settings.ResolveInternalScale(_qualityWeight);
                 int halfWidth = QuantizeDimension(Mathf.Max(1, Mathf.RoundToInt(sourceDesc.width * renderScale)));
                 int halfHeight = QuantizeDimension(Mathf.Max(1, Mathf.RoundToInt(sourceDesc.height * renderScale)));
@@ -356,6 +358,9 @@ namespace Hecton8.Visor
                 Vector4 abyssalFlowSpacing = Shader.GetGlobalVector(ShaderConstants.AbyssalFlowSpacingId);
                 Vector4 abyssalFlowTextureParams = Shader.GetGlobalVector(ShaderConstants.AbyssalFlowTextureParamsId);
                 float abyssalFlowTextureActive = Shader.GetGlobalFloat(ShaderConstants.AbyssalFlowTextureActiveId);
+                Vector4 biomeTransitionFogColor = Shader.GetGlobalVector(ShaderConstants.BiomeTransitionFogColorId);
+                Vector4 biomeTransitionAbsorption = Shader.GetGlobalVector(ShaderConstants.BiomeTransitionAbsorptionId);
+                Vector4 biomeTransitionWeights = Shader.GetGlobalVector(ShaderConstants.BiomeTransitionWeightsId);
 
                 if (!UpdateVaultAndGpuState(
                         camera,
@@ -364,6 +369,9 @@ namespace Hecton8.Visor
                         renderScale,
                         visualPhaseSeconds,
                         estimatedGpuMicroseconds,
+                        in biomeTransitionFogColor,
+                        in biomeTransitionAbsorption,
+                        in biomeTransitionWeights,
                         marineFogTexture != null,
                         abyssalFlowTexture != null && abyssalFlowTextureActive > 0.5f,
                         out int activePointLightCount,
@@ -546,12 +554,25 @@ namespace Hecton8.Visor
 
                 if (!ReferenceEquals(vault, _vault))
                 {
+                    if (_mockLightsJobPending)
+                    {
+                        if (!_mockLightsJobHandle.IsCompleted)
+                            return false;
+
+                        DispatcherJobFence.TryFinalizeCompleted(ref _mockLightsJobHandle);
+                        _mockLightsJobPending = false;
+                    }
+
                     _vault = vault;
                     _paramsHandle = default;
                     _pointLightsHandle = default;
                     _telemetryHandle = default;
                     _extinctionProfilesHandle = default;
                     _extinctionProfilesSeeded = false;
+                    ResetAuthoredOverrideState();
+                    ResetPointLightScheduleState();
+                    ClearPointLightBuffer(_pointLightBufferA);
+                    ClearPointLightBuffer(_pointLightBufferB);
                 }
 
                 if (!_paramsHandle.IsCreated)
@@ -589,6 +610,9 @@ namespace Hecton8.Visor
                 float renderScale,
                 float visualPhaseSeconds,
                 float estimatedGpuMicroseconds,
+                in Vector4 biomeTransitionFogColor,
+                in Vector4 biomeTransitionAbsorption,
+                in Vector4 biomeTransitionWeights,
                 bool hasMarineFogTexture,
                 bool hasAbyssalFlowTexture,
                 out int activePointLightCount,
@@ -621,31 +645,35 @@ namespace Hecton8.Visor
                 float extinctionCoefficient = ResolveFiniteClamped(_settings.extinctionCoefficient, 0.0001f, 2f, 0.12f);
                 float3 cameraPosition = ResolveCameraAupLocalPosition(camera);
                 float3 cameraForward = ResolveCameraForward(camera);
-                ApplyExtinctionProfileFromVault(ref color, ref baseDensity, ref extinctionCoefficient, cameraPosition);
                 float3 wrappedNoiseOffset = ResolveWrappedNoiseOffset(cameraPosition);
                 ref VolumetricFogParamsDTO fogState = ref VolumetricFogParamsAccess.ElementAt(fogParams, 0);
                 VolumetricFogParamsDTO existing = fogState;
-                bool useVaultOverride = IsUsableVaultOverride(in existing);
-                float4 fogColorAndDensity = useVaultOverride
-                    ? new float4(
-                        ResolveFiniteClamped(existing.FogColorAndDensity.x, 0.0015f, 8f, settingsColor.x),
-                        ResolveFiniteClamped(existing.FogColorAndDensity.y, 0.0023f, 8f, settingsColor.y),
-                        ResolveFiniteClamped(existing.FogColorAndDensity.z, 0.0031f, 8f, settingsColor.z),
-                        ResolveFiniteClamped(existing.FogColorAndDensity.w, 0f, 0.3f, baseDensity))
-                    : new float4(color.r, color.g, color.b, baseDensity);
-                float4 scatteringParams = useVaultOverride
-                    ? new float4(
-                        ResolveFiniteClamped(existing.ScatteringParams.x, 0f, 4f, 0.85f),
-                        ResolveFiniteClamped(existing.ScatteringParams.y, 0.0001f, 2f, extinctionCoefficient),
-                        ResolveFiniteClamped(existing.ScatteringParams.z, -0.95f, 0.95f, 0.42f),
-                        ResolveFiniteClamped(existing.ScatteringParams.w, 0.25f, 0.995f, 0.97f))
-                    : new float4(
-                        ResolveFiniteClamped(_settings.scatteringCoefficient, 0f, 4f, 0.85f),
-                        extinctionCoefficient,
-                        ResolveFiniteClamped(_settings.anisotropy, -0.95f, 0.95f, 0.42f),
-                        ResolveFiniteClamped(_settings.opacityEarlyBreak, 0.25f, 0.995f, 0.97f));
+                UpdateExternalOverrideState(in existing);
+                bool useVaultOverride = _hasExternalOverrideParams;
+                VolumetricFogParamsDTO overrideParams = _externalOverrideParams;
+                float scatteringCoefficient = ResolveFiniteClamped(_settings.scatteringCoefficient, 0f, 4f, 0.85f);
+                float anisotropy = ResolveFiniteClamped(_settings.anisotropy, -0.95f, 0.95f, 0.42f);
+                float opacityEarlyBreak = ResolveFiniteClamped(_settings.opacityEarlyBreak, 0.25f, 0.995f, 0.97f);
+                if (useVaultOverride)
+                {
+                    color = new Color(
+                        ResolveFiniteClamped(overrideParams.FogColorAndDensity.x, 0.0015f, 8f, color.r),
+                        ResolveFiniteClamped(overrideParams.FogColorAndDensity.y, 0.0023f, 8f, color.g),
+                        ResolveFiniteClamped(overrideParams.FogColorAndDensity.z, 0.0031f, 8f, color.b),
+                        color.a);
+                    baseDensity = ResolveFiniteClamped(overrideParams.FogColorAndDensity.w, 0f, 0.3f, baseDensity);
+                    scatteringCoefficient = ResolveFiniteClamped(overrideParams.ScatteringParams.x, 0f, 4f, scatteringCoefficient);
+                    extinctionCoefficient = ResolveFiniteClamped(overrideParams.ScatteringParams.y, 0.0001f, 2f, extinctionCoefficient);
+                    anisotropy = ResolveFiniteClamped(overrideParams.ScatteringParams.z, -0.95f, 0.95f, anisotropy);
+                    opacityEarlyBreak = ResolveFiniteClamped(overrideParams.ScatteringParams.w, 0.25f, 0.995f, opacityEarlyBreak);
+                }
+
+                ApplyExtinctionProfileFromVault(ref color, ref baseDensity, ref extinctionCoefficient, cameraPosition);
+                ApplyBiomeTransitionGlobals(ref color, ref baseDensity, ref extinctionCoefficient, in biomeTransitionFogColor, in biomeTransitionAbsorption, in biomeTransitionWeights);
+                float4 fogColorAndDensity = new float4(color.r, color.g, color.b, baseDensity);
+                float4 scatteringParams = new float4(scatteringCoefficient, extinctionCoefficient, anisotropy, opacityEarlyBreak);
                 float flowStrength = useVaultOverride
-                    ? ResolveFiniteClamped(existing.FlowAdvection.w, 0f, 8f, 2.25f)
+                    ? ResolveFiniteClamped(overrideParams.FlowAdvection.w, 0f, 8f, 2.25f)
                     : ResolveFiniteClamped(_settings.flowAdvectionStrength, 0f, 8f, 2.25f);
                 VolumetricFogParamsDTO dto = new VolumetricFogParamsDTO
                 {
@@ -659,6 +687,8 @@ namespace Hecton8.Visor
                         _settings.ResolveProxyBlend(_qualityWeight))
                 };
                 fogState = dto;
+                _lastAuthoredParams = dto;
+                _hasAuthoredParams = true;
 
                 UploadConstantBufferIfDirty(in dto);
                 ScheduleMockLightsIfIdle(pointLights, cameraPosition, cameraForward, pointLightCount, visualPhaseSeconds);
@@ -669,18 +699,33 @@ namespace Hecton8.Visor
                 return true;
             }
 
+            private void UpdateExternalOverrideState(in VolumetricFogParamsDTO existing)
+            {
+                if (!IsUsableVaultOverride(in existing))
+                {
+                    _externalOverrideParams = default;
+                    _hasExternalOverrideParams = false;
+                    return;
+                }
+
+                if (_hasAuthoredParams && AreParamsEqual(in existing, in _lastAuthoredParams))
+                    return;
+
+                _externalOverrideParams = existing;
+                _hasExternalOverrideParams = true;
+            }
+
+            private void ResetAuthoredOverrideState()
+            {
+                _lastAuthoredParams = default;
+                _externalOverrideParams = default;
+                _hasAuthoredParams = false;
+                _hasExternalOverrideParams = false;
+            }
+
             private static bool IsUsableVaultOverride(in VolumetricFogParamsDTO dto)
             {
-                return math.all(math.isfinite(dto.FogColorAndDensity.xyz)) &&
-                       IsFinite(dto.FogColorAndDensity.w) &&
-                       IsFinite(dto.ScatteringParams.x) &&
-                       IsFinite(dto.ScatteringParams.y) &&
-                       IsFinite(dto.ScatteringParams.z) &&
-                       IsFinite(dto.ScatteringParams.w) &&
-                       IsFinite(dto.FlowAdvection.w) &&
-                       dto.QualityAndLimits.y >= VolumetricFogConstants.MinRaySteps &&
-                       dto.QualityAndLimits.y <= VolumetricFogConstants.MaxRaySteps &&
-                       dto.ScatteringParams.y > 0f;
+                return VolumetricFogParamsAccess.IsUsableParams(in dto);
             }
 
             private static float3 ResolveCameraAupLocalPosition(Camera camera)
@@ -751,6 +796,41 @@ namespace Hecton8.Visor
                 }
             }
 
+            private static void ApplyBiomeTransitionGlobals(
+                ref Color fogColor,
+                ref float baseDensity,
+                ref float extinctionCoefficient,
+                in Vector4 biomeFogColor,
+                in Vector4 biomeAbsorption,
+                in Vector4 biomeWeights)
+            {
+                float weightSum =
+                    ResolveFiniteClamped(biomeWeights.x, 0f, 1f, 0f) +
+                    ResolveFiniteClamped(biomeWeights.y, 0f, 1f, 0f) +
+                    ResolveFiniteClamped(biomeWeights.z, 0f, 1f, 0f) +
+                    ResolveFiniteClamped(biomeWeights.w, 0f, 1f, 0f);
+                float blend = ResolveFiniteSaturated(weightSum);
+                if (blend <= 0.0001f)
+                    return;
+
+                float biomeR = ResolveFiniteClamped(biomeFogColor.x, 0.0015f, 8f, fogColor.r);
+                float biomeG = ResolveFiniteClamped(biomeFogColor.y, 0.0023f, 8f, fogColor.g);
+                float biomeB = ResolveFiniteClamped(biomeFogColor.z, 0.0031f, 8f, fogColor.b);
+                float absorptionR = ResolveFiniteClamped(biomeAbsorption.x, 0.0015f, 8f, extinctionCoefficient);
+                float absorptionG = ResolveFiniteClamped(biomeAbsorption.y, 0.0023f, 8f, extinctionCoefficient);
+                float absorptionB = ResolveFiniteClamped(biomeAbsorption.z, 0.0031f, 8f, extinctionCoefficient);
+                float biomeDensity = ResolveFiniteClamped(biomeAbsorption.w * 0.04f, 0f, 0.3f, baseDensity);
+                float biomeExtinction = ResolveFiniteClamped((absorptionR + absorptionG + absorptionB) * (1f / 3f), 0.0001f, 2f, extinctionCoefficient);
+
+                fogColor = new Color(
+                    math.lerp(fogColor.r, biomeR, blend),
+                    math.lerp(fogColor.g, biomeG, blend),
+                    math.lerp(fogColor.b, biomeB, blend),
+                    fogColor.a);
+                baseDensity = math.lerp(baseDensity, biomeDensity, blend);
+                extinctionCoefficient = math.lerp(extinctionCoefficient, biomeExtinction, blend);
+            }
+
             private void UploadConstantBufferIfDirty(in VolumetricFogParamsDTO dto)
             {
                 uint dtoHash = HashParams(in dto);
@@ -804,7 +884,20 @@ namespace Hecton8.Visor
                 if (_mockLightsJobPending || !pointLights.IsCreated)
                     return;
 
-                _pendingPointLightCount = Mathf.Clamp(desiredPointLightCount, 1, VolumetricFogConstants.MaxPointLights);
+                int safeDesiredPointLightCount = math.clamp(desiredPointLightCount, 1, VolumetricFogConstants.MaxPointLights);
+                uint scheduleHash = math.hash(new uint4(
+                    math.asuint(_qualityWeight),
+                    math.asuint(visualPhaseSeconds),
+                    (uint)safeDesiredPointLightCount,
+                    0x51A0B120u));
+                if (_hasScheduledPointLightJob &&
+                    safeDesiredPointLightCount == _lastScheduledPointLightCount &&
+                    scheduleHash == _lastScheduledPointLightHash)
+                {
+                    return;
+                }
+
+                _pendingPointLightCount = safeDesiredPointLightCount;
                 BuildMockVolumetricLightsJob lightJob = new BuildMockVolumetricLightsJob
                 {
                     PointLights = pointLights,
@@ -815,6 +908,9 @@ namespace Hecton8.Visor
                 };
                 _mockLightsJobHandle = lightJob.Schedule();
                 _mockLightsJobPending = true;
+                _lastScheduledPointLightCount = safeDesiredPointLightCount;
+                _lastScheduledPointLightHash = scheduleHash;
+                _hasScheduledPointLightJob = true;
             }
 
             private void RefreshCompletedLightJobAndUpload(NativeArray<PointLightDTO> pointLights)
@@ -822,14 +918,16 @@ namespace Hecton8.Visor
                 if (!_mockLightsJobPending || !_mockLightsJobHandle.IsCompleted)
                     return;
 
-                _mockLightsJobHandle.Complete();
+                if (!DispatcherJobFence.TryFinalizeCompleted(ref _mockLightsJobHandle))
+                    return;
+
                 _mockLightsJobPending = false;
 
                 GraphicsBuffer target = GetInactivePointLightBuffer();
                 if (target == null || !target.IsValid())
                     return;
 
-                int completedPointLightCount = Mathf.Clamp(_pendingPointLightCount, 0, VolumetricFogConstants.MaxPointLights);
+                int completedPointLightCount = math.clamp(_pendingPointLightCount, 0, VolumetricFogConstants.MaxPointLights);
                 uint pointLightsHash = HashPointLights(pointLights, completedPointLightCount);
                 if (_hasUploadedPointLights &&
                     completedPointLightCount == _lastUploadedPointLightCount &&
@@ -870,7 +968,7 @@ namespace Hecton8.Visor
 
             private unsafe void UploadPointLights(GraphicsBuffer target, NativeArray<PointLightDTO> pointLights)
             {
-                int count = Mathf.Min(target.count, pointLights.Length);
+                int count = math.min(target.count, pointLights.Length);
                 if (count <= 0)
                     return;
 
@@ -1032,6 +1130,7 @@ namespace Hecton8.Visor
                     _hasUploadedParams = false;
                     _lastUploadedParams = default;
                     _lastUploadedParamsHash = 0u;
+                    ResetAuthoredOverrideState();
                 }
 
                 bool createdPointLightBuffer = false;
@@ -1062,9 +1161,7 @@ namespace Hecton8.Visor
                     ClearPointLightBuffer(_pointLightBufferA);
                     ClearPointLightBuffer(_pointLightBufferB);
                     _activePointLightBufferIndex = 0;
-                    _lastUploadedPointLightCount = 0;
-                    _lastUploadedPointLightsHash = 0u;
-                    _hasUploadedPointLights = false;
+                    ResetPointLightScheduleState();
                 }
 
                 return _paramsBuffer != null && _paramsBuffer.IsValid() &&
@@ -1077,7 +1174,7 @@ namespace Hecton8.Visor
                 if (buffer == null || !buffer.IsValid())
                     return;
 
-                int count = Mathf.Min(buffer.count, VolumetricFogConstants.MaxPointLights);
+                int count = math.min(buffer.count, VolumetricFogConstants.MaxPointLights);
                 if (count <= 0)
                     return;
 
@@ -1091,6 +1188,17 @@ namespace Hecton8.Visor
                 {
                     buffer.UnlockBufferAfterWrite<PointLightDTO>(count);
                 }
+            }
+
+            private void ResetPointLightScheduleState()
+            {
+                _lastUploadedPointLightCount = 0;
+                _pendingPointLightCount = 0;
+                _lastScheduledPointLightCount = 0;
+                _lastUploadedPointLightsHash = 0u;
+                _lastScheduledPointLightHash = 0u;
+                _hasUploadedPointLights = false;
+                _hasScheduledPointLightJob = false;
             }
 
             private void EnsureRenderTargets(int halfWidth, int halfHeight, int fullWidth, int fullHeight)
@@ -1246,6 +1354,9 @@ namespace Hecton8.Visor
             internal static readonly int AbyssalFlowSpacingId = Shader.PropertyToID("_AbyssalFlowSpacing");
             internal static readonly int AbyssalFlowTextureParamsId = Shader.PropertyToID("_AbyssalFlowTextureParams");
             internal static readonly int AbyssalFlowTextureActiveId = Shader.PropertyToID("_AbyssalFlowTextureActive");
+            internal static readonly int BiomeTransitionFogColorId = Shader.PropertyToID("_H8BiomeTransitionFogColor");
+            internal static readonly int BiomeTransitionAbsorptionId = Shader.PropertyToID("_H8BiomeTransitionAbsorption");
+            internal static readonly int BiomeTransitionWeightsId = Shader.PropertyToID("_H8BiomeTransitionWeights");
         }
 
         [SerializeField] private FeatureSettings settings = new FeatureSettings();
@@ -1272,11 +1383,13 @@ namespace Hecton8.Visor
             if (IsUnsupportedCameraType(cameraType))
                 return;
 
-            long setupStartTimestamp = Stopwatch.GetTimestamp();
+            int currentFrame = Time.frameCount;
+            bool sampleSetupCost = currentFrame >= _nextPerformanceWarningFrame;
+            long setupStartTimestamp = sampleSetupCost ? Stopwatch.GetTimestamp() : 0L;
             float qualityWeight = ResolveFiniteSaturated(HomeostasisBrain.GlobalQualityWeight);
             _pass.Setup(settings, settings.computeShader, qualityWeight);
             renderer.EnqueuePass(_pass);
-            PublishSetupWarningIfNeeded(setupStartTimestamp);
+            PublishSetupWarningIfNeeded(setupStartTimestamp, currentFrame, sampleSetupCost);
         }
 
         protected override void Dispose(bool disposing)
@@ -1285,14 +1398,17 @@ namespace Hecton8.Visor
             _pass = null;
         }
 
-        private void PublishSetupWarningIfNeeded(long setupStartTimestamp)
+        private void PublishSetupWarningIfNeeded(long setupStartTimestamp, int currentFrame, bool sampleSetupCost)
         {
-            long elapsedTicks = Stopwatch.GetTimestamp() - setupStartTimestamp;
-            double elapsedMilliseconds = elapsedTicks * 1000.0d / Stopwatch.Frequency;
-            if (elapsedMilliseconds <= SetupBudgetWarningMilliseconds || Time.frameCount < _nextPerformanceWarningFrame)
+            if (!sampleSetupCost)
                 return;
 
-            _nextPerformanceWarningFrame = Time.frameCount + 30;
+            long elapsedTicks = Stopwatch.GetTimestamp() - setupStartTimestamp;
+            double elapsedMilliseconds = elapsedTicks * 1000.0d / Stopwatch.Frequency;
+            _nextPerformanceWarningFrame = currentFrame + 30;
+            if (elapsedMilliseconds <= SetupBudgetWarningMilliseconds)
+                return;
+
             GlobalTelemetryBus.PublishPerformanceWarning(
                 SetupWarningHash,
                 SetupContextHash,

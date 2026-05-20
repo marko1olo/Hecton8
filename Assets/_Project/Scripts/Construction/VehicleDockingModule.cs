@@ -45,7 +45,7 @@ namespace Hecton8.Construction
         private const ushort DockTelemetryEntrySizeBytes = 128;
         private const int DockTelemetryDumpCooldownFrames = 30;
 
-        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 128)]
+        [StructLayout(LayoutKind.Explicit, Size = 128)]
         private struct DockTelemetryEntry
         {
             [FieldOffset(0)]
@@ -507,9 +507,7 @@ namespace Hecton8.Construction
             if (!TryResolveCandidatePose(transportBehaviour, out Vector3 candidatePosition, out Quaternion candidateRotation))
                 return false;
 
-            AbsoluteUniversePosition candidateAup = AbsoluteUniversePosition.FromRuntimePosition(candidatePosition);
-            AbsoluteUniversePosition anchorAup = AbsoluteUniversePosition.FromRuntimePosition(anchor.position);
-            if (AbsoluteUniversePosition.DistanceSq(candidateAup, anchorAup) >= DockingAcquireDistanceSqMeters)
+            if (RuntimeDistanceSq(candidatePosition, anchor.position) >= DockingAcquireDistanceSqMeters)
                 return false;
 
             Vector3 candidateForward = candidateRotation * Vector3.forward;
@@ -691,7 +689,9 @@ namespace Hecton8.Construction
             _dockingStartPosition = startPosition;
             _dockingStartRotation = startRotation;
             _dockingStartAup = AbsoluteUniversePosition.FromRuntimePosition(startPosition);
-            _dockingTargetAup = AbsoluteUniversePosition.FromRuntimePosition(anchor != null ? anchor.position : startPosition);
+            _dockingTargetAup = anchor != null
+                ? OffsetAupByRuntimeDelta(in _dockingStartAup, startPosition, anchor.position)
+                : _dockingStartAup;
             float duration = ResolveSafeDockingDurationSeconds();
             float3 startForward = ToFloat3(startRotation * Vector3.forward);
             float3 targetForward = anchor != null ? ToFloat3(anchor.forward) : startForward;
@@ -781,7 +781,7 @@ namespace Hecton8.Construction
 
             Vector3 anchorPosition = anchor.position;
             Quaternion anchorRotation = anchor.rotation;
-            _dockingTargetAup = AbsoluteUniversePosition.FromRuntimePosition(anchorPosition);
+            _dockingTargetAup = OffsetAupByRuntimeDelta(in _dockingStartAup, _dockingStartPosition, anchorPosition);
             RefreshDockedRelativeAup(anchorPosition);
             float normalizedTime = math.saturate(_dockingElapsedSeconds * math.rcp(duration));
             float systemStress01 = ResolveSystemStress01();
@@ -941,21 +941,23 @@ namespace Hecton8.Construction
         private void RefreshDockedRelativeAup(Vector3 dockRuntimePosition)
         {
             AbsoluteUniversePosition dockWorldAup = AbsoluteUniversePosition.FromRuntimePosition(dockRuntimePosition);
-            _habitatReferenceAup = ResolveHabitatReferenceAup(dockRuntimePosition);
+            _habitatReferenceAup = ResolveHabitatReferenceAup(in dockWorldAup, dockRuntimePosition);
             _dockedRelativeAup = ResolveRelativeToHabitatAup(dockWorldAup, _habitatReferenceAup);
             _hasDockedRelativeAup = true;
         }
 
-        private AbsoluteUniversePosition ResolveHabitatReferenceAup(Vector3 fallbackPosition)
+        private AbsoluteUniversePosition ResolveHabitatReferenceAup(
+            in AbsoluteUniversePosition dockWorldAup,
+            Vector3 dockRuntimePosition)
         {
             if (_owningModule != null)
             {
                 Transform ownerTransform = _owningModule.transform;
                 if (ownerTransform != null && IsFiniteVector(ownerTransform.position))
-                    return AbsoluteUniversePosition.FromRuntimePosition(ownerTransform.position);
+                    return OffsetAupByRuntimeDelta(in dockWorldAup, dockRuntimePosition, ownerTransform.position);
             }
 
-            return AbsoluteUniversePosition.FromRuntimePosition(fallbackPosition);
+            return dockWorldAup;
         }
 
         private static AbsoluteUniversePosition ResolveRelativeToHabitatAup(
@@ -1081,9 +1083,8 @@ namespace Hecton8.Construction
             float alignmentDot = 0f;
             if (anchor != null && IsFiniteVector(anchor.position))
             {
-                double resolvedDistanceSq = AbsoluteUniversePosition.DistanceSq(
-                    aup,
-                    AbsoluteUniversePosition.FromRuntimePosition(anchor.position));
+                AbsoluteUniversePosition anchorAup = OffsetAupByRuntimeDelta(in aup, position, anchor.position);
+                double resolvedDistanceSq = AbsoluteUniversePosition.DistanceSq(in aup, in anchorAup);
                 distanceSq = resolvedDistanceSq < float.MaxValue ? (float)resolvedDistanceSq : float.MaxValue;
                 alignmentDot = IsFiniteQuaternion(anchor.rotation)
                     ? Vector3.Dot(rotation * Vector3.forward, anchor.forward)
@@ -1664,6 +1665,26 @@ namespace Hecton8.Construction
                 return 0f;
 
             return magnitudeSq * math.rsqrt(math.max(magnitudeSq, 0.000001f));
+        }
+
+        private static double RuntimeDistanceSq(Vector3 a, Vector3 b)
+        {
+            double dx = (double)a.x - b.x;
+            double dy = (double)a.y - b.y;
+            double dz = (double)a.z - b.z;
+            return (dx * dx) + (dy * dy) + (dz * dz);
+        }
+
+        private static AbsoluteUniversePosition OffsetAupByRuntimeDelta(
+            in AbsoluteUniversePosition referenceAup,
+            Vector3 referenceRuntimePosition,
+            Vector3 targetRuntimePosition)
+        {
+            double3 localDelta = new double3(
+                (double)targetRuntimePosition.x - referenceRuntimePosition.x,
+                (double)targetRuntimePosition.y - referenceRuntimePosition.y,
+                (double)targetRuntimePosition.z - referenceRuntimePosition.z);
+            return AbsoluteUniversePosition.OffsetMeters(in referenceAup, localDelta);
         }
 
         private static Quaternion ResolveDockingSplineRotation(float3 tangent, float3 up, Quaternion fallbackRotation)

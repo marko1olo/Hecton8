@@ -710,7 +710,7 @@ namespace Hecton8.World
                 // COLD SYNC JOB: Unity Terrain SetHeightsDelayLOD requires CPU patch data; this path is bounded to SlowTick/chunk seam work, not frame Tick.
                 using (TerrainProjectionFenceMarker.Auto())
                 {
-                    finalHandle.Complete();
+                    DispatcherJobFence.TryComplete(ref finalHandle, forceComplete: true);
                 }
 
                 float minHeight01 = 1f;

@@ -120,24 +120,24 @@ namespace Hecton8.Core
     /// <summary>
     /// Fixed job-completion sample stored in replay sidecars.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct DodReplayJobProfileRecord
     {
         /// <summary>Frame index.</summary>
-        public uint FrameIndex;
+        [FieldOffset(0)] public uint FrameIndex;
         /// <summary>Profiled subject hash.</summary>
-        public uint SubjectHash;
+        [FieldOffset(4)] public uint SubjectHash;
         /// <summary>Completion duration in microseconds.</summary>
-        public uint CompletionMicroseconds;
+        [FieldOffset(8)] public uint CompletionMicroseconds;
         /// <summary>Worker or lane index.</summary>
-        public ushort WorkerIndex;
+        [FieldOffset(12)] public ushort WorkerIndex;
         /// <summary>Flags.</summary>
-        public ushort Flags;
+        [FieldOffset(14)] public ushort Flags;
         /// <summary>Error code when completion represents a stall.</summary>
-        public uint ErrorCode;
-        private uint _pad0;
+        [FieldOffset(16)] public uint ErrorCode;
+        [FieldOffset(20)] private uint _pad0;
         /// <summary>Reserved.</summary>
-        public ulong Reserved;
+        [FieldOffset(24)] public ulong Reserved;
     }
 
     /// <summary>
@@ -175,140 +175,140 @@ namespace Hecton8.Core
     /// <summary>
     /// AUP drift detector result over a 1000-frame sample window.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct DodReplayAupDriftRecord
     {
         /// <summary>Frame index where drift was evaluated.</summary>
-        public uint FrameIndex;
+        [FieldOffset(0)] public uint FrameIndex;
         /// <summary>Subject hash.</summary>
-        public uint SubjectHash;
+        [FieldOffset(4)] public uint SubjectHash;
         /// <summary>Frame window length.</summary>
-        public uint FrameSpan;
+        [FieldOffset(8)] public uint FrameSpan;
         /// <summary>Flags.</summary>
-        public uint Flags;
+        [FieldOffset(12)] public uint Flags;
         /// <summary>Grid delta X.</summary>
-        public long GridDeltaX;
+        [FieldOffset(16)] public long GridDeltaX;
         /// <summary>Grid delta Y.</summary>
-        public long GridDeltaY;
+        [FieldOffset(24)] public long GridDeltaY;
         /// <summary>Grid delta Z.</summary>
-        public long GridDeltaZ;
+        [FieldOffset(32)] public long GridDeltaZ;
         /// <summary>Maximum absolute local drift.</summary>
-        public float MaxLocalDrift;
+        [FieldOffset(40)] public float MaxLocalDrift;
         /// <summary>Reserved.</summary>
-        public uint Reserved;
+        [FieldOffset(44)] public uint Reserved;
     }
 
     /// <summary>
     /// Entity ghost breadcrumb for editor replay overlays.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct DodReplayEntityGhostRecord
     {
         /// <summary>Frame index.</summary>
-        public uint FrameIndex;
+        [FieldOffset(0)] public uint FrameIndex;
         /// <summary>Entity hash or stable id.</summary>
-        public uint EntityHash;
+        [FieldOffset(4)] public uint EntityHash;
         /// <summary>Runtime position.</summary>
-        public float3 Position;
+        [FieldOffset(8)] public float3 Position;
         /// <summary>Flags.</summary>
-        public uint Flags;
+        [FieldOffset(20)] public uint Flags;
         /// <summary>Sequence.</summary>
-        public uint Sequence;
-        private uint _pad0;
+        [FieldOffset(24)] public uint Sequence;
+        [FieldOffset(28)] private uint _pad0;
     }
 
     /// <summary>
     /// Debug vector for logistics Jacobi flow visualization.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct DodReplayLogisticFlowRecord
     {
         /// <summary>Frame index.</summary>
-        public uint FrameIndex;
+        [FieldOffset(0)] public uint FrameIndex;
         /// <summary>Edge hash.</summary>
-        public uint EdgeHash;
+        [FieldOffset(4)] public uint EdgeHash;
         /// <summary>Source point.</summary>
-        public float3 From;
+        [FieldOffset(8)] public float3 From;
         /// <summary>Destination point.</summary>
-        public float3 To;
+        [FieldOffset(20)] public float3 To;
         /// <summary>Scalar potential.</summary>
-        public float Potential;
+        [FieldOffset(32)] public float Potential;
         /// <summary>Flags.</summary>
-        public uint Flags;
-        private ulong _pad0;
+        [FieldOffset(36)] public uint Flags;
+        [FieldOffset(40)] private ulong _pad0;
     }
 
     /// <summary>
     /// Atmosphere pressure/gas grid cell sample.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 40)]
+    [StructLayout(LayoutKind.Explicit, Size = 40)]
     public struct DodReplayAtmosphereCellRecord
     {
         /// <summary>Frame index.</summary>
-        public uint FrameIndex;
+        [FieldOffset(0)] public uint FrameIndex;
         /// <summary>Cell hash.</summary>
-        public uint CellHash;
+        [FieldOffset(4)] public uint CellHash;
         /// <summary>Grid X.</summary>
-        public int X;
+        [FieldOffset(8)] public int X;
         /// <summary>Grid Y.</summary>
-        public int Y;
+        [FieldOffset(12)] public int Y;
         /// <summary>Oxygen concentration.</summary>
-        public float Oxygen01;
+        [FieldOffset(16)] public float Oxygen01;
         /// <summary>Carbon dioxide concentration.</summary>
-        public float CarbonDioxide01;
+        [FieldOffset(20)] public float CarbonDioxide01;
         /// <summary>Pressure in kPa.</summary>
-        public float PressureKpa;
+        [FieldOffset(24)] public float PressureKpa;
         /// <summary>Flags.</summary>
-        public uint Flags;
+        [FieldOffset(28)] public uint Flags;
         /// <summary>Reserved.</summary>
-        public ulong Reserved;
+        [FieldOffset(32)] public ulong Reserved;
     }
 
     /// <summary>
     /// Graphics buffer allocation sample captured near faults.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct DodReplayVramAllocationRecord
     {
         /// <summary>Frame index.</summary>
-        public uint FrameIndex;
+        [FieldOffset(0)] public uint FrameIndex;
         /// <summary>Owner hash.</summary>
-        public uint OwnerHash;
+        [FieldOffset(4)] public uint OwnerHash;
         /// <summary>Label hash.</summary>
-        public uint LabelHash;
-        private uint _pad0;
+        [FieldOffset(8)] public uint LabelHash;
+        [FieldOffset(12)] private uint _pad0;
         /// <summary>Allocation byte count.</summary>
-        public long Bytes;
+        [FieldOffset(16)] public long Bytes;
         /// <summary>Graphics buffer stride.</summary>
-        public uint Stride;
+        [FieldOffset(24)] public uint Stride;
         /// <summary>Flags.</summary>
-        public uint Flags;
+        [FieldOffset(28)] public uint Flags;
     }
 
     /// <summary>
     /// Deterministic physics smoke-test result.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 56)]
+    [StructLayout(LayoutKind.Explicit, Size = 56)]
     public struct DodReplayPhysicsSmokeRecord
     {
         /// <summary>Frame index.</summary>
-        public uint FrameIndex;
+        [FieldOffset(0)] public uint FrameIndex;
         /// <summary>Test hash.</summary>
-        public uint TestHash;
+        [FieldOffset(4)] public uint TestHash;
         /// <summary>First run FNV64 state hash.</summary>
-        public ulong RunAHash;
+        [FieldOffset(8)] public ulong RunAHash;
         /// <summary>Second run FNV64 state hash.</summary>
-        public ulong RunBHash;
+        [FieldOffset(16)] public ulong RunBHash;
         /// <summary>Grid delta X.</summary>
-        public long GridDeltaX;
+        [FieldOffset(24)] public long GridDeltaX;
         /// <summary>Grid delta Y.</summary>
-        public long GridDeltaY;
+        [FieldOffset(32)] public long GridDeltaY;
         /// <summary>Grid delta Z.</summary>
-        public long GridDeltaZ;
+        [FieldOffset(40)] public long GridDeltaZ;
         /// <summary>Flags. Bit0 means mismatch.</summary>
-        public uint Flags;
+        [FieldOffset(48)] public uint Flags;
         /// <summary>Local maximum drift.</summary>
-        public float MaxLocalDrift;
+        [FieldOffset(52)] public float MaxLocalDrift;
     }
 
     /// <summary>
@@ -936,7 +936,7 @@ namespace Hecton8.Core
         private static NativeArray<T> AllocateNativeArray<T>(int length, string label, NativeArrayOptions options)
             where T : struct
         {
-            NativeArray<T> array = new NativeArray<T>(length, Allocator.Persistent, options);
+            NativeArray<T> array = new NativeArray<T>(length, Allocator.Persistent, (NativeArrayOptions)options);
             NativeMemorySentinel.RegisterNativeArray(array, nameof(DodReplayRecorder), label, NativeAllocationLifetime.Session);
             return array;
         }
@@ -1805,27 +1805,27 @@ namespace Hecton8.Core
             array = default;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 24)]
+        [StructLayout(LayoutKind.Explicit, Size = 24)]
         private struct ReplaySourceHash
         {
-            public uint OwnerHash;
-            public uint LabelHash;
-            public long Bytes;
-            public ulong Hash;
+            [FieldOffset(0)] public uint OwnerHash;
+            [FieldOffset(4)] public uint LabelHash;
+            [FieldOffset(8)] public long Bytes;
+            [FieldOffset(16)] public ulong Hash;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 48)]
+        [StructLayout(LayoutKind.Explicit, Size = 48)]
         private struct AupDriftState
         {
-            public uint SubjectHash;
-            public int StartFrame;
-            public long GridX;
-            public long GridY;
-            public long GridZ;
-            public float LocalX;
-            public float LocalY;
-            public float LocalZ;
-            public uint Valid;
+            [FieldOffset(0)] public uint SubjectHash;
+            [FieldOffset(4)] public int StartFrame;
+            [FieldOffset(8)] public long GridX;
+            [FieldOffset(16)] public long GridY;
+            [FieldOffset(24)] public long GridZ;
+            [FieldOffset(32)] public float LocalX;
+            [FieldOffset(36)] public float LocalY;
+            [FieldOffset(40)] public float LocalZ;
+            [FieldOffset(44)] public uint Valid;
         }
     }
 }

@@ -1,0 +1,1444 @@
+using System;
+using System.IO;
+using Hecton8.Core;
+using Hecton8.Core.Memory;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
+using Unity.Jobs;
+using Unity.Mathematics;
+using UnityEngine;
+using UnityEngine.Rendering;
+using Stopwatch = System.Diagnostics.Stopwatch;
+
+namespace Hecton8.Lighting
+{
+    /// <summary>
+    /// Vault-owned dynamic point-light culling director. It submits mathematical light payloads, not Unity Light objects.
+    /// </summary>
+    [DisallowMultipleComponent]
+    [DefaultExecutionOrder(-2300)]
+    public sealed unsafe class DynamicPointLightCullingDirector : MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, IDisposable
+    {
+        private const SystemID MemoryOwner = SystemID.GraphicsScalability;
+        private const int DefaultCsvScratchBytes = 32 * 1024;
+        private const int DefaultProfileCapacity = 64;
+        private const int DefaultSdfResolution = 16;
+        private const int MaxGizmoLightsHardCap = 512;
+        private const float MinimumScheduleCadence = 1f / 60f;
+        private const float MaximumScheduleCadence = 0.16f;
+        private const float FaultTimeoutSeconds = 1.5f;
+        private const uint DumpMagic = 0x4C445038u; // LDP8
+        private const int DumpVersion = 1;
+        private const string DefaultProfileCsvRelativePath = "Docs/Data/light_culling_profiles.csv";
+        private const string BlackBoxDumpFileName = "Dump_LIGHT_DIRECTOR.bin";
+
+        private static readonly int _DynamicLightBufferId = Shader.PropertyToID("_H8DynamicPointLightBuffer");
+        private static readonly int _DynamicLightStateId = Shader.PropertyToID("_H8DynamicPointLightState");
+        private static readonly int _DynamicLightCameraAupId = Shader.PropertyToID("_H8DynamicPointLightCameraAup");
+
+        [Header("Source Capacity")]
+        [Tooltip("Maximum mathematical light sources stored in the Vault.")]
+        [SerializeField, Range(128, 16384)] private int sourceCapacity = DynamicPointLightCullingMath.DefaultMockLightCount;
+        [Tooltip("Generate deterministic stress lights when source buffers are empty.")]
+        [SerializeField] private bool generateMockDataOnEnable = true;
+
+        [Header("Culling")]
+        [Tooltip("Camera used for frustum plane extraction. If empty, the player runtime context camera is used.")]
+        [SerializeField] private Camera renderCamera;
+        [Tooltip("Base fade distance in meters before source profile multipliers.")]
+        [SerializeField, Range(4f, 96f)] private float baseFadeDistanceMeters = 38f;
+        [Tooltip("Importance multiplier applied before radix sorting.")]
+        [SerializeField, Range(0.05f, 8f)] private float importanceWeight = 1f;
+        [Tooltip("SDF threshold below which the light is considered occluded.")]
+        [SerializeField, Range(-4f, 4f)] private float sdfOcclusionThreshold = -0.05f;
+        [Tooltip("Maximum range accepted from a source record.")]
+        [SerializeField, Range(8f, 256f)] private float maxRangeMeters = 48f;
+        [Tooltip("Intensity below this value is excluded from GPU upload.")]
+        [SerializeField, Range(0.000001f, 0.05f)] private float submitIntensityEpsilon = 0.0002f;
+
+        [Header("Scalability")]
+        [Tooltip("Secondary bounce gain applied to surviving lights before probe injection.")]
+        [SerializeField, Range(0f, 2f)] private float bounceGain = 0.35f;
+        [Tooltip("Near-field extra intensity bought on high quality weights.")]
+        [SerializeField, Range(0f, 1f)] private float nearFieldOverkillBoost = 0.25f;
+        [Tooltip("Thermal-pressure fade strength. Final behavior still remains continuous.")]
+        [SerializeField, Range(0f, 1f)] private float thermalFadeStrength = 0.65f;
+        [Tooltip("Editor/test override. Negative uses HomeostasisBrain.GlobalQualityWeight.")]
+        [SerializeField, Range(-1f, 1f)] private float editorQualityOverride = -1f;
+
+        [Header("Voxel SDF")]
+        [Tooltip("Resolution of the mock CPU SDF grid used when no streamed voxel mirror is connected.")]
+        [SerializeField, Range(4, 32)] private int mockSdfResolution = DefaultSdfResolution;
+        [Tooltip("Cell size in meters for mock SDF line-of-sight samples.")]
+        [SerializeField, Range(0.5f, 8f)] private float mockSdfCellSizeMeters = 4f;
+
+        [Header("Profiles")]
+        [Tooltip("Project-relative CSV path for profile priority/fade/intensity rules.")]
+        [SerializeField] private string profileCsvRelativePath = DefaultProfileCsvRelativePath;
+
+        [Header("Debug")]
+        [Tooltip("Draw editor-only culling gizmos from Vault state.")]
+        [SerializeField] private bool drawDebugGizmos;
+        [Tooltip("Maximum debug gizmo boxes drawn in Scene view.")]
+        [SerializeField, Range(0, MaxGizmoLightsHardCap)] private int debugGizmoMaxLights = 192;
+
+        private IDataVault _vault;
+        private IPlayerRuntimeContext _playerContext;
+        private Transform _cachedTransform;
+        private VaultBufferHandle<DynamicPointLightSourceDTO> _sources;
+        private VaultBufferHandle<LightCullStateDTO> _states;
+        private VaultBufferHandle<DynamicPointLightSourceManifestDTO> _sourceManifest;
+        private VaultBufferHandle<DynamicPointLightCullingSettingsDTO> _settings;
+        private VaultBufferHandle<DynamicPointLightGpuDTO> _gpuPayloadFront;
+        private VaultBufferHandle<DynamicPointLightGpuDTO> _gpuPayloadBack;
+        private VaultBufferHandle<DynamicPointLightCullingTelemetryEntry> _telemetryRing;
+        private VaultBufferHandle<int> _telemetryCursor;
+        private VaultBufferHandle<uint> _importanceKeys;
+        private VaultBufferHandle<int> _importanceIndices;
+        private VaultBufferHandle<uint> _sortScratchKeys;
+        private VaultBufferHandle<int> _sortScratchIndices;
+        private VaultBufferHandle<byte> _csvScratch;
+        private VaultBufferHandle<DynamicPointLightProfileRuleDTO> _profileRules;
+        private VaultBufferHandle<float> _mockSdfSamples;
+        private VaultBufferHandle<CustomDynamicProbeLightDTO> _dynamicProbeLights;
+        private VaultBufferHandle<DynamicPointLightRuntimeCountersDTO> _runtimeCounters;
+        private VaultBufferHandle<float4> _frustumPlanes;
+        private VaultBufferHandle<DynamicPointLightSelfAuditDTO> _selfAudit;
+
+        private GraphicsBuffer _gpuBufferA;
+        private GraphicsBuffer _gpuBufferB;
+        private JobHandle _pendingCullHandle;
+        private long _pendingScheduleTicks;
+        private int _payloadWriteIndex;
+        private int _scheduledPayloadIndex;
+        private int _gpuUploadWriteIndex;
+        private int _profileRuleCount;
+        private int _activeSourceCount;
+        private int _telemetryWriteCursor;
+        private uint _frameSequence;
+        private ulong _lastGpuUploadBytes;
+        private float _scheduleAccumulator;
+        private bool _nativeStorageReady;
+        private bool _registeredTick;
+        private bool _registeredSlowTick;
+        private bool _registeredLateFrame;
+        private bool _jobActive;
+        private bool _csvReloadRequested;
+        private bool _blackBoxDumped;
+        private bool _sourceBufferSeeded;
+        private bool _mockSdfSeeded;
+        private bool _timeoutFaultPending;
+        private bool _lockedSources;
+        private bool _lockedStates;
+        private bool _lockedGpuFront;
+        private bool _lockedGpuBack;
+        private bool _lockedKeys;
+        private bool _lockedIndices;
+        private bool _lockedScratchKeys;
+        private bool _lockedScratchIndices;
+        private bool _lockedCounters;
+        private bool _lockedProbeLights;
+        private bool _lockedMockSources;
+        private bool _lockedMockStates;
+        private bool _lockedMockSdf;
+        private bool _lockedSourceManifest;
+
+        /// <summary>True when Vault buffers and GPU buffers can be used.</summary>
+        public bool IsInitialized => _nativeStorageReady;
+
+        /// <summary>Current logical source count.</summary>
+        public int ActiveSourceCount => _activeSourceCount;
+
+        /// <summary>Current parsed profile rule count.</summary>
+        public int ProfileRuleCount => _profileRuleCount;
+
+        /// <summary>Dispatcher heartbeat count.</summary>
+        public int TickCount => unchecked((int)_frameSequence);
+
+        private void Awake()
+        {
+            _cachedTransform = transform;
+        }
+
+        private void OnEnable()
+        {
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+                return;
+#endif
+            _cachedTransform = transform;
+            CacheDependencies();
+            EnsureNativeStorage();
+            TryRegisterDispatch();
+        }
+
+        private void OnDisable()
+        {
+            ShutdownRuntime();
+        }
+
+        private void OnDestroy()
+        {
+            ShutdownRuntime();
+            ReleaseGpuBuffers();
+        }
+
+        public void Dispose()
+        {
+            ShutdownRuntime();
+            ReleaseGpuBuffers();
+        }
+
+        /// <summary>
+        /// Simulation-phase scheduling. Jobs complete only in the late-frame visual/swap window.
+        /// </summary>
+        public void Tick(float deltaTime)
+        {
+            _frameSequence++;
+            if (!_nativeStorageReady && !EnsureNativeStorage())
+                return;
+
+            if (_jobActive)
+                return;
+
+            float quality = ResolveQualityWeight();
+            float cadence = ResolveScheduleCadence(quality, HomeostasisBrain.SystemHealthIndex01);
+            _scheduleAccumulator += math.max(0f, math.isfinite(deltaTime) ? deltaTime : MinimumScheduleCadence);
+            if (_scheduleAccumulator < cadence)
+                return;
+
+            _scheduleAccumulator = 0f;
+            DynamicPointLightCullingSettingsDTO settings = BuildSettings(quality);
+            WriteSettings(settings);
+            WriteFrustumPlanes();
+            ScheduleCullingPipeline(settings);
+        }
+
+        /// <summary>
+        /// Slow path for profile CSV reload requests.
+        /// </summary>
+        public void SlowTick()
+        {
+            if (!_csvReloadRequested)
+                return;
+
+            _csvReloadRequested = false;
+            TryLoadProfilesFromCsv();
+        }
+
+        /// <summary>
+        /// VISUAL_SYNC window. Reclaims completed culling jobs, uploads GPU payload, and writes telemetry.
+        /// </summary>
+        public void LateFrameTick()
+        {
+            if (!_nativeStorageReady)
+                return;
+
+            if (!_jobActive)
+                return;
+
+            double pendingSeconds = (Stopwatch.GetTimestamp() - _pendingScheduleTicks) / (double)Stopwatch.Frequency;
+            if (!_pendingCullHandle.IsCompleted)
+            {
+                if (pendingSeconds > FaultTimeoutSeconds)
+                {
+                    _timeoutFaultPending = true;
+                    if (!_blackBoxDumped)
+                        DumpBlackBoxNow();
+                }
+                return;
+            }
+
+            // Non-blocking reclaim: the handle was proven completed above before release/upload.
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _pendingCullHandle))
+                return;
+
+            UnlockJobBuffers();
+            _jobActive = false;
+
+            float elapsedUs = (float)math.max(0.0d, pendingSeconds * 1000000.0d);
+            if (_timeoutFaultPending)
+            {
+                RecordTimeoutFault();
+                _timeoutFaultPending = false;
+            }
+
+            UploadScheduledPayload();
+            RecordTelemetry(elapsedUs);
+            if (TryGetCountersCopy(out DynamicPointLightRuntimeCountersDTO counters) &&
+                (counters.Flags & DynamicPointLightCullingFlags.NonFinite) != 0u)
+            {
+                if (!_blackBoxDumped)
+                    DumpBlackBoxNow();
+            }
+        }
+
+        /// <summary>Requests profile CSV reload on the next slow tick.</summary>
+        public void RequestCsvReload()
+        {
+            _csvReloadRequested = true;
+        }
+
+        /// <summary>Runs the CSV reload immediately from editor/cold tooling.</summary>
+        public bool ReloadCsvNow()
+        {
+            return TryLoadProfilesFromCsv();
+        }
+
+        /// <summary>Regenerates deterministic 5000-light mock data through Burst.</summary>
+        public bool GenerateMockLightCullingData()
+        {
+            if (_jobActive)
+                return false;
+
+            if (!_nativeStorageReady && !EnsureNativeStorage(false))
+                return false;
+
+            DynamicPointLightCullingSettingsDTO settings = BuildSettings(ResolveQualityWeight());
+            int targetCount = math.min(sourceCapacity, DynamicPointLightCullingMath.DefaultMockLightCount);
+            if (targetCount <= 0)
+                return false;
+
+            settings.ActiveSourceCount = targetCount;
+
+            NativeArray<DynamicPointLightSourceDTO> sources = ResolveArray(ref _sources);
+            NativeArray<LightCullStateDTO> states = ResolveArray(ref _states);
+            if (!sources.IsCreated || !states.IsCreated)
+                return false;
+
+            if (!TryLockMockSeedBuffers())
+                return false;
+
+            try
+            {
+                JobHandle handle = new GenerateMockLightCullingDataJob
+                {
+                    Sources = sources,
+                    States = states,
+                    Settings = settings,
+                    Count = targetCount
+                }.Schedule(targetCount, 64);
+                H8Memory.RegisterActiveJob(MemoryOwner, handle);
+                // COLD SYNC JOB: mock seed fence; source manifest commits only after data is written.
+                DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+            }
+            finally
+            {
+                UnlockMockSeedBuffers();
+            }
+
+            if (!TryLockSourceManifestBuffer())
+                return false;
+
+            try
+            {
+                CommitSourceManifest(
+                    targetCount,
+                    math.min(sources.Length, states.Length),
+                    DynamicPointLightSourceManifestFlags.Committed | DynamicPointLightSourceManifestFlags.MockGenerated,
+                    DynamicPointLightCullingMath.SourceHash);
+            }
+            finally
+            {
+                UnlockSourceManifestBuffer();
+            }
+
+            WriteSettings(settings);
+            _sourceBufferSeeded = true;
+            _mockSdfSeeded = GenerateMockSdfSamples(settings);
+            return true;
+        }
+
+        /// <summary>Reads the telemetry ring without allocating.</summary>
+        public bool TryGetTelemetryReadback(out NativeArray<DynamicPointLightCullingTelemetryEntry> telemetry, out int cursor)
+        {
+            telemetry = default;
+            cursor = _telemetryWriteCursor;
+            if (_jobActive || !_telemetryRing.IsCreated)
+                return false;
+
+            telemetry = ResolveArray(ref _telemetryRing);
+            return telemetry.IsCreated;
+        }
+
+        /// <summary>Reads culling states for editor diagnostics.</summary>
+        public bool TryGetStatesReadback(out NativeArray<LightCullStateDTO> states, out NativeArray<DynamicPointLightSourceDTO> sources, out int count)
+        {
+            states = default;
+            sources = default;
+            count = 0;
+            if (_jobActive || !_states.IsCreated || !_sources.IsCreated)
+                return false;
+
+            states = ResolveArray(ref _states);
+            sources = ResolveArray(ref _sources);
+            if (!states.IsCreated || !sources.IsCreated)
+                return false;
+
+            count = math.min(ReadCommittedSourceCount(), math.min(states.Length, sources.Length));
+            return true;
+        }
+
+        /// <summary>Copies current settings for editor tooling.</summary>
+        public bool TryGetSettingsCopy(out DynamicPointLightCullingSettingsDTO settings)
+        {
+            settings = default;
+            if (!_settings.IsCreated)
+                return false;
+
+            NativeArray<DynamicPointLightCullingSettingsDTO> array = ResolveArray(ref _settings);
+            if (!array.IsCreated || array.Length == 0)
+                return false;
+
+            settings = array[0];
+            return true;
+        }
+
+        /// <summary>Copies current counters for editor tooling.</summary>
+        public bool TryGetCountersCopy(out DynamicPointLightRuntimeCountersDTO counters)
+        {
+            counters = default;
+            if (!_runtimeCounters.IsCreated)
+                return false;
+
+            NativeArray<DynamicPointLightRuntimeCountersDTO> array = ResolveArray(ref _runtimeCounters);
+            if (!array.IsCreated || array.Length == 0)
+                return false;
+
+            counters = array[0];
+            return true;
+        }
+
+        /// <summary>Exposes the owner-local fake bounce stream for the probe-grid owner without scheduling cross-owner jobs.</summary>
+        public bool TryGetProbeBounceReadback(out NativeArray<CustomDynamicProbeLightDTO> lights, out int count)
+        {
+            lights = default;
+            count = 0;
+            if (_jobActive || !_dynamicProbeLights.IsCreated)
+                return false;
+
+            if (!TryGetCountersCopy(out DynamicPointLightRuntimeCountersDTO counters))
+                return false;
+
+            lights = ResolveArray(ref _dynamicProbeLights);
+            if (!lights.IsCreated)
+                return false;
+
+            count = math.clamp(counters.SubmittedLights, 0, math.min(lights.Length, DynamicPointLightCullingMath.MaximumActiveLights));
+            return count > 0;
+        }
+
+        /// <summary>
+        /// Commits an externally written source window after the writer has fully populated the Vault source/state buffers.
+        /// </summary>
+        /// <param name="count">Number of valid source records written from index zero.</param>
+        /// <param name="writerHash">Stable writer hash for forensic ownership.</param>
+        /// <remarks>
+        /// This method does not allocate and does not touch Unity Light objects. It only publishes a Vault manifest.
+        /// </remarks>
+        public bool TryCommitExternalSourceCount(int count, uint writerHash)
+        {
+            if (_jobActive)
+                return false;
+
+            if (!_nativeStorageReady && !EnsureNativeStorage(false))
+                return false;
+
+            NativeArray<DynamicPointLightSourceDTO> sources = ResolveArray(ref _sources);
+            NativeArray<LightCullStateDTO> states = ResolveArray(ref _states);
+            if (!sources.IsCreated || !states.IsCreated)
+                return false;
+
+            int capacity = math.min(sourceCapacity, math.min(sources.Length, states.Length));
+            int safeCount = math.clamp(count, 0, capacity);
+            if (!TryLockSourceManifestBuffer())
+                return false;
+
+            try
+            {
+                CommitSourceManifest(
+                    safeCount,
+                    capacity,
+                    DynamicPointLightSourceManifestFlags.Committed | DynamicPointLightSourceManifestFlags.ExternalWriter,
+                    writerHash);
+            }
+            finally
+            {
+                UnlockSourceManifestBuffer();
+            }
+
+            DynamicPointLightCullingSettingsDTO settings = BuildSettings(ResolveQualityWeight());
+            settings.ActiveSourceCount = safeCount;
+            WriteSettings(settings);
+            return safeCount == count;
+        }
+
+        /// <summary>Copies the current source manifest for editor tools and forensics.</summary>
+        public bool TryGetSourceManifestCopy(out DynamicPointLightSourceManifestDTO manifest)
+        {
+            manifest = default;
+            if (!_sourceManifest.IsCreated)
+                return false;
+
+            NativeArray<DynamicPointLightSourceManifestDTO> array = ResolveArray(ref _sourceManifest);
+            if (!array.IsCreated || array.Length == 0)
+                return false;
+
+            manifest = array[0];
+            return true;
+        }
+
+        /// <summary>Editor-only quality override setter.</summary>
+        public void SetEditorForceQuality(float value)
+        {
+            editorQualityOverride = math.clamp(value, -1f, 1f);
+        }
+
+        /// <summary>Editor-only base fade setter.</summary>
+        public void SetEditorBaseFadeDistance(float meters)
+        {
+            baseFadeDistanceMeters = math.clamp(meters, 4f, 96f);
+        }
+
+        /// <summary>Editor-only importance setter.</summary>
+        public void SetEditorImportanceWeight(float value)
+        {
+            importanceWeight = math.clamp(value, 0.05f, 8f);
+        }
+
+        /// <summary>Editor-only SDF threshold setter.</summary>
+        public void SetEditorSdfOcclusionThreshold(float value)
+        {
+            sdfOcclusionThreshold = math.clamp(value, -4f, 4f);
+        }
+
+        /// <summary>Writes the 300-frame black box to Docs/AgentLogs/Dump_LIGHT_DIRECTOR.bin.</summary>
+        public bool DumpBlackBoxNow()
+        {
+            if (!_telemetryRing.IsCreated)
+                return false;
+
+            NativeArray<DynamicPointLightCullingTelemetryEntry> ring = ResolveArray(ref _telemetryRing);
+            if (!ring.IsCreated || ring.Length == 0)
+                return false;
+
+            string path = ResolveAgentLogPath(BlackBoxDumpFileName);
+            try
+            {
+                string directory = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                using (BinaryWriter writer = new BinaryWriter(File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read)))
+                {
+                    writer.Write(DumpMagic);
+                    writer.Write(DumpVersion);
+                    writer.Write(ring.Length);
+                    writer.Write(UnsafeUtility.SizeOf<DynamicPointLightCullingTelemetryEntry>());
+                    writer.Write(_telemetryWriteCursor);
+                    for (int i = 0; i < ring.Length; i++)
+                    {
+                        int index = _telemetryWriteCursor + i;
+                        if (index >= ring.Length)
+                            index -= ring.Length;
+
+                        DynamicPointLightCullingTelemetryEntry entry = ring[index];
+                        writer.Write(entry.Frame);
+                        writer.Write(entry.TotalLights);
+                        writer.Write(entry.CulledLights);
+                        writer.Write(entry.SubmittedLights);
+                        writer.Write(entry.BurstCpuUs);
+                        writer.Write(entry.GlobalQualityWeight);
+                        writer.Write(entry.ThermalPressure01);
+                        writer.Write(entry.Flags);
+                        writer.Write(entry.StateHash);
+                        writer.Write(entry.MaxActiveLights);
+                        writer.Write(entry.MaxDistanceSq);
+                        writer.Write(entry.AverageIntensity);
+                        writer.Write(entry.LastGpuUploadBytes);
+                        writer.Write(entry.VaultGeneration);
+                        writer.Write(entry._pad0);
+                    }
+                }
+
+                _blackBoxDumped = true;
+                return true;
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+        }
+
+        private void CacheDependencies()
+        {
+            _vault = GlobalRegistry.DataVault;
+            _playerContext = GlobalRegistry.Player;
+        }
+
+        private bool EnsureNativeStorage(bool allowMockGeneration = true)
+        {
+            IDataVault vault = _vault ?? GlobalRegistry.DataVault;
+            if (vault == null || vault.IsAllocationLocked)
+                return false;
+
+            _vault = vault;
+            int safeSourceCapacity = math.clamp(sourceCapacity, 128, 16384);
+            int gpuCapacity = DynamicPointLightCullingMath.MaximumActiveLights;
+            int sdfResolution = math.clamp(mockSdfResolution, 4, 32);
+            int sdfCapacity = sdfResolution * sdfResolution * sdfResolution;
+            bool hadSourceHandles = _sources.IsCreated || _states.IsCreated;
+            bool vaultHasSourceWindow =
+                vault.TryGetBufferHandle(DynamicPointLightCullingVaultIds.Sources, out VaultBufferHandle<DynamicPointLightSourceDTO> existingSources) &&
+                existingSources.Length >= safeSourceCapacity &&
+                vault.TryGetBufferHandle(DynamicPointLightCullingVaultIds.States, out VaultBufferHandle<LightCullStateDTO> existingStates) &&
+                existingStates.Length >= safeSourceCapacity;
+            bool sourceBuffersWillChange =
+                !vaultHasSourceWindow ||
+                (hadSourceHandles &&
+                (!_sources.IsCreated ||
+                _sources.Length < safeSourceCapacity ||
+                !_states.IsCreated ||
+                _states.Length < safeSourceCapacity));
+            bool sdfBufferWillChange = !_mockSdfSamples.IsCreated || _mockSdfSamples.Length < sdfCapacity;
+
+            _sources = AcquireBuffer(ref _sources, DynamicPointLightCullingVaultIds.Sources, safeSourceCapacity, NativeArrayOptions.UninitializedMemory);
+            _states = AcquireBuffer(ref _states, DynamicPointLightCullingVaultIds.States, safeSourceCapacity, NativeArrayOptions.UninitializedMemory);
+            _sourceManifest = AcquireBuffer(ref _sourceManifest, DynamicPointLightCullingVaultIds.SourceManifest, 1, NativeArrayOptions.ClearMemory);
+            if (sourceBuffersWillChange)
+            {
+                _sourceBufferSeeded = false;
+                _activeSourceCount = 0;
+                ClearSourceManifest(safeSourceCapacity);
+            }
+
+            _settings = AcquireBuffer(ref _settings, DynamicPointLightCullingVaultIds.Settings, 1, NativeArrayOptions.UninitializedMemory);
+            _gpuPayloadFront = AcquireBuffer(ref _gpuPayloadFront, DynamicPointLightCullingVaultIds.GpuPayloadFront, gpuCapacity, NativeArrayOptions.UninitializedMemory);
+            _gpuPayloadBack = AcquireBuffer(ref _gpuPayloadBack, DynamicPointLightCullingVaultIds.GpuPayloadBack, gpuCapacity, NativeArrayOptions.UninitializedMemory);
+            _telemetryRing = AcquireBuffer(ref _telemetryRing, DynamicPointLightCullingVaultIds.TelemetryRing, DynamicPointLightCullingMath.TelemetryCapacity, NativeArrayOptions.ClearMemory);
+            _telemetryCursor = AcquireBuffer(ref _telemetryCursor, DynamicPointLightCullingVaultIds.TelemetryCursor, 1, NativeArrayOptions.ClearMemory);
+            _importanceKeys = AcquireBuffer(ref _importanceKeys, DynamicPointLightCullingVaultIds.ImportanceKeys, safeSourceCapacity, NativeArrayOptions.UninitializedMemory);
+            _importanceIndices = AcquireBuffer(ref _importanceIndices, DynamicPointLightCullingVaultIds.ImportanceIndices, safeSourceCapacity, NativeArrayOptions.UninitializedMemory);
+            _sortScratchKeys = AcquireBuffer(ref _sortScratchKeys, DynamicPointLightCullingVaultIds.SortScratchKeys, safeSourceCapacity, NativeArrayOptions.UninitializedMemory);
+            _sortScratchIndices = AcquireBuffer(ref _sortScratchIndices, DynamicPointLightCullingVaultIds.SortScratchIndices, safeSourceCapacity, NativeArrayOptions.UninitializedMemory);
+            _csvScratch = AcquireBuffer(ref _csvScratch, DynamicPointLightCullingVaultIds.CsvScratch, DefaultCsvScratchBytes, NativeArrayOptions.UninitializedMemory);
+            _profileRules = AcquireBuffer(ref _profileRules, DynamicPointLightCullingVaultIds.ProfileRules, DefaultProfileCapacity, NativeArrayOptions.UninitializedMemory);
+            _mockSdfSamples = AcquireBuffer(ref _mockSdfSamples, DynamicPointLightCullingVaultIds.MockSdfSamples, sdfCapacity, NativeArrayOptions.UninitializedMemory);
+            if (sdfBufferWillChange)
+                _mockSdfSeeded = false;
+            _dynamicProbeLights = AcquireBuffer(ref _dynamicProbeLights, DynamicPointLightCullingVaultIds.DynamicProbeLights, gpuCapacity, NativeArrayOptions.UninitializedMemory);
+            _runtimeCounters = AcquireBuffer(ref _runtimeCounters, DynamicPointLightCullingVaultIds.RuntimeCounters, 1, NativeArrayOptions.ClearMemory);
+            _frustumPlanes = AcquireBuffer(ref _frustumPlanes, DynamicPointLightCullingVaultIds.FrustumPlanes, 6, NativeArrayOptions.UninitializedMemory);
+            _selfAudit = AcquireBuffer(ref _selfAudit, DynamicPointLightCullingVaultIds.SelfAudit, 1, NativeArrayOptions.UninitializedMemory);
+
+            _nativeStorageReady =
+                _sources.IsCreated &&
+                _states.IsCreated &&
+                _sourceManifest.IsCreated &&
+                _settings.IsCreated &&
+                _gpuPayloadFront.IsCreated &&
+                _gpuPayloadBack.IsCreated &&
+                _telemetryRing.IsCreated &&
+                _telemetryCursor.IsCreated &&
+                _importanceKeys.IsCreated &&
+                _importanceIndices.IsCreated &&
+                _sortScratchKeys.IsCreated &&
+                _sortScratchIndices.IsCreated &&
+                _csvScratch.IsCreated &&
+                _profileRules.IsCreated &&
+                _mockSdfSamples.IsCreated &&
+                _dynamicProbeLights.IsCreated &&
+                _runtimeCounters.IsCreated &&
+                _frustumPlanes.IsCreated &&
+                _selfAudit.IsCreated;
+
+            if (!_nativeStorageReady)
+                return false;
+
+            EnsureGpuBuffers(gpuCapacity);
+            WriteSelfAudit();
+            int committedSourceCount = ReadCommittedSourceCount();
+            if (allowMockGeneration && generateMockDataOnEnable && committedSourceCount <= 0)
+                GenerateMockLightCullingData();
+
+            return true;
+        }
+
+        private VaultBufferHandle<T> AcquireBuffer<T>(
+            ref VaultBufferHandle<T> handle,
+            BufferID bufferId,
+            int length,
+            NativeArrayOptions options) where T : struct
+        {
+            IDataVault vault = _vault;
+            if (vault == null)
+                return default;
+
+            if (!handle.IsCreated || handle.Length < length || !vault.ResolveBuffer(ref handle))
+                handle = vault.GetBufferHandle<T>(bufferId, length, MemoryOwner, options);
+
+            return handle;
+        }
+
+        private NativeArray<T> ResolveArray<T>(ref VaultBufferHandle<T> handle) where T : struct
+        {
+            IDataVault vault = _vault;
+            return vault != null && handle.IsCreated ? handle.Resolve(vault) : default;
+        }
+
+        private void TryRegisterDispatch()
+        {
+            if (!_registeredTick)
+                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            if (!_registeredSlowTick)
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void ShutdownRuntime()
+        {
+            if (_jobActive)
+            {
+                // Teardown drain: release Vault locks before unregistering this owner.
+                DispatcherJobFence.TryComplete(ref _pendingCullHandle, forceComplete: true);
+                UnlockJobBuffers();
+                _jobActive = false;
+            }
+
+            UnlockSourceManifestBuffer();
+
+            if (_registeredTick)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _registeredTick = false;
+            }
+
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredSlowTick = false;
+            }
+
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
+            }
+        }
+
+        private DynamicPointLightCullingSettingsDTO BuildSettings(float quality)
+        {
+            double3 cameraAup = ResolveCameraAup();
+            float thermal = DynamicPointLightCullingMath.Sanitize01(HomeostasisBrain.SystemHealthIndex01, 0f);
+            int maxActive = DynamicPointLightCullingMath.ResolveMaxActiveLights(quality, thermal);
+            int activeSourceCount = ReadCommittedSourceCount();
+            DynamicPointLightCullingSettingsDTO settings = default;
+            settings.CameraAup = cameraAup;
+            settings.GlobalQualityWeight = quality;
+            settings.ThermalPressure01 = thermal;
+            float safeFadeMeters = math.max(1f, DynamicPointLightCullingMath.SanitizeFinite(baseFadeDistanceMeters, 320f));
+            settings.BaseFadeDistanceSq = math.max(1f, safeFadeMeters * safeFadeMeters);
+            settings.ImportanceWeight = math.max(0.0001f, DynamicPointLightCullingMath.SanitizeFinite(importanceWeight, 1f));
+            settings.SdfOcclusionThreshold = DynamicPointLightCullingMath.SanitizeFinite(sdfOcclusionThreshold, -0.05f);
+            settings.ActiveSourceCount = math.clamp(activeSourceCount, 0, sourceCapacity);
+            settings.MaxActiveLights = maxActive;
+            settings.FrameIndex = _frameSequence;
+            settings.SdfSampleCount = _mockSdfSeeded ? math.max(0, ResolveArray(ref _mockSdfSamples).Length) : 0;
+            settings.SdfOriginAup = cameraAup;
+            settings.SdfCellSizeMeters = math.max(0.01f, DynamicPointLightCullingMath.SanitizeFinite(mockSdfCellSizeMeters, 64f));
+            settings.SdfGridResolution = math.clamp(mockSdfResolution, 4, 32);
+            settings.BounceGain = math.max(0f, DynamicPointLightCullingMath.SanitizeFinite(bounceGain, 0.35f));
+            settings.NearFieldOverkillBoost = math.max(0f, DynamicPointLightCullingMath.SanitizeFinite(nearFieldOverkillBoost, 0.35f));
+            settings.ThermalFadeStrength = math.max(0f, DynamicPointLightCullingMath.SanitizeFinite(thermalFadeStrength, 0.65f));
+            settings.MaxRangeMeters = math.max(1f, DynamicPointLightCullingMath.SanitizeFinite(maxRangeMeters, 4096f));
+            settings.SubmitIntensityEpsilon = math.max(0.000001f, DynamicPointLightCullingMath.SanitizeFinite(submitIntensityEpsilon, 0.0005f));
+            settings.FrustumPlaneCount = 6;
+            settings.SettingsHash = HashSettings(in settings);
+            return settings;
+        }
+
+        private float ResolveQualityWeight()
+        {
+            return editorQualityOverride >= 0f
+                ? DynamicPointLightCullingMath.Sanitize01(editorQualityOverride, 1f)
+                : DynamicPointLightCullingMath.Sanitize01(HomeostasisBrain.GlobalQualityWeight, 1f);
+        }
+
+        private static float ResolveScheduleCadence(float quality, float thermal)
+        {
+            float pressure = DynamicPointLightCullingMath.Sanitize01(thermal, 0f);
+            float cadenceT = math.saturate(quality * (1f - pressure * 0.5f));
+            float curved = cadenceT * cadenceT * (3f - 2f * cadenceT);
+            return math.lerp(MaximumScheduleCadence, MinimumScheduleCadence, curved);
+        }
+
+        private double3 ResolveCameraAup()
+        {
+            IPlayerRuntimeContext player = _playerContext;
+            if (player != null && player.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
+                return snapshot.Aup.ToAbsoluteDouble3();
+
+            var playerMovement = player != null ? player.PlayerMovement : null;
+            if (playerMovement != null)
+            {
+                AbsoluteUniversePosition currentAup = playerMovement.CurrentAup;
+                if (MathGuard.IsFinite(in currentAup))
+                    return currentAup.ToAbsoluteDouble3();
+            }
+
+            return HectonFloatingOrigin.CurrentTotalOffsetDouble;
+        }
+
+        private Camera ResolveRenderCamera()
+        {
+            if (renderCamera != null)
+                return renderCamera;
+
+            IPlayerRuntimeContext player = _playerContext;
+            if (player != null && player.PlayerCamera != null)
+            {
+                renderCamera = player.PlayerCamera;
+                return renderCamera;
+            }
+
+            return null;
+        }
+
+        private void WriteSettings(DynamicPointLightCullingSettingsDTO settings)
+        {
+            NativeArray<DynamicPointLightCullingSettingsDTO> array = ResolveArray(ref _settings);
+            if (array.IsCreated && array.Length > 0)
+                array[0] = settings;
+        }
+
+        private int ReadCommittedSourceCount()
+        {
+            NativeArray<DynamicPointLightSourceManifestDTO> array = ResolveArray(ref _sourceManifest);
+            if (!array.IsCreated || array.Length == 0)
+            {
+                _activeSourceCount = 0;
+                _sourceBufferSeeded = false;
+                return 0;
+            }
+
+            DynamicPointLightSourceManifestDTO manifest = array[0];
+            if ((manifest.Flags & DynamicPointLightSourceManifestFlags.Committed) == 0u)
+            {
+                _activeSourceCount = 0;
+                _sourceBufferSeeded = false;
+                return 0;
+            }
+
+            NativeArray<DynamicPointLightSourceDTO> sources = ResolveArray(ref _sources);
+            NativeArray<LightCullStateDTO> states = ResolveArray(ref _states);
+            int capacity = math.min(sourceCapacity, math.min(sources.IsCreated ? sources.Length : 0, states.IsCreated ? states.Length : 0));
+            int count = math.clamp(manifest.ActiveSourceCount, 0, capacity);
+            _activeSourceCount = count;
+            _sourceBufferSeeded = count > 0;
+            return count;
+        }
+
+        private void ClearSourceManifest(int capacity)
+        {
+            NativeArray<DynamicPointLightSourceManifestDTO> array = ResolveArray(ref _sourceManifest);
+            if (!array.IsCreated || array.Length == 0)
+                return;
+
+            DynamicPointLightSourceManifestDTO manifest = default;
+            manifest.SourceCapacity = math.max(0, capacity);
+            manifest.VaultGeneration = _vault != null ? _vault.VaultGenerationID : 0u;
+            array[0] = manifest;
+        }
+
+        private void CommitSourceManifest(int count, int capacity, uint flags, uint writerHash)
+        {
+            NativeArray<DynamicPointLightSourceManifestDTO> array = ResolveArray(ref _sourceManifest);
+            if (!array.IsCreated || array.Length == 0)
+                return;
+
+            int safeCapacity = math.max(0, capacity);
+            int safeCount = math.clamp(count, 0, safeCapacity);
+            DynamicPointLightSourceManifestDTO previous = array[0];
+            DynamicPointLightSourceManifestDTO manifest = default;
+            manifest.ActiveSourceCount = safeCount;
+            manifest.SourceCapacity = safeCapacity;
+            manifest.WriterHash = writerHash;
+            manifest.SourceRevision = previous.SourceRevision + 1u;
+            manifest.Flags = flags;
+            manifest.LastCommitFrame = _frameSequence;
+            manifest.RejectedSourceCount = math.max(0, count - safeCount);
+            manifest.VaultGeneration = _vault != null ? _vault.VaultGenerationID : 0u;
+            array[0] = manifest;
+
+            _activeSourceCount = safeCount;
+            _sourceBufferSeeded = safeCount > 0;
+        }
+
+        private void WriteFrustumPlanes()
+        {
+            NativeArray<float4> planes = ResolveArray(ref _frustumPlanes);
+            if (!planes.IsCreated || planes.Length < 6)
+                return;
+
+            Camera camera = ResolveRenderCamera();
+            if (camera == null)
+            {
+                for (int i = 0; i < 6; i++)
+                    planes[i] = default;
+                return;
+            }
+
+            Matrix4x4 viewProjection = camera.projectionMatrix * camera.worldToCameraMatrix;
+            Vector3 cameraPosition = camera.transform.position;
+            planes[0] = BuildCameraLocalPlane(viewProjection.m30 + viewProjection.m00, viewProjection.m31 + viewProjection.m01, viewProjection.m32 + viewProjection.m02, viewProjection.m33 + viewProjection.m03, cameraPosition);
+            planes[1] = BuildCameraLocalPlane(viewProjection.m30 - viewProjection.m00, viewProjection.m31 - viewProjection.m01, viewProjection.m32 - viewProjection.m02, viewProjection.m33 - viewProjection.m03, cameraPosition);
+            planes[2] = BuildCameraLocalPlane(viewProjection.m30 + viewProjection.m10, viewProjection.m31 + viewProjection.m11, viewProjection.m32 + viewProjection.m12, viewProjection.m33 + viewProjection.m13, cameraPosition);
+            planes[3] = BuildCameraLocalPlane(viewProjection.m30 - viewProjection.m10, viewProjection.m31 - viewProjection.m11, viewProjection.m32 - viewProjection.m12, viewProjection.m33 - viewProjection.m13, cameraPosition);
+            planes[4] = BuildCameraLocalPlane(viewProjection.m30 + viewProjection.m20, viewProjection.m31 + viewProjection.m21, viewProjection.m32 + viewProjection.m22, viewProjection.m33 + viewProjection.m23, cameraPosition);
+            planes[5] = BuildCameraLocalPlane(viewProjection.m30 - viewProjection.m20, viewProjection.m31 - viewProjection.m21, viewProjection.m32 - viewProjection.m22, viewProjection.m33 - viewProjection.m23, cameraPosition);
+        }
+
+        private static float4 BuildCameraLocalPlane(float x, float y, float z, float w, Vector3 cameraPosition)
+        {
+            float3 normal = new float3(x, y, z);
+            float invLength = math.rsqrt(math.max(0.000001f, math.lengthsq(normal)));
+            normal *= invLength;
+            float distance = w * invLength;
+            float localDistance = math.dot(normal, new float3(cameraPosition.x, cameraPosition.y, cameraPosition.z)) + distance;
+            return math.all(math.isfinite(new float4(normal, localDistance))) ? new float4(normal, localDistance) : default;
+        }
+
+        private void ScheduleCullingPipeline(DynamicPointLightCullingSettingsDTO settings)
+        {
+            NativeArray<DynamicPointLightSourceDTO> sources = ResolveArray(ref _sources);
+            NativeArray<LightCullStateDTO> states = ResolveArray(ref _states);
+            NativeArray<float4> planes = ResolveArray(ref _frustumPlanes);
+            NativeArray<float> sdf = ResolveArray(ref _mockSdfSamples);
+            NativeArray<DynamicPointLightProfileRuleDTO> rules = ResolveArray(ref _profileRules);
+            NativeArray<uint> keys = ResolveArray(ref _importanceKeys);
+            NativeArray<int> indices = ResolveArray(ref _importanceIndices);
+            NativeArray<uint> scratchKeys = ResolveArray(ref _sortScratchKeys);
+            NativeArray<int> scratchIndices = ResolveArray(ref _sortScratchIndices);
+            NativeArray<DynamicPointLightGpuDTO> gpu = ResolveScheduledGpuPayload();
+            NativeArray<CustomDynamicProbeLightDTO> probeLights = ResolveArray(ref _dynamicProbeLights);
+            NativeArray<DynamicPointLightRuntimeCountersDTO> counters = ResolveArray(ref _runtimeCounters);
+
+            if (!sources.IsCreated ||
+                !states.IsCreated ||
+                !planes.IsCreated ||
+                !sdf.IsCreated ||
+                !rules.IsCreated ||
+                !keys.IsCreated ||
+                !indices.IsCreated ||
+                !scratchKeys.IsCreated ||
+                !scratchIndices.IsCreated ||
+                !gpu.IsCreated ||
+                !probeLights.IsCreated ||
+                !counters.IsCreated)
+                return;
+
+            int count = math.min(settings.ActiveSourceCount, math.min(sources.Length, states.Length));
+            if (count <= 0)
+                return;
+
+            if (!TryLockJobBuffers())
+                return;
+
+            _scheduledPayloadIndex = _payloadWriteIndex;
+            _pendingScheduleTicks = Stopwatch.GetTimestamp();
+            _blackBoxDumped = false;
+            JobHandle eval = new EvaluateLightCullingJob
+            {
+                Sources = sources,
+                FrustumPlanes = planes,
+                SdfSamples = sdf,
+                ProfileRules = rules,
+                States = states,
+                ImportanceKeys = keys,
+                ImportanceIndices = indices,
+                Settings = settings,
+                ProfileRuleCount = _profileRuleCount
+            }.Schedule(count, 64);
+
+            JobHandle sort = new SortLightImportanceJob
+            {
+                Keys = keys,
+                Indices = indices,
+                ScratchKeys = scratchKeys,
+                ScratchIndices = scratchIndices,
+                Count = count
+            }.Schedule(eval);
+
+            _pendingCullHandle = new BuildLightGpuPayloadJob
+            {
+                Sources = sources,
+                States = states,
+                SortedIndices = indices,
+                GpuPayload = gpu,
+                DynamicProbeLights = probeLights,
+                Counters = counters,
+                Settings = settings,
+                Count = count,
+                GpuCapacity = DynamicPointLightCullingMath.MaximumActiveLights
+            }.Schedule(sort);
+
+            H8Memory.RegisterActiveJob(MemoryOwner, _pendingCullHandle);
+            _jobActive = true;
+        }
+
+        private NativeArray<DynamicPointLightGpuDTO> ResolveScheduledGpuPayload()
+        {
+            return _payloadWriteIndex == 0
+                ? ResolveArray(ref _gpuPayloadFront)
+                : ResolveArray(ref _gpuPayloadBack);
+        }
+
+        private NativeArray<DynamicPointLightGpuDTO> ResolveCompletedGpuPayload()
+        {
+            return _scheduledPayloadIndex == 0
+                ? ResolveArray(ref _gpuPayloadFront)
+                : ResolveArray(ref _gpuPayloadBack);
+        }
+
+        private bool TryLockJobBuffers()
+        {
+            IDataVault vault = _vault;
+            if (vault == null)
+                return false;
+
+            bool ok = true;
+            ok &= _lockedSources = vault.TryLockBuffer(DynamicPointLightCullingVaultIds.Sources, MemoryOwner);
+            ok &= _lockedStates = vault.TryLockBuffer(DynamicPointLightCullingVaultIds.States, MemoryOwner);
+            if (_payloadWriteIndex == 0)
+                ok &= _lockedGpuFront = vault.TryLockBuffer(DynamicPointLightCullingVaultIds.GpuPayloadFront, MemoryOwner);
+            else
+                ok &= _lockedGpuBack = vault.TryLockBuffer(DynamicPointLightCullingVaultIds.GpuPayloadBack, MemoryOwner);
+            ok &= _lockedKeys = vault.TryLockBuffer(DynamicPointLightCullingVaultIds.ImportanceKeys, MemoryOwner);
+            ok &= _lockedIndices = vault.TryLockBuffer(DynamicPointLightCullingVaultIds.ImportanceIndices, MemoryOwner);
+            ok &= _lockedScratchKeys = vault.TryLockBuffer(DynamicPointLightCullingVaultIds.SortScratchKeys, MemoryOwner);
+            ok &= _lockedScratchIndices = vault.TryLockBuffer(DynamicPointLightCullingVaultIds.SortScratchIndices, MemoryOwner);
+            ok &= _lockedCounters = vault.TryLockBuffer(DynamicPointLightCullingVaultIds.RuntimeCounters, MemoryOwner);
+            ok &= _lockedProbeLights = vault.TryLockBuffer(DynamicPointLightCullingVaultIds.DynamicProbeLights, MemoryOwner);
+
+            if (!ok)
+                UnlockJobBuffers();
+
+            return ok;
+        }
+
+        private void UnlockJobBuffers()
+        {
+            IDataVault vault = _vault;
+            if (vault != null)
+            {
+                if (_lockedSources) vault.TryUnlockBuffer(DynamicPointLightCullingVaultIds.Sources, MemoryOwner);
+                if (_lockedStates) vault.TryUnlockBuffer(DynamicPointLightCullingVaultIds.States, MemoryOwner);
+                if (_lockedGpuFront) vault.TryUnlockBuffer(DynamicPointLightCullingVaultIds.GpuPayloadFront, MemoryOwner);
+                if (_lockedGpuBack) vault.TryUnlockBuffer(DynamicPointLightCullingVaultIds.GpuPayloadBack, MemoryOwner);
+                if (_lockedKeys) vault.TryUnlockBuffer(DynamicPointLightCullingVaultIds.ImportanceKeys, MemoryOwner);
+                if (_lockedIndices) vault.TryUnlockBuffer(DynamicPointLightCullingVaultIds.ImportanceIndices, MemoryOwner);
+                if (_lockedScratchKeys) vault.TryUnlockBuffer(DynamicPointLightCullingVaultIds.SortScratchKeys, MemoryOwner);
+                if (_lockedScratchIndices) vault.TryUnlockBuffer(DynamicPointLightCullingVaultIds.SortScratchIndices, MemoryOwner);
+                if (_lockedCounters) vault.TryUnlockBuffer(DynamicPointLightCullingVaultIds.RuntimeCounters, MemoryOwner);
+                if (_lockedProbeLights) vault.TryUnlockBuffer(DynamicPointLightCullingVaultIds.DynamicProbeLights, MemoryOwner);
+            }
+
+            _lockedSources = false;
+            _lockedStates = false;
+            _lockedGpuFront = false;
+            _lockedGpuBack = false;
+            _lockedKeys = false;
+            _lockedIndices = false;
+            _lockedScratchKeys = false;
+            _lockedScratchIndices = false;
+            _lockedCounters = false;
+            _lockedProbeLights = false;
+        }
+
+        private bool TryLockMockSeedBuffers()
+        {
+            IDataVault vault = _vault;
+            if (vault == null)
+                return false;
+
+            bool ok = true;
+            ok &= _lockedMockSources = vault.TryLockBuffer(DynamicPointLightCullingVaultIds.Sources, MemoryOwner);
+            ok &= _lockedMockStates = vault.TryLockBuffer(DynamicPointLightCullingVaultIds.States, MemoryOwner);
+
+            if (!ok)
+                UnlockMockSeedBuffers();
+
+            return ok;
+        }
+
+        private void UnlockMockSeedBuffers()
+        {
+            IDataVault vault = _vault;
+            if (vault != null)
+            {
+                if (_lockedMockSources) vault.TryUnlockBuffer(DynamicPointLightCullingVaultIds.Sources, MemoryOwner);
+                if (_lockedMockStates) vault.TryUnlockBuffer(DynamicPointLightCullingVaultIds.States, MemoryOwner);
+                if (_lockedMockSdf) vault.TryUnlockBuffer(DynamicPointLightCullingVaultIds.MockSdfSamples, MemoryOwner);
+            }
+
+            _lockedMockSources = false;
+            _lockedMockStates = false;
+            _lockedMockSdf = false;
+        }
+
+        private bool TryLockMockSdfBuffer()
+        {
+            IDataVault vault = _vault;
+            if (vault == null)
+                return false;
+
+            _lockedMockSdf = vault.TryLockBuffer(DynamicPointLightCullingVaultIds.MockSdfSamples, MemoryOwner);
+            return _lockedMockSdf;
+        }
+
+        private void UnlockMockSdfBuffer()
+        {
+            IDataVault vault = _vault;
+            if (vault != null && _lockedMockSdf)
+                vault.TryUnlockBuffer(DynamicPointLightCullingVaultIds.MockSdfSamples, MemoryOwner);
+
+            _lockedMockSdf = false;
+        }
+
+        private bool TryLockSourceManifestBuffer()
+        {
+            IDataVault vault = _vault;
+            if (vault == null)
+                return false;
+
+            _lockedSourceManifest = vault.TryLockBuffer(DynamicPointLightCullingVaultIds.SourceManifest, MemoryOwner);
+            return _lockedSourceManifest;
+        }
+
+        private void UnlockSourceManifestBuffer()
+        {
+            IDataVault vault = _vault;
+            if (vault != null && _lockedSourceManifest)
+                vault.TryUnlockBuffer(DynamicPointLightCullingVaultIds.SourceManifest, MemoryOwner);
+
+            _lockedSourceManifest = false;
+        }
+
+        private void UploadScheduledPayload()
+        {
+            NativeArray<DynamicPointLightGpuDTO> payload = ResolveCompletedGpuPayload();
+            if (!payload.IsCreated)
+                return;
+
+            if (!TryGetCountersCopy(out DynamicPointLightRuntimeCountersDTO counters))
+                return;
+
+            int submitted = math.clamp(counters.SubmittedLights, 0, math.min(payload.Length, DynamicPointLightCullingMath.MaximumActiveLights));
+            EnsureGpuBuffers(DynamicPointLightCullingMath.MaximumActiveLights);
+            GraphicsBuffer target = _gpuUploadWriteIndex == 0 ? _gpuBufferA : _gpuBufferB;
+            if (target == null)
+                return;
+
+            if (submitted > 0)
+            {
+                NativeArray<DynamicPointLightGpuDTO> mapped = target.LockBufferForWrite<DynamicPointLightGpuDTO>(0, submitted);
+                try
+                {
+                    void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(payload);
+                    void* targetPtr = NativeArrayUnsafeUtility.GetUnsafePtr(mapped);
+                    long bytes = (long)UnsafeUtility.SizeOf<DynamicPointLightGpuDTO>() * submitted;
+                    UnsafeUtility.MemCpy(targetPtr, sourcePtr, bytes);
+                    _lastGpuUploadBytes = (ulong)bytes;
+                }
+                finally
+                {
+                    target.UnlockBufferAfterWrite<DynamicPointLightGpuDTO>(submitted);
+                }
+            }
+            else
+            {
+                _lastGpuUploadBytes = 0UL;
+            }
+
+            Shader.SetGlobalBuffer(_DynamicLightBufferId, target);
+            Vector4 state = default;
+            state.x = submitted;
+            state.y = counters.MaxActiveLights;
+            state.z = counters.QualityWeight;
+            state.w = counters.ThermalPressure01;
+            Shader.SetGlobalVector(_DynamicLightStateId, state);
+            Vector4 cameraResidue = ResolveShaderCameraAupResidue();
+            Shader.SetGlobalVector(_DynamicLightCameraAupId, cameraResidue);
+
+            _gpuUploadWriteIndex = 1 - _gpuUploadWriteIndex;
+            _payloadWriteIndex = 1 - _payloadWriteIndex;
+        }
+
+        private void EnsureGpuBuffers(int capacity)
+        {
+            int stride = UnsafeUtility.SizeOf<DynamicPointLightGpuDTO>();
+            if (_gpuBufferA == null || _gpuBufferA.count < capacity || _gpuBufferA.stride != stride)
+            {
+                _gpuBufferA?.Release();
+                _gpuBufferA = new GraphicsBuffer(GraphicsBuffer.Target.Structured, GraphicsBuffer.UsageFlags.LockBufferForWrite, capacity, stride);
+            }
+
+            if (_gpuBufferB == null || _gpuBufferB.count < capacity || _gpuBufferB.stride != stride)
+            {
+                _gpuBufferB?.Release();
+                _gpuBufferB = new GraphicsBuffer(GraphicsBuffer.Target.Structured, GraphicsBuffer.UsageFlags.LockBufferForWrite, capacity, stride);
+            }
+        }
+
+        private Vector4 ResolveShaderCameraAupResidue()
+        {
+            if (!TryGetSettingsCopy(out DynamicPointLightCullingSettingsDTO settings))
+                return Vector4.zero;
+
+            double3 camera = settings.CameraAup;
+            double3 residue = camera - math.floor(camera / 1024.0d) * 1024.0d;
+            Vector4 value = default;
+            value.x = (float)residue.x;
+            value.y = (float)residue.y;
+            value.z = (float)residue.z;
+            value.w = settings.GlobalQualityWeight;
+            return value;
+        }
+
+        private void ReleaseGpuBuffers()
+        {
+            if (_gpuBufferA != null)
+            {
+                _gpuBufferA.Release();
+                _gpuBufferA = null;
+            }
+
+            if (_gpuBufferB != null)
+            {
+                _gpuBufferB.Release();
+                _gpuBufferB = null;
+            }
+        }
+
+        private void RecordTelemetry(float elapsedUs)
+        {
+            NativeArray<DynamicPointLightCullingTelemetryEntry> ring = ResolveArray(ref _telemetryRing);
+            if (!ring.IsCreated || ring.Length == 0)
+                return;
+
+            if (!TryGetCountersCopy(out DynamicPointLightRuntimeCountersDTO counters))
+                return;
+
+            int cursor = _telemetryWriteCursor;
+            if ((uint)cursor >= (uint)ring.Length)
+                cursor = 0;
+
+            DynamicPointLightCullingTelemetryEntry entry = default;
+            entry.Frame = counters.Frame;
+            entry.TotalLights = counters.TotalLights;
+            entry.CulledLights = counters.CulledLights;
+            entry.SubmittedLights = counters.SubmittedLights;
+            entry.BurstCpuUs = math.max(0f, elapsedUs);
+            entry.GlobalQualityWeight = counters.QualityWeight;
+            entry.ThermalPressure01 = counters.ThermalPressure01;
+            entry.Flags = counters.Flags;
+            entry.StateHash = counters.StateHash;
+            entry.MaxActiveLights = counters.MaxActiveLights;
+            entry.MaxDistanceSq = counters.MaxDistanceSq;
+            entry.AverageIntensity = counters.AverageSubmittedIntensity;
+            entry.LastGpuUploadBytes = _lastGpuUploadBytes;
+            entry.VaultGeneration = _vault != null ? _vault.VaultGenerationID : 0u;
+            ring[cursor] = entry;
+
+            cursor++;
+            if (cursor >= ring.Length)
+                cursor = 0;
+            _telemetryWriteCursor = cursor;
+
+            NativeArray<int> cursorArray = ResolveArray(ref _telemetryCursor);
+            if (cursorArray.IsCreated && cursorArray.Length > 0)
+                cursorArray[0] = cursor;
+        }
+
+        private void RecordTimeoutFault()
+        {
+            NativeArray<DynamicPointLightRuntimeCountersDTO> counters = ResolveArray(ref _runtimeCounters);
+            if (!counters.IsCreated || counters.Length == 0)
+                return;
+
+            DynamicPointLightRuntimeCountersDTO entry = counters[0];
+            entry.Flags |= DynamicPointLightCullingFlags.TimedOut;
+            counters[0] = entry;
+        }
+
+        private bool GenerateMockSdfSamples(DynamicPointLightCullingSettingsDTO settings)
+        {
+            NativeArray<float> samples = ResolveArray(ref _mockSdfSamples);
+            if (!samples.IsCreated || samples.Length == 0)
+                return false;
+
+            if (!TryLockMockSdfBuffer())
+                return false;
+
+            try
+            {
+                JobHandle handle = new GenerateMockLightSdfSamplesJob
+                {
+                    Samples = samples,
+                    Resolution = settings.SdfGridResolution,
+                    CellSizeMeters = settings.SdfCellSizeMeters
+                }.Schedule(samples.Length, 64);
+                H8Memory.RegisterActiveJob(MemoryOwner, handle);
+                // COLD SYNC JOB: editor SDF seed fence; gameplay culling treats unseeded SDF as absent.
+                DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+                return true;
+            }
+            finally
+            {
+                UnlockMockSdfBuffer();
+            }
+        }
+
+        private bool TryLoadProfilesFromCsv()
+        {
+            if (!_nativeStorageReady && !EnsureNativeStorage())
+                return false;
+
+            NativeArray<byte> csv = ResolveArray(ref _csvScratch);
+            NativeArray<DynamicPointLightProfileRuleDTO> rules = ResolveArray(ref _profileRules);
+            if (!csv.IsCreated || !rules.IsCreated)
+                return false;
+
+            string path = ResolveProjectPath(profileCsvRelativePath);
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+                return false;
+
+            int count = 0;
+            try
+            {
+                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    while (count < csv.Length)
+                    {
+                        int value = stream.ReadByte();
+                        if (value < 0)
+                            break;
+                        csv[count++] = (byte)value;
+                    }
+                }
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+
+            _profileRuleCount = DynamicPointLightProfileCsvParser.Parse(csv, count, rules, rules.Length, out _);
+            return _profileRuleCount > 0;
+        }
+
+        private void WriteSelfAudit()
+        {
+            NativeArray<DynamicPointLightSelfAuditDTO> auditArray = ResolveArray(ref _selfAudit);
+            if (!auditArray.IsCreated || auditArray.Length == 0)
+                return;
+
+            DynamicPointLightSelfAuditDTO audit = default;
+            audit.LightCullStateSize = UnsafeUtility.SizeOf<LightCullStateDTO>();
+            audit.SourceSize = UnsafeUtility.SizeOf<DynamicPointLightSourceDTO>();
+            audit.GpuPayloadSize = UnsafeUtility.SizeOf<DynamicPointLightGpuDTO>();
+            audit.TelemetrySize = UnsafeUtility.SizeOf<DynamicPointLightCullingTelemetryEntry>();
+            audit.SettingsSize = UnsafeUtility.SizeOf<DynamicPointLightCullingSettingsDTO>();
+            audit.ProfileRuleSize = UnsafeUtility.SizeOf<DynamicPointLightProfileRuleDTO>();
+            audit.SourceBufferId = (int)DynamicPointLightCullingVaultIds.Sources;
+            audit.StateBufferId = (int)DynamicPointLightCullingVaultIds.States;
+            audit.GpuFrontBufferId = (int)DynamicPointLightCullingVaultIds.GpuPayloadFront;
+            audit.GpuBackBufferId = (int)DynamicPointLightCullingVaultIds.GpuPayloadBack;
+            audit.TelemetryBufferId = (int)DynamicPointLightCullingVaultIds.TelemetryRing;
+            audit.MaxMockLights = DynamicPointLightCullingMath.DefaultMockLightCount;
+            audit.Flags = DynamicPointLightCullingFlags.GpuDirty;
+            audit.SourceHash = DynamicPointLightCullingMath.SourceHash;
+            audit.SourceManifestBufferId = (int)DynamicPointLightCullingVaultIds.SourceManifest;
+            audit.SourceManifestSize = UnsafeUtility.SizeOf<DynamicPointLightSourceManifestDTO>();
+            auditArray[0] = audit;
+        }
+
+        private static uint HashSettings(in DynamicPointLightCullingSettingsDTO settings)
+        {
+            uint hash = 2166136261u;
+            hash = DynamicPointLightCullingMath.FnvaByte(hash, (byte)settings.MaxActiveLights);
+            hash = DynamicPointLightCullingMath.FnvaByte(hash, (byte)settings.ActiveSourceCount);
+            hash = DynamicPointLightCullingMath.FnvaByte(hash, (byte)math.asuint(settings.GlobalQualityWeight));
+            hash = DynamicPointLightCullingMath.FnvaByte(hash, (byte)math.asuint(settings.ThermalPressure01));
+            hash = DynamicPointLightCullingMath.FnvaByte(hash, (byte)settings.FrameIndex);
+            return hash;
+        }
+
+        private static string ResolveProjectPath(string relativePath)
+        {
+            if (string.IsNullOrEmpty(relativePath))
+                return null;
+
+            string root = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
+            return Path.Combine(root, relativePath);
+        }
+
+        private static string ResolveAgentLogPath(string fileName)
+        {
+            string root = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
+            return Path.Combine(root, "Docs", "AgentLogs", fileName);
+        }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            sourceCapacity = math.clamp(sourceCapacity, 128, 16384);
+            baseFadeDistanceMeters = math.clamp(baseFadeDistanceMeters, 4f, 96f);
+            importanceWeight = math.clamp(importanceWeight, 0.05f, 8f);
+            sdfOcclusionThreshold = math.clamp(sdfOcclusionThreshold, -4f, 4f);
+            maxRangeMeters = math.clamp(maxRangeMeters, 8f, 256f);
+            mockSdfResolution = math.clamp(mockSdfResolution, 4, 32);
+            mockSdfCellSizeMeters = math.clamp(mockSdfCellSizeMeters, 0.5f, 8f);
+            debugGizmoMaxLights = math.clamp(debugGizmoMaxLights, 0, MaxGizmoLightsHardCap);
+            _mockSdfSeeded = false;
+        }
+
+        private void OnDrawGizmos()
+        {
+            if (!drawDebugGizmos || !Application.isPlaying || _jobActive)
+                return;
+
+            if (!TryGetStatesReadback(out NativeArray<LightCullStateDTO> states, out NativeArray<DynamicPointLightSourceDTO> sources, out int count))
+                return;
+
+            int limit = math.min(math.min(count, states.Length), math.min(sources.Length, debugGizmoMaxLights));
+            for (int i = 0; i < limit; i++)
+            {
+                LightCullStateDTO state = states[i];
+                DynamicPointLightSourceDTO source = sources[i];
+                if (state.LightHash == 0u)
+                    continue;
+
+                if ((state.Flags & DynamicPointLightCullingFlags.Submitted) != 0u)
+                    Gizmos.color = Color.green;
+                else if ((state.Flags & DynamicPointLightCullingFlags.Active) != 0u)
+                    Gizmos.color = Color.yellow;
+                else
+                    Gizmos.color = Color.red;
+
+                Vector3 position = HectonFloatingOrigin.ToRuntimePosition(source.AUP);
+                float size = math.max(0.15f, math.min(2.0f, source.RangeMeters * 0.08f));
+                Gizmos.DrawWireCube(position, new Vector3(size, size, size));
+            }
+        }
+#endif
+    }
+}

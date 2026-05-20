@@ -13,16 +13,24 @@ namespace Hecton8.Environment
         Lightning = 1
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct WeatherEventPayload
     {
-        public float3 GlobalCurrentVector;
-        public float3 GlobalWindVector;
-        public CurrentMeta CurrentMeta;
-        public uint StateMask;
-        public float WeatherIntensity;
-        public ushort EventType;
-        public ushort Reserved;
+        [FieldOffset(0)] public float3 GlobalCurrentVector;
+        [FieldOffset(12)] public float3 GlobalWindVector;
+        [FieldOffset(24)] public uint StateMask;
+        [FieldOffset(28)] public float WeatherIntensity;
+        [FieldOffset(32)] public CurrentMeta CurrentMeta;
+        [FieldOffset(64)] public ushort EventType;
+        [FieldOffset(66)] public ushort Reserved;
+        [FieldOffset(68)] private uint _pad0;
+        [FieldOffset(72)] private ulong _pad1;
+        [FieldOffset(80)] private ulong _pad2;
+        [FieldOffset(88)] private ulong _pad3;
+        [FieldOffset(96)] private ulong _pad4;
+        [FieldOffset(104)] private ulong _pad5;
+        [FieldOffset(112)] private ulong _pad6;
+        [FieldOffset(120)] private ulong _pad7;
     }
 
     public interface IWeatherEventListener

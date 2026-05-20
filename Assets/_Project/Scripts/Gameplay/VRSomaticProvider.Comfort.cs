@@ -84,8 +84,8 @@ namespace Hecton8.Gameplay
         [FieldOffset(60)] public uint Flags;
     }
 
-    /// <summary>Fixed 300-frame comfort telemetry row. Size: 64 bytes.</summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    /// <summary>Fixed 300-frame comfort telemetry row. Size: 80 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
     public struct ComfortTelemetryEntry
     {
         [FieldOffset(0)] public uint Frame;
@@ -101,9 +101,12 @@ namespace Hecton8.Gameplay
         [FieldOffset(40)] public float GlobalQualityWeight01;
         [FieldOffset(44)] public float VramPressure01;
         [FieldOffset(48)] public float ThermalPressure01;
-        [FieldOffset(52)] public uint StateHash;
-        [FieldOffset(56)] public uint Sequence;
-        [FieldOffset(60)] public uint AupHash;
+        [FieldOffset(52)] public float SystemPressure01;
+        [FieldOffset(56)] public uint StateHash;
+        [FieldOffset(60)] public uint Sequence;
+        [FieldOffset(64)] public uint AupHash;
+        [FieldOffset(68)] public uint _pad0;
+        [FieldOffset(72)] public ulong _pad1;
     }
 
     /// <summary>Profiler-safe mock sickness sample injected into Vault buffers. Size: 64 bytes.</summary>
@@ -125,6 +128,8 @@ namespace Hecton8.Gameplay
         private const int SomaticComfortProfileLookupCapacity = 8;
         private const int SomaticMockSicknessSampleCapacity = 128;
         private const int SomaticCsvScratchBytes = 4096;
+        private const int SomaticComfortStateBytes = 32;
+        private const int ComfortTelemetryEntryBytes = 80;
         private const uint SomaticHistoryValidFlag = 1u << 0;
         private const uint SomaticDerivativeNonFiniteFlag = 1u << 1;
         private const uint SomaticComfortFlagFovTunnel = 1u << 0;
@@ -163,6 +168,9 @@ namespace Hecton8.Gameplay
         private float _somaticImpactShock01;
         private float _somaticComfortPresence01;
         private Vector4 _lastPublishedSomaticComfortState = Vector4.positiveInfinity;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private static bool s_somaticComfortLayoutsValidated;
+#endif
 
         /// <summary>Cold test hook that refills the Vault mock sickness buffer with deterministic violent motion samples.</summary>
         public unsafe void GenerateMockSicknessData()
@@ -172,11 +180,12 @@ namespace Hecton8.Gameplay
                 return;
 
             EnsureSomaticComfortBuffers(vault);
+            TryPublishCompletedSomaticComfortNoBlock();
             if (!_somaticMockSicknessSamples.IsCreated ||
                 !_somaticComfortWrite.IsCreated ||
                 !_somaticDerivatives.IsCreated ||
                 !_somaticProfiles.IsCreated ||
-                !_somaticComfortHandle.IsCompleted)
+                _somaticComfortJobScheduled)
             {
                 return;
             }
@@ -237,6 +246,7 @@ namespace Hecton8.Gameplay
             _somaticComfortHandle = horizonJob.Schedule(fovHandle);
             _somaticScheduleTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
             _somaticComfortJobScheduled = true;
+            TryRegisterLateFrame();
         }
 
         public static int ParseComfortProfilesCsv(ReadOnlySpan<byte> csv, NativeArray<VrComfortProfileDTO> profiles)
@@ -289,6 +299,10 @@ namespace Hecton8.Gameplay
             if (vault == null)
                 return;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            ValidateSomaticComfortLayouts();
+#endif
+
             if (!_somaticComfortWrite.IsCreated)
             {
                 _somaticComfortWrite = VaultNativeArray<SomaticComfortStateDTO>.Create(
@@ -328,7 +342,8 @@ namespace Hecton8.Gameplay
                 !_somaticProfiles.IsCreated ||
                 !_somaticProfileLookup.IsCreated ||
                 !_somaticComfortTelemetry.IsCreated ||
-                !_somaticMockSicknessSamples.IsCreated)
+                !_somaticMockSicknessSamples.IsCreated ||
+                !_somaticCsvScratch.IsCreated)
             {
                 return;
             }
@@ -370,7 +385,53 @@ namespace Hecton8.Gameplay
             _somaticComfortHandle = mockJob.Schedule(mock.Length, 32, telemetryHandle);
             _somaticComfortBuffersSeeded = true;
             _somaticComfortJobScheduled = true;
+            TryRegisterLateFrame();
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private static void ValidateSomaticComfortLayouts()
+        {
+            if (s_somaticComfortLayoutsValidated)
+                return;
+
+            if (UnsafeUtility.SizeOf<SomaticComfortStateDTO>() != SomaticComfortStateBytes ||
+                OffsetOf<SomaticComfortStateDTO>(nameof(SomaticComfortStateDTO.FovTunnelingIntensity)) != 0 ||
+                OffsetOf<SomaticComfortStateDTO>(nameof(SomaticComfortStateDTO.HorizonLockBlend)) != 4 ||
+                OffsetOf<SomaticComfortStateDTO>(nameof(SomaticComfortStateDTO.FoveatedScaleMultiplier)) != 8 ||
+                OffsetOf<SomaticComfortStateDTO>(nameof(SomaticComfortStateDTO.ActiveComfortFlags)) != 12 ||
+                OffsetOf<SomaticComfortStateDTO>(nameof(SomaticComfortStateDTO.ReservedParameters)) != 16)
+            {
+                throw new InvalidOperationException("SomaticComfortStateDTO ABI drift.");
+            }
+
+            if (UnsafeUtility.SizeOf<ComfortTelemetryEntry>() != ComfortTelemetryEntryBytes ||
+                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry.Frame)) != 0 ||
+                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry.Flags)) != 4 ||
+                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry.PeakAngularVelocityRadS)) != 8 ||
+                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry.PeakAngularAccelerationRadS2)) != 12 ||
+                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry.PeakLinearAccelerationMps2)) != 16 ||
+                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry.FovTunnelingIntensity)) != 20 ||
+                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry.HorizonLockBlend)) != 24 ||
+                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry.FoveatedScaleMultiplier)) != 28 ||
+                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry.BurstExecutionMicroseconds)) != 32 ||
+                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry.ImpactShock01)) != 36 ||
+                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry.GlobalQualityWeight01)) != 40 ||
+                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry.VramPressure01)) != 44 ||
+                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry.ThermalPressure01)) != 48 ||
+                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry.SystemPressure01)) != 52 ||
+                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry.StateHash)) != 56 ||
+                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry.Sequence)) != 60 ||
+                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry.AupHash)) != 64 ||
+                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry._pad0)) != 68 ||
+                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry._pad1)) != 72)
+            {
+                throw new InvalidOperationException("ComfortTelemetryEntry ABI drift.");
+            }
+
+            s_somaticComfortLayoutsValidated = true;
+        }
+
+#endif
 
         private void ResetSomaticComfortBuffers()
         {
@@ -425,7 +486,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (_somaticComfortJobScheduled && !_somaticComfortHandle.IsCompleted)
+            if (_somaticComfortJobScheduled)
                 return;
 
             RefreshSomaticPressureState(deltaTime);
@@ -450,7 +511,7 @@ namespace Hecton8.Gameplay
 
             float safeDeltaTime = math.isfinite(deltaTime) ? math.max(deltaTime, MinimumDeltaTime) : MinimumDeltaTime;
             float quality = ResolveGlobalQualityWeight01();
-            float runtimeComfortTarget01 = math.select(0.0625f, 1f, HectonXRRuntimeState.IsXRActive);
+            float runtimeComfortTarget01 = ResolveRuntimeComfortBlendTarget01(quality, _comfortPressureFallbackWeight01);
             _somaticComfortPresence01 = Sanitize01(math.lerp(
                 Sanitize01(_somaticComfortPresence01, 0f),
                 runtimeComfortTarget01,
@@ -559,6 +620,14 @@ namespace Hecton8.Gameplay
             }
         }
 
+        private static float ResolveRuntimeComfortBlendTarget01(float globalQualityWeight01, float pressureFallbackWeight01)
+        {
+            float quality = Sanitize01(globalQualityWeight01, 1f);
+            float fallback = Sanitize01(pressureFallbackWeight01, 0f);
+            float protectiveBias01 = Smoothstep01(math.max(1f - quality, fallback));
+            return math.saturate(math.lerp(0.92f, 1f, protectiveBias01));
+        }
+
         private void TryPublishCompletedSomaticComfortNoBlock()
         {
             if (!_somaticComfortJobScheduled || !_somaticComfortHandle.IsCompleted)
@@ -650,7 +719,7 @@ namespace Hecton8.Gameplay
                     aupHash = ResolveAupHash(in history[0].PreviousAup);
             }
 
-            int index = _somaticTelemetryCursor % BlackBoxFrameCapacity;
+            int index = PositiveModuloSomatic(_somaticTelemetryCursor, telemetry.Length);
             telemetry[index] = new ComfortTelemetryEntry
             {
                 Frame = unchecked((uint)Time.frameCount),
@@ -666,11 +735,14 @@ namespace Hecton8.Gameplay
                 GlobalQualityWeight01 = ResolveGlobalQualityWeight01(),
                 VramPressure01 = Sanitize01(_somaticVramPressure01, 0f),
                 ThermalPressure01 = Sanitize01(_somaticThermalPressure01, 0f),
+                SystemPressure01 = Sanitize01(_somaticSystemPressure01, 0f),
                 StateHash = ResolveSomaticComfortStateHash(in state, in derivative, flags),
                 Sequence = _somaticTelemetrySequence++,
                 AupHash = aupHash
             };
-            _somaticTelemetryCursor = (_somaticTelemetryCursor + 1) % BlackBoxFrameCapacity;
+            _somaticTelemetryCursor = _somaticTelemetryCursor == int.MaxValue
+                ? telemetry.Length
+                : _somaticTelemetryCursor + 1;
 
             if (nonFinite)
             {
@@ -703,7 +775,7 @@ namespace Hecton8.Gameplay
                     int count = math.min(_somaticTelemetryCursor, telemetry.Length);
                     int start = _somaticTelemetryCursor - count;
                     writer.Write(SomaticComfortTelemetryHash);
-                    writer.Write(1u);
+                    writer.Write(2u);
                     writer.Write(telemetry.Length);
                     writer.Write(count);
                     for (int i = 0; i < count; i++)
@@ -722,6 +794,7 @@ namespace Hecton8.Gameplay
                         writer.Write(entry.GlobalQualityWeight01);
                         writer.Write(entry.VramPressure01);
                         writer.Write(entry.ThermalPressure01);
+                        writer.Write(entry.SystemPressure01);
                         writer.Write(entry.StateHash);
                         writer.Write(entry.Sequence);
                         writer.Write(entry.AupHash);
@@ -730,9 +803,7 @@ namespace Hecton8.Gameplay
             }
             catch (Exception exception)
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[VRSomaticProvider] Comfort telemetry dump failed: " + exception.Message);
-#endif
+                GlobalTelemetryBus.PublishPerformanceWarning(ComfortDumpFaultHash, SomaticComfortTelemetryHash, exception.HResult);
             }
         }
 
@@ -809,7 +880,9 @@ namespace Hecton8.Gameplay
         private void PublishSomaticComfortShaderState()
         {
             float foveatedScale = math.max(1f, math.isfinite(_somaticFoveatedScaleMultiplier) ? _somaticFoveatedScaleMultiplier : 1f);
-            float pressure01 = math.max(Sanitize01(_somaticVramPressure01, 0f), Sanitize01(_somaticThermalPressure01, 0f));
+            float pressure01 = math.max(
+                math.max(Sanitize01(_somaticVramPressure01, 0f), Sanitize01(_somaticThermalPressure01, 0f)),
+                Sanitize01(_somaticSystemPressure01, 0f));
             Vector4 state = new Vector4(
                 Sanitize01(_somaticFovTunnelingIntensity01, 0f),
                 Sanitize01(_somaticHorizonLockBlend01, 0f),
@@ -1240,10 +1313,7 @@ namespace Hecton8.Gameplay
                     return;
                 }
 
-                double3 currentAbsolute = ResolveAbsoluteDouble3(in CurrentAup);
-                double3 previousAbsolute = ResolveAbsoluteDouble3(in history.PreviousAup);
-                float3 localDelta = (float3)(currentAbsolute - previousAbsolute);
-                localDelta = SanitizeJobFloat3(localDelta);
+                float3 localDelta = ResolveLocalAupDeltaMeters(in CurrentAup, in history.PreviousAup);
                 uint frameDelta = Frame >= history.PreviousFrame ? Frame - history.PreviousFrame : 1u;
                 if (frameDelta == 0u)
                     frameDelta = 1u;
@@ -1362,7 +1432,10 @@ namespace Hecton8.Gameplay
                 state.FovTunnelingIntensity = SanitizeJob01(math.lerp(currentTunnel, target, SanitizeJob01(blend, 0f)), currentTunnel);
 
                 float pressure = math.max(math.max(SanitizeJob01(VramPressure01, 0f), SanitizeJob01(ThermalPressure01, 0f)), SanitizeJob01(SystemPressure01, 0f));
-                state.FoveatedScaleMultiplier = math.max(1f, 1f + profile.FoveatedBaseline + (pressure * math.lerp(0.9f, 1.45f, 1f - qualityCurve)));
+                float lowQualityWindow = 1f - math.step(0.3f, quality);
+                float lowQualityCurve = lowQualityWindow * SmoothJob01((0.3f - quality) * 3.3333333f);
+                float pressureGain = math.lerp(0.9f, 1.45f, 1f - qualityCurve) + (lowQualityCurve * 0.25f);
+                state.FoveatedScaleMultiplier = math.max(1f, 1f + profile.FoveatedBaseline + (pressure * pressureGain));
                 uint flags = state.ActiveComfortFlags;
                 flags = state.FovTunnelingIntensity > 0.001f ? (flags | SomaticComfortFlagFovTunnel) : (flags & ~SomaticComfortFlagFovTunnel);
                 flags = pressure > 0.001f ? (flags | SomaticComfortFlagFoveatedPressure) : (flags & ~SomaticComfortFlagFoveatedPressure);
@@ -1507,13 +1580,14 @@ namespace Hecton8.Gameplay
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static double3 ResolveAbsoluteDouble3(in AbsoluteUniversePosition aup)
+        private static float3 ResolveLocalAupDeltaMeters(in AbsoluteUniversePosition current, in AbsoluteUniversePosition previous)
         {
             const double CellSize = AbsoluteUniversePosition.CellSizeMeters;
-            return new double3(
-                (aup.GridX * CellSize) + aup.LocalX,
-                (aup.GridY * CellSize) + aup.LocalY,
-                (aup.GridZ * CellSize) + aup.LocalZ);
+            double3 delta = new double3(
+                (((double)current.GridX - previous.GridX) * CellSize) + ((double)current.LocalX - previous.LocalX),
+                (((double)current.GridY - previous.GridY) * CellSize) + ((double)current.LocalY - previous.LocalY),
+                (((double)current.GridZ - previous.GridZ) * CellSize) + ((double)current.LocalZ - previous.LocalZ));
+            return math.all(math.isfinite(delta)) ? SanitizeJobFloat3((float3)delta) : float3.zero;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

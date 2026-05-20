@@ -242,175 +242,188 @@ namespace Hecton8.World
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     internal struct WreckGridCell
     {
-        public ushort PossibleModuleMask;
-        public byte CollapsedModuleId;
-        public byte SocketConstraints;
-        public float Entropy;
-        private uint _reserved0;
-        private uint _reserved1;
+        [FieldOffset(0)] public ushort PossibleModuleMask;
+        [FieldOffset(2)] public byte CollapsedModuleId;
+        [FieldOffset(3)] public byte SocketConstraints;
+        [FieldOffset(4)] public float Entropy;
+        [FieldOffset(8)] private uint _reserved0;
+        [FieldOffset(12)] private uint _reserved1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct WreckModuleRuntimeDefinition
     {
-        public ushort NorthSocket;
-        public ushort EastSocket;
-        public ushort SouthSocket;
-        public ushort WestSocket;
-        public ushort TopSocket;
-        public ushort BottomSocket;
-        public float3 BoundsCenter;
-        public float3 BoundsSize;
-        public byte DrawCallPriority;
-        public byte EmitsGeometry;
-        public byte EmitsNavProxy;
-        public byte UniversalConnector;
-        public byte IntegrityState;
-        public byte RequiresLaserCutter;
-        public byte LootTableIndex;
-        private byte _runtimeReserved0;
-        public ushort LoreFragmentChancePermille;
-        private ushort _runtimeReserved1;
+        [FieldOffset(0)] public float3 BoundsCenter;
+        [FieldOffset(12)] public float3 BoundsSize;
+        [FieldOffset(24)] public ushort NorthSocket;
+        [FieldOffset(26)] public ushort EastSocket;
+        [FieldOffset(28)] public ushort SouthSocket;
+        [FieldOffset(30)] public ushort WestSocket;
+        [FieldOffset(32)] public ushort TopSocket;
+        [FieldOffset(34)] public ushort BottomSocket;
+        [FieldOffset(36)] public ushort LoreFragmentChancePermille;
+        [FieldOffset(38)] private ushort _runtimeReserved1;
+        [FieldOffset(40)] public byte DrawCallPriority;
+        [FieldOffset(41)] public byte EmitsGeometry;
+        [FieldOffset(42)] public byte EmitsNavProxy;
+        [FieldOffset(43)] public byte UniversalConnector;
+        [FieldOffset(44)] public byte IntegrityState;
+        [FieldOffset(45)] public byte RequiresLaserCutter;
+        [FieldOffset(46)] public byte LootTableIndex;
+        [FieldOffset(47)] private byte _runtimeReserved0;
+        [FieldOffset(48)] private ulong _pad0;
+        [FieldOffset(56)] private ulong _pad1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct WreckModulePlacement
     {
-        public float3 Position;
-        public quaternion Rotation;
-        public float3 BoundsCenter;
-        public float3 BoundsSize;
-        public int MortonIndex;
-        public byte ModuleId;
-        public byte DrawPriority;
-        public byte IntegrityState;
-        public byte ModuleFlags;
+        [FieldOffset(0)] public quaternion Rotation;
+        [FieldOffset(16)] public float3 Position;
+        [FieldOffset(28)] public float3 BoundsCenter;
+        [FieldOffset(40)] public float3 BoundsSize;
+        [FieldOffset(52)] public int MortonIndex;
+        [FieldOffset(56)] public byte ModuleId;
+        [FieldOffset(57)] public byte DrawPriority;
+        [FieldOffset(58)] public byte IntegrityState;
+        [FieldOffset(59)] public byte ModuleFlags;
+        [FieldOffset(60)] private uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct WreckMergedVertex
     {
-        public float3 Position;
-        public float3 Normal;
-        public float2 UV;
-        public uint Color;
+        [FieldOffset(0)] public float3 Position;
+        [FieldOffset(12)] public float3 Normal;
+        [FieldOffset(24)] public float2 UV;
+        [FieldOffset(32)] public uint Color;
+        [FieldOffset(36)] private uint _pad0;
+        [FieldOffset(40)] private ulong _pad1;
+        [FieldOffset(48)] private ulong _pad2;
+        [FieldOffset(56)] private ulong _pad3;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct WreckLootRecord
     {
-        public int ItemHashId;
-        public ushort MinQuantity;
-        public ushort MaxQuantity;
-        public uint StableDropHash;
-        public uint Flags;
-        private ulong _reserved0;
-        private ulong _reserved1;
-        private ulong _reserved2;
-        private ulong _reserved3;
-        private ulong _reserved4;
+        [FieldOffset(0)] public int ItemHashId;
+        [FieldOffset(4)] public ushort MinQuantity;
+        [FieldOffset(6)] public ushort MaxQuantity;
+        [FieldOffset(8)] public uint StableDropHash;
+        [FieldOffset(12)] public uint Flags;
+        [FieldOffset(16)] private ulong _reserved0;
+        [FieldOffset(24)] private ulong _reserved1;
+        [FieldOffset(32)] private ulong _reserved2;
+        [FieldOffset(40)] private ulong _reserved3;
+        [FieldOffset(48)] private ulong _reserved4;
+        [FieldOffset(56)] private ulong _reserved5;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct WreckDebrisRecord
     {
-        public float3 Position;
-        public float InitialY;
-        public float TerrainY;
-        public int SpatialHashKey;
-        public int ClusterIndex;
-        public int ItemHashId;
-        public ushort Quantity;
-        public byte Flags;
-        public byte LootTableIndex;
-        public uint StableId;
-        public float SinkMetersPerSlowTick;
-        public float PickupRadiusSq;
-        public uint Reserved0;
-        public ulong Reserved1;
+        [FieldOffset(0)] public float3 Position;
+        [FieldOffset(12)] public float InitialY;
+        [FieldOffset(16)] public float TerrainY;
+        [FieldOffset(20)] public int SpatialHashKey;
+        [FieldOffset(24)] public int ClusterIndex;
+        [FieldOffset(28)] public int ItemHashId;
+        [FieldOffset(32)] public ushort Quantity;
+        [FieldOffset(34)] public byte Flags;
+        [FieldOffset(35)] public byte LootTableIndex;
+        [FieldOffset(36)] public uint StableId;
+        [FieldOffset(40)] public float SinkMetersPerSlowTick;
+        [FieldOffset(44)] public float PickupRadiusSq;
+        [FieldOffset(48)] public uint Reserved0;
+        [FieldOffset(52)] private uint _pad0;
+        [FieldOffset(56)] public ulong Reserved1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct WreckDebrisCluster
     {
-        public float3 Center;
-        public float3 Extents;
-        public int ClusterKey;
-        public int DebrisCount;
-        public byte Visible;
-        private byte _reserved0;
-        private ushort _reserved1;
-        private uint _reserved2;
-        private ulong _reserved3;
-        private ulong _reserved4;
+        [FieldOffset(0)] public float3 Center;
+        [FieldOffset(12)] public float3 Extents;
+        [FieldOffset(24)] public int ClusterKey;
+        [FieldOffset(28)] public int DebrisCount;
+        [FieldOffset(32)] public byte Visible;
+        [FieldOffset(33)] private byte _reserved0;
+        [FieldOffset(34)] private ushort _reserved1;
+        [FieldOffset(36)] private uint _reserved2;
+        [FieldOffset(40)] private ulong _reserved3;
+        [FieldOffset(48)] private ulong _reserved4;
+        [FieldOffset(56)] private ulong _reserved5;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct WreckArtifactRecord
     {
-        public uint EntryHash;
-        public float3 Position;
-        public int ModuleIndex;
-        public byte State;
-        public byte ModuleId;
-        public ushort ChancePermille;
-        public uint StableId;
-        public float DiscoveryRadiusSq;
-        private ulong _reserved0;
-        private ulong _reserved1;
-        private ulong _reserved2;
+        [FieldOffset(0)] public uint EntryHash;
+        [FieldOffset(4)] public float3 Position;
+        [FieldOffset(16)] public int ModuleIndex;
+        [FieldOffset(20)] public byte State;
+        [FieldOffset(21)] public byte ModuleId;
+        [FieldOffset(22)] public ushort ChancePermille;
+        [FieldOffset(24)] public uint StableId;
+        [FieldOffset(28)] public float DiscoveryRadiusSq;
+        [FieldOffset(32)] private ulong _reserved0;
+        [FieldOffset(40)] private ulong _reserved1;
+        [FieldOffset(48)] private ulong _reserved2;
+        [FieldOffset(56)] private ulong _reserved3;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct WreckScorchDecalRecord
     {
-        public float3 Position;
-        public float3 Normal;
-        public float Radius;
-        public float Intensity;
-        public uint StableId;
-        public byte ModuleId;
-        private byte _reserved0;
-        private ushort _reserved1;
-        private ulong _reserved2;
-        private ulong _reserved3;
+        [FieldOffset(0)] public float3 Position;
+        [FieldOffset(12)] public float3 Normal;
+        [FieldOffset(24)] public float Radius;
+        [FieldOffset(28)] public float Intensity;
+        [FieldOffset(32)] public uint StableId;
+        [FieldOffset(36)] public byte ModuleId;
+        [FieldOffset(37)] private byte _reserved0;
+        [FieldOffset(38)] private ushort _reserved1;
+        [FieldOffset(40)] private ulong _reserved2;
+        [FieldOffset(48)] private ulong _reserved3;
+        [FieldOffset(56)] private ulong _reserved4;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct WreckBurialCutRecord
     {
-        public double3 AbsoluteCenter;
-        public float3 HalfExtents;
-        public float BlendStrength;
-        public byte MaterialId;
-        public byte Applied;
-        private ushort _reserved0;
-        public uint StableId;
-        private ulong _reserved1;
-        private ulong _reserved2;
+        [FieldOffset(0)] public double3 AbsoluteCenter;
+        [FieldOffset(24)] public float3 HalfExtents;
+        [FieldOffset(36)] public float BlendStrength;
+        [FieldOffset(40)] public byte MaterialId;
+        [FieldOffset(41)] public byte Applied;
+        [FieldOffset(42)] private ushort _reserved0;
+        [FieldOffset(44)] public uint StableId;
+        [FieldOffset(48)] private ulong _reserved1;
+        [FieldOffset(56)] private ulong _reserved2;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct WreckTelemetryEntry
     {
-        public uint FrameIndex;
-        public uint EventHash;
-        public uint Seed;
-        public uint Flags;
-        public float3 Position;
-        public int DebrisCount;
-        public int ArtifactCount;
-        public int SealedCount;
-        public int RupturedCount;
-        public float Value0;
-        public float Value1;
-        private uint _reserved0;
+        [FieldOffset(0)] public uint FrameIndex;
+        [FieldOffset(4)] public uint EventHash;
+        [FieldOffset(8)] public uint Seed;
+        [FieldOffset(12)] public uint Flags;
+        [FieldOffset(16)] public float3 Position;
+        [FieldOffset(28)] public int DebrisCount;
+        [FieldOffset(32)] public int ArtifactCount;
+        [FieldOffset(36)] public int SealedCount;
+        [FieldOffset(40)] public int RupturedCount;
+        [FieldOffset(44)] public float Value0;
+        [FieldOffset(48)] public float Value1;
+        [FieldOffset(52)] private uint _reserved0;
+        [FieldOffset(56)] private ulong _reserved1;
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct XorShift32State
     {
         public uint State;

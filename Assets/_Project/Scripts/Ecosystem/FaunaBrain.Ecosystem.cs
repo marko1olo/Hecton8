@@ -185,7 +185,14 @@ namespace Hecton8.AI
                 return;
             }
 
-            AbsoluteUniversePosition selfAup = AbsoluteUniversePosition.FromRuntimePosition(transform.position);
+            if (!TryResolveSelfLogicAup(out AbsoluteUniversePosition selfAup))
+            {
+                if (_isDiseased)
+                    SetDiseasedState(false, 0f);
+
+                return;
+            }
+
             if (ecosystemDirector.TryResolveCorpseDiseaseExposure(in selfAup, _cognitionTimeSeconds, out float severity01, out _))
             {
                 if (!_isDiseased || Mathf.Abs(severity01 - _diseaseSeverity) > 0.01f)

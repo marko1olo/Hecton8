@@ -272,6 +272,39 @@ Known build issues visible:
 Performance claim planned? no unless measured:
 ```
 
+### First Capture Session Call Sheet V0
+
+Use this for the first real capture session. The goal is not a full campaign pack. The goal is to learn whether the current build can produce proof assets without lying.
+
+V5 priority note: the 2026-05-20 Steam API/page refresh kept SN2 `Very Positive` while the API summary rose to 73,533 all-language reviews and 44,011 English reviews; the public page also displays 73,893 total reviews and a Korean `Mixed` regional split. This confirms competitor strength, not collapse. After identity and player verb, do not spend the first session on mood-only anomaly footage if base/machinery and agency/decision proof are still missing. If the session time collapses, prioritize `PLAN-SHOT-002` or `PLAN-SHOT-005`, then `PLAN-SHOT-006` or a decision clip (`PLAN-CLIP-001` / `PLAN-CLIP-003`) before `PLAN-SHOT-007`.
+
+| Timebox | Attempt | Asset IDs | Required result | Stop if |
+|---:|---|---|---|---|
+| 0-10m | Setup log | all | Fill build ID, scene, quality preset, resolution, known visible build issues. | Build/source cannot be identified. |
+| 10-25m | Identity exterior | `PLAN-SHOT-001` | 3 takes with industrial silhouette, route cue, player/machine light. | All takes are empty water or generic diver frames. |
+| 25-40m | Player verb | `PLAN-SHOT-003` | 3 takes where tool/target/hazard/reward read at thumbnail size. | Player action needs a caption. |
+| 40-55m | Machinery/base | `PLAN-SHOT-002`, then `PLAN-SHOT-005` | 2-4 takes showing gauge/seal/pipe/failure/response path. | Base reads as clean room, red UI, or decorative sci-fi. |
+| 55-70m | Threat/anomaly | `PLAN-SHOT-006`, then `PLAN-SHOT-007` | 2-4 takes with sonar/floodlight/route or instrument corruption. | Threat reads as terrain or anomaly reads as concept art. |
+| 70-85m | Motion proof | `PLAN-CLIP-001` or `PLAN-CLIP-003` | One 10-20s clip where first 3 seconds show action/consequence. | Clip only works after explanation. |
+| 85-90m | Triage | all attempted | Assign reject code, provisional QA score, creator utility, pain proof, and next action. | Any field would be guessed. |
+
+Minimum useful output from the first session:
+
+- one identity candidate;
+- one player-verb candidate;
+- one machinery/base candidate;
+- every failed attempt has a reject code;
+- metadata row updated only with facts from the capture, not wishes.
+
+First session verdicts:
+
+| Verdict | Condition | Next action |
+|---|---|---|
+| `KEEP_TESTING` | At least 3 stills score 9/12+ and one clip has a readable first 3 seconds. | Run Campaign 01 cold-read/QA path. |
+| `REVISE_SCENE` | Assets fail but reject codes point to fixable lighting, UI, composition, or missing affordance. | Fix scene/capture setup before more marketing work. |
+| `HOLD_ASSET` | Build cannot honestly show the planned feature yet. | Keep row `PLANNED_CAPTURE`; do not fake with concept art. |
+| `KILL_ANGLE` | The angle repeatedly reads as clone, empty water, concept art, or no player verb. | Remove from first pack and replace with a simpler proof angle. |
+
 ### Per-Asset Review Form
 
 ```text
@@ -282,9 +315,14 @@ Hook:
 First 3-second read:
 Player verb visible? yes/no
 Pressure/machinery cue visible? yes/no
-Co-op implication? yes/no
+Multiplayer-scope implication? yes/no
 Performance implication? yes/no
 Clone-risk cue:
+Pain bucket answered:
+Pain proof score:
+Pain freshness source:
+Pain freshness checked at:
+Public comparison gate:
 QA score:
 Decision: APPROVED_INTERNAL / APPROVED_PUBLIC / REVISION / QA_FAIL
 Rejection code:
@@ -298,6 +336,27 @@ Next action:
 - If a shot requires a lore caption to make sense, it is not a first-pack asset.
 - If a clip is only impressive after 10 seconds, recut or kill it for short-form.
 - If comments would likely ask "is this co-op?", remove extra player silhouettes or helpers.
+
+### SN2 Pain-Point Capture Modifier
+
+This modifier uses current competitor sentiment privately. It must not appear as public comparison copy.
+
+Freshness rule: recheck `Monitoring/COMPETITOR_AND_SENTIMENT_MONITORING_QUERIES.md` on the same day as capture planning. If SN2 has patched, roadmapped, or sentiment-shifted a bucket, keep the asset only if it still proves HECTON identity on its own; otherwise mark the bucket `MONITOR_ONLY` and choose a stronger HECTON-native proof job.
+
+| Asset ID | Private pain bucket answered | Capture adjustment |
+|---|---|---|
+| `PLAN-SHOT-001` | SN2 owns bright wonder and franchise scale; HECTON clone risk is high. | Add industrial silhouette, pressure hardware, corrosion, and black-water route cue. Reject if it could be a generic diver-in-ocean frame. |
+| `PLAN-SHOT-002` | Base-building praise/friction means base visuals must be readable, not only decorative. | Show gauge/seal/pipe affordances and a maintenance surface. Reject clean corridor beauty. |
+| `PLAN-SHOT-003` | Negative reviews mention thin loops and missing player agency. | Tool, salvage target, hazard, and reward reason must be visible in one frame. |
+| `PLAN-SHOT-005` | Save/death-loop frustration makes unfair failure risky. | Failure state must show a response path: repair, seal, reroute, or escape. |
+| `PLAN-SHOT-006` | V5 agency/defensive-choice signal makes passive monster shots weak. | Threat must create a player choice through sonar/floodlight/route relation. Do not use a helpless monster-pose thumbnail. |
+| `PLAN-SHOT-008` | Performance trust is fragile. | Keep internal unless measured. It can prove readability at low settings, not frame rate. |
+| `PLAN-CLIP-001` | Pressure must be a system, not mood. | First 3 seconds: warning, leak, and player choice. |
+| `PLAN-CLIP-002` | Atmosphere praise means HECTON must not lose wonder, only change its contract. | Let instrument/audio dread carry the reveal before creature/shape visibility. |
+| `PLAN-CLIP-003` | Short-content complaints require route depth. | Salvage success must create a second decision, not end the clip. |
+| `PLAN-CLIP-004` | Vehicle/machine fantasy is a gap opportunity. | Show weight and consequence; reject if the machine reads as a static prop or toy. |
+
+Use the matching pain bucket in asset metadata as internal context only. Captions must remain HECTON-positive: pressure, salvage, machinery, route risk, black water, Seed Ship signal.
 
 ## Capture Naming
 
@@ -313,7 +372,7 @@ Examples:
 
 ## Human Review Checklist
 
-- Does it avoid co-op implication?
+- Does it avoid multiplayer-scope implication?
 - Does it avoid "Subnautica clone" read?
 - Does it show pressure/machinery/salvage/black water?
 - Is UI readable?

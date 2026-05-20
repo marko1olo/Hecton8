@@ -4,8 +4,7 @@ Date: 2026-05-19
 Status: PENDING VERIFICATION
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-19 R32 Root/Architecture R4/Proof-Wording Boundary
-
+## 2026-05-20 R45 Root/Architecture Actuality Boundary
 This document is active only where it agrees with:
 
 - `Docs/README.md`
@@ -14,14 +13,14 @@ This document is active only where it agrees with:
 - current source files
 - fresh verification logs and artifacts
 
-Current root/architecture boundary is `Docs/Reports/2026-05-19_DOCUMENTATION_R32_ARCHITECTURE_R4_AND_PROOF_WORDING_LOCAL.md`. R31 remains the prior current-boundary propagation correction; R30 remains the prior internal-currentness correction; R29 remains the prior stale-gate/global-authority correction; R28 remains the prior interior-boundary correction; R27 remains the latest source-counter/index snapshot only until a newer counter pass reruns it.
+Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL evidence. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. R42 remains the prior counter/route-boundary/proof-label correction. R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers; runtime proof remains absent.
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler,
 Frame Debugger, player build, save/load route, or visual-route proof is implied
 unless this document links a fresh evidence artifact. Historical counters and
 older version claims inside this file are subordinate to the current authority
 spine above.
-R32 architecture R4/proof-wording correction is the latest artifact-backed local static DOC_GLOBAL boundary for architecture/root documentation. R31 remains the prior current-boundary propagation layer, R30 remains the prior internal-currentness layer, R29 remains the prior stale-gate/global-authority layer, R28 remains the prior interior-boundary layer, and R27 remains the latest source-counter/index snapshot until rerun.
+R45 root/architecture R43/R44 residue/proof-artifact/source-counter correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 Evidence class: `STATIC_DOC`. This file is a reusable review template, not
@@ -88,14 +87,14 @@ Managed fields present: yes/no
 UnityEngine.Object fields present: yes/no
 Layout proof:
 Capacity:
-Overflow/failure mode:
+Overflow/failure:
 
 Telemetry fields:
 Black-box fields:
 Profiler marker:
 GC proof required:
 
-Shutdown/disposal rule:
+Shutdown/disposal:
 Scene unload behavior:
 Stale-handle behavior:
 
@@ -109,8 +108,9 @@ Rejected alternatives:
 
 Why this does not increase global monolith risk:
 H-Phi impact expected:
-Runtime proof required before acceptance:
+Proof required before GREEN:
 Reviewer:
+Review disposition:
 Status: PROPOSED / ACCEPTED / REJECTED / BLOCKED
 ```
 
@@ -127,7 +127,7 @@ The reviewer rejects the route when any answer is missing for:
 - overflow/failure mode
 - telemetry or black-box fields
 - shutdown/disposal rule
-- proof required before acceptance
+- proof required before GREEN
 
 The reviewer rejects the route immediately when:
 
@@ -249,12 +249,12 @@ Consumer phase: VISUAL_SYNC / UI
 Cadence: dirty only, max 1/player/frame
 Payload/data shape: unmanaged 32-byte struct, player id, state enum byte, depth01, frame id
 Capacity: 8
-Overflow/failure mode: coalesce by player id, keep latest
+Overflow/failure: coalesce by player id, keep latest
 Telemetry fields: pushed, coalesced, invalid-depth count
-Shutdown/disposal rule: lane shutdown by GlobalSignals/SystemDispatcher teardown
+Shutdown/disposal: lane shutdown by GlobalSignals/SystemDispatcher teardown
 Why owner-local data is insufficient: atmosphere, audio, HUD, and survival presentation need fan-out
 Rejected alternatives: registry polling by every consumer
-Proof required before acceptance: Play Mode transition sweep, Profiler/GC 0 B, overflow counter clean
+Proof required before GREEN: Play Mode transition sweep, Profiler/GC 0 B, overflow counter clean
 Status: PROPOSED
 ```
 

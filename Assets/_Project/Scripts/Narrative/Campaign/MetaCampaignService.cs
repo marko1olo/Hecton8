@@ -13,7 +13,7 @@ using UnityEngine;
 
 namespace Hecton8.Narrative.Campaign
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential)]
     internal struct MetaCampaignRule
     {
         public uint TriggerHash;
@@ -24,7 +24,7 @@ namespace Hecton8.Narrative.Campaign
         public ushort Reserved;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential)]
     internal struct MetaCampaignVariableChange
     {
         public uint VariableHash;
@@ -34,13 +34,13 @@ namespace Hecton8.Narrative.Campaign
         public ushort Reserved1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential)]
     internal struct MetaCampaignEvaluationResult
     {
         public FixedList128Bytes<MetaCampaignVariableChange> Changes;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential)]
     internal struct MetaCampaignBlackBoxEntry
     {
         public uint Frame;
@@ -556,9 +556,10 @@ namespace Hecton8.Narrative.Campaign
             if (!_evaluationPending)
                 return;
 
-            _evaluationHandle.Complete();
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _evaluationHandle))
+                return;
+
             _evaluationPending = false;
-            _evaluationHandle = default;
             MetaCampaignEvaluationResult result = _evaluationOutput.IsCreated ? _evaluationOutput[0] : default;
             int changeCount = result.Changes.Length;
             if (changeCount <= 0)

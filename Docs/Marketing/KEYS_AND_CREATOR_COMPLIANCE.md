@@ -20,9 +20,17 @@ No Steam policy, FTC/legal, creator-contact, key-distribution, runtime build, Un
 
 - No keys before a stable demo or review build exists.
 - No raw keys to unverified contacts.
+- No key/access send before `official_inbox_custody_gate = ALLOW_OFFICIAL_INBOX_USE_VERIFIED` and key/access log fields exist.
+- No key/access send before `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED` for the exact recipient or batch.
+- No key/access message can reference assets that have not passed asset metadata claim checks.
+- No key/access message can claim gameplay, pressure, route-risk, threat, salvage, base-failure, or first-public agency proof unless AB-009/KPI has `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`.
+- No private access link can be used as a public CTA, social bio link, showcase CTA, or presskit download link.
+- No press key/access can proceed unless the press tracker row has `send_permission_gate = ALLOW_PRESS_SEND_VERIFIED`.
+- No curator key/access can proceed unless the curator tracker row has `send_permission_gate = ALLOW_CURATOR_SEND_VERIFIED`.
 - Prefer Steam Curator Connect for Steam curators.
 - Track every key.
 - Require disclosure for sponsored/free-key coverage where applicable.
+- No paid creator placement can proceed unless the CRM row has `paid_creator_permission_gate = ALLOW_PAID_CREATOR_TEST_VERIFIED`.
 - Do not pay with keys.
 - Do not buy reviews.
 - Do not imply coverage is required for a free key.
@@ -57,10 +65,16 @@ No Steam policy, FTC/legal, creator-contact, key-distribution, runtime build, Un
 3. Check recent videos/articles.
 4. Check whether they covered similar games.
 5. Check if they disclose sponsored/free-key content.
-6. Assign key batch ID.
-7. Log key issue date.
-8. Follow up once.
-9. Revoke/disable unused campaign keys if possible.
+6. Confirm `official_inbox_custody_gate = ALLOW_OFFICIAL_INBOX_USE_VERIFIED`.
+7. Confirm `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED` for the exact recipient or batch.
+8. Confirm approved asset/build/access links only.
+9. Confirm AB-009/KPI decision-read proof for any gameplay/pressure/route-risk claim in the access message.
+10. Confirm press/curator `send_permission_gate` allow value if the recipient is from either tracker.
+11. Record `access_route_class` and `reply_consent_provenance`.
+12. Assign key batch ID.
+13. Log key issue date and access route.
+14. Follow up once only through the verified route.
+15. Revoke/disable unused campaign keys if possible.
 
 ## Disclosure Notes
 
@@ -86,13 +100,18 @@ Do not write the disclosure for them unless asked. Do not hide it.
 | key_id_or_batch | yes |
 | recipient_name | yes |
 | recipient_url | yes |
-| verified_contact | yes |
+| verified_contact_route | yes |
 | key_type | yes |
 | date_sent | yes |
 | embargo | optional |
-| reply_status | yes |
+| reply_status_after_send | yes |
 | coverage_url | optional |
 | notes | optional |
+| access_route_class | yes |
+| reply_consent_provenance | yes |
+| agency_decision_field_source | yes if the access message claims gameplay/pressure/route-risk proof |
+
+`reply_consent_provenance` defaults to creator/press/curator reply only. A key request, curator reply, or press reply is not newsletter, playtest, or public marketing consent unless the recipient explicitly opts into that separate route.
 
 ## Refusal Template
 

@@ -27,8 +27,10 @@ namespace Hecton8.UI
     {
         private const string SonarPointCloudShaderPath = "Assets/_Project/Art/Shaders/Hecton_PDA_SonarPointCloud.shader";
         private const string SonarMapComputePath = "Assets/_Project/Art/Shaders/Hecton_MapMesh.compute";
+        private const string HologramMapShaderPath = "Assets/_Project/Art/Shaders/Hecton_HologramMap.shader";
         private const string SonarMapConstantsBufferName = "HectonSonarMapConstants";
         private const string SonarPointCloudShaderName = "Hecton8/UI/PDA Sonar Point Cloud";
+        private const string HologramMapShaderName = "Hecton8/UI/Hecton Hologram Map";
         private const int MaxThreatPings = 8;
         private const int MaxStatusChars = 64;
         private const float AcousticOverlayRadiusMeters = 160f;
@@ -40,7 +42,6 @@ namespace Hecton8.UI
         private const int SonarIndirectArgsStrideBytes = sizeof(uint) * 5;
         private const uint SonarQuadIndexCount = 6u;
         private const float PointCloudPingBandWidth = 0.16f;
-        private const float PointCloudTierHysteresisSeconds = 2f;
         private const int MaxMarkerVisuals = 64;
         private const int MarkerUpdateQueueCapacity = 128;
         private const int MaxMarkerUiUpdatesPerLateFrame = 10;
@@ -66,6 +67,12 @@ namespace Hecton8.UI
         private static readonly int ActiveSonarGeoParamsId = Shader.PropertyToID("_ActiveSonarGeoParams");
         private static readonly int HeightColorizationId = Shader.PropertyToID("_HeightColorization");
         private static readonly int DepthFadeMetersId = Shader.PropertyToID("_DepthFadeMeters");
+        private static readonly int CartographyVoxelR8Id = Shader.PropertyToID("_CartographyVoxelR8");
+        private static readonly int CartographyGridParamsId = Shader.PropertyToID("_CartographyGridParams");
+        private static readonly int CartographyVisualParamsId = Shader.PropertyToID("_CartographyVisualParams");
+        private static readonly int HologramTintId = Shader.PropertyToID("_Tint");
+        private static readonly int HologramGlowId = Shader.PropertyToID("_Glow");
+        private static readonly int HologramQualityId = Shader.PropertyToID("_Quality");
         private static readonly uint _GhostSignalRejectedWarningHash = unchecked((uint)LocHash.Compute("PDAMapTab.GhostSignalRejected"));
         private static readonly uint _GhostSignalContextHash = unchecked((uint)LocHash.Compute("GhostSignal"));
         private static readonly Vector3[] SonarQuadVertices =
@@ -98,6 +105,8 @@ namespace Hecton8.UI
         private Shader sonarPointCloudShader;
         [SerializeField, Tooltip("Compute shader that expands packed discovered sectors into the PDA point-cloud append buffer.")]
         private ComputeShader sonarMapCompute;
+        [SerializeField, Tooltip("Optional holographic virtual-volume shader that raymarches the packed R8 cartography buffer.")]
+        private Shader hologramMapShader;
         [SerializeField, Tooltip("Optional explicit RawImage target. When null, the component builds its own viewport.")]
         private RawImage mapImage;
         [SerializeField, Tooltip("Optional explicit status label. When null, the component builds its own label.")]
@@ -143,7 +152,9 @@ namespace Hecton8.UI
         private GraphicsBuffer _emptyPredatorAupBuffer;
         private GraphicsBuffer _hlodImpostorAupBuffer;
         private GraphicsBuffer _cartographySectorWordBuffer;
+        private GraphicsBuffer _cartographyPackedR8Buffer;
         private Material _pointCloudMaterial;
+        private Material _hologramMapMaterial;
         private Mesh _pointCloudQuadMesh;
         private int _sonarClearArgsKernel = -1;
         private int _sonarBuildMapPointsKernel = -1;
@@ -152,13 +163,11 @@ namespace Hecton8.UI
         private int _sonarBuildMapPointsThreadGroupSizeZ = PointCloudThreadAxis;
         private bool _sonarComputeKernelsResolved;
         private uint _uploadedCartographyRevision = uint.MaxValue;
+        private uint _uploadedPackedCartographyRevision = uint.MaxValue;
+        private int _packedUploadCountdown;
         private bool _cartographySectorBufferUploaded;
         private bool _pointCloudAssetLookupAttempted;
         private bool _pointCloudMapReady;
-        private bool _pointCloudTierInitialized;
-        private bool _pointCloudLowTierActive;
-        private bool _pointCloudLowTierCandidate;
-        private float _pointCloudLowTierCandidateSince;
         private uint _uploadedHlodImpostorVersion = uint.MaxValue;
         private int _uploadedHlodImpostorCount = -1;
         private CharBufferPool.Lease _statusBufferLease;
@@ -179,7 +188,6 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             EnsureBuilt();
-            _pointCloudTierInitialized = false;
             TryAcquireStatusBuffer();
             TryRegisterPDAEvents();
             RegisterToTickManager();
@@ -214,6 +222,7 @@ namespace Hecton8.UI
         public void LateFrameTick()
         {
             RunVisualSync(SystemDispatcher.CurrentFrameDeltaTime);
+            RenderHologramMap();
             RenderPointCloud();
             ProcessPendingMarkerUpdates(MaxMarkerUiUpdatesPerLateFrame);
         }
@@ -586,14 +595,32 @@ namespace Hecton8.UI
                 _cartographySectorBufferUploaded = false;
             }
 
+            if (_cartographyPackedR8Buffer == null || !_cartographyPackedR8Buffer.IsValid())
+            {
+                _cartographyPackedR8Buffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<uint>(
+                    CartographyGridConstants.PackedUploadWordCount);
+                _uploadedPackedCartographyRevision = uint.MaxValue;
+                _packedUploadCountdown = 0;
+            }
+
             EnsurePointCloudQuadMesh();
+
+            TryResolvePointCloudAssets();
+            if (_hologramMapMaterial == null && hologramMapShader != null)
+            {
+                _hologramMapMaterial = new Material(hologramMapShader)
+                {
+                    name = "Runtime_PDAHologramMap"
+                }; // COLD ALLOC: Material[1] - virtual 3D cartography volume shader bridge - owner: PDAMapTab
+                _hologramMapMaterial.SetBuffer(CartographyVoxelR8Id, _cartographyPackedR8Buffer);
+            }
 
             if (_pointCloudMaterial != null)
             {
                 return;
             }
 
-            if (!TryResolvePointCloudAssets())
+            if (sonarPointCloudShader == null)
                 return;
 
             _pointCloudMaterial = new Material(sonarPointCloudShader)
@@ -616,9 +643,13 @@ namespace Hecton8.UI
                 sonarPointCloudShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>(SonarPointCloudShaderPath);
             if (sonarMapCompute == null)
                 sonarMapCompute = UnityEditor.AssetDatabase.LoadAssetAtPath<ComputeShader>(SonarMapComputePath);
+            if (hologramMapShader == null)
+                hologramMapShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>(HologramMapShaderPath);
 #endif
             if (sonarPointCloudShader == null)
                 sonarPointCloudShader = Shader.Find(SonarPointCloudShaderName);
+            if (hologramMapShader == null)
+                hologramMapShader = Shader.Find(HologramMapShaderName);
 
             return sonarPointCloudShader != null;
         }
@@ -673,6 +704,91 @@ namespace Hecton8.UI
             return _sonarComputeKernelsResolved;
         }
 
+        private void RenderHologramMap()
+        {
+            if (mapImage == null || !isActiveAndEnabled || !_pointCloudMapReady)
+                return;
+
+            EnsurePointCloudResources();
+            if (_hologramMapMaterial == null ||
+                _cartographyPackedR8Buffer == null ||
+                !_cartographyPackedR8Buffer.IsValid() ||
+                _pointCloudQuadMesh == null)
+            {
+                return;
+            }
+
+            PlayerExplorationTracker explorationTracker = ResolvePlayerExplorationTracker();
+            if (explorationTracker == null ||
+                !explorationTracker.TryGetDiscoveredSectorsPayload(
+                    out NativeArray<ulong> discoveredSectors,
+                    out int axisLength,
+                    out int originOffset,
+                    out int cellSizeMeters,
+                    out uint revision) ||
+                !discoveredSectors.IsCreated)
+            {
+                return;
+            }
+
+            CartographyTuningDTO tuning = explorationTracker.TryGetCartographyTuning(out CartographyTuningDTO resolvedTuning)
+                ? resolvedTuning
+                : CartographyVault.BuildDefaultTuning(ResolveHomeostasisQualityWeight());
+            float quality = ResolveCartographyQuality(in tuning);
+            int framesBetweenUploads = CartographyGridMath.ResolveUploadIntervalFrames(quality);
+
+            if (!TryResolvePointCloudFrame(out Matrix4x4 localToWorld, out _, out Camera renderCamera))
+                return;
+
+            bool uploadDue = _packedUploadCountdown <= 0 || _uploadedPackedCartographyRevision != revision;
+            if (uploadDue &&
+                explorationTracker.TryPrepareCartographyUpload(
+                    quality,
+                    out NativeArray<uint> packedR8,
+                    out int resolvedCadence,
+                    out uint uploadRevision) &&
+                packedR8.IsCreated)
+            {
+                GraphicsBufferUploadUtility.UploadNativeArray(
+                    _cartographyPackedR8Buffer,
+                    packedR8,
+                    math.min(packedR8.Length, CartographyGridConstants.PackedUploadWordCount));
+                _uploadedPackedCartographyRevision = uploadRevision;
+                framesBetweenUploads = math.max(1, resolvedCadence);
+                _packedUploadCountdown = framesBetweenUploads;
+            }
+            else
+            {
+                _packedUploadCountdown = math.max(0, _packedUploadCountdown - 1);
+            }
+
+            _hologramMapMaterial.SetBuffer(CartographyVoxelR8Id, _cartographyPackedR8Buffer);
+            _hologramMapMaterial.SetColor(HologramTintId, edgeTint);
+            _hologramMapMaterial.SetFloat(OpacityId, pointCloudOpacity * 0.72f);
+            _hologramMapMaterial.SetFloat(HologramGlowId, tuning.VisualGlowIntensity);
+            _hologramMapMaterial.SetFloat(HologramQualityId, quality);
+            _hologramMapMaterial.SetVector(
+                CartographyGridParamsId,
+                new Vector4(axisLength, originOffset, math.max(0.0001f, quality), cellSizeMeters));
+            _hologramMapMaterial.SetVector(
+                CartographyVisualParamsId,
+                new Vector4(_animationTime, _uploadedPackedCartographyRevision, framesBetweenUploads, 0f));
+
+            UnityEngine.Graphics.DrawMesh(
+                _pointCloudQuadMesh,
+                localToWorld,
+                _hologramMapMaterial,
+                gameObject.layer,
+                renderCamera,
+                0,
+                null,
+                ShadowCastingMode.Off,
+                false,
+                null,
+                LightProbeUsage.Off,
+                null);
+        }
+
         private void RenderPointCloud()
         {
             if (mapImage == null || !isActiveAndEnabled || !_pointCloudMapReady)
@@ -697,8 +813,13 @@ namespace Hecton8.UI
             if (!TryResolvePointCloudFrame(out Matrix4x4 localToWorld, out Bounds bounds, out Camera renderCamera))
                 return;
 
-            bool lowTier = ResolvePointCloudLowTier();
-            if (!DispatchSonarPointCloud(in playerAup, playerPosition, lowTier))
+            PlayerExplorationTracker explorationTracker = ResolvePlayerExplorationTracker();
+            CartographyTuningDTO tuning = explorationTracker != null &&
+                                          explorationTracker.TryGetCartographyTuning(out CartographyTuningDTO resolvedTuning)
+                ? resolvedTuning
+                : CartographyVault.BuildDefaultTuning(ResolveHomeostasisQualityWeight());
+            float quality = ResolveCartographyQuality(in tuning);
+            if (!DispatchSonarPointCloud(in playerAup, playerPosition, quality))
                 return;
 
             Vector4 activeSonarGeoParams = Shader.GetGlobalVector(ActiveSonarGeoParamsId);
@@ -716,7 +837,7 @@ namespace Hecton8.UI
             _pointCloudMaterial.SetFloat(PointSizeId, pointCloudPointSize);
             _pointCloudMaterial.SetFloat(OpacityId, pointCloudOpacity);
             _pointCloudMaterial.SetFloat(DepthFadeMetersId, pointCloudDepthMeters);
-            _pointCloudMaterial.SetFloat(HeightColorizationId, lowTier ? 0f : 1f);
+            _pointCloudMaterial.SetFloat(HeightColorizationId, Smooth01(quality));
 
             RenderParams renderParams = new RenderParams(_pointCloudMaterial)
             {
@@ -790,7 +911,7 @@ namespace Hecton8.UI
         private bool DispatchSonarPointCloud(
             in AbsoluteUniversePosition playerAup,
             Vector3 playerPosition,
-            bool lowTier)
+            float globalQualityWeight)
         {
             if (sonarMapCompute == null ||
                 _pointCloudAppendBuffer == null ||
@@ -836,9 +957,10 @@ namespace Hecton8.UI
             if (!CartographyGridMath.TryResolveMacroCell(in playerCartographyAup, out int3 playerMacroCell))
                 return false;
 
+            float qualityCurve = Smooth01(globalQualityWeight);
             int wordCount = math.min(discoveredSectors.Length, CartographyGridConstants.WordCount);
-            int maxBitsPerWord = lowTier ? 1 : 2;
-            int wordStride = lowTier ? 4 : 1;
+            int maxBitsPerWord = math.clamp((int)math.round(math.lerp(1f, 4f, qualityCurve)), 1, 4);
+            int wordStride = math.clamp((int)math.round(math.lerp(8f, 1f, qualityCurve)), 1, 8);
             int dispatchWordCount = CeilDividePositive(wordCount, wordStride);
             TryResolvePredatorAupBuffer(out GraphicsBuffer predatorAupBuffer, out int predatorAupCount);
             TryResolveHlodImpostorAupBuffer(out GraphicsBuffer hlodAupBuffer, out int hlodAupCount);
@@ -852,6 +974,7 @@ namespace Hecton8.UI
                 wordCount,
                 maxBitsPerWord,
                 wordStride,
+                qualityCurve,
                 predatorAupCount,
                 hlodAupCount);
 
@@ -877,6 +1000,7 @@ namespace Hecton8.UI
             int wordCount,
             int maxBitsPerWord,
             int wordStride,
+            float qualityCurve,
             int predatorAupCount,
             int hlodAupCount)
         {
@@ -909,7 +1033,7 @@ namespace Hecton8.UI
                     SonarQuadIndexCount),
                 OverlayParams = new Vector4(
                     hlodAupCount,
-                    0f,
+                    qualityCurve,
                     0f,
                     0f)
             };
@@ -1030,48 +1154,23 @@ namespace Hecton8.UI
             return forwardDot > 0.025f;
         }
 
-        private bool ResolvePointCloudLowTier()
+        private static float ResolveHomeostasisQualityWeight()
         {
-            bool requestedLowTier = IsLowMathTierRequested();
-            if (!_pointCloudTierInitialized)
-            {
-                _pointCloudTierInitialized = true;
-                _pointCloudLowTierActive = requestedLowTier;
-                _pointCloudLowTierCandidate = requestedLowTier;
-                _pointCloudLowTierCandidateSince = _animationTime;
-                return _pointCloudLowTierActive;
-            }
-
-            if (requestedLowTier == _pointCloudLowTierActive)
-            {
-                _pointCloudLowTierCandidate = requestedLowTier;
-                _pointCloudLowTierCandidateSince = _animationTime;
-                return _pointCloudLowTierActive;
-            }
-
-            if (requestedLowTier != _pointCloudLowTierCandidate)
-            {
-                _pointCloudLowTierCandidate = requestedLowTier;
-                _pointCloudLowTierCandidateSince = _animationTime;
-                return _pointCloudLowTierActive;
-            }
-
-            if (_animationTime - _pointCloudLowTierCandidateSince >= PointCloudTierHysteresisSeconds)
-            {
-                _pointCloudLowTierActive = requestedLowTier;
-                _pointCloudLowTierCandidateSince = _animationTime;
-            }
-
-            return _pointCloudLowTierActive;
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.isfinite(quality) ? quality : 1f);
         }
 
-        private static bool IsLowMathTierRequested()
+        private static float ResolveCartographyQuality(in CartographyTuningDTO tuning)
         {
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            return HardwareTierDetector.SharedMemoryModeActive ||
-                   tier == HectonQualityTier.Low ||
-                   tier == HectonQualityTier.Mx350 ||
-                   tier == HectonQualityTier.Unknown;
+            float homeostasisQuality = ResolveHomeostasisQualityWeight();
+            float tuningQuality = math.saturate(math.isfinite(tuning.GlobalQualityWeight) ? tuning.GlobalQualityWeight : 1f);
+            return math.saturate(math.min(homeostasisQuality, tuningQuality));
+        }
+
+        private static float Smooth01(float value)
+        {
+            float x = math.saturate(math.isfinite(value) ? value : 1f);
+            return x * x * (3f - (2f * x));
         }
 
         private void EnqueueMarkerUpdate(uint markerHashId)
@@ -1765,10 +1864,22 @@ namespace Hecton8.UI
                 _cartographySectorWordBuffer = null;
             }
 
+            if (_cartographyPackedR8Buffer != null)
+            {
+                _cartographyPackedR8Buffer.Release();
+                _cartographyPackedR8Buffer = null;
+            }
+
             if (_pointCloudQuadMesh != null)
             {
                 Destroy(_pointCloudQuadMesh);
                 _pointCloudQuadMesh = null;
+            }
+
+            if (_hologramMapMaterial != null)
+            {
+                Destroy(_hologramMapMaterial);
+                _hologramMapMaterial = null;
             }
 
             if (_pointCloudMaterial != null)
@@ -1784,13 +1895,11 @@ namespace Hecton8.UI
             _sonarBuildMapPointsThreadGroupSizeZ = PointCloudThreadAxis;
             _sonarComputeKernelsResolved = false;
             _uploadedCartographyRevision = uint.MaxValue;
+            _uploadedPackedCartographyRevision = uint.MaxValue;
+            _packedUploadCountdown = 0;
             _cartographySectorBufferUploaded = false;
             _pointCloudAssetLookupAttempted = false;
             _pointCloudMapReady = false;
-            _pointCloudTierInitialized = false;
-            _pointCloudLowTierActive = false;
-            _pointCloudLowTierCandidate = false;
-            _pointCloudLowTierCandidateSince = 0f;
         }
 
     }

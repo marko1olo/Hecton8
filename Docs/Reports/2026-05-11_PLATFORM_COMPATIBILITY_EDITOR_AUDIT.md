@@ -44,7 +44,7 @@ No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler,
 | Check | Status | Evidence |
 |---|---:|---|
 | Addressables package | PASS | manifest contains com.unity.addressables |
-| Addressables project data | BLOCKED | Assets/AddressableAssetsData missing |
+| Addressables project data | BLOCKED | 2026-05-11 scan found missing project data; 2026-05-19 filesystem supersession: `Assets/AddressableAssetsData` exists but contains 0 files/settings/groups. |
 | Input System package | PASS | manifest contains com.unity.inputsystem |
 | XR Management package | BLOCKED | manifest missing com.unity.xr.management |
 | OpenXR package | BLOCKED | manifest missing com.unity.xr.openxr |

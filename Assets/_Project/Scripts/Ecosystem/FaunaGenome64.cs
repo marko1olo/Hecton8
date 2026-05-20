@@ -224,15 +224,15 @@ namespace Hecton8.Ecosystem
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct FaunaGenomeMutationJob : IJobParallelFor
     {
-        public NativeArray<ulong> Genomes;
-        [ReadOnly] public NativeArray<float> Radiation;
-        [ReadOnly] public NativeArray<float> Toxicity;
-        [ReadOnly] public NativeArray<float> Brine;
-        [ReadOnly] public NativeArray<uint> StableHashes;
-        public NativeArray<byte> MutationResults;
+        [NoAlias] public NativeArray<ulong> Genomes;
+        [ReadOnly, NoAlias] public NativeArray<float> Radiation;
+        [ReadOnly, NoAlias] public NativeArray<float> Toxicity;
+        [ReadOnly, NoAlias] public NativeArray<float> Brine;
+        [ReadOnly, NoAlias] public NativeArray<uint> StableHashes;
+        [NoAlias] public NativeArray<byte> MutationResults;
         public uint RollIndex;
         public int Count;
 
@@ -259,14 +259,14 @@ namespace Hecton8.Ecosystem
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct MacroSwarmGenomeMutationJob : IJobParallelFor
     {
-        public NativeArray<MacroSwarm> Swarms;
-        [ReadOnly] public NativeArray<float> Radiation;
-        [ReadOnly] public NativeArray<float> Toxicity;
-        [ReadOnly] public NativeArray<float> Brine;
-        public NativeArray<byte> MutationResults;
+        [NoAlias] public NativeArray<MacroSwarm> Swarms;
+        [ReadOnly, NoAlias] public NativeArray<float> Radiation;
+        [ReadOnly, NoAlias] public NativeArray<float> Toxicity;
+        [ReadOnly, NoAlias] public NativeArray<float> Brine;
+        [NoAlias] public NativeArray<byte> MutationResults;
         public uint RollIndex;
         public int Count;
 

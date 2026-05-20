@@ -17,36 +17,65 @@ using UnityEngine.Rendering;
 
 namespace Hecton8.UI.Navigation
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 40)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct CompassBlackBoxEntry
     {
+        [FieldOffset(0)]
         public uint Frame;
+        [FieldOffset(4)]
         public float ActualHeadingDegrees;
+        [FieldOffset(8)]
         public float CurrentHeadingDegrees;
+        [FieldOffset(12)]
         public float DriftDegrees;
+        [FieldOffset(16)]
         public float MaxGyroDriftDegrees;
+        [FieldOffset(20)]
         public float AnomalyInterference01;
+        [FieldOffset(24)]
         public float Power01;
+        [FieldOffset(28)]
         public uint Flags;
+        [FieldOffset(32)]
         public uint LastAupShiftFrameId;
+        [FieldOffset(36)]
         public int CalibrationCount;
+        [FieldOffset(40)]
+        public ulong Padding0;
+        [FieldOffset(48)]
+        public ulong Padding1;
+        [FieldOffset(56)]
+        public ulong Padding2;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 80)]
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
     public struct CompassPresentationStateDTO
     {
+        [FieldOffset(0)]
         public float LastPresentedHeadingDegrees;
+        [FieldOffset(4)]
         public float LastCompassGlassChromatic01;
+        [FieldOffset(8)]
         public float LastCompassPower01;
+        [FieldOffset(12)]
         public float LastCompassOverkill01;
+        [FieldOffset(16)]
         public float ParticleDebt;
+        [FieldOffset(20)]
         public float LastUploadedDialHeadingDegrees;
+        [FieldOffset(24)]
         public float3 LastUploadedDialPosition;
+        [FieldOffset(36)]
         public float4 LastUploadedDialRotation;
+        [FieldOffset(52)]
         public float3 LastUploadedDialScale;
+        [FieldOffset(64)]
         public int LastCardinalIndex;
+        [FieldOffset(68)]
         public int LastPowerState;
+        [FieldOffset(72)]
         public int DialMatrixWriteIndex;
+        [FieldOffset(76)]
         public uint PresentationFlags;
     }
 
@@ -57,9 +86,9 @@ namespace Hecton8.UI.Navigation
 
         public static void ConfigureOwnedLanes()
         {
-            SignalBus<AnomalyProximitySignal>.Configure(8, maxFrameSignals: 16, lowTierFrameSignals: 4, laneHash: CompassAnomalyLaneHash);
+            SignalBus<AnomalyProximitySignal>.Configure(8, 16, 4, CompassAnomalyLaneHash);
             SignalBus<AnomalyProximitySignal>.EnsureInitialized();
-            SignalBus<CompassCalibratedSignal>.Configure(4, maxFrameSignals: 8, lowTierFrameSignals: 2, laneHash: CompassCalibrationLaneHash);
+            SignalBus<CompassCalibratedSignal>.Configure(4, 8, 2, CompassCalibrationLaneHash);
             SignalBus<CompassCalibratedSignal>.EnsureInitialized();
         }
 
@@ -125,7 +154,7 @@ namespace Hecton8.UI.Navigation
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Navigation/Diegetic Gyro Compass Runtime")]
-    public sealed class DiegeticGyroCompassRuntime : MonoBehaviour, IInertialNavigationService, IFastTickable, ISlowTickable, ILateFrameTickable
+    public sealed class DiegeticGyroCompassRuntime : MonoBehaviour, IInertialNavigationService, IFastTickable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
     {
         private const int StateLength = 1;
         private const int BlackBoxCapacity = 300;
@@ -150,7 +179,7 @@ namespace Hecton8.UI.Navigation
         private const uint FlagStressSlowCadence = 1u << 3;
         private const uint FlagCalibrationApplied = 1u << 4;
         private const uint FlagNonFiniteFallback = 1u << 5;
-        private const uint FlagLowTier = 1u << 6;
+        private const uint FlagReducedQualityNoise = 1u << 6;
         private const uint FlagIndirectDial = 1u << 7;
         private const uint FlagHasPreviousAup = 1u << 8;
         private const uint FlagCalibrationRequested = 1u << 9;
@@ -213,16 +242,21 @@ namespace Hecton8.UI.Navigation
 
         private IDataVault _vault;
         private IPlayerRuntimeContext _playerContext;
-        private HectonQualityTier _cachedQualityTier = HectonQualityTier.Unknown;
         private JobHandle _jobHandle;
-        private bool _lowTier;
         private bool _jobPending;
         private bool _registeredFastTick;
         private bool _registeredSlowTick;
         private bool _registeredLateFrame;
         private bool _registeredService;
+        private bool _hotSwapListenerRegistered;
+        private bool _scalabilityListenerRegistered;
         private bool _diegeticTextValid = true;
         private bool _blackBoxDumped;
+        private float _qualityWeight01 = 1f;
+        private float _visualOverkillWeight01 = 1f;
+        private float _fastCadenceAccumulatedDelta;
+        private int _fastCadenceStride = 1;
+        private int _fastCadenceCounter;
 
         private readonly char[] _cardinalBuffer = new char[2]; // COLD ALLOC: char[2] - diegetic compass cardinal text buffer - owner: DiegeticGyroCompassRuntime
         private readonly uint[] _indirectArgs = new uint[5]; // COLD ALLOC: uint[5] - compass indirect draw args - owner: DiegeticGyroCompassRuntime
@@ -249,6 +283,8 @@ namespace Hecton8.UI.Navigation
         private void OnEnable()
         {
             ConfigureSignalLanes();
+            TryRegisterHotSwapListener();
+            TryRegisterScalabilityListener();
             TryRegisterService();
             TryRegisterTickables();
         }
@@ -264,13 +300,17 @@ namespace Hecton8.UI.Navigation
 
         private void OnDisable()
         {
+            CompletePendingJob(forceComplete: true);
             TryUnregisterTickables();
             TryUnregisterService();
+            TryUnregisterScalabilityListener();
+            TryUnregisterHotSwapListener();
             ClearCompassShaderGlobals();
         }
 
         private void OnDestroy()
         {
+            CompletePendingJob(forceComplete: true);
             ReleaseIndirectBuffers();
         }
 
@@ -335,14 +375,13 @@ namespace Hecton8.UI.Navigation
         /// </summary>
         /// <param name="playerContext">Authoritative player pose/AUP provider.</param>
         /// <param name="vault">Global vault owner for compass state, output, and blackbox buffers.</param>
-        /// <param name="qualityTier">Boot-time hardware quality tier.</param>
+        /// <param name="qualityWeight01">Boot-time continuous quality weight from HomeostasisBrain.</param>
         /// <remarks>Call from bootstrap or tool installation only; tick paths do not poll the registry.</remarks>
-        public void InjectDependencies(IPlayerRuntimeContext playerContext, IDataVault vault, HectonQualityTier qualityTier)
+        public void InjectDependencies(IPlayerRuntimeContext playerContext, IDataVault vault, float qualityWeight01)
         {
             _playerContext = playerContext;
             _vault = vault;
-            _cachedQualityTier = qualityTier;
-            _lowTier = IsLowTier(qualityTier);
+            RefreshQualityPolicy(qualityWeight01);
             TryResolveVaultBuffers();
             EnsureIndirectBuffers();
         }
@@ -396,13 +435,23 @@ namespace Hecton8.UI.Navigation
         /// <inheritdoc />
         public void FastTick(float deltaTime)
         {
+            float safeDeltaTime = SanitizeDeltaTime(deltaTime);
+            _fastCadenceAccumulatedDelta = math.min(
+                MaxIntegrationDeltaSeconds,
+                _fastCadenceAccumulatedDelta + safeDeltaTime);
+
             if (!RefreshFastSignalInputs(out CompassStateDTO state))
                 return;
 
             if (!ShouldUseFastCadence(in state))
                 return;
 
-            ScheduleDrift(SanitizeDeltaTime(deltaTime));
+            if (!ConsumeFastCadenceGate())
+                return;
+
+            float scheduledDelta = _fastCadenceAccumulatedDelta;
+            _fastCadenceAccumulatedDelta = 0f;
+            ScheduleDrift(scheduledDelta);
         }
 
         /// <inheritdoc />
@@ -417,13 +466,14 @@ namespace Hecton8.UI.Navigation
             if (ShouldUseFastCadence(in state))
                 return;
 
+            _fastCadenceAccumulatedDelta = 0f;
             ScheduleDrift(DefaultSlowDeltaSeconds);
         }
 
         /// <inheritdoc />
         public void LateFrameTick()
         {
-            CompletePendingJob();
+            CompletePendingJob(forceComplete: false);
             ApplyPresentation();
         }
 
@@ -438,14 +488,13 @@ namespace Hecton8.UI.Navigation
 
         private void ResolveColdDependencies()
         {
+            RefreshQualityPolicy();
+
             if (_playerContext == null)
                 _playerContext = GlobalRegistry.Player;
 
             if (_vault == null)
                 _vault = GlobalRegistry.DataVault;
-
-            _cachedQualityTier = GlobalRegistry.ScalabilityTier;
-            _lowTier = IsLowTier(_cachedQualityTier);
         }
 
         private bool TryResolveVaultBuffers()
@@ -632,6 +681,82 @@ namespace Hecton8.UI.Navigation
             return true;
         }
 
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Player:
+                    _playerContext = currentService as IPlayerRuntimeContext;
+                    _fastCadenceAccumulatedDelta = 0f;
+                    break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    _vault = currentService as IDataVault;
+                    TryResolveVaultBuffers();
+                    ResetPresentationState(resetDialMatrix: true);
+                    break;
+            }
+        }
+
+        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            RefreshQualityPolicy();
+            EnsureIndirectBuffers();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
+        private void TryRegisterScalabilityListener()
+        {
+            if (_scalabilityListenerRegistered || !Application.isPlaying)
+                return;
+
+            ScalabilityEvents.Register(this);
+            _scalabilityListenerRegistered = true;
+        }
+
+        private void TryUnregisterScalabilityListener()
+        {
+            if (!_scalabilityListenerRegistered)
+                return;
+
+            ScalabilityEvents.Unregister(this);
+            _scalabilityListenerRegistered = false;
+        }
+
+        private void RefreshQualityPolicy()
+        {
+            RefreshQualityPolicy(HomeostasisBrain.GlobalQualityWeight);
+        }
+
+        private void RefreshQualityPolicy(float qualityWeight01)
+        {
+            _qualityWeight01 = math.saturate(math.isfinite(qualityWeight01) ? qualityWeight01 : 1f);
+            float qualityCurve = SmoothStep01(_qualityWeight01);
+            _fastCadenceStride = math.clamp(
+                (int)math.round(math.lerp(6f, 1f, qualityCurve)),
+                1,
+                6);
+            _visualOverkillWeight01 = SmoothStep01(math.saturate((_qualityWeight01 - 0.45f) * (1f / 0.55f)));
+        }
+
         private void TryRegisterService()
         {
             if (_registeredService || !Application.isPlaying)
@@ -745,9 +870,19 @@ namespace Hecton8.UI.Navigation
 
         private bool ShouldUseFastCadence(in CompassStateDTO state)
         {
-            return !_lowTier &&
-                   state.SystemStress01 <= StressSlowThreshold01 &&
+            return state.SystemStress01 <= StressSlowThreshold01 &&
                    state.Power01 >= PowerDeathThreshold01;
+        }
+
+        private bool ConsumeFastCadenceGate()
+        {
+            int stride = math.clamp(_fastCadenceStride, 1, 6);
+            _fastCadenceCounter++;
+            if (_fastCadenceCounter < stride)
+                return false;
+
+            _fastCadenceCounter = 0;
+            return true;
         }
 
         private void ScheduleDrift(float deltaTime)
@@ -787,7 +922,7 @@ namespace Hecton8.UI.Navigation
             state.DeltaSeconds = deltaTime;
             state.Frame = state.Frame == uint.MaxValue ? 1u : state.Frame + 1u;
             state.Flags |= FlagInitialized;
-            state.Flags = _lowTier ? state.Flags | FlagLowTier : state.Flags & ~FlagLowTier;
+            state.Flags = _fastCadenceStride > 1 ? state.Flags | FlagReducedQualityNoise : state.Flags & ~FlagReducedQualityNoise;
             state.Flags = ShouldUseFastCadence(in state) ? state.Flags & ~FlagStressSlowCadence : state.Flags | FlagStressSlowCadence;
             state.Flags = ShouldUseVisualOverkill(in state) ? state.Flags | FlagIndirectDial : state.Flags & ~FlagIndirectDial;
             if ((state.Flags & FlagPowered) == 0u && state.Power01 >= PowerDeathThreshold01)
@@ -836,12 +971,15 @@ namespace Hecton8.UI.Navigation
             return false;
         }
 
-        private void CompletePendingJob()
+        private void CompletePendingJob(bool forceComplete)
         {
             if (!_jobPending)
                 return;
 
-            _jobHandle.Complete();
+            if (!forceComplete && !_jobHandle.IsCompleted)
+                return;
+
+            Hecton8.Core.DispatcherJobFence.TryComplete(ref _jobHandle, forceComplete);
             _jobPending = false;
             CommitCompletedState();
         }
@@ -919,7 +1057,7 @@ namespace Hecton8.UI.Navigation
             }
 
             float chromatic = powered && anomaly > 0.8f ? math.saturate((anomaly - 0.8f) * 5f) : 0f;
-            float overkill = powered && ShouldUseVisualOverkill(in state) ? math.saturate(anomaly * 1.35f) : 0f;
+            float overkill = powered && ShouldUseVisualOverkill(in state) ? math.saturate(anomaly * 1.35f * _visualOverkillWeight01) : 0f;
             presentationDirty |= ApplyChromatic(chromatic, power, overkill, ref presentation);
             presentationDirty |= EmitHighTierFailureParticles(powered, anomaly, in state, ref presentation);
 
@@ -957,13 +1095,13 @@ namespace Hecton8.UI.Navigation
                    dialMesh != null &&
                    dialIndirectMaterial != null &&
                    SupportsIndirectDial() &&
-                   _cachedQualityTier >= HectonQualityTier.High &&
+                   _visualOverkillWeight01 > 0.001f &&
                    state.SystemStress01 <= StressSlowThreshold01;
         }
 
         private bool ShouldUseVisualOverkill(in CompassStateDTO state)
         {
-            return _cachedQualityTier >= HectonQualityTier.High &&
+            return _visualOverkillWeight01 > 0.001f &&
                    state.SystemStress01 <= StressSlowThreshold01;
         }
 
@@ -1158,7 +1296,16 @@ namespace Hecton8.UI.Navigation
                 return true;
             }
 
-            int burst = math.min(anomalyParticleBurst, MaxAnomalyParticleBurst);
+            int burst = math.clamp(
+                (int)math.round(math.min(anomalyParticleBurst, MaxAnomalyParticleBurst) * _visualOverkillWeight01),
+                0,
+                MaxAnomalyParticleBurst);
+            if (burst <= 0)
+            {
+                presentation.ParticleDebt = 0f;
+                return true;
+            }
+
             float debt = presentation.ParticleDebt + math.saturate((anomaly - 0.8f) * 5f) * burst;
             if (!math.isfinite(debt))
                 debt = 0f;
@@ -1179,7 +1326,7 @@ namespace Hecton8.UI.Navigation
         private void EnsureIndirectBuffers()
         {
             if (!enableIndirectHighTier ||
-                _cachedQualityTier < HectonQualityTier.High ||
+                _visualOverkillWeight01 <= 0.001f ||
                 dialMesh == null ||
                 dialIndirectMaterial == null ||
                 !SupportsIndirectDial())
@@ -1352,11 +1499,6 @@ namespace Hecton8.UI.Navigation
             catch (UnauthorizedAccessException)
             {
             }
-        }
-
-        private static bool IsLowTier(HectonQualityTier tier)
-        {
-            return tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350 || tier == HectonQualityTier.Unknown;
         }
 
         private static bool SupportsIndirectDial()
@@ -1552,12 +1694,18 @@ namespace Hecton8.UI.Navigation
             return changed;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private static float SmoothStep01(float value)
+        {
+            float t = math.saturate(math.isfinite(value) ? value : 1f);
+            return t * t * (3f - 2f * t);
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct GyroDriftJob : IJob
         {
-            public NativeSlice<CompassStateDTO> State;
-            public NativeSlice<float> Output;
-            public NativeSlice<CompassBlackBoxEntry> BlackBox;
+            [NoAlias] public NativeSlice<CompassStateDTO> State;
+            [NoAlias] public NativeSlice<float> Output;
+            [NoAlias] public NativeSlice<CompassBlackBoxEntry> BlackBox;
             public float DeltaSeconds;
             public float NoiseTime;
             public float HeadingCatchupRate;
@@ -1675,7 +1823,7 @@ namespace Hecton8.UI.Navigation
                     return 0f;
 
                 float t = noiseTime * noiseFrequency;
-                if ((flags & FlagLowTier) != 0u)
+                if ((flags & FlagReducedQualityNoise) != 0u)
                     return TriangleNoise(t);
 
                 float baseNoise = noise.cnoise(new float2(t, 17.371f));

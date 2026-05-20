@@ -1,0 +1,10 @@
+{
+    "Key":  "ROOT_INDEX",
+    "SplitOver3MB":  false,
+    "MdOutputs":  [
+                      "Archive_Batch010_ROOT_INDEX_SLIM.md"
+                  ],
+    "TxtOutputs":  [
+                       "Archive_Batch010_ROOT_INDEX_SLIM.txt"
+                   ]
+}

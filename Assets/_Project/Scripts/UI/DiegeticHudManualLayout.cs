@@ -109,8 +109,8 @@ namespace Hecton8.UI
                 }
             };
 
-            JobHandle handle = job.Schedule(count, 8);
-            handle.Complete();
+            for (int i = 0; i < count; i++)
+                job.Execute(i);
 
             for (int i = 0; i < count; i++)
             {
@@ -238,7 +238,7 @@ namespace Hecton8.UI
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential)]
     public struct DiegeticHudLayoutInput
     {
         public float Offset;
@@ -246,7 +246,7 @@ namespace Hecton8.UI
         public float DepthOffset;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential)]
     public struct DiegeticHudLayoutSettings
     {
         public byte Axis;

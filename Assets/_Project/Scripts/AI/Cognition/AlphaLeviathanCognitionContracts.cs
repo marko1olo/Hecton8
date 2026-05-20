@@ -29,10 +29,10 @@ namespace Hecton8.AI.Cognition
     /// </summary>
     public static class AlphaLeviathanTelemetryFlags
     {
-        /// <summary>Low-tier radial fallback was used.</summary>
-        public const byte LowTierRadialFallback = 1 << 0;
+        /// <summary>Survival math radial fallback was used.</summary>
+        public const byte SurvivalRadialFallback = 1 << 0;
 
-        /// <summary>High-tier SDF contouring was requested.</summary>
+        /// <summary>SDF contouring was requested and survived continuous quality pressure.</summary>
         public const byte SdfDiveRequested = 1 << 1;
 
         /// <summary>Player gaze crossed the predator exposure threshold.</summary>

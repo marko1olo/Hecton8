@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -13,6 +14,8 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEditor;
+using UnityEditor.Build;
+using UnityEditor.Build.Reporting;
 using UnityEngine;
 
 namespace Hecton8.EditorValidation
@@ -28,6 +31,8 @@ namespace Hecton8.EditorValidation
         private const string MenuPath = "Hecton8/Data Monolith/Bake Static Data";
         private const int InitialBlobCapacity = 128 * 1024;
         private const int Utf8ScratchBytes = 2048;
+        private const string TempOutputSuffix = ".tmp";
+        private const string BackupOutputSuffix = ".bak";
 
         internal static string LastError;
 
@@ -102,7 +107,13 @@ namespace Hecton8.EditorValidation
                 ValidateCrossReferences(dataSet);
 
                 byte[] blob = BuildBlob(dataSet, localizationPool);
-                File.WriteAllBytes(OutputAssetPath, blob);
+                if (!TryWriteValidatedBlob(blob, out string validationError))
+                {
+                    LastError = validationError;
+                    Debug.LogError("[H8DataMonolithCompiler] " + LastError + " Bake aborted.");
+                    return false;
+                }
+
                 AssetDatabase.ImportAsset(OutputAssetPath, ImportAssetOptions.ForceUpdate);
 
                 H8DataMonolithHotReloadSocket.NotifyBake(OutputAssetPath);
@@ -144,6 +155,15 @@ namespace Hecton8.EditorValidation
                     IsUnderAbsoluteRoot(assetPath, BalanceSourceFolder));
         }
 
+        internal static bool TryValidateOutputBlob(out string error, bool updateLastError = true)
+        {
+            bool valid = TryValidateBlobFile(OutputAssetPath, out error);
+            if (updateLastError)
+                LastError = valid ? string.Empty : error;
+
+            return valid;
+        }
+
         private static string[] CollectSourceFiles(string searchPattern)
         {
             List<string> files = new List<string>(128); // COLD ALLOC: List<string>[source file count] - editor-only source enumeration - owner: H8DataMonolithCompiler
@@ -155,14 +175,25 @@ namespace Hecton8.EditorValidation
         private static CsvFileRows[] ReadCsvSourcesParallel(string[] csvFiles)
         {
             CsvFileRows[] results = new CsvFileRows[csvFiles.Length]; // COLD ALLOC: CsvFileRows[source file count] - editor-only parallel CSV import results - owner: H8DataMonolithCompiler
-            Task[] workers = new Task[csvFiles.Length]; // COLD ALLOC: Task[source file count] - editor-only CSV import workers - owner: H8DataMonolithCompiler
-            for (int i = 0; i < csvFiles.Length; i++)
+            if (csvFiles.Length == 0)
+                return results;
+
+            int workerCount = Math.Min(csvFiles.Length, Math.Max(1, Environment.ProcessorCount - 1));
+            Task[] workers = new Task[workerCount]; // COLD ALLOC: Task[bounded worker count] - editor-only CSV import workers - owner: H8DataMonolithCompiler
+            int nextIndex = -1;
+            for (int i = 0; i < workerCount; i++)
             {
-                int workerIndex = i;
                 workers[i] = Task.Run(() =>
                 {
-                    string path = csvFiles[workerIndex];
-                    results[workerIndex] = new CsvFileRows(path, ReadCsvRows(path));
+                    while (true)
+                    {
+                        int workerIndex = Interlocked.Increment(ref nextIndex);
+                        if (workerIndex >= csvFiles.Length)
+                            break;
+
+                        string path = csvFiles[workerIndex];
+                        results[workerIndex] = new CsvFileRows(path, ReadCsvRows(path));
+                    }
                 });
             }
 
@@ -199,6 +230,278 @@ namespace Hecton8.EditorValidation
             string normalizedRoot = Path.GetFullPath(relativeRoot).Replace('\\', '/').TrimEnd('/');
             return normalizedPath.StartsWith(normalizedRoot + "/", StringComparison.OrdinalIgnoreCase) ||
                    string.Equals(normalizedPath, normalizedRoot, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool TryWriteValidatedBlob(byte[] blob, out string error)
+        {
+            error = string.Empty;
+            string tempPath = OutputAssetPath + TempOutputSuffix;
+            string backupPath = OutputAssetPath + BackupOutputSuffix;
+
+            try
+            {
+                TryDeleteFile(tempPath);
+                TryDeleteFile(backupPath);
+                using (FileStream stream = new FileStream(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                    stream.Write(blob, 0, blob.Length);
+
+                if (!TryValidateBlobFile(tempPath, out error))
+                {
+                    TryDeleteFile(tempPath);
+                    return false;
+                }
+
+                if (File.Exists(OutputAssetPath))
+                {
+                    File.Replace(tempPath, OutputAssetPath, backupPath, true);
+                    TryDeleteFile(backupPath);
+                }
+                else
+                {
+                    File.Move(tempPath, OutputAssetPath);
+                }
+
+                if (!TryValidateBlobFile(OutputAssetPath, out error))
+                    return false;
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                error = "Atomic output write failed: " + ex.Message;
+                TryDeleteFile(tempPath);
+                return false;
+            }
+        }
+
+        private static void TryDeleteFile(string path)
+        {
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+                return;
+
+            try
+            {
+                File.Delete(path);
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+        }
+
+        private static bool TryValidateBlobFile(string path, out string error)
+        {
+            error = string.Empty;
+            if (!File.Exists(path))
+            {
+                error = "Missing Data Monolith output: " + path;
+                return false;
+            }
+
+            FileInfo info = new FileInfo(path);
+            if (info.Length < H8DataLayoutConstants.HeaderSizeBytes + H8DataLayoutConstants.DirectorySizeBytes)
+            {
+                error = "Data Monolith is too small: " + info.Length + " bytes.";
+                return false;
+            }
+
+            if (info.Length > int.MaxValue || info.Length > uint.MaxValue)
+            {
+                error = "Data Monolith is too large for the current runtime contract: " + info.Length + " bytes.";
+                return false;
+            }
+
+            if ((info.Length & (H8DataLayoutConstants.SectionAlignmentBytes - 1)) != 0)
+            {
+                error = "Data Monolith file length is not 16-byte aligned: " + info.Length + " bytes.";
+                return false;
+            }
+
+            byte[] bytes = new byte[(int)info.Length];
+            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                int total = 0;
+                while (total < bytes.Length)
+                {
+                    int read = stream.Read(bytes, total, bytes.Length - total);
+                    if (read <= 0)
+                        break;
+
+                    total += read;
+                }
+
+                if (total != bytes.Length)
+                {
+                    error = "Data Monolith read was incomplete: " + total + "/" + bytes.Length + " bytes.";
+                    return false;
+                }
+            }
+
+            uint headerMagic = ReadUInt32(bytes, 0);
+            ushort headerVersion = ReadUInt16(bytes, 4);
+            ushort headerBytes = ReadUInt16(bytes, 6);
+            ulong checksum = ReadUInt64(bytes, 8);
+            if (headerMagic != H8DataLayoutConstants.BlobMagic)
+            {
+                error = "Header magic mismatch: 0x" + headerMagic.ToString("X8");
+                return false;
+            }
+
+            if (headerVersion != H8DataLayoutConstants.FormatVersion)
+            {
+                error = "Header version mismatch: " + headerVersion;
+                return false;
+            }
+
+            if (headerBytes != H8DataLayoutConstants.HeaderSizeMarker)
+            {
+                error = "Header byte-count mismatch: " + headerBytes;
+                return false;
+            }
+
+            ulong computedChecksum = ComputeHash64(bytes, H8DataLayoutConstants.HeaderSizeBytes, bytes.Length - H8DataLayoutConstants.HeaderSizeBytes);
+            if (checksum != computedChecksum)
+            {
+                error = "XXHash3 checksum mismatch: stored=0x" + checksum.ToString("X16") + " computed=0x" + computedChecksum.ToString("X16");
+                return false;
+            }
+
+            int directoryOffset = H8DataLayoutConstants.HeaderSizeBytes;
+            uint directoryMagic = ReadUInt32(bytes, directoryOffset);
+            ushort directoryVersion = ReadUInt16(bytes, directoryOffset + 4);
+            ushort sectionCount = ReadUInt16(bytes, directoryOffset + 6);
+            uint sectionTableOffset = ReadUInt32(bytes, directoryOffset + 8);
+            uint sectionTableBytes = ReadUInt32(bytes, directoryOffset + 12);
+            uint blobBytes = ReadUInt32(bytes, directoryOffset + 16);
+            uint dataStartOffset = ReadUInt32(bytes, directoryOffset + 20);
+            uint localizationOffset = ReadUInt32(bytes, directoryOffset + 24);
+            uint localizationBytes = ReadUInt32(bytes, directoryOffset + 28);
+            if (directoryMagic != H8DataLayoutConstants.BlobMagic)
+            {
+                error = "Directory magic mismatch: 0x" + directoryMagic.ToString("X8");
+                return false;
+            }
+
+            if (directoryVersion != H8DataLayoutConstants.FormatVersion)
+            {
+                error = "Directory version mismatch: " + directoryVersion;
+                return false;
+            }
+
+            if (sectionCount != SectionOrder.Length)
+            {
+                error = "Section count mismatch: " + sectionCount + " expected " + SectionOrder.Length;
+                return false;
+            }
+
+            uint expectedSectionTableOffset = H8DataLayoutConstants.HeaderSizeBytes + H8DataLayoutConstants.DirectorySizeBytes;
+            uint expectedSectionTableBytes = (uint)(SectionOrder.Length * UnsafeUtility.SizeOf<H8DataSectionEntry>());
+            if (sectionTableOffset != expectedSectionTableOffset || sectionTableBytes != expectedSectionTableBytes)
+            {
+                error = "Section table range mismatch: offset=" + sectionTableOffset + " bytes=" + sectionTableBytes;
+                return false;
+            }
+
+            if (blobBytes != bytes.Length)
+            {
+                error = "Directory blob byte-count mismatch: " + blobBytes + " expected " + bytes.Length;
+                return false;
+            }
+
+            if (dataStartOffset != sectionTableOffset + sectionTableBytes || (dataStartOffset & 15u) != 0u)
+            {
+                error = "Data start offset mismatch or alignment failure: " + dataStartOffset;
+                return false;
+            }
+
+            long sectionTableEnd = (long)sectionTableOffset + sectionTableBytes;
+            if (sectionTableEnd > bytes.Length)
+            {
+                error = "Section table exceeds blob length.";
+                return false;
+            }
+
+            bool sawLocalization = false;
+            for (int i = 0; i < SectionOrder.Length; i++)
+            {
+                int entryOffset = (int)sectionTableOffset + (i * UnsafeUtility.SizeOf<H8DataSectionEntry>());
+                uint sectionId = ReadUInt32(bytes, entryOffset);
+                uint recordSize = ReadUInt32(bytes, entryOffset + 4);
+                uint count = ReadUInt32(bytes, entryOffset + 8);
+                uint offset = ReadUInt32(bytes, entryOffset + 12);
+                H8DataSectionId expectedId = SectionOrder[i];
+                if (sectionId != (uint)expectedId)
+                {
+                    error = "Section order mismatch at index " + i + ": got=" + sectionId + " expected=" + (uint)expectedId;
+                    return false;
+                }
+
+                uint expectedRecordSize = GetExpectedRecordSize(expectedId);
+                if (recordSize != expectedRecordSize)
+                {
+                    error = expectedId + " record size mismatch: " + recordSize + " expected " + expectedRecordSize;
+                    return false;
+                }
+
+                if (count == 0u)
+                {
+                    if (offset != 0u)
+                    {
+                        error = expectedId + " empty section has non-zero offset: " + offset;
+                        return false;
+                    }
+
+                    continue;
+                }
+
+                if ((offset & 15u) != 0u)
+                {
+                    error = expectedId + " section offset is not 16-byte aligned: " + offset;
+                    return false;
+                }
+
+                if (offset < dataStartOffset)
+                {
+                    error = expectedId + " section offset overlaps the fixed header/directory/table area: " + offset;
+                    return false;
+                }
+
+                ulong sectionBytes = (ulong)recordSize * count;
+                if ((ulong)offset + sectionBytes > (ulong)bytes.Length)
+                {
+                    error = expectedId + " section range exceeds blob length.";
+                    return false;
+                }
+
+                if (expectedId == H8DataSectionId.LocalizationUtf8)
+                {
+                    sawLocalization = true;
+                    if (localizationOffset != offset || localizationBytes != count)
+                    {
+                        error = "Directory localization range does not match section table.";
+                        return false;
+                    }
+                }
+            }
+
+            if (localizationBytes > 0u && !sawLocalization)
+            {
+                error = "Directory declares localization bytes but section table has no localization range.";
+                return false;
+            }
+
+            return true;
+        }
+
+        private static uint GetExpectedRecordSize(H8DataSectionId sectionId)
+        {
+            uint recordSize = H8DataLayoutAudit.GetExpectedRecordSize(sectionId);
+            if (recordSize == 0u)
+                throw new ArgumentOutOfRangeException(nameof(sectionId), sectionId, null);
+
+            return recordSize;
         }
 
         private static byte[] BuildBlob(DataSet dataSet, LocalizationPool localizationPool)
@@ -404,51 +707,63 @@ namespace Hecton8.EditorValidation
             for (int i = 0; i < dataSet.Items.Count; i++)
                 itemHashes.Add(dataSet.Items[i].HashId);
 
-            for (int i = 0; i < dataSet.Recipes.Count; i++)
-            {
-                H8RecipeRecord recipe = dataSet.Recipes[i];
-                if (recipe.OutputHash != 0u && !itemHashes.Contains(recipe.OutputHash))
-                    ThrowBrokenReference("recipe.output", recipe.OutputHash);
-                ValidateItemReference("recipe.ingredient0", recipe.IngredientHash0, itemHashes);
-                ValidateItemReference("recipe.ingredient1", recipe.IngredientHash1, itemHashes);
-                ValidateItemReference("recipe.ingredient2", recipe.IngredientHash2, itemHashes);
-                ValidateItemReference("recipe.ingredient3", recipe.IngredientHash3, itemHashes);
-            }
+            for (int i = 0; i < dataSet.RawItemRows.Count; i++)
+                ValidatePackedItemReferences(dataSet.RawItemRows[i], "item.recipe", "recipe", Get(dataSet.RawItemRows[i], "recipe", string.Empty), itemHashes);
 
-            for (int i = 0; i < dataSet.LootCdf.Count; i++)
-                ValidateItemReference("loot.item", dataSet.LootCdf[i].ItemHash, itemHashes);
+            for (int i = 0; i < dataSet.RawRecipeRows.Count; i++)
+                ValidateRecipeItemReferences(dataSet.RawRecipeRows[i], itemHashes);
+
+            for (int i = 0; i < dataSet.RawLootRows.Count; i++)
+            {
+                ValidateOptionalItemReference(dataSet.RawLootRows[i], "loot.item_id", "item_id", itemHashes);
+                ValidateOptionalItemReference(dataSet.RawLootRows[i], "loot.item", "item", itemHashes);
+            }
 
             for (int i = 0; i < dataSet.RawEconomyRows.Count; i++)
                 ValidateEconomyItemReferences(dataSet.RawEconomyRows[i], itemHashes);
         }
 
-        private static void ValidateItemReference(string owner, uint hash, HashSet<uint> itemHashes)
+        private static void ValidateRecipeItemReferences(CsvRow row, HashSet<uint> itemHashes)
         {
-            if (hash != 0u && !itemHashes.Contains(hash))
-                ThrowBrokenReference(owner, hash);
+            ValidateOptionalItemReference(row, "recipe.output", "output", itemHashes);
+            ValidateOptionalItemReference(row, "recipe.output_id", "output_id", itemHashes);
+            ValidatePackedItemReferences(row, "recipe.ingredients", "ingredients", Get(row, "ingredients", string.Empty), itemHashes);
+            ValidatePackedItemReferences(row, "recipe.recipe", "recipe", Get(row, "recipe", string.Empty), itemHashes);
         }
 
         private static void ValidateEconomyItemReferences(CsvRow row, HashSet<uint> itemHashes)
         {
-            ValidateItemReference("economy.item_id", Hash(Get(row, "item_id", string.Empty)), itemHashes);
-            ValidateItemReference("economy.item", Hash(Get(row, "item", string.Empty)), itemHashes);
-            ValidateItemReference("economy.output_id", Hash(Get(row, "output_id", string.Empty)), itemHashes);
-            ValidateItemReference("economy.output", Hash(Get(row, "output", string.Empty)), itemHashes);
-            ValidateItemReference("economy.recipe_output_id", Hash(Get(row, "recipe_output_id", string.Empty)), itemHashes);
-            ValidateItemReference("economy.recipe_output", Hash(Get(row, "recipe_output", string.Empty)), itemHashes);
-            ValidatePackedItemReferences("economy.ingredients", Get(row, "ingredients", string.Empty), itemHashes);
-            ValidatePackedItemReferences("economy.ingredient_ids", Get(row, "ingredient_ids", string.Empty), itemHashes);
-            ValidatePackedItemReferences("economy.recipe", Get(row, "recipe", string.Empty), itemHashes);
-            ValidatePackedItemReferences("economy.recipe_items", Get(row, "recipe_items", string.Empty), itemHashes);
+            ValidateOptionalItemReference(row, "economy.item_id", "item_id", itemHashes);
+            ValidateOptionalItemReference(row, "economy.item", "item", itemHashes);
+            ValidateOptionalItemReference(row, "economy.output_id", "output_id", itemHashes);
+            ValidateOptionalItemReference(row, "economy.output", "output", itemHashes);
+            ValidateOptionalItemReference(row, "economy.recipe_output_id", "recipe_output_id", itemHashes);
+            ValidateOptionalItemReference(row, "economy.recipe_output", "recipe_output", itemHashes);
+            ValidatePackedItemReferences(row, "economy.ingredients", "ingredients", Get(row, "ingredients", string.Empty), itemHashes);
+            ValidatePackedItemReferences(row, "economy.ingredient_ids", "ingredient_ids", Get(row, "ingredient_ids", string.Empty), itemHashes);
+            ValidatePackedItemReferences(row, "economy.recipe", "recipe", Get(row, "recipe", string.Empty), itemHashes);
+            ValidatePackedItemReferences(row, "economy.recipe_items", "recipe_items", Get(row, "recipe_items", string.Empty), itemHashes);
         }
 
-        private static void ValidatePackedItemReferences(string owner, string packedIds, HashSet<uint> itemHashes)
+        private static void ValidateOptionalItemReference(CsvRow row, string owner, string fieldName, HashSet<uint> itemHashes)
+        {
+            string itemId = Get(row, fieldName, string.Empty);
+            if (string.IsNullOrWhiteSpace(itemId))
+                return;
+
+            uint hash = Hash(itemId);
+            if (hash != 0u && !itemHashes.Contains(hash))
+                ThrowBrokenReference(row, owner, fieldName, itemId, hash, -1);
+        }
+
+        private static void ValidatePackedItemReferences(CsvRow row, string owner, string fieldName, string packedIds, HashSet<uint> itemHashes)
         {
             if (string.IsNullOrWhiteSpace(packedIds))
                 return;
 
             ReadOnlySpan<char> ids = packedIds.AsSpan();
             int start = 0;
+            int tokenIndex = 0;
             while (start <= ids.Length)
             {
                 int separator = start < ids.Length ? ids.Slice(start).IndexOf(';') : -1;
@@ -458,13 +773,43 @@ namespace Hecton8.EditorValidation
                 if (token.Length == 0)
                     continue;
 
-                ValidateItemReference(owner, Hash(token), itemHashes);
+                uint hash = Hash(token);
+                if (hash != 0u && !itemHashes.Contains(hash))
+                    ThrowBrokenReference(row, owner, fieldName, token.ToString(), hash, tokenIndex);
+
+                tokenIndex++;
             }
         }
 
-        private static void ThrowBrokenReference(string owner, uint hash)
+        private static void ThrowBrokenReference(CsvRow row, string owner, string fieldName, string authoredValue, uint hash, int tokenIndex)
         {
-            throw new InvalidOperationException("[H8DataMonolithCompiler] Broken static-data cross-reference: owner=" + owner + ", hash=0x" + hash.ToString("X8"));
+            string tokenText = tokenIndex >= 0 ? ", token_index=" + tokenIndex : string.Empty;
+            throw new InvalidOperationException(
+                "[H8DataMonolithCompiler] Broken static-data cross-reference: owner=" +
+                owner +
+                ", " +
+                FormatRowLocation(row) +
+                ", field=" +
+                fieldName +
+                tokenText +
+                ", value=" +
+                authoredValue +
+                ", hash=0x" +
+                hash.ToString("X8"));
+        }
+
+        private static string FormatRowLocation(CsvRow row)
+        {
+            if (row == null)
+                return "file=<unknown>";
+
+            string location = "file=" + (string.IsNullOrEmpty(row.AbsolutePath) ? "<unknown>" : row.AbsolutePath);
+            if (row.LineNumber > 0)
+                location += ", line=" + row.LineNumber;
+            if (row.SourceIndex >= 0)
+                location += ", source_index=" + row.SourceIndex;
+
+            return location;
         }
 
         private static void ParseCsv(CsvFileRows source, DataSet dataSet, LocalizationPool localizationPool)
@@ -472,7 +817,7 @@ namespace Hecton8.EditorValidation
             string tableName = Path.GetFileNameWithoutExtension(source.AbsolutePath).ToLowerInvariant();
             for (int i = 0; i < source.Rows.Count; i++)
             {
-                ValidateCsvRowHashes(source.AbsolutePath, i + 2, source.Rows[i], requireHashPairs: false);
+                ValidateCsvRowHashes(source.AbsolutePath, source.Rows[i].LineNumber, source.Rows[i], requireHashPairs: false);
                 ParseRow(tableName, source.Rows[i], dataSet, localizationPool);
             }
         }
@@ -485,8 +830,14 @@ namespace Hecton8.EditorValidation
                 return;
 
             if (root.items != null)
+            {
                 for (int i = 0; i < root.items.Length; i++)
-                    dataSet.Items.Add(ToItemRecord(root.items[i], localizationPool));
+                {
+                    JsonItem item = root.items[i];
+                    dataSet.RawItemRows.Add(ToJsonItemReferenceRow(absolutePath, i, item));
+                    dataSet.Items.Add(ToItemRecord(item, localizationPool));
+                }
+            }
 
             if (root.creatures != null)
                 for (int i = 0; i < root.creatures.Length; i++)
@@ -497,8 +848,14 @@ namespace Hecton8.EditorValidation
                     dataSet.Biomes.Add(ToBiomeRecord(root.biomes[i], localizationPool));
 
             if (root.recipes != null)
+            {
                 for (int i = 0; i < root.recipes.Length; i++)
-                    dataSet.Recipes.Add(ToRecipeRecord(root.recipes[i]));
+                {
+                    JsonRecipe recipe = root.recipes[i];
+                    dataSet.RawRecipeRows.Add(ToJsonRecipeReferenceRow(absolutePath, i, recipe));
+                    dataSet.Recipes.Add(ToRecipeRecord(recipe));
+                }
+            }
         }
 
         private static void ParseRow(string tableName, CsvRow row, DataSet dataSet, LocalizationPool localizationPool)
@@ -507,6 +864,7 @@ namespace Hecton8.EditorValidation
             {
                 case "items":
                 case "item":
+                    dataSet.RawItemRows.Add(row);
                     dataSet.Items.Add(ParseItem(row, localizationPool));
                     break;
                 case "fauna":
@@ -527,6 +885,7 @@ namespace Hecton8.EditorValidation
                     dataSet.Biomes.Add(ParseBiome(row, localizationPool));
                     break;
                 case "recipes":
+                    dataSet.RawRecipeRows.Add(row);
                     dataSet.Recipes.Add(ParseRecipe(row));
                     break;
                 case "biome_heatmap":
@@ -1213,6 +1572,31 @@ namespace Hecton8.EditorValidation
             bytes[offset + 7] = (byte)(value >> 56);
         }
 
+        private static ushort ReadUInt16(byte[] bytes, int offset)
+        {
+            return (ushort)(bytes[offset] | (bytes[offset + 1] << 8));
+        }
+
+        private static uint ReadUInt32(byte[] bytes, int offset)
+        {
+            return (uint)bytes[offset] |
+                   ((uint)bytes[offset + 1] << 8) |
+                   ((uint)bytes[offset + 2] << 16) |
+                   ((uint)bytes[offset + 3] << 24);
+        }
+
+        private static ulong ReadUInt64(byte[] bytes, int offset)
+        {
+            return (ulong)bytes[offset] |
+                   ((ulong)bytes[offset + 1] << 8) |
+                   ((ulong)bytes[offset + 2] << 16) |
+                   ((ulong)bytes[offset + 3] << 24) |
+                   ((ulong)bytes[offset + 4] << 32) |
+                   ((ulong)bytes[offset + 5] << 40) |
+                   ((ulong)bytes[offset + 6] << 48) |
+                   ((ulong)bytes[offset + 7] << 56);
+        }
+
         private static void WriteStruct<T>(MemoryStream stream, T value)
             where T : unmanaged
         {
@@ -1253,7 +1637,7 @@ namespace Hecton8.EditorValidation
                     continue;
 
                 string[] values = SplitCsvLine(lines[i]);
-                CsvRow row = new CsvRow();
+                CsvRow row = new CsvRow(absolutePath, i + 1, -1);
                 int count = Mathf.Min(headers.Length, values.Length);
                 for (int j = 0; j < count; j++)
                     row.Fields[headers[j].Trim()] = values[j].Trim();
@@ -1756,6 +2140,23 @@ namespace Hecton8.EditorValidation
             };
         }
 
+        private static CsvRow ToJsonItemReferenceRow(string absolutePath, int sourceIndex, JsonItem item)
+        {
+            CsvRow row = new CsvRow(absolutePath, 0, sourceIndex);
+            row.Fields["id"] = item.id;
+            row.Fields["recipe"] = item.recipe;
+            return row;
+        }
+
+        private static CsvRow ToJsonRecipeReferenceRow(string absolutePath, int sourceIndex, JsonRecipe recipe)
+        {
+            CsvRow row = new CsvRow(absolutePath, 0, sourceIndex);
+            row.Fields["output"] = recipe.output;
+            row.Fields["station"] = recipe.station;
+            row.Fields["ingredients"] = recipe.ingredients;
+            return row;
+        }
+
         private sealed class LocalizationPool
         {
             private readonly Dictionary<string, uint> _offsetByValue = new Dictionary<string, uint>(StringComparer.Ordinal); // COLD ALLOC: Dictionary<string,uint>[source loc count] - editor-only localization pool de-duplication - owner: H8DataMonolithCompiler
@@ -1802,6 +2203,16 @@ namespace Hecton8.EditorValidation
         private sealed class CsvRow
         {
             internal readonly Dictionary<string, string> Fields = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            internal readonly string AbsolutePath;
+            internal readonly int LineNumber;
+            internal readonly int SourceIndex;
+
+            internal CsvRow(string absolutePath, int lineNumber, int sourceIndex)
+            {
+                AbsolutePath = absolutePath;
+                LineNumber = lineNumber;
+                SourceIndex = sourceIndex;
+            }
         }
 
         private sealed class CsvFileRows
@@ -1819,9 +2230,11 @@ namespace Hecton8.EditorValidation
         private sealed class DataSet
         {
             internal readonly List<H8ItemRecord> Items = new List<H8ItemRecord>(256);
+            internal readonly List<CsvRow> RawItemRows = new List<CsvRow>(256);
             internal readonly List<H8CreatureTraitRecord> Creatures = new List<H8CreatureTraitRecord>(128);
             internal readonly List<H8BiomeRecord> Biomes = new List<H8BiomeRecord>(64);
             internal readonly List<H8RecipeRecord> Recipes = new List<H8RecipeRecord>(256);
+            internal readonly List<CsvRow> RawRecipeRows = new List<CsvRow>(256);
             internal readonly List<H8BiomeHeatmapCellRecord> BiomeHeatmap = new List<H8BiomeHeatmapCellRecord>(1024);
             internal readonly List<H8QuestNodeRecord> QuestNodes = new List<H8QuestNodeRecord>(128);
             internal readonly List<H8QuestEdgeRecord> QuestEdges = new List<H8QuestEdgeRecord>(256);
@@ -1854,6 +2267,24 @@ namespace Hecton8.EditorValidation
         [Serializable] private sealed class JsonRecipe { public string output; public string station; public uint flags; public string ingredients; public float craftSeconds = 1f; public uint outputCount = 1u; }
     }
 
+    internal sealed class H8DataMonolithBuildPreprocessor : IPreprocessBuildWithReport
+    {
+        public int callbackOrder => -9100;
+
+        public void OnPreprocessBuild(BuildReport report)
+        {
+            if (!H8DataMonolithCompiler.BakeAll(logSummary: false))
+            {
+                throw new BuildFailedException(
+                    "[H8DataMonolith] Prebuild bake failed: " +
+                    H8DataMonolithCompiler.LastError);
+            }
+
+            if (!H8DataMonolithCompiler.TryValidateOutputBlob(out string error))
+                throw new BuildFailedException("[H8DataMonolith] Prebuild validation failed: " + error);
+        }
+    }
+
     internal sealed class H8DataMonolithSourceWatcher : AssetPostprocessor
     {
         private static void OnPostprocessAllAssets(
@@ -1870,7 +2301,7 @@ namespace Hecton8.EditorValidation
                 return;
             }
 
-            H8DataMonolithCompiler.BakeAll(logSummary: false);
+            H8DataMonolithFileSystemWatcher.RequestBake();
         }
 
         private static bool TouchesSourceData(string[] paths)
@@ -1889,9 +2320,12 @@ namespace Hecton8.EditorValidation
     [InitializeOnLoad]
     internal static class H8DataMonolithFileSystemWatcher
     {
+        private const double AutoBakeDebounceSeconds = 0.75d;
         private static FileSystemWatcher _sourceWatcher;
         private static FileSystemWatcher _balanceWatcher;
         private static int _pendingBake;
+        private static int _bakeInProgress;
+        private static long _lastSourceChangeTicks;
 
         static H8DataMonolithFileSystemWatcher()
         {
@@ -1905,6 +2339,12 @@ namespace Hecton8.EditorValidation
             StopWatcher();
             _sourceWatcher = StartWatcherFor(Path.GetFullPath("Assets/_SourceData"));
             _balanceWatcher = StartWatcherFor(Path.GetFullPath("Data/Balance"));
+        }
+
+        internal static void RequestBake()
+        {
+            Interlocked.Exchange(ref _lastSourceChangeTicks, Stopwatch.GetTimestamp());
+            Interlocked.Exchange(ref _pendingBake, 1);
         }
 
         private static FileSystemWatcher StartWatcherFor(string absoluteSourceFolder)
@@ -1946,13 +2386,13 @@ namespace Hecton8.EditorValidation
         private static void HandleSourceChanged(object sender, FileSystemEventArgs args)
         {
             if (IsDataSourcePath(args.FullPath))
-                Interlocked.Exchange(ref _pendingBake, 1);
+                RequestBake();
         }
 
         private static void HandleSourceRenamed(object sender, RenamedEventArgs args)
         {
             if (IsDataSourcePath(args.FullPath) || IsDataSourcePath(args.OldFullPath))
-                Interlocked.Exchange(ref _pendingBake, 1);
+                RequestBake();
         }
 
         private static bool IsDataSourcePath(string path)
@@ -1967,10 +2407,30 @@ namespace Hecton8.EditorValidation
 
         private static void DrainPendingBake()
         {
-            if (Interlocked.Exchange(ref _pendingBake, 0) == 0)
+            if (Volatile.Read(ref _pendingBake) == 0)
                 return;
 
-            H8DataMonolithCompiler.BakeAll(logSummary: false);
+            if (EditorApplication.isCompiling)
+                return;
+
+            long lastChangeTicks = Volatile.Read(ref _lastSourceChangeTicks);
+            long elapsedTicks = Stopwatch.GetTimestamp() - lastChangeTicks;
+            long requiredTicks = (long)(Stopwatch.Frequency * AutoBakeDebounceSeconds);
+            if (elapsedTicks < requiredTicks)
+                return;
+
+            if (Interlocked.CompareExchange(ref _bakeInProgress, 1, 0) != 0)
+                return;
+
+            try
+            {
+                if (Interlocked.Exchange(ref _pendingBake, 0) != 0)
+                    H8DataMonolithCompiler.BakeAll(logSummary: false);
+            }
+            finally
+            {
+                Interlocked.Exchange(ref _bakeInProgress, 0);
+            }
         }
     }
 
@@ -1979,6 +2439,7 @@ namespace Hecton8.EditorValidation
     {
         private const int Port = 48088;
         private const string ReloadPrefix = "RELOAD ";
+        private const int MaxReloadPacketChars = 1024;
         private static readonly object QueueLock = new object();
         private static TcpListener _listener;
         private static Thread _thread;
@@ -1991,6 +2452,13 @@ namespace Hecton8.EditorValidation
             EditorApplication.playModeStateChanged += HandlePlayModeStateChanged;
             EditorApplication.update -= DrainMainThread;
             EditorApplication.update += DrainMainThread;
+            AssemblyReloadEvents.beforeAssemblyReload -= Stop;
+            AssemblyReloadEvents.beforeAssemblyReload += Stop;
+            EditorApplication.quitting -= Stop;
+            EditorApplication.quitting += Stop;
+
+            if (EditorApplication.isPlaying)
+                Start();
         }
 
         internal static void NotifyBake(string outputAssetPath)
@@ -1999,7 +2467,7 @@ namespace Hecton8.EditorValidation
                 return;
 
             string absolutePath = Path.GetFullPath(outputAssetPath);
-            if (!TrySendReload(absolutePath))
+            if (IsAllowedReloadPath(absolutePath))
                 QueueReload(absolutePath);
         }
 
@@ -2030,6 +2498,16 @@ namespace Hecton8.EditorValidation
             catch (Exception ex)
             {
                 Interlocked.Exchange(ref _running, 0);
+                try
+                {
+                    _listener?.Stop();
+                }
+                catch (Exception)
+                {
+                }
+
+                _listener = null;
+                _thread = null;
                 Debug.LogWarning("[H8DataMonolithHotReloadSocket] Socket bridge unavailable: " + ex.Message);
             }
         }
@@ -2063,8 +2541,14 @@ namespace Hecton8.EditorValidation
                     using (StreamReader reader = new StreamReader(stream, Encoding.UTF8, false, 1024, false))
                     {
                         string line = reader.ReadLine();
-                        if (!string.IsNullOrEmpty(line) && line.StartsWith(ReloadPrefix, StringComparison.Ordinal))
-                            QueueReload(line.Substring(ReloadPrefix.Length));
+                        if (!string.IsNullOrEmpty(line) &&
+                            line.Length <= MaxReloadPacketChars &&
+                            line.StartsWith(ReloadPrefix, StringComparison.Ordinal))
+                        {
+                            string path = line.Substring(ReloadPrefix.Length);
+                            if (IsAllowedReloadPath(path))
+                                QueueReload(Path.GetFullPath(path));
+                        }
                     }
                 }
                 catch (SocketException)
@@ -2082,27 +2566,27 @@ namespace Hecton8.EditorValidation
             }
         }
 
-        private static bool TrySendReload(string absolutePath)
+        private static void QueueReload(string absolutePath)
         {
+            lock (QueueLock)
+                _pendingPath = absolutePath;
+        }
+
+        private static bool IsAllowedReloadPath(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return false;
+
             try
             {
-                using TcpClient client = new TcpClient();
-                client.Connect(IPAddress.Loopback, Port);
-                using NetworkStream stream = client.GetStream();
-                byte[] payload = Encoding.UTF8.GetBytes(ReloadPrefix + absolutePath + "\n");
-                stream.Write(payload, 0, payload.Length);
-                return true;
+                string fullPath = Path.GetFullPath(path);
+                string expectedPath = Path.GetFullPath(H8DataMonolithCompiler.OutputAssetPath);
+                return string.Equals(fullPath, expectedPath, StringComparison.OrdinalIgnoreCase);
             }
             catch (Exception)
             {
                 return false;
             }
-        }
-
-        private static void QueueReload(string absolutePath)
-        {
-            lock (QueueLock)
-                _pendingPath = absolutePath;
         }
 
         private static void DrainMainThread()

@@ -157,7 +157,7 @@ World/scatter/streaming findings:
 - The runtime guarantee is weaker than the code: `GameBootstrapper` creates `PersistentWorldRegistry`, but does not create scatter, field sampler, chunk residency, MapMagic, vegetation, streaming, slice, or scatter-budget managers.
 - Static text scene/prefab/data scans still do not prove serialized world-runtime manager wiring or `WorldChunkStreamingProfile.asset` assignment in the production world scene.
 - `WorldRuntimeBootstrapAuthoring` and `WorldStreamingWiringValidator` provide editor authoring/validation paths, but these are not runtime proof.
-- `WorldChunkResidencyManager` has Addressables code through `UNITY_ADDRESSABLES_EXIST`, but `Assets/AddressableAssetsData` is still absent in the current filesystem scan.
+- `WorldChunkResidencyManager` has Addressables code through `UNITY_ADDRESSABLES_EXIST`; 2026-05-19 filesystem supersession: `Assets/AddressableAssetsData` exists but contains 0 files/settings/groups, so runtime streaming readiness remains unproven.
 - `HectonMapMagicVegetationBridge` default native vegetation pool budget is `256 MB`; this can buy visuals on high-end machines but requires Memory Profiler proof before any MX350/toaster claim.
 
 Action:
@@ -383,7 +383,7 @@ Resource pickup route closure:
 - Added `Data_CarbonGraphite`, `Data_PressureDiamond`, and `Data_VoidGlassMeteorite` to `ItemCatalog`. Current non-catalog ItemData count under `Data/Items` is now `1`: legacy root `Data_Copper.asset`.
 - Assigned existing pickup shells to the remaining resource-node harvest ItemData. Current resource-node primary harvest recount: `0 / 27` missing `worldPrefab`, `0 / 27` non-catalog.
 - `BarterBootstrapAuthoring` now loads `Assets/_Project/Data/Items/Resources/Raw/Data_Copper.asset`, not root `Assets/_Project/Data/Items/Data_Copper.asset`.
-- `ItemCatalog` now falls back to direct serialized `ItemData.worldPrefab` when Addressables world-prefab lookup has no usable entry or failed load result. This is required by current static reality: `com.unity.addressables` exists, but `Assets/AddressableAssetsData` is absent.
+- `ItemCatalog` now falls back to direct serialized `ItemData.worldPrefab` when Addressables world-prefab lookup has no usable entry or failed load result. This remains required by current static reality: `com.unity.addressables` exists, but `Assets/AddressableAssetsData` contains 0 files/settings/groups.
 - `ContentSanityValidator` now also validates resource-yield world-prefab contract: `PickupItem` or `HectonItem`, plus `Collider` and `Rigidbody`.
 
 Action:

@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System.Globalization;
 using Hecton8.Core;
 using Unity.Mathematics;
 using UnityEditor;
@@ -165,7 +166,7 @@ namespace Hecton8.Visor.Editor
 
             bool loaded = DynamicDecalVaultRuntime.TryLoadMaterialProfilesCsv(selected, out int rowCount);
             _csvLabel.text = loaded
-                ? $"CSV profiles loaded: {rowCount}"
+                ? string.Concat("CSV profiles loaded: ", rowCount.ToString(CultureInfo.InvariantCulture))
                 : "CSV profiles rejected";
         }
 
@@ -188,8 +189,28 @@ namespace Hecton8.Visor.Editor
                 _histogramBars[i].style.height = height;
             }
 
-            _statsLabel.text =
-                $"Active {state.ActiveCount}/{state.MaxActiveThisFrame} | New {state.NewThisFrame} | Upload {state.LastUploadCount} | CPU {state.CpuMicroseconds:0.00} us | GPU Upload {state.UploadMicroseconds:0.00} us | Q {state.GlobalQualityWeight:0.000} | Thermal {state.ThermalPressure01:0.000} | CSV {DynamicDecalVaultRuntime.GetLoadedMaterialProfileCount()} | Last Hash 0x{telemetry.StateHash:X8}";
+            CultureInfo culture = CultureInfo.InvariantCulture;
+            _statsLabel.text = string.Concat(
+                "Active ",
+                state.ActiveCount.ToString(culture),
+                "/",
+                state.MaxActiveThisFrame.ToString(culture),
+                " | New ",
+                state.NewThisFrame.ToString(culture),
+                " | Upload ",
+                state.LastUploadCount.ToString(culture),
+                " | CPU ",
+                state.CpuMicroseconds.ToString("0.00", culture),
+                " us | GPU Upload ",
+                state.UploadMicroseconds.ToString("0.00", culture),
+                " us | Q ",
+                state.GlobalQualityWeight.ToString("0.000", culture),
+                " | Thermal ",
+                state.ThermalPressure01.ToString("0.000", culture),
+                " | CSV ",
+                DynamicDecalVaultRuntime.GetLoadedMaterialProfileCount().ToString(culture),
+                " | Last Hash 0x",
+                telemetry.StateHash.ToString("X8", culture));
         }
     }
 }

@@ -86,7 +86,7 @@ namespace Hecton8.Core
             {
                 TryRegisterUpdatable();
                 TryRegisterContext();
-                SyncEnvironmentContext();
+                SyncEnvironmentContextCold();
                 EnsureHazardZoneManager();
                 return;
             }
@@ -98,7 +98,7 @@ namespace Hecton8.Core
             _isInitialized = true;
             TryRegisterUpdatable();
             TryRegisterContext();
-            SyncEnvironmentContext();
+            SyncEnvironmentContextCold();
             EnsureHazardZoneManager();
         }
 
@@ -119,7 +119,7 @@ namespace Hecton8.Core
             {
                 TryRegisterUpdatable();
                 TryRegisterContext();
-                SyncEnvironmentContext();
+                SyncEnvironmentContextCold();
             }
         }
 
@@ -182,13 +182,24 @@ namespace Hecton8.Core
 
         private void SyncEnvironmentContext()
         {
-            if (_constructionManager == null || !_constructionManager.isActiveAndEnabled)
-                _constructionManager = Hecton8.Core.GlobalRegistry.ConstructionRuntime;
+            if (_constructionManager != null && !_constructionManager.isActiveAndEnabled)
+                _constructionManager = null;
 
             _moduleCatalog = _constructionManager != null ? _constructionManager.Catalog : null;
 
+            if (_hazardZoneManager != null && !_hazardZoneManager.isActiveAndEnabled)
+                _hazardZoneManager = null;
+        }
+
+        private void SyncEnvironmentContextCold()
+        {
+            if (_constructionManager == null || !_constructionManager.isActiveAndEnabled)
+                _constructionManager = GlobalRegistry.ConstructionRuntime;
+
             if (_hazardZoneManager == null || !_hazardZoneManager.isActiveAndEnabled)
                 _hazardZoneManager = GlobalRegistry.HazardZones;
+
+            SyncEnvironmentContext();
         }
 
         private void TryRegisterUpdatable()

@@ -15,7 +15,7 @@ namespace Hecton8.AtlasSignal
     /// <summary>
     /// Snapshot published by active Atlas signal beacons for PDA and HUD consumers.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential)]
     public struct SignalBeaconTelemetry
     {
         /// <summary>Camera-relative runtime position of the triangulated beacon centroid.</summary>
@@ -598,7 +598,7 @@ namespace Hecton8.AtlasSignal
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential)]
     public struct SignalBeaconSolveResult
     {
         public float Strength01;

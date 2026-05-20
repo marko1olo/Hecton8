@@ -32,7 +32,7 @@ namespace Hecton8.Visor
             public Texture2DArray decalAtlas = null;
 
             [Tooltip("Maximum number of active decals uploaded to the fullscreen decal buffer.")]
-            [Range(1, 1024)] public int maxDecals = DynamicDecalVaultRuntime.MaxCapacity;
+            [Range(DynamicDecalVaultRuntime.LowCapacity, DynamicDecalVaultRuntime.MaxCapacity)] public int maxDecals = DynamicDecalVaultRuntime.MaxCapacity;
 
             [Tooltip("Base fade time consumed by the Vault-backed decay job.")]
             [Range(0.25f, 60f)] public float baseFadeTimeSeconds = 7.5f;
@@ -94,6 +94,10 @@ namespace Hecton8.Visor
                 if (cameraData.cameraType == CameraType.Preview || cameraData.cameraType == CameraType.Reflection)
                     return;
 
+                int requiredBufferCapacity = Mathf.Clamp(_settings.maxDecals, DynamicDecalVaultRuntime.LowCapacity, DynamicDecalVaultRuntime.MaxCapacity);
+                if (_hasReadableBuffer && _bufferCapacity != requiredBufferCapacity)
+                    EnsureDecalBuffers(requiredBufferCapacity);
+
                 GraphicsBuffer readableBuffer = _hasReadableBuffer ? ResolveBuffer(_readBufferIndex) : null;
                 int readableCount = _hasReadableBuffer ? _readCount : 0;
                 bool hasUpload = DynamicDecalVaultRuntime.ExecuteVisualSync(
@@ -135,7 +139,7 @@ namespace Hecton8.Visor
                     ShaderConstants.DecalAtlasParamsId,
                     new Vector4(
                         Mathf.Max(1, _settings.atlasSlices),
-                        Mathf.Clamp(DynamicDecalVaultRuntime.LowCapacity, 1, DynamicDecalVaultRuntime.MaxCapacity),
+                        Mathf.Clamp01(stats.GlobalQualityWeight),
                         Mathf.Max(0f, _settings.intensity),
                         _settings.decalAtlas != null ? 1f : 0f));
                 _material.SetColor(ShaderConstants.DecalTintId, _settings.decalTint);
@@ -155,13 +159,17 @@ namespace Hecton8.Visor
 
             private void UploadDecalBuffer(in DynamicDecalFrameStats stats)
             {
-                int uploadCount = Mathf.Clamp(stats.UploadCount, 0, DynamicDecalVaultRuntime.MaxCapacity);
-                if (uploadCount <= 0 || !stats.UploadBuffer.IsCreated)
+                int requestedUploadCount = Mathf.Clamp(stats.UploadCount, 0, DynamicDecalVaultRuntime.MaxCapacity);
+                if (requestedUploadCount <= 0 || !stats.UploadBuffer.IsCreated)
                     return;
 
-                EnsureDecalBuffers(Mathf.Clamp(_settings.maxDecals, 1, DynamicDecalVaultRuntime.MaxCapacity));
+                EnsureDecalBuffers(Mathf.Clamp(_settings.maxDecals, DynamicDecalVaultRuntime.LowCapacity, DynamicDecalVaultRuntime.MaxCapacity));
                 GraphicsBuffer target = ResolveBuffer(_writeBufferIndex);
                 if (target == null)
+                    return;
+
+                int uploadCount = Mathf.Min(requestedUploadCount, Mathf.Min(target.count, stats.UploadBuffer.Length));
+                if (uploadCount <= 0)
                     return;
 
                 long startTicks = System.Diagnostics.Stopwatch.GetTimestamp();
@@ -178,7 +186,8 @@ namespace Hecton8.Visor
                         };
                         JobHandle handle = uploadJob.Schedule();
                         H8Memory.RegisterActiveJob(SystemID.Vfx, handle);
-                        handle.Complete();
+                        // [BLOCKING_SYNC_POINT] Unity requires mapped GraphicsBuffer writes to finish before UnlockBufferAfterWrite.
+                        DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
                     }
                 }
                 finally

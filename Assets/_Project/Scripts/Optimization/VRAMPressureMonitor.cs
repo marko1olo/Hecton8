@@ -1,6 +1,7 @@
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.SaveSystem;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Profiling;
 
@@ -11,7 +12,7 @@ namespace Hecton8.Optimization
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8007)]
-    public sealed class VRAMPressureMonitor : MonoBehaviour, ITickable, IUpdatable
+    public sealed class VRAMPressureMonitor : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
     {
         private const float BytesPerMegabyte = 1024f * 1024f;
         private const float DefaultWarningVramFraction = 1600f / 1800f;
@@ -47,6 +48,7 @@ namespace Hecton8.Optimization
 
         private bool _registeredTick;
         private bool _registeredService;
+        private bool _registeredHotSwap;
         private int _framesUntilSample;
         private int _baselineMipLimit;
         private int _activeMipLimit;
@@ -54,6 +56,10 @@ namespace Hecton8.Optimization
         private bool _lodAggressionActive;
         private VRAMBudgetThresholds _runtimeBudgetThresholds;
         private long _runtimeTotalVramBudgetBytes;
+        private VRAMMonitor _vramMonitor;
+        private AssetLifecycleGovernor _assetLifecycle;
+        private IPlayerInventoryService _playerInventory;
+        private RenderTexturePool _renderTexturePool;
 
         internal static float BrgLodDistanceScalar { get; private set; } = 1f;
 
@@ -80,12 +86,16 @@ namespace Hecton8.Optimization
 
         private void OnEnable()
         {
+            CacheDependencies();
+            TryRegisterHotSwap();
             if (TryRegisterService())
                 TryRegister();
         }
 
         private void Start()
         {
+            CacheDependencies();
+            TryRegisterHotSwap();
             TryRegister();
         }
 
@@ -95,7 +105,9 @@ namespace Hecton8.Optimization
                 BrgLodDistanceScalar = 1f;
 
             TryUnregister();
+            TryUnregisterHotSwap();
             TryUnregisterService();
+            ClearCachedDependencies();
         }
 
         private void OnDestroy()
@@ -104,7 +116,9 @@ namespace Hecton8.Optimization
                 BrgLodDistanceScalar = 1f;
 
             TryUnregister();
+            TryUnregisterHotSwap();
             TryUnregisterService();
+            ClearCachedDependencies();
         }
 
         /// <inheritdoc />
@@ -131,6 +145,7 @@ namespace Hecton8.Optimization
             if (!ReferenceEquals(GlobalRegistry.VRAMPressure, this))
                 return;
 
+            CacheDependencies();
             _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
         }
 
@@ -162,6 +177,23 @@ namespace Hecton8.Optimization
             _registeredTick = false;
         }
 
+        private void TryRegisterHotSwap()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwap()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
+        }
+
         private void TryUnregisterService()
         {
             if (!_registeredService)
@@ -173,11 +205,11 @@ namespace Hecton8.Optimization
 
         private void SampleAndRespond()
         {
-            VRAMMonitor monitor = GlobalRegistry.VRAMMonitor;
+            VRAMMonitor monitor = _vramMonitor;
             if (monitor != null)
                 monitor.SlowTick();
 
-            AssetLifecycleGovernor governor = GlobalRegistry.AssetLifecycle;
+            AssetLifecycleGovernor governor = _assetLifecycle;
             long maxSystemRamBytes = (long)SystemInfo.systemMemorySize * 1024L * 1024L;
             long currentReservedBytes = Profiler.GetTotalReservedMemoryLong();
             if (governor != null)
@@ -190,13 +222,55 @@ namespace Hecton8.Optimization
 
             VramPressureFactor = vramBudgetBytes > 0L ? usedVramBytes / (float)vramBudgetBytes : 0f;
             RamPressureFactor = maxSystemRamBytes > 0L ? currentReservedBytes / (float)maxSystemRamBytes : 0f;
-            PressureFactor = Mathf.Max(VramPressureFactor, RamPressureFactor);
+            PressureFactor = math.max(VramPressureFactor, RamPressureFactor);
             HasSample = true;
 
             ApplyStreamingMipBudget(monitor, thresholds);
             ApplyMipBias();
             ApplyLodAggression();
             RunPressureEviction(governor, monitor);
+        }
+
+        private void CacheDependencies()
+        {
+            if (_vramMonitor == null)
+                _vramMonitor = GlobalRegistry.VRAMMonitor;
+            if (_assetLifecycle == null)
+                _assetLifecycle = GlobalRegistry.AssetLifecycle;
+            if (_playerInventory == null)
+                _playerInventory = GlobalRegistry.PlayerInventory;
+            if (_renderTexturePool == null)
+                _renderTexturePool = GlobalRegistry.RenderTexturePool;
+        }
+
+        private void ClearCachedDependencies()
+        {
+            _vramMonitor = null;
+            _assetLifecycle = null;
+            _playerInventory = null;
+            _renderTexturePool = null;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.VRAMMonitorRuntime:
+                    _vramMonitor = currentService as VRAMMonitor;
+                    break;
+                case GlobalRegistryServiceSlot.AssetLifecycleRuntime:
+                    _assetLifecycle = currentService as AssetLifecycleGovernor;
+                    break;
+                case GlobalRegistryServiceSlot.PlayerInventory:
+                    _playerInventory = currentService as IPlayerInventoryService;
+                    break;
+                case GlobalRegistryServiceSlot.RenderTexturePoolRuntime:
+                    _renderTexturePool = currentService as RenderTexturePool;
+                    break;
+            }
         }
 
         private void ApplyStreamingMipBudget(VRAMMonitor monitor, VRAMBudgetThresholds thresholds)
@@ -233,7 +307,7 @@ namespace Hecton8.Optimization
                 targetMipLimit = _baselineMipLimit;
             else if (softVramPressure)
                 targetMipLimit = Mathf.Max(_baselineMipLimit, 1);
-            else if (allowFractionRestore && VramPressureFactor <= restoreVramFraction)
+            else if (allowFractionRestore && VramPressureFactor <= ResolveRestoreVramFraction())
                 targetMipLimit = _baselineMipLimit;
 
             if (targetMipLimit == _activeMipLimit)
@@ -263,17 +337,20 @@ namespace Hecton8.Optimization
 
         private void ApplyLodAggression()
         {
-            bool shouldCollapseLods = LastUsedVramBytes >= ResolveLodAggressionThresholdBytes();
+            float lodPressureResponse = ResolveLodAggressionResponse();
+            bool redZonePressure = LastUsedVramBytes >= ResolveRedZoneVramPressureThresholdBytes();
+            bool shouldCollapseLods = redZonePressure || lodPressureResponse > 0f;
             bool shouldRestoreLods = LastUsedVramBytes <= ResolveFullResolutionRestoreThresholdBytes() ||
-                                     (!HectonXRRuntimeState.IsXRActive && VramPressureFactor <= restoreVramFraction);
+                                     (!HectonXRRuntimeState.IsXRActive && VramPressureFactor <= ResolveRestoreVramFraction());
 
             if (shouldCollapseLods)
             {
-                float targetLodBias = Mathf.Max(0.05f, _baselineLodBias * LODAggressionMultiplier);
+                float lodScalar = math.lerp(1f, LODAggressionMultiplier, redZonePressure ? 1f : math.saturate(lodPressureResponse));
+                float targetLodBias = Mathf.Max(0.05f, _baselineLodBias * lodScalar);
                 if (!_lodAggressionActive || !Mathf.Approximately(QualitySettings.lodBias, targetLodBias))
                     QualitySettings.lodBias = targetLodBias;
 
-                BrgLodDistanceScalar = LODAggressionMultiplier;
+                BrgLodDistanceScalar = lodScalar;
                 _lodAggressionActive = true;
                 return;
             }
@@ -288,36 +365,32 @@ namespace Hecton8.Optimization
 
         private bool IsSoftVramPressureActive()
         {
-            return LastUsedVramBytes >= ResolveSoftVramPressureThresholdBytes() || VramPressureFactor >= warningVramFraction;
+            return ResolveSoftPressureResponse() > 0f;
         }
 
         private long ResolveForcedMipDropThresholdBytes()
         {
             return ResolveBudgetFractionBytes(HectonXRRuntimeState.IsXRActive
-                ? VRForcedHalfResolutionVramFraction
-                : ForcedHalfResolutionVramFraction);
+                ? ResolveQualityAdjustedFraction(
+                    math.max(0.25f, VRForcedHalfResolutionVramFraction - 0.12f),
+                    VRForcedHalfResolutionVramFraction)
+                : ResolveQualityAdjustedFraction(
+                    math.max(0.25f, ForcedHalfResolutionVramFraction - 0.12f),
+                    ForcedHalfResolutionVramFraction));
         }
 
         private long ResolveFullResolutionRestoreThresholdBytes()
         {
             return ResolveBudgetFractionBytes(HectonXRRuntimeState.IsXRActive
-                ? VRRestoreFullResolutionVramFraction
-                : restoreVramFraction);
-        }
-
-        private long ResolveSoftVramPressureThresholdBytes()
-        {
-            return ResolveBudgetFractionBytes(warningVramFraction);
+                ? ResolveQualityAdjustedFraction(
+                    math.max(0.25f, VRRestoreFullResolutionVramFraction - 0.10f),
+                    VRRestoreFullResolutionVramFraction)
+                : ResolveRestoreVramFraction());
         }
 
         private long ResolveRedZoneVramPressureThresholdBytes()
         {
             return _runtimeTotalVramBudgetBytes;
-        }
-
-        private long ResolveLodAggressionThresholdBytes()
-        {
-            return ResolveBudgetFractionBytes(LODAggressionVramFraction);
         }
 
         private long ResolveBudgetFractionBytes(float fraction)
@@ -326,11 +399,86 @@ namespace Hecton8.Optimization
             return (long)(_runtimeTotalVramBudgetBytes * clampedFraction);
         }
 
+        private float ResolveSoftPressureResponse()
+        {
+            float vramResponse = ResolvePressureResponse(ResolveWarningVramFraction(), VramPressureFactor);
+            float ramResponse = ResolvePressureResponse(ResolveRamWarningFraction(), RamPressureFactor);
+            return math.saturate(math.max(vramResponse, ramResponse));
+        }
+
+        private float ResolveEmergencyPressureResponse()
+        {
+            float vramResponse = ResolvePressureResponse(ResolveEmergencyVramFraction(), VramPressureFactor);
+            float ramResponse = ResolvePressureResponse(ResolveRamEmergencyFraction(), RamPressureFactor);
+            return math.saturate(math.max(vramResponse, ramResponse));
+        }
+
+        private float ResolveLodAggressionResponse()
+        {
+            float fraction = ResolveQualityAdjustedFraction(0.75f, LODAggressionVramFraction);
+            return ResolvePressureResponse(fraction, VramPressureFactor);
+        }
+
+        private float ResolveWarningVramFraction()
+        {
+            return ResolveQualityAdjustedFraction(math.max(0.5f, warningVramFraction - 0.18f), warningVramFraction);
+        }
+
+        private float ResolveEmergencyVramFraction()
+        {
+            return ResolveQualityAdjustedFraction(math.max(0.5f, emergencyVramFraction - 0.09f), emergencyVramFraction);
+        }
+
+        private float ResolveRestoreVramFraction()
+        {
+            return ResolveQualityAdjustedFraction(math.max(0.25f, restoreVramFraction - 0.12f), restoreVramFraction);
+        }
+
+        private static float ResolveRamWarningFraction()
+        {
+            return ResolveQualityAdjustedFraction(0.60f, RamWarningFraction);
+        }
+
+        private static float ResolveRamEmergencyFraction()
+        {
+            return ResolveQualityAdjustedFraction(0.82f, RamEmergencyFraction);
+        }
+
+        private static float ResolvePressureResponse(float startFraction, float pressureFactor)
+        {
+            float start = math.saturate(startFraction);
+            float end = 1f;
+            if (start >= end)
+                start = end - 0.0001f;
+
+            return math.smoothstep(start, end, math.saturate(pressureFactor));
+        }
+
+        private static float ResolveQualityAdjustedFraction(float lowQualityFraction, float highQualityFraction)
+        {
+            float quality = ResolveGlobalQualityWeight();
+            float qualityCurve = math.smoothstep(0.15f, 0.85f, quality);
+            return math.saturate(math.lerp(lowQualityFraction, highQualityFraction, qualityCurve));
+        }
+
+        private static float ResolveGlobalQualityWeight()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.isfinite(quality) ? quality : 1f);
+        }
+
+        private static int ResolveBudgetedPressureCount(int maxCount, float response)
+        {
+            int safeMax = math.max(1, maxCount);
+            return math.max(1, (int)math.ceil(math.lerp(1f, safeMax, math.saturate(response))));
+        }
+
         private void RunPressureEviction(AssetLifecycleGovernor governor, VRAMMonitor monitor)
         {
             EmergencyEvictionCount = 0;
-            ItemCatalog itemCatalog = GlobalRegistry.PlayerInventory != null && GlobalRegistry.PlayerInventory.Inventory != null
-                ? GlobalRegistry.PlayerInventory.Inventory.ItemCatalog
+            IPlayerInventoryService playerInventory = _playerInventory;
+            ItemCatalog itemCatalog = playerInventory != null && playerInventory.Inventory != null
+                ? playerInventory.Inventory.ItemCatalog
                 : null;
 
             long hardwareHeadroomBytes = long.MaxValue;
@@ -342,22 +490,27 @@ namespace Hecton8.Optimization
             }
 
             bool redZoneVramPressure = LastUsedVramBytes >= ResolveRedZoneVramPressureThresholdBytes() || VramPressureFactor >= 1f;
-            if (redZoneVramPressure || VramPressureFactor >= emergencyVramFraction || RamPressureFactor >= RamEmergencyFraction)
+            float emergencyPressureResponse = ResolveEmergencyPressureResponse();
+            if (redZoneVramPressure || emergencyPressureResponse > 0f)
             {
                 if (redZoneVramPressure)
                     SystemDispatcher.RequestVisualStaticGlitch();
+
+                int emergencyEvictionBudget = redZoneVramPressure
+                    ? maxEmergencyEvictionsPerPass
+                    : ResolveBudgetedPressureCount(maxEmergencyEvictionsPerPass, emergencyPressureResponse);
 
                 if (governor != null)
                 {
                     governor.ForceDrainPendingReleaseQueue();
                     EmergencyEvictionCount = governor.EvictLowestPriorityUnusedAssets(
-                        maxEmergencyEvictionsPerPass,
+                        emergencyEvictionBudget,
                         AssetPriorityTier.Tier4MidRange);
                 }
 
                 if (redZoneVramPressure || (monitor != null && monitor.RenderTextureBudgetUtilization >= 1f))
                 {
-                    RenderTexturePool pool = GlobalRegistry.RenderTexturePool;
+                    RenderTexturePool pool = _renderTexturePool;
                     if (pool != null)
                         pool.ClearAllPools();
                 }
@@ -365,23 +518,26 @@ namespace Hecton8.Optimization
                 if (itemCatalog != null && hardwareHeadroomBytes < MinimumHardwareHeadroomBytes)
                 {
                     EmergencyEvictionCount += itemCatalog.EvictLeastRecentlyUsedWorldPrefabs(
-                        maxEmergencyEvictionsPerPass,
+                        emergencyEvictionBudget,
                         WorldPrefabEvictionIdleFrames);
                 }
 
                 return;
             }
 
-            if (IsSoftVramPressureActive() || RamPressureFactor >= RamWarningFraction)
+            float softPressureResponse = ResolveSoftPressureResponse();
+            if (softPressureResponse > 0f)
             {
+                int softReleaseDrain = ResolveBudgetedPressureCount(SoftPressurePendingReleaseDrain, softPressureResponse);
+                int softEvictionBudget = ResolveBudgetedPressureCount(2, softPressureResponse);
                 if (governor != null)
                 {
-                    governor.DrainPendingReleaseQueueBudgeted(SoftPressurePendingReleaseDrain);
-                    governor.EvictLowestPriorityUnusedAssets(1, AssetPriorityTier.Tier5DistantHlod);
+                    governor.DrainPendingReleaseQueueBudgeted(softReleaseDrain);
+                    governor.EvictLowestPriorityUnusedAssets(softEvictionBudget, AssetPriorityTier.Tier5DistantHlod);
                 }
 
                 if (itemCatalog != null && hardwareHeadroomBytes < MinimumHardwareHeadroomBytes)
-                    itemCatalog.EvictLeastRecentlyUsedWorldPrefabs(1, WorldPrefabEvictionIdleFrames);
+                    itemCatalog.EvictLeastRecentlyUsedWorldPrefabs(softEvictionBudget, WorldPrefabEvictionIdleFrames);
             }
         }
     }

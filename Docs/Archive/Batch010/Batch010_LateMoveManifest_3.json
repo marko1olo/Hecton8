@@ -1,0 +1,29 @@
+[
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_140.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_140__late3.md",
+        "WasDirectory":  false,
+        "Status":  "LateMoved",
+        "Loop":  3,
+        "Key":  "LOG"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_140.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_140__late3.md",
+        "WasDirectory":  false,
+        "Status":  "LateMoved",
+        "Loop":  3,
+        "Key":  "Rationale"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_140.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_140__late3.md",
+        "WasDirectory":  false,
+        "Status":  "LateMoved",
+        "Loop":  3,
+        "Key":  "Status"
+    }
+]

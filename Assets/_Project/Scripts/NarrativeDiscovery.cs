@@ -334,13 +334,37 @@ namespace Hecton8.Interaction
             _cachedDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(discoveryId);
             float safeRadiusMeters = aupTriggerRadiusMeters > 0f ? aupTriggerRadiusMeters : 0f;
             _cachedAupTriggerRadiusSq = (double)safeRadiusMeters * safeRadiusMeters;
-            _cachedAup = AbsoluteUniversePosition.FromRuntimePosition(transform.position);
+            if (!TryResolveAupFromRuntimeOrigin(transform.position, out _cachedAup))
+                _cachedAup = default;
+
             _cachedQuestHash = ComputeQuestHash(activeQuestId);
             _cachedBiomeHash = ComputeStableHash(biomeSignalId);
             _cachedSoundscapeHash = ComputeStableHash(soundscapeProfileId);
             _cachedSpatialFlags = publishHudBreadcrumb
                 ? NarrativeSpatialTriggerFlags.HudBreadcrumb
                 : NarrativeSpatialTriggerFlags.None;
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(
+            Vector3 runtimePosition,
+            out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!float.IsFinite(runtimePosition.x) ||
+                !float.IsFinite(runtimePosition.y) ||
+                !float.IsFinite(runtimePosition.z))
+            {
+                return false;
+            }
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!MathGuard.IsFinite(in originAup))
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new Unity.Mathematics.double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return MathGuard.IsFinite(in positionAup);
         }
 
         private static uint ComputeQuestHash(string value)

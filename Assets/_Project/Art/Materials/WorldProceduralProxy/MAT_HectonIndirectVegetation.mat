@@ -1,0 +1,72 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: MAT_HectonIndirectVegetation
+  m_Shader: {fileID: 4800000, guid: 864c03acc66b39b4783fd87113dbbc79, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 0
+  m_EnableInstancingVariants: 1
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs: []
+    m_Ints: []
+    m_Floats:
+    - _AlphaClip: 0.08
+    - _AmbientStrength: 0.75
+    - _AnisotropicSssPower: 4.5
+    - _AnisotropicSssStrength: 0.72
+    - _BacklightViewBias: 0.58
+    - _Cull: 0
+    - _CullFadeDistance: 10
+    - _EdgeBloomStrength: 0.62
+    - _GrassWindAmplitude: 0.26
+    - _GrassWindFrequency: 6.4
+    - _GrassWindSpeed: 2.8
+    - _InteractionDistancePower: 2.2
+    - _InteractionPushStrength: 1.35
+    - _InteractionVelocityBias: 0.85
+    - _KelpCurrentAmplitude: 1.25
+    - _KelpCurrentFrequency: 0.85
+    - _KelpCurrentSpeed: 0.42
+    - _LocalCausticScale: 0.82
+    - _LocalCausticSpeed: 0.48
+    - _LocalCausticStrength: 0.18
+    - _NormalResponse: 0.32
+    - _Opacity: 0.92
+    - _OrganicSssDistortion: 0.45
+    - _OrganicSssPower: 4.2
+    - _OrganicSssScale: 1.05
+    - _SargassumPulsationAmplitude: 0.12
+    - _SargassumPulsationFrequency: 1.4
+    - _SargassumPulsationSpeed: 0.52
+    - _SargassumWaveAmplitude: 0.55
+    - _SargassumWaveFrequency: 1.2
+    - _SargassumWaveSpeed: 1.1
+    - _SargassumWoundCurlStrength: 0.2
+    - _SurfaceWaterLevelFallback: 4900
+    - _TranslucencyStrength: 0.38
+    m_Colors:
+    - _GrassBaseColor: {r: 0.18, g: 0.48, b: 0.2, a: 1}
+    - _GrassTipColor: {r: 0.58, g: 0.82, b: 0.42, a: 1}
+    - _KelpBaseColor: {r: 0.08, g: 0.24, b: 0.16, a: 1}
+    - _KelpTipColor: {r: 0.22, g: 0.56, b: 0.36, a: 1}
+    - _SargassumBaseColor: {r: 0.32, g: 0.38, b: 0.1, a: 1}
+    - _SargassumTipColor: {r: 0.64, g: 0.56, b: 0.18, a: 1}
+    - _SeedlingColor: {r: 0.18, g: 0.42, b: 0.26, a: 1}
+    - _TranslucencyColor: {r: 0.28, g: 0.72, b: 0.38, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

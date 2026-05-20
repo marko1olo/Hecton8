@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.UI;
+using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 
 namespace Hecton8.UI
 {
@@ -63,32 +64,37 @@ namespace Hecton8.UI
     /// <summary>
     /// Event payload emitted by diegetic panel hit processing.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct DiegeticPanelInputEvent
     {
         /// <summary>
         /// Stable panel identifier.
         /// </summary>
+        [FieldOffset(0)]
         public int PanelId;
 
         /// <summary>
         /// Canvas-space hit position in reference-resolution pixels.
         /// </summary>
+        [FieldOffset(4)]
         public float2 CanvasHitPoint;
 
         /// <summary>
         /// Analog delta forwarded for terminal dials and lever drags.
         /// </summary>
+        [FieldOffset(12)]
         public float2 AnalogDelta;
 
         /// <summary>
         /// Event-type bitmask.
         /// </summary>
+        [FieldOffset(24)]
         public DiegeticPanelInputEventType EventType;
 
         /// <summary>
         /// Monotonic unscaled timestamp in seconds.
         /// </summary>
+        [FieldOffset(20)]
         public float Timestamp;
     }
 
@@ -123,7 +129,7 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Diegetic Panel Controller")]
     [RequireComponent(typeof(Canvas))]
-    public sealed class DiegeticPanelController : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, ICursorHost, IDepthOcclusionReceiver, IDamageReceiver, IGlobalRegistryHotSwapListener
+    public sealed class DiegeticPanelController : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, ICursorHost, IDepthOcclusionReceiver, IDamageReceiver, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
     {
         private const string WorldGeometrySortingLayer = "WorldGeometry";
         private const float MinCanvasExtent = 0.0001f;
@@ -152,6 +158,10 @@ namespace Hecton8.UI
         private const float DefaultProxyLightIntensity = 0.22f;
         private const float MaxProxyLightFlicker = 0.3f;
         private const float DefaultProxyLightFlicker = 0.06f;
+        private const float PhosphorActivationQuality = 0.24f;
+        private const float PhosphorFullQuality = 0.62f;
+        private const float MinRenderResolutionWeight = 0.05f;
+        private const int RenderResolutionStep = 64;
         private const float InvalidPowerSourceFallback = 0f;
         private const float InvalidFlashlightGlareFallback = 0f;
         private const float FarPanelDistanceSq = 25f;
@@ -202,21 +212,34 @@ namespace Hecton8.UI
             PlayerInRange = 1 << 7,
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 208)]
         private struct PanelData
         {
+            [FieldOffset(0)]
             public float4x4 LocalToWorld;
+            [FieldOffset(64)]
             public float4x4 WorldToLocal;
+            [FieldOffset(128)]
             public float3 PanelNormal;
+            [FieldOffset(140)]
             public float3 PanelUp;
+            [FieldOffset(152)]
             public float2 CanvasSize;
+            [FieldOffset(160)]
             public float2 InvCanvasSize;
+            [FieldOffset(168)]
             public float2 HalfSize;
+            [FieldOffset(176)]
             public float2 InvReferenceSize;
+            [FieldOffset(184)]
             public int ReferenceWidth;
+            [FieldOffset(188)]
             public int ReferenceHeight;
+            [FieldOffset(192)]
             public PanelStateFlags StateFlags;
+            [FieldOffset(196)]
             public float DistToCameraSq;
+            [FieldOffset(200)]
             public float LastInteractTime;
         }
 
@@ -378,6 +401,7 @@ namespace Hecton8.UI
         private IPanelInteractable _panelInteractable;
         private IPanelPowerSource _panelPowerSource;
         private IInputService _input;
+        private IPlayerRuntimeContext _cachedPlayerContext;
         private RenderTexture _panelRenderTexture;
         private RenderTexture _phosphorFrontTexture;
         private RenderTexture _phosphorBackTexture;
@@ -408,6 +432,7 @@ namespace Hecton8.UI
         private bool _lateFrameRegistered;
         private bool _renderPipelineHookRegistered;
         private bool _hotSwapListenerRegistered;
+        private bool _scalabilityListenerRegistered;
         private bool _inputAwaitingRegistration;
         private bool _phosphorMaterialResolveAttempted;
         private bool _phosphorMaterialResolveFailed;
@@ -428,6 +453,8 @@ namespace Hecton8.UI
         private bool _canvasSettingsApplied;
         private bool _isMx350Tier;
         private bool _ownsPanelRenderTexture;
+        private float _qualityWeight01 = 1f;
+        private float _phosphorBlend01;
         private int _inputEventHead;
         private int _inputEventTail;
         private int _inputEventCount;
@@ -441,7 +468,6 @@ namespace Hecton8.UI
         private Transform[] _cachedFingertipTransforms;
         private uint _fingertipBindingMask;
         private int _activeFingerIndex = -1;
-        private bool _lowTierPhosphorProfile = true;
 
         /// <summary>
         /// Returns the current RT assigned to the panel camera, if any.
@@ -459,9 +485,10 @@ namespace Hecton8.UI
             ResolveSerializedReferences();
             ResolveInterfaces();
             DetermineTargetHardwareTier();
-            RefreshPhosphorTierProfile();
-            RefreshServices();
+            RefreshQualityPolicy();
+            CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
+            TryRegisterScalabilityListener();
             RegisterRenderPipelineHook();
             ApplyCanvasWorldSpaceSettings();
             ApplyRendererBindings();
@@ -473,9 +500,10 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             ResolveSerializedReferences();
-            RefreshPhosphorTierProfile();
-            RefreshServices();
+            RefreshQualityPolicy();
+            CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
+            TryRegisterScalabilityListener();
             TryRegisterTick();
             RegisterRenderPipelineHook();
             ApplyCanvasWorldSpaceSettings();
@@ -487,11 +515,13 @@ namespace Hecton8.UI
         {
             UnregisterTick();
             TryUnregisterHotSwapListener();
+            TryUnregisterScalabilityListener();
             UnregisterRenderPipelineHook();
             UnregisterProxyLight();
             ClearHoverState();
             CacheInteractionCamera(null, fromExplicit: false);
             _input = null;
+            _cachedPlayerContext = null;
             _inputAwaitingRegistration = false;
             _cursorStateInitialized = false;
             _canvasSettingsApplied = false;
@@ -505,6 +535,7 @@ namespace Hecton8.UI
         {
             UnregisterRenderPipelineHook();
             TryUnregisterHotSwapListener();
+            TryUnregisterScalabilityListener();
             UnregisterProxyLight();
             ReleaseRenderTexture();
             ReleasePhosphorResources();
@@ -848,7 +879,7 @@ namespace Hecton8.UI
         internal void OverridePhosphorDecay(bool enabled, float decay)
         {
             enablePhosphorDecay = enabled;
-            phosphorDecay = ResolvePhosphorDecay(decay);
+            phosphorDecay = ResolveAuthoredPhosphorDecay(decay);
             if (ShouldUsePhosphorDecay())
                 EnsurePhosphorResources();
             else
@@ -881,7 +912,7 @@ namespace Hecton8.UI
             fingerPressDistance = ResolveFingerPressDistance();
             fingerReleaseDistance = ResolveFingerReleaseDistance(fingerPressDistance);
             fingerHoverDistance = ResolveFingerHoverDistance(fingerReleaseDistance);
-            phosphorDecay = ResolvePhosphorDecay(phosphorDecay);
+            phosphorDecay = ResolveAuthoredPhosphorDecay(phosphorDecay);
             depthFadeRange = ResolveDepthFadeRange();
             flashlightGlare = ResolveFlashlightGlare(flashlightGlare);
             damageGlitchDurationSeconds = ResolveAuthoredDamageGlitchDuration();
@@ -987,7 +1018,21 @@ namespace Hecton8.UI
                             gpuName.IndexOf("MX350", System.StringComparison.OrdinalIgnoreCase) >= 0);
         }
 
-        private void RefreshServices()
+        private void RefreshQualityPolicy()
+        {
+            _qualityWeight01 = math.saturate(HomeostasisBrain.GlobalQualityWeight);
+            float phosphorRange = math.max(0.0001f, PhosphorFullQuality - PhosphorActivationQuality);
+            float phosphorT = math.saturate((_qualityWeight01 - PhosphorActivationQuality) / phosphorRange);
+            _phosphorBlend01 = SmoothStep01(phosphorT);
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedPlayerContext = GlobalRegistry.Player;
+            RefreshInputService();
+        }
+
+        private void RefreshInputService()
         {
             IInputService registeredInput = GlobalRegistry.RegisteredInput;
             if (registeredInput != null)
@@ -1011,7 +1056,7 @@ namespace Hecton8.UI
                 _input = currentService as IInputService;
                 if (_input == null)
                 {
-                    RefreshServices();
+                    RefreshInputService();
                     return;
                 }
 
@@ -1019,14 +1064,37 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (serviceSlot != GlobalRegistryServiceSlot.Player || interactionCamera != null)
-                return;
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                if (interactionCamera == null)
+                {
+                    Camera playerCamera = _cachedPlayerContext != null
+                        ? _cachedPlayerContext.PlayerCamera
+                        : null;
+                    CacheInteractionCamera(playerCamera != null && playerCamera.isActiveAndEnabled ? playerCamera : null, fromExplicit: false);
+                    _canvasSettingsApplied = false;
+                }
 
-            Camera playerCamera = currentService is IPlayerRuntimeContext playerContext
-                ? playerContext.PlayerCamera
-                : null;
-            CacheInteractionCamera(playerCamera != null && playerCamera.isActiveAndEnabled ? playerCamera : null, fromExplicit: false);
-            _canvasSettingsApplied = false;
+                return;
+            }
+        }
+
+        /// <inheritdoc />
+        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            RefreshQualityPolicy();
+            if (ShouldUsePhosphorDecay())
+                EnsurePhosphorResources();
+            else
+                ReleasePhosphorTextures();
+
+            if (isActiveAndEnabled)
+                EnsureRenderTexture(forceRefresh: true);
+            else
+                RefreshLateFrameRegistration();
+
+            ApplyMaterialState(forceTextureRefresh: true, forceDepthRefresh: false);
         }
 
         private bool EnsureRuntimeState()
@@ -1037,7 +1105,7 @@ namespace Hecton8.UI
             ResolveSerializedReferences();
             ResolveInterfaces();
             if (_input == null || _inputAwaitingRegistration)
-                RefreshServices();
+                RefreshInputService();
             ApplyCanvasWorldSpaceSettings();
             return targetCanvas != null && _resolvedPanelRect != null && panelCollider != null;
         }
@@ -1220,9 +1288,7 @@ namespace Hecton8.UI
                 useMipMap = false,
                 autoGenerateMips = false,
                 sRGB = QualitySettings.activeColorSpace == ColorSpace.Linear,
-                graphicsFormat = _isMx350Tier
-                    ? GraphicsFormat.B5G6R5_UNormPack16
-                    : GraphicsFormat.R8G8B8A8_UNorm,
+                graphicsFormat = ResolveColorGraphicsFormat(),
                 depthStencilFormat = GraphicsFormat.D16_UNorm
             };
 
@@ -1242,27 +1308,29 @@ namespace Hecton8.UI
             RefreshLateFrameRegistration();
         }
 
+        private GraphicsFormat ResolveColorGraphicsFormat()
+        {
+            return _isMx350Tier && _qualityWeight01 < 0.72f
+                    ? GraphicsFormat.B5G6R5_UNormPack16
+                    : GraphicsFormat.R8G8B8A8_UNorm;
+        }
+
         private int2 DetermineRenderResolutionFromDistanceSq(float distanceToCameraSq)
         {
             if (_fixedRenderResolution.x > 0 && _fixedRenderResolution.y > 0)
                 return _fixedRenderResolution;
 
-            if (_isMx350Tier)
-            {
-                if (distanceToCameraSq > FarPanelDistanceSq)
-                    return new int2(128, 64);
-                if (distanceToCameraSq > MediumPanelDistanceSq)
-                    return new int2(256, 128);
-                return new int2(512, 256);
-            }
+            float safeDistanceSq = math.max(0f, distanceToCameraSq);
+            float distanceBand = math.max(0.0001f, FarPanelDistanceSq - NearPanelDistanceSq);
+            float distanceWeight = 1f - math.saturate((safeDistanceSq - NearPanelDistanceSq) / distanceBand);
+            float qualityCurve = SmoothStep01(math.saturate(_qualityWeight01));
+            float resolutionWeight = math.max(
+                MinRenderResolutionWeight,
+                qualityCurve * math.lerp(0.34f, 1f, SmoothStep01(distanceWeight)));
 
-            if (distanceToCameraSq > FarPanelDistanceSq)
-                return new int2(256, 128);
-            if (distanceToCameraSq > MediumPanelDistanceSq)
-                return new int2(512, 256);
-            if (distanceToCameraSq > NearPanelDistanceSq)
-                return new int2(1024, 512);
-            return new int2(2048, 1024);
+            int width = QuantizeResolution((int)math.round(math.lerp(128f, 2048f, resolutionWeight)), 128, 2048);
+            int height = QuantizeResolution((int)math.round(math.lerp(64f, 1024f, resolutionWeight)), 64, 1024);
+            return new int2(width, height);
         }
 
         private void ReleaseRenderTexture()
@@ -1401,7 +1469,7 @@ namespace Hecton8.UI
                 _phosphorDecayMaterial.SetTexture(_CurrentTexId, _panelRenderTexture);
             }
 
-            float resolvedPhosphorDecay = ResolvePhosphorDecay(phosphorDecay);
+            float resolvedPhosphorDecay = ResolveRuntimePhosphorDecay(phosphorDecay);
             if (math.abs(_appliedPhosphorDecay - resolvedPhosphorDecay) > 0.0001f)
             {
                 _appliedPhosphorDecay = resolvedPhosphorDecay;
@@ -1626,9 +1694,15 @@ namespace Hecton8.UI
                 _proxyLightRegistered = true;
         }
 
-        private float ResolvePhosphorDecay(float value)
+        private static float ResolveAuthoredPhosphorDecay(float value)
         {
             return math.isfinite(value) ? math.clamp(value, MinPhosphorDecay, MaxPhosphorDecay) : DefaultPhosphorDecay;
+        }
+
+        private float ResolveRuntimePhosphorDecay(float value)
+        {
+            float authoredDecay = ResolveAuthoredPhosphorDecay(value);
+            return math.lerp(MinPhosphorDecay, authoredDecay, _phosphorBlend01);
         }
 
         private float ResolveDepthFadeRange()
@@ -2179,8 +2253,7 @@ namespace Hecton8.UI
             if (_resolvedInteractionCamera != null && _resolvedInteractionCamera.isActiveAndEnabled)
                 return _resolvedInteractionCamera;
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            Camera playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
+            Camera playerCamera = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerCamera : null;
             CacheInteractionCamera(playerCamera != null && playerCamera.isActiveAndEnabled ? playerCamera : null, fromExplicit: false);
 
             return _resolvedInteractionCamera;
@@ -2280,6 +2353,24 @@ namespace Hecton8.UI
             _hotSwapListenerRegistered = false;
         }
 
+        private void TryRegisterScalabilityListener()
+        {
+            if (_scalabilityListenerRegistered || !Application.isPlaying)
+                return;
+
+            ScalabilityEvents.Register(this);
+            _scalabilityListenerRegistered = true;
+        }
+
+        private void TryUnregisterScalabilityListener()
+        {
+            if (!_scalabilityListenerRegistered)
+                return;
+
+            ScalabilityEvents.Unregister(this);
+            _scalabilityListenerRegistered = false;
+        }
+
         private void UnregisterTick()
         {
             if (_lateFrameRegistered)
@@ -2321,18 +2412,22 @@ namespace Hecton8.UI
             CompositePhosphorFrame();
         }
 
-        private void RefreshPhosphorTierProfile()
-        {
-            byte fallbackTier = _isMx350Tier
-                ? ScalabilityTierProfiles.LowMx350
-                : ScalabilityTierProfiles.HighRtx;
-            byte profileTier = PlatformIntegrationBridge.ResolveCurrentScalabilityTier(fallbackTier);
-            _lowTierPhosphorProfile = _isMx350Tier || profileTier == ScalabilityTierProfiles.LowMx350;
-        }
-
         private bool ShouldUsePhosphorDecay()
         {
-            return enablePhosphorDecay && !_lowTierPhosphorProfile;
+            return enablePhosphorDecay && _phosphorBlend01 > 0.001f;
+        }
+
+        private static int QuantizeResolution(int rawResolution, int minimum, int maximum)
+        {
+            int clamped = math.clamp(rawResolution, minimum, maximum);
+            int stepped = ((clamped + (RenderResolutionStep >> 1)) / RenderResolutionStep) * RenderResolutionStep;
+            return math.clamp(stepped, minimum, maximum);
+        }
+
+        private static float SmoothStep01(float value)
+        {
+            float t = math.saturate(value);
+            return t * t * (3f - 2f * t);
         }
 
         private static void SetLayerRecursive(Transform root, int layer)

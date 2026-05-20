@@ -226,7 +226,7 @@ namespace Hecton8.Visor
                        math.abs(left.w - right.w) <= GlobalsFloatEpsilon;
             }
 
-            [StructLayout(LayoutKind.Sequential, Pack = 4, Size = VRBrownoutGlobalsStrideBytes)]
+            [StructLayout(LayoutKind.Sequential, Size = VRBrownoutGlobalsStrideBytes)]
             private struct BrownoutGlobalsDTO
             {
                 public Vector4 Params0;

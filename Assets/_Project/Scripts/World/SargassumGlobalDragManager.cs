@@ -5,6 +5,7 @@ using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.SaveSystem;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -71,7 +72,7 @@ namespace Hecton8.World
         private static readonly Quaternion _yawPositiveX = new Quaternion(0f, 0.70710678118f, 0f, 0.70710678118f);
         private static readonly Quaternion _yawNegativeX = new Quaternion(0f, -0.70710678118f, 0f, 0.70710678118f);
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential)]
         internal struct SargassumFieldSample
         {
             public bool HasInfluence;
@@ -104,26 +105,30 @@ namespace Hecton8.World
             public float ExtremePanicRadiusWS;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
         private struct CellData
         {
-            public float Density;
-            public float MinY;
-            public float MaxY;
+            [FieldOffset(0)] public float Density;
+            [FieldOffset(4)] public float MinY;
+            [FieldOffset(8)] public float MaxY;
+            [FieldOffset(12)] private uint _pad0;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Explicit, Size = 80)]
         private struct NestedAttachmentState
         {
-            public Vector3 SampleSpaceAnchorWS;
-            public Vector3 RenderOffsetWS;
-            public Vector3 ReleaseVelocityWS;
-            public Quaternion Rotation;
-            public float UniformScale;
-            public float ReleaseLifetime;
-            public float ReleaseAge;
-            public int PrototypeIndex;
-            public byte ReleasedFlag;
+            [FieldOffset(0)] public Vector3 SampleSpaceAnchorWS;
+            [FieldOffset(12)] public Vector3 RenderOffsetWS;
+            [FieldOffset(24)] public Vector3 ReleaseVelocityWS;
+            [FieldOffset(36)] public Quaternion Rotation;
+            [FieldOffset(52)] public float UniformScale;
+            [FieldOffset(56)] public float ReleaseLifetime;
+            [FieldOffset(60)] public float ReleaseAge;
+            [FieldOffset(64)] public int PrototypeIndex;
+            [FieldOffset(68)] public byte ReleasedFlag;
+            [FieldOffset(69)] private byte _pad0;
+            [FieldOffset(70)] private ushort _pad1;
+            [FieldOffset(72)] private ulong _pad2;
         }
 
         private enum DisruptionZoneMode : byte
@@ -132,29 +137,34 @@ namespace Hecton8.World
             MassiveDisplacement = 2
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct DisruptionZoneState
         {
-            public Vector3 SampleSpaceCenterWS;
-            public float RadiusWS;
-            public float Strength01;
-            public float SinkDepthWS;
-            public float RampDuration;
-            public float HoldDuration;
-            public float FadeDuration;
-            public float Age;
-            public byte Mode;
-            public byte Flags;
+            [FieldOffset(0)] public Vector3 SampleSpaceCenterWS;
+            [FieldOffset(12)] public float RadiusWS;
+            [FieldOffset(16)] public float Strength01;
+            [FieldOffset(20)] public float SinkDepthWS;
+            [FieldOffset(24)] public float RampDuration;
+            [FieldOffset(28)] public float HoldDuration;
+            [FieldOffset(32)] public float FadeDuration;
+            [FieldOffset(36)] public float Age;
+            [FieldOffset(40)] public byte Mode;
+            [FieldOffset(41)] public byte Flags;
+            [FieldOffset(42)] private ushort _pad0;
+            [FieldOffset(44)] private uint _pad1;
+            [FieldOffset(48)] private ulong _pad2;
+            [FieldOffset(56)] private ulong _pad3;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
         private struct DisruptionSample
         {
-            public float Suppression01;
-            public float SinkDepthWS;
+            [FieldOffset(0)] public float Suppression01;
+            [FieldOffset(4)] public float SinkDepthWS;
+            [FieldOffset(8)] private ulong _pad0;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct ScavengerHostState
         {
             public SargassumCollapseChunk Chunk;
@@ -164,42 +174,45 @@ namespace Hecton8.World
             public uint Seed;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct ExternalScavengerSiteState
         {
-            public Vector3 AnchorWS;
-            public float RadiusWS;
-            public float RemainingTime;
-            public uint Seed;
+            [FieldOffset(0)] public Vector3 AnchorWS;
+            [FieldOffset(12)] public float RadiusWS;
+            [FieldOffset(16)] public float RemainingTime;
+            [FieldOffset(20)] public uint Seed;
+            [FieldOffset(24)] private ulong _pad0;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
         private struct DebrisTimer
         {
-            public int Slot;
-            public float RemainingSeconds;
+            [FieldOffset(0)] public int Slot;
+            [FieldOffset(4)] public float RemainingSeconds;
+            [FieldOffset(8)] private ulong _pad0;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
         private struct DensitySourceData
         {
-            public float3 OriginWS;
-            public float Scale;
+            [FieldOffset(0)] public float3 OriginWS;
+            [FieldOffset(12)] public float Scale;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 12)]
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
         private struct DensityContributionData
         {
-            public float Density;
-            public float MinY;
-            public float MaxY;
+            [FieldOffset(0)] public float Density;
+            [FieldOffset(4)] public float MinY;
+            [FieldOffset(8)] public float MaxY;
+            [FieldOffset(12)] private uint _pad0;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildDensityContributionJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<DensitySourceData> Sources;
-            public NativeParallelMultiHashMap<long, DensityContributionData>.ParallelWriter Contributions;
+            [ReadOnly, NoAlias] public NativeArray<DensitySourceData> Sources;
+            [NoAlias] public NativeParallelMultiHashMap<long, DensityContributionData>.ParallelWriter Contributions;
             public float CellSize;
             public float InverseCellSize;
             public float BaseInfluenceRadius;

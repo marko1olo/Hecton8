@@ -6,8 +6,6 @@ using Hecton8.SaveSystem;
 using Hecton8.Construction;
 using Hecton8.Building;
 using Hecton8.Audio;
-using Hecton8.Audio.Propagation;
-using Hecton8.Audio.Virtualization;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory.Layout;
@@ -151,7 +149,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Read-only orbital prologue snapshot for consumers that need telemetry without owning the simulation.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public readonly struct OrbitalDirectorSnapshot
     {
         public OrbitalDirectorSnapshot(
@@ -170,15 +168,32 @@ namespace Hecton8.Core
             Sequence = sequence;
             MathLod = mathLod;
             Flags = flags;
+            _pad0 = 0;
         }
 
-        public double3 UniverseVelocity { get; }
-        public double PlanetDistanceMeters { get; }
-        public float ReentryHeat01 { get; }
-        public float CloudWhiteout01 { get; }
-        public uint Sequence { get; }
-        public byte MathLod { get; }
-        public byte Flags { get; }
+        [FieldOffset(0)]
+        public readonly double3 UniverseVelocity;
+
+        [FieldOffset(24)]
+        public readonly double PlanetDistanceMeters;
+
+        [FieldOffset(32)]
+        public readonly float ReentryHeat01;
+
+        [FieldOffset(36)]
+        public readonly float CloudWhiteout01;
+
+        [FieldOffset(40)]
+        public readonly uint Sequence;
+
+        [FieldOffset(44)]
+        public readonly byte MathLod;
+
+        [FieldOffset(45)]
+        public readonly byte Flags;
+
+        [FieldOffset(46)]
+        private readonly ushort _pad0;
     }
 
     /// <summary>
@@ -212,15 +227,28 @@ namespace Hecton8.Core
     /// Registry-published world streaming IO backpressure read model.
     /// Movement, PDA, and VFX consumers read the dispatcher scalar or this cached service; they do not touch Addressables owners directly.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct StreamingHlodImpostorPoint
     {
+        [FieldOffset(0)]
         public float3 Center;
+
+        [FieldOffset(12)]
         public float3 Size;
+
+        [FieldOffset(24)]
         public long ChunkId;
+
+        [FieldOffset(32)]
         public int ImpostorType;
+
+        [FieldOffset(36)]
         public float SpawnTimeSeconds;
+
+        [FieldOffset(40)]
         public float Fade01;
+
+        [FieldOffset(44)]
         public uint Flags;
     }
 
@@ -298,70 +326,70 @@ namespace Hecton8.Core
     /// <summary>
     /// Canonical damage packet routed through the global packet-based damage receiver contract.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct DamagePacket
     {
         /// <summary>
         /// Packet channel resolved by the emitting owner.
         /// </summary>
-        public DamageChannel Channel;
-        private byte _pad0;
-        private byte _pad1;
-        private byte _pad2;
+        [FieldOffset(0)] public DamageChannel Channel;
+        [FieldOffset(1)] private byte _pad0;
+        [FieldOffset(2)] private byte _pad1;
+        [FieldOffset(3)] private byte _pad2;
 
         /// <summary>
         /// Previous normalized channel value when the packet represents a continuous channel delta.
         /// </summary>
-        public float PreviousValue;
+        [FieldOffset(4)] public float PreviousValue;
 
         /// <summary>
         /// Next normalized channel value when the packet represents a continuous channel delta.
         /// </summary>
-        public float NextValue;
+        [FieldOffset(8)] public float NextValue;
 
         /// <summary>
         /// Primary physical magnitude associated with the event.
         /// Integrity and clarity send normalized magnitudes, hull breaches send pressure delta.
         /// </summary>
-        public float Magnitude;
+        [FieldOffset(12)] public float Magnitude;
 
         /// <summary>
         /// Local-space point relative to the emitting owner.
         /// </summary>
-        public float3 LocalPoint;
+        [FieldOffset(16)] public float3 LocalPoint;
 
         /// <summary>
         /// Damage-type bitmask authored by the emitter.
         /// </summary>
-        public uint DamageType;
+        [FieldOffset(28)] public uint DamageType;
 
         /// <summary>
         /// Quantized integrity delta used by structural diffusion consumers.
         /// </summary>
-        public byte IntegrityDelta;
-        private byte _pad3;
-        private byte _pad4;
-        private byte _pad5;
+        [FieldOffset(32)] public byte IntegrityDelta;
+        [FieldOffset(33)] private byte _pad3;
+        [FieldOffset(34)] private byte _pad4;
+        [FieldOffset(35)] private byte _pad5;
 
         /// <summary>
         /// Depth in meters associated with the damage event when relevant.
         /// </summary>
-        public float Depth;
+        [FieldOffset(36)] public float Depth;
 
         /// <summary>
         /// Stable emitter-local source identifier.
         /// </summary>
-        public ushort SourceId;
+        [FieldOffset(40)] public ushort SourceId;
 
         /// <summary>
         /// Encoded trauma threshold when <see cref="Channel"/> is <see cref="DamageChannel.Trauma"/>.
         /// </summary>
-        public byte TraumaLevel;
-        private byte _pad6;
-        private byte _pad7;
-        private byte _pad8;
-        private byte _pad9;
-        private byte _pad10;
+        [FieldOffset(42)] public byte TraumaLevel;
+        [FieldOffset(43)] private byte _pad6;
+        [FieldOffset(44)] private byte _pad7;
+        [FieldOffset(45)] private byte _pad8;
+        [FieldOffset(46)] private byte _pad9;
+        [FieldOffset(47)] private byte _pad10;
     }
 
     /// <summary>
@@ -481,7 +509,7 @@ namespace Hecton8.Core
     /// Shared current-metadata payload mandated for flow-field-derived systems.
     /// </summary>
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 24)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct CurrentMeta
     {
         /// <summary>
@@ -507,43 +535,61 @@ namespace Hecton8.Core
         /// </summary>
         [FieldOffset(20)]
         public float TimeAccumulator;
+
+        [FieldOffset(24)]
+        private ulong _pad0;
     }
 
     /// <summary>
     /// Blittable Gerstner-wave component consumed by Burst jobs.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct GerstnerWaveComponent
     {
         /// <summary>
         /// Normalized XZ travel direction.
         /// </summary>
+        [FieldOffset(0)]
         public float2 DirectionXZ;
 
         /// <summary>
         /// Vertical amplitude in meters.
         /// </summary>
+        [FieldOffset(8)]
         public float Amplitude;
 
         /// <summary>
         /// Wavelength in meters.
         /// </summary>
+        [FieldOffset(12)]
         public float Wavelength;
 
         /// <summary>
         /// Horizontal-displacement factor.
         /// </summary>
+        [FieldOffset(16)]
         public float Steepness;
 
         /// <summary>
         /// Authoring-time phase offset in radians.
         /// </summary>
+        [FieldOffset(20)]
         public float PhaseOffset;
 
         /// <summary>
         /// Speed multiplier applied to the analytic phase velocity.
         /// </summary>
+        [FieldOffset(24)]
         public float SpeedMultiplier;
+
+        [FieldOffset(28)]
+        private byte _pad0;
+        [FieldOffset(29)]
+        private byte _pad1;
+        [FieldOffset(30)]
+        private byte _pad2;
+        [FieldOffset(31)]
+        private byte _pad3;
     }
 
     /// <summary>
@@ -566,48 +612,68 @@ namespace Hecton8.Core
     /// <summary>
     /// Zero-allocation weather snapshot consumed by physics and VFX systems.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Explicit, Size = 192)]
     public struct WeatherRuntimeSnapshot
     {
         /// <summary>
         /// Active weather-state flags for this frame.
         /// </summary>
+        [FieldOffset(0)]
         public WeatherState StateMask;
 
         /// <summary>
         /// Normalized storm/current intensity after active weather-state blending.
         /// </summary>
+        [FieldOffset(4)]
         public float WeatherIntensity;
 
         /// <summary>
         /// Resolved world-space global current vector.
         /// </summary>
+        [FieldOffset(8)]
         public float3 GlobalCurrentVector;
 
         /// <summary>
         /// Resolved world-space global wind vector.
         /// </summary>
+        [FieldOffset(20)]
         public float3 GlobalWindVector;
 
         /// <summary>
         /// Shared metadata for current-driven consumers.
         /// </summary>
+        [FieldOffset(32)]
         public CurrentMeta CurrentMeta;
 
         /// <summary>
         /// First wave component in the weather-driven fallback spectrum.
         /// </summary>
+        [FieldOffset(64)]
         public GerstnerWaveComponent Wave0;
 
         /// <summary>
         /// Second wave component in the weather-driven fallback spectrum.
         /// </summary>
+        [FieldOffset(96)]
         public GerstnerWaveComponent Wave1;
 
         /// <summary>
         /// Third wave component in the weather-driven fallback spectrum.
         /// </summary>
+        [FieldOffset(128)]
         public GerstnerWaveComponent Wave2;
+
+        [FieldOffset(160)]
+        private ulong _pad0;
+
+        [FieldOffset(168)]
+        private ulong _pad1;
+
+        [FieldOffset(176)]
+        private ulong _pad2;
+
+        [FieldOffset(184)]
+        private ulong _pad3;
     }
 
     /// <summary>
@@ -628,84 +694,84 @@ namespace Hecton8.Core
     /// Blittable celestial runtime payload consumed by rendering, fluid, audio, and gameplay systems.
     /// Double universe time is retained for deterministic sync; spatial presentation data is reduced to float vectors.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 144)]
+    [StructLayout(LayoutKind.Explicit, Size = 144)]
     public struct CelestialRuntimeSnapshot
     {
         /// <summary>Authoritative Absolute Universe Time used for the analytical orbit solve.</summary>
-        public double AbsoluteUniverseTime;
+        [FieldOffset(0)] public double AbsoluteUniverseTime;
 
         /// <summary>Observer-to-sun direction in runtime space.</summary>
-        public float3 SunDirection;
+        [FieldOffset(8)] public float3 SunDirection;
 
         /// <summary>AUP-safe presentation offset for the gas giant relative to the observer.</summary>
-        public float3 GasGiantOffset;
+        [FieldOffset(20)] public float3 GasGiantOffset;
 
         /// <summary>AUP-safe presentation offset for the first moon relative to the observer.</summary>
-        public float3 Moon0Offset;
+        [FieldOffset(32)] public float3 Moon0Offset;
 
         /// <summary>AUP-safe presentation offset for the second moon relative to the observer.</summary>
-        public float3 Moon1Offset;
+        [FieldOffset(44)] public float3 Moon1Offset;
 
         /// <summary>Normalized observer-to-gas-giant direction.</summary>
-        public float3 GasGiantDirection;
+        [FieldOffset(56)] public float3 GasGiantDirection;
 
         /// <summary>Normalized observer-to-first-moon direction.</summary>
-        public float3 Moon0Direction;
+        [FieldOffset(68)] public float3 Moon0Direction;
 
         /// <summary>Normalized observer-to-second-moon direction.</summary>
-        public float3 Moon1Direction;
+        [FieldOffset(80)] public float3 Moon1Direction;
 
         /// <summary>Normalized dominant tide pull direction.</summary>
-        public float3 TidePullVector;
+        [FieldOffset(92)] public float3 TidePullVector;
 
         /// <summary>Signed sea-level offset in meters resolved from the current celestial pull.</summary>
-        public float TideHeightMeters;
+        [FieldOffset(104)] public float TideHeightMeters;
 
         /// <summary>Normalized high-tide state. 0 is lowest tide, 1 is highest tide.</summary>
-        public float TideHigh01;
+        [FieldOffset(108)] public float TideHigh01;
 
         /// <summary>First moon visual fullness, used by lunar phase materials.</summary>
-        public float Moon0Phase01;
+        [FieldOffset(112)] public float Moon0Phase01;
 
         /// <summary>Second moon visual fullness, used by lunar phase materials.</summary>
-        public float Moon1Phase01;
+        [FieldOffset(116)] public float Moon1Phase01;
 
         /// <summary>Gas giant visual fullness.</summary>
-        public float GasGiantPhase01;
+        [FieldOffset(120)] public float GasGiantPhase01;
 
         /// <summary>Current eclipse occlusion factor.</summary>
-        public float EclipseOcclusion01;
+        [FieldOffset(124)] public float EclipseOcclusion01;
 
         /// <summary>Current radiation-storm intensity sourced from the global event lane.</summary>
-        public float RadiationStorm01;
+        [FieldOffset(128)] public float RadiationStorm01;
 
         /// <summary>Global bioluminescence multiplier resolved from full-moon and resonance states.</summary>
-        public float GlobalBiolumMultiplier;
+        [FieldOffset(132)] public float GlobalBiolumMultiplier;
 
         /// <summary>Bitmask of <see cref="CelestialRuntimeFlags"/>.</summary>
-        public uint Flags;
+        [FieldOffset(136)] public uint Flags;
 
         /// <summary>Monotonic sequence used by frame caches to detect celestial tide updates.</summary>
-        public uint Sequence;
+        [FieldOffset(140)] public uint Sequence;
     }
 
     /// <summary>
     /// Blittable GI relay state published for watchdogs, diagnostics, and low-cost consumers.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct GIRelayRuntimeSnapshot
     {
-        public double AbsoluteUniverseTime;
-        public float TimeOfDay01;
-        public float DepthMeters;
-        public float Depth01;
-        public float EclipseScalar;
-        public float MoonPhase01;
-        public float FogLod;
-        public float LightningScalar;
-        public int ShadowCascadeLevel;
-        public uint Flags;
-        public uint Sequence;
+        [FieldOffset(0)] public double AbsoluteUniverseTime;
+        [FieldOffset(8)] public float TimeOfDay01;
+        [FieldOffset(12)] public float DepthMeters;
+        [FieldOffset(16)] public float Depth01;
+        [FieldOffset(20)] public float EclipseScalar;
+        [FieldOffset(24)] public float MoonPhase01;
+        [FieldOffset(28)] public float FogLod;
+        [FieldOffset(32)] public float LightningScalar;
+        [FieldOffset(36)] public int ShadowCascadeLevel;
+        [FieldOffset(40)] public uint Flags;
+        [FieldOffset(44)] public uint Sequence;
     }
 
     /// <summary>
@@ -743,20 +809,20 @@ namespace Hecton8.Core
     /// <summary>
     /// Blittable seismic and harmonic-tide payload for systems that need latest deterministic macro-world state.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 56)]
+    [StructLayout(LayoutKind.Explicit, Size = 56)]
     public struct SeismicRuntimeSnapshot
     {
-        public double AbsoluteUniverseTime;
-        public float3 SeismicDirection;
-        public float SeismicIntensity01;
-        public float TideHeightMeters;
-        public float TideHigh01;
-        public float CameraJitter01;
-        public float AudioRumble01;
-        public float ThermalEruptionProbabilityScalar;
-        public uint Flags;
-        public uint Sequence;
-        private uint _pad0;
+        [FieldOffset(0)] public double AbsoluteUniverseTime;
+        [FieldOffset(8)] public float3 SeismicDirection;
+        [FieldOffset(20)] public float SeismicIntensity01;
+        [FieldOffset(24)] public float TideHeightMeters;
+        [FieldOffset(28)] public float TideHigh01;
+        [FieldOffset(32)] public float CameraJitter01;
+        [FieldOffset(36)] public float AudioRumble01;
+        [FieldOffset(40)] public float ThermalEruptionProbabilityScalar;
+        [FieldOffset(44)] public uint Flags;
+        [FieldOffset(48)] public uint Sequence;
+        [FieldOffset(52)] private uint _pad0;
     }
 
     /// <summary>
@@ -1014,15 +1080,15 @@ namespace Hecton8.Core
     /// Blittable gameplay audio request consumed by the central audio service queue.
     /// EventID maps to an authored clip-table slot owned by the audio runtime.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public readonly struct AudioEvent
     {
-        public readonly uint EventID;
-        public readonly Vector3 Position;
-        public readonly float Volume;
-        public readonly float Pitch;
-        private readonly uint _reserved0;
-        private readonly uint _reserved1;
+        [FieldOffset(0)] public readonly uint EventID;
+        [FieldOffset(4)] public readonly Vector3 Position;
+        [FieldOffset(16)] public readonly float Volume;
+        [FieldOffset(20)] public readonly float Pitch;
+        [FieldOffset(24)] private readonly uint _reserved0;
+        [FieldOffset(28)] private readonly uint _reserved1;
 
         public AudioEvent(uint eventID, Vector3 position, float volume, float pitch)
         {
@@ -1483,12 +1549,13 @@ namespace Hecton8.Core
     /// <summary>
     /// Immutable AUP-backed chest socket pose.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 80)]
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
     public readonly struct VRSomaticChestSocketPose
     {
-        public readonly AbsoluteUniversePosition SocketAup;
-        public readonly Vector3 RuntimePosition;
-        public readonly Quaternion RuntimeRotation;
+        [FieldOffset(0)] public readonly AbsoluteUniversePosition SocketAup;
+        [FieldOffset(48)] public readonly Vector3 RuntimePosition;
+        [FieldOffset(60)] public readonly Quaternion RuntimeRotation;
+        [FieldOffset(76)] private readonly uint _pad0;
 
         public VRSomaticChestSocketPose(
             AbsoluteUniversePosition socketAup,
@@ -1498,27 +1565,28 @@ namespace Hecton8.Core
             SocketAup = socketAup;
             RuntimePosition = runtimePosition;
             RuntimeRotation = runtimeRotation;
+            _pad0 = 0u;
         }
     }
 
     /// <summary>
     /// Immutable near-field head contact state emitted by the VR somatic provider.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 96)]
+    [StructLayout(LayoutKind.Explicit, Size = 96)]
     public readonly struct VRSomaticCollisionState
     {
-        public readonly byte HasContactFlag;
-        private readonly byte _reserved0;
-        private readonly byte _reserved1;
-        private readonly byte _reserved2;
-        private readonly int _pad0;
-        public readonly AbsoluteUniversePosition ContactAup;
-        public readonly Vector3 RuntimePoint;
-        public readonly Vector3 RuntimeNormal;
-        public readonly float DistanceMeters;
-        public readonly float Intensity01;
-        public readonly float ImpactSpeedMetersPerSecond;
-        private readonly int _pad1;
+        [FieldOffset(0)] public readonly byte HasContactFlag;
+        [FieldOffset(1)] private readonly byte _reserved0;
+        [FieldOffset(2)] private readonly byte _reserved1;
+        [FieldOffset(3)] private readonly byte _reserved2;
+        [FieldOffset(4)] private readonly int _pad0;
+        [FieldOffset(8)] public readonly AbsoluteUniversePosition ContactAup;
+        [FieldOffset(56)] public readonly Vector3 RuntimePoint;
+        [FieldOffset(68)] public readonly Vector3 RuntimeNormal;
+        [FieldOffset(80)] public readonly float DistanceMeters;
+        [FieldOffset(84)] public readonly float Intensity01;
+        [FieldOffset(88)] public readonly float ImpactSpeedMetersPerSecond;
+        [FieldOffset(92)] private readonly int _pad1;
 
         public VRSomaticCollisionState(
             bool hasContact,
@@ -1549,23 +1617,23 @@ namespace Hecton8.Core
     /// <summary>
     /// Immutable frame snapshot for VR somatic suit systems.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 120)]
+    [StructLayout(LayoutKind.Explicit, Size = 120)]
     public readonly struct VRSomaticSnapshot
     {
-        public readonly byte IsActiveFlag;
-        private readonly byte _reserved0;
-        private readonly byte _reserved1;
-        private readonly byte _reserved2;
-        private readonly int _pad0;
-        public readonly AbsoluteUniversePosition HeadAup;
-        public readonly Vector3 HeadRuntimePosition;
-        public readonly Quaternion HeadRuntimeRotation;
-        public readonly Quaternion VisorHudWorldRotation;
-        public readonly float PlayerStress01;
-        public readonly float Oxygen01;
-        public readonly float DepthMeters;
-        public readonly float NearFieldCollision01;
-        public readonly float Condensation01;
+        [FieldOffset(0)] public readonly byte IsActiveFlag;
+        [FieldOffset(1)] private readonly byte _reserved0;
+        [FieldOffset(2)] private readonly byte _reserved1;
+        [FieldOffset(3)] private readonly byte _reserved2;
+        [FieldOffset(4)] private readonly int _pad0;
+        [FieldOffset(8)] public readonly AbsoluteUniversePosition HeadAup;
+        [FieldOffset(56)] public readonly Vector3 HeadRuntimePosition;
+        [FieldOffset(68)] public readonly Quaternion HeadRuntimeRotation;
+        [FieldOffset(84)] public readonly Quaternion VisorHudWorldRotation;
+        [FieldOffset(100)] public readonly float PlayerStress01;
+        [FieldOffset(104)] public readonly float Oxygen01;
+        [FieldOffset(108)] public readonly float DepthMeters;
+        [FieldOffset(112)] public readonly float NearFieldCollision01;
+        [FieldOffset(116)] public readonly float Condensation01;
 
         public VRSomaticSnapshot(
             bool isActive,
@@ -1613,16 +1681,16 @@ namespace Hecton8.Core
     /// <summary>
     /// Immutable hand pose pair for VR hand renderers: controller target versus spring-driven physical hand.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public readonly struct VRSomaticHandPose
     {
-        public readonly byte HandIndex;
-        public readonly byte HasTrackingFlag;
-        public readonly byte GhostVisibleFlag;
-        public readonly byte Reserved;
-        public readonly Vector3 TargetRuntimePosition;
-        public readonly Vector3 PhysicalRuntimePosition;
-        public readonly float SeparationMetersSq;
+        [FieldOffset(0)] public readonly byte HandIndex;
+        [FieldOffset(1)] public readonly byte HasTrackingFlag;
+        [FieldOffset(2)] public readonly byte GhostVisibleFlag;
+        [FieldOffset(3)] public readonly byte Reserved;
+        [FieldOffset(4)] public readonly Vector3 TargetRuntimePosition;
+        [FieldOffset(16)] public readonly Vector3 PhysicalRuntimePosition;
+        [FieldOffset(28)] public readonly float SeparationMetersSq;
 
         public VRSomaticHandPose(
             byte handIndex,
@@ -1782,36 +1850,36 @@ namespace Hecton8.Core
     /// <summary>
     /// Cold-path authoring payload copied from scene POI components into the native spatial registry.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 88)]
+    [StructLayout(LayoutKind.Explicit, Size = 88)]
     public struct NarrativeSpatialTriggerAuthoring
     {
-        public AbsoluteUniversePosition PositionAup;
-        public float RadiusMeters;
-        public float RadiusSq;
-        public uint PoiHash;
-        public uint QuestHash;
-        public uint BiomeHash;
-        public uint SoundscapeHash;
-        public uint LoreHash;
-        public int BitIndex;
-        public NarrativeSpatialTriggerFlags Flags;
-        private byte _reserved0;
-        private byte _reserved1;
-        private byte _reserved2;
-        private uint _pad0;
+        [FieldOffset(0)] public AbsoluteUniversePosition PositionAup;
+        [FieldOffset(48)] public float RadiusMeters;
+        [FieldOffset(52)] public float RadiusSq;
+        [FieldOffset(56)] public uint PoiHash;
+        [FieldOffset(60)] public uint QuestHash;
+        [FieldOffset(64)] public uint BiomeHash;
+        [FieldOffset(68)] public uint SoundscapeHash;
+        [FieldOffset(72)] public uint LoreHash;
+        [FieldOffset(76)] public int BitIndex;
+        [FieldOffset(80)] public NarrativeSpatialTriggerFlags Flags;
+        [FieldOffset(81)] private byte _reserved0;
+        [FieldOffset(82)] private byte _reserved1;
+        [FieldOffset(83)] private byte _reserved2;
+        [FieldOffset(84)] private uint _pad0;
     }
 
     /// <summary>
     /// Blittable player pose snapshot for systems that need player AUP and view direction without concrete player-runtime access.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 80)]
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
     public struct PlayerRuntimePoseSnapshot
     {
-        public float3 RuntimePosition;
-        public float3 Forward;
-        public AbsoluteUniversePosition Aup;
-        public uint Flags;
-        private uint _pad0;
+        [FieldOffset(0)] public float3 RuntimePosition;
+        [FieldOffset(12)] public float3 Forward;
+        [FieldOffset(24)] public AbsoluteUniversePosition Aup;
+        [FieldOffset(72)] public uint Flags;
+        [FieldOffset(76)] private uint _pad0;
 
         public PlayerRuntimePoseSnapshot(float3 runtimePosition, float3 forward, AbsoluteUniversePosition aup, uint flags)
         {
@@ -2032,7 +2100,10 @@ namespace Hecton8.Core
         void ConsumeBattery(uint toolId, float normalizedBatteryDrainRate, float deltaSeconds);
         void SetHeat(uint toolId, float normalizedHeat);
         void SetToolActive(uint toolId, bool active);
+        void SetToolActive(uint toolId, bool active, float batteryDrainPerSecond);
         bool TryGetPublishedActiveEquipmentState(uint toolId, out ActiveEquipmentDTO state);
+        bool TryGetWirelessBrownoutFeedback(uint toolId, out float flickerScalar);
+        bool TryGetToolBrownoutFeedback(uint toolId, out float flickerScalar);
         void SetDurability(uint toolId, float normalizedDurability);
     }
 
@@ -2230,7 +2301,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Blittable flood readback for one habitat room, expressed in runtime-space meters.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public readonly struct HabitatRoomWaterlineSnapshot
     {
         public const byte FlagBreached = 1 << 0;
@@ -2261,17 +2332,17 @@ namespace Hecton8.Core
             _reserved2 = 0;
         }
 
-        public int RoomId { get; }
-        public float Fill01 { get; }
-        public float SurfaceY { get; }
-        public float FloorY { get; }
-        public float CeilingY { get; }
-        public float WaterVolumeM3 { get; }
-        public uint Sequence { get; }
-        public byte Flags { get; }
-        private readonly byte _reserved0;
-        private readonly byte _reserved1;
-        private readonly byte _reserved2;
+        [FieldOffset(0)] public readonly int RoomId;
+        [FieldOffset(4)] public readonly float Fill01;
+        [FieldOffset(8)] public readonly float SurfaceY;
+        [FieldOffset(12)] public readonly float FloorY;
+        [FieldOffset(16)] public readonly float CeilingY;
+        [FieldOffset(20)] public readonly float WaterVolumeM3;
+        [FieldOffset(24)] public readonly uint Sequence;
+        [FieldOffset(28)] public readonly byte Flags;
+        [FieldOffset(29)] private readonly byte _reserved0;
+        [FieldOffset(30)] private readonly byte _reserved1;
+        [FieldOffset(31)] private readonly byte _reserved2;
 
         public bool IsValid =>
             RoomId >= 0 &&
@@ -2642,7 +2713,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Blittable room gas snapshot expressed as Dalton partial pressures in kPa.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 40)]
+    [StructLayout(LayoutKind.Explicit, Size = 40)]
     public readonly struct GasRoomSnapshot
     {
         public GasRoomSnapshot(
@@ -2665,23 +2736,27 @@ namespace Hecton8.Core
             Toxicity01 = toxicity01;
             Narcosis01 = narcosis01;
             Flags = flags;
+            _pad0 = 0;
+            _pad1 = 0u;
         }
 
-        public int RoomId { get; }
-        public float OxygenKPa { get; }
-        public float CarbonDioxideKPa { get; }
-        public float NitrogenKPa { get; }
-        public float PressureKPa { get; }
-        public float AmbientPressureKPa { get; }
-        public float Toxicity01 { get; }
-        public float Narcosis01 { get; }
-        public ushort Flags { get; }
+        [FieldOffset(0)] public readonly int RoomId;
+        [FieldOffset(4)] public readonly float OxygenKPa;
+        [FieldOffset(8)] public readonly float CarbonDioxideKPa;
+        [FieldOffset(12)] public readonly float NitrogenKPa;
+        [FieldOffset(16)] public readonly float PressureKPa;
+        [FieldOffset(20)] public readonly float AmbientPressureKPa;
+        [FieldOffset(24)] public readonly float Toxicity01;
+        [FieldOffset(28)] public readonly float Narcosis01;
+        [FieldOffset(32)] public readonly ushort Flags;
+        [FieldOffset(34)] private readonly ushort _pad0;
+        [FieldOffset(36)] private readonly uint _pad1;
     }
 
     /// <summary>
     /// Cold-path hibernation snapshot for one habitat/base atmosphere island.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 88)]
+    [StructLayout(LayoutKind.Explicit, Size = 88)]
     public readonly struct GasBaseHibernationSnapshot
     {
         public GasBaseHibernationSnapshot(
@@ -2710,18 +2785,18 @@ namespace Hecton8.Core
             _pad1 = 0u;
         }
 
-        private readonly AbsoluteUniversePosition _centerAup;
-        private readonly double _hibernatedUnscaledTime;
-        private readonly float _batteryWattSeconds;
-        private readonly float _idleDrawWatts;
-        private readonly float _leakRatePerSecond;
-        private readonly int _baseId;
-        private readonly int _roomStart;
-        private readonly int _roomCount;
-        private readonly byte _awake;
-        private readonly byte _playerInside;
-        private readonly ushort _pad0;
-        private readonly uint _pad1;
+        [FieldOffset(0)] private readonly AbsoluteUniversePosition _centerAup;
+        [FieldOffset(48)] private readonly double _hibernatedUnscaledTime;
+        [FieldOffset(56)] private readonly float _batteryWattSeconds;
+        [FieldOffset(60)] private readonly float _idleDrawWatts;
+        [FieldOffset(64)] private readonly float _leakRatePerSecond;
+        [FieldOffset(68)] private readonly int _baseId;
+        [FieldOffset(72)] private readonly int _roomStart;
+        [FieldOffset(76)] private readonly int _roomCount;
+        [FieldOffset(80)] private readonly byte _awake;
+        [FieldOffset(81)] private readonly byte _playerInside;
+        [FieldOffset(82)] private readonly ushort _pad0;
+        [FieldOffset(84)] private readonly uint _pad1;
 
         public int BaseId => _baseId;
         public int RoomStart => _roomStart;
@@ -2738,7 +2813,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Unmanaged gas-to-physiology signal emitted when CO2 toxicity or nitrogen narcosis crosses a scalar threshold.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public readonly struct ToxicitySignal
     {
         public ToxicitySignal(
@@ -2761,21 +2836,21 @@ namespace Hecton8.Core
             _pad1 = 0u;
         }
 
-        public int RoomId { get; }
-        public float CarbonDioxideKPa { get; }
-        public float PressureAtm { get; }
-        public float Toxicity01 { get; }
-        public float Narcosis01 { get; }
-        public uint FrameIndex { get; }
-        public ushort Flags { get; }
-        private readonly ushort _pad0;
-        private readonly uint _pad1;
+        [FieldOffset(0)] public readonly int RoomId;
+        [FieldOffset(4)] public readonly float CarbonDioxideKPa;
+        [FieldOffset(8)] public readonly float PressureAtm;
+        [FieldOffset(12)] public readonly float Toxicity01;
+        [FieldOffset(16)] public readonly float Narcosis01;
+        [FieldOffset(20)] public readonly uint FrameIndex;
+        [FieldOffset(24)] public readonly ushort Flags;
+        [FieldOffset(26)] private readonly ushort _pad0;
+        [FieldOffset(28)] private readonly uint _pad1;
     }
 
     /// <summary>
     /// Cold-path audit snapshot for the Dalton gas solver's persistent native memory.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public readonly struct GasDynamicsNativeMemoryAudit
     {
         public GasDynamicsNativeMemoryAudit(
@@ -2796,16 +2871,18 @@ namespace Hecton8.Core
             LargestAllocationLabelHash = largestAllocationLabelHash;
             SentinelActiveAllocationCount = sentinelActiveAllocationCount;
             SentinelTrackedBytes = sentinelTrackedBytes;
+            _pad0 = 0u;
         }
 
-        public int RoomCapacity { get; }
-        public int BulkheadCapacity { get; }
-        public int LocalAllocationCount { get; }
-        public long LocalRegisteredBytes { get; }
-        public long LargestAllocationBytes { get; }
-        public uint LargestAllocationLabelHash { get; }
-        public int SentinelActiveAllocationCount { get; }
-        public long SentinelTrackedBytes { get; }
+        [FieldOffset(0)] public readonly int RoomCapacity;
+        [FieldOffset(4)] public readonly int BulkheadCapacity;
+        [FieldOffset(8)] public readonly int LocalAllocationCount;
+        [FieldOffset(12)] private readonly uint _pad0;
+        [FieldOffset(16)] public readonly long LocalRegisteredBytes;
+        [FieldOffset(24)] public readonly long LargestAllocationBytes;
+        [FieldOffset(32)] public readonly uint LargestAllocationLabelHash;
+        [FieldOffset(36)] public readonly int SentinelActiveAllocationCount;
+        [FieldOffset(40)] public readonly long SentinelTrackedBytes;
     }
 
     /// <summary>
@@ -2878,7 +2955,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Immutable hardware profile captured during the bootstrap HardwareCheck phase.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public readonly struct HectonHardwareProfile
     {
         /// <summary>
@@ -2943,28 +3020,36 @@ namespace Hecton8.Core
             PhysicsBenchmarkMillisecondsPerStep = physicsBenchmarkMillisecondsPerStep;
             HardwareScore = hardwareScore;
             MathPrecisionLevel = mathPrecisionLevel;
+            _pad0 = 0;
+            _pad1 = 0;
+            _pad2 = 0;
+            _pad3 = 0;
         }
 
         /// <summary>Detected graphics memory in megabytes.</summary>
-        public int GraphicsMemoryMegabytes { get; }
+        [FieldOffset(0)] public readonly int GraphicsMemoryMegabytes;
 
         /// <summary>Detected system memory in megabytes.</summary>
-        public int SystemMemoryMegabytes { get; }
+        [FieldOffset(4)] public readonly int SystemMemoryMegabytes;
 
         /// <summary>Detected logical CPU core count.</summary>
-        public int ProcessorCount { get; }
+        [FieldOffset(8)] public readonly int ProcessorCount;
 
         /// <summary>Resolved runtime quality tier.</summary>
-        public HectonQualityTier QualityTier { get; }
+        [FieldOffset(12)] public readonly HectonQualityTier QualityTier;
+        [FieldOffset(13)] private readonly byte _pad0;
+        [FieldOffset(14)] private readonly ushort _pad1;
 
         /// <summary>Cold BIOS local-physics benchmark cost in milliseconds per 0.02s step.</summary>
-        public double PhysicsBenchmarkMillisecondsPerStep { get; }
+        [FieldOffset(16)] public readonly double PhysicsBenchmarkMillisecondsPerStep;
 
         /// <summary>Deterministic 0-100 BIOS hardware score captured at boot.</summary>
-        public int HardwareScore { get; }
+        [FieldOffset(24)] public readonly int HardwareScore;
 
         /// <summary>BIOS-selected math precision level for runtime shader/simulation paths.</summary>
-        public MathPrecisionLevel MathPrecisionLevel { get; }
+        [FieldOffset(28)] public readonly MathPrecisionLevel MathPrecisionLevel;
+        [FieldOffset(29)] private readonly byte _pad2;
+        [FieldOffset(30)] private readonly ushort _pad3;
     }
 
     /// <summary>
@@ -3030,16 +3115,17 @@ namespace Hecton8.Core
     /// Unmanaged registry event payload drained by <see cref="SystemDispatcher"/>.
     /// Managed service references are carried by GlobalRegistry sidecar slots during dispatch only.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 24)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct RegistryEventPayload
     {
-        public uint PreviousServiceHash;
-        public uint CurrentServiceHash;
-        public int ReferenceSlot;
-        public uint FrameIndex;
-        public ushort ServiceSlot;
-        public ushort EventType;
-        private uint _pad0;
+        [FieldOffset(0)] public uint PreviousServiceHash;
+        [FieldOffset(4)] public uint CurrentServiceHash;
+        [FieldOffset(8)] public int ReferenceSlot;
+        [FieldOffset(12)] public uint FrameIndex;
+        [FieldOffset(16)] public ushort ServiceSlot;
+        [FieldOffset(18)] public ushort EventType;
+        [FieldOffset(20)] private uint _pad0;
+        [FieldOffset(24)] private ulong _pad1;
     }
 
     /// <summary>
@@ -3471,89 +3557,88 @@ namespace Hecton8.Core
     /// <summary>
     /// Immutable ecosystem population sample returned by <see cref="IEcosystemDirectorService"/>.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct EcosystemSectorPopulationSample
     {
         /// <summary>
         /// Quantized 1 km sector coordinate on the X axis.
         /// </summary>
-        public int SectorX;
+        [FieldOffset(0)] public int SectorX;
 
         /// <summary>
         /// Quantized 1 km sector coordinate on the Z axis.
         /// </summary>
-        public int SectorZ;
+        [FieldOffset(4)] public int SectorZ;
 
         /// <summary>
         /// Current prey population carried by the sector simulation.
         /// </summary>
-        public int PreyPopulation;
+        [FieldOffset(8)] public int PreyPopulation;
 
         /// <summary>
         /// Current predator population carried by the sector simulation.
         /// </summary>
-        public int PredatorPopulation;
+        [FieldOffset(12)] public int PredatorPopulation;
 
         /// <summary>
         /// Normalized prey fitness derived from sustained sector stress and survivor adaptation.
         /// </summary>
-        public float Fitness;
+        [FieldOffset(16)] public float Fitness;
 
         /// <summary>
         /// Sector-authored prey speed multiplier applied to spawned swarm agents.
         /// </summary>
-        public float SpeedMultiplier;
+        [FieldOffset(20)] public float SpeedMultiplier;
 
         /// <summary>
         /// Sector-authored prey camouflage bias applied to spawned swarm agents.
         /// </summary>
-        public float CamouflageIndex;
+        [FieldOffset(24)] public float CamouflageIndex;
 
         /// <summary>
-        /// True when the containing sector carries active apex pressure.
+        /// Non-zero when the containing sector carries active apex pressure.
         /// </summary>
-        [MarshalAs(UnmanagedType.I1)]
-        public bool ApexInSector;
-        private byte _pad0;
-        private byte _pad1;
-        private byte _pad2;
+        [FieldOffset(28)] public byte ApexInSector;
+        [FieldOffset(29)] private byte _pad0;
+        [FieldOffset(30)] private byte _pad1;
+        [FieldOffset(31)] private byte _pad2;
 
         /// <summary>
         /// Normalized prey biomass in the containing 50 m ecology macro-cell.
         /// </summary>
-        public float PreyBiomass01;
+        [FieldOffset(32)] public float PreyBiomass01;
 
         /// <summary>
         /// Normalized predator biomass in the containing 50 m ecology macro-cell.
         /// </summary>
-        public float PredatorBiomass01;
+        [FieldOffset(36)] public float PredatorBiomass01;
 
         /// <summary>
         /// Normalized kelp/flora overgrowth pressure derived from local prey depletion.
         /// </summary>
-        public float FloraOvergrowth01;
-        private uint _pad3;
+        [FieldOffset(40)] public float FloraOvergrowth01;
+        [FieldOffset(44)] private uint _pad3;
     }
 
     /// <summary>
     /// Allocation-free fauna genome mutation request passed through the ecosystem service boundary.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 56)]
+    [StructLayout(LayoutKind.Explicit, Size = 56)]
     public struct FaunaGenomeMutationRequest
     {
-        public Vector3 RuntimePosition;
-        private int _pad0;
-        public ulong Genome;
-        public uint StableEntityHash;
-        public int SpeciesId;
-        public uint RollIndex;
-        public ushort Slot;
-        public byte Flags;
-        public byte ResultFlags;
-        public float RadiationRads;
-        public float Toxicity01;
-        public float BrineDepth01;
-        private int _pad1;
+        [FieldOffset(0)] public Vector3 RuntimePosition;
+        [FieldOffset(12)] private int _pad0;
+        [FieldOffset(16)] public ulong Genome;
+        [FieldOffset(24)] public uint StableEntityHash;
+        [FieldOffset(28)] public int SpeciesId;
+        [FieldOffset(32)] public uint RollIndex;
+        [FieldOffset(36)] public ushort Slot;
+        [FieldOffset(38)] public byte Flags;
+        [FieldOffset(39)] public byte ResultFlags;
+        [FieldOffset(40)] public float RadiationRads;
+        [FieldOffset(44)] public float Toxicity01;
+        [FieldOffset(48)] public float BrineDepth01;
+        [FieldOffset(52)] private int _pad1;
     }
 
     /// <summary>
@@ -3648,17 +3733,17 @@ namespace Hecton8.Core
     /// <summary>
     /// Allocation-free global biomass audit sample returned by <see cref="IEcosystemDirectorService"/>.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 24)]
+    [StructLayout(LayoutKind.Explicit, Size = 24)]
     public struct EcosystemBiomassAuditSample
     {
-        public float PreyBiomassSum;
-        public float PredatorBiomassSum;
-        public float CarryingCapacitySum;
-        public int ActiveCellCount;
-        public uint Sequence;
-        public uint Flags;
+        [FieldOffset(0)] public float PreyBiomassSum;
+        [FieldOffset(4)] public float PredatorBiomassSum;
+        [FieldOffset(8)] public float CarryingCapacitySum;
+        [FieldOffset(12)] public int ActiveCellCount;
+        [FieldOffset(16)] public uint Sequence;
+        [FieldOffset(20)] public uint Flags;
 
-        public bool IsFinite =>
+        public readonly bool IsFinite() =>
             math.isfinite(PreyBiomassSum) &&
             math.isfinite(PredatorBiomassSum) &&
             math.isfinite(CarryingCapacitySum);

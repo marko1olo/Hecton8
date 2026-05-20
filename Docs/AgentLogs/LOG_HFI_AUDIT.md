@@ -1,146 +1,387 @@
-# LOG_HFI_AUDIT
+# HFI_AUDIT Agent Log
 
 Agent: HFI_AUDIT
-Domain: Cross-domain static integration audit
-Status: PENDING VERIFICATION
-Date: 2026-05-19
+Domain: Architecture / Global Authority / Platform Portability Audit
+Status: ACTIVE / PENDING VERIFICATION
 
-## 2026-05-19 Dirty Integration Snapshot R1
+Historical log is archived at:
 
-Scope: read-only static audit of current dirty tree after a large multi-agent batch. No runtime code was edited. No Unity import, Play Mode, Profiler, GCMonitor, player build, or dotnet build was launched in this slice.
+- `Docs/Archive/Batch010/AgentLogs/LOG_HFI_AUDIT.md`
 
-Evidence class: STATIC_SOURCE / STATIC_DOC / GIT_DIFF only.
+## 2026-05-20 R18 Start
 
-### Snapshot Counts
+What was wrong: active HFI audit files were missing after Batch010 archival, so
+new work had no current on-disk state in `Docs/Tasks` and `Docs/AgentLogs`.
 
-- `git status --short -uall`: observed moving target between 392 and 422 entries while agents continued writing. Latest observed count in this slice: 422 entries: 354 modified, 66 untracked, 3 deleted.
-- Interpretation: current tree is source-heavy construction state, not verification-grade integration state.
+What was done: restored active concise status/rationale/log anchors and linked
+them to the archived Batch010 files. Re-reading mandates and current docs before
+new static gates.
 
-### Highest-Signal Findings
+Cinematic Cheats used: none; audit/tooling pass only.
 
-- `Docs/Tasks/CURRENT_BATCH.md` fails `git diff --check` on trailing whitespace and final blank-line errors. Static process impact: strict prompt extraction can become noisy or brittle.
-- `CURRENT_BATCH.md` contains parsing hazards reported by read-only docs subagent: split or malformed `SHINOBU_141` prompt tag around line 2430, inline closing tags around line 2627, and mojibake near the same area. Evidence remains STATIC_DOC until re-extracted with each agent ID.
-- Subtitle cue traffic has split-brain semantics. `Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs` defines `Hecton8.Core.Contracts.Signals.SubtitleCueSignal` with `StartAudioFrame`, `DurationMilliseconds`, `Priority`, `Flags`, and `SourceHash`. `Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs` defines `Hecton8.Modding.SubtitleCueSignal` with `TokenHash`, `Duration`, `Priority`, `_pad0`. This is not a direct namespace duplicate, but it is a duplicate signal-name/meaning route and conflicts with the batch text that expects the 16-byte `TokenHash + float Duration + uint Priority + uint _pad0` layout.
-- Unity metadata is incomplete for new C# assets. Static scan found 17 untracked `.cs` files; 14 lacked matching `.meta` at scan time. Examples: `BallisticsRuntime.cs`, `BallisticsEditorFacade.cs`, `BabelSubtitleSyncRuntime.cs`, `BiomeTransitionManagerRuntime.cs`, `BiomeTransitionTunerWindow.cs`, `ProceduralCoralContracts.cs`, `EquipmentThermalBatteryContracts.cs`, `VRSomaticProvider.Comfort.cs`, `DynamicDecalVaultRuntime.cs`.
-- Data Monolith boot path can fail if the binary blob is absent. Runtime expects `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`; observed `Assets/StreamingAssets` did not contain that blob in the static scan. `GameBootstrapper` sets fail-if-missing behavior for the static data arena.
-- Data Monolith ABI appears changed while `H8DataLayoutConstants.FormatVersion` remains `1`. Static concern: stale v1 blobs may be accepted by version gate and decoded under a changed ABI.
-- Rollback Merkle/AUP schema is inconsistent by static read. `EntityAUPs` resolves as `AbsoluteUniversePosition`, while snapshot descriptors and hash byte-length paths use `UnsafeUtility.SizeOf<double3>()` for some AUP hashing routes. If intentional projection hashing, the contract needs an explicit note; otherwise byte offsets/lengths do not describe the backing buffer.
-- `RigidbodyAUPs` consumer drift exists: physics ownership appears to use `double3`, while `ArchitectEyeVisualizer` still requests `AbsoluteUniversePosition` for `BufferID.RigidbodyAUPs`, forcing silent fallback behavior.
-- Mock network jitter path appears scheduled every fixed tick and marks state active in the job without an obvious mode/debug gate in the inspected path.
-- BufferID governance is drifting through local hard-cast ranges instead of central enum/ledger names. Examples: Ballistics `(BufferID)71270..71279`, DroneFleet `(BufferID)70265..70275`, ProceduralCoral `(BufferID)71390..71408`.
-- Save telemetry dump format changed in `VoxelDeltaCompressionArchitecture` by prepending a dump header. Tools expecting raw telemetry rings need a reader update or explicit version handling.
-- Save docs are duplicated/noisy: `SAVE_PAGING_PROTOCOL.md` repeats active-version blocks; `SAVE_V8_BINARY_SPEC.md` repeats the heading and retains superseded `CurrentHeaderSize = 52` text under older sections.
+Exact Microseconds saved: 0 runtime us claimed.
 
-### What Looks Like Real Work
+## 2026-05-20 R18 Ultra-Think Polish Recapture
 
-- Large source-backed changes exist in Ballistics, Biome Transition, Hydrodynamic KCC, Seismic/Celestial, DroneFleet, Rollback Netcode, Save/Voxel, Structural Integrity, Thermodynamics, Audio/Virtualization, UI/Babel, and Procedural Coral/Wreckage.
-- Strongest narrow verification claim found in agent status is `SHINOBU_127`, which reports narrow `Assembly-CSharp` compile passes for owned Ballistics scope. This was not independently rerun in this slice.
-- Most other status files still say PENDING, BLOCKED BY DEPENDENCY, COMPILE PENDING, SOURCE IMPLEMENTED, or STATIC PASS only.
+What was wrong: fresh gates found 12 central `BufferID` duplicate values in
+`H8Memory.cs`, active DataVault baseline was missing, broad polish pressure
+remained high, and platform/XR readiness still had no runtime artifacts.
 
-### Immediate Integration Order
+What was done: repaired `ConstructionSocket*` IDs to `70358..70369`, added
+`PolishMandateStaticAudit.py` plus tests, corrected Pack=1 gate false positives,
+and routed scanner query finalization through `DispatcherJobFence`.
 
-1. Repair `CURRENT_BATCH.md` formatting and XML prompt extraction hazards.
-2. Generate/track Unity `.meta` files for new C# assets before any commit or merge.
-3. Unify subtitle cue contract and decide whether modding subtitle payload is a wrapper/adapter or the canonical signal.
-4. Validate Data Monolith blob generation, `StreamingAssets` placement, and ABI `FormatVersion`.
-5. Normalize rollback AUP byte schema and document projection hashing if intentional.
-6. Add central BufferID enum/ledger entries or route cards for hard-cast ranges.
-7. Run compile only after CPU/compiler guard opens; runtime proof remains pending.
+Cinematic Cheats used: no new simulation was added. This pass used static gates
+and identity repair instead of adding runtime abstraction.
 
-Runtime microseconds saved: 0 claimed. This slice only prevents integration churn and false verification.
+Exact Microseconds saved: 0 runtime us claimed. Potential saved stall: one
+direct scanner completion site no longer bypasses dispatcher fence; profiler
+proof still required.
 
-## 2026-05-19 Dirty Integration Snapshot R2
+Verification:
 
-Scope: deeper static contract audit after R1. No runtime/source fixes applied. No build launched.
+- `python Tools/test_global_authority_gate.py`: PASS, 3 tests.
+- `python Tools/test_buffer_id_sovereignty_audit.py`: PASS, 2 tests.
+- `python Tools/test_polish_mandate_static_audit.py`: PASS, 2 tests.
+- `python Tools/GlobalAuthorityGate.py`: PASS_WITH_WARNINGS.
+- `python Tools/BufferIDSovereigntyAudit.py --fail-on-duplicates`: PASS.
+- `python Tools/DataVaultSovereigntyAudit.py --fail-on-regression`: FAIL,
+  active baseline missing.
+- `python Tools/PolishMandateStaticAudit.py`: PASS_WITH_WARNINGS.
 
-Evidence class: STATIC_SOURCE / STATIC_DOC / GIT_DIFF only.
+R18 verdict: direction correct, hard authority tripwires clean, warning pressure
+high, platform runtime readiness still unproven.
 
-### New High-Severity Findings
+Final static recapture before handoff:
 
-- `BufferID.BabelSubtitleCueState` and `BufferID.BabelSubtitleCueTelemetryRing` are referenced by `Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs`, but the current parsed `H8Memory.BufferID` enum does not define either symbol. Static impact: this is a likely compile error in the current dirty tree.
-- `H8Memory.BufferID` contains duplicate numeric values inside the enum itself:
-  - `70142..70149`: `ShinobuVRSomatic*` overlap with `ShinobuInventory*`.
-  - `70200`: `SaveWorldPagerWriteArena` overlaps with `ConstructionBuilderOccupancy`.
-  - `70800..70807`: `AudioStem*` overlap with `ShinobuActiveEquipment*`.
-  C# permits duplicate enum values, but `GlobalDataVault` does not get separate storage identities from separate names with the same integer key.
-- `DroneFleetManager` hard-casts local BufferIDs that collide with existing Save Merkle IDs:
-  - `70270` DroneFleet service cursor collides with `SaveMerkleNodeFront`.
-  - `70271` DroneFleet pending snapshots collides with `SaveMerkleNodeBack`.
-  - `70272` DroneFleet next-frame snapshots collides with `SaveMerkleLeafDescriptors`.
-  - `70273` DroneFleet spatial bucket heads collides with `SaveMerkleDeltaRecords`.
-  - `70274` DroneFleet spatial next indices collides with `SaveMerkleDeltaBytes`.
-  - `70275` DroneFleet spatial keys collides with `SaveMerkleCompressedBytes`.
-  Static impact: potential cross-system Vault buffer corruption between DroneFleet and Save/Merkle.
-- Additional hard-cast overlap exists in active source:
-  - `RollbackNetcodeContracts` uses `(BufferID)70750..70752` for rollback state buffers.
-  - `VolcanicUpdraftDirector` uses `(BufferID)70750..70752` for volcanic buffers.
-  - `H8Memory` defines `ShinobuHydroKccCsvScratch/DebugOutputs/ResolvedHits` at `70750..70752`.
-  Static impact: three unrelated systems claim the same numeric Vault keys.
-- `ToxicOutgassingChemistryRuntime` uses `(BufferID)70800..70807`; current `H8Memory` also maps `AudioStem*` and `ShinobuActiveEquipment*` to `70800..70807`. Static impact: atmosphere, audio, and equipment can alias the same Vault keys if active together.
-- `DiegeticGlitchSurgeonRuntime` hard-casts `(BufferID)70520` as a Terminal OS bridge while `H8Memory` defines `ShinobuInputCurrentDto = 70520`. Static impact: UI glitch/terminal bridge can alias input state.
-- `DiegeticGlitchSurgeonRuntime` hard-casts `(BufferID)70900` while `H8Memory` defines `ShinobuModSandboxBlackboxMemory = 70900`. Static impact: UI glitch state can alias mod sandbox blackbox memory.
+- `GlobalAuthorityGate.py`: `PASS_WITH_WARNINGS`, `csFiles=1981`,
+  `GlobalRegistry.Get/TryGet=0`, exact runtime `Pack=1=0`, central
+  `BufferID` duplicates `0`, local casts `677`.
+- `DataVaultSovereigntyAudit.py --fail-on-regression`: FAIL closed, active
+  baseline missing, `direct=1153`, `forbidden=1147`, declarations `5091`,
+  forbidden declarations `5077`.
+- `PolishMandateStaticAudit.py`: `PASS_WITH_WARNINGS`,
+  missing `CompileSynchronously=354`, missing `FloatMode=41`, missing
+  `FloatPrecision=43`, direct `.Complete()` lines `226`, private native
+  collection fields `1385`, exact runtime `Pack=1=0`.
 
-### Data Monolith Details
+## 2026-05-20 R19 Assembly Dependency / Compile-Wall Audit
 
-- `Assets/StreamingAssets` currently contains only `signal_tuning_profiles.csv` and `.meta`; no `Hecton8/DataMonolith/static_data.h8bin` was found.
-- `H8DataLayoutConstants.DefaultStreamingAssetsRelativePath` is `Hecton8/DataMonolith/static_data.h8bin`.
-- `GameBootstrapper.InitializeBootstrapDataMonolith()` sets `failIfMissing = true` outside `UNITY_EDITOR` and throws `FatalArchitectureException` when load fails.
-- `H8DataMonolithTypes.cs` changed multiple UTF-8 offsets from signed `int` to unsigned `uint` and expanded `H8StaticLocalizationReference` from 12 bytes to 16 bytes, while `FormatVersion` remains `1`.
-- Loader validation still accepts only `H8DataLayoutConstants.FormatVersion`, so a stale v1 blob with old field semantics can pass version validation if present. Checksum may still reject mismatched bytes, but versioning no longer communicates ABI change.
+What was wrong: Core compile-wall risk was described manually, but there was no
+repeatable static graph artifact for first-party `.asmdef` dependencies.
 
-### Subtitle/Babel Details
+What was done: added `Tools/AssemblyDependencyAudit.py` and
+`Tools/test_assembly_dependency_audit.py`. The tool writes
+`Docs/AgentLogs/AssemblyDependencyAudit_HFI_AUDIT.md` and `.json`, reports Core
+concrete sibling refs, runtime concrete cross-domain refs, and first-party graph
+cycles.
 
-- `CURRENT_BATCH.md` has contradictory subtitle expectations:
-  - Early task text expects `SubtitleCueSignal` = 16 bytes: `TokenHash`, `float Duration`, `uint Priority`, `_pad0`.
-  - Later SHINOBU_150 text expects a 16-byte signal containing `TokenHash` and `StartAudioFrame`.
-  - `BabelSubtitleSyncRuntime.cs` implements `TokenHash`, `StartAudioFrame`, `DurationMilliseconds`, `Priority`, `Flags`, `SourceHash`.
-  This is still 16 bytes, but the wire contract meaning is not singular.
+Cinematic Cheats used: none; this is compile-wall governance, not gameplay
+simulation.
 
-### Batch Parsing Details
+Exact Microseconds saved: 0 runtime us claimed. Potential build-iteration gain
+is unmeasured until concrete dependencies are migrated and Unity import timing
+is captured.
 
-- `SHINOBU_141` opening tag spans lines and starts inline with body text rather than a clean single-line tag block. Several later closing tags are inline with body text. This may not break every extractor, but it violates the strict "extract own XML tag" assumption used by agents.
+Verification:
 
-### Meta Hygiene Update
+- `python Tools/test_assembly_dependency_audit.py`: PASS, 3 tests.
+- `python Tools/AssemblyDependencyAudit.py`: PASS_WITH_WARNINGS.
 
-- The untracked C# set changed while auditing. Latest static scan found 17 untracked `.cs` and 15 without a matching `.meta` at that moment, including `KineticCharacterAnimatorJobs.cs`, `KineticCharacterAnimatorTypes.cs`, `MesofaunaBehavioralStateMachine.cs`, `BallisticsRuntime.cs`, `BallisticsEditorFacade.cs`, `FabricationAssemblerRuntime.cs`, `VRSomaticProvider.Comfort.cs`, `TetherAupVerletJobs.cs`, `EquipmentThermalBatteryContracts.cs`, `DynamicDecalVaultRuntime.cs`, `BiomeTransitionManagerRuntime.cs`, `BiomeTransitionTunerWindow.cs`, `ProceduralCoralContracts.cs`, and `ProceduralCoralJobs.cs`.
+Current static graph:
 
-### Updated Immediate Integration Order
+- first-party asmdefs: `135`;
+- runtime first-party asmdefs: `102`;
+- editor first-party asmdefs: `33`;
+- first-party cycles: `0`;
+- Core references: `43`;
+- Core first-party references: `31`;
+- Core concrete sibling references: `16`;
+- runtime concrete cross-domain references: `92`.
 
-1. Stop adding hard-cast `BufferID` ranges. First fix numeric collisions and missing enum symbols.
-2. Restore `BabelSubtitleCueState` / `BabelSubtitleCueTelemetryRing` or rename `BabelSubtitleSyncRuntime` to an existing canonical BufferID route.
-3. Move DroneFleet temporary IDs away from `SaveMerkle*` immediately before any save/drone runtime test.
-4. Reconcile `70750..70752`, `70800..70807`, `70520`, and `70900` ownership before treating DataVault as safe.
-5. Then fix batch XML/whitespace and Unity `.meta`.
-6. Then perform guarded compile.
+R19 verdict: no global collapse, but Core is still too connected to concrete
+runtime domains for a clean long-term compile wall.
 
-Runtime microseconds saved: 0 claimed. These are static contract defects; no profiler evidence exists.
+## 2026-05-20 R20 Platform Proof Audit
 
-## 2026-05-19 Dirty Integration Snapshot R3
+What was wrong: platform readiness facts were documented, but there was no
+repeatable local gate separating package/settings scaffold from real build or
+device proof.
 
-Scope: static generated-project and untracked-source audit. No build launched.
+What was done: added `Tools/PlatformPortabilityProofAudit.py` and
+`Tools/test_platform_portability_proof_audit.py`. The tool writes
+`Docs/AgentLogs/PlatformPortabilityProofAudit_HFI_AUDIT.md` and `.json`.
 
-Evidence class: STATIC_SOURCE / GIT_STATUS / CSPROJ_TEXT only.
+Cinematic Cheats used: none; proof-gate pass only.
 
-### Moving Dirty Tree
+Exact Microseconds saved: 0 runtime us claimed.
 
-- Latest observed `git status --short -uall`: 448 entries: 365 modified, 80 untracked, 3 deleted.
-- Latest observed untracked C# count: 26 at first count, then 27 by generated-project inclusion scan. The tree is still moving while this audit runs.
+Verification:
 
-### Generated Project Inclusion Gap
+- `python Tools/test_platform_portability_proof_audit.py`: PASS, 2 tests.
+- `python Tools/PlatformPortabilityProofAudit.py`: PASS_WITH_WARNINGS.
 
-- Current scan of all root `*.csproj` files found every currently untracked `.cs` file absent from generated project text.
-- Examples absent from all `*.csproj`: `BallisticsRuntime.cs`, `BallisticsEditorFacade.cs`, `BabelSubtitleSyncRuntime.cs`, `EquipmentThermalBatteryContracts.cs`, `BiomeTransitionManagerRuntime.cs`, `ProceduralCoralContracts.cs`, `ProceduralCoralJobs.cs`, `ProceduralCoralVault.cs`, `DynamicDecalVaultRuntime.cs`, `VRSomaticProvider.Comfort.cs`, `InventoryRoutingNetwork.cs`, `FabricationAssemblerRuntime.cs`, `TopographicalSonarSynthesizer.cs`, `MesofaunaBehavioralStateMachine.cs`, and KineticCharacter animator files.
-- Static implication: local `dotnet build` results can be false negatives for this batch. Until Unity imports/regenerates projects or the files become included in the generated compile graph, narrow build claims do not prove these new source files compile.
+Current static platform facts:
 
-### Missing World Source Wall Rechecked
+- required XR packages in manifest: `true`;
+- required XR packages in lock: `true`;
+- Android ARM64-only serialized: `true`;
+- Android IL2CPP serialized: `true`;
+- Android target SDK: `35`;
+- Android/Quest scaffold flag: `true`;
+- XR provider serialized proof: `false`;
+- Addressables files: `0`;
+- Data Monolith exists: `false`;
+- build files/logs: `0`;
+- PICO package candidates: `0`;
+- native plugin files: `24`, classified as Windows/native-or-managed and
+  managed/editor DLL surface; no Android/Linux/macOS native parity proof.
 
-- `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridgeFloraCollisionProxies.cs` and `.meta` are absent on disk.
-- Current direct scan of `Hecton8.Core.csproj`, `Assembly-CSharp.csproj`, `Directory.Build.targets`, and `Directory.Build.props` did not find a current reference to that source file.
-- Static implication: older agent logs that cite this as the current hard compile wall may now be stale. The source is still absent, but the generated-project include wall was not present in the currently scanned project files.
+R20 verdict: Quest/Android scaffold exists, but every real platform readiness
+claim remains blocked by missing provider/build/payload/runtime proof.
 
-### Current Hard Compile Mines By Static Source
+## 2026-05-20 R21 No-Build Static Recapture
 
-- Missing BufferID enum symbols for `BabelSubtitleCueState` and `BabelSubtitleCueTelemetryRing` remain the clearest direct C# compile mine because `BabelSubtitleSyncRuntime.cs` references them and current `H8Memory.BufferID` lacks them.
-- Untracked files not included in generated projects mean this compile mine may remain hidden until project regeneration/import.
+What was wrong: concurrent source churn changed current counters after R18-R20.
+The audit needed a fresh current layer without rewriting older evidence.
 
-Runtime microseconds saved: 0 claimed. No compile/runtime proof.
+What was done: reran the local static audit test suite and static gates. No
+Unity import, dotnet build, player build, profiler, or device run was launched.
+
+Cinematic Cheats used: none; audit recapture only.
+
+Exact Microseconds saved: 0 runtime us claimed.
+
+Verification:
+
+- `python Tools/test_global_authority_gate.py`: PASS, 3 tests.
+- `python Tools/test_buffer_id_sovereignty_audit.py`: PASS, 2 tests.
+- `python Tools/test_polish_mandate_static_audit.py`: PASS, 2 tests.
+- `python Tools/test_assembly_dependency_audit.py`: PASS, 3 tests.
+- `python Tools/test_platform_portability_proof_audit.py`: PASS, 2 tests.
+- `python Tools/GlobalAuthorityGate.py`: PASS_WITH_WARNINGS.
+- `python Tools/BufferIDSovereigntyAudit.py --fail-on-duplicates`: PASS.
+- `python Tools/PolishMandateStaticAudit.py`: PASS_WITH_WARNINGS.
+- `python Tools/AssemblyDependencyAudit.py`: PASS_WITH_WARNINGS.
+- `python Tools/PlatformPortabilityProofAudit.py`: PASS_WITH_WARNINGS.
+
+Current R21 hard gates:
+
+- generic `GlobalRegistry.Get/TryGet<T>`: `0`;
+- exact runtime `Pack=1`: `0`;
+- central `BufferID` duplicate values: `0`;
+- first-party asmdef cycles: `0`.
+
+Current R21 warning pressure:
+
+- C# files scanned: `1984`;
+- local numeric `(BufferID)N` casts: `693` across `59` files;
+- `SignalBus` producer/config suspect types: `9`;
+- private native collection fields: `1389` across `222` files;
+- direct `.Complete()` lines: `231` across `104` files;
+- first-party asmdefs: `137`;
+- Core concrete sibling refs: `16`;
+- runtime concrete cross-domain refs: `93`;
+- XR provider proof: `false`;
+- Addressables files: `0`;
+- Data Monolith: `missing`;
+- build artifacts/logs: `0`.
+
+R21 verdict: hard architectural tripwires remain clean; global direction is
+still sane. Warning pressure is moving, so this is still YELLOW, not GREEN.
+
+## 2026-05-20 R22 Stable Policy Promotion
+
+What was wrong: new assembly/platform gates existed in tools, AgentLogs,
+Quality Gates, and the dated report, but not in the stable architecture policy
+files that future agents are supposed to obey first.
+
+What was done: added the platform proof audit command to
+`Docs/ARCHITECTURE/PLATFORM_PORTABILITY_PROOF_LADDER.md`, added assembly
+dependency audit commands to
+`Docs/ARCHITECTURE/GLOBAL_AUTHORITY_MIGRATION_LEDGER.md`, and added one concise
+no-prose-readiness rule to both `AGENTS.md` files.
+
+Cinematic Cheats used: none; documentation authority pass only.
+
+Exact Microseconds saved: 0 runtime us claimed.
+
+R22 verdict: dated report policy has been promoted into stable docs without
+adding runtime code or launching builds.
+
+## 2026-05-20 R23 Architecture Risk Hotlist
+
+What was wrong: static gates showed large warning counts, but not a ranked
+owner-review order. That invites chasing small findings while large overlap
+files stay untouched.
+
+What was done: added `Tools/ArchitectureRiskHotlistAudit.py` and
+`Tools/test_architecture_risk_hotlist_audit.py`. The tool writes
+`Docs/AgentLogs/ArchitectureRiskHotlist_HFI_AUDIT.md` and `.json`.
+
+Cinematic Cheats used: none; triage/tooling pass only.
+
+Exact Microseconds saved: 0 runtime us claimed.
+
+Verification:
+
+- `python Tools/test_architecture_risk_hotlist_audit.py`: PASS, 2 tests.
+- `python Tools/ArchitectureRiskHotlistAudit.py`: PASS_WITH_WARNINGS.
+
+Current hotlist map:
+
+- C# files scanned: `1986`;
+- scored files: `907`;
+- family totals: authority `6088`, DataVault `3257`, determinism `1211`,
+  signals `593`, jobs `231`, platform `102`, layout `8`, hotpath `6`.
+
+Top review files:
+
+1. `Assets/_Project/Scripts/PlayerInventory.cs`
+2. `Assets/_Project/Scripts/Core/GlobalSignals.cs`
+3. `Assets/_Project/Scripts/HectonFluidEngine.cs`
+4. `Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs`
+5. `Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs`
+6. `Assets/_Project/Scripts/SpatialAudioManager.cs`
+7. `Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs`
+8. `Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs`
+9. `Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs`
+10. `Assets/_Project/Scripts/Construction/DroneFleetManager.cs`
+
+R23 verdict: this confirms the global direction issue is not one tiny bug. The
+highest-value next burn-down is owner-domain review of inventory, fluid,
+logistics, audio, residency/streaming, and atmosphere state ownership. Do not
+mass-refactor these in one pass.
+
+## 2026-05-20 R24 DataVault Baseline Candidate
+
+What was wrong: the default DataVault no-regression gate has no active baseline
+after archival. That makes the gate fail closed, but does not say whether debt
+actually grew.
+
+What was done: compared current source against the archived Batch007 baseline
+and wrote a separate HFI candidate baseline. The official active
+`VAULT_SOVEREIGNTY_ENFORCER` baseline was not overwritten.
+
+Cinematic Cheats used: none; audit/proof pass only.
+
+Exact Microseconds saved: 0 runtime us claimed.
+
+Verification:
+
+- `python Tools/DataVaultSovereigntyAudit.py --baseline Docs/Archive/Batch007/AgentLogs/DataVaultSovereigntyBaseline_VAULT_SOVEREIGNTY_ENFORCER.json --report Docs/AgentLogs/DataVaultSovereigntyAudit_HFI_AUDIT_vs_Batch007.md --fail-on-regression`: FAIL_REGRESSION.
+- `python Tools/DataVaultSovereigntyAudit.py --baseline Docs/AgentLogs/DataVaultSovereigntyBaselineCandidate_HFI_AUDIT.json --report Docs/AgentLogs/DataVaultSovereigntyAudit_HFI_AUDIT_candidate.md --write-baseline`: PASS_NO_REGRESSION_WITH_LEGACY_DEBT against the newly written candidate only.
+
+Current DataVault counts:
+
+- total direct `new NativeArray<T>` constructors: `1155`;
+- allowed constructors: `6`;
+- forbidden constructors: `1149` across `178` files;
+- total field-like `NativeArray<T>` declarations: `5139`;
+- allowed declarations: `14`;
+- forbidden declarations: `5125` across `349` files.
+
+Compared to Batch007 historical baseline:
+
+- forbidden constructors increased `1085 -> 1149`;
+- forbidden declarations increased `2643 -> 5125`.
+
+R24 verdict: do not approve the candidate automatically. It is an integrator
+decision point: either accept a new baseline with explicit debt waiver, or burn
+down the highest-risk owner files first.
+
+## 2026-05-20 R25 Domain Pressure Burn-Down Map
+
+What was wrong: the hotlist ranked individual files but did not expose
+ownership concentration. That was enough to find review files, but not enough
+to answer the global-direction question without chasing local noise.
+
+What was done: upgraded `Tools/ArchitectureRiskHotlistAudit.py` to schema
+`hecton8.architecture_risk_hotlist.v2`, added per-domain pressure totals, and
+rewrote the hotlist unit test to avoid filesystem temp writes. Added
+`Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BURN_DOWN_PLAN.md` and promoted the plan
+into `Docs/QUALITY_GATES.md` and
+`Docs/ARCHITECTURE/GLOBAL_AUTHORITY_MIGRATION_LEDGER.md`.
+
+Cinematic Cheats used: none; audit/tooling/docs pass only.
+
+Exact Microseconds saved: 0 runtime us claimed.
+
+Verification:
+
+- `python Tools/test_architecture_risk_hotlist_audit.py` with
+  `PYTHONDONTWRITEBYTECODE=1`: PASS, 3 tests.
+- `python Tools/ArchitectureRiskHotlistAudit.py`: PASS_WITH_WARNINGS.
+- `python -m py_compile ...`: not used as proof; sandbox denied writes to
+  `Tools/__pycache__`.
+
+Current R25 hotlist map:
+
+- C# files scanned: `1989`;
+- scored files: `910`;
+- family totals: authority `6111`, DataVault/native ownership `3274`,
+  determinism/time/random `1214`, signals `593`, job completion `103`,
+  platform-tier `102`, layout `8`, hotpath `6`;
+- top domain pressure: `Root=12903`, `World=8228`, `Core=5128`,
+  `Gameplay=3452`, `Editor=2435`, `Construction=2237`, `UI=2156`,
+  `Audio=1595`, `Atmosphere=1362`, `Power=1307`.
+
+R25 verdict: global direction is still sane but not green. The next useful work
+is owner-domain burn-down starting with Root monolith classification, then
+World/residency, Core signal corridor, gameplay/inventory truth, and
+construction/power/atmosphere/audio slices. Do not treat the DataVault candidate
+baseline or the domain score as approval.
+
+## 2026-05-20 R26 Hard Gate Repair / No-Build Recapture
+
+What was wrong: fresh no-build recapture found a real hard-gate regression:
+`GlobalRegistry.Get/TryGet<T>` generic hits had returned from `0` to `4`.
+Those were cold Core bridge lookups, but the gate is intentionally absolute.
+
+What was done: replaced the four generic lookups with existing typed slots:
+
+- `SceneRuntimeService`: `GlobalRegistry.PersistentWorldRegistry` for
+  `ISceneTransitionWorldResidencyBridge`;
+- `RuntimeWatchdog`: `GlobalRegistry.PersistentWorldRegistry` for
+  `IRuntimeWatchdogWorldHealthBridge`;
+- `RenderSettingsLifecycleGuard`: `GlobalRegistry.Atmosphere` for
+  `IAtmosphereRenderSettingsBridge`.
+
+Cinematic Cheats used: none; static hard-gate repair only.
+
+Exact Microseconds saved: 0 runtime us claimed.
+
+Verification:
+
+- `rg -n "GlobalRegistry\.(Get|TryGet)\s*<" Assets/_Project/Scripts -g "*.cs"`:
+  no matches.
+- `python Tools/GlobalAuthorityGate.py`: PASS_WITH_WARNINGS,
+  `globalRegistryGenericGet=0`, `packOne=0`, duplicate central BufferIDs `0`.
+- `python Tools/ArchitectureRiskHotlistAudit.py`: PASS_WITH_WARNINGS,
+  schema `hecton8.architecture_risk_hotlist.v2`, C# files `1989`, scored files
+  `910`.
+- `python Tools/BufferIDSovereigntyAudit.py --fail-on-duplicates`: PASS,
+  duplicates `0`, local casts `734` across `62` files.
+- `python Tools/AssemblyDependencyAudit.py`: PASS_WITH_WARNINGS, cycles `0`,
+  Core concrete sibling refs `1` (`Hecton8.Input`), runtime concrete
+  cross-domain refs `77`.
+- `python Tools/DataVaultSovereigntyAudit.py --baseline Docs/AgentLogs/DataVaultSovereigntyBaselineCandidate_HFI_AUDIT.json --report Docs/AgentLogs/DataVaultSovereigntyAudit_HFI_AUDIT_candidate.md --fail-on-regression`: FAIL, forbidden field declarations increased `5125 -> 5130`.
+
+Current R26 hotlist domain pressure:
+
+- `Root=12899`;
+- `World=8228`;
+- `Core=4728`;
+- `Gameplay=3452`;
+- `Editor=2435`;
+- `Construction=2237`;
+- `UI=2156`;
+- `Audio=1595`;
+- `Atmosphere=1362`;
+- `Power=1304`.
+
+R26 verdict: the registry hard gate is repaired. The global direction remains
+YELLOW/PENDING VERIFICATION because DataVault candidate no-regression now fails
+on field declaration growth in construction/static-data owner files. No dotnet
+build, Unity import, player build, profiler, GC, memory, or device run was
+launched.

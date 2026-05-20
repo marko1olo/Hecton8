@@ -6,7 +6,6 @@ using AOT;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
-using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -159,20 +158,17 @@ namespace Hecton8.Core
                     SystemBit.TimeDilation09);
 
         private static IDataVault _dataVault;
-        private static VaultBufferHandle<float> _globalHardwareMetricsHandle;
-        private static VaultBufferHandle<float> _frameTimeMsHandle;
-        private static VaultBufferHandle<HomeostasisBlackBoxEntry> _blackBoxHandle;
+        private static VaultGenerationHandle<float> _globalHardwareMetricsHandle;
+        private static VaultGenerationHandle<float> _frameTimeMsHandle;
+        private static VaultGenerationHandle<HomeostasisBlackBoxEntry> _blackBoxHandle;
         private static FunctionPointer<ComputeSystemHealthIndexDelegate> _computeShi;
         private static FunctionPointer<ComputeFrameEwmaDelegate> _computeFrameEwma;
-        // COLD ALLOC: ScalabilityListener[1] - cached scalability-tier bridge for PreSimulationTick - owner: HomeostasisBrain
-        private static readonly ScalabilityListener s_scalabilityListener = new ScalabilityListener();
         // COLD ALLOC: DependencyHotSwapBridge[1] - cached registry dependency bridge - owner: HomeostasisBrain
         private static readonly DependencyHotSwapBridge s_dependencyHotSwapBridge = new DependencyHotSwapBridge();
 
         private static bool _initialized;
         private static bool _blackBoxDumped;
         private static bool _shiEwmaSeeded;
-        private static bool _scalabilityListenerRegistered;
         private static bool _hotSwapRegistered;
         private static int _frameTimeCursor;
         private static int _frameTimeSampleCount;
@@ -188,7 +184,6 @@ namespace Hecton8.Core
         private static float _fallbackHardwareBias;
         private static float _cachedBatteryLife01 = 1f;
         private static bool _usingHardwareSnapshot;
-        private static HectonQualityTier _cachedScalabilityTier = HectonQualityTier.Unknown;
         private static IHardwareThermalService _hardwareThermalService;
         private static ulong _currentKillSwitchMask;
         private static byte _currentPressureLevel;
@@ -208,8 +203,7 @@ namespace Hecton8.Core
         private delegate float ComputeSystemHealthIndexDelegate(
             float jitterSigmaMs,
             float cpuTempC,
-            float batteryLife01,
-            int lowTier);
+            float batteryLife01);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate float ComputeFrameEwmaDelegate(
@@ -270,7 +264,6 @@ namespace Hecton8.Core
 
             _computeShi = BurstCompiler.CompileFunctionPointer<ComputeSystemHealthIndexDelegate>(ComputeSystemHealthIndexBurst);
             _computeFrameEwma = BurstCompiler.CompileFunctionPointer<ComputeFrameEwmaDelegate>(ComputeFrameEwmaBurst);
-            _cachedScalabilityTier = GlobalRegistry.ScalabilityTier;
             _hardwareThermalService = GlobalRegistry.HardwareThermal;
             RegisterDependencyListeners();
             _fpsEwma = ResolveTargetFrameRate();
@@ -306,6 +299,7 @@ namespace Hecton8.Core
             UnregisterDependencyListeners();
             MemoryBudgetTracker.Unregister(OwnerName);
             _computeShi = default;
+            ReleaseHomeostasisVaultHandles(_dataVault);
             _dataVault = null;
             _globalHardwareMetricsHandle = default;
             _frameTimeMsHandle = default;
@@ -329,7 +323,6 @@ namespace Hecton8.Core
             _fallbackHardwareBias = 0f;
             _cachedBatteryLife01 = 1f;
             _usingHardwareSnapshot = false;
-            _cachedScalabilityTier = HectonQualityTier.Unknown;
             _hardwareThermalService = null;
             _currentKillSwitchMask = 0UL;
             _currentPressureLevel = 0;
@@ -339,7 +332,9 @@ namespace Hecton8.Core
 
         internal static void PreSimulationTick(float unscaledDeltaTime)
         {
-            InitializeRuntime();
+            if (!_initialized)
+                return;
+
             if (!TryResolveRuntimeBuffers(
                     out NativeArray<float> hardwareMetrics,
                     out NativeArray<float> frameTimes,
@@ -353,19 +348,15 @@ namespace Hecton8.Core
             float targetFrameMs = ResolveTargetFrameMs(targetFps);
             float vramPressure01 = SampleVramPressure01(hardwareMetrics);
 
-            HectonQualityTier tier = _cachedScalabilityTier;
-            bool lowTier = IsLowTier(tier);
             float rawShi = _computeShi.IsCreated
                 ? _computeShi.Invoke(
                     hardwareMetrics[(int)HardwareMetricSlot.JitterSigma],
                     hardwareMetrics[(int)HardwareMetricSlot.CpuTempC],
-                    hardwareMetrics[(int)HardwareMetricSlot.BatteryLife01],
-                    lowTier ? 1 : 0)
+                    hardwareMetrics[(int)HardwareMetricSlot.BatteryLife01])
                 : ComputeSystemHealthIndexManaged(
                     hardwareMetrics[(int)HardwareMetricSlot.JitterSigma],
                     hardwareMetrics[(int)HardwareMetricSlot.CpuTempC],
-                    hardwareMetrics[(int)HardwareMetricSlot.BatteryLife01],
-                    lowTier);
+                    hardwareMetrics[(int)HardwareMetricSlot.BatteryLife01]);
             rawShi = ComputeDictatorRawShi(
                 frame,
                 rawShi,
@@ -374,7 +365,6 @@ namespace Hecton8.Core
                 vramPressure01,
                 hardwareMetrics[(int)HardwareMetricSlot.CpuTempC],
                 hardwareMetrics[(int)HardwareMetricSlot.JitterSigma],
-                lowTier,
                 hardwareMetrics);
 
             if (!math.isfinite(rawShi))
@@ -399,7 +389,7 @@ namespace Hecton8.Core
             if (_systemHealthIndex01 > _peakSystemHealthIndex01)
                 _peakSystemHealthIndex01 = _systemHealthIndex01;
 
-            ushort flags = ApplyPressurePolicy(frame, frameMs, BuildFlags(lowTier, tier, hardwareMetrics), hardwareMetrics);
+            ushort flags = ApplyPressurePolicy(frame, frameMs, BuildFlags(hardwareMetrics), hardwareMetrics);
             PublishFrameTimeSignal(frame, frameMs, targetFps, flags, hardwareMetrics);
             WriteBlackBox(frame, frameMs, flags, hardwareMetrics, blackBox);
         }
@@ -620,19 +610,15 @@ namespace Hecton8.Core
             return target;
         }
 
-        private static bool IsLowTier(HectonQualityTier tier)
-        {
-            return tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350;
-        }
-
-        private static ushort BuildFlags(bool lowTier, HectonQualityTier tier, NativeArray<float> hardwareMetrics)
+        private static ushort BuildFlags(NativeArray<float> hardwareMetrics)
         {
             ushort flags = 0;
             if (hardwareMetrics[(int)HardwareMetricSlot.JitterSigma] > JitterUnstableSigmaMs)
                 flags |= (ushort)HomeostasisSignalFlags.UnstableJitter;
-            if (lowTier)
+            float hardwareConstraint01 = ResolveHardwareConstraintPressure01();
+            if (hardwareConstraint01 >= HardwareConstraintFlagThreshold01)
                 flags |= (ushort)HomeostasisSignalFlags.LowTierBatteryWeight;
-            else if ((tier == HectonQualityTier.High || tier == HectonQualityTier.Ultra) &&
+            else if (GlobalQualityWeight >= VisualOverkillFlagQualityThreshold01 &&
                      _systemHealthIndex01 < SequentialRecoveryShi)
                 flags |= (ushort)HomeostasisSignalFlags.VisualOverkillBudgetOpen;
             if (_usingHardwareSnapshot)
@@ -1015,42 +1001,34 @@ namespace Hecton8.Core
             if (vault == null)
                 return false;
 
-            bool metricsCreated = false;
-            bool frameTimesCreated = false;
-            bool blackBoxCreated = false;
-            if (!_globalHardwareMetricsHandle.IsCreated || !vault.ResolveBuffer(ref _globalHardwareMetricsHandle))
-            {
-                _globalHardwareMetricsHandle = vault.GetBufferHandle<float>(
+            if (!TryResolveOrAcquire(
+                    vault,
+                    ref _globalHardwareMetricsHandle,
                     BufferID.HardwareMetrics,
                     (int)HardwareMetricSlot.Count,
-                    SystemID.HardwareHomeostasis,
-                    NativeArrayOptions.UninitializedMemory);
-                metricsCreated = true;
-            }
-
-            if (!_frameTimeMsHandle.IsCreated || !vault.ResolveBuffer(ref _frameTimeMsHandle))
-            {
-                _frameTimeMsHandle = vault.GetBufferHandle<float>(
+                    NativeArrayOptions.UninitializedMemory,
+                    out hardwareMetrics,
+                    out bool metricsCreated) ||
+                !TryResolveOrAcquire(
+                    vault,
+                    ref _frameTimeMsHandle,
                     BufferID.HardwareFrameTimes,
                     FrameTimeWindow,
-                    SystemID.HardwareHomeostasis,
-                    NativeArrayOptions.UninitializedMemory);
-                frameTimesCreated = true;
-            }
-
-            if (!_blackBoxHandle.IsCreated || !vault.ResolveBuffer(ref _blackBoxHandle))
-            {
-                _blackBoxHandle = vault.GetBufferHandle<HomeostasisBlackBoxEntry>(
+                    NativeArrayOptions.UninitializedMemory,
+                    out frameTimes,
+                    out bool frameTimesCreated) ||
+                !TryResolveOrAcquire(
+                    vault,
+                    ref _blackBoxHandle,
                     BufferID.HomeostasisBlackBox,
                     BlackBoxCapacity,
-                    SystemID.HardwareHomeostasis,
-                    NativeArrayOptions.UninitializedMemory);
-                blackBoxCreated = true;
+                    NativeArrayOptions.UninitializedMemory,
+                    out blackBox,
+                    out bool blackBoxCreated))
+            {
+                return false;
             }
 
-            hardwareMetrics = _globalHardwareMetricsHandle.Resolve(vault);
-            frameTimes = _frameTimeMsHandle.Resolve(vault);
-            blackBox = _blackBoxHandle.Resolve(vault);
             if (metricsCreated)
                 MemClearIfCreated(hardwareMetrics);
             if (frameTimesCreated)
@@ -1072,43 +1050,88 @@ namespace Hecton8.Core
             if (vault == null)
                 return false;
 
-            bool metricsCreated = false;
-            if (!_globalHardwareMetricsHandle.IsCreated || !vault.ResolveBuffer(ref _globalHardwareMetricsHandle))
-            {
-                _globalHardwareMetricsHandle = vault.GetBufferHandle<float>(
+            if (!TryResolveOrAcquire(
+                    vault,
+                    ref _globalHardwareMetricsHandle,
                     BufferID.HardwareMetrics,
                     (int)HardwareMetricSlot.Count,
-                    SystemID.HardwareHomeostasis,
-                    NativeArrayOptions.UninitializedMemory);
-                metricsCreated = true;
+                    NativeArrayOptions.UninitializedMemory,
+                    out metrics,
+                    out bool metricsCreated))
+            {
+                return false;
             }
 
-            metrics = _globalHardwareMetricsHandle.Resolve(vault);
             if (metricsCreated)
                 MemClearIfCreated(metrics);
             return metrics.IsCreated && metrics.Length >= (int)HardwareMetricSlot.Count;
         }
 
-        private static void RegisterDependencyListeners()
+        private static bool TryResolveOrAcquire<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer,
+            out bool allocatedOrResized)
+            where T : struct
         {
-            if (!_scalabilityListenerRegistered)
+            buffer = default;
+            allocatedOrResized = false;
+            if (vault == null || requiredLength <= 0)
+                return false;
+
+            if (handle.BufferID != 0u &&
+                vault.TryResolveHandle(in handle, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= requiredLength)
             {
-                ScalabilityEvents.Register(s_scalabilityListener);
-                _scalabilityListenerRegistered = true;
+                return true;
             }
 
+            if (vault.TryGetGenerationHandle<T>(bufferId, out handle) &&
+                vault.TryResolveHandle(in handle, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= requiredLength)
+            {
+                return true;
+            }
+
+            handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.HardwareHomeostasis,
+                options);
+            allocatedOrResized = true;
+
+            return handle.BufferID != 0u &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static void ReleaseHomeostasisVaultHandles(IDataVault vault)
+        {
+            if (vault == null)
+                return;
+
+            if (_globalHardwareMetricsHandle.BufferID != 0u)
+                vault.ReleaseBuffer(in _globalHardwareMetricsHandle);
+            if (_frameTimeMsHandle.BufferID != 0u)
+                vault.ReleaseBuffer(in _frameTimeMsHandle);
+            if (_blackBoxHandle.BufferID != 0u)
+                vault.ReleaseBuffer(in _blackBoxHandle);
+        }
+
+        private static void RegisterDependencyListeners()
+        {
             if (!_hotSwapRegistered)
                 _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(s_dependencyHotSwapBridge);
         }
 
         private static void UnregisterDependencyListeners()
         {
-            if (_scalabilityListenerRegistered)
-            {
-                ScalabilityEvents.Unregister(s_scalabilityListener);
-                _scalabilityListenerRegistered = false;
-            }
-
             if (_hotSwapRegistered)
             {
                 GlobalRegistry.TryUnregisterHotSwapListener(s_dependencyHotSwapBridge);
@@ -1116,7 +1139,10 @@ namespace Hecton8.Core
             }
         }
 
-        private static void RebindRegistryDependency(GlobalRegistryServiceSlot serviceSlot, object currentService)
+        private static void RebindRegistryDependency(
+            GlobalRegistryServiceSlot serviceSlot,
+            object currentService,
+            object previousService = null)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.HardwareThermalService)
             {
@@ -1134,19 +1160,13 @@ namespace Hecton8.Core
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
+            IDataVault previousVault = previousService as IDataVault ?? _dataVault;
+            ReleaseHomeostasisVaultHandles(previousVault);
+            ResetScalabilityDictatorVaultHandles(previousVault);
             _dataVault = currentService as IDataVault;
             _globalHardwareMetricsHandle = default;
             _frameTimeMsHandle = default;
             _blackBoxHandle = default;
-            ResetScalabilityDictatorVaultHandles();
-        }
-
-        private sealed class ScalabilityListener : IScalabilityChangedEventListener
-        {
-            public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
-            {
-                _cachedScalabilityTier = payload.CurrentQualityTier;
-            }
         }
 
         private sealed class DependencyHotSwapBridge : IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
@@ -1163,7 +1183,7 @@ namespace Hecton8.Core
                 object previousService,
                 object currentService)
             {
-                RebindRegistryDependency(serviceSlot, currentService);
+                RebindRegistryDependency(serviceSlot, currentService, previousService);
             }
         }
 
@@ -1196,8 +1216,7 @@ namespace Hecton8.Core
         private static float ComputeSystemHealthIndexBurst(
             float jitterSigmaMs,
             float cpuTempC,
-            float batteryLife01,
-            int lowTier)
+            float batteryLife01)
         {
             float jitter01 = math.saturate(jitterSigmaMs * 0.5f);
             float temp01 = math.saturate((cpuTempC - 55f) / 30f);
@@ -1208,8 +1227,7 @@ namespace Hecton8.Core
         private static float ComputeSystemHealthIndexManaged(
             float jitterSigmaMs,
             float cpuTempC,
-            float batteryLife01,
-            bool lowTier)
+            float batteryLife01)
         {
             float jitter01 = math.saturate(jitterSigmaMs * 0.5f);
             float temp01 = math.saturate((cpuTempC - 55f) / 30f);

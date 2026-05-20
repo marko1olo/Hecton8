@@ -5,7 +5,6 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
-using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -13,6 +12,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Serialization;
 
 namespace Hecton8.AI.Ambient
 {
@@ -41,18 +41,18 @@ namespace Hecton8.AI.Ambient
         private const float DefaultFlowX = 0.08f;
         private const float DefaultFlowY = -0.01f;
         private const float DefaultFlowZ = 0.04f;
-        private const float HighTierHeadlightConeDot = 0.70f;
-        private const float HighTierAvoidanceMetersPerSecond = 0.42f;
+        private const float PrecisionHeadlightConeDot = 0.70f;
+        private const float PrecisionAvoidanceMetersPerSecond = 0.42f;
         private const ushort TelemetryFlagFaultSanitized = 1 << 0;
-        private const ushort TelemetryFlagLowTier = 1 << 1;
-        private const ushort TelemetryFlagHighTierOverkill = 1 << 2;
+        private const ushort TelemetryFlagSurvivalPressure = 1 << 1;
+        private const ushort TelemetryFlagVisualOverkill = 1 << 2;
         private const ushort TelemetryFlagPendingDebris = 1 << 3;
         private const string AgentDumpFileName = "Dump_AMBIENT_BIOTA_DIRECTOR.bin";
         private static readonly int BiotaInstancesShaderId = Shader.PropertyToID("_HectonBiotaInstances");
         private static readonly int BiotaCapacityShaderId = Shader.PropertyToID("_HectonBiotaCapacity");
         private static readonly int BiotaActiveCountShaderId = Shader.PropertyToID("_HectonBiotaActiveCount");
         private static readonly int BiotaBiomeHashShaderId = Shader.PropertyToID("_HectonBiotaBiomeHash");
-        private static readonly int BiotaQualityProfileShaderId = Shader.PropertyToID("_HectonBiotaQualityProfile");
+        private static readonly int BiotaQualityWeightShaderId = Shader.PropertyToID("_HectonBiotaQualityProfile");
         private static readonly int BiotaSystemStressShaderId = Shader.PropertyToID("_HectonBiotaSystemStress01");
         private static readonly int BiotaFlowVectorShaderId = Shader.PropertyToID("_HectonBiotaFlowVector");
         private static readonly int BiotaOverkillShaderId = Shader.PropertyToID("_HectonBiotaOverkill01");
@@ -60,10 +60,12 @@ namespace Hecton8.AI.Ambient
         private static readonly int BiotaOriginWsShaderId = Shader.PropertyToID("_HectonBiotaOriginWS");
 
         [Header("Biota Capacity")]
-        [SerializeField, Tooltip("Maximum low-tier ambient biota slots requested from the GlobalDataVault."), Min(128)] private int lowTierCapacity = 2048;
-        [SerializeField, Tooltip("Maximum high-tier ambient biota slots requested from the GlobalDataVault."), Min(128)] private int highTierCapacity = 8192;
+        [FormerlySerializedAs("lowTierCapacity")]
+        [SerializeField, Tooltip("Minimum survival ambient biota slots requested from the GlobalDataVault."), Min(128)] private int survivalCapacity = 2048;
+        [FormerlySerializedAs("highTierCapacity")]
+        [SerializeField, Tooltip("Precision ambient biota slots requested from the GlobalDataVault before ultra overdraw."), Min(128)] private int precisionCapacity = 8192;
         [SerializeField, Tooltip("Maximum dead slots the Burst spawn job may reactivate per slow tick."), Min(1)] private int spawnBudgetPerSlowTick = 64;
-        [SerializeField, Tooltip("Nominal AUP bubble radius in meters before stress and quality-tier clamps."), Min(8f)] private float simulationRadiusMeters = 100f;
+        [SerializeField, Tooltip("Nominal AUP bubble radius in meters before stress and quality clamps."), Min(8f)] private float simulationRadiusMeters = 100f;
         [SerializeField, Tooltip("Biota lifetime in seconds before deterministic culling and organic debris signaling."), Min(1f)] private float lifetimeSeconds = 45f;
         [SerializeField, Tooltip("Base deterministic species id used to derive biome-biased ambient biota variants.")] private ushort baseSpeciesId = 16;
 
@@ -96,9 +98,8 @@ namespace Hecton8.AI.Ambient
         private float3 _lastPlayerRuntimePosition;
         private float3 _lastPlayerForward = new float3(0f, 0f, 1f);
         private float3 _flowVector = new float3(DefaultFlowX, DefaultFlowY, DefaultFlowZ);
-        private HectonQualityTier _cachedQualityTier = HectonQualityTier.Unknown;
-        private byte _cachedQualityProfile;
-        private byte _highTierOverkillEnabled;
+        private float _cachedQualityWeight01 = 1f;
+        private float _visualOverkillWeight01;
         private float _cachedSystemStress01;
         private int _capacity;
         private int _activeBiotaCount;
@@ -164,7 +165,7 @@ namespace Hecton8.AI.Ambient
 
         private void OnDisable()
         {
-            CompleteActiveJob();
+            CompleteActiveJobForTeardown();
             UnregisterRuntime();
             ReleaseGraphicsResources();
             ClearVaultHandles();
@@ -226,10 +227,10 @@ namespace Hecton8.AI.Ambient
                 RadiusSq = (double)radius * radius,
                 ActiveBucket = activeBucket,
                 FrameIndex = _frameIndex,
-                LowTier = (byte)(_cachedQualityProfile == 0 ? 1 : 0),
-                HighTierOverkill = _highTierOverkillEnabled,
-                HeadlightConeDot = HighTierHeadlightConeDot,
-                AvoidanceMetersPerSecond = HighTierAvoidanceMetersPerSecond
+                SurvivalPressure01 = ResolveSurvivalPressure01(),
+                VisualOverkill01 = _visualOverkillWeight01,
+                HeadlightConeDot = PrecisionHeadlightConeDot,
+                AvoidanceMetersPerSecond = PrecisionAvoidanceMetersPerSecond
             };
 
             _activeJobHandle = driftJob.Schedule(_capacity, 64);
@@ -282,8 +283,8 @@ namespace Hecton8.AI.Ambient
                 Seed = BaseSeedSalt,
                 FrameIndex = _frameIndex,
                 CurrentBiomeHash = _currentBiomeHash,
-                LowTier = (byte)(_cachedQualityProfile == 0 ? 1 : 0),
-                HighTierOverkill = _highTierOverkillEnabled
+                SurvivalPressure01 = ResolveSurvivalPressure01(),
+                VisualOverkill01 = _visualOverkillWeight01
             };
 
             _activeJobHandle = spawnJob.Schedule();
@@ -293,9 +294,12 @@ namespace Hecton8.AI.Ambient
 
         public void LateFrameTick()
         {
-            bool completedJob = _jobPending;
-            if (completedJob)
-                CompleteActiveJob();
+            bool completedJob = _jobPending && TryFinalizeActiveJobNoWait();
+            if (_jobPending)
+            {
+                WriteTelemetryHeartbeat();
+                return;
+            }
 
             if (TryResolveBiotaBuffers(out NativeArray<AbsoluteUniversePosition> aups, out NativeArray<float4> velocities, out NativeArray<AmbientBiotaState> states))
             {
@@ -317,7 +321,7 @@ namespace Hecton8.AI.Ambient
             ushort radiusMetersQ,
             NativeArray<MacroSwarm> swarms,
             int swarmCount,
-            byte qualityTier,
+            byte qualityByte,
             float systemStress01,
             out int spawnedBoidCount)
         {
@@ -338,7 +342,11 @@ namespace Hecton8.AI.Ambient
             ClearMacroCounters(counters);
             int safeSwarmCount = math.min(swarmCount, swarms.Length);
             float radiusMeters = math.max(8f, radiusMetersQ);
-            byte spawnQualityTier = ResolveMacroVisualQualityTier(in centerAup, qualityTier, systemStress01);
+            byte spawnQualityByte = ResolveMacroVisualQualityByte(in centerAup, qualityByte, systemStress01);
+            float macroQualityWeight01 = math.saturate(spawnQualityByte * (1f / 3f));
+            float macroSurvivalPressure01 = math.max(
+                1f - SmoothStep01(macroQualityWeight01),
+                SmoothStep01(math.saturate((systemStress01 - 0.62f) * math.rcp(0.38f))));
             AmbientBiotaMacroHydrationJob hydrationJob = new AmbientBiotaMacroHydrationJob
             {
                 Aups = aups,
@@ -355,11 +363,13 @@ namespace Hecton8.AI.Ambient
                 Seed = MacroHydrationSeedSalt,
                 FrameIndex = _frameIndex,
                 CurrentBiomeHash = _currentBiomeHash,
-                QualityTier = spawnQualityTier,
+                QualityWeight01 = macroQualityWeight01,
+                SurvivalPressure01 = macroSurvivalPressure01,
                 SystemStress01 = math.saturate(systemStress01)
             };
 
-            hydrationJob.Run();
+            JobHandle hydrationHandle = hydrationJob.Schedule();
+            DispatcherJobFence.TryComplete(ref hydrationHandle, forceComplete: true);
             _frameIndex++;
             spawnedBoidCount = counters[0];
             if (spawnedBoidCount <= 0)
@@ -374,10 +384,10 @@ namespace Hecton8.AI.Ambient
                 SpawnedCount = (ushort)math.clamp(spawnedBoidCount, 0, ushort.MaxValue),
                 RequestedCount = (ushort)math.clamp(counters[1], 0, ushort.MaxValue),
                 EntityKind = EntitySpawnSignal.KindEcology,
-                QualityTier = spawnQualityTier,
+                QualityTier = spawnQualityByte,
                 Flags = (byte)(EntitySpawnSignal.FlagEcology |
-                               (spawnQualityTier == 0 ? EntitySpawnSignal.FlagLowTierVisual : 0) |
-                               (spawnQualityTier >= 3 ? EntitySpawnSignal.FlagHighTierOverkill : 0)),
+                               (macroSurvivalPressure01 >= 0.75f ? EntitySpawnSignal.FlagLowTierVisual : 0) |
+                               (macroQualityWeight01 >= 0.95f ? EntitySpawnSignal.FlagHighTierOverkill : 0)),
                 Frame = _frameIndex
             };
             SignalBus<EntitySpawnSignal>.Push(in spawnSignal);
@@ -415,7 +425,8 @@ namespace Hecton8.AI.Ambient
                 Capacity = _capacity
             };
 
-            dehydrationJob.Run();
+            JobHandle dehydrationHandle = dehydrationJob.Schedule();
+            DispatcherJobFence.TryComplete(ref dehydrationHandle, forceComplete: true);
             releasedBoidCount = counters[0];
             if (releasedBoidCount <= 0)
                 return false;
@@ -434,7 +445,10 @@ namespace Hecton8.AI.Ambient
         private void RefreshRegistryDependencies()
         {
             if (_vault == null)
-                _vault = GlobalRegistry.DataVault;
+            {
+                if (GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latestVault))
+                    _vault = latestVault;
+            }
 
             if (_player == null || !_player.IsInitialized)
                 _player = GlobalRegistry.Player;
@@ -678,25 +692,17 @@ namespace Hecton8.AI.Ambient
 
         private int ResolveCapacity()
         {
-            HectonQualityTier tier = _cachedQualityTier;
-            int requested = tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350
-                ? lowTierCapacity
-                : highTierCapacity;
-
-            if (tier == HectonQualityTier.Ultra)
-                requested = highTierCapacity << 1;
-
-            return math.clamp(requested, 128, 32768);
+            float qualityCurve = SmoothStep01(_cachedQualityWeight01);
+            float ultraCurve = SmoothStep01(math.saturate((_cachedQualityWeight01 - 0.82f) * math.rcp(0.18f)));
+            float requested = math.lerp(survivalCapacity, precisionCapacity, qualityCurve) + precisionCapacity * ultraCurve;
+            return math.clamp((int)math.round(requested), 128, 32768);
         }
 
         private int ResolveTargetActiveCount(float preyBiomass01, float carryingCapacity01)
         {
             float biomass = math.saturate(math.min(preyBiomass01, carryingCapacity01));
-            float scalar = 0.65f;
-            if (_cachedQualityTier == HectonQualityTier.Low || _cachedQualityTier == HectonQualityTier.Mx350 || _cachedQualityProfile == 0)
-                scalar = 0.35f;
-            else if (_cachedQualityTier == HectonQualityTier.High || _cachedQualityTier == HectonQualityTier.Ultra)
-                scalar = 0.92f;
+            float scalar = math.lerp(0.35f, 0.92f, SmoothStep01(_cachedQualityWeight01));
+            scalar *= math.lerp(1f, 0.45f, ResolveSurvivalPressure01());
 
             return math.clamp((int)math.round(_capacity * biomass * scalar), 0, _capacity);
         }
@@ -704,12 +710,9 @@ namespace Hecton8.AI.Ambient
         private float ResolveSimulationRadiusMeters()
         {
             float radius = math.max(8f, simulationRadiusMeters);
-            float systemStress01 = _cachedSystemStress01;
-            if (systemStress01 > 0.8f)
-                radius = math.min(radius, 30f);
-
-            if (_highTierOverkillEnabled != 0 && systemStress01 < 0.35f)
-                radius = math.min(radius * 1.35f, 220f);
+            float survivalPressure01 = ResolveSurvivalPressure01();
+            radius = math.lerp(radius, math.min(radius, 30f), survivalPressure01);
+            radius = math.min(radius * math.lerp(1f, 1.35f, _visualOverkillWeight01 * (1f - survivalPressure01)), 220f);
 
             return radius;
         }
@@ -720,6 +723,19 @@ namespace Hecton8.AI.Ambient
                 return _bucketer.ActiveSlowBucket & BucketMask;
 
             return (int)(_frameIndex & BucketMask);
+        }
+
+        private float ResolveSurvivalPressure01()
+        {
+            float qualityPressure01 = 1f - SmoothStep01(_cachedQualityWeight01);
+            float stressPressure01 = SmoothStep01(math.saturate((_cachedSystemStress01 - 0.62f) * math.rcp(0.38f)));
+            return math.saturate(math.max(qualityPressure01, stressPressure01));
+        }
+
+        private static float SmoothStep01(float value)
+        {
+            float saturated = math.saturate(value);
+            return saturated * saturated * (3f - 2f * saturated);
         }
 
         private bool TryCapturePlayerPose(out PlayerRuntimePoseSnapshot pose)
@@ -734,11 +750,13 @@ namespace Hecton8.AI.Ambient
 
         private void RefreshQualityPolicy()
         {
-            _cachedQualityTier = GlobalRegistry.ScalabilityTier;
-            _cachedQualityProfile = GlobalRegistry.ScalabilityTierProfileByte;
-            _highTierOverkillEnabled = (byte)(_cachedQualityTier == HectonQualityTier.High || _cachedQualityTier == HectonQualityTier.Ultra ? 1 : 0);
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            _cachedQualityWeight01 = math.saturate(math.select(_cachedQualityWeight01, quality, math.isfinite(quality)));
             float systemStress01 = GlobalSignals.SystemStress01;
             _cachedSystemStress01 = math.select(0f, math.saturate(systemStress01), math.isfinite(systemStress01));
+            float overkillQuality01 = SmoothStep01(math.saturate((_cachedQualityWeight01 - 0.55f) * math.rcp(0.45f)));
+            float stressSuppression01 = SmoothStep01(math.saturate((_cachedSystemStress01 - 0.35f) * math.rcp(0.65f)));
+            _visualOverkillWeight01 = math.saturate(overkillQuality01 * (1f - stressSuppression01));
         }
 
         private void RefreshEcologyInputs(float3 runtimePosition, out float preyBiomass01, out float carryingCapacity01)
@@ -814,10 +832,10 @@ namespace Hecton8.AI.Ambient
             material.SetInt(BiotaCapacityShaderId, _capacity);
             material.SetInt(BiotaActiveCountShaderId, _activeBiotaCount);
             material.SetFloat(BiotaBiomeHashShaderId, (float)_currentBiomeHash);
-            material.SetFloat(BiotaQualityProfileShaderId, _cachedQualityProfile);
+            material.SetFloat(BiotaQualityWeightShaderId, _cachedQualityWeight01);
             material.SetFloat(BiotaSystemStressShaderId, _cachedSystemStress01);
             material.SetVector(BiotaFlowVectorShaderId, new Vector4(_flowVector.x, _flowVector.y, _flowVector.z, 0f));
-            material.SetFloat(BiotaOverkillShaderId, _highTierOverkillEnabled);
+            material.SetFloat(BiotaOverkillShaderId, _visualOverkillWeight01);
             material.SetFloat(BiotaVisualTimeShaderId, _telemetryClockSeconds);
             material.SetVector(BiotaOriginWsShaderId, new Vector4(_lastPlayerRuntimePosition.x, _lastPlayerRuntimePosition.y, _lastPlayerRuntimePosition.z, 1f));
 
@@ -1142,13 +1160,26 @@ namespace Hecton8.AI.Ambient
             buffer = null;
         }
 
-        private void CompleteActiveJob()
+        private bool TryFinalizeActiveJobNoWait()
+        {
+            if (!_jobPending)
+                return true;
+
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _activeJobHandle))
+                return false;
+
+            _jobPending = false;
+            return true;
+        }
+
+        private void CompleteActiveJobForTeardown()
         {
             if (!_jobPending)
                 return;
 
-            _activeJobHandle.Complete();
-            _activeJobHandle = default;
+            if (!DispatcherJobFence.TryComplete(ref _activeJobHandle, forceComplete: true))
+                return;
+
             _jobPending = false;
         }
 
@@ -1177,10 +1208,10 @@ namespace Hecton8.AI.Ambient
                     PositionAup = aups[i],
                     SpeciesHash = state.StableHash != 0u ? state.StableHash : state.SpeciesId,
                     SourceEntityId = DirectorSourceHash,
-                    Intensity01 = math.saturate(state.Emission01 + (_highTierOverkillEnabled != 0 ? 0.35f : 0.05f)),
+                    Intensity01 = math.saturate(state.Emission01 + math.lerp(0.05f, 0.35f, _visualOverkillWeight01)),
                     DebrisKind = DebrisSpawnSignal.DebrisKindOrganicScrap,
                     Flags = DebrisSpawnSignal.FlagComputeShard,
-                    Quantity = (ushort)(_highTierOverkillEnabled != 0 ? 6 : 2)
+                    Quantity = (ushort)math.clamp((int)math.round(math.lerp(2f, 6f, _visualOverkillWeight01)), 1, ushort.MaxValue)
                 };
                 SignalBus<DebrisSpawnSignal>.Push(in debrisSignal);
 
@@ -1231,10 +1262,10 @@ namespace Hecton8.AI.Ambient
             _lastCulledCount = culled;
             _lastStateHash = hash;
             _pendingDebrisDrainActive = _pendingDebrisDrainActive || pendingDebris > 0;
-            if (_cachedQualityProfile == 0)
-                flags = (ushort)(flags | TelemetryFlagLowTier);
-            if (_highTierOverkillEnabled != 0)
-                flags = (ushort)(flags | TelemetryFlagHighTierOverkill);
+            if (ResolveSurvivalPressure01() >= 0.75f)
+                flags = (ushort)(flags | TelemetryFlagSurvivalPressure);
+            if (_visualOverkillWeight01 >= 0.6f)
+                flags = (ushort)(flags | TelemetryFlagVisualOverkill);
             if (_pendingDebrisDrainActive)
                 flags = (ushort)(flags | TelemetryFlagPendingDebris);
             _lastTelemetryFlags = flags;
@@ -1329,7 +1360,7 @@ namespace Hecton8.AI.Ambient
             return Path.Combine(projectRoot, "Docs", "AgentLogs", AgentDumpFileName);
         }
 
-        [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct AmbientBiotaGpuInstance
         {
             [FieldOffset(0)] public float4 PositionScale;
@@ -1341,14 +1372,14 @@ namespace Hecton8.AI.Ambient
             [FieldOffset(48)] public float4 VisualParams;
         }
 
-        [BurstCompile(FloatPrecision.Low, FloatMode.Fast, CompileSynchronously = false)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct AmbientBiotaMacroHydrationJob : IJob
         {
-            public NativeArray<AbsoluteUniversePosition> Aups;
-            public NativeArray<float4> Velocities;
-            public NativeArray<AmbientBiotaState> States;
-            [ReadOnly] public NativeArray<MacroSwarm> Swarms;
-            public NativeArray<int> Counters;
+            [NoAlias] public NativeArray<AbsoluteUniversePosition> Aups;
+            [NoAlias] public NativeArray<float4> Velocities;
+            [NoAlias] public NativeArray<AmbientBiotaState> States;
+            [ReadOnly, NoAlias] public NativeArray<MacroSwarm> Swarms;
+            [NoAlias] public NativeArray<int> Counters;
             public AbsoluteUniversePosition CenterAup;
             public float RadiusMeters;
             public float LifetimeSeconds;
@@ -1358,7 +1389,8 @@ namespace Hecton8.AI.Ambient
             public uint Seed;
             public uint FrameIndex;
             public uint CurrentBiomeHash;
-            public byte QualityTier;
+            public float QualityWeight01;
+            public float SurvivalPressure01;
             public float SystemStress01;
 
             public void Execute()
@@ -1369,7 +1401,10 @@ namespace Hecton8.AI.Ambient
                     return;
 
                 float radius = math.max(8f, RadiusMeters);
-                float visualScale = SystemStress01 > MacroHydrationStressCullThreshold01 ? 0.5f : 1f;
+                float survivalPressure01 = math.saturate(math.select(1f, SurvivalPressure01, math.isfinite(SurvivalPressure01)));
+                float qualityWeight01 = math.saturate(math.select(1f, QualityWeight01, math.isfinite(QualityWeight01)));
+                float visualBudget01 = math.saturate(SmoothStep01(qualityWeight01) * (1f - survivalPressure01 * 0.75f));
+                float visualScale = math.lerp(1f, 0.5f, SmoothStep01(math.saturate((SystemStress01 - MacroHydrationStressCullThreshold01) * math.rcp(0.3f))));
                 int spawned = 0;
                 int requested = 0;
                 int invalid = 0;
@@ -1397,7 +1432,7 @@ namespace Hecton8.AI.Ambient
                             break;
 
                         uint hash = Hash32(Seed ^ CurrentBiomeHash ^ swarm.HashId ^ ((uint)slot * 747796405u) ^ ((uint)spawnedForSwarm * 2891336453u) ^ FrameIndex);
-                        double3 offset = ResolveSpawnOffset(hash, radius, QualityTier);
+                        double3 offset = ResolveSpawnOffset(hash, radius, visualBudget01);
                         if (!IsFinite(offset))
                         {
                             invalid++;
@@ -1411,14 +1446,14 @@ namespace Hecton8.AI.Ambient
                             continue;
                         }
 
-                        float3 velocity = ResolveSpawnVelocity(hash, QualityTier);
+                        float3 velocity = ResolveSpawnVelocity(hash, visualBudget01);
                         Velocities[slot] = new float4(velocity, ((hash >> 8) & 255u) * (1f / 255f));
                         Aups[slot] = aup;
                         States[slot] = new AmbientBiotaState
                         {
                             StateFlags = AmbientBiotaState.FlagActive |
                                          AmbientBiotaState.FlagMacroHydrated |
-                                         (QualityTier == 0 || SystemStress01 > MacroHydrationStressCullThreshold01
+                                         (survivalPressure01 >= 0.75f
                                              ? AmbientBiotaState.FlagLowTierBillboard
                                              : 0u),
                             StableHash = hash,
@@ -1426,7 +1461,7 @@ namespace Hecton8.AI.Ambient
                             BucketId = (ushort)(hash & BucketMask),
                             AgeSeconds = 0f,
                             LifetimeSeconds = math.max(1f, LifetimeSeconds * math.lerp(0.8f, 1.6f, ((hash >> 16) & 255u) * (1f / 255f))),
-                            ScaleMeters = math.lerp(0.08f, QualityTier >= 2 ? 0.42f : 0.26f, ((hash >> 24) & 255u) * (1f / 255f)),
+                            ScaleMeters = math.lerp(0.08f, math.lerp(0.26f, 0.42f, visualBudget01), ((hash >> 24) & 255u) * (1f / 255f)),
                             Emission01 = math.saturate(ResolveBiomeEmissionBias(CurrentBiomeHash, hash) + swarm.BiomassValue * 0.6f),
                             Reserved = 0u
                         };
@@ -1473,46 +1508,46 @@ namespace Hecton8.AI.Ambient
                        swarm.BiomassValue > 0.0001f;
             }
 
-            private static double3 ResolveSpawnOffset(uint hash, float radius, byte qualityTier)
+            private static double3 ResolveSpawnOffset(uint hash, float radius, float visualBudget01)
             {
                 float normA = (hash & 65535u) * (1f / 65535f);
                 float normB = ((hash >> 10) & 1023u) * (1f / 1023f);
                 float normC = ((hash >> 20) & 1023u) * (1f / 1023f);
                 float angle = normA * TwoPi;
-                if (qualityTier == 0)
-                {
-                    float triangle = 1f - math.abs(normC * 2f - 1f);
-                    return new double3(
-                        math.cos(angle) * radius,
-                        (triangle - 0.5f) * 8f,
-                        math.sin(angle) * radius);
-                }
-
-                float radial = math.lerp(radius * 0.18f, radius * 0.82f, normB);
-                float verticalBias = qualityTier >= 2 ? -math.lerp(3f, 18f, normC) : (normC - 0.5f) * 18f;
+                float triangle = 1f - math.abs(normC * 2f - 1f);
+                float radial = math.lerp(radius, math.lerp(radius * 0.18f, radius * 0.82f, normB), visualBudget01);
+                float survivalVertical = (triangle - 0.5f) * 8f;
+                float precisionVertical = math.lerp((normC - 0.5f) * 18f, -math.lerp(3f, 18f, normC), visualBudget01);
+                float verticalBias = math.lerp(survivalVertical, precisionVertical, visualBudget01);
                 return new double3(
                     math.cos(angle) * radial,
                     verticalBias,
                     math.sin(angle) * radial);
             }
 
-            private static float3 ResolveSpawnVelocity(uint hash, byte qualityTier)
+            private static float3 ResolveSpawnVelocity(uint hash, float visualBudget01)
             {
-                float scalar = qualityTier >= 2 ? 0.18f : 0.08f;
+                float scalar = math.lerp(0.08f, 0.18f, visualBudget01);
                 return new float3(
                     (((hash >> 3) & 255u) * (1f / 255f) - 0.5f) * scalar,
                     (((hash >> 11) & 255u) * (1f / 255f)) * scalar,
                     (((hash >> 19) & 255u) * (1f / 255f) - 0.5f) * scalar);
             }
+
+            private static float SmoothStep01(float value)
+            {
+                float saturated = math.saturate(value);
+                return saturated * saturated * (3f - 2f * saturated);
+            }
         }
 
-        [BurstCompile(FloatPrecision.Low, FloatMode.Fast, CompileSynchronously = false)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct AmbientBiotaMacroDehydrationJob : IJob
         {
-            public NativeArray<AbsoluteUniversePosition> Aups;
-            public NativeArray<float4> Velocities;
-            public NativeArray<AmbientBiotaState> States;
-            public NativeArray<int> Counters;
+            [NoAlias] public NativeArray<AbsoluteUniversePosition> Aups;
+            [NoAlias] public NativeArray<float4> Velocities;
+            [NoAlias] public NativeArray<AmbientBiotaState> States;
+            [NoAlias] public NativeArray<int> Counters;
             public AbsoluteUniversePosition CenterAup;
             public double RadiusSq;
             public int Capacity;
@@ -1552,12 +1587,12 @@ namespace Hecton8.AI.Ambient
             }
         }
 
-        [BurstCompile(FloatPrecision.Low, FloatMode.Fast, CompileSynchronously = false)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct AmbientBiotaSpawnJob : IJob
         {
-            public NativeArray<AbsoluteUniversePosition> Aups;
-            public NativeArray<float4> Velocities;
-            public NativeArray<AmbientBiotaState> States;
+            [NoAlias] public NativeArray<AbsoluteUniversePosition> Aups;
+            [NoAlias] public NativeArray<float4> Velocities;
+            [NoAlias] public NativeArray<AmbientBiotaState> States;
             public AbsoluteUniversePosition CenterAup;
             public float PreyBiomass01;
             public float CarryingCapacity01;
@@ -1569,8 +1604,8 @@ namespace Hecton8.AI.Ambient
             public uint Seed;
             public uint FrameIndex;
             public uint CurrentBiomeHash;
-            public byte LowTier;
-            public byte HighTierOverkill;
+            public float SurvivalPressure01;
+            public float VisualOverkill01;
 
             public void Execute()
             {
@@ -1581,6 +1616,9 @@ namespace Hecton8.AI.Ambient
                 int activated = 0;
                 uint biomassThreshold = (uint)math.round(math.saturate(PreyBiomass01 * CarryingCapacity01) * 1023f);
                 float radius = math.max(8f, RadiusMeters);
+                float survivalPressure01 = math.saturate(math.select(1f, SurvivalPressure01, math.isfinite(SurvivalPressure01)));
+                float visualOverkill01 = math.saturate(math.select(0f, VisualOverkill01, math.isfinite(VisualOverkill01)));
+                float visualBudget01 = math.saturate((1f - survivalPressure01) * (0.45f + visualOverkill01 * 0.55f));
                 for (int i = 0; i < safeCapacity && activated < SpawnBudget; i++)
                 {
                     AmbientBiotaState state = States[i];
@@ -1595,12 +1633,10 @@ namespace Hecton8.AI.Ambient
                     float normB = ((hash >> 10) & 1023u) * (1.0f / 1023.0f);
                     float normC = ((hash >> 20) & 1023u) * (1.0f / 1023.0f);
                     float angle = normA * TwoPi;
-                    float radial = LowTier != 0
-                        ? radius
-                        : math.lerp(radius * 0.35f, radius, normB);
-                    float vertical = LowTier != 0
-                        ? (1f - math.abs(normC * 2f - 1f) - 0.5f) * 10f
-                        : (normC - 0.5f) * (HighTierOverkill != 0 ? 38f : 28f);
+                    float radial = math.lerp(radius, math.lerp(radius * 0.35f, radius, normB), visualBudget01);
+                    float survivalVertical = (1f - math.abs(normC * 2f - 1f) - 0.5f) * 10f;
+                    float precisionVertical = (normC - 0.5f) * math.lerp(28f, 38f, visualOverkill01);
+                    float vertical = math.lerp(survivalVertical, precisionVertical, visualBudget01);
                     double3 offset = new double3(
                         math.cos(angle) * radial,
                         vertical,
@@ -1613,7 +1649,7 @@ namespace Hecton8.AI.Ambient
                     if (!IsFiniteAup(in aup))
                         continue;
 
-                    float speedScalar = HighTierOverkill != 0 ? 0.14f : 0.08f;
+                    float speedScalar = math.lerp(0.08f, 0.14f, visualOverkill01);
                     float3 velocity = new float3(
                         (normB - 0.5f) * speedScalar,
                         (normC - 0.5f) * 0.03f,
@@ -1626,14 +1662,14 @@ namespace Hecton8.AI.Ambient
                     States[i] = new AmbientBiotaState
                     {
                         StateFlags = AmbientBiotaState.FlagActive |
-                                     (LowTier != 0 ? AmbientBiotaState.FlagLowTierBillboard : 0u),
+                                     (survivalPressure01 >= 0.75f ? AmbientBiotaState.FlagLowTierBillboard : 0u),
                         StableHash = hash,
                         SpeciesId = (ushort)(BaseSpeciesId + (Hash32(hash ^ CurrentBiomeHash) & 7u)),
                         BucketId = (ushort)(hash & BucketMask),
                         AgeSeconds = 0f,
-                        LifetimeSeconds = math.max(1f, LifetimeSeconds * math.lerp(0.75f, HighTierOverkill != 0 ? 1.65f : 1.25f, normC)),
-                        ScaleMeters = math.lerp(0.06f, HighTierOverkill != 0 ? 0.42f : 0.28f, normB),
-                        Emission01 = math.saturate(ResolveBiomeEmissionBias(CurrentBiomeHash, hash) + PreyBiomass01 * (HighTierOverkill != 0 ? 0.7f : 0.4f) + normA * 0.2f),
+                        LifetimeSeconds = math.max(1f, LifetimeSeconds * math.lerp(0.75f, math.lerp(1.25f, 1.65f, visualOverkill01), normC)),
+                        ScaleMeters = math.lerp(0.06f, math.lerp(0.28f, 0.42f, visualOverkill01), normB),
+                        Emission01 = math.saturate(ResolveBiomeEmissionBias(CurrentBiomeHash, hash) + PreyBiomass01 * math.lerp(0.4f, 0.7f, visualOverkill01) + normA * 0.2f),
                         Reserved = 0u
                     };
                     activated++;
@@ -1641,12 +1677,12 @@ namespace Hecton8.AI.Ambient
             }
         }
 
-        [BurstCompile(FloatPrecision.Low, FloatMode.Fast, CompileSynchronously = false)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct AmbientBiotaDriftJob : IJobParallelFor
         {
-            public NativeArray<AbsoluteUniversePosition> Aups;
-            public NativeArray<float4> Velocities;
-            public NativeArray<AmbientBiotaState> States;
+            [NoAlias] public NativeArray<AbsoluteUniversePosition> Aups;
+            [NoAlias] public NativeArray<float4> Velocities;
+            [NoAlias] public NativeArray<AmbientBiotaState> States;
             public AbsoluteUniversePosition CenterAup;
             public float3 PlayerForward;
             public float3 FlowVector;
@@ -1654,8 +1690,8 @@ namespace Hecton8.AI.Ambient
             public double RadiusSq;
             public int ActiveBucket;
             public uint FrameIndex;
-            public byte LowTier;
-            public byte HighTierOverkill;
+            public float SurvivalPressure01;
+            public float VisualOverkill01;
             public float HeadlightConeDot;
             public float AvoidanceMetersPerSecond;
 
@@ -1671,16 +1707,18 @@ namespace Hecton8.AI.Ambient
                 bool shouldSimulate = active & bucketActive & validDeltaTime;
                 float safeDeltaTime = math.select(0f, DeltaTime, shouldSimulate);
                 bool faultSanitized = false;
+                float survivalPressure01 = math.saturate(math.select(1f, SurvivalPressure01, math.isfinite(SurvivalPressure01)));
+                float visualOverkill01 = math.saturate(math.select(0f, VisualOverkill01, math.isfinite(VisualOverkill01)));
                 float3 rawVelocity = originalPackedVelocity.xyz;
                 bool velocityFinite = math.all(math.isfinite(rawVelocity));
                 faultSanitized |= shouldSimulate & !velocityFinite;
                 float3 velocity = math.select(float3.zero, rawVelocity, velocityFinite);
 
                 uint hash = Hash32(state.StableHash ^ (FrameIndex * 2246822519u));
-                float3 brownian = math.select(
-                    ResolveHashBrownian(hash, HighTierOverkill),
-                    ResolveLowTierTriangleNoise(hash),
-                    LowTier != 0);
+                float3 brownian = math.lerp(
+                    ResolveHashBrownian(hash, visualOverkill01),
+                    ResolveTriangleNoise(hash),
+                    survivalPressure01);
 
                 float3 rawTargetVelocity = FlowVector + brownian;
                 bool targetVelocityFinite = math.all(math.isfinite(rawTargetVelocity));
@@ -1693,21 +1731,22 @@ namespace Hecton8.AI.Ambient
                 float3 playerForward = SafeNormalize(PlayerForward, new float3(0f, 0f, 1f), ref faultSanitized);
                 float frontDot = math.dot(outward, playerForward);
                 bool frontDotFinite = math.isfinite(frontDot);
-                bool shouldAvoidLight = shouldSimulate & HighTierOverkill != 0 & frontDotFinite & frontDot > HeadlightConeDot;
-                faultSanitized |= shouldSimulate & HighTierOverkill != 0 & !frontDotFinite;
-                targetVelocity += math.select(float3.zero, outward * AvoidanceMetersPerSecond, shouldAvoidLight);
+                float avoidanceWeight01 = math.select(0f, visualOverkill01, frontDotFinite & (frontDot > HeadlightConeDot));
+                bool shouldAvoidLight = shouldSimulate & (avoidanceWeight01 > 0.0001f);
+                faultSanitized |= shouldSimulate & (visualOverkill01 > 0.0001f) & !frontDotFinite;
+                targetVelocity += math.select(float3.zero, outward * AvoidanceMetersPerSecond * avoidanceWeight01, shouldAvoidLight);
                 uint stateFlagsWithoutReactive = state.StateFlags & ~AmbientBiotaState.FlagHighTierReactive;
                 state.StateFlags = math.select(
                     stateFlagsWithoutReactive,
                     stateFlagsWithoutReactive | AmbientBiotaState.FlagHighTierReactive,
                     shouldAvoidLight);
-                float relaxedEmission = math.saturate(state.Emission01 - safeDeltaTime * math.select(0.18f, 0.08f, LowTier != 0));
+                float relaxedEmission = math.saturate(state.Emission01 - safeDeltaTime * math.lerp(0.18f, 0.08f, survivalPressure01));
                 float panicEmission = math.saturate(state.Emission01 + safeDeltaTime * 0.9f);
                 state.Emission01 = math.select(relaxedEmission, panicEmission, shouldAvoidLight);
 
-                float blend = math.saturate(safeDeltaTime * math.select(0.35f, 0.22f, LowTier != 0));
+                float blend = math.saturate(safeDeltaTime * math.lerp(0.35f, 0.22f, survivalPressure01));
                 velocity = math.lerp(velocity, targetVelocity, blend);
-                float maxSpeed = math.select(math.select(0.42f, 0.95f, HighTierOverkill != 0), 0.18f, LowTier != 0);
+                float maxSpeed = math.lerp(math.lerp(0.42f, 0.95f, visualOverkill01), 0.18f, survivalPressure01);
                 velocity = ClampMagnitude(velocity, maxSpeed, ref faultSanitized);
                 double3 deltaMeters = new double3(velocity.x, velocity.y, velocity.z) * safeDeltaTime;
                 bool deltaFinite = IsFinite(deltaMeters);
@@ -1741,7 +1780,7 @@ namespace Hecton8.AI.Ambient
                 States[index] = SelectState(in originalState, in state, shouldSimulate);
             }
 
-            private static float3 ResolveLowTierTriangleNoise(uint hash)
+            private static float3 ResolveTriangleNoise(uint hash)
             {
                 float a = ((hash >> 0) & 255u) * (1f / 255f);
                 float b = ((hash >> 8) & 255u) * (1f / 255f);
@@ -1752,10 +1791,10 @@ namespace Hecton8.AI.Ambient
                     (1f - math.abs(c * 2f - 1f) - 0.5f) * 0.08f);
             }
 
-            private static float3 ResolveHashBrownian(uint hash, byte highTier)
+            private static float3 ResolveHashBrownian(uint hash, float visualOverkill01)
             {
-                float scale = highTier != 0 ? 0.15f : 0.08f;
-                float verticalScale = highTier != 0 ? 0.045f : 0.025f;
+                float scale = math.lerp(0.08f, 0.15f, visualOverkill01);
+                float verticalScale = math.lerp(0.025f, 0.045f, visualOverkill01);
                 return new float3(
                     (((hash >> 0) & 255u) * (1f / 255f) - 0.5f) * scale,
                     (((hash >> 8) & 255u) * (1f / 255f) - 0.5f) * verticalScale,
@@ -1872,15 +1911,15 @@ namespace Hecton8.AI.Ambient
             };
         }
 
-        private static byte ResolveMacroVisualQualityTier(in AbsoluteUniversePosition centerAup, byte qualityTier, float systemStress01)
+        private static byte ResolveMacroVisualQualityByte(in AbsoluteUniversePosition centerAup, byte qualityByte, float systemStress01)
         {
             if (!IsFiniteAup(in centerAup) || !math.isfinite(systemStress01))
                 return 0;
 
-            byte clampedTier = qualityTier <= 3 ? qualityTier : (byte)3;
-            return systemStress01 > MacroHydrationStressCullThreshold01
-                ? (byte)0
-                : clampedTier;
+            byte clampedQuality = qualityByte <= 3 ? qualityByte : (byte)3;
+            float quality01 = clampedQuality * (1f / 3f);
+            float stressPressure01 = SmoothStep01(math.saturate((systemStress01 - 0.62f) * math.rcp(0.38f)));
+            return (byte)math.clamp((int)math.round(math.saturate(quality01 * (1f - stressPressure01)) * 3f), 0, 3);
         }
 
         private static double3 DeltaMeters(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)

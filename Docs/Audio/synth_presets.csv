@@ -1,0 +1,18 @@
+# key,value
+# SHINOBU_135 cold-tuned procedural music preset. Parser is key/value FNV-1a, no managed strings in runtime parser.
+preset_hash,abyssal_default
+biome_hash,abyss
+narrative_hash,none
+waveform_hash,cello_scrape_fake
+base_pitch,73.416
+grain_size,0.075
+base_density,32
+tension_multiplier,1.35
+lfo_frequency,1.35
+base_volume,0.22
+quality_min,0
+quality_max,1
+depth_max_meters,1800
+lpf_min_hz,400
+lpf_depth_hz_per_meter,10
+stereo_width,0.82

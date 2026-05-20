@@ -25,7 +25,7 @@ namespace Hecton8.VFX.Materials
         IScalabilityChangedEventListener
     {
         private const int TelemetryCapacity = 300;
-        private const int MaterialDecayStateSizeBytes = 28;
+        private const int MaterialDecayStateSizeBytes = 32;
         private const int RustAtlasSize = 512;
         private const float RustPomGate = 0.3f;
         private const float WetnessFadeSeconds = 5f;
@@ -621,18 +621,19 @@ namespace Hecton8.VFX.Materials
             return value;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = MaterialDecayStateSizeBytes)]
+        [StructLayout(LayoutKind.Explicit, Size = MaterialDecayStateSizeBytes)]
         private struct MaterialDecayState
         {
-            public uint Frame;
-            public uint ItemHash;
-            public float Rust01;
-            public float Wetness01;
-            public float Blood01;
-            public ushort SlotIndex;
-            public byte Reason;
-            public byte Flags;
-            public uint StateHash;
+            [FieldOffset(0)] public uint Frame;
+            [FieldOffset(4)] public uint ItemHash;
+            [FieldOffset(8)] public float Rust01;
+            [FieldOffset(12)] public float Wetness01;
+            [FieldOffset(16)] public float Blood01;
+            [FieldOffset(20)] public ushort SlotIndex;
+            [FieldOffset(22)] public byte Reason;
+            [FieldOffset(23)] public byte Flags;
+            [FieldOffset(24)] public uint StateHash;
+            [FieldOffset(28)] private uint _pad0;
         }
     }
 }

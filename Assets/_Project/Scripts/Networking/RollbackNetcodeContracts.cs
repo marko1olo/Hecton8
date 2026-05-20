@@ -1,9 +1,9 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Determinism;
 using Hecton8.Core.Memory;
-using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -55,7 +55,7 @@ namespace Hecton8.Networking
             int bytes = 0;
             bytes += UnsafeUtility.SizeOf<double3>() * MaxRigidbodyAups;
             bytes += UnsafeUtility.SizeOf<LockstepPlayerKinematicState>() * MaxPlayerStates;
-            bytes += UnsafeUtility.SizeOf<AbsoluteUniversePosition>() * MaxEntityAups;
+            bytes += UnsafeUtility.SizeOf<RollbackAup48>() * MaxEntityAups;
             bytes += UnsafeUtility.SizeOf<float3>() * MaxEntityVelocities;
             bytes += UnsafeUtility.SizeOf<float>() * MaxRoomWaterLevels;
             bytes += UnsafeUtility.SizeOf<uint>() * MaxEntityFlags;
@@ -135,6 +135,7 @@ namespace Hecton8.Networking
         public const uint Predicted = 1u << 1;
         public const uint ModQuarantined = 1u << 2;
         public const uint MockGenerated = 1u << 3;
+        public const uint Valid = 1u << 31;
     }
 
     public static class InputMismatchFlags
@@ -156,6 +157,21 @@ namespace Hecton8.Networking
         public const uint PresentationExcluded = 1u << 5;
         public const uint BranchNode = 1u << 6;
         public const uint RootNode = 1u << 7;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
+    public struct RollbackAup48
+    {
+        public const int CellSizeMeters = HectonPhysicsContract.AupSectorSizeMetersInt;
+
+        [FieldOffset(0)] public long GridX;
+        [FieldOffset(8)] public long GridY;
+        [FieldOffset(16)] public long GridZ;
+        [FieldOffset(24)] public float LocalX;
+        [FieldOffset(28)] public float LocalY;
+        [FieldOffset(32)] public float LocalZ;
+        [FieldOffset(36)] public float _pad0;
+        [FieldOffset(40)] public ulong _pad1;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -442,6 +458,7 @@ namespace Hecton8.Networking
         public const uint Tuning = 1u << 10;
         public const uint AudioSuppression = 1u << 11;
         public const uint BlackBoxHeader = 1u << 12;
+        public const uint AupMirror = 1u << 13;
 
         public static uint Validate()
         {
@@ -459,6 +476,7 @@ namespace Hecton8.Networking
             mask |= SizeMask<RollbackTuningDTO>(64, Tuning);
             mask |= SizeMask<RollbackAudioSuppressionDTO>(16, AudioSuppression);
             mask |= SizeMask<RollbackBlackBoxDumpHeader32>(32, BlackBoxHeader);
+            mask |= SizeMask<RollbackAup48>(48, AupMirror);
             return mask;
         }
 
@@ -584,12 +602,18 @@ namespace Hecton8.Networking
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ulong HashExactAupDouble3(in AbsoluteUniversePosition aup)
+        public static double3 AbsoluteFromAup(in RollbackAup48 aup)
         {
-            double3 absolute = new double3(
-                (aup.GridX * (double)AbsoluteUniversePosition.CellSizeMeters) + aup.LocalX,
-                (aup.GridY * (double)AbsoluteUniversePosition.CellSizeMeters) + aup.LocalY,
-                (aup.GridZ * (double)AbsoluteUniversePosition.CellSizeMeters) + aup.LocalZ);
+            return new double3(
+                (aup.GridX * (double)RollbackAup48.CellSizeMeters) + aup.LocalX,
+                (aup.GridY * (double)RollbackAup48.CellSizeMeters) + aup.LocalY,
+                (aup.GridZ * (double)RollbackAup48.CellSizeMeters) + aup.LocalZ);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ulong HashExactAupDouble3(in RollbackAup48 aup)
+        {
+            double3 absolute = AbsoluteFromAup(in aup);
             return HashExactAupDouble3(in absolute);
         }
 
@@ -608,19 +632,44 @@ namespace Hecton8.Networking
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int ResolveRollbackFrameCount(uint rollbackFrame, uint currentFrame)
         {
-            if (rollbackFrame > currentFrame)
-                return 0;
             uint frames = currentFrame - rollbackFrame;
+            if ((int)frames < 0)
+                return 0;
             return frames > ushort.MaxValue ? ushort.MaxValue : (int)frames;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool HasFrameReached(uint currentFrame, uint targetFrame)
+        {
+            return (int)(currentFrame - targetFrame) >= 0;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool DidFrameWrap(uint previousFrame, uint currentFrame)
+        {
+            return currentFrame < previousFrame && HasFrameReached(currentFrame, previousFrame);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryResolveHistoricalFrame(uint currentFrame, uint previousFrame, uint age, out uint frame)
+        {
+            if (!DidFrameWrap(previousFrame, currentFrame) && currentFrame < age)
+            {
+                frame = 0u;
+                return false;
+            }
+
+            frame = currentFrame - age;
+            return true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double3 AbsoluteFromPlayerState(in LockstepPlayerKinematicState state)
         {
             return new double3(
-                (state.SectorX * (double)AbsoluteUniversePosition.CellSizeMeters) + state.LocalPosition.x,
-                (state.SectorY * (double)AbsoluteUniversePosition.CellSizeMeters) + state.LocalPosition.y,
-                (state.SectorZ * (double)AbsoluteUniversePosition.CellSizeMeters) + state.LocalPosition.z);
+                (state.SectorX * (double)RollbackAup48.CellSizeMeters) + state.LocalPosition.x,
+                (state.SectorY * (double)RollbackAup48.CellSizeMeters) + state.LocalPosition.y,
+                (state.SectorZ * (double)RollbackAup48.CellSizeMeters) + state.LocalPosition.z);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -652,7 +701,7 @@ namespace Hecton8.Networking
         [NativeDisableParallelForRestriction, NoAlias] public NativeArray<H8NetMerkleNodeRecord32> MerkleNodes;
         [ReadOnly, NoAlias] public NativeArray<double3> RigidbodyAups;
         [ReadOnly, NoAlias] public NativeArray<LockstepPlayerKinematicState> PlayerStates;
-        [ReadOnly, NoAlias] public NativeArray<AbsoluteUniversePosition> EntityAups;
+        [ReadOnly, NoAlias] public NativeArray<RollbackAup48> EntityAups;
         [ReadOnly, NoAlias] public NativeArray<float3> EntityVelocities;
         [ReadOnly, NoAlias] public NativeArray<float> RoomWaterLevels;
         [ReadOnly, NoAlias] public NativeArray<uint> EntityFlags;
@@ -762,25 +811,27 @@ namespace Hecton8.Networking
             return RollbackNetcodeMath.HashExactBytes(ptr, (int)byteLength);
         }
 
-        private static ulong HashAupArray(NativeArray<AbsoluteUniversePosition> source, in RollbackVaultBufferDescriptor32 descriptor, out uint byteLength)
+        private static ulong HashAupArray(NativeArray<RollbackAup48> source, in RollbackVaultBufferDescriptor32 descriptor, out uint byteLength)
         {
             byteLength = 0u;
             if (!source.IsCreated || source.Length <= 0)
                 return 0UL;
 
+            int stride = UnsafeUtility.SizeOf<double3>();
+            int start = stride > 0 ? (int)(descriptor.ByteOffset / (uint)stride) : 0;
             int desired = descriptor.ElementCount == 0u ? source.Length : (int)descriptor.ElementCount;
-            int count = math.clamp(desired, 0, source.Length);
-            if (count <= 0)
+            int count = math.clamp(desired, 0, source.Length - math.min(start, source.Length));
+            if (start < 0 || start >= source.Length || count <= 0)
                 return 0UL;
 
             ulong hash = 0xCBF29CE484222325UL ^ descriptor.BufferId;
             for (int i = 0; i < count; i++)
             {
-                AbsoluteUniversePosition aup = source[i];
+                RollbackAup48 aup = source[start + i];
                 hash = RollbackNetcodeMath.MixHash64(hash, RollbackNetcodeMath.HashExactAupDouble3(in aup));
             }
 
-            byteLength = (uint)(count * UnsafeUtility.SizeOf<double3>());
+            byteLength = (uint)(count * stride);
             return hash;
         }
 
@@ -866,7 +917,7 @@ namespace Hecton8.Networking
     {
         [ReadOnly, NoAlias] public NativeArray<double3> RigidbodyAups;
         [ReadOnly, NoAlias] public NativeArray<LockstepPlayerKinematicState> PlayerStates;
-        [ReadOnly, NoAlias] public NativeArray<AbsoluteUniversePosition> EntityAups;
+        [ReadOnly, NoAlias] public NativeArray<RollbackAup48> EntityAups;
         [ReadOnly, NoAlias] public NativeArray<float3> EntityVelocities;
         [ReadOnly, NoAlias] public NativeArray<float> RoomWaterLevels;
         [ReadOnly, NoAlias] public NativeArray<uint> EntityFlags;
@@ -1025,7 +1076,7 @@ namespace Hecton8.Networking
         [ReadOnly, NoAlias] public NativeArray<byte> StateRingBuffer;
         [NoAlias] public NativeArray<double3> RigidbodyAups;
         [NoAlias] public NativeArray<LockstepPlayerKinematicState> PlayerStates;
-        [NoAlias] public NativeArray<AbsoluteUniversePosition> EntityAups;
+        [NoAlias] public NativeArray<RollbackAup48> EntityAups;
         [NoAlias] public NativeArray<float3> EntityVelocities;
         [NoAlias] public NativeArray<float> RoomWaterLevels;
         [NoAlias] public NativeArray<uint> EntityFlags;
@@ -1149,6 +1200,7 @@ namespace Hecton8.Networking
         [NoAlias] public NativeArray<RollbackInputJournalSlot64> InputJournalRing;
         [NoAlias] public NativeArray<RollbackRuntimeStateDTO> RuntimeState;
         public uint CurrentFrame;
+        public uint PreviousFrame;
         public int MaxRollbackFrames;
         public float GlobalQualityWeight;
         public float MinQualityForLookRollback;
@@ -1162,6 +1214,7 @@ namespace Hecton8.Networking
                 return;
 
             RollbackRuntimeStateDTO state = RuntimeState[0];
+            uint previousFrame = PreviousFrame;
             state.CurrentFrame = CurrentFrame;
             state.GlobalQualityWeight = math.saturate(GlobalQualityWeight);
             state.MismatchSeverity01 = 0f;
@@ -1189,11 +1242,10 @@ namespace Hecton8.Networking
 
             for (int age = lookback - 1; age >= 0; age--)
             {
-                if (CurrentFrame < (uint)age)
+                if (!RollbackNetcodeMath.TryResolveHistoricalFrame(CurrentFrame, previousFrame, (uint)age, out uint frame))
                     continue;
 
-                uint frame = CurrentFrame - (uint)age;
-                if (CurrentFrame - frame < InputDelayFrames)
+                if ((uint)RollbackNetcodeMath.ResolveRollbackFrameCount(frame, CurrentFrame) < InputDelayFrames)
                     continue;
 
                 int ringIndex = (int)(frame % (uint)RemoteInputRing.Length);
@@ -1204,7 +1256,9 @@ namespace Hecton8.Networking
                 slot.Frame = frame;
                 slot.ExpectedMask = 1u;
                 slot.Flags = RemoteInputFlags.Predicted;
-                if (remote.Frame == frame && (remote.Flags & RemoteInputFlags.Received) != 0u)
+                if (remote.Frame == frame &&
+                    (remote.Flags & (RemoteInputFlags.Received | RemoteInputFlags.Valid)) ==
+                    (RemoteInputFlags.Received | RemoteInputFlags.Valid))
                 {
                     slot.Remote = remote.Input;
                     slot.ReceivedMask = 1u;
@@ -1332,13 +1386,14 @@ namespace Hecton8.Networking
             while (state.Tail != state.Head && guard++ < Packets.Length)
             {
                 MockNetworkJitterPacket64 packet = Packets[(int)state.Tail];
-                if (packet.ReleaseFrame > CurrentFrame)
+                if (!RollbackNetcodeMath.HasFrameReached(CurrentFrame, packet.ReleaseFrame))
                     break;
 
                 int remoteIndex = (int)(packet.SourceFrame % (uint)RemoteInputRing.Length);
                 RemoteInputFrameDTO existing = RemoteInputRing[remoteIndex];
                 if (existing.Frame == packet.SourceFrame &&
-                    (existing.Flags & RemoteInputFlags.Received) != 0u &&
+                    (existing.Flags & (RemoteInputFlags.Received | RemoteInputFlags.Valid)) ==
+                    (RemoteInputFlags.Received | RemoteInputFlags.Valid) &&
                     (existing.Flags & RemoteInputFlags.MockGenerated) == 0u)
                 {
                     state.Tail = (state.Tail + 1u) % (uint)Packets.Length;
@@ -1349,7 +1404,7 @@ namespace Hecton8.Networking
                 {
                     Input = packet.Input,
                     Frame = packet.SourceFrame,
-                    Flags = RemoteInputFlags.Received | packet.Flags
+                    Flags = RemoteInputFlags.Received | RemoteInputFlags.Valid | packet.Flags
                 };
                 state.Tail = (state.Tail + 1u) % (uint)Packets.Length;
             }
@@ -1369,18 +1424,20 @@ namespace Hecton8.Networking
             if (!PredictedJournal.IsCreated || !RemoteInputRing.IsCreated || PredictedJournal.Length <= 0 || RemoteInputRing.Length <= 0)
                 return;
 
-            for (uint frame = RollbackFrame; frame <= CurrentFrame; frame++)
+            int frames = RollbackNetcodeMath.ResolveRollbackFrameCount(RollbackFrame, CurrentFrame);
+            for (int offset = 0; offset <= frames; offset++)
             {
+                uint frame = RollbackFrame + (uint)offset;
                 int remoteIndex = (int)(frame % (uint)RemoteInputRing.Length);
                 RemoteInputFrameDTO remote = RemoteInputRing[remoteIndex];
-                if (remote.Frame != frame || (remote.Flags & RemoteInputFlags.Received) == 0u)
+                if (remote.Frame != frame ||
+                    (remote.Flags & (RemoteInputFlags.Received | RemoteInputFlags.Valid)) !=
+                    (RemoteInputFlags.Received | RemoteInputFlags.Valid))
                     continue;
                 if ((remote.Flags & RemoteInputFlags.ModQuarantined) != 0u)
                     continue;
 
                 PredictedJournal[(int)(frame % (uint)PredictedJournal.Length)] = remote.Input;
-                if (frame == uint.MaxValue)
-                    break;
             }
         }
     }
@@ -1453,7 +1510,7 @@ namespace Hecton8.Networking
         [NoAlias] public NativeArray<NetTelemetryEntry64> Telemetry;
         [NoAlias] public NativeArray<double3> RigidbodyAups;
         [NoAlias] public NativeArray<LockstepPlayerKinematicState> PlayerStates;
-        [NoAlias] public NativeArray<AbsoluteUniversePosition> EntityAups;
+        [NoAlias] public NativeArray<RollbackAup48> EntityAups;
         [NoAlias] public NativeArray<float3> EntityVelocities;
         [NoAlias] public NativeArray<float> RoomWaterLevels;
         [NoAlias] public NativeArray<uint> EntityFlags;
@@ -1465,6 +1522,7 @@ namespace Hecton8.Networking
         [NoAlias] public NativeArray<ulong> QuestMasks;
         [NoAlias] public NativeArray<byte> PredatorChosenStates;
         public uint CurrentFrame;
+        public uint PreviousFrame;
         public uint ModeFlags;
         public int RingFrameCapacity;
         public int SnapshotStrideBytes;
@@ -1510,6 +1568,7 @@ namespace Hecton8.Networking
                 InputJournalRing = InputJournalRing,
                 RuntimeState = RuntimeState,
                 CurrentFrame = CurrentFrame,
+                PreviousFrame = PreviousFrame,
                 MaxRollbackFrames = MaxRollbackFrames,
                 GlobalQualityWeight = GlobalQualityWeight,
                 MinQualityForLookRollback = tuning.MinQualityForLookRollback,
@@ -1911,17 +1970,9 @@ namespace Hecton8.Networking
                 return RigidbodyAups[0];
 
             if (EntityAups.IsCreated && EntityAups.Length > 0)
-                return AbsoluteFromAup(EntityAups[0]);
+                return RollbackNetcodeMath.AbsoluteFromAup(EntityAups[0]);
 
             return double3.zero;
-        }
-
-        private static double3 AbsoluteFromAup(in AbsoluteUniversePosition aup)
-        {
-            return new double3(
-                (aup.GridX * (double)AbsoluteUniversePosition.CellSizeMeters) + aup.LocalX,
-                (aup.GridY * (double)AbsoluteUniversePosition.CellSizeMeters) + aup.LocalY,
-                (aup.GridZ * (double)AbsoluteUniversePosition.CellSizeMeters) + aup.LocalZ);
         }
 
         private uint ResolveInputMask()

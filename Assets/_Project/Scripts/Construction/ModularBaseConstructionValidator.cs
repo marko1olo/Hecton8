@@ -186,8 +186,8 @@ namespace Hecton8.Construction
         public const int ConstructionValidationResultSizeBytes = 32;
         public const int BaseModuleOccupancySizeBytes = 32;
         public const int TelemetryEntrySizeBytes = 64;
-        public const int ConstructionPreviewSignalSizeBytes = 96;
-        public const int FloraExclusionSignalSizeBytes = 80;
+        public const int ConstructionPreviewSignalSizeBytes = 128;
+        public const int FloraExclusionSignalSizeBytes = 128;
         public const int BlueprintPreviewInstanceSizeBytes = 64;
 
         private const float DefaultGridSizeMeters = 10f;
@@ -217,7 +217,15 @@ namespace Hecton8.Construction
                    UnsafeUtility.SizeOf<ConstructionTelemetryEntry>() == TelemetryEntrySizeBytes &&
                    UnsafeUtility.SizeOf<ConstructionPreviewSignal>() == ConstructionPreviewSignalSizeBytes &&
                    UnsafeUtility.SizeOf<FloraExclusionSignal>() == FloraExclusionSignalSizeBytes &&
-                   UnsafeUtility.SizeOf<HectonBlueprintPreviewBatch.BlueprintPreviewInstance>() == BlueprintPreviewInstanceSizeBytes;
+                   UnsafeUtility.SizeOf<HectonBlueprintPreviewBatch.BlueprintPreviewInstance>() == BlueprintPreviewInstanceSizeBytes &&
+                   ResolveOffset<ConstructionPreviewSignal>(nameof(ConstructionPreviewSignal.DearLieDampen)) == 96 &&
+                   ResolveOffset<ConstructionPreviewSignal>(nameof(ConstructionPreviewSignal.GlobalQualityWeight)) == 100 &&
+                   ResolveOffset<ConstructionPreviewSignal>(nameof(ConstructionPreviewSignal.DearLieWiggleSpeed)) == 104;
+        }
+
+        private static int ResolveOffset<T>(string fieldName) where T : struct
+        {
+            return Marshal.OffsetOf<T>(fieldName).ToInt32();
         }
 
         public static NativeArray<ConstructionRequestDTO> AllocateRequestScratch(Allocator allocator, int count)

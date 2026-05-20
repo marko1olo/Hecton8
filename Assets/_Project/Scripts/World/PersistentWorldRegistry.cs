@@ -15,6 +15,7 @@ using Hecton8.Items;
 using Hecton8.Physics;
 using Hecton8.SaveSystem;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -258,54 +259,77 @@ namespace Hecton8.World
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 40)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct PoolSlotData
     {
-        public ulong BoundGuid;
-        public int3 AupCell;
-        public float3 LocalOffset;
-        public ushort HydrationFrame;
-        public byte RefCount;
-        public byte StateFlags;
-        public ushort StableFrames;
-        public ushort LastVisibleFrame;
+        [FieldOffset(0)] public ulong BoundGuid;
+        [FieldOffset(8)] public int3 AupCell;
+        [FieldOffset(20)] public float3 LocalOffset;
+        [FieldOffset(32)] public ushort HydrationFrame;
+        [FieldOffset(34)] public byte RefCount;
+        [FieldOffset(35)] public byte StateFlags;
+        [FieldOffset(36)] public ushort StableFrames;
+        [FieldOffset(38)] public ushort LastVisibleFrame;
+        [FieldOffset(40)] private ulong _pad0;
+        [FieldOffset(48)] private ulong _pad1;
+        [FieldOffset(56)] private ulong _pad2;
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Pack = 16, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct EntityDataRecord
     {
-        public AbsoluteUniversePositionBlit128 Position;
-        public int Quantity;
-        public float Integrity01;
-        public int InventoryHash;
-        public uint InstanceUid;
+        [FieldOffset(0)] public AbsoluteUniversePositionBlit128 Position;
+        [FieldOffset(48)] public int Quantity;
+        [FieldOffset(52)] public float Integrity01;
+        [FieldOffset(56)] public int InventoryHash;
+        [FieldOffset(60)] public uint InstanceUid;
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Pack = 8, Size = 80)]
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
     internal struct ResourceNodeTombstoneRecord
     {
+        [FieldOffset(0)]
         public ulong TombstoneId;
+        [FieldOffset(8)]
         public uint InstanceUid;
+        [FieldOffset(12)]
         public uint Reserved0;
+        [FieldOffset(16)]
         public AbsoluteUniversePosition Position;
+        [FieldOffset(64)]
         public int3 ChunkId;
+        [FieldOffset(76)]
+        public uint Reserved1;
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 204)]
+    [StructLayout(LayoutKind.Explicit, Size = 256)]
     internal struct PersistentWorldItemRecord
     {
         private const uint QuantityMask = 0x00FFFFFFu;
         private const int FlagsShift = 24;
 
+        [FieldOffset(0)]
         public AbsoluteUniversePosition Position;
-        public int3 ChunkId;
+        [FieldOffset(48)]
         public ulong ItemPersistentIdHash;
+        [FieldOffset(56)]
         public FixedString128Bytes ItemPersistentId;
+        [FieldOffset(184)]
+        public int3 ChunkId;
+        [FieldOffset(196)]
         private uint _packedQuantityAndFlags;
+        [FieldOffset(200)]
         public uint InstanceUid;
+        [FieldOffset(204)] private uint _pad0;
+        [FieldOffset(208)] private ulong _pad1;
+        [FieldOffset(216)] private ulong _pad2;
+        [FieldOffset(224)] private ulong _pad3;
+        [FieldOffset(232)] private ulong _pad4;
+        [FieldOffset(240)] private ulong _pad5;
+        [FieldOffset(248)] private ulong _pad6;
 
         public int Quantity
         {
@@ -352,19 +376,31 @@ namespace Hecton8.World
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct PersistentWorldDeltaRecord
     {
         private const uint PackedAxisMask = 0x3FFu;
         private const float PackedAxisScale = 1023f;
 
+        [FieldOffset(0)]
         public int3 ChunkId;
+        [FieldOffset(12)] private uint _pad0;
+        [FieldOffset(16)]
         public ulong ItemPersistentIdHash;
+        [FieldOffset(24)]
         public uint InstanceUid;
+        [FieldOffset(28)]
         public uint PackedLocalPosition;
+        [FieldOffset(32)]
         public ushort Quantity;
+        [FieldOffset(34)]
         public byte ItemFlags;
+        [FieldOffset(35)]
         public byte Reserved;
+        [FieldOffset(36)] private uint _pad1;
+        [FieldOffset(40)] private ulong _pad2;
+        [FieldOffset(48)] private ulong _pad3;
+        [FieldOffset(56)] private ulong _pad4;
 
         public bool IsDeleted => ((PersistentWorldItemFlags)ItemFlags & PersistentWorldItemFlags.Deleted) != 0;
 
@@ -460,29 +496,28 @@ namespace Hecton8.World
     }
 
     [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     internal struct PersistentWorldCompactDeltaRecord
     {
-        public uint PackedLocalPosition;
-        public uint InstanceUid;
-        public ushort Quantity;
-        public byte ItemFlags;
-        public byte Reserved;
-        public ushort ChunkIndex;
-        public ushort ItemHashIndex;
+        [FieldOffset(0)] public uint PackedLocalPosition;
+        [FieldOffset(4)] public uint InstanceUid;
+        [FieldOffset(8)] public ushort Quantity;
+        [FieldOffset(10)] public byte ItemFlags;
+        [FieldOffset(11)] public byte Reserved;
+        [FieldOffset(12)] public ushort ChunkIndex;
+        [FieldOffset(14)] public ushort ItemHashIndex;
 
         public bool IsDeleted => ((PersistentWorldItemFlags)ItemFlags & PersistentWorldItemFlags.Deleted) != 0;
 
         public bool IsValid => InstanceUid != 0u && (IsDeleted || Quantity > 0);
     }
 
-    [BurstCompile]
-    [StructLayout(LayoutKind.Sequential, Pack = 16)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [StructLayout(LayoutKind.Sequential)]
     internal struct TombstoneDecayCollectJob : IJob
     {
-        [ReadOnly]
-        public NativeArray<PersistentWorldCompactDeltaRecord> DeltaRecords;
-        public NativeList<int> ExpiredDeltaIndices;
+        [ReadOnly, NoAlias] public NativeArray<PersistentWorldCompactDeltaRecord> DeltaRecords;
+        [NoAlias] public NativeList<int> ExpiredDeltaIndices;
         public int CurrentDay;
         public int Threshold;
         public int TimeToLiveDays;
@@ -521,7 +556,7 @@ namespace Hecton8.World
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-5850)]
-    public sealed class PersistentWorldRegistry : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable
+    public sealed class PersistentWorldRegistry : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, ISceneTransitionWorldResidencyBridge, IRuntimeWatchdogWorldHealthBridge
     {
         private sealed class SectorOverrideState
         {
@@ -794,6 +829,11 @@ namespace Hecton8.World
             return _indexedSectorPagingEnabled && !string.IsNullOrEmpty(absolutePath);
         }
 
+        bool IRuntimeWatchdogWorldHealthBridge.TryGetIndexedSaveHealth(out string absolutePath, out long currentSectorHash)
+        {
+            return TryGetIndexedSaveHealth(out absolutePath, out currentSectorHash);
+        }
+
         /// <summary>
         /// Returns true when a sandboxed mod command targets protected runtime space near the active player core.
         /// </summary>
@@ -832,12 +872,32 @@ namespace Hecton8.World
             if (submarine != null && IsInsideSubmarineFallbackBounds(submarine, runtimePosition))
                 return true;
 
-            Transform playerTransform = null;
-            if (!WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform) || playerTransform == null)
+            if (!TryResolvePlayerAupSnapshot(out AbsoluteUniversePosition playerAup))
                 return false;
 
-            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerTransform.position);
             return AbsoluteUniversePosition.DistanceSq(in position, in playerAup) <= ModCoreProtectionRadiusSq;
+        }
+
+        private static bool TryResolvePlayerAupSnapshot(out AbsoluteUniversePosition playerAup)
+        {
+            playerAup = default;
+
+            IPlayerRuntimeContext player = GlobalRegistry.Player;
+            if (player == null)
+                return false;
+
+            if (player.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
+            {
+                playerAup = snapshot.Aup;
+                return MathGuard.IsFinite(in playerAup);
+            }
+
+            HectonPlayerMovement playerMovement = player.PlayerMovement;
+            if (playerMovement == null)
+                return false;
+
+            playerAup = playerMovement.CurrentAup;
+            return MathGuard.IsFinite(in playerAup);
         }
 
         public bool AreResidentWorldPrefabPoolsReady()
@@ -1226,10 +1286,9 @@ namespace Hecton8.World
             float now = Time.unscaledTime;
             ScheduleTombstoneDecaySweepIfDue(now);
 
-            if (!WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _playerTransform) || _playerTransform == null)
+            if (!TryResolvePlayerAupSnapshot(out AbsoluteUniversePosition playerAup))
                 return;
 
-            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(_playerTransform.position);
             int2 nextSector = QuantizeSector(in playerAup);
             if (_indexedSectorPagingEnabled && (!_playerSectorValid || !math.all(nextSector == _currentPlayerSector)))
             {
@@ -1454,6 +1513,12 @@ namespace Hecton8.World
 
         internal bool TryRegisterDestroyedResourceNode(ulong tombstoneId, Vector3 runtimePosition)
         {
+            AbsoluteUniversePosition position = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            return TryRegisterDestroyedResourceNode(tombstoneId, in position);
+        }
+
+        internal bool TryRegisterDestroyedResourceNode(ulong tombstoneId, in AbsoluteUniversePosition position)
+        {
             if (tombstoneId == 0UL ||
                 !_records.IsCreated ||
                 _records.Length >= _records.Capacity)
@@ -1467,7 +1532,6 @@ namespace Hecton8.World
             if (!TryGenerateResourceNodeTombstoneInstanceUid(tombstoneId, out uint instanceUid))
                 return false;
 
-            AbsoluteUniversePosition position = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
             int3 chunkId = AbsoluteUniversePosition.ResolveChunkId(in position, chunkSizeMeters);
             PersistentWorldItemRecord record = new PersistentWorldItemRecord
             {
@@ -2194,9 +2258,8 @@ namespace Hecton8.World
             }
 
             if (scheduleHydration &&
-                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _playerTransform) && _playerTransform != null)
+                TryResolvePlayerAupSnapshot(out AbsoluteUniversePosition playerAup))
             {
-                AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(_playerTransform.position);
                 _currentPlayerChunk = AbsoluteUniversePosition.ResolveChunkId(in playerAup, chunkSizeMeters);
                 _playerChunkValid = true;
                 _lastHydrationScanAup = playerAup;
@@ -2279,9 +2342,8 @@ namespace Hecton8.World
             if (!string.IsNullOrEmpty(_indexedSectorOverrideDirectory))
                 Directory.CreateDirectory(_indexedSectorOverrideDirectory);
 
-            if (WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _playerTransform) && _playerTransform != null)
+            if (TryResolvePlayerAupSnapshot(out AbsoluteUniversePosition playerAup))
             {
-                AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(_playerTransform.position);
                 int2 playerSector = QuantizeSector(in playerAup);
                 _currentPlayerSector = playerSector;
                 _playerSectorValid = true;
@@ -2409,9 +2471,8 @@ namespace Hecton8.World
                 await AwaitSectorPrefabPrewarmAsync(stagedRecords);
                 RestoreFromLoadedRecords(stagedRecords, scheduleHydration: false);
                 ApplyStagedEntityStates(stagedEntityStates);
-                if (WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _playerTransform) && _playerTransform != null)
+                if (TryResolvePlayerAupSnapshot(out AbsoluteUniversePosition playerAup))
                 {
-                    AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(_playerTransform.position);
                     _currentPlayerChunk = AbsoluteUniversePosition.ResolveChunkId(in playerAup, chunkSizeMeters);
                     _playerChunkValid = true;
                     _lastHydrationScanAup = playerAup;

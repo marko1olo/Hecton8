@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core.Memory;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -67,11 +68,11 @@ namespace Hecton8.Animation.IK
     /// </summary>
     public static class VRPhysicalHandPresenceLayout
     {
-        public const int AupPoseBytes = 48;
-        public const int GrabStateBytes = 72;
-        public const int InputBytes = 260;
-        public const int OutputBytes = 116;
-        public const int TelemetryEntryBytes = 80;
+        public const int AupPoseBytes = 64;
+        public const int GrabStateBytes = 128;
+        public const int InputBytes = 320;
+        public const int OutputBytes = 128;
+        public const int TelemetryEntryBytes = 128;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool Validate()
@@ -87,116 +88,139 @@ namespace Hecton8.Animation.IK
     /// <summary>
     /// Compact AUP hand pose used by DataVault hand target and actual lanes.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct VRHandAupPose
     {
-        public long GridX;
-        public long GridY;
-        public long GridZ;
-        public float3 LocalMeters;
-        public uint ShiftFrameId;
-        public uint SourceHash;
-        public byte Flags;
-        public byte HandIndex;
-        public ushort Reserved;
+        [FieldOffset(0)] public long GridX;
+        [FieldOffset(8)] public long GridY;
+        [FieldOffset(16)] public long GridZ;
+        [FieldOffset(24)] public float3 LocalMeters;
+        [FieldOffset(36)] public uint ShiftFrameId;
+        [FieldOffset(40)] public uint SourceHash;
+        [FieldOffset(44)] public byte Flags;
+        [FieldOffset(45)] public byte HandIndex;
+        [FieldOffset(46)] public ushort Reserved;
+        [FieldOffset(48)] private ulong _pad0;
+        [FieldOffset(56)] private ulong _pad1;
     }
 
     /// <summary>
     /// Persistent per-hand grab state stored in the global vault.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct VRHandGrabState
     {
-        public float3 TargetPosition;
-        public float3 ActualPosition;
-        public float3 ControllerPosition;
-        public float3 SurfaceNormal;
-        public float Grip01;
-        public float LockBlend01;
-        public float SlidingSpeed;
-        public byte State;
-        public byte Flags;
-        public ushort InteractableId;
-        public uint FrameIndex;
-        public uint StateHash;
+        [FieldOffset(0)] public float3 TargetPosition;
+        [FieldOffset(12)] public float3 ActualPosition;
+        [FieldOffset(24)] public float3 ControllerPosition;
+        [FieldOffset(36)] public float3 SurfaceNormal;
+        [FieldOffset(48)] public float Grip01;
+        [FieldOffset(52)] public float LockBlend01;
+        [FieldOffset(56)] public float SlidingSpeed;
+        [FieldOffset(60)] public byte State;
+        [FieldOffset(61)] public byte Flags;
+        [FieldOffset(62)] public ushort InteractableId;
+        [FieldOffset(64)] public uint FrameIndex;
+        [FieldOffset(68)] public uint StateHash;
+        [FieldOffset(72)] private ulong _pad0;
+        [FieldOffset(80)] private ulong _pad1;
+        [FieldOffset(88)] private ulong _pad2;
+        [FieldOffset(96)] private ulong _pad3;
+        [FieldOffset(104)] private ulong _pad4;
+        [FieldOffset(112)] private ulong _pad5;
+        [FieldOffset(120)] private ulong _pad6;
     }
 
     /// <summary>
     /// Blittable bridge payload for UniversalInputStateSignal grip and interactable AUP data.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Explicit, Size = 320)]
     public struct VRHandPresenceInput
     {
-        public float3 ShoulderPosition;
-        public float3 CurrentElbowPosition;
-        public float3 ControllerPosition;
-        public float3 PreviousActualPosition;
-        public float3 PolePosition;
-        public float3 ControllerForward;
-        public float3 ControllerUp;
-        public float3 SurfacePoint;
-        public float3 SurfaceNormal;
-        public VRHandAupPose InteractableAUP;
-        public quaternion CurrentUpperRotation;
-        public quaternion CurrentLowerRotation;
-        public quaternion CurrentHandRotation;
-        public quaternion ControllerRotation;
-        public float UpperArmLength;
-        public float LowerArmLength;
-        public float Grip01;
-        public float TargetBlend01;
-        public float HandClearance;
-        public float ScrapeVelocityThreshold;
-        public uint RuntimeFlags;
-        public uint UniversalInputFlags;
-        public uint GripInputMask;
-        public ushort InteractableId;
-        public byte HandIndex;
-        public byte Reserved;
+        [FieldOffset(0)] public VRHandAupPose InteractableAUP;
+        [FieldOffset(64)] public quaternion CurrentUpperRotation;
+        [FieldOffset(80)] public quaternion CurrentLowerRotation;
+        [FieldOffset(96)] public quaternion CurrentHandRotation;
+        [FieldOffset(112)] public quaternion ControllerRotation;
+        [FieldOffset(128)] public float3 ShoulderPosition;
+        [FieldOffset(140)] public float3 CurrentElbowPosition;
+        [FieldOffset(152)] public float3 ControllerPosition;
+        [FieldOffset(164)] public float3 PreviousActualPosition;
+        [FieldOffset(176)] public float3 PolePosition;
+        [FieldOffset(188)] public float3 ControllerForward;
+        [FieldOffset(200)] public float3 ControllerUp;
+        [FieldOffset(212)] public float3 SurfacePoint;
+        [FieldOffset(224)] public float3 SurfaceNormal;
+        [FieldOffset(236)] public float UpperArmLength;
+        [FieldOffset(240)] public float LowerArmLength;
+        [FieldOffset(244)] public float Grip01;
+        [FieldOffset(248)] public float TargetBlend01;
+        [FieldOffset(252)] public float HandClearance;
+        [FieldOffset(256)] public float ScrapeVelocityThreshold;
+        [FieldOffset(260)] public uint RuntimeFlags;
+        [FieldOffset(264)] public uint UniversalInputFlags;
+        [FieldOffset(268)] public uint GripInputMask;
+        [FieldOffset(272)] public ushort InteractableId;
+        [FieldOffset(274)] public byte HandIndex;
+        [FieldOffset(275)] public byte Reserved;
+        [FieldOffset(276)] private uint _pad0;
+        [FieldOffset(280)] private ulong _pad1;
+        [FieldOffset(288)] private ulong _pad2;
+        [FieldOffset(296)] private ulong _pad3;
+        [FieldOffset(304)] private ulong _pad4;
+        [FieldOffset(312)] private ulong _pad5;
     }
 
     /// <summary>
     /// Solved hand presence output consumed by animation rig binding code.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct VRHandPresenceOutput
     {
-        public float3 ActualHandPosition;
-        public float3 GhostHandPosition;
-        public float3 ElbowPosition;
-        public float3 SurfaceNormal;
-        public quaternion UpperArmRotation;
-        public quaternion LowerArmRotation;
-        public quaternion HandRotation;
-        public float LockBlend01;
-        public float HapticIntensity;
-        public float SlidingSpeed;
-        public uint Flags;
-        public uint StateHash;
+        [FieldOffset(0)] public float3 ActualHandPosition;
+        [FieldOffset(12)] public float3 GhostHandPosition;
+        [FieldOffset(24)] public float3 ElbowPosition;
+        [FieldOffset(36)] public float3 SurfaceNormal;
+        [FieldOffset(48)] public quaternion UpperArmRotation;
+        [FieldOffset(64)] public quaternion LowerArmRotation;
+        [FieldOffset(80)] public quaternion HandRotation;
+        [FieldOffset(96)] public float LockBlend01;
+        [FieldOffset(100)] public float HapticIntensity;
+        [FieldOffset(104)] public float SlidingSpeed;
+        [FieldOffset(108)] public uint Flags;
+        [FieldOffset(112)] public uint StateHash;
+        [FieldOffset(116)] private uint _pad0;
+        [FieldOffset(120)] private ulong _pad1;
     }
 
     /// <summary>
     /// Fixed-size black-box record for hand IK lock state, hashes, and guard flags.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct VRHandIkTelemetryEntry
     {
-        public uint FrameIndex;
-        public uint StateHash;
-        public uint Flags;
-        public ushort InteractableId;
-        public byte HandIndex;
-        public byte GrabState;
-        public byte IKLockState;
-        public ushort Reserved;
-        public byte LayoutPadding;
-        public float3 TargetPosition;
-        public float3 ActualPosition;
-        public float3 ControllerPosition;
-        public float3 SurfaceNormal;
-        public float LockBlend01;
-        public float SlidingSpeed;
-        public float ControllerSeparation;
+        [FieldOffset(0)] public uint FrameIndex;
+        [FieldOffset(4)] public uint StateHash;
+        [FieldOffset(8)] public uint Flags;
+        [FieldOffset(12)] public ushort InteractableId;
+        [FieldOffset(14)] public byte HandIndex;
+        [FieldOffset(15)] public byte GrabState;
+        [FieldOffset(16)] public byte IKLockState;
+        [FieldOffset(17)] public byte LayoutPadding;
+        [FieldOffset(18)] public ushort Reserved;
+        [FieldOffset(20)] public float3 TargetPosition;
+        [FieldOffset(32)] public float3 ActualPosition;
+        [FieldOffset(44)] public float3 ControllerPosition;
+        [FieldOffset(56)] public float3 SurfaceNormal;
+        [FieldOffset(68)] public float LockBlend01;
+        [FieldOffset(72)] public float SlidingSpeed;
+        [FieldOffset(76)] public float ControllerSeparation;
+        [FieldOffset(80)] private ulong _pad0;
+        [FieldOffset(88)] private ulong _pad1;
+        [FieldOffset(96)] private ulong _pad2;
+        [FieldOffset(104)] private ulong _pad3;
+        [FieldOffset(112)] private ulong _pad4;
+        [FieldOffset(120)] private ulong _pad5;
     }
 
     /// <summary>
@@ -415,7 +439,7 @@ namespace Hecton8.Animation.IK
     /// <summary>
     /// Burst hand presence job: input controller pose in, projected physical hand and two-bone arm pose out.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, OptimizeFor = OptimizeFor.Performance)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, OptimizeFor = OptimizeFor.Performance)]
     public struct VRPhysicalHandPresenceJob : IJob
     {
         private const float MinLengthSq = 0.000001f;
@@ -430,14 +454,14 @@ namespace Hecton8.Animation.IK
         private const float InvMillimeterScale = 0.001f;
         private const float MaxQuantizedLocalMeters = 1048576f;
 
-        [ReadOnly] public NativeArray<VRHandPresenceInput> Inputs;
-        [ReadOnly] public NativeArray<byte> EncodedSdf;
-        public NativeArray<VRHandPresenceOutput> Outputs;
-        public NativeArray<VRHandAupPose> HandTargetAUP;
-        public NativeArray<VRHandAupPose> HandActualAUP;
-        public NativeArray<VRHandGrabState> GrabStates;
-        public NativeArray<VRHandIkTelemetryEntry> TelemetryRing;
-        public NativeArray<int> TelemetryCursor;
+        [ReadOnly, NoAlias] public NativeArray<VRHandPresenceInput> Inputs;
+        [ReadOnly, NoAlias] public NativeArray<byte> EncodedSdf;
+        [NoAlias] public NativeArray<VRHandPresenceOutput> Outputs;
+        [NoAlias] public NativeArray<VRHandAupPose> HandTargetAUP;
+        [NoAlias] public NativeArray<VRHandAupPose> HandActualAUP;
+        [NoAlias] public NativeArray<VRHandGrabState> GrabStates;
+        [NoAlias] public NativeArray<VRHandIkTelemetryEntry> TelemetryRing;
+        [NoAlias] public NativeArray<int> TelemetryCursor;
         public int3 SdfDimensions;
         public float3 SdfOrigin;
         public float3 SdfCellSize;

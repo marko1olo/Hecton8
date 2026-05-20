@@ -93,14 +93,20 @@ namespace Hecton8.World
 
         public float EvaluateInfluence(Vector3 playerPosition)
         {
-            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
-            return EvaluateInfluence(in playerAup);
+            Vector3 anchorPosition = transform.position;
+            double deltaX = (double)anchorPosition.x - playerPosition.x;
+            double deltaZ = (double)anchorPosition.z - playerPosition.z;
+            return EvaluateInfluenceFromDistanceSq((deltaX * deltaX) + (deltaZ * deltaZ));
         }
 
         public float EvaluateInfluence(in AbsoluteUniversePosition playerAup)
         {
-            AbsoluteUniversePosition anchorAup = AbsoluteUniversePosition.FromRuntimePosition(transform.position);
-            double distanceSq = PlanarDistanceSq(in anchorAup, in playerAup);
+            double distanceSq = PlanarDistanceSqToRuntimeAnchor(transform.position, in playerAup);
+            return EvaluateInfluenceFromDistanceSq(distanceSq);
+        }
+
+        private float EvaluateInfluenceFromDistanceSq(double distanceSq)
+        {
             if (double.IsNaN(distanceSq) || double.IsInfinity(distanceSq))
             {
                 _debugLastInfluence = 0f;
@@ -130,11 +136,11 @@ namespace Hecton8.World
             return t;
         }
 
-        private static double PlanarDistanceSq(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)
+        private static double PlanarDistanceSqToRuntimeAnchor(Vector3 anchorPosition, in AbsoluteUniversePosition playerAup)
         {
-            const double cellSize = AbsoluteUniversePosition.CellSizeMeters;
-            double deltaX = ((a.GridX - b.GridX) * cellSize) + (a.LocalX - b.LocalX);
-            double deltaZ = ((a.GridZ - b.GridZ) * cellSize) + (a.LocalZ - b.LocalZ);
+            float3 playerRuntime = playerAup.ToRuntimeFloat3();
+            double deltaX = (double)anchorPosition.x - playerRuntime.x;
+            double deltaZ = (double)anchorPosition.z - playerRuntime.z;
             return (deltaX * deltaX) + (deltaZ * deltaZ);
         }
 

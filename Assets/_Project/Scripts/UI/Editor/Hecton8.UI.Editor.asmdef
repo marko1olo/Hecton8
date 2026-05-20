@@ -3,6 +3,7 @@
     "rootNamespace": "Hecton8.UI.Editor",
     "references": [
         "Hecton8.Core",
+        "Unity.Collections",
         "Unity.Mathematics"
     ],
     "includePlatforms": [

@@ -10,6 +10,7 @@ using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.World;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -54,39 +55,50 @@ namespace Hecton8.Physics
     /// <summary>
     /// Deferred main-thread force application payload.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct ForcePacket
     {
         /// <summary>World-space force vector.</summary>
+        [FieldOffset(0)]
         public Vector3 Force;
 
         /// <summary>World-space torque vector.</summary>
+        [FieldOffset(12)]
         public Vector3 Torque;
 
         /// <summary>World-space offset from the rigidbody center of mass used by deferred AddForceAtPosition routing.</summary>
+        [FieldOffset(24)]
         public Vector3 PointOffset;
 
         /// <summary>Force application mode.</summary>
+        [FieldOffset(36)]
         public ForceMode Mode;
 
+        /// <summary>Dense rigidbody slot index owned by <see cref="PhysicsApplySystem"/>.</summary>
+        [FieldOffset(40)]
+        public int RigidbodyIndex;
+
         /// <summary>Bitfield flags describing packet contents.</summary>
+        [FieldOffset(44)]
         public byte Flags;
 
         /// <summary>Priority class used by contention and entanglement guards.</summary>
+        [FieldOffset(45)]
         public ForcePacketPriority Priority;
 
-        private byte _padding1;
-        private byte _padding2;
-
-        /// <summary>Dense rigidbody slot index owned by <see cref="PhysicsApplySystem"/>.</summary>
-        public int RigidbodyIndex;
+        [FieldOffset(46)]
+        private ushort _padding0;
+        [FieldOffset(48)]
+        private ulong _padding1;
+        [FieldOffset(56)]
+        private ulong _padding2;
     }
 
     /// <summary>
     /// Pressure blowout payload emitted when a bulkhead opens across a large pressure differential.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 80)]
-    public readonly struct PressureImpulseEvent
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
+    public struct PressureImpulseEvent
     {
         /// <summary>
         /// Creates a pressure blowout payload.
@@ -102,6 +114,7 @@ namespace Hecton8.Physics
             Vector3 impulseVectorNewtonSeconds,
             float influenceRadiusMeters)
         {
+            this = default;
             DoorIndex = doorIndex;
             RuntimePosition = runtimePosition;
             Direction = direction;
@@ -115,41 +128,65 @@ namespace Hecton8.Physics
         }
 
         /// <summary>Bulkhead edge index inside the submarine compartment graph.</summary>
-        public int DoorIndex { get; }
+        [FieldOffset(68)]
+        public int DoorIndex;
 
         /// <summary>Runtime-space midpoint of the opened bulkhead.</summary>
-        public Vector3 RuntimePosition { get; }
+        [FieldOffset(0)]
+        public Vector3 RuntimePosition;
 
         /// <summary>Normalized airflow direction from the high-pressure room toward the low-pressure room.</summary>
-        public Vector3 Direction { get; }
+        [FieldOffset(12)]
+        public Vector3 Direction;
 
         /// <summary>Cross-sectional doorway area used by the blowout force calculation.</summary>
-        public float DoorAreaSquareMeters { get; }
+        [FieldOffset(48)]
+        public float DoorAreaSquareMeters;
 
         /// <summary>Pressure of the source room at the moment of opening.</summary>
-        public float HighPressureKPa { get; }
+        [FieldOffset(52)]
+        public float HighPressureKPa;
 
         /// <summary>Pressure of the destination room at the moment of opening.</summary>
-        public float LowPressureKPa { get; }
+        [FieldOffset(56)]
+        public float LowPressureKPa;
 
         /// <summary>Absolute pressure delta across the opened bulkhead.</summary>
-        public float PressureDeltaKPa { get; }
+        [FieldOffset(60)]
+        public float PressureDeltaKPa;
 
         /// <summary>Raw force vector in newtons derived from the pressure differential.</summary>
-        public Vector3 ForceVectorNewtons { get; }
+        [FieldOffset(24)]
+        public Vector3 ForceVectorNewtons;
 
         /// <summary>One-shot impulse vector in newton-seconds routed into the deferred physics system.</summary>
-        public Vector3 ImpulseVectorNewtonSeconds { get; }
+        [FieldOffset(36)]
+        public Vector3 ImpulseVectorNewtonSeconds;
 
         /// <summary>World-space influence radius used by the local overlap dispatch.</summary>
-        public float InfluenceRadiusMeters { get; }
+        [FieldOffset(64)]
+        public float InfluenceRadiusMeters;
+        [FieldOffset(72)]
+        private ulong _pad0;
+        [FieldOffset(80)]
+        private ulong _pad1;
+        [FieldOffset(88)]
+        private ulong _pad2;
+        [FieldOffset(96)]
+        private ulong _pad3;
+        [FieldOffset(104)]
+        private ulong _pad4;
+        [FieldOffset(112)]
+        private ulong _pad5;
+        [FieldOffset(120)]
+        private ulong _pad6;
     }
 
     /// <summary>
     /// Electromagnetic pulse payload emitted by fauna or environmental hazards.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
-    public readonly struct ElectromagneticPulseEvent
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct ElectromagneticPulseEvent
     {
         public ElectromagneticPulseEvent(
             Vector3 runtimePosition,
@@ -159,6 +196,7 @@ namespace Hecton8.Physics
             uint damageType,
             ushort sourceId)
         {
+            this = default;
             RuntimePosition = runtimePosition;
             RadiusMeters = radiusMeters;
             DurationSeconds = durationSeconds;
@@ -167,19 +205,27 @@ namespace Hecton8.Physics
             SourceId = sourceId;
         }
 
-        public Vector3 RuntimePosition { get; }
-        public float RadiusMeters { get; }
-        public float DurationSeconds { get; }
-        public float ClaritySuppression01 { get; }
-        public uint DamageType { get; }
-        public ushort SourceId { get; }
+        [FieldOffset(0)]
+        public Vector3 RuntimePosition;
+        [FieldOffset(12)]
+        public float RadiusMeters;
+        [FieldOffset(16)]
+        public float DurationSeconds;
+        [FieldOffset(20)]
+        public float ClaritySuppression01;
+        [FieldOffset(24)]
+        public uint DamageType;
+        [FieldOffset(28)]
+        public ushort SourceId;
+        [FieldOffset(30)]
+        private ushort _pad0;
     }
 
     /// <summary>
     /// False or authored acoustic ping payload consumed by sonar and PDA signal systems.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
-    public readonly struct AcousticPingEvent
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct AcousticPingEvent
     {
         /// <summary>
         /// Creates one transient acoustic ping payload.
@@ -193,6 +239,7 @@ namespace Hecton8.Physics
             int sourceSpeciesId,
             float energyJoules = 0f)
         {
+            this = default;
             RuntimePosition = runtimePosition;
             RadiusMeters = math.max(0f, radiusMeters);
             Intensity01 = math.saturate(intensity01);
@@ -203,25 +250,40 @@ namespace Hecton8.Physics
         }
 
         /// <summary>Runtime-space origin of the ping.</summary>
-        public Vector3 RuntimePosition { get; }
+        [FieldOffset(0)]
+        public Vector3 RuntimePosition;
 
         /// <summary>World-space radius in authored meters.</summary>
-        public float RadiusMeters { get; }
+        [FieldOffset(12)]
+        public float RadiusMeters;
 
         /// <summary>Normalized signal intensity.</summary>
-        public float Intensity01 { get; }
+        [FieldOffset(16)]
+        public float Intensity01;
 
         /// <summary>Transient acoustic lifetime in seconds.</summary>
-        public float LifetimeSeconds { get; }
+        [FieldOffset(20)]
+        public float LifetimeSeconds;
 
         /// <summary>PDA-facing role label used by signal displays.</summary>
-        public FieldTargetRole SignalRole { get; }
+        [FieldOffset(24)]
+        public FieldTargetRole SignalRole;
 
         /// <summary>Stable species id of the emitter.</summary>
-        public int SourceSpeciesId { get; }
+        [FieldOffset(28)]
+        public int SourceSpeciesId;
 
         /// <summary>Authored or measured acoustic energy used to reject spoof pings.</summary>
-        public float EnergyJoules { get; }
+        [FieldOffset(32)]
+        public float EnergyJoules;
+        [FieldOffset(36)]
+        private uint _pad0;
+        [FieldOffset(40)]
+        private ulong _pad1;
+        [FieldOffset(48)]
+        private ulong _pad2;
+        [FieldOffset(56)]
+        private ulong _pad3;
     }
 
     /// <summary>
@@ -240,8 +302,8 @@ namespace Hecton8.Physics
     /// <summary>
     /// Kinetic acoustic impulse payload emitted by physics and consumed by audio, HUD, haptics, and passive radar.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
-    public readonly struct AcousticImpulseEvent
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct AcousticImpulseEvent
     {
         public AcousticImpulseEvent(
             Vector3 runtimePosition,
@@ -254,6 +316,7 @@ namespace Hecton8.Physics
             byte audioMaterialId,
             AcousticImpulseFlags flags)
         {
+            this = default;
             RuntimePosition = runtimePosition;
             Direction = DominantAxisOrDefault(direction);
             KineticEnergyJoules = math.max(0f, kineticEnergyJoules);
@@ -265,15 +328,30 @@ namespace Hecton8.Physics
             Flags = flags;
         }
 
-        public Vector3 RuntimePosition { get; }
-        public Vector3 Direction { get; }
-        public float KineticEnergyJoules { get; }
-        public float Volume01 { get; }
-        public float PitchScale { get; }
-        public float RadiusMeters { get; }
-        public int SourceBodyInstanceId { get; }
-        public byte AudioMaterialId { get; }
-        public AcousticImpulseFlags Flags { get; }
+        [FieldOffset(0)]
+        public Vector3 RuntimePosition;
+        [FieldOffset(12)]
+        public Vector3 Direction;
+        [FieldOffset(24)]
+        public float KineticEnergyJoules;
+        [FieldOffset(28)]
+        public float Volume01;
+        [FieldOffset(32)]
+        public float PitchScale;
+        [FieldOffset(36)]
+        public float RadiusMeters;
+        [FieldOffset(40)]
+        public int SourceBodyInstanceId;
+        [FieldOffset(44)]
+        public byte AudioMaterialId;
+        [FieldOffset(45)]
+        public AcousticImpulseFlags Flags;
+        [FieldOffset(46)]
+        private ushort _pad0;
+        [FieldOffset(48)]
+        private ulong _pad1;
+        [FieldOffset(56)]
+        private ulong _pad2;
 
         private static Vector3 DominantAxisOrDefault(Vector3 value)
         {
@@ -300,8 +378,8 @@ namespace Hecton8.Physics
     /// <summary>
     /// Active-sonar danger payload routed through the acoustic impulse lane with the Large flag forced on.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
-    public readonly struct LargeAcousticImpulseEvent
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct LargeAcousticImpulseEvent
     {
         public LargeAcousticImpulseEvent(
             Vector3 runtimePosition,
@@ -314,6 +392,7 @@ namespace Hecton8.Physics
             byte audioMaterialId,
             AcousticImpulseFlags flags)
         {
+            this = default;
             RuntimePosition = runtimePosition;
             Direction = direction;
             KineticEnergyJoules = math.max(0f, kineticEnergyJoules);
@@ -325,15 +404,30 @@ namespace Hecton8.Physics
             Flags = flags | AcousticImpulseFlags.Large;
         }
 
-        public readonly Vector3 RuntimePosition;
-        public readonly Vector3 Direction;
-        public readonly float KineticEnergyJoules;
-        public readonly float Volume01;
-        public readonly float PitchScale;
-        public readonly float RadiusMeters;
-        public readonly int SourceBodyInstanceId;
-        public readonly byte AudioMaterialId;
-        public readonly AcousticImpulseFlags Flags;
+        [FieldOffset(0)]
+        public Vector3 RuntimePosition;
+        [FieldOffset(12)]
+        public Vector3 Direction;
+        [FieldOffset(24)]
+        public float KineticEnergyJoules;
+        [FieldOffset(28)]
+        public float Volume01;
+        [FieldOffset(32)]
+        public float PitchScale;
+        [FieldOffset(36)]
+        public float RadiusMeters;
+        [FieldOffset(40)]
+        public int SourceBodyInstanceId;
+        [FieldOffset(44)]
+        public byte AudioMaterialId;
+        [FieldOffset(45)]
+        public AcousticImpulseFlags Flags;
+        [FieldOffset(46)]
+        private ushort _pad0;
+        [FieldOffset(48)]
+        private ulong _pad1;
+        [FieldOffset(56)]
+        private ulong _pad2;
 
         public AcousticImpulseEvent ToAcousticImpulseEvent()
         {
@@ -364,22 +458,47 @@ namespace Hecton8.Physics
     /// <summary>
     /// Unmanaged event payload carried by the deferred physics event lane.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 80)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     internal struct RemovedPhysicsEventPayload
     {
+        [FieldOffset(0)]
         public Vector3 RuntimePosition;
+        [FieldOffset(12)]
         public Vector3 Direction;
+        [FieldOffset(24)]
         public Vector3 ForceVector;
+        [FieldOffset(36)]
         public Vector3 ImpulseVector;
+        [FieldOffset(48)]
         public float RadiusMeters;
+        [FieldOffset(52)]
         public float Scalar0;
+        [FieldOffset(56)]
         public float Scalar1;
+        [FieldOffset(60)]
         public float Scalar2;
+        [FieldOffset(64)]
         public int PrimaryId;
+        [FieldOffset(68)]
         public uint DataHash;
+        [FieldOffset(72)]
         public uint StatusBits;
+        [FieldOffset(76)]
         public ushort EventType;
+        [FieldOffset(78)]
         public ushort Reserved;
+        [FieldOffset(80)]
+        private ulong _pad0;
+        [FieldOffset(88)]
+        private ulong _pad1;
+        [FieldOffset(96)]
+        private ulong _pad2;
+        [FieldOffset(104)]
+        private ulong _pad3;
+        [FieldOffset(112)]
+        private ulong _pad4;
+        [FieldOffset(120)]
+        private ulong _pad5;
     }
 
     /// <summary>
@@ -1006,11 +1125,11 @@ namespace Hecton8.Physics
         BiomeBuoyancy = 1 << 4,
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct ValidateForcePacketsJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<ForcePacket> Packets;
-        public NativeArray<byte> ValidityMask;
+        [ReadOnly, NoAlias] public NativeArray<ForcePacket> Packets;
+        [NoAlias] public NativeArray<byte> ValidityMask;
         public int MaxTrackedBodies;
 
         public void Execute(int index)
@@ -1048,7 +1167,7 @@ namespace Hecton8.Physics
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9000)]
-    public sealed class PhysicsApplySystem : MonoBehaviour, IPhysicsService, IFixedTickable, IPostFixedTickable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown
+    public sealed partial class PhysicsApplySystem : MonoBehaviour, IPhysicsService, ISceneTransitionPhysicsBridge, IFixedTickable, IPostFixedTickable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown
     {
         private const int MaxTrackedBodies = 64;
         private const int MaxQueuedPackets = 64;
@@ -1088,18 +1207,35 @@ namespace Hecton8.Physics
         // COLD ALLOC: Collider[64] - static implosion overlap query buffer for zero-GC radius impulse dispatch - owner: PhysicsApplySystem
         private static readonly Collider[] s_implosionOverlapBuffer = new Collider[ImplosionOverlapCapacity];
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct RemovedDeferredSubmarineImpactSignal
         {
+            [FieldOffset(0)]
             public float3 LocalPoint;
+            [FieldOffset(12)]
             public float Magnitude;
+            [FieldOffset(16)]
             public float Depth;
+            [FieldOffset(20)]
             public uint DamageType;
+            [FieldOffset(24)]
             public float PreviousIntegrityNormalized;
+            [FieldOffset(28)]
             public float NextIntegrityNormalized;
+            [FieldOffset(32)]
             public ushort SourceId;
+            [FieldOffset(34)]
             public byte IntegrityDelta;
+            [FieldOffset(35)]
             public TraumaLevel TraumaLevel;
+            [FieldOffset(36)]
+            private uint _pad0;
+            [FieldOffset(40)]
+            private ulong _pad1;
+            [FieldOffset(48)]
+            private ulong _pad2;
+            [FieldOffset(56)]
+            private ulong _pad3;
         }
 
         private struct DepressurizationVortex
@@ -1582,6 +1718,13 @@ namespace Hecton8.Physics
             _frontBufferValidationReady = false;
         }
 
+        /// <inheritdoc />
+        public void ClearSceneTransitionRuntimeState()
+        {
+            ClearQueuedPackets();
+            GlobalPhysicsStateManager.ClearRuntimeStateStatic();
+        }
+
         private void Awake()
         {
             PhysicsApplySystem registeredSystem = Instance;
@@ -1683,6 +1826,7 @@ namespace Hecton8.Physics
             }
 
             ClearQueuedPackets();
+            ShutdownBuoyancyForceQueue();
             ReleaseValidationBufferViews();
             ReleaseForcePacketBufferViews();
             ClearTransientImpactProxyLights();

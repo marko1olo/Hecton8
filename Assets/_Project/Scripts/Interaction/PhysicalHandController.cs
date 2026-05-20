@@ -27,14 +27,14 @@ namespace Hecton8.Interaction
         Disabled = 5,
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential)]
     internal struct FingerRayDefinition
     {
         public float3 LocalKnuckleOffset;
         public float3 LocalFingerDirection;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential)]
     internal struct FingerRayRuntime
     {
         public float3 Origin;
@@ -677,7 +677,7 @@ namespace Hecton8.Interaction
                 return true;
             }
 
-            if (state.HasActiveInput)
+            if (state.HasActiveInput())
             {
                 _hasXRIdleGripPoseSample = false;
                 return false;
@@ -1514,9 +1514,8 @@ namespace Hecton8.Interaction
             Bounds bodyBounds = ResolveActiveBodyBounds(body);
             float maxExtent = math.max(MinimumBoundsSpan, math.cmax((float3)bodyBounds.extents));
             float stabilizerRadius = (maxExtent * 2f) + math.max(0.08f, suitCollisionProbeRadius);
-            AbsoluteUniversePosition handAup = AbsoluteUniversePosition.FromRuntimePosition(opposingHand.position);
-            AbsoluteUniversePosition bodyAup = AbsoluteUniversePosition.FromRuntimePosition(bodyBounds.center);
-            bool withinStabilizerRange = AbsoluteUniversePosition.DistanceSq(in handAup, in bodyAup) <= stabilizerRadius * stabilizerRadius;
+            Vector3 stabilizerDelta = opposingHand.position - bodyBounds.center;
+            bool withinStabilizerRange = stabilizerDelta.sqrMagnitude <= stabilizerRadius * stabilizerRadius;
             SetTwoHandStabilizerPose(withinStabilizerRange, opposingHand.position);
         }
 
@@ -2191,7 +2190,7 @@ namespace Hecton8.Interaction
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct FingerPoseData
         {
             public float3 TipPosition;

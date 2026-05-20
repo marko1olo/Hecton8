@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -22,32 +23,36 @@ namespace Hecton8.World.GPR
         public const uint AupShiftFlag = 1u << 1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 36)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct GroundRadarTelemetryEntry
     {
-        public uint Frame;
-        public int ActiveGprPings;
-        public int AddedGprPings;
-        public int RayCount;
-        public float HighestSignalStrength;
-        public float3 ProbeOrigin;
-        public uint Flags;
+        [FieldOffset(0)] public uint Frame;
+        [FieldOffset(4)] public int ActiveGprPings;
+        [FieldOffset(8)] public int AddedGprPings;
+        [FieldOffset(12)] public int RayCount;
+        [FieldOffset(16)] public float HighestSignalStrength;
+        [FieldOffset(20)] public float3 ProbeOrigin;
+        [FieldOffset(32)] public uint Flags;
+        [FieldOffset(36)] private uint _pad0;
+        [FieldOffset(40)] private ulong _pad1;
+        [FieldOffset(48)] private ulong _pad2;
+        [FieldOffset(56)] private ulong _pad3;
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct GroundRadarRaymarchJob : IJob
     {
-        [ReadOnly] public NativeSlice<byte> EncodedSdf;
-        [ReadOnly] public NativeSlice<float3> OrePositions;
-        [ReadOnly] public NativeSlice<int> OreTypes;
+        [ReadOnly, NoAlias] public NativeSlice<byte> EncodedSdf;
+        [ReadOnly, NoAlias] public NativeSlice<float3> OrePositions;
+        [ReadOnly, NoAlias] public NativeSlice<int> OreTypes;
 
-        public NativeSlice<float3> GprHits;
-        public NativeSlice<float> GprSignalStrength;
-        public NativeSlice<float> GprAgeSeconds;
-        public NativeSlice<int> GprOreTypes;
-        public NativeSlice<float4> GprPingGpu;
-        public NativeSlice<int> Counters;
-        public NativeSlice<float> MaxSignalStrength;
+        [NoAlias] public NativeSlice<float3> GprHits;
+        [NoAlias] public NativeSlice<float> GprSignalStrength;
+        [NoAlias] public NativeSlice<float> GprAgeSeconds;
+        [NoAlias] public NativeSlice<int> GprOreTypes;
+        [NoAlias] public NativeSlice<float4> GprPingGpu;
+        [NoAlias] public NativeSlice<int> Counters;
+        [NoAlias] public NativeSlice<float> MaxSignalStrength;
 
         public int3 GridDimensions;
         public float3 VolumeOrigin;

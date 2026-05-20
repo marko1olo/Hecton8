@@ -15,6 +15,7 @@ namespace Hecton8.Editor.Build
         private const string MobileVrDefine = "MOBILE_VR";
         private const string XrManagementPackage = "com.unity.xr.management";
         private const string OpenXrPackage = "com.unity.xr.openxr";
+        private const string MetaOpenXrPackage = "com.unity.xr.meta-openxr";
 
         public int callbackOrder => -4610;
 
@@ -52,6 +53,7 @@ namespace Hecton8.Editor.Build
 
             bool hasXrManagement = PackageManifestContains(root, XrManagementPackage);
             bool hasOpenXr = PackageManifestContains(root, OpenXrPackage);
+            bool hasMetaOpenXr = PackageManifestContains(root, MetaOpenXrPackage);
             bool strictXr = HasDefine(target, StrictXrDefine);
             bool mobileVrAndroid = target == BuildTarget.Android &&
                 (HasDefine(target, MobileVrDefine) || AndroidManifestHasMobileVrMarker());
@@ -71,6 +73,11 @@ namespace Hecton8.Editor.Build
             if (!hasOpenXr)
             {
                 Append(failures, "Packages/manifest.json is missing com.unity.xr.openxr.");
+            }
+
+            if (target == BuildTarget.Android && mobileVrAndroid && !hasMetaOpenXr)
+            {
+                Append(warnings, "Packages/manifest.json is missing com.unity.xr.meta-openxr; Quest-specific OpenXR feature validation will remain incomplete.");
             }
 
             if (ProjectSettingsContain(root, "m_BuildTargetVRSettings: []"))
@@ -140,6 +147,21 @@ namespace Hecton8.Editor.Build
             if (FileContains(projectSettingsPath, "AndroidTargetSdkVersion: 0"))
             {
                 Append(failures, "AndroidTargetSdkVersion is automatic (0), not an explicit release target.");
+            }
+
+            if (!FileContains(projectSettingsPath, "useCustomMainManifest: 1"))
+            {
+                Append(failures, "useCustomMainManifest is disabled; Assets/Plugins/Android/AndroidManifest.xml will not be authoritative.");
+            }
+
+            if (!FileContains(projectSettingsPath, "useCustomMainGradleTemplate: 1"))
+            {
+                Append(warnings, "useCustomMainGradleTemplate is disabled; Android native packaging overrides are not guaranteed.");
+            }
+
+            if (!FileContains(projectSettingsPath, "AndroidTargetArchitectures: 2"))
+            {
+                Append(failures, "AndroidTargetArchitectures is not ARM64-only. Quest/PICO standalone builds must not include 32-bit ARM.");
             }
 
             string qualitySettingsPath = Path.Combine(root, "ProjectSettings", "QualitySettings.asset");

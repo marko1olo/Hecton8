@@ -1,6 +1,5 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Hecton8.World;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -30,19 +29,19 @@ namespace Hecton8.Core
     /// <summary>
     /// Blittable UI state snapshot owned by core simulation and read by visual UI renderers.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct UIStateData
     {
-        public uint Version;
-        public uint CommandSequence;
-        public ushort Flags;
-        public ushort ActiveTab;
-        public ushort PreviousTab;
-        public ushort Reserved;
-        public uint LogEntryCount;
-        public uint LatestLogEventHash;
-        public float OpenDurationSeconds;
-        private uint _padding0;
+        [FieldOffset(0)] public uint Version;
+        [FieldOffset(4)] public uint CommandSequence;
+        [FieldOffset(8)] public ushort Flags;
+        [FieldOffset(10)] public ushort ActiveTab;
+        [FieldOffset(12)] public ushort PreviousTab;
+        [FieldOffset(14)] public ushort Reserved;
+        [FieldOffset(16)] public uint LogEntryCount;
+        [FieldOffset(20)] public uint LatestLogEventHash;
+        [FieldOffset(24)] public float OpenDurationSeconds;
+        [FieldOffset(28)] private uint _padding0;
     }
 
     /// <summary>
@@ -78,15 +77,17 @@ namespace Hecton8.Core
     /// <summary>
     /// Blittable scalar UI value written by simulation and read by visual presenters.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 24)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct UIValueSlot
     {
-        public uint Version;
-        public uint Flags;
-        public float Value;
-        public float PreviousValue;
-        public float LastWriteUnscaledTime;
-        private uint _padding0;
+        [FieldOffset(0)] public uint Version;
+        [FieldOffset(4)] public uint Flags;
+        [FieldOffset(8)] public float Value;
+        [FieldOffset(12)] public float PreviousValue;
+        [FieldOffset(16)] public float LastWriteUnscaledTime;
+        [FieldOffset(20)] private uint _padding0;
+        [FieldOffset(24)] private uint _padding1;
+        [FieldOffset(28)] private uint _padding2;
     }
 
     /// <summary>
@@ -484,7 +485,7 @@ namespace Hecton8.Core
             DisposeNativeArray(ref _historyStates, ref disposeHandle);
             DisposeNativeArray(ref _pdaLogEventHashes, ref disposeHandle);
             DisposeNativeArray(ref _pdaLogEventTimestamps, ref disposeHandle);
-            DispatcherJobSwap.TryComplete(ref disposeHandle, forceComplete: true);
+            DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
 
             _pdaLogWriteIndex = 0;
             _pdaLogCount = 0;

@@ -729,7 +729,9 @@ namespace Hecton8.UI
             if (!lease.Handle.IsCompleted)
                 return false;
 
-            lease.Handle.Complete();
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref lease.Handle))
+                return false;
+
             lease.Vault?.TryUnlockBuffer(GlitchTableBufferId, SystemID.UI);
 
             lease = default;
@@ -1473,9 +1475,9 @@ namespace Hecton8.UI
             if (!_activeHandle.IsCompleted)
                 return false;
 
-            // Non-blocking: normal and teardown paths only call Complete after IsCompleted.
-            _activeHandle.Complete();
-            _activeHandle = default;
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _activeHandle))
+                return false;
+
             _jobScheduled = false;
             _lastComputeMs = (float)((Stopwatch.GetTimestamp() - _jobStartTimestamp) * 1000.0 / Stopwatch.Frequency);
             UnlockScheduledBuffers();

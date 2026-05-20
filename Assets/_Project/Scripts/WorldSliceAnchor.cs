@@ -43,28 +43,15 @@ namespace Hecton8.World
         [SerializeField] private float _debugScaledNearDistance;
         [SerializeField] private float _debugScaledMidDistance;
 
-        private AbsoluteUniversePosition _anchorAup;
         private SliceState _currentState = SliceState.Far;
-        private bool _anchorAupInitialized;
 
         public SliceState CurrentState => _currentState;
         public float NearDistance => nearDistance;
         public float MidDistance => midDistance;
         public float HysteresisPadding => hysteresisPadding;
-        public AbsoluteUniversePosition AnchorAup
-        {
-            get
-            {
-                if (!_anchorAupInitialized)
-                    CacheAnchorAup();
-
-                return _anchorAup;
-            }
-        }
 
         private void OnEnable()
         {
-            CacheAnchorAup();
             RegisterActiveAnchor(this);
         }
 
@@ -101,7 +88,6 @@ namespace Hecton8.World
         private void Awake()
         {
             ClampSettings();
-            CacheAnchorAup();
             RefreshFidelityRoots();
             ApplyState(SliceState.Far, true);
         }
@@ -195,10 +181,14 @@ namespace Hecton8.World
             }
         }
 
-        private void CacheAnchorAup()
+        internal float GetPlanarDistanceSq(in AbsoluteUniversePosition playerAup)
         {
-            _anchorAup = AbsoluteUniversePosition.FromRuntimePosition(transform.position);
-            _anchorAupInitialized = true;
+            Vector3 anchorRuntime = transform.position;
+            float3 playerRuntime = playerAup.ToRuntimeFloat3();
+            double deltaX = (double)anchorRuntime.x - playerRuntime.x;
+            double deltaZ = (double)anchorRuntime.z - playerRuntime.z;
+            double distanceSq = (deltaX * deltaX) + (deltaZ * deltaZ);
+            return distanceSq > float.MaxValue ? float.MaxValue : (float)distanceSq;
         }
 
         private static void SetRootsActive(GameObject[] roots, bool active)

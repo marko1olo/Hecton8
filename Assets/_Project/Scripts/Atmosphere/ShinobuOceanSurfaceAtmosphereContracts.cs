@@ -17,14 +17,13 @@ namespace Hecton8.Atmosphere
         public const int MaxWaveOctaves = WaveCapacity * WavesPerParameters;
         public const int MinQualityWaveCount = 1;
         public const int TelemetryFrameCount = 300;
-        public const int MockBuoyancyQueryCount = 10000;
         public const int WaveReadbackSampleCapacity = 64;
         public const int WaveReadbackRingSize = 3;
         public const int BeaufortProfileCapacity = 16;
-        public const long MockBuoyancyBudgetNs = 100000L;
         public const long TelemetryDumpBudgetNs = 500000L;
         public const uint SourceHash = 0x53485236u; // SHR6
         public const uint WaterlineBreachLaneHash = 0x57425236u; // WBR6
+        public const uint QualityStepTuningHash = 0x51535450u; // QSTP
         public const float DefaultSeaLevel = 0f;
         public const float MinimumWavelength = 0.25f;
         public const float TwoPi = 6.2831853071795864769f;
@@ -37,7 +36,19 @@ namespace Hecton8.Atmosphere
         [FieldOffset(0)] public float4 Wave1;
         [FieldOffset(16)] public float4 Wave2;
         [FieldOffset(32)] public float4 Wave3;
-        [FieldOffset(48)] public float4 GlobalWindAndTime;
+        [FieldOffset(48)] public float4 GlobalWindAndStorm;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct OceanWaveAupPhaseDTO
+    {
+        [FieldOffset(0)] public float4 PhaseBase0;
+        [FieldOffset(16)] public float4 PhaseBase1;
+        [FieldOffset(32)] public float4 CameraAupLocalXZ;
+        [FieldOffset(48)] public uint Frame;
+        [FieldOffset(52)] public uint Flags;
+        [FieldOffset(56)] public float GlobalQualityWeight;
+        [FieldOffset(60)] public float ActiveWaveCount;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -91,7 +102,7 @@ namespace Hecton8.Atmosphere
         [FieldOffset(60)] public int ReadbackSampleCount;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct BeaufortProfileDTO
     {
         [FieldOffset(0)] public uint StateHash;
@@ -102,39 +113,24 @@ namespace Hecton8.Atmosphere
         [FieldOffset(20)] public float FoamThreshold;
         [FieldOffset(24)] public float FrequencyScale;
         [FieldOffset(28)] public uint Flags;
-    }
-
-    [StructLayout(LayoutKind.Explicit, Size = 64)]
-    public partial struct MockBuoyancyQuery
-    {
-        [FieldOffset(0)] public double3 AUP;
-        [FieldOffset(24)] public float TimeSeconds;
-        [FieldOffset(28)] public float GlobalQualityWeight;
-        [FieldOffset(32)] public uint Seed;
-        [FieldOffset(36)] public uint Flags;
-        [FieldOffset(40)] public float SeaLevel;
-        [FieldOffset(44)] public float _pad0;
-        [FieldOffset(48)] public ulong _pad1;
-        [FieldOffset(56)] public ulong _pad2;
-    }
-
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
-    public struct MockBuoyancyResult
-    {
-        [FieldOffset(0)] public float Height;
-        [FieldOffset(4)] public float3 Normal;
-        [FieldOffset(16)] public float3 Displacement;
-        [FieldOffset(28)] public uint Flags;
+        [FieldOffset(32)] public float4 Reserved0;
+        [FieldOffset(48)] public float4 Reserved1;
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public static class HectonOceanSurfaceMath
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float SanitizeQualityWeight(float qualityWeight)
+        {
+            return math.isfinite(qualityWeight) ? math.saturate(qualityWeight) : 0f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ResolveDesiredWaveCount(float qualityWeight, int maxWaveCount)
         {
             int maxCount = math.clamp(maxWaveCount, 1, OceanSurfaceAtmosphereConstants.MaxWaveOctaves);
-            float q = math.saturate(qualityWeight);
+            float q = SanitizeQualityWeight(qualityWeight);
             float qualityCurve = q * q * (3f - (2f * q));
             float minimum = math.min(OceanSurfaceAtmosphereConstants.MinQualityWaveCount, maxCount);
             return math.min(maxCount, math.lerp(minimum, maxCount, qualityCurve));
@@ -265,8 +261,9 @@ namespace Hecton8.Atmosphere
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ResolveFoamScalar(float jacobianDeterminant, float foamThreshold, float globalQualityWeight)
         {
-            float qualityFoam = math.saturate((globalQualityWeight - 0.28f) * (1f / 0.72f));
-            qualityFoam *= math.step(0.28f, math.saturate(globalQualityWeight));
+            float q = SanitizeQualityWeight(globalQualityWeight);
+            float qualityFoam = math.saturate((q - 0.28f) * (1f / 0.72f));
+            qualityFoam *= math.step(0.28f, q);
             float pinched = math.saturate((foamThreshold - jacobianDeterminant) * 4f);
             return pinched * qualityFoam;
         }
@@ -280,7 +277,7 @@ namespace Hecton8.Atmosphere
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static OceanSurfaceLodDTO ResolveRadialGridLod(double3 cameraAup, float globalQualityWeight, float maxWavelength)
         {
-            float q = math.saturate(globalQualityWeight);
+            float q = SanitizeQualityWeight(globalQualityWeight);
             float safeWavelength = math.max(OceanSurfaceAtmosphereConstants.MinimumWavelength, FinitePositive(maxWavelength, 4096f));
             OceanSurfaceLodDTO dto = default;
             dto.CameraAupLocalXZ = new float4((float)WrapMeters(cameraAup.x, safeWavelength), (float)WrapMeters(cameraAup.z, safeWavelength), safeWavelength, 0f);
@@ -303,7 +300,7 @@ namespace Hecton8.Atmosphere
                 hash = HashFloat4(hash, wave.Wave1);
                 hash = HashFloat4(hash, wave.Wave2);
                 hash = HashFloat4(hash, wave.Wave3);
-                hash = HashFloat4(hash, wave.GlobalWindAndTime);
+                hash = HashFloat4(hash, wave.GlobalWindAndStorm);
             }
 
             hash = Hash(hash, math.asuint(time));
@@ -328,6 +325,60 @@ namespace Hecton8.Atmosphere
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveAupPhaseBaseRadians(double projectedMeters, float wavelength)
+        {
+            float safeWavelength = WaveLaneWavelength(new float4(0f, 0f, wavelength, 0f));
+            double wrappedMeters = WrapMeters(projectedMeters, safeWavelength);
+            return WrapPhaseRadians((float)(wrappedMeters * (OceanSurfaceAtmosphereConstants.TwoPi / safeWavelength)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static OceanWaveAupPhaseDTO ResolveAupPhaseBases(
+            double3 cameraAup,
+            NativeArray<WaveParametersDTO> waves,
+            uint frame,
+            float globalQualityWeight,
+            int activeWaveCount)
+        {
+            OceanWaveAupPhaseDTO dto = default;
+            float q = SanitizeQualityWeight(globalQualityWeight);
+            float maxWavelength = ResolveMaxWavelength(waves);
+            double3 safeAup = math.all(math.isfinite(cameraAup)) ? cameraAup : double3.zero;
+            dto.CameraAupLocalXZ = new float4(
+                (float)WrapMeters(safeAup.x, maxWavelength),
+                (float)WrapMeters(safeAup.z, maxWavelength),
+                maxWavelength,
+                0f);
+            dto.Frame = frame;
+            dto.Flags = math.all(math.isfinite(cameraAup)) ? 1u : 2u;
+            dto.GlobalQualityWeight = q;
+            dto.ActiveWaveCount = math.max(0, activeWaveCount);
+
+            if (!waves.IsCreated)
+                return dto;
+
+            int laneLimit = math.min(waves.Length * OceanSurfaceAtmosphereConstants.WavesPerParameters, OceanSurfaceAtmosphereConstants.MaxWaveOctaves);
+            for (int waveIndex = 0; waveIndex < waves.Length; waveIndex++)
+            {
+                WaveParametersDTO wave = waves[waveIndex];
+                for (int laneIndex = 0; laneIndex < OceanSurfaceAtmosphereConstants.WavesPerParameters; laneIndex++)
+                {
+                    int globalLaneIndex = (waveIndex * OceanSurfaceAtmosphereConstants.WavesPerParameters) + laneIndex;
+                    if (globalLaneIndex >= laneLimit)
+                        break;
+
+                    float4 lane = GetWaveLane(wave, laneIndex);
+                    float2 direction = WaveLaneDirection(lane);
+                    float wavelength = WaveLaneWavelength(lane);
+                    double projectedMeters = (safeAup.x * direction.x) + (safeAup.z * direction.y);
+                    SetAupPhaseBase(ref dto, globalLaneIndex, ResolveAupPhaseBaseRadians(projectedMeters, wavelength));
+                }
+            }
+
+            return dto;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float2 Normalize2OrDefault(float2 value, float2 fallback)
         {
             float lenSq = math.dot(value, value);
@@ -343,7 +394,7 @@ namespace Hecton8.Atmosphere
             wave.Wave1 = SanitizeWaveLane(wave.Wave1);
             wave.Wave2 = SanitizeWaveLane(wave.Wave2);
             wave.Wave3 = SanitizeWaveLane(wave.Wave3);
-            wave.GlobalWindAndTime = math.select(float4.zero, wave.GlobalWindAndTime, math.isfinite(wave.GlobalWindAndTime));
+            wave.GlobalWindAndStorm = math.select(float4.zero, wave.GlobalWindAndStorm, math.isfinite(wave.GlobalWindAndStorm));
             return wave;
         }
 
@@ -387,6 +438,53 @@ namespace Hecton8.Atmosphere
                     break;
                 default:
                     wave.Wave3 = SanitizeWaveLane(lane);
+                    break;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float GetAupPhaseBase(OceanWaveAupPhaseDTO phase, int waveIndex)
+        {
+            switch (waveIndex)
+            {
+                case 0:
+                    return math.isfinite(phase.PhaseBase0.x) ? phase.PhaseBase0.x : 0f;
+                case 1:
+                    return math.isfinite(phase.PhaseBase0.y) ? phase.PhaseBase0.y : 0f;
+                case 2:
+                    return math.isfinite(phase.PhaseBase0.z) ? phase.PhaseBase0.z : 0f;
+                case 3:
+                    return math.isfinite(phase.PhaseBase0.w) ? phase.PhaseBase0.w : 0f;
+                case 4:
+                    return math.isfinite(phase.PhaseBase1.x) ? phase.PhaseBase1.x : 0f;
+                default:
+                    return math.isfinite(phase.PhaseBase1.y) ? phase.PhaseBase1.y : 0f;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void SetAupPhaseBase(ref OceanWaveAupPhaseDTO phase, int waveIndex, float phaseBaseRadians)
+        {
+            float safePhase = WrapPhaseRadians(phaseBaseRadians);
+            switch (waveIndex)
+            {
+                case 0:
+                    phase.PhaseBase0.x = safePhase;
+                    break;
+                case 1:
+                    phase.PhaseBase0.y = safePhase;
+                    break;
+                case 2:
+                    phase.PhaseBase0.z = safePhase;
+                    break;
+                case 3:
+                    phase.PhaseBase0.w = safePhase;
+                    break;
+                case 4:
+                    phase.PhaseBase1.x = safePhase;
+                    break;
+                default:
+                    phase.PhaseBase1.y = safePhase;
                     break;
             }
         }
@@ -501,115 +599,6 @@ namespace Hecton8.Atmosphere
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    public struct OceanBuoyancyHeightJob : IJobParallelFor
-    {
-        [ReadOnly, NoAlias] public NativeArray<float3> RuntimePositions;
-        [ReadOnly, NoAlias] public NativeArray<WaveParametersDTO> Waves;
-        [NoAlias] public NativeArray<float> Heights;
-        [NoAlias] public NativeArray<float3> Normals;
-        public double3 RuntimeOriginAUP;
-        public float TimeSeconds;
-        public float GlobalQualityWeight;
-        public float SeaLevel;
-
-        public void Execute(int index)
-        {
-            float3 runtime = RuntimePositions[index];
-            double3 aup = RuntimeOriginAUP + new double3(runtime.x, runtime.y, runtime.z);
-            HectonOceanSurfaceMath.EvaluateWaves(aup, TimeSeconds, Waves, GlobalQualityWeight, out float relativeHeight, out float3 normal);
-            Heights[index] = SeaLevel + relativeHeight;
-            if (Normals.IsCreated && index < Normals.Length)
-                Normals[index] = normal;
-        }
-    }
-
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    public struct OceanBuoyancyAupJob : IJobParallelFor
-    {
-        [ReadOnly, NoAlias] public NativeArray<double3> AUPs;
-        [ReadOnly, NoAlias] public NativeArray<WaveParametersDTO> Waves;
-        [NoAlias] public NativeArray<float> Heights;
-        [NoAlias] public NativeArray<float3> Normals;
-        public float TimeSeconds;
-        public float GlobalQualityWeight;
-        public float SeaLevel;
-
-        public void Execute(int index)
-        {
-            HectonOceanSurfaceMath.EvaluateWaves(AUPs[index], TimeSeconds, Waves, GlobalQualityWeight, out float relativeHeight, out float3 normal);
-            Heights[index] = SeaLevel + relativeHeight;
-            if (Normals.IsCreated && index < Normals.Length)
-                Normals[index] = normal;
-        }
-    }
-
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    public struct MockBuoyancyQueryJob : IJobParallelFor
-    {
-        [ReadOnly, NoAlias] public NativeArray<MockBuoyancyQuery> Queries;
-        [ReadOnly, NoAlias] public NativeArray<WaveParametersDTO> Waves;
-        [NoAlias] public NativeArray<MockBuoyancyResult> Results;
-
-        public void Execute(int index)
-        {
-            MockBuoyancyQuery query = Queries[index];
-            HectonOceanSurfaceMath.EvaluateWavesDetailed(
-                query.AUP,
-                query.TimeSeconds,
-                Waves,
-                query.GlobalQualityWeight,
-                out float relativeHeight,
-                out float3 normal,
-                out float3 displacement,
-                out float jacobian,
-                out _);
-
-            MockBuoyancyResult result = default;
-            result.Height = query.SeaLevel + relativeHeight;
-            result.Normal = normal;
-            result.Displacement = displacement;
-            result.Flags = math.isfinite(jacobian) ? 1u : 2u;
-            Results[index] = result;
-        }
-    }
-
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    public struct MockBuoyancyQueryHydrationJob : IJobParallelFor
-    {
-        [NoAlias] public NativeArray<MockBuoyancyQuery> Queries;
-        public double3 CenterAUP;
-        public float TimeSeconds;
-        public float GlobalQualityWeight;
-        public float SeaLevel;
-        public uint Seed;
-        public uint SectorHash;
-        public uint SimulationFrame;
-
-        public void Execute(int index)
-        {
-            uint randomSeed =
-                ((uint)index * 747796405u) ^
-                Seed ^
-                SectorHash ^
-                (SimulationFrame * 2246822519u) ^
-                2891336453u;
-            if (randomSeed == 0u)
-                randomSeed = 1u;
-            Unity.Mathematics.Random random = new Unity.Mathematics.Random(randomSeed);
-            float x = random.NextFloat(-5000f, 5000f);
-            float z = random.NextFloat(-5000f, 5000f);
-            MockBuoyancyQuery query = default;
-            query.AUP = CenterAUP + new double3(x, 0.0, z);
-            query.TimeSeconds = TimeSeconds;
-            query.GlobalQualityWeight = GlobalQualityWeight;
-            query.SeaLevel = SeaLevel;
-            query.Seed = random.state;
-            query.Flags = 1u;
-            Queries[index] = query;
-        }
-    }
-
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct GenerateMockStormJob : IJob
     {
         [NoAlias] public NativeArray<WaveParametersDTO> Waves;
@@ -633,10 +622,10 @@ namespace Hecton8.Atmosphere
             state.SurfaceScalars = new float4(SeaLevel, 1f, math.lerp(0.78f, 0.46f, state.WindDirectionSpeedStorm.w), math.saturate(state.WindDirectionSpeedStorm.w * 0.65f));
             state.SkyTintAndSurge = new float4(0.33f, 0.21f, 0.48f, math.lerp(0.08f, 1.35f, state.WindDirectionSpeedStorm.w));
             state.StateMask = 1u;
-            state.GlobalQualityWeight = math.saturate(GlobalQualityWeight);
+            state.GlobalQualityWeight = HectonOceanSurfaceMath.SanitizeQualityWeight(GlobalQualityWeight);
             Weather[0] = state;
 
-            CalculateWaveParametersJob.FillWaveParameters(Waves, ref state, SurfaceSwell, TimeSeconds, GlobalQualityWeight);
+            CalculateWaveParametersJob.FillWaveParameters(Waves, ref state, SurfaceSwell, default, TimeSeconds, GlobalQualityWeight);
             Weather[0] = state;
 
             if (Atmosphere.IsCreated && Atmosphere.Length > 0)
@@ -657,6 +646,7 @@ namespace Hecton8.Atmosphere
         [NoAlias] public NativeArray<WaveParametersDTO> Waves;
         [NoAlias] public NativeArray<WeatherStateDTO> Weather;
         [NoAlias] public NativeArray<float4> SurfaceSwell;
+        [ReadOnly, NoAlias] public NativeArray<BeaufortProfileDTO> TuningProfiles;
         public float TimeSeconds;
         public float GlobalQualityWeight;
 
@@ -666,7 +656,7 @@ namespace Hecton8.Atmosphere
                 return;
 
             WeatherStateDTO state = Weather[0];
-            FillWaveParameters(Waves, ref state, SurfaceSwell, TimeSeconds, GlobalQualityWeight);
+            FillWaveParameters(Waves, ref state, SurfaceSwell, TuningProfiles, TimeSeconds, GlobalQualityWeight);
             Weather[0] = state;
         }
 
@@ -674,13 +664,22 @@ namespace Hecton8.Atmosphere
             NativeArray<WaveParametersDTO> waves,
             ref WeatherStateDTO state,
             NativeArray<float4> surfaceSwell,
+            NativeArray<BeaufortProfileDTO> tuningProfiles,
             float timeSeconds,
             float globalQualityWeight)
         {
             float2 windDirection = HectonOceanSurfaceMath.Normalize2OrDefault(state.WindDirectionSpeedStorm.xy, new float2(1f, 0f));
             float windSpeed = math.max(0.01f, math.isfinite(state.WindDirectionSpeedStorm.z) ? state.WindDirectionSpeedStorm.z : 11f);
             float storm = math.saturate(math.isfinite(state.WindDirectionSpeedStorm.w) ? state.WindDirectionSpeedStorm.w : 0.42f);
-            float quality = math.saturate(globalQualityWeight);
+            float choppiness = 0.52f;
+            if (tuningProfiles.IsCreated &&
+                tuningProfiles.Length > 0 &&
+                tuningProfiles[0].StateHash == OceanSurfaceAtmosphereConstants.QualityStepTuningHash)
+            {
+                choppiness = math.saturate(tuningProfiles[0].StormIntensity);
+            }
+
+            float quality = HectonOceanSurfaceMath.SanitizeQualityWeight(globalQualityWeight);
             state.WindDirectionSpeedStorm = new float4(windDirection.x, windDirection.y, windSpeed, storm);
             state.GlobalQualityWeight = quality;
 
@@ -700,7 +699,8 @@ namespace Hecton8.Atmosphere
                 float octave01 = laneLimit <= 1 ? 0f : i * math.rcp(laneLimit - 1f);
                 float wavelength = baseWavelength * math.pow(1.58f, i) * stormScale;
                 float spread = ((i & 1) == 0 ? -1f : 1f) * math.lerp(0.08f, 0.72f, octave01);
-                float steepness = math.saturate(math.lerp(0.12f, 0.82f, storm) * math.lerp(1.05f, 0.42f, octave01));
+                float tunedSteepness = math.lerp(0.08f, 0.92f, choppiness);
+                float steepness = math.saturate(tunedSteepness * math.lerp(0.72f, 1.18f, storm) * math.lerp(1.05f, 0.42f, octave01));
                 float waveNumber = OceanSurfaceAtmosphereConstants.TwoPi / math.max(OceanSurfaceAtmosphereConstants.MinimumWavelength, wavelength);
                 float phaseSpeed = math.sqrt(9.81f * waveNumber) * math.lerp(0.82f, 1.22f, octave01);
                 float4 lane = HectonOceanSurfaceMath.CreateWaveLane(directionAngle + spread, steepness, wavelength, phaseSpeed);
@@ -708,7 +708,7 @@ namespace Hecton8.Atmosphere
                 int laneIndex = i - (waveIndex * OceanSurfaceAtmosphereConstants.WavesPerParameters);
                 WaveParametersDTO wave = waves[waveIndex];
                 HectonOceanSurfaceMath.SetWaveLane(ref wave, laneIndex, lane);
-                wave.GlobalWindAndTime = new float4(windDirection.x, windDirection.y, windSpeed, storm);
+                wave.GlobalWindAndStorm = new float4(windDirection.x, windDirection.y, windSpeed, storm);
                 waves[waveIndex] = HectonOceanSurfaceMath.SanitizeWave(wave);
                 maxAmplitude = math.max(maxAmplitude, HectonOceanSurfaceMath.WaveLaneAmplitude(lane));
             }
@@ -723,7 +723,7 @@ namespace Hecton8.Atmosphere
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    public struct ApplyDelayedWaveReadbackJob : IJobParallelFor
+    public struct ApplyBuoyancyJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<float4> CompletedResults;
         [NoAlias] public NativeArray<float> Heights;
@@ -823,6 +823,184 @@ namespace Hecton8.Atmosphere
             }
 
             return changed;
+        }
+
+        public static bool TryApplyBeaufort(
+            NativeArray<byte> csvBytes,
+            int length,
+            NativeArray<BeaufortProfileDTO> profiles)
+        {
+            if (!csvBytes.IsCreated || length <= 0 || !profiles.IsCreated || profiles.Length <= 0)
+                return false;
+
+            int safeLength = math.min(length, csvBytes.Length);
+            bool changed = false;
+            int rowStart = 0;
+            while (rowStart < safeLength)
+            {
+                int rowEnd = rowStart;
+                while (rowEnd < safeLength && csvBytes[rowEnd] != LineFeed && csvBytes[rowEnd] != CarriageReturn)
+                    rowEnd++;
+
+                int firstComma = FindByte(csvBytes, rowStart, rowEnd, Comma);
+                if (firstComma > rowStart)
+                {
+                    int stateStart = TrimStart(csvBytes, rowStart, firstComma);
+                    int stateEnd = TrimEnd(csvBytes, stateStart, firstComma);
+                    uint stateHash = HashKey(csvBytes, stateStart, stateEnd);
+                    if (TryParseBeaufortRow(csvBytes, firstComma + 1, rowEnd, stateHash, out BeaufortProfileDTO profile))
+                        changed |= UpsertBeaufortProfile(profiles, profile);
+                }
+
+                rowStart = rowEnd + 1;
+                while (rowStart < safeLength && (csvBytes[rowStart] == LineFeed || csvBytes[rowStart] == CarriageReturn))
+                    rowStart++;
+            }
+
+            return changed;
+        }
+
+        public static bool TryApplyBeaufort(ReadOnlySpan<byte> csvBytes, NativeArray<BeaufortProfileDTO> profiles)
+        {
+            if (csvBytes.Length <= 0 || !profiles.IsCreated || profiles.Length <= 0)
+                return false;
+
+            bool changed = false;
+            int rowStart = 0;
+            while (rowStart < csvBytes.Length)
+            {
+                int rowEnd = rowStart;
+                while (rowEnd < csvBytes.Length && csvBytes[rowEnd] != LineFeed && csvBytes[rowEnd] != CarriageReturn)
+                    rowEnd++;
+
+                int firstComma = FindByte(csvBytes, rowStart, rowEnd, Comma);
+                if (firstComma > rowStart)
+                {
+                    int stateStart = TrimStart(csvBytes, rowStart, firstComma);
+                    int stateEnd = TrimEnd(csvBytes, stateStart, firstComma);
+                    uint stateHash = HashKey(csvBytes, stateStart, stateEnd);
+                    if (TryParseBeaufortRow(csvBytes, firstComma + 1, rowEnd, stateHash, out BeaufortProfileDTO profile))
+                        changed |= UpsertBeaufortProfile(profiles, profile);
+                }
+
+                rowStart = rowEnd + 1;
+                while (rowStart < csvBytes.Length && (csvBytes[rowStart] == LineFeed || csvBytes[rowStart] == CarriageReturn))
+                    rowStart++;
+            }
+
+            return changed;
+        }
+
+        private static bool TryParseBeaufortRow(NativeArray<byte> bytes, int start, int end, uint stateHash, out BeaufortProfileDTO profile)
+        {
+            profile = default;
+            float windSpeed = 0f;
+            float steepness = 0f;
+            float wavelength = 0f;
+            float storm = 0f;
+            float foam = 0f;
+            float frequency = 1f;
+            int cursor = start;
+            if (!TryParseNextFloat(bytes, ref cursor, end, out windSpeed) ||
+                !TryParseNextFloat(bytes, ref cursor, end, out steepness) ||
+                !TryParseNextFloat(bytes, ref cursor, end, out wavelength) ||
+                !TryParseNextFloat(bytes, ref cursor, end, out storm) ||
+                !TryParseNextFloat(bytes, ref cursor, end, out foam))
+            {
+                return false;
+            }
+
+            TryParseNextFloat(bytes, ref cursor, end, out frequency);
+            profile.StateHash = stateHash;
+            profile.WindSpeed = math.max(0f, windSpeed);
+            profile.BaseSteepness = math.saturate(steepness);
+            profile.BaseWavelength = math.max(OceanSurfaceAtmosphereConstants.MinimumWavelength, wavelength);
+            profile.StormIntensity = math.saturate(storm);
+            profile.FoamThreshold = math.saturate(foam);
+            profile.FrequencyScale = math.max(0.01f, frequency);
+            profile.Flags = 1u;
+            return true;
+        }
+
+        private static bool TryParseNextFloat(NativeArray<byte> bytes, ref int cursor, int end, out float value)
+        {
+            value = 0f;
+            if (cursor >= end)
+                return false;
+
+            int comma = FindByte(bytes, cursor, end, Comma);
+            int valueEnd = comma >= 0 ? comma : end;
+            bool parsed = TryParseFloat(bytes, cursor, valueEnd, out value);
+            cursor = comma >= 0 ? comma + 1 : end;
+            return parsed;
+        }
+
+        private static bool TryParseBeaufortRow(ReadOnlySpan<byte> bytes, int start, int end, uint stateHash, out BeaufortProfileDTO profile)
+        {
+            profile = default;
+            float windSpeed = 0f;
+            float steepness = 0f;
+            float wavelength = 0f;
+            float storm = 0f;
+            float foam = 0f;
+            float frequency = 1f;
+            int cursor = start;
+            if (!TryParseNextFloat(bytes, ref cursor, end, out windSpeed) ||
+                !TryParseNextFloat(bytes, ref cursor, end, out steepness) ||
+                !TryParseNextFloat(bytes, ref cursor, end, out wavelength) ||
+                !TryParseNextFloat(bytes, ref cursor, end, out storm) ||
+                !TryParseNextFloat(bytes, ref cursor, end, out foam))
+            {
+                return false;
+            }
+
+            TryParseNextFloat(bytes, ref cursor, end, out frequency);
+            profile.StateHash = stateHash;
+            profile.WindSpeed = math.max(0f, windSpeed);
+            profile.BaseSteepness = math.saturate(steepness);
+            profile.BaseWavelength = math.max(OceanSurfaceAtmosphereConstants.MinimumWavelength, wavelength);
+            profile.StormIntensity = math.saturate(storm);
+            profile.FoamThreshold = math.saturate(foam);
+            profile.FrequencyScale = math.max(0.01f, frequency);
+            profile.Flags = 1u;
+            return true;
+        }
+
+        private static bool TryParseNextFloat(ReadOnlySpan<byte> bytes, ref int cursor, int end, out float value)
+        {
+            value = 0f;
+            if (cursor >= end)
+                return false;
+
+            int comma = FindByte(bytes, cursor, end, Comma);
+            int valueEnd = comma >= 0 ? comma : end;
+            bool parsed = TryParseFloat(bytes, cursor, valueEnd, out value);
+            cursor = comma >= 0 ? comma + 1 : end;
+            return parsed;
+        }
+
+        private static bool UpsertBeaufortProfile(NativeArray<BeaufortProfileDTO> profiles, BeaufortProfileDTO profile)
+        {
+            if (profile.StateHash == 0u || !profiles.IsCreated || profiles.Length <= 0)
+                return false;
+
+            uint hash = profile.StateHash;
+            int mask = profiles.Length - 1;
+            int index = (profiles.Length & mask) == 0
+                ? (int)(hash & (uint)mask)
+                : (int)(hash % (uint)profiles.Length);
+            for (int probe = 0; probe < profiles.Length; probe++)
+            {
+                int slot = (index + probe) % profiles.Length;
+                BeaufortProfileDTO current = profiles[slot];
+                if (current.StateHash == 0u || current.StateHash == profile.StateHash)
+                {
+                    profiles[slot] = profile;
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static bool ApplyValue(
@@ -1043,6 +1221,47 @@ namespace Hecton8.Atmosphere
             return hash;
         }
 
+        private static int FindByte(ReadOnlySpan<byte> bytes, int start, int end, byte value)
+        {
+            for (int i = start; i < end; i++)
+            {
+                if (bytes[i] == value)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private static int TrimStart(ReadOnlySpan<byte> bytes, int start, int end)
+        {
+            while (start < end && (bytes[start] == Space || bytes[start] == Tab))
+                start++;
+            return start;
+        }
+
+        private static int TrimEnd(ReadOnlySpan<byte> bytes, int start, int end)
+        {
+            while (end > start && (bytes[end - 1] == Space || bytes[end - 1] == Tab))
+                end--;
+            return end;
+        }
+
+        private static uint HashKey(ReadOnlySpan<byte> bytes, int start, int end)
+        {
+            uint hash = 2166136261u;
+            for (int i = start; i < end; i++)
+            {
+                byte c = bytes[i];
+                if (c >= (byte)'A' && c <= (byte)'Z')
+                    c = (byte)(c + 32);
+
+                hash ^= c;
+                hash *= 16777619u;
+            }
+
+            return hash;
+        }
+
         private static bool TryParseInt(NativeArray<byte> bytes, int start, int end, out int value)
         {
             value = 0;
@@ -1075,6 +1294,97 @@ namespace Hecton8.Atmosphere
         }
 
         private static bool TryParseFloat(NativeArray<byte> bytes, int start, int end, out float value)
+        {
+            value = 0f;
+            start = TrimStart(bytes, start, end);
+            end = TrimEnd(bytes, start, end);
+            if (start >= end)
+                return false;
+
+            int sign = 1;
+            if (bytes[start] == (byte)'-')
+            {
+                sign = -1;
+                start++;
+            }
+            else if (bytes[start] == (byte)'+')
+            {
+                start++;
+            }
+
+            double parsed = 0.0;
+            bool any = false;
+            while (start < end)
+            {
+                byte c = bytes[start];
+                if (c < (byte)'0' || c > (byte)'9')
+                    break;
+
+                parsed = (parsed * 10.0) + (c - (byte)'0');
+                start++;
+                any = true;
+            }
+
+            if (start < end && bytes[start] == (byte)'.')
+            {
+                start++;
+                double scale = 0.1;
+                while (start < end)
+                {
+                    byte c = bytes[start];
+                    if (c < (byte)'0' || c > (byte)'9')
+                        break;
+
+                    parsed += (c - (byte)'0') * scale;
+                    scale *= 0.1;
+                    start++;
+                    any = true;
+                }
+            }
+
+            int exponent = 0;
+            if (start < end && (bytes[start] == (byte)'e' || bytes[start] == (byte)'E'))
+            {
+                start++;
+                int exponentSign = 1;
+                if (start < end && bytes[start] == (byte)'-')
+                {
+                    exponentSign = -1;
+                    start++;
+                }
+                else if (start < end && bytes[start] == (byte)'+')
+                {
+                    start++;
+                }
+
+                int exp = 0;
+                bool hasExp = false;
+                while (start < end)
+                {
+                    byte c = bytes[start];
+                    if (c < (byte)'0' || c > (byte)'9')
+                        break;
+
+                    exp = (exp * 10) + (c - (byte)'0');
+                    start++;
+                    hasExp = true;
+                }
+
+                if (hasExp)
+                    exponent = exp * exponentSign;
+            }
+
+            if (!any)
+                return false;
+
+            if (exponent != 0)
+                parsed *= math.pow(10f, exponent);
+
+            value = (float)(parsed * sign);
+            return math.isfinite(value);
+        }
+
+        private static bool TryParseFloat(ReadOnlySpan<byte> bytes, int start, int end, out float value)
         {
             value = 0f;
             start = TrimStart(bytes, start, end);

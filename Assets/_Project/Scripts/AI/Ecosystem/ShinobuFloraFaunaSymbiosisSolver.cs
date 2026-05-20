@@ -163,7 +163,7 @@ namespace Hecton8.AI.Ecosystem
 
         public void Dispose()
         {
-            CompleteFrameJob(forceComplete: true);
+            CompleteFrameJobForTeardown();
             TryUnregisterTicks();
             TryUnregisterHotSwapListener();
             UnlockJobBuffers();
@@ -178,7 +178,7 @@ namespace Hecton8.AI.Ecosystem
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
-            CompleteFrameJob(forceComplete: true);
+            CompleteFrameJobForTeardown();
             UnlockJobBuffers();
             _dataVault = currentService as IDataVault;
             ResetVaultHandles();
@@ -342,7 +342,7 @@ namespace Hecton8.AI.Ecosystem
 
         public void LateFrameTick()
         {
-            CompleteFrameJob(forceComplete: false);
+            TryFinalizeFrameJobNoWait();
         }
 
         internal static ref SymbiosisFloraDTO GetFloraRef(
@@ -517,7 +517,8 @@ namespace Hecton8.AI.Ecosystem
             if (_dataVault != null)
                 return _dataVault;
 
-            _dataVault = GlobalRegistry.DataVault;
+            if (GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
+                _dataVault = latest;
             return _dataVault;
         }
 
@@ -668,8 +669,7 @@ namespace Hecton8.AI.Ecosystem
             if (math.isfinite(weight))
                 return math.saturate(weight);
 
-            byte tier = ScalabilityTierProfiles.Normalize(GlobalRegistry.ScalabilityTierProfileByte);
-            return math.saturate(tier * (1f / 3f));
+            return 1f;
         }
 
         private void MonitorCsvOverrides(IDataVault vault)
@@ -773,14 +773,33 @@ namespace Hecton8.AI.Ecosystem
             }
         }
 
-        private void CompleteFrameJob(bool forceComplete)
+        private void TryFinalizeFrameJobNoWait()
         {
             if (!_jobScheduled)
                 return;
 
-            if (!DispatcherJobSwap.TryComplete(ref _activeJobHandle, forceComplete))
+            if (!_activeJobHandle.IsCompleted)
                 return;
 
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _activeJobHandle))
+                return;
+
+            FinishFrameJobCompletion();
+        }
+
+        private void CompleteFrameJobForTeardown()
+        {
+            if (!_jobScheduled)
+                return;
+
+            if (!DispatcherJobFence.TryComplete(ref _activeJobHandle, forceComplete: true))
+                return;
+
+            FinishFrameJobCompletion();
+        }
+
+        private void FinishFrameJobCompletion()
+        {
             _jobScheduled = false;
             long completeTicks = Stopwatch.GetTimestamp();
             long elapsedTicks = completeTicks >= _scheduleTicks ? completeTicks - _scheduleTicks : 0L;

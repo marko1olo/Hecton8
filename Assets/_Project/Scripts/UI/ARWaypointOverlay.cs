@@ -18,7 +18,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/AR Waypoint Overlay")]
-    public sealed class ARWaypointOverlay : MonoBehaviour, ITickable, ISlowTickable, IOriginShiftListener, IARWaypointService
+    public sealed class ARWaypointOverlay : MonoBehaviour, ITickable, ISlowTickable, IOriginShiftListener, IARWaypointService, IGlobalRegistryHotSwapListener
     {
         private const int MaxAnchorWaypoints = 7;
         private const int MaxExternalWaypoints = 8;
@@ -61,6 +61,7 @@ namespace Hecton8.UI
         private static readonly Color RelayColor = new Color(0.64f, 0.94f, 0.98f, 0.96f);
         private static readonly Color AnchorColor = new Color(0.98f, 0.74f, 0.22f, 0.96f);
         private static readonly Color OccludedColor = new Color(0.94f, 0.94f, 0.94f, 0.62f);
+        private static IARWaypointService s_cachedWaypointService;
         // COLD ALLOC: Quaternion[8] - precomputed edge-marker rotations, replaces Tick-path rotation construction - owner: ARWaypointOverlay
         private static readonly Quaternion[] s_edgeRotationLut =
         {
@@ -107,6 +108,7 @@ namespace Hecton8.UI
             public int Id;
             public Transform Target;
             public AbsoluteUniversePosition PositionAup;
+            public Vector3 PresentationPosition;
             public string Label;
             public Color Color;
             public bool Active;
@@ -175,10 +177,13 @@ namespace Hecton8.UI
         private bool _registeredWaypointService;
         private bool _registeredTick;
         private bool _registeredSlowTick;
+        private bool _hotSwapListenerRegistered;
         private bool _uiBuilt;
         private int _waypointCount;
         private int _renderedSlotCount;
         private int _nextWaypointPerformanceWarningFrame;
+        private IPlayerRuntimeContext _cachedPlayerContext;
+        private EmergencyServiceRelayDirector _cachedEmergencyRelay;
         private Canvas _targetCanvas;
         private RectTransform _targetCanvasRect;
         private RectTransform _root;
@@ -191,6 +196,7 @@ namespace Hecton8.UI
         {
             s_overlayResolveBuffer.Clear();
             s_directChildBuffer.Clear();
+            s_cachedWaypointService = null;
         }
 
         /// <summary>
@@ -198,7 +204,7 @@ namespace Hecton8.UI
         /// </summary>
         public static void SetWaypoint(int id, Transform target, string label, Color color)
         {
-            IARWaypointService service = GlobalRegistry.ARWaypoints;
+            IARWaypointService service = ResolveWaypointServiceCold();
             if (service == null)
                 return;
 
@@ -210,7 +216,7 @@ namespace Hecton8.UI
         /// </summary>
         public static void SetWaypoint(int id, Vector3 worldPosition, string label, Color color)
         {
-            IARWaypointService service = GlobalRegistry.ARWaypoints;
+            IARWaypointService service = ResolveWaypointServiceCold();
             if (service == null)
                 return;
 
@@ -222,15 +228,28 @@ namespace Hecton8.UI
         /// </summary>
         public static void ClearWaypoint(int id)
         {
-            IARWaypointService service = GlobalRegistry.ARWaypoints;
+            IARWaypointService service = ResolveWaypointServiceCold();
             if (service == null)
                 return;
 
             service.ClearWaypoint(id);
         }
 
+        private static IARWaypointService ResolveWaypointServiceCold()
+        {
+            IARWaypointService service = s_cachedWaypointService;
+            if (service != null)
+                return service;
+
+            service = GlobalRegistry.ARWaypoints;
+            s_cachedWaypointService = service;
+            return service;
+        }
+
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             TryRegisterWaypointService();
             ResolveOwners(allowHierarchySearch: true);
             EnsureUiBuilt(allowCreate: true);
@@ -249,6 +268,7 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             UnregisterWaypointService();
             HectonFloatingOrigin.UnregisterListener(this);
             UnregisterFromTickManager();
@@ -258,6 +278,7 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             UnregisterWaypointService();
             HectonFloatingOrigin.UnregisterListener(this);
             UnregisterFromTickManager();
@@ -353,7 +374,7 @@ namespace Hecton8.UI
 
             if (_viewCamera == null)
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = _cachedPlayerContext;
                 if (_targetCanvas != null && _targetCanvas.worldCamera != null)
                     _viewCamera = _targetCanvas.worldCamera;
                 else if (playerContext != null && playerContext.PlayerCamera != null)
@@ -373,6 +394,106 @@ namespace Hecton8.UI
 
             if (_playerTransform == null)
                 GameBootstrapper.TryGetCurrentPlayerTransform(out _playerTransform);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                _playerTransform = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerTransform : null;
+                _viewCamera = null;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.EmergencyRelayRuntime)
+            {
+                _cachedEmergencyRelay = currentService as EmergencyServiceRelayDirector;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.ARWaypointRuntime)
+                s_cachedWaypointService = currentService as IARWaypointService;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedEmergencyRelay = GlobalRegistry.EmergencyRelay;
+            if (_cachedPlayerContext != null && _playerTransform == null)
+                _playerTransform = _cachedPlayerContext.PlayerTransform;
+        }
+
+        private bool TryResolveCameraAup(out AbsoluteUniversePosition cameraAup)
+        {
+            cameraAup = default;
+
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext == null)
+                return false;
+
+            if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
+            {
+                cameraAup = snapshot.Aup;
+                return MathGuard.IsFinite(in cameraAup);
+            }
+
+            var playerMovement = playerContext.PlayerMovement;
+            if (playerMovement == null)
+                return false;
+
+            cameraAup = playerMovement.CurrentAup;
+            return MathGuard.IsFinite(in cameraAup);
+        }
+
+        private bool TryResolvePresentationWaypointAup(Transform target, out AbsoluteUniversePosition waypointAup)
+        {
+            waypointAup = default;
+            if (target == null)
+                return false;
+
+            return TryResolvePresentationWaypointAup(target.position, out waypointAup);
+        }
+
+        private bool TryResolvePresentationWaypointAup(Vector3 presentationPosition, out AbsoluteUniversePosition waypointAup)
+        {
+            waypointAup = default;
+            if (_viewCamera == null ||
+                !TryResolveCameraAup(out AbsoluteUniversePosition cameraAup))
+            {
+                return false;
+            }
+
+            Vector3 cameraPosition = _viewCamera.transform.position;
+            double3 cameraLocalDelta = new double3(
+                (double)presentationPosition.x - cameraPosition.x,
+                (double)presentationPosition.y - cameraPosition.y,
+                (double)presentationPosition.z - cameraPosition.z);
+            if (!math.all(math.isfinite(cameraLocalDelta)))
+                return false;
+
+            waypointAup = AbsoluteUniversePosition.OffsetMeters(in cameraAup, cameraLocalDelta);
+            return MathGuard.IsFinite(in waypointAup);
         }
 
         private bool EnsureUiBuilt(bool allowCreate)
@@ -416,7 +537,7 @@ namespace Hecton8.UI
         {
             int count = 0;
 
-            EmergencyServiceRelayDirector relayDirector = Hecton8.Core.GlobalRegistry.EmergencyRelay;
+            EmergencyServiceRelayDirector relayDirector = _cachedEmergencyRelay;
             EmergencyServiceRelay relayTarget = relayDirector != null ? relayDirector.GetActiveRouteTarget() : null;
             if (relayTarget != null && relayTarget.isActiveAndEnabled && count < _runtimeWaypoints.Length)
             {
@@ -431,15 +552,15 @@ namespace Hecton8.UI
             }
 
             if (_vegetationBridge != null &&
-                _vegetationBridge.TryGetActiveAbyssalAnchorPayload(out NativeArray<Vector3> anchors, out int anchorCount) &&
-                anchors.IsCreated &&
-                anchorCount > 0)
+                _vegetationBridge.TryGetActiveAbyssalAnchorAupPayload(out NativeArray<AbsoluteUniversePosition> anchorAups, out int anchorAupCount) &&
+                anchorAups.IsCreated &&
+                anchorAupCount > 0)
             {
-                int visibleAnchors = math.min(MaxAnchorWaypoints, anchorCount);
+                int visibleAnchors = math.min(MaxAnchorWaypoints, math.min(anchorAupCount, anchorAups.Length));
                 for (int i = 0; i < visibleAnchors && count < _runtimeWaypoints.Length; i++)
                 {
                     RuntimeWaypoint waypoint = _runtimeWaypoints[count];
-                    waypoint.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(anchors[i]);
+                    waypoint.PositionAup = anchorAups[i];
                     waypoint.Label = DefaultAnchorLabel;
                     waypoint.Color = AnchorColor;
                     waypoint.Active = true;
@@ -455,6 +576,7 @@ namespace Hecton8.UI
                 if (!externalWaypoint.Active)
                     continue;
 
+                bool hasWaypointAup;
                 if (externalWaypoint.UseTransform)
                 {
                     if (externalWaypoint.Target == null)
@@ -464,9 +586,16 @@ namespace Hecton8.UI
                         continue;
                     }
 
-                    externalWaypoint.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(externalWaypoint.Target.position);
-                    _externalWaypoints[i] = externalWaypoint;
+                    hasWaypointAup = TryResolvePresentationWaypointAup(externalWaypoint.Target, out externalWaypoint.PositionAup);
                 }
+                else
+                {
+                    hasWaypointAup = TryResolvePresentationWaypointAup(externalWaypoint.PresentationPosition, out externalWaypoint.PositionAup);
+                }
+
+                _externalWaypoints[i] = externalWaypoint;
+                if (!hasWaypointAup)
+                    continue;
 
                 RuntimeWaypoint runtimeWaypoint = _runtimeWaypoints[count];
                 runtimeWaypoint.PositionAup = externalWaypoint.PositionAup;
@@ -570,7 +699,9 @@ namespace Hecton8.UI
                 return;
 
             Transform cameraTransform = _viewCamera.transform;
-            AbsoluteUniversePosition cameraAup = AbsoluteUniversePosition.FromRuntimePosition(cameraTransform.position);
+            if (!TryResolveCameraAup(out AbsoluteUniversePosition cameraAup))
+                return;
+
             Vector3 cameraForwardVector = cameraTransform.forward;
             float3 cameraForward = math.float3(cameraForwardVector.x, cameraForwardVector.y, cameraForwardVector.z);
             float nearDistanceSq = CinematicOcclusionNearDistanceMeters * CinematicOcclusionNearDistanceMeters;
@@ -705,6 +836,9 @@ namespace Hecton8.UI
             Vector3 cameraRight = cameraTransform.right;
             Vector3 cameraUp = cameraTransform.up;
             Vector3 cameraForward = cameraTransform.forward;
+            if (!TryResolveCameraAup(out AbsoluteUniversePosition cameraAup))
+                return default;
+
             float3 cameraForward3 = math.float3(cameraForward.x, cameraForward.y, cameraForward.z);
             float planeDistance = ResolveHudPlaneDistance(cameraForward3, cameraPosition, _targetCanvasRect);
             if (planeDistance <= ProjectionDepthEpsilon)
@@ -714,7 +848,7 @@ namespace Hecton8.UI
             Rect rootRect = _root.rect;
             return new WaypointProjectionFrame
             {
-                CameraAup = AbsoluteUniversePosition.FromRuntimePosition(cameraPosition),
+                CameraAup = cameraAup,
                 CameraRight = math.float3(cameraRight.x, cameraRight.y, cameraRight.z),
                 CameraUp = math.float3(cameraUp.x, cameraUp.y, cameraUp.z),
                 CameraForward = cameraForward3,
@@ -788,9 +922,8 @@ namespace Hecton8.UI
             ExternalWaypoint externalWaypoint = _externalWaypoints[freeIndex];
             externalWaypoint.Id = id;
             externalWaypoint.Target = target;
-            externalWaypoint.PositionAup = useTransform && target != null
-                ? AbsoluteUniversePosition.FromRuntimePosition(target.position)
-                : AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
+            externalWaypoint.PositionAup = default;
+            externalWaypoint.PresentationPosition = worldPosition;
             externalWaypoint.Label = label;
             externalWaypoint.Color = color;
             externalWaypoint.Active = true;
@@ -898,6 +1031,8 @@ namespace Hecton8.UI
 
             GlobalRegistry.RegisterARWaypointService(this);
             _registeredWaypointService = ReferenceEquals(GlobalRegistry.ARWaypoints, this);
+            if (_registeredWaypointService)
+                s_cachedWaypointService = this;
         }
 
         private void UnregisterWaypointService()
@@ -906,6 +1041,8 @@ namespace Hecton8.UI
                 return;
 
             GlobalRegistry.UnregisterARWaypointService(this);
+            if (ReferenceEquals(s_cachedWaypointService, this))
+                s_cachedWaypointService = null;
             _registeredWaypointService = false;
         }
 

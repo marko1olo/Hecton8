@@ -15,9 +15,13 @@ namespace Hecton8.Habitat.Deformation.Editor
         private Slider _buckling;
         private Slider _support;
         private Slider _collapse;
+        private Slider _quality;
         private Label _status;
         private StressGraphElement _graph;
         private int _suppressWrite;
+        private double _nextStatusRefreshTime;
+        private int _lastStatusNodeCount = -1;
+        private int _lastStatusQualityMilli = -1;
 
         [MenuItem("Hecton-8/Habitat/Structural Integrity Calculator")]
         public static void Open()
@@ -64,6 +68,7 @@ namespace Hecton8.Habitat.Deformation.Editor
             _buckling = CreateSlider("Buckling Visual Intensity", 0f, 4f);
             _support = CreateSlider("Support Damping", 0f, 2f);
             _collapse = CreateSlider("Collapse Stress", 0.1f, 2f);
+            _quality = CreateSlider("Authoritative Quality Weight", 0f, 1f);
 
             root.Add(_basePressure);
             root.Add(_pressureGradient);
@@ -71,6 +76,7 @@ namespace Hecton8.Habitat.Deformation.Editor
             root.Add(_buckling);
             root.Add(_support);
             root.Add(_collapse);
+            root.Add(_quality);
 
             Button regenerate = new Button(RegenerateMockGraph) { text = "Regenerate Mock Graph" };
             root.Add(regenerate);
@@ -96,12 +102,31 @@ namespace Hecton8.Habitat.Deformation.Editor
             if (runtime == null || !runtime.TryGetTuning(out StructuralTuningDTO tuning))
             {
                 if (_status != null)
+                {
                     _status.text = "Runtime not bound";
+                    _lastStatusNodeCount = -1;
+                    _lastStatusQualityMilli = -1;
+                }
+
                 return;
             }
 
-            if (_status != null)
-                _status.text = "Runtime bound | Nodes " + runtime.ActiveNodeCount + " | Quality " + tuning.GlobalQualityWeight.ToString("0.000");
+            double now = EditorApplication.timeSinceStartup;
+            int nodeCount = runtime.ActiveNodeCount;
+            int qualityMilli = Mathf.RoundToInt(Mathf.Clamp01(tuning.GlobalQualityWeight) * 1000f);
+            if (_status != null && now >= _nextStatusRefreshTime &&
+                (nodeCount != _lastStatusNodeCount || qualityMilli != _lastStatusQualityMilli))
+            {
+                _nextStatusRefreshTime = now + 0.25d;
+                _lastStatusNodeCount = nodeCount;
+                _lastStatusQualityMilli = qualityMilli;
+                int whole = qualityMilli / 1000;
+                int fraction = qualityMilli - whole * 1000;
+                char hundreds = (char)('0' + (fraction / 100));
+                char tens = (char)('0' + ((fraction / 10) % 10));
+                char ones = (char)('0' + (fraction % 10));
+                _status.text = "Runtime bound | Nodes " + nodeCount + " | Quality " + whole + "." + hundreds + tens + ones;
+            }
 
             _suppressWrite = 1;
             SetSliderWithoutNotify(_basePressure, tuning.BasePressureKPa);
@@ -110,6 +135,7 @@ namespace Hecton8.Habitat.Deformation.Editor
             SetSliderWithoutNotify(_buckling, tuning.BucklingVisualIntensity);
             SetSliderWithoutNotify(_support, tuning.SupportDamping);
             SetSliderWithoutNotify(_collapse, tuning.CollapseStress01);
+            SetSliderWithoutNotify(_quality, tuning.GlobalQualityWeight);
             _suppressWrite = 0;
 
             if (_graph != null)
@@ -134,6 +160,7 @@ namespace Hecton8.Habitat.Deformation.Editor
             tuning.BucklingVisualIntensity = _buckling != null ? _buckling.value : tuning.BucklingVisualIntensity;
             tuning.SupportDamping = _support != null ? _support.value : tuning.SupportDamping;
             tuning.CollapseStress01 = _collapse != null ? _collapse.value : tuning.CollapseStress01;
+            tuning.GlobalQualityWeight = _quality != null ? _quality.value : tuning.GlobalQualityWeight;
             runtime.SetTuning(in tuning);
         }
 
@@ -158,7 +185,9 @@ namespace Hecton8.Habitat.Deformation.Editor
             if (runtime == null)
                 return;
 
-            runtime.TryGetTuning(out StructuralTuningDTO tuning);
+            if (!runtime.TryGetTuning(out StructuralTuningDTO tuning))
+                return;
+
             int count = Mathf.Min(runtime.ActiveNodeCount, 512);
             Handles.zTest = UnityEngine.Rendering.CompareFunction.LessEqual;
             for (int i = 0; i < count; i++)
@@ -174,8 +203,9 @@ namespace Hecton8.Habitat.Deformation.Editor
                     color = Color.Lerp(Color.red, Color.white, pulse * 0.35f);
                 }
 
-                double3 relative = aup - tuning.SeaLevelAup;
-                Vector3 position = new Vector3((float)relative.x, (float)relative.y, (float)relative.z);
+                if (!StructuralIntegrityCalculatorRuntime.TryBuildEditorRelativePosition(aup, tuning.SeaLevelAup, out Vector3 position))
+                    continue;
+
                 float size = Mathf.Lerp(0.18f, 0.85f, stress);
                 Handles.color = color;
                 Handles.DrawWireCube(position, Vector3.one * size);

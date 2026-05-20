@@ -71,7 +71,7 @@ namespace Hecton8.Construction
         private const string NativeMemoryOwner = nameof(ConstructionManager);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct HabitatDeconstructionTelemetryEntry
         {
             public uint Frame;
@@ -1224,7 +1224,7 @@ namespace Hecton8.Construction
             if (!_deconstructionRaycastScheduled)
                 return;
 
-            _deconstructionRaycastHandle.Complete();
+            DispatcherJobFence.TryComplete(ref _deconstructionRaycastHandle, forceComplete: true);
             _deconstructionRaycastScheduled = false;
             _pendingDeconstructionRequest = default;
             _pendingDeconstructionModule = null;
@@ -2336,17 +2336,6 @@ namespace Hecton8.Construction
             uint hash = 2166136261u;
             hash = FoldAmbientAccidentHash(hash, (uint)ResolveModuleHashId(candidate));
             hash = FoldAmbientAccidentHash(hash, (uint)_ambientAccidentCursor);
-
-            if (candidate != null)
-            {
-                AbsoluteUniversePosition position = AbsoluteUniversePosition.FromRuntimePosition(candidate.transform.position);
-                hash = FoldAmbientAccidentHash(hash, (uint)position.GridX);
-                hash = FoldAmbientAccidentHash(hash, (uint)((ulong)position.GridX >> 32));
-                hash = FoldAmbientAccidentHash(hash, (uint)position.GridY);
-                hash = FoldAmbientAccidentHash(hash, (uint)((ulong)position.GridY >> 32));
-                hash = FoldAmbientAccidentHash(hash, (uint)position.GridZ);
-                hash = FoldAmbientAccidentHash(hash, (uint)((ulong)position.GridZ >> 32));
-            }
 
             hash ^= hash >> 16;
             hash *= 0x7FEB352Du;

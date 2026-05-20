@@ -70,19 +70,21 @@ namespace Hecton8.Core.Bridge
         private static void ClearDesignValueBuffer(IDataVault vault)
         {
             if (vault == null ||
-                !vault.TryGetBufferHandle(BufferID.BridgeDesignFacadeValues, out VaultBufferHandle<byte> bytes) ||
-                !bytes.IsCreated ||
-                bytes.Length <= 0)
+                !vault.TryGetGenerationHandle<byte>(BufferID.BridgeDesignFacadeValues, out VaultGenerationHandle<byte> bytes) ||
+                bytes.BufferID == 0u ||
+                !vault.TryResolveHandle(in bytes, out NativeArray<byte> buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length <= 0)
             {
                 return;
             }
 
-            byte* ptr = (byte*)bytes.ResolvePointer(vault);
+            byte* ptr = (byte*)buffer.GetUnsafePtr();
             if (ptr == null)
                 return;
 
             Thread.MemoryBarrier();
-            UnsafeUtility.MemClear(ptr, bytes.Length);
+            UnsafeUtility.MemClear(ptr, buffer.Length);
             Thread.MemoryBarrier();
         }
 
@@ -128,13 +130,16 @@ namespace Hecton8.Core.Bridge
             entry.Value = value;
 
             int requiredLength = entry.OffsetBytes + sizeof(float);
-            VaultBufferHandle<byte> bytes = vault.GetBufferHandle<byte>(
+            VaultGenerationHandle<byte> bytes = vault.GetGenerationHandle<byte>(
                 BufferID.BridgeDesignFacadeValues,
                 requiredLength,
                 SystemID.CoreBridge,
                 NativeArrayOptions.ClearMemory);
 
-            if (!bytes.IsCreated || bytes.Length < requiredLength)
+            if (bytes.BufferID == 0u ||
+                !vault.TryResolveHandle(in bytes, out NativeArray<byte> buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
             {
                 GlobalTelemetryBus.PublishPerformanceWarning(PointerFenceFaultHash, entry.FieldHash, requiredLength);
                 return false;
@@ -143,7 +148,7 @@ namespace Hecton8.Core.Bridge
             try
             {
                 Thread.MemoryBarrier();
-                byte* basePtr = (byte*)bytes.ResolvePointer(vault);
+                byte* basePtr = (byte*)buffer.GetUnsafePtr();
                 if (basePtr == null)
                 {
                     GlobalTelemetryBus.PublishPerformanceWarning(PointerFenceFaultHash, entry.FieldHash, requiredLength);
@@ -293,18 +298,18 @@ namespace Hecton8.Core.Bridge
                 HighTierVisualHash = facade.HighTierVisualHash
             };
 
-            VaultBufferHandle<H8FacadeMacroHeader> headerBuffer = vault.GetBufferHandle<H8FacadeMacroHeader>(
+            VaultGenerationHandle<H8FacadeMacroHeader> headerBuffer = vault.GetGenerationHandle<H8FacadeMacroHeader>(
                 BufferID.BridgeFacadeMacroHeader,
                 1,
                 SystemID.CoreBridge,
                 NativeArrayOptions.ClearMemory);
-            H8FacadeMacroHeader* headerBufferPtr = headerBuffer.IsCreated
-                ? (H8FacadeMacroHeader*)headerBuffer.ResolvePointer(vault)
-                : null;
-            if (headerBufferPtr != null && headerBuffer.Length > 0)
+            if (headerBuffer.BufferID != 0u &&
+                vault.TryResolveHandle(in headerBuffer, out NativeArray<H8FacadeMacroHeader> headerBufferView) &&
+                headerBufferView.IsCreated &&
+                headerBufferView.Length > 0)
             {
                 Thread.MemoryBarrier();
-                headerBufferPtr[0] = header;
+                headerBufferView[0] = header;
                 Thread.MemoryBarrier();
             }
 
@@ -355,18 +360,19 @@ namespace Hecton8.Core.Bridge
             float oldValue,
             ushort extraFlags)
         {
-            VaultBufferHandle<H8FacadeTelemetryEntry> ring = vault.GetBufferHandle<H8FacadeTelemetryEntry>(
+            VaultGenerationHandle<H8FacadeTelemetryEntry> ring = vault.GetGenerationHandle<H8FacadeTelemetryEntry>(
                 BufferID.BridgeDesignFacadeTelemetryRing,
                 BlackBoxFrameCount,
                 SystemID.CoreBridge,
                 NativeArrayOptions.ClearMemory);
 
-            if (!ring.IsCreated || ring.Length < BlackBoxFrameCount)
+            if (ring.BufferID == 0u ||
+                !vault.TryResolveHandle(in ring, out NativeArray<H8FacadeTelemetryEntry> ringBuffer) ||
+                !ringBuffer.IsCreated ||
+                ringBuffer.Length < BlackBoxFrameCount)
+            {
                 return;
-
-            H8FacadeTelemetryEntry* ringPtr = (H8FacadeTelemetryEntry*)ring.ResolvePointer(vault);
-            if (ringPtr == null)
-                return;
+            }
 
             int index = Interlocked.Increment(ref _blackBoxCursor) - 1;
             if (index < 0)
@@ -385,7 +391,7 @@ namespace Hecton8.Core.Bridge
                 Flags = (ushort)(entry.Flags | extraFlags)
             };
             Thread.MemoryBarrier();
-            ringPtr[index % BlackBoxFrameCount] = telemetry;
+            ringBuffer[index % BlackBoxFrameCount] = telemetry;
             Thread.MemoryBarrier();
         }
 
@@ -395,9 +401,11 @@ namespace Hecton8.Core.Bridge
             if (vault == null)
                 return;
 
-            if (!vault.TryGetBufferHandle(BufferID.BridgeDesignFacadeTelemetryRing, out VaultBufferHandle<H8FacadeTelemetryEntry> ring) ||
-                !ring.IsCreated ||
-                ring.Length == 0)
+            if (!vault.TryGetGenerationHandle<H8FacadeTelemetryEntry>(BufferID.BridgeDesignFacadeTelemetryRing, out VaultGenerationHandle<H8FacadeTelemetryEntry> ring) ||
+                ring.BufferID == 0u ||
+                !vault.TryResolveHandle(in ring, out NativeArray<H8FacadeTelemetryEntry> ringBuffer) ||
+                !ringBuffer.IsCreated ||
+                ringBuffer.Length == 0)
             {
                 return;
             }
@@ -409,12 +417,7 @@ namespace Hecton8.Core.Bridge
                 if (!string.IsNullOrEmpty(directory))
                     Directory.CreateDirectory(directory);
 
-                void* ptr = ring.ResolvePointer(vault);
-                if (ptr == null)
-                    return;
-
-                H8FacadeTelemetryEntry* ringPtr = (H8FacadeTelemetryEntry*)ptr;
-                int capacity = math.min(ring.Length, BlackBoxFrameCount);
+                int capacity = math.min(ringBuffer.Length, BlackBoxFrameCount);
                 int cursor = Volatile.Read(ref _blackBoxCursor);
                 if (cursor < 0)
                     cursor = 0;
@@ -422,7 +425,7 @@ namespace Hecton8.Core.Bridge
                 int entryCount = math.min(cursor, capacity);
                 int startIndex = cursor >= capacity && capacity > 0 ? cursor % capacity : 0;
                 int entrySize = UnsafeUtility.SizeOf<H8FacadeTelemetryEntry>();
-                uint payloadHash = ComputeTelemetryDumpHash(ringPtr, startIndex, entryCount, capacity);
+                uint payloadHash = ComputeTelemetryDumpHash(ringBuffer, startIndex, entryCount, capacity);
                 H8FacadeTelemetryDumpHeader header = new H8FacadeTelemetryDumpHeader
                 {
                     Magic = H8BridgeHashes.TelemetryDumpMagic,
@@ -440,7 +443,8 @@ namespace Hecton8.Core.Bridge
                     for (int i = 0; i < entryCount; i++)
                     {
                         int index = (startIndex + i) % capacity;
-                        stream.Write(new ReadOnlySpan<byte>(&ringPtr[index], entrySize));
+                        H8FacadeTelemetryEntry entry = ringBuffer[index];
+                        stream.Write(new ReadOnlySpan<byte>(&entry, entrySize));
                     }
                 }
             }
@@ -451,18 +455,18 @@ namespace Hecton8.Core.Bridge
         }
 
         private static uint ComputeTelemetryDumpHash(
-            H8FacadeTelemetryEntry* ringPtr,
+            NativeArray<H8FacadeTelemetryEntry> ringBuffer,
             int startIndex,
             int entryCount,
             int capacity)
         {
-            if (ringPtr == null || entryCount <= 0 || capacity <= 0)
+            if (!ringBuffer.IsCreated || entryCount <= 0 || capacity <= 0)
                 return H8BridgeHashes.FnvOffset;
 
             uint hash = H8BridgeHashes.Mix(H8BridgeHashes.FnvOffset, H8BridgeHashes.TelemetryDumpMagic);
             for (int i = 0; i < entryCount; i++)
             {
-                H8FacadeTelemetryEntry entry = ringPtr[(startIndex + i) % capacity];
+                H8FacadeTelemetryEntry entry = ringBuffer[(startIndex + i) % capacity];
                 hash = H8BridgeHashes.Mix(hash, entry.Frame);
                 hash = H8BridgeHashes.Mix(hash, entry.FacadeHash);
                 hash = H8BridgeHashes.Mix(hash, entry.FieldHash);

@@ -16,14 +16,25 @@ This document is active only where it agrees with:
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
 
-R32 architecture R4/proof-wording correction is the latest artifact-backed local static DOC_GLOBAL boundary for architecture/root documentation. R31 remains the prior current-boundary propagation layer, R30 remains the prior internal-currentness layer, R29 remains the prior stale-gate/global-authority layer, R28 remains the prior interior-boundary layer, and R27 remains the latest source-counter/index snapshot until rerun.
+R45 root/architecture R43/R44 residue/proof-artifact/source-counter correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
-## 2026-05-19 DOC_GLOBAL R32 Current Boundary Note
+## 2026-05-20 DOC_GLOBAL R45 Root/Architecture Boundary Note
 
-R32 artifact-backed reread evidence keeps this file as a static DataMonolith binary-spec contract, not product payload existence, runtime I/O, or platform-storage proof. Current root/architecture boundary is `Docs/Reports/2026-05-19_DOCUMENTATION_R32_ARCHITECTURE_R4_AND_PROOF_WORDING_LOCAL.md`; R31 remains the prior current-boundary propagation correction. R30 remains the prior internal-currentness correction, R29 remains the prior stale-gate/global-authority correction, R28 remains the prior interior-boundary correction, and R27 source counters are retained until a newer counter pass reruns them. Current static gates: `Tools/AtlasCheck.py` remains red on `59` missing refs (RealtimeCSG vendor refs plus absent `VaultXRayWindow.cs` and `HectonMapMagicVegetationBridgeFloraCollisionProxies.cs`); `Docs/Modding/Validate_Mod_API_Static.ps1` now passes (`Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`) as static-tool orientation only; do not treat PASS as current proof without artifact path, command, timestamp, environment, and output. Unity/runtime/profiler/player-build proof remains absent.
+R45 root/architecture R43/R44 residue/proof-artifact/source-counter correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`) (R44 prior internal-residue/exact-route-field/proof-wording correction) keeps this file as a static DataMonolith binary-spec contract, not product payload existence, runtime I/O, or platform-storage proof. Current DOC_GLOBAL boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`; R44 remains prior at `Docs/Reports/2026-05-20_DOCUMENTATION_R44_ROOT_ARCHITECTURE_INTERNAL_RESIDUE_EXACT_ROUTE_FIELDS_LOCAL.md`; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. Current static gates: `Tools/AtlasCheck.py` remains red on `ATLAS_CHECK_FAIL references=6741 missing=59` (one Dynamic Decals missing vendor asset ref, RealtimeCSG vendor icon/readme image refs, and missing HabitatDamageBakePipeline source ref in the current atlas); `Docs/Modding/Validate_Mod_API_Static.ps1` passes (`Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`) as static-tool orientation only. Runtime proof remains absent.
 
-Owners: `H8DataMonolithTypes`, `H8StaticDataArena`, `H8DataHash`, `H8DataMonolithCompiler`
+## Source Anchors
+
+Evidence class: STATIC_SOURCE / FILESYSTEM path check. These anchors prove current path visibility only, not DataMonolith load success, StreamingAssets presence, profiler, or player-build proof.
+
+- `Assets/_Project/Scripts/Data/Monolith/H8DataMonolithTypes.cs`
+- `Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs`
+- `Assets/_Project/Scripts/Data/Monolith/H8DataHash.cs`
+- `Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithCompiler.cs`
+- `Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithCompilerWindow.cs`
+- `Assets/_Project/Scripts/Editor/DataMonolith/Hecton8.DataMonolith.Editor.asmdef`
+
+Owner symbols above are filesystem-verified by the explicit source-anchor paths; symbol names alone are not evidence artifacts.
 
 ## Current File
 
@@ -33,6 +44,7 @@ Owners: `H8DataMonolithTypes`, `H8StaticDataArena`, `H8DataHash`, `H8DataMonolit
 | Default path | `StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` |
 | runtime owner | `H8StaticDataArena` |
 | editor compiler | `H8DataMonolithCompiler` |
+| editor assembly | `Hecton8.DataMonolith.Editor` |
 | hash owner | `H8DataHash` |
 
 ## Binary Layout
@@ -138,14 +150,72 @@ and `0` as byte length.
 
 Item, creature, biome, recipe, and many section ids use the same 32-bit FNV-1a contract.
 
+## Cross-Reference Gate
+
+`H8DataMonolithCompiler` validates authored source rows before blob output. The gate rejects item
+references that cannot resolve to a baked `Items` hash in these fields:
+
+- item authoring: `recipe`
+- recipe authoring: `output`, `output_id`, `ingredients`, `recipe`
+- loot authoring: `item_id`, `item`
+- economy authoring: `item_id`, `item`, `output_id`, `output`, `recipe_output_id`,
+  `recipe_output`, `ingredients`, `ingredient_ids`, `recipe`, `recipe_items`
+
+The validator uses raw CSV rows and synthetic JSON provenance rows instead of post-sort binary
+records, because sorted `Recipes` and rebuilt `LootCdf` records no longer preserve source location.
+Failure messages must include source file, CSV line or JSON source index, owner, field, packed token
+index when applicable, authored value, and computed FNV-1a hash.
+
+## Runtime Consumer Bridges
+
+Static-data consumers must read the resident monolith through `H8StaticDataArena` section spans or
+owner-provided helper methods. `ScavengingLootOracle` is currently compiled in Core and therefore
+imports `Hecton8.Data` directly only as a monolith consumer bridge: it copies the first contiguous
+`LootCdf` table from `ReadOnlySpan<H8LootCdfRecord>` into its Vault-owned `LootTableEntryDTO`
+buffer. Production player builds do not synthesize the emergency loot table when the monolith has no
+loot rows; editor/self-audit paths may still schedule the deterministic emergency mock for tooling.
+The Scavenging editor/manual loot CSV self-audit reads selected CSV files through `FileStream` into a
+Temp `NativeArray<byte>` and then uses `TryIngestLootDistributionCsvBytes`; it must not use
+`File.ReadAllBytes` or managed `byte[]` staging as a static-data bridge.
+
+## Assembly Boundary Truth
+
+Static source truth as of 2026-05-19 SHINOBU_103: Data Monolith runtime files are still compiled by
+`Hecton8.Core.csproj` from `Assets/_Project/Scripts/Data/Monolith`. There is no dedicated
+`Hecton8.Data.Runtime.asmdef` yet. Creating one requires a planned bootstrap boundary migration,
+because `GameBootstrapper` in Core currently calls `H8StaticDataArena`, while the arena depends on
+Core Vault and fatal-boot contracts. Do not claim compile-wall isolation for Data Monolith until that
+route is split through contracts or a boot-owned facade.
+
+Editor source truth as of 2026-05-19 SHINOBU_103: Data Monolith editor tooling is scoped by
+`Assets/_Project/Scripts/Editor/DataMonolith/Hecton8.DataMonolith.Editor.asmdef`. It references
+`Hecton8.Core`, `Unity.Burst`, `Unity.Collections`, and `Unity.Mathematics` only, includes Editor
+platforms only, and has stable `.meta` GUIDs for the asmdef and compiler window. Unity import/project
+regeneration proof is still pending. The compiler window binary inspector must call the same
+`H8DataMonolithCompiler.TryValidateOutputBlob` gate used by the player-build preprocessor before it
+prints ad hoc header/checksum/section diagnostics; the inspector is not allowed to maintain a looser
+validation contract than release builds. Inspector validation must be non-destructive to the baker's
+stored `LastError`, so cross-reference and CSV validation failures remain visible after UI refresh.
+The primary `BAKE MONOLITH` facade command is intentionally larger than the secondary toolbar actions
+(`260 x 42`, bold) because it is the human-owned route into the authoritative binary artifact.
+Automated editor bakes must route through `H8DataMonolithFileSystemWatcher.RequestBake()`, not direct
+`BakeAll()` calls from import callbacks. The scheduler debounces source changes for 0.75 seconds,
+skips while Unity is compiling, and blocks overlapping bakes with an interlocked in-progress flag.
+Play-mode hot reload for a successful local bake must queue the canonical `static_data.h8bin` path
+directly on the editor main-thread drain path. The loopback socket remains only as an external bridge:
+packets are capped at 1024 characters, must target the exact canonical output path, and the listener is
+stopped on play-mode exit, assembly reload, and editor quit.
+
 ## I/O Truth
 
 Source truth as of 2026-05-19 SHINOBU_103:
 
-- runtime monolith load: `H8StaticDataArena` requests `GlobalDataVault` BufferID `71103`, attempts MMF on desktop, and falls back to direct `FileStream.Read(Span<byte>)` into Vault-owned bytes on hostile platforms.
+- runtime monolith load: `H8StaticDataArena` requests `GlobalDataVault` BufferID `71103`, stages non-filesystem StreamingAssets URIs such as Android/Quest `jar:` paths into `Application.temporaryCachePath`, attempts MMF on desktop filesystem paths, and falls back to direct `FileStream.Read(Span<byte>)` into Vault-owned bytes on hostile platforms.
 - runtime no-vault behavior: allocation fails closed; `H8StaticDataArena` does not allocate a private persistent `NativeArray<byte>` fallback.
-- editor bake: `H8DataMonolithCompiler` uses editor-only `MemoryStream` and `File.WriteAllBytes`
+- editor bake: `H8DataMonolithCompiler` uses editor-only `MemoryStream`, reads CSV sources through a bounded worker pool capped by CPU capacity, writes `static_data.h8bin.tmp`, validates the temp file, promotes it atomically, then validates the production blob.
+- editor auto-bake: AssetPostprocessor and filesystem change notifications enqueue one debounced bake route instead of baking synchronously during Unity import or on every file-write event.
 - checksum: runtime recomputes XXHash3-64 over bytes `[16..blobLength)` before setting Ready.
+- runtime directory gate: `H8StaticDataArena` uses `H8DataLayoutAudit.GetExpectedRecordSize` to reject wrong section count, section order, record stride, nonzero empty offsets, data-start mismatch, unaligned section starts, and localization directory/table drift before setting Ready.
 
 Do not document the Data Monolith as Unity runtime/profiler/player-build proven until a guarded Unity import, bake, boot, and GC/profiler pass produces fresh artifacts.
 

@@ -52,16 +52,14 @@ namespace Hecton8.Core
         private const int ListenerCapacity = 32;
         private const int PendingEventCapacity = 4;
 
-        // COLD ALLOC: RegistryBucket<IScalabilityChangedEventListener>[32] - platform scalability listeners drained by SystemDispatcher - owner: ScalabilityEvents
-        private static readonly RegistryBucket<IScalabilityChangedEventListener> _listeners =
-            new RegistryBucket<IScalabilityChangedEventListener>(ListenerCapacity);
-        // COLD ALLOC: IScalabilityChangedEventListener[32] - listener additions deferred during scalability dispatch - owner: ScalabilityEvents
-        private static readonly IScalabilityChangedEventListener[] _deferredRegisterListeners =
-            new IScalabilityChangedEventListener[ListenerCapacity];
-        // COLD ALLOC: IScalabilityChangedEventListener[32] - listener removals deferred during scalability dispatch - owner: ScalabilityEvents
-        private static readonly IScalabilityChangedEventListener[] _deferredUnregisterListeners =
-            new IScalabilityChangedEventListener[ListenerCapacity];
+        // COLD ALLOC: object[32] - platform scalability listeners drained by SystemDispatcher, object-backed to avoid interface arrays - owner: ScalabilityEvents
+        private static readonly object[] _listeners = new object[ListenerCapacity];
+        // COLD ALLOC: object[32] - listener additions deferred during scalability dispatch, object-backed to avoid interface arrays - owner: ScalabilityEvents
+        private static readonly object[] _deferredRegisterListeners = new object[ListenerCapacity];
+        // COLD ALLOC: object[32] - listener removals deferred during scalability dispatch, object-backed to avoid interface arrays - owner: ScalabilityEvents
+        private static readonly object[] _deferredUnregisterListeners = new object[ListenerCapacity];
 
+        private static int _listenerCount;
         private static int _deferredRegisterCount;
         private static int _deferredUnregisterCount;
         private static int _dispatchedSnapshotFrame = -1;
@@ -86,9 +84,10 @@ namespace Hecton8.Core
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         internal static void ResetStaticState()
         {
-            _listeners.Clear();
+            Array.Clear(_listeners, 0, _listenerCount);
             Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterCount);
             Array.Clear(_deferredUnregisterListeners, 0, _deferredUnregisterCount);
+            _listenerCount = 0;
             _deferredRegisterCount = 0;
             _deferredUnregisterCount = 0;
             _dispatchedSnapshotFrame = -1;
@@ -111,7 +110,7 @@ namespace Hecton8.Core
                 return;
             }
 
-            _listeners.TryRegister(listener);
+            TryRegisterListener(listener);
         }
 
         /// <summary>Unregisters a scalability listener.</summary>
@@ -127,7 +126,7 @@ namespace Hecton8.Core
                 return;
             }
 
-            _listeners.TryUnregister(listener);
+            TryUnregisterListener(listener);
         }
 
         /// <summary>Queues one scalability change event.</summary>
@@ -141,7 +140,7 @@ namespace Hecton8.Core
         /// <summary>Flushes queued scalability events to listeners on the main dispatcher lane.</summary>
         public static void FlushPending()
         {
-            if (_listeners.Count <= 0)
+            if (_listenerCount <= 0)
                 return;
 
             EnsureTypedSignalLaneConfigured();
@@ -165,14 +164,13 @@ namespace Hecton8.Core
 
                 ScalabilityChangedEvent payload = snapshot[_dispatchedSnapshotIndex++];
 
-                IScalabilityChangedEventListener[] rawArray = _listeners.RawArray;
-                int listenerCount = _listeners.Count;
+                int listenerCount = _listenerCount;
                 _isDispatching = true;
                 try
                 {
                     for (int i = listenerCount - 1; i >= 0; i--)
                     {
-                        IScalabilityChangedEventListener listener = rawArray[i];
+                        IScalabilityChangedEventListener listener = _listeners[i] as IScalabilityChangedEventListener;
                         if (listener == null || IsDeferredUnregisterPending(listener))
                             continue;
 
@@ -232,22 +230,61 @@ namespace Hecton8.Core
         {
             for (int i = 0; i < _deferredUnregisterCount; i++)
             {
-                IScalabilityChangedEventListener listener = _deferredUnregisterListeners[i];
+                IScalabilityChangedEventListener listener = _deferredUnregisterListeners[i] as IScalabilityChangedEventListener;
                 _deferredUnregisterListeners[i] = null;
-                _listeners.TryUnregister(listener);
+                if (listener != null)
+                    TryUnregisterListener(listener);
             }
 
             _deferredUnregisterCount = 0;
 
             for (int i = 0; i < _deferredRegisterCount; i++)
             {
-                IScalabilityChangedEventListener listener = _deferredRegisterListeners[i];
+                IScalabilityChangedEventListener listener = _deferredRegisterListeners[i] as IScalabilityChangedEventListener;
                 _deferredRegisterListeners[i] = null;
                 if (listener != null)
-                    _listeners.TryRegister(listener);
+                    TryRegisterListener(listener);
             }
 
             _deferredRegisterCount = 0;
+        }
+
+        private static bool TryRegisterListener(IScalabilityChangedEventListener listener)
+        {
+            if (IndexOfListener(listener) >= 0)
+                return false;
+
+            if (_listenerCount >= ListenerCapacity)
+                return false;
+
+            _listeners[_listenerCount] = listener;
+            _listenerCount++;
+            return true;
+        }
+
+        private static bool TryUnregisterListener(IScalabilityChangedEventListener listener)
+        {
+            int index = IndexOfListener(listener);
+            if (index < 0)
+                return false;
+
+            _listenerCount--;
+            if (index < _listenerCount)
+                _listeners[index] = _listeners[_listenerCount];
+
+            _listeners[_listenerCount] = null;
+            return true;
+        }
+
+        private static int IndexOfListener(IScalabilityChangedEventListener listener)
+        {
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (ReferenceEquals(_listeners[i], listener))
+                    return i;
+            }
+
+            return -1;
         }
     }
 }

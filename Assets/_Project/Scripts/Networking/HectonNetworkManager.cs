@@ -57,9 +57,7 @@ namespace Hecton8.Networking
             if (_runtime != null)
                 return _runtime;
 
-            if (!TryGetComponent(out _runtime))
-                _runtime = gameObject.AddComponent<HectonRollbackNetcodeRuntime>();
-
+            TryGetComponent(out _runtime);
             return _runtime;
         }
     }

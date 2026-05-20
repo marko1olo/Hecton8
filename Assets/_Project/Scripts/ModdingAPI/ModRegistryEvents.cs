@@ -19,13 +19,22 @@ namespace Hecton8.Modding
     /// <summary>
     /// Deferred unmanaged payload for mod registry invalidation events.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct ModRegistryEventPayload
     {
+        [FieldOffset(0)]
         public uint Frame;
+
+        [FieldOffset(4)]
         public uint ModHash;
+
+        [FieldOffset(8)]
         public uint SubjectHash;
+
+        [FieldOffset(12)]
         public ushort EventType;
+
+        [FieldOffset(14)]
         public ushort StatusBits;
     }
 

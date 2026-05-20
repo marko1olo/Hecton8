@@ -9,14 +9,14 @@ No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler,
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 Status: reusable copy bank / human approval required before sending
-Public stance: single-player-first / no co-op promise
+Public stance: single-player-first scope / proof-first creator copy
 
 ## Universal Constraints
 
 Every pitch must obey:
 
-- no "Subnautica killer";
-- no co-op promise;
+- no competitor-attack positioning;
+- no multiplayer-scope promise;
 - no fake performance claim;
 - no generic "you might like our game" spam;
 - one reason the creator's audience fits;
@@ -25,13 +25,13 @@ Every pitch must obey:
 
 ## Creator Pitch Archetypes
 
-### Subnautica Veteran
+### Underwater Survival Veteran
 
-Subject: A darker underwater survival game for your Subnautica audience
+Subject: A darker underwater survival game for your audience
 
 Pitch:
 
-HECTON-8 is a single-player-first underwater survival game built around NASA-punk machinery, deep-sea isolation, hostile pressure systems, and black-water exploration. It is not a "Subnautica killer" pitch; the tone is heavier, colder, and more industrial.
+HECTON-8 is a single-player-first underwater survival game built around NASA-punk machinery, deep-sea isolation, hostile pressure systems, and black-water exploration. The tone is heavier, colder, and more industrial.
 
 Best angle: viewers who like underwater survival, base risk, creature discovery, and dread.
 
@@ -91,7 +91,7 @@ Subject: HECTON-8: мрачное подводное выживание в NASA-
 
 Pitch:
 
-HECTON-8 — одиночное подводное выживание с атмосферой deep-sea noir: давление, темнота, техника, базы, опасная глубина и чувство полной изоляции. Это не "убийца Subnautica" и не обещание кооператива.
+HECTON-8 — одиночное подводное выживание с атмосферой deep-sea noir: давление, темнота, техника, базы, опасная глубина и чувство полной изоляции. Фокус остается на доказанном одиночном scope и индустриальной идентичности.
 
 Best angle: атмосферное выживание, страх глубины, техника, база как машина, честный одиночный фокус.
 
@@ -101,7 +101,7 @@ Subject: HECTON-8 press angle: single-player-first underwater survival
 
 Pitch:
 
-HECTON-8 is an upcoming NASA-punk / deep-sea noir underwater survival game focused on isolation, engineering tension, hostile depth, salvage, and player-controlled survival systems. Key angle: industrial underwater survival without relying on co-op promises or comparison-war marketing.
+HECTON-8 is an upcoming NASA-punk / deep-sea noir underwater survival game focused on isolation, engineering tension, hostile depth, salvage, and player-controlled survival systems. Key angle: industrial underwater survival with proof-first scope and no comparison-war marketing.
 
 Best angle: PC survival, Steam demo, dark sci-fi identity.
 
@@ -133,18 +133,31 @@ Best angle: 30-60 minute demo or first build.
 - HECTON-8 demo candidate for future coverage
 - A darker industrial ocean survival project
 - Pressure, salvage, machinery, black water
-- HECTON-8 - not a co-op pitch, not a clone pitch
+- HECTON-8 - proof-first industrial underwater survival pitch
 - Upcoming underwater survival with heavy machinery and hostile depth
 - First-look candidate: pressure-based underwater survival
 - HECTON-8 screenshots for blunt critique
+
+## Template Use Gate
+
+These templates are copy banks, not send permission. Before any DM/email is pasted into a browser or mail client:
+
+- matching asset metadata claim checks pass;
+- pain-backed angles have `pain_freshness_source` and `pain_freshness_checked_at` filled;
+- recipient-specific `creator_utility_score` is 3/4+;
+- matching asset `creator_send_gate` is open for that recipient segment;
+- gameplay/pressure/route-risk copy has one factual `AGENCY_PROOF_CANDIDATE` asset, non-empty `agency_decision_notes`, and AB-009/KPI `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`;
+- official contact route is verified the same day;
+- CRM send-log fields are ready to record the real send;
+- Promise Lint passes the final human-edited text.
 
 ## Short Creator DM
 
 Hi [Name], I am working on HECTON-8, a single-player-first underwater survival game about pressure, salvage, heavy machinery, and deep-sea noir isolation.
 
-Your channel fits because [specific reason]. This is not a "Subnautica killer" pitch and not a co-op promise. The angle is industrial underwater survival where the base and machines are what keep you alive.
+Your channel fits because [specific reason]. The angle is industrial underwater survival where the base and machines are what keep you alive.
 
-Assets: [Steam/trailer/screenshots/demo]
+Assets: [approved screenshots/clips; public Steam/trailer/demo links only after Official CTA Link Activation Gate V0; private demo/key/playtest/preview routes only after recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED` plus exact access-log fields]
 
 If this fits your audience, I can send a short build/press kit when the demo is ready.
 
@@ -160,18 +173,18 @@ I am reaching out because your audience has shown interest in [specific channel 
 
 The short version:
 
-- no co-op promise;
-- no "Subnautica killer" angle;
+- single-player-first public scope;
+- competitor-neutral positioning;
 - industrial NASA-punk tone;
 - pressure, oxygen, power, and machinery as readable survival systems;
 - black-water exploration and Seed Ship anomaly as the long-term mystery.
 
 Assets:
 
-- Steam: [TBD]
-- trailer: [TBD]
-- screenshots: [TBD]
-- demo/key: [TBD]
+- Steam: [official Steam URL only after `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED` and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`]
+- trailer: [approved asset ID/link only after asset metadata claim checks; public link only after destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`]
+- screenshots: [approved asset IDs/links only]
+- demo/key: [recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED` plus exact access-log fields only]
 
 Specific reason this might fit your channel:
 

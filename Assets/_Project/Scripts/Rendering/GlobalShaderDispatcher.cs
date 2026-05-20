@@ -78,7 +78,7 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Rendering/Global Shader Dispatcher")]
-    public sealed unsafe class GlobalShaderDispatcher : MonoBehaviour, ILateFrameTickable
+    public sealed unsafe class GlobalShaderDispatcher : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int RequiredShaderGlobalSlots = HectonShaderGlobalDataVaultBridge.SlotCount;
         private const int ShaderGlobalsDtoSlot = 8;
@@ -139,6 +139,9 @@ namespace Hecton8.Core
         private static readonly int _ExtinctionLutWeatherParamsId = Shader.PropertyToID("_ExtinctionLUTWeatherParams");
         private static readonly int _HectonUberNoirRuntimeParamsId = Shader.PropertyToID("_HectonUberNoirRuntimeParams");
         private static readonly int _HectonActiveShaderFeatureMaskId = Shader.PropertyToID("_HectonActiveShaderFeatureMask");
+        private static readonly int _HectonPowerBrownoutParamsId = Shader.PropertyToID("_HectonPowerBrownoutParams");
+        private static readonly int _HectonRespawnDearLieParamsId = Shader.PropertyToID("_HectonRespawnDearLieParams");
+        private static readonly int _HectonDeathFadeIntensityId = Shader.PropertyToID("_HectonDeathFadeIntensity");
 
         private static GlobalShaderDispatcher s_instance;
         private static CommandBuffer s_commandBuffer;
@@ -160,15 +163,18 @@ namespace Hecton8.Core
         private GraphicsBuffer _thermalAnomalyBuffer;
         private GraphicsBuffer _emptyFloat4Buffer;
         private IDataVault _vault;
+        private IResolutionScalerService _resolutionScaler;
         private bool _registeredLateFrame;
+        private bool _hotSwapListenerRegistered;
         private bool _binaryProbeCompleted;
         private bool _generatedEmergencyGlobals;
         private bool _dumpedOverBudget;
         private double _shaderTime;
         private int _telemetryCursor;
+        private uint _dispatchTelemetryFrame;
         private int _activeKeywordCount;
-        private byte _lastTierProfileByte = byte.MaxValue;
-        private int _lastQualityTier = int.MinValue;
+        private byte _lastGlobalQualityByte = byte.MaxValue;
+        private int _lastLowTierWeightBucket = int.MinValue;
         private Vector4 _lastWakeParams = Vector4.zero;
         private Vector4 _lastThermalParams = Vector4.zero;
 
@@ -216,9 +222,10 @@ namespace Hecton8.Core
             }
 
             s_instance = this;
-            _vault = GlobalRegistry.DataVault;
+            CacheRegistryServicesCold(forceRefresh: true);
+            TryRegisterHotSwapListener();
             EnsureCommandBuffer();
-            if (EnsureShaderGlobalSlots(out IDataVault vault))
+            if (EnsureShaderGlobalSlotsRuntime(out IDataVault vault))
                 RunBinaryGraveyardProbeCold(vault);
             EnsureGpuBuffers();
             TryLoadCsvOverridesCold();
@@ -233,6 +240,8 @@ namespace Hecton8.Core
             }
 
             s_instance = this;
+            CacheRegistryServicesCold(forceRefresh: false);
+            TryRegisterHotSwapListener();
             TryRegisterLateFrameTickable();
         }
 
@@ -247,19 +256,41 @@ namespace Hecton8.Core
                 _registeredLateFrame = false;
             }
 
+            TryUnregisterHotSwapListener();
             ReleaseGraphicsBuffer(ref _wakeBuffer);
             ReleaseGraphicsBuffer(ref _wakeVectorBuffer);
             ReleaseGraphicsBuffer(ref _thermalAnomalyBuffer);
             ReleaseGraphicsBuffer(ref _emptyFloat4Buffer);
             _vault = null;
+            _resolutionScaler = null;
+            _dispatchTelemetryFrame = 0u;
         }
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             if (ReferenceEquals(s_instance, this))
             {
                 HectonShaderGlobalDataVaultBridge.SetVisualSyncDispatcherActive(false);
                 s_instance = null;
+            }
+        }
+
+        /// <inheritdoc />
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.DataVault:
+                    _vault = currentService as IDataVault;
+                    InvalidateShaderGlobalSlotCache();
+                    break;
+                case GlobalRegistryServiceSlot.ResolutionScalerService:
+                    _resolutionScaler = currentService as IResolutionScalerService;
+                    break;
             }
         }
 
@@ -276,8 +307,7 @@ namespace Hecton8.Core
                 return;
             }
 
-            _vault = GlobalRegistry.DataVault;
-            if (!EnsureShaderGlobalSlots(out IDataVault vault))
+            if (!EnsureShaderGlobalSlotsRuntime(out IDataVault vault))
                 return;
 
             GenerateEmergencyMockShaderGlobalsNoIo(vault);
@@ -287,13 +317,10 @@ namespace Hecton8.Core
             if (_shaderTime >= ShaderTimeModuloSeconds)
                 _shaderTime -= Math.Floor(_shaderTime / ShaderTimeModuloSeconds) * ShaderTimeModuloSeconds;
 
-            byte tierProfile = GlobalRegistry.ScalabilityTierProfileByte;
-            bool lowTier = tierProfile == ScalabilityTierProfiles.LowMx350 ||
-                           GlobalRegistry.ScalabilityTier == HectonQualityTier.Low ||
-                           GlobalRegistry.ScalabilityTier == HectonQualityTier.Mx350;
             float globalQualityWeight01 = ResolveGlobalQualityWeight01();
-            float lowTierWeight01 = ResolveLowTierWeight01(globalQualityWeight01, lowTier);
-            RefreshTierProfileTelemetry(tierProfile);
+            float lowTierFloor01 = ResolveLowTierFloor01(globalQualityWeight01);
+            float lowTierWeight01 = ResolveLowTierWeight01(globalQualityWeight01, lowTierFloor01);
+            RefreshQualityTelemetry(globalQualityWeight01, lowTierWeight01);
 
             if (!vault.TryLockBuffer(BufferID.ShaderGlobalState, SystemID.GraphicsScalability))
                 return;
@@ -316,6 +343,8 @@ namespace Hecton8.Core
             Vector4 extinctionLutRuntime;
             Vector4 extinctionLutWeather;
             Vector4 uberNoirRuntime;
+            Vector4 powerBrownout;
+            Vector4 respawnDearLie;
             float uberNoirFeatureMask;
             try
             {
@@ -350,6 +379,10 @@ namespace Hecton8.Core
                 extinctionLutRuntime = ToVector4(slots[HectonShaderGlobalDataVaultBridge.WaterExtinctionRuntimeSlot]);
                 extinctionLutWeather = ToVector4(slots[HectonShaderGlobalDataVaultBridge.WaterExtinctionWeatherSlot]);
                 uberNoirRuntime = ToVector4(slots[HectonShaderGlobalDataVaultBridge.UberNoirRuntimeSlot]);
+                powerBrownout = SanitizePowerBrownoutVector(
+                    ToVector4(slots[HectonShaderGlobalDataVaultBridge.PowerBrownoutSlot]),
+                    globalQualityWeight01);
+                respawnDearLie = ToVector4(slots[HectonShaderGlobalDataVaultBridge.RespawnDearLieSlot]);
                 uberNoirFeatureMask = math.clamp(slots[HectonShaderGlobalDataVaultBridge.UberNoirFeatureMaskSlot].x, 0f, 16777215f);
             }
             finally
@@ -377,7 +410,11 @@ namespace Hecton8.Core
                 extinctionLutRuntime,
                 extinctionLutWeather,
                 uberNoirRuntime,
-                uberNoirFeatureMask);
+                powerBrownout,
+                respawnDearLie,
+                uberNoirFeatureMask,
+                globalQualityWeight01,
+                lowTierWeight01);
 
             float dispatchMicroseconds = (float)((Stopwatch.GetTimestamp() - startTicks) * s_stopwatchTicksToMicroseconds);
             RecordTelemetry(vault, dispatchMicroseconds, (uint)_activeKeywordCount, 0u);
@@ -535,9 +572,49 @@ namespace Hecton8.Core
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
+        private void CacheRegistryServicesCold(bool forceRefresh)
+        {
+            if (forceRefresh || _vault == null)
+                _vault = GlobalRegistry.DataVault;
+
+            if (forceRefresh || _resolutionScaler == null)
+                _resolutionScaler = GlobalRegistry.ResolutionScaler;
+        }
+
+        private bool EnsureShaderGlobalSlotsRuntime(out IDataVault vault)
+        {
+            vault = _vault;
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            return EnsureShaderGlobalSlots(vault);
+        }
+
         private static bool EnsureShaderGlobalSlots(out IDataVault vault)
         {
             vault = GlobalRegistry.DataVault;
+            return EnsureShaderGlobalSlots(vault);
+        }
+
+        private static bool EnsureShaderGlobalSlots(IDataVault vault)
+        {
             if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
@@ -563,6 +640,13 @@ namespace Hecton8.Core
                 return false;
 
             return true;
+        }
+
+        private static void InvalidateShaderGlobalSlotCache()
+        {
+            s_cachedVault = null;
+            s_cachedVaultGeneration = 0u;
+            s_shaderSlotsHandle = default;
         }
 
         private static bool TryResolveShaderGlobalSlotsLocked(IDataVault vault, out NativeArray<float4> slots)
@@ -692,7 +776,8 @@ namespace Hecton8.Core
                 CsvFogColorDensity = s_csvFogColorDensity,
                 CsvCausticFlow = s_csvCausticFlow
             };
-            job.Run();
+            // Shader global mock data is consumed in this method; direct Execute removes synchronous job-runner overhead without changing publish timing.
+            job.Execute();
         }
 
         private static bool ValidateLayouts()
@@ -702,6 +787,8 @@ namespace Hecton8.Core
                    UnsafeUtility.SizeOf<UberNoirGlobalTuning>() == UberNoirGlobalTuning.SizeBytes &&
                    ShaderGlobalsDtoSlot % 1 == 0 &&
                    (ShaderGlobalsDtoSlot * UnsafeUtility.SizeOf<float4>()) % 16 == 0 &&
+                   HectonShaderGlobalDataVaultBridge.PowerBrownoutSlot < TelemetrySlotStart &&
+                   HectonShaderGlobalDataVaultBridge.RespawnDearLieSlot < TelemetrySlotStart &&
                    TelemetrySlotStart + TelemetryCapacity <= RequiredShaderGlobalSlots;
         }
 
@@ -912,7 +999,11 @@ namespace Hecton8.Core
             Vector4 extinctionLutRuntime,
             Vector4 extinctionLutWeather,
             Vector4 uberNoirRuntime,
-            float uberNoirFeatureMask)
+            Vector4 powerBrownout,
+            Vector4 respawnDearLie,
+            float uberNoirFeatureMask,
+            float globalQualityWeight01,
+            float lowTierWeight01)
         {
             CommandBuffer cmd = s_commandBuffer;
             cmd.Clear();
@@ -941,11 +1032,18 @@ namespace Hecton8.Core
             cmd.SetGlobalMatrix(_CausticProjectionMatrixId, causticProjection);
             cmd.SetGlobalVector(_CausticRuntimeId, causticRuntime);
             cmd.SetGlobalVector(_BiomePaletteId, biomePalette);
-            cmd.SetGlobalVector(_HardwareTierParamsId, new Vector4(GlobalRegistry.ScalabilityTierProfileByte, _activeKeywordCount, _generatedEmergencyGlobals ? 1f : 0f, 0f));
+            cmd.SetGlobalVector(_HardwareTierParamsId, new Vector4(
+                math.saturate(globalQualityWeight01),
+                math.saturate(lowTierWeight01),
+                _generatedEmergencyGlobals ? 1f : 0f,
+                _activeKeywordCount));
             cmd.SetGlobalVector(_BiolumMasterPhaseId, biolumMasterPhase);
             cmd.SetGlobalFloat(_GlobalBiolumPhaseId, biolumMasterPhase.x);
             cmd.SetGlobalVector(_HectonUberNoirRuntimeParamsId, uberNoirRuntime);
             cmd.SetGlobalFloat(_HectonActiveShaderFeatureMaskId, uberNoirFeatureMask);
+            cmd.SetGlobalVector(_HectonPowerBrownoutParamsId, powerBrownout);
+            cmd.SetGlobalVector(_HectonRespawnDearLieParamsId, respawnDearLie);
+            cmd.SetGlobalFloat(_HectonDeathFadeIntensityId, math.saturate(respawnDearLie.x));
             cmd.SetGlobalVector(_DynamicWakeParamsId, wakeParams);
             cmd.SetGlobalVector(_ThermalAnomalyParamsId, thermalParams);
 
@@ -981,7 +1079,7 @@ namespace Hecton8.Core
 
         private Vector4 ResolveResolutionState()
         {
-            IResolutionScalerService scaler = GlobalRegistry.ResolutionScaler;
+            IResolutionScalerService scaler = _resolutionScaler;
             if (scaler != null && scaler.TryGetScaleState(out ResolutionScaleState state))
             {
                 float current = math.saturate(math.isfinite(state.CurrentRenderScale01) ? state.CurrentRenderScale01 : 1f);
@@ -999,9 +1097,9 @@ namespace Hecton8.Core
             return new Vector4(1f, 1f, fallbackStress, overkill01);
         }
 
-        private static float ResolveGlobalQualityWeight01()
+        private float ResolveGlobalQualityWeight01()
         {
-            IResolutionScalerService scaler = GlobalRegistry.ResolutionScaler;
+            IResolutionScalerService scaler = _resolutionScaler;
             if (scaler != null && scaler.TryGetScaleState(out ResolutionScaleState state))
                 return math.saturate(math.isfinite(state.GlobalQualityWeight01) ? state.GlobalQualityWeight01 : 1f);
 
@@ -1009,11 +1107,20 @@ namespace Hecton8.Core
             return math.saturate(math.isfinite(quality) ? quality : 1f);
         }
 
-        private static float ResolveLowTierWeight01(float qualityWeight01, bool lowTierFallback)
+        private static float ResolveLowTierWeight01(float qualityWeight01, float lowTierFloor01)
         {
-            float quality = math.saturate(math.isfinite(qualityWeight01) ? qualityWeight01 : (lowTierFallback ? 0.35f : 1f));
+            lowTierFloor01 = math.saturate(lowTierFloor01);
+            float fallbackQuality = math.lerp(1f, 0.35f, lowTierFloor01);
+            float quality = math.saturate(math.isfinite(qualityWeight01) ? qualityWeight01 : fallbackQuality);
             float weight = 1f - Smooth01(math.saturate((quality - 0.18f) * 1.2195122f));
-            return lowTierFallback ? math.max(weight, 0.25f) : weight;
+            return math.max(weight, lowTierFloor01);
+        }
+
+        private static float ResolveLowTierFloor01(float qualityWeight01)
+        {
+            float quality = math.saturate(math.isfinite(qualityWeight01) ? qualityWeight01 : 1f);
+            float survivalPressure01 = 1f - Smooth01(math.saturate((quality - 0.12f) * 1.1363636f));
+            return 0.25f * survivalPressure01;
         }
 
         private static float Smooth01(float value)
@@ -1074,21 +1181,27 @@ namespace Hecton8.Core
             return (hash & 1023u) * (6.2831853f / 1024f);
         }
 
-        private void RefreshTierProfileTelemetry(byte tierProfile)
+        private void RefreshQualityTelemetry(float globalQualityWeight01, float lowTierWeight01)
         {
-            HectonQualityTier qualityTier = GlobalRegistry.ScalabilityTier;
-            int qualityTierValue = (int)qualityTier;
-            if (_lastTierProfileByte == tierProfile && _lastQualityTier == qualityTierValue)
+            byte qualityByte = EncodeQualityWeightByte(globalQualityWeight01);
+            int lowTierWeightBucket = (int)math.round(math.saturate(lowTierWeight01) * 255f);
+            if (_lastGlobalQualityByte == qualityByte && _lastLowTierWeightBucket == lowTierWeightBucket)
                 return;
 
-            _lastTierProfileByte = tierProfile;
-            _lastQualityTier = qualityTierValue;
+            _lastGlobalQualityByte = qualityByte;
+            _lastLowTierWeightBucket = lowTierWeightBucket;
             _activeKeywordCount = 0;
+        }
+
+        private static byte EncodeQualityWeightByte(float qualityWeight01)
+        {
+            float quality = math.saturate(math.isfinite(qualityWeight01) ? qualityWeight01 : 1f);
+            return (byte)math.round(quality * 255f);
         }
 
         private void RecordTelemetry(IDataVault vault, float dispatchMicroseconds, uint keywordCount, uint flags)
         {
-            if (!EnsureShaderGlobalSlots(out IDataVault currentVault))
+            if (!EnsureShaderGlobalSlotsRuntime(out IDataVault currentVault))
                 return;
 
             if (!ReferenceEquals(vault, currentVault))
@@ -1106,7 +1219,11 @@ namespace Hecton8.Core
                     return;
 
                 int slot = TelemetrySlotStart + _telemetryCursor;
-                slots[slot] = new float4(Time.frameCount, dispatchMicroseconds, keywordCount, flags);
+                uint frame = unchecked(_dispatchTelemetryFrame + 1u);
+                if (frame == 0u)
+                    frame = 1u;
+                _dispatchTelemetryFrame = frame;
+                slots[slot] = new float4(frame, dispatchMicroseconds, keywordCount, flags);
                 _telemetryCursor = (_telemetryCursor + 1) % TelemetryCapacity;
             }
             finally
@@ -1125,7 +1242,7 @@ namespace Hecton8.Core
             if (string.IsNullOrEmpty(projectRoot))
                 return;
 
-            if (!EnsureShaderGlobalSlots(out IDataVault vault))
+            if (!EnsureShaderGlobalSlotsRuntime(out IDataVault vault))
                 return;
 
             string directory = Path.Combine(projectRoot, "Docs", "AgentLogs");
@@ -1369,6 +1486,17 @@ namespace Hecton8.Core
         private static Vector4 ToVector4(float4 value)
         {
             return new Vector4(value.x, value.y, value.z, value.w);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static Vector4 SanitizePowerBrownoutVector(Vector4 value, float fallbackQuality01)
+        {
+            float supply = math.saturate(math.isfinite(value.x) ? value.x : 1f);
+            float severity = math.saturate(math.isfinite(value.y) ? value.y : 0f);
+            float phase = math.max(0f, math.isfinite(value.z) ? value.z : 0f);
+            float fallbackQuality = math.saturate(math.isfinite(fallbackQuality01) ? fallbackQuality01 : 1f);
+            float quality = math.saturate(math.isfinite(value.w) ? value.w : fallbackQuality);
+            return new Vector4(supply, severity, phase, quality);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

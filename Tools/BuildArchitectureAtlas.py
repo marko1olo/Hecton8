@@ -172,7 +172,7 @@ def write_source_cache(files: dict[str, object]) -> None:
 
 
 def analyze_source_bytes(raw: bytes, path_rel: str, first_party: bool) -> dict[str, object]:
-    line_count = raw.count(b"\n") + 1
+    line_count = raw.count(b"\n") + (0 if not raw or raw.endswith(b"\n") else 1)
 
     entry: dict[str, object] = {
         "line_count": line_count,
@@ -769,6 +769,14 @@ def build_markdown(data: dict[str, object] | None = None, generated_at: datetime
         "this document links a fresh evidence artifact. Historical counters and older version claims "
         "inside this file are subordinate to the current authority spine above."
     )
+    out.append("")
+    out.append(
+        "Current DOC_GLOBAL boundary (2026-05-20 R45): "
+        "`Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md` "
+        "is the latest local static root/architecture R43/R44 residue, proof-artifact wording, and source-counter correction. "
+        "R44 remains the prior internal-residue/exact-route-field/proof-wording correction; "
+        "R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; AtlasCheck remains red and runtime proof is absent."
+    )
     out.append("<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->")
     out.append("")
 
@@ -840,7 +848,7 @@ def build_markdown(data: dict[str, object] | None = None, generated_at: datetime
     out.append("- `python Tools/AtlasCheck.py`")
     out.append("- `python -m py_compile Tools/BuildArchitectureAtlas.py Tools/AtlasCheck.py`")
     out.append("- C# compile verification is outside this atlas; run Unity import/Console and serial CLI builds as separate evidence.")
-    out.append("- Current DOC_GLOBAL R27 blocker: `python Tools/AtlasCheck.py` still exits `1` on `57` RealtimeCSG vendor icon/readme image references until the references are restored or the atlas check excludes that vendor evidence class deliberately.")
+    out.append("- Current DOC_GLOBAL R45 blocker: `python Tools/AtlasCheck.py` still exits `1` with `ATLAS_CHECK_FAIL references=6741 missing=59`; missing refs include one Dynamic Decals vendor asset reference, RealtimeCSG vendor icon/readme image references, and `Assets/_Project/Scripts/Habitat/Deformation/Editor/HabitatDamageBakePipeline.cs` until the references are restored or the atlas check excludes that evidence class deliberately.")
     out.append("- This generated atlas is not `VERIFIED` unless `Tools/AtlasCheck.py` exits `0` after generation.")
     out.append("")
 
@@ -946,7 +954,7 @@ def build_json_payload(data: dict[str, object], generated_at: datetime | None = 
             "generator": "Tools/BuildArchitectureAtlas.py",
             "validator": "Tools/AtlasCheck.py",
             "tests": "Tools/test_architecture_atlas.py",
-            "atlas_check_status": "RED: Tools/AtlasCheck.py exits 1 on 57 RealtimeCSG vendor icon/readme image references; generated atlas is STATIC_SOURCE only until AtlasCheck exits 0.",
+            "atlas_check_status": "RED: Tools/AtlasCheck.py exits 1 with ATLAS_CHECK_FAIL references=6741 missing=59; missing refs include one Dynamic Decals vendor asset reference, RealtimeCSG vendor icon/readme image references, and Assets/_Project/Scripts/Habitat/Deformation/Editor/HabitatDamageBakePipeline.cs. Generated atlas is STATIC_SOURCE only until AtlasCheck exits 0.",
         },
         "residual_risk": [
             "Unity import, runtime wiring, actual VRAM residency, profiler frame time, GC, build, and Play Mode remain PENDING VERIFICATION.",

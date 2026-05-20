@@ -144,15 +144,17 @@ Mine creators covering these games because audience overlap is stronger than gen
 
 ## Next Pass Goal
 
-Target: 300 rows.
+Current hold: do not expand raw leads while the active bottleneck is asset proof. The live CRM already has 100 rows, 0 raw staged rows, and no creator-send-ready assets. Resume this queue only after first capture proves a segment/asset gap that the existing CRM cannot cover.
+
+Target after asset-gap proof: 300 rows.
 
 Method:
 
-- 100 from Subnautica/Subnautica 2 indices;
+- up to 100 from Subnautica/Subnautica 2 indices only if first assets prove a direct-underwater-survival gap;
 - 50 survival crafting;
 - 50 horror/atmosphere;
 - 40 simulation/engineering;
 - 30 indie showcase/press/demo;
 - 30 regional.
 
-Target after that: 1000 rows, but only if a verification workflow exists. A thousand unverified names is not an outreach asset. It is a liability.
+Target after that: 1000 rows, but only if post-asset evidence still shows a segment gap the live CRM cannot cover and a verification workflow exists. A thousand unverified names is not an outreach asset. It is a liability.

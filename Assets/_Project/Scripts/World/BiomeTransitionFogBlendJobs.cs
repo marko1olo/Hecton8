@@ -15,6 +15,7 @@ namespace Hecton8.World
         public const int TelemetryCapacity = 300;
         public const int CsvScratchBytes = 65536;
         public const int ShaderPayloadFloat4Count = 8;
+        public const int ShaderPayloadStrideBytes = ShaderPayloadFloat4Count * 16;
         public const int BiomeStateStrideBytes = 64;
         public const int BiomeCenterStrideBytes = 64;
         public const int CurrentAtmosphereStrideBytes = 128;
@@ -35,6 +36,8 @@ namespace Hecton8.World
         public const uint FlagSignalEmitted = 1u << 4;
         public const uint FlagNonFiniteOutput = 1u << 5;
         public const uint FlagSectorCulled = 1u << 6;
+        public const uint FlagNearestFallback = 1u << 7;
+        public const uint FlagCadenceReused = 1u << 8;
     }
 
     public static class BiomeTransitionNativeLayout
@@ -47,13 +50,25 @@ namespace Hecton8.World
                    OffsetOf<BiomeStateDTO>(nameof(BiomeStateDTO.AbsorptionParams)) == 32 &&
                    OffsetOf<BiomeStateDTO>(nameof(BiomeStateDTO.AmbientAudioVolume)) == 48 &&
                    UnsafeUtility.SizeOf<BiomeCenterDTO>() == BiomeTransitionConstants.BiomeCenterStrideBytes &&
+                   OffsetOf<BiomeCenterDTO>(nameof(BiomeCenterDTO.CenterAup)) == 0 &&
+                   OffsetOf<BiomeCenterDTO>(nameof(BiomeCenterDTO.BiomeHash)) == 32 &&
+                   OffsetOf<BiomeCenterDTO>(nameof(BiomeCenterDTO.StateIndex)) == 48 &&
                    UnsafeUtility.SizeOf<CurrentAtmosphereDTO>() == BiomeTransitionConstants.CurrentAtmosphereStrideBytes &&
                    UnsafeUtility.SizeOf<BiomeBlendMaskDTO>() == BiomeTransitionConstants.BlendMaskStrideBytes &&
                    UnsafeUtility.SizeOf<BiomeInfluenceDTO>() == BiomeTransitionConstants.InfluenceStrideBytes &&
                    UnsafeUtility.SizeOf<BiomeAcousticStageDTO>() == BiomeTransitionConstants.AcousticStageStrideBytes &&
                    UnsafeUtility.SizeOf<BiomeTransitionTelemetryEntry>() == BiomeTransitionConstants.TelemetryStrideBytes &&
                    UnsafeUtility.SizeOf<BiomeTransitionCounterDTO>() == BiomeTransitionConstants.CounterStrideBytes &&
-                   UnsafeUtility.SizeOf<BiomeTransitionTuningDTO>() == BiomeTransitionConstants.TuningStrideBytes;
+                   UnsafeUtility.SizeOf<BiomeTransitionTuningDTO>() == BiomeTransitionConstants.TuningStrideBytes &&
+                   UnsafeUtility.SizeOf<BiomeTransitionShaderPayloadCBufferDTO>() == BiomeTransitionConstants.ShaderPayloadStrideBytes &&
+                   OffsetOf<BiomeTransitionShaderPayloadCBufferDTO>(nameof(BiomeTransitionShaderPayloadCBufferDTO.FogColor)) == 0 &&
+                   OffsetOf<BiomeTransitionShaderPayloadCBufferDTO>(nameof(BiomeTransitionShaderPayloadCBufferDTO.AbsorptionParams)) == 16 &&
+                   OffsetOf<BiomeTransitionShaderPayloadCBufferDTO>(nameof(BiomeTransitionShaderPayloadCBufferDTO.AudioParams)) == 32 &&
+                   OffsetOf<BiomeTransitionShaderPayloadCBufferDTO>(nameof(BiomeTransitionShaderPayloadCBufferDTO.NormalizedWeights)) == 48 &&
+                   OffsetOf<BiomeTransitionShaderPayloadCBufferDTO>(nameof(BiomeTransitionShaderPayloadCBufferDTO.BiomeHashes)) == 64 &&
+                   OffsetOf<BiomeTransitionShaderPayloadCBufferDTO>(nameof(BiomeTransitionShaderPayloadCBufferDTO.DitherParams)) == 80 &&
+                   OffsetOf<BiomeTransitionShaderPayloadCBufferDTO>(nameof(BiomeTransitionShaderPayloadCBufferDTO.FrameFlags)) == 96 &&
+                   OffsetOf<BiomeTransitionShaderPayloadCBufferDTO>(nameof(BiomeTransitionShaderPayloadCBufferDTO.Reserved0)) == 112;
         }
 
         private static int OffsetOf<T>(string fieldName) where T : struct
@@ -125,7 +140,9 @@ namespace Hecton8.World
         [FieldOffset(36)] public uint SectorHash;
         [FieldOffset(40)] public int SectorX;
         [FieldOffset(44)] public int SectorZ;
-        [FieldOffset(48)] public float4 _pad0;
+        [FieldOffset(48)] public int StateIndex;
+        [FieldOffset(52)] public uint _pad0;
+        [FieldOffset(56)] public ulong _pad1;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = BiomeTransitionConstants.InfluenceStrideBytes)]
@@ -157,6 +174,19 @@ namespace Hecton8.World
         [FieldOffset(52)] public uint FrameIndex;
         [FieldOffset(56)] public uint Flags;
         [FieldOffset(60)] public uint _pad0;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = BiomeTransitionConstants.ShaderPayloadStrideBytes)]
+    public struct BiomeTransitionShaderPayloadCBufferDTO
+    {
+        [FieldOffset(0)] public float4 FogColor;
+        [FieldOffset(16)] public float4 AbsorptionParams;
+        [FieldOffset(32)] public float4 AudioParams;
+        [FieldOffset(48)] public float4 NormalizedWeights;
+        [FieldOffset(64)] public float4 BiomeHashes;
+        [FieldOffset(80)] public float4 DitherParams;
+        [FieldOffset(96)] public float4 FrameFlags;
+        [FieldOffset(112)] public float4 Reserved0;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -402,13 +432,21 @@ namespace Hecton8.World
         [NoAlias] public NativeArray<BiomeStateDTO> States;
         [NoAlias] public NativeArray<BiomeCenterDTO> Centers;
         [NoAlias] public NativeArray<BiomeTransitionCounterDTO> Counters;
-        [NoAlias] public NativeArray<BiomeTransitionTuningDTO> Tuning;
         public double3 OriginAup;
+        public byte OnlyWhenCounterEmpty;
 
         public void Execute()
         {
             if (!States.IsCreated || !Centers.IsCreated || States.Length < 4 || Centers.Length < 4)
                 return;
+
+            if (OnlyWhenCounterEmpty != 0 &&
+                Counters.IsCreated &&
+                Counters.Length > 0 &&
+                Counters[0].ActiveBiomeCount > 0)
+            {
+                return;
+            }
 
             WriteBiome(0, 0xB55119E7u, OriginAup + new double3(-1200d, -25d, 0d), 320f, 1800f,
                 new float4(0.07f, 0.18f, 0.19f, 1f),
@@ -433,21 +471,6 @@ namespace Hecton8.World
                 {
                     ActiveBiomeCount = 4,
                     LastFlags = BiomeTransitionConstants.FlagFallbackMock
-                };
-            }
-
-            if (Tuning.IsCreated && Tuning.Length > 0)
-            {
-                Tuning[0] = new BiomeTransitionTuningDTO
-                {
-                    RadiusScale = 1f,
-                    HardwareQualityOverride = -1f,
-                    LowCadenceHz = 5f,
-                    UltraCadenceHz = 60f,
-                    DitherStrength = 1f,
-                    DebugDrawEnabled = 0f,
-                    MockTraversalEnabled = 0f,
-                    MaxCenterScanScale = 1f
                 };
             }
         }
@@ -480,7 +503,8 @@ namespace Hecton8.World
                 BiomeHash = hash,
                 SectorHash = BiomeTransitionMath.HashSector(sector),
                 SectorX = sector.x,
-                SectorZ = sector.y
+                SectorZ = sector.y,
+                StateIndex = index
             };
         }
     }
@@ -546,6 +570,9 @@ namespace Hecton8.World
             int2 playerSector = BiomeTransitionMath.ResolveSector(playerAbsolute);
             int startIndex = ResolveStartIndex(activeCount, playerSector);
             float safeRadiusScale = math.max(0.0001f, math.select(1f, RadiusScale, math.isfinite(RadiusScale)));
+            uint nearestHash = 0u;
+            int nearestStateIndex = -1;
+            float nearestDistance = float.MaxValue;
 
             for (int step = 0; step < scanCount; step++)
             {
@@ -556,6 +583,13 @@ namespace Hecton8.World
                 BiomeCenterDTO center = Centers[i];
                 if (center.BiomeHash == 0u)
                     continue;
+
+                int stateIndex = ResolveStateIndex(in center);
+                if (stateIndex < 0)
+                {
+                    flags |= BiomeTransitionConstants.FlagInvalidInput;
+                    continue;
+                }
 
                 int dx = math.abs(center.SectorX - playerSector.x);
                 int dz = math.abs(center.SectorZ - playerSector.y);
@@ -570,6 +604,13 @@ namespace Hecton8.World
 
                 distanceSq = math.max(distanceSq, BiomeTransitionConstants.NaNEpsilon);
                 float distance = distanceSq * math.rsqrt(distanceSq);
+                if (distance < nearestDistance)
+                {
+                    nearestDistance = distance;
+                    nearestHash = center.BiomeHash;
+                    nearestStateIndex = stateIndex;
+                }
+
                 float innerRadius = math.max(0f, center.InnerRadiusMeters * safeRadiusScale);
                 float outerRadius = math.max(innerRadius + BiomeTransitionConstants.MinRadiusMeters, center.OuterRadiusMeters * safeRadiusScale);
                 float band = math.max(BiomeTransitionConstants.NaNEpsilon, outerRadius - innerRadius);
@@ -578,8 +619,20 @@ namespace Hecton8.World
                 if (weight <= 0f || !math.isfinite(weight))
                     continue;
 
-                int stateIndex = FindStateIndex(center.BiomeHash);
                 InsertCandidate(ref influence, center.BiomeHash, stateIndex, weight, distance);
+            }
+
+            if (influence.BiomeHashes.x == 0u && nearestHash != 0u)
+            {
+                if (nearestStateIndex >= 0)
+                {
+                    InsertCandidate(ref influence, nearestHash, nearestStateIndex, 1f, nearestDistance);
+                    flags |= BiomeTransitionConstants.FlagNearestFallback;
+                }
+                else
+                {
+                    flags |= BiomeTransitionConstants.FlagInvalidInput;
+                }
             }
 
             Influence[0] = influence;
@@ -601,6 +654,18 @@ namespace Hecton8.World
             if (Counters.IsCreated && Counters.Length > 0 && Counters[0].ActiveBiomeCount > 0)
                 requested = math.min(requested, Counters[0].ActiveBiomeCount);
             return math.clamp(requested, 0, Centers.IsCreated ? Centers.Length : 0);
+        }
+
+        private int ResolveStateIndex(in BiomeCenterDTO center)
+        {
+            if (!States.IsCreated || States.Length == 0)
+                return -1;
+
+            int stateIndex = center.StateIndex;
+            if (stateIndex >= 0 && stateIndex < States.Length && States[stateIndex].BiomeHash == center.BiomeHash)
+                return stateIndex;
+
+            return FindStateIndex(center.BiomeHash);
         }
 
         private int ResolveStartIndex(int activeCount, int2 playerSector)
@@ -868,8 +933,13 @@ namespace Hecton8.World
 
         public unsafe void Execute()
         {
-            if (!CurrentAtmosphere.IsCreated || CurrentAtmosphere.Length == 0 || !ShaderPayload.IsCreated || ShaderPayload.Length < 6)
+            if (!CurrentAtmosphere.IsCreated ||
+                CurrentAtmosphere.Length == 0 ||
+                !ShaderPayload.IsCreated ||
+                ShaderPayload.Length < BiomeTransitionConstants.ShaderPayloadFloat4Count)
+            {
                 return;
+            }
 
             CurrentAtmosphereDTO current = CurrentAtmosphere[0];
             BiomeBlendMaskDTO mask = BlendMask.IsCreated && BlendMask.Length > 0 ? BlendMask[0] : default;
@@ -883,6 +953,12 @@ namespace Hecton8.World
                 math.asfloat(mask.BiomeHashes.z),
                 math.asfloat(mask.BiomeHashes.w));
             float4 slot5 = mask.DitherParams;
+            float4 slot6 = new float4(
+                math.asfloat(mask.DominantBiomeHash),
+                math.asfloat(mask.FrameIndex),
+                math.asfloat(mask.Flags),
+                0f);
+            float4 slot7 = default;
             void* dst = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(ShaderPayload);
             int stride = UnsafeUtility.SizeOf<float4>();
             UnsafeUtility.MemCpy(dst, &slot0, stride);
@@ -891,6 +967,8 @@ namespace Hecton8.World
             UnsafeUtility.MemCpy((byte*)dst + stride * 3, &slot3, stride);
             UnsafeUtility.MemCpy((byte*)dst + stride * 4, &slot4, stride);
             UnsafeUtility.MemCpy((byte*)dst + stride * 5, &slot5, stride);
+            UnsafeUtility.MemCpy((byte*)dst + stride * 6, &slot6, stride);
+            UnsafeUtility.MemCpy((byte*)dst + stride * 7, &slot7, stride);
         }
     }
 
@@ -1034,7 +1112,8 @@ namespace Hecton8.World
                     BiomeHash = biomeHash,
                     SectorHash = BiomeTransitionMath.HashSector(sector),
                     SectorX = sector.x,
-                    SectorZ = sector.y
+                    SectorZ = sector.y,
+                    StateIndex = written
                 };
                 written++;
             }

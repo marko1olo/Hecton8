@@ -1,0 +1,164 @@
+#pragma kernel SampleWaveHeights
+
+#define H8_WAVE_THREADS_PER_GROUP 64
+#define H8_OCEAN_TWO_PI 6.28318530718
+
+struct H8WaveParametersDTO
+{
+    float4 Wave1;
+    float4 Wave2;
+    float4 Wave3;
+    float4 GlobalWindAndStorm;
+};
+
+StructuredBuffer<H8WaveParametersDTO> _H8OceanWaveParameters;
+StructuredBuffer<float4> _H8WaveSamplePositions;
+RWStructuredBuffer<float4> _H8WaveSampleResults;
+
+cbuffer HectonWaveHeightSamplerConstants
+{
+    float _H8OceanSurfaceTime;
+    float _H8OceanGlobalQualityWeight;
+    int _H8OceanActiveWaveCount;
+    float _H8WaveSeaLevel;
+    int _H8WaveSampleCount;
+    float3 _H8WavePad0;
+    float4 _H8OceanCameraAupLocalProjection;
+    float4 _H8OceanWavePhaseBase0;
+    float4 _H8OceanWavePhaseBase1;
+    float4 _H8WaveSampleLod;
+};
+
+float H8WaveFiniteOr(float value, float fallbackValue)
+{
+    return ((value == value) && abs(value) < 1.0e20) ? value : fallbackValue;
+}
+
+float H8WaveSafeQuality(float qualityWeight)
+{
+    return saturate(H8WaveFiniteOr(qualityWeight, 0.0));
+}
+
+float H8WaveDesiredCount(float qualityWeight)
+{
+    float q = H8WaveSafeQuality(qualityWeight);
+    float curve = q * q * (3.0 - 2.0 * q);
+    return lerp(1.0, 6.0, curve);
+}
+
+float H8WaveContribution(int waveIndex)
+{
+    return saturate(H8WaveDesiredCount(_H8OceanGlobalQualityWeight) - (float)waveIndex);
+}
+
+float H8WaveWrapPhase(float phase)
+{
+    float safePhase = H8WaveFiniteOr(phase, 0.0);
+    return safePhase - floor(safePhase / H8_OCEAN_TWO_PI) * H8_OCEAN_TWO_PI;
+}
+
+float4 H8GetWaveLane(H8WaveParametersDTO dto, int laneIndex)
+{
+    if (laneIndex == 0)
+        return dto.Wave1;
+    if (laneIndex == 1)
+        return dto.Wave2;
+    return dto.Wave3;
+}
+
+float H8GetWavePhaseBase(int waveIndex)
+{
+    if (waveIndex == 0)
+        return H8WaveWrapPhase(H8WaveFiniteOr(_H8OceanWavePhaseBase0.x, 0.0));
+    if (waveIndex == 1)
+        return H8WaveWrapPhase(H8WaveFiniteOr(_H8OceanWavePhaseBase0.y, 0.0));
+    if (waveIndex == 2)
+        return H8WaveWrapPhase(H8WaveFiniteOr(_H8OceanWavePhaseBase0.z, 0.0));
+    if (waveIndex == 3)
+        return H8WaveWrapPhase(H8WaveFiniteOr(_H8OceanWavePhaseBase0.w, 0.0));
+    if (waveIndex == 4)
+        return H8WaveWrapPhase(H8WaveFiniteOr(_H8OceanWavePhaseBase1.x, 0.0));
+    return H8WaveWrapPhase(H8WaveFiniteOr(_H8OceanWavePhaseBase1.y, 0.0));
+}
+
+float2 H8WaveDirection(float4 lane)
+{
+    float sine;
+    float cosine;
+    sincos(H8WaveFiniteOr(lane.x, 0.0), sine, cosine);
+    return float2(cosine, sine);
+}
+
+float H8WaveWavelength(float4 lane)
+{
+    return max(abs(H8WaveFiniteOr(lane.z, 0.25)), 0.25);
+}
+
+float H8WaveSteepness(float4 lane)
+{
+    return saturate(H8WaveFiniteOr(lane.y, 0.0));
+}
+
+float H8WaveSpeed(float4 lane)
+{
+    return H8WaveFiniteOr(lane.w, 0.0);
+}
+
+float H8WaveAmplitude(float4 lane)
+{
+    float wavelength = H8WaveWavelength(lane);
+    float waveNumber = H8_OCEAN_TWO_PI / wavelength;
+    return min(wavelength * 0.125, H8WaveSteepness(lane) / max(waveNumber, 0.000001));
+}
+
+float3 H8WaveNormalize3(float3 value, float3 fallbackValue)
+{
+    float lenSq = dot(value, value);
+    return lenSq > 1e-6 ? value * rsqrt(lenSq) : fallbackValue;
+}
+
+[numthreads(H8_WAVE_THREADS_PER_GROUP, 1, 1)]
+void SampleWaveHeights(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint index = dispatchThreadId.x;
+    if (index >= (uint)_H8WaveSampleCount)
+        return;
+
+    float4 query = _H8WaveSamplePositions[index];
+    float2 projectedAupXZ = query.xy;
+    float height = 0.0;
+    float dHeightDx = 0.0;
+    float dHeightDz = 0.0;
+
+    [loop]
+    for (int i = 0; i < 6; i++)
+    {
+        float contribution = H8WaveContribution(i);
+        if (contribution <= 0.0001 || i >= _H8OceanActiveWaveCount + 1)
+            continue;
+
+        H8WaveParametersDTO dto = _H8OceanWaveParameters[i / 3];
+        int laneIndex = i - (i / 3) * 3;
+        float4 lane = H8GetWaveLane(dto, laneIndex);
+        float2 direction = H8WaveDirection(lane);
+        float wavelength = H8WaveWavelength(lane);
+        float waveNumber = H8_OCEAN_TWO_PI / wavelength;
+        float projected = dot(projectedAupXZ, direction);
+        float phaseOffset = (float)(i + 1) * 0.754877666;
+        float phase = H8WaveWrapPhase(H8GetWavePhaseBase(i) + projected * waveNumber + phaseOffset + H8WaveSpeed(lane) * _H8OceanSurfaceTime);
+        float sine;
+        float cosine;
+        sincos(phase, sine, cosine);
+
+        float amp = H8WaveAmplitude(lane) * contribution;
+        height += amp * sine;
+        float slope = amp * waveNumber * cosine;
+        dHeightDx += slope * direction.x;
+        dHeightDz += slope * direction.y;
+    }
+
+    float3 normal = H8WaveNormalize3(float3(-dHeightDx, 1.0, -dHeightDz), float3(0.0, 1.0, 0.0));
+    float4 result = float4(height, normal.x, normal.z, 1.0);
+    bool finiteResult = all(result == result) && all(abs(result) < 1.0e20);
+    _H8WaveSampleResults[index] = finiteResult ? result : float4(0.0, 0.0, 0.0, 0.0);
+}

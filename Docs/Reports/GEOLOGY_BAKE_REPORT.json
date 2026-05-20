@@ -1,0 +1,7 @@
+{
+  "agent": "SHINOBU_208",
+  "status": "STATIC_PLACEHOLDER_AFTER_NORMAL_WELD_PATCH_BUILD_BLOCKED",
+  "generatedMeshCount": 0,
+  "meshes": [],
+  "note": "Geology Forge report target exists. BRG manifest source now writes Assets/_Project/BakedGeometry/Geology/geology_mesh_manifest.h8geom during asset bake; black-box source writes Docs/AgentLogs/Dump_SHINOBU_208.bin on non-finite bake telemetry or exception; normal smoothing now uses transient angle-weighted weld buckets before UV/AO/packing. No Unity Editor bake has been executed in this CLI-only pass."
+}

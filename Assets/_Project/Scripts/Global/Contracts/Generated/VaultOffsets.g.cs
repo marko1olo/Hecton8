@@ -18,13 +18,13 @@ namespace Hecton8.Global.Contracts.Generated
         public const int AssemblyRoutingOverride_MinQualityWeight = 20;
         public const int AssemblyRoutingOverride_MaxQualityWeight = 24;
         public const int AssemblyRoutingOverride_QualityCurveHash = 28;
-        public const int BootstrapRegistryContext_Size = 80;
+        public const int BootstrapRegistryContext_Size = 128;
         public const int BootstrapRegistryContext_BufferTable = 8;
         public const int BootstrapRegistryContext_RegistryTable = 40;
-        public const int BootstrapDependencySnapshot_Size = 80;
+        public const int BootstrapDependencySnapshot_Size = 128;
         public const int BootstrapDependencySnapshot_ServiceTable = 8;
         public const int BootstrapDependencySnapshot_SignalTable = 40;
-        public const int PhysicsFacade_Size = 40;
+        public const int PhysicsFacade_Size = 64;
         public const int MockDomainState_Size = 32;
     }
 }

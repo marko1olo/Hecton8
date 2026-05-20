@@ -177,6 +177,7 @@ namespace Hecton8.Audio
         private const uint FlagClipNotStreaming = 1u << 3;
         private const uint FlagNonFinite = 1u << 4;
         private const ulong DefaultBossNarrativeMask = 1ul << 7;
+        private const bool ProceduralSynthOwnsStemTransport = true;
         private const SystemID VaultOwner = SystemID.AudioStemMixer;
         private const int CsvPollSlowTickInterval = 2;
         private const string CsvDefaultRelativePath = "Docs/Audio/audio_stem_rules.csv";
@@ -630,6 +631,9 @@ namespace Hecton8.Audio
 
         private void ConfigureSourcesCold()
         {
+            if (ProceduralSynthOwnsStemTransport)
+                EnsureDynamicMusicSignalLaneCold();
+
             ConfigureSourceCold(_baseStemSource);
             ConfigureSourceCold(_actionStemSource);
             ConfigureSourceCold(_depthStemSource);
@@ -672,6 +676,17 @@ namespace Hecton8.Audio
             if (source == null)
                 return;
 
+            if (ProceduralSynthOwnsStemTransport)
+            {
+                source.Stop();
+                source.clip = null;
+                source.playOnAwake = false;
+                source.loop = false;
+                source.volume = 0f;
+                source.enabled = false;
+                return;
+            }
+
             source.playOnAwake = false;
             source.loop = true;
             source.spatialBlend = 0f;
@@ -682,6 +697,9 @@ namespace Hecton8.Audio
         private void ValidateStreamingClipsCold()
         {
             _streamingFaultFlags = 0u;
+            if (ProceduralSynthOwnsStemTransport)
+                return;
+
             ValidateStreamingClipCold(_baseStemSource);
             ValidateStreamingClipCold(_actionStemSource);
             ValidateStreamingClipCold(_depthStemSource);
@@ -934,7 +952,9 @@ namespace Hecton8.Audio
                 return false;
 
             long startTicks = Stopwatch.GetTimestamp();
-            _audioJobHandle.Complete();
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _audioJobHandle))
+                return false;
+
             Volatile.Write(ref _audioJobsPending, 0);
             ApplyMixFrameToUnityAudio();
             float elapsedMicroseconds = ResolveElapsedMicroseconds(startTicks);
@@ -950,7 +970,7 @@ namespace Hecton8.Audio
                 return;
 
             long startTicks = Stopwatch.GetTimestamp();
-            _audioJobHandle.Complete();
+            DispatcherJobFence.TryComplete(ref _audioJobHandle, forceComplete: true);
             Volatile.Write(ref _audioJobsPending, 0);
             if (_mixFrame.IsCreated && _telemetryRing.IsCreated && _telemetryCursor.IsCreated)
             {
@@ -962,6 +982,17 @@ namespace Hecton8.Audio
         private void ApplyMixFrameToUnityAudio()
         {
             StemMixFrameDTO frame = _mixFrame[0];
+            if (ProceduralSynthOwnsStemTransport)
+            {
+                AudioStemRuleDTO rule = _rules.IsCreated ? _rules[0] : default;
+                float depthMeters = math.max(0f, math.isfinite(rule.MockDepthMeters) ? rule.MockDepthMeters : 0f);
+                float quality = math.saturate(math.isfinite(frame.QualityWeight) ? frame.QualityWeight : 1f);
+                float tension = math.saturate(math.isfinite(frame.TensionIndex) ? frame.TensionIndex : 0f);
+                float impulse = math.saturate(math.isfinite(frame.IoPressure01) ? frame.IoPressure01 : 0f);
+                PushDynamicMusicSignal(tension, depthMeters, quality, impulse);
+                return;
+            }
+
             ApplyVolume(_baseStemSource, frame.BaseVolume);
             ApplyVolume(_actionStemSource, frame.ActionVolume);
             ApplyVolume(_depthStemSource, frame.DepthVolume);
@@ -978,6 +1009,30 @@ namespace Hecton8.Audio
                 EnsurePlaying(_depthStemSource);
                 EnsurePlaying(_bossStemSource);
             }
+        }
+
+        private static void EnsureDynamicMusicSignalLaneCold()
+        {
+            SignalBus<DynamicMusicScalarSignal>.Configure(
+                expectedCapacity: 32,
+                maxFrameSignals: 64,
+                lowTierFrameSignals: 8,
+                laneHash: DynamicMusicScalarSignal.LaneHash);
+            SignalBus<DynamicMusicScalarSignal>.EnsureInitialized();
+        }
+
+        private void PushDynamicMusicSignal(float tension01, float depthMeters, float quality01, float damageImpulse01)
+        {
+            EnsureDynamicMusicSignalLaneCold();
+            DynamicMusicScalarSignal signal = default;
+            signal.Frame = _simulationFrameCounter;
+            signal.Flags = DynamicMusicScalarSignal.FlagExternalScalars;
+            signal.Tension01 = math.saturate(FiniteOrFallback(tension01, 0f));
+            signal.DepthMeters = math.max(0f, FiniteOrFallback(depthMeters, 0f));
+            signal.GlobalQualityWeight = math.saturate(FiniteOrFallback(quality01, 1f));
+            signal.DamageImpulse01 = math.saturate(FiniteOrFallback(damageImpulse01, 0f));
+            signal.SourceHash = DynamicMusicScalarSignal.SourceAdaptiveStemHash;
+            SignalBus<DynamicMusicScalarSignal>.TryPush(in signal);
         }
 
         private static void ApplyVolume(AudioSource source, float volume)

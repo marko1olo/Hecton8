@@ -161,14 +161,8 @@ namespace Hecton8.Physics.KCC.Editor
                 painter.strokeColor = new Color(0.1f, 0.8f, 0.7f, 1f);
                 painter.BeginPath();
 
-                IDataVault vault = GlobalRegistry.DataVault;
-                if (vault == null ||
-                    !vault.TryGetBuffer(BufferID.ShinobuHydroKccTelemetryRing, out NativeArray<KinematicTelemetryEntry> telemetry) ||
-                    !vault.TryGetBuffer(BufferID.ShinobuHydroKccTelemetryCursor, out NativeArray<int> cursor) ||
-                    !telemetry.IsCreated ||
-                    telemetry.Length == 0 ||
-                    !cursor.IsCreated ||
-                    cursor.Length == 0)
+                if (!HydrodynamicKccRuntime.TryGetEditorTelemetryVaultView(out NativeArray<KinematicTelemetryEntry> telemetry, out int cursorIndex, out int telemetryLength) ||
+                    telemetryLength <= 0)
                 {
                     painter.MoveTo(new Vector2(rect.xMin, rect.yMax));
                     painter.LineTo(new Vector2(rect.xMax, rect.yMax));
@@ -177,19 +171,20 @@ namespace Hecton8.Physics.KCC.Editor
                 }
 
                 float maxSpeed = 0.001f;
-                int cursorIndex = math.clamp(cursor[0], 0, telemetry.Length - 1);
-                int startIndex = (cursorIndex + 1) % telemetry.Length;
-                for (int i = 0; i < telemetry.Length; i++)
+                cursorIndex = math.clamp(cursorIndex, 0, telemetryLength - 1);
+                int startIndex = (cursorIndex + 1) % telemetryLength;
+                for (int i = 0; i < telemetryLength; i++)
                 {
-                    int telemetryIndex = (startIndex + i) % telemetry.Length;
+                    int telemetryIndex = (startIndex + i) % telemetryLength;
                     maxSpeed = math.max(maxSpeed, telemetry[telemetryIndex].Speed);
                 }
 
-                for (int i = 0; i < telemetry.Length; i++)
+                for (int i = 0; i < telemetryLength; i++)
                 {
-                    int telemetryIndex = (startIndex + i) % telemetry.Length;
-                    float x = rect.xMin + rect.width * (i / math.max(1f, telemetry.Length - 1f));
-                    float y = rect.yMax - rect.height * math.saturate(telemetry[telemetryIndex].Speed / maxSpeed);
+                    int telemetryIndex = (startIndex + i) % telemetryLength;
+                    KinematicTelemetryEntry entry = telemetry[telemetryIndex];
+                    float x = rect.xMin + rect.width * (i / math.max(1f, telemetryLength - 1f));
+                    float y = rect.yMax - rect.height * math.saturate(entry.Speed / maxSpeed);
                     if (i == 0)
                         painter.MoveTo(new Vector2(x, y));
                     else

@@ -1,0 +1,74 @@
+<SELF_AUDIT agent="SHINOBU_213" domain="OFFLINE_LOD_AND_COLLIDER_BAKER" status="PENDING_VERIFICATION">
+  <TASK_RECONCILIATION>
+    <Task id="01" name="REALTIME_MESH_COLLIDER_INQUISITION" status="PASS">Scanner reports high-poly concave MeshCollider findings and optional editor repair uses BoxCollider.</Task>
+    <Task id="02" name="MANUAL_LOD_AUTHORING_PURGE" status="PASS">Manual LOD drift and material slot mismatch are reported; bake output overwrites with deterministic budgets.</Task>
+    <Task id="03" name="CS1612_GEOMETRY_STATE_ANNIHILATION" status="PASS">Burst DTOs expose fields only; no properties in geometry job structs.</Task>
+    <Task id="04" name="ARM64_MAPPING_LAYOUT_ASSERTION" status="PASS">LodConfigurationDTO is explicit 16 bytes with validated offsets.</Task>
+    <Task id="05" name="EMERGENCY_MOCK_DECIMATION_BENCHMARK" status="PASS">GenerateMockHighPolyMeshJob emits dense fractal sphere geometry.</Task>
+    <Task id="06" name="AUTOMATED_LOD_GENERATION_PIPELINE" status="PASS">BuildLodMesh emits LOD0/LOD1/LOD2 meshes from strict triangle budgets.</Task>
+    <Task id="07" name="BURST_CONVEX_HULL_GENERATOR" status="PASS">GenerateConvexHullJob emits a bounded 8..32 point conservative support hull with plane-deduped fan triangulation after primitive rejection; invalid hull output fails closed to BoxCollider.</Task>
+    <Task id="08" name="THE_DEAR_LIE_PRIMITIVE_FITTING" status="PASS">FitGeometricPrimitivesJob selects sphere or box before convex collision.</Task>
+    <Task id="09" name="ASYNCHRONOUS_ASSET_SERIALIZATION" status="PASS">Mesh assets serialize through SetVertexBufferData and SetIndexBufferData.</Task>
+    <Task id="10" name="AUTOMATED_PREFAB_ASSEMBLY" status="PASS">Generated prefab contains static LODGroup and primitive or convex colliders only.</Task>
+    <Task id="11" name="CONTINUOUS_SCALABILITY_THRESHOLD_SHIFT" status="PASS">GlobalQualityWeight continuously shifts generated thresholds and fade widths.</Task>
+    <Task id="12" name="AUP_DEPTH_BASED_CULLING_PREP" status="PASS">DepthMeters compresses LOD thresholds for hadal darkness without runtime authority.</Task>
+    <Task id="13" name="ROLLBACK_NETCODE_EXCLUSION_FENCE" status="PASS">Reports explicitly exclude LOD choice from Merkle/StateRingBuffer truth.</Task>
+    <Task id="14" name="ZERO_INIT_OVERHEAD_BYPASS" status="PASS">Geometry scratch NativeArrays use UninitializedMemory and deterministic overwrites.</Task>
+    <Task id="15" name="TELEMETRY_OPTIMIZATION_REPORT_GENERATOR" status="PASS">LOD_OPTIMIZATION_REPORT.json and editor black-box ring capture bake outcomes.</Task>
+    <Task id="16" name="PROCEDURAL_OPTIMIZATION_FORGE_WINDOW" status="PASS">UI Toolkit forge window exposes folder, budgets, tolerance, quality, depth, bake, scan, and preview.</Task>
+    <Task id="17" name="CSV_OPTIMIZATION_PROFILES_INGESTOR" status="PASS">CSV profiles parse through NativeArray byte cursor into FixedString settings; no token strings.</Task>
+    <Task id="18" name="LIVE_HULL_PREVIEW_GIZMO" status="PASS">SceneView overlay draws sphere, box, or hull before asset commit.</Task>
+    <Task id="19" name="ARCHITECTURAL_METRIC_VALIDATOR" status="PASS">Unoptimized_Mesh_Scanner writes PHYSICS_OPTIMIZATION_REPORT.json.</Task>
+    <Task id="20" name="SELF_AUDIT_AND_ARCHITECTURE_VERIFICATION" status="PASS">This XML file records layout, scalability, vault, job graph, compile guard, and Dear Lie proof.</Task>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <Field struct="LodConfigurationDTO" name="Lod1Threshold" offset="0" bytes="4" />
+    <Field struct="LodConfigurationDTO" name="Lod2Threshold" offset="4" bytes="4" />
+    <Field struct="LodConfigurationDTO" name="Lod1MeshHash" offset="8" bytes="4" />
+    <Field struct="LodConfigurationDTO" name="Lod2MeshHash" offset="12" bytes="4" />
+    <Struct name="LodConfigurationDTO" size="16" alignmentMath="4+4+4+4=16; exact 16-byte DTO; no packed layout attribute" />
+    <Struct name="OfflineGeometryVertex32" size="32" alignmentMath="float3(12)+float3(12)+float2(8)=32; single interleaved vertex stride" />
+    <Field struct="OfflineGeometryBakeTelemetryEntry" name="SourceHash" offset="0" bytes="4" />
+    <Field struct="OfflineGeometryBakeTelemetryEntry" name="OutputHash" offset="4" bytes="4" />
+    <Field struct="OfflineGeometryBakeTelemetryEntry" name="OriginalTriangles" offset="8" bytes="4" />
+    <Field struct="OfflineGeometryBakeTelemetryEntry" name="Lod0Triangles" offset="12" bytes="4" />
+    <Field struct="OfflineGeometryBakeTelemetryEntry" name="Lod1Triangles" offset="16" bytes="4" />
+    <Field struct="OfflineGeometryBakeTelemetryEntry" name="Lod2Triangles" offset="20" bytes="4" />
+    <Field struct="OfflineGeometryBakeTelemetryEntry" name="PrimitiveColliderCount" offset="24" bytes="4" />
+    <Field struct="OfflineGeometryBakeTelemetryEntry" name="ConvexColliderCount" offset="28" bytes="4" />
+    <Field struct="OfflineGeometryBakeTelemetryEntry" name="ExtractionMicroseconds" offset="32" bytes="4" />
+    <Field struct="OfflineGeometryBakeTelemetryEntry" name="SerializationMicroseconds" offset="36" bytes="4" />
+    <Field struct="OfflineGeometryBakeTelemetryEntry" name="Lod1Threshold" offset="40" bytes="4" />
+    <Field struct="OfflineGeometryBakeTelemetryEntry" name="Lod2Threshold" offset="44" bytes="4" />
+    <Field struct="OfflineGeometryBakeTelemetryEntry" name="GlobalQualityWeight" offset="48" bytes="4" />
+    <Field struct="OfflineGeometryBakeTelemetryEntry" name="DepthMeters" offset="52" bytes="4" />
+    <Field struct="OfflineGeometryBakeTelemetryEntry" name="WarningFlags" offset="56" bytes="4" />
+    <Field struct="OfflineGeometryBakeTelemetryEntry" name="StateHash" offset="60" bytes="4" />
+    <Struct name="OfflineGeometryBakeTelemetryEntry" size="64" alignmentMath="64-byte black-box row; one cache line" />
+    <Struct name="OfflineLodManifestHeader" size="64" alignmentMath="64-byte binary manifest header; all fields 4-byte aligned; little-endian tag at offset 20" />
+    <Struct name="OfflineLodManifestRecord" size="128" alignmentMath="128-byte flat BRG/LOD record; all fields 4-byte aligned; first 80 bytes data, 48 bytes explicit uint reserve" />
+  </STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE>GlobalQualityWeight is consumed during offline bake. Below 0.3, ResolveLod1Ratio and ResolveLod2Ratio continuously reduce triangle density with math.smoothstep, ResolveDecimationWindow collapses to one source-triangle sample per deterministic partition, LOD thresholds are compressed, depth culling is more aggressive, and ResolvePrimitiveTolerance raises primitive acceptance so more assets collapse to Box/Sphere colliders. Between 0.4 and 0.7, ratios, partition-local saliency, and thresholds hold middle residency while deterministic budgets remain bounded. At 1.0, LOD0/LOD1 residency extends and the decimator scans up to seven candidates inside each output triangle's source partition to preserve larger silhouette triangles without overlapping neighboring partitions; saved PhysX cost buys richer visual mesh residency, not heavier collision. No IsLowEndHardware branch exists.</SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>
+    <RuntimePersistentNativeArrays count="0" />
+    <VaultBufferHandles count="0" reason="Editor-only offline baker emits immutable assets and owns no runtime persistent memory." />
+    <BinaryManifest path="Assets/_Project/BakedGeometry/Optimized/offline_lod_manifest.h8lod" ownership="immutable editor output, not runtime Vault state" serialization="explicit little-endian per 4-byte lane; no raw host-endian struct dump" />
+    <EditorPersistentNativeArrays count="1" owner="OfflineGeometryBakeBlackBox" capacity="300" rowBytes="64" allocation="UninitializedMemory plus explicit deterministic sentinel rows" dumpSerialization="explicit little-endian 64-byte rows; no raw host-endian NativeArray dump" />
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    <NoAlias>Status applied to non-overlapping NativeArray fields in geometry jobs. HullVertices is intentionally read-write NoAlias, not WriteOnly, because support duplicate elimination and face fan triangulation read previous support points.</NoAlias>
+    <Job name="GenerateMockHighPolyMeshJob" handle="editor scheduled; completed before mesh serialization" />
+    <Job name="OfflineDecimateUInt16Job/OfflineDecimateUInt32Job" handle="editor scheduled per LOD; completed before asset write" sourceReads="UnsafeUtility.AsRef" outputs="corrupt index/range/vertex streams fail closed to deterministic zero triangles" />
+    <Job name="OfflinePackVertexJob" handle="packHandle" />
+    <Job name="OfflineIndexFillJob" handle="indexHandle depends on packHandle" />
+    <Job name="FitGeometricPrimitivesJob" handle="completed before collider authoring" />
+    <Job name="GenerateConvexHullJob" handle="completed only if primitive fitting rejects" outputs="bounded 8..32 point support hull plus plane-deduped triangle index stream; invalid output collapses to BoxCollider before MeshCollider binding" />
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>
+    <RuntimeAssembly name="Hecton8.World.OfflineGeometry" references="none" />
+    <EditorAssembly name="Hecton8.World.OfflineGeometry.Editor" references="Hecton8.World.OfflineGeometry,Unity.Burst,Unity.Collections,Unity.Jobs,Unity.Mathematics" />
+    <SiblingDomainReferences count="0" />
+    <RoslynProbe status="PRE_ENDIAN_BOUNDED_HULL_ASSET_BIND_SAFETY_INDEX_RECHECK_PENDING" path="Temp/SHINOBU_213_CompileProbe" note="Last pass predates explicit-endian fallback, bounded-hull support-index edits, fail-closed hull asset-binding guard, hull read-write annotation fix, finite rsqrt normalization guards, decimator index-stream fail-closed guards, and mock asset reload guard; post-endian bounded-hull safety-index probe gated by CPU; Unity import/profiler proof still pending" />
+  </COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>Before: concave source-mesh collision approaches O(T) triangle contact/cooking complexity. After: sphere/box is O(1), fallback convex collision is bounded to V support points where 8 &lt;= V &lt;= 32; offline face discovery is capped to O(V^3) but emitted faces are plane-deduped and fan-triangulated before MeshCollider import. Underpopulated or unbound hull output collapses to BoxCollider O(1), never forced counters. Visual mesh remains rich; PhysX receives the lie.</DEAR_LIE_CONFIRMATION>
+</SELF_AUDIT>

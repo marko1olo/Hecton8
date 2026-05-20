@@ -1,0 +1,173 @@
+[
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "CoreBuild_SHINOBU_02_current40.txt",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\CoreBuild_SHINOBU_02_current40__instant99.txt",
+        "WasDirectory":  false,
+        "Status":  "LateMoved",
+        "Loop":  99,
+        "Key":  "CoreBuild"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_02.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_02__instant99.md",
+        "WasDirectory":  false,
+        "Status":  "LateMoved",
+        "Loop":  99,
+        "Key":  "LOG"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_153.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_153__instant99.md",
+        "WasDirectory":  false,
+        "Status":  "LateMoved",
+        "Loop":  99,
+        "Key":  "LOG"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_154.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_154__instant99.md",
+        "WasDirectory":  false,
+        "Status":  "LateMoved",
+        "Loop":  99,
+        "Key":  "LOG"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_155.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_155__instant99.md",
+        "WasDirectory":  false,
+        "Status":  "LateMoved",
+        "Loop":  99,
+        "Key":  "LOG"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_81.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_81__instant99.md",
+        "WasDirectory":  false,
+        "Status":  "LateMoved",
+        "Loop":  99,
+        "Key":  "LOG"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_02.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_02__instant99.md",
+        "WasDirectory":  false,
+        "Status":  "LateMoved",
+        "Loop":  99,
+        "Key":  "Rationale"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_153.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_153__instant99.md",
+        "WasDirectory":  false,
+        "Status":  "LateMoved",
+        "Loop":  99,
+        "Key":  "Rationale"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_154.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_154__instant99.md",
+        "WasDirectory":  false,
+        "Status":  "LateMoved",
+        "Loop":  99,
+        "Key":  "Rationale"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_155.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_155__instant99.md",
+        "WasDirectory":  false,
+        "Status":  "LateMoved",
+        "Loop":  99,
+        "Key":  "Rationale"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_81.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_81__instant99.md",
+        "WasDirectory":  false,
+        "Status":  "LateMoved",
+        "Loop":  99,
+        "Key":  "Rationale"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Unity_SHINOBU_154_Compile.log",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Unity_SHINOBU_154_Compile__instant99.log",
+        "WasDirectory":  false,
+        "Status":  "LateMoved",
+        "Loop":  99,
+        "Key":  "Unity"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Route_SHINOBU_154_EntityDeltaCompression.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Route_SHINOBU_154_EntityDeltaCompression__instant99.md",
+        "WasDirectory":  false,
+        "Status":  "LateMoved",
+        "Loop":  99,
+        "Key":  "Route"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Route_SHINOBU_155_Respawn.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Route_SHINOBU_155_Respawn__instant99.md",
+        "WasDirectory":  false,
+        "Status":  "LateMoved",
+        "Loop":  99,
+        "Key":  "Route"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_02.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_02__instant99.md",
+        "WasDirectory":  false,
+        "Status":  "LateMoved",
+        "Loop":  99,
+        "Key":  "Status"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_153.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_153__instant99.md",
+        "WasDirectory":  false,
+        "Status":  "LateMoved",
+        "Loop":  99,
+        "Key":  "Status"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_154.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_154__instant99.md",
+        "WasDirectory":  false,
+        "Status":  "LateMoved",
+        "Loop":  99,
+        "Key":  "Status"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_155.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_155__instant99.md",
+        "WasDirectory":  false,
+        "Status":  "LateMoved",
+        "Loop":  99,
+        "Key":  "Status"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_81.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_81__instant99.md",
+        "WasDirectory":  false,
+        "Status":  "LateMoved",
+        "Loop":  99,
+        "Key":  "Status"
+    }
+]

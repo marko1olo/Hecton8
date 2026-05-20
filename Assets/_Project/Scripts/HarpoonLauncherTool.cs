@@ -13,7 +13,7 @@ using UnityEngine.Rendering;
 namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
-    public sealed class HarpoonLauncherTool : PlayerTool
+    public sealed class HarpoonLauncherTool : PlayerTool, ILateFrameTickable
     {
         private const string HarpoonCategory = "HARPOON";
         private const string TracerShaderName = "Hecton8/Physics/TetherLineStrip";
@@ -185,6 +185,7 @@ namespace Hecton8.Gameplay
         private GraphicsBuffer _tracerTensionBuffer;
         private GraphicsBuffer _tracerDrawParamsBuffer;
         private MaterialPropertyBlock _tracerPropertyBlock;
+        private bool _lateFrameRegistered;
 
         private void Awake()
         {
@@ -193,6 +194,18 @@ namespace Hecton8.Gameplay
             EnsureTracer();
             GetTracerMaterial();
             SetTracer(false, Vector3.zero);
+        }
+
+        public override void OnSpawn()
+        {
+            base.OnSpawn();
+            TryRegisterLateFrameTick();
+        }
+
+        public override void OnDespawn()
+        {
+            TryUnregisterLateFrameTick();
+            base.OnDespawn();
         }
 
         protected override void ConfigureModularRuntimeProfile(ref ToolRuntimeProfile profile)
@@ -571,7 +584,7 @@ namespace Hecton8.Gameplay
             return s_tracerMaterial;
         }
 
-        private void LateUpdate()
+        public void LateFrameTick()
         {
             RenderTracer();
         }
@@ -642,7 +655,25 @@ namespace Hecton8.Gameplay
 
         private void OnDestroy()
         {
+            TryUnregisterLateFrameTick();
             ReleaseTracerResources();
+        }
+
+        private void TryRegisterLateFrameTick()
+        {
+            if (_lateFrameRegistered || !Application.isPlaying)
+                return;
+
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+        }
+
+        private void TryUnregisterLateFrameTick()
+        {
+            if (!_lateFrameRegistered)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+            _lateFrameRegistered = false;
         }
 
         private void ReleaseTracerResources()

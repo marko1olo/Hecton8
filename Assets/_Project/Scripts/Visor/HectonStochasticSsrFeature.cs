@@ -215,7 +215,7 @@ namespace Hecton8.Visor
                        left.ParamsB == right.ParamsB;
             }
 
-            [StructLayout(LayoutKind.Sequential, Pack = 4, Size = StochasticSsrGlobalsStrideBytes)]
+            [StructLayout(LayoutKind.Sequential, Size = StochasticSsrGlobalsStrideBytes)]
             private struct StochasticSsrGlobalsDTO
             {
                 public Vector4 InputSize;

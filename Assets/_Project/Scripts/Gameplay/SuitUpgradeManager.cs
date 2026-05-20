@@ -32,7 +32,6 @@ using Hecton8.Items;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using Unity.Collections;
-using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 #if UNITY_EDITOR
@@ -124,22 +123,22 @@ namespace Hecton8.Gameplay
             public string UpgradeId;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = TelemetryEntrySizeBytes)]
+        [StructLayout(LayoutKind.Explicit, Size = TelemetryEntrySizeBytes)]
         private struct SuitUpgradeTelemetryEntry
         {
-            public uint FrameIndex;
-            public uint Sequence;
-            public ulong UpgradeMask;
-            public ulong EffectiveMask;
-            public ulong InventoryMask;
-            public uint Flags;
-            public uint StateHash;
-            public float MaxO2;
-            public float CrushDepth;
-            public float SwimSpeedMultiplier;
-            public float ThermalResistance;
-            public float MaxEnergy;
-            public float RadiationThreshold;
+            [FieldOffset(0)] public uint FrameIndex;
+            [FieldOffset(4)] public uint Sequence;
+            [FieldOffset(8)] public ulong UpgradeMask;
+            [FieldOffset(16)] public ulong EffectiveMask;
+            [FieldOffset(24)] public ulong InventoryMask;
+            [FieldOffset(32)] public uint Flags;
+            [FieldOffset(36)] public uint StateHash;
+            [FieldOffset(40)] public float MaxO2;
+            [FieldOffset(44)] public float CrushDepth;
+            [FieldOffset(48)] public float SwimSpeedMultiplier;
+            [FieldOffset(52)] public float ThermalResistance;
+            [FieldOffset(56)] public float MaxEnergy;
+            [FieldOffset(60)] public float RadiationThreshold;
         }
 
         // ----------------------------------------------------------
@@ -1055,7 +1054,7 @@ namespace Hecton8.Gameplay
                     Baseline = _baseSuitStats,
                     Result = new NativeSlice<SuitStats>(resolverResult)
                 };
-                job.Run();
+                job.Execute();
                 _resolvedSuitStats = resolverResult[0];
             }
             else

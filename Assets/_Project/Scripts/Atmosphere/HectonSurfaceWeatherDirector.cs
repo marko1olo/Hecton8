@@ -13,7 +13,6 @@ using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
-using Hecton8.Modding;
 using Hecton8.Physics;
 using Hecton8.World;
 using NASAPunk.Visor;
@@ -24,32 +23,6 @@ using UnityEditor;
 
 namespace Hecton8.Atmosphere
 {
-    public readonly struct ThunderAcousticShockEvent
-    {
-        public readonly Vector3 PositionWS;
-        public readonly float RadiusMeters;
-        public readonly float Intensity01;
-        public readonly float LifetimeSeconds;
-        public readonly float CameraShake01;
-        public readonly float AcousticEnergy;
-
-        public ThunderAcousticShockEvent(
-            Vector3 positionWS,
-            float radiusMeters,
-            float intensity01,
-            float lifetimeSeconds,
-            float cameraShake01,
-            float acousticEnergy)
-        {
-            PositionWS = positionWS;
-            RadiusMeters = radiusMeters;
-            Intensity01 = intensity01;
-            LifetimeSeconds = lifetimeSeconds;
-            CameraShake01 = cameraShake01;
-            AcousticEnergy = acousticEnergy;
-        }
-    }
-
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Atmosphere/Surface Weather Director")]
     [DefaultExecutionOrder(-4500)]
@@ -1710,14 +1683,6 @@ namespace Hecton8.Atmosphere
             float radiusMeters = math.lerp(ThunderAcousticShockMinRadiusMeters, ThunderAcousticShockMaxRadiusMeters, intensity01);
             float acousticEnergy = intensity01 * ThunderAcousticShockEnergyScale;
             float cameraShake01 = math.saturate(intensity01 * ThunderCameraShakeScale);
-            ThunderAcousticShockEvent shockEvent = new ThunderAcousticShockEvent(
-                shockPosition,
-                radiusMeters,
-                intensity01,
-                ThunderAcousticShockLifetimeSeconds,
-                cameraShake01,
-                acousticEnergy);
-            HectonEventBus.Publish(in shockEvent);
 
             PhysicsEventBus.NotifyAcousticPing(new AcousticPingEvent(
                 shockPosition,

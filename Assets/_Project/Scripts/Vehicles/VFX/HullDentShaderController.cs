@@ -632,16 +632,7 @@ namespace Hecton8.Vehicles.VFX
             if (root == null || !IsFiniteVector(root.position) || !IsFiniteQuaternion(root.rotation))
                 return false;
 
-            double3 hitAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPoint);
-            double3 rootAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(root.position);
-            double3 relativeWorldDouble = hitAup - rootAup;
-            if (!math.all(math.isfinite(relativeWorldDouble)))
-                return false;
-
-            Vector3 relativeWorld = new Vector3(
-                (float)relativeWorldDouble.x,
-                (float)relativeWorldDouble.y,
-                (float)relativeWorldDouble.z);
+            Vector3 relativeWorld = worldPoint - root.position;
             if (!IsFiniteVector(relativeWorld))
                 return false;
 

@@ -44,7 +44,7 @@ Static H-Phi changed or was recalculated. Runtime quality remains `PENDING VERIF
 | `HPhiContract` | `0.01020039` |
 | `HPhiRisk` | `0.000553189` |
 
-### Runtime Counter Summary
+### Static Generated Counter Snapshot (historical)
 
 | Counter | Value |
 |---|---:|

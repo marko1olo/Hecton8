@@ -1,7 +1,6 @@
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Generated;
 using CameraJuiceImpactSignal = Hecton8.Core.Contracts.Signals.CameraJuiceImpactSignal;
-using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -56,7 +55,9 @@ namespace Hecton8.Core
                 return;
 
             ImpactSignal impact = default;
-            impact.PointAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            if (!GlobalSignals.TryRuntimePositionToAup(runtimePosition, ref impact.PointAup))
+                return;
+
             impact.Intensity = severity;
             impact.Force = severity;
             PublishImpact(in impact, new float3(direction.x, direction.y, direction.z));

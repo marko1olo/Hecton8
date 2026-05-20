@@ -23,25 +23,25 @@ namespace Hecton8.Editor
 
         public static void RunBatchCraftingRuntimeSmokePass()
         {
-            bool passed = CraftingRuntimeSmokeTester.RunAsyncQueueSmoke(
+            bool passed = CraftingRuntimeSmokeTester.RunFabricationVaultSmoke(
                 1f,
                 1f,
-                out float pausedProgress,
-                out float firstPoweredProgress,
-                out float completedProgress);
-            int pausedProgressMilli = Mathf.RoundToInt(pausedProgress * 1000f);
-            int firstPoweredProgressMilli = Mathf.RoundToInt(firstPoweredProgress * 1000f);
-            int completedProgressMilli = Mathf.RoundToInt(completedProgress * 1000f);
+                out float firstMockProgress,
+                out float lastMockProgress,
+                out float averageMockProgress);
+            int firstMockProgressMilli = Mathf.RoundToInt(firstMockProgress * 1000f);
+            int lastMockProgressMilli = Mathf.RoundToInt(lastMockProgress * 1000f);
+            int averageMockProgressMilli = Mathf.RoundToInt(averageMockProgress * 1000f);
 
             Debug.Log(
                 "{\"CraftingRuntimeSmokeTester\":{\"pass\":" +
                 (passed ? "true" : "false") +
-                ",\"pausedProgressMilli\":" +
-                pausedProgressMilli +
-                ",\"firstPoweredProgressMilli\":" +
-                firstPoweredProgressMilli +
-                ",\"completedProgressMilli\":" +
-                completedProgressMilli +
+                ",\"firstMockProgressMilli\":" +
+                firstMockProgressMilli +
+                ",\"lastMockProgressMilli\":" +
+                lastMockProgressMilli +
+                ",\"averageMockProgressMilli\":" +
+                averageMockProgressMilli +
                 "}}");
 
             if (!passed)

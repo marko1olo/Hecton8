@@ -12,6 +12,7 @@ using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Core.Data
@@ -21,8 +22,6 @@ namespace Hecton8.Core.Data
     /// </summary>
     public sealed unsafe class StaticDataStore : IDisposable
     {
-        private const string OwnerName = "CSV_DATA_MONOLITH_SYNC.StaticDataStore";
-        private const string LookupLabel = "HashToOffset";
         private const uint StateOpenHash = 0x53444F50u;
         private const uint StateMissHash = 0x53444D49u;
         private const uint StateErrorHash = 0x53444552u;
@@ -42,10 +41,21 @@ namespace Hecton8.Core.Data
         private long _mappedBytes;
         private H8StaticDataHeader _header;
         private IDataVault _dataVault;
-        private VaultBufferHandle<H8StaticDataTelemetryEntry> _blackBoxHandle;
-        private VaultBufferHandle<int> _blackBoxCursorHandle;
-        private NativeParallelHashMap<uint, long> _lookup;
-        private bool _lookupRegistered;
+        private VaultGenerationHandle<H8StaticDataTelemetryEntry> _blackBoxHandle;
+        private VaultGenerationHandle<int> _blackBoxCursorHandle;
+        private VaultGenerationHandle<BTreeTelemetryEntry> _btreeTelemetryHandle;
+        private VaultGenerationHandle<int> _btreeTelemetryCursorHandle;
+        private VaultGenerationHandle<BTreeTelemetryAccumulatorDTO> _btreeTelemetryAccumulatorHandle;
+        private H8StaticDataLookupEntry* _lookupPointer;
+        private uint _btreeOffset;
+        private uint _btreeRootOffset;
+        private uint _btreeEndOffset;
+        private uint _btreeNodeCount;
+        private uint _lastTreeDepth;
+        private uint _lastTreeKeysProcessed;
+        private uint _lastPrefetchTouchCount;
+        private uint _lastSearchComputeTimeNs;
+        private bool _btreeAvailable;
 
         public bool IsOpen => _basePointer != null && _mappedBytes >= UnsafeUtility.SizeOf<H8StaticDataHeader>();
         public int LookupCount => IsOpen ? (int)_header.LookupCount : 0;
@@ -66,6 +76,9 @@ namespace Hecton8.Core.Data
             _dataVault = dataVault;
             _blackBoxHandle = default;
             _blackBoxCursorHandle = default;
+            _btreeTelemetryHandle = default;
+            _btreeTelemetryCursorHandle = default;
+            _btreeTelemetryAccumulatorHandle = default;
         }
 
         public bool OpenDefault()
@@ -148,7 +161,7 @@ namespace Hecton8.Core.Data
                 return false;
             }
 
-            if (!BuildLookupMap())
+            if (!BuildLookupTree())
             {
                 Dispose();
                 return false;
@@ -169,12 +182,50 @@ namespace Hecton8.Core.Data
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ref readonly T GetRecord<T>(uint hash) where T : unmanaged
         {
-            if (_basePointer == null || !_lookup.IsCreated || !_lookup.TryGetValue(hash, out long packedValue))
+            if (_basePointer == null || !_btreeAvailable || _lookupPointer == null)
             {
                 RecordTelemetry(StateMissHash, ErrorMissingHash, hash, 0L);
                 return ref MissingRecord<T>.Value;
             }
 
+            long searchStart = System.Diagnostics.Stopwatch.GetTimestamp();
+            bool found = H8CacheBTree.TryFindValue(
+                _basePointer,
+                _btreeOffset,
+                _btreeRootOffset,
+                _btreeEndOffset,
+                hash,
+                ResolveGlobalQualityWeight(),
+                out uint lookupIndex,
+                out uint depth,
+                out uint keysProcessed,
+                out uint prefetchTouchCount);
+            long elapsedNs = ToNanoseconds(System.Diagnostics.Stopwatch.GetTimestamp() - searchStart);
+            _lastSearchComputeTimeNs = elapsedNs <= 0L
+                ? 0u
+                : elapsedNs >= uint.MaxValue
+                    ? uint.MaxValue
+                    : (uint)elapsedNs;
+            if (_lastSearchComputeTimeNs > H8CacheBTree.BTreeSlowBatchThresholdNs)
+                DumpBTreeTelemetry();
+
+            _lastTreeDepth = depth;
+            _lastTreeKeysProcessed = keysProcessed;
+            _lastPrefetchTouchCount = prefetchTouchCount;
+            if (!found || lookupIndex >= _header.LookupCount)
+            {
+                RecordTelemetry(StateMissHash, ErrorMissingHash, hash, 0L);
+                return ref MissingRecord<T>.Value;
+            }
+
+            H8StaticDataLookupEntry lookupEntry = UnsafeUtility.ReadArrayElement<H8StaticDataLookupEntry>(_lookupPointer, (int)lookupIndex);
+            if (lookupEntry.Hash != hash)
+            {
+                RecordTelemetry(StateMissHash, ErrorMissingHash, hash, lookupEntry.Offset);
+                return ref MissingRecord<T>.Value;
+            }
+
+            long packedValue = H8StaticDataFormat.PackLookupValue(lookupEntry.Offset, lookupEntry.RecordType);
             long offset = H8StaticDataFormat.UnpackLookupOffset(packedValue);
             ushort actualRecordType = H8StaticDataFormat.UnpackLookupRecordType(packedValue);
             ushort expectedRecordType = RecordContract<T>.RecordType;
@@ -209,23 +260,44 @@ namespace Hecton8.Core.Data
 
         public void DumpBlackBox(string path = null)
         {
-            if (!EnsureBlackBox())
+            if (!EnsureBlackBox() ||
+                !TryResolveBlackBox(out NativeArray<H8StaticDataTelemetryEntry> ring, out NativeArray<int> cursor))
+            {
                 return;
-
-            H8StaticDataTelemetryEntry* ring = (H8StaticDataTelemetryEntry*)_blackBoxHandle.ResolvePointer(_dataVault);
-            int* cursor = (int*)_blackBoxCursorHandle.ResolvePointer(_dataVault);
-            if (ring == null || cursor == null)
-                return;
+            }
 
             string resolvedPath = string.IsNullOrEmpty(path)
-                ? Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", "Dump_CSV_DATA_MONOLITH_SYNC.bin"))
+                ? Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", "Dump_SHINOBU_207.bin"))
                 : path;
+            H8StaticDataTelemetryEntry* ringPtr = (H8StaticDataTelemetryEntry*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(ring);
             H8StaticDataBlackBoxDump.Write(
                 resolvedPath,
-                ring,
-                *cursor,
+                ringPtr,
+                cursor[0],
                 IsOpen ? _header.PayloadCrc32 : 0u,
                 IsOpen ? _header.Flags : 0u);
+        }
+
+        public void DumpBTreeTelemetry(string path = null)
+        {
+            if (!EnsureBTreeTelemetry() ||
+                !TryResolveBTreeTelemetry(
+                    out NativeArray<BTreeTelemetryEntry> ring,
+                    out NativeArray<int> cursor,
+                    out _))
+            {
+                return;
+            }
+
+            string resolvedPath = string.IsNullOrEmpty(path)
+                ? Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", "Dump_SHINOBU_207.bin"))
+                : path;
+            BTreeTelemetryEntry* ringPtr = (BTreeTelemetryEntry*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(ring);
+            H8BTreeTelemetryDump.Write(
+                resolvedPath,
+                ringPtr,
+                cursor[0],
+                H8CacheBTree.BTreeTelemetrySlowBatchFlag);
         }
 
         public void Dispose()
@@ -238,6 +310,22 @@ namespace Hecton8.Core.Data
             CloseFile();
             _blackBoxHandle = default;
             _blackBoxCursorHandle = default;
+            _btreeTelemetryHandle = default;
+            _btreeTelemetryCursorHandle = default;
+            _btreeTelemetryAccumulatorHandle = default;
+        }
+
+        private static long ToNanoseconds(long stopwatchTicks)
+        {
+            if (stopwatchTicks <= 0L)
+                return 0L;
+
+            double ns = stopwatchTicks * 1000000000.0 / System.Diagnostics.Stopwatch.Frequency;
+            if (ns <= 0.0)
+                return 0L;
+            if (ns >= long.MaxValue)
+                return long.MaxValue;
+            return (long)ns;
         }
 
         private void CloseFile()
@@ -271,20 +359,18 @@ namespace Hecton8.Core.Data
             }
 
             _basePointer = null;
+            _lookupPointer = null;
+            _btreeOffset = 0u;
+            _btreeRootOffset = 0u;
+            _btreeEndOffset = 0u;
+            _btreeNodeCount = 0u;
+            _lastTreeDepth = 0u;
+            _lastTreeKeysProcessed = 0u;
+            _lastPrefetchTouchCount = 0u;
+            _lastSearchComputeTimeNs = 0u;
+            _btreeAvailable = false;
             _mappedBytes = 0L;
             _header = default;
-
-            if (_lookup.IsCreated)
-            {
-                if (_lookupRegistered)
-                {
-                    NativeMemorySentinel.UnregisterNativeParallelHashMap(OwnerName, LookupLabel);
-                    _lookupRegistered = false;
-                }
-
-                _lookup.Dispose();
-                _lookup = default;
-            }
         }
 
         private bool ValidateHeaderAndChecksum()
@@ -314,7 +400,7 @@ namespace Hecton8.Core.Data
                 _header.RecordBytes != recordBytes ||
                 (recordBytes & 15L) != 0L ||
                 (_header.LookupOffset & 15u) != 0u ||
-                (_header.RecordsOffset & 15u) != 0u)
+                (_header.RecordsOffset & (H8StaticDataFormat.CacheLineBytes - 1u)) != 0u)
             {
                 RecordTelemetry(StateErrorHash, ErrorHeaderHash, 0u, 0L);
                 return false;
@@ -330,25 +416,33 @@ namespace Hecton8.Core.Data
             return true;
         }
 
-        private bool BuildLookupMap()
+        private bool BuildLookupTree()
         {
             int count = (int)_header.LookupCount;
             if (count <= 0)
                 return false;
 
-            _lookup = new NativeParallelHashMap<uint, long>(count, Allocator.Persistent);
-            _lookupRegistered = NativeMemorySentinel.RegisterNativeParallelHashMap(
-                _lookup,
-                OwnerName,
-                LookupLabel,
-                NativeAllocationLifetime.Session) != 0;
+            if (!H8CacheBTree.TryResolveTree(
+                    _header.Flags,
+                    _header.LookupOffset,
+                    _header.LookupCount,
+                    (uint)UnsafeUtility.SizeOf<H8StaticDataLookupEntry>(),
+                    _header.RecordsOffset,
+                    out _btreeOffset,
+                    out _btreeRootOffset,
+                    out _btreeNodeCount))
+            {
+                RecordTelemetry(StateErrorHash, ErrorHeaderHash, 0u, _header.RecordsOffset);
+                return false;
+            }
 
-            byte* lookupBase = _basePointer + _header.LookupOffset;
+            _btreeEndOffset = _header.RecordsOffset;
+            _lookupPointer = (H8StaticDataLookupEntry*)(_basePointer + _header.LookupOffset);
             for (int i = 0; i < count; i++)
             {
-                H8StaticDataLookupEntry entry = UnsafeUtility.ReadArrayElement<H8StaticDataLookupEntry>(lookupBase, i);
+                H8StaticDataLookupEntry entry = UnsafeUtility.ReadArrayElement<H8StaticDataLookupEntry>(_lookupPointer, i);
                 int recordSize = H8StaticDataFormat.RecordSizeBytes(entry.RecordType);
-                if ((entry.Offset & 15L) != 0L ||
+                if ((entry.Offset & (H8StaticDataFormat.CacheLineBytes - 1L)) != 0L ||
                     entry.Hash == 0u ||
                     !H8StaticDataFormat.CanPackRecordType(entry.RecordType) ||
                     recordSize <= 0 ||
@@ -359,16 +453,50 @@ namespace Hecton8.Core.Data
                     RecordTelemetry(StateErrorHash, ErrorMissingHash, entry.Hash, entry.Offset);
                     return false;
                 }
-
-                long packedValue = H8StaticDataFormat.PackLookupValue(entry.Offset, entry.RecordType);
-                if (!_lookup.TryAdd(entry.Hash, packedValue))
-                {
-                    RecordTelemetry(StateErrorHash, ErrorMissingHash, entry.Hash, entry.Offset);
-                    return false;
-                }
             }
 
+            if (!ValidateBTreeEdge(count))
+                return false;
+
+            _btreeAvailable = true;
             return true;
+        }
+
+        private bool ValidateBTreeEdge(int count)
+        {
+            H8StaticDataLookupEntry first = UnsafeUtility.ReadArrayElement<H8StaticDataLookupEntry>(_lookupPointer, 0);
+            H8StaticDataLookupEntry last = UnsafeUtility.ReadArrayElement<H8StaticDataLookupEntry>(_lookupPointer, count - 1);
+            return H8CacheBTree.TryFindValue(
+                    _basePointer,
+                    _btreeOffset,
+                    _btreeRootOffset,
+                    _btreeEndOffset,
+                    first.Hash,
+                    0f,
+                    out uint firstIndex,
+                    out _,
+                    out _,
+                    out _) &&
+                firstIndex == 0u &&
+                H8CacheBTree.TryFindValue(
+                    _basePointer,
+                    _btreeOffset,
+                    _btreeRootOffset,
+                    _btreeEndOffset,
+                    last.Hash,
+                    0f,
+                    out uint lastIndex,
+                    out _,
+                    out _,
+                    out _) &&
+                lastIndex == (uint)(count - 1);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveGlobalQualityWeight()
+        {
+            float weight = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.select(1f, weight, math.isfinite(weight)));
         }
 
         private bool EnsureBlackBox()
@@ -382,41 +510,145 @@ namespace Hecton8.Core.Data
                 _dataVault = vault;
                 _blackBoxHandle = default;
                 _blackBoxCursorHandle = default;
+                _btreeTelemetryHandle = default;
+                _btreeTelemetryCursorHandle = default;
+                _btreeTelemetryAccumulatorHandle = default;
             }
 
-            if (!_blackBoxHandle.IsCreated || _blackBoxHandle.Length < H8StaticDataFormat.TelemetryFrameCount)
+            if (_blackBoxHandle.BufferID == 0u ||
+                !vault.TryResolveHandle(in _blackBoxHandle, out NativeArray<H8StaticDataTelemetryEntry> ring) ||
+                !ring.IsCreated ||
+                ring.Length < H8StaticDataFormat.TelemetryFrameCount)
             {
-                _blackBoxHandle = vault.GetBufferHandle<H8StaticDataTelemetryEntry>(
+                _blackBoxHandle = vault.GetGenerationHandle<H8StaticDataTelemetryEntry>(
                     BufferID.StaticDataTelemetryRing,
                     H8StaticDataFormat.TelemetryFrameCount,
                     SystemID.CoreDataVault,
                     NativeArrayOptions.ClearMemory);
             }
 
-            if (!_blackBoxCursorHandle.IsCreated || _blackBoxCursorHandle.Length < 1)
+            if (_blackBoxCursorHandle.BufferID == 0u ||
+                !vault.TryResolveHandle(in _blackBoxCursorHandle, out NativeArray<int> cursor) ||
+                !cursor.IsCreated ||
+                cursor.Length < 1)
             {
-                _blackBoxCursorHandle = vault.GetBufferHandle<int>(
+                _blackBoxCursorHandle = vault.GetGenerationHandle<int>(
                     BufferID.StaticDataTelemetryCursor,
                     1,
                     SystemID.CoreDataVault,
                     NativeArrayOptions.ClearMemory);
             }
 
-            return _blackBoxHandle.IsCreated && _blackBoxCursorHandle.IsCreated;
+            return TryResolveBlackBox(out _, out _);
+        }
+
+        private bool EnsureBTreeTelemetry()
+        {
+            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            if (vault == null)
+                return false;
+
+            if (!ReferenceEquals(_dataVault, vault))
+            {
+                _dataVault = vault;
+                _blackBoxHandle = default;
+                _blackBoxCursorHandle = default;
+                _btreeTelemetryHandle = default;
+                _btreeTelemetryCursorHandle = default;
+                _btreeTelemetryAccumulatorHandle = default;
+            }
+
+            if (_btreeTelemetryHandle.BufferID == 0u ||
+                !vault.TryResolveHandle(in _btreeTelemetryHandle, out NativeArray<BTreeTelemetryEntry> ring) ||
+                !ring.IsCreated ||
+                ring.Length < H8StaticDataFormat.TelemetryFrameCount)
+            {
+                _btreeTelemetryHandle = vault.GetGenerationHandle<BTreeTelemetryEntry>(
+                    H8CacheBTree.BTreeTelemetryRingBufferId,
+                    H8StaticDataFormat.TelemetryFrameCount,
+                    SystemID.CoreDataVault,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            if (_btreeTelemetryCursorHandle.BufferID == 0u ||
+                !vault.TryResolveHandle(in _btreeTelemetryCursorHandle, out NativeArray<int> cursor) ||
+                !cursor.IsCreated ||
+                cursor.Length < 1)
+            {
+                _btreeTelemetryCursorHandle = vault.GetGenerationHandle<int>(
+                    H8CacheBTree.BTreeTelemetryCursorBufferId,
+                    1,
+                    SystemID.CoreDataVault,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            if (_btreeTelemetryAccumulatorHandle.BufferID == 0u ||
+                !vault.TryResolveHandle(in _btreeTelemetryAccumulatorHandle, out NativeArray<BTreeTelemetryAccumulatorDTO> accumulator) ||
+                !accumulator.IsCreated ||
+                accumulator.Length < 1)
+            {
+                _btreeTelemetryAccumulatorHandle = vault.GetGenerationHandle<BTreeTelemetryAccumulatorDTO>(
+                    H8CacheBTree.BTreeTelemetryAccumulatorBufferId,
+                    1,
+                    SystemID.CoreDataVault,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            return TryResolveBTreeTelemetry(out _, out _, out _);
+        }
+
+        private bool TryResolveBlackBox(
+            out NativeArray<H8StaticDataTelemetryEntry> ring,
+            out NativeArray<int> cursor)
+        {
+            ring = default;
+            cursor = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   _blackBoxHandle.BufferID != 0u &&
+                   _blackBoxCursorHandle.BufferID != 0u &&
+                   vault.TryResolveHandle(in _blackBoxHandle, out ring) &&
+                   ring.IsCreated &&
+                   ring.Length >= H8StaticDataFormat.TelemetryFrameCount &&
+                   vault.TryResolveHandle(in _blackBoxCursorHandle, out cursor) &&
+                   cursor.IsCreated &&
+                   cursor.Length >= 1;
+        }
+
+        private bool TryResolveBTreeTelemetry(
+            out NativeArray<BTreeTelemetryEntry> ring,
+            out NativeArray<int> cursor,
+            out NativeArray<BTreeTelemetryAccumulatorDTO> accumulator)
+        {
+            ring = default;
+            cursor = default;
+            accumulator = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   _btreeTelemetryHandle.BufferID != 0u &&
+                   _btreeTelemetryCursorHandle.BufferID != 0u &&
+                   _btreeTelemetryAccumulatorHandle.BufferID != 0u &&
+                   vault.TryResolveHandle(in _btreeTelemetryHandle, out ring) &&
+                   ring.IsCreated &&
+                   ring.Length >= H8StaticDataFormat.TelemetryFrameCount &&
+                   vault.TryResolveHandle(in _btreeTelemetryCursorHandle, out cursor) &&
+                   cursor.IsCreated &&
+                   cursor.Length >= 1 &&
+                   vault.TryResolveHandle(in _btreeTelemetryAccumulatorHandle, out accumulator) &&
+                   accumulator.IsCreated &&
+                   accumulator.Length >= 1;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void RecordTelemetry(uint stateHash, uint errorHash, uint requestedHash, long offset)
         {
-            if (!EnsureBlackBox())
+            if (!EnsureBlackBox() ||
+                !TryResolveBlackBox(out NativeArray<H8StaticDataTelemetryEntry> ring, out NativeArray<int> cursor))
+            {
                 return;
+            }
 
-            H8StaticDataTelemetryEntry* ring = (H8StaticDataTelemetryEntry*)_blackBoxHandle.ResolvePointer(_dataVault);
-            int* cursor = (int*)_blackBoxCursorHandle.ResolvePointer(_dataVault);
-            if (ring == null || cursor == null)
-                return;
-
-            int index = *cursor;
+            int index = cursor[0];
             if ((uint)index >= H8StaticDataFormat.TelemetryFrameCount)
                 index = 0;
 
@@ -432,9 +664,52 @@ namespace Hecton8.Core.Data
                 SchemaHash = IsOpen ? _header.SchemaHash : 0u,
                 FileByteLength = _mappedBytes,
                 LastOffset = offset,
-                ErrorHash = errorHash
+                ErrorHash = errorHash,
+                Reserved0 = _lastTreeDepth,
+                Reserved1 = _lastTreeKeysProcessed,
+                Reserved2 = _lastPrefetchTouchCount
             };
-            *cursor = (index + 1) % H8StaticDataFormat.TelemetryFrameCount;
+            cursor[0] = (index + 1) % H8StaticDataFormat.TelemetryFrameCount;
+            RecordBTreeTelemetry(stateHash == StateOpenHash && errorHash == 0u, errorHash, requestedHash, offset);
+        }
+
+        private void RecordBTreeTelemetry(bool found, uint errorHash, uint requestedHash, long offset)
+        {
+            if (!EnsureBTreeTelemetry() ||
+                !TryResolveBTreeTelemetry(
+                    out NativeArray<BTreeTelemetryEntry> ring,
+                    out NativeArray<int> cursor,
+                    out NativeArray<BTreeTelemetryAccumulatorDTO> accumulatorBuffer))
+            {
+                return;
+            }
+
+            uint safeOffset = offset >= 0L && offset <= uint.MaxValue ? (uint)offset : H8CacheBTree.NotFound;
+            uint frameIndex = (uint)Mathf.Max(0, Time.frameCount);
+            BTreeTelemetryAccumulatorDTO accumulator = accumulatorBuffer[0];
+            H8CacheBTree.AccumulateTelemetry(
+                ref accumulator,
+                frameIndex,
+                found,
+                requestedHash,
+                safeOffset,
+                _lastTreeDepth,
+                _lastTreeKeysProcessed,
+                _lastPrefetchTouchCount,
+                _btreeNodeCount,
+                _btreeRootOffset,
+                _lastSearchComputeTimeNs,
+                ResolveGlobalQualityWeight(),
+                errorHash);
+            accumulatorBuffer[0] = accumulator;
+
+            BTreeTelemetryAccumulatorDTO immediate = accumulator;
+            immediate.Flags |= H8CacheBTree.BTreeTelemetryImmediateSampleFlag;
+            int index = cursor[0];
+            if ((uint)index >= H8StaticDataFormat.TelemetryFrameCount)
+                index = 0;
+            ring[index] = H8CacheBTree.BuildTelemetryEntry(in immediate);
+            cursor[0] = (index + 1) % H8StaticDataFormat.TelemetryFrameCount;
         }
 
         private static class MissingRecord<T> where T : unmanaged

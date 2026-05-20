@@ -101,8 +101,6 @@ namespace Hecton8.UI
         private const float SlowDecodeDumpThresholdMs = 0.5f;
         private const BufferID SubtitleCueStateBufferId = (BufferID)15070550;
         private const BufferID SubtitleCueTelemetryBufferId = (BufferID)15070551;
-        private const BufferID SubtitleAudioFrameClockBufferId = (BufferID)15070552;
-        private const BufferID SubtitleDebugScratchBufferId = (BufferID)15070553;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_BABEL_SURGEON.bin";
         private const string DumpAgentRelativePath = "Docs/AgentLogs/Dump_SHINOBU_150.bin";
 
@@ -206,8 +204,9 @@ namespace Hecton8.UI
                 Cues = (SubtitleCueDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(cues),
                 CueCount = MaxSubtitleCueCount
             };
-            // Cold boot fence. Runtime frame updates use dispatcher-chained cue evaluation.
-            clearJob.Schedule(MaxSubtitleCueCount, 32).Complete();
+            // COLD SYNC JOB: first-use cue sanitation must finish before runtime signal ingestion sees the buffer.
+            for (int i = 0; i < MaxSubtitleCueCount; i++)
+                clearJob.Execute(i);
             s_nextCueSlot = 0;
             s_activeCueCount = 0;
             s_initialized = true;
@@ -563,8 +562,10 @@ namespace Hecton8.UI
 
         private static JobHandle ScheduleCueEvaluation(JobHandle dependsOn)
         {
-            if (s_pendingCueEvaluationActive ||
-                !TryResolveCueBuffer(out NativeArray<SubtitleCueDTO> cues))
+            if (s_pendingCueEvaluationActive)
+                return JobHandle.CombineDependencies(dependsOn, s_pendingCueEvaluationHandle);
+
+            if (!TryResolveCueBuffer(out NativeArray<SubtitleCueDTO> cues))
             {
                 return dependsOn;
             }
@@ -593,9 +594,9 @@ namespace Hecton8.UI
             if (!s_pendingCueEvaluationHandle.IsCompleted)
                 return false;
 
-            // [BLOCKING_SYNC_POINT] Non-blocking fence: IsCompleted was true before Complete().
-            s_pendingCueEvaluationHandle.Complete();
-            s_pendingCueEvaluationHandle = default;
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref s_pendingCueEvaluationHandle))
+                return false;
+
             s_pendingCueEvaluationActive = false;
             RefreshActiveCueCount();
             return true;
@@ -734,7 +735,7 @@ namespace Hecton8.UI
         public struct EvaluateSubtitleCuesJob : IJobParallelFor
         {
             // SAFETY_JUSTIFICATION_PARAGRAPH_1:
-            // Cues points to a GlobalDataVault-owned SubtitleCueDTO buffer requested by BufferID.BabelSubtitleCueState.
+            // Cues points to a GlobalDataVault-owned SubtitleCueDTO buffer requested by SubtitleCueStateBufferId.
             // The job receives CueCount bounded by the allocated NativeArray length and never touches memory outside
             // [0, CueCount). Unity safety cannot express the ref-in-place requirement from the batch prompt.
             // SAFETY_JUSTIFICATION_PARAGRAPH_2:
@@ -744,7 +745,7 @@ namespace Hecton8.UI
             // SAFETY_JUSTIFICATION_PARAGRAPH_3:
             // Each parallel index owns exactly one cue slot. There is no cross-index aliasing, and the only mutable
             // fields are CurrentProgress and Flags inside that index's DTO.
-            [NativeDisableUnsafePtrRestriction] public SubtitleCueDTO* Cues;
+            [NoAlias, NativeDisableUnsafePtrRestriction] public SubtitleCueDTO* Cues;
             public int CueCount;
             public uint AudioFrameClock;
             public uint SampleRate;
@@ -780,10 +781,10 @@ namespace Hecton8.UI
             }
         }
 
-        [BurstCompile(CompileSynchronously = true)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ClearSubtitleCueFlagsJob : IJobParallelFor
         {
-            [NativeDisableUnsafePtrRestriction] public SubtitleCueDTO* Cues;
+            [NoAlias, NativeDisableUnsafePtrRestriction] public SubtitleCueDTO* Cues;
             public int CueCount;
 
             public void Execute(int index)
@@ -815,15 +816,17 @@ namespace Hecton8.UI
                 in DispatcherJobContext context,
                 JobHandle dependsOn)
             {
-                return dependsOn;
+                return ScheduleCueEvaluation(dependsOn);
             }
 
             public void PostSimulationTick(in DispatcherTimingDTO timing)
             {
+                TryCompletePendingCueEvaluation();
             }
 
             public void VisualSyncTick(in DispatcherTimingDTO timing)
             {
+                TryCompletePendingCueEvaluation();
             }
         }
     }

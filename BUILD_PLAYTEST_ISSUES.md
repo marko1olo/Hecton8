@@ -1,21 +1,37 @@
-# HECTON-8 — BUILD / PLAYTEST ISSUES LEDGER
+# HECTON-8 - BUILD / PLAYTEST ISSUES LEDGER
 
 Status: `PENDING VERIFICATION`
 Ledger Start Date: `2026-04-05`
+
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
+## 2026-05-20 R45 Root/Architecture Actuality Boundary
+This ledger is active only where it agrees with:
+
+- `Docs/README.md`
+- `Docs/DOC_GOVERNANCE.md`
+- `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+- current source files
+- fresh verification logs and artifacts
+
+R45 root/architecture R43/R44 residue/proof-artifact/source-counter correction is the latest local static DOC_GLOBAL boundary for architecture/root documentation: `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 ## Purpose
 
 This file tracks confirmed build and playtest observations.
 
-2026-05-15 current-state boundary:
+2026-05-20 current-state boundary:
 
+- Read `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`, then `Docs/Reports/2026-05-20_DOCUMENTATION_R44_ROOT_ARCHITECTURE_INTERNAL_RESIDUE_EXACT_ROUTE_FIELDS_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R43_ROOT_ARCHITECTURE_ROUTE_CARD_AND_COUNTER_RESIDUE_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R42_ROOT_ARCHITECTURE_COUNTER_AND_ROUTE_BOUNDARY_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R41_ROOT_ARCHITECTURE_GLOBAL_AUTHORITY_INTERNAL_RESIDUE_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R40_ROOT_ARCHITECTURE_R38_RESIDUE_AND_COUNTER_REFRESH_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R39_ROOT_ARCHITECTURE_AUTHORITY_COUNTER_AND_PROOF_WORDING_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R38_ROOT_ARCHITECTURE_SOURCE_COUNTER_DRIFT_AND_BOUNDARY_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R37_ROOT_ARCHITECTURE_ARTIFACT_PATHS_AND_COUNTERS_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R36_ROOT_ARCHITECTURE_AUTHORITY_SPINE_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R35_ROOT_ARCHITECTURE_R4_AND_COUNTER_RESIDUE_LOCAL.md`, and `Docs/Reports/2026-05-19_DOCUMENTATION_R34_ROOT_ARCHITECTURE_SOURCE_COUNTER_REFRESH_LOCAL.md` before using this ledger for current root/architecture/source-counter/proof-wording truth. This ledger is subordinate to current source and fresh verification artifacts.
 - Read `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` before using this ledger for current project truth. May 11 reports remain historical where the May 13 DOC_AUDIT override conflicts.
 - This ledger records build/playtest observations and coding follow-ups; it is not a global runtime certification report.
+- Dated entries that say compile/pass/returned `0` without a fresh artifact path, command, timestamp, environment, and output are capture-time report text only; they are not current Unity import, Play Mode, profiler, GCMonitor, player build, save/load, platform, analytics, or visual proof.
 - Items marked `[c]` are code-closed only until build/user proof confirms them.
 - If this file disagrees with current source, console, profiler, or fresh user evidence, the newer evidence wins.
 - 2026-05-13 DOC_AUDIT filesystem check did not find `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt` or `.log`. Treat the May 11 compile-success line as stale report text until the artifact is restored or replaced. It is not current build proof and not player-build, Play Mode, Unity Console, profiler, GCMonitor, scene-wiring, visual-quality, or user-playtest proof.
-- 2026-05-15 current-disk proof: latest observed `Docs/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_224641_CurrentDisk53.log` reports `Hecton8.Core.csproj` CLI compile `EXIT=0`, `Build succeeded`, `0 Warning(s)`, `0 Error(s)`; latest observed `Docs/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_224426_CurrentDiskBudgetGate22.json` reports H-Phi static budget `EXIT=0` with `GlobalRegistrySurface=5060/5060`. These are not player-build, live run, Play Mode, profiler, user-playtest, or visual acceptance evidence.
+- 2026-05-15 archived CLI/static evidence exists at `Docs/Archive/Batch007/AgentLogs/Build_INTEGRATION_ASSEMBLY_SURGEON_20260515_224641_CurrentDisk53.log` and `Docs/Archive/Batch007/AgentLogs/HPhi_INTEGRATION_ASSEMBLY_SURGEON_20260515_224426_CurrentDiskBudgetGate22.json`; active `Docs/AgentLogs/...` copies are absent. Treat these as historical CLI/static evidence only, not current build, player-build, live run, Play Mode, profiler, user-playtest, or visual acceptance proof.
 - 2026-05-19 global authority boundary: any issue or code-closed item involving `GlobalRegistry`, `SignalBus<T>`, `GlobalSignals`, `HectonEventBus`, or `GlobalDataVault` must cite `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md`; setup work must follow `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_SETUP_PLAYBOOK.md`; new/changed global routes must satisfy `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_OPERATING_MODEL.md` and `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_ROUTE_CARD_TEMPLATE.md`; migration/review work must cite `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_MIGRATION_LEDGER.md`.
+- 2026-05-19 first-20-minutes product gate: build/playtest entries should classify whether they affect `boot`, `world load`, `swim`, `resource`, `tool`, `craft/repair/build`, `hazard`, `save/load`, or `return`. Use `Docs/ARCHITECTURE/FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md` as the route contract and `Docs/ARCHITECTURE/FIRST_20_MINUTES_ROUTE_BRIEF.md` as the selected V0 Copper Wire route.
 - Current visual-realism doctrine is visual fake first; do not log simulation work as accepted without gameplay-correctness need and profiler/GC/memory proof.
 
 Rules:
@@ -25,6 +41,7 @@ Rules:
 - Do not mark anything fully solved without new evidence
 - Every item remains `PENDING VERIFICATION` until a new build or user check confirms the fix
 - Player build is the main arbiter, not editor feel
+- First 20 Minutes Copper Wire route proof is the main product arbiter, not subsystem count
 - Use `[c]` for code-fixed issues that are closed for current coding work but still await build or user confirmation
 - Do not reopen `[c]` issues for new coding work unless new logs, build evidence, or user verification proves the fix is incomplete or regressed
 - Use `[x]` only after new proof from build, live run, or explicit user confirmation
@@ -84,7 +101,7 @@ Rules:
 - Next Step: build swim verification while rotating camera across the surface
 
 - Did: diagnosed live runtime mismatch at the waterline (`Atmosphere=UNDERWATER` while `Visuals=false`, `Movement=false`, `Survival depth≈0`) and replaced it with one shared hysteresis contract based on `HectonPlayerMovement.CurrentDepth` for atmosphere, underwater visuals, and survival.
-- Result: editor runtime no longer splits state at the surface boundary; current readback keeps `Atmosphere=surface`, `Visuals=false`, `Survival depth≈0.0049` on the same near-surface frame instead of contradictory surface/underwater states.
+- Result: capture-time editor readback text indicated the surface boundary no longer split state; it kept `Atmosphere=surface`, `Visuals=false`, `Survival depth≈0.0049` on the same near-surface frame instead of contradictory surface/underwater states.
 - Failed: build verification not run yet; could not force a scripted underwater transition sweep because Unity MCP runtime code execution fails on this machine (`mono.exe: filename or extension is too long`).
 - Broke: no compile errors from the patch; console still shows unrelated warnings from `Dynamic Decals` and one generic `Leak Detected : Persistent allocates 8 individual allocations` warning after recompilation.
 - Remaining: real swim test in player build while rotating the camera across the surface; confirm hitch is gone under build timing, not just editor runtime. Closed for coding unless new evidence reopens it.
@@ -296,10 +313,10 @@ Rules:
 - Next Step: keep the giant huge, keep the new giant-anchored veil, verify it in build and across day/night states, and decide whether horizon compression should become a weather-state dial instead of one static default
 
 - Did: traced the actual render order and found the root cause in the celestial camera path instead of size alone: `SpaceCamera` renders the `Celestial` layer as the base pass, and that same layer contains both `Sky_System/Sphere` and `GasGiant_Aegir`, so the existing sky dome clouds never draw any atmospheric veil over the gas giant. The first pass used a cloud/haze overlay shell, but the user rejected it, and then correctly identified the deeper bug: a camera-centered overlay sphere will always drift against the giant under lateral camera motion. Reworked the solution into the correct place: `SG_GasGiant_Master.shader` now applies the distance veil directly on the giant using the fragment view ray, sky-linked color, and `NightBlend`; `HectonCelestialEngine` now feeds the giant the same live sky colors as the rest of the atmosphere. After that, the remaining defect was no longer giant scale but horizon balance, so the next pass was moved to the actual source of truth: `HectonCelestialEngine` now compresses horizon luminance before pushing colors into both the sky and the gas giant, and `Mat_GasGiant` now carries a stronger horizon extinction curve so the lower arc loses contrast into the same atmospheric band instead of sitting on top of it. This pass adds the missing architectural layer for the future cloud problem: a separate soft `celestial occlusion` field in `SG_GasGiant_Master.shader`, sampled from the shared sky cloud atlas at low frequency and used only as optical transmittance/detail loss, not as the visible cloud layer itself. The legacy `Sphere_CloudOverlay` object is disabled in the live scene.
-- Result: user reported the giant now looks much better. The atmospheric softening is now anchored to the giant instead of a fake disc in front of the camera, so the left/right edge inconsistency from the overlay patch is gone in the current live scene. The follow-up pass reduces the chalk-white horizon and makes the giant dissolve harder at the waterline, so the lower arc reads less like a clean sticker edge. The new soft occlusion field avoids the old giant-vs-cloud contradiction: celestial objects can now lose transmittance from atmospheric structure without having the ugly visible cloud shapes stamped directly on them. Scene-view and `SpaceCamera` readback after switching the occlusion field to spherical UV no longer show the earlier vertical-streak artifact from horizon-projected UVs.
+- Result: user reported the giant now looks much better. The atmospheric softening is now anchored to the giant instead of a fake disc in front of the camera, so the left/right edge inconsistency from the overlay patch is gone in the capture-time live scene. The follow-up pass reduces the chalk-white horizon and makes the giant dissolve harder at the waterline, so the lower arc reads less like a clean sticker edge. The new soft occlusion field avoids the old giant-vs-cloud contradiction: celestial objects can now lose transmittance from atmospheric structure without having the ugly visible cloud shapes stamped directly on them. Scene-view and `SpaceCamera` readback after switching the occlusion field to spherical UV no longer show the earlier vertical-streak artifact from horizon-projected UVs.
 - Result Addendum: the next objective readback showed a second issue after the first haze wins: the lower half of the giant was flattening into an overly uniform lavender plate, while the left horizon band was still too white. The latest pass narrows the giant extinction into a true horizon band instead of a broad half-disc wash, restores more structure in the middle of the planet, and cools the sky horizon material directly so the background no longer blows out into a near-white wall.
-- Result Addendum: the follow-up pass split the problem one step further into `horizon band` and `bottom arc`. That preserves the upper and middle structure while letting the very lowest edge merge harder into the horizon. Current scene-view and `SpaceCamera` readback now match the intended shape more closely: top remains readable, middle is moderated, and the bottom arc is the part that gets eaten first.
-- Result Addendum: the next pass tightened the `bottom arc` itself with a steeper response curve and slightly stronger veil/desaturation values. This keeps the extra extinction concentrated at the very edge instead of bleeding back into the middle of the disc. Current readback shows the lowest edge merging harder while the upper and middle zones remain readable.
+- Result Addendum: the follow-up pass split the problem one step further into `horizon band` and `bottom arc`. That preserves the upper and middle structure while letting the very lowest edge merge harder into the horizon. Capture-time scene-view and `SpaceCamera` readback now match the intended shape more closely: top remains readable, middle is moderated, and the bottom arc is the part that gets eaten first.
+- Result Addendum: the next pass tightened the `bottom arc` itself with a steeper response curve and slightly stronger veil/desaturation values. This keeps the extra extinction concentrated at the very edge instead of bleeding back into the middle of the disc. Capture-time readback showed the lowest edge merging harder while the upper and middle zones remain readable.
 - Result Addendum: the next objective gameplay screenshot exposed the last remaining shape error more clearly: the very bottom center was improving, but the lower side silhouette still read as a clean circular arc. The giant shader now welds not only the bottom center but the lower horizon-facing limb as a soft crescent, suppressing rim light and pushing that narrow silhouette strip into the same haze color as the horizon band. This is the correct physical shape for long atmospheric path length: not a flat strip, but a lower edge crescent.
 - Result Addendum: a further coefficient pass pushed that lower horizon-facing limb crescent harder by reducing local detail/contrast and increasing haze tint along the side silhouette, not just at the bottom-center strip. `SpaceCamera` readback now shows the lower-left arc less clean than before, although the weld is still not absolute.
 - Result Addendum: after the lower edge was pushed hard enough, a second regression appeared above the horizon: the bottom weld held, but the zone just above it became too clean again and the atmosphere stopped reading except at the waterline. The giant shader now has a separate `air-mass shoulder` between the narrow horizon weld and the cleaner upper disc. This shoulder reduces detail, saturation, and contrast in the lower-mid band without collapsing the top third into a flat wash.
@@ -615,7 +632,7 @@ After each new build, ask one short question:
 - Need In-World Swim Check: no
 - Why: `GasGiantRotationDriver.Tick()` was paying a per-tick `EnsureRendererResources()` guard that could still hit `GetComponent<Renderer>()` in runtime fallback paths
 - Evidence:
-  - `Assets/_Project/Scripts/GasGiantRotationDriver.cs`
+  - Historical/pending source anchor: `Assets/_Project/Scripts/GasGiantRotationDriver.cs` is absent in the current checkout; do not treat this item as current source proof until a replacement source path or artifact is linked.
   - renderer/resource resolution now lives in `Awake`, `OnEnable`, and editor-only `OnValidate`
   - `Tick()` now only early-outs on missing `_planetRenderer` and updates the MPB rotation value
 - Problems:
@@ -944,7 +961,7 @@ After each new build, ask one short question:
   - editor thumbnail texture cache is now bounded and evicts least-recently-used textures immediately
 - Problems:
   - first access to an evicted thumbnail now reloads from disk, so very large slot lists may trade some IO for bounded RAM
-  - compile truth is clean, but live memory slope still needs a real save-window session
+  - capture-time compile note for touched files is clean, but no linked current artifact is attached here; live memory slope still needs a real save-window session
 - Short Comment: removed unbounded thumbnail retention without changing thumbnail load/delete ownership
 - Next Step: open Save Slot Manager, scroll through many slots, then watch whether RAM plateaus instead of climbing
 
@@ -958,7 +975,7 @@ After each new build, ask one short question:
   - `Assets/_Project/Scripts/Visor/VisorHUDController.cs`
   - `ShouldTickInEditMode()` now keeps editor ticking only for dirty material state, unresolved refs, or explicit edit-mode pose sync
   - `OnEnable()` / `OnValidate()` now evaluate whether edit tick should exist instead of subscribing unconditionally
-  - fresh Unity compile/readback after this pass returned `0` console errors/warnings from touched files
+  - capture-time Unity compile/readback text after this pass reported `0` console errors/warnings from touched files; no linked current artifact is attached here
 - Problems:
   - if some future edit-mode preview invalidation path forgets to re-arm, preview can look stale until the next explicit validate/change
   - live memory improvement is still unproven without an hour-scale idle sample
@@ -977,7 +994,7 @@ After each new build, ask one short question:
   - `Assets/_Project/Scripts/HectonCelestialEngine.cs`
   - all three editor tick paths now early-out when `InternalEditorUtility.isApplicationActive` is false
   - `HectonUnderwaterVisuals.ResolveEditorCamera()` now prefers cached SceneView/game cameras and retries `Camera.main` only on a bounded interval instead of every editor update
-  - fresh Unity compile/readback after this pass returned `0` console errors/warnings from touched files
+  - capture-time Unity compile/readback text after this pass reported `0` console errors/warnings from touched files; no linked current artifact is attached here
 - Problems:
   - when Unity is unfocused, edit-mode atmosphere/underwater/celestial preview intentionally pauses until focus returns
   - live RAM slope improvement is still unproven without a long idle sample
@@ -1073,10 +1090,10 @@ After each new build, ask one short question:
 - Result Addendum: the HUD vertical readout path no longer cross-polls underwater visuals for temperature estimation, so depth-driven visor telemetry stays on its own cheap owner signal and remains valid even when survival is unavailable.
 - VRAM Addendum: sky / gas-giant texture imports were intentionally left untouched. `HectonCelestialEngine` now detaches its own celestial texture references only below `1000 m`, so deep-water runtime can drop sky-sphere, day/night skybox, blended skybox cubemap, and gas-giant material residency without changing authored texture sizes or shallow-water visuals.
 - VRAM Addendum: current live `RT RED` snapshot is coming from idle unfocused editor, not play mode. `VisorHUDController` now suspends its edit-mode projection preview when the Unity editor loses focus: it unbinds the HUD camera target texture, disables the HUD preview camera, releases any owned runtime RT, and restores the projection only when focus returns. This is an editor-only sleep path; play mode and shallow runtime visor behavior are unchanged.
-- VRAM Addendum: the next proven editor-side render owner is URP decals, not first-party TAA. Live scene inspection showed `0` `DecalProjector` objects and no active `DynamicDecals` components, while `PC_Renderer.asset` still keeps `DecalRendererFeature` active in `DBuffer` mode. The package feature now fail-closes when `m_DecalEntityManager.chunkCount == 0`, so empty-decals cameras stop enqueuing the `CopyDepth + DBuffer + ForwardEmissive` chain at all.
+- VRAM Addendum: the next observed editor-side render-owner candidate is URP decals, not first-party TAA. Capture-time scene inspection text showed `0` `DecalProjector` objects and no active `DynamicDecals` components, while `PC_Renderer.asset` still keeps `DecalRendererFeature` active in `DBuffer` mode. The package feature now fail-closes when `m_DecalEntityManager.chunkCount == 0`, so empty-decals cameras stop enqueuing the `CopyDepth + DBuffer + ForwardEmissive` chain at all.
 - Result Addendum: this is not a project-settings change and not a texture downgrade. It is an owner-local render-feature suppression path for the exact case where there are no registered decal entities to draw.
 - VRAM Addendum: the next editor-side owner cut now hits unfocused non-game editor cameras directly. `ScreenSpaceAmbientOcclusion`, `ScreenSpaceShadows`, `ShapesRenderFeature`, and `DecalRendererFeature` now all fail-close for non-`Game` cameras when the Unity editor is unfocused, so SceneView / Preview / inspector-preview cameras stop enqueuing those feature passes while nobody is looking at the editor.
-- Result Addendum: after the compile blocker was neutralized and the guards actually entered the live domain, the unfocused editor snapshot moved from the pre-pass high-water mark of `981` render textures / `~2051 MB` graphics driver memory to a repeated post-reload snapshot of `978` render textures / `~1687-1714 MB` graphics driver memory. This is only a partial reduction and `RT RED` remains open.
+- Result Addendum: capture-time editor snapshot text reported movement from the pre-pass high-water mark of `981` render textures / `~2051 MB` graphics driver memory to a repeated post-reload snapshot of `978` render textures / `~1687-1714 MB` graphics driver memory. No player build/profiler artifact is linked here; this is only a partial reduction and `RT RED` remains open.
 - Failed: no new swim/build proof yet that these domains now read correctly in-world; this is code truth only.
 - Failed: `render_textures_bytes` is still about `1.49 GB` in idle unfocused editor and `RT RED` is still unresolved. The new guards reduced editor-side pressure, but they did not identify or clear the full retained RT owner set.
 - Runtime Addendum: `HectonUnderwaterVisuals` was still leaving the player camera stack's `SpaceCamera` alive all the way into aphotic depths even though the vertical path already owns the underwater transition and `SpaceCamera` only exists to render the celestial layer. It now zeros `SpaceCamera.cullingMask` below `1000 m` while underwater and restores the original celestial mask on return, so deep water stops paying that sky-layer render path without touching shallow-water behavior or the camera stack contract.

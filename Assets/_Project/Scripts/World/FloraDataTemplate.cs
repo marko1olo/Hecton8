@@ -65,7 +65,7 @@ namespace Hecton8.World
             Fan = 4
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 56)]
+        [StructLayout(LayoutKind.Sequential, Size = 56)]
         public struct RuntimeDescriptor
         {
             public int StableHashId;

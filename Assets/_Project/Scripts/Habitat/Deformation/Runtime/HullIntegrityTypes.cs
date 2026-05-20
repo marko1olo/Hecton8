@@ -348,7 +348,7 @@ namespace Hecton8.Habitat.Deformation
         [FieldOffset(60)] public uint StateHash;
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct HullIntegrityEmergencyMockJob : IJob
     {
         [NoAlias] public NativeArray<BaseModuleStateDTO> Modules;
@@ -429,7 +429,7 @@ namespace Hecton8.Habitat.Deformation
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct HullIntegrityMockDepthJob : IJob
     {
         [NoAlias] public NativeArray<MockDepthSignal> DepthSignal;
@@ -460,7 +460,7 @@ namespace Hecton8.Habitat.Deformation
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct HullIntegrityDamageJob : IJob
     {
         [NoAlias] public NativeArray<BaseModuleStateDTO> Modules;
@@ -539,7 +539,7 @@ namespace Hecton8.Habitat.Deformation
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct HullIntegritySipAggregationJob : IJob
     {
         [NoAlias] public NativeArray<BaseModuleStateDTO> Modules;
@@ -617,7 +617,7 @@ namespace Hecton8.Habitat.Deformation
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct HullIntegrityHydrostaticPressureJob : IJob
     {
         [NoAlias] public NativeArray<BaseModuleStateDTO> Modules;
@@ -703,7 +703,7 @@ namespace Hecton8.Habitat.Deformation
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct HullIntegrityRepairDentJob : IJob
     {
         [NoAlias] public NativeArray<HullDentDTO> Dents;
@@ -783,7 +783,7 @@ namespace Hecton8.Habitat.Deformation
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct HullIntegritySubmarineCrushDentJob : IJob
     {
         [NoAlias] public NativeArray<HullDentDTO> Dents;
@@ -859,7 +859,7 @@ namespace Hecton8.Habitat.Deformation
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct HullIntegrityArenaBfsProofJob : IJob
     {
         [NoAlias] public NativeArray<int> Queue;
@@ -876,7 +876,7 @@ namespace Hecton8.Habitat.Deformation
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct GenerateMockHullImpactsJob : IJobParallelFor
     {
         [NoAlias] public NativeArray<HullImpactDTO> Impacts;
@@ -933,7 +933,7 @@ namespace Hecton8.Habitat.Deformation
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal unsafe struct AccumulateHullDamageJob : IJob
     {
         [ReadOnly] [NoAlias] public NativeArray<HullImpactDTO> Impacts;
@@ -1136,7 +1136,7 @@ namespace Hecton8.Habitat.Deformation
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal unsafe struct DecayDeformationJob : IJob
     {
         [NoAlias] public NativeArray<DeformationStateDTO> States;
@@ -1238,7 +1238,7 @@ namespace Hecton8.Habitat.Deformation
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal unsafe struct BuildBreachJetsJob : IJob
     {
         [ReadOnly] [NoAlias] public NativeArray<DeformationStateDTO> States;
@@ -1305,7 +1305,7 @@ namespace Hecton8.Habitat.Deformation
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal unsafe struct ApplyPressureBucklingJob : IJob
     {
         [NoAlias] public NativeArray<DeformationStateDTO> States;
@@ -1414,7 +1414,7 @@ namespace Hecton8.Habitat.Deformation
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal unsafe struct ClearDeformationActiveFlagsJob : IJobParallelFor
     {
         [NoAlias] public NativeArray<DeformationStateDTO> States;
@@ -1429,7 +1429,7 @@ namespace Hecton8.Habitat.Deformation
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal unsafe struct HullIntegrityMemClearJob : IJob
     {
         [NativeDisableUnsafePtrRestriction] public void* Ptr;
@@ -1442,7 +1442,7 @@ namespace Hecton8.Habitat.Deformation
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal unsafe struct HullIntegrityMappedCopyJob : IJob
     {
         [NativeDisableUnsafePtrRestriction] [NoAlias] public void* Source;

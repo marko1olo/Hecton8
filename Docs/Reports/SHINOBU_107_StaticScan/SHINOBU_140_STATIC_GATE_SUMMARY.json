@@ -1,0 +1,84 @@
+{
+  "agent": "SHINOBU_140",
+  "baseline": "Docs/Reports/SHINOBU_140_STATIC_GATE_BASELINE.json",
+  "evidence": "STATIC_SOURCE/PY_TOOL/CI_FALLBACK",
+  "ownerMap": "Docs/Reports/SHINOBU_140_STATIC_GATE_OWNER_MAP.json",
+  "regressionAttribution": "Docs/Reports/SHINOBU_140_STATIC_GATE_REGRESSION_ATTRIBUTION.json",
+  "regressionCritical": 1,
+  "regressionWarnings": 0,
+  "scanners": {
+    "AUP_Compliance": {
+      "criticalCount": 22,
+      "filesScanned": 1580,
+      "warningCount": 0
+    },
+    "Burst_Job_Directives": {
+      "criticalCount": 656,
+      "filesScanned": 1580,
+      "warningCount": 0
+    },
+    "Compile_Wall": {
+      "criticalCount": 85,
+      "filesScanned": 1782,
+      "warningCount": 0
+    },
+    "Dev_Virtualization": {
+      "criticalCount": 0,
+      "filesScanned": 1580,
+      "warningCount": 152
+    },
+    "Hot_Helper_Complete": {
+      "criticalCount": 0,
+      "filesScanned": 1580,
+      "warningCount": 0
+    },
+    "Hot_Helper_Registry_Polling": {
+      "criticalCount": 247,
+      "filesScanned": 1580,
+      "warningCount": 0
+    },
+    "Hot_Registry_Polling": {
+      "criticalCount": 0,
+      "filesScanned": 1580,
+      "warningCount": 0
+    },
+    "Mid_Frame_Complete": {
+      "criticalCount": 0,
+      "filesScanned": 1580,
+      "warningCount": 0
+    },
+    "Rollback_Fence_Compliance": {
+      "criticalCount": 0,
+      "filesScanned": 1580,
+      "warningCount": 0
+    },
+    "Runtime_Struct_Layout": {
+      "criticalCount": 570,
+      "filesScanned": 1580,
+      "warningCount": 0
+    },
+    "Self_Audit_Proof": {
+      "criticalCount": 0,
+      "filesScanned": 1,
+      "warningCount": 0
+    },
+    "Signal_Bus_Topology": {
+      "criticalCount": 0,
+      "filesScanned": 1580,
+      "warningCount": 0
+    },
+    "Static_Gate_Regression": {
+      "criticalCount": 1,
+      "filesScanned": 13,
+      "warningCount": 0
+    },
+    "Vault_Sovereignty": {
+      "criticalCount": 290,
+      "filesScanned": 1580,
+      "warningCount": 0
+    }
+  },
+  "status": "PENDING VERIFICATION",
+  "totalCritical": 1871,
+  "totalWarnings": 152
+}

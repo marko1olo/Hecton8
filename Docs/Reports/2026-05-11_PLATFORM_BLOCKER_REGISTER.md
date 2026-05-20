@@ -57,7 +57,7 @@ Fix class:
 | E05 | `ProjectSettings/XRSettings.asset`: only legacy `VR Device Disabled/User Alert` keys. |
 | E06 | `ProjectSettings/ProjectSettings.asset`: `m_BuildTargetVRSettings: []`. |
 | E07 | `ProjectSettings/QualitySettings.asset`: all three quality tiers exclude `Android` and `iPhone`. |
-| E08 | No `Assets/AddressableAssetsData` directory found. |
+| E08 | 2026-05-11 scan found no `Assets/AddressableAssetsData` directory; 2026-05-19 filesystem supersession: directory exists but contains 0 files/settings/groups. |
 | E09 | `Assets/_Project/Scripts/Hecton8.Core.asmdef`: `UNITY_ADDRESSABLES_EXIST` via Addressables version define. |
 | E10 | Runtime code uses Addressables in `GameBootstrapper`, `ItemCatalog`, and `AssetLifecycleGovernor`. |
 | E11 | `AsyncLoadHelper` states runtime Resources/Addressables loading is disabled and fails requests. |

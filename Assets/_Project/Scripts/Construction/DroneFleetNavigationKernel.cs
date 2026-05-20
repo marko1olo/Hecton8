@@ -90,6 +90,24 @@ namespace Hecton8.Construction
         [FieldOffset(12)] public uint StartInstance;
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct DroneChassisSpecDTO
+    {
+        [FieldOffset(0)] public uint TypeHash;
+        [FieldOffset(4)] public uint Flags;
+        [FieldOffset(8)] public float MaxSpeed;
+        [FieldOffset(12)] public float BatteryCapacity;
+        [FieldOffset(16)] public float BatteryDrainRate;
+        [FieldOffset(20)] public float RepairSpeed;
+        [FieldOffset(24)] public float CargoCapacity;
+        [FieldOffset(28)] public float MiningHoldSeconds;
+        [FieldOffset(32)] public float SdfRepulsionScale;
+        [FieldOffset(36)] public float Reserved0;
+        [FieldOffset(40)] public ulong _pad0;
+        [FieldOffset(48)] public ulong _pad1;
+        [FieldOffset(56)] public ulong _pad2;
+    }
+
     internal static class DroneFleetLayoutSentinel
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -126,6 +144,25 @@ namespace Hecton8.Construction
         {
             return UnsafeUtility.SizeOf<DroneTaskDTO>() == 64 &&
                 UnsafeUtility.SizeOf<DroneProceduralIndirectArgsDTO>() == 16;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool ValidateDroneChassisSpecDTO()
+        {
+            return UnsafeUtility.SizeOf<DroneChassisSpecDTO>() == 64 &&
+                OffsetOf<DroneChassisSpecDTO>(nameof(DroneChassisSpecDTO.TypeHash)) == 0 &&
+                OffsetOf<DroneChassisSpecDTO>(nameof(DroneChassisSpecDTO.Flags)) == 4 &&
+                OffsetOf<DroneChassisSpecDTO>(nameof(DroneChassisSpecDTO.MaxSpeed)) == 8 &&
+                OffsetOf<DroneChassisSpecDTO>(nameof(DroneChassisSpecDTO.BatteryCapacity)) == 12 &&
+                OffsetOf<DroneChassisSpecDTO>(nameof(DroneChassisSpecDTO.BatteryDrainRate)) == 16 &&
+                OffsetOf<DroneChassisSpecDTO>(nameof(DroneChassisSpecDTO.RepairSpeed)) == 20 &&
+                OffsetOf<DroneChassisSpecDTO>(nameof(DroneChassisSpecDTO.CargoCapacity)) == 24 &&
+                OffsetOf<DroneChassisSpecDTO>(nameof(DroneChassisSpecDTO.MiningHoldSeconds)) == 28 &&
+                OffsetOf<DroneChassisSpecDTO>(nameof(DroneChassisSpecDTO.SdfRepulsionScale)) == 32 &&
+                OffsetOf<DroneChassisSpecDTO>(nameof(DroneChassisSpecDTO.Reserved0)) == 36 &&
+                OffsetOf<DroneChassisSpecDTO>(nameof(DroneChassisSpecDTO._pad0)) == 40 &&
+                OffsetOf<DroneChassisSpecDTO>(nameof(DroneChassisSpecDTO._pad1)) == 48 &&
+                OffsetOf<DroneChassisSpecDTO>(nameof(DroneChassisSpecDTO._pad2)) == 56;
         }
 
         private static int OffsetOf<T>(string fieldName)
@@ -644,7 +681,7 @@ namespace Hecton8.Construction
         public uint Reserved3;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 40)]
+    [StructLayout(LayoutKind.Sequential, Size = 48)]
     public struct DroneFleetAutomationStats
     {
         public int ActiveDrones;
@@ -654,9 +691,11 @@ namespace Hecton8.Construction
         public int TasksCompleted;
         public int LastAStarStatus;
         public int SteeringTickModulo;
+        public int ChassisSpecCount;
         public float AveragePathfindingTimeMs;
         public float SdfRepulsionStrength;
         public float AStarCellSize;
+        public float AverageBatteryPercent;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]

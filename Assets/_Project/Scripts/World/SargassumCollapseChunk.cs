@@ -15,7 +15,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
-    public sealed class SargassumCollapseChunk : MonoBehaviour, ITickable, IFixedTickable, IPoolable, IOriginShiftListener
+    public sealed class SargassumCollapseChunk : MonoBehaviour, ITickable, IFixedTickable, IPoolable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private const string ScrapPickupPrefabAssetPath = "Assets/_Project/Prefabs/Resources/Pickups/PFB_Resource_TitaniumScrap.prefab";
         private static readonly Vector3[] ScrapEjectDirections =
@@ -134,6 +134,9 @@ namespace Hecton8.World
         private bool _registeredScavengerHost;
         private bool _disintegrating;
         private bool _registeredFixedTick;
+        private bool _hotSwapRegistered;
+        private ObjectPoolManager _objectPool;
+        private SargassumGlobalDragManager _sargassumDrag;
         private readonly Collider[] _snagColliders = new Collider[8]; // COLD ALLOC: Collider[8] - bounded snag-target probe buffer for collapse chunks - owner: SargassumCollapseChunk
         // COLD ALLOC: ParticleSystem.Particle[192] - reusable world-space silt particle shift buffer - owner: SargassumCollapseChunk
         private ParticleSystem.Particle[] _siltTrailShiftParticles;
@@ -141,6 +144,7 @@ namespace Hecton8.World
         private void Awake()
         {
             ResolveRuntimeWiring(createFallbackTrail: true);
+            CacheRegistryServicesCold();
             EnsureSnagJoints();
             EnsureShiftBuffers();
 
@@ -230,7 +234,7 @@ namespace Hecton8.World
             if (_remainingLifetime > 0f)
                 return;
 
-            ObjectPoolManager poolManager = GlobalRegistry.ObjectPool;
+            ObjectPoolManager poolManager = _objectPool;
             if (poolManager != null)
                 poolManager.Despawn(gameObject);
         }
@@ -253,6 +257,7 @@ namespace Hecton8.World
         public void OnSpawn()
         {
             ResolveRuntimeWiring(createFallbackTrail: true);
+            CacheRegistryServicesCold();
             transform.localScale = _defaultLocalScale;
             _remainingLifetime = 0f;
             if (chunkRigidbody != null)
@@ -345,7 +350,7 @@ namespace Hecton8.World
             if (_cascadeImpactConsumed)
                 return;
 
-            SargassumGlobalDragManager dragManager = Hecton8.Core.GlobalRegistry.SargassumDrag;
+            SargassumGlobalDragManager dragManager = _sargassumDrag;
             if (dragManager != null)
                 dragManager.RegisterCollapseChunkImpact(contact.point, contact.normal, impactSpeedSq, _fragmentDepth + 1);
 
@@ -356,6 +361,7 @@ namespace Hecton8.World
         {
             TryUnregisterScavengerHost();
             TryUnregister();
+            TryUnregisterHotSwapListener();
             HectonFloatingOrigin.UnregisterListener(this);
         }
 
@@ -363,6 +369,7 @@ namespace Hecton8.World
         {
             TryUnregisterScavengerHost();
             TryUnregister();
+            TryUnregisterHotSwapListener();
             HectonFloatingOrigin.UnregisterListener(this);
         }
 
@@ -370,6 +377,9 @@ namespace Hecton8.World
         {
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
+
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
 
             if (_registeredTick)
             {
@@ -407,12 +417,63 @@ namespace Hecton8.World
             if (!_registeredFixedTick)
             {
                 HectonFloatingOrigin.UnregisterListener(this);
+                TryUnregisterHotSwapListener();
                 return;
             }
 
             GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
             _registeredFixedTick = false;
             HectonFloatingOrigin.UnregisterListener(this);
+            TryUnregisterHotSwapListener();
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _objectPool = GlobalRegistry.ObjectPool;
+            _sargassumDrag = GlobalRegistry.SargassumDrag;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.ObjectPool:
+                    _objectPool = currentService as ObjectPoolManager;
+                    break;
+                case GlobalRegistryServiceSlot.SargassumDragRuntime:
+                    if (_registeredScavengerHost && previousService is SargassumGlobalDragManager previousDrag)
+                        previousDrag.UnregisterSettledCollapseChunk(this);
+
+                    _sargassumDrag = currentService as SargassumGlobalDragManager;
+                    _registeredScavengerHost = false;
+                    if (CanHostScavengers)
+                        TryRegisterScavengerHost();
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (isActiveAndEnabled && _remainingLifetime > 0f)
+                        TryRegister();
+                    break;
+            }
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
@@ -763,7 +824,7 @@ namespace Hecton8.World
             if (_registeredScavengerHost)
                 return;
 
-            SargassumGlobalDragManager dragManager = Hecton8.Core.GlobalRegistry.SargassumDrag;
+            SargassumGlobalDragManager dragManager = _sargassumDrag;
             if (dragManager == null)
                 return;
 
@@ -775,7 +836,7 @@ namespace Hecton8.World
             if (!_registeredScavengerHost)
                 return;
 
-            SargassumGlobalDragManager dragManager = Hecton8.Core.GlobalRegistry.SargassumDrag;
+            SargassumGlobalDragManager dragManager = _sargassumDrag;
             if (dragManager != null)
                 dragManager.UnregisterSettledCollapseChunk(this);
 
@@ -789,7 +850,7 @@ namespace Hecton8.World
 
             _disintegrating = true;
             TryUnregisterScavengerHost();
-            ObjectPoolManager poolManager = GlobalRegistry.ObjectPool;
+            ObjectPoolManager poolManager = _objectPool;
             if (poolManager != null && scrapPickupPrefab != null)
             {
                 Vector3 origin = transform.position;

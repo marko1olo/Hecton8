@@ -3,6 +3,7 @@ using System.IO;
 using Hecton8.Cartography;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
 using Hecton8.SaveSystem;
@@ -36,7 +37,9 @@ namespace Hecton8.PDA
         private const int AupCellSizeMeters = HectonPhysicsContract.AupSectorSizeMetersInt;
         private const string NativeMemoryOwner = nameof(PlayerExplorationTracker);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
-        private const string CartographyDumpPath = "Docs/AgentLogs/Dump_CARTOGRAPHY_UX_LEAD.bin";
+        private const uint CartographyPreSimulationSystemHash = 0x53313350u;
+        private const uint CartographySimulationSystemHash = 0x53313349u;
+        private const uint CartographyPostSimulationSystemHash = 0x5331334Fu;
 
         [Header("References")]
         [Tooltip("Optional explicit player transform. When empty, the tracker resolves the current registry player.")]
@@ -54,11 +57,8 @@ namespace Hecton8.PDA
         private readonly PDAMarkerSnapshot[] _poiMarkerScratch = new PDAMarkerSnapshot[CartographyGridConstants.MaxPoiRevealPerSlowTick];
         private NativeBitArray _exploredChunkMask;
         private NativeList<int> _exploredBitIndices;
-        private NativeArray<ulong> _discoveredSectors;
-        private NativeArray<CartographyPoiRecord> _poiRecordScratch;
-        private NativeArray<int> _cartographyChangeScratch;
-        private NativeArray<CartographyBlackBoxEntry> _cartographyBlackBox;
-        private NativeQueue<MapRevealSignal> _pendingMapRevealSignals;
+        private IDataVault _cartographyVault;
+        private CartographyVaultHandles _cartographyHandles;
         private bool _registeredToTick;
         private bool _registeredToSlowTick;
         private bool _registeredToSave;
@@ -71,10 +71,24 @@ namespace Hecton8.PDA
         private bool _hasLastSampledAup;
         private int _lastBitIndex = -1;
         private int _lastCartographyBitIndex = -1;
-        private int _cartographyBlackBoxCursor;
         private uint _cartographyRevision;
         private uint _cartographyFrameIndex;
+        private bool _cartographyVaultReady;
         private bool _cartographyDumpedThisSession;
+        private CartographyDispatcherPhaseSystem _cartographyPreSimulationPhase;
+        private CartographyDispatcherPhaseSystem _cartographySimulationPhase;
+        private CartographyDispatcherPhaseSystem _cartographyPostSimulationPhase;
+        private bool _cartographyDispatcherRegistered;
+        private bool _cartographyDispatcherFrameScheduled;
+        private bool _cartographyDispatcherHasPlayerAup;
+        private CartographyAup _cartographyDispatcherPlayerAup;
+        private int _cartographyDispatcherPendingSignalCount;
+        private int _cartographyDispatcherPoiCount;
+        private uint _nextPoiRevealFrame;
+        private JobHandle _cartographyUploadHandle;
+        private bool _cartographyUploadPending;
+        private uint _cartographyUploadPendingRevision;
+        private int _cartographyUploadPendingCadence;
 
         /// <summary>Live registry-owned instance for PDA map systems.</summary>
         public static PlayerExplorationTracker Instance => GlobalRegistry.PlayerExploration;
@@ -113,6 +127,7 @@ namespace Hecton8.PDA
             TryRegisterService();
             TryRegisterWithTickManager();
             TryRegisterWithSlowTickManager();
+            TryRegisterCartographyDispatcher();
             TryRegisterWithSaveManager();
             TryRegisterSignalListeners();
             MapMagicBiomeEvents.Register(this);
@@ -124,6 +139,7 @@ namespace Hecton8.PDA
             InitializeExplorationMask();
             TryRegisterWithTickManager();
             TryRegisterWithSlowTickManager();
+            TryRegisterCartographyDispatcher();
             TryRegisterWithSaveManager();
             TryRegisterSignalListeners();
             ResolvePlayerTransform(force: true);
@@ -134,9 +150,11 @@ namespace Hecton8.PDA
         {
             MapMagicBiomeEvents.Unregister(this);
             UnregisterSignalListeners();
+            UnregisterCartographyDispatcher();
             UnregisterFromTickManager();
             UnregisterFromSlowTickManager();
             UnregisterFromSaveManager();
+            CompleteCartographyUploadJobForTeardown();
             TryUnregisterService();
         }
 
@@ -144,9 +162,11 @@ namespace Hecton8.PDA
         {
             MapMagicBiomeEvents.Unregister(this);
             UnregisterSignalListeners();
+            UnregisterCartographyDispatcher();
             UnregisterFromTickManager();
             UnregisterFromSlowTickManager();
             UnregisterFromSaveManager();
+            CompleteCartographyUploadJobForTeardown();
             TryUnregisterService();
             DisposeExplorationMask();
         }
@@ -174,6 +194,17 @@ namespace Hecton8.PDA
         public void SlowTick()
         {
             InitializeExplorationMask();
+            if (_cartographyUploadPending)
+            {
+                if (!TryResolveCartographyBuffers(out CartographyVaultBuffers uploadBuffers) ||
+                    !TryFinalizeCartographyUpload(uploadBuffers, out _, out _, out _))
+                {
+                    return;
+                }
+            }
+
+            if (_cartographyDispatcherRegistered)
+                return;
 
             CartographyAup playerCartographyAup = default;
             bool hasPlayerAup = TryResolvePlayerAup(out AbsoluteUniversePosition playerAup);
@@ -202,6 +233,180 @@ namespace Hecton8.PDA
                 _cartographyRevision++;
 
             RecordCartographyBlackBox(in playerCartographyAup, revealedSignalCount, revealedPoiCount, hasPlayerAup ? 1u : 0u);
+        }
+
+        private void CartographyPreSimulationTick(in DispatcherTimingDTO timing)
+        {
+            InitializeExplorationMask();
+            _cartographyDispatcherFrameScheduled = false;
+            _cartographyDispatcherPendingSignalCount = 0;
+            _cartographyDispatcherPoiCount = 0;
+            _cartographyDispatcherHasPlayerAup = false;
+            _cartographyDispatcherPlayerAup = default;
+
+            if (!TryResolveCartographyBuffers(out CartographyVaultBuffers buffers) ||
+                !buffers.Counters.IsCreated ||
+                buffers.Counters.Length == 0)
+            {
+                return;
+            }
+
+            if (_cartographyUploadPending &&
+                !TryFinalizeCartographyUpload(buffers, out _, out _, out _))
+            {
+                return;
+            }
+
+            if (TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
+            {
+                CartographyAup playerCartographyAup = ToCartographyAup(in playerAup);
+                if (CartographyGridMath.IsFinite(in playerCartographyAup))
+                {
+                    _cartographyDispatcherPlayerAup = playerCartographyAup;
+                    _cartographyDispatcherHasPlayerAup = true;
+                }
+                else
+                {
+                    DumpCartographyBlackBox();
+                }
+            }
+
+            CartographyTuningDTO tuning = ResolveCartographyTuning();
+            uint frame = _cartographyFrameIndex;
+            if (frame >= _nextPoiRevealFrame)
+            {
+                _cartographyDispatcherPoiCount = AppendPoiRevealSignals(in buffers, in tuning);
+                _nextPoiRevealFrame = frame + (uint)ResolvePoiRevealIntervalFrames(tuning.GlobalQualityWeight);
+            }
+
+            _cartographyDispatcherPendingSignalCount = StagePendingMapRevealSignals(buffers);
+        }
+
+        private JobHandle ScheduleCartographySimulation(
+            in DispatcherTimingDTO timing,
+            in DispatcherJobContext context,
+            JobHandle dependsOn)
+        {
+            if (!TryResolveCartographyBuffers(out CartographyVaultBuffers buffers) ||
+                !buffers.Counters.IsCreated ||
+                buffers.Counters.Length == 0)
+            {
+                return dependsOn;
+            }
+
+            CartographyTuningDTO tuning = ResolveCartographyTuning();
+            _cartographyDispatcherFrameScheduled = _cartographyDispatcherHasPlayerAup ||
+                                                   _cartographyDispatcherPendingSignalCount > 0;
+            if (!_cartographyDispatcherFrameScheduled)
+                return dependsOn;
+
+            ApplyCartographyFrameDiscoveryJob job = new ApplyCartographyFrameDiscoveryJob
+            {
+                DiscoveredSectors = buffers.DiscoveryWords,
+                SurfaceMaskWords = buffers.SurfaceMaskWords,
+                PendingSignals = buffers.PendingPings,
+                Counters = buffers.Counters,
+                PlayerAup = _cartographyDispatcherPlayerAup,
+                SurfaceThicknessMeters = tuning.SurfaceThicknessMeters,
+                GlobalQualityWeight = tuning.GlobalQualityWeight,
+                HasPlayerAup = _cartographyDispatcherHasPlayerAup ? 1 : 0,
+                PendingSignalCount = _cartographyDispatcherPendingSignalCount,
+                WordOffset = 0
+            };
+            return job.Schedule(dependsOn);
+        }
+
+        private void CartographyPostSimulationTick(in DispatcherTimingDTO timing)
+        {
+            if (!_cartographyDispatcherFrameScheduled)
+                return;
+
+            if (TryResolveCartographyBuffers(out CartographyVaultBuffers buffers) &&
+                buffers.Counters.IsCreated &&
+                buffers.Counters.Length > 0)
+            {
+                CartographyCounterDTO counter = buffers.Counters[0];
+                if (counter.Changed != 0)
+                {
+                    _lastCartographyBitIndex = counter.LastBitIndex == uint.MaxValue ? -1 : (int)counter.LastBitIndex;
+                    _cartographyRevision++;
+                }
+            }
+
+            uint stateFlags = _cartographyDispatcherHasPlayerAup ? 1u : 0u;
+            stateFlags |= 1u << 1;
+            int explicitSignalCount = math.max(0, _cartographyDispatcherPendingSignalCount - _cartographyDispatcherPoiCount);
+            RecordCartographyBlackBox(
+                in _cartographyDispatcherPlayerAup,
+                explicitSignalCount,
+                _cartographyDispatcherPoiCount,
+                stateFlags);
+            _cartographyDispatcherFrameScheduled = false;
+        }
+
+        private int AppendPoiRevealSignals(in CartographyVaultBuffers buffers, in CartographyTuningDTO tuning)
+        {
+            int appended = 0;
+            PDAMarkerRegistry markerRegistry = GlobalRegistry.PDAMarkers;
+            int markerCount = markerRegistry != null ? markerRegistry.CopyMarkers(_poiMarkerScratch, hudOnly: false) : 0;
+            int count = math.min(markerCount, CartographyGridConstants.MaxPoiRevealPerSlowTick);
+            for (int i = 0; i < count; i++)
+            {
+                PDAMarkerSnapshot marker = _poiMarkerScratch[i];
+                AbsoluteUniversePosition markerAup = marker.PositionAup;
+                CartographyAup markerCartographyAup = ToCartographyAup(in markerAup);
+                if (CartographyGridMath.IsFinite(in markerCartographyAup))
+                {
+                    MapRevealSignal signal = default;
+                    signal.Center = markerCartographyAup;
+                    signal.RadiusMeters = math.max(CartographyGridConstants.MacroCellSizeMeters, tuning.SonarPingRadiusMeters * 0.25f);
+                    signal.Flags = MapRevealSignalFlags.Poi;
+                    if (TryAppendMapRevealSignal(buffers, in signal))
+                        appended++;
+                }
+
+                _poiMarkerScratch[i] = default;
+            }
+
+            PersistentWorldRegistry persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
+            if (persistentWorldRegistry != null && appended < CartographyGridConstants.MaxPoiRevealPerSlowTick)
+            {
+                NativeArray<PersistentWorldDeltaRecord> persistentDeltas = persistentWorldRegistry.GetSaveSnapshotArray();
+                int chunkSizeMeters = math.max(1, persistentWorldRegistry.ChunkSizeMeters);
+                for (int i = 0;
+                     persistentDeltas.IsCreated &&
+                     i < persistentDeltas.Length &&
+                     appended < CartographyGridConstants.MaxPoiRevealPerSlowTick;
+                     i++)
+                {
+                    PersistentWorldDeltaRecord delta = persistentDeltas[i];
+                    if (!delta.IsValid || delta.IsDeleted)
+                        continue;
+
+                    AbsoluteUniversePosition position = delta.UnpackPosition(chunkSizeMeters);
+                    CartographyAup persistentCartographyAup = ToCartographyAup(in position);
+                    if (!CartographyGridMath.IsFinite(in persistentCartographyAup))
+                        continue;
+
+                    MapRevealSignal signal = default;
+                    signal.Center = persistentCartographyAup;
+                    signal.RadiusMeters = math.max(CartographyGridConstants.MacroCellSizeMeters, tuning.SonarPingRadiusMeters * 0.2f);
+                    signal.Flags = MapRevealSignalFlags.Poi;
+                    if (TryAppendMapRevealSignal(buffers, in signal))
+                        appended++;
+                    else
+                        break;
+                }
+            }
+
+            return appended;
+        }
+
+        private static int ResolvePoiRevealIntervalFrames(float globalQualityWeight)
+        {
+            float quality = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
+            float curve = quality * quality * (3f - (2f * quality));
+            return math.clamp((int)math.round(math.lerp(60f, 6f, curve)), 6, 60);
         }
 
         /// <summary>
@@ -445,24 +650,83 @@ namespace Hecton8.PDA
             out uint revision)
         {
             InitializeExplorationMask();
-            discoveredSectors = _discoveredSectors;
+            bool resolved = TryResolveCartographyBuffers(out CartographyVaultBuffers buffers);
+            discoveredSectors = resolved ? buffers.DiscoveryWords : default;
             axisLength = CartographyGridConstants.AxisLength;
             originOffset = CartographyGridConstants.OriginOffset;
             cellSizeMeters = CartographyGridConstants.MacroCellSizeMeters;
             revision = _cartographyRevision;
-            return discoveredSectors.IsCreated;
+            return resolved && discoveredSectors.IsCreated;
         }
 
         public bool EnqueueMapReveal(in MapRevealSignal signal)
         {
             InitializeExplorationMask();
-            if (!_pendingMapRevealSignals.IsCreated)
+            if (!TryResolveCartographyBuffers(out CartographyVaultBuffers buffers) ||
+                !buffers.MockPings.IsCreated ||
+                !buffers.PendingSignalCounts.IsCreated ||
+                !buffers.Counters.IsCreated ||
+                buffers.Counters.Length == 0)
+            {
+                return false;
+            }
+
+            return TryAppendMapRevealSignal(buffers, in signal);
+        }
+
+        private static bool TryAppendMapRevealSignal(CartographyVaultBuffers buffers, in MapRevealSignal signal)
+        {
+            if (!buffers.MockPings.IsCreated ||
+                !buffers.PendingSignalCounts.IsCreated ||
+                buffers.PendingSignalCounts.Length == 0)
+            {
+                return false;
+            }
+
+            int pendingCount = math.clamp(buffers.PendingSignalCounts[0], 0, buffers.MockPings.Length);
+            int capacity = math.min(buffers.MockPings.Length, CartographyGridConstants.MaxRevealSignalsPerSlowTick);
+            if (pendingCount >= capacity)
                 return false;
 
             MapRevealSignal clampedSignal = signal;
             clampedSignal.RadiusMeters = ClampRevealRadius(signal.RadiusMeters);
-            _pendingMapRevealSignals.Enqueue(clampedSignal);
+            buffers.MockPings[pendingCount] = clampedSignal;
+            buffers.PendingSignalCounts[0] = pendingCount + 1;
             return true;
+        }
+
+        private static int StagePendingMapRevealSignals(CartographyVaultBuffers buffers)
+        {
+            if (!buffers.MockPings.IsCreated ||
+                !buffers.PendingPings.IsCreated ||
+                !buffers.PendingSignalCounts.IsCreated ||
+                buffers.PendingSignalCounts.Length == 0)
+            {
+                return 0;
+            }
+
+            int capacity = math.min(
+                math.min(buffers.MockPings.Length, buffers.PendingPings.Length),
+                CartographyGridConstants.MaxRevealSignalsPerSlowTick);
+            int pendingCount = math.clamp(buffers.PendingSignalCounts[0], 0, capacity);
+            for (int i = 0; i < pendingCount; i++)
+            {
+                buffers.PendingPings[i] = buffers.MockPings[i];
+                buffers.MockPings[i] = default;
+            }
+
+            for (int i = pendingCount; i < capacity; i++)
+                buffers.PendingPings[i] = default;
+
+            buffers.PendingSignalCounts[0] = 0;
+            if (buffers.Counters.IsCreated && buffers.Counters.Length > 0)
+            {
+                CartographyCounterDTO counter = buffers.Counters[0];
+                counter.PendingSignalCount = (uint)pendingCount;
+                buffers.Counters[0] = counter;
+            }
+
+            return pendingCount;
         }
 
         private static int ResolveSerializedByteCount(NativeArray<ulong> maskWords, int wordCount)
@@ -490,17 +754,28 @@ namespace Hecton8.PDA
             data.explorationMap.cartographyMaskAxisBits = CartographyGridConstants.AxisBits;
             data.explorationMap.cartographyMaskOriginOffset = CartographyGridConstants.OriginOffset;
 
-            int wordCount = math.min(_discoveredSectors.IsCreated ? _discoveredSectors.Length : 0, CartographyGridConstants.WordCount);
-            int byteCount = SaveBinaryStorage.AlignExplorationMortonByteCount(ResolveSerializedByteCount(_discoveredSectors, wordCount));
+            if (!TryResolveCartographyBuffers(out CartographyVaultBuffers buffers))
+            {
+                data.explorationMap.discoveredSectorByteCount = 0;
+                data.explorationMap.discoveredSectorWordCount = 0;
+                Array.Clear(data.explorationMap.discoveredSectorMaskBytes, 0, data.explorationMap.discoveredSectorMaskBytes.Length);
+                for (int i = 0; i < CartographyGridConstants.WordCount; i++)
+                    data.explorationMap.discoveredSectorMaskWords[i] = 0L;
+                return;
+            }
+
+            NativeArray<ulong> discoveredWords = buffers.DiscoveryWords;
+            int wordCount = math.min(discoveredWords.Length, CartographyGridConstants.WordCount);
+            int byteCount = SaveBinaryStorage.AlignExplorationMortonByteCount(ResolveSerializedByteCount(discoveredWords, wordCount));
             data.explorationMap.discoveredSectorByteCount = byteCount;
             Array.Clear(data.explorationMap.discoveredSectorMaskBytes, 0, data.explorationMap.discoveredSectorMaskBytes.Length);
-            if (byteCount > 0 && _discoveredSectors.IsCreated)
+            if (byteCount > 0 && discoveredWords.IsCreated)
             {
                 unsafe
                 {
                     fixed (byte* destination = data.explorationMap.discoveredSectorMaskBytes)
                     {
-                        void* source = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_discoveredSectors);
+                        void* source = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(discoveredWords);
                         int destinationBytes = data.explorationMap.discoveredSectorMaskBytes.Length;
                         if (!UnsafeMemoryCopyGuard.TryMemCpy(destination, destinationBytes, source, byteCount))
                             UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(PlayerExplorationTracker));
@@ -509,7 +784,7 @@ namespace Hecton8.PDA
             }
 
             for (int i = 0; i < wordCount; i++)
-                data.explorationMap.discoveredSectorMaskWords[i] = unchecked((long)_discoveredSectors[i]);
+                data.explorationMap.discoveredSectorMaskWords[i] = unchecked((long)discoveredWords[i]);
 
             for (int i = wordCount; i < CartographyGridConstants.WordCount; i++)
                 data.explorationMap.discoveredSectorMaskWords[i] = 0L;
@@ -529,24 +804,27 @@ namespace Hecton8.PDA
         {
             if (dto.discoveredSectorMaskWords == null ||
                 dto.discoveredSectorMaskWords.Length == 0 ||
-                dto.discoveredSectorWordCount <= 0)
+                dto.discoveredSectorWordCount <= 0 ||
+                !TryResolveCartographyBuffers(out CartographyVaultBuffers buffers))
             {
                 return false;
             }
 
-            int wordCount = math.min(math.min(_discoveredSectors.Length, dto.discoveredSectorMaskWords.Length), dto.discoveredSectorWordCount);
+            NativeArray<ulong> discoveredWords = buffers.DiscoveryWords;
+            int wordCount = math.min(math.min(CartographyGridConstants.WordCount, dto.discoveredSectorMaskWords.Length), dto.discoveredSectorWordCount);
             for (int i = 0; i < wordCount; i++)
-                _discoveredSectors[i] = unchecked((ulong)dto.discoveredSectorMaskWords[i]);
+                discoveredWords[i] = unchecked((ulong)dto.discoveredSectorMaskWords[i]);
 
-            for (int i = wordCount; i < _discoveredSectors.Length; i++)
-                _discoveredSectors[i] = 0UL;
+            for (int i = wordCount; i < CartographyGridConstants.WordCount; i++)
+                discoveredWords[i] = 0UL;
 
+            SetCartographyTotal(buffers.Counters, discoveredWords);
             return true;
         }
 
         private bool TryLoadCartographyByteMask(ExplorationMapDTO dto)
         {
-            if (!_discoveredSectors.IsCreated)
+            if (!TryResolveCartographyBuffers(out CartographyVaultBuffers buffers))
                 return false;
 
             if (dto.discoveredSectorMaskBytes == null ||
@@ -561,16 +839,18 @@ namespace Hecton8.PDA
                 SaveBinaryStorage.AlignExplorationMortonByteCount(dto.discoveredSectorByteCount));
             unsafe
             {
-                void* destination = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_discoveredSectors);
-                UnsafeUtility.MemClear(destination, _discoveredSectors.Length * sizeof(ulong));
+                NativeArray<ulong> discoveredWords = buffers.DiscoveryWords;
+                void* destination = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(discoveredWords);
+                UnsafeUtility.MemClear(destination, CartographyGridConstants.WordCount * sizeof(ulong));
                 fixed (byte* source = dto.discoveredSectorMaskBytes)
                 {
-                    int destinationBytes = _discoveredSectors.Length * sizeof(ulong);
+                    int destinationBytes = CartographyGridConstants.WordCount * sizeof(ulong);
                     if (!UnsafeMemoryCopyGuard.TryMemCpy(destination, destinationBytes, source, byteCount))
                         UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(PlayerExplorationTracker));
                 }
             }
 
+            SetCartographyTotal(buffers.Counters, buffers.DiscoveryWords);
             return true;
         }
 
@@ -583,23 +863,6 @@ namespace Hecton8.PDA
             _exploredChunkMask = new NativeBitArray(MaskBitCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeList<int>[ExplorationMapDTO.MaxExploredChunks] — explored bit-index enumeration cache — owner: PlayerExplorationTracker
             _exploredBitIndices = new NativeList<int>(ExplorationMapDTO.MaxExploredChunks, Allocator.Persistent);
-            _discoveredSectors = new NativeArray<ulong>(
-                CartographyGridConstants.WordCount,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ulong>[32768] — 1-bit 50m cartography sector mask — owner: PlayerExplorationTracker
-            _poiRecordScratch = new NativeArray<CartographyPoiRecord>(
-                CartographyGridConstants.MaxPoiRevealPerSlowTick,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<CartographyPoiRecord>[64] — POI reveal staging — owner: PlayerExplorationTracker
-            _cartographyChangeScratch = new NativeArray<int>(
-                1,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[1] — cartography bit-flip dirty flag — owner: PlayerExplorationTracker
-            _cartographyBlackBox = new NativeArray<CartographyBlackBoxEntry>(
-                CartographyGridConstants.BlackBoxFrameCount,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<CartographyBlackBoxEntry>[300] — cartography crash telemetry ring — owner: PlayerExplorationTracker
-            _pendingMapRevealSignals = new NativeQueue<MapRevealSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<MapRevealSignal>[16 prewarmed] — decoupled map reveal lane — owner: PlayerExplorationTracker
             NativeMemorySentinel.RegisterNativeArray(
                 _exploredChunkMask.AsNativeArray<ulong>(),
                 NativeMemoryOwner,
@@ -610,33 +873,7 @@ namespace Hecton8.PDA
                 NativeMemoryOwner,
                 nameof(_exploredBitIndices),
                 NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(
-                _discoveredSectors,
-                NativeMemoryOwner,
-                nameof(_discoveredSectors),
-                NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(
-                _poiRecordScratch,
-                NativeMemoryOwner,
-                nameof(_poiRecordScratch),
-                NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(
-                _cartographyChangeScratch,
-                NativeMemoryOwner,
-                nameof(_cartographyChangeScratch),
-                NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(
-                _cartographyBlackBox,
-                NativeMemoryOwner,
-                nameof(_cartographyBlackBox),
-                NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeQueue(
-                _pendingMapRevealSignals,
-                CartographyGridConstants.MaxRevealSignalsPerSlowTick,
-                NativeMemoryOwner,
-                nameof(_pendingMapRevealSignals),
-                NativeMemoryLifetime);
-            PrewarmMapRevealQueue();
+            TryResolveCartographyBuffers(out _);
             _explorationMaskInitialized = true;
         }
 
@@ -654,36 +891,9 @@ namespace Hecton8.PDA
                 _exploredBitIndices.Dispose();
             }
 
-            if (_discoveredSectors.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_discoveredSectors);
-                _discoveredSectors.Dispose();
-            }
-
-            if (_poiRecordScratch.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_poiRecordScratch);
-                _poiRecordScratch.Dispose();
-            }
-
-            if (_cartographyChangeScratch.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_cartographyChangeScratch);
-                _cartographyChangeScratch.Dispose();
-            }
-
-            if (_cartographyBlackBox.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_cartographyBlackBox);
-                _cartographyBlackBox.Dispose();
-            }
-
-            if (_pendingMapRevealSignals.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(NativeMemoryOwner, nameof(_pendingMapRevealSignals));
-                _pendingMapRevealSignals.Dispose();
-            }
-
+            _cartographyVault = null;
+            _cartographyHandles = default;
+            _cartographyVaultReady = false;
             _explorationMaskInitialized = false;
         }
 
@@ -694,28 +904,99 @@ namespace Hecton8.PDA
             ClearDiscoveredSectors();
         }
 
-        private void ClearDiscoveredSectors()
+        private static void ExecuteClearCartographyUlongBuffer(NativeArray<ulong> buffer)
         {
-            if (!_discoveredSectors.IsCreated)
+            if (!buffer.IsCreated)
                 return;
 
-            for (int i = 0; i < _discoveredSectors.Length; i++)
-                _discoveredSectors[i] = 0UL;
-            _lastCartographyBitIndex = -1;
-            _cartographyRevision++;
+            ClearCartographyUlongBufferJob job = new ClearCartographyUlongBufferJob { Buffer = buffer };
+            for (int i = 0; i < buffer.Length; i++)
+                job.Execute(i);
         }
 
-        private void PrewarmMapRevealQueue()
+        private static void ExecuteClearCartographyUintBuffer(NativeArray<uint> buffer)
         {
-            if (!_pendingMapRevealSignals.IsCreated)
+            if (!buffer.IsCreated)
                 return;
 
-            for (int i = 0; i < CartographyGridConstants.MaxRevealSignalsPerSlowTick; i++)
-                _pendingMapRevealSignals.Enqueue(default);
+            ClearCartographyUintBufferJob job = new ClearCartographyUintBufferJob { Buffer = buffer };
+            for (int i = 0; i < buffer.Length; i++)
+                job.Execute(i);
+        }
 
-            while (_pendingMapRevealSignals.TryDequeue(out _))
+        private static void ExecuteClearCartographyRevealSignals(NativeArray<MapRevealSignal> buffer)
+        {
+            if (!buffer.IsCreated)
+                return;
+
+            ClearCartographyRevealSignalBufferJob job = new ClearCartographyRevealSignalBufferJob { Buffer = buffer };
+            for (int i = 0; i < buffer.Length; i++)
+                job.Execute(i);
+        }
+
+        private bool TryFinalizeCartographyUpload(
+            CartographyVaultBuffers buffers,
+            out NativeArray<uint> packedR8,
+            out uint revision,
+            out int framesBetweenUploads)
+        {
+            packedR8 = default;
+            revision = _cartographyUploadPendingRevision;
+            framesBetweenUploads = math.max(1, _cartographyUploadPendingCadence);
+            if (!_cartographyUploadPending ||
+                !DispatcherJobFence.TryFinalizeCompleted(ref _cartographyUploadHandle))
             {
+                return false;
             }
+
+            _cartographyUploadPending = false;
+            packedR8 = buffers.UploadPackedR8;
+            return packedR8.IsCreated;
+        }
+
+        private void CompleteCartographyUploadJobForTeardown()
+        {
+            if (!_cartographyUploadPending)
+                return;
+
+            if (DispatcherJobFence.TryComplete(ref _cartographyUploadHandle, forceComplete: true))
+                _cartographyUploadPending = false;
+        }
+
+        private void ClearDiscoveredSectors()
+        {
+            if (!TryResolveCartographyBuffers(out CartographyVaultBuffers buffers))
+                return;
+
+            CompleteCartographyUploadJobForTeardown();
+            ExecuteClearCartographyUlongBuffer(buffers.DiscoveryWords);
+            ExecuteClearCartographyUlongBuffer(buffers.RollbackSnapshotWords);
+            ExecuteClearCartographyUintBuffer(buffers.UploadPackedR8);
+            if (buffers.MockPings.IsCreated)
+                ExecuteClearCartographyRevealSignals(buffers.MockPings);
+
+            if (buffers.PendingPings.IsCreated)
+                ExecuteClearCartographyRevealSignals(buffers.PendingPings);
+
+            if (buffers.PendingSignalCounts.IsCreated && buffers.PendingSignalCounts.Length > 0)
+                buffers.PendingSignalCounts[0] = 0;
+
+            if (buffers.Counters.IsCreated)
+            {
+                for (int i = 0; i < buffers.Counters.Length; i++)
+                {
+                    CartographyCounterDTO counter = buffers.Counters[i];
+                    counter.Changed = 0;
+                    counter.DiscoveredDelta = 0;
+                    counter.LastBitIndex = 0u;
+                    counter.TotalDiscoveredVoxels = 0;
+                    counter.PendingSignalCount = 0u;
+                    buffers.Counters[i] = counter;
+                }
+            }
+
+            _lastCartographyBitIndex = -1;
+            _cartographyRevision++;
         }
 
         private bool TryLoadDenseMask(ExplorationMapDTO dto)
@@ -943,9 +1224,154 @@ namespace Hecton8.PDA
             return true;
         }
 
+        private bool TryResolveCartographyBuffers(out CartographyVaultBuffers buffers)
+        {
+            buffers = default;
+            if (!_cartographyVaultReady && !EnsureCartographyVault())
+                return false;
+
+            IDataVault vault = _cartographyVault;
+            if (vault == null)
+                return false;
+
+            if (CartographyVault.TryResolveViews(vault, ref _cartographyHandles, out buffers))
+                return true;
+
+            _cartographyVaultReady = false;
+            _cartographyHandles = default;
+            return EnsureCartographyVault() &&
+                   CartographyVault.TryResolveViews(_cartographyVault, ref _cartographyHandles, out buffers);
+        }
+
+        private bool EnsureCartographyVault()
+        {
+            if (_cartographyVaultReady && _cartographyVault != null && _cartographyHandles.IsCreated())
+                return true;
+
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null && GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latestVault))
+                vault = latestVault;
+
+            if (vault == null || !CartographyVault.TryResolve(vault, out _cartographyHandles))
+                return false;
+
+            if (!CartographyVault.TryResolveViews(vault, ref _cartographyHandles, out CartographyVaultBuffers buffers))
+                return false;
+
+            if (!CartographyLayoutVerifier.ValidateRuntimeLayouts())
+                return false;
+
+            _cartographyVault = vault;
+            InitializeCartographyVaultBuffers(buffers);
+            _cartographyVaultReady = true;
+            return true;
+        }
+
+        private void InitializeCartographyVaultBuffers(CartographyVaultBuffers buffers)
+        {
+            CompleteCartographyUploadJobForTeardown();
+            float globalQualityWeight = ResolveHomeostasisQualityWeight();
+            ExecuteClearCartographyUlongBuffer(buffers.DiscoveryWords);
+            ExecuteClearCartographyUlongBuffer(buffers.SurfaceMaskWords);
+            ExecuteClearCartographyUlongBuffer(buffers.RollbackSnapshotWords);
+            ExecuteClearCartographyUintBuffer(buffers.UploadPackedR8);
+            if (buffers.MockPings.IsCreated)
+                ExecuteClearCartographyRevealSignals(buffers.MockPings);
+
+            if (buffers.PendingPings.IsCreated)
+                ExecuteClearCartographyRevealSignals(buffers.PendingPings);
+
+            if (buffers.PendingSignalCounts.IsCreated && buffers.PendingSignalCounts.Length > 0)
+                buffers.PendingSignalCounts[0] = 0;
+
+            InitializeCartographyVaultJob initializeJob = new InitializeCartographyVaultJob
+            {
+                Sectors = buffers.SectorTable,
+                Counters = buffers.Counters,
+                TelemetryRing = buffers.TelemetryRing,
+                TelemetryCursor = buffers.TelemetryCursor,
+                Tuning = buffers.Tuning,
+                ScannerProfiles = buffers.ScannerProfiles,
+                ActiveSectorHashes = buffers.ActiveSectorHashes,
+                GlobalQualityWeight = globalQualityWeight
+            };
+            initializeJob.Execute();
+
+            CartographyTuningDTO tuning = buffers.Tuning.IsCreated && buffers.Tuning.Length > 0
+                ? buffers.Tuning[0]
+                : CartographyVault.BuildDefaultTuning(globalQualityWeight);
+            BuildMockSurfaceMaskJob surfaceMaskJob = new BuildMockSurfaceMaskJob
+            {
+                SurfaceMaskWords = buffers.SurfaceMaskWords,
+                SurfaceThicknessMeters = tuning.SurfaceThicknessMeters,
+                GlobalQualityWeight = tuning.GlobalQualityWeight
+            };
+            for (int i = 0; i < buffers.SurfaceMaskWords.Length; i++)
+                surfaceMaskJob.Execute(i);
+        }
+
+        private CartographyTuningDTO ResolveCartographyTuning()
+        {
+            if (TryResolveCartographyBuffers(out CartographyVaultBuffers buffers) &&
+                buffers.Tuning.IsCreated &&
+                buffers.Tuning.Length > 0)
+            {
+                CartographyTuningDTO tuning = buffers.Tuning[0];
+                tuning.GlobalQualityWeight = ResolveEffectiveCartographyQuality(tuning.GlobalQualityWeight);
+                tuning.UploadCadenceFrames = CartographyGridMath.ResolveUploadIntervalFrames(tuning.GlobalQualityWeight);
+                return tuning;
+            }
+
+            return CartographyVault.BuildDefaultTuning(ResolveHomeostasisQualityWeight());
+        }
+
+        private static float ResolveHomeostasisQualityWeight()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.isfinite(quality) ? quality : 1f);
+        }
+
+        private static float ResolveEffectiveCartographyQuality(float tuningQuality)
+        {
+            float localQuality = math.saturate(math.isfinite(tuningQuality) ? tuningQuality : 1f);
+            return math.saturate(math.min(ResolveHomeostasisQualityWeight(), localQuality));
+        }
+
+        private static void ResetCartographyCounter(NativeArray<CartographyCounterDTO> counters)
+        {
+            if (!counters.IsCreated || counters.Length == 0)
+                return;
+
+            CartographyCounterDTO counter = counters[0];
+            counter.Changed = 0;
+            counter.DiscoveredDelta = 0;
+            counters[0] = counter;
+        }
+
+        private static void SetCartographyTotal(
+            NativeArray<CartographyCounterDTO> counters,
+            NativeArray<ulong> discoveryWords)
+        {
+            if (!counters.IsCreated || counters.Length == 0)
+                return;
+
+            int wordCount = math.min(discoveryWords.IsCreated ? discoveryWords.Length : 0, CartographyGridConstants.WordCount);
+            int total = 0;
+            for (int i = 0; i < wordCount; i++)
+            {
+                ulong word = discoveryWords[i];
+                total += math.countbits((uint)word);
+                total += math.countbits((uint)(word >> 32));
+            }
+
+            CartographyCounterDTO counter = counters[0];
+            counter.TotalDiscoveredVoxels = total;
+            counters[0] = counter;
+        }
+
         private bool RevealCartographyCell(in CartographyAup cartographyAup, MapRevealSignalFlags flags)
         {
-            if (!_discoveredSectors.IsCreated)
+            if (!TryResolveCartographyBuffers(out CartographyVaultBuffers buffers))
                 return false;
 
             if (!CartographyGridMath.TryEncode(
@@ -957,14 +1383,18 @@ namespace Hecton8.PDA
                 return false;
             }
 
-            ulong before = _discoveredSectors[wordIndex];
-            new CartographyRevealAupCellJob
+            ResetCartographyCounter(buffers.Counters);
+            ulong before = buffers.DiscoveryWords[wordIndex];
+            CartographyRevealAupCellJob revealJob = new CartographyRevealAupCellJob
             {
-                DiscoveredSectors = _discoveredSectors,
-                Center = cartographyAup
-            }.Run();
+                DiscoveredSectors = buffers.DiscoveryWords,
+                Counters = buffers.Counters,
+                Center = cartographyAup,
+                WordOffset = 0
+            };
+            revealJob.Execute();
 
-            ulong after = _discoveredSectors[wordIndex];
+            ulong after = buffers.DiscoveryWords[wordIndex];
             _lastCartographyBitIndex = bitIndex;
             return before != after || (flags & MapRevealSignalFlags.Player) == 0;
         }
@@ -972,17 +1402,28 @@ namespace Hecton8.PDA
         private int DrainMapRevealSignals(out bool changed)
         {
             changed = false;
-            if (!_pendingMapRevealSignals.IsCreated || !_discoveredSectors.IsCreated)
+            if (!TryResolveCartographyBuffers(out CartographyVaultBuffers buffers) ||
+                !buffers.MockPings.IsCreated ||
+                !buffers.PendingSignalCounts.IsCreated ||
+                buffers.PendingSignalCounts.Length == 0 ||
+                !buffers.Counters.IsCreated ||
+                buffers.Counters.Length == 0)
+            {
                 return 0;
+            }
 
-            bool canTrackChange = _cartographyChangeScratch.IsCreated;
-            if (canTrackChange)
-                _cartographyChangeScratch[0] = 0;
+            ResetCartographyCounter(buffers.Counters);
+            CartographyTuningDTO tuning = ResolveCartographyTuning();
+            int pendingCount = math.clamp(
+                buffers.PendingSignalCounts[0],
+                0,
+                math.min(buffers.MockPings.Length, CartographyGridConstants.MaxRevealSignalsPerSlowTick));
 
             int processed = 0;
-            while (processed < CartographyGridConstants.MaxRevealSignalsPerSlowTick &&
-                   _pendingMapRevealSignals.TryDequeue(out MapRevealSignal signal))
+            while (processed < pendingCount)
             {
+                MapRevealSignal signal = buffers.MockPings[processed];
+                buffers.MockPings[processed] = default;
                 if (!CartographyGridMath.IsFinite(in signal.Center))
                 {
                     DumpCartographyBlackBox();
@@ -991,26 +1432,41 @@ namespace Hecton8.PDA
                 }
 
                 float radius = ClampRevealRadius(signal.RadiusMeters);
-                new CartographyRevealSphereJob
+                ApplySonarDiscoveryJob discoveryJob = new ApplySonarDiscoveryJob
                 {
-                    DiscoveredSectors = _discoveredSectors,
-                    Changed = _cartographyChangeScratch,
+                    DiscoveredSectors = buffers.DiscoveryWords,
+                    SurfaceMaskWords = buffers.SurfaceMaskWords,
+                    Counters = buffers.Counters,
                     Center = signal.Center,
-                    RadiusMeters = radius
-                }.Run();
+                    RadiusMeters = radius,
+                    SurfaceThicknessMeters = tuning.SurfaceThicknessMeters,
+                    GlobalQualityWeight = tuning.GlobalQualityWeight,
+                    UseExplicitCenterAup = 0,
+                    UseSdfSurfaceMask = 1,
+                    WordOffset = 0
+                };
+                discoveryJob.Execute();
                 processed++;
             }
 
-            changed = canTrackChange ? _cartographyChangeScratch[0] != 0 : processed > 0;
+            CartographyCounterDTO counter = buffers.Counters[0];
+            counter.PendingSignalCount = 0u;
+            buffers.Counters[0] = counter;
+            buffers.PendingSignalCounts[0] = 0;
+            changed = buffers.Counters.IsCreated &&
+                      buffers.Counters.Length > 0 &&
+                      buffers.Counters[0].Changed != 0;
             return processed;
         }
 
         private int InjectPoiReveals(out bool changed)
         {
             changed = false;
-            if (!_poiRecordScratch.IsCreated || !_discoveredSectors.IsCreated)
+            if (!TryResolveCartographyBuffers(out CartographyVaultBuffers buffers))
                 return 0;
 
+            ResetCartographyCounter(buffers.Counters);
+            CartographyTuningDTO tuning = ResolveCartographyTuning();
             PDAMarkerRegistry markerRegistry = GlobalRegistry.PDAMarkers;
             int markerCount = markerRegistry != null ? markerRegistry.CopyMarkers(_poiMarkerScratch, hudOnly: false) : 0;
             int count = math.min(markerCount, CartographyGridConstants.MaxPoiRevealPerSlowTick);
@@ -1018,12 +1474,25 @@ namespace Hecton8.PDA
             {
                 PDAMarkerSnapshot marker = _poiMarkerScratch[i];
                 AbsoluteUniversePosition markerAup = marker.PositionAup;
-                _poiRecordScratch[i] = new CartographyPoiRecord
+                CartographyAup markerCartographyAup = ToCartographyAup(in markerAup);
+                if (CartographyGridMath.IsFinite(in markerCartographyAup))
                 {
-                    Position = ToCartographyAup(in markerAup),
-                    Kind = (uint)marker.IconType,
-                    Hash = marker.MarkerHashID
-                };
+                    ApplySonarDiscoveryJob markerJob = new ApplySonarDiscoveryJob
+                    {
+                        DiscoveredSectors = buffers.DiscoveryWords,
+                        SurfaceMaskWords = buffers.SurfaceMaskWords,
+                        Counters = buffers.Counters,
+                        Center = markerCartographyAup,
+                        RadiusMeters = math.max(CartographyGridConstants.MacroCellSizeMeters, tuning.SonarPingRadiusMeters * 0.25f),
+                        SurfaceThicknessMeters = tuning.SurfaceThicknessMeters,
+                        GlobalQualityWeight = tuning.GlobalQualityWeight,
+                        UseExplicitCenterAup = 0,
+                        UseSdfSurfaceMask = 1,
+                        WordOffset = 0
+                    };
+                    markerJob.Execute();
+                }
+
                 _poiMarkerScratch[i] = default;
             }
 
@@ -1043,35 +1512,32 @@ namespace Hecton8.PDA
                         continue;
 
                     AbsoluteUniversePosition position = delta.UnpackPosition(chunkSizeMeters);
-                    _poiRecordScratch[count] = new CartographyPoiRecord
+                    CartographyAup persistentCartographyAup = ToCartographyAup(in position);
+                    if (CartographyGridMath.IsFinite(in persistentCartographyAup))
                     {
-                        Position = ToCartographyAup(in position),
-                        Kind = (uint)MapRevealSignalFlags.Poi,
-                        Hash = unchecked((uint)delta.ItemPersistentIdHash)
-                    };
+                        ApplySonarDiscoveryJob persistentJob = new ApplySonarDiscoveryJob
+                        {
+                            DiscoveredSectors = buffers.DiscoveryWords,
+                            SurfaceMaskWords = buffers.SurfaceMaskWords,
+                            Counters = buffers.Counters,
+                            Center = persistentCartographyAup,
+                            RadiusMeters = math.max(CartographyGridConstants.MacroCellSizeMeters, tuning.SonarPingRadiusMeters * 0.2f),
+                            SurfaceThicknessMeters = tuning.SurfaceThicknessMeters,
+                            GlobalQualityWeight = tuning.GlobalQualityWeight,
+                            UseExplicitCenterAup = 0,
+                            UseSdfSurfaceMask = 1,
+                            WordOffset = 0
+                        };
+                        persistentJob.Execute();
+                    }
+
                     count++;
                 }
             }
 
-            if (count <= 0)
-                return 0;
-
-            bool canTrackChange = _cartographyChangeScratch.IsCreated;
-            if (canTrackChange)
-                _cartographyChangeScratch[0] = 0;
-
-            new CartographyInjectPoiJob
-            {
-                PoiRecords = _poiRecordScratch,
-                DiscoveredSectors = _discoveredSectors,
-                Changed = _cartographyChangeScratch,
-                Count = count
-            }.Run();
-
-            for (int i = 0; i < count; i++)
-                _poiRecordScratch[i] = default;
-
-            changed = canTrackChange ? _cartographyChangeScratch[0] != 0 : count > 0;
+            changed = buffers.Counters.IsCreated &&
+                      buffers.Counters.Length > 0 &&
+                      buffers.Counters[0].Changed != 0;
             return count;
         }
 
@@ -1088,65 +1554,227 @@ namespace Hecton8.PDA
 
         private void RecordCartographyBlackBox(in CartographyAup playerAup, int signalCount, int poiCount, uint stateFlags)
         {
-            if (!_cartographyBlackBox.IsCreated || _cartographyBlackBox.Length == 0)
+            if (!TryResolveCartographyBuffers(out CartographyVaultBuffers buffers))
                 return;
 
-            int index = _cartographyBlackBoxCursor;
-            _cartographyBlackBox[index] = new CartographyBlackBoxEntry
+            CartographyTuningDTO tuning = ResolveCartographyTuning();
+            RecordCartographyTelemetryJob telemetryJob = new RecordCartographyTelemetryJob
             {
+                TelemetryRing = buffers.TelemetryRing,
+                TelemetryCursor = buffers.TelemetryCursor,
+                Counters = buffers.Counters,
+                PlayerAup = playerAup,
                 FrameIndex = _cartographyFrameIndex++,
                 Revision = _cartographyRevision,
-                LastBitIndex = _lastCartographyBitIndex,
                 RevealedSignalCount = signalCount,
                 RevealedPoiCount = poiCount,
                 StateFlags = stateFlags,
-                PlayerAup = playerAup
+                GlobalQualityWeight = tuning.GlobalQualityWeight
             };
-
-            _cartographyBlackBoxCursor++;
-            if (_cartographyBlackBoxCursor >= _cartographyBlackBox.Length)
-                _cartographyBlackBoxCursor = 0;
+            telemetryJob.Execute();
         }
 
         private void DumpCartographyBlackBox()
         {
-            if (_cartographyDumpedThisSession || !_cartographyBlackBox.IsCreated)
+            if (_cartographyDumpedThisSession ||
+                !TryResolveCartographyBuffers(out CartographyVaultBuffers buffers))
                 return;
 
             _cartographyDumpedThisSession = true;
-            try
+            CartographyVault.TryDumpBlackBox(in buffers, Application.dataPath + "/..");
+        }
+
+        public bool GenerateMockExplorationData()
+        {
+            InitializeExplorationMask();
+            if (!TryResolveCartographyBuffers(out CartographyVaultBuffers buffers))
+                return false;
+
+            CartographyTuningDTO tuning = ResolveCartographyTuning();
+            ulong sectorHash = buffers.ActiveSectorHashes.IsCreated && buffers.ActiveSectorHashes.Length > 4
+                ? buffers.ActiveSectorHashes[4]
+                : CartographyGridConstants.DefaultSectorHashSeed;
+            GenerateMockExplorationDataJob mockJob = new GenerateMockExplorationDataJob
             {
-                Directory.CreateDirectory("Docs/AgentLogs");
-                using FileStream stream = new FileStream(CartographyDumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-                using BinaryWriter writer = new BinaryWriter(stream);
-                writer.Write(0x43545848u);
-                writer.Write(_cartographyRevision);
-                writer.Write(_cartographyBlackBoxCursor);
-                writer.Write(_cartographyBlackBox.Length);
-                for (int i = 0; i < _cartographyBlackBox.Length; i++)
-                {
-                    CartographyBlackBoxEntry entry = _cartographyBlackBox[i];
-                    writer.Write(entry.FrameIndex);
-                    writer.Write(entry.Revision);
-                    writer.Write(entry.LastBitIndex);
-                    writer.Write(entry.RevealedSignalCount);
-                    writer.Write(entry.RevealedPoiCount);
-                    writer.Write(entry.StateFlags);
-                    writer.Write(entry.PlayerAup.GridX);
-                    writer.Write(entry.PlayerAup.GridY);
-                    writer.Write(entry.PlayerAup.GridZ);
-                    writer.Write(entry.PlayerAup.LocalX);
-                    writer.Write(entry.PlayerAup.LocalY);
-                    writer.Write(entry.PlayerAup.LocalZ);
-                }
+                DiscoveredSectors = buffers.DiscoveryWords,
+                SectorTable = buffers.SectorTable,
+                SimulationFrameCounter = _cartographyFrameIndex,
+                SectorHash = sectorHash,
+                GlobalQualityWeight = tuning.GlobalQualityWeight,
+                WordOffset = 0
+            };
+            for (int i = 0; i < CartographyGridConstants.WordCount; i++)
+                mockJob.Execute(i);
+            SetCartographyTotal(buffers.Counters, buffers.DiscoveryWords);
+            _cartographyRevision++;
+            TryPrepareCartographyUpload(tuning.GlobalQualityWeight, out _, out _, out _);
+            return true;
+        }
+
+        public bool TryPrepareCartographyUpload(
+            float globalQualityWeight,
+            out NativeArray<uint> packedR8,
+            out int framesBetweenUploads,
+            out uint revision)
+        {
+            InitializeExplorationMask();
+            packedR8 = default;
+            framesBetweenUploads = CartographyGridMath.ResolveUploadIntervalFrames(globalQualityWeight);
+            revision = _cartographyRevision;
+            if (!TryResolveCartographyBuffers(out CartographyVaultBuffers buffers))
+                return false;
+
+            float quality = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
+            framesBetweenUploads = CartographyGridMath.ResolveUploadIntervalFrames(quality);
+            if (TryFinalizeCartographyUpload(buffers, out packedR8, out revision, out framesBetweenUploads))
+                return true;
+
+            if (_cartographyUploadPending)
+                return false;
+
+            FormatCartographyUploadR8Job formatJob = new FormatCartographyUploadR8Job
+            {
+                DiscoveredSectors = buffers.DiscoveryWords,
+                UploadPackedR8 = buffers.UploadPackedR8,
+                GlobalQualityWeight = quality,
+                WordOffset = 0
+            };
+            CopyCartographyRollbackSnapshotJob snapshotJob = new CopyCartographyRollbackSnapshotJob
+            {
+                DiscoveryWords = buffers.DiscoveryWords,
+                RollbackSnapshotWords = buffers.RollbackSnapshotWords,
+                WordOffset = 0
+            };
+
+            int formatBatch = SystemDispatcher.ResolveInnerloopBatchCount(CartographyGridConstants.PackedUploadWordCount, 64, 512);
+            int snapshotBatch = SystemDispatcher.ResolveInnerloopBatchCount(CartographyGridConstants.WordCount, 64, 512);
+            JobHandle formatHandle = formatJob.Schedule(CartographyGridConstants.PackedUploadWordCount, formatBatch);
+            JobHandle snapshotHandle = snapshotJob.Schedule(CartographyGridConstants.WordCount, snapshotBatch);
+            _cartographyUploadHandle = JobHandle.CombineDependencies(formatHandle, snapshotHandle);
+            _cartographyUploadPending = true;
+            _cartographyUploadPendingRevision = _cartographyRevision;
+            _cartographyUploadPendingCadence = framesBetweenUploads;
+            H8Memory.RegisterActiveJob(SystemID.UI, _cartographyUploadHandle);
+            return TryFinalizeCartographyUpload(buffers, out packedR8, out revision, out framesBetweenUploads);
+        }
+
+        public bool TryBuildCartographyRleRuns(out NativeArray<CartographyRleRunDTO> runs, out int runCount)
+        {
+            InitializeExplorationMask();
+            runs = default;
+            runCount = 0;
+            if (!TryResolveCartographyBuffers(out CartographyVaultBuffers buffers))
+                return false;
+
+            BuildCartographyRleRunsJob rleJob = new BuildCartographyRleRunsJob
+            {
+                DiscoveryWords = buffers.DiscoveryWords,
+                RleRuns = buffers.RleRuns,
+                Counters = buffers.Counters,
+                WordOffset = 0,
+                WordCount = CartographyGridConstants.WordCount
+            };
+            rleJob.Execute();
+
+            runs = buffers.RleRuns;
+            runCount = buffers.Counters.IsCreated && buffers.Counters.Length > 0
+                ? math.clamp(buffers.Counters[0].DiscoveredDelta, 0, buffers.RleRuns.Length)
+                : 0;
+            return runs.IsCreated;
+        }
+
+        public bool TryGetCartographyTuning(out CartographyTuningDTO tuning)
+        {
+            InitializeExplorationMask();
+            tuning = default;
+            return TryResolveCartographyBuffers(out _) &&
+                   CartographyVault.TryGetTuning(_cartographyVault, ref _cartographyHandles, out tuning);
+        }
+
+        public bool TrySetCartographyTuning(in CartographyTuningDTO tuning)
+        {
+            InitializeExplorationMask();
+            if (!TryResolveCartographyBuffers(out CartographyVaultBuffers buffers) ||
+                !CartographyVault.TrySetTuning(_cartographyVault, ref _cartographyHandles, in tuning))
+            {
+                return false;
             }
-            catch (IOException)
+
+            CartographyTuningDTO sanitized = buffers.Tuning.IsCreated && buffers.Tuning.Length > 0
+                ? buffers.Tuning[0]
+                : CartographyVault.BuildDefaultTuning(ResolveEffectiveCartographyQuality(tuning.GlobalQualityWeight));
+            BuildMockSurfaceMaskJob surfaceMaskJob = new BuildMockSurfaceMaskJob
             {
-            }
-            catch (UnauthorizedAccessException)
+                SurfaceMaskWords = buffers.SurfaceMaskWords,
+                SurfaceThicknessMeters = sanitized.SurfaceThicknessMeters,
+                GlobalQualityWeight = ResolveEffectiveCartographyQuality(sanitized.GlobalQualityWeight)
+            };
+            for (int i = 0; i < buffers.SurfaceMaskWords.Length; i++)
+                surfaceMaskJob.Execute(i);
+            _cartographyRevision++;
+            return true;
+        }
+
+        public bool TryLoadScannerProfilesCsvForEditor(string projectRoot, out int appliedRows)
+        {
+            InitializeExplorationMask();
+            appliedRows = 0;
+            if (!TryResolveCartographyBuffers(out _))
+                return false;
+
+            bool loaded = CartographyVault.TryLoadScannerProfilesCsvForEditor(
+                _cartographyVault,
+                ref _cartographyHandles,
+                projectRoot,
+                out appliedRows);
+            if (loaded)
+                _cartographyRevision++;
+            return loaded;
+        }
+
+#if UNITY_EDITOR
+        private void OnDrawGizmos()
+        {
+            if (!TryResolveCartographyBuffers(out CartographyVaultBuffers buffers))
+                return;
+
+            CartographyAup centerAup;
+            if (TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
+                centerAup = ToCartographyAup(in playerAup);
+            else
+                return;
+
+            if (!CartographyGridMath.TryResolveMacroCell(in centerAup, out int3 centerCell))
+                return;
+
+            BuildCartographyDebugVoxelsJob debugJob = new BuildCartographyDebugVoxelsJob
             {
+                DiscoveryWords = buffers.DiscoveryWords,
+                DebugVoxels = buffers.DebugVoxels,
+                Counters = buffers.Counters,
+                CenterMacroCell = centerCell,
+                RadiusCells = 4,
+                WordOffset = 0
+            };
+            debugJob.Execute();
+
+            int count = buffers.Counters.IsCreated && buffers.Counters.Length > 0
+                ? math.clamp(buffers.Counters[0].DiscoveredDelta, 0, buffers.DebugVoxels.Length)
+                : 0;
+            Vector3 origin = playerTransform != null ? playerTransform.position : transform.position;
+            float scale = CartographyGridConstants.MacroCellSizeMeters * 0.02f;
+            Gizmos.color = new Color(0.1f, 0.65f, 1f, 0.55f);
+            for (int i = 0; i < count; i++)
+            {
+                CartographyDebugVoxelDTO voxel = buffers.DebugVoxels[i];
+                Vector3 local = new Vector3(
+                    (voxel.X - centerCell.x) * scale,
+                    (voxel.Y - centerCell.y) * scale,
+                    (voxel.Z - centerCell.z) * scale);
+                Gizmos.DrawWireCube(origin + local, Vector3.one * (scale * 0.85f));
             }
         }
+#endif
 
         private static CartographyAup ToCartographyAup(in AbsoluteUniversePosition aup)
         {
@@ -1236,6 +1864,61 @@ namespace Hecton8.PDA
                 return;
 
             _registeredToSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player);
+        }
+
+        private void TryRegisterCartographyDispatcher()
+        {
+            if (_cartographyDispatcherRegistered || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            EnsureCartographyDispatcherSystems();
+            bool registered =
+                GlobalRegistry.TryRegisterDispatcherSystem(_cartographyPreSimulationPhase) &&
+                GlobalRegistry.TryRegisterDispatcherSystem(_cartographySimulationPhase) &&
+                GlobalRegistry.TryRegisterDispatcherSystem(_cartographyPostSimulationPhase);
+            if (!registered)
+            {
+                UnregisterCartographyDispatcher();
+                return;
+            }
+
+            _cartographyDispatcherRegistered = true;
+        }
+
+        private void EnsureCartographyDispatcherSystems()
+        {
+            if (_cartographyPreSimulationPhase != null)
+                return;
+
+            // COLD ALLOC: IDispatcherSystem[3] — Kahn dispatcher phase adapters — owner: PlayerExplorationTracker
+            _cartographyPreSimulationPhase = new CartographyDispatcherPhaseSystem(
+                this,
+                DispatcherPhase.PreSimulation,
+                CartographyPreSimulationSystemHash);
+            _cartographySimulationPhase = new CartographyDispatcherPhaseSystem(
+                this,
+                DispatcherPhase.Simulation,
+                CartographySimulationSystemHash);
+            _cartographyPostSimulationPhase = new CartographyDispatcherPhaseSystem(
+                this,
+                DispatcherPhase.PostSimulation,
+                CartographyPostSimulationSystemHash);
+        }
+
+        private void UnregisterCartographyDispatcher()
+        {
+            if (_cartographyPreSimulationPhase != null)
+                GlobalRegistry.UnregisterDispatcherSystem(_cartographyPreSimulationPhase);
+            if (_cartographySimulationPhase != null)
+                GlobalRegistry.UnregisterDispatcherSystem(_cartographySimulationPhase);
+            if (_cartographyPostSimulationPhase != null)
+                GlobalRegistry.UnregisterDispatcherSystem(_cartographyPostSimulationPhase);
+
+            _cartographyDispatcherRegistered = false;
+            _cartographyDispatcherFrameScheduled = false;
         }
 
         private void UnregisterFromSlowTickManager()
@@ -1328,6 +2011,74 @@ namespace Hecton8.PDA
 
             GlobalRegistry.UnregisterPlayerExplorationRuntime(this);
             _serviceRegistered = false;
+        }
+
+        private sealed class CartographyDispatcherPhaseSystem : IDispatcherSystem
+        {
+            private readonly PlayerExplorationTracker _owner;
+            private readonly DispatcherPhase _phase;
+            private readonly uint _systemHash;
+
+            public CartographyDispatcherPhaseSystem(
+                PlayerExplorationTracker owner,
+                DispatcherPhase phase,
+                uint systemHash)
+            {
+                _owner = owner;
+                _phase = phase;
+                _systemHash = systemHash;
+            }
+
+            public uint GetSystemIdHash()
+            {
+                return _systemHash;
+            }
+
+            public DispatcherPhase GetDispatcherPhase()
+            {
+                return _phase;
+            }
+
+            public byte GetBucketId()
+            {
+                return byte.MaxValue;
+            }
+
+            public int GetDependencyCount()
+            {
+                return 0;
+            }
+
+            public uint GetDependencyHash(int dependencyIndex)
+            {
+                return 0u;
+            }
+
+            public void PreSimulationTick(in DispatcherTimingDTO timing)
+            {
+                if (_phase == DispatcherPhase.PreSimulation)
+                    _owner.CartographyPreSimulationTick(in timing);
+            }
+
+            public JobHandle ScheduleSimulation(
+                in DispatcherTimingDTO timing,
+                in DispatcherJobContext context,
+                JobHandle dependsOn)
+            {
+                return _phase == DispatcherPhase.Simulation
+                    ? _owner.ScheduleCartographySimulation(in timing, in context, dependsOn)
+                    : dependsOn;
+            }
+
+            public void PostSimulationTick(in DispatcherTimingDTO timing)
+            {
+                if (_phase == DispatcherPhase.PostSimulation)
+                    _owner.CartographyPostSimulationTick(in timing);
+            }
+
+            public void VisualSyncTick(in DispatcherTimingDTO timing)
+            {
+            }
         }
 
 #if UNITY_EDITOR

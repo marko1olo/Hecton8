@@ -67,7 +67,7 @@ SDK authoring details are in [SDK_Authoring_Interface_Plan.md](SDK_Authoring_Int
 | `HectonAPI.Recycling` | `ProcessRecycle` | Owner-arbitrated request; no direct inventory mutation. |
 | `HectonAPI.Construction` | `RegisterBuildable`, `TryFindBuildable` | Runtime buildable overlay; no direct scene spawn. |
 | `HectonAPI.Ecosystem` | `RegisterBiomeMutation` | Deterministic fauna mutation overlay. |
-| `HectonAPI.Localization` | `InjectTable` | Cold localization injection only. |
+| `HectonAPI.Localization` | `InjectBabelEnvelope` | Rejected binary Babel envelope seam; runtime dictionary injection is disabled. |
 | `HectonAPI.UI` | `ShowInfo`, `ShowWarning`, `ShowCritical`, `RegisterSetting` bool, `RegisterSetting` float | Presentation/settings only; UI cannot claim command success without owner acceptance. |
 
 Public content method count: `14`.

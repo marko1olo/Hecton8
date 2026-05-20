@@ -140,7 +140,7 @@ Prompt cadence nearby: 146 explicit `event_msg.user_message` rows over six hours
 
 ## H-Phi Continuation
 
-Current H-Phi source scan at 2026-05-16T17:18:57+04:00:
+Capture-time H-Phi source scan at 2026-05-16T17:18:57+04:00:
 
 | Metric | Value |
 |---|---:|

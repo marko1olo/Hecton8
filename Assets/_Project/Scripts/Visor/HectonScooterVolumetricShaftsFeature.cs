@@ -745,7 +745,7 @@ namespace Hecton8.Visor
                 return configured;
             }
 
-            [StructLayout(LayoutKind.Sequential, Pack = 4, Size = ShaftGlobalsStrideBytes)]
+            [StructLayout(LayoutKind.Sequential, Size = ShaftGlobalsStrideBytes)]
             private struct ShaftGlobalsDTO
             {
                 internal Vector4 PassRenderRayDistance;
@@ -778,7 +778,7 @@ namespace Hecton8.Visor
                 }
             }
 
-            [StructLayout(LayoutKind.Sequential, Pack = 4, Size = MaterialParameterStateSizeBytes)]
+            [StructLayout(LayoutKind.Sequential, Size = MaterialParameterStateSizeBytes)]
             private struct MaterialParameterState
             {
                 internal float RenderScale;

@@ -1,16 +1,17 @@
-﻿# Verify Batch 06 - Priority Raw Creator Leads
+# Verify Batch 06 - Priority Raw Creator Leads
 
 Status: assignment sheet / not outreach-ready
 Generated: 2026-05-19
-Public stance: single-player-first / no co-op promise
+Public stance: single-player-first scope / proof-first creator copy
 
 ## Instructions
 
+- Use only if an explicit raw-lead sprint is opened after first asset proof exposes a segment gap the live CRM cannot cover.
 - Verify. Do not contact.
 - Do not invent emails.
 - Use only creator-owned public contact routes.
 - Mark `NEEDS_ASSET` if the lead is good but HECTON-8 has no matching screenshot/clip/demo yet.
-- Reject co-op-only or scam/key-reseller leads.
+- Reject multiplayer-only, scam, or key-reseller leads.
 
 ## Batch Leads
 
@@ -22,8 +23,8 @@ Public stance: single-player-first / no co-op promise
 - Country candidates: United States
 - Raw occurrences: 4
 - Public metric seen: 12742
-- Draft pitch seed: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
-- Risk: May compare directly to Subnautica; send only when screenshots clearly differentiate NASA-punk machinery and black-water pressure.
+- Draft pitch seed: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
+- Risk: May invite direct comparison; send only when screenshots clearly differentiate NASA-punk machinery and black-water pressure, public_comparison_gate stays private-only, and pain freshness fields are filled for pain-backed angles.
 - Verification checklist:
   - [ ] Official YouTube/Twitch/site found
   - [ ] Upload activity checked
@@ -33,7 +34,7 @@ Public stance: single-player-first / no co-op promise
   - [ ] Brand safety checked
   - [ ] HECTON-8 matching asset identified
   - [ ] Custom opener written
-- CRM status: `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
+- Raw sheet status (do not copy into live CRM): `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
 - Custom opener: `TODO`
 - Required asset: `TODO`
 - Notes: `TODO`
@@ -46,8 +47,8 @@ Public stance: single-player-first / no co-op promise
 - Country candidates: United States
 - Raw occurrences: 4
 - Public metric seen: 12112
-- Draft pitch seed: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
-- Risk: May compare directly to Subnautica; send only when screenshots clearly differentiate NASA-punk machinery and black-water pressure.
+- Draft pitch seed: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
+- Risk: May invite direct comparison; send only when screenshots clearly differentiate NASA-punk machinery and black-water pressure, public_comparison_gate stays private-only, and pain freshness fields are filled for pain-backed angles.
 - Verification checklist:
   - [ ] Official YouTube/Twitch/site found
   - [ ] Upload activity checked
@@ -57,7 +58,7 @@ Public stance: single-player-first / no co-op promise
   - [ ] Brand safety checked
   - [ ] HECTON-8 matching asset identified
   - [ ] Custom opener written
-- CRM status: `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
+- Raw sheet status (do not copy into live CRM): `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
 - Custom opener: `TODO`
 - Required asset: `TODO`
 - Notes: `TODO`
@@ -70,8 +71,8 @@ Public stance: single-player-first / no co-op promise
 - Country candidates: UNKNOWN
 - Raw occurrences: 4
 - Public metric seen: 12038
-- Draft pitch seed: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
-- Risk: May compare directly to Subnautica; send only when screenshots clearly differentiate NASA-punk machinery and black-water pressure.
+- Draft pitch seed: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
+- Risk: May invite direct comparison; send only when screenshots clearly differentiate NASA-punk machinery and black-water pressure, public_comparison_gate stays private-only, and pain freshness fields are filled for pain-backed angles.
 - Verification checklist:
   - [ ] Official YouTube/Twitch/site found
   - [ ] Upload activity checked
@@ -81,7 +82,7 @@ Public stance: single-player-first / no co-op promise
   - [ ] Brand safety checked
   - [ ] HECTON-8 matching asset identified
   - [ ] Custom opener written
-- CRM status: `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
+- Raw sheet status (do not copy into live CRM): `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
 - Custom opener: `TODO`
 - Required asset: `TODO`
 - Notes: `TODO`
@@ -94,8 +95,8 @@ Public stance: single-player-first / no co-op promise
 - Country candidates: United States
 - Raw occurrences: 4
 - Public metric seen: 11900
-- Draft pitch seed: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
-- Risk: May compare directly to Subnautica; send only when screenshots clearly differentiate NASA-punk machinery and black-water pressure.
+- Draft pitch seed: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
+- Risk: May invite direct comparison; send only when screenshots clearly differentiate NASA-punk machinery and black-water pressure, public_comparison_gate stays private-only, and pain freshness fields are filled for pain-backed angles.
 - Verification checklist:
   - [ ] Official YouTube/Twitch/site found
   - [ ] Upload activity checked
@@ -105,7 +106,7 @@ Public stance: single-player-first / no co-op promise
   - [ ] Brand safety checked
   - [ ] HECTON-8 matching asset identified
   - [ ] Custom opener written
-- CRM status: `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
+- Raw sheet status (do not copy into live CRM): `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
 - Custom opener: `TODO`
 - Required asset: `TODO`
 - Notes: `TODO`
@@ -118,8 +119,8 @@ Public stance: single-player-first / no co-op promise
 - Country candidates: United Kingdom
 - Raw occurrences: 4
 - Public metric seen: 11616
-- Draft pitch seed: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
-- Risk: May compare directly to Subnautica; send only when screenshots clearly differentiate NASA-punk machinery and black-water pressure.
+- Draft pitch seed: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
+- Risk: May invite direct comparison; send only when screenshots clearly differentiate NASA-punk machinery and black-water pressure, public_comparison_gate stays private-only, and pain freshness fields are filled for pain-backed angles.
 - Verification checklist:
   - [ ] Official YouTube/Twitch/site found
   - [ ] Upload activity checked
@@ -129,7 +130,7 @@ Public stance: single-player-first / no co-op promise
   - [ ] Brand safety checked
   - [ ] HECTON-8 matching asset identified
   - [ ] Custom opener written
-- CRM status: `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
+- Raw sheet status (do not copy into live CRM): `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
 - Custom opener: `TODO`
 - Required asset: `TODO`
 - Notes: `TODO`
@@ -142,8 +143,8 @@ Public stance: single-player-first / no co-op promise
 - Country candidates: United States
 - Raw occurrences: 4
 - Public metric seen: 11600
-- Draft pitch seed: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
-- Risk: May compare directly to Subnautica; send only when screenshots clearly differentiate NASA-punk machinery and black-water pressure.
+- Draft pitch seed: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
+- Risk: May invite direct comparison; send only when screenshots clearly differentiate NASA-punk machinery and black-water pressure, public_comparison_gate stays private-only, and pain freshness fields are filled for pain-backed angles.
 - Verification checklist:
   - [ ] Official YouTube/Twitch/site found
   - [ ] Upload activity checked
@@ -153,7 +154,7 @@ Public stance: single-player-first / no co-op promise
   - [ ] Brand safety checked
   - [ ] HECTON-8 matching asset identified
   - [ ] Custom opener written
-- CRM status: `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
+- Raw sheet status (do not copy into live CRM): `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
 - Custom opener: `TODO`
 - Required asset: `TODO`
 - Notes: `TODO`
@@ -166,8 +167,8 @@ Public stance: single-player-first / no co-op promise
 - Country candidates: United States
 - Raw occurrences: 4
 - Public metric seen: 11529
-- Draft pitch seed: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
-- Risk: May compare directly to Subnautica; send only when screenshots clearly differentiate NASA-punk machinery and black-water pressure.
+- Draft pitch seed: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
+- Risk: May invite direct comparison; send only when screenshots clearly differentiate NASA-punk machinery and black-water pressure, public_comparison_gate stays private-only, and pain freshness fields are filled for pain-backed angles.
 - Verification checklist:
   - [ ] Official YouTube/Twitch/site found
   - [ ] Upload activity checked
@@ -177,7 +178,7 @@ Public stance: single-player-first / no co-op promise
   - [ ] Brand safety checked
   - [ ] HECTON-8 matching asset identified
   - [ ] Custom opener written
-- CRM status: `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
+- Raw sheet status (do not copy into live CRM): `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
 - Custom opener: `TODO`
 - Required asset: `TODO`
 - Notes: `TODO`
@@ -201,7 +202,7 @@ Public stance: single-player-first / no co-op promise
   - [ ] Brand safety checked
   - [ ] HECTON-8 matching asset identified
   - [ ] Custom opener written
-- CRM status: `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
+- Raw sheet status (do not copy into live CRM): `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
 - Custom opener: `TODO`
 - Required asset: `TODO`
 - Notes: `TODO`
@@ -214,8 +215,8 @@ Public stance: single-player-first / no co-op promise
 - Country candidates: Australia
 - Raw occurrences: 4
 - Public metric seen: 11409
-- Draft pitch seed: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
-- Risk: May compare directly to Subnautica; send only when screenshots clearly differentiate NASA-punk machinery and black-water pressure.
+- Draft pitch seed: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
+- Risk: May invite direct comparison; send only when screenshots clearly differentiate NASA-punk machinery and black-water pressure, public_comparison_gate stays private-only, and pain freshness fields are filled for pain-backed angles.
 - Verification checklist:
   - [ ] Official YouTube/Twitch/site found
   - [ ] Upload activity checked
@@ -225,7 +226,7 @@ Public stance: single-player-first / no co-op promise
   - [ ] Brand safety checked
   - [ ] HECTON-8 matching asset identified
   - [ ] Custom opener written
-- CRM status: `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
+- Raw sheet status (do not copy into live CRM): `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
 - Custom opener: `TODO`
 - Required asset: `TODO`
 - Notes: `TODO`
@@ -238,8 +239,8 @@ Public stance: single-player-first / no co-op promise
 - Country candidates: Canada
 - Raw occurrences: 4
 - Public metric seen: 11045
-- Draft pitch seed: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
-- Risk: May compare directly to Subnautica; send only when screenshots clearly differentiate NASA-punk machinery and black-water pressure.
+- Draft pitch seed: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
+- Risk: May invite direct comparison; send only when screenshots clearly differentiate NASA-punk machinery and black-water pressure, public_comparison_gate stays private-only, and pain freshness fields are filled for pain-backed angles.
 - Verification checklist:
   - [ ] Official YouTube/Twitch/site found
   - [ ] Upload activity checked
@@ -249,7 +250,7 @@ Public stance: single-player-first / no co-op promise
   - [ ] Brand safety checked
   - [ ] HECTON-8 matching asset identified
   - [ ] Custom opener written
-- CRM status: `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
+- Raw sheet status (do not copy into live CRM): `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
 - Custom opener: `TODO`
 - Required asset: `TODO`
 - Notes: `TODO`
@@ -262,8 +263,8 @@ Public stance: single-player-first / no co-op promise
 - Country candidates: United States
 - Raw occurrences: 4
 - Public metric seen: 10400
-- Draft pitch seed: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
-- Risk: May compare directly to Subnautica; send only when screenshots clearly differentiate NASA-punk machinery and black-water pressure.
+- Draft pitch seed: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
+- Risk: May invite direct comparison; send only when screenshots clearly differentiate NASA-punk machinery and black-water pressure, public_comparison_gate stays private-only, and pain freshness fields are filled for pain-backed angles.
 - Verification checklist:
   - [ ] Official YouTube/Twitch/site found
   - [ ] Upload activity checked
@@ -273,7 +274,7 @@ Public stance: single-player-first / no co-op promise
   - [ ] Brand safety checked
   - [ ] HECTON-8 matching asset identified
   - [ ] Custom opener written
-- CRM status: `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
+- Raw sheet status (do not copy into live CRM): `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
 - Custom opener: `TODO`
 - Required asset: `TODO`
 - Notes: `TODO`
@@ -297,7 +298,7 @@ Public stance: single-player-first / no co-op promise
   - [ ] Brand safety checked
   - [ ] HECTON-8 matching asset identified
   - [ ] Custom opener written
-- CRM status: `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
+- Raw sheet status (do not copy into live CRM): `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
 - Custom opener: `TODO`
 - Required asset: `TODO`
 - Notes: `TODO`
@@ -321,7 +322,7 @@ Public stance: single-player-first / no co-op promise
   - [ ] Brand safety checked
   - [ ] HECTON-8 matching asset identified
   - [ ] Custom opener written
-- CRM status: `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
+- Raw sheet status (do not copy into live CRM): `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
 - Custom opener: `TODO`
 - Required asset: `TODO`
 - Notes: `TODO`
@@ -345,7 +346,7 @@ Public stance: single-player-first / no co-op promise
   - [ ] Brand safety checked
   - [ ] HECTON-8 matching asset identified
   - [ ] Custom opener written
-- CRM status: `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
+- Raw sheet status (do not copy into live CRM): `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
 - Custom opener: `TODO`
 - Required asset: `TODO`
 - Notes: `TODO`
@@ -369,7 +370,7 @@ Public stance: single-player-first / no co-op promise
   - [ ] Brand safety checked
   - [ ] HECTON-8 matching asset identified
   - [ ] Custom opener written
-- CRM status: `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
+- Raw sheet status (do not copy into live CRM): `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
 - Custom opener: `TODO`
 - Required asset: `TODO`
 - Notes: `TODO`
@@ -382,8 +383,8 @@ Public stance: single-player-first / no co-op promise
 - Country candidates: Spain
 - Raw occurrences: 4
 - Public metric seen: 5330
-- Draft pitch seed: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
-- Risk: May compare directly to Subnautica; send only when screenshots clearly differentiate NASA-punk machinery and black-water pressure.
+- Draft pitch seed: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
+- Risk: May invite direct comparison; send only when screenshots clearly differentiate NASA-punk machinery and black-water pressure, public_comparison_gate stays private-only, and pain freshness fields are filled for pain-backed angles.
 - Verification checklist:
   - [ ] Official YouTube/Twitch/site found
   - [ ] Upload activity checked
@@ -393,7 +394,7 @@ Public stance: single-player-first / no co-op promise
   - [ ] Brand safety checked
   - [ ] HECTON-8 matching asset identified
   - [ ] Custom opener written
-- CRM status: `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
+- Raw sheet status (do not copy into live CRM): `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
 - Custom opener: `TODO`
 - Required asset: `TODO`
 - Notes: `TODO`
@@ -417,7 +418,7 @@ Public stance: single-player-first / no co-op promise
   - [ ] Brand safety checked
   - [ ] HECTON-8 matching asset identified
   - [ ] Custom opener written
-- CRM status: `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
+- Raw sheet status (do not copy into live CRM): `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
 - Custom opener: `TODO`
 - Required asset: `TODO`
 - Notes: `TODO`
@@ -441,7 +442,7 @@ Public stance: single-player-first / no co-op promise
   - [ ] Brand safety checked
   - [ ] HECTON-8 matching asset identified
   - [ ] Custom opener written
-- CRM status: `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
+- Raw sheet status (do not copy into live CRM): `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
 - Custom opener: `TODO`
 - Required asset: `TODO`
 - Notes: `TODO`
@@ -454,8 +455,8 @@ Public stance: single-player-first / no co-op promise
 - Country candidates: Ireland
 - Raw occurrences: 4
 - Public metric seen: 4630
-- Draft pitch seed: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
-- Risk: May compare directly to Subnautica; send only when screenshots clearly differentiate NASA-punk machinery and black-water pressure.
+- Draft pitch seed: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
+- Risk: May invite direct comparison; send only when screenshots clearly differentiate NASA-punk machinery and black-water pressure, public_comparison_gate stays private-only, and pain freshness fields are filled for pain-backed angles.
 - Verification checklist:
   - [ ] Official YouTube/Twitch/site found
   - [ ] Upload activity checked
@@ -465,7 +466,7 @@ Public stance: single-player-first / no co-op promise
   - [ ] Brand safety checked
   - [ ] HECTON-8 matching asset identified
   - [ ] Custom opener written
-- CRM status: `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
+- Raw sheet status (do not copy into live CRM): `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
 - Custom opener: `TODO`
 - Required asset: `TODO`
 - Notes: `TODO`
@@ -489,7 +490,7 @@ Public stance: single-player-first / no co-op promise
   - [ ] Brand safety checked
   - [ ] HECTON-8 matching asset identified
   - [ ] Custom opener written
-- CRM status: `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
+- Raw sheet status (do not copy into live CRM): `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
 - Custom opener: `TODO`
 - Required asset: `TODO`
 - Notes: `TODO`
@@ -502,8 +503,8 @@ Public stance: single-player-first / no co-op promise
 - Country candidates: Czech Republic
 - Raw occurrences: 4
 - Public metric seen: 4405
-- Draft pitch seed: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
-- Risk: May compare directly to Subnautica; send only when screenshots clearly differentiate NASA-punk machinery and black-water pressure.
+- Draft pitch seed: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
+- Risk: May invite direct comparison; send only when screenshots clearly differentiate NASA-punk machinery and black-water pressure, public_comparison_gate stays private-only, and pain freshness fields are filled for pain-backed angles.
 - Verification checklist:
   - [ ] Official YouTube/Twitch/site found
   - [ ] Upload activity checked
@@ -513,7 +514,7 @@ Public stance: single-player-first / no co-op promise
   - [ ] Brand safety checked
   - [ ] HECTON-8 matching asset identified
   - [ ] Custom opener written
-- CRM status: `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
+- Raw sheet status (do not copy into live CRM): `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
 - Custom opener: `TODO`
 - Required asset: `TODO`
 - Notes: `TODO`
@@ -537,7 +538,7 @@ Public stance: single-player-first / no co-op promise
   - [ ] Brand safety checked
   - [ ] HECTON-8 matching asset identified
   - [ ] Custom opener written
-- CRM status: `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
+- Raw sheet status (do not copy into live CRM): `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
 - Custom opener: `TODO`
 - Required asset: `TODO`
 - Notes: `TODO`
@@ -561,7 +562,7 @@ Public stance: single-player-first / no co-op promise
   - [ ] Brand safety checked
   - [ ] HECTON-8 matching asset identified
   - [ ] Custom opener written
-- CRM status: `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
+- Raw sheet status (do not copy into live CRM): `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
 - Custom opener: `TODO`
 - Required asset: `TODO`
 - Notes: `TODO`
@@ -574,8 +575,8 @@ Public stance: single-player-first / no co-op promise
 - Country candidates: Germany
 - Raw occurrences: 4
 - Public metric seen: 3851
-- Draft pitch seed: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
-- Risk: May compare directly to Subnautica; send only when screenshots clearly differentiate NASA-punk machinery and black-water pressure.
+- Draft pitch seed: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
+- Risk: May invite direct comparison; send only when screenshots clearly differentiate NASA-punk machinery and black-water pressure, public_comparison_gate stays private-only, and pain freshness fields are filled for pain-backed angles.
 - Verification checklist:
   - [ ] Official YouTube/Twitch/site found
   - [ ] Upload activity checked
@@ -585,7 +586,7 @@ Public stance: single-player-first / no co-op promise
   - [ ] Brand safety checked
   - [ ] HECTON-8 matching asset identified
   - [ ] Custom opener written
-- CRM status: `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
+- Raw sheet status (do not copy into live CRM): `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
 - Custom opener: `TODO`
 - Required asset: `TODO`
 - Notes: `TODO`
@@ -598,8 +599,8 @@ Public stance: single-player-first / no co-op promise
 - Country candidates: Germany
 - Raw occurrences: 4
 - Public metric seen: 3741
-- Draft pitch seed: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
-- Risk: May compare directly to Subnautica; send only when screenshots clearly differentiate NASA-punk machinery and black-water pressure.
+- Draft pitch seed: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
+- Risk: May invite direct comparison; send only when screenshots clearly differentiate NASA-punk machinery and black-water pressure, public_comparison_gate stays private-only, and pain freshness fields are filled for pain-backed angles.
 - Verification checklist:
   - [ ] Official YouTube/Twitch/site found
   - [ ] Upload activity checked
@@ -609,7 +610,7 @@ Public stance: single-player-first / no co-op promise
   - [ ] Brand safety checked
   - [ ] HECTON-8 matching asset identified
   - [ ] Custom opener written
-- CRM status: `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
+- Raw sheet status (do not copy into live CRM): `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`
 - Custom opener: `TODO`
 - Required asset: `TODO`
 - Notes: `TODO`

@@ -21,65 +21,96 @@ namespace Hecton8.World.ProceduralCoral
         private int _capacity;
         private int _writeIndex;
         private int _activeIndex = -1;
+        private int _activeInstanceCount;
 
         public bool EnsureGraphicsResources(int requiredCapacity)
         {
-            int capacity = math.max(1, requiredCapacity);
-            if (_capacity >= capacity &&
-                IsValid(_matrixBufferA, _capacity, UnsafeUtility.SizeOf<float4x4>()) &&
-                IsValid(_matrixBufferB, _capacity, UnsafeUtility.SizeOf<float4x4>()) &&
-                IsValid(_argsBufferA, 1, UnsafeUtility.SizeOf<CoralIndirectArgsDTO>()) &&
-                IsValid(_argsBufferB, 1, UnsafeUtility.SizeOf<CoralIndirectArgsDTO>()))
-            {
+            int capacity = math.clamp(requiredCapacity, 1, ProceduralCoralConstants.MaxRenderMatrices);
+            if (HasGraphicsResources(capacity))
                 return true;
-            }
 
             ReleaseGraphicsResources();
             _capacity = NextPowerOfTwo(capacity);
-            // COLD ALLOC: double-buffered coral instance matrix upload; no GameObject hierarchy.
-            _matrixBufferA = CreateStructuredLockBuffer<float4x4>(_capacity);
-            // COLD ALLOC: double-buffered coral instance matrix upload; no GameObject hierarchy.
-            _matrixBufferB = CreateStructuredLockBuffer<float4x4>(_capacity);
-            // COLD ALLOC: DrawProceduralIndirect argument buffer.
-            _argsBufferA = CreateIndirectArgsBuffer();
-            // COLD ALLOC: DrawProceduralIndirect argument buffer.
-            _argsBufferB = CreateIndirectArgsBuffer();
+            try
+            {
+                // COLD ALLOC: double-buffered coral instance matrix upload; no GameObject hierarchy.
+                _matrixBufferA = CreateStructuredLockBuffer<float4x4>(_capacity);
+                // COLD ALLOC: double-buffered coral instance matrix upload; no GameObject hierarchy.
+                _matrixBufferB = CreateStructuredLockBuffer<float4x4>(_capacity);
+                // COLD ALLOC: DrawProceduralIndirect argument buffer.
+                _argsBufferA = CreateIndirectArgsBuffer();
+                // COLD ALLOC: DrawProceduralIndirect argument buffer.
+                _argsBufferB = CreateIndirectArgsBuffer();
+            }
+            catch (Exception)
+            {
+                ReleaseGraphicsResources();
+                return false;
+            }
+
             _writeIndex = 0;
             _activeIndex = -1;
+            _activeInstanceCount = 0;
             return _matrixBufferA != null && _matrixBufferB != null && _argsBufferA != null && _argsBufferB != null;
         }
 
         public unsafe bool UploadFromVault(
             NativeArray<float4x4> matrices,
             NativeArray<CoralIndirectArgsDTO> indirectArgs,
-            NativeArray<CoralGpuSwayDTO> gpuSway)
+            NativeArray<CoralGpuSwayDTO> gpuSway,
+            bool allowAllocation = false)
         {
             if (!matrices.IsCreated || !indirectArgs.IsCreated || indirectArgs.Length <= 0)
                 return false;
 
-            int requested = math.min((int)indirectArgs[0].InstanceCount, matrices.Length);
-            if (!EnsureGraphicsResources(math.max(requested, 1)))
-                return false;
+            int requested = ResolveRequestedInstanceCount(indirectArgs[0].InstanceCount, matrices.Length);
+            int requiredCapacity = math.max(requested, 1);
+            if (!HasGraphicsResources(requiredCapacity))
+            {
+                if (!allowAllocation || !EnsureGraphicsResources(requiredCapacity))
+                    return false;
+            }
 
             GraphicsBuffer matrixTarget = _writeIndex == 0 ? _matrixBufferA : _matrixBufferB;
             GraphicsBuffer argsTarget = _writeIndex == 0 ? _argsBufferA : _argsBufferB;
             int writeCount = math.clamp(requested, 0, math.min(_capacity, matrixTarget.count));
             if (writeCount > 0)
             {
-                NativeArray<float4x4> mappedMatrices = matrixTarget.LockBufferForWrite<float4x4>(0, writeCount);
-                void* dst = NativeArrayUnsafeUtility.GetUnsafePtr(mappedMatrices);
-                void* src = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(matrices);
-                UnsafeUtility.MemCpy(dst, src, writeCount * UnsafeUtility.SizeOf<float4x4>());
-                matrixTarget.UnlockBufferAfterWrite<float4x4>(writeCount);
+                bool matrixLocked = false;
+                try
+                {
+                    NativeArray<float4x4> mappedMatrices = matrixTarget.LockBufferForWrite<float4x4>(0, writeCount);
+                    matrixLocked = true;
+                    void* dst = NativeArrayUnsafeUtility.GetUnsafePtr(mappedMatrices);
+                    void* src = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(matrices);
+                    UnsafeUtility.MemCpy(dst, src, writeCount * UnsafeUtility.SizeOf<float4x4>());
+                }
+                finally
+                {
+                    if (matrixLocked)
+                        matrixTarget.UnlockBufferAfterWrite<float4x4>(writeCount);
+                }
             }
 
             CoralIndirectArgsDTO args = indirectArgs[0];
             args.InstanceCount = (uint)writeCount;
-            NativeArray<CoralIndirectArgsDTO> mappedArgs = argsTarget.LockBufferForWrite<CoralIndirectArgsDTO>(0, 1);
-            mappedArgs[0] = args;
-            argsTarget.UnlockBufferAfterWrite<CoralIndirectArgsDTO>(1);
+            args.VertexCountPerInstance = math.max(1u, args.VertexCountPerInstance);
+            bool argsLocked = false;
+            try
+            {
+                NativeArray<CoralIndirectArgsDTO> mappedArgs =
+                    argsTarget.LockBufferForWrite<CoralIndirectArgsDTO>(0, 1);
+                argsLocked = true;
+                mappedArgs[0] = args;
+            }
+            finally
+            {
+                if (argsLocked)
+                    argsTarget.UnlockBufferAfterWrite<CoralIndirectArgsDTO>(1);
+            }
 
             _activeIndex = _writeIndex;
+            _activeInstanceCount = writeCount;
             _writeIndex ^= 1;
             Shader.SetGlobalBuffer(_CoralMatricesId, matrixTarget);
             PublishSway(gpuSway);
@@ -88,8 +119,12 @@ namespace Hecton8.World.ProceduralCoral
 
         public bool TryDraw(Material material, Bounds bounds, MeshTopology topology = MeshTopology.Triangles)
         {
-            if (material == null || !TryGetActiveBuffers(out GraphicsBuffer matrixBuffer, out GraphicsBuffer argsBuffer))
+            if (material == null ||
+                _activeInstanceCount <= 0 ||
+                !TryGetActiveBuffers(out GraphicsBuffer matrixBuffer, out GraphicsBuffer argsBuffer))
+            {
                 return false;
+            }
 
             Shader.SetGlobalBuffer(_CoralMatricesId, matrixBuffer);
             Graphics.DrawProceduralIndirect(
@@ -129,9 +164,13 @@ namespace Hecton8.World.ProceduralCoral
                 return;
 
             CoralGpuSwayDTO sway = gpuSway[0];
-            Shader.SetGlobalVector(_CoralSway0Id, new Vector4(sway.FlowAndAmplitude.x, sway.FlowAndAmplitude.y, sway.FlowAndAmplitude.z, sway.FlowAndAmplitude.w));
-            Shader.SetGlobalVector(_CoralSway1Id, new Vector4(sway.BoundsAndDensity.x, sway.BoundsAndDensity.y, sway.BoundsAndDensity.z, sway.BoundsAndDensity.w));
-            Shader.SetGlobalVector(_CoralSway2Id, new Vector4(sway.FaultAndFrame.x, sway.FaultAndFrame.y, sway.FaultAndFrame.z, sway.FaultAndFrame.w));
+            Shader.SetGlobalVector(
+                _CoralSway0Id,
+                ToFiniteVector4(sway.FlowAndAmplitude, new float4(0.04f, 0f, 1f, 0f)));
+            Shader.SetGlobalVector(
+                _CoralSway1Id,
+                ToFiniteVector4(sway.BoundsAndDensity, new float4(0f, 0f, 0f, 1f)));
+            Shader.SetGlobalVector(_CoralSway2Id, ToFiniteVector4(sway.FaultAndFrame, float4.zero));
         }
 
         private void ReleaseGraphicsResources()
@@ -143,6 +182,7 @@ namespace Hecton8.World.ProceduralCoral
             _capacity = 0;
             _writeIndex = 0;
             _activeIndex = -1;
+            _activeInstanceCount = 0;
         }
 
         private static GraphicsBuffer CreateStructuredLockBuffer<T>(int count) where T : struct
@@ -168,6 +208,22 @@ namespace Hecton8.World.ProceduralCoral
             return buffer != null && buffer.IsValid() && buffer.count >= count && buffer.stride == stride;
         }
 
+        private static int ResolveRequestedInstanceCount(uint rawInstanceCount, int matrixCapacity)
+        {
+            int safeCapacity = math.max(0, matrixCapacity);
+            return rawInstanceCount > (uint)safeCapacity ? safeCapacity : (int)rawInstanceCount;
+        }
+
+        private bool HasGraphicsResources(int requiredCapacity)
+        {
+            int capacity = math.max(1, requiredCapacity);
+            return _capacity >= capacity &&
+                   IsValid(_matrixBufferA, capacity, UnsafeUtility.SizeOf<float4x4>()) &&
+                   IsValid(_matrixBufferB, capacity, UnsafeUtility.SizeOf<float4x4>()) &&
+                   IsValid(_argsBufferA, 1, UnsafeUtility.SizeOf<CoralIndirectArgsDTO>()) &&
+                   IsValid(_argsBufferB, 1, UnsafeUtility.SizeOf<CoralIndirectArgsDTO>());
+        }
+
         private static void ReleaseBuffer(ref GraphicsBuffer buffer)
         {
             if (buffer == null)
@@ -188,6 +244,12 @@ namespace Hecton8.World.ProceduralCoral
             v |= v >> 16;
             v++;
             return v;
+        }
+
+        private static Vector4 ToFiniteVector4(float4 value, float4 fallback)
+        {
+            float4 safe = math.all(math.isfinite(value)) ? value : fallback;
+            return new Vector4(safe.x, safe.y, safe.z, safe.w);
         }
     }
 }

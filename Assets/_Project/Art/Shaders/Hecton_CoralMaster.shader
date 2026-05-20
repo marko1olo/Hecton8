@@ -84,6 +84,7 @@ Shader "Hecton8/Flora/CoralMaster"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl"
+            #include "Assets/_Project/Art/Shaders/Hecton_CustomLightProbeGrid.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/LODCrossFade.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
@@ -249,7 +250,8 @@ Shader "Hecton8/Flora/CoralMaster"
                 int stateIndex = min((int)floor(selector * activeCount), activeCount - 1);
                 float4 state = _GlobalBiolumDearLieGroups[stateIndex];
                 half strobe = saturate((half)_GlobalBiolumParams.z);
-                half highTier = step(4.0h, (half)_GlobalBiolumParams.y);
+                half qualityCurve = saturate((half)_GlobalBiolumParams.y);
+                qualityCurve = qualityCurve * qualityCurve * (3.0h - 2.0h * qualityCurve);
                 int secondaryIndex = stateIndex + 1;
                 if (secondaryIndex >= activeCount)
                     secondaryIndex = 0;
@@ -257,14 +259,11 @@ Shader "Hecton8/Flora/CoralMaster"
                 half overdrive = 0.0h;
                 half godSpark = 0.0h;
                 half godHaze = 0.0h;
-                if (highTier > 0.5h)
-                {
-                    half overPulse = (half)(1.0 - abs(frac(_GlobalBiolumClock.x * 0.065 + selector * 3.7) * 2.0 - 1.0));
-                    half filament = (half)(1.0 - abs(frac(positionWS.x * 0.137 + positionWS.y * 0.113 + positionWS.z * 0.157 + _GlobalBiolumClock.x * 0.205) * 2.0 - 1.0));
-                    godHaze = smoothstep(0.43h, 0.91h, overPulse) * (0.54h + filament * 0.46h);
-                    godSpark = smoothstep(0.82h, 0.98h, filament) * overPulse;
-                    overdrive = saturate(overPulse * 0.33h + godSpark * 0.20h);
-                }
+                half overPulse = (half)(1.0 - abs(frac(_GlobalBiolumClock.x * 0.065 + selector * 3.7) * 2.0 - 1.0));
+                half filament = (half)(1.0 - abs(frac(positionWS.x * 0.137 + positionWS.y * 0.113 + positionWS.z * 0.157 + _GlobalBiolumClock.x * 0.205) * 2.0 - 1.0));
+                godHaze = smoothstep(0.43h, 0.91h, overPulse) * (0.54h + filament * 0.46h) * qualityCurve;
+                godSpark = smoothstep(0.82h, 0.98h, filament) * overPulse * qualityCurve;
+                overdrive = saturate(overPulse * 0.33h + godSpark * 0.20h) * qualityCurve;
                 half3 color = lerp((half3)state.rgb, half3(1.0h, 1.0h, 1.0h), strobe);
                 half intensity = clamp(max((half)state.w, strobe * 10.0h), 0.0h, 10.0h);
                 color = lerp(color, (half3)secondaryState.rgb, overdrive);
@@ -445,7 +444,7 @@ Shader "Hecton8/Flora/CoralMaster"
                 albedo *= lerp(1.0h, detailSample, _DetailStrength);
                 albedo = lerp(albedo, albedo * 0.78h, cavity * 0.22h);
 
-                half3 ambient = SampleSH(normalWS) * (_AmbientStrength + wetness * 0.1h);
+                half3 ambient = H8CustomLightProbeResolveAmbient(samplePositionWS, normalWS, half3(0.015h, 0.025h, 0.035h)) * (_AmbientStrength + wetness * 0.1h);
                 half vertexAO = lerp(0.72h, 1.0h, saturate(input.color.a));
                 half3 diffuse = albedo * (ambient + mainLight.color * wrapDiffuse) * vertexAO;
                 diffuse *= (1.0h - cavity * _CavityStrength * 0.5h);

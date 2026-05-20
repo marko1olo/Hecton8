@@ -1,0 +1,9 @@
+# SHINOBU_219 cold-path shader aging tuning.
+# key,value
+rust_stress,0.78
+corrosion_pressure,0.62
+salt_depth,0.58
+biomass_temperature,0.42
+glass_threshold,0.68
+temperature_boost,0.018
+quality_noise,1.0

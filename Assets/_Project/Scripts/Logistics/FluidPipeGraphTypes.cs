@@ -32,7 +32,7 @@ namespace Hecton8.Logistics
         Ultra = 3
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential)]
     public struct FluidPipeRuptureRecord
     {
         public int NodeIndex;
@@ -48,7 +48,7 @@ namespace Hecton8.Logistics
         public ushort Reserved;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential)]
     public struct FluidPipeTelemetryEntry
     {
         public int FrameIndex;

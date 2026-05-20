@@ -3,7 +3,7 @@ Shader "Hecton8/Rendering/UberNoir"
     Properties
     {
         [MainTexture] _BaseMap("Albedo", 2D) = "white" {}
-        _MaskMap("Packed ORM Emission", 2D) = "white" {}
+        _MaskMap("Packed ARM Emission", 2D) = "white" {}
         [Normal] _BumpMap("Normal", 2D) = "bump" {}
         _RustDetailMap("Rust Height Normal", 2D) = "gray" {}
         _BlueNoiseTex("Blue Noise", 2D) = "gray" {}

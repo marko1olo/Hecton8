@@ -4,6 +4,7 @@ using Hecton8.Gameplay;
 using Hecton8.Scavenging;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 using Unity.Jobs;
@@ -15,7 +16,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-119)]
-    public sealed class FloraRegrowthDirector : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener
+    public sealed class FloraRegrowthDirector : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private const float RegrowthDelaySeconds = 4f * 60f * 60f;
         private const float DefaultRegrowthDurationSeconds = 90f;
@@ -45,85 +46,133 @@ namespace Hecton8.World
         private const string NativeMemoryOwner = nameof(FloraRegrowthDirector);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Explicit, Size = 40)]
         private struct FloraRegrowthState
         {
+            [FieldOffset(32)]
             public uint InstanceUid;
+            [FieldOffset(0)]
             public ulong TemplateHash;
+            [FieldOffset(8)]
             public float3 RuntimePosition;
+            [FieldOffset(20)]
             public float EligiblePlayTime;
+            [FieldOffset(24)]
             public float RegrowthStartPlayTime;
+            [FieldOffset(28)]
             public float RegrowthDurationSeconds;
+            [FieldOffset(36)]
             public byte State;
+            [FieldOffset(37)]
             public byte SeenThisScan;
+            [FieldOffset(38)]
             public ushort Reserved0;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct SeedFlightState
         {
+            [FieldOffset(24)]
             public uint SeedInstanceUid;
+            [FieldOffset(0)]
             public ulong TemplateHash;
+            [FieldOffset(8)]
             public float3 Position;
+            [FieldOffset(20)]
             public float ElapsedSeconds;
+            [FieldOffset(28)]
             public byte Landed;
+            [FieldOffset(29)]
             public byte Reserved0;
+            [FieldOffset(30)]
             public ushort Reserved1;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Explicit, Size = 56)]
         private struct FloraMaturationState
         {
+            [FieldOffset(44)]
             public uint InstanceUid;
+            [FieldOffset(0)]
             public ulong TemplateHash;
+            [FieldOffset(8)]
             public float3 RuntimePosition;
+            [FieldOffset(20)]
             public float SpawnPlayTimeSeconds;
+            [FieldOffset(24)]
             public float GrowthDurationSeconds;
+            [FieldOffset(28)]
             public float HeightScale;
+            [FieldOffset(32)]
             public float WidthScale;
+            [FieldOffset(36)]
             public float ExternalShadeOcclusion01;
+            [FieldOffset(40)]
             public float RadiationGrowthMultiplier;
+            [FieldOffset(48)]
             public int TypeId;
+            [FieldOffset(52)]
             public byte SeenThisScan;
+            [FieldOffset(53)]
             public byte Reserved0;
+            [FieldOffset(54)]
             public ushort Reserved1;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Explicit, Size = 24)]
         private struct FloraMaturationResult
         {
+            [FieldOffset(0)]
             public uint InstanceUid;
+            [FieldOffset(4)]
             public float Progress01;
+            [FieldOffset(8)]
             public float GrowthMultiplier;
+            [FieldOffset(12)]
             public float ScaleMultiplier;
+            [FieldOffset(16)]
             public float ResourceYieldMultiplier;
+            [FieldOffset(20)]
+            public uint _pad0;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct SymbioticFungalNodeState
         {
+            [FieldOffset(20)]
             public uint InstanceUid;
+            [FieldOffset(0)]
             public ulong TemplateHash;
+            [FieldOffset(8)]
             public float3 RuntimePosition;
+            [FieldOffset(24)]
             public byte Active;
+            [FieldOffset(25)]
             public byte Reserved0;
+            [FieldOffset(26)]
             public ushort Reserved1;
+            [FieldOffset(28)]
+            public uint _pad0;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
         private struct SymbioticFungalBuffState
         {
+            [FieldOffset(0)]
             public uint InstanceUid;
+            [FieldOffset(4)]
             public float ExpirePlayTimeSeconds;
+            [FieldOffset(8)]
             public float GrowthMultiplier;
+            [FieldOffset(12)]
             public float Reserved0;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct EvaluateMaturationJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<FloraMaturationState> States;
-            [ReadOnly] public NativeArray<SymbioticFungalBuffState> SymbioticBuffs;
+            [ReadOnly, NoAlias] public NativeArray<FloraMaturationState> States;
+            [ReadOnly, NoAlias] public NativeArray<SymbioticFungalBuffState> SymbioticBuffs;
             public float CurrentPlayTimeSeconds;
             public float CanopyShadowRadiusMeters;
             public float CanopyVerticalMinMeters;
@@ -131,7 +180,7 @@ namespace Hecton8.World
             public float CanopyMinHeightScale;
             public float LightStarvationStrength;
             public float LunarResonanceGrowthMultiplier;
-            [WriteOnly] public NativeArray<FloraMaturationResult> Results;
+            [WriteOnly, NoAlias] public NativeArray<FloraMaturationResult> Results;
 
             public void Execute(int index)
             {
@@ -266,6 +315,8 @@ namespace Hecton8.World
         private NativeList<SymbioticFungalNodeState> _symbioticFungalNodes;
         private NativeList<SymbioticFungalBuffState> _symbioticFungalBuffs;
         private JobHandle _maturationJobHandle;
+        private PersistentWorldRegistry _persistentWorldRegistry;
+        private ISaveService _saveService;
         private bool _maturationJobScheduled;
         private float _lunarResonanceExpirePlayTimeSeconds;
         private float _lunarResonanceGrowthMultiplier = 1f;
@@ -275,10 +326,12 @@ namespace Hecton8.World
         private bool _slowTickRegistered;
         private bool _lateFrameRegistered;
         private bool _originShiftRegistered;
+        private bool _hotSwapRegistered;
 
         private void Awake()
         {
             ResolveLocalComponentReferences();
+            CacheRegistryServicesCold();
 
             _destroyedFloraScratch = new NativeList<PersistentWorldDeltaRecord>(
                 DefaultTrackedRegrowthCapacity,
@@ -332,27 +385,10 @@ namespace Hecton8.World
                 return;
 
             ResolveLocalComponentReferences();
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
 
-            if (GlobalRegistry.Dispatcher != null)
-            {
-                if (!_tickRegistered)
-                {
-                    GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                    _tickRegistered = GlobalRegistry.Updatables.Contains(this);
-                }
-
-                if (!_slowTickRegistered)
-                {
-                    GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                    _slowTickRegistered = GlobalRegistry.SlowTickables.Contains(this);
-                }
-
-                if (!_lateFrameRegistered)
-                {
-                    GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-                    _lateFrameRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
-                }
-            }
+            TryRegisterDispatcherLanes();
 
             if (!_originShiftRegistered)
             {
@@ -386,6 +422,8 @@ namespace Hecton8.World
                 HectonFloatingOrigin.UnregisterListener(this);
                 _originShiftRegistered = false;
             }
+
+            TryUnregisterHotSwapListener();
         }
 
         private void OnDestroy()
@@ -402,6 +440,7 @@ namespace Hecton8.World
                 _originShiftRegistered = false;
             }
 
+            TryUnregisterHotSwapListener();
             JobHandle disposeHandle = _maturationJobScheduled ? _maturationJobHandle : default;
             DisposeNativeList(ref _destroyedFloraScratch, nameof(_destroyedFloraScratch));
             DisposeNativeList(ref _pendingSeedScratch, nameof(_pendingSeedScratch));
@@ -415,6 +454,72 @@ namespace Hecton8.World
             DisposeNativeHashMap(ref _maturationIndexByInstanceUid, nameof(_maturationIndexByInstanceUid), disposeHandle, _maturationJobScheduled);
             DisposeNativeList(ref _symbioticFungalBuffs, nameof(_symbioticFungalBuffs), disposeHandle, _maturationJobScheduled);
             DisposeNativeList(ref _symbioticFungalNodes, nameof(_symbioticFungalNodes));
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
+            _saveService = GlobalRegistry.Save;
+        }
+
+        private void TryRegisterDispatcherLanes()
+        {
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            if (!_tickRegistered)
+            {
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+                _tickRegistered = GlobalRegistry.Updatables.Contains(this);
+            }
+
+            if (!_slowTickRegistered)
+            {
+                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
+                _slowTickRegistered = GlobalRegistry.SlowTickables.Contains(this);
+            }
+
+            if (!_lateFrameRegistered)
+            {
+                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
+                _lateFrameRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.PersistentWorldRegistry:
+                    _persistentWorldRegistry = currentService as PersistentWorldRegistry;
+                    break;
+                case GlobalRegistryServiceSlot.Save:
+                    _saveService = currentService as ISaveService;
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    TryRegisterDispatcherLanes();
+                    break;
+            }
         }
 
         private void SyncMaturationStates(PersistentWorldRegistry registry, float currentPlayTime)
@@ -861,7 +966,7 @@ namespace Hecton8.World
             if (!_regrowthStates.IsCreated || !_stateIndexByInstanceUid.IsCreated || destructibleOrganicManager == null)
                 return;
 
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            PersistentWorldRegistry registry = _persistentWorldRegistry;
             float currentPlayTime = GetCurrentPlayTimeSeconds();
             UpdateSeedFlights(deltaTime);
             for (int i = _regrowthStates.Length - 1; i >= 0; i--)
@@ -915,7 +1020,7 @@ namespace Hecton8.World
             if (!_destroyedFloraScratch.IsCreated || !_regrowthStates.IsCreated || !_stateIndexByInstanceUid.IsCreated)
                 return;
 
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            PersistentWorldRegistry registry = _persistentWorldRegistry;
             if (registry == null || destructibleOrganicManager == null)
                 return;
 
@@ -1075,7 +1180,7 @@ namespace Hecton8.World
             if (!_seedFlightStates.IsCreated || _seedFlightStates.Length <= 0)
                 return;
 
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            PersistentWorldRegistry registry = _persistentWorldRegistry;
             if (registry == null)
                 return;
 
@@ -1155,7 +1260,7 @@ namespace Hecton8.World
                 return;
             }
 
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            PersistentWorldRegistry registry = _persistentWorldRegistry;
             if (registry == null)
                 return;
 
@@ -1397,10 +1502,10 @@ namespace Hecton8.World
             }
         }
 
-        private static float GetCurrentPlayTimeSeconds()
+        private float GetCurrentPlayTimeSeconds()
         {
-            return GlobalRegistry.Save != null
-                ? GlobalRegistry.Save.CurrentPlayTimeSeconds
+            return _saveService != null
+                ? _saveService.CurrentPlayTimeSeconds
                 : Time.realtimeSinceStartup;
         }
 

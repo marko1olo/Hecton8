@@ -11,9 +11,11 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/UI/Localized Layout Mirror")]
-    public sealed class LocalizedLayoutMirror : MonoBehaviour, ILateFrameTickable, ILocalizationLanguageChangedListener
+    public sealed class LocalizedLayoutMirror : MonoBehaviour, ILateFrameTickable, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         private static bool s_isRebuildingLayout;
+        private static LocalizationManager s_cachedLocalization;
+        private static bool s_localizationColdResolved;
 
         [Header("References")]
         [Tooltip("Target layout group to mirror. Defaults to the component on the same GameObject.")]
@@ -56,6 +58,7 @@ namespace Hecton8.UI
         private bool _isApplyingMirroring;
         private bool _applyMirroringPending = true;
         private bool _registeredForTick;
+        private bool _hotSwapRegistered;
         private readonly List<RectTransform> _resolvedIconRoots = new List<RectTransform>(8); // COLD ALLOC: List[8] — cached mirrored icon roots — owner: LocalizedLayoutMirror
         private readonly List<Vector3> _baseIconScales = new List<Vector3>(8); // COLD ALLOC: List[8] — cached icon base scales — owner: LocalizedLayoutMirror
 
@@ -67,6 +70,8 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            CacheLocalizationCold();
+            TryRegisterHotSwapListener();
             LocalizationEvents.RegisterLanguageListener(this);
             QueueApplyMirroring();
         }
@@ -74,6 +79,7 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             LocalizationEvents.UnregisterLanguageListener(this);
+            TryUnregisterHotSwapListener();
             TryUnregisterFromTick();
         }
 
@@ -99,6 +105,19 @@ namespace Hecton8.UI
 
         private void HandleLanguageChanged(GameLanguage language)
         {
+            QueueApplyMirroring();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.LocalizationRuntime)
+                return;
+
+            s_cachedLocalization = currentService as LocalizationManager;
+            s_localizationColdResolved = true;
             QueueApplyMirroring();
         }
 
@@ -141,9 +160,7 @@ namespace Hecton8.UI
 
             CaptureDefaults();
 
-            GameLanguage language = Hecton8.Core.GlobalRegistry.Localization != null
-                ? Hecton8.Core.GlobalRegistry.Localization.CurrentLanguage
-                : GameLanguage.English;
+            GameLanguage language = ResolveCurrentLanguage();
             bool rtl = LocalizedMeasurementFormatter.IsRightToLeft(language);
             if (_isAppliedRtl == rtl && Application.isPlaying)
                 return;
@@ -192,6 +209,39 @@ namespace Hecton8.UI
         {
             _applyMirroringPending = true;
             TryRegisterForTick();
+        }
+
+        private static void CacheLocalizationCold()
+        {
+            if (s_localizationColdResolved && s_cachedLocalization != null)
+                return;
+
+            s_cachedLocalization = Hecton8.Core.GlobalRegistry.Localization;
+            s_localizationColdResolved = s_cachedLocalization != null;
+        }
+
+        private static GameLanguage ResolveCurrentLanguage()
+        {
+            CacheLocalizationCold();
+            LocalizationManager manager = s_cachedLocalization;
+            return manager != null ? manager.CurrentLanguage : GameLanguage.English;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private static void MarkLayoutForRebuildSafe(RectTransform rectTransform)

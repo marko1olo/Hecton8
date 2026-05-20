@@ -4,6 +4,7 @@ using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.World;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -11,50 +12,61 @@ using UnityEngine;
 
 namespace Hecton8.Gameplay
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 56)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct HazardVolumeData
     {
-        public double3 AbsoluteUniversePosition;
-        public float Radius;
-        public float InvRadius;
-        public float InvRadiusSqr;
-        public float Intensity;
-        public float VisorGlitchBias;
-        public int CurveLutOffset;
-        public HazardType Type;
-        public byte RequiresToxicMudBroadphase;
-        public byte PlayerToxicMudBroadphase;
-        public byte VehicleToxicMudBroadphase;
+        [FieldOffset(0)] public double3 AbsoluteUniversePosition;
+        [FieldOffset(24)] public float Radius;
+        [FieldOffset(28)] public float InvRadius;
+        [FieldOffset(32)] public float InvRadiusSqr;
+        [FieldOffset(36)] public float Intensity;
+        [FieldOffset(40)] public float VisorGlitchBias;
+        [FieldOffset(44)] public int CurveLutOffset;
+        [FieldOffset(48)] public HazardType Type;
+        [FieldOffset(52)] public byte RequiresToxicMudBroadphase;
+        [FieldOffset(53)] public byte PlayerToxicMudBroadphase;
+        [FieldOffset(54)] public byte VehicleToxicMudBroadphase;
+        [FieldOffset(55)] private byte _pad0;
+        [FieldOffset(56)] private ulong _pad1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 68)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     internal struct HazardExposureJobResult
     {
-        public float PlayerRadiation;
-        public float PlayerHeat;
-        public float PlayerToxicity;
-        public float PlayerBiohazard;
-        public float PlayerRadiationGlitchBias;
-        public float PlayerHeatGlitchBias;
-        public float PlayerToxicityGlitchBias;
-        public float PlayerBiohazardGlitchBias;
-        public float VehicleRadiation;
-        public float VehicleHeat;
-        public float VehicleToxicity;
-        public float VehicleBiohazard;
-        public float VehicleRadiationGlitchBias;
-        public float VehicleHeatGlitchBias;
-        public float VehicleToxicityGlitchBias;
-        public float VehicleBiohazardGlitchBias;
-        public byte PlayerExposureMask;
-        public byte VehicleExposureMask;
+        [FieldOffset(0)] public float PlayerRadiation;
+        [FieldOffset(4)] public float PlayerHeat;
+        [FieldOffset(8)] public float PlayerToxicity;
+        [FieldOffset(12)] public float PlayerBiohazard;
+        [FieldOffset(16)] public float PlayerRadiationGlitchBias;
+        [FieldOffset(20)] public float PlayerHeatGlitchBias;
+        [FieldOffset(24)] public float PlayerToxicityGlitchBias;
+        [FieldOffset(28)] public float PlayerBiohazardGlitchBias;
+        [FieldOffset(32)] public float VehicleRadiation;
+        [FieldOffset(36)] public float VehicleHeat;
+        [FieldOffset(40)] public float VehicleToxicity;
+        [FieldOffset(44)] public float VehicleBiohazard;
+        [FieldOffset(48)] public float VehicleRadiationGlitchBias;
+        [FieldOffset(52)] public float VehicleHeatGlitchBias;
+        [FieldOffset(56)] public float VehicleToxicityGlitchBias;
+        [FieldOffset(60)] public float VehicleBiohazardGlitchBias;
+        [FieldOffset(64)] public byte PlayerExposureMask;
+        [FieldOffset(65)] public byte VehicleExposureMask;
+        [FieldOffset(66)] private ushort _pad0;
+        [FieldOffset(68)] private uint _pad1;
+        [FieldOffset(72)] private ulong _pad2;
+        [FieldOffset(80)] private ulong _pad3;
+        [FieldOffset(88)] private ulong _pad4;
+        [FieldOffset(96)] private ulong _pad5;
+        [FieldOffset(104)] private ulong _pad6;
+        [FieldOffset(112)] private ulong _pad7;
+        [FieldOffset(120)] private ulong _pad8;
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct EvaluateHazardExposureJob : IJob
     {
-        [ReadOnly] public NativeArray<HazardVolumeData> Volumes;
-        [ReadOnly] public NativeArray<float> CurveLutSamples;
+        [ReadOnly, NoAlias] public NativeArray<HazardVolumeData> Volumes;
+        [ReadOnly, NoAlias] public NativeArray<float> CurveLutSamples;
         public int CurveLutSampleCount;
         public int VolumeCount;
         public bool HasPlayerBounds;
@@ -63,7 +75,7 @@ namespace Hecton8.Gameplay
         public float3 PlayerHalfExtents;
         public double3 VehicleCenter;
         public float3 VehicleHalfExtents;
-        public NativeSlice<HazardExposureJobResult> Result;
+        [NoAlias] public NativeSlice<HazardExposureJobResult> Result;
 
         public void Execute()
         {

@@ -1,0 +1,51 @@
+#pragma kernel CSMain
+
+Texture2D<float4> _SourceAtlas;
+Texture2D<float4> _SourceMaskAtlas;
+RWTexture2D<float4> _OutputAtlas;
+
+float4 _AtlasSize;
+int _DilationRadius;
+
+[numthreads(8, 8, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    int2 atlasSize = max(int2(_AtlasSize.xy), int2(1, 1));
+    if (id.x >= (uint)atlasSize.x || id.y >= (uint)atlasSize.y)
+        return;
+
+    int2 pixel = int2(id.xy);
+    float4 current = _SourceAtlas.Load(int3(pixel, 0));
+    float currentMask = _SourceMaskAtlas.Load(int3(pixel, 0)).a;
+    if (currentMask > 0.0005)
+    {
+        _OutputAtlas[pixel] = current;
+        return;
+    }
+
+    int radius = clamp(_DilationRadius, 0, 32);
+    float bestDistanceSq = 1048576.0;
+    float4 best = current;
+
+    [loop]
+    for (int y = -radius; y <= radius; y++)
+    {
+        [loop]
+        for (int x = -radius; x <= radius; x++)
+        {
+            int2 samplePixel = clamp(pixel + int2(x, y), int2(0, 0), atlasSize - int2(1, 1));
+            float mask = _SourceMaskAtlas.Load(int3(samplePixel, 0)).a;
+            if (mask <= 0.0005)
+                continue;
+
+            float d = (float)(x * x + y * y);
+            if (d < bestDistanceSq)
+            {
+                bestDistanceSq = d;
+                best = _SourceAtlas.Load(int3(samplePixel, 0));
+            }
+        }
+    }
+
+    _OutputAtlas[pixel] = best;
+}

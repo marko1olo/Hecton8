@@ -49,6 +49,7 @@ using Hecton8.Environment.Fluids;
 using Hecton8.Gameplay;
 using Hecton8.World;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -64,112 +65,194 @@ using BrineLayerSample = Hecton8.Core.Contracts.BrineLayerSample;
 
 namespace Hecton8.Physics
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct ActiveThrusterFlow
     {
+        [FieldOffset(0)]
         public float3 PositionWS;
+        [FieldOffset(12)]
         public float3 DirectionWS;
+        [FieldOffset(24)]
         public float Strength;
+        [FieldOffset(28)]
         public float RadiusSq;
+        [FieldOffset(32)]
         public float InvRadiusSq;
+        [FieldOffset(36)]
         public float ConeCos;
+        [FieldOffset(40)]
         public int Active;
+        [FieldOffset(44)]
         public float Padding0;
+        [FieldOffset(48)]
+        private ulong _pad0;
+        [FieldOffset(56)]
+        private ulong _pad1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct WhirlpoolFlow
     {
+        [FieldOffset(0)]
         public float3 CenterWS;
+        [FieldOffset(12)]
         public float RadiusSq;
+        [FieldOffset(16)]
         public float InvRadiusSq;
+        [FieldOffset(20)]
         public float TangentialStrength;
+        [FieldOffset(24)]
         public float CentripetalStrength;
+        [FieldOffset(28)]
         public float VerticalPull;
+        [FieldOffset(32)]
         public int Active;
+        [FieldOffset(36)]
         public float Padding0;
+        [FieldOffset(40)]
         public float Padding1;
+        [FieldOffset(44)]
         public float Padding2;
+        [FieldOffset(48)]
+        private ulong _pad0;
+        [FieldOffset(56)]
+        private ulong _pad1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct FluidViscosityRegion
     {
+        [FieldOffset(0)]
         public float3 CenterWS;
+        [FieldOffset(12)]
         public float InvRadiusSq;
+        [FieldOffset(16)]
         public float ViscosityMultiplier;
+        [FieldOffset(20)]
         public int Active;
+        [FieldOffset(24)]
         public float Padding0;
+        [FieldOffset(28)]
         public float Padding1;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct FluidImpactEvent
     {
+        [FieldOffset(0)]
         public float3 PositionWS;
+        [FieldOffset(12)]
         public float3 VelocityWS;
+        [FieldOffset(24)]
         public float MassKg;
+        [FieldOffset(28)]
         public float SurfaceY;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct OceanSurfaceTelemetryEntry
     {
+        [FieldOffset(0)]
         public uint FrameIndex;
+        [FieldOffset(4)]
         public uint OriginShiftSequence;
+        [FieldOffset(8)]
         public int ActiveFloaters;
+        [FieldOffset(12)]
         public int SleepingFloaters;
+        [FieldOffset(16)]
         public int WaveOctaves;
+        [FieldOffset(20)]
         public int TerrainRevision;
+        [FieldOffset(24)]
         public float WaterLevelY;
+        [FieldOffset(28)]
         public float MinSurfaceOffset;
+        [FieldOffset(32)]
         public float MaxSurfaceOffset;
+        [FieldOffset(36)]
         public float3 ObserverWS;
+        [FieldOffset(48)]
         public float3 WindWS;
+        [FieldOffset(60)]
+        private uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct FluidAdvectionTelemetryEntry
     {
+        [FieldOffset(0)]
         public uint FrameIndex;
+        [FieldOffset(4)]
         public uint OriginShiftSequence;
+        [FieldOffset(8)]
         public int ActiveAdvectedParticles;
+        [FieldOffset(12)]
         public int SiltCount;
+        [FieldOffset(16)]
         public int BubbleCount;
+        [FieldOffset(20)]
         public int DebrisCount;
+        [FieldOffset(24)]
         public int ActiveTurbulenceWakes;
+        [FieldOffset(28)]
         public uint Flags;
+        [FieldOffset(32)]
         public uint StateHash;
+        [FieldOffset(36)]
+        private uint _pad0;
+        [FieldOffset(40)]
+        private ulong _pad1;
+        [FieldOffset(48)]
+        private ulong _pad2;
+        [FieldOffset(56)]
+        private ulong _pad3;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct InteriorFloodNode
     {
+        [FieldOffset(0)]
         public float CurrentLiters;
+        [FieldOffset(4)]
         public float CapacityLiters;
+        [FieldOffset(8)]
         public float TransferLitersPerSecond;
+        [FieldOffset(12)]
         public float StructuralMassKg;
+        [FieldOffset(16)]
         public int FirstEdgeIndex;
+        [FieldOffset(20)]
         public int EdgeCount;
+        [FieldOffset(24)]
         public uint Flags;
+        [FieldOffset(28)]
         public uint Padding;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct InteriorFloodEdge
     {
+        [FieldOffset(0)]
         public int ToNode;
+        [FieldOffset(4)]
         public float FlowMultiplier;
+        [FieldOffset(8)]
         public int IsOpen;
+        [FieldOffset(12)]
         public int Padding;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct InteriorFloodBfsResult
     {
+        [FieldOffset(0)]
         public float TotalWaterMassKg;
+        [FieldOffset(4)]
         public float StructuralLoadKg;
+        [FieldOffset(8)]
         public int FloodedNodeCount;
+        [FieldOffset(12)]
         public int Padding;
     }
 
@@ -286,56 +369,93 @@ namespace Hecton8.Physics
         private const string NativeMemoryOwner = nameof(HectonFluidEngine);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct GpuBuoyancyObjectData
         {
+            [FieldOffset(0)]
             public float Volume;
+            [FieldOffset(4)]
             public float Height;
+            [FieldOffset(8)]
             public float IsInAir;
+            [FieldOffset(12)]
             public float SimplifiedSubmersion;
+            [FieldOffset(16)]
             public float3 BoundsCenterWS;
+            [FieldOffset(28)]
             public float BoundsPadding0;
+            [FieldOffset(32)]
             public float3 BoundsExtentsWS;
+            [FieldOffset(44)]
             public float BoundsPadding1;
+            [FieldOffset(48)]
+            private ulong _pad0;
+            [FieldOffset(56)]
+            private ulong _pad1;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct GpuHeatSourceData
         {
+            [FieldOffset(0)]
             public float3 PositionWS;
+            [FieldOffset(12)]
             public float Intensity;
+            [FieldOffset(16)]
             public float Radius;
+            [FieldOffset(20)]
             public float3 Padding;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct AbyssalFlowTelemetryEntry
         {
+            [FieldOffset(0)]
             public int Frame;
+            [FieldOffset(4)]
             public float FixedTime;
+            [FieldOffset(8)]
             public float3 CenterWS;
+            [FieldOffset(20)]
             public float3 WakePositionWS;
+            [FieldOffset(32)]
             public float3 WakeVelocityWS;
+            [FieldOffset(44)]
             public float WakeRadius;
+            [FieldOffset(48)]
             public int HeatSourceCount;
+            [FieldOffset(52)]
             public int FluidImpulseCount;
+            [FieldOffset(56)]
             public uint Flags;
+            [FieldOffset(60)]
             public uint StateHash;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct MaelstromTelemetryEntry
         {
+            [FieldOffset(0)]
             public int Frame;
+            [FieldOffset(4)]
             public float FixedTime;
+            [FieldOffset(8)]
             public float3 PrimaryCenterWS;
+            [FieldOffset(20)]
             public float PrimaryRadius;
+            [FieldOffset(24)]
             public float4 PrimaryCompact;
+            [FieldOffset(40)]
             public float Warp01;
+            [FieldOffset(44)]
             public int ActiveCount;
+            [FieldOffset(48)]
             public uint Flags;
+            [FieldOffset(52)]
             public uint StateHash;
+            [FieldOffset(56)]
             public float EscapeVelocityClamp;
+            [FieldOffset(60)]
             public float EventHorizonRadius;
         }
 
@@ -597,30 +717,42 @@ namespace Hecton8.Physics
         //  PUBLIC API
         // ══════════════════════════════════════════════════════════
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         public struct AdvectedSilt
         {
+            [FieldOffset(0)]
             public float3 PositionWS;
+            [FieldOffset(12)]
             public float Life;
+            [FieldOffset(16)]
             public float3 VelocityWS;
+            [FieldOffset(28)]
             public uint Flags;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         public struct AdvectedBubble
         {
+            [FieldOffset(0)]
             public float3 PositionWS;
+            [FieldOffset(12)]
             public float Life;
+            [FieldOffset(16)]
             public float3 VelocityWS;
+            [FieldOffset(28)]
             public uint Flags;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         public struct AdvectedDebris
         {
+            [FieldOffset(0)]
             public float3 PositionWS;
+            [FieldOffset(12)]
             public float Life;
+            [FieldOffset(16)]
             public float3 VelocityWS;
+            [FieldOffset(28)]
             public uint Flags;
         }
 
@@ -3086,7 +3218,9 @@ namespace Hecton8.Physics
             if (!_splashdownImpulseJobHandle.IsCompleted || _splashdownImpulseScheduleFrame == Time.frameCount)
                 return;
 
-            _splashdownImpulseJobHandle.Complete();
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _splashdownImpulseJobHandle))
+                return;
+
             _splashdownImpulseJobActive = false;
             _splashdownImpulseScheduleFrame = -1;
 
@@ -6136,7 +6270,7 @@ namespace Hecton8.Physics
                     flowCenter.z + sampleOffset.z);
 
                 if (!thermalManager.SampleThermalFlow(samplePosition, sampleRadius, out AbyssalThermalManager.ThermalFlowSample sample) ||
-                    !sample.HasFlow)
+                    sample.HasFlow == 0)
                 {
                     continue;
                 }
@@ -6538,42 +6672,71 @@ namespace Hecton8.Physics
     /// IZMENENIE: dobavleno pole isInAir dlya sistemy Suhih Zon.
     /// Dry-zone and simulation flags are packed into explicit bytes to keep the Burst payload deterministic.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 96)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct BuoyancyParams
     {
         public const uint ExactSurfaceNormalFlag = 1u;
-        public const int StrideBytes = 96;
+        public const int StrideBytes = 128;
 
+        [FieldOffset(0)]
         public float3 boundsCenter;
+        [FieldOffset(12)]
         public float3 boundsExtents;
 
         /// <summary>Plotnost obekta (kg/m³).</summary>
+        [FieldOffset(24)]
         public float density;
 
         /// <summary>Obem obekta (m³).</summary>
+        [FieldOffset(28)]
         public float volume;
 
         /// <summary>Vysota obekta (m) dlya chastichnogo pogruzheniya.</summary>
+        [FieldOffset(32)]
         public float height;
 
         /// <summary>Massa Rigidbody (kg).</summary>
+        [FieldOffset(36)]
         public float mass;
+        [FieldOffset(40)]
         public float currentResponse;
+        [FieldOffset(44)]
         public float surfaceStability;
+        [FieldOffset(48)]
         public float localFluidDensity;
+        [FieldOffset(52)]
         public float angularDragMultiplier;
+        [FieldOffset(56)]
         public float buoyancyMultiplier;
+        [FieldOffset(60)]
         public float3 localCurrent;
 
         /// <summary>
         /// Obekt nahoditsya v suhoy zone (vnutri nezatoplennogo modulya).
         /// Esli true — vse vodnye sily obnulyayutsya v BuoyancyJob.
         /// </summary>
+        [FieldOffset(72)]
         public byte isInAir;
+        [FieldOffset(73)]
         public byte simulationMode;
+        [FieldOffset(74)]
         public byte simplifiedSubmersion;
+        [FieldOffset(75)]
         public byte useLocalFluidDensityOverride;
+        [FieldOffset(76)]
         public uint alignmentPadding;
+        [FieldOffset(80)]
+        private ulong _pad0;
+        [FieldOffset(88)]
+        private ulong _pad1;
+        [FieldOffset(96)]
+        private ulong _pad2;
+        [FieldOffset(104)]
+        private ulong _pad3;
+        [FieldOffset(112)]
+        private ulong _pad4;
+        [FieldOffset(120)]
+        private ulong _pad5;
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -6601,17 +6764,17 @@ namespace Hecton8.Physics
     /// Burst-compiled fallback wave evaluator used by CPU-side buoyancy systems.
     /// This samples the first-party weather spectrum for physics consumers and does not replace Crest FFT rendering.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [StructLayout(LayoutKind.Sequential)]
     public struct WaveQueryJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<float3> PositionsWS;
-        [ReadOnly] public NativeArray<BuoyancyParams> ObjParams;
-        [WriteOnly] public NativeArray<float> VerticalOffsets;
-        [WriteOnly] public NativeArray<float3> SurfaceUpVectors;
+        [ReadOnly, NoAlias] public NativeArray<float3> PositionsWS;
+        [ReadOnly, NoAlias] public NativeArray<BuoyancyParams> ObjParams;
+        [WriteOnly, NoAlias] public NativeArray<float> VerticalOffsets;
+        [WriteOnly, NoAlias] public NativeArray<float3> SurfaceUpVectors;
 
-        [ReadOnly] public NativeArray<GerstnerWaveComponent> Waves;
-        [ReadOnly] public NativeArray<ushort> TerrainHeightSamples;
+        [ReadOnly, NoAlias] public NativeArray<GerstnerWaveComponent> Waves;
+        [ReadOnly, NoAlias] public NativeArray<ushort> TerrainHeightSamples;
         public int WaveCount;
         public float TimeSeconds;
         public float WaterLevelY;
@@ -6728,8 +6891,8 @@ namespace Hecton8.Physics
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [StructLayout(LayoutKind.Sequential)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct BuoyancyJob : IJobParallelFor
     {
         private const float ThermoclineDepthMeters = 120f;
@@ -6740,34 +6903,34 @@ namespace Hecton8.Physics
         private const float JobGyroscopicFlowMaxTorquePerKg = 50f;
 
         // ── Input (ReadOnly) ──
-        [ReadOnly] public NativeArray<float3>         positions;
-        [ReadOnly] public NativeArray<float3>         previousPositions;
-        [ReadOnly] public NativeArray<byte>           previousPositionValid;
-        [ReadOnly] public NativeArray<float3>         velocities;
-        [ReadOnly] public NativeArray<float3>         angularVelocities;
-        [ReadOnly] public NativeArray<float3>         upVectors;
-        [ReadOnly] public NativeArray<float3>         surfaceUpVectors;
-        [ReadOnly] public NativeArray<BuoyancyParams> objParams;
-        [ReadOnly] public NativeArray<float>          waveOffsets;
-        [ReadOnly] public NativeArray<float>          gpuBuoyancyForcesY;
-        [ReadOnly] public NativeArray<float>          brineHeights;
-        [ReadOnly] public NativeArray<float>          brineDensityMultipliers;
-        [ReadOnly] public NativeArray<byte>           brineFlags;
-        [ReadOnly] public NativeArray<ActiveThrusterFlow> activeThrusters;
-        [ReadOnly] public NativeArray<WhirlpoolFlow> activeWhirlpools;
-        [ReadOnly] public NativeArray<FluidViscosityRegion> activeViscosityRegions;
-        [ReadOnly] public NativeArray<float> viscosityGradientLut;
-        [ReadOnly] public NativeArray<float3> vectorNoiseField;
+        [ReadOnly, NoAlias] public NativeArray<float3>         positions;
+        [ReadOnly, NoAlias] public NativeArray<float3>         previousPositions;
+        [ReadOnly, NoAlias] public NativeArray<byte>           previousPositionValid;
+        [ReadOnly, NoAlias] public NativeArray<float3>         velocities;
+        [ReadOnly, NoAlias] public NativeArray<float3>         angularVelocities;
+        [ReadOnly, NoAlias] public NativeArray<float3>         upVectors;
+        [ReadOnly, NoAlias] public NativeArray<float3>         surfaceUpVectors;
+        [ReadOnly, NoAlias] public NativeArray<BuoyancyParams> objParams;
+        [ReadOnly, NoAlias] public NativeArray<float>          waveOffsets;
+        [ReadOnly, NoAlias] public NativeArray<float>          gpuBuoyancyForcesY;
+        [ReadOnly, NoAlias] public NativeArray<float>          brineHeights;
+        [ReadOnly, NoAlias] public NativeArray<float>          brineDensityMultipliers;
+        [ReadOnly, NoAlias] public NativeArray<byte>           brineFlags;
+        [ReadOnly, NoAlias] public NativeArray<ActiveThrusterFlow> activeThrusters;
+        [ReadOnly, NoAlias] public NativeArray<WhirlpoolFlow> activeWhirlpools;
+        [ReadOnly, NoAlias] public NativeArray<FluidViscosityRegion> activeViscosityRegions;
+        [ReadOnly, NoAlias] public NativeArray<float> viscosityGradientLut;
+        [ReadOnly, NoAlias] public NativeArray<float3> vectorNoiseField;
         public int vectorNoiseFieldLength;
         public int activeThrusterCount;
         public int activeWhirlpoolCount;
         public int activeViscosityRegionCount;
-        [WriteOnly] public NativeArray<FluidImpactEvent> impactEvents;
-        [WriteOnly] public NativeArray<int> impactEventFlags;
+        [WriteOnly, NoAlias] public NativeArray<FluidImpactEvent> impactEvents;
+        [WriteOnly, NoAlias] public NativeArray<int> impactEventFlags;
 
         // ── Output (WriteOnly) ──
-        [WriteOnly] public NativeArray<float3> resultForces;
-        [WriteOnly] public NativeArray<float3> resultTorques;
+        [WriteOnly, NoAlias] public NativeArray<float3> resultForces;
+        [WriteOnly, NoAlias] public NativeArray<float3> resultTorques;
         public NativeQueue<int>.ParallelWriter mathGuardWriter;
         public int forceNanErrorCode;
         public int torqueNanErrorCode;
@@ -7708,7 +7871,7 @@ namespace Hecton8.Physics
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct InteriorFloodBfsJob : IJobParallelFor
     {
         public const uint FloodSeedFlag = 1u;
@@ -7717,11 +7880,11 @@ namespace Hecton8.Physics
         private const int DefaultNodeVisitBudget = MaxFloodNodesPerFrame;
         private const int DefaultEdgeVisitBudget = 64;
 
-        public NativeArray<InteriorFloodNode> Nodes;
-        [ReadOnly] public NativeArray<InteriorFloodEdge> Edges;
-        public NativeArray<int> Queue;
-        public NativeArray<int> Visited;
-        public NativeArray<InteriorFloodBfsResult> Result;
+        [NoAlias] public NativeArray<InteriorFloodNode> Nodes;
+        [ReadOnly, NoAlias] public NativeArray<InteriorFloodEdge> Edges;
+        [NoAlias] public NativeArray<int> Queue;
+        [NoAlias] public NativeArray<int> Visited;
+        [NoAlias] public NativeArray<InteriorFloodBfsResult> Result;
         public float DeltaTime;
         public float WaterDensityKgPerM3;
         public int VisitStamp;

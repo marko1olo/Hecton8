@@ -1,0 +1,22 @@
+{
+    "name": "Hecton8.World.OfflineHadalArchBaker.Editor",
+    "rootNamespace": "Hecton8.World.OfflineHadalArchBaker.Editor",
+    "references": [
+        "Hecton8.World.OfflineHadalArchBaker",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

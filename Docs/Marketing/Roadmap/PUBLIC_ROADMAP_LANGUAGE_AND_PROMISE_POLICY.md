@@ -110,7 +110,7 @@ Every public sentence must be tagged internally as one of:
 | Simulation | "fully simulated ocean", "realistic ecosystem" | "systems-driven pressure, salvage, and machinery" | Gameplay capture showing player-facing behavior. |
 | Visuals | "ray-traced", "cinematic", "AAA graphics" | "industrial deep-sea noir art direction" | Real screenshot/capture, not concept art. |
 | Release timing | "coming soon", "monthly updates", "launching this year" | "date TBD" or omit | Production lock and platform page. |
-| Demo/access | "demo now", "keys available" | "demo/access will be announced when ready" | Stable build, key/access log, public link. |
+| Demo/access | "demo now", "keys available" | "demo/access will be announced when ready" | Stable build, public CTA gate for public links, or recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED` plus exact access-log fields for private access. |
 | Competitor | "Subnautica killer", "better than Subnautica" | "for players who want pressure, machinery, and black-water survival" | Never use direct attack copy. |
 | AI/assets | "handmade everything" when unverified | "real in-game capture only in public assets" | Asset metadata source and approval. |
 
@@ -118,19 +118,71 @@ Every public sentence must be tagged internally as one of:
 
 1. Copy the public text into a review scratchpad.
 2. Mark every sentence with one classification tag from the table above.
-3. Search manually for these terms before publish: `co-op`, `multiplayer`, `zero`, `locked`, `massive`, `seamless`, `fully simulated`, `realistic ecosystem`, `Subnautica killer`, `coming soon`, `soon`, `guarantee`, `promise`.
+3. Search manually for these terms before publish: `co-op`, `multiplayer`, `zero`, `locked`, `massive`, `seamless`, `fully simulated`, `realistic ecosystem`, `Subnautica killer`, `Subnautica 2`, `SN2`, `EULA`, `privacy`, `desync`, `stutter`, `performance`, `coming soon`, `soon`, `guarantee`, `promise`.
 4. For every `CURRENT_BUILD` sentence, attach a build ID or asset ID.
 5. For every `ACTIVE_WORK` or `PLANNED_FOCUS` sentence, remove dates, guarantees, and sales pressure.
 6. Delete any sentence that cannot survive the proof check in under five minutes.
+
+### Grep Audit Boundary
+
+The forbidden search terms may appear only in these contexts:
+
+- `Do not use`, `Reject`, `Forbidden`, `Bad copy`, or `Kill rule` sections;
+- monitoring/query sections marked listen-only or internal research;
+- CRM/source evidence fields that are not final send copy;
+- risk register entries describing what to prevent.
+
+If a forbidden term appears in a subject line, final pitch body, Steam/page copy block, ad headline, press opening, public FAQ reply, caption, bio, or announcement draft, rewrite it before publication. Direct competitor-title personalization is allowed only as internal CRM evidence; public or creator-facing copy should use neutral audience-fit language.
+
+### Negative Denial Copy Rule
+
+Expectation control must not rely on proactive "not X / no Y" slogans.
+
+Use positive proof-boundary language for public, creator, press, social, account-profile, signup, and campaign body copy:
+
+- "single-player-first scope";
+- "proof-first public scope";
+- "scope stays inside what the current build can show";
+- "performance claims require measured build/hardware context";
+- "competitor-neutral positioning".
+
+Use direct denial wording only when answering an explicit user question, in FAQ/moderation response blocks, or in reject/forbidden-copy lists. If the line can be pasted into a proactive post, subject, pitch body, profile bio, signup form, presskit quote, creator brief, or campaign announcement, rewrite it to proof-boundary language.
 
 ### Approved Public Scope Lines
 
 ```text
 HECTON-8 is single-player-first.
-Co-op is not part of the current public plan.
+Public scope stays inside what the current build can show.
 We are not making performance claims without measured hardware and build proof.
 Public screenshots and videos should be real in-game capture, not target renders.
 Dates and scope may change until a build is publicly locked.
+```
+
+Direct Q&A only:
+
+```text
+Co-op is not part of the current public plan.
+```
+
+### Competitor-Pain Lint
+
+Any sentence using competitor pain must be tagged `REMOVE` for public use.
+
+Forbidden public claim families:
+
+- `they have EULA/privacy issues`;
+- `their co-op/desync is broken`;
+- `they stutter/crash, we do not`;
+- `they have too little content`;
+- `they do not let players fight back`;
+- `their building is clunky`;
+- `we are the fix for SN2`.
+
+Internal replacement:
+
+```text
+Private competitor signal informs which HECTON proof asset we prioritize.
+Public copy stays about pressure, salvage, machinery, black water, and honest scope.
 ```
 
 ## Current HECTON-8 Decision

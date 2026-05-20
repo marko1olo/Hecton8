@@ -36,7 +36,7 @@ namespace Hecton8.AI.Pathfinding
     /// One corridor portal edge in sector-local meters. Left and right are ordered around the path corridor.
     /// ClearanceMeters is pre-eroded SDF clearance from the navgrid owner; zero means unknown.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 36, Pack = 1)]
+    [StructLayout(LayoutKind.Explicit, Size = 40)]
     public struct NavPortal
     {
         [FieldOffset(0)] public float3 Left;
@@ -47,6 +47,7 @@ namespace Hecton8.AI.Pathfinding
         [FieldOffset(32)] public byte Flags;
         [FieldOffset(33)] public byte Reserved0;
         [FieldOffset(34)] public ushort Reserved1;
+        [FieldOffset(36)] public uint Reserved2;
     }
 
     /// <summary>
@@ -87,7 +88,7 @@ namespace Hecton8.AI.Pathfinding
     /// <summary>
     /// Single-slot result payload written by the Burst funnel job.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32, Pack = 1)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct PathFunnelResult
     {
         [FieldOffset(0)] public int WaypointCount;
@@ -105,7 +106,7 @@ namespace Hecton8.AI.Pathfinding
     /// <summary>
     /// Fixed active-path record used by the WFC door invalidation owner.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32, Pack = 1)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct PathFunnelActivePath
     {
         [FieldOffset(0)] public ulong SectorHash;
@@ -130,7 +131,7 @@ namespace Hecton8.AI.Pathfinding
     /// <summary>
     /// Bounded invalidation payload for consumers polling the runtime owner.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32, Pack = 1)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct PathFunnelInvalidation
     {
         [FieldOffset(0)] public ulong SectorHash;
@@ -148,7 +149,7 @@ namespace Hecton8.AI.Pathfinding
     /// <summary>
     /// Fixed black-box entry. The runtime writes one entry per late-frame flush.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 48, Pack = 1)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct PathFunnelTelemetryEntry
     {
         [FieldOffset(0)] public uint Frame;
@@ -178,7 +179,7 @@ namespace Hecton8.AI.Pathfinding
     /// <summary>
     /// Vault-resident mutable runtime counters for WFC path invalidation.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 64, Pack = 1)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct PathFunnelRuntimeState
     {
         [FieldOffset(0)] public int ActivePathCount;
@@ -195,7 +196,8 @@ namespace Hecton8.AI.Pathfinding
         [FieldOffset(42)] public byte DumpRequested;
         [FieldOffset(43)] public byte BuffersReady;
         [FieldOffset(44)] public uint VaultGeneration;
-        [FieldOffset(48)] public ulong Reserved0;
+        [FieldOffset(48)] public uint FrameCounter;
+        [FieldOffset(52)] public uint Reserved0;
         [FieldOffset(56)] public ulong Reserved1;
     }
 }

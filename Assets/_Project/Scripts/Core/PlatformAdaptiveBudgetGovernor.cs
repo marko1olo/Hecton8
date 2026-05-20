@@ -1,6 +1,5 @@
 using System;
 using Hecton8.Core.Contracts;
-using Hecton8.World;
 using UnityEngine;
 
 namespace Hecton8.Core
@@ -24,9 +23,14 @@ namespace Hecton8.Core
         private const float CriticalFrameTimeMs = 25f;
         private const float FrameTrendAlpha = 0.125f;
         private const int SustainedFramePressureSamples = 3;
+        private const uint PlatformPressureMask = GlobalRegistry.TransientScalabilityPlatformPressureMask;
+
+        private delegate void TransientScalabilityOverrideWriter(uint mask, bool active);
 
         // COLD ALLOC: AdaptiveBudgetTickable[1] - dispatcher-owned platform pressure sampler - owner: PlatformAdaptiveBudgetGovernor
         private static readonly AdaptiveBudgetTickable s_tickable = new AdaptiveBudgetTickable();
+        // COLD ALLOC: delegate[1] - boot-bound GlobalRegistry writer; low-cadence tick code never polls registry - owner: PlatformAdaptiveBudgetGovernor
+        private static readonly TransientScalabilityOverrideWriter s_setTransientLowScalabilityOverride = GlobalRegistry.SetTransientLowScalabilityOverride;
 
         private static bool _registered;
         private static bool _hotSwapRegistered;
@@ -75,7 +79,7 @@ namespace Hecton8.Core
             _hardwareThermalService = null;
             _dynamicResolutionScaler = null;
             GlobalRegistry.SetTransientLowScalabilityOverride(
-                GlobalRegistry.TransientScalabilityPlatformPressureMask,
+                PlatformPressureMask,
                 false);
             s_tickable.Reset();
         }
@@ -126,8 +130,8 @@ namespace Hecton8.Core
 
             if (pressured != _lowTierApplied)
             {
-                GlobalRegistry.SetTransientLowScalabilityOverride(
-                    GlobalRegistry.TransientScalabilityPlatformPressureMask,
+                s_setTransientLowScalabilityOverride(
+                    PlatformPressureMask,
                     pressured);
                 _lowTierApplied = pressured;
             }

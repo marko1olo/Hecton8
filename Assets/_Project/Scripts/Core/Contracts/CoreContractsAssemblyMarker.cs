@@ -1,13 +1,14 @@
 using System;
 using System.Runtime.InteropServices;
 using Unity.Collections;
+using Unity.Mathematics;
 
 namespace Hecton8.Core.Contracts
 {
     /// <summary>
     /// Assembly marker for isolated core contract-only packages.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 1)]
     public readonly struct CoreContractsAssemblyMarker
     {
     }
@@ -98,5 +99,25 @@ namespace Hecton8.Core.Contracts
             byte pressureLevel,
             byte flags);
         void ClearSystemOverrideRenderScale();
+    }
+
+    /// <summary>
+    /// Presentation-only bridge for procedural character animation consumers.
+    /// Implemented by the Animation domain; gameplay callers cache this interface instead of depending on a concrete MonoBehaviour type.
+    /// </summary>
+    public interface IKineticCharacterPresentationSink
+    {
+        void SubmitSwimPresentation(
+            float waveForward,
+            float waveLateral,
+            float crestReach,
+            float descentTuck,
+            float leanWeight,
+            float immersionDepth,
+            float breathingPhase,
+            float activeToolWeight);
+
+        void SubmitToolPose(float4x4 localToCameraMatrix, float weight01, uint toolHash);
+        void SubmitDamageImpulse(float3 localImpulse, float weight01);
     }
 }

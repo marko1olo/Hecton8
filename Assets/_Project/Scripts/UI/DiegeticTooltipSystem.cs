@@ -114,7 +114,7 @@ namespace Hecton8.UI
         private float glyphWorldHeight = DefaultGlyphWorldHeight;
         [SerializeField, Range(MinGlyphAdvanceScale, MaxGlyphAdvanceScale), Tooltip("Horizontal advance multiplier applied to glyph metrics.")]
         private float glyphAdvanceScale = DefaultGlyphAdvanceScale;
-        [SerializeField, Range(MinFadeDurationSeconds, MaxFadeDurationSeconds), Tooltip("Dither fade duration in seconds. Low tier snaps instead.")]
+        [SerializeField, Range(MinFadeDurationSeconds, MaxFadeDurationSeconds), Tooltip("Dither fade duration in seconds before continuous quality scaling.")]
         private float fadeDurationSeconds = DefaultFadeDurationSeconds;
         [SerializeField, Range(0.02f, 0.25f), Tooltip("VR-only shift toward the camera to avoid stereo clipping.")]
         private float vrDepthOffsetMeters = 0.1f;
@@ -172,6 +172,7 @@ namespace Hecton8.UI
         private TMP_Text _textSinkWithPayload;
         private Camera _cachedRenderCamera;
         private Transform _cachedRenderCameraTransform;
+        private IPlayerRuntimeContext _cachedPlayerContext;
         private IInputDeterminismService _inputDeterminism;
         private AbsoluteUniversePosition _activeTargetAup;
         private Vector3 _activeRuntimeAnchor;
@@ -210,9 +211,8 @@ namespace Hecton8.UI
         private bool _materialResolveAttempted;
         private bool _materialResolveFailed;
         private bool _materialsReady;
-        private bool _lowTierActive;
+        private float _qualityWeight01 = 1f;
         private bool _cachedRenderCameraFromInteraction;
-        private bool _inputDeterminismAwaitingRegistration;
         private bool _textSinkHasPayload;
         private bool _blackBoxDumped;
 
@@ -230,13 +230,7 @@ namespace Hecton8.UI
                 ClearTextSink();
 
             float targetAlpha = hasVisiblePayload ? 1f : 0f;
-            if (IsLowTier())
-            {
-                _visibleAlpha = targetAlpha;
-                return;
-            }
-
-            float fadeDuration = ResolveFadeDurationSeconds();
+            float fadeDuration = ResolveQualityFadeDurationSeconds();
             _visibleAlpha = MoveTowardsFast(_visibleAlpha, targetAlpha, math.max(0f, deltaTime) * math.rcp(fadeDuration));
         }
 
@@ -275,8 +269,8 @@ namespace Hecton8.UI
 
             Color resolvedColor = _diagnosticActive ? _diagnosticColor : glyphColor;
             Vector4 tint = new Vector4(resolvedColor.r, resolvedColor.g, resolvedColor.b, resolvedColor.a * _visibleAlpha);
-            bool lowTier = IsLowTier();
-            float ditherEnabled = lowTier ? 0f : 1f;
+            float qualityWeight = math.saturate(_qualityWeight01);
+            float ditherEnabled = ResolveDitherWeight(qualityWeight);
             int renderLayer = gameObject.layer;
             Bounds bounds = new Bounds(anchorPosition, _cachedBoundsSize);
             UploadUvTablesIfDirty();
@@ -343,7 +337,8 @@ namespace Hecton8.UI
                     ditherEnabled);
             }
 
-            RecordBlackBox(anchorPosition, tint, lowTier ? (byte)1 : (byte)0);
+            byte qualityByte = (byte)math.clamp((int)math.round(qualityWeight * 255f), 0, 255);
+            RecordBlackBox(anchorPosition, tint, qualityByte);
         }
 
         private void OnEnable()
@@ -354,7 +349,8 @@ namespace Hecton8.UI
             TryRegisterRuntime();
             TryRegisterHotSwapListener();
             TryRegisterScalabilityListener();
-            RefreshScalabilityTier();
+            CacheRegistryServicesCold();
+            RefreshScalabilityPolicy();
             RefreshInputDeterminismService();
             _activeSchemeHash = ResolveCurrentSchemeHash();
         }
@@ -364,7 +360,8 @@ namespace Hecton8.UI
             TryRegisterRuntime();
             TryRegisterHotSwapListener();
             TryRegisterScalabilityListener();
-            RefreshScalabilityTier();
+            CacheRegistryServicesCold();
+            RefreshScalabilityPolicy();
             RefreshInputDeterminismService();
             _activeSchemeHash = ResolveCurrentSchemeHash();
         }
@@ -378,7 +375,6 @@ namespace Hecton8.UI
             _promptLength = 0;
             CacheRenderCamera(null, fromInteraction: false);
             _inputDeterminism = null;
-            _inputDeterminismAwaitingRegistration = false;
         }
 
         private void OnDestroy()
@@ -391,7 +387,7 @@ namespace Hecton8.UI
 
         public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
         {
-            _lowTierActive = payload.CurrentTier == ScalabilityTierProfiles.LowMx350;
+            RefreshScalabilityPolicy();
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -401,8 +397,9 @@ namespace Hecton8.UI
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
             {
-                Camera playerCamera = interactionCamera == null && currentService is IPlayerRuntimeContext playerContext
-                    ? playerContext.PlayerCamera
+                _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                Camera playerCamera = interactionCamera == null && _cachedPlayerContext != null
+                    ? _cachedPlayerContext.PlayerCamera
                     : null;
                 CacheRenderCamera(playerCamera != null && playerCamera.isActiveAndEnabled ? playerCamera : null, fromInteraction: false);
             }
@@ -413,8 +410,6 @@ namespace Hecton8.UI
             _inputDeterminism = currentService as IInputDeterminismService;
             if (_inputDeterminism == null)
                 RefreshInputDeterminismService();
-            else
-                _inputDeterminismAwaitingRegistration = false;
 
             _activeSchemeHash = 0u;
             RefreshActiveSchemeHash();
@@ -1170,7 +1165,7 @@ namespace Hecton8.UI
             if (_cachedRenderCamera != null)
                 CacheRenderCamera(null, fromInteraction: false);
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             Camera playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
             CacheRenderCamera(playerCamera != null && playerCamera.isActiveAndEnabled ? playerCamera : null, fromInteraction: false);
             return _cachedRenderCamera;
@@ -1201,9 +1196,6 @@ namespace Hecton8.UI
 
         private uint ResolveCurrentSchemeHash()
         {
-            if (_inputDeterminismAwaitingRegistration)
-                RefreshInputDeterminismService();
-
             IInputDeterminismService input = _inputDeterminism;
             if (input == null)
                 return InputSchemeHashKeyboardMouse;
@@ -1230,17 +1222,29 @@ namespace Hecton8.UI
             if (registeredInput != null)
             {
                 _inputDeterminism = registeredInput;
-                _inputDeterminismAwaitingRegistration = false;
                 return;
             }
 
             _inputDeterminism = GlobalRegistry.InputDeterminism;
-            _inputDeterminismAwaitingRegistration = true;
         }
 
-        private bool IsLowTier()
+        private void CacheRegistryServicesCold()
         {
-            return _lowTierActive;
+            _cachedPlayerContext = GlobalRegistry.Player;
+        }
+
+        private float ResolveQualityFadeDurationSeconds()
+        {
+            float authoredDuration = ResolveFadeDurationSeconds();
+            float quality = math.saturate(_qualityWeight01);
+            float curve = quality * quality * (3f - (2f * quality));
+            return math.max(0.0001f, math.lerp(0.0001f, authoredDuration, curve));
+        }
+
+        private static float ResolveDitherWeight(float qualityWeight01)
+        {
+            float quality = math.saturate(qualityWeight01);
+            return math.saturate((quality - 0.2f) * 2.5f);
         }
 
         private void RefreshVisibleDistanceCache()
@@ -1255,9 +1259,9 @@ namespace Hecton8.UI
             _cachedBoundsSize = Vector3.one * math.max(1f, distance * 0.35f);
         }
 
-        private void RefreshScalabilityTier()
+        private void RefreshScalabilityPolicy()
         {
-            _lowTierActive = GlobalRegistry.ScalabilityTierProfileByte == ScalabilityTierProfiles.LowMx350;
+            _qualityWeight01 = math.saturate(HomeostasisBrain.GlobalQualityWeight);
         }
 
         private void TryRegisterRuntime()
@@ -1559,17 +1563,17 @@ namespace Hecton8.UI
             public Vector4 GlyphIndex;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct TooltipBlackBoxEntry
         {
-            public uint Frame;
-            public uint TargetHash;
-            public float3 Anchor;
-            public float Alpha;
-            public uint SchemeHash;
-            public ushort GlyphCount;
-            public byte Flags;
-            public byte TierFlags;
+            [FieldOffset(0)] public uint Frame;
+            [FieldOffset(4)] public uint TargetHash;
+            [FieldOffset(8)] public float3 Anchor;
+            [FieldOffset(20)] public float Alpha;
+            [FieldOffset(24)] public uint SchemeHash;
+            [FieldOffset(28)] public ushort GlyphCount;
+            [FieldOffset(30)] public byte Flags;
+            [FieldOffset(31)] public byte TierFlags;
         }
     }
 }

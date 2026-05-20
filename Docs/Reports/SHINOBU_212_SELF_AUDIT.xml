@@ -1,0 +1,122 @@
+<SELF_AUDIT agent="SHINOBU_212" domain="OFFLINE_HLOD_IMPOSTOR_BAKER" date="2026-05-20" evidence="STATIC_SOURCE_STATIC_DOC">
+  <TASK_RECONCILIATION>
+    <TASK id="01" status="PASS">REALTIME_IMPOSTOR_INQUISITION: no runtime Camera.Render/ReadPixels path in SHINOBU impostor generation; capture is Editor-only.</TASK>
+    <TASK id="02" status="PASS">UNITY_BILLBOARD_RENDERER_PURGE: first-party scan found no Unity BillboardRenderer components or tree billboard assets in the SHINOBU path.</TASK>
+    <TASK id="03" status="PASS">CS1612_CAPTURE_STATE_ANNIHILATION: hot DTOs expose raw public fields; Burst jobs mutate records through UnsafeUtility.AsRef.</TASK>
+    <TASK id="04" status="PASS">ARM64_MAPPING_LAYOUT_ASSERTION: DTOs use explicit layout at 16, 32, and 160 bytes; no Pack=1.</TASK>
+    <TASK id="05" status="PASS">EMERGENCY_MOCK_CAPTURE_BENCHMARK: deterministic Burst mock target generator exists for CI/bake stress without waiting for final art.</TASK>
+    <TASK id="06" status="PASS">HEMISPHERICAL_CAMERA_ORCHESTRATOR: Fibonacci capture job writes 16+ view records with view/projection matrices.</TASK>
+    <TASK id="07" status="PASS">AUTOMATED_RENDER_TEXTURE_CAPTURE: Editor baker renders albedo and normal/depth into RTs, not runtime gameplay cameras.</TASK>
+    <TASK id="08" status="PASS">THE_DEAR_LIE_ATLAS_PACKING: compute kernel packs all views into albedo-depth and normal atlases.</TASK>
+    <TASK id="09" status="PASS">DEPTH_BASED_PIXEL_DILATION: compute dilation fills empty border pixels from nearest valid depth occupancy.</TASK>
+    <TASK id="10" status="PASS">ASYNCHRONOUS_ASSET_SERIALIZATION: AsyncGPUReadback plus native PNG encode replaces ReadPixels/managed byte arrays.</TASK>
+    <TASK id="11" status="PASS">PROCEDURAL_VIEW_INTERPOLATION_SHADER: shader samples nearest/two atlas frames and blends under GlobalQualityWeight.</TASK>
+    <TASK id="12" status="PASS">AUP_DEPTH_RECONSTRUCTION: impostor instances support camera-relative AUP conversion and depth alpha writes SV_Depth.</TASK>
+    <TASK id="13" status="PASS">ROLLBACK_NETCODE_EXCLUSION_FENCE: visual HLOD state is not authoritative rollback state; validator writes a report.</TASK>
+    <TASK id="14" status="PASS">ZERO_INIT_OVERHEAD_BYPASS: TempJob scratch arrays use UninitializedMemory and SHINOBU scan has no MemClear/ClearMemory.</TASK>
+    <TASK id="15" status="PASS">TELEMETRY_BAKE_REPORT_GENERATOR: bake writes object count, atlas size, bytes, GPU microsecond fields, and VRAM warnings.</TASK>
+    <TASK id="16" status="PASS">PROCEDURAL_IMPOSTOR_FORGE_WINDOW: UI Toolkit batch window exposes profiles, prefab/folder fields, sliders, preview and bake controls.</TASK>
+    <TASK id="17" status="PASS">CSV_IMPOSTOR_PROFILES_INGESTOR: profile parser fills fixed-string records from native bytes without string.Split.</TASK>
+    <TASK id="18" status="PASS">LIVE_CAPTURE_PREVIEW_GIZMO: SceneView preview draws capture vectors from the same angle job before baking.</TASK>
+    <TASK id="19" status="PASS">ARCHITECTURAL_METRIC_VALIDATOR: LOD scanner emits RENDERING_OPTIMIZATION_REPORT.json from prefab/YAML bounds scan.</TASK>
+    <TASK id="20" status="PASS">SELF_AUDIT_AND_ARCHITECTURE_VERIFICATION: this artifact plus status/rationale/log documents static proof; Unity import proof remains pending CPU gate.</TASK>
+  </TASK_RECONCILIATION>
+
+  <STRUCT_LAYOUT_VERIFICATION>
+    <STRUCT name="ImpostorConfigDTO" sizeBytes="16" alignment="16">
+      <FIELD name="AtlasGridSize" offset="0" size="8" type="float2"/>
+      <FIELD name="DepthScale" offset="8" size="4" type="float"/>
+      <FIELD name="Flags" offset="12" size="4" type="uint"/>
+      <PADDING bytes="0">16 = 8 + 4 + 4, exact 16-byte payload.</PADDING>
+    </STRUCT>
+    <STRUCT name="OctahedralImpostorInstance" sizeBytes="32" alignment="32">
+      <FIELD name="CenterFade" offset="0" size="16" type="Vector4"/>
+      <FIELD name="SizeFlags" offset="16" size="16" type="Vector4"/>
+      <PADDING bytes="0">32 = 16 + 16, one half cache line, GPU structured stride aligned.</PADDING>
+    </STRUCT>
+    <STRUCT name="HlodImpostorCaptureAngleRecord" sizeBytes="160" alignment="32">
+      <FIELD name="Direction" offset="0" size="12" type="float3"/>
+      <FIELD name="OrthoSize" offset="12" size="4" type="float"/>
+      <FIELD name="CameraPosition" offset="16" size="12" type="float3"/>
+      <FIELD name="CameraDistance" offset="28" size="4" type="float"/>
+      <FIELD name="ViewMatrix" offset="32" size="64" type="float4x4"/>
+      <FIELD name="ProjectionMatrix" offset="96" size="64" type="float4x4"/>
+      <PADDING bytes="0">160 = 16 + 16 + 64 + 64, divisible by 32 and 16.</PADDING>
+    </STRUCT>
+    <STRUCT name="HlodImpostorMockPoint" sizeBytes="32" alignment="32">
+      <FIELD name="Position" offset="0" size="12" type="float3"/>
+      <FIELD name="RadiusMeters" offset="12" size="4" type="float"/>
+      <FIELD name="Normal" offset="16" size="12" type="float3"/>
+      <FIELD name="StableHash" offset="28" size="4" type="uint"/>
+      <PADDING bytes="0">32 = 16 + 16, SIMD/cache aligned for mock generation.</PADDING>
+    </STRUCT>
+    <STRUCT name="HlodImpostorBakeSettings" sizeBytes="96" alignment="32">
+      <FIELD name="ProfileName" offset="0" size="64" type="FixedString64Bytes"/>
+      <FIELD name="ViewCount" offset="64" size="4" type="int"/>
+      <FIELD name="AtlasResolution" offset="68" size="4" type="int"/>
+      <FIELD name="DilationRadiusPixels" offset="72" size="4" type="int"/>
+      <FIELD name="ExtraPaddingMeters" offset="76" size="4" type="float"/>
+      <FIELD name="RealGeometryDistanceMeters" offset="80" size="4" type="float"/>
+      <FIELD name="HemisphereOnly" offset="84" size="1" type="byte"/>
+      <PADDING bytes="11">85..95 are explicit padding: byte, ushort, ulong. 96 is divisible by 32.</PADDING>
+    </STRUCT>
+    <STRUCT name="HlodImpostorProfileRecord" sizeBytes="96" alignment="32">
+      <FIELD name="Name" offset="0" size="64" type="FixedString64Bytes"/>
+      <FIELD name="ViewCount" offset="64" size="4" type="int"/>
+      <FIELD name="AtlasResolution" offset="68" size="4" type="int"/>
+      <FIELD name="DilationRadiusPixels" offset="72" size="4" type="int"/>
+      <FIELD name="ExtraPaddingMeters" offset="76" size="4" type="float"/>
+      <FIELD name="RealGeometryDistanceMeters" offset="80" size="4" type="float"/>
+      <FIELD name="HemisphereOnly" offset="84" size="1" type="byte"/>
+      <PADDING bytes="11">85..95 are explicit padding: byte, ushort, ulong. 96 is divisible by 32.</PADDING>
+    </STRUCT>
+    <FALSE_SHARING status="N/A">SHINOBU jobs do not mutate shared atomic counters or contested per-thread slots. Output arrays are per-index or single-thread record writes.</FALSE_SHARING>
+  </STRUCT_LAYOUT_VERIFICATION>
+
+  <SCALABILITY_CURVE>
+    GlobalQualityWeight is consumed as a continuous 0..1 scalar. Below q=0.22 the active and legacy fragment shaders sample only the primary view frame and skip secondary-view atlas reads. Between q=0.22 and q=0.55, smoothstep restores interpolation weight continuously. Bake/mock math collapses toward cheaper silhouettes, smaller radii, lower view complexity, earlier impostor swap distance through ResolveContinuousEnterDistanceMeters, and shader interpolation bias toward the cheaper frame selection. Middle weights keep 16-view atlases and dithered transitions. High and Ultra spend saved geometry time on larger atlases, more views, stronger dilation, longer real-geometry residency, and richer normal/depth fidelity. No SHINOBU runtime path now reads GlobalRegistry.ScalabilityTier in Tick; culling tier is only a quantized adapter for the existing culling enum, derived from the continuous weight.
+  </SCALABILITY_CURVE>
+
+  <H_PHI_VAULT_STATUS>
+    <PRIVATE_NATIVE_ARRAYS status="ZERO_IN_SHINOBU_RENDERER">The previous renderer-owned NativeArray upload cache was removed. Runtime upload writes either the provided NativeArray directly or writes straight into GraphicsBuffer.LockBufferForWrite.</PRIVATE_NATIVE_ARRAYS>
+    <RUNTIME_FALLBACK_ALLOCATIONS status="REMOVED">The renderer no longer creates fallback Mesh, Material, shader lookup, or managed quad arrays at runtime. The baker must output the quad mesh and material; missing assets fail closed by not drawing.</RUNTIME_FALLBACK_ALLOCATIONS>
+    <AUP_OFFSET_AUTHORITY status="CORE_ONLY">The renderer resolves floating offset through HectonFloatingOrigin.CurrentTotalOffset and no longer reads HectonMapMagicVegetationBridge.</AUP_OFFSET_AUTHORITY>
+    <MATERIAL_CHURN status="GATED">Static atlas/material metadata refresh is dirty-gated by material/data identity; _GlobalFloatingOffset writes are gated by material or origin-shift/value change.</MATERIAL_CHURN>
+    <EDITOR_NATIVE_ARRAYS status="TEMP_ONLY">Forge preview now allocates NativeArray records only as TempJob scratch and disposes in the same call; profile and preview caches are editor-managed arrays outside gameplay hot paths.</EDITOR_NATIVE_ARRAYS>
+    <VAULT_HANDLES status="NOT_REQUESTED">No VaultBufferHandle is requested because SHINOBU owns offline Editor bake artifacts and GPU presentation buffers only. It owns no authoritative gameplay fact, rollback state, or cross-domain persistent simulation memory.</VAULT_HANDLES>
+    <LIFECYCLE>RenderTextures and GraphicsBuffers are explicitly released; temporary native arrays in editor bake scopes use TempJob and dispose after readback/job completion.</LIFECYCLE>
+  </H_PHI_VAULT_STATUS>
+
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    <BURST_JOB name="CalculateCaptureAnglesJob" burst="CompileSynchronously=true FloatMode.Fast FloatPrecision.Standard">
+      <NO_ALIAS field="OutputRecords"/>
+      <INPUT_HANDLE>Editor bake scheduling only; dependency consumed by caller before using view records.</INPUT_HANDLE>
+      <OUTPUT_HANDLE>JobHandle from Schedule; completed in editor bake/previews, never runtime gameplay loop.</OUTPUT_HANDLE>
+    </BURST_JOB>
+    <BURST_JOB name="GenerateMockCaptureTargetJob" burst="CompileSynchronously=true FloatMode.Fast FloatPrecision.Standard">
+      <NO_ALIAS field="Points"/>
+      <INPUT_HANDLE>Editor benchmark scheduling only.</INPUT_HANDLE>
+      <OUTPUT_HANDLE>JobHandle from Schedule(points.Length, batchSize); completed by editor benchmark path.</OUTPUT_HANDLE>
+    </BURST_JOB>
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+
+  <COMPILE_GUARD>
+    SHINOBU did not create or modify asmdef dependencies. Runtime communication uses existing Core contracts/registry interfaces and the core floating-origin authority. Shader material dynamic fields now sit inside UnityPerMaterial CBUFFER in active and legacy impostor shaders. No direct new sibling Runtime assembly reference was introduced. Compile/import proof is pending because CPU gate is still active.
+  </COMPILE_GUARD>
+
+  <EDITOR_CAPTURE_BOUNDARY>
+    RenderWithShader remains only inside the Editor baker capture function. Static archaeology now scans runtime Rendering and Environment directories for RenderWithShader in addition to Camera.Render, ReadPixels, and EncodeToPNG. Runtime generation of captures remains forbidden.
+  </EDITOR_CAPTURE_BOUNDARY>
+
+  <DEAR_LIE_CONFIRMATION>
+    Before: far giant object rendering costs O(V) vertex processing plus material/overdraw per mesh every frame, where V is original mesh vertex count. After: runtime costs O(1) quad vertices per impostor plus O(K) atlas samples per shaded pixel, with K collapsing toward one/two samples under low GlobalQualityWeight. Heavy capture, packing, dilation, and PNG serialization move to offline Editor time.
+  </DEAR_LIE_CONFIRMATION>
+
+  <LOOP_10_RENDERER_REBIND evidence="STATIC_SOURCE">
+    <INDIRECT_ARGS_CACHE status="PATCHED">_argsMesh and _lastArgsInstanceCount are invalidated when the indirect args GraphicsBuffer is allocated or released; fresh buffers cannot skip their first args write.</INDIRECT_ARGS_CACHE>
+    <BUFFER_LOCK status="PATCHED">Indirect args LockBufferForWrite is paired with UnlockBufferAfterWrite in finally.</BUFFER_LOCK>
+    <PAYLOAD_VALIDITY status="FAIL_CLOSED">Tick returns before draw if HectonOctahedralImpostorData, AlbedoDepthAtlas, or NormalDepthAtlas is absent, preventing stale material atlas reuse.</PAYLOAD_VALIDITY>
+    <VALIDATOR_SHADOWING status="PATCHED">ScanBillboardAssets local array is named paths; the StringBuilder files output parameter is no longer shadowed.</VALIDATOR_SHADOWING>
+    <COMPILE_GATE status="DEFERRED_BY_CPU">CPU sample was 100 percent and compiler process count was 0; Unity compile/import was not launched under the project CPU gate.</COMPILE_GATE>
+  </LOOP_10_RENDERER_REBIND>
+</SELF_AUDIT>

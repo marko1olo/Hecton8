@@ -6,31 +6,31 @@ namespace Hecton8.Core.Contracts
     /// <summary>
     /// Vault-owned compass state. Runtime writers keep this as the single mutable compass authority.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 176)]
+    [StructLayout(LayoutKind.Explicit, Size = 176)]
     public struct CompassStateDTO
     {
-        public double3 ActualAUP;
-        public double3 RawEstimatedAUP;
-        public double3 EstimatedAUP;
-        public double3 PreviousActualAUP;
-        public float3 Velocity;
-        public float ActualHeadingDegrees;
-        public float CurrentHeadingDegrees;
-        public float DriftDegrees;
-        public float AnomalyInterference01;
-        public float Power01;
-        public float Glitch01;
-        public float RecalibrationHold01;
-        public float MaxGyroDriftDegrees;
-        public float DeltaSeconds;
-        public float SystemStress01;
-        public float NoiseClockSeconds;
-        public uint Frame;
-        public uint Flags;
-        public uint LastAupShiftFrameId;
-        public int BlackBoxCursor;
-        public int CalibrationCount;
-        public uint Reserved0;
+        [FieldOffset(0)] public double3 ActualAUP;
+        [FieldOffset(24)] public double3 RawEstimatedAUP;
+        [FieldOffset(48)] public double3 EstimatedAUP;
+        [FieldOffset(72)] public double3 PreviousActualAUP;
+        [FieldOffset(96)] public float3 Velocity;
+        [FieldOffset(108)] public float ActualHeadingDegrees;
+        [FieldOffset(112)] public float CurrentHeadingDegrees;
+        [FieldOffset(116)] public float DriftDegrees;
+        [FieldOffset(120)] public float AnomalyInterference01;
+        [FieldOffset(124)] public float Power01;
+        [FieldOffset(128)] public float Glitch01;
+        [FieldOffset(132)] public float RecalibrationHold01;
+        [FieldOffset(136)] public float MaxGyroDriftDegrees;
+        [FieldOffset(140)] public float DeltaSeconds;
+        [FieldOffset(144)] public float SystemStress01;
+        [FieldOffset(148)] public float NoiseClockSeconds;
+        [FieldOffset(152)] public uint Frame;
+        [FieldOffset(156)] public uint Flags;
+        [FieldOffset(160)] public uint LastAupShiftFrameId;
+        [FieldOffset(164)] public int BlackBoxCursor;
+        [FieldOffset(168)] public int CalibrationCount;
+        [FieldOffset(172)] public uint Reserved0;
     }
 
     /// <summary>
@@ -52,47 +52,47 @@ namespace Hecton8.Core.Contracts
     /// <summary>
     /// Registry-facing dead-reckoning state exposed to cockpit and UI consumers without concrete navigation runtime coupling.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 120)]
+    [StructLayout(LayoutKind.Explicit, Size = 120)]
     public struct InertialNavigationSnapshot
     {
         /// <summary>Actual submarine AUP resolved from the authoritative motion read model.</summary>
-        public double3 ActualAUP;
+        [FieldOffset(0)] public double3 ActualAUP;
 
         /// <summary>Integrated estimate before transient gyro error presentation is applied.</summary>
-        public double3 RawEstimatedAUP;
+        [FieldOffset(24)] public double3 RawEstimatedAUP;
 
         /// <summary>Presented estimate after gyro drift rotation has falsified the translation.</summary>
-        public double3 EstimatedAUP;
+        [FieldOffset(48)] public double3 EstimatedAUP;
 
         /// <summary>Submarine velocity used by the last integration step.</summary>
-        public float3 SubmarineVelocity;
+        [FieldOffset(72)] public float3 SubmarineVelocity;
 
         /// <summary>Accumulated gyro drift in degrees.</summary>
-        public float GyroDriftError;
+        [FieldOffset(84)] public float GyroDriftError;
 
         /// <summary>False cockpit bearing produced from the drifted estimated AUP.</summary>
-        public float FalseBearingDegrees;
+        [FieldOffset(88)] public float FalseBearingDegrees;
 
         /// <summary>Hold-progress scalar for the physical recalibration control.</summary>
-        public float RecalibrationHold01;
+        [FieldOffset(92)] public float RecalibrationHold01;
 
         /// <summary>Navigation-driven UI glitch scalar consumed by visor post processing.</summary>
-        public float DriftGlitch01;
+        [FieldOffset(96)] public float DriftGlitch01;
 
         /// <summary>Total completed recalibrations since runtime boot or loaded save state.</summary>
-        public int CalibrationCount;
+        [FieldOffset(100)] public int CalibrationCount;
 
         /// <summary>State flags for telemetry and UI diagnostics.</summary>
-        public uint Flags;
+        [FieldOffset(104)] public uint Flags;
 
         /// <summary>Latest consumed AUP shift frame id.</summary>
-        public uint LastAupShiftFrameId;
+        [FieldOffset(108)] public uint LastAupShiftFrameId;
 
         /// <summary>Latest consumed impact frame.</summary>
-        public uint LastImpactFrame;
+        [FieldOffset(112)] public uint LastImpactFrame;
 
         /// <summary>Latest consumed brownout frame.</summary>
-        public uint LastBrownoutFrame;
+        [FieldOffset(116)] public uint LastBrownoutFrame;
     }
 
     /// <summary>

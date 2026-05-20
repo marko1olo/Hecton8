@@ -9,12 +9,12 @@ namespace Hecton8.AI.Ecology.Migration
     /// <summary>
     /// Burst-compiled low-frequency macro travel integrator. Removal uses swap-with-last inside the native array.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct MacroSwarmTravelJob : IJob
     {
-        public NativeArray<MacroSwarm> Swarms;
-        public NativeArray<MacroSwarmArrival> Arrivals;
-        public NativeArray<int> Counters;
+        [NoAlias] public NativeArray<MacroSwarm> Swarms;
+        [NoAlias] public NativeArray<MacroSwarmArrival> Arrivals;
+        [NoAlias] public NativeArray<int> Counters;
         public float DeltaSeconds;
 
         public void Execute()

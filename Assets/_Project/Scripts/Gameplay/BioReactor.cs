@@ -20,6 +20,7 @@
 
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Interaction;
 using Hecton8.Inventory;
 using Hecton8.Items;
@@ -641,6 +642,7 @@ namespace Hecton8.Gameplay
                 return;
 
             _hostModule.ApplyDamage(overheatIntegrityDamagePerSecond * deltaTime * parasiteOverheatMultiplier);
+            PublishReactorGasLeak(math.saturate(_overheatTimer / math.max(0.001f, overheatGraceSeconds)));
             if (_hostModule.CurrentIntegrity <= 0f)
                 TriggerMeltdown();
         }
@@ -671,6 +673,7 @@ namespace Hecton8.Gameplay
             NotifyGridBalanceChanged();
 
             Vector3 origin = _cachedTransform != null ? _cachedTransform.position : transform.position;
+            PublishReactorGasLeak(1f);
             int hitCount = UnityEngine.Physics.OverlapSphereNonAlloc(
                 origin,
                 meltdownRadius,
@@ -718,6 +721,20 @@ namespace Hecton8.Gameplay
 
             if (_hostModule != null && !_hostModule.IsFlooded)
                 _hostModule.ForceFlood();
+        }
+
+        private void PublishReactorGasLeak(float severity01)
+        {
+            Vector3 origin = _cachedTransform != null ? _cachedTransform.position : transform.position;
+            ReactorDamageSignal signal = new ReactorDamageSignal
+            {
+                DamageAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(origin),
+                ReactorHash = unchecked((uint)GetRuntimeId(this)),
+                Damage01 = math.saturate(severity01),
+                ToxinLeak01 = math.saturate(severity01),
+                Flags = 1
+            };
+            SignalBus<ReactorDamageSignal>.TryPush(in signal);
         }
 
         private static bool TryRegisterUniqueId(int[] ids, ref int count, int value)

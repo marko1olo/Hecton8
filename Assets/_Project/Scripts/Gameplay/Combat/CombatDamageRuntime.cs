@@ -103,7 +103,7 @@ namespace Hecton8.Gameplay
         public const ushort Deflected = 1 << 8;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     public struct CombatDamageRequest
     {
         public int TargetId;
@@ -114,7 +114,7 @@ namespace Hecton8.Gameplay
         public uint PackedMeta;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     public struct CombatDamageSignalDetail
     {
         public float3 LocalPoint;
@@ -144,7 +144,7 @@ namespace Hecton8.Gameplay
         [FieldOffset(76)] public float Depth;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
+    [StructLayout(LayoutKind.Sequential, Size = 64)]
     internal struct CombatTelemetryEntry
     {
         public uint FrameIndex;

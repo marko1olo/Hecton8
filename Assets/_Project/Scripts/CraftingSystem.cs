@@ -7,6 +7,7 @@ using Hecton8.Power;
 using Hecton8.SaveSystem;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 
@@ -23,12 +24,12 @@ namespace Hecton8.Crafting
         public const int MaxComplexRecipeNodeCount = 64;
         public const int MaxComplexRecipeEdgeCount = 128;
 
-        [BurstCompile]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         internal struct EvaluateRecipeAvailabilityJob : IJob
         {
-            [ReadOnly] public NativeArray<int2> RecipeCosts;
-            [ReadOnly] public NativeParallelHashMap<int, int> AvailableItemCounts;
-            public NativeArray<byte> Result;
+            [ReadOnly, NoAlias] public NativeArray<int2> RecipeCosts;
+            [ReadOnly, NoAlias] public NativeParallelHashMap<int, int> AvailableItemCounts;
+            [NoAlias] public NativeArray<byte> Result;
             public int RecipeCostCount;
             public ulong AvailableResourceMask;
             public ulong RecipeResourceMask;
@@ -60,16 +61,16 @@ namespace Hecton8.Crafting
             }
         }
 
-        [BurstCompile]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         internal struct KahnTotalRawCostJob : IJob
         {
-            [ReadOnly] public NativeArray<int2> GraphNodes;
-            [ReadOnly] public NativeArray<int2> GraphEdges;
-            public NativeArray<int> InDegrees;
-            public NativeArray<int> Queue;
-            public NativeArray<int2> RawCosts;
-            public NativeArray<int> RawCostCount;
-            public NativeArray<byte> Status;
+            [ReadOnly, NoAlias] public NativeArray<int2> GraphNodes;
+            [ReadOnly, NoAlias] public NativeArray<int2> GraphEdges;
+            [NoAlias] public NativeArray<int> InDegrees;
+            [NoAlias] public NativeArray<int> Queue;
+            [NoAlias] public NativeArray<int2> RawCosts;
+            [NoAlias] public NativeArray<int> RawCostCount;
+            [NoAlias] public NativeArray<byte> Status;
             public int NodeCount;
             public int EdgeCount;
 

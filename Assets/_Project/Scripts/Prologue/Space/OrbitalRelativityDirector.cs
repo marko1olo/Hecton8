@@ -4,10 +4,12 @@ using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Tools;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -38,6 +40,8 @@ namespace Hecton8.Prologue.Space
         private const float SplashdownFluidImpulseRadiusMeters = 50f;
         private const float SplashdownFluidImpulseLifetimeSeconds = 5f;
         private const float SplashdownFluidImpulseStrengthMetersPerSecond = 20f;
+        private const SystemID OwnerSystemId = SystemID.CoreBridge;
+        private const BufferID TelemetryRingBufferId = (BufferID)0x4F524241; // "ORBA"
 
         private static readonly int _planetDistanceId = Shader.PropertyToID("_H8OrbitalPlanetDistanceMeters");
         private static readonly int _fakeRadiusId = Shader.PropertyToID("_H8OrbitalFakeRadiusMeters");
@@ -85,6 +89,7 @@ namespace Hecton8.Prologue.Space
         [SerializeField] private float hapticIntervalSeconds = 0.10f;
 
         private NativeArray<OrbitalTelemetryEntry> _telemetryRing;
+        private VaultBufferHandle<OrbitalTelemetryEntry> _telemetryRingHandle;
         private int _telemetryCursor;
         private int _tickCount;
         private uint _sequence;
@@ -104,6 +109,7 @@ namespace Hecton8.Prologue.Space
         private bool _registeredUpdate;
         private bool _registeredHotSwapListener;
         private bool _serviceRegistered;
+        private bool _spaceDomainActive;
         private bool _handoffEmitted;
         private bool _telemetryDumped;
         private bool _domainExitHandled;
@@ -111,6 +117,7 @@ namespace Hecton8.Prologue.Space
         private bool _velocityZeroForced;
         private Quaternion _capsuleLockedRotation = Quaternion.identity;
         private float3 _capsuleLeadingEdgeLocalNormalized = new float3(0f, -1f, 0f);
+        private IDataVault _dataVault;
         private IInputService _inputService;
         private OrbitalDirectorSnapshot _snapshot;
         private AbsoluteUniversePosition _originAup;
@@ -153,6 +160,7 @@ namespace Hecton8.Prologue.Space
             CacheColdReferences();
             _originAup = AbsoluteUniversePosition.FromRuntimePosition(Vector3.zero);
             ResetRuntimeState(applyPresentation: false);
+            _spaceDomainActive = false;
 
             IOrbitalDirector existingDirector = GlobalRegistry.OrbitalDirector;
             if (existingDirector != null && !ReferenceEquals(existingDirector, this))
@@ -171,12 +179,18 @@ namespace Hecton8.Prologue.Space
                     PublishTelemetryAnomaly(DomainClaimFailedHash, 2);
                     return;
                 }
+
+                _spaceDomainActive = true;
             }
             else if (GlobalRegistry.CurrentDomain != Domain.Space)
             {
                 _aborted = true;
                 PublishTelemetryAnomaly(DomainNotSpaceHash, 2);
                 return;
+            }
+            else
+            {
+                _spaceDomainActive = true;
             }
 
             EnsureTelemetry();
@@ -224,6 +238,8 @@ namespace Hecton8.Prologue.Space
                 GlobalRegistry.ClearCurrentDomain(Domain.Space, this);
                 _domainClaimed = false;
             }
+
+            _spaceDomainActive = false;
         }
 
         private void OnDestroy()
@@ -233,17 +249,14 @@ namespace Hecton8.Prologue.Space
 
         public void Dispose()
         {
-            if (!_telemetryRing.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(_telemetryRing);
-            _telemetryRing.Dispose();
+            _telemetryRing = default;
+            _telemetryRingHandle = default;
             _telemetryCursor = 0;
         }
 
         public void Tick(float deltaTime)
         {
-            if (GlobalRegistry.CurrentDomain != Domain.Space)
+            if (!_spaceDomainActive)
             {
                 HandleDomainExit();
                 return;
@@ -277,27 +290,15 @@ namespace Hecton8.Prologue.Space
             _tickCount++;
         }
 
-        [ContextMenu("Run Burst Smoke Check")]
-        public void RunBurstSmokeCheck()
+        [ContextMenu("Run Orbital Math Smoke Check")]
+        public void RunOrbitalMathSmokeCheck()
         {
-            NativeArray<OrbitalApproachJobResult> result = new NativeArray<OrbitalApproachJobResult>(1, Allocator.TempJob);
-            try
-            {
-                OrbitalApproachIntegrateJob job = new OrbitalApproachIntegrateJob
-                {
-                    UniverseVelocity = new double3(0d, -passiveApproachSpeedMetersPerSecond, 0d),
-                    DistanceMeters = math.max(1d, startDistanceMeters),
-                    DeltaTime = 0.016666666666666666d,
-                    Result = result
-                };
-
-                job.Schedule().Complete();
-            }
-            finally
-            {
-                if (result.IsCreated)
-                    result.Dispose();
-            }
+            OrbitalApproachJobResult result = OrbitalApproachIntegrateJob.Integrate(
+                new double3(0d, -passiveApproachSpeedMetersPerSecond, 0d),
+                math.max(1d, startDistanceMeters),
+                0.016666666666666666d);
+            if (result.Flags != 0)
+                PublishTelemetryAnomaly(NaNHash, 3);
         }
 
         private void CacheColdReferences()
@@ -322,6 +323,9 @@ namespace Hecton8.Prologue.Space
 
             if (cloudLayerRenderer == null && cloudLayer != null)
                 cloudLayer.TryGetComponent(out cloudLayerRenderer);
+
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
         }
 
         private void ApplyColdSceneConfiguration()
@@ -374,15 +378,22 @@ namespace Hecton8.Prologue.Space
             if (_telemetryRing.IsCreated)
                 return;
 
-            _telemetryRing = new NativeArray<OrbitalTelemetryEntry>(
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return;
+
+            _telemetryRingHandle = vault.GetBufferHandle<OrbitalTelemetryEntry>(
+                TelemetryRingBufferId,
                 TelemetryCapacity,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<OrbitalTelemetryEntry>[300] - orbital black-box circular buffer - owner: OrbitalRelativityDirector
-            NativeMemorySentinel.RegisterNativeArray(
-                _telemetryRing,
-                nameof(OrbitalRelativityDirector),
-                nameof(_telemetryRing),
-                NativeAllocationLifetime.Scene);
+                OwnerSystemId,
+                NativeArrayOptions.ClearMemory);
+            _telemetryRing = _telemetryRingHandle.Resolve(vault);
+            if (!_telemetryRing.IsCreated || _telemetryRing.Length < TelemetryCapacity)
+            {
+                _telemetryRing = default;
+                _telemetryRingHandle = default;
+                _telemetryCursor = 0;
+            }
         }
 
         private void ResetRuntimeState(bool applyPresentation)
@@ -535,15 +546,16 @@ namespace Hecton8.Prologue.Space
 
         private byte ResolveMathLod(float distance)
         {
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            bool weakDevice = tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350 || tier == HectonQualityTier.Unknown;
-            if (weakDevice && distance > meshSwapDistanceMeters)
+            float quality01 = math.saturate(HomeostasisBrain.GlobalQualityWeight);
+            float meshContinuity01 = math.smoothstep(0.12f, 0.45f, quality01);
+            float highDetail01 = math.smoothstep(0.52f, 0.88f, quality01);
+            if (distance > meshSwapDistanceMeters && meshContinuity01 < 0.5f)
                 return MathLodImpostor;
 
-            if (tier == HectonQualityTier.Ultra)
+            if (highDetail01 >= 0.92f)
                 return MathLodUltra;
 
-            if (tier == HectonQualityTier.High)
+            if (highDetail01 >= 0.42f)
                 return MathLodHigh;
 
             return MathLodMesh;
@@ -731,6 +743,7 @@ namespace Hecton8.Prologue.Space
                 return;
 
             _domainExitHandled = true;
+            _spaceDomainActive = false;
             consumeInput = false;
 
             if (!_handoffEmitted)
@@ -755,6 +768,15 @@ namespace Hecton8.Prologue.Space
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
                 TryRegisterUpdateLane();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                _dataVault = currentService as IDataVault;
+                _telemetryRing = default;
+                _telemetryRingHandle = default;
+                _telemetryCursor = 0;
                 return;
             }
 
@@ -956,46 +978,80 @@ namespace Hecton8.Prologue.Space
         }
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct OrbitalTelemetryEntry
     {
+        [FieldOffset(0)]
         public double3 UniverseVelocity;
+        [FieldOffset(24)]
         public double PlanetDistanceMeters;
+        [FieldOffset(32)]
         public uint Frame;
+        [FieldOffset(36)]
         public uint StateHash;
+        [FieldOffset(40)]
         public float ReentryHeat01;
+        [FieldOffset(44)]
         public float CloudWhiteout01;
+        [FieldOffset(48)]
         public ushort Sequence;
+        [FieldOffset(50)]
         public byte MathLod;
+        [FieldOffset(51)]
         public byte Flags;
+        [FieldOffset(52)]
+        public uint _pad0;
+        [FieldOffset(56)]
+        public ulong _pad1;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct OrbitalApproachJobResult
     {
-        public double DistanceMeters;
+        [FieldOffset(0)]
         public double3 UniverseVelocity;
+        [FieldOffset(24)]
+        public double DistanceMeters;
+        [FieldOffset(32)]
         public byte Flags;
+        [FieldOffset(33)]
+        public byte _pad0;
+        [FieldOffset(34)]
+        public ushort _pad1;
+        [FieldOffset(36)]
+        public uint _pad2;
+        [FieldOffset(40)]
+        public ulong _pad3;
+        [FieldOffset(48)]
+        public ulong _pad4;
+        [FieldOffset(56)]
+        public ulong _pad5;
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct OrbitalApproachIntegrateJob : IJob
     {
         public double3 UniverseVelocity;
         public double DistanceMeters;
         public double DeltaTime;
+        [WriteOnly, NoAlias]
         public NativeArray<OrbitalApproachJobResult> Result;
 
         public void Execute()
         {
-            double speedSq = math.max(0d, math.lengthsq(UniverseVelocity));
+            Result[0] = Integrate(UniverseVelocity, DistanceMeters, DeltaTime);
+        }
+
+        public static OrbitalApproachJobResult Integrate(double3 universeVelocity, double distanceMeters, double deltaTime)
+        {
+            double speedSq = math.max(0d, math.lengthsq(universeVelocity));
             double speed = speedSq > 0d ? speedSq * math.rsqrt(speedSq) : 0d;
-            double integratedDistance = math.max(0d, DistanceMeters + UniverseVelocity.y * math.max(0d, DeltaTime));
+            double integratedDistance = math.max(0d, distanceMeters + universeVelocity.y * math.max(0d, deltaTime));
             byte flags = (byte)((IsFinite(speed) && IsFinite(integratedDistance)) ? 0 : 1);
-            Result[0] = new OrbitalApproachJobResult
+            return new OrbitalApproachJobResult
             {
                 DistanceMeters = flags == 0 ? integratedDistance : 0d,
-                UniverseVelocity = flags == 0 ? UniverseVelocity : double3.zero,
+                UniverseVelocity = flags == 0 ? universeVelocity : double3.zero,
                 Flags = flags
             };
         }

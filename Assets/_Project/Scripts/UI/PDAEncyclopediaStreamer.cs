@@ -180,6 +180,8 @@ namespace Hecton8.UI
         [ReadOnly] [NoAlias] public NativeArray<BabelIndexDTO> Index;
         [WriteOnly] [NoAlias] public NativeArray<BabelLookupResultDTO> Result;
         public uint EntryHash;
+        public uint MockBaseHash;
+        public uint MockEntryCount;
 
         public void Execute()
         {
@@ -187,24 +189,19 @@ namespace Hecton8.UI
             result.TextHash = EntryHash;
             result.Flags = 1u;
 
-            int lo = 0;
-            int hi = Index.Length - 1;
-            while (lo <= hi)
+            if (EntryHash >= MockBaseHash)
             {
-                int mid = (lo + hi) >> 1;
-                BabelIndexDTO row = Index[mid];
-                if (row.StringHash == EntryHash)
+                uint ordinal = EntryHash - MockBaseHash;
+                if (ordinal < MockEntryCount && ordinal < (uint)Index.Length)
                 {
-                    result.ByteOffset = row.ByteOffset;
-                    result.ByteLength = row.ByteLength;
-                    result.Flags = 0u;
-                    break;
+                    BabelIndexDTO row = Index[(int)ordinal];
+                    if (row.StringHash == EntryHash)
+                    {
+                        result.ByteOffset = row.ByteOffset;
+                        result.ByteLength = row.ByteLength;
+                        result.Flags = 0u;
+                    }
                 }
-
-                if (row.StringHash < EntryHash)
-                    lo = mid + 1;
-                else
-                    hi = mid - 1;
             }
 
             Result[0] = result;
@@ -1382,7 +1379,8 @@ namespace Hecton8.UI
                 VisibleLength = _visibleLength,
                 Frame = (uint)Time.frameCount
             };
-            job.Run();
+            // UI presentation scalar: visible-char state is read below in the same frame, so execute directly instead of forcing the synchronous job runner.
+            job.Execute();
 
             PdaTypewriterStateDTO state = typewriter[0];
             int previousVisible = _visibleLength;
@@ -1666,7 +1664,7 @@ namespace Hecton8.UI
                     UnlockMask = mask,
                     TypewriterState = typewriter
                 };
-                job.Run();
+                job.Execute();
                 ref PdaEncyclopediaRuntimeStateDTO runtimeState = ref _runtimeStateHandle.GetElementAsRef(_vault, 0);
                 runtimeState.Magic = StateMagic;
                 runtimeState.StreamState = (uint)PdaEncyclopediaStreamState.Idle;
@@ -1882,9 +1880,12 @@ namespace Hecton8.UI
             {
                 Index = index,
                 Result = result,
-                EntryHash = hash
+                EntryHash = hash,
+                MockBaseHash = DefaultEntryHash,
+                MockEntryCount = (uint)math.min(MockEntryCapacity, index.Length)
             };
-            job.Run();
+            // One-row lookup consumed immediately by the streamer; direct Execute avoids a synchronous Job System run path.
+            job.Execute();
 
             BabelLookupResultDTO row = result[0];
             if (row.Flags != 0u ||

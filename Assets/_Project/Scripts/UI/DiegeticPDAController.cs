@@ -11,7 +11,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Diegetic PDA Controller")]
-    public sealed class DiegeticPDAController : MonoBehaviour, ITickable, IUpdatable, IPanelInteractable
+    public sealed class DiegeticPDAController : MonoBehaviour, ITickable, IUpdatable, IPanelInteractable, IGlobalRegistryHotSwapListener
     {
         private const string TabletScreenShaderPath = "Assets/_Project/Art/Shaders/Hecton_DiegeticPanelUnlit.shader";
         private const float ReferenceResolveRetryIntervalSeconds = 0.5f;
@@ -112,13 +112,16 @@ namespace Hecton8.UI
         private bool _hasLastPointerRaycastCanvasPosition;
         private bool _pointerTargetCacheDirty = true;
         private bool _pointerTargetCacheOverflow;
+        private bool _hotSwapListenerRegistered;
         private int _pointerTargetCount;
+        private IPlayerRuntimeContext _cachedPlayerContext;
         private Material _runtimeTabletScreenMaterial;
         private float _referenceResolveRetryTimer;
 
         private void Awake()
         {
             CharBufferPool.Prewarm();
+            CacheRegistryServicesCold();
             ResolveReferences();
             ConfigureDiegeticPdaShell();
             ApplyPresentationState(PlayerPDA.IsOpen, force: true);
@@ -126,14 +129,17 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
             ResolveReferences();
             _referenceResolveRetryTimer = 0f;
             ConfigureDiegeticPdaShell();
+            TryRegisterHotSwapListener();
             RegisterToTickManager();
         }
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             UnregisterFromTickManager();
             _uiConfigured = false;
             ClearPointerState();
@@ -146,6 +152,7 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             if (diegeticPanel != null)
                 diegeticPanel.ReleasePresentationRenderTexture();
             DisposeRuntimeScreenMaterial();
@@ -240,6 +247,56 @@ namespace Hecton8.UI
             _registeredToTickManager = false;
         }
 
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Player)
+                return;
+
+            IPlayerRuntimeContext previousContext = _cachedPlayerContext;
+            PlayerPDA previousPda = previousContext != null ? previousContext.PlayerPDA : null;
+            Transform previousHandAnchor = previousContext != null && previousContext.ToolManager != null
+                ? previousContext.ToolManager.HandAnchor
+                : null;
+            Camera previousCamera = previousContext != null ? previousContext.PlayerCamera : null;
+            _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+
+            if (playerPda == null || ReferenceEquals(playerPda, previousPda))
+                playerPda = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerPDA : null;
+
+            if (tabletHandAnchor == null || ReferenceEquals(tabletHandAnchor, previousHandAnchor))
+                tabletHandAnchor = ResolveCachedPlayerHandAnchor();
+
+            if (_visibilityCamera == null || ReferenceEquals(_visibilityCamera, previousCamera))
+                _visibilityCamera = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerCamera : null;
+
+            _referenceResolveRetryTimer = 0f;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedPlayerContext = GlobalRegistry.Player;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
         private void ResolveReferencesThrottled(float deltaTime)
         {
             if (!NeedsReferenceResolve())
@@ -284,7 +341,7 @@ namespace Hecton8.UI
         {
             if (playerPda == null)
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                IPlayerRuntimeContext playerContext = _cachedPlayerContext;
                 if (playerContext != null)
                     playerPda = playerContext.PlayerPDA;
 
@@ -324,10 +381,7 @@ namespace Hecton8.UI
 
             if (tabletHandAnchor == null)
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-                PlayerToolManager toolManager = playerContext != null ? playerContext.ToolManager : null;
-                if (toolManager != null)
-                    tabletHandAnchor = toolManager.HandAnchor;
+                tabletHandAnchor = ResolveCachedPlayerHandAnchor();
             }
 
             if (tabletScreenRenderer == null && tabletRoot != null)
@@ -500,9 +554,15 @@ namespace Hecton8.UI
             if (_visibilityCamera != null && _visibilityCamera.isActiveAndEnabled)
                 return _visibilityCamera;
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             _visibilityCamera = playerContext != null ? playerContext.PlayerCamera : null;
             return _visibilityCamera != null && _visibilityCamera.isActiveAndEnabled ? _visibilityCamera : null;
+        }
+
+        private Transform ResolveCachedPlayerHandAnchor()
+        {
+            PlayerToolManager toolManager = _cachedPlayerContext != null ? _cachedPlayerContext.ToolManager : null;
+            return toolManager != null ? toolManager.HandAnchor : null;
         }
 
         private void RebuildTabletVisibilityCache()

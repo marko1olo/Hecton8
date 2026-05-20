@@ -75,7 +75,7 @@ using UnityEngine.Rendering;
 namespace Hecton8.AI.GPU
 {
     [DisallowMultipleComponent]
-    public sealed class HectonBoidController : MonoBehaviour, ITickable, IUpdatable
+    public sealed class HectonBoidController : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
     {
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  BOID DATA â€” must match compute shader struct exactly
@@ -101,13 +101,13 @@ namespace Hecton8.AI.GPU
         /// Matches HLSL struct BoidData layout exactly.
         /// Blittable â€” no GC, direct GPU upload.
         /// </summary>
-        [StructLayout(LayoutKind.Sequential, Size = BoidStride)]
+        [StructLayout(LayoutKind.Explicit, Size = BoidStride)]
         private struct BoidData
         {
-            public Vector3 position;  // 12 bytes
-            public Vector3 velocity;  // 12 bytes
-            public float   panic;     // 4 bytes
-            public uint    stateFlags;// 4 bytes
+            [FieldOffset(0)] public Vector3 position;  // 12 bytes
+            [FieldOffset(12)] public Vector3 velocity;  // 12 bytes
+            [FieldOffset(24)] public float   panic;     // 4 bytes
+            [FieldOffset(28)] public uint    stateFlags;// 4 bytes
             // TOTAL: 32 bytes
         }
 
@@ -402,7 +402,9 @@ namespace Hecton8.AI.GPU
         /// <summary>ÐšÑÑˆÐ¸Ñ€Ð¾Ð²Ð°Ð½Ð½Ð°Ñ ÐºÐ°Ð¼ÐµÑ€Ð°.</summary>
         private Camera _mainCamera;
         private IFoveatedSimulationDirector _foveatedSimulationDirector;
+        private HectonFluidEngine _fluidRuntime;
         private FoveatedSimulationTier _foveatedSimulationTier = FoveatedSimulationTier.Active;
+        private bool _hotSwapListenerRegistered;
 
         /// <summary>Is system initialized and ready.</summary>
         private bool _initialized;
@@ -486,7 +488,13 @@ namespace Hecton8.AI.GPU
 
         private void OnEnable()
         {
-            if (_registeredToTickManager || !Application.isPlaying)
+            if (!Application.isPlaying)
+                return;
+
+            CacheRegistryServicesCold(forceRefresh: true);
+            TryRegisterHotSwapListener();
+
+            if (_registeredToTickManager)
                 return;
 
             if (GlobalRegistry.Dispatcher == null)
@@ -494,7 +502,6 @@ namespace Hecton8.AI.GPU
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
-            _foveatedSimulationDirector = GlobalRegistry.FoveatedSimulationDirector;
 
             if (_playerTransform == null)
                 FindPlayer();
@@ -508,13 +515,42 @@ namespace Hecton8.AI.GPU
                 _registeredToTickManager = false;
             }
 
+            TryUnregisterHotSwapListener();
             _foveatedSimulationDirector = null;
+            _fluidRuntime = null;
+            _playerRuntimeContext = null;
+            _playerTransform = null;
+            _mainCamera = null;
             _foveatedSimulationTier = FoveatedSimulationTier.Active;
         }
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             ReleaseBuffers();
+        }
+
+        /// <inheritdoc />
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    _playerTransform = _playerRuntimeContext != null ? _playerRuntimeContext.PlayerTransform : null;
+                    _mainCamera = null;
+                    break;
+                case GlobalRegistryServiceSlot.FluidRuntime:
+                    _fluidRuntime = currentService as HectonFluidEngine;
+                    break;
+                case GlobalRegistryServiceSlot.FoveatedSimulationDirector:
+                    _foveatedSimulationDirector = currentService as IFoveatedSimulationDirector;
+                    _foveatedSimulationTier = FoveatedSimulationTier.Active;
+                    break;
+            }
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -548,9 +584,6 @@ namespace Hecton8.AI.GPU
 
             UpdateTarget();
             UpdateSpatialGridLayout();
-            if (_foveatedSimulationDirector == null)
-                _foveatedSimulationDirector = GlobalRegistry.FoveatedSimulationDirector;
-
             if (_foveatedSimulationDirector != null)
                 _foveatedSimulationTier = _foveatedSimulationDirector.ResolveTierForPosition(boundsCenter);
             bool simulateBoids = _foveatedSimulationTier != FoveatedSimulationTier.Frozen;
@@ -1113,8 +1146,7 @@ namespace Hecton8.AI.GPU
                 new Vector4(_spatialGridResolution.x, _spatialGridResolution.y, _spatialGridResolution.z, 0f));
             cs.SetFloat(ShaderProps.SpatialGridCellSize, _spatialGridCellSize);
             cs.SetInt(ShaderProps.SpatialGridMaxBoidsPerCell, SpatialGridMaxBoidsPerCell);
-            cs.SetInt(ShaderProps.BoidMathLodMode,
-                DistanceMath.ResolveMathLodMode(GlobalRegistry.ScalabilityTier) == MathLodMode.High ? 1 : 0);
+            cs.SetFloat(ShaderProps.BoidMathLodMode, ResolveBoidSocialLodWeight01());
 
             // â”€â”€ Weights â”€â”€
             cs.SetFloat(ShaderProps.SeparationWeight, separationWeight);
@@ -1202,7 +1234,7 @@ namespace Hecton8.AI.GPU
             Vector4 flowSpacing = Vector4.zero;
             float active = 0f;
 
-            var fluid = GlobalRegistry.Fluid;
+            HectonFluidEngine fluid = _fluidRuntime;
             if (enableAbyssalFlowAdvection && fluid != null)
             {
                 if (fluid.TryGetGpuAbyssalFlowFieldTexture(
@@ -1453,11 +1485,48 @@ namespace Hecton8.AI.GPU
 
         private IPlayerRuntimeContext ResolvePlayerContext()
         {
-            if (_playerRuntimeContext != null)
-                return _playerRuntimeContext;
-
-            _playerRuntimeContext = Hecton8.Core.GlobalRegistry.Player;
             return _playerRuntimeContext;
+        }
+
+        private void CacheRegistryServicesCold(bool forceRefresh)
+        {
+            if (forceRefresh || _playerRuntimeContext == null)
+            {
+                _playerRuntimeContext = GlobalRegistry.Player;
+                _playerTransform = _playerRuntimeContext != null ? _playerRuntimeContext.PlayerTransform : _playerTransform;
+                _mainCamera = null;
+            }
+
+            if (forceRefresh || _fluidRuntime == null)
+                _fluidRuntime = GlobalRegistry.Fluid;
+
+            if (forceRefresh || _foveatedSimulationDirector == null)
+                _foveatedSimulationDirector = GlobalRegistry.FoveatedSimulationDirector;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
+        private static float ResolveBoidSocialLodWeight01()
+        {
+            float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
+            qualityWeight = math.select(0f, qualityWeight, math.isfinite(qualityWeight));
+            qualityWeight = math.saturate(qualityWeight);
+            return math.saturate(math.smoothstep(0.2f, 0.85f, qualityWeight));
         }
 
         private bool TryResolvePlayerTargetPosition(out Vector3 playerPosition)

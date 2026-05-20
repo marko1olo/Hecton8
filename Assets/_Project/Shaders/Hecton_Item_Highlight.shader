@@ -70,9 +70,11 @@ Shader "Hecton/Item/Highlight"
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
             #pragma multi_compile _ _SHADOWS_SOFT
+            #pragma target 4.5
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+            #include "Assets/_Project/Art/Shaders/Hecton_CustomLightProbeGrid.hlsl"
 
             struct Attributes
             {
@@ -166,7 +168,7 @@ Shader "Hecton/Item/Highlight"
                 inputData.viewDirectionWS = GetWorldSpaceNormalizeViewDir(input.positionWS);
                 inputData.shadowCoord = TransformWorldToShadowCoord(input.positionWS);
                 inputData.fogCoord = input.fogFactor;
-                inputData.bakedGI = max(half3(0, 0, 0), SampleSH(inputData.normalWS));
+                inputData.bakedGI = H8CustomLightProbeResolveAmbient(input.positionWS, inputData.normalWS, half3(0.015h, 0.025h, 0.035h));
                 inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(input.positionCS);
                 inputData.shadowMask = 1.0;
 

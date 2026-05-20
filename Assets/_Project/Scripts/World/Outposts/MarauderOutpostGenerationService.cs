@@ -267,30 +267,27 @@ namespace Hecton8.World.Outposts
         {
             if (_jobPhase == JobPhase.Solving)
             {
-                if (!_jobHandle.IsCompleted)
+                if (!DispatcherJobFence.TryFinalizeCompleted(ref _jobHandle))
                     return;
 
-                _jobHandle.Complete();
                 ScheduleMatrixExtraction();
                 return;
             }
 
             if (_jobPhase == JobPhase.Extracting)
             {
-                if (!_jobHandle.IsCompleted)
+                if (!DispatcherJobFence.TryFinalizeCompleted(ref _jobHandle))
                     return;
 
-                _jobHandle.Complete();
                 CommitCompletedGeneration();
                 return;
             }
 
             if (_jobPhase == JobPhase.Shifting)
             {
-                if (!_jobHandle.IsCompleted)
+                if (!DispatcherJobFence.TryFinalizeCompleted(ref _jobHandle))
                     return;
 
-                _jobHandle.Complete();
                 _jobPhase = JobPhase.None;
                 _matrixUploadDirty = true;
                 SetState(_generated ? OutpostGenerationState.Ready : OutpostGenerationState.Idle);

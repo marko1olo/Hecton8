@@ -27,18 +27,22 @@ namespace Hecton8.Gameplay
         Scannable = 4
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct ScanEventPayload
     {
-        public float3 Position;
-        public float Radius;
-        public uint EntryHash;
-        public uint TitleHash;
-        public uint CategoryHash;
-        public uint SummaryHash;
-        public ushort EventType;
-        public byte EntryKind;
-        public byte Reserved;
+        [FieldOffset(0)] public float3 Position;
+        [FieldOffset(12)] public float Radius;
+        [FieldOffset(16)] public uint EntryHash;
+        [FieldOffset(20)] public uint TitleHash;
+        [FieldOffset(24)] public uint CategoryHash;
+        [FieldOffset(28)] public uint SummaryHash;
+        [FieldOffset(32)] public ushort EventType;
+        [FieldOffset(34)] public byte EntryKind;
+        [FieldOffset(35)] public byte Reserved;
+        [FieldOffset(36)] private uint _pad0;
+        [FieldOffset(40)] private ulong _pad1;
+        [FieldOffset(48)] private ulong _pad2;
+        [FieldOffset(56)] private ulong _pad3;
     }
 
     public readonly struct ScanEntryMetadata

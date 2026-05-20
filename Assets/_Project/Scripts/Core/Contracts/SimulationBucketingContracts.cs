@@ -23,11 +23,11 @@ namespace Hecton8.Core
         /// <summary>Mask for standard slow buckets.</summary>
         public const int StandardSlowBucketMask = StandardSlowBucketCount - 1;
 
-        /// <summary>Low/MX350 slow bucket count, rounded up from 120 to preserve bitmask bucket math.</summary>
-        public const int LowSlowBucketCount = 128;
+        /// <summary>Survival-pressure slow bucket count, rounded up from 120 to preserve bitmask bucket math.</summary>
+        public const int SurvivalSlowBucketCount = 128;
 
-        /// <summary>Mask for low-tier slow buckets.</summary>
-        public const int LowSlowBucketMask = LowSlowBucketCount - 1;
+        /// <summary>Mask for survival-pressure slow buckets.</summary>
+        public const int SurvivalSlowBucketMask = SurvivalSlowBucketCount - 1;
 
         /// <summary>Prompt target of 600 cold buckets, rounded down to the nearest power-of-two cadence.</summary>
         public const int ColdBucketCount = 512;
@@ -41,10 +41,10 @@ namespace Hecton8.Core
         /// <summary>Hard cap for entity bucket storage; 1,048,576 entries costs 4 MiB.</summary>
         public const int MaxEntityCapacity = 1 << 20;
 
-        /// <summary>Maximum active slow buckets per frame on high-tier hardware with no admission debt.</summary>
-        public const byte HighTierActiveSlowBucketCount = 2;
+        /// <summary>Maximum active slow buckets per frame at full quality with no admission debt.</summary>
+        public const byte PrecisionActiveSlowBucketCount = 4;
 
-        /// <summary>Minimum active slow bucket count used during debt, AUP barriers, and low tier.</summary>
+        /// <summary>Minimum active slow bucket count used during debt, AUP barriers, and survival pressure.</summary>
         public const byte MinimumActiveSlowBucketCount = 1;
 
         /// <summary>Target 60 FPS frame duration in milliseconds.</summary>
@@ -53,7 +53,7 @@ namespace Hecton8.Core
         /// <summary>PRE_SIMULATION hard budget in milliseconds.</summary>
         public const float PreSimulationBudgetMilliseconds = Hecton8.Core.Contracts.ScalabilityContract.PreSimulationBudgetMilliseconds;
 
-        /// <summary>High-tier dynamic rebalance cadence in dispatcher frames.</summary>
+        /// <summary>Full-quality dynamic rebalance cadence in dispatcher frames.</summary>
         public const int RebalanceCadenceFrames = 60;
     }
 
@@ -74,75 +74,75 @@ namespace Hecton8.Core
         /// <summary>A background rebalance job is pending and the current frame uses the last stable table.</summary>
         public const uint RebalancePending = 1u << 3;
 
-        /// <summary>Low-tier static distribution is active.</summary>
-        public const uint LowTierStaticDistribution = 1u << 4;
+        /// <summary>Survival-pressure static distribution is active.</summary>
+        public const uint SurvivalStaticDistribution = 1u << 4;
 
         /// <summary>The dispatcher requested homeostasis load shedding for this frame.</summary>
         public const uint HomeostasisKillRequested = 1u << 5;
 
-        /// <summary>High-tier frame budget has room for downstream visual overkill systems.</summary>
+        /// <summary>Frame budget has room for downstream visual overkill systems.</summary>
         public const uint VisualOverkillBudgetAvailable = 1u << 6;
     }
 
     /// <summary>
     /// Lightweight frame snapshot emitted by the simulation bucketer and black-box telemetry.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct SimulationBucketFrameState
     {
         /// <summary>Monotonic frame count owned by the bucketer, independent of Unity frame wrapping.</summary>
-        public int CurrentFrameCount;
+        [FieldOffset(0)] public int CurrentFrameCount;
 
         /// <summary>Active fast bucket for this dispatcher frame.</summary>
-        public int ActiveFastBucket;
+        [FieldOffset(4)] public int ActiveFastBucket;
 
         /// <summary>Active slow bucket for this dispatcher frame.</summary>
-        public int ActiveSlowBucket;
+        [FieldOffset(8)] public int ActiveSlowBucket;
 
         /// <summary>Active cold bucket for this dispatcher frame.</summary>
-        public int ActiveColdBucket;
+        [FieldOffset(12)] public int ActiveColdBucket;
 
-        /// <summary>Current slow bucket count selected by scalability tier.</summary>
-        public int SlowBucketCount;
+        /// <summary>Current slow bucket count selected by continuous quality pressure.</summary>
+        [FieldOffset(16)] public int SlowBucketCount;
 
-        /// <summary>Slow bucket mask selected by scalability tier.</summary>
-        public int SlowBucketMask;
+        /// <summary>Slow bucket mask selected by continuous quality pressure.</summary>
+        [FieldOffset(20)] public int SlowBucketMask;
 
         /// <summary>Current job admission critical debt frame count.</summary>
-        public int CriticalDebtFrames;
+        [FieldOffset(24)] public int CriticalDebtFrames;
 
         /// <summary>Frame-pacing flags from <see cref="SimulationBucketPacingFlags"/>.</summary>
-        public uint FramePacingFlags;
+        [FieldOffset(28)] public uint FramePacingFlags;
 
         /// <summary>Accepted dynamic rebalance sequence number.</summary>
-        public uint RebalanceSequence;
+        [FieldOffset(32)] public uint RebalanceSequence;
 
         /// <summary>Last measured active bucket workload in milliseconds.</summary>
-        public float ActiveBucketLoadMs;
+        [FieldOffset(36)] public float ActiveBucketLoadMs;
 
         /// <summary>EWMA absolute jitter deviation in milliseconds.</summary>
-        public float JitterVarianceMs;
+        [FieldOffset(40)] public float JitterVarianceMs;
 
         /// <summary>Expected maximum bucket load after the latest accepted rebalance.</summary>
-        public float ExpectedMaxBucketLoadMs;
+        [FieldOffset(44)] public float ExpectedMaxBucketLoadMs;
 
         /// <summary>Expected mean bucket load after the latest accepted rebalance.</summary>
-        public float ExpectedMeanBucketLoadMs;
+        [FieldOffset(48)] public float ExpectedMeanBucketLoadMs;
 
         /// <summary>Dispatcher-measured PRE_SIMULATION phase cost in milliseconds.</summary>
-        public float PreSimulationCostMs;
+        [FieldOffset(52)] public float PreSimulationCostMs;
 
         /// <summary>Globally broadcast interpolation alpha for bucketed presentation.</summary>
-        public float SimulationBucketInterpolationAlpha;
+        [FieldOffset(56)] public float SimulationBucketInterpolationAlpha;
 
         /// <summary>Number of slow buckets permitted this frame.</summary>
-        public byte ActiveSlowBucketCount;
+        [FieldOffset(60)] public byte ActiveSlowBucketCount;
 
         /// <summary>Non-zero when an AUP shift barrier is active.</summary>
-        public byte AupBarrierActive;
+        [FieldOffset(61)] public byte AupBarrierActive;
 
         /// <summary>Explicit tail pad. Keeps the contract at 64 bytes with no implicit platform padding.</summary>
-        public ushort ReservedPadding;
+        [FieldOffset(62)] public ushort ReservedPadding;
     }
 
     /// <summary>
@@ -218,11 +218,18 @@ namespace Hecton8.Core
         void Initialize(int entityCapacity);
 
         /// <summary>Advances active bucket state once in the dispatcher simulation phase.</summary>
-        /// <param name="scalabilityTierProfile">Profile byte: 0 = Low/MX350, 1 = High/RTX.</param>
+        /// <param name="globalQualityWeight01">Continuous 0..1 quality scalar from HomeostasisBrain.</param>
         /// <param name="unscaledDeltaTime">Unscaled dispatcher delta for non-finite guards.</param>
         /// <param name="criticalDebtFrames">Lane0 critical job admission debt.</param>
         /// <param name="aupBarrierActive">True while an AUP shift barrier may tear interpolated presentation.</param>
-        void AdvanceFrame(byte scalabilityTierProfile, float unscaledDeltaTime, int criticalDebtFrames, bool aupBarrierActive);
+        void AdvanceFrame(float globalQualityWeight01, float unscaledDeltaTime, int criticalDebtFrames, bool aupBarrierActive);
+
+        /// <summary>Legacy generated-project bridge. Implementations must normalize back to 0..1 before policy math.</summary>
+        /// <param name="globalQualityWeightByte">Continuous quality encoded as 0..255 for stale contract-DLL compatibility.</param>
+        /// <param name="unscaledDeltaTime">Unscaled dispatcher delta for non-finite guards.</param>
+        /// <param name="criticalDebtFrames">Lane0 critical job admission debt.</param>
+        /// <param name="aupBarrierActive">True while an AUP shift barrier may tear interpolated presentation.</param>
+        void AdvanceFrame(byte globalQualityWeightByte, float unscaledDeltaTime, int criticalDebtFrames, bool aupBarrierActive);
 
         /// <summary>Stores the measured active bucket load for black-box telemetry.</summary>
         /// <param name="milliseconds">Measured milliseconds. Non-finite values are clamped to zero.</param>

@@ -324,7 +324,7 @@ Shader "HECTON/Terrain/TerrainMaster"
             Cull   Back
 
             HLSLPROGRAM
-            #pragma target 3.5
+            #pragma target 4.5
             #pragma vertex   ForwardVert
             #pragma fragment ForwardFrag
 
@@ -350,6 +350,7 @@ Shader "HECTON/Terrain/TerrainMaster"
             #pragma instancing_options assumeuniformscaling
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+            #include "Assets/_Project/Art/Shaders/Hecton_CustomLightProbeGrid.hlsl"
 
             // -- Vertex color packing: R=Slope G=Depth B=Cave A=Biome --
 
@@ -561,10 +562,7 @@ Shader "HECTON/Terrain/TerrainMaster"
                     inputData.shadowCoord = float4(0.0, 0.0, 0.0, 0.0);
                 #endif
 
-                // ---- Ambient / GI (Unity 6 / URP 17+ compatible) ----
-                // SampleSH(float3) was removed/changed in URP 17.
-                // Use SampleSHPixel which is the correct URP 17 API,
-                // or fall back to manual SH evaluation.
+                // ---- Ambient / GI ----
                 #if defined(LIGHTMAP_ON)
                     // Use lightmap for baked GI
                     #if defined(DYNAMICLIGHTMAP_ON)
@@ -580,18 +578,7 @@ Shader "HECTON/Terrain/TerrainMaster"
                             finalNormalWS);
                     #endif
                 #else
-                    // No lightmap - sample Spherical Harmonics
-                    // URP 17+ approach: SampleSHPixel with vertex SH passed as 0
-                    // The vertex SH (OUTPUT_SH4) is broken, so we compute per-pixel.
-                    #if defined(EVALUATE_SH_VERTEX) || defined(EVALUATE_SH_MIXED)
-                        // If URP defines these, use SampleSHPixel
-                        inputData.bakedGI = SampleSHPixel(half3(0, 0, 0), finalNormalWS);
-                    #else
-                        // Robust fallback: manually evaluate L0+L1+L2 SH
-                        // unity_SHAr/Ag/Ab/Br/Bg/Bb/C are always available
-                        inputData.bakedGI = max(half3(0, 0, 0),
-                            SampleSH(finalNormalWS));
-                    #endif
+                    inputData.bakedGI = H8CustomLightProbeResolveAmbient(IN.positionWS, finalNormalWS, half3(0.015h, 0.025h, 0.035h));
                 #endif
 
                 // ============================================================

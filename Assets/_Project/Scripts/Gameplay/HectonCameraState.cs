@@ -6,7 +6,7 @@ namespace Hecton8.Gameplay
     /// <summary>
     /// Immutable camera target state produced by locomotion and consumed by the camera rig owner.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 16)]
+    [StructLayout(LayoutKind.Sequential)]
     public struct HectonCameraState
     {
         public const uint ApplyTransformDirectlyFlag = 1u << 0;

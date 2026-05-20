@@ -1,0 +1,1787 @@
+[
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "AllocationAudit_SHINOBU_100.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\AllocationAudit_SHINOBU_100.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "BufferIDSovereigntyAudit_HFI_AUDIT.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\BufferIDSovereigntyAudit_HFI_AUDIT.json",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "BufferIDSovereigntyAudit_HFI_AUDIT.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\BufferIDSovereigntyAudit_HFI_AUDIT.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "DataVaultSovereigntyAudit_VAULT_SOVEREIGNTY_ENFORCER.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\DataVaultSovereigntyAudit_VAULT_SOVEREIGNTY_ENFORCER.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "HPhiTrend_SHINOBU_02.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\HPhiTrend_SHINOBU_02.json",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "HPhiTrend_SHINOBU_02.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\HPhiTrend_SHINOBU_02.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "HPhiTrend_SHINOBU_02_current17.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\HPhiTrend_SHINOBU_02_current17.json",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "HPhiTrend_SHINOBU_02_current17.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\HPhiTrend_SHINOBU_02_current17.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "HPhiTrend_SHINOBU_02_current18.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\HPhiTrend_SHINOBU_02_current18.json",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "HPhiTrend_SHINOBU_02_current18.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\HPhiTrend_SHINOBU_02_current18.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "HPhiTrend_SHINOBU_02_current19.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\HPhiTrend_SHINOBU_02_current19.json",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "HPhiTrend_SHINOBU_02_current19.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\HPhiTrend_SHINOBU_02_current19.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "HPhiTrend_SHINOBU_02_current20.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\HPhiTrend_SHINOBU_02_current20.json",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "HPhiTrend_SHINOBU_02_current20.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\HPhiTrend_SHINOBU_02_current20.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "HPhiTrend_SHINOBU_02_current21.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\HPhiTrend_SHINOBU_02_current21.json",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "HPhiTrend_SHINOBU_02_current21.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\HPhiTrend_SHINOBU_02_current21.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_ARCHIVE_BATCH_010.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_ARCHIVE_BATCH_010.md",
+        "WasDirectory":  false,
+        "Status":  "Created"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_DOC_GLOBAL_DOCS_REFRESH.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_DOC_GLOBAL_DOCS_REFRESH.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_HFI_AUDIT.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_HFI_AUDIT.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_PAYLOAD_AND_STREAMING_DOC_SCOUT_CURRENT34.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_PAYLOAD_AND_STREAMING_DOC_SCOUT_CURRENT34.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_02.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_02.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_100.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_100.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_101.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_101.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_102.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_102.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_103.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_103.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_104.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_104.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_105.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_105.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_106.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_106.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_107.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_107.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_108.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_108.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_109.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_109.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_111.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_111.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_112.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_112.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_113.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_113.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_114.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_114.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_115.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_115.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_116.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_116.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_117.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_117.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_118.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_118.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_119.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_119.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_120.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_120.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_121.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_121.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_122.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_122.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_123.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_123.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_124.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_124.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_125.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_125.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_126.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_126.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_127.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_127.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_128.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_128.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_129.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_129.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_130.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_130.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_131.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_131.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_132.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_132.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_133.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_133.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_134.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_134.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_135.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_135.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_136.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_136.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_137.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_137.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_138.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_138.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_139.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_139.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_140.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_140.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_141.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_141.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_142.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_142.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_143.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_143.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_144.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_144.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_145.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_145.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_146.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_146.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_147.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_147.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_148.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_148.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_149.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_149.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_150.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_150.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_151.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_151.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_152.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_152.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_153.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_153.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_154.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_154.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_155.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_155.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_156.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_156.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_157.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_157.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_158.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_158.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_159.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_159.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_160.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_160.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_66.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_66.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "LOG_SHINOBU_81.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\LOG_SHINOBU_81.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "QA_Endurance_Log.csv",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\QA_Endurance_Log.csv",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_ARCHIVE_BATCH_010.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_ARCHIVE_BATCH_010.md",
+        "WasDirectory":  false,
+        "Status":  "Created"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_DOC_GLOBAL_DOCS_REFRESH.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_DOC_GLOBAL_DOCS_REFRESH.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_HFI_AUDIT.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_HFI_AUDIT.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_PAYLOAD_AND_STREAMING_DOC_SCOUT_CURRENT34.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_PAYLOAD_AND_STREAMING_DOC_SCOUT_CURRENT34.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_02.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_02.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_100.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_100.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_101.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_101.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_102.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_102.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_103.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_103.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_104.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_104.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_105.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_105.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_106.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_106.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_107.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_107.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_108.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_108.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_109.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_109.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_111.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_111.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_112.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_112.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_113.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_113.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_114.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_114.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_115.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_115.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_116.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_116.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_117.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_117.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_118.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_118.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_119.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_119.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_120.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_120.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_121.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_121.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_122.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_122.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_123.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_123.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_124.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_124.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_125.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_125.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_126.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_126.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_127.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_127.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_128.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_128.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_129.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_129.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_130.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_130.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_131.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_131.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_132.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_132.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_133.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_133.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_134.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_134.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_135.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_135.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_136.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_136.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_137.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_137.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_138.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_138.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_139.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_139.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_140.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_140.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_141.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_141.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_142.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_142.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_143.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_143.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_144.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_144.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_145.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_145.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_146.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_146.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_147.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_147.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_148.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_148.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_149.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_149.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_150.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_150.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_151.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_151.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_152.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_152.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_153.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_153.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_154.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_154.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_155.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_155.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_156.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_156.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_157.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_157.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_158.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_158.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_159.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_159.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_160.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_160.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Rationale_SHINOBU_81.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Rationale_SHINOBU_81.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_full_current15.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current15.json",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_full_current15.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current15.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_full_current16.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current16.json",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_full_current16.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current16.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_full_current17.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current17.json",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_full_current17.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current17.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_full_current18.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current18.json",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_full_current18.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current18.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_full_current19.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current19.json",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_full_current19.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current19.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_full_current20.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current20.json",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_full_current20.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current20.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_full_current21.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current21.json",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_full_current21.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_full_current21.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_signalcritical_current15.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current15.json",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_signalcritical_current15.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current15.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_signalcritical_current16.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current16.json",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_signalcritical_current16.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current16.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_signalcritical_current17.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current17.json",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_signalcritical_current17.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current17.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_signalcritical_current18.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current18.json",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_signalcritical_current18.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current18.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_signalcritical_current19.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current19.json",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_signalcritical_current19.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current19.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_signalcritical_current20.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current20.json",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_signalcritical_current20.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current20.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_signalcritical_current21.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current21.json",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_signalcritical_current21.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current21.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_signalcritical_current36.json",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current36.json",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "SignalBusContractAuditCli_SHINOBU_02_signalcritical_current36.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\SignalBusContractAuditCli_SHINOBU_02_signalcritical_current36.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Unity_SHINOBU_154_Compile.log",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Unity_SHINOBU_154_Compile.log",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Unity_SHINOBU_160_compile.log",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Unity_SHINOBU_160_compile.log",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Unity_SHINOBU_160_compile_after_hotpath.log",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Unity_SHINOBU_160_compile_after_hotpath.log",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "AgentLogs",
+        "Name":  "Unity_SHINOBU_38_Run_final_exitprocess.log",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\AgentLogs\\Unity_SHINOBU_38_Run_final_exitprocess.log",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "POLISH.txt",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\POLISH.txt",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Route_SHINOBU_145_Metabolism.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Route_SHINOBU_145_Metabolism.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Route_SHINOBU_154_EntityDeltaCompression.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Route_SHINOBU_154_EntityDeltaCompression.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Route_SHINOBU_155_Respawn.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Route_SHINOBU_155_Respawn.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_ARCHIVE_BATCH_010.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_ARCHIVE_BATCH_010.md",
+        "WasDirectory":  false,
+        "Status":  "Created"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_DOC_GLOBAL_DOCS_REFRESH.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_DOC_GLOBAL_DOCS_REFRESH.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_HFI_AUDIT.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_HFI_AUDIT.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_PAYLOAD_AND_STREAMING_DOC_SCOUT_CURRENT34.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_PAYLOAD_AND_STREAMING_DOC_SCOUT_CURRENT34.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_02.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_02.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_100.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_100.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_101.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_101.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_102.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_102.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_103.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_103.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_104.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_104.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_105.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_105.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_106.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_106.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_107.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_107.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_108.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_108.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_109.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_109.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_111.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_111.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_112.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_112.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_113.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_113.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_114.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_114.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_115.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_115.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_116.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_116.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_117.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_117.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_118.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_118.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_119.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_119.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_120.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_120.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_121.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_121.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_122.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_122.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_123.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_123.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_124.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_124.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_125.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_125.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_126.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_126.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_127.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_127.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_128.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_128.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_129.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_129.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_130.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_130.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_131.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_131.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_132.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_132.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_133.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_133.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_134.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_134.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_135.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_135.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_136.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_136.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_137.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_137.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_138.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_138.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_139.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_139.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_140.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_140.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_141.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_141.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_142.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_142.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_143.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_143.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_144.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_144.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_145.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_145.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_146.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_146.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_147.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_147.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_148.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_148.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_149.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_149.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_150.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_150.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_151.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_151.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_152.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_152.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_153.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_153.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_154.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_154.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_155.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_155.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_156.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_156.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_157.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_157.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_158.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_158.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_159.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_159.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_160.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_160.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "Status_SHINOBU_81.md",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\Status_SHINOBU_81.md",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    },
+    {
+        "Bucket":  "Tasks",
+        "Name":  "НЕ ДВИГАТЬ! ИНСТРЫ.txt",
+        "Destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch010\\Tasks\\НЕ ДВИГАТЬ! ИНСТРЫ.txt",
+        "WasDirectory":  false,
+        "Status":  "Moved"
+    }
+]

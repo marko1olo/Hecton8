@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
@@ -15,17 +16,14 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Submarine Sonar Holo Map Renderer")]
-    public sealed class SubmarineSonarHoloMapRenderer : MonoBehaviour, ILateFrameTickable
+    public sealed class SubmarineSonarHoloMapRenderer : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
     {
         private const int MaxGridCells = 18;
         private const int MaxGridVerticesPerAxis = MaxGridCells + 1;
         private const int MaxVertexCount = MaxGridVerticesPerAxis * MaxGridVerticesPerAxis;
         private const int MaxLineIndexCount = MaxGridCells * MaxGridVerticesPerAxis * 4;
         private const float LowTierUpdateIntervalSeconds = 0.1f;
-        private const float MidTierUpdateIntervalSeconds = 0.06666667f;
         private const float HighTierUpdateIntervalSeconds = 0.03333334f;
-        private const float QualityTierProbeIntervalSeconds = 0.5f;
-        private const float QualityTierHysteresisSeconds = 2f;
         private const float VisibilityDotThreshold = 0.035f;
         private const float MinimumDirectionLengthSq = 0.0001f;
         private const string RuntimeMeshName = "Runtime_SubmarineSonarHoloMap";
@@ -64,33 +62,35 @@ namespace Hecton8.UI
         private Mesh _runtimeMesh;
         private Material _runtimeMaterial;
         private Camera _viewCamera;
+        private IPlayerRuntimeContext _cachedPlayerContext;
         private bool _registeredLateFrame;
+        private bool _hotSwapListenerRegistered;
+        private bool _scalabilityListenerRegistered;
         private bool _hasCurrentSample;
         private bool _hasPreviousSample;
         private bool _visibleToPlayer;
-        private bool _interpolationEnabled;
-        private bool _qualityTierInitialized;
         private float _sampleAccumulator;
         private float _interpolationAgeSeconds;
-        private float _qualityTierProbeCountdown;
-        private float _qualityTierCandidateAge;
+        private float _interpolationBlendWeight;
+        private float _cachedQualityWeight01 = 1f;
         private float _activeUpdateIntervalSeconds = LowTierUpdateIntervalSeconds;
         private int _activeGridCells = -1;
         private int _activeIndexCount;
-        private HectonQualityTier _cachedQualityTier = HectonQualityTier.Low;
-        private HectonQualityTier _qualityTierCandidate = HectonQualityTier.Low;
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
+            TryRegisterScalabilityListener();
             EnsureResources();
-            _qualityTierInitialized = false;
-            _qualityTierProbeCountdown = 0f;
-            _qualityTierCandidateAge = 0f;
             TryRegisterTick();
         }
 
         private void Start()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
+            TryRegisterScalabilityListener();
             EnsureResources();
             TryRegisterTick();
         }
@@ -98,11 +98,15 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             _visibleToPlayer = false;
+            TryUnregisterHotSwapListener();
+            TryUnregisterScalabilityListener();
             TryUnregister();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
+            TryUnregisterScalabilityListener();
             TryUnregister();
             DestroyRuntimeResources();
         }
@@ -118,10 +122,10 @@ namespace Hecton8.UI
             }
 
             float safeDeltaTime = math.max(0f, deltaTime);
-            HectonQualityTier tier = ResolveCachedQualityTier(safeDeltaTime);
-            int gridCells = ResolveGridCells(tier);
-            float updateInterval = ResolveUpdateIntervalSeconds(tier);
-            _interpolationEnabled = ResolveInterpolationEnabled(tier);
+            float qualityWeight = math.saturate(_cachedQualityWeight01);
+            int gridCells = ResolveGridCells(qualityWeight);
+            float updateInterval = ResolveUpdateIntervalSeconds(qualityWeight);
+            _interpolationBlendWeight = ResolveInterpolationBlendWeight(qualityWeight);
             if (_activeGridCells != gridCells)
                 RebuildLineIndices(gridCells);
 
@@ -148,7 +152,7 @@ namespace Hecton8.UI
 
             Transform anchor = ResolveMapAnchor();
             Matrix4x4 matrix = Matrix4x4.TRS(anchor.position, anchor.rotation, Vector3.one);
-            if (_interpolationEnabled && _hasPreviousSample)
+            if (_hasPreviousSample && _interpolationBlendWeight > 0.0001f)
                 UploadInterpolatedVertices();
 
             UnityEngine.Graphics.DrawMesh(
@@ -228,7 +232,8 @@ namespace Hecton8.UI
 
         private void UploadInterpolatedVertices()
         {
-            float t = math.saturate(_interpolationAgeSeconds * math.rcp(math.max(0.0001f, _activeUpdateIntervalSeconds)));
+            float ageT = math.saturate(_interpolationAgeSeconds * math.rcp(math.max(0.0001f, _activeUpdateIntervalSeconds)));
+            float t = math.lerp(1f, ageT, math.saturate(_interpolationBlendWeight));
             int vertexCount = (_activeGridCells + 1) * (_activeGridCells + 1);
             for (int i = 0; i < vertexCount; i++)
                 _renderVertices[i] = Vector3.LerpUnclamped(_previousVertices[i], _currentVertices[i], t);
@@ -288,82 +293,24 @@ namespace Hecton8.UI
             return z * (gridCells + 1) + x;
         }
 
-        private static int ResolveGridCells(HectonQualityTier tier)
+        private static int ResolveGridCells(float qualityWeight01)
         {
-            switch (tier)
-            {
-                case HectonQualityTier.High:
-                    return 16;
-                case HectonQualityTier.Ultra:
-                    return MaxGridCells;
-                case HectonQualityTier.Mid:
-                    return 12;
-                default:
-                    return 8;
-            }
+            float quality = math.saturate(qualityWeight01);
+            float curve = quality * quality * (3f - (2f * quality));
+            return math.clamp((int)math.round(math.lerp(8f, MaxGridCells, curve)), 8, MaxGridCells);
         }
 
-        private static float ResolveUpdateIntervalSeconds(HectonQualityTier tier)
+        private static float ResolveUpdateIntervalSeconds(float qualityWeight01)
         {
-            switch (tier)
-            {
-                case HectonQualityTier.High:
-                case HectonQualityTier.Ultra:
-                    return HighTierUpdateIntervalSeconds;
-                case HectonQualityTier.Mid:
-                    return MidTierUpdateIntervalSeconds;
-                default:
-                    return LowTierUpdateIntervalSeconds;
-            }
+            float quality = math.saturate(qualityWeight01);
+            float curve = quality * quality * (3f - (2f * quality));
+            return math.max(0.01666667f, math.lerp(LowTierUpdateIntervalSeconds, HighTierUpdateIntervalSeconds, curve));
         }
 
-        private static bool ResolveInterpolationEnabled(HectonQualityTier tier)
+        private static float ResolveInterpolationBlendWeight(float qualityWeight01)
         {
-            return tier == HectonQualityTier.High || tier == HectonQualityTier.Ultra;
-        }
-
-        private HectonQualityTier ResolveCachedQualityTier(float deltaTime)
-        {
-            if (!_qualityTierInitialized)
-            {
-                HectonQualityTier observedTier = GlobalRegistry.ScalabilityTier;
-                _cachedQualityTier = observedTier;
-                _qualityTierCandidate = observedTier;
-                _qualityTierInitialized = true;
-                _qualityTierProbeCountdown = QualityTierProbeIntervalSeconds;
-                _qualityTierCandidateAge = 0f;
-                return _cachedQualityTier;
-            }
-
-            _qualityTierProbeCountdown -= math.max(0f, deltaTime);
-            if (_qualityTierProbeCountdown > 0f)
-                return _cachedQualityTier;
-
-            _qualityTierProbeCountdown = QualityTierProbeIntervalSeconds;
-            HectonQualityTier currentTier = GlobalRegistry.ScalabilityTier;
-            if (currentTier == _cachedQualityTier)
-            {
-                _qualityTierCandidate = currentTier;
-                _qualityTierCandidateAge = 0f;
-                return _cachedQualityTier;
-            }
-
-            if (currentTier != _qualityTierCandidate)
-            {
-                _qualityTierCandidate = currentTier;
-                _qualityTierCandidateAge = 0f;
-                return _cachedQualityTier;
-            }
-
-            _qualityTierCandidateAge += QualityTierProbeIntervalSeconds;
-            if (_qualityTierCandidateAge >= QualityTierHysteresisSeconds)
-            {
-                _cachedQualityTier = currentTier;
-                _qualityTierCandidate = currentTier;
-                _qualityTierCandidateAge = 0f;
-            }
-
-            return _cachedQualityTier;
+            float quality = math.saturate(qualityWeight01);
+            return math.saturate((quality - 0.35f) * 1.5384616f);
         }
 
         private bool ResolveVisibleToPlayer()
@@ -407,7 +354,7 @@ namespace Hecton8.UI
             if (_viewCamera != null)
                 return;
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             _viewCamera = playerContext != null ? playerContext.PlayerCamera : null;
         }
 
@@ -417,6 +364,36 @@ namespace Hecton8.UI
                    camera.isActiveAndEnabled &&
                    camera.cameraType != CameraType.Preview &&
                    camera.cameraType != CameraType.Reflection;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Player)
+                return;
+
+            Camera previousCamera = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerCamera : null;
+            _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+            if (_viewCamera == null || ReferenceEquals(_viewCamera, previousCamera))
+                _viewCamera = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerCamera : null;
+        }
+
+        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            RefreshQualityPolicy();
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedPlayerContext = GlobalRegistry.Player;
+            RefreshQualityPolicy();
+        }
+
+        private void RefreshQualityPolicy()
+        {
+            _cachedQualityWeight01 = math.saturate(HomeostasisBrain.GlobalQualityWeight);
         }
 
         private void EnsureResources()
@@ -439,7 +416,7 @@ namespace Hecton8.UI
                     MeshUpdateFlags.DontValidateIndices |
                     MeshUpdateFlags.DontNotifyMeshUsers);
                 _runtimeMesh.bounds = new Bounds(Vector3.zero, new Vector3(displayRadiusMeters * 2f, displayRadiusMeters, displayRadiusMeters * 2f));
-                RebuildLineIndices(ResolveGridCells(ResolveCachedQualityTier(0f)));
+                RebuildLineIndices(ResolveGridCells(_cachedQualityWeight01));
             }
 
 #if UNITY_EDITOR
@@ -468,6 +445,41 @@ namespace Hecton8.UI
                 return;
 
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
+        private void TryRegisterScalabilityListener()
+        {
+            if (_scalabilityListenerRegistered || !Application.isPlaying)
+                return;
+
+            ScalabilityEvents.Register(this);
+            _scalabilityListenerRegistered = true;
+        }
+
+        private void TryUnregisterScalabilityListener()
+        {
+            if (!_scalabilityListenerRegistered)
+                return;
+
+            ScalabilityEvents.Unregister(this);
+            _scalabilityListenerRegistered = false;
         }
 
         private void TryUnregister()

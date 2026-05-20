@@ -447,7 +447,7 @@ namespace Hecton8.Rendering.Scatter
                 MaxDistanceSq = _effectiveCullDistanceMeters * _effectiveCullDistanceMeters
             }.Schedule(_activeInstanceCount, BurstAuditBatchSize);
 
-            handle.Complete(); // COLD SYNC JOB: explicit manual audit, never part of the shipping Tick path.
+            DispatcherJobFence.TryComplete(ref handle, forceComplete: true); // COLD SYNC JOB: explicit manual audit, never part of the shipping Tick path.
             return true;
         }
 

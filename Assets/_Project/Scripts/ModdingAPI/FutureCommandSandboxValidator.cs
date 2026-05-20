@@ -232,7 +232,7 @@ namespace Hecton8.Modding
         [FieldOffset(24)] public ulong _pad1;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct HapticPulseSignal : ISignal
     {
         [FieldOffset(0)] public double3 TargetAUP;
@@ -241,6 +241,8 @@ namespace Hecton8.Modding
         [FieldOffset(32)] public float Duration;
         [FieldOffset(36)] public uint Flags;
         [FieldOffset(40)] public ulong _pad0;
+        [FieldOffset(48)] public ulong _pad1;
+        [FieldOffset(56)] public ulong _pad2;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 16)]
@@ -338,6 +340,9 @@ namespace Hecton8.Modding
         public const int CameraJuiceImpulseCapacity = 256;
         public const int KernelTuningCapacity = 16;
         public const int KernelCsvScratchBytes = 16 * 1024;
+        public const int KernelMaxProfileCommandsPerFrame = 10000;
+        public const float KernelOptionalPriorityMax = 0.50f;
+        public const float KernelSurvivalPriorityMin = 0.90f;
         public const uint DevNullReasonFutureSeam = 0x44564E4Cu;
         public const uint FaultHashInvalidAup = 0x414E414Eu;
         public const uint FaultHashInvalidPayload = 0x5041594Cu;
@@ -648,8 +653,11 @@ namespace Hecton8.Modding
             if (!TryPrepareValidationJob(out ValidateFutureCommandEnvelopeJob job, out ModSandboxScheduledValidationState validationState, recordNoWorkTelemetry: true))
                 return;
 
-            job.Run();
-            FinalizeValidationTelemetry(in validationState);
+            JobHandle validationHandle = job.Schedule();
+            _scheduledValidationHandle = validationHandle;
+            _scheduledValidationState = validationState;
+            _scheduledValidationActive = true;
+            H8Memory.RegisterActiveJob(SystemID.ModSandbox, validationHandle);
         }
 
         public static bool TrySchedulePreSimulation(JobHandle dependsOn, out JobHandle validationHandle)
@@ -678,9 +686,16 @@ namespace Hecton8.Modding
             if (!forceComplete && !_scheduledValidationHandle.IsCompleted)
                 return false;
 
-            _scheduledValidationHandle.Complete();
+            if (forceComplete)
+            {
+                DispatcherJobFence.TryComplete(ref _scheduledValidationHandle, forceComplete: true);
+            }
+            else if (!DispatcherJobFence.TryFinalizeCompleted(ref _scheduledValidationHandle))
+            {
+                return false;
+            }
+
             FinalizeValidationTelemetry(in _scheduledValidationState);
-            _scheduledValidationHandle = default;
             _scheduledValidationState = default;
             _scheduledValidationActive = false;
             return true;
@@ -830,7 +845,8 @@ namespace Hecton8.Modding
         public static FutureCommandSandboxTuning GetTuningSnapshot()
         {
             Initialize();
-            return ResolveTuning(ResolveGlobalQualityWeight());
+            NativeArray<FutureCommandSandboxTuning> tuningBuffer = ResolveBuffer(ref _tuningHandle);
+            return ResolveTuning(tuningBuffer);
         }
 
         public static void ApplyTuning(in FutureCommandSandboxTuning tuning)
@@ -904,6 +920,9 @@ namespace Hecton8.Modding
                 return false;
 
             int length = math.min(byteLength, csvBytes.Length);
+            if (!TryValidateAllowedOpcodesCsv(csvBytes, length, opcodeRecords.Length, out int expectedAccepted))
+                return false;
+
             MemClearArray(opcodeRecords);
             ModSandboxRingState state = ringState[0];
             state.OpcodeCount = 0;
@@ -915,7 +934,9 @@ namespace Hecton8.Modding
                 if (b != (byte)'\n' && b != (byte)'\r')
                     continue;
 
-                if (TryParseOpcodeCsvLine(csvBytes, tokenStart, cursor - tokenStart, out uint opcodeHash) &&
+                int lineLength = cursor - tokenStart;
+                if (!IsOpcodeCsvMetadataLine(csvBytes, tokenStart, lineLength) &&
+                    TryParseOpcodeCsvLine(csvBytes, tokenStart, lineLength, out uint opcodeHash) &&
                     opcodeHash != 0u &&
                     AddOpcodeRecord(opcodeRecords, ref state, opcodeHash, 1u))
                 {
@@ -925,12 +946,11 @@ namespace Hecton8.Modding
                 tokenStart = cursor + 1;
             }
 
-            if (accepted == 0)
-                GenerateEmergencyMockOpcodes();
-            else
-                ringState[0] = state;
+            if (accepted != expectedAccepted)
+                return false;
 
-            return accepted > 0;
+            ringState[0] = state;
+            return true;
         }
 
 #if UNITY_EDITOR
@@ -950,12 +970,15 @@ namespace Hecton8.Modding
                 using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
                     long fileLength = stream.Length;
-                    int readLength = fileLength > scratch.Length ? scratch.Length : (int)fileLength;
-                    if (readLength <= 0)
+                    if (fileLength <= 0L || fileLength > scratch.Length)
                         return false;
 
+                    int readLength = (int)fileLength;
                     byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
                     int read = stream.Read(new Span<byte>(ptr, readLength));
+                    if (read != readLength)
+                        return false;
+
                     return TryIngestAllowedOpcodesCsv(scratch, read);
                 }
             }
@@ -981,9 +1004,15 @@ namespace Hecton8.Modding
                 using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
                     long fileLength = stream.Length;
-                    int readLength = fileLength > scratch.Length ? scratch.Length : (int)fileLength;
+                    if (fileLength <= 0L || fileLength > scratch.Length)
+                        return false;
+
+                    int readLength = (int)fileLength;
                     byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
                     int read = stream.Read(new Span<byte>(ptr, readLength));
+                    if (read != readLength)
+                        return false;
+
                     return TryIngestKernelTuningProfilesCsv(new ReadOnlySpan<byte>(ptr, read));
                 }
             }
@@ -1001,6 +1030,9 @@ namespace Hecton8.Modding
             if (!profiles.IsCreated || profiles.Length == 0 || csvBytes.Length == 0)
                 return false;
 
+            if (!TryValidateKernelTuningProfilesCsv(csvBytes, profiles.Length, out int profileCount))
+                return false;
+
             MemClearArray(profiles);
             int accepted = 0;
             int lineStart = 0;
@@ -1011,8 +1043,9 @@ namespace Hecton8.Modding
                     continue;
 
                 int length = cursor - lineStart;
-                if (accepted < profiles.Length &&
-                    TryParseKernelTuningCsvLine(csvBytes.Slice(lineStart, length), out ModKernelTuningProfile profile))
+                ReadOnlySpan<byte> line = csvBytes.Slice(lineStart, length);
+                if (!IsKernelTuningCsvMetadataLine(line) &&
+                    TryParseKernelTuningCsvLine(line, out ModKernelTuningProfile profile))
                 {
                     profiles[accepted] = profile;
                     accepted++;
@@ -1021,7 +1054,7 @@ namespace Hecton8.Modding
                 lineStart = cursor + 1;
             }
 
-            return accepted > 0;
+            return accepted == profileCount;
         }
 
         public static void SetRollbackResimulationActive(bool active)
@@ -1055,6 +1088,7 @@ namespace Hecton8.Modding
             NativeArray<ModKernelCameraJuiceImpulse> cameraJuiceImpulses = ResolveBuffer(ref _kernelCameraJuiceImpulseHandle);
             NativeArray<ModKernelCameraJuiceState> cameraJuiceState = ResolveBuffer(ref _kernelCameraJuiceStateHandle);
             NativeArray<ModKernelTuningProfile> kernelProfiles = ResolveBuffer(ref _kernelTuningProfilesHandle);
+            NativeArray<FutureCommandSandboxTuning> tuningBuffer = ResolveBuffer(ref _tuningHandle);
             if (!staging.IsCreated ||
                 staging.Length < 2 ||
                 !statsBuffer.IsCreated ||
@@ -1068,6 +1102,8 @@ namespace Hecton8.Modding
                 !ringState.IsCreated ||
                 !cameraJuiceImpulses.IsCreated ||
                 !cameraJuiceState.IsCreated ||
+                !kernelProfiles.IsCreated ||
+                !tuningBuffer.IsCreated ||
                 ringState.Length == 0)
             {
                 return false;
@@ -1087,8 +1123,8 @@ namespace Hecton8.Modding
             maliciousPayload.PayloadData = new float4(float.NaN, 12f, 0f, 0f);
             maliciousPayload.IntegrityHash = ComputeIntegrityHash(in maliciousPayload);
 
-            float quality = ResolveGlobalQualityWeight();
-            FutureCommandSandboxTuning tuning = ResolveTuning(quality);
+            float quality = ResolveGlobalQualityWeight(tuningBuffer);
+            FutureCommandSandboxTuning tuning = ResolveTuning(tuningBuffer);
             int maxPerSignature = ResolveScaledCommandBudget(tuning.MaxCommandsPerFrame, quality);
             ModSandboxRingState state = ringState[0];
             MemClearArray(statsBuffer);
@@ -1129,7 +1165,7 @@ namespace Hecton8.Modding
                 ObserverAUP = ResolveObserverAup()
             };
 
-            job.Run();
+            job.Execute();
             FutureCommandValidationStats stats = statsBuffer[0];
             bool rejectedInvalidPackets =
                 stats.Incoming == 2u &&
@@ -1137,6 +1173,20 @@ namespace Hecton8.Modding
                 stats.Rejected == 2u &&
                 (stats.RejectionMask & (uint)FutureCommandRejectReason.InvalidAup) != 0u &&
                 (stats.RejectionMask & (uint)FutureCommandRejectReason.InvalidPayload) != 0u;
+            bool exactAupTelemetry = stats.AupViolations == 1u;
+            ModSandboxRingState overflowProbe = default;
+            overflowProbe.PendingCount = staging.Length;
+            overflowProbe.PendingHead = 0;
+            overflowProbe.PendingTail = 0;
+            EnqueuePendingEnvelope(staging, ref overflowProbe, in maliciousPayload);
+            bool overflowCounterWorked =
+                overflowProbe.PendingOverflowDropped == 1u &&
+                overflowProbe.PendingCount == staging.Length &&
+                overflowProbe.PendingHead == 1;
+            bool selfAuditPassed = rejectedInvalidPackets && exactAupTelemetry && overflowCounterWorked;
+            uint auditFaultHash = rejectedInvalidPackets
+                ? FutureCommandSandboxConstants.FaultHashLayout
+                : FutureCommandSandboxConstants.FaultHashInvalidPayload;
             RecordTelemetry(
                 (uint)Time.frameCount,
                 stats.Incoming,
@@ -1147,14 +1197,14 @@ namespace Hecton8.Modding
                 0UL,
                 quality,
                 stats.RejectionMask,
-                rejectedInvalidPackets ? 0u : FutureCommandSandboxConstants.FaultHashInvalidPayload,
+                selfAuditPassed ? 0u : auditFaultHash,
                 (uint)state.PendingCount,
                 stats.PeakCommandsForSignature,
                 (uint)maxPerSignature);
 
-            if (!rejectedInvalidPackets)
-                DumpBlackbox(FutureCommandSandboxConstants.FaultHashInvalidPayload);
-            return rejectedInvalidPackets;
+            if (!selfAuditPassed)
+                DumpBlackbox(auditFaultHash);
+            return selfAuditPassed;
         }
 
         public static ulong ComputeIntegrityHash(in FutureCommandEnvelope envelope)
@@ -1194,6 +1244,85 @@ namespace Hecton8.Modding
             return opcodeHash != 0u;
         }
 
+        private static bool TryValidateAllowedOpcodesCsv(NativeArray<byte> bytes, int length, int capacity, out int accepted)
+        {
+            accepted = 0;
+            int tokenStart = 0;
+            for (int cursor = 0; cursor <= length; cursor++)
+            {
+                byte b = cursor < length ? bytes[cursor] : (byte)'\n';
+                if (b != (byte)'\n' && b != (byte)'\r')
+                    continue;
+
+                int lineLength = cursor - tokenStart;
+                if (IsOpcodeCsvMetadataLine(bytes, tokenStart, lineLength))
+                {
+                    tokenStart = cursor + 1;
+                    continue;
+                }
+
+                if (!TryParseOpcodeCsvLine(bytes, tokenStart, lineLength, out uint opcodeHash) ||
+                    opcodeHash == 0u ||
+                    ContainsOpcodeCsvLineBefore(bytes, tokenStart, opcodeHash))
+                {
+                    return false;
+                }
+
+                accepted++;
+                if (accepted > capacity)
+                    return false;
+
+                tokenStart = cursor + 1;
+            }
+
+            return accepted > 0;
+        }
+
+        private static bool ContainsOpcodeCsvLineBefore(NativeArray<byte> bytes, int stopExclusive, uint opcodeHash)
+        {
+            int tokenStart = 0;
+            for (int cursor = 0; cursor <= stopExclusive; cursor++)
+            {
+                byte b = cursor < stopExclusive ? bytes[cursor] : (byte)'\n';
+                if (b != (byte)'\n' && b != (byte)'\r')
+                    continue;
+
+                int lineLength = cursor - tokenStart;
+                if (!IsOpcodeCsvMetadataLine(bytes, tokenStart, lineLength) &&
+                    TryParseOpcodeCsvLine(bytes, tokenStart, lineLength, out uint previousHash) &&
+                    previousHash == opcodeHash)
+                {
+                    return true;
+                }
+
+                tokenStart = cursor + 1;
+            }
+
+            return false;
+        }
+
+        private static bool IsOpcodeCsvMetadataLine(NativeArray<byte> bytes, int start, int length)
+        {
+            if (length <= 0)
+                return true;
+
+            int end = start + length;
+            while (start < end && IsWhitespace(bytes[start]))
+                start++;
+            while (end > start && IsWhitespace(bytes[end - 1]))
+                end--;
+            if (start >= end || bytes[start] == (byte)'#')
+                return true;
+
+            int tokenEnd = start;
+            while (tokenEnd < end && bytes[tokenEnd] != (byte)',' && !IsWhitespace(bytes[tokenEnd]))
+                tokenEnd++;
+
+            int tokenLength = tokenEnd - start;
+            return IsAsciiToken(bytes, start, tokenLength, "opcode") ||
+                IsAsciiToken(bytes, start, tokenLength, "opcodehash");
+        }
+
         private static bool TryParseKernelTuningCsvLine(ReadOnlySpan<byte> line, out ModKernelTuningProfile profile)
         {
             profile = default;
@@ -1205,26 +1334,143 @@ namespace Hecton8.Modding
             if (IsAsciiToken(opcodeToken, "opcode") || IsAsciiToken(opcodeToken, "opcodehash"))
                 return false;
 
+            if (CountCsvDelimiters(line) != 6)
+                return false;
+
             if (!TryParseOpcodeToken(opcodeToken, out uint opcodeHash))
                 return false;
 
-            float priority = ReadFloatToken(line, ref next, DefaultPriorityForOpcode(opcodeHash));
-            int maxPerFrame = ReadIntToken(line, ref next, 0);
-            uint flags = ReadUIntToken(line, ref next, 0u);
-            float range = ReadFloatToken(line, ref next, 32f);
-            float maxDuration = ReadFloatToken(line, ref next, 5f);
-            float intensityScale = ReadFloatToken(line, ref next, 1f);
+            ReadOnlySpan<byte> priorityToken = NextCsvToken(line, next, out next);
+            ReadOnlySpan<byte> maxPerFrameToken = NextCsvToken(line, next, out next);
+            ReadOnlySpan<byte> flagsToken = NextCsvToken(line, next, out next);
+            ReadOnlySpan<byte> rangeToken = NextCsvToken(line, next, out next);
+            ReadOnlySpan<byte> maxDurationToken = NextCsvToken(line, next, out next);
+            ReadOnlySpan<byte> intensityScaleToken = NextCsvToken(line, next, out next);
+            if (!TryParseFloatAscii(priorityToken, out float priority) ||
+                !TryParseIntAscii(maxPerFrameToken, out int maxPerFrame) ||
+                !TryParseUIntTokenStrict(flagsToken, out uint flags) ||
+                !TryParseFloatAscii(rangeToken, out float range) ||
+                !TryParseFloatAscii(maxDurationToken, out float maxDuration) ||
+                !TryParseFloatAscii(intensityScaleToken, out float intensityScale))
+            {
+                return false;
+            }
+
+            if (!IsKernelTuningSemanticRangeValid(priority, maxPerFrame, range, maxDuration, intensityScale))
+                return false;
+
+            if (next < line.Length && TrimAscii(line.Slice(next)).Length != 0)
+                return false;
+
             profile = new ModKernelTuningProfile
             {
                 OpcodeHash = opcodeHash,
-                PriorityWeight = math.saturate(priority),
-                MaxPerFrame = math.max(0, maxPerFrame),
+                PriorityWeight = priority,
+                MaxPerFrame = maxPerFrame,
                 Flags = flags,
-                MaxDurationSeconds = math.clamp(maxDuration, 0.01f, 30f),
-                RangeMeters = math.max(1f, range),
-                IntensityScale = math.max(0f, intensityScale),
+                MaxDurationSeconds = maxDuration,
+                RangeMeters = range,
+                IntensityScale = intensityScale,
                 Reserved = 0u
             };
+            return true;
+        }
+
+        private static bool IsKernelTuningSemanticRangeValid(
+            float priority,
+            int maxPerFrame,
+            float range,
+            float maxDuration,
+            float intensityScale)
+        {
+            return priority >= 0f && priority <= 1f &&
+                maxPerFrame > 0 &&
+                maxPerFrame <= FutureCommandSandboxConstants.KernelMaxProfileCommandsPerFrame &&
+                range >= 1f && range <= (float)FutureCommandSandboxConstants.KernelMaxAupMagnitudeMeters &&
+                maxDuration >= 0.01f && maxDuration <= 30f &&
+                intensityScale >= 0f;
+        }
+
+        private static bool TryValidateKernelTuningProfilesCsv(ReadOnlySpan<byte> csvBytes, int capacity, out int accepted)
+        {
+            accepted = 0;
+            int lineStart = 0;
+            for (int cursor = 0; cursor <= csvBytes.Length; cursor++)
+            {
+                byte b = cursor < csvBytes.Length ? csvBytes[cursor] : (byte)'\n';
+                if (b != (byte)'\n' && b != (byte)'\r')
+                    continue;
+
+                int length = cursor - lineStart;
+                ReadOnlySpan<byte> line = csvBytes.Slice(lineStart, length);
+                if (IsKernelTuningCsvMetadataLine(line))
+                {
+                    lineStart = cursor + 1;
+                    continue;
+                }
+
+                if (!TryParseKernelTuningCsvLine(line, out ModKernelTuningProfile profile) ||
+                    ContainsKernelTuningProfileBefore(csvBytes, lineStart, profile.OpcodeHash))
+                    return false;
+
+                accepted++;
+                if (accepted > capacity)
+                    return false;
+
+                lineStart = cursor + 1;
+            }
+
+            return accepted > 0;
+        }
+
+        private static bool ContainsKernelTuningProfileBefore(ReadOnlySpan<byte> csvBytes, int stopExclusive, uint opcodeHash)
+        {
+            int lineStart = 0;
+            for (int cursor = 0; cursor <= stopExclusive; cursor++)
+            {
+                byte b = cursor < stopExclusive ? csvBytes[cursor] : (byte)'\n';
+                if (b != (byte)'\n' && b != (byte)'\r')
+                    continue;
+
+                int length = cursor - lineStart;
+                ReadOnlySpan<byte> line = csvBytes.Slice(lineStart, length);
+                if (!IsKernelTuningCsvMetadataLine(line) &&
+                    TryParseKernelTuningCsvLine(line, out ModKernelTuningProfile previous) &&
+                    previous.OpcodeHash == opcodeHash)
+                {
+                    return true;
+                }
+
+                lineStart = cursor + 1;
+            }
+
+            return false;
+        }
+
+        private static bool IsKernelTuningCsvMetadataLine(ReadOnlySpan<byte> line)
+        {
+            line = TrimAscii(line);
+            if (line.Length == 0 || line[0] == (byte)'#')
+                return true;
+
+            ReadOnlySpan<byte> opcodeToken = NextCsvToken(line, 0, out _);
+            return IsAsciiToken(opcodeToken, "opcode") || IsAsciiToken(opcodeToken, "opcodehash");
+        }
+
+        private static bool IsAsciiToken(NativeArray<byte> bytes, int start, int length, string literal)
+        {
+            if (length != literal.Length)
+                return false;
+
+            for (int i = 0; i < length; i++)
+            {
+                byte b = bytes[start + i];
+                if (b >= (byte)'A' && b <= (byte)'Z')
+                    b = (byte)(b + 32);
+                if (b != (byte)literal[i])
+                    return false;
+            }
+
             return true;
         }
 
@@ -1239,24 +1485,23 @@ namespace Hecton8.Modding
             return TrimAscii(line.Slice(tokenStart, cursor - tokenStart));
         }
 
-        private static float ReadFloatToken(ReadOnlySpan<byte> line, ref int next, float fallback)
+        private static int CountCsvDelimiters(ReadOnlySpan<byte> line)
         {
-            ReadOnlySpan<byte> token = NextCsvToken(line, next, out next);
-            return TryParseFloatAscii(token, out float value) ? value : fallback;
+            int count = 0;
+            for (int i = 0; i < line.Length; i++)
+            {
+                if (line[i] == (byte)',')
+                    count++;
+            }
+
+            return count;
         }
 
-        private static int ReadIntToken(ReadOnlySpan<byte> line, ref int next, int fallback)
+        private static bool TryParseUIntTokenStrict(ReadOnlySpan<byte> token, out uint value)
         {
-            ReadOnlySpan<byte> token = NextCsvToken(line, next, out next);
-            return TryParseIntAscii(token, out int value) ? value : fallback;
-        }
-
-        private static uint ReadUIntToken(ReadOnlySpan<byte> line, ref int next, uint fallback)
-        {
-            ReadOnlySpan<byte> token = NextCsvToken(line, next, out next);
-            if (TryParseHex32(token, out uint hex))
-                return hex;
-            return TryParseUIntAscii(token, out uint value) ? value : fallback;
+            if (TryParseHex32(token, out value))
+                return true;
+            return TryParseUIntAscii(token, out value);
         }
 
         private static bool TryParseOpcodeToken(ReadOnlySpan<byte> token, out uint opcodeHash)
@@ -1343,7 +1588,12 @@ namespace Hecton8.Modding
                 byte b = token[i];
                 if (b < (byte)'0' || b > (byte)'9')
                     return false;
-                value = value * 10u + (uint)(b - (byte)'0');
+
+                uint digit = (uint)(b - (byte)'0');
+                if (value > (uint.MaxValue - digit) / 10u)
+                    return false;
+
+                value = value * 10u + digit;
             }
 
             return true;
@@ -1364,14 +1614,23 @@ namespace Hecton8.Modding
                 start = 1;
             }
 
+            bool digitSeen = false;
             int accumulator = 0;
             for (int i = start; i < token.Length; i++)
             {
                 byte b = token[i];
                 if (b < (byte)'0' || b > (byte)'9')
                     return false;
-                accumulator = accumulator * 10 + (b - (byte)'0');
+                digitSeen = true;
+                int digit = b - (byte)'0';
+                if (accumulator > (int.MaxValue - digit) / 10)
+                    return false;
+
+                accumulator = accumulator * 10 + digit;
             }
+
+            if (!digitSeen)
+                return false;
 
             value = accumulator * sign;
             return true;
@@ -1644,7 +1903,7 @@ namespace Hecton8.Modding
             state.NextLeaseIndex = math.min(memoryLeases.Length, state.NextLeaseIndex + 1);
         }
 
-        private static FutureCommandSandboxTuning ResolveTuning(float quality)
+        private static FutureCommandSandboxTuning ResolveTuning(NativeArray<FutureCommandSandboxTuning> tuningBuffer)
         {
             FutureCommandSandboxTuning tuning = default;
             tuning.MaxCommandsPerFrame = FutureCommandSandboxConstants.DefaultMaxCommandsPerSignature;
@@ -1656,7 +1915,6 @@ namespace Hecton8.Modding
             tuning.CpuThermalPressure01 = 0f;
             tuning.Reserved = 0u;
 
-            NativeArray<FutureCommandSandboxTuning> tuningBuffer = ResolveBuffer(ref _tuningHandle);
             if (tuningBuffer.IsCreated && tuningBuffer.Length > 0)
             {
                 FutureCommandSandboxTuning stored = tuningBuffer[0];
@@ -1677,8 +1935,13 @@ namespace Hecton8.Modding
 
         private static float ResolveGlobalQualityWeight()
         {
-            float weight = HomeostasisBrain.GlobalQualityWeight;
             NativeArray<FutureCommandSandboxTuning> tuningBuffer = ResolveBuffer(ref _tuningHandle);
+            return ResolveGlobalQualityWeight(tuningBuffer);
+        }
+
+        private static float ResolveGlobalQualityWeight(NativeArray<FutureCommandSandboxTuning> tuningBuffer)
+        {
+            float weight = HomeostasisBrain.GlobalQualityWeight;
             if (tuningBuffer.IsCreated && tuningBuffer.Length > 0)
             {
                 FutureCommandSandboxTuning stored = tuningBuffer[0];
@@ -1705,9 +1968,8 @@ namespace Hecton8.Modding
             return math.max(FutureCommandSandboxConstants.LowTierMinCommandsPerSignature, (int)math.round(scaled));
         }
 
-        private static int ResolveKernelProfileFrameBudget(int fallbackBudget)
+        private static int ResolveKernelProfileFrameBudget(NativeArray<ModKernelTuningProfile> profiles, int fallbackBudget)
         {
-            NativeArray<ModKernelTuningProfile> profiles = ResolveBuffer(ref _kernelTuningProfilesHandle);
             if (!profiles.IsCreated || profiles.Length == 0)
                 return fallbackBudget;
 
@@ -1718,7 +1980,11 @@ namespace Hecton8.Modding
                 if (profile.OpcodeHash == 0u)
                     continue;
                 if (profile.MaxPerFrame > 0)
-                    sum += profile.MaxPerFrame;
+                {
+                    int profileBudget = math.min(profile.MaxPerFrame, FutureCommandSandboxConstants.KernelMaxProfileCommandsPerFrame);
+                    int remainingBudget = math.max(0, FutureCommandSandboxConstants.KernelMaxProfileCommandsPerFrame - sum);
+                    sum += math.min(profileBudget, remainingBudget);
+                }
             }
 
             if (sum <= 0)
@@ -1727,9 +1993,8 @@ namespace Hecton8.Modding
             return math.clamp(sum, FutureCommandSandboxConstants.LowTierMinCommandsPerSignature, fallbackBudget);
         }
 
-        private static int ResolveSmallestKernelProfileFrameBudget(int fallbackBudget)
+        private static int ResolveSmallestKernelProfileFrameBudget(NativeArray<ModKernelTuningProfile> profiles, int fallbackBudget)
         {
-            NativeArray<ModKernelTuningProfile> profiles = ResolveBuffer(ref _kernelTuningProfilesHandle);
             if (!profiles.IsCreated || profiles.Length == 0)
                 return fallbackBudget;
 
@@ -1740,7 +2005,7 @@ namespace Hecton8.Modding
                 if (profile.OpcodeHash == 0u)
                     continue;
                 if (profile.MaxPerFrame > 0)
-                    smallest = math.min(smallest, profile.MaxPerFrame);
+                    smallest = math.min(smallest, math.min(profile.MaxPerFrame, FutureCommandSandboxConstants.KernelMaxProfileCommandsPerFrame));
             }
 
             return smallest;
@@ -2120,7 +2385,7 @@ namespace Hecton8.Modding
                 UnsafeUtility.SizeOf<ModSandboxTelemetryEntry>() == 64 &&
                 UnsafeUtility.SizeOf<ModSpawnRequestSignal>() == 64 &&
                 UnsafeUtility.SizeOf<SurvivalOverrideSignal>() == 32 &&
-                UnsafeUtility.SizeOf<HapticPulseSignal>() == 48 &&
+                UnsafeUtility.SizeOf<HapticPulseSignal>() == 64 &&
                 UnsafeUtility.SizeOf<SubtitleCueSignal>() == 16 &&
                 UnsafeUtility.SizeOf<KernelExecutionTelemetryEntry>() == 64 &&
                 UnsafeUtility.SizeOf<ModCommandKernelOpcodeRecord>() == 16 &&
@@ -2334,6 +2599,7 @@ namespace Hecton8.Modding
             NativeArray<ModKernelCameraJuiceImpulse> cameraJuiceImpulses = ResolveBuffer(ref _kernelCameraJuiceImpulseHandle);
             NativeArray<ModKernelCameraJuiceState> cameraJuiceState = ResolveBuffer(ref _kernelCameraJuiceStateHandle);
             NativeArray<ModKernelTuningProfile> kernelProfiles = ResolveBuffer(ref _kernelTuningProfilesHandle);
+            NativeArray<FutureCommandSandboxTuning> tuningBuffer = ResolveBuffer(ref _tuningHandle);
             if (!pendingRing.IsCreated ||
                 !devNullRing.IsCreated ||
                 !staging.IsCreated ||
@@ -2346,15 +2612,17 @@ namespace Hecton8.Modding
                 !ringState.IsCreated ||
                 !cameraJuiceImpulses.IsCreated ||
                 !cameraJuiceState.IsCreated ||
+                !kernelProfiles.IsCreated ||
+                !tuningBuffer.IsCreated ||
                 ringState.Length == 0)
             {
                 return false;
             }
 
-            float quality = ResolveGlobalQualityWeight();
-            FutureCommandSandboxTuning tuning = ResolveTuning(quality);
+            float quality = ResolveGlobalQualityWeight(tuningBuffer);
+            FutureCommandSandboxTuning tuning = ResolveTuning(tuningBuffer);
             int maxPerSignature = ResolveScaledCommandBudget(tuning.MaxCommandsPerFrame, quality);
-            maxPerSignature = ResolveKernelProfileFrameBudget(maxPerSignature);
+            maxPerSignature = ResolveKernelProfileFrameBudget(kernelProfiles, maxPerSignature);
             int globalBudget = math.min(
                 staging.Length,
                 maxPerSignature);
@@ -2370,7 +2638,7 @@ namespace Hecton8.Modding
             }
 
             MemClearArray(statsBuffer);
-            int smallestProfileBudget = ResolveSmallestKernelProfileFrameBudget(int.MaxValue);
+            int smallestProfileBudget = ResolveSmallestKernelProfileFrameBudget(kernelProfiles, int.MaxValue);
             bool profileCapMayTrip = smallestProfileBudget != int.MaxValue && state.PendingCount > smallestProfileBudget;
             if (state.PendingCount > globalBudget || profileCapMayTrip)
             {
@@ -2383,14 +2651,12 @@ namespace Hecton8.Modding
                     KernelProfiles = kernelProfiles,
                     DynamicBudget = globalBudget
                 };
-                shedJob.Run();
+                shedJob.Execute();
                 state = ringState[0];
             }
 
             uint shedDropped = statsBuffer[0].Dropped;
-            uint thermalDropped = enqueueOverflowDropped > uint.MaxValue - shedDropped
-                ? uint.MaxValue
-                : enqueueOverflowDropped + shedDropped;
+            uint thermalDropped = SaturatingAdd(enqueueOverflowDropped, shedDropped);
             int drainCount = 0;
             MemClearElements(staging, 0, math.min(globalBudget, staging.Length));
             while (drainCount < globalBudget && state.PendingCount > 0)
@@ -2422,6 +2688,18 @@ namespace Hecton8.Modding
                         (uint)state.PendingCount,
                         0u,
                         (uint)maxPerSignature);
+                    FutureCommandValidationStats kernelNoWorkStats = default;
+                    kernelNoWorkStats.Dropped = thermalDropped;
+                    kernelNoWorkStats.RejectionMask = thermalDropped > 0u
+                        ? (uint)FutureCommandRejectReason.ThermalShed
+                        : 0u;
+                    RecordKernelTelemetry(
+                        frame,
+                        in kernelNoWorkStats,
+                        thermalDropped,
+                        0UL,
+                        quality,
+                        (uint)state.PendingCount);
                 }
 
                 return false;
@@ -2489,23 +2767,27 @@ namespace Hecton8.Modding
                 elapsedTicks = 0L;
             ulong elapsedNs = (ulong)((double)elapsedTicks * 1000000000.0d / Stopwatch.Frequency);
             ulong elapsedKernelTicks = (ulong)elapsedTicks;
+            FutureCommandValidationStats telemetryStats = stats;
+            if (validationState.ThermalDropped != 0u)
+                telemetryStats.RejectionMask |= (uint)FutureCommandRejectReason.ThermalShed;
+            uint totalDropped = SaturatingAdd(stats.Dropped, validationState.ThermalDropped);
             RecordTelemetry(
                 validationState.Frame,
                 stats.Incoming,
                 stats.Valid,
                 stats.Rejected,
-                stats.Dropped + validationState.ThermalDropped,
+                totalDropped,
                 stats.DevNull,
                 elapsedNs,
                 validationState.Quality,
-                stats.RejectionMask,
+                telemetryStats.RejectionMask,
                 stats.FaultHash,
                 (uint)state.PendingCount,
                 stats.PeakCommandsForSignature,
                 validationState.MaxCommandsPerSignature);
             RecordKernelTelemetry(
                 validationState.Frame,
-                in stats,
+                in telemetryStats,
                 validationState.ThermalDropped,
                 elapsedKernelTicks,
                 validationState.Quality,
@@ -2523,6 +2805,12 @@ namespace Hecton8.Modding
             UnsafeUtility.MemClear(
                 NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(array),
                 (long)array.Length * UnsafeUtility.SizeOf<T>());
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint SaturatingAdd(uint left, uint right)
+        {
+            return left > uint.MaxValue - right ? uint.MaxValue : left + right;
         }
 
         private static void MemClearElements<T>(NativeArray<T> array, int start, int count) where T : struct
@@ -2719,9 +3007,9 @@ namespace Hecton8.Modding
                 float profileWeight = ResolvePriorityWeight(opcodeHash);
                 if (profileWeight >= 0f)
                 {
-                    if (profileWeight <= 0.30f)
+                    if (profileWeight <= FutureCommandSandboxConstants.KernelOptionalPriorityMax)
                         return 0;
-                    if (profileWeight >= 0.90f)
+                    if (profileWeight >= FutureCommandSandboxConstants.KernelSurvivalPriorityMin)
                         return 2;
                     return 1;
                 }
@@ -2747,7 +3035,9 @@ namespace Hecton8.Modding
                 {
                     ModKernelTuningProfile profile = KernelProfiles[i];
                     if (profile.OpcodeHash == normalizedOpcode)
-                        return profile.MaxPerFrame > 0 ? profile.MaxPerFrame : int.MaxValue;
+                        return profile.MaxPerFrame > 0
+                            ? math.min(profile.MaxPerFrame, FutureCommandSandboxConstants.KernelMaxProfileCommandsPerFrame)
+                            : int.MaxValue;
                     if (profile.OpcodeHash == 0u)
                         return int.MaxValue;
                 }

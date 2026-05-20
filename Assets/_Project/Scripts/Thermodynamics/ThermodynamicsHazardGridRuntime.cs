@@ -217,14 +217,14 @@ namespace Hecton8.Thermodynamics
         /// <inheritdoc />
         public void LateFrameTick()
         {
-            if (!_simulationJobActive || !_simulationHandle.IsCompleted)
+            if (!_simulationJobActive)
                 return;
 
             long start = Stopwatch.GetTimestamp();
-            _simulationHandle.Complete();
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _simulationHandle))
+                return;
             long end = Stopwatch.GetTimestamp();
             _lastCompleteMs = (float)((end - start) * 1000.0 / Stopwatch.Frequency);
-            _simulationHandle = default;
             _simulationJobActive = false;
 
             SwapFrontBack();
@@ -588,7 +588,7 @@ namespace Hecton8.Thermodynamics
         private void ReleaseNativeState()
         {
             if (_simulationJobActive)
-                _simulationHandle.Complete();
+                DispatcherJobFence.TryComplete(ref _simulationHandle, forceComplete: true);
 
             _temperatureFront = default;
             _temperatureBack = default;

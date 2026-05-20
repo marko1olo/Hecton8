@@ -1919,14 +1919,14 @@ namespace Hecton8.Gameplay
             public int ColliderInstanceId;
             public int ColliderLayer;
             public Rigidbody TargetRigidbody;
-            public bool IsTrigger;
+            public byte IsTrigger;
         }
 
         [StructLayout(LayoutKind.Sequential)]
         private struct ColliderCallbackMetadata
         {
             public int Layer;
-            public bool IsTrigger;
+            public byte IsTrigger;
         }
 
         /// <summary>
@@ -2696,14 +2696,16 @@ namespace Hecton8.Gameplay
             if (!_playerKinematicsNativeState.DragSolvedVelocities.IsCreated)
                 return velocity;
 
-            new PlayerKinematicsLinearDragJob
+            PlayerKinematicsLinearDragJob dragJob = new PlayerKinematicsLinearDragJob
             {
                 Velocities = _playerKinematicsNativeState.Velocities,
                 SolvedVelocities = _playerKinematicsNativeState.DragSolvedVelocities,
                 DragCoefficient = dragCoefficient,
                 WaterDensityScale = waterDensityScale,
                 DeltaTime = fixedDeltaTime
-            }.Run();
+            };
+            // HOT SCALAR CONTROL KERNEL: same-frame player velocity is consumed immediately; Execute removes the synchronous job runner without a fake schedule fence.
+            dragJob.Execute();
 
             float3 solvedVelocity = _playerKinematicsNativeState.DragSolvedVelocities[0];
             if (!math.all(math.isfinite(solvedVelocity)))
@@ -2737,7 +2739,7 @@ namespace Hecton8.Gameplay
                 return;
 
             MovementAcousticSignal signal = default;
-            signal.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(_rb != null ? _rb.position : ResolvePlayerAupRuntimePosition());
+            signal.PositionAup = _playerState.AbsolutePosition;
             signal.Volume = math.saturate(velocitySq * MovementAcousticVolumeScale);
             signal.VelocitySq = velocitySq;
             signal.SourceId = _playerKinematicsSourceId;
@@ -3215,7 +3217,7 @@ namespace Hecton8.Gameplay
             if (TryReadCollisionMetadataCache(colliderInstanceId, out ColliderCallbackMetadata cachedMetadata))
             {
                 colliderLayer = cachedMetadata.Layer;
-                isTrigger = cachedMetadata.IsTrigger;
+                isTrigger = cachedMetadata.IsTrigger != 0;
                 return true;
             }
 
@@ -3224,7 +3226,7 @@ namespace Hecton8.Gameplay
             WriteCollisionMetadataCache(colliderInstanceId, new ColliderCallbackMetadata
             {
                 Layer = colliderLayer,
-                IsTrigger = isTrigger
+                IsTrigger = isTrigger ? (byte)1 : (byte)0
             });
             return true;
         }
@@ -4388,7 +4390,10 @@ namespace Hecton8.Gameplay
             RefreshCinematicFocusTierGateCold();
             _playerKinematicsTelemetryDumpedThisFault = false;
             if (_rb != null)
-                RecordLastValidAup(AbsoluteUniversePosition.FromRuntimePosition(_rb.position));
+            {
+                _playerState.SyncKinematic(_rb.position, HectonPlayerMotor.SafeVelocity(_rb.linearVelocity));
+                RecordLastValidAup(_playerState.AbsolutePosition);
+            }
             if (_cameraRig != null)
                 _cameraRig.Bind(playerCamera, _cameraComponent);
             ToggleBuoyancy(true);
@@ -4813,7 +4818,7 @@ namespace Hecton8.Gameplay
             float3 shiftOffset3 = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
             _playerKinematicsNativeState.ApplyOriginShift(shiftOffset3);
 
-            if (_abyssalThermalFlowSample.IsCableZone)
+            if (_abyssalThermalFlowSample.IsCableZone != 0)
                 _abyssalThermalFlowSample.CableAnchorWS -= shiftOffset;
 
             if (_queuedCollisionCount > 0)
@@ -5747,10 +5752,10 @@ namespace Hecton8.Gameplay
             if (sample.DragMultiplier > 1f)
                 ApplyEnvironmentalDrag(sample.DragMultiplier);
 
-            if (sample.IsCableZone)
+            if (sample.IsCableZone != 0)
                 ApplyAbyssalCableEnvironmentalDrag(fixedDeltaTime, transportPreset, sample);
 
-            if (sample.HasFlow && fixedDeltaTime > 0f)
+            if (sample.HasFlow != 0 && fixedDeltaTime > 0f)
                 ApplyExternalThermalUpdraft(sample.FlowVelocityWS * fixedDeltaTime);
         }
 
@@ -5766,7 +5771,7 @@ namespace Hecton8.Gameplay
             }
 
             if (!thermalManager.SampleThermalFlow(payloadPositionWS, payloadRadiusWS, out AbyssalThermalManager.ThermalFlowSample payloadSample) ||
-                !payloadSample.IsCableZone)
+                payloadSample.IsCableZone == 0)
             {
                 _heavyTowWinch.ApplyExternalCableSnare(Vector3.zero, 0f, 1f);
                 return;
@@ -6034,7 +6039,7 @@ namespace Hecton8.Gameplay
 
         private void ApplyAbyssalCableEntanglementForce(PlayerTransportPreset transportPreset)
         {
-            if (!_abyssalThermalFlowSample.IsCableZone)
+            if (_abyssalThermalFlowSample.IsCableZone == 0)
                 return;
 
             float tension = _abyssalThermalFlowSample.CableTension01;
@@ -6405,12 +6410,14 @@ namespace Hecton8.Gameplay
             collisionEvent.RelativeSpeed = ApproximateVectorMagnitude(collision.relativeVelocity);
             collisionEvent.HitPointWS = ResolvePlayerAupRuntimePosition();
             collisionEvent.HitNormalWS = Vector3.up;
+            bool isTrigger;
             TryResolveCollisionEventMetadata(
                 collision,
                 out collisionEvent.ColliderInstanceId,
                 out collisionEvent.ColliderLayer,
-                out collisionEvent.IsTrigger,
+                out isTrigger,
                 out collisionEvent.TargetRigidbody);
+            collisionEvent.IsTrigger = isTrigger ? (byte)1 : (byte)0;
 
             if (collision.contactCount > 0)
             {
@@ -6468,7 +6475,7 @@ namespace Hecton8.Gameplay
             if (_currentLocomotionMode != PlayerLocomotionMode.ExosuitLocomotion)
                 return;
 
-            if (collisionEvent.IsTrigger)
+            if (collisionEvent.IsTrigger != 0)
                 return;
 
             int collisionLayerMask = 1 << collisionEvent.ColliderLayer;
@@ -6492,7 +6499,7 @@ namespace Hecton8.Gameplay
         private void TryTransferKccImpactToRigidbody(in QueuedCollisionEvent collisionEvent)
         {
             Rigidbody targetBody = collisionEvent.TargetRigidbody;
-            if (targetBody == null || targetBody == _rb || targetBody.isKinematic || collisionEvent.IsTrigger)
+            if (targetBody == null || targetBody == _rb || targetBody.isKinematic || collisionEvent.IsTrigger != 0)
                 return;
 
             float bodyMass = math.isfinite(targetBody.mass) ? math.max(targetBody.mass, 0f) : 0f;
@@ -6559,7 +6566,7 @@ namespace Hecton8.Gameplay
             if (_wipeoutTimer > 0f)
                 return;
 
-            if (collisionEvent.IsTrigger)
+            if (collisionEvent.IsTrigger != 0)
                 return;
 
             int collisionLayerMask = 1 << collisionEvent.ColliderLayer;
@@ -10597,6 +10604,7 @@ namespace Hecton8.Gameplay
         {
             Vector3 runtimePosition = ResolvePlayerAupRuntimePosition();
             Vector3 safeRuntimePosition = HectonPlayerMotor.SafeVelocity(runtimePosition);
+            AbsoluteUniversePosition transitionAup = AbsoluteUniversePosition.FromRuntimePosition(safeRuntimePosition);
             WaterTransitionSignal signal = new WaterTransitionSignal
             {
                 SourceId = PlayerSignalSourceId,
@@ -10607,9 +10615,22 @@ namespace Hecton8.Gameplay
                 Kind = (byte)kind,
                 IsSubmerged = isSubmerged ? (byte)1 : (byte)0,
                 RuntimePosition = new float3(safeRuntimePosition.x, safeRuntimePosition.y, safeRuntimePosition.z),
-                AbsolutePosition = AbsoluteUniversePosition.FromRuntimePosition(safeRuntimePosition)
+                AbsolutePosition = ToPlayerPresentationAup48(in transitionAup)
             };
             SignalBus<WaterTransitionSignal>.Push(in signal);
+        }
+
+        private static PlayerPresentationAup48 ToPlayerPresentationAup48(in AbsoluteUniversePosition aup)
+        {
+            return new PlayerPresentationAup48
+            {
+                GridX = aup.GridX,
+                GridY = aup.GridY,
+                GridZ = aup.GridZ,
+                LocalX = aup.LocalX,
+                LocalY = aup.LocalY,
+                LocalZ = aup.LocalZ
+            };
         }
 
         private void TryStartWaterEntryImpact(float previousWaterImmersionRatio, bool wasGroundedLastFixedTick, float entryVerticalVelocity)

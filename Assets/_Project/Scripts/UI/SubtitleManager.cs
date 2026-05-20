@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using Hecton.Localization;
 using Hecton8.Core;
@@ -36,20 +35,9 @@ namespace Hecton8.UI
                 DurationSeconds = durationSeconds;
             }
 
-            /// <summary>
-            /// Playback transition type.
-            /// </summary>
-            public PlaybackEventKind Kind { get; }
-
-            /// <summary>
-            /// Stable FNV-1a lore hash emitted by the audio owner.
-            /// </summary>
-            public uint LoreHash { get; }
-
-            /// <summary>
-            /// Active playback duration. Only meaningful for start events.
-            /// </summary>
-            public float DurationSeconds { get; }
+            public readonly PlaybackEventKind Kind;
+            public readonly uint LoreHash;
+            public readonly float DurationSeconds;
         }
 
         /// <summary>
@@ -123,47 +111,45 @@ namespace Hecton8.UI
                 NextStart = nextStart;
             }
 
-            public int Start { get; }
-            public int Length { get; }
-            public int NextStart { get; }
+            public readonly int Start;
+            public readonly int Length;
+            public readonly int NextStart;
         }
 
         private ref struct SubtitleSpanBuilder
         {
             private Span<char> _destination;
-            private int _length;
+            public int Length;
 
             public SubtitleSpanBuilder(Span<char> destination)
             {
                 _destination = destination;
-                _length = 0;
+                Length = 0;
             }
-
-            public int Length => _length;
 
             public void Append(char value)
             {
-                if ((uint)_length >= (uint)_destination.Length)
+                if ((uint)Length >= (uint)_destination.Length)
                     return;
 
-                _destination[_length++] = value;
+                _destination[Length++] = value;
             }
 
             public void Append(char[] source, int start, int length)
             {
-                if (source == null || length <= 0 || _length >= _destination.Length)
+                if (source == null || length <= 0 || Length >= _destination.Length)
                     return;
 
                 int safeStart = Mathf.Clamp(start, 0, source.Length);
                 int safeLength = Mathf.Clamp(
                     length,
                     0,
-                    Mathf.Min(source.Length - safeStart, _destination.Length - _length));
+                    Mathf.Min(source.Length - safeStart, _destination.Length - Length));
                 if (safeLength <= 0)
                     return;
 
-                source.AsSpan(safeStart, safeLength).CopyTo(_destination.Slice(_length));
-                _length += safeLength;
+                source.AsSpan(safeStart, safeLength).CopyTo(_destination.Slice(Length));
+                Length += safeLength;
             }
         }
 
@@ -188,7 +174,7 @@ namespace Hecton8.UI
         private static readonly Color WaveformColor = new Color(0.72f, 0.97f, 1f, 0.92f);
         private static readonly char[] EmptyCueBuffer = new char[1]; // COLD ALLOC: char[1] - non-null empty cue sentinel - owner: SubtitleManager
 
-        private readonly List<SubtitleRequest> _queue = new List<SubtitleRequest>(MaxQueuedSubtitles); // COLD ALLOC: List[8] - queued subtitle requests - owner: SubtitleManager
+        private readonly SubtitleRequest[] _stringQueue = new SubtitleRequest[MaxQueuedSubtitles]; // COLD ALLOC: SubtitleRequest[8] - fixed legacy string request ring - owner: SubtitleManager
         private readonly SubtitleCommandDTO[] _subtitleCommandQueue = new SubtitleCommandDTO[MaxQueuedSubtitles]; // COLD ALLOC: SubtitleCommandDTO[8] - zero-string Babel subtitle command ring - owner: SubtitleManager
         private readonly BufferedSubtitleRequest[] _bufferedQueue = new BufferedSubtitleRequest[MaxQueuedSubtitles]; // COLD ALLOC: BufferedSubtitleRequest[8] - zero-GC subtitle request ring - owner: SubtitleManager
         private readonly char[][] _bufferedQueueBuffers =
@@ -210,7 +196,7 @@ namespace Hecton8.UI
         [Header("Settings")]
         [SerializeField, Range(1.5f, 8f)] private float defaultDuration = 3.25f;
         [SerializeField, Range(1f, 12f)] private float fadeSpeed = 5f;
-        [SerializeField, Range(1, 10)] private int maxQueuedSubtitles = 6;
+        [SerializeField, Range(1, 8)] private int maxQueuedSubtitles = 6;
         [SerializeField, Range(0.1f, 2f)] private float repeatSuppressWindow = 0.4f;
         [SerializeField, Range(12f, 96f)] private float typewriterCharactersPerSecond = 56f;
         [SerializeField] private TMP_FontAsset font;
@@ -241,6 +227,8 @@ namespace Hecton8.UI
         private uint _lastEnqueuedCommandTextHash;
         private uint _lastEnqueuedCommandSpeakerHash;
         private int _lastGlobalSubtitleSignalFrame = -1;
+        private int _stringQueueHead;
+        private int _stringQueueCount;
         private int _currentBufferedSubtitleLength;
         private int _lastEnqueuedBufferedSubtitleLength = -1;
         private bool _currentUsesBufferedSubtitle;
@@ -382,11 +370,14 @@ namespace Hecton8.UI
         /// </summary>
         public void DisplaySubtitle(string key, float duration)
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
-            string resolved = manager != null
-                ? manager.GetExpandedOrFallback(manager.CurrentLanguage, key, key)
-                : key;
-            Enqueue(resolved, duration, SubtitleSource.Generic, false);
+            if (string.IsNullOrWhiteSpace(key))
+                return;
+
+            uint keyHash = unchecked((uint)LocHash.Compute(key.AsSpan()));
+            if (DisplaySubtitle(keyHash, duration))
+                return;
+
+            EnqueueBuffered(key.AsSpan(), duration, SubtitleSource.Generic, false);
         }
 
         /// <summary>
@@ -492,7 +483,7 @@ namespace Hecton8.UI
                 return ShowSubtitleCommand(in normalized);
 
             if (_timer <= 0f &&
-                _queue.Count == 0 &&
+                _stringQueueCount == 0 &&
                 _subtitleCommandQueueCount == 0 &&
                 _bufferedQueueCount == 0 &&
                 !_isShowing &&
@@ -549,9 +540,9 @@ namespace Hecton8.UI
             DrainBabelCueSignals();
 
             if (_timedAudioLogActive && _currentSource == SubtitleSource.AudioLog)
-                AdvanceTimedAudioLog(deltaTime);
+                AdvanceTimedAudioLog();
             else if (_tmpTypewriterActive)
-                AdvanceTmpTypewriter(deltaTime);
+                AdvanceTmpTypewriter();
 
             _timer = ResolveCurrentSubtitleTimeRemaining();
             if (_timer > 0f)
@@ -582,10 +573,8 @@ namespace Hecton8.UI
                     {
                         ShowImmediate(bufferedNext);
                     }
-                    else if (_queue.Count > 0)
+                    else if (TryDequeueStringSubtitle(out SubtitleRequest next))
                     {
-                        SubtitleRequest next = _queue[0];
-                        _queue.RemoveAt(0);
                         ShowImmediate(next.Message, next.Duration, next.Source);
                     }
                     else
@@ -714,7 +703,7 @@ namespace Hecton8.UI
             }
 
             if (_timer <= 0f &&
-                _queue.Count == 0 &&
+                _stringQueueCount == 0 &&
                 _subtitleCommandQueueCount == 0 &&
                 !_isShowing &&
                 _currentAlpha <= 0.01f)
@@ -723,15 +712,46 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (_queue.Count >= Mathf.Max(1, maxQueuedSubtitles))
-                _queue.RemoveAt(0);
+            EnqueueStringSubtitle(normalized, resolvedDuration, source);
+        }
 
-            _queue.Add(new SubtitleRequest
+        private bool TryDequeueStringSubtitle(out SubtitleRequest request)
+        {
+            if (_stringQueueCount <= 0)
             {
-                Message = normalized,
-                Duration = resolvedDuration,
+                request = default;
+                _stringQueueHead = 0;
+                return false;
+            }
+
+            request = _stringQueue[_stringQueueHead];
+            _stringQueue[_stringQueueHead] = default;
+            _stringQueueHead = (_stringQueueHead + 1) & BufferedQueueMask;
+            _stringQueueCount--;
+            if (_stringQueueCount == 0)
+                _stringQueueHead = 0;
+
+            return true;
+        }
+
+        private void EnqueueStringSubtitle(string message, float duration, SubtitleSource source)
+        {
+            int capacity = Mathf.Clamp(maxQueuedSubtitles, 1, _stringQueue.Length);
+            if (_stringQueueCount >= capacity)
+            {
+                _stringQueue[_stringQueueHead] = default;
+                _stringQueueHead = (_stringQueueHead + 1) & BufferedQueueMask;
+                _stringQueueCount--;
+            }
+
+            int slot = (_stringQueueHead + _stringQueueCount) & BufferedQueueMask;
+            _stringQueue[slot] = new SubtitleRequest
+            {
+                Message = message,
+                Duration = duration,
                 Source = source
-            });
+            };
+            _stringQueueCount++;
         }
 
         private void EnqueueSubtitleCommand(in SubtitleCommandDTO command)
@@ -900,7 +920,7 @@ namespace Hecton8.UI
                 }
 
                 if (_timer <= 0f &&
-                    _queue.Count == 0 &&
+                    _stringQueueCount == 0 &&
                     _subtitleCommandQueueCount == 0 &&
                     _bufferedQueueCount == 0 &&
                     !_isShowing &&
@@ -1161,7 +1181,7 @@ namespace Hecton8.UI
             return remainingFrames / (float)Mathf.Max(1, BabelSubtitleSyncRuntime.CurrentSampleRate);
         }
 
-        private void AdvanceTmpTypewriter(float deltaTime)
+        private void AdvanceTmpTypewriter()
         {
             if (_subtitleText == null || _tmpTypewriterTargetCharacters <= 0)
             {
@@ -1315,7 +1335,7 @@ namespace Hecton8.UI
             return initialRenderLength > 0;
         }
 
-        private void AdvanceTimedAudioLog(float deltaTime)
+        private void AdvanceTimedAudioLog()
         {
             _timedAudioLogElapsed = BabelSubtitleSyncRuntime.ResolveElapsedSecondsSince(_audioLogPlaybackStartAudioFrame);
             bool changed = false;
@@ -1473,26 +1493,24 @@ namespace Hecton8.UI
         private static void ResolveAudioLogCueTransform(out Vector3 runtimePosition, out Vector3 direction)
         {
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
-            if (playerTransform == null)
+            if (playerContext == null || !playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
             {
                 runtimePosition = Vector3.zero;
                 direction = Vector3.forward;
                 return;
             }
 
-            AbsoluteUniversePosition cameraAup = AbsoluteUniversePosition.FromRuntimePosition(playerTransform.position);
-            AbsoluteUniversePosition sourceAup = AbsoluteUniversePosition.FromRuntimePosition(playerTransform.position + playerTransform.forward);
-            float3 delta = AbsoluteUniversePosition.ToCameraRelativeFloat3(in sourceAup, in cameraAup);
-            if (!math.all(math.isfinite(delta)) || math.lengthsq(delta) <= 0.0001f)
+            runtimePosition = (Vector3)snapshot.RuntimePosition;
+            float3 forward = snapshot.Forward;
+            float forwardSq = math.lengthsq(forward);
+            if (!math.all(math.isfinite(forward)) || forwardSq <= 0.0001f)
             {
-                runtimePosition = playerTransform.position;
-                direction = playerTransform.forward;
+                direction = Vector3.forward;
                 return;
             }
 
-            direction = new Vector3(delta.x, delta.y, delta.z).normalized;
-            runtimePosition = playerTransform.position + direction;
+            direction = (Vector3)(forward * math.rsqrt(math.max(forwardSq, 0.0001f)));
+            runtimePosition += direction;
         }
 
         private bool TryParseTimedSubtitleCues(char[] subtitleBuffer, int subtitleLength)

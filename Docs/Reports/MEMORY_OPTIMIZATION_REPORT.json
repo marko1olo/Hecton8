@@ -1,0 +1,50 @@
+{
+  "agent": "SHINOBU_207",
+  "binarySearch": {
+    "avgTableProbes": 13.00099,
+    "nsPerLookup": 26167.873,
+    "theoreticalCacheLineFetchesPerLookup": 13.00099
+  },
+  "cacheBTree": {
+    "avgDepth": 5.0,
+    "avgKeysProcessed": 31.57094,
+    "nsPerLookup": 26089.424,
+    "theoreticalCacheLineFetchesPerLookup": 5.0
+  },
+  "delta": {
+    "nsPerLookupSaved": 78.44900000000052,
+    "theoreticalBytesSavedPerLookup": 512.06336,
+    "theoreticalCacheLinesSavedPerLookup": 8.00099
+  },
+  "flatRecordBytes": 16,
+  "flatTableBytes": 262144,
+  "lookupCount": 100000,
+  "nodeBytes": 64,
+  "notes": [
+    "Python timing is static scanner evidence, not Unity Burst profiler proof.",
+    "Both legacy binary search and B-Tree traversal read packed byte blobs through struct.unpack_from.",
+    "The cache-line delta is topology-derived and independent of Python interpreter overhead."
+  ],
+  "recordCount": 16384,
+  "sourceContracts": {
+    "btreeNodeExplicit64": true,
+    "deterministicSearchJobs": {
+      "BabelBTreeSearchKernel": true,
+      "DispatchBulkBTreeSearchJob": true,
+      "ScanBTreeNodeJob": true,
+      "SpatialMortonRangeQueryJob": true,
+      "TraceBTreeTraversalJob": true,
+      "TraverseBTreeJob": true
+    },
+    "pdaMockFlatIndexScanRemoved": true,
+    "sourceResidueClean": {
+      "binarySearchApi": true,
+      "flatBinarySearchLoop": true,
+      "managedLookupContainers": true,
+      "mockFullOutputClear": true,
+      "packOneLayout": true,
+      "wrappedOffsetPlus64": true
+    }
+  },
+  "treeBytes": 171328
+}

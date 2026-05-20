@@ -375,7 +375,7 @@ namespace Hecton8.Audio
     /// Runtime audio service accessed through the core audio registry.
     /// Zero-GC Ð² hot path. Ð–Ñ‘ÑÑ‚ÐºÐ¸Ð¹ Ð»Ð¸Ð¼Ð¸Ñ‚ Ð¾Ð´Ð½Ð¾Ð²Ñ€ÐµÐ¼ÐµÐ½Ð½Ñ‹Ñ… Ð¸ÑÑ‚Ð¾Ñ‡Ð½Ð¸ÐºÐ¾Ð².
     /// </summary>
-    public sealed class SpatialAudioManager : MonoBehaviour, IAudioService, IAudioVirtualizationService, IUpdatable, IFastTickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IPhysicsImpactEventListener, IRepairDroneTorchAcousticListener, IFatalPressureImplosionEventListener, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener, IServiceHeartbeat, IServiceShutdown
+    public sealed class SpatialAudioManager : MonoBehaviour, IAudioService, ISceneTransitionAudioBridge, IAudioVirtualizationService, IUpdatable, IFastTickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IPhysicsImpactEventListener, IRepairDroneTorchAcousticListener, IFatalPressureImplosionEventListener, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener, IServiceHeartbeat, IServiceShutdown
     {
         private const float SoundSpeedWaterMetersPerSecond = HectonPhysicsContract.SoundSpeedWaterMetersPerSecondConst;
         private const float MassiveDistanceFixedAudioDelayMeters = 740f;
@@ -1495,7 +1495,7 @@ namespace Hecton8.Audio
         /// <param name="deltaTime">Dispatcher delta time.</param>
         public void FastTick(float deltaTime)
         {
-            if (!TryCompleteAcousticOcclusion(false))
+            if (!TryFinalizeAcousticOcclusionNoWait())
             {
                 _virtualVoiceDroppedCount += math.clamp(_virtualVoiceWriteCount, 0, MaxVirtualVoiceCapacity);
                 _virtualVoiceWriteCount = 0;
@@ -1503,7 +1503,7 @@ namespace Hecton8.Audio
                 return;
             }
 
-            if (!TryCompleteVirtualVoiceSort(false))
+            if (!TryFinalizeVirtualVoiceSortJobNoWait())
             {
                 _virtualVoiceDroppedCount += math.clamp(_virtualVoiceWriteCount, 0, MaxVirtualVoiceCapacity);
                 _virtualVoiceWriteCount = 0;
@@ -1670,7 +1670,7 @@ namespace Hecton8.Audio
         {
             AcousticOcclusionUtility.LateFrameTick();
             ConsumeAcousticImpulseSignals();
-            CompleteVirtualVoiceSort();
+            TryFinalizeVirtualVoiceSortNoWait();
             InjectVirtualVoiceSelections();
             DrainAudioEventQueue();
 #if DEVELOPMENT_BUILD
@@ -2656,8 +2656,14 @@ namespace Hecton8.Audio
 
         private void CompleteVirtualVoiceSort()
         {
-            TryCompleteVirtualVoiceSort(true);
-            TryCompleteAcousticOcclusion(true);
+            CompleteVirtualVoiceSortJobForBarrier();
+            CompleteAcousticOcclusionForBarrier();
+        }
+
+        private void TryFinalizeVirtualVoiceSortNoWait()
+        {
+            TryFinalizeVirtualVoiceSortJobNoWait();
+            TryFinalizeAcousticOcclusionNoWait();
         }
 
         private void ScheduleAcousticOcclusionJob(
@@ -2848,15 +2854,35 @@ namespace Hecton8.Audio
             return written;
         }
 
-        private bool TryCompleteAcousticOcclusion(bool allowBlocking)
+        private bool TryFinalizeAcousticOcclusionNoWait()
         {
             if (!_acousticOcclusionScheduled)
                 return true;
 
-            if (!allowBlocking && !_acousticOcclusionHandle.IsCompleted)
+            if (!_acousticOcclusionHandle.IsCompleted)
                 return false;
 
-            _acousticOcclusionHandle.Complete();
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _acousticOcclusionHandle))
+                return false;
+
+            FinishAcousticOcclusionCompletion();
+            return true;
+        }
+
+        private bool CompleteAcousticOcclusionForBarrier()
+        {
+            if (!_acousticOcclusionScheduled)
+                return true;
+
+            if (!DispatcherJobFence.TryComplete(ref _acousticOcclusionHandle, forceComplete: true))
+                return false;
+
+            FinishAcousticOcclusionCompletion();
+            return true;
+        }
+
+        private void FinishAcousticOcclusionCompletion()
+        {
             _acousticOcclusionScheduled = false;
             if (_acousticOcclusionStartTicks > 0L)
             {
@@ -2878,15 +2904,14 @@ namespace Hecton8.Audio
                 _virtualVoiceStatistics[0] = _lastVirtualVoiceStatistics;
             PushVirtualVoiceTelemetry(in _lastVirtualVoiceStatistics);
             PublishVirtualVoiceTelemetry(in _lastVirtualVoiceStatistics);
-            return true;
         }
 
-        private bool TryCompleteVirtualVoiceSort(bool allowBlocking)
+        private bool TryFinalizeVirtualVoiceSortJobNoWait()
         {
             if (!_virtualVoiceSortScheduled)
                 return true;
 
-            if (!allowBlocking && !_virtualVoiceSortHandle.IsCompleted)
+            if (!_virtualVoiceSortHandle.IsCompleted)
             {
                 VirtualVoiceStatistics overrunStatistics = _lastVirtualVoiceStatistics;
                 overrunStatistics.Frame = Time.frameCount;
@@ -2902,7 +2927,28 @@ namespace Hecton8.Audio
             }
 
             long sortWaitStartTicks = System.Diagnostics.Stopwatch.GetTimestamp();
-            _virtualVoiceSortHandle.Complete();
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _virtualVoiceSortHandle))
+                return false;
+
+            FinishVirtualVoiceSortCompletion(sortWaitStartTicks);
+            return true;
+        }
+
+        private bool CompleteVirtualVoiceSortJobForBarrier()
+        {
+            if (!_virtualVoiceSortScheduled)
+                return true;
+
+            long sortWaitStartTicks = System.Diagnostics.Stopwatch.GetTimestamp();
+            if (!DispatcherJobFence.TryComplete(ref _virtualVoiceSortHandle, forceComplete: true))
+                return false;
+
+            FinishVirtualVoiceSortCompletion(sortWaitStartTicks);
+            return true;
+        }
+
+        private void FinishVirtualVoiceSortCompletion(long sortWaitStartTicks)
+        {
             long sortWaitTicks = System.Diagnostics.Stopwatch.GetTimestamp() - sortWaitStartTicks;
             _virtualVoiceSortScheduled = false;
             if (_virtualVoiceStatistics.IsCreated && _virtualVoiceStatistics.Length > 0)
@@ -2930,7 +2976,6 @@ namespace Hecton8.Audio
                 PushVirtualVoiceTelemetry(in _lastVirtualVoiceStatistics);
                 PublishVirtualVoiceTelemetry(in _lastVirtualVoiceStatistics);
             }
-            return true;
         }
 
         private void InjectVirtualVoiceSelections()
@@ -6329,7 +6374,7 @@ namespace Hecton8.Audio
                 resolvedSourceId,
                 Time.frameCount,
                 Time.unscaledTime,
-                ScalabilityTierProfiles.Normalize(GlobalRegistry.ScalabilityTierProfileByte),
+                AcousticEchoLocationRuntime.EncodeQualityWeightByte(HomeostasisBrain.GlobalQualityWeight),
                 flags);
         }
 
@@ -6398,7 +6443,7 @@ namespace Hecton8.Audio
             };
 
             double start = Time.realtimeSinceStartupAsDouble;
-            new AcousticPathJob
+            AcousticPathJob pathJob = new AcousticPathJob
             {
                 Nodes = _acousticPortalNodes,
                 Edges = _acousticPortalEdges,
@@ -6409,7 +6454,8 @@ namespace Hecton8.Audio
                 States = _acousticPortalStates,
                 Result = _acousticPortalResult,
                 Query = query
-            }.Run();
+            };
+            pathJob.Execute();
 
             result = _acousticPortalResult[0];
             result.PathfindingMs = (float)((Time.realtimeSinceStartupAsDouble - start) * 1000.0);

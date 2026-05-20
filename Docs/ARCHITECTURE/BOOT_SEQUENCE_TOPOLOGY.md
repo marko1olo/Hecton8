@@ -16,8 +16,19 @@ This document is active only where it agrees with:
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
 
-R32 architecture R4/proof-wording correction is the latest artifact-backed local static DOC_GLOBAL boundary for architecture/root documentation. R31 remains the prior current-boundary propagation layer, R30 remains the prior internal-currentness layer, R29 remains the prior stale-gate/global-authority layer, R28 remains the prior interior-boundary layer, and R27 remains the latest source-counter/index snapshot until rerun.
+R45 root/architecture R43/R44 residue/proof-artifact/source-counter correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
+## Source Anchors
+
+Evidence class: STATIC_SOURCE / FILESYSTEM path check. These anchors prove current path visibility only, not Unity scene import, boot completion, Console cleanliness, profiler, or player-build proof.
+
+- `Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs`
+- `Assets/_Project/Scripts/Bootstrap/BootstrapController.cs`
+- `Assets/_Project/Scripts/Bootstrap/BootstrapRouteEnforcer.cs`
+- `Assets/_Project/Scripts/Bootstrap/BootstrapHealthMonitor.cs`
+- `Assets/_Project/Scripts/Bootstrap/SceneGuard.cs`
+- `Assets/_Project/Scripts/Core/SystemDispatcher.cs`
 
 Owner Source: `Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs`
 
@@ -34,7 +45,7 @@ This is the documentation contract. The current implementation still has legacy 
 | Stage | Source Owner | Required Work | Hard Rule |
 |---:|---|---|---|
 | 1 | allocators / memory sentinels | persistent native memory, arena, budget trackers | allocate cold, never in hot tick |
-| 2 | `GlobalSignals` | prewarm source-observed native signal queues: R27 scan sees `73` direct `CreateQueue(...)` slots and `133` typed `SignalBus<T>.EnsureInitialized()` lanes including `DebugSignal`; rerun command, timestamp, and artifact before exact-count use | no listener callbacks during publish |
+| 2 | `GlobalSignals` | prewarm source-observed native signal queues: R43-corrected static scan sees `73` direct `CreateQueue(...)` slots, `135` typed `SignalBus<T>.EnsureInitialized()` lanes inside `GlobalSignals.cs`, `271` `SignalBus<T>.Configure/EnsureInitialized` hits inside `GlobalSignals.cs`, `116` `NativeQueue<...>` refs, and `1328` broader script-level `SignalBus<T>` typed-lane matches. Rerun command, timestamp, and artifact before exact-count use | no listener callbacks during publish |
 | 3 | platform I/O | persistent path, FileStream save I/O, native bridges | no MMF claims without source proof |
 | 4 | `H8StaticDataArena` | load `.h8bin` into persistent native arena | validate header, directory, checksum |
 | 5 | registry services | Kahn-sorted bootstrap nodes and GlobalRegistry service slots | no singleton self-wiring |
@@ -74,9 +85,9 @@ No presentation system can be treated as authoritative state. Presentation can r
 
 | Claim | Code Truth |
 |---|---|
-| "Single clean bootstrap sovereign" | false; bootstrap authority still spans `GameBootstrapper`, `SceneBootstrap`, and legacy owner surfaces |
-| "FileStream everywhere" | false for Data Monolith; `H8StaticDataArena` still uses boot-only `File.ReadAllBytes` staging |
-| "Five artery event bus" | stale; R27 static source scan sees `73` direct native queue slots and `133` typed `SignalBus<T>` lanes including `DebugSignal`; rerun before exact use |
+| "Single clean bootstrap sovereign" | false; bootstrap authority still spans `GameBootstrapper`, `BootstrapEvents`, `SceneGuard`, and legacy owner surfaces; no first-party `SceneBootstrap.cs` exists in the current source scan |
+| "FileStream everywhere" | false for Data Monolith; `H8StaticDataArena` uses MMF-first desktop reads, Android/Quest StreamingAssets URI staging to cache, then direct `FileStream` into Vault-owned bytes. Managed whole-file runtime staging is not the Data Monolith route. |
+| "Five artery event bus" | stale; R43-corrected static source scan sees `73` direct native queue slots, `135` typed `SignalBus<T>` lanes inside `GlobalSignals.cs`, `271` `SignalBus<T>.Configure/EnsureInitialized` hits inside `GlobalSignals.cs`, `116` `NativeQueue<...>` refs, and `1328` broader script-level `SignalBus<T>` typed-lane matches; rerun before exact use |
 
 ## Verification Required
 

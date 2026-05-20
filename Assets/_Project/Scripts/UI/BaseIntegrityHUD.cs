@@ -34,16 +34,20 @@ namespace Hecton8.UI
     /// <summary>
     /// Blittable base integrity event payload flushed during dispatcher LateUpdate.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 8)]
     public struct BaseIntegrityEventPayload
     {
         /// <summary>Integrity or air-quality value in normalized [0..1] range.</summary>
+        [FieldOffset(0)]
         public float Value;
         /// <summary>Failure mode cast from <see cref="BaseModuleFailureMode"/>.</summary>
+        [FieldOffset(4)]
         public byte FailureMode;
         /// <summary>Event type cast from <see cref="BaseIntegrityEventType"/>.</summary>
+        [FieldOffset(5)]
         public byte EventType;
         /// <summary>Reserved padding for future payload expansion.</summary>
+        [FieldOffset(6)]
         public ushort Reserved;
     }
 
@@ -573,7 +577,7 @@ namespace Hecton8.UI
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-55)]
-    public sealed class BaseIntegrityHUD : MonoBehaviour, ISlowTickable
+    public sealed class BaseIntegrityHUD : MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         [Header("── Thresholds ─────────────────────────────")]
         [SerializeField, Range(0f, 1f)] private float warningThreshold = 0.75f;
@@ -588,7 +592,10 @@ namespace Hecton8.UI
 
         private Transform _playerTransform;
         private HectonPlayerMovement _playerMovement;
+        private IPlayerRuntimeContext _cachedPlayerContext;
+        private LocalizationManager _cachedLocalization;
         private bool _registered;
+        private bool _hotSwapListenerRegistered;
         private float _lastWarningIntegrity = 1f;
         private float _nextWarningTime;
         private float _lastAirQuality = 1f;
@@ -636,17 +643,21 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             TryRegister();
             ResolvePlayerTransform();
         }
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             TryUnregister();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             TryUnregister();
         }
 
@@ -822,6 +833,14 @@ namespace Hecton8.UI
             if (_playerTransform != null)
                 return true;
 
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext != null && playerContext.PlayerTransform != null)
+            {
+                _playerTransform = playerContext.PlayerTransform;
+                _playerMovement = playerContext.PlayerMovement;
+                return true;
+            }
+
             if (!GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) ||
                 playerTransform == null)
             {
@@ -847,15 +866,75 @@ namespace Hecton8.UI
                 : AbsoluteUniversePosition.FromRuntimePosition(fallbackPosition);
         }
 
-        private static HectonPlayerMovement ResolvePlayerMovement(Transform playerTransform)
+        private HectonPlayerMovement ResolvePlayerMovement(Transform playerTransform)
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             if (playerContext != null && playerContext.PlayerMovement != null)
                 return playerContext.PlayerMovement;
 
             return playerTransform != null && playerTransform.TryGetComponent(out HectonPlayerMovement movement)
                 ? movement
                 : null;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                ApplyCachedPlayerContext(forceAssign: true);
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime)
+                _cachedLocalization = currentService as LocalizationManager;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedLocalization = GlobalRegistry.Localization;
+        }
+
+        private void ApplyCachedPlayerContext(bool forceAssign)
+        {
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext == null)
+            {
+                if (forceAssign)
+                {
+                    _playerTransform = null;
+                    _playerMovement = null;
+                }
+
+                return;
+            }
+
+            if (forceAssign || _playerTransform == null)
+                _playerTransform = playerContext.PlayerTransform;
+
+            if (forceAssign || _playerMovement == null)
+                _playerMovement = playerContext.PlayerMovement;
         }
 
         private void TryRegister()
@@ -941,9 +1020,9 @@ namespace Hecton8.UI
                 destination[writeIndex++] = state.Format[i];
         }
 
-        private static string ResolveLocalized(string key, string fallback)
+        private string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = _cachedLocalization;
             return manager != null ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback) : fallback;
         }
     }

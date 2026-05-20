@@ -40,9 +40,9 @@ HPhiStaticRisk   = RiskIntegration * ArchitecturalPurity * DataSovereignty * Mem
 
 H-Phi is not compile proof, profiler proof, Unity Console proof, Play Mode proof, GC proof, frame-time proof, memory proof, scene wiring proof, or visual proof. It is an architecture hygiene tripwire.
 
-## Current Static H-Phi
+## Latest Existing Static H-Phi Artifact As Of 2026-05-19
 
-Latest runtime static artifact values:
+Latest PowerShell static H-Phi artifact values:
 
 | Component | Value |
 |---|---:|
@@ -76,7 +76,7 @@ Parallel Python score-family snapshot, from `Docs/Reports/HECTON_PHI_SCORE_FINAL
 | StrictLocalNativeArraySovereignty | 0.089045936 |
 | MemoryAlignment | 0.516657853 |
 
-Do not compare the Python score family and the PowerShell runtime H-Phi family as one continuous numeric curve. They are related static models with different counters.
+Do not compare the Python score family and the PowerShell static H-Phi family as one continuous numeric curve. They are related static models with different counters.
 
 ## Trend Graph
 
@@ -118,7 +118,7 @@ Linear-scale bars. Early values are nearly invisible because the late DataVault/
 
 The H-Phi trend improved hard on paper. The honest cause is mixed:
 
-- Real positive movement: DataVault/access-surface references increased, owner-blocked NativeArray debt decreased, memory layout coverage improved, and Unity loop debt is zero in the runtime H-Phi artifact.
+- Real positive movement: DataVault/access-surface references increased, owner-blocked NativeArray debt decreased, memory layout coverage improved, and Unity loop debt is zero in the static H-Phi artifact.
 - Metric-model movement: multiple jumps are explicitly caused by model corrections, especially counting real Vault access surfaces instead of only literal `GlobalDataVault` text.
 - Runtime readiness is not proven. The metric says architecture is less chaotic than earlier snapshots. It does not say the world loads, the first hour plays, GC is zero, frame-time is stable, content is populated, or visuals are acceptable.
 
@@ -174,7 +174,7 @@ Static/filesystem evidence:
 |---|---:|
 | `Assets/_SourceData` | exists, 0 files |
 | `Assets/StreamingAssets` | exists; current filesystem scan finds only `signal_tuning_profiles.csv`; authoritative `Hecton8/DataMonolith/static_data.h8bin` is absent |
-| `AddressableAssetsData` | missing at repo root scan path |
+| `Assets/AddressableAssetsData` | exists, 0 files/settings/groups |
 | `Assets/_ThirdParty` | exists, 0 files |
 
 `Docs/ARCHITECTURE/HECTON8_P0_FOUNDATION_PROOF_MATRIX.md` also reports zero concrete payloads for DataMonolith, ContentAuthority, object batches, visibility proxies, and VFX prewarm.
@@ -287,6 +287,26 @@ Impact: public push before a stable demo route and proof artifacts is waste.
 5. Attack DataVault backlog by owner, not by global find/replace: start World, HectonVoxelEngine, PlayerInventory, Power, SaveBinaryStorage. Require BufferID/SystemID/generation/disposal/job-handle proof.
 6. Convert spike candidates into bounded lanes: no hot hierarchy search, no live registry polling in Tick, no unbounded SetActive command drain, no mid-frame job completion without explicit end-of-frame window.
 7. Treat H-Phi increases as architecture health only. Never trade them for runtime claims without artifacts.
+
+## 2026-05-19 Global Direction Addendum
+
+Latest dirty-tree read shows broad movement across runtime systems, visuals, UI, world/content, optimization, marketing, and governance. The direction is not fake: the project has a coherent identity, a real runtime doctrine, and real source surfaces.
+
+The strategic problem is breadth before proof. The project can still fail by becoming a strong technical platform without a proven first playable route. Current acceptance lens should be:
+
+```text
+First 20 Minutes Vertical Slice
+boot -> world load -> swim -> find resource -> tool interaction -> craft/repair/build
+-> hazard response -> save -> load -> return to same state
+```
+
+Every new subsystem, global route, and documentation batch should state which moment of that route it makes playable, visible, faster, safer, or more testable. Work that does not affect the route is parked unless it removes an integration blocker.
+
+This does not invalidate the global authority work. It limits it: `GlobalRegistry`, `SignalBus<T>`, `GlobalSignals`, `HectonEventBus`, and `GlobalDataVault` exist to serve the vertical slice and later scale it. They are not product progress by themselves.
+
+Follow-up action: this route gate was promoted into `Docs/ARCHITECTURE/FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md` and linked from root agent rules, architecture docs, quality gates, runtime plan, roadmap, playtest ledger, marketing workflow, and active HFI AgentLogs.
+
+Selected V0 route addendum: `Docs/ARCHITECTURE/FIRST_20_MINUTES_ROUTE_BRIEF.md` now defines Copper Wire as the first route to prove. Scanner and Repair Tool remain P1 route extensions until `scan.expedition_contact` and `scan.structure_relay` have proven production scene/prefab/data unlock routes.
 
 ## AAA Senior Operating Model Follow-Up
 

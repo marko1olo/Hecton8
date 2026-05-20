@@ -256,7 +256,7 @@ namespace Hecton8.Visor
                        math.abs(left.w - right.w) <= GlobalsFloatEpsilon;
             }
 
-            [StructLayout(LayoutKind.Sequential, Pack = 4, Size = RetinaGlobalsStrideBytes)]
+            [StructLayout(LayoutKind.Sequential, Size = RetinaGlobalsStrideBytes)]
             private struct RetinaGlobalsDTO
             {
                 public Vector4 Params0;

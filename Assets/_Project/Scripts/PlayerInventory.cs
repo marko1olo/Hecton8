@@ -13,6 +13,7 @@ namespace Hecton8.Inventory
     using Hecton8.Core;
     using Hecton8.Core.Contracts;
     using Hecton8.Core.Contracts.Signals;
+    using Hecton8.Core.Memory;
     using Hecton8.Gameplay;
     using Hecton8.Interaction;
     using Hecton8.Inventory.Algorithms;
@@ -32,7 +33,7 @@ namespace Hecton8.Inventory
     using UnityEngine;
 
     [DisallowMultipleComponent]
-    public sealed class PlayerInventory : MonoBehaviour, ISaveable, ISlowTickable, ILateFrameTickable, IPhysicsImpactEventListener
+    public sealed class PlayerInventory : MonoBehaviour, ISaveable, ISlowTickable, ILateFrameTickable, IPhysicsImpactEventListener, IGlobalRegistryHotSwapListener
     {
         private const ushort CraftingLockedMask = ItemRuntimeStateFlags.CraftingLocked;
         private const ushort RadioactiveItemStateMask = ItemRuntimeStateFlags.Radioactive;
@@ -603,6 +604,11 @@ namespace Hecton8.Inventory
         private int _lastDefragTimeMicroseconds;
         private float _currentWeightKg;
         private float _currentVolumeLiters;
+        private PersistentWorldRegistry _cachedPersistentWorldRegistry;
+        private IPlayerRuntimeContext _cachedPlayerContext;
+        private IAudioService _cachedAudioService;
+        private IDataVault _cachedDataVault;
+        private bool _hotSwapListenerRegistered;
 
         public float TotalWeight { get; private set; }
         public float TotalMassKg => _currentWeightKg;
@@ -719,10 +725,13 @@ namespace Hecton8.Inventory
             RegisterNativeMemorySentinel();
             _sortBuffer = new ItemPlacement[columns * rows];
             TryGetComponent(out _traumaDispatcher);
+            CacheRegistryServicesCold();
         }
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             GlobalRegistry.Save?.Register(this);
             TryRegisterSlowTick();
             TryRegisterLateFrameTick();
@@ -736,12 +745,14 @@ namespace Hecton8.Inventory
             GlobalRegistry.Save?.Unregister(this);
             TryUnregisterSlowTick();
             TryUnregisterLateFrameTick();
+            TryUnregisterHotSwapListener();
             CompleteInventoryMassRecomputeJob(forceComplete: true);
         }
 
         private void OnDestroy()
         {
             TryUnregisterLateFrameTick();
+            TryUnregisterHotSwapListener();
             CompleteInventoryMassRecomputeJob(forceComplete: true);
 
             if (_grid != null)
@@ -800,6 +811,61 @@ namespace Hecton8.Inventory
             DisposeNativeArray(ref _defragUnitRadiationSv);
             DisposeNativeArray(ref _defragResult);
 
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.PersistentWorldRegistry:
+                    _cachedPersistentWorldRegistry = currentService as PersistentWorldRegistry;
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                    _playerImpactBodyId = 0ul;
+                    ResolvePlayerImpactBodyId();
+                    break;
+                case GlobalRegistryServiceSlot.Audio:
+                    _cachedAudioService = currentService as IAudioService;
+                    break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    _cachedDataVault = currentService as IDataVault;
+                    break;
+            }
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedPersistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (!ReferenceEquals(_cachedPlayerContext, playerContext))
+            {
+                _cachedPlayerContext = playerContext;
+                _playerImpactBodyId = 0ul;
+            }
+
+            _cachedAudioService = GlobalRegistry.Audio;
+            _cachedDataVault = GlobalRegistry.DataVault;
         }
 
         private void RegisterNativeMemorySentinel()
@@ -1006,7 +1072,7 @@ namespace Hecton8.Inventory
                 return false;
             }
 
-            PersistentWorldRegistry persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
+            PersistentWorldRegistry persistentWorldRegistry = _cachedPersistentWorldRegistry;
             if (persistentWorldRegistry == null ||
                 !persistentWorldRegistry.TryRegisterDroppedItemWithState(droppedItem, 1, runtimePosition, geneticsMask, qualityMilli))
             {
@@ -2094,10 +2160,16 @@ namespace Hecton8.Inventory
             for (int index = 0; index < commands.Length; index++)
             {
                 InventoryCommandSignal command = commands[index];
-                if (command.Command != InventoryCommandSignalCommands.Sort)
+                if (command.InventoryHash != 0u && command.InventoryHash != inventoryHash)
                     continue;
 
-                if (command.InventoryHash != 0u && command.InventoryHash != inventoryHash)
+                if (command.Command == InventoryCommandSignalCommands.DropNonEquippedResources)
+                {
+                    TryApplyRespawnDropPenalty(in command);
+                    continue;
+                }
+
+                if (command.Command != InventoryCommandSignalCommands.Sort)
                     continue;
 
                 int commandFrame = unchecked((int)command.Frame);
@@ -2108,6 +2180,146 @@ namespace Hecton8.Inventory
                 SortInventory();
                 return;
             }
+        }
+
+        private bool TryApplyRespawnDropPenalty(in InventoryCommandSignal command)
+        {
+            if (_grid == null || !_stackCounts.IsCreated)
+                return false;
+
+            int sourceCells = math.min(_grid.TotalCells, _stackCounts.Length);
+            int dropBudget = ResolveRespawnDropBudget(command.Flags);
+            bool requiresRuleTable = (command.PayloadFlags & InventoryCommandSignalPayloadFlags.VaultPenaltyRules) != 0;
+            bool hasRuleTable = TryResolveRespawnPenaltyRules(in command, out NativeArray<InventoryDeathPenaltyRuleDTO> rules, out int ruleCount);
+            if (requiresRuleTable &&
+                !hasRuleTable &&
+                (command.PayloadFlags & InventoryCommandSignalPayloadFlags.FallbackWhenRuleTableMissing) == 0)
+            {
+                return false;
+            }
+
+            Transform playerTransform = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerTransform : null;
+            Vector3 dropPosition = playerTransform != null ? playerTransform.position : transform.position;
+            bool dropped = false;
+
+            for (int anchorIndex = 0; anchorIndex < sourceCells && dropBudget > 0; anchorIndex++)
+            {
+                if (!_grid.HasAnchor(anchorIndex) || IsCraftLockedFlagSet(anchorIndex))
+                    continue;
+
+                int itemHashId = _grid.GetAnchorHashId(anchorIndex);
+                if (!TryGetRuntimeDescriptor(itemHashId, out ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor))
+                    continue;
+
+                byte category = runtimeDescriptor.CategoryId;
+                if (hasRuleTable)
+                {
+                    uint itemHash = unchecked((uint)itemHashId);
+                    if (!TryFindRespawnPenaltyRule(itemHash, rules, ruleCount, out InventoryDeathPenaltyRuleDTO rule) ||
+                        rule.DropOnDeath == 0 ||
+                        ShouldRetainRespawnPenaltyItem(itemHash, rule.RetainIfEquipped, category))
+                    {
+                        continue;
+                    }
+                }
+                else if (category == (byte)ItemCategory.Tool || category == (byte)ItemCategory.Equipment)
+                {
+                    continue;
+                }
+
+                int anchorX = anchorIndex % _grid.Columns;
+                int anchorY = anchorIndex / _grid.Columns;
+                if (!TryDropOneItemToWorldSignal(anchorX, anchorY, dropPosition, Vector3.zero, null, out _))
+                    continue;
+
+                dropBudget--;
+                dropped = true;
+            }
+
+            return dropped;
+        }
+
+        private static int ResolveRespawnDropBudget(byte encodedMultiplier)
+        {
+            return math.clamp((int)math.ceil(math.max(1, encodedMultiplier) * (3f / 255f)), 1, 3);
+        }
+
+        private bool TryResolveRespawnPenaltyRules(
+            in InventoryCommandSignal command,
+            out NativeArray<InventoryDeathPenaltyRuleDTO> rules,
+            out int ruleCount)
+        {
+            rules = default;
+            ruleCount = 0;
+            if ((command.PayloadFlags & InventoryCommandSignalPayloadFlags.VaultPenaltyRules) == 0 ||
+                command.Payload0 == 0u ||
+                command.Payload1 == 0u)
+            {
+                return false;
+            }
+
+            IDataVault vault = _cachedDataVault;
+            if (vault == null ||
+                !vault.TryGetBuffer<InventoryDeathPenaltyRuleDTO>((BufferID)command.Payload0, out rules) ||
+                !rules.IsCreated)
+            {
+                rules = default;
+                return false;
+            }
+
+            int requestedCount = command.Payload1 > int.MaxValue ? int.MaxValue : (int)command.Payload1;
+            ruleCount = math.min(math.max(0, requestedCount), rules.Length);
+            return ruleCount > 0;
+        }
+
+        private static bool TryFindRespawnPenaltyRule(
+            uint itemHash,
+            NativeArray<InventoryDeathPenaltyRuleDTO> rules,
+            int ruleCount,
+            out InventoryDeathPenaltyRuleDTO rule)
+        {
+            rule = default;
+            if (!rules.IsCreated || itemHash == 0u)
+                return false;
+
+            int count = math.min(math.max(0, ruleCount), rules.Length);
+            for (int i = 0; i < count; i++)
+            {
+                InventoryDeathPenaltyRuleDTO candidate = rules[i];
+                if (candidate.ItemHash != itemHash)
+                    continue;
+
+                rule = candidate;
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool ShouldRetainRespawnPenaltyItem(uint itemHash, byte retainIfEquipped, byte category)
+        {
+            if (retainIfEquipped == 0)
+                return false;
+
+            if (category == (byte)ItemCategory.Equipment)
+                return true;
+
+            return category == (byte)ItemCategory.Tool &&
+                   TryResolveCurrentToolItemHash(out uint currentToolHash) &&
+                   currentToolHash == itemHash;
+        }
+
+        private bool TryResolveCurrentToolItemHash(out uint itemHash)
+        {
+            itemHash = 0u;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            PlayerToolManager toolManager = playerContext != null ? playerContext.ToolManager : null;
+            PlayerTool currentTool = toolManager != null ? toolManager.CurrentTool : null;
+            if (currentTool == null || currentTool.ToolData == null || string.IsNullOrEmpty(currentTool.ToolData.PersistentId))
+                return false;
+
+            itemHash = unchecked((uint)LocHash.Compute(currentTool.ToolData.PersistentId));
+            return itemHash != 0u;
         }
 
         private int PopulateInventoryDefragBuffers()
@@ -4197,7 +4409,9 @@ namespace Hecton8.Inventory
             for (int i = 0; i < signals.Length; i++)
             {
                 ItemAcquiredSignal signal = signals[i];
-                if (signal.ItemHash != _TitaniumScrapHashId || signal.Frame <= _lastRepairTitaniumFrame)
+                if (signal.SourceKind == ItemAcquiredSignalSourceKinds.ScavengingLootOracle ||
+                    signal.ItemHash != _TitaniumScrapHashId ||
+                    signal.Frame <= _lastRepairTitaniumFrame)
                     continue;
 
                 _lastRepairTitaniumFrame = signal.Frame;
@@ -4209,7 +4423,7 @@ namespace Hecton8.Inventory
         private bool TryResolveActiveRepairToolItemHash(out int itemHashId)
         {
             itemHashId = 0;
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             PlayerToolManager toolManager = playerContext != null ? playerContext.ToolManager : null;
             PlayerTool currentTool = toolManager != null ? toolManager.CurrentTool : null;
             if (!(currentTool is RepairTool) || currentTool.ToolData == null || string.IsNullOrEmpty(currentTool.ToolData.PersistentId))
@@ -4286,7 +4500,7 @@ namespace Hecton8.Inventory
                 return;
             }
 
-            JobHandle salinityHandle = new ItemSalinityCorrosionJob
+            ItemSalinityCorrosionJob salinityJob = new ItemSalinityCorrosionJob
             {
                 ItemHashes = _itemHashes.AsReadOnly(),
                 StackCounts = _stackCounts,
@@ -4303,9 +4517,8 @@ namespace Hecton8.Inventory
                 RustedMask = RustedItemStateMask,
                 BrokenMask = BrokenItemStateMask,
                 DegradedThresholdMilli = DegradedQualityMilliThreshold
-            }.Schedule();
-
-            DispatcherJobSwap.TryComplete(ref salinityHandle, forceComplete: true);
+            };
+            salinityJob.Execute();
 
             int averageMilli = _salinityCorrosionJobResult[InventoryCorrosionConstants.ResultAverageDurabilityMilli];
             _averageEquipmentDurability01 = math.saturate(averageMilli * 0.001f);
@@ -5006,7 +5219,7 @@ namespace Hecton8.Inventory
                 dispatcher.OnTraumaThresholdCrossed(TraumaLevel.Critical);
             }
 
-            if (GlobalRegistry.Audio is SpatialAudioManager spatialAudio)
+            if (_cachedAudioService is SpatialAudioManager spatialAudio)
                 spatialAudio.QueueInventoryRunawayExplosion(transform.position, ThermalRunawayAudioVolume);
         }
 
@@ -5176,9 +5389,9 @@ namespace Hecton8.Inventory
             return math.max(0.01f, radiationTraumaThresholdSv);
         }
 
-        private static float ResolveInventoryCarrierDepthMeters()
+        private float ResolveInventoryCarrierDepthMeters()
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             HectonPlayerMovement movement = playerContext != null ? playerContext.PlayerMovement : null;
             return movement != null ? math.max(0f, movement.CurrentDepth) : 0f;
         }
@@ -5197,9 +5410,9 @@ namespace Hecton8.Inventory
             return TraumaLevel.Minor;
         }
 
-        private static bool ResolveInventoryCarrierSubmergedState()
+        private bool ResolveInventoryCarrierSubmergedState()
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             HectonPlayerMovement movement = playerContext != null ? playerContext.PlayerMovement : null;
             return movement != null && movement.CurrentDepth > 0f;
         }
@@ -5217,7 +5430,7 @@ namespace Hecton8.Inventory
             if (_playerImpactBodyId != 0ul)
                 return;
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             Rigidbody playerBody = playerContext != null ? playerContext.PlayerRigidbody : null;
             _playerImpactBodyId = playerBody != null ? EntityId.ToULong(playerBody.GetEntityId()) : 0ul;
         }
@@ -5245,7 +5458,7 @@ namespace Hecton8.Inventory
 
         private float EstimateImpactAccelerationInG(PhysicsImpactSignal impactSignal)
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             Rigidbody playerBody = playerContext != null ? playerContext.PlayerRigidbody : null;
             float playerMass = playerBody != null ? Mathf.Max(0.1f, playerBody.mass) : 80f;
             return math.max(0f, impactSignal.Force * math.rcp(playerMass * HectonPhysicsContract.GravityMetersPerSecondSquaredConst));

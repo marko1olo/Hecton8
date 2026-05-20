@@ -88,11 +88,8 @@ namespace Hecton8.UI.Editor
                 if (EditorGUI.EndChangeCheck())
                 {
                     Undo.RecordObject(_runtime, "Terminal OS Mock State");
-                    ref TerminalStateDTO stateRef = ref _runtime.GetTerminalStateRef(index);
-                    stateRef.Value1 = barWidth;
-                    stateRef.Value2 = damage;
-                    _runtime.ForceDirty(index);
-                    EditorUtility.SetDirty(_runtime);
+                    if (_runtime.TrySetTerminalMockState(index, barWidth, damage))
+                        EditorUtility.SetDirty(_runtime);
                 }
             }
         }
@@ -126,7 +123,9 @@ namespace Hecton8.UI.Editor
             if (_previewMaterial != null)
                 return _previewMaterial;
 
-            Shader shader = Shader.Find("HECTON/UI/Terminal TextureArray Panel");
+            Shader shader = Shader.Find("HECTON/UI/Diegetic Terminal");
+            if (shader == null)
+                shader = Shader.Find("HECTON/UI/Terminal TextureArray Panel");
             if (shader == null)
                 return null;
 

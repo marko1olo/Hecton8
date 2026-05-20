@@ -1,6 +1,6 @@
 # Press And Steam Curator Targets
 
-Status: public target map / not outreach-ready
+Status: public seed map / not outreach-ready. Operational send status lives in `Press/PRESS_TARGET_VERIFICATION_TRACKER.csv` and `Press/STEAM_CURATOR_CANDIDATE_TRACKER.csv`; recheck same-day before outreach/key use and fill `send_route_class` / `reply_consent_provenance` fields before counting replies.
 Date: 2026-05-18
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
@@ -25,23 +25,59 @@ No press contact route, curator eligibility, key policy state, demo approval, ru
 - For curators, prioritize consistent review history and real off-Steam identity.
 - Avoid "we review anything" pages.
 
+## 2026-05-20 Tracker Status Boundary V0
+
+Tracker `status` values are triage labels, not send permission. A row that says `READY_FOR_HUMAN_REVIEW_AFTER_PRESSKIT`, `READY_FOR_HUMAN_REVIEW_AFTER_PUBLIC_DEMO`, `CURATOR_CONNECT_AFTER_STEAM_PAGE_AND_BUILD`, or similar is still blocked until the named artifact exists and the route is rechecked the same day.
+
+The tracker CSVs now carry a separate `send_permission_gate` field. Treat it as the machine-readable permission gate:
+
+- current pre-asset values must begin with `BLOCKED_` or equal `DO_NOT_CONTACT_COMPETITOR`;
+- no press row can send unless `send_permission_gate = ALLOW_PRESS_SEND_VERIFIED`;
+- no curator row can receive a Curator Connect offer or other controlled send unless `send_permission_gate = ALLOW_CURATOR_SEND_VERIFIED`;
+- `send_route_class` records route type before send; it is not permission by itself;
+- `reply_consent_provenance` stays blank until a real reply exists.
+
+Press send permission requires all of:
+
+- `send_permission_gate = ALLOW_PRESS_SEND_VERIFIED`;
+- the row has a current official route checked the same day;
+- required asset/presskit/demo/Steam artifact exists;
+- official project inbox custody passes;
+- `send_route_class` is filled before send;
+- `reply_consent_provenance` remains blank until a reply exists;
+- no gameplay/pressure/route-risk proof is used unless the AB-009/KPI decision-read field source exists.
+
+Curator send permission requires all of:
+
+- `send_permission_gate = ALLOW_CURATOR_SEND_VERIFIED`;
+- public Steam page and uploaded playable build exist;
+- Curator Connect is used where possible instead of raw keys;
+- first exposed screenshot set passes asset QA and claim checks;
+- one agency/decision proof asset has AB-009/KPI decision-read fields if the message leans on gameplay/pressure/route-risk proof;
+- `send_route_class` is filled before the Curator Connect offer or other controlled send;
+- `reply_consent_provenance` remains curator/press-local unless explicit separate opt-in exists.
+
+Invalid interpretation: treating `READY_FOR_HUMAN_REVIEW_AFTER_*` as `READY_TO_SEND`.
+
 ## Press / Newsletter / Showcase Targets
+
+This table is seed navigation only. For any row with a tracker entry, use the tracker `last_checked`, `status`, `send_permission_gate`, `asset_required`, `send_route_class`, and `reply_consent_provenance` fields instead of this table before outreach or reporting.
 
 | Segment | Name | Type | URL | Fit Reason | Contact Route | Risk Notes | Pitch Angle |
 |---|---|---|---|---|---|---|---|
 | PC press | PC Gamer | PC games press | https://www.pcgamer.com/about-pc-gamer/ | PC-first survival coverage. | Official about/contact page. | High volume. | Single-player underwater survival with systemic dread. |
-| PC press | Rock Paper Shotgun | PC games press | https://www.rockpapershotgun.com/ | Strong PC indie readership. | UNKNOWN | Selective. | NASA-punk survival sim, not co-op bait. |
+| PC press | Rock Paper Shotgun | PC games press | https://www.rockpapershotgun.com/ | Strong PC indie readership. | UNKNOWN | Selective. | NASA-punk survival sim, single-player-first proof angle. |
 | PC press | Eurogamer | Games press | https://www.eurogamer.net/ | Survival/indie features. | UNKNOWN | Broad console focus. | Atmospheric PC survival with authored systems. |
 | PC press | GamesRadar+ | Games press | https://www.gamesradar.com/ | Future/PC coverage. | UNKNOWN | Broad. | Deep-sea horror survival reveal/demo. |
 | PC press | GameSpot | Games press | https://www.gamespot.com/ | Major demo/news outlet. | UNKNOWN | Very competitive. | Pressure, darkness, machinery demo hook. |
 | PC press | IGN | Games press | https://www.ign.com/ | Major trailer/demo reach. | UNKNOWN | Requires strong asset package. | Underwater survival horror with AA target. |
 | PC press | VG247 | Games press | https://www.vg247.com/ | PC/indie news. | UNKNOWN | Needs newsworthiness. | Survival built around isolation, not crafting spam. |
-| PC press | PCGamesN | PC games press | https://www.pcgamesn.com/ | PC survival audience. | UNKNOWN | SEO/news angle needed. | Subnautica-adjacent but darker, single-player-first. |
+| PC press | PCGamesN | PC games press | https://www.pcgamesn.com/ | PC survival audience. | UNKNOWN | SEO/news angle needed. | Adjacent underwater-survival audience, darker and single-player-first. |
 | PC press | PC Invasion | PC games press | https://www.pcinvasion.com/ | PC indie/review fit. | UNKNOWN | Mid-tier reach. | Demo preview with systemic underwater hazards. |
 | PC press | Shacknews | Games press | https://www.shacknews.com/ | PC legacy readership. | UNKNOWN | Needs concise pitch. | NASA-punk survival reveal. |
 | PC press | Destructoid | Games press | https://www.destructoid.com/ | Indie/news coverage. | UNKNOWN | Broad taste. | Claustrophobic deep-sea survival hook. |
 | PC press | TheGamer | Games press | https://www.thegamer.com/ | List/features potential. | UNKNOWN | Feature framing matters. | Underwater survival still has unused territory. |
-| PC press | Hardcore Gamer | Games press | https://hardcoregamer.com/ | Reviews/previews. | UNKNOWN | Smaller staff. | Playable PC demo preview. |
+| PC press | Hardcore Gamer | Games press | https://hardcoregamer.com/ | Reviews/previews. | UNKNOWN | Smaller staff. | Playable PC demo preview only after stable demo proof. |
 | PC press | Wccftech Gaming | PC/tech press | https://wccftech.com/gaming/ | PC tech + games. | UNKNOWN | Tech specs must be real. | Scalable AA underwater rendering only with proof. |
 | PC press | Digital Trends Gaming | Consumer tech/games | https://www.digitaltrends.com/gaming/ | PC/console news. | UNKNOWN | Broad consumer angle. | Survival horror with premium visual direction. |
 | PC press | TechRadar Gaming | Tech/games press | https://www.techradar.com/gaming | PC hardware audience. | UNKNOWN | Needs visual/tech proof. | Looks expensive, but performance only if measured. |
@@ -83,6 +119,8 @@ No press contact route, curator eligibility, key policy state, demo approval, ru
 | Showcase | Guerrilla Collective | Indie showcase | https://www.guerrillacollective.com/ | Indie showcase audience. | UNKNOWN | Timing/fit varies. | Dark survival trailer/demo. |
 | Showcase | Day of the Devs | Indie showcase | https://www.dayofthedevs.com/ | High-trust indie showcase. | UNKNOWN | Very selective. | Distinctive world + playable proof. |
 | Showcase | Indie Horror Showcase | Horror showcase | https://www.indiehorrorshowcase.com/ | Exact horror demo fit. | UNKNOWN | Seasonal. | Underwater horror trailer/demo. |
+YouTube rows are creator seeds only, not verified channel/contact records. Use the CRM row if present, or reverify official page/current activity before send.
+
 | YouTube list | SplatterCatGaming | YouTube | https://www.youtube.com/@SplatterCatGaming | Strong indie survival demos. | YouTube About if public. | Do not DM keys blindly. | First 30 min demo coverage. |
 | YouTube list | Alpha Beta Gamer | YouTube/site | https://www.youtube.com/@AlphaBetaGamer | Demo-first audience. | Site/channel route. | No fake exclusive. | Playable demo footage. |
 | YouTube list | ManlyBadassHero | YouTube | https://www.youtube.com/@ManlyBadassHero | Indie horror audience. | YouTube About if public. | Very selective. | Atmospheric horror demo. |
@@ -101,9 +139,11 @@ No press contact route, curator eligibility, key policy state, demo approval, ru
 
 Use Steam Curator Connect and tag discovery. Do not send raw keys to unverified curator emails.
 
+Curator allocation and identity/activity evidence live in `Press/STEAM_CURATOR_CANDIDATE_TRACKER.csv`; this section is tag/seed navigation only. Curator replies stay curator/press provenance unless explicit separate opt-in exists.
+
 | Curator/Tag Surface | URL | Why It Matters | Risk |
 |---|---|---|---|
-| Rely on Horror Steam Curator | https://store.steampowered.com/curator/6856130-Rely-on-Horror/ | Known horror curator. | Verify identity. |
+| Rely on Horror Steam Curator | https://store.steampowered.com/curator/6856130-Rely-on-Horror/ | Tracker-backed horror curator seed; use CUR-001 status and reverify in Steamworks before Curator Connect allocation. | Verify identity. |
 | HORROR gems | https://store.steampowered.com/curator/41487727-HORROR-gems/ | Horror-focused curator. | Curator-only, no raw keys. |
 | Survival Horror tag | https://store.steampowered.com/tags/en/Survival%20Horror/ | Finds active horror curators. | Manual vet required. |
 | Open World Survival Craft tag | https://store.steampowered.com/tags/en/Open%20World%20Survival%20Craft/ | Survival audience. | Scam-heavy tag. |

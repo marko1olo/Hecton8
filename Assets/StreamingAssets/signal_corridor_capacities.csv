@@ -1,0 +1,6 @@
+# platform,min_stride_bytes,max_stride_bytes,max_output_count
+quest3,2048,8192,1024
+steamdeck,4096,12288,2048
+mx350,4096,12288,2048
+pc,8192,16384,4096
+rtx4090,16384,16384,4096

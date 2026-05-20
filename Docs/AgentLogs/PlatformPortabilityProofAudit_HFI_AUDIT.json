@@ -1,0 +1,115 @@
+{
+  "artifacts": {
+    "addressables": {
+      "exists": true,
+      "fileCount": 0,
+      "path": "Assets/AddressableAssetsData",
+      "sampleFiles": []
+    },
+    "buildResultLogCount": 0,
+    "buildResultLogs": [],
+    "builds": {
+      "exists": false,
+      "fileCount": 0,
+      "path": "Builds",
+      "sampleFiles": []
+    },
+    "dataMonolith": {
+      "bytes": 0,
+      "exists": false,
+      "path": "Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin"
+    }
+  },
+  "nativePlugins": {
+    "byClass": {
+      "editorOrManagedDll": 8,
+      "managedOrUnknownDll": 14,
+      "windowsNativeOrManagedDll": 2
+    },
+    "byExtension": {
+      ".dll": 24
+    },
+    "firstPartyOrRuntimeCritical": [
+      "Assets/_Project/Plugins/Windows/x86_64/liblz4.dll",
+      "Assets/Plugins/x86_64/HectonAudioKernel.dll"
+    ],
+    "pluginFileCount": 24,
+    "sampleFiles": [
+      "Assets/_Project/Plugins/Windows/x86_64/liblz4.dll",
+      "Assets/Plugins/Demigiant/DemiLib/Core/DemiLib.dll",
+      "Assets/Plugins/Demigiant/DemiLib/Core/Editor/DemiEditor.dll",
+      "Assets/Plugins/Demigiant/DOTween/DOTween.dll",
+      "Assets/Plugins/Demigiant/DOTween/Editor/DOTweenEditor.dll",
+      "Assets/Plugins/Demigiant/DOTweenPro/DOTweenPro.dll",
+      "Assets/Plugins/Demigiant/DOTweenPro/Editor/DOTweenProEditor.dll",
+      "Assets/Plugins/Editor/RelationsInspector/RelationsInspector.dll",
+      "Assets/Plugins/Roslyn/Microsoft.CodeAnalysis.CSharp.dll",
+      "Assets/Plugins/Roslyn/Microsoft.CodeAnalysis.dll",
+      "Assets/Plugins/Roslyn/System.Collections.Immutable.dll",
+      "Assets/Plugins/Roslyn/System.Reflection.Metadata.dll",
+      "Assets/Plugins/Sirenix/Assemblies/NoEditor/Sirenix.Serialization.dll",
+      "Assets/Plugins/Sirenix/Assemblies/NoEditor/Sirenix.Utilities.dll",
+      "Assets/Plugins/Sirenix/Assemblies/NoEmitAndNoEditor/Sirenix.Serialization.dll",
+      "Assets/Plugins/Sirenix/Assemblies/NoEmitAndNoEditor/Sirenix.Utilities.dll",
+      "Assets/Plugins/Sirenix/Assemblies/Sirenix.OdinInspector.Attributes.dll",
+      "Assets/Plugins/Sirenix/Assemblies/Sirenix.OdinInspector.Editor.dll",
+      "Assets/Plugins/Sirenix/Assemblies/Sirenix.Reflection.Editor.dll",
+      "Assets/Plugins/Sirenix/Assemblies/Sirenix.Serialization.Config.dll",
+      "Assets/Plugins/Sirenix/Assemblies/Sirenix.Serialization.dll",
+      "Assets/Plugins/Sirenix/Assemblies/Sirenix.Utilities.dll",
+      "Assets/Plugins/Sirenix/Assemblies/Sirenix.Utilities.Editor.dll",
+      "Assets/Plugins/x86_64/HectonAudioKernel.dll"
+    ]
+  },
+  "packages": {
+    "allRequiredXrPackagesInLock": true,
+    "allRequiredXrPackagesInManifest": true,
+    "lockDependencyCount": 74,
+    "manifestDependencyCount": 50,
+    "picoPackageCandidates": [],
+    "xrPackages": {
+      "com.unity.xr.management": {
+        "lock": true,
+        "lockVersion": "4.6.0",
+        "manifest": true,
+        "manifestVersion": "4.6.0"
+      },
+      "com.unity.xr.meta-openxr": {
+        "lock": true,
+        "lockVersion": "2.5.0",
+        "manifest": true,
+        "manifestVersion": "2.5.0"
+      },
+      "com.unity.xr.openxr": {
+        "lock": true,
+        "lockVersion": "1.17.0",
+        "manifest": true,
+        "manifestVersion": "1.17.0"
+      }
+    }
+  },
+  "projectSettings": {
+    "androidApplicationIdentifier": "com.danatgames.hecton8",
+    "androidArm64OnlySerialized": true,
+    "androidIl2CppSerialized": true,
+    "androidMinSdkVersion": 25,
+    "androidScriptingBackend": 1,
+    "androidTargetArchitectures": 2,
+    "androidTargetSdkVersion": 35,
+    "buildTargetVrSettingsEmpty": true,
+    "projectSettingsPresent": true,
+    "xrLegacyDisabledFalse": true,
+    "xrProviderSerializedProof": false,
+    "xrSettingsPresent": true
+  },
+  "readiness": {
+    "addressablesContentPresent": false,
+    "androidQuestScaffold": true,
+    "buildArtifactPresent": false,
+    "dataMonolithPresent": false,
+    "picoPackagePresent": false,
+    "xrProviderSerializedProof": false
+  },
+  "root": ".",
+  "schema": "hecton8.platform_portability_proof_audit.v1"
+}

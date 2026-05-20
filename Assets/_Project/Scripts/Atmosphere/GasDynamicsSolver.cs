@@ -157,6 +157,7 @@ namespace Hecton8.Atmosphere
         private int _tickCount;
         private float _tickAccumulator;
         private float _lastCadenceSeconds = 2.0f;
+        private float _lastQualityWeight01;
         private GasDynamicsMathLod _lastMathLod = GasDynamicsMathLod.Low;
         private ITickDispatcher _tickDispatcher;
         private IPlayerMovementContracts _playerMovementContracts;
@@ -256,8 +257,10 @@ namespace Hecton8.Atmosphere
             DrainBaseTransitionSignals(allowWake: true);
             DrainHullRepairedSignals();
             WakePlayerInsideSleepingBases(now);
-            _lastMathLod = ResolveMathLod(GlobalRegistry.ScalabilityTier);
-            _lastCadenceSeconds = ResolveCadenceSeconds(_lastMathLod);
+            float qualityWeight01 = ResolveGlobalQualityWeight01();
+            _lastQualityWeight01 = qualityWeight01;
+            _lastMathLod = ResolveMathLod(qualityWeight01);
+            _lastCadenceSeconds = ResolveCadenceSeconds(qualityWeight01);
             _tickAccumulator += math.max(0f, fixedDeltaTime);
             if (_tickAccumulator + 0.0001f < _lastCadenceSeconds)
                 return;
@@ -1360,7 +1363,7 @@ namespace Hecton8.Atmosphere
 
             double now = ResolveUnscaledTimeSeconds();
             bool hasPlayerAup = TryResolvePlayerAup(out AbsoluteUniversePosition playerAup);
-            float sleepDistance = ResolveHibernationDistanceMeters(_lastMathLod);
+            float sleepDistance = ResolveHibernationDistanceMeters(_lastQualityWeight01);
             float wakeDistance = math.max(0f, sleepDistance - math.max(3f, hibernationHysteresisMeters));
             double sleepDistanceSq = (double)sleepDistance * sleepDistance;
             double wakeDistanceSq = (double)wakeDistance * wakeDistance;
@@ -1472,15 +1475,13 @@ namespace Hecton8.Atmosphere
                    math.isfinite(position.LocalZ);
         }
 
-        private float ResolveHibernationDistanceMeters(GasDynamicsMathLod lod)
+        private float ResolveHibernationDistanceMeters(float qualityWeight01)
         {
-            switch (lod)
-            {
-                case GasDynamicsMathLod.Low:
-                    return math.max(1f, lowTierHibernationDistanceMeters);
-                default:
-                    return math.max(1f, hibernationDistanceMeters);
-            }
+            float lowDistance = math.max(1f, lowTierHibernationDistanceMeters);
+            float normalDistance = math.max(1f, hibernationDistanceMeters);
+            float quality = math.saturate(math.isfinite(qualityWeight01) ? qualityWeight01 : 0f);
+            float curve = Smooth01(math.saturate((quality - 0.25f) * 1.5384616f));
+            return math.lerp(lowDistance, normalDistance, curve);
         }
 
         private bool AreRoomStateLanesReady(int requiredCount)
@@ -1634,7 +1635,7 @@ namespace Hecton8.Atmosphere
                 BaseAmbientOxygenKPa = _baseAmbientOxygenKPa
             };
 
-            job.Run(); // COLD SYNC JOB: FrostTick wake catch-up, not a per-frame path.
+            job.Execute(); // COLD SYNC JOB: FrostTick wake catch-up, not a per-frame path.
         }
 
         private void PublishActiveRoomUi()
@@ -1903,33 +1904,40 @@ namespace Hecton8.Atmosphere
             accumulator.LargestAllocationLabelHash = NativeMemorySentinel.ComputeSnapshotHash(label);
         }
 
-        private GasDynamicsMathLod ResolveMathLod(HectonQualityTier tier)
+        private static GasDynamicsMathLod ResolveMathLod(float qualityWeight01)
         {
-            switch (tier)
-            {
-                case HectonQualityTier.High:
-                    return GasDynamicsMathLod.High;
-                case HectonQualityTier.Ultra:
-                    return GasDynamicsMathLod.Ultra;
-                case HectonQualityTier.Mid:
-                    return GasDynamicsMathLod.Mid;
-                default:
-                    return GasDynamicsMathLod.Low;
-            }
+            float quality = math.saturate(math.isfinite(qualityWeight01) ? qualityWeight01 : 0f);
+            if (quality >= 0.92f)
+                return GasDynamicsMathLod.Ultra;
+            if (quality >= 0.68f)
+                return GasDynamicsMathLod.High;
+            if (quality >= 0.32f)
+                return GasDynamicsMathLod.Mid;
+            return GasDynamicsMathLod.Low;
         }
 
-        private float ResolveCadenceSeconds(GasDynamicsMathLod lod)
+        private float ResolveCadenceSeconds(float qualityWeight01)
         {
-            switch (lod)
-            {
-                case GasDynamicsMathLod.High:
-                case GasDynamicsMathLod.Ultra:
-                    return math.max(0.02f, highTierColdTickSeconds);
-                case GasDynamicsMathLod.Mid:
-                    return math.max(0.05f, midTierColdTickSeconds);
-                default:
-                    return math.max(0.1f, lowTierColdTickSeconds);
-            }
+            float lowCadence = math.max(0.1f, lowTierColdTickSeconds);
+            float midCadence = math.max(0.05f, midTierColdTickSeconds);
+            float highCadence = math.max(0.02f, highTierColdTickSeconds);
+            float quality = math.saturate(math.isfinite(qualityWeight01) ? qualityWeight01 : 0f);
+            float midCurve = Smooth01(math.saturate((quality - 0.18f) * 1.7241379f));
+            float highCurve = Smooth01(math.saturate((quality - 0.62f) * 2.631579f));
+            return math.lerp(math.lerp(lowCadence, midCadence, midCurve), highCadence, highCurve);
+        }
+
+        private static float ResolveGlobalQualityWeight01()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.isfinite(quality) ? quality : 0f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float Smooth01(float value)
+        {
+            value = math.saturate(value);
+            return value * value * (3f - (2f * value));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1974,37 +1982,47 @@ namespace Hecton8.Atmosphere
             second = temp;
         }
 
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct PendingBaseTransitionSignal
         {
+            [FieldOffset(0)]
             public AbsoluteUniversePosition BaseCenterAup;
+            [FieldOffset(48)]
             public int BaseId;
+            [FieldOffset(52)]
             public int RoomId;
+            [FieldOffset(56)]
             public ushort Flags;
+            [FieldOffset(58)]
             public byte IsEnter;
+            [FieldOffset(59)]
+            public byte _pad0;
+            [FieldOffset(60)]
+            public uint _pad1;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, CompileSynchronously = false)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BaseHibernationWakeCatchUpJob : IJob
         {
             public int BaseId;
             public int RoomCount;
             public float ElapsedSeconds;
 
-            public NativeArray<float> RoomO2;
-            public NativeArray<float> RoomCO2;
-            public NativeArray<float> RoomNitrogen;
-            public NativeArray<float> RoomPressure;
-            public NativeArray<float> RoomO2Back;
-            public NativeArray<float> RoomCO2Back;
-            public NativeArray<float> RoomNitrogenBack;
-            public NativeArray<float> RoomPressureBack;
+            [NoAlias] public NativeArray<float> RoomO2;
+            [NoAlias] public NativeArray<float> RoomCO2;
+            [NoAlias] public NativeArray<float> RoomNitrogen;
+            [NoAlias] public NativeArray<float> RoomPressure;
+            [NoAlias] public NativeArray<float> RoomO2Back;
+            [NoAlias] public NativeArray<float> RoomCO2Back;
+            [NoAlias] public NativeArray<float> RoomNitrogenBack;
+            [NoAlias] public NativeArray<float> RoomPressureBack;
 
-            [ReadOnly] public NativeArray<int> BaseRoomStart;
-            [ReadOnly] public NativeArray<int> BaseRoomCount;
-            public NativeArray<float> BaseBatteryWattSeconds;
-            [ReadOnly] public NativeArray<float> BaseIdleDrawWatts;
-            [ReadOnly] public NativeArray<float> BaseLeakRatePerSecond;
-            [ReadOnly] public NativeArray<float> BaseAmbientOxygenKPa;
+            [ReadOnly, NoAlias] public NativeArray<int> BaseRoomStart;
+            [ReadOnly, NoAlias] public NativeArray<int> BaseRoomCount;
+            [NoAlias] public NativeArray<float> BaseBatteryWattSeconds;
+            [ReadOnly, NoAlias] public NativeArray<float> BaseIdleDrawWatts;
+            [ReadOnly, NoAlias] public NativeArray<float> BaseLeakRatePerSecond;
+            [ReadOnly, NoAlias] public NativeArray<float> BaseAmbientOxygenKPa;
 
             public void Execute()
             {
@@ -2110,7 +2128,7 @@ namespace Hecton8.Atmosphere
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low, CompileSynchronously = false)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct GasDynamicsStepJob : IJob
         {
             public float DeltaTime;
@@ -2128,28 +2146,28 @@ namespace Hecton8.Atmosphere
             public float NarcosisFullAtm;
             public int TelemetryWriteIndex;
 
-            [ReadOnly] public NativeArray<float> RoomO2Front;
-            [ReadOnly] public NativeArray<float> RoomCO2Front;
-            [ReadOnly] public NativeArray<float> RoomNitrogenFront;
-            public NativeArray<float> RoomO2Back;
-            public NativeArray<float> RoomCO2Back;
-            public NativeArray<float> RoomNitrogenBack;
-            public NativeArray<float> RoomPressureBack;
-            [ReadOnly] public NativeArray<float> RoomAmbientPressure;
-            [ReadOnly] public NativeArray<float> RoomSubmerged01;
-            [ReadOnly] public NativeArray<float> RoomPlayerStress01;
-            [ReadOnly] public NativeArray<float> RoomPlayerHeartRateBpm;
-            [ReadOnly] public NativeArray<float> RoomTemperatureCelsius;
-            [ReadOnly] public NativeArray<byte> RoomPlayerPresent;
-            [ReadOnly] public NativeArray<byte> RoomScrubberPowered;
-            [ReadOnly] public NativeArray<ushort> RoomFlags;
-            [ReadOnly] public NativeArray<int> RoomBaseIndex;
-            [ReadOnly] public NativeArray<byte> BaseAwakeState;
-            [ReadOnly] public NativeArray<int> BulkheadRoomA;
-            [ReadOnly] public NativeArray<int> BulkheadRoomB;
-            [ReadOnly] public NativeArray<byte> BulkheadSealed;
-            public NativeQueue<ToxicitySignal>.ParallelWriter ToxicitySignals;
-            public NativeArray<GasDynamicsTelemetryEntry> TelemetryRing;
+            [ReadOnly, NoAlias] public NativeArray<float> RoomO2Front;
+            [ReadOnly, NoAlias] public NativeArray<float> RoomCO2Front;
+            [ReadOnly, NoAlias] public NativeArray<float> RoomNitrogenFront;
+            [NoAlias] public NativeArray<float> RoomO2Back;
+            [NoAlias] public NativeArray<float> RoomCO2Back;
+            [NoAlias] public NativeArray<float> RoomNitrogenBack;
+            [NoAlias] public NativeArray<float> RoomPressureBack;
+            [ReadOnly, NoAlias] public NativeArray<float> RoomAmbientPressure;
+            [ReadOnly, NoAlias] public NativeArray<float> RoomSubmerged01;
+            [ReadOnly, NoAlias] public NativeArray<float> RoomPlayerStress01;
+            [ReadOnly, NoAlias] public NativeArray<float> RoomPlayerHeartRateBpm;
+            [ReadOnly, NoAlias] public NativeArray<float> RoomTemperatureCelsius;
+            [ReadOnly, NoAlias] public NativeArray<byte> RoomPlayerPresent;
+            [ReadOnly, NoAlias] public NativeArray<byte> RoomScrubberPowered;
+            [ReadOnly, NoAlias] public NativeArray<ushort> RoomFlags;
+            [ReadOnly, NoAlias] public NativeArray<int> RoomBaseIndex;
+            [ReadOnly, NoAlias] public NativeArray<byte> BaseAwakeState;
+            [ReadOnly, NoAlias] public NativeArray<int> BulkheadRoomA;
+            [ReadOnly, NoAlias] public NativeArray<int> BulkheadRoomB;
+            [ReadOnly, NoAlias] public NativeArray<byte> BulkheadSealed;
+            [NoAlias] public NativeQueue<ToxicitySignal>.ParallelWriter ToxicitySignals;
+            [NoAlias] public NativeArray<GasDynamicsTelemetryEntry> TelemetryRing;
 
             public void Execute()
             {
@@ -2437,17 +2455,26 @@ namespace Hecton8.Atmosphere
             public uint LargestAllocationLabelHash;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = TelemetryEntrySizeBytes)]
+        [StructLayout(LayoutKind.Explicit, Size = TelemetryEntrySizeBytes)]
         private struct GasDynamicsTelemetryEntry
         {
+            [FieldOffset(0)]
             public uint FrameIndex;
+            [FieldOffset(4)]
             public int RoomCount;
+            [FieldOffset(8)]
             public float TotalO2KPa;
+            [FieldOffset(12)]
             public float TotalCO2KPa;
+            [FieldOffset(16)]
             public float TotalNitrogenKPa;
+            [FieldOffset(20)]
             public float MaxPressureKPa;
+            [FieldOffset(24)]
             public uint StateHash;
+            [FieldOffset(28)]
             public ushort Flags;
+            [FieldOffset(30)]
             public ushort Reserved;
         }
     }

@@ -16,7 +16,7 @@ This document is active only where it agrees with:
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
 
-R32 architecture R4/proof-wording correction is the latest artifact-backed local static DOC_GLOBAL boundary for architecture/root documentation. R31 remains the prior current-boundary propagation layer, R30 remains the prior internal-currentness layer, R29 remains the prior stale-gate/global-authority layer, R28 remains the prior interior-boundary layer, and R27 remains the latest source-counter/index snapshot until rerun.
+R45 root/architecture R43/R44 residue/proof-artifact/source-counter correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 Purpose: canonical architecture contract for habitat logistics links, Bishop-frame pipe rendering, rupture buckling, and CSR adjacency rebuilds.
@@ -28,7 +28,7 @@ Purpose: canonical architecture contract for habitat logistics links, Bishop-fra
 - Historical actuality manifest: `Docs/Reports/2026-05-17_ACTIVE_DOCUMENTATION_ACTUALITY_MANIFEST.json` (historical snapshot only; do not use for current counts or proof).
 - Current actuality ledger: `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`.
 - Visual-realistic-fake doctrine snapshot: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`; re-check `.agents-skills` for newer mandates before implementation.
-- Historical May 14/R43 CLI compile wording is stale report text, not current proof. Current static/tool boundary is R32; R31 remains the prior current-boundary propagation layer; R30 remains the prior internal-currentness layer; R29 remains the prior stale-gate/global-authority layer; R28 remains the prior interior-boundary layer; R27 remains the latest source-counter/index snapshot until rerun; AtlasCheck fails `59` missing refs (RealtimeCSG vendor refs plus absent `VaultXRayWindow.cs` and `HectonMapMagicVegetationBridgeFloraCollisionProxies.cs`); Mod API static validation now passes (`Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`) as static-tool orientation only; do not treat PASS as current proof without artifact path, command, timestamp, environment, and output. Unity import, Console, Play Mode, profiler, GCMonitor, player build, scene wiring, save/load, and visual proof remain PENDING VERIFICATION.
+- Historical May 14/R43 CLI compile wording is stale report text, not current proof. Current static/tool boundary is R45 root/architecture R43/R44 residue/proof-artifact/source-counter correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`) (R44 prior internal-residue/exact-route-field/proof-wording correction); R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers; AtlasCheck fails `ATLAS_CHECK_FAIL references=6741 missing=59` (one Dynamic Decals missing vendor asset ref, RealtimeCSG vendor icon/readme image refs, and missing HabitatDamageBakePipeline source ref in the current atlas); Mod API static validation passes (`Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`) as static-tool orientation only; do not treat PASS as current proof without artifact path, command, timestamp, environment, and output. Unity import, Console, Play Mode, profiler, GCMonitor, player build, scene wiring, save/load, and visual proof remain PENDING VERIFICATION.
 - Existing May 4 boundary sections in this file are historical unless they describe local system intent not contradicted by newer reports.
 - Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, and visual quality remain `PENDING VERIFICATION`.
 Historical 2026-05-04 boundary:
@@ -116,7 +116,7 @@ Mutation source is module/socket discovery. Runtime traversal reads CSR only.
 - `LogisticsFlowSolverJob` is the parallel Jacobi kernel (`IJobParallelFor`) over node pressure lanes. It ping-pongs `PressureFront` / `PressureBack`; `LogisticsPressureCopyJob` copies odd-iteration results back before `LogisticsFlowFinalizeJob` performs exact milli-unit conservation and telemetry.
 - `HomeostasisBrain.GlobalQualityWeight` maps through a smoothstep curve to 1..10 Jacobi iterations and 5..1 oxygen cadence; no binary tier switch owns accuracy.
 - Edge length/resistance must subtract `double3` AUPs before any `float3` cast.
-- Flow visualization is shader scalar only through `ConnectionSplineBatchRenderer.SetPipeNodeFlow`; no resource GameObjects are authorized.
+- Flow visualization is shader scalar only through the existing `IConnectionSplineBatchRendererService` GlobalRegistry route; no resource GameObjects or SHINOBU-local renderer singleton calls are authorized.
 - Fault telemetry writes the explicit 64-byte 300-frame black-box ring and dumps to both `Docs/AgentLogs/Dump_SHINOBU_114.bin` and `Docs/AgentLogs/Dump_LOGISTICS_SURGEON.bin`.
 - Breach side effects write node indices into the same Vault scratch lane during the solver and publish the existing `FluidIncursionSignal` lane during POST_SIMULATION. No duplicate local breach signal queue is authorized.
 - Designer CSV reload stages bytes in Vault-owned `ShinobuLogisticsCsvScratch=70550`; private managed CSV byte arrays are not authorized.
@@ -452,7 +452,7 @@ Current material variants:
 
 - socket forward authoring can still produce ugly handles if prefab sockets are misoriented
 - rupture buckling uses `position.z` phase, so world orientation affects crush wave pattern
-- support inference is proximity-based, not explicit ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“support pylonÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â taxonomy
+- support inference is proximity-based, not explicit ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œsupport pylonÃƒÂ¢Ã¢â€šÂ¬Ã‚Â taxonomy
 - if rebuild cadence lags, visual rupture onset lags with it
 - if no downstream crack renderer binds the matrix cache, only authored decals / fluid aftermath appear
 

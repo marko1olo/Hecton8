@@ -46,19 +46,16 @@ Shader "Hecton8/VFX/TopographicalSonarPoint"
 
             StructuredBuffer<SonarPointDTO> _SonarPoints;
 
-            CBUFFER_START(UnityPerMaterial)
-                float4x4 _PointCloudLocalToWorld;
+            CBUFFER_START(HectonTopographicalSonarGlobals)
+                float4 _CameraRuntimeAndPointSize;
                 float4 _PingSignal;
-                float _PointSize;
-                float _Opacity;
-                float _DepthFadeMeters;
-                float _MaxDistanceMeters;
-                float _GlobalQualityWeight;
+                float4 _RenderParams0;
+                float4 _RenderParams1;
             CBUFFER_END
 
             struct Attributes
             {
-                float3 positionOS : POSITION;
+                uint vertexId : SV_VertexID;
                 uint instanceId : SV_InstanceID;
             };
 
@@ -91,33 +88,49 @@ Shader "Hecton8/VFX/TopographicalSonarPoint"
                 return float4(r, g, b, a);
             }
 
+            float2 ResolveQuadCorner(uint vertexId)
+            {
+                uint corner = vertexId % 6u;
+                if (corner == 0u) return float2(-1.0f, -1.0f);
+                if (corner == 1u) return float2(1.0f, -1.0f);
+                if (corner == 2u) return float2(1.0f, 1.0f);
+                if (corner == 3u) return float2(-1.0f, -1.0f);
+                if (corner == 4u) return float2(1.0f, 1.0f);
+                return float2(-1.0f, 1.0f);
+            }
+
             Varyings vert(Attributes input)
             {
                 SonarPointDTO point = _SonarPoints[input.instanceId];
                 float4 color = UnpackColor(point.ColorPacked);
                 float3 cameraLocal = point.LocalPosition;
+                float pointSize = max(0.2f, _CameraRuntimeAndPointSize.w);
+                float opacity = saturate(_RenderParams0.x);
+                float maxDistanceMeters = max(0.001f, _RenderParams0.z);
+                float globalQualityWeight = saturate(_RenderParams0.w);
                 float3 noise = frac((float(input.instanceId) + float3(17.0f, 59.0f, 113.0f)) * 0.1031f + _Time.y * 0.071f);
-                cameraLocal += (noise - 0.5f) * lerp(0.002f, 0.012f, saturate(_GlobalQualityWeight));
+                cameraLocal += (noise - 0.5f) * lerp(0.002f, 0.012f, globalQualityWeight);
 
-                float3 worldCenter = mul(_PointCloudLocalToWorld, float4(cameraLocal, 1.0f)).xyz;
+                float3 worldCenter = _CameraRuntimeAndPointSize.xyz + _RenderParams1.xyz + cameraLocal;
                 float3 cameraRight = SafeNormalize(float3(UNITY_MATRIX_I_V._m00, UNITY_MATRIX_I_V._m10, UNITY_MATRIX_I_V._m20), float3(1.0f, 0.0f, 0.0f));
                 float3 cameraUp = SafeNormalize(float3(UNITY_MATRIX_I_V._m01, UNITY_MATRIX_I_V._m11, UNITY_MATRIX_I_V._m21), float3(0.0f, 1.0f, 0.0f));
                 float distanceMeters = max(max(abs(cameraLocal.x), abs(cameraLocal.y)), abs(cameraLocal.z));
-                float distance01 = saturate(distanceMeters * rcp(max(_MaxDistanceMeters, 0.001f)));
-                float pointScale = max(_PointSize, 0.2f) * 0.0015f * lerp(0.75f, 1.45f, saturate(_GlobalQualityWeight));
-                float3 worldPosition = worldCenter + (cameraRight * input.positionOS.x + cameraUp * input.positionOS.y) * pointScale;
+                float distance01 = saturate(distanceMeters * rcp(maxDistanceMeters));
+                float pointScale = pointSize * 0.0015f * lerp(0.75f, 1.45f, globalQualityWeight);
+                float2 corner = ResolveQuadCorner(input.vertexId);
+                float3 worldPosition = worldCenter + (cameraRight * corner.x + cameraUp * corner.y) * pointScale;
 
                 float pingAge = max(0.0f, _PingSignal.x);
                 float fadeSeconds = max(0.001f, _PingSignal.y);
-                float waveRadius = pingAge * max(18.0f, _MaxDistanceMeters * 0.55f);
-                float waveBand = 1.0f - saturate(abs(distanceMeters - waveRadius) * rcp(lerp(1.2f, 6.5f, saturate(_GlobalQualityWeight))));
+                float waveRadius = pingAge * max(18.0f, maxDistanceMeters * 0.55f);
+                float waveBand = 1.0f - saturate(abs(distanceMeters - waveRadius) * rcp(lerp(1.2f, 6.5f, globalQualityWeight)));
                 float echoFade = saturate(1.0f - pingAge * rcp(fadeSeconds));
-                float boost = 0.55f + waveBand * lerp(0.45f, 1.35f, saturate(_GlobalQualityWeight));
+                float boost = 0.55f + waveBand * lerp(0.45f, 1.35f, globalQualityWeight);
 
                 Varyings output;
                 output.positionCS = TransformWorldToHClip(worldPosition);
                 output.screenPos = ComputeScreenPos(output.positionCS);
-                output.color = float4(saturate(color.rgb * boost), color.a * _Opacity * echoFade * saturate(1.0f - distance01 * 0.3f));
+                output.color = float4(saturate(color.rgb * boost), color.a * opacity * echoFade * saturate(1.0f - distance01 * 0.3f));
                 output.clipAlpha = output.color.a;
                 return output;
             }
@@ -128,7 +141,7 @@ Shader "Hecton8/VFX/TopographicalSonarPoint"
                 float sceneRawDepth = SampleSceneDepth(screenUv);
                 float sceneEyeDepth = LinearEyeDepth(sceneRawDepth, _ZBufferParams);
                 float particleEyeDepth = max(input.screenPos.w, 0.0001f);
-                float depthFade = saturate((sceneEyeDepth - particleEyeDepth) * rcp(max(_DepthFadeMeters, 0.0001f)));
+                float depthFade = saturate((sceneEyeDepth - particleEyeDepth) * rcp(max(_RenderParams0.y, 0.0001f)));
                 float alpha = input.clipAlpha * depthFade;
                 clip(alpha - max(HectonDitherCoverage(input.positionCS.xy), 0.001f));
                 return half4(input.color.rgb, 1.0h);

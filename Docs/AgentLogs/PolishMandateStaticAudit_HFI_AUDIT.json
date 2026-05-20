@@ -1,0 +1,1686 @@
+{
+  "categories": {
+    "binaryHardwareSwitch": {
+      "examples": [
+        {
+          "line": 387,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "QualityTier = spawnQualityByte,"
+        },
+        {
+          "line": 287,
+          "path": "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs",
+          "text": "AssertContains(rendererColdQuality, \"GlobalRegistry.QualityTier\", \"Critical renderer seeds hardware quality only during cold cache refresh\", builder, ref failureCount);"
+        },
+        {
+          "line": 291,
+          "path": "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs",
+          "text": "AssertNotContains(rendererTick, \"GlobalRegistry.QualityTier\", \"Critical renderer Tick does not poll hardware quality directly\", builder, ref failureCount);"
+        },
+        {
+          "line": 1130,
+          "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+          "text": "public byte QualityTier;"
+        },
+        {
+          "line": 3524,
+          "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+          "text": "GlobalRegistry.QualityTier,"
+        },
+        {
+          "line": 9845,
+          "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+          "text": "QualityTier = state.QualityTier,"
+        },
+        {
+          "line": 9966,
+          "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+          "text": "writer.Write(entry.QualityTier);"
+        },
+        {
+          "line": 382,
+          "path": "Assets/_Project/Scripts/Audio/Prologue/PrologueAcousticOrchestrator.cs",
+          "text": "QualityTier = _qualityTierByte,"
+        },
+        {
+          "line": 429,
+          "path": "Assets/_Project/Scripts/Audio/Prologue/PrologueAcousticOrchestrator.cs",
+          "text": "QualityTier = _qualityTierByte,"
+        },
+        {
+          "line": 80,
+          "path": "Assets/_Project/Scripts/Audio/Propagation/AcousticPortalPropagation.cs",
+          "text": "public byte QualityTier;"
+        },
+        {
+          "line": 199,
+          "path": "Assets/_Project/Scripts/Audio/Propagation/AcousticPortalPropagation.cs",
+          "text": "Query.DisablePortalPath != 0 || Query.QualityTier <= 2"
+        },
+        {
+          "line": 209,
+          "path": "Assets/_Project/Scripts/Audio/Propagation/AcousticPortalPropagation.cs",
+          "text": "if (Query.DisablePortalPath != 0 || Query.QualityTier <= 2)"
+        },
+        {
+          "line": 477,
+          "path": "Assets/_Project/Scripts/Audio/Virtualization/Contracts/AudioVirtualizationContracts.cs",
+          "text": "public byte QualityTier;"
+        },
+        {
+          "line": 3603,
+          "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+          "text": "switch (hardwareProfile.QualityTier)"
+        },
+        {
+          "line": 3621,
+          "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+          "text": "switch (hardwareProfile.QualityTier)"
+        },
+        {
+          "line": 3638,
+          "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+          "text": "switch (hardwareProfile.QualityTier)"
+        },
+        {
+          "line": 3652,
+          "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+          "text": "switch (hardwareProfile.QualityTier)"
+        },
+        {
+          "line": 3053,
+          "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+          "text": "QualityTier = (byte)GlobalRegistry.ScalabilityTier,"
+        },
+        {
+          "line": 1494,
+          "path": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+          "text": "QualityTier = tierProfile"
+        },
+        {
+          "line": 80,
+          "path": "Assets/_Project/Scripts/Core/Contracts/CoreContractsAssemblyMarker.cs",
+          "text": "byte HardwareTier { get; }"
+        }
+      ],
+      "files": 48,
+      "matches": 103,
+      "topFiles": [
+        {
+          "count": 7,
+          "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs"
+        },
+        {
+          "count": 6,
+          "path": "Assets/_Project/Scripts/Visor/HectonVisorFluidDistortionFeature.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/Prologue/VFX/OrbitalDropReentryVfxController.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/ScannerTool.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/VFX/VFXEmissionProfile.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/World/FloraGenomics/FloraGenomeJobs.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/World/FloraGenomics/FloraGenomeVaultRuntime.cs"
+        }
+      ]
+    },
+    "burstCompile": {
+      "examples": [
+        {
+          "line": 1367,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 1536,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 1582,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 1672,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 13,
+          "path": "Assets/_Project/Scripts/AI/Cognition/LeviathanStalkJob.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 13,
+          "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainJobs.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 77,
+          "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainJobs.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 12,
+          "path": "Assets/_Project/Scripts/AI/Ecology/Migration/MacroSwarm.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 960,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/EcosystemPopulationBalancer.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 3357,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 3391,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 3415,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 3492,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 3546,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 3784,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 3845,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 3918,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 3957,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 1906,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 2068,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs",
+          "text": "[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]"
+        }
+      ],
+      "files": 301,
+      "matches": 1184,
+      "topFiles": [
+        {
+          "count": 42,
+          "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs"
+        },
+        {
+          "count": 18,
+          "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs"
+        },
+        {
+          "count": 18,
+          "path": "Assets/_Project/Scripts/Inventory/Routing/InventoryRoutingNetwork.cs"
+        },
+        {
+          "count": 17,
+          "path": "Assets/_Project/Scripts/Core/DistanceMath.cs"
+        },
+        {
+          "count": 17,
+          "path": "Assets/_Project/Scripts/SaveSystem/EntityDeltaCompressionArchitecture.cs"
+        },
+        {
+          "count": 16,
+          "path": "Assets/_Project/Scripts/Cartography/CartographyGridJobs.cs"
+        },
+        {
+          "count": 16,
+          "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityTypes.cs"
+        },
+        {
+          "count": 15,
+          "path": "Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs"
+        },
+        {
+          "count": 15,
+          "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs"
+        },
+        {
+          "count": 14,
+          "path": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs"
+        }
+      ]
+    },
+    "burstMissingCompileSynchronously": {
+      "examples": [
+        {
+          "line": 610,
+          "path": "Assets/_Project/Scripts/AtlasSignal/SignalBeacon.cs",
+          "text": "[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 692,
+          "path": "Assets/_Project/Scripts/AtlasSignal/SignalBeacon.cs",
+          "text": "[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 711,
+          "path": "Assets/_Project/Scripts/AtlasSignal/SignalBeacon.cs",
+          "text": "[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 772,
+          "path": "Assets/_Project/Scripts/AtlasSignal/SignalBeacon.cs",
+          "text": "[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 779,
+          "path": "Assets/_Project/Scripts/AtlasSignal/SignalBeacon.cs",
+          "text": "[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 191,
+          "path": "Assets/_Project/Scripts/Atmosphere/SurfaceWeatherMath.cs",
+          "text": "[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 32,
+          "path": "Assets/_Project/Scripts/Audio/Echolocation/AcousticEcholocationRaymarch.cs",
+          "text": "[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 15,
+          "path": "Assets/_Project/Scripts/Audio/PlayerCriticalBufferJobs.cs",
+          "text": "[BurstCompile(FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast)]"
+        },
+        {
+          "line": 57,
+          "path": "Assets/_Project/Scripts/Audio/PlayerCriticalBufferJobs.cs",
+          "text": "[BurstCompile(FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast)]"
+        },
+        {
+          "line": 178,
+          "path": "Assets/_Project/Scripts/Audio/PlayerCriticalBufferJobs.cs",
+          "text": "[BurstCompile(FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast)]"
+        },
+        {
+          "line": 412,
+          "path": "Assets/_Project/Scripts/Audio/PlayerCriticalBufferJobs.cs",
+          "text": "[BurstCompile(FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast)]"
+        },
+        {
+          "line": 434,
+          "path": "Assets/_Project/Scripts/Audio/PlayerCriticalBufferJobs.cs",
+          "text": "[BurstCompile(FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast)]"
+        },
+        {
+          "line": 1254,
+          "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+          "text": "[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 7032,
+          "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+          "text": "[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 7053,
+          "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+          "text": "[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 7068,
+          "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+          "text": "[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 7074,
+          "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+          "text": "[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 7085,
+          "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+          "text": "[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 7095,
+          "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+          "text": "[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]"
+        },
+        {
+          "line": 7105,
+          "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+          "text": "[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]"
+        }
+      ],
+      "files": 113,
+      "matches": 350,
+      "topFiles": [
+        {
+          "count": 41,
+          "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs"
+        },
+        {
+          "count": 18,
+          "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs"
+        },
+        {
+          "count": 17,
+          "path": "Assets/_Project/Scripts/Core/DistanceMath.cs"
+        },
+        {
+          "count": 15,
+          "path": "Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs"
+        },
+        {
+          "count": 10,
+          "path": "Assets/_Project/Scripts/VFX/Debris/ShinobuDeltaCrusherJobs.cs"
+        },
+        {
+          "count": 10,
+          "path": "Assets/_Project/Scripts/World/ScatterMath.cs"
+        },
+        {
+          "count": 10,
+          "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs"
+        },
+        {
+          "count": 9,
+          "path": "Assets/_Project/Scripts/World/HectonSandboxAbyssalShelfJobs.cs"
+        },
+        {
+          "count": 8,
+          "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs"
+        },
+        {
+          "count": 7,
+          "path": "Assets/_Project/Scripts/World/HectonAnomalySdfJobs.cs"
+        }
+      ]
+    },
+    "burstMissingFloatMode": {
+      "examples": [
+        {
+          "line": 106,
+          "path": "Assets/_Project/Scripts/Core/MathGuard.cs",
+          "text": "[BurstCompile]"
+        },
+        {
+          "line": 114,
+          "path": "Assets/_Project/Scripts/Core/MathGuard.cs",
+          "text": "[BurstCompile]"
+        },
+        {
+          "line": 198,
+          "path": "Assets/_Project/Scripts/Core/MathGuard.cs",
+          "text": "[BurstCompile]"
+        },
+        {
+          "line": 545,
+          "path": "Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs",
+          "text": "[BurstCompile]"
+        },
+        {
+          "line": 559,
+          "path": "Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs",
+          "text": "[BurstCompile]"
+        },
+        {
+          "line": 570,
+          "path": "Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs",
+          "text": "[BurstCompile]"
+        },
+        {
+          "line": 581,
+          "path": "Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs",
+          "text": "[BurstCompile]"
+        },
+        {
+          "line": 594,
+          "path": "Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs",
+          "text": "[BurstCompile]"
+        },
+        {
+          "line": 9,
+          "path": "Assets/_Project/Scripts/Environment/Fluids/BrineLayerMath.cs",
+          "text": "[BurstCompile]"
+        },
+        {
+          "line": 1702,
+          "path": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
+          "text": "[BurstCompile]"
+        },
+        {
+          "line": 2039,
+          "path": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
+          "text": "[BurstCompile]"
+        },
+        {
+          "line": 311,
+          "path": "Assets/_Project/Scripts/Gameplay/SomaticKinematicsRuntime.cs",
+          "text": "[BurstCompile]"
+        },
+        {
+          "line": 273,
+          "path": "Assets/_Project/Scripts/Gameplay/SuitUpgradeResolver.cs",
+          "text": "[BurstCompile]"
+        },
+        {
+          "line": 9,
+          "path": "Assets/_Project/Scripts/Inventory/Corrosion/ItemSalinityCorrosionJob.cs",
+          "text": "[BurstCompile]"
+        },
+        {
+          "line": 181,
+          "path": "Assets/_Project/Scripts/Inventory/InventorySoAUtility.cs",
+          "text": "[BurstCompile]"
+        },
+        {
+          "line": 286,
+          "path": "Assets/_Project/Scripts/Inventory/InventorySoAUtility.cs",
+          "text": "[BurstCompile]"
+        },
+        {
+          "line": 428,
+          "path": "Assets/_Project/Scripts/Inventory/InventorySoAUtility.cs",
+          "text": "[BurstCompile]"
+        },
+        {
+          "line": 472,
+          "path": "Assets/_Project/Scripts/Inventory/InventorySoAUtility.cs",
+          "text": "[BurstCompile]"
+        },
+        {
+          "line": 1940,
+          "path": "Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs",
+          "text": "[BurstCompile]"
+        },
+        {
+          "line": 1955,
+          "path": "Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs",
+          "text": "[BurstCompile]"
+        }
+      ],
+      "files": 16,
+      "matches": 41,
+      "topFiles": [
+        {
+          "count": 15,
+          "path": "Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs"
+        },
+        {
+          "count": 5,
+          "path": "Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/Inventory/InventorySoAUtility.cs"
+        },
+        {
+          "count": 3,
+          "path": "Assets/_Project/Scripts/Core/MathGuard.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/World/ErosionHarnessJobs.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/Environment/Fluids/BrineLayerMath.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/Gameplay/SomaticKinematicsRuntime.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/Gameplay/SuitUpgradeResolver.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/Inventory/Corrosion/ItemSalinityCorrosionJob.cs"
+        }
+      ]
+    },
+    "burstMissingFloatPrecision": {
+      "examples": [
+        {
+          "line": 106,
+          "path": "Assets/_Project/Scripts/Core/MathGuard.cs",
+          "text": "[BurstCompile]"
+        },
+        {
+          "line": 114,
+          "path": "Assets/_Project/Scripts/Core/MathGuard.cs",
+          "text": "[BurstCompile]"
+        },
+        {
+          "line": 198,
+          "path": "Assets/_Project/Scripts/Core/MathGuard.cs",
+          "text": "[BurstCompile]"
+        },
+        {
+          "line": 545,
+          "path": "Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs",
+          "text": "[BurstCompile]"
+        },
+        {
+          "line": 559,
+          "path": "Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs",
+          "text": "[BurstCompile]"
+        },
+        {
+          "line": 570,
+          "path": "Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs",
+          "text": "[BurstCompile]"
+        },
+        {
+          "line": 581,
+          "path": "Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs",
+          "text": "[BurstCompile]"
+        },
+        {
+          "line": 594,
+          "path": "Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs",
+          "text": "[BurstCompile]"
+        },
+        {
+          "line": 129,
+          "path": "Assets/_Project/Scripts/Editor/SignalCryptographySmokeTester.cs",
+          "text": "AssertContains(beacon, \"[BurstCompile(FloatMode = FloatMode.Fast\", \"Signal beacon math has Burst fast-mode annotation\", report, ref failureCount); AssertContains(beacon, \"BurstCompiler.CompileFunctionPointer<SolveTriangulatedStrengthDelegate>\", \"Triangulation solver is compiled as Burst function pointer\", report, ref failureCount); AssertContains(beacon, \"BurstCompiler.CompileFunctionPointer<EvaluateSineWaveMatchDelegate>\", \"Spectrogram match solver is compiled as Burst function pointer\", report, ref failureCount); AssertContains(beacon, \"BurstCompiler.CompileFunctionPointer<MergeRecoveredBitsDelegate>\", \"Fragment bit merge solver is compiled as Burst function pointer\", report, ref failureCount); AssertContains(solveWrapperBody, \"_solveTriangulatedStrength.Invoke(\", \"Public triangulation entry invokes Burst function pointer\", report, ref failureCount); AssertContains(solveBody, \"AbsoluteUniversePosition.DistanceSq(in playerAup, in point0)\", \"Triangulation reads AUP distance squared for point0\", report, ref failureCount); AssertContains(solveBody, \"AbsoluteUniversePosition.DistanceSq(in playerAup, in point1)\", \"Triangulation reads AUP distance squared for point1\", report, ref failureCount); AssertContains(solveBody, \"AbsoluteUniversePosition.DistanceSq(in playerAup, in point2)\", \"Triangulation reads AUP distance squared for point2\", report, ref failureCount); AssertContains(solveBody, \"averageDistanceSq = (distanceSq0 + distanceSq1 + distanceSq2) * OneThird\", \"Triangulation strength uses averaged distance squared\", report, ref failureCount);"
+        },
+        {
+          "line": 505,
+          "path": "Assets/_Project/Scripts/Editor/SignalCryptographySmokeTester.cs",
+          "text": "AssertContains(spectrogram, \"[BurstCompile(FloatMode = FloatMode.Fast\", \"Frequency tuning jobs use Burst fast math\", report, ref failureCount); AssertContains(spectrogram, \"IJobParallelFor\", \"Frequency tuning wave generation is parallel\", report, ref failureCount); AssertContains(generateJobBody, \"math.sin(x * TargetFrequency) * TargetAmplitude\", \"Target sine uses Burst math sine with amplitude\", report, ref failureCount); AssertContains(generateJobBody, \"math.sin(x * PlayerFrequency) * PlayerAmplitude\", \"Player sine uses Burst math sine with amplitude\", report, ref failureCount); AssertContains(errorJobBody, \"error += math.abs(TargetWave[i] - PlayerWave[i])\", \"Frequency tuning error sums math.abs differences\", report, ref failureCount);"
+        },
+        {
+          "line": 9,
+          "path": "Assets/_Project/Scripts/Environment/Fluids/BrineLayerMath.cs",
+          "text": "[BurstCompile]"
+        },
+        {
+          "line": 1702,
+          "path": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
+          "text": "[BurstCompile]"
+        },
+        {
+          "line": 2039,
+          "path": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
+          "text": "[BurstCompile]"
+        },
+        {
+          "line": 311,
+          "path": "Assets/_Project/Scripts/Gameplay/SomaticKinematicsRuntime.cs",
+          "text": "[BurstCompile]"
+        },
+        {
+          "line": 273,
+          "path": "Assets/_Project/Scripts/Gameplay/SuitUpgradeResolver.cs",
+          "text": "[BurstCompile]"
+        },
+        {
+          "line": 9,
+          "path": "Assets/_Project/Scripts/Inventory/Corrosion/ItemSalinityCorrosionJob.cs",
+          "text": "[BurstCompile]"
+        },
+        {
+          "line": 181,
+          "path": "Assets/_Project/Scripts/Inventory/InventorySoAUtility.cs",
+          "text": "[BurstCompile]"
+        },
+        {
+          "line": 286,
+          "path": "Assets/_Project/Scripts/Inventory/InventorySoAUtility.cs",
+          "text": "[BurstCompile]"
+        },
+        {
+          "line": 428,
+          "path": "Assets/_Project/Scripts/Inventory/InventorySoAUtility.cs",
+          "text": "[BurstCompile]"
+        },
+        {
+          "line": 472,
+          "path": "Assets/_Project/Scripts/Inventory/InventorySoAUtility.cs",
+          "text": "[BurstCompile]"
+        }
+      ],
+      "files": 17,
+      "matches": 43,
+      "topFiles": [
+        {
+          "count": 15,
+          "path": "Assets/_Project/Scripts/Inventory/Shinobu19EconomyLedger.cs"
+        },
+        {
+          "count": 5,
+          "path": "Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/Inventory/InventorySoAUtility.cs"
+        },
+        {
+          "count": 3,
+          "path": "Assets/_Project/Scripts/Core/MathGuard.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/Editor/SignalCryptographySmokeTester.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/World/ErosionHarnessJobs.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/Environment/Fluids/BrineLayerMath.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/Gameplay/SomaticKinematicsRuntime.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/Gameplay/SuitUpgradeResolver.cs"
+        }
+      ]
+    },
+    "globalQualityWeight": {
+      "examples": [
+        {
+          "line": 753,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "float quality = HomeostasisBrain.GlobalQualityWeight;"
+        },
+        {
+          "line": 51,
+          "path": "Assets/_Project/Scripts/AI/Cognition/Editor/LeviathanCortexTunerWindow.cs",
+          "text": "_tuning.GlobalQualityWeight = EditorGUILayout.Slider(\"Global Quality Weight\", _tuning.GlobalQualityWeight, 0f, 1f);"
+        },
+        {
+          "line": 97,
+          "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainContracts.cs",
+          "text": "tuning.GlobalQualityWeight = 1f;"
+        },
+        {
+          "line": 243,
+          "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainContracts.cs",
+          "text": "[FieldOffset(32)] public float GlobalQualityWeight;"
+        },
+        {
+          "line": 355,
+          "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainContracts.cs",
+          "text": "[FieldOffset(92)] public float GlobalQualityWeight;"
+        },
+        {
+          "line": 155,
+          "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainJobs.cs",
+          "text": "float quality = ResolveQuality(tuning.GlobalQualityWeight);"
+        },
+        {
+          "line": 733,
+          "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainJobs.cs",
+          "text": "float resolvedQuality = ResolveQuality(tuning.GlobalQualityWeight);"
+        },
+        {
+          "line": 750,
+          "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainJobs.cs",
+          "text": "GlobalQualityWeight = resolvedQuality,"
+        },
+        {
+          "line": 386,
+          "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainVault.cs",
+          "text": "quality = ResolveSchedulingQuality(buffers.Tuning[0].GlobalQualityWeight);"
+        },
+        {
+          "line": 736,
+          "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainVault.cs",
+          "text": "tuning.GlobalQualityWeight = math.saturate(math.select(fallback.GlobalQualityWeight, tuning.GlobalQualityWeight, math.isfinite(tuning.GlobalQualityWeight)));"
+        },
+        {
+          "line": 805,
+          "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainVault.cs",
+          "text": "tuning.GlobalQualityWeight = math.saturate(value);"
+        },
+        {
+          "line": 1039,
+          "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainVault.cs",
+          "text": "writer.Write(entry.GlobalQualityWeight);"
+        },
+        {
+          "line": 379,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+          "text": "GlobalQualityWeight = globalQualityWeight,"
+        },
+        {
+          "line": 436,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+          "text": "GlobalQualityWeight = globalQualityWeight,"
+        },
+        {
+          "line": 456,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+          "text": "GlobalQualityWeight = globalQualityWeight,"
+        },
+        {
+          "line": 1315,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+          "text": "GlobalQualityWeight = globalQualityWeight,"
+        },
+        {
+          "line": 1457,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+          "text": "GlobalQualityWeight = _lastGlobalQualityWeight,"
+        },
+        {
+          "line": 1764,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+          "text": "float weight = HomeostasisBrain.GlobalQualityWeight;"
+        },
+        {
+          "line": 1998,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+          "text": "GlobalQualityWeight = math.saturate(globalQualityWeight),"
+        },
+        {
+          "line": 2134,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+          "text": "writer.Write(entry.GlobalQualityWeight);"
+        }
+      ],
+      "files": 291,
+      "matches": 1417,
+      "topFiles": [
+        {
+          "count": 27,
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs"
+        },
+        {
+          "count": 26,
+          "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs"
+        },
+        {
+          "count": 26,
+          "path": "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs"
+        },
+        {
+          "count": 25,
+          "path": "Assets/_Project/Scripts/FabricationAssemblerRuntime.cs"
+        },
+        {
+          "count": 23,
+          "path": "Assets/_Project/Scripts/Habitat/Deformation/Editor/DamageBake/HabitatDamageBakePipeline.cs"
+        },
+        {
+          "count": 22,
+          "path": "Assets/_Project/Scripts/Cartography/CartographyGridJobs.cs"
+        },
+        {
+          "count": 21,
+          "path": "Assets/_Project/Scripts/Physics/CablePhysicsSolver132.cs"
+        },
+        {
+          "count": 20,
+          "path": "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs"
+        },
+        {
+          "count": 19,
+          "path": "Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs"
+        },
+        {
+          "count": 19,
+          "path": "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs"
+        }
+      ]
+    },
+    "jobHandleComplete": {
+      "examples": [
+        {
+          "line": 641,
+          "path": "Assets/_Project/Scripts/Animation/FaunaProcedural/ProceduralBoneBlenderRuntime.cs",
+          "text": "_pendingHandle.Complete();"
+        },
+        {
+          "line": 802,
+          "path": "Assets/_Project/Scripts/Animation/KineticCharacter/KineticCharacterAnimatorRuntime.cs",
+          "text": "_pendingHandle.Complete();"
+        },
+        {
+          "line": 992,
+          "path": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+          "text": "_waveParameterJobHandle.Complete();"
+        },
+        {
+          "line": 1005,
+          "path": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+          "text": "_waveParameterJobHandle.Complete();"
+        },
+        {
+          "line": 845,
+          "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
+          "text": "_scheduledHandle.Complete();"
+        },
+        {
+          "line": 955,
+          "path": "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs",
+          "text": "_audioJobHandle.Complete();"
+        },
+        {
+          "line": 971,
+          "path": "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs",
+          "text": "_audioJobHandle.Complete();"
+        },
+        {
+          "line": 73,
+          "path": "Assets/_Project/Scripts/Audio/Editor/AudioOmegaAutonomySmokeTester.cs",
+          "text": "AppendCheck(\"hot DSP block has no JobHandle completion\", !ExtractMethodBody(renderer, \"private void MixAndFilterBlock\").Contains(\".Complete()\"), ref passedCount, ref failedCount, checks);"
+        },
+        {
+          "line": 153,
+          "path": "Assets/_Project/Scripts/Audio/Editor/DSPThreadSafetySmokeTester.cs",
+          "text": "AssertNotContains(bufferJobs, \".Complete(\", \"PlayerCriticalBufferJobs.Clear has no JobHandle.Complete barrier\", builder, ref failureCount);"
+        },
+        {
+          "line": 10749,
+          "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+          "text": "job.Schedule().Complete();"
+        },
+        {
+          "line": 1089,
+          "path": "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs",
+          "text": "_synthJobHandle.Complete();"
+        },
+        {
+          "line": 1101,
+          "path": "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs",
+          "text": "_synthJobHandle.Complete();"
+        },
+        {
+          "line": 264,
+          "path": "Assets/_Project/Scripts/Construction/SumpPumpPipeGridRuntime.cs",
+          "text": "handle.Complete();"
+        },
+        {
+          "line": 1227,
+          "path": "Assets/_Project/Scripts/ConstructionManager.cs",
+          "text": "_deconstructionRaycastHandle.Complete();"
+        },
+        {
+          "line": 483,
+          "path": "Assets/_Project/Scripts/Core/Bucketing/ModuloSimulationBucketer.cs",
+          "text": "_rebalanceHandle.Complete();"
+        },
+        {
+          "line": 593,
+          "path": "Assets/_Project/Scripts/Core/Bucketing/ModuloSimulationBucketer.cs",
+          "text": "_rebalanceHandle.Complete();"
+        },
+        {
+          "line": 853,
+          "path": "Assets/_Project/Scripts/Core/Data/BabelDictionaryStore.cs",
+          "text": "_activeLoreReadHandle.Complete();"
+        },
+        {
+          "line": 865,
+          "path": "Assets/_Project/Scripts/Core/Data/BabelDictionaryStore.cs",
+          "text": "_activeLoreReadHandle.Complete();"
+        },
+        {
+          "line": 477,
+          "path": "Assets/_Project/Scripts/Core/Data/Editor/CacheBTreeTopologyXRayWindow.cs",
+          "text": "handle.Complete();"
+        },
+        {
+          "line": 769,
+          "path": "Assets/_Project/Scripts/Core/Determinism/LockstepStateValidator.cs",
+          "text": "masterHandle.Complete();"
+        }
+      ],
+      "files": 104,
+      "matches": 231,
+      "topFiles": [
+        {
+          "count": 15,
+          "path": "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs"
+        },
+        {
+          "count": 9,
+          "path": "Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/HadalArchBakePipeline.cs"
+        },
+        {
+          "count": 7,
+          "path": "Assets/_Project/Scripts/Editor/GeologyForge/GeologyForgeGenerator.cs"
+        },
+        {
+          "count": 7,
+          "path": "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/Shinobu213/OfflineGeometryBaker.cs"
+        },
+        {
+          "count": 7,
+          "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs"
+        },
+        {
+          "count": 6,
+          "path": "Assets/_Project/Scripts/Editor/OfflineGeometryBaker/InteriorClutterForge.cs"
+        },
+        {
+          "count": 5,
+          "path": "Assets/_Project/Scripts/Editor/HectonArmTextureChannelPacker.cs"
+        },
+        {
+          "count": 5,
+          "path": "Assets/_Project/Scripts/SavePersistenceOmegaSmokeTester.cs"
+        },
+        {
+          "count": 5,
+          "path": "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs"
+        },
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs"
+        }
+      ]
+    },
+    "linqSurface": {
+      "examples": [
+        {
+          "line": 368,
+          "path": "Assets/_Project/Scripts/Editor/HectonComplianceValidator.cs",
+          "text": "int usingIndex = text.IndexOf(\"using System.Linq;\", StringComparison.Ordinal);"
+        },
+        {
+          "line": 501,
+          "path": "Assets/_Project/Scripts/Editor/HectonComplianceValidator.cs",
+          "text": "int usingIndex = text.IndexOf(\"using System.Linq;\", StringComparison.Ordinal);"
+        },
+        {
+          "line": 21,
+          "path": "Assets/_Project/Scripts/Editor/MainMenuValidator.cs",
+          "text": "using System.Linq;"
+        },
+        {
+          "line": 67,
+          "path": "Assets/_Project/Scripts/Editor/MainMenuValidator.cs",
+          "text": ".FirstOrDefault();"
+        },
+        {
+          "line": 81,
+          "path": "Assets/_Project/Scripts/Editor/MainMenuValidator.cs",
+          "text": ".FirstOrDefault();"
+        }
+      ],
+      "files": 2,
+      "matches": 5,
+      "topFiles": [
+        {
+          "count": 3,
+          "path": "Assets/_Project/Scripts/Editor/MainMenuValidator.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/Editor/HectonComplianceValidator.cs"
+        }
+      ]
+    },
+    "noAlias": {
+      "examples": [
+        {
+          "line": 1370,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "[NoAlias] public NativeArray<AbsoluteUniversePosition> Aups;"
+        },
+        {
+          "line": 1371,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "[NoAlias] public NativeArray<float4> Velocities;"
+        },
+        {
+          "line": 1372,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "[NoAlias] public NativeArray<AmbientBiotaState> States;"
+        },
+        {
+          "line": 1374,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "[NoAlias] public NativeArray<int> Counters;"
+        },
+        {
+          "line": 1539,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "[NoAlias] public NativeArray<AbsoluteUniversePosition> Aups;"
+        },
+        {
+          "line": 1540,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "[NoAlias] public NativeArray<float4> Velocities;"
+        },
+        {
+          "line": 1541,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "[NoAlias] public NativeArray<AmbientBiotaState> States;"
+        },
+        {
+          "line": 1542,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "[NoAlias] public NativeArray<int> Counters;"
+        },
+        {
+          "line": 1585,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "[NoAlias] public NativeArray<AbsoluteUniversePosition> Aups;"
+        },
+        {
+          "line": 1586,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "[NoAlias] public NativeArray<float4> Velocities;"
+        },
+        {
+          "line": 1587,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "[NoAlias] public NativeArray<AmbientBiotaState> States;"
+        },
+        {
+          "line": 1675,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "[NoAlias] public NativeArray<AbsoluteUniversePosition> Aups;"
+        },
+        {
+          "line": 1676,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "[NoAlias] public NativeArray<float4> Velocities;"
+        },
+        {
+          "line": 1677,
+          "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+          "text": "[NoAlias] public NativeArray<AmbientBiotaState> States;"
+        },
+        {
+          "line": 16,
+          "path": "Assets/_Project/Scripts/AI/Cognition/LeviathanStalkJob.cs",
+          "text": "[NoAlias]"
+        },
+        {
+          "line": 20,
+          "path": "Assets/_Project/Scripts/AI/Cognition/LeviathanStalkJob.cs",
+          "text": "[NoAlias]"
+        },
+        {
+          "line": 16,
+          "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainJobs.cs",
+          "text": "[NoAlias] public NativeArray<MockPlayerAUP> Targets;"
+        },
+        {
+          "line": 80,
+          "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainJobs.cs",
+          "text": "[NoAlias] public NativeArray<ApexStateDTO> States;"
+        },
+        {
+          "line": 86,
+          "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainJobs.cs",
+          "text": "[NoAlias] public NativeArray<ApexBrainOutputDTO> Outputs;"
+        },
+        {
+          "line": 87,
+          "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainJobs.cs",
+          "text": "[NoAlias] public NativeArray<ApexProximitySignal> ProximitySignals;"
+        }
+      ],
+      "files": 147,
+      "matches": 1638,
+      "topFiles": [
+        {
+          "count": 73,
+          "path": "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs"
+        },
+        {
+          "count": 57,
+          "path": "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs"
+        },
+        {
+          "count": 56,
+          "path": "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs"
+        },
+        {
+          "count": 42,
+          "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/StructuralIntegrityCalculatorTypes.cs"
+        },
+        {
+          "count": 40,
+          "path": "Assets/_Project/Scripts/Cartography/CartographyGridJobs.cs"
+        },
+        {
+          "count": 39,
+          "path": "Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralJobs.cs"
+        },
+        {
+          "count": 38,
+          "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityTypes.cs"
+        },
+        {
+          "count": 38,
+          "path": "Assets/_Project/Scripts/World/ShinobuBiomimetic/ShinobuBiomimeticArchitectureRuntime.cs"
+        },
+        {
+          "count": 37,
+          "path": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs"
+        },
+        {
+          "count": 35,
+          "path": "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageJobs.cs"
+        }
+      ]
+    },
+    "packOne": {
+      "examples": [],
+      "files": 0,
+      "matches": 0,
+      "topFiles": []
+    },
+    "privateNativeCollectionField": {
+      "examples": [
+        {
+          "line": 100,
+          "path": "Assets/_Project/Scripts/AtlasSignal/Atlas6DirectiveSystem.cs",
+          "text": "private static NativeQueue<Atlas6EventPayload> _pendingEvents;"
+        },
+        {
+          "line": 101,
+          "path": "Assets/_Project/Scripts/AtlasSignal/Atlas6DirectiveSystem.cs",
+          "text": "private static NativeQueue<Atlas6EventPayload> _nextFrameEvents;"
+        },
+        {
+          "line": 56,
+          "path": "Assets/_Project/Scripts/AtlasSignal/AtlasSignalEvents.cs",
+          "text": "private static NativeQueue<AtlasSignalEventPayload> _pendingEvents;"
+        },
+        {
+          "line": 57,
+          "path": "Assets/_Project/Scripts/AtlasSignal/AtlasSignalEvents.cs",
+          "text": "private static NativeQueue<AtlasSignalEventPayload> _nextFrameEvents;"
+        },
+        {
+          "line": 91,
+          "path": "Assets/_Project/Scripts/Atmosphere/BaseAtmosphereEngine.cs",
+          "text": "private NativeArray<CompartmentState> _front;"
+        },
+        {
+          "line": 92,
+          "path": "Assets/_Project/Scripts/Atmosphere/BaseAtmosphereEngine.cs",
+          "text": "private NativeArray<CompartmentState> _back;"
+        },
+        {
+          "line": 93,
+          "path": "Assets/_Project/Scripts/Atmosphere/BaseAtmosphereEngine.cs",
+          "text": "private NativeArray<byte> _carbonDioxideByteLane;"
+        },
+        {
+          "line": 94,
+          "path": "Assets/_Project/Scripts/Atmosphere/BaseAtmosphereEngine.cs",
+          "text": "private NativeArray<BaseAtmosphereTelemetryEntry> _blackBox;"
+        },
+        {
+          "line": 102,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> RoomO2;"
+        },
+        {
+          "line": 103,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> RoomCO2;"
+        },
+        {
+          "line": 104,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> RoomPressure;"
+        },
+        {
+          "line": 105,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> _roomO2Back;"
+        },
+        {
+          "line": 106,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> _roomCO2Back;"
+        },
+        {
+          "line": 107,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> _roomNitrogen;"
+        },
+        {
+          "line": 108,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> _roomNitrogenBack;"
+        },
+        {
+          "line": 109,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> _roomPressureBack;"
+        },
+        {
+          "line": 110,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> _roomAmbientPressure;"
+        },
+        {
+          "line": 111,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> _roomSubmerged01;"
+        },
+        {
+          "line": 112,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> _roomPlayerStress01;"
+        },
+        {
+          "line": 113,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "private NativeArray<float> _roomPlayerHeartRateBpm;"
+        }
+      ],
+      "files": 222,
+      "matches": 1389,
+      "topFiles": [
+        {
+          "count": 75,
+          "path": "Assets/_Project/Scripts/Core/GlobalSignals.cs"
+        },
+        {
+          "count": 54,
+          "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs"
+        },
+        {
+          "count": 50,
+          "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs"
+        },
+        {
+          "count": 49,
+          "path": "Assets/_Project/Scripts/PlayerInventory.cs"
+        },
+        {
+          "count": 40,
+          "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs"
+        },
+        {
+          "count": 40,
+          "path": "Assets/_Project/Scripts/HectonFluidEngine.cs"
+        },
+        {
+          "count": 40,
+          "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs"
+        },
+        {
+          "count": 37,
+          "path": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs"
+        },
+        {
+          "count": 36,
+          "path": "Assets/_Project/Scripts/SpatialAudioManager.cs"
+        },
+        {
+          "count": 35,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs"
+        }
+      ]
+    },
+    "structAutoProperties": {
+      "examples": [
+        {
+          "line": 83,
+          "path": "Assets/_Project/Scripts/BuildTools/BuildPlaytestEntry.cs",
+          "text": "public long CreatedTimestamp { get; private set; }"
+        },
+        {
+          "line": 343,
+          "path": "Assets/_Project/Scripts/Fauna/FaunaBrain.Compatibility.cs",
+          "text": "public PredatorUtilityState CurrentStateMask { get; private set; }"
+        },
+        {
+          "line": 346,
+          "path": "Assets/_Project/Scripts/Fauna/FaunaBrain.Compatibility.cs",
+          "text": "public float HungerScore { get; private set; }"
+        },
+        {
+          "line": 347,
+          "path": "Assets/_Project/Scripts/Fauna/FaunaBrain.Compatibility.cs",
+          "text": "public float AggressionScore { get; private set; }"
+        },
+        {
+          "line": 348,
+          "path": "Assets/_Project/Scripts/Fauna/FaunaBrain.Compatibility.cs",
+          "text": "public float FearScore { get; private set; }"
+        },
+        {
+          "line": 412,
+          "path": "Assets/_Project/Scripts/SaveSidecarStorage.cs",
+          "text": "public string Error { get; private set; }"
+        },
+        {
+          "line": 512,
+          "path": "Assets/_Project/Scripts/SaveSidecarStorage.cs",
+          "text": "public string Error { get; private set; }"
+        },
+        {
+          "line": 210,
+          "path": "Assets/_Project/Scripts/StringBuilderPool.cs",
+          "text": "public StringBuilder Value { get; private set; }"
+        }
+      ],
+      "files": 4,
+      "matches": 8,
+      "topFiles": [
+        {
+          "count": 4,
+          "path": "Assets/_Project/Scripts/Fauna/FaunaBrain.Compatibility.cs"
+        },
+        {
+          "count": 2,
+          "path": "Assets/_Project/Scripts/SaveSidecarStorage.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/BuildTools/BuildPlaytestEntry.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/StringBuilderPool.cs"
+        }
+      ]
+    },
+    "unityRandom": {
+      "examples": [
+        {
+          "line": 233,
+          "path": "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs",
+          "text": "AssertNotContains(renderer, \"UnityEngine.Random\", \"Critical renderer has no UnityEngine.Random call\", builder, ref failureCount);"
+        },
+        {
+          "line": 131,
+          "path": "Assets/_Project/Scripts/Audio/Editor/DSPThreadSafetySmokeTester.cs",
+          "text": "AssertNotContains(renderer, \"UnityEngine.Random\", \"Critical renderer has no UnityEngine.Random call\", builder, ref failureCount);"
+        }
+      ],
+      "files": 2,
+      "matches": 2,
+      "topFiles": [
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/Audio/Editor/DSPThreadSafetySmokeTester.cs"
+        }
+      ]
+    },
+    "unityTimeCritical": {
+      "examples": [
+        {
+          "line": 929,
+          "path": "Assets/_Project/Scripts/AcousticZoneController.cs",
+          "text": "int frame = Time.frameCount;"
+        },
+        {
+          "line": 544,
+          "path": "Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs",
+          "text": "Frame = Time.frameCount,"
+        },
+        {
+          "line": 701,
+          "path": "Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs",
+          "text": "uint frame = unchecked((uint)Time.frameCount);"
+        },
+        {
+          "line": 807,
+          "path": "Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs",
+          "text": "Frame = (uint)Time.frameCount,"
+        },
+        {
+          "line": 842,
+          "path": "Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs",
+          "text": "int frame = Time.frameCount;"
+        },
+        {
+          "line": 576,
+          "path": "Assets/_Project/Scripts/AtlasSignal/Atlas6DirectiveSystem.cs",
+          "text": "int frame = Time.frameCount;"
+        },
+        {
+          "line": 590,
+          "path": "Assets/_Project/Scripts/AtlasSignal/Atlas6DirectiveSystem.cs",
+          "text": "int frame = Time.frameCount;"
+        },
+        {
+          "line": 564,
+          "path": "Assets/_Project/Scripts/AtlasSignal/AtlasSignalEvents.cs",
+          "text": "int frame = Time.frameCount;"
+        },
+        {
+          "line": 579,
+          "path": "Assets/_Project/Scripts/AtlasSignal/AtlasSignalEvents.cs",
+          "text": "int frame = Time.frameCount;"
+        },
+        {
+          "line": 593,
+          "path": "Assets/_Project/Scripts/AtlasSignal/AtlasSignalEvents.cs",
+          "text": "int frame = Time.frameCount;"
+        },
+        {
+          "line": 607,
+          "path": "Assets/_Project/Scripts/AtlasSignal/AtlasSignalEvents.cs",
+          "text": "int frame = Time.frameCount;"
+        },
+        {
+          "line": 621,
+          "path": "Assets/_Project/Scripts/AtlasSignal/AtlasSignalEvents.cs",
+          "text": "int frame = Time.frameCount;"
+        },
+        {
+          "line": 635,
+          "path": "Assets/_Project/Scripts/AtlasSignal/AtlasSignalEvents.cs",
+          "text": "int frame = Time.frameCount;"
+        },
+        {
+          "line": 673,
+          "path": "Assets/_Project/Scripts/AtlasSignal/AtlasSignalSystem.cs",
+          "text": "if (Time.time < _nextSignalLogTime)"
+        },
+        {
+          "line": 676,
+          "path": "Assets/_Project/Scripts/AtlasSignal/AtlasSignalSystem.cs",
+          "text": "_nextSignalLogTime = Time.time + 5f;"
+        },
+        {
+          "line": 312,
+          "path": "Assets/_Project/Scripts/AtlasSignal/SignalBeacon.cs",
+          "text": "int currentFrame = Time.frameCount;"
+        },
+        {
+          "line": 957,
+          "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+          "text": "FrameIndex = (uint)math.max(0, Time.frameCount),"
+        },
+        {
+          "line": 1561,
+          "path": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
+          "text": "Time.frameCount < _nextSurfaceWeatherPerformanceWarningFrame)"
+        },
+        {
+          "line": 1571,
+          "path": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
+          "text": "_nextSurfaceWeatherPerformanceWarningFrame = Time.frameCount + SurfaceWeatherPerformanceWarningCooldownFrames;"
+        },
+        {
+          "line": 173,
+          "path": "Assets/_Project/Scripts/Atmosphere/SurfaceWeatherVfxRig.cs",
+          "text": "impulse.z = Time.time;"
+        }
+      ],
+      "files": 311,
+      "matches": 1209,
+      "topFiles": [
+        {
+          "count": 43,
+          "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs"
+        },
+        {
+          "count": 36,
+          "path": "Assets/_Project/Scripts/CrashTelemetryBuffer.cs"
+        },
+        {
+          "count": 32,
+          "path": "Assets/_Project/Scripts/SpatialAudioManager.cs"
+        },
+        {
+          "count": 23,
+          "path": "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs"
+        },
+        {
+          "count": 22,
+          "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs"
+        },
+        {
+          "count": 20,
+          "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs"
+        },
+        {
+          "count": 19,
+          "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs"
+        },
+        {
+          "count": 18,
+          "path": "Assets/_Project/Scripts/Core/InputDispatcher.cs"
+        },
+        {
+          "count": 18,
+          "path": "Assets/_Project/Scripts/HectonFloatingOrigin.cs"
+        },
+        {
+          "count": 18,
+          "path": "Assets/_Project/Scripts/ScannerTool.cs"
+        }
+      ]
+    },
+    "unityUpdateMethod": {
+      "examples": [
+        {
+          "line": 82,
+          "path": "Assets/_Project/Scripts/Editor/SubmarineDynoTunerWindow.cs",
+          "text": "private void Update()"
+        },
+        {
+          "line": 34,
+          "path": "Assets/_Project/Scripts/Editor/SumpPumpPipeGridTunerWindow.cs",
+          "text": "private void Update()"
+        },
+        {
+          "line": 85,
+          "path": "Assets/_Project/Scripts/Editor/VerletTowTunerWindow.cs",
+          "text": "private void Update()"
+        },
+        {
+          "line": 71,
+          "path": "Assets/_Project/Scripts/Physics/KCC/Editor/HydrodynamicKccTunerWindow.cs",
+          "text": "private void Update()"
+        },
+        {
+          "line": 99,
+          "path": "Assets/_Project/Scripts/SaveSystem/Editor/EntitySaveTunerWindow.cs",
+          "text": "private void Update()"
+        },
+        {
+          "line": 81,
+          "path": "Assets/_Project/Scripts/SaveSystem/Editor/VoxelSaveTunerWindow.cs",
+          "text": "private void Update()"
+        }
+      ],
+      "files": 6,
+      "matches": 6,
+      "topFiles": [
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/Editor/SubmarineDynoTunerWindow.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/Editor/SumpPumpPipeGridTunerWindow.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/Editor/VerletTowTunerWindow.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/Physics/KCC/Editor/HydrodynamicKccTunerWindow.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/SaveSystem/Editor/EntitySaveTunerWindow.cs"
+        },
+        {
+          "count": 1,
+          "path": "Assets/_Project/Scripts/SaveSystem/Editor/VoxelSaveTunerWindow.cs"
+        }
+      ]
+    }
+  },
+  "csFileCount": 1984,
+  "schema": "hecton8.polish_mandate_static_audit.v1",
+  "sourceRoot": "Assets/_Project/Scripts"
+}

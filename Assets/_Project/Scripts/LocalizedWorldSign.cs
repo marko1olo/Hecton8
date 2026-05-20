@@ -1,5 +1,6 @@
 using System;
 using Hecton8.Core;
+using Hecton8.World;
 using TMPro;
 using Unity.Mathematics;
 using UnityEngine;
@@ -218,12 +219,35 @@ namespace Hecton.Localization
                 return;
             }
 
-            _absoluteUniversePositionDouble = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(_cachedTransform.position);
+            if (!TryResolveAbsoluteAupFromRuntimeOrigin(_cachedTransform.position, out _absoluteUniversePositionDouble))
+            {
+                _hasAupPosition = false;
+                return;
+            }
+
             _absoluteUniversePosition = new Vector3(
                 (float)_absoluteUniversePositionDouble.x,
                 (float)_absoluteUniversePositionDouble.y,
                 (float)_absoluteUniversePositionDouble.z);
             _hasAupPosition = true;
+        }
+
+        private static bool TryResolveAbsoluteAupFromRuntimeOrigin(Vector3 runtimePosition, out double3 absoluteAup)
+        {
+            absoluteAup = default;
+            if (!float.IsFinite(runtimePosition.x) ||
+                !float.IsFinite(runtimePosition.y) ||
+                !float.IsFinite(runtimePosition.z))
+            {
+                return false;
+            }
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!MathGuard.IsFinite(in originAup))
+                return false;
+
+            absoluteAup = originAup.ToAbsoluteDouble3() + new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            return math.all(math.isfinite(absoluteAup));
         }
     }
 }

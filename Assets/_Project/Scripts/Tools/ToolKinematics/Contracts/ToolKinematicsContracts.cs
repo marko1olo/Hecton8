@@ -186,7 +186,7 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
         [FieldOffset(12)] public uint Frame;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public partial struct MockCarveRequestSignal : ISignal
     {
         [FieldOffset(0)] public float3 HitPoint;
@@ -197,9 +197,11 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
         [FieldOffset(36)] public float Power01;
         [FieldOffset(40)] public uint Flags;
         [FieldOffset(44)] public uint _pad0;
+        [FieldOffset(48)] public ulong _pad1;
+        [FieldOffset(56)] public ulong _pad2;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 24)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public partial struct ToolHeatSignal : ISignal
     {
         [FieldOffset(0)] public uint ToolHash;
@@ -208,9 +210,10 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
         [FieldOffset(12)] public float Energy01;
         [FieldOffset(16)] public uint Flags;
         [FieldOffset(20)] public uint _pad0;
+        [FieldOffset(24)] public ulong _pad1;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 40)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public partial struct VfxSparkRequestSignal : ISignal
     {
         [FieldOffset(0)] public float3 HitPoint;
@@ -219,6 +222,9 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
         [FieldOffset(28)] public uint ToolHash;
         [FieldOffset(32)] public float Intensity01;
         [FieldOffset(36)] public uint Frame;
+        [FieldOffset(40)] public ulong _pad0;
+        [FieldOffset(48)] public ulong _pad1;
+        [FieldOffset(56)] public ulong _pad2;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 8)]

@@ -20,7 +20,7 @@ Current raw artifact:
 
 PowerShell JSON warning: many historical `HPhi*.json` files are UTF-16. A UTF-8-only parser falsely marks them as broken. The timeseries extractor used UTF-8/UTF-16 autodetection.
 
-## Current H-Phi
+## Capture-Time H-Phi
 
 Snapshot: 2026-05-16 17:18:57 +04:00.
 
@@ -217,7 +217,7 @@ Therefore:
 
 | Claim | Status |
 |---|---|
-| Current H-Phi score improved | proven by `COMPUTE_HPHI_CURRENT_20260516_171857.json` |
+| Capture-time H-Phi score improved | proven by `COMPUTE_HPHI_CURRENT_20260516_171857.json` |
 | Old absolute budget gates are all green | false by current counters |
 | Fresh strict gate command produced an `EXIT=0`/`EXIT=1` artifact | not proven; command timed out |
 
@@ -227,7 +227,7 @@ STATUS: AUDIT COMPLETE.
 
 ## 2026-05-17 02:17 Superseding H-Phi Rebase
 
-This file's "Current H-Phi" section was current at 2026-05-16T17:18+04:00. A later static H-Phi scan now supersedes it for current-state reporting:
+This file's "Capture-Time H-Phi" section was current at 2026-05-16T17:18+04:00. A later static H-Phi scan now supersedes it for current-state reporting:
 
 `Docs/Reports/2026-05-16_COMPUTE_AUDIT/COMPUTE_HPHI_LIVE_REBASE_20260517_0217.md`
 

@@ -8,8 +8,13 @@ No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler,
 # Mass Lead Verification And Pitch Workflow
 
 Status: operating manual for agents / pre-screenshot
-Public stance: single-player-first / no co-op promise
+Public stance: single-player-first scope / proof-first public copy
 Runtime impact: none
+Product gate: `Docs/ARCHITECTURE/FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md`.
+Selected V0 route: `Docs/ARCHITECTURE/FIRST_20_MINUTES_ROUTE_BRIEF.md`
+(`Copper Wire`: swim -> resource -> collect -> craft -> save/load).
+Creator outreach may verify leads before the slice exists, but send-ready status
+requires real screenshot/clip/demo proof from that route.
 
 ## Goal
 
@@ -47,18 +52,20 @@ Never record guessed emails.
 
 ## Status Values
 
+Use the live CRM statuses from `Docs/Marketing/Data/CREATOR_VERIFICATION_TEMPLATE.csv`.
+
 | Status | Meaning |
 |---|---|
-| `RAW_PUBLIC_INDEX_NOT_CONTACT_READY` | Default scrape state. Do not contact. |
-| `VERIFYING` | Agent is checking source/profile. |
-| `VERIFIED_NOT_CONTACTED` | Official route and fit are confirmed, but no outreach sent. |
+| `VERIFY_BEFORE_CONTACT` | Candidate has enough fit to recheck official route/current activity before any send; not send approval. |
 | `NEEDS_ASSET` | Good lead, but no matching screenshot/clip/demo exists yet. |
+| `LOW_PRIORITY_VERIFY_LATER` | Archive/revisit later; do not spend route-recheck time before first assets. |
 | `DO_NOT_CONTACT` | Dead, unsafe, irrelevant, fake, stolen content, scam risk, or bad fit. |
-| `CONTACTED_BATCH_01` | First outreach sent. |
-| `FOLLOWUP_01_SENT` | One follow-up sent after 7-10 days. |
-| `RESPONDED_POSITIVE` | Interested or requested build/materials. |
-| `RESPONDED_NEGATIVE` | Declined or no fit. |
-| `COVERED` | Published/streamed/mentioned. |
+| `CONTACTED` | First outreach actually sent by a human owner and logged with `outreach_batch`, `sent_date`, `contact_route_verified_for_send`, `asset_ids_sent`, `creator_utility_score`, `send_route_class`, and matching asset/AB-009 gates where required. |
+| `REPLIED` | Reply received after a logged send; classify `reply_status_after_send`, `reply_consent_provenance`, and notes without importing it into newsletter/playtest/press routes unless explicit opt-in exists. |
+| `DECLINED` | Declined or no fit. |
+| `COVERED` | Published/streamed/mentioned after a logged send or verified inbound route; requires `coverage_url` if public coverage exists. |
+
+Future raw sprints must start in a separate raw queue or explicit sprint file. Do not add `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`, `VERIFYING`, or `VERIFIED_NOT_CONTACTED` to the live CRM without a deliberate schema migration.
 
 ## Scoring
 
@@ -75,7 +82,7 @@ Start at 0.
 | Regional market where localized pitch exists | +2 |
 | Public business contact route found | +2 |
 | High brand safety / non-toxic channel | +2 |
-| Requires paid slot only | -2 |
+| Requires paid slot only | -2 and keep `paid_creator_permission_gate = BLOCKED_NO_PAID_CREATOR_PROOF` until budget, disclosure, route, asset, and demo/Steam proof pass. |
 | Mostly shorts/reuploads/no commentary | -2 |
 | Very large unreachable creator | -2 |
 | Co-op-only audience expectation | -2 |
@@ -95,8 +102,8 @@ Every verified lead gets this structure:
 
 1. `Specific channel fit`: one sentence naming their content pattern.
 2. `HECTON-8 match`: one sentence mapping to pressure/machinery/salvage/black water/Seed Ship.
-3. `Boundary`: not a co-op promise, not a clone-war pitch.
-4. `Asset`: one real screenshot/clip/demo link.
+3. `Boundary`: proof-first scope and competitor-neutral positioning.
+4. `Asset`: one real screenshot/clip; public demo link only after Official CTA Link Activation Gate V0, and private demo/key/playtest/preview route only after recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED` plus exact access-log fields.
 5. `Ask`: one clear request.
 
 Template:
@@ -105,7 +112,7 @@ Hi [Name],
 
 Your channel fits because [specific verified content pattern].
 
-HECTON-8 is a single-player-first underwater survival game about [segment-specific hook]. This is not a "Subnautica killer" pitch and not a co-op promise.
+HECTON-8 is a single-player-first underwater survival game about [segment-specific hook]. Public scope stays inside what the current build can show, and the angle is pressure, machinery, salvage, and black-water route risk.
 
 The reason I think it might work for your audience: [one real asset-backed sentence].
 
@@ -117,7 +124,7 @@ If useful, I can send the demo/press kit when the slice is ready.
 
 ### Direct Underwater Survival
 
-"Your channel has direct Subnautica/underwater survival history, so I am not going to pitch this as a clone. HECTON-8 is aimed at the colder side of the fantasy: pressure, machinery, salvage, black-water visibility, and a base that behaves like a pressure vessel."
+"Your channel has direct underwater-survival history. HECTON-8 is aimed at the colder side of that fantasy: pressure, machinery, salvage, black-water visibility, and a base that behaves like a pressure vessel."
 
 ### Survival Route Risk
 
@@ -135,28 +142,57 @@ If useful, I can send the demo/press kit when the slice is ready.
 
 Pre-screenshot:
 
-- Verify 25 leads per agent per batch.
+- Do not run default raw-lead verification while CRM-100 has 0 raw rows.
+- Use agent time on planned asset readiness, asset-to-CRM matching, and same-day route rechecks only when a matching asset is close to send use.
 - Do not send outreach.
 - Mark `NEEDS_ASSET` if fit is good but no matching asset exists.
-- Promote only the best 50 to `VERIFIED_NOT_CONTACTED`.
+- Do not invent `VERIFIED_NOT_CONTACTED`; use the live CRM statuses in `Data/CREATOR_VERIFICATION_TEMPLATE.csv`.
+- Do not mark any lead send-ready until the First 20 Minutes route has matching real assets.
+
+Raw-lead verification reopens only through an explicit source-backed sprint requested after assets reveal a real audience gap.
 
 After first screenshots:
 
-- Send 10 critique-first creator messages to B/A candidates who tolerate WIP.
+- Prepare up to 10 critique-first creator messages for B/A candidates who tolerate WIP; send only after asset QA, creator utility 3/4+, matching asset `creator_send_gate` is open, pain-backed angles have `pain_freshness_source` and `pain_freshness_checked_at`, the send packet includes one factual `AGENCY_PROOF_CANDIDATE` plus AB-009/KPI decision-read fields if it asks about gameplay/pressure/route risk, same-day official contact-route verification, and CRM send-log fields pass. If payment is involved, the CRM row must also be `paid_creator_permission_gate = ALLOW_PAID_CREATOR_TEST_VERIFIED`.
 - Send no keys.
 - Ask for blunt visual fit, not coverage.
 
 After Steam page:
 
-- Send 20 wishlist-page pitches to verified creators.
+- Send 20 wishlist-page pitches to send-verified creators only after official route, asset-fit, creator utility, asset `creator_send_gate`, and CRM send-log gates pass. If payment is involved, require `paid_creator_permission_gate = ALLOW_PAID_CREATOR_TEST_VERIFIED`.
 - Include one asset and one reason.
 - Track replies and Steam traffic.
 
 After demo:
 
-- Send 30-50 demo/key pitches.
-- Use Steam keys only through the key policy.
+- Prepare 30-50 gated demo/key pitch rows; send them only after stable demo/review-build proof exists, recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED`, official inbox custody, exact access-log fields, disclosure, recipient route verification, creator utility/send gates, paid creator permission gate if payment is involved, and every key/send row is logged.
+- Use Steam keys only through the private access/key policy after the same recipient/batch gate passes.
 - Stop after two non-responses.
+
+## 2026-05-20 SN2 Pain-Point Fit Rules V5
+
+Status: internal routing only. Do not mention Subnautica 2 pain, EULA, bugs, co-op desync, performance variance, or missing features in creator messages.
+
+The purpose of the SN2 pain refresh is to select the proof asset that makes a creator care without turning HECTON-8 into a competitor-attack pitch.
+
+V5 currentness boundary: the 2026-05-20 official Steam API/page refresh still reads `Very Positive` globally and in English. Treat SN2-active creator rows as audience-fit evidence, not competitor weakness. If a pain-backed angle uses V4 negative-sample buckets, the send packet must name the V5 monitoring/currentness row plus the specific private pain bucket in `pain_freshness_source`, fill `pain_freshness_checked_at`, and keep `public_comparison_gate = PRIVATE_ONLY_NO_COMPETITOR_COPY` or stricter.
+
+| Creator segment | Private pain signal to answer | Required HECTON proof | Safe pitch angle |
+|---|---|---|---|
+| Direct underwater survival | SN2 owns the audience; clone fatigue and thin-loop complaints exist. | `PLAN-SHOT-001` plus `PLAN-SHOT-003` or `PLAN-CLIP-003`. | "Different emotional contract: colder, heavier, salvage under pressure." |
+| Engineering/base systems | Base-builder praise/friction means systems need visual clarity. | `PLAN-SHOT-002`, `PLAN-SHOT-005`, or `PLAN-CLIP-001`. | "Base-as-machine, gauges, seals, pumps, failure response." |
+| Horror/abyss | Atmosphere praise is strong; defensive-agency complaints make passive fear weak. | `PLAN-SHOT-006` or `PLAN-CLIP-002`. | "Instrument dread and route decisions before the reveal." |
+| Indie first-look | EA trust and AI-looking asset risk are high. | Real gameplay asset with build/source fields, no concept-looking still. | "A small honest slice, not a future-feature promise." |
+| Regional first-look | Localized pitch risk plus Steam/SN2 familiarity. | Reviewed local one-liner plus `PLAN-SHOT-001` and one base/machinery proof asset. | "Industrial underwater survival with single-player-first, proof-first scope." |
+| Systems/progression | Short-content complaints mean scenery is not enough. | A clip that shows action -> consequence -> next decision. | "Route loop, recovery, and machinery pressure." |
+
+Hard gates:
+
+- SN2 pain may choose which planned asset to send; it cannot change the message into "they failed, we fixed it."
+- Creator utility must still score 3/4+ and map to the recipient row.
+- If the only matching asset is a mood shot, do not send to gameplay-first creators.
+- If a creator's recent content is SN2-positive, assume they respect the competitor; pitch difference, not opposition.
+- If the current monitoring read remains competitor-positive, lead with HECTON-native proof and creator fit; do not pitch "players are angry" as the reason to care.
 
 ## 2026-05-19 First Human-Send Packet After Assets
 
@@ -164,12 +200,21 @@ Status: blocked until real screenshots/Steam page/demo proof exists. This is an 
 
 Use this only after:
 
+- official project inbox custody passes `Docs/Marketing/Website/ONE_PAGE_SITE_AND_PRESSKIT_PLAN.md` (`Official Project Inbox Gate V0`);
 - `PLAN-SHOT-001`, `PLAN-SHOT-003`, and one base/machinery shot pass QA;
+- the first capture session verdict is `KEEP_TESTING`, Campaign 01 verdict is `KEEP`, and AB-001/002/004/009 cold-read responses are logged if the message references screenshot, Steam, gameplay, pressure, route-risk, or proof language;
+- no asset in the packet is marked `HOLD_ASSET` or `KILL_ANGLE`;
 - every creator-facing asset in the packet has creator utility 3/4+ in `QA/MARKETING_ASSET_QA_CHECKLIST.md` and maps to the recipient's CRM row;
+- each asset metadata row has `creator_send_gate` open for that recipient segment, not just a nonzero utility score;
+- the packet has `pain_freshness_source` and `pain_freshness_checked_at` for any pain-backed angle; the source must name the current monitoring refresh, for example `Monitoring SN2 Steam API/Page Refresh V5`, plus the exact private bucket used, and the packet must include at least one factual asset with `agency_decision_proof_gate = AGENCY_PROOF_CANDIDATE`, non-empty `agency_decision_notes`, and AB-009/KPI `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision` when the message references gameplay proof, pressure decisions, route risk, threat, salvage failure, demo readiness, or first-public feedback;
 - official Steam page or presskit URL exists if the message mentions it;
 - YouTube About/site contact route is verified by the human owner where required;
-- the final email contains no co-op, clone-war, or performance claim;
-- exact sent row is logged back into `Data/CREATOR_VERIFICATION_TEMPLATE.csv`.
+- the final email contains no multiplayer-scope promise, clone-war framing, or unsupported performance claim;
+- final text passes `Docs/Marketing/Roadmap/PUBLIC_ROADMAP_LANGUAGE_AND_PROMISE_POLICY.md` Promise Lint;
+- `send_route_class` is chosen before the message is sent: `NO_LINK_CREATOR_FEEDBACK`, `PUBLIC_CTA_CREATOR`, or `PRIVATE_ACCESS_CREATOR`;
+- exact sent row is logged back into `Docs/Marketing/Data/CREATOR_VERIFICATION_TEMPLATE.csv`.
+
+CRM copy-like fields are drafting hints, not send approval. `personalized_opener`, `pitch_angle`, and `next_action` must be rechecked against Promise Lint and the live asset verdicts before paste/send.
 
 ### Wave A - Screenshot/Steam Proof, No Key
 
@@ -177,12 +222,12 @@ Ask: "Would this be a fit for future coverage or feedback when the preview slice
 
 | Send order | Creator | Current CRM gate | Required asset before send | Creator utility gate | Pitch angle | Notes |
 |---:|---|---|---|---|---|---|
-| 1 | Kage848 | `VERIFY_BEFORE_CONTACT` | `PLAN-SHOT-001`, `PLAN-SHOT-003`, Steam/presskit link | 3/4+ for direct underwater survival and salvage-route read | UNDERWATER_SURVIVAL | Hot SN2-active draft exists; human must reveal gated YouTube email. |
+| 1 | Kage848 | `VERIFY_BEFORE_CONTACT` | `PLAN-SHOT-001`, `PLAN-SHOT-003`, Steam/presskit link only after CTA activation | 3/4+ for direct underwater survival and salvage-route read | UNDERWATER_SURVIVAL | CRM/draft marks SN2-active as of 2026-05-19; recheck current channel and official contact route on send day; no outreach before required asset proof and CTA/access route gate. |
 | 2 | AldemarHD | `VERIFY_BEFORE_CONTACT` | German-ready screenshot pack | 3/4+ plus localization QA pass | REGIONAL_FIRST_LOOK | Use German draft; no auto-translated hype. |
-| 3 | Zombyra | `VERIFY_BEFORE_CONTACT` | German base/machinery screenshot | 3/4+ plus localization QA pass | REGIONAL_FIRST_LOOK | Explicit no-coop line. |
+| 3 | Zombyra | `VERIFY_BEFORE_CONTACT` | German base/machinery screenshot | 3/4+ plus localization QA pass | REGIONAL_FIRST_LOOK | Explicit single-player-first scope line. |
 | 4 | SpielbaerLP | `VERIFY_BEFORE_CONTACT` | German machinery/base shot or clip | 3/4+ plus gameplay proof, not static mood | REGIONAL_FIRST_LOOK | Long-form fit; do not send without gameplay proof. |
 | 5 | Keith Ballard | `VERIFY_BEFORE_CONTACT` | Screenshot/Steam proof and no-pressure opener | 3/4+ for underwater-survival clarity | UNDERWATER_SURVIVAL | Confirm official YouTube RSS/About first. |
-| 6 | Accurize2 | `VERIFY_BEFORE_CONTACT` | Survival screenshot plus Steam/presskit link | 3/4+ for survival route and identity | UNDERWATER_SURVIVAL | Verify official route before contact. |
+| 6 | Accurize2 | `VERIFY_BEFORE_CONTACT` | Survival screenshot plus Steam/presskit link only after CTA activation | 3/4+ for survival route and identity | UNDERWATER_SURVIVAL | Verify official route and CTA/access route gate before contact. |
 | 7 | Aavak | `NEEDS_ASSET` | Machinery/base gameplay clip | 3/4+ for base systems and visible consequence | BASE_SYSTEMS | Do not use Twitch chat/DM as cold route. |
 | 8 | Wanderbots | `NEEDS_ASSET` | Real gameplay clip, no AI-looking asset risk | 3/4+ for indie discovery and player verb | INDIE_DEMO | Confirm official contact policy and AI-asset boundary. |
 | 9 | GameEdged | `NEEDS_ASSET` | Steam page plus survival/base clip | 3/4+ for survival-route risk | SURVIVAL_ROUTE_RISK | Verify official YouTube route after asset exists. |
@@ -199,20 +244,34 @@ Append or update the CRM row with:
 ```text
 outreach_batch:
 sent_date:
-contact_route_verified:
+contact_route_verified_for_send:
 asset_ids_sent:
 creator_utility_score:
 utm_content:
 reply_deadline:
 followup_allowed: yes/no
-notes:
+reply_status_after_send:
+send_route_class:
+reply_consent_provenance:
+coverage_url:
 ```
+
+### Current Send-State Safety Check V0
+
+Snapshot expectation until the first real asset-send pass:
+
+- CRM send-log fields stay empty across all 100 rows: `outreach_batch`, `sent_date`, `contact_route_verified_for_send`, `asset_ids_sent`, `creator_utility_score`, `send_route_class`, `reply_consent_provenance`, and `reply_status_after_send`.
+- Asset metadata stays blocked for planned rows: 13 `creator_send_gate = BLOCKED_PLANNED_CAPTURE` and 13 `creator_utility_score = 0`.
+- Agency metadata remains pre-capture: exactly three planned rows are `AGENCY_PROOF_CANDIDATE` before QA (`PLAN-SHOT-006`, `PLAN-CLIP-001`, `PLAN-CLIP-003`), and no send can treat that planned status as real proof.
+- AB-009/KPI decision-read fields remain empty until a valid blind read exists. A planned candidate with `agency_decision_notes` is still not send proof without `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`.
+- Any non-empty send-log field before a named asset passes QA, `creator_send_gate` opens, pain-backed angles have source/date freshness proof, required agency proof is factual, AB-009/KPI decision-read fields exist where required, official route is rechecked, `send_route_class` is chosen, and a human owner actually sends the message is a HOLD condition, not progress.
+- Empty send fields mean "no outreach has happened yet"; they do not authorize filling drafts, sending DMs, or creating account/browser actions.
 
 One follow-up only, and only if a new asset or demo exists.
 
 ## 2026-05-19 CRM-100 Asset Unlock Map V0
 
-Current CRM state: 100 rows, 0 raw. Distribution: 23 `VERIFY_BEFORE_CONTACT`, 22 `NEEDS_ASSET`, 52 `LOW_PRIORITY_VERIFY_LATER`, 3 `DO_NOT_CONTACT`.
+CRM snapshot as of 2026-05-19: 100 rows, 0 raw. Distribution: 23 `VERIFY_BEFORE_CONTACT`, 22 `NEEDS_ASSET`, 52 `LOW_PRIORITY_VERIFY_LATER`, 3 `DO_NOT_CONTACT`. Recheck the live CSV before using this for send decisions.
 
 The next useful creator work is not more names. It is proving the planned assets below and then rechecking exact official contact routes.
 
@@ -220,9 +279,9 @@ The next useful creator work is not more names. It is proving the planned assets
 |---|---|---|---|---|
 | `PLAN-SHOT-001` Identity hero | Warm screenshot/Steam proof | Kage848, Keith Ballard, Accurize2, CohhCarnage, Dad's Gaming Addiction, Games4Kickz, Timm Plays Games | Direct underwater-survival creators need to see the project is not bright reef clone art. | QA score 10/12, Steam/presskit URL if mentioned, human contact-route reveal. |
 | `PLAN-SHOT-002` Pressure room | Base/system proof | NOOBLETS, Nerdzeitalter, Boubers, Aavak, TotalXclipse | Engineering/base-system creators need machinery, gauges, leaks, and pressure-vessel logic, not scenery. | Real gameplay state, not decorative room; official route recheck. |
-| `PLAN-SHOT-003` Salvage contact | First outreach hook | Kage848, Jade PG, GameEdged, EnterElysium, Welonz, paulsoaresjr | Survival-route creators need one readable action: tool, target, hazard, reward. | Player verb readable without caption; Steam/presskit link if used. |
+| `PLAN-SHOT-003` Salvage contact | First outreach hook | Kage848, Jade PG, GameEdged, EnterElysium, Welonz, paulsoaresjr | Survival-route creators need one readable action: tool, target, hazard, reward. | Player verb readable without caption; Steam/presskit link only after CTA activation if used. |
 | `PLAN-SHOT-004` Heavy machine | Machine fantasy proof | NOOBLETS, TotalXclipse, Aavak, BringTheParty, Nerdzeitalter | Systems audiences need heavy interaction and mass. This shot also separates HECTON-8 from generic underwater horror. | Reject if toy-like, clean sci-fi, or static prop. |
-| `PLAN-SHOT-005` Base stress | Base-as-risk proof | Aavak, TotalXclipse, Wanderbots, GameEdged, Splattercatgaming | The base must look like a pressure vessel under failure, not a cozy room. | Failure must be actionable and fair. |
+| `PLAN-SHOT-005` Base stress | Base-as-risk proof | Aavak, TotalXclipse, Wanderbots, GameEdged, Splattercatgaming | The base must look like a pressure vessel under failure with an actionable response path. | Failure must be actionable and fair. |
 | `PLAN-SHOT-006` Threat silhouette | Abyss pressure proof | Neyreyan, IGP, Insym VODS, Game Advisor, Splattercatgaming | Horror/pressure rows need dread through instruments, floodlight, and scale, not a monster-pose thumbnail. | Do not send if threat reads as random terrain or AI-looking concept. |
 | `PLAN-SHOT-007` Seed Ship signal | Narrative/system hook | Wanderbots, Welonz, Praetorian HiJynx, EnterElysium | Indie/long-form creators need a reason this is more than a survival clone. | Use only if the build shows system interference honestly. |
 | `PLAN-CLIP-001` Pressure leak decision | First gameplay proof | Aavak, TotalXclipse, GameEdged, Wanderbots, Splattercatgaming | A 10-20s clip can prove player action, consequence, and machinery better than screenshots. | No route crash, no unclear objective, no performance claim. |

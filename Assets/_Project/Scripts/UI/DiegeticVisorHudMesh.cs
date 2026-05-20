@@ -16,7 +16,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
-    public sealed class DiegeticVisorHudMesh : MonoBehaviour, IUpdatable, IPlayerSignalEventListener, IDamageReceiver
+    public sealed class DiegeticVisorHudMesh : MonoBehaviour, IUpdatable, IPlayerSignalEventListener, IDamageReceiver, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
     {
         private const int BlackBoxCapacity = 300;
         private const float DefaultDistanceMeters = 0.48f;
@@ -58,9 +58,12 @@ namespace Hecton8.UI
         private Mesh _runtimeMesh;
         private Material _runtimeMaterial;
         private Transform _cameraTransform;
+        private IPlayerRuntimeContext _cachedPlayerContext;
         private NativeArray<DiegeticHudTelemetryEntry> _blackBox;
         private int _blackBoxCursor;
         private bool _registered;
+        private bool _hotSwapListenerRegistered;
+        private bool _scalabilityListenerRegistered;
         private bool _playerSignalRegistered;
         private bool _nativeRegistered;
         private bool _blackBoxDumped;
@@ -74,7 +77,8 @@ namespace Hecton8.UI
         private int _lastStencilReference = int.MinValue;
         private int _meshHorizontalSegments = -1;
         private int _meshVerticalSegments = -1;
-        private HectonQualityTier _meshTier;
+        private int _meshQualityBucket = -1;
+        private float _cachedQualityWeight01 = 1f;
         private float _meshDistanceMeters = -1f;
         private float _meshHorizontalDegrees = -1f;
         private float _meshVerticalDegrees = -1f;
@@ -91,6 +95,9 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
+            TryRegisterScalabilityListener();
             ResolveComponents();
             ResolveCamera();
             RebuildMesh();
@@ -103,6 +110,8 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
+            TryUnregisterScalabilityListener();
             TryUnregisterTick();
             if (_playerSignalRegistered)
             {
@@ -118,6 +127,8 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
+            TryUnregisterScalabilityListener();
             TryUnregisterTick();
             DisposeBlackBox();
             ReleaseRuntimeObjects();
@@ -242,22 +253,74 @@ namespace Hecton8.UI
             return x * (27f - x2) * math.rcp(denominator);
         }
 
-        private static int ResolveSegmentCount(int authoringCount, HectonQualityTier tier, int min, int max)
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Player)
+                return;
+
+            _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+            if (visorCamera == null)
+                ResolveCamera();
+        }
+
+        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            _cachedQualityWeight01 = math.saturate(HomeostasisBrain.GlobalQualityWeight);
+            RebuildMesh();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
+        private void TryRegisterScalabilityListener()
+        {
+            if (_scalabilityListenerRegistered || !Application.isPlaying)
+                return;
+
+            ScalabilityEvents.Register(this);
+            _scalabilityListenerRegistered = true;
+        }
+
+        private void TryUnregisterScalabilityListener()
+        {
+            if (!_scalabilityListenerRegistered)
+                return;
+
+            ScalabilityEvents.Unregister(this);
+            _scalabilityListenerRegistered = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedQualityWeight01 = math.saturate(HomeostasisBrain.GlobalQualityWeight);
+        }
+
+        private static int ResolveSegmentCount(int authoringCount, float qualityWeight01, int min, int max)
         {
             int safeCount = math.clamp(authoringCount, min, max);
-            switch (tier)
-            {
-                case HectonQualityTier.Low:
-                    return math.max(min, safeCount >> 1);
-                case HectonQualityTier.Mx350:
-                    return math.max(min, (safeCount * 3) >> 2);
-                case HectonQualityTier.High:
-                    return math.min(max, safeCount + (safeCount >> 1));
-                case HectonQualityTier.Ultra:
-                    return max;
-                default:
-                    return safeCount;
-            }
+            float quality = math.saturate(math.isfinite(qualityWeight01) ? qualityWeight01 : 1f);
+            float lowToAuth = math.lerp(min, safeCount, math.saturate(quality * 2f));
+            float authToMax = math.lerp(safeCount, max, math.saturate((quality - 0.5f) * 2f));
+            float target = math.lerp(lowToAuth, authToMax, math.step(0.5f, quality));
+            return math.clamp((int)math.round(target), min, max);
         }
 
         private void ResolveComponents()
@@ -270,8 +333,9 @@ namespace Hecton8.UI
 
         private void ResolveCamera()
         {
-            if (visorCamera == null && GlobalRegistry.Player != null)
-                visorCamera = GlobalRegistry.Player.PlayerCamera;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (visorCamera == null && playerContext != null)
+                visorCamera = playerContext.PlayerCamera;
             if (visorCamera == null)
                 visorCamera = ResolveNearestParentCamera(transform);
             if (visorCamera == null)
@@ -301,10 +365,11 @@ namespace Hecton8.UI
         private void RebuildMesh()
         {
             ResolveComponents();
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            int hSegments = ResolveSegmentCount(horizontalSegments, tier, 4, 64);
-            int vSegments = ResolveSegmentCount(verticalSegments, tier, 2, 32);
-            if (IsMeshCurrent(tier, hSegments, vSegments))
+            float qualityWeight = math.saturate(_cachedQualityWeight01);
+            int qualityBucket = (int)math.round(qualityWeight * 1000f);
+            int hSegments = ResolveSegmentCount(horizontalSegments, qualityWeight, 4, 64);
+            int vSegments = ResolveSegmentCount(verticalSegments, qualityWeight, 2, 32);
+            if (IsMeshCurrent(qualityBucket, hSegments, vSegments))
             {
                 if (_meshFilter != null && _meshFilter.sharedMesh != _runtimeMesh)
                     _meshFilter.sharedMesh = _runtimeMesh;
@@ -374,7 +439,7 @@ namespace Hecton8.UI
             _runtimeMesh.triangles = _indices;
             _runtimeMesh.RecalculateBounds();
             _meshFilter.sharedMesh = _runtimeMesh;
-            _meshTier = tier;
+            _meshQualityBucket = qualityBucket;
             _meshHorizontalSegments = hSegments;
             _meshVerticalSegments = vSegments;
             _meshDistanceMeters = distanceMeters;
@@ -607,12 +672,12 @@ namespace Hecton8.UI
             _indices = null;
         }
 
-        private bool IsMeshCurrent(HectonQualityTier tier, int hSegments, int vSegments)
+        private bool IsMeshCurrent(int qualityBucket, int hSegments, int vSegments)
         {
             return _runtimeMesh != null &&
                    _meshHorizontalSegments == hSegments &&
                    _meshVerticalSegments == vSegments &&
-                   _meshTier == tier &&
+                   _meshQualityBucket == qualityBucket &&
                    math.abs(_meshDistanceMeters - distanceMeters) <= Epsilon &&
                    math.abs(_meshHorizontalDegrees - horizontalDegrees) <= Epsilon &&
                    math.abs(_meshVerticalDegrees - verticalDegrees) <= Epsilon &&
@@ -643,17 +708,18 @@ namespace Hecton8.UI
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Explicit, Size = 40)]
     public struct DiegeticHudTelemetryEntry
     {
-        public int Frame;
-        public float Power01;
-        public float Brownout01;
-        public float DamageGlitch01;
-        public float Humidity01;
-        public float LocalX;
-        public float LocalY;
-        public float LocalZ;
-        public uint Flags;
+        [FieldOffset(0)] public int Frame;
+        [FieldOffset(4)] public float Power01;
+        [FieldOffset(8)] public float Brownout01;
+        [FieldOffset(12)] public float DamageGlitch01;
+        [FieldOffset(16)] public float Humidity01;
+        [FieldOffset(20)] public float LocalX;
+        [FieldOffset(24)] public float LocalY;
+        [FieldOffset(28)] public float LocalZ;
+        [FieldOffset(32)] public uint Flags;
+        [FieldOffset(36)] public uint Reserved0;
     }
 }

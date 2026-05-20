@@ -11,11 +11,13 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     [RequireComponent(typeof(TMP_Text))]
     [AddComponentMenu("Hecton/UI/Localized TMP Auto Sizer")]
-    public sealed class LocalizedTMPAutoSizer : MonoBehaviour, ILateFrameTickable, ILocalizationLanguageChangedListener
+    public sealed class LocalizedTMPAutoSizer : MonoBehaviour, ILateFrameTickable, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         private const float CollapsedRectThreshold = 0.5f;
         private const int MaxRectRepairPasses = 4;
         private const int MaxRectRepairDepth = 4;
+        private static LocalizationManager s_cachedLocalization;
+        private static bool s_localizationColdResolved;
 
         [Header("References")]
         [Tooltip("Target TMP text. Defaults to TMP_Text on the same GameObject.")]
@@ -52,6 +54,7 @@ namespace Hecton8.UI
         private Vector2 _lastAppliedRectSize = new Vector2(-1f, -1f);
         private Vector3 _baselineLocalScale = Vector3.one;
         private bool _registeredForTick;
+        private bool _hotSwapRegistered;
 #if UNITY_EDITOR
         private bool _isEditorValidating;
 #endif
@@ -65,6 +68,8 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            CacheLocalizationCold();
+            TryRegisterHotSwapListener();
             LocalizationEvents.RegisterLanguageListener(this);
             InvalidateConfiguration();
             QueueConfigurationApply();
@@ -73,6 +78,7 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             LocalizationEvents.UnregisterLanguageListener(this);
+            TryUnregisterHotSwapListener();
             TryUnregisterFromTick();
         }
 
@@ -149,6 +155,20 @@ namespace Hecton8.UI
             QueueConfigurationApply();
         }
 
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.LocalizationRuntime)
+                return;
+
+            s_cachedLocalization = currentService as LocalizationManager;
+            s_localizationColdResolved = true;
+            InvalidateConfiguration();
+            QueueConfigurationApply();
+        }
+
         /// <inheritdoc />
         public void LateFrameTick()
         {
@@ -191,9 +211,7 @@ namespace Hecton8.UI
             CaptureDefaults();
             RepairCollapsedRectHierarchy();
 
-            GameLanguage language = Hecton8.Core.GlobalRegistry.Localization != null
-                ? Hecton8.Core.GlobalRegistry.Localization.CurrentLanguage
-                : GameLanguage.English;
+            GameLanguage language = ResolveCurrentLanguage();
             Vector2 rectSize = targetText.rectTransform != null ? targetText.rectTransform.rect.size : Vector2.zero;
             if (!_configurationDirty &&
                 _lastAppliedLanguage == language &&
@@ -257,6 +275,39 @@ namespace Hecton8.UI
         {
             _configurationApplyPending = true;
             TryRegisterForTick();
+        }
+
+        private static void CacheLocalizationCold()
+        {
+            if (s_localizationColdResolved && s_cachedLocalization != null)
+                return;
+
+            s_cachedLocalization = Hecton8.Core.GlobalRegistry.Localization;
+            s_localizationColdResolved = s_cachedLocalization != null;
+        }
+
+        private static GameLanguage ResolveCurrentLanguage()
+        {
+            CacheLocalizationCold();
+            LocalizationManager manager = s_cachedLocalization;
+            return manager != null ? manager.CurrentLanguage : GameLanguage.English;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private void RepairCollapsedRectHierarchy()
@@ -344,8 +395,7 @@ namespace Hecton8.UI
             if (text == null)
                 return;
 
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
-            GameLanguage language = manager != null ? manager.CurrentLanguage : GameLanguage.English;
+            GameLanguage language = ResolveCurrentLanguage();
             bool rtl = LocalizedMeasurementFormatter.IsRightToLeft(language);
             if (text.isRightToLeftText == rtl)
                 return;

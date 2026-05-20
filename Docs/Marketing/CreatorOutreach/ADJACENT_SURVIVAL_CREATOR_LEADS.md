@@ -3,7 +3,7 @@
 Status: raw public prospecting list / not outreach-ready
 Date: 2026-05-18
 Source class: public creator pages, public search surfaces, third-party/community references
-Public stance: HECTON-8 is single-player-first; no co-op promise
+Public stance: HECTON-8 is single-player-first with proof-first public scope
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
 ## 2026-05-17 R4 Interior Actuality Boundary
@@ -51,14 +51,14 @@ Before outreach, verify current channel, recent videos, audience fit, official c
 | Deep-ocean survival | Subnautica | Broadbent | YouTube | https://www.youtube.com/@Broadbent | English | Raft/survival challenge audience. | May prefer challenge pacing. | Deep-sea survival challenge run. |
 | Deep-ocean survival | Subnautica | Rye Games | YouTube | https://www.youtube.com/@RyeGamesOfficial | English | Survival/indie discovery. | Verify profile. | Dark survival concept discovery. |
 | Deep-ocean survival | Subnautica | Drae | YouTube | https://www.youtube.com/@Drae | English | Survival sandbox audience. | Comedy/sandbox mismatch possible. | Strange ocean tech and emergent survival. |
-| Deep-ocean survival | Subnautica | Blitz | YouTube | https://www.youtube.com/@Blitz | English | Raft/survival/crafting audience. | Broad variety; needs strong hook. | Deep-ocean survival toybox without co-op claim. |
+| Deep-ocean survival | Subnautica | Blitz | YouTube | https://www.youtube.com/@Blitz | English | Raft/survival/crafting audience. | Broad variety; needs strong hook. | Deep-ocean survival toybox with single-player-first scope. |
 | Deep-ocean survival | Subnautica | DangerouslyFunny | YouTube | https://www.youtube.com/@DangerouslyFunny | English | System exploitation survival audience. | May break systems for comedy. | Survival systems worth stress-testing. |
 | Deep-ocean survival | Subnautica | TheWaffleGalaxy | YouTube | https://www.youtube.com/@TheWaffleGalaxy | English | Longform survival/building audience. | Manual activity check needed. | Slow-burn survival progression. |
 | Deep-ocean survival | Subnautica | PaulSoaresJr | YouTube | https://www.youtube.com/@paulsoaresjr | English | Classic survival LP audience. | Older Minecraft/survival skew. | First-night survival readability. |
 | Deep-ocean survival | Subnautica | Thinknoodles | YouTube | https://www.youtube.com/@Thinknoodles | English | Subnautica/creature game audience. | Younger tone risk. | Exploration mystery, not gore. |
 | Deep-ocean survival | Subnautica | BestInSlot | YouTube | https://www.youtube.com/@BestInSlot | English | Creature/ecosystem game audience. | Creature-first angle may overshadow systems. | Abyss wildlife and scanning discovery. |
-| Undersea pressure | Barotrauma | Rimmy Downunder | YouTube | https://www.youtube.com/@RimmyDownunder | English | Barotrauma tactical chaos audience. | Co-op comedy expectation; no co-op promise. | Serious solo systems under pressure. |
-| Undersea pressure | Barotrauma | SovietWomble | YouTube | https://www.youtube.com/@SovietWomble | English | Barotrauma/co-op chaos overlap. | Very selective; co-op expectation risk. | Stressful underwater failure chains. |
+| Undersea pressure | Barotrauma | Rimmy Downunder | YouTube | https://www.youtube.com/@RimmyDownunder | English | Barotrauma tactical chaos audience. | Group-comedy expectation risk. | Serious solo systems under pressure. |
+| Undersea pressure | Barotrauma | SovietWomble | YouTube | https://www.youtube.com/@SovietWomble | English | Barotrauma/co-op chaos overlap. | Very selective; multiplayer-scope expectation risk. | Stressful underwater failure chains. |
 | Undersea pressure | Barotrauma | Criken | YouTube | https://www.youtube.com/@Criken | English | Barotrauma/surreal multiplayer chaos audience. | Comedy chaos; single-player harder sell. | Abyss horror moments and systemic disasters. |
 | Undersea pressure | Barotrauma | TomatoGaming | YouTube | https://www.youtube.com/@TomatoGaming | English | Indie survival/horror streamer audience. | Live-stream focused. | Reactive first-look horror survival. |
 | Undersea pressure | Barotrauma | Charborg | YouTube | https://www.youtube.com/@Charborg | English | Barotrauma/physics chaos adjacent. | Co-op humor expectation. | Pressure failure and improvisation. |
@@ -124,7 +124,7 @@ Before outreach, verify current channel, recent videos, audience fit, official c
 | Factory survival | Satisfactory | TotalXclipse | YouTube | https://www.youtube.com/@TotalXclipse | English | Satisfactory guide/build authority. | Factory-first. | Base build systems and progression. |
 | Factory survival | Satisfactory | ImKibitz | YouTube | https://www.youtube.com/@ImKibitz | English | Satisfactory mega-build audience. | Broad entertainment. | Visual overkill base construction. |
 | Factory survival | Satisfactory | KatherineOfSky | YouTube | https://www.youtube.com/@KatherineOfSky | English | Factorio/Satisfactory systems. | Calm longform. | Resource routing and base survival. |
-| Lab survival | Abiotic Factor | Angory Tom | YouTube | https://www.youtube.com/@AngoryTom | English | Indie survival audience. | Co-op expectation; single-player clarity. | Facility survival horror and crafting. |
+| Lab survival | Abiotic Factor | Angory Tom | YouTube | https://www.youtube.com/@AngoryTom | English | Indie survival audience. | Multiplayer-scope expectation; single-player clarity. | Facility survival horror and crafting. |
 | Lab survival | Abiotic Factor | Sips | YouTube | https://www.youtube.com/@Sips | English | Survival/base game audience. | Variety schedule unknown. | Dark facility survival sandbox. |
 | Lab survival | Abiotic Factor | Duncan | YouTube | https://www.youtube.com/@YogscastDuncan | English | Survival crafting audience. | Group/co-op skew. | Single-player systems challenge. |
 | Fishing horror | Dredge | Welyn | YouTube | https://www.youtube.com/@Welyn | English | Survival storytelling audience. | Rust-heavy. | Ocean survival story and dread. |

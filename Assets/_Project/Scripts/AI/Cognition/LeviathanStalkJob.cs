@@ -40,9 +40,11 @@ namespace Hecton8.AI.Cognition
             bool hasTrackingAnchor = hasPlayerAnchor | sonarActive;
             bool eligibleToAct = active & hasTrackingAnchor;
             float systemStress = math.saturate(math.select(0f, stimulus.SystemStress01, math.isfinite(stimulus.SystemStress01)));
-            bool lowTier =
-                (stimulus.RuntimeFlags & AlphaLeviathanStalkRuntimeFlags.MathLodLow) != 0u |
-                systemStress > 0.8f;
+            float forcedMathLod01 = math.select(0f, 1f, (stimulus.RuntimeFlags & AlphaLeviathanStalkRuntimeFlags.MathLodSurvival) != 0u);
+            float stressMathLod01 = SmoothStep01(math.saturate((systemStress - 0.62f) * math.rcp(0.38f)));
+            float mathLodPressure01 = math.max(forcedMathLod01, stressMathLod01);
+            float visualQuality01 = 1f - mathLodPressure01;
+            bool survivalMathLod = mathLodPressure01 >= 0.75f;
             bool shiftFenceActive = (stimulus.RuntimeFlags & AlphaLeviathanStalkRuntimeFlags.ShiftFenceActive) != 0u;
             bool shiftChanged = stimulus.ObservedShiftFrameId != state.LastShiftFrameId;
             AlphaLeviathanAup rawAnchor = SelectAup(stimulus.PlayerAup, stimulus.PingAup, sonarActive);
@@ -72,10 +74,10 @@ namespace Hecton8.AI.Cognition
             bool invalidAupInput = !finiteDelta | !anchorAupFinite | !leviathanAupFinite;
             bool faultedInput = invalidAupInput | invalidPersistedState;
             bool safeToAct = eligibleToAct & !faultedInput;
-            bool highTierSdf =
-                (stimulus.RuntimeFlags & AlphaLeviathanStalkRuntimeFlags.HighTierSdfContour) != 0u &
-                !lowTier &
+            bool sdfContourRequested =
+                (stimulus.RuntimeFlags & AlphaLeviathanStalkRuntimeFlags.SdfContourRequested) != 0u &
                 safeToAct;
+            float sdfQuality01 = SmoothStep01(math.saturate((visualQuality01 - 0.45f) * math.rcp(0.55f)));
 
             float3 toAnchor = NormalizeDouble3(toAnchorDouble, new float3(0f, 1f, 0f), validDelta);
             float3 awayFromAnchor = -toAnchor;
@@ -106,7 +108,9 @@ namespace Hecton8.AI.Cognition
             float radialCorrection = math.clamp((distanceMeters - ringDistance) * inverseRing, -1f, 1f);
             float3 radialSteer = toAnchor * radialCorrection;
             float3 sdfContour = NormalizeSafe(math.cross(new float3(0f, 1f, 0f), stimulus.SdfGradient), tangent);
-            float sdfWeight = math.select(0f, AlphaLeviathanStalkConstants.HighTierSdfContourWeight, highTierSdf);
+            float sdfWeight = math.select(0f, AlphaLeviathanStalkConstants.SdfContourWeight * sdfQuality01, sdfContourRequested);
+            float sdfOverkill01 = math.saturate(sdfWeight * math.rcp(math.max(AlphaLeviathanStalkConstants.SdfContourWeight, AlphaLeviathanStalkConstants.DirectionEpsilon)));
+            bool sdfContourActive = sdfWeight > AlphaLeviathanStalkConstants.DirectionEpsilon;
             float3 orbitSteer = NormalizeSafe(math.lerp(tangent + radialSteer, sdfContour + radialSteer, sdfWeight), tangent);
 
             float3 retreatSteer = NormalizeSafe(awayFromAnchor + new float3(0f, -0.2f, 0f), awayFromAnchor);
@@ -142,7 +146,7 @@ namespace Hecton8.AI.Cognition
 
             float3 previous = NormalizeSafe(statePrevious, phaseSteer);
             previous = math.select(previous, phaseSteer, shiftChanged);
-            float blend = math.select(AlphaLeviathanStalkConstants.HighTierSteeringBlend, AlphaLeviathanStalkConstants.LowTierSteeringBlend, lowTier);
+            float blend = math.lerp(AlphaLeviathanStalkConstants.PrecisionSteeringBlend, AlphaLeviathanStalkConstants.SurvivalSteeringBlend, mathLodPressure01);
             float3 desiredDirection = NormalizeSafe(math.lerp(previous, phaseSteer, blend), phaseSteer);
             float activeIntent = math.select(0f, 1f, safeToAct);
             float reportedAggression = math.select(0f, aggression, safeToAct);
@@ -151,15 +155,15 @@ namespace Hecton8.AI.Cognition
             float3 outputDirection = math.select(float3.zero, desiredDirection, safeToAct);
 
             byte flags = 0;
-            flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.LowTierRadialFallback, lowTier & safeToAct);
-            flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.SdfDiveRequested, highTierSdf);
+            flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.SurvivalRadialFallback, survivalMathLod & safeToAct);
+            flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.SdfDiveRequested, sdfContourActive);
             flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.PlayerGazeBreak, playerGazeBreak);
             flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.LightRetreat, lightRetreat);
             flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.ShiftFenceReset, shiftChanged | shiftFenceActive);
             flags = (byte)math.select(flags, flags | AlphaLeviathanTelemetryFlags.Fault, faultedInput & eligibleToAct);
             byte intentFlags = 0;
-            intentFlags = (byte)math.select(intentFlags, intentFlags | AlphaLeviathanSteeringIntentFlags.LowTierRadialFallback, lowTier & safeToAct);
-            intentFlags = (byte)math.select(intentFlags, intentFlags | AlphaLeviathanSteeringIntentFlags.SdfContourRequested, highTierSdf);
+            intentFlags = (byte)math.select(intentFlags, intentFlags | AlphaLeviathanSteeringIntentFlags.SurvivalRadialFallback, survivalMathLod & safeToAct);
+            intentFlags = (byte)math.select(intentFlags, intentFlags | AlphaLeviathanSteeringIntentFlags.SdfContourRequested, sdfContourActive);
             intentFlags = (byte)math.select(intentFlags, intentFlags | AlphaLeviathanSteeringIntentFlags.PlayerGazeBreak, playerGazeBreak);
             intentFlags = (byte)math.select(intentFlags, intentFlags | AlphaLeviathanSteeringIntentFlags.AcousticLure, safeToAct & sonarActive);
             intentFlags = (byte)math.select(intentFlags, intentFlags | AlphaLeviathanSteeringIntentFlags.LightRetreat, lightRetreat);
@@ -185,23 +189,20 @@ namespace Hecton8.AI.Cognition
             float wakeSiltIntensity = math.saturate(
                 (math.abs(radialCorrection) * 0.35f +
                  math.select(0.08f, 0.85f, phase == AlphaLeviathanStalkPhase.Charge) +
-                 math.select(0f, 0.25f, highTierSdf)) * activeIntent);
-            float visualOverkill = math.select(
-                0f,
-                AlphaLeviathanStalkConstants.HighTierVisualOverkill01,
-                highTierSdf);
-            float recommendedCadence = math.select(
-                AlphaLeviathanStalkConstants.HighTierCadenceSeconds,
-                AlphaLeviathanStalkConstants.LowTierCadenceSeconds,
-                lowTier);
+                 (0.25f * sdfOverkill01)) * activeIntent);
+            float visualOverkill = math.select(0f, AlphaLeviathanStalkConstants.VisualOverkillMax01 * sdfOverkill01, safeToAct);
+            float recommendedCadence = math.lerp(
+                AlphaLeviathanStalkConstants.PrecisionCadenceSeconds,
+                AlphaLeviathanStalkConstants.SurvivalCadenceSeconds,
+                mathLodPressure01);
             recommendedCadence = math.select(0f, recommendedCadence, safeToAct);
             float charge01 = math.select(0f, 1f, phase == AlphaLeviathanStalkPhase.Charge);
-            float saltGrowth = math.select(0f, math.select(0.03f, math.saturate(0.25f + aggression * 0.55f + sdfWeight * 0.2f), highTierSdf), safeToAct);
+            float saltGrowth = math.select(0f, math.lerp(0.03f, math.saturate(0.25f + aggression * 0.55f + sdfWeight * 0.2f), sdfOverkill01), safeToAct);
             float dentImpulse = math.saturate(charge01 * (aggression * 0.75f + math.abs(radialCorrection) * 0.25f));
-            float sssPulse = math.saturate((0.05f + charge01 * 0.8f + math.select(0f, 0.15f, highTierSdf)) * activeIntent);
-            float particleBudget = math.select(0f, math.select(0.18f, 1f, highTierSdf), safeToAct);
+            float sssPulse = math.saturate((0.05f + charge01 * 0.8f + 0.15f * sdfOverkill01) * activeIntent);
+            float particleBudget = math.select(0f, math.lerp(0.18f, 1f, sdfOverkill01), safeToAct);
             float triangleNoise = Triangle01(((float)((Frame + (uint)(index * 17)) & 1023u)) * AlphaLeviathanStalkConstants.TriangleNoiseInvPeriod + aggression);
-            float silhouetteNoise = math.select(0f, math.select(triangleNoise * 0.2f, triangleNoise, lowTier), safeToAct);
+            float silhouetteNoise = math.select(0f, math.lerp(triangleNoise, triangleNoise * 0.2f, mathLodPressure01), safeToAct);
             SteeringOutputs[index] = new AlphaLeviathanSteeringOutput
             {
                 DesiredDirection = outputDirection,
@@ -284,6 +285,13 @@ namespace Hecton8.AI.Cognition
         private static float Triangle01(float value)
         {
             return math.saturate(math.abs(math.frac(value) - 0.5f) * 2f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SmoothStep01(float value)
+        {
+            float saturated = math.saturate(value);
+            return saturated * saturated * (3f - 2f * saturated);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

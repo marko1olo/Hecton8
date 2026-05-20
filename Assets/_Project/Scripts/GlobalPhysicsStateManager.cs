@@ -1881,8 +1881,8 @@ namespace Hecton8.Physics
                     _trackedBodyIndexByInstanceId[body.GetInstanceID()] = existingBodyIndex;
                     AbsoluteUniversePosition existingAup = existingState.HasLastValidAup && IsFinite(in existingState.LastValidAup)
                         ? existingState.LastValidAup
-                        : IsFinite(body.position)
-                            ? AbsoluteUniversePosition.FromRuntimePosition(body.position)
+                        : TryResolveAupFromRuntimeOrigin(body.position, out AbsoluteUniversePosition resolvedExistingAup)
+                            ? resolvedExistingAup
                             : default;
                     WritePhysicsCullingDto(existingBodyIndex, body, in _bodyStates[existingBodyIndex], in existingAup);
                     MarkPhysicsCullingSpatialHashDirty();
@@ -2687,6 +2687,9 @@ namespace Hecton8.Physics
                 return;
             }
 
+            if (TrySchedulePendingMockSeismicShockwave(jobCount))
+                return;
+
             int candidateCount = BuildPhysicsCullingSpatialCandidates(in cameraAup, jobCount);
             if (candidateCount <= 0)
             {
@@ -2754,15 +2757,19 @@ namespace Hecton8.Physics
             if (discardResults)
                 _physicsCullingJobDiscardRequested = true;
 
-            _physicsCullingJobHandle.Complete();
+            bool shouldDiscard = _physicsCullingJobDiscardRequested;
+            bool completed = shouldDiscard
+                ? DispatcherJobSwap.TryComplete(ref _physicsCullingJobHandle, forceComplete: true)
+                : DispatcherJobSwap.TryFinalizeCompleted(ref _physicsCullingJobHandle);
+            if (!completed)
+                return;
+
             int jobCount = math.min(
                 _physicsCullingJobCount,
                 math.max(_trackedBodyCount, _physicsCullingMockBodyCount));
-            bool shouldDiscard = _physicsCullingJobDiscardRequested;
             _physicsCullingJobScheduled = false;
             _physicsCullingJobDiscardRequested = false;
             _physicsCullingJobCount = 0;
-            _physicsCullingJobHandle = default;
 
             if (shouldDiscard)
                 return;
@@ -3994,6 +4001,22 @@ namespace Hecton8.Physics
             return math.isfinite(value.LocalX) &&
                 math.isfinite(value.LocalY) &&
                 math.isfinite(value.LocalZ);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!IsFinite(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!IsFinite(in originAup))
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return IsFinite(in positionAup);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

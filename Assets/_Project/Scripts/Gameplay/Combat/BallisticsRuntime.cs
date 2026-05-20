@@ -3,9 +3,9 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
-using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -204,6 +204,23 @@ namespace Hecton8.Gameplay
         private const SystemID OwnerSystem = SystemID.Physics;
         private const ulong MutationGuardBit = 1UL << 42;
         private const uint SourceHash = 0x53483132u; // SH12
+        private const uint CsvWeaponHeaderHash = 0x6F332041u;
+        private const uint CsvWeaponMicroHash = 0x8404523Bu;
+        private const uint CsvWeaponNeedleHash = 0x88B14DC2u;
+        private const uint CsvWeaponSpikeHash = 0xBBD77415u;
+        private const uint CsvWeaponSlugHash = 0x5DD5D0DEu;
+        private const uint CsvWeaponHarpoonHash = 0x847D2648u;
+        private const uint CsvWeaponRailHash = 0x8BA3B8F9u;
+        private const uint CsvWeaponSupercavHash = 0xE2735D5Eu;
+        private const uint CsvWeaponAbyssalHash = 0x588F795Au;
+        private const uint CsvMaterialFleshHash = 0x02FC484Du;
+        private const uint CsvMaterialChitinHash = 0x12B1E2D0u;
+        private const uint CsvMaterialPlasteelHash = 0x29E22C37u;
+        private const uint CsvMaterialGlassHash = 0xF203A92Bu;
+        private const uint CsvMaterialOrganicHeavyHash = 0xC861E916u;
+        private const uint CsvMaterialBrittleHash = 0x2BEE83CFu;
+        private const uint CsvMaterialShieldedHash = 0x9700E1B1u;
+        private const uint CsvMaterialReservedHash = 0xD4B5CAFDu;
 
         private static readonly ProfilerMarker _frameMarker = new ProfilerMarker("H8.Ballistics.FrameTick");
         private static readonly ProfilerMarker _queueMarker = new ProfilerMarker("H8.Ballistics.QueueTrajectory");
@@ -245,7 +262,7 @@ namespace Hecton8.Gameplay
             if (!EnsureInitialized())
                 return false;
 
-            TryFinalizeScheduled(forceComplete: false);
+            TryFinalizeScheduledNoWait();
             return !_jobScheduled && _pendingTrajectoryCount > 0;
         }
 
@@ -262,7 +279,7 @@ namespace Hecton8.Gameplay
             bool vaultChanged = _initialized && _vault != null && !ReferenceEquals(_vault, resolvedVault);
             if (vaultChanged)
             {
-                TryFinalizeScheduled(forceComplete: true);
+                CompleteScheduledForTeardown();
                 UnlockSolverBuffers();
                 ResetTransientState();
             }
@@ -341,34 +358,21 @@ namespace Hecton8.Gameplay
         {
             using (_queueMarker.Auto())
             {
-                if (!EnsureInitialized())
-                    return false;
-
-                if (!IsFinite(origin) || !IsFinite(direction))
-                    return false;
-
-                float3 resolvedDirection = NormalizeOrDefault(ToFloat3(direction), new float3(0f, 0f, 1f));
-                float safeVelocity = math.max(0f, math.isfinite(velocity) ? velocity : 0f);
-                float safeMass = math.max(0.0001f, math.isfinite(mass) ? mass : 0.0001f);
-                if (safeVelocity <= Epsilon)
-                    return false;
-
-                NativeArray<BallisticTrajectoryDTO> writeTrajectories = ResolveWriteTrajectories();
-                if (!writeTrajectories.IsCreated || _pendingTrajectoryCount >= math.min(writeTrajectories.Length, MaxTrajectories))
-                    return false;
-
-                int index = _pendingTrajectoryCount++;
-                BallisticTrajectoryDTO trajectory = default;
-                trajectory.OriginAUP = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(origin);
-                trajectory.Direction = resolvedDirection;
-                trajectory.Velocity = safeVelocity;
-                trajectory.Mass = safeMass;
-                trajectory.WeaponHash = weaponHash;
-                trajectory.SourceEntityID = sourceEntityId;
-                trajectory.Flags = flags;
-                writeTrajectories[index] = trajectory;
-                return true;
+                return QueueResolvedTrajectoryNoMarker(
+                    origin,
+                    ToFloat3(direction),
+                    velocity,
+                    mass,
+                    weaponHash,
+                    sourceEntityId,
+                    flags);
             }
+        }
+
+        /// <summary>Returns the deterministic frame id that will be assigned to the next queued ballistic solve.</summary>
+        public static uint ResolveNextSimulationFrameCounter()
+        {
+            return unchecked(_simulationFrame + 1u);
         }
 
         /// <summary>Queues one trajectory from velocity, preserving legacy projectile facade compatibility.</summary>
@@ -383,11 +387,72 @@ namespace Hecton8.Gameplay
             if (!IsFinite(velocity))
                 return false;
 
-            float speed = velocity.magnitude;
-            if (!float.IsFinite(speed) || speed <= Epsilon)
+            float3 velocity3 = ToFloat3(velocity);
+            float speedSq = math.lengthsq(velocity3);
+            if (!math.isfinite(speedSq) || speedSq <= Epsilon)
                 return false;
 
-            return QueueTrajectoryFromRuntime(origin, velocity / speed, speed, mass, weaponHash, sourceEntityId, flags);
+            float invSpeed = math.rsqrt(math.max(speedSq, Epsilon));
+            float speed = speedSq * invSpeed;
+            using (_queueMarker.Auto())
+            {
+                return QueueResolvedTrajectoryNoMarker(
+                    origin,
+                    velocity3 * invSpeed,
+                    speed,
+                    mass,
+                    weaponHash,
+                    sourceEntityId,
+                    flags);
+            }
+        }
+
+        private static bool QueueResolvedTrajectoryNoMarker(
+            Vector3 origin,
+            float3 direction,
+            float velocity,
+            float mass,
+            uint weaponHash,
+            uint sourceEntityId,
+            uint flags)
+        {
+            if (!EnsureInitialized())
+                return false;
+
+            if (!IsFinite(origin) || !math.all(math.isfinite(direction)))
+                return false;
+
+            float3 resolvedDirection = NormalizeOrDefault(direction, new float3(0f, 0f, 1f));
+            float safeVelocity = math.max(0f, math.isfinite(velocity) ? velocity : 0f);
+            float safeMass = math.max(0.0001f, math.isfinite(mass) ? mass : 0.0001f);
+            if (safeVelocity <= Epsilon)
+                return false;
+
+            NativeArray<BallisticTrajectoryDTO> writeTrajectories = ResolveWriteTrajectories();
+            if (!writeTrajectories.IsCreated || _pendingTrajectoryCount >= math.min(writeTrajectories.Length, MaxTrajectories))
+                return false;
+
+            int index = _pendingTrajectoryCount++;
+            BallisticTrajectoryDTO trajectory = default;
+            trajectory.OriginAUP = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(origin);
+            trajectory.Direction = resolvedDirection;
+            trajectory.Velocity = safeVelocity;
+            trajectory.Mass = safeMass;
+            trajectory.WeaponHash = weaponHash;
+            trajectory.SourceEntityID = sourceEntityId;
+            trajectory.Flags = flags;
+            unsafe
+            {
+                byte* trajectoryPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(writeTrajectories);
+                if (trajectoryPtr == null)
+                    return false;
+
+                ref BallisticTrajectoryDTO trajectorySlot = ref UnsafeUtility.AsRef<BallisticTrajectoryDTO>(
+                    trajectoryPtr + (index * UnsafeUtility.SizeOf<BallisticTrajectoryDTO>()));
+                trajectorySlot = trajectory;
+            }
+
+            return true;
         }
 
         /// <summary>Registers or updates a target AABB primitive in the DataVault. Cold target-registration path.</summary>
@@ -542,20 +607,20 @@ namespace Hecton8.Gameplay
                 if (!EnsureInitialized())
                     return;
 
-                TryFinalizeScheduled(forceComplete: false);
+                TryFinalizeScheduledNoWait();
                 if (_jobScheduled || _pendingTrajectoryCount <= 0 || _primitiveCount <= 0)
                     return;
 
                 float quality = ResolveGlobalQualityWeight();
                 BallisticsTuningDTO tuning = ResolveTuning(quality);
-                NativeArray<BallisticTrajectoryDTO> readTrajectories = ResolveWriteTrajectories();
+                NativeArray<BallisticTrajectoryDTO> solverTrajectories = ResolveWriteTrajectories();
                 NativeArray<AABBPrimitiveDTO> primitives = _primitiveHandle.Resolve(_vault);
                 NativeArray<BallisticHitResultDTO> hitResults = _hitHandle.Resolve(_vault);
                 NativeArray<float> penetrationLut = _penetrationLutHandle.Resolve(_vault);
                 NativeArray<BallisticsTelemetryEntry> telemetry = _telemetryHandle.Resolve(_vault);
                 NativeArray<BallisticsCountersDTO> counters = _counterHandle.Resolve(_vault);
                 NativeArray<BallisticImpactVfxDTO> impactVfx = _impactVfxHandle.Resolve(_vault);
-                if (!readTrajectories.IsCreated ||
+                if (!solverTrajectories.IsCreated ||
                     !primitives.IsCreated ||
                     !hitResults.IsCreated ||
                     !penetrationLut.IsCreated ||
@@ -564,11 +629,11 @@ namespace Hecton8.Gameplay
                     !impactVfx.IsCreated)
                     return;
 
-                int trajectoryCount = math.min(_pendingTrajectoryCount, math.min(readTrajectories.Length, hitResults.Length));
+                int trajectoryCount = math.min(_pendingTrajectoryCount, math.min(solverTrajectories.Length, hitResults.Length));
                 if (trajectoryCount <= 0)
                     return;
 
-                if (!TryLockSolverBuffers(ResolveReadBufferId()))
+                if (!TryLockSolverBuffers(ResolveWriteBufferId()))
                     return;
 
                 _activeReadCount = trajectoryCount;
@@ -585,7 +650,7 @@ namespace Hecton8.Gameplay
                 ClearCounter(counters, frame, quality, activeBufferId);
                 BallisticIntersectionJob intersectionJob = new BallisticIntersectionJob
                 {
-                    Trajectories = readTrajectories,
+                    Trajectories = solverTrajectories,
                     Primitives = primitives,
                     PenetrationLut = penetrationLut,
                     HitResults = hitResults,
@@ -641,13 +706,13 @@ namespace Hecton8.Gameplay
         /// <summary>Non-blocking late-frame finalization; only completes already-finished work.</summary>
         public static void LateFrameTick()
         {
-            TryFinalizeScheduled(forceComplete: false);
+            TryFinalizeScheduledNoWait();
         }
 
         /// <summary>Completes outstanding work only during teardown/simulation barrier ownership.</summary>
         public static void Shutdown()
         {
-            TryFinalizeScheduled(forceComplete: true);
+            CompleteScheduledForTeardown();
             UnlockSolverBuffers();
             _initialized = false;
             _vault = null;
@@ -682,14 +747,24 @@ namespace Hecton8.Gameplay
             if (!EnsureInitialized() || _jobScheduled)
                 return false;
 
-            NativeArray<BallisticsTuningDTO> buffer = _tuningHandle.Resolve(_vault);
-            if (!buffer.IsCreated || buffer.Length <= 0)
+            if (!_vault.TryAcquireMutationGuard(MutationGuardBit))
                 return false;
 
-            BallisticsTuningDTO sanitized = SanitizeTuning(tuning);
-            sanitized.Revision = tuning.Revision + 1u;
-            buffer[0] = sanitized;
-            return true;
+            try
+            {
+                NativeArray<BallisticsTuningDTO> buffer = _tuningHandle.Resolve(_vault);
+                if (!buffer.IsCreated || buffer.Length <= 0)
+                    return false;
+
+                BallisticsTuningDTO sanitized = SanitizeTuning(tuning);
+                sanitized.Revision = tuning.Revision + 1u;
+                buffer[0] = sanitized;
+                return true;
+            }
+            finally
+            {
+                _vault.ReleaseMutationGuard(MutationGuardBit);
+            }
         }
 
         /// <summary>Cold Burst mock used to profile the solver without player or AI dependencies.</summary>
@@ -698,31 +773,57 @@ namespace Hecton8.Gameplay
             if (!EnsureInitialized() || _jobScheduled)
                 return false;
 
-            NativeArray<BallisticTrajectoryDTO> trajectories = ResolveWriteTrajectories();
-            NativeArray<AABBPrimitiveDTO> primitives = _primitiveHandle.Resolve(_vault);
-            if (!trajectories.IsCreated || !primitives.IsCreated)
+            if (!_vault.TryAcquireMutationGuard(MutationGuardBit))
                 return false;
 
-            int safeTrajectoryCount = math.clamp(trajectoryCount, 1, math.min(trajectories.Length, MaxTrajectories));
-            int safePrimitiveCount = math.clamp(primitiveCount, 1, math.min(primitives.Length, MaxAabbPrimitives));
-            BallisticsTuningDTO tuning = ResolveTuning(ResolveGlobalQualityWeight());
-            GenerateMockBallisticsJob job = new GenerateMockBallisticsJob
+            BufferID writeBufferId = ResolveWriteBufferId();
+            bool trajectoriesLocked = false;
+            bool primitivesLocked = false;
+            try
             {
-                Trajectories = trajectories,
-                Primitives = primitives,
-                TrajectoryCount = safeTrajectoryCount,
-                PrimitiveCount = safePrimitiveCount,
-                GridSpacingMeters = math.max(0.5f, tuning.MockGridSpacingMeters),
-                MockOriginAUP = HectonFloatingOrigin.CurrentTotalOffsetDouble,
-                Frame = ++_simulationFrame
-            };
+                trajectoriesLocked = _vault.TryLockBuffer(writeBufferId, OwnerSystem);
+                if (!trajectoriesLocked)
+                    return false;
 
-            JobHandle handle = job.Schedule(math.max(safeTrajectoryCount, safePrimitiveCount), 64);
-            H8Memory.RegisterActiveJob(OwnerSystem, handle);
-            handle.Complete(); // COLD SYNC JOB: editor/manual mock injection before profiling solver.
-            _pendingTrajectoryCount = safeTrajectoryCount;
-            _primitiveCount = safePrimitiveCount;
-            return true;
+                primitivesLocked = _vault.TryLockBuffer(BallisticsVaultBufferIds.AabbPrimitives, OwnerSystem);
+                if (!primitivesLocked)
+                    return false;
+
+                NativeArray<BallisticTrajectoryDTO> trajectories = ResolveWriteTrajectories();
+                NativeArray<AABBPrimitiveDTO> primitives = _primitiveHandle.Resolve(_vault);
+                if (!trajectories.IsCreated || !primitives.IsCreated)
+                    return false;
+
+                int safeTrajectoryCount = math.clamp(trajectoryCount, 1, math.min(trajectories.Length, MaxTrajectories));
+                int safePrimitiveCount = math.clamp(primitiveCount, 1, math.min(primitives.Length, MaxAabbPrimitives));
+                BallisticsTuningDTO tuning = ResolveTuning(ResolveGlobalQualityWeight());
+                GenerateMockBallisticsJob job = new GenerateMockBallisticsJob
+                {
+                    Trajectories = trajectories,
+                    Primitives = primitives,
+                    TrajectoryCount = safeTrajectoryCount,
+                    PrimitiveCount = safePrimitiveCount,
+                    GridSpacingMeters = math.max(0.5f, tuning.MockGridSpacingMeters),
+                    MockOriginAUP = HectonFloatingOrigin.CurrentTotalOffsetDouble,
+                    Frame = ++_simulationFrame
+                };
+
+                JobHandle handle = job.Schedule(math.max(safeTrajectoryCount, safePrimitiveCount), 64);
+                H8Memory.RegisterActiveJob(OwnerSystem, handle);
+                DispatcherJobFence.TryComplete(ref handle, forceComplete: true); // COLD SYNC JOB: editor/manual mock injection before profiling solver.
+                _pendingTrajectoryCount = safeTrajectoryCount;
+                _primitiveCount = safePrimitiveCount;
+                _activeReadCount = 0;
+                return true;
+            }
+            finally
+            {
+                if (primitivesLocked)
+                    _vault.TryUnlockBuffer(BallisticsVaultBufferIds.AabbPrimitives, OwnerSystem);
+                if (trajectoriesLocked)
+                    _vault.TryUnlockBuffer(writeBufferId, OwnerSystem);
+                _vault.ReleaseMutationGuard(MutationGuardBit);
+            }
         }
 
         /// <summary>Cold CSV loader for the 8x8 weapon/material penetration matrix.</summary>
@@ -731,29 +832,71 @@ namespace Hecton8.Gameplay
             if (!EnsureInitialized() || _jobScheduled || string.IsNullOrEmpty(csvPath) || !File.Exists(csvPath))
                 return false;
 
-            NativeArray<byte> scratch = _csvScratchHandle.Resolve(_vault);
-            NativeArray<float> lut = _penetrationLutHandle.Resolve(_vault);
-            if (!scratch.IsCreated || !lut.IsCreated)
-                return false;
-
-            int bytesRead = 0;
-            using (FileStream stream = File.OpenRead(csvPath))
+            bool scratchLocked = false;
+            bool lutLocked = false;
+            bool mutationGuarded = false;
+            try
             {
-                while (bytesRead < scratch.Length)
-                {
-                    int value = stream.ReadByte();
-                    if (value < 0)
-                        break;
+                scratchLocked = _vault.TryLockBuffer(BallisticsVaultBufferIds.CsvScratch, OwnerSystem);
+                if (!scratchLocked)
+                    return false;
 
-                    scratch[bytesRead++] = (byte)value;
+                lutLocked = _vault.TryLockBuffer(BallisticsVaultBufferIds.PenetrationLut, OwnerSystem);
+                if (!lutLocked)
+                    return false;
+
+                NativeArray<byte> scratch = _csvScratchHandle.Resolve(_vault);
+                NativeArray<float> lut = _penetrationLutHandle.Resolve(_vault);
+                if (!scratch.IsCreated || !lut.IsCreated || scratch.Length <= 0)
+                    return false;
+
+                FileInfo info = new FileInfo(csvPath);
+                if (!info.Exists || info.Length <= 0L || info.Length > scratch.Length)
+                    return false;
+
+                unsafe
+                {
+                    byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(scratch);
+                    if (ptr == null)
+                        return false;
+
+                    int bytesRead = 0;
+                    using (FileStream stream = new FileStream(csvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+                    {
+                        while (bytesRead < scratch.Length)
+                        {
+                            int chunk = stream.Read(new Span<byte>(ptr + bytesRead, scratch.Length - bytesRead));
+                            if (chunk <= 0)
+                                break;
+
+                            bytesRead += chunk;
+                        }
+                    }
+
+                    mutationGuarded = _vault.TryAcquireMutationGuard(MutationGuardBit);
+                    if (!mutationGuarded)
+                        return false;
+
+                    ReadOnlySpan<byte> bytes = new ReadOnlySpan<byte>(ptr, bytesRead);
+                    return ApplyPenetrationCsvBytes(bytes, lut);
                 }
             }
-
-            unsafe
+            catch (IOException)
             {
-                byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(scratch);
-                ReadOnlySpan<byte> bytes = new ReadOnlySpan<byte>(ptr, bytesRead);
-                return ApplyPenetrationCsvBytes(bytes, lut);
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            finally
+            {
+                if (mutationGuarded)
+                    _vault.ReleaseMutationGuard(MutationGuardBit);
+                if (lutLocked)
+                    _vault.TryUnlockBuffer(BallisticsVaultBufferIds.PenetrationLut, OwnerSystem);
+                if (scratchLocked)
+                    _vault.TryUnlockBuffer(BallisticsVaultBufferIds.CsvScratch, OwnerSystem);
             }
         }
 
@@ -763,12 +906,30 @@ namespace Hecton8.Gameplay
             if (!lut.IsCreated || lut.Length < PenetrationLutLength || bytes.Length <= 0)
                 return false;
 
-            int row = 0;
+            Span<float> parsedLut = stackalloc float[PenetrationLutLength];
+            for (int i = 0; i < PenetrationLutLength; i++)
+                parsedLut[i] = lut[i];
+
+            int sequentialRow = 0;
+            int rowsParsed = 0;
+            int currentRow = -1;
             int col = 0;
             int tokenStart = 0;
+            int header0 = 0;
+            int header1 = 1;
+            int header2 = 2;
+            int header3 = 3;
+            int header4 = 4;
+            int header5 = 5;
+            int header6 = 6;
+            int header7 = 7;
             bool firstTokenInLine = true;
             bool parsedAny = false;
             bool headerLine = false;
+            bool hasHeaderMap = false;
+            bool invalidHeader = false;
+            bool invalidData = false;
+            int mappedHeaderColumns = 0;
 
             for (int i = 0; i <= bytes.Length; i++)
             {
@@ -780,42 +941,95 @@ namespace Hecton8.Gameplay
                 ReadOnlySpan<byte> token = TrimAscii(bytes.Slice(tokenStart, i - tokenStart));
                 tokenStart = i + 1;
                 if (c == (byte)'\r' && i + 1 < bytes.Length && bytes[i + 1] == (byte)'\n')
+                {
                     tokenStart = i + 2;
+                    i++;
+                }
 
                 if (token.Length > 0)
                 {
-                    uint _ = HashFnv1aLower(token);
+                    uint tokenHash = HashFnv1aLower(token);
                     if (firstTokenInLine && !StartsNumeric(token))
                     {
+                        int namedRow = ResolveWeaponCsvIndex(tokenHash);
+                        if (namedRow >= 0)
+                        {
+                            currentRow = namedRow;
+                            headerLine = false;
+                        }
+                        else
+                        {
+                            headerLine = true;
+                            currentRow = -1;
+                        }
+
                         firstTokenInLine = false;
                         continue;
                     }
 
-                    if (TryParseFloat(token, out float value))
+                    if (headerLine)
                     {
-                        if (!headerLine && row < 8 && col < 8)
+                        int materialIndex = ResolveMaterialCsvIndex(tokenHash);
+                        if (materialIndex >= 0 && col < 8)
                         {
-                            lut[(row * 8) + col] = math.max(0f, value);
-                            parsedAny = true;
-                            col++;
+                            switch (col)
+                            {
+                                case 0: header0 = materialIndex; break;
+                                case 1: header1 = materialIndex; break;
+                                case 2: header2 = materialIndex; break;
+                                case 3: header3 = materialIndex; break;
+                                case 4: header4 = materialIndex; break;
+                                case 5: header5 = materialIndex; break;
+                                case 6: header6 = materialIndex; break;
+                                default: header7 = materialIndex; break;
+                            }
+
+                            hasHeaderMap = true;
+                            mappedHeaderColumns++;
                         }
+                        else if (col < 8)
+                        {
+                            invalidHeader = true;
+                        }
+
+                        col++;
                     }
-                    else if (row == 0 && !parsedAny)
+                    else if (TryParseFloat(token, out float value))
+                    {
+                        int targetRow = currentRow >= 0 ? currentRow : sequentialRow;
+                        int targetCol = hasHeaderMap
+                            ? ResolveHeaderMaterialIndex(col, header0, header1, header2, header3, header4, header5, header6, header7)
+                            : col;
+                        if (targetRow < 8 && targetCol < 8)
+                        {
+                            parsedLut[(targetRow * 8) + targetCol] = math.max(0f, value);
+                            parsedAny = true;
+                        }
+
+                        col++;
+                    }
+                    else if (sequentialRow == 0 && !parsedAny)
                     {
                         headerLine = true;
+                    }
+                    else
+                    {
+                        invalidData = true;
                     }
                 }
 
                 if (c == (byte)'\n' || c == (byte)'\r')
                 {
-                    if (!headerLine && (col > 0 || parsedAny))
+                    if (!headerLine && col > 0)
                     {
-                        row++;
-                        if (row >= 8)
+                        sequentialRow++;
+                        rowsParsed++;
+                        if (rowsParsed >= 8)
                             break;
                     }
 
                     col = 0;
+                    currentRow = -1;
                     firstTokenInLine = true;
                     headerLine = false;
                 }
@@ -825,7 +1039,13 @@ namespace Hecton8.Gameplay
                 }
             }
 
-            return parsedAny;
+            if (!parsedAny || rowsParsed < 8 || invalidHeader || invalidData || (hasHeaderMap && mappedHeaderColumns < 8))
+                return false;
+
+            for (int i = 0; i < PenetrationLutLength; i++)
+                lut[i] = parsedLut[i];
+
+            return true;
         }
 
         internal static bool TryGetDebugBuffers(
@@ -843,7 +1063,7 @@ namespace Hecton8.Gameplay
             if (!EnsureInitialized())
                 return false;
 
-            TryFinalizeScheduled(forceComplete: false);
+            TryFinalizeScheduledNoWait();
             if (_jobScheduled)
                 return false;
 
@@ -866,7 +1086,7 @@ namespace Hecton8.Gameplay
             if (!EnsureInitialized())
                 return false;
 
-            TryFinalizeScheduled(forceComplete: false);
+            TryFinalizeScheduledNoWait();
             if (_jobScheduled)
                 return false;
 
@@ -882,17 +1102,30 @@ namespace Hecton8.Gameplay
             return frame != 0u;
         }
 
-        private static void TryFinalizeScheduled(bool forceComplete)
+        private static void TryFinalizeScheduledNoWait()
         {
             if (!_jobScheduled)
                 return;
 
-            bool completed = forceComplete
-                ? DispatcherJobSwap.TryComplete(ref _activeHandle, forceComplete: true)
-                : DispatcherJobSwap.TryFinalizeCompleted(ref _activeHandle);
-            if (!completed)
+            if (!DispatcherJobSwap.TryFinalizeCompleted(ref _activeHandle))
                 return;
 
+            FinishScheduledCompletion();
+        }
+
+        private static void CompleteScheduledForTeardown()
+        {
+            if (!_jobScheduled)
+                return;
+
+            if (!DispatcherJobSwap.TryComplete(ref _activeHandle, forceComplete: true))
+                return;
+
+            FinishScheduledCompletion();
+        }
+
+        private static void FinishScheduledCompletion()
+        {
             _jobScheduled = false;
             UnlockSolverBuffers();
             double elapsedUs =
@@ -1009,7 +1242,7 @@ namespace Hecton8.Gameplay
             {
                 for (int material = 0; material < 8; material++)
                 {
-                    float weaponScalar = math.lerp(0.55f, 1.4f, weapon / 7f);
+                    float weaponScalar = math.lerp(0.55f, 1.4f, weapon * 0.14285715f);
                     float materialScalar = 1f - (material * 0.075f);
                     lut[(weapon * 8) + material] = math.max(0.08f, weaponScalar * materialScalar);
                 }
@@ -1053,8 +1286,8 @@ namespace Hecton8.Gameplay
             value.MaxRangeMeters = math.clamp(math.isfinite(value.MaxRangeMeters) ? value.MaxRangeMeters : 120f, 0.25f, 2000f);
             value.FloraBaseVelocity = math.clamp(math.isfinite(value.FloraBaseVelocity) ? value.FloraBaseVelocity : 28f, 0.25f, 400f);
             value.FloraSpikeMassKg = math.clamp(math.isfinite(value.FloraSpikeMassKg) ? value.FloraSpikeMassKg : FloraSpikeMassKg, 0.0001f, 10f);
-            value.GlobalQualityWeight = math.saturate(math.isfinite(value.GlobalQualityWeight) ? value.GlobalQualityWeight : ResolveGlobalQualityWeight());
-            value.LimbAdmissionFloor = math.saturate(math.isfinite(value.LimbAdmissionFloor) ? value.LimbAdmissionFloor : 0.25f);
+            value.GlobalQualityWeight = SanitizeQualityWeight(math.isfinite(value.GlobalQualityWeight) ? value.GlobalQualityWeight : ResolveGlobalQualityWeight());
+            value.LimbAdmissionFloor = math.clamp(math.isfinite(value.LimbAdmissionFloor) ? value.LimbAdmissionFloor : 0.25f, 0f, 0.9f);
             value.MockGridSpacingMeters = math.clamp(math.isfinite(value.MockGridSpacingMeters) ? value.MockGridSpacingMeters : 1.4f, 0.1f, 20f);
             return value;
         }
@@ -1078,7 +1311,7 @@ namespace Hecton8.Gameplay
             return ResolveWriteTrajectories();
         }
 
-        private static BufferID ResolveReadBufferId()
+        private static BufferID ResolveWriteBufferId()
         {
             return (_writeTrajectoryBufferIndex & 1) == 0
                 ? BallisticsVaultBufferIds.TrajectoriesA
@@ -1092,33 +1325,53 @@ namespace Hecton8.Gameplay
                 : BallisticsVaultBufferIds.TrajectoriesB;
         }
 
-        private static bool TryLockSolverBuffers(BufferID readBufferId)
+        private static bool TryLockSolverBuffers(BufferID trajectoryBufferId)
         {
             if (_solverBuffersLocked)
                 return true;
 
-            bool locked =
-                _vault.TryLockBuffer(readBufferId, OwnerSystem) &&
-                _vault.TryLockBuffer(BallisticsVaultBufferIds.AabbPrimitives, OwnerSystem) &&
-                _vault.TryLockBuffer(BallisticsVaultBufferIds.HitResults, OwnerSystem) &&
-                _vault.TryLockBuffer(BallisticsVaultBufferIds.ImpactVfx, OwnerSystem) &&
-                _vault.TryLockBuffer(BallisticsVaultBufferIds.PenetrationLut, OwnerSystem) &&
-                _vault.TryLockBuffer(BallisticsVaultBufferIds.TelemetryRing, OwnerSystem) &&
-                _vault.TryLockBuffer(BallisticsVaultBufferIds.Counters, OwnerSystem);
-            if (!locked)
+            bool trajectoryLocked = false;
+            bool primitivesLocked = false;
+            bool hitsLocked = false;
+            bool vfxLocked = false;
+            bool lutLocked = false;
+            bool telemetryLocked = false;
+            bool countersLocked = false;
+            try
             {
-                _vault.TryUnlockBuffer(BallisticsVaultBufferIds.Counters, OwnerSystem);
-                _vault.TryUnlockBuffer(BallisticsVaultBufferIds.TelemetryRing, OwnerSystem);
-                _vault.TryUnlockBuffer(BallisticsVaultBufferIds.PenetrationLut, OwnerSystem);
-                _vault.TryUnlockBuffer(BallisticsVaultBufferIds.ImpactVfx, OwnerSystem);
-                _vault.TryUnlockBuffer(BallisticsVaultBufferIds.HitResults, OwnerSystem);
-                _vault.TryUnlockBuffer(BallisticsVaultBufferIds.AabbPrimitives, OwnerSystem);
-                _vault.TryUnlockBuffer(readBufferId, OwnerSystem);
-                return false;
-            }
+                trajectoryLocked = _vault.TryLockBuffer(trajectoryBufferId, OwnerSystem);
+                primitivesLocked = trajectoryLocked && _vault.TryLockBuffer(BallisticsVaultBufferIds.AabbPrimitives, OwnerSystem);
+                hitsLocked = primitivesLocked && _vault.TryLockBuffer(BallisticsVaultBufferIds.HitResults, OwnerSystem);
+                vfxLocked = hitsLocked && _vault.TryLockBuffer(BallisticsVaultBufferIds.ImpactVfx, OwnerSystem);
+                lutLocked = vfxLocked && _vault.TryLockBuffer(BallisticsVaultBufferIds.PenetrationLut, OwnerSystem);
+                telemetryLocked = lutLocked && _vault.TryLockBuffer(BallisticsVaultBufferIds.TelemetryRing, OwnerSystem);
+                countersLocked = telemetryLocked && _vault.TryLockBuffer(BallisticsVaultBufferIds.Counters, OwnerSystem);
+                if (!countersLocked)
+                    return false;
 
-            _solverBuffersLocked = true;
-            return true;
+                _solverBuffersLocked = true;
+                return true;
+            }
+            finally
+            {
+                if (!_solverBuffersLocked)
+                {
+                    if (countersLocked)
+                        _vault.TryUnlockBuffer(BallisticsVaultBufferIds.Counters, OwnerSystem);
+                    if (telemetryLocked)
+                        _vault.TryUnlockBuffer(BallisticsVaultBufferIds.TelemetryRing, OwnerSystem);
+                    if (lutLocked)
+                        _vault.TryUnlockBuffer(BallisticsVaultBufferIds.PenetrationLut, OwnerSystem);
+                    if (vfxLocked)
+                        _vault.TryUnlockBuffer(BallisticsVaultBufferIds.ImpactVfx, OwnerSystem);
+                    if (hitsLocked)
+                        _vault.TryUnlockBuffer(BallisticsVaultBufferIds.HitResults, OwnerSystem);
+                    if (primitivesLocked)
+                        _vault.TryUnlockBuffer(BallisticsVaultBufferIds.AabbPrimitives, OwnerSystem);
+                    if (trajectoryLocked)
+                        _vault.TryUnlockBuffer(trajectoryBufferId, OwnerSystem);
+                }
+            }
         }
 
         private static void UnlockSolverBuffers()
@@ -1154,13 +1407,12 @@ namespace Hecton8.Gameplay
 
         private static float ResolveGlobalQualityWeight()
         {
-            float quality = HomeostasisBrain.GlobalQualityWeight;
-            return math.saturate(math.isfinite(quality) ? quality : 1f);
+            return SanitizeQualityWeight(HomeostasisBrain.GlobalQualityWeight);
         }
 
         private static int ResolveDamageSignalBudget(float quality)
         {
-            float smoothed = Smooth01(quality);
+            float smoothed = SmoothQualityWeight(quality);
             return math.clamp(
                 (int)math.round(math.lerp(LowQualityDamageSignalsPerSolve, MaxDamageSignalsPerSolve, smoothed)),
                 LowQualityDamageSignalsPerSolve,
@@ -1210,6 +1462,19 @@ namespace Hecton8.Gameplay
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static float SanitizeQualityWeight(float value)
+        {
+            return math.saturate(math.isfinite(value) ? value : 0f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static float SmoothQualityWeight(float value)
+        {
+            float t = SanitizeQualityWeight(value);
+            return t * t * (3f - (2f * t));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static quaternion NormalizeOrIdentity(quaternion value)
         {
             float lengthSq = math.lengthsq(value.value);
@@ -1240,6 +1505,67 @@ namespace Hecton8.Gameplay
 
             byte c = token[0];
             return (c >= (byte)'0' && c <= (byte)'9') || c == (byte)'-' || c == (byte)'+' || c == (byte)'.';
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int ResolveWeaponCsvIndex(uint hash)
+        {
+            switch (hash)
+            {
+                case CsvWeaponMicroHash: return 0;
+                case CsvWeaponNeedleHash: return 1;
+                case CsvWeaponSpikeHash: return 2;
+                case CsvWeaponSlugHash: return 3;
+                case CsvWeaponHarpoonHash: return 4;
+                case CsvWeaponRailHash: return 5;
+                case CsvWeaponSupercavHash: return 6;
+                case CsvWeaponAbyssalHash: return 7;
+                case CsvWeaponHeaderHash: return -2;
+                default: return -1;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int ResolveMaterialCsvIndex(uint hash)
+        {
+            switch (hash)
+            {
+                case CsvMaterialFleshHash: return 0;
+                case CsvMaterialChitinHash: return 1;
+                case CsvMaterialPlasteelHash: return 2;
+                case CsvMaterialGlassHash: return 3;
+                case CsvMaterialOrganicHeavyHash: return 4;
+                case CsvMaterialBrittleHash: return 5;
+                case CsvMaterialShieldedHash: return 6;
+                case CsvMaterialReservedHash: return 7;
+                default: return -1;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int ResolveHeaderMaterialIndex(
+            int col,
+            int header0,
+            int header1,
+            int header2,
+            int header3,
+            int header4,
+            int header5,
+            int header6,
+            int header7)
+        {
+            switch (col)
+            {
+                case 0: return header0;
+                case 1: return header1;
+                case 2: return header2;
+                case 3: return header3;
+                case 4: return header4;
+                case 5: return header5;
+                case 6: return header6;
+                case 7: return header7;
+                default: return col;
+            }
         }
 
         private static bool TryParseFloat(ReadOnlySpan<byte> token, out float value)
@@ -1286,7 +1612,7 @@ namespace Hecton8.Gameplay
             if (!any)
                 return false;
 
-            value = sign * (whole + (fraction / math.max(divisor, 1f)));
+            value = sign * (whole + (fraction * math.rcp(math.max(divisor, 1f))));
             return math.isfinite(value);
         }
 
@@ -1321,12 +1647,17 @@ namespace Hecton8.Gameplay
 
         public void Execute(int index)
         {
+            int trajectoryStride = UnsafeUtility.SizeOf<BallisticTrajectoryDTO>();
+            int primitiveStride = UnsafeUtility.SizeOf<AABBPrimitiveDTO>();
+            byte* trajectoryPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(Trajectories);
+            byte* primitivePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(Primitives);
+
             if ((uint)index < (uint)PrimitiveCount)
             {
                 float spacing = math.max(0.5f, GridSpacingMeters);
-                int x = index % 16;
-                int y = (index / 16) % 8;
-                int z = index / 128;
+                int x = index & 15;
+                int y = (index >> 4) & 7;
+                int z = index >> 7;
                 AABBPrimitiveDTO primitive = default;
                 primitive.CenterAUP = MockOriginAUP + new double3((x - 8) * spacing, (y - 4) * spacing, 16.0 + (z * spacing));
                 primitive.HalfExtents = new float3(0.32f, 0.46f, 0.32f);
@@ -1337,7 +1668,8 @@ namespace Hecton8.Gameplay
                 primitive.Flags = AABBPrimitiveFlags.Active | AABBPrimitiveFlags.Root | AABBPrimitiveFlags.Mock;
                 primitive.DamageMultiplier = 1f;
                 primitive.ArmorScalar = 1f;
-                Primitives[index] = primitive;
+                ref AABBPrimitiveDTO primitiveSlot = ref UnsafeUtility.AsRef<AABBPrimitiveDTO>(primitivePtr + (index * primitiveStride));
+                primitiveSlot = primitive;
             }
 
             if ((uint)index < (uint)TrajectoryCount)
@@ -1346,13 +1678,16 @@ namespace Hecton8.Gameplay
                 float lateral = (lane - 15.5f) * 0.18f;
                 BallisticTrajectoryDTO trajectory = default;
                 trajectory.OriginAUP = MockOriginAUP + new double3(lateral, -1.2, -14.0);
-                trajectory.Direction = math.normalize(new float3(lateral * -0.02f, 0.03f * ((index & 3) - 1), 1f));
+                trajectory.Direction = BallisticsRuntime.NormalizeOrDefault(
+                    new float3(lateral * -0.02f, 0.03f * ((index & 3) - 1), 1f),
+                    new float3(0f, 0f, 1f));
                 trajectory.Velocity = 84f + ((index & 15) * 0.75f);
                 trajectory.Mass = 0.018f;
                 trajectory.WeaponHash = BallisticWeaponHashes.MockNeedle + (uint)(index & 7);
                 trajectory.SourceEntityID = 0x53484D4Fu;
                 trajectory.Flags = BallisticTrajectoryFlags.Mock;
-                Trajectories[index] = trajectory;
+                ref BallisticTrajectoryDTO trajectorySlot = ref UnsafeUtility.AsRef<BallisticTrajectoryDTO>(trajectoryPtr + (index * trajectoryStride));
+                trajectorySlot = trajectory;
             }
         }
     }
@@ -1394,9 +1729,12 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            float quality = Smooth01(GlobalQualityWeight);
+            float quality = BallisticsRuntime.SmoothQualityWeight(GlobalQualityWeight);
             int maxRicochets = ResolveRicochetBudget(quality);
             int primitiveCount = math.min(PrimitiveCount, Primitives.Length);
+            byte* primitivePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(Primitives);
+            float* penetrationPtr = (float*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(PenetrationLut);
+            int primitiveStride = UnsafeUtility.SizeOf<AABBPrimitiveDTO>();
             double3 originAup = trajectory.OriginAUP;
             uint ricochetCount = 0u;
             uint rejectedCount = 0u;
@@ -1409,11 +1747,10 @@ namespace Hecton8.Gameplay
                 float3 closestNormal = float3.zero;
                 double3 closestHitAup = originAup;
 
-                void* primitivePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(Primitives);
                 for (int i = 0; i < primitiveCount; i++)
                 {
                     ref readonly AABBPrimitiveDTO primitive = ref UnsafeUtility.AsRef<AABBPrimitiveDTO>(
-                        (byte*)primitivePtr + (i * UnsafeUtility.SizeOf<AABBPrimitiveDTO>()));
+                        primitivePtr + (i * primitiveStride));
                     if ((primitive.Flags & AABBPrimitiveFlags.Active) == 0u)
                         continue;
 
@@ -1456,8 +1793,9 @@ namespace Hecton8.Gameplay
                     return;
                 }
 
-                AABBPrimitiveDTO hitPrimitive = Primitives[closestIndex];
-                float penetrationScalar = ResolvePenetrationScalar(trajectory.WeaponHash, hitPrimitive.MaterialHash);
+                ref readonly AABBPrimitiveDTO hitPrimitive = ref UnsafeUtility.AsRef<AABBPrimitiveDTO>(
+                    primitivePtr + (closestIndex * primitiveStride));
+                float penetrationScalar = ResolvePenetrationScalar(penetrationPtr, PenetrationLut.Length, trajectory.WeaponHash, hitPrimitive.MaterialHash);
                 float incidence = math.abs(math.dot(-direction, BallisticsRuntime.NormalizeOrDefault(closestNormal, new float3(0f, 0f, 1f))));
                 bool canRicochet = penetrationScalar < 0.42f &&
                                    incidence < Tuning.RicochetIncidenceThreshold &&
@@ -1510,8 +1848,9 @@ namespace Hecton8.Gameplay
             if ((primitive.Flags & AABBPrimitiveFlags.Root) != 0u)
                 return true;
 
-            float admission = math.smoothstep(Tuning.LimbAdmissionFloor, 0.95f, quality);
-            float hash01 = ((primitive.PrimitiveHash * 747796405u) + 2891336453u) * (1.0f / 4294967295.0f);
+            float floor = math.clamp(math.isfinite(Tuning.LimbAdmissionFloor) ? Tuning.LimbAdmissionFloor : 0.25f, 0f, 0.9f);
+            float admission = math.smoothstep(floor, 0.95f, quality);
+            float hash01 = ((primitive.PrimitiveHash * 747796405u) + 2891336453u) * 2.3283064e-10f;
             return hash01 <= admission;
         }
 
@@ -1538,11 +1877,17 @@ namespace Hecton8.Gameplay
                 return false;
 
             float3 half = math.max(math.abs(primitive.HalfExtents), new float3(0.01f));
-            float3 centerFromOrigin = (float3)-deltaAup;
+            float3 centerFromOrigin = AupPrecisionMath.DowncastLocalDelta(-deltaAup, float3.zero);
             float radiusSq = math.max(math.lengthsq(half), Epsilon);
-            float radius = math.sqrt(radiusSq);
             float projected = math.dot(centerFromOrigin, direction);
-            if (!math.isfinite(projected) || projected < -radius || projected > maxDistance + radius)
+            if (!math.isfinite(projected))
+                return false;
+
+            if (projected < 0f && (projected * projected) > radiusSq)
+                return false;
+
+            float excessPastSegment = projected - maxDistance;
+            if (excessPastSegment > 0f && (excessPastSegment * excessPastSegment) > radiusSq)
                 return false;
 
             float clampedProjection = math.clamp(projected, 0f, math.max(0f, maxDistance));
@@ -1551,7 +1896,7 @@ namespace Hecton8.Gameplay
                 return false;
 
             quaternion inverseRotation = math.inverse(BallisticsRuntime.NormalizeOrIdentity(primitive.Rotation));
-            float3 localOrigin = math.mul(inverseRotation, (float3)deltaAup);
+            float3 localOrigin = math.mul(inverseRotation, AupPrecisionMath.DowncastLocalDelta(deltaAup, float3.zero));
             float3 localDirection = BallisticsRuntime.NormalizeOrDefault(math.mul(inverseRotation, direction), new float3(0f, 0f, 1f));
             if (!TryIntersectAabbSlab(localOrigin, localDirection, half, maxDistance, out distance, out localHit, out float3 localNormal))
                 return false;
@@ -1576,7 +1921,7 @@ namespace Hecton8.Gameplay
                 direction,
                 math.select(new float3(Epsilon), new float3(-Epsilon), direction < 0f),
                 math.abs(direction) < Epsilon);
-            float3 invDir = 1f / safeDirection;
+            float3 invDir = math.rcp(safeDirection);
             float3 t0 = (-half - origin) * invDir;
             float3 t1 = (half - origin) * invDir;
             float3 tMin3 = math.min(t0, t1);
@@ -1605,23 +1950,16 @@ namespace Hecton8.Gameplay
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private float ResolvePenetrationScalar(uint weaponHash, uint materialHash)
+        private static float ResolvePenetrationScalar(float* penetrationPtr, int penetrationLength, uint weaponHash, uint materialHash)
         {
             uint weaponClass = weaponHash & 7u;
             uint materialClass = materialHash & 7u;
             int index = (int)((weaponClass * 8u) + materialClass);
-            if ((uint)index >= (uint)PenetrationLut.Length)
+            if (penetrationPtr == null || (uint)index >= (uint)penetrationLength)
                 return 0.25f;
 
-            float value = PenetrationLut[index];
+            float value = penetrationPtr[index];
             return math.max(0f, math.isfinite(value) ? value : 0f);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float Smooth01(float value)
-        {
-            float t = math.saturate(math.isfinite(value) ? value : 1f);
-            return t * t * (3f - (2f * t));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1632,7 +1970,7 @@ namespace Hecton8.Gameplay
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    public struct EmitBallisticDamageSignalsJob : IJob
+    public unsafe struct EmitBallisticDamageSignalsJob : IJob
     {
         [NoAlias] public NativeArray<BallisticHitResultDTO> HitResults;
         public NativeQueue<CombatDamageSignal>.ParallelWriter DamageWriter;
@@ -1645,10 +1983,12 @@ namespace Hecton8.Gameplay
             int count = math.min(math.max(0, HitCount), HitResults.Length);
             int budget = math.max(0, SignalEmitBudget);
             int emitted = 0;
+            byte* hitPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(HitResults);
+            int hitStride = UnsafeUtility.SizeOf<BallisticHitResultDTO>();
 
             for (int i = 0; i < count; i++)
             {
-                BallisticHitResultDTO hit = HitResults[i];
+                ref BallisticHitResultDTO hit = ref UnsafeUtility.AsRef<BallisticHitResultDTO>(hitPtr + (i * hitStride));
                 if ((hit.Flags & BallisticHitFlags.Hit) == 0u)
                     continue;
 
@@ -1677,7 +2017,6 @@ namespace Hecton8.Gameplay
                 }
 
                 hit.Flags |= BallisticHitFlags.SignalDropped;
-                HitResults[i] = hit;
             }
         }
     }
@@ -1697,11 +2036,16 @@ namespace Hecton8.Gameplay
             if ((uint)index >= (uint)HitCount || (uint)index >= (uint)ImpactVfx.Length)
                 return;
 
-            BallisticHitResultDTO hit = HitResults[index];
+            byte* hitPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(HitResults);
+            byte* vfxPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(ImpactVfx);
+            ref readonly BallisticHitResultDTO hit = ref UnsafeUtility.AsRef<BallisticHitResultDTO>(
+                hitPtr + (index * UnsafeUtility.SizeOf<BallisticHitResultDTO>()));
+            ref BallisticImpactVfxDTO vfxSlot = ref UnsafeUtility.AsRef<BallisticImpactVfxDTO>(
+                vfxPtr + (index * UnsafeUtility.SizeOf<BallisticImpactVfxDTO>()));
             BallisticImpactVfxDTO vfx = default;
             if ((hit.Flags & BallisticHitFlags.Hit) == 0u)
             {
-                ImpactVfx[index] = vfx;
+                vfxSlot = vfx;
                 return;
             }
 
@@ -1709,10 +2053,10 @@ namespace Hecton8.Gameplay
             float3 fallback = math.abs(up.y) < 0.95f ? new float3(0f, 1f, 0f) : new float3(1f, 0f, 0f);
             float3 right = BallisticsRuntime.NormalizeOrDefault(math.cross(fallback, up), new float3(1f, 0f, 0f));
             float3 forward = BallisticsRuntime.NormalizeOrDefault(math.cross(up, right), new float3(0f, 0f, 1f));
-            float scale = math.lerp(0.035f, 0.11f, math.saturate(GlobalQualityWeight));
+            float scale = math.lerp(0.035f, 0.11f, BallisticsRuntime.SanitizeQualityWeight(GlobalQualityWeight));
             double3 runtimeAup = hit.HitAUP - PresentationOriginAUP;
             float3 runtimeHit = math.all(math.isfinite(runtimeAup))
-                ? (float3)runtimeAup
+                ? AupPrecisionMath.DowncastLocalDelta(runtimeAup, hit.LocalHitPoint)
                 : hit.LocalHitPoint;
             vfx.Matrix = new float4x4(
                 new float4(right * scale, 0f),
@@ -1723,12 +2067,12 @@ namespace Hecton8.Gameplay
             vfx.TargetEntityID = hit.TargetEntityID;
             vfx.Flags = hit.Flags;
             vfx.Frame = Frame;
-            ImpactVfx[index] = vfx;
+            vfxSlot = vfx;
         }
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    public struct BallisticsTelemetryJob : IJob
+    public unsafe struct BallisticsTelemetryJob : IJob
     {
         [ReadOnly, NoAlias] public NativeArray<BallisticHitResultDTO> HitResults;
         [NoAlias] public NativeArray<BallisticsTelemetryEntry> TelemetryRing;
@@ -1746,13 +2090,15 @@ namespace Hecton8.Gameplay
             counters.Frame = Frame;
             counters.TrajectoriesProcessed = (uint)math.max(0, TrajectoryCount);
             counters.PrimitiveCount = (uint)math.max(0, PrimitiveCount);
-            counters.GlobalQualityWeight = math.saturate(GlobalQualityWeight);
+            counters.GlobalQualityWeight = BallisticsRuntime.SanitizeQualityWeight(GlobalQualityWeight);
             counters.ActiveTrajectoryBufferId = ActiveTrajectoryBufferId;
 
             int count = math.min(TrajectoryCount, HitResults.Length);
+            byte* hitPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(HitResults);
+            int hitStride = UnsafeUtility.SizeOf<BallisticHitResultDTO>();
             for (int i = 0; i < count; i++)
             {
-                BallisticHitResultDTO hit = HitResults[i];
+                ref readonly BallisticHitResultDTO hit = ref UnsafeUtility.AsRef<BallisticHitResultDTO>(hitPtr + (i * hitStride));
                 if ((hit.Flags & BallisticHitFlags.Hit) != 0u)
                 {
                     counters.HitCount++;
@@ -1789,11 +2135,18 @@ namespace Hecton8.Gameplay
                 entry.SignalCount = counters.SignalCount;
                 entry.RejectedCount = counters.RejectedCount;
                 entry.ActiveTrajectoryBufferId = ActiveTrajectoryBufferId;
-                TelemetryRing[TelemetryIndex] = entry;
+                byte* telemetryPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(TelemetryRing);
+                ref BallisticsTelemetryEntry telemetrySlot = ref UnsafeUtility.AsRef<BallisticsTelemetryEntry>(
+                    telemetryPtr + (TelemetryIndex * UnsafeUtility.SizeOf<BallisticsTelemetryEntry>()));
+                telemetrySlot = entry;
             }
 
             if (Counters.IsCreated && Counters.Length > 0)
-                Counters[0] = counters;
+            {
+                byte* counterPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(Counters);
+                ref BallisticsCountersDTO counterSlot = ref UnsafeUtility.AsRef<BallisticsCountersDTO>(counterPtr);
+                counterSlot = counters;
+            }
         }
     }
 }

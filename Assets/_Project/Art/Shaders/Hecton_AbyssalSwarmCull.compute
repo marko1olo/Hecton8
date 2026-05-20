@@ -1,0 +1,201 @@
+#pragma kernel ClearAbyssalSwarmIndirectArgs
+#pragma kernel CullAbyssalSwarm
+#pragma require compute
+
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+#define H8_SHINOBU_THREADS_PER_GROUP 64
+
+struct BoidMatrixDTO
+{
+    float4 C0;
+    float4 C1;
+    float4 C2;
+    float4 C3;
+};
+
+StructuredBuffer<BoidMatrixDTO> _H8ShinobuBoidMatrices;
+RWStructuredBuffer<uint> _H8ShinobuBoidVisibleIndices;
+RWByteAddressBuffer _H8ShinobuBoidCulledIndirectArgs;
+Texture2D<float> _H8ShinobuDepthPyramid;
+
+uint _H8ShinobuSourceCount;
+float4x4 _H8ShinobuViewProjection;
+float4x4 _H8ShinobuViewMatrix;
+float4 _H8ShinobuZBufferParams;
+float4 _H8ShinobuDepthPyramidTexelSize;
+int _H8ShinobuDepthPyramidMipCount;
+uint _H8ShinobuOcclusionEnabled;
+uint _H8ShinobuDensityStep;
+float _H8ShinobuOcclusionDepthBias;
+float _H8ShinobuBoundsRadius;
+float _H8ShinobuQualityWeight;
+
+bool IsFiniteFloat(float value)
+{
+    return value == value && abs(value) <= 3.402823466e+38;
+}
+
+bool IsFiniteFloat2(float2 value)
+{
+    return IsFiniteFloat(value.x) && IsFiniteFloat(value.y);
+}
+
+bool IsFiniteFloat3(float3 value)
+{
+    return IsFiniteFloat(value.x) && IsFiniteFloat(value.y) && IsFiniteFloat(value.z);
+}
+
+bool IsFiniteFloat4(float4 value)
+{
+    return IsFiniteFloat(value.x) &&
+           IsFiniteFloat(value.y) &&
+           IsFiniteFloat(value.z) &&
+           IsFiniteFloat(value.w);
+}
+
+uint HashUint(uint value)
+{
+    value ^= value >> 16;
+    value *= 0x7feb352du;
+    value ^= value >> 15;
+    value *= 0x846ca68bu;
+    value ^= value >> 16;
+    return value;
+}
+
+bool PassesDensityDecimation(uint sourceIndex)
+{
+    uint stepValue = min(max(_H8ShinobuDensityStep, 1u), 8u);
+    if (stepValue <= 1u)
+        return true;
+
+    uint qualitySeed = (uint)floor(saturate(_H8ShinobuQualityWeight) * 65535.0);
+    uint hash = HashUint(sourceIndex * 747796405u + qualitySeed + 2891336453u);
+    return (hash % stepValue) == 0u;
+}
+
+float ResolveSphereRadius()
+{
+    float quality = saturate(_H8ShinobuQualityWeight);
+    float smoothQuality = quality * quality * (3.0 - (2.0 * quality));
+    return max(0.001, _H8ShinobuBoundsRadius * lerp(1.45, 1.0, smoothQuality));
+}
+
+float2 ResolveClipUv(float4 clipPosition)
+{
+    float invW = rcp(max(clipPosition.w, 0.0001));
+    return (clipPosition.xy * invW) * 0.5 + 0.5;
+}
+
+bool PassesClipFrustum(float4 clipPosition, float radius)
+{
+    if (!IsFiniteFloat4(clipPosition) || clipPosition.w <= 0.0001)
+        return false;
+
+    float invW = rcp(max(clipPosition.w, 0.0001));
+    float3 ndc = clipPosition.xyz * invW;
+    if (!IsFiniteFloat3(ndc))
+        return false;
+
+    float paddedRadius = radius * invW;
+    if (ndc.x < -1.06 - paddedRadius || ndc.x > 1.06 + paddedRadius)
+        return false;
+
+    if (ndc.y < -1.08 - paddedRadius || ndc.y > 1.08 + paddedRadius)
+        return false;
+
+    if (ndc.z < -1.10 || ndc.z > 1.10)
+        return false;
+
+    return true;
+}
+
+float SampleDepthPyramid(float2 uv, int mipLevel)
+{
+    int2 sourceSize = max(int2(1, 1), int2(_H8ShinobuDepthPyramidTexelSize.zw));
+    int2 mipSize = max(int2(1, 1), sourceSize >> mipLevel);
+    int2 pixel = clamp(int2(uv * mipSize), int2(0, 0), mipSize - 1);
+    return _H8ShinobuDepthPyramid.Load(int3(pixel, mipLevel));
+}
+
+float ResolveEyeDepth(float3 positionWS)
+{
+    float4 viewPosition = mul(_H8ShinobuViewMatrix, float4(positionWS, 1.0));
+    return IsFiniteFloat4(viewPosition) ? max(0.0, -viewPosition.z) : 0.0;
+}
+
+bool IsOccludedByDepth(float3 centerWS, float4 clipPosition, float radius)
+{
+    if (_H8ShinobuOcclusionEnabled == 0u || _H8ShinobuDepthPyramidMipCount <= 0)
+        return false;
+
+    float2 uv = ResolveClipUv(clipPosition);
+    if (!IsFiniteFloat2(uv) ||
+        uv.x < 0.0 ||
+        uv.y < 0.0 ||
+        uv.x > 1.0 ||
+        uv.y > 1.0)
+    {
+        return false;
+    }
+
+    float quality = saturate(_H8ShinobuQualityWeight);
+    float smoothQuality = quality * quality * (3.0 - (2.0 * quality));
+    float maxPixels = max(_H8ShinobuDepthPyramidTexelSize.z, _H8ShinobuDepthPyramidTexelSize.w);
+    float radiusPixels = max(1.0, radius * maxPixels / max(clipPosition.w, 0.0001));
+    int mipLevel = (int)clamp(
+        floor(log2(radiusPixels) * lerp(0.35, 1.0, smoothQuality)),
+        0.0,
+        (float)(_H8ShinobuDepthPyramidMipCount - 1));
+    float rawDepth = SampleDepthPyramid(uv, mipLevel);
+#if defined(UNITY_REVERSED_Z)
+    if (rawDepth <= 0.0001)
+        return false;
+#else
+    if (rawDepth >= 0.9999)
+        return false;
+#endif
+
+    float sceneEyeDepth = LinearEyeDepth(rawDepth, _H8ShinobuZBufferParams);
+    if (!IsFiniteFloat(sceneEyeDepth) || sceneEyeDepth <= 0.0001)
+        return false;
+
+    float objectEyeDepth = max(0.0, ResolveEyeDepth(centerWS) - radius);
+    return objectEyeDepth - sceneEyeDepth > max(0.0001, _H8ShinobuOcclusionDepthBias);
+}
+
+[numthreads(1, 1, 1)]
+void ClearAbyssalSwarmIndirectArgs(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    _H8ShinobuBoidCulledIndirectArgs.Store(0, 3u);
+    _H8ShinobuBoidCulledIndirectArgs.Store(4, 0u);
+    _H8ShinobuBoidCulledIndirectArgs.Store(8, 0u);
+    _H8ShinobuBoidCulledIndirectArgs.Store(12, 0u);
+}
+
+[numthreads(H8_SHINOBU_THREADS_PER_GROUP, 1, 1)]
+void CullAbyssalSwarm(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint sourceIndex = dispatchThreadId.x;
+    if (sourceIndex >= _H8ShinobuSourceCount || !PassesDensityDecimation(sourceIndex))
+        return;
+
+    BoidMatrixDTO matrixDto = _H8ShinobuBoidMatrices[sourceIndex];
+    float3 centerWS = matrixDto.C3.xyz;
+    if (!IsFiniteFloat3(centerWS))
+        return;
+
+    float radius = ResolveSphereRadius();
+    float4 clipPosition = mul(_H8ShinobuViewProjection, float4(centerWS, 1.0));
+    if (!PassesClipFrustum(clipPosition, radius) ||
+        IsOccludedByDepth(centerWS, clipPosition, radius))
+    {
+        return;
+    }
+
+    uint visibleSlot;
+    _H8ShinobuBoidCulledIndirectArgs.InterlockedAdd(4, 1u, visibleSlot);
+    if (visibleSlot < _H8ShinobuSourceCount)
+        _H8ShinobuBoidVisibleIndices[visibleSlot] = sourceIndex;
+}

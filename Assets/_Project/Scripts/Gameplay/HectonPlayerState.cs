@@ -4,6 +4,7 @@ using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.World;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -15,20 +16,37 @@ namespace Hecton8.Gameplay
     /// <summary>
     /// Compact player kinematic snapshot owned by the locomotion orchestrator.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Explicit, Size = 192)]
     internal struct HectonPlayerState
     {
         private const float PredictionHorizonSeconds = 0.1f;
 
+        [FieldOffset(0)]
         public AbsoluteUniversePosition AbsolutePosition;
+        [FieldOffset(48)]
         public AbsoluteUniversePosition PredictedAbsolutePosition;
+        [FieldOffset(96)]
         public float3 RuntimePosition;
+        [FieldOffset(108)]
         public float3 PredictedRuntimePosition;
+        [FieldOffset(120)]
         public float3 LinearVelocity;
+        [FieldOffset(132)]
         public float3 ExternalAcceleration;
+        [FieldOffset(144)]
         public float3 ExternalVelocityChange;
+        [FieldOffset(156)]
         public float InventoryLoad01;
+        [FieldOffset(160)]
         public float InventoryMovementMultiplier;
+        [FieldOffset(164)]
+        private uint _pad0;
+        [FieldOffset(168)]
+        private ulong _pad1;
+        [FieldOffset(176)]
+        private ulong _pad2;
+        [FieldOffset(184)]
+        private ulong _pad3;
 
         public void SyncKinematic(Vector3 runtimePosition, Vector3 linearVelocity)
         {
@@ -65,7 +83,7 @@ namespace Hecton8.Gameplay
         }
     }
 
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 32)]
+[StructLayout(LayoutKind.Explicit, Size = 32)]
     internal struct PlayerKinematicsHandTarget
     {
         public const byte FlagBrace = 1 << 0;
@@ -80,7 +98,7 @@ namespace Hecton8.Gameplay
         [FieldOffset(31)] public byte Reserved1;
     }
 
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 64)]
+[StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct PlayerKinematicsTelemetryEntry
     {
         [FieldOffset(0)] public float3 Position;
@@ -95,12 +113,12 @@ namespace Hecton8.Gameplay
         [FieldOffset(60)] public uint Padding2;
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [StructLayout(LayoutKind.Sequential)]
     internal struct PlayerKinematicsLinearDragJob : IJob
     {
-        [ReadOnly] public NativeArray<float3> Velocities;
-        public NativeArray<float3> SolvedVelocities;
+        [ReadOnly, NoAlias] public NativeArray<float3> Velocities;
+        [NoAlias] public NativeArray<float3> SolvedVelocities;
         public float DragCoefficient;
         public float WaterDensityScale;
         public float DeltaTime;
@@ -125,7 +143,7 @@ namespace Hecton8.Gameplay
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential)]
     internal struct PlayerKinematicsNativeState : IDisposable
     {
         public const int KinematicCapacity = 1;
@@ -322,7 +340,7 @@ namespace Hecton8.Gameplay
     /// <summary>
     /// Owns persistent native buffers used by <see cref="HectonPlayerMotor"/>.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential)]
     internal struct HectonPlayerMotorNativeState : IDisposable
     {
         public NativeArray<CapsulecastCommand> ScheduledSweepCommands;

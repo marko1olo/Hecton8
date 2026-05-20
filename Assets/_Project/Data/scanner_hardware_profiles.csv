@@ -1,0 +1,5 @@
+# upgrade_hash,ping_radius_m,discovery_resolution_m,surface_thickness_m,visual_glow
+mk1_field_scanner,90,50,2.0,1.0
+mk2_directional_sonar,145,35,1.6,1.35
+mk3_deep_cartographer,210,25,1.1,2.25
+abyssal_overkill_array,250,12,0.65,4.0

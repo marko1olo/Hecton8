@@ -341,7 +341,7 @@ namespace Hecton8.Gameplay
 
             double3 sector = Context.SectorOriginAup;
             state.SectorOriginAup = sector;
-            float3 local = (float3)(state.Aup - sector);
+            float3 local = AupPrecisionMath.LocalDeltaFloat3(state.Aup, sector, float3.zero);
             if (!IsFinite(local))
                 local = input.HeadLocalPosition;
             local = SnapMillimeter(local);
@@ -997,7 +997,7 @@ namespace Hecton8.Gameplay
 
             PlayerKinematicState state = stateBuffer[0];
             state.SectorOriginAup = shiftData.NewTotalOffsetDouble;
-            state.LocalPosition = (float3)(state.Aup - state.SectorOriginAup);
+            state.LocalPosition = AupPrecisionMath.LocalDeltaFloat3(state.Aup, state.SectorOriginAup, state.LastValidLocalPosition);
             state.LocalPosition = SanitizeFinite(state.LocalPosition, state.LastValidLocalPosition);
             state.ShiftFrameId = shiftData.Sequence;
             state.Frame = shiftData.Frame >= 0 ? unchecked((uint)shiftData.Frame) : state.Frame;

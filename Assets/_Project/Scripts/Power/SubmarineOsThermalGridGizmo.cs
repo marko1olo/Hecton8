@@ -8,8 +8,10 @@ namespace Hecton8.Power
     public sealed class SubmarineOsThermalGridGizmo : MonoBehaviour
     {
         [SerializeField] private bool drawHeatmap = true;
+        [SerializeField] private bool drawDivergence = true;
         [SerializeField] private float sphereRadius = 0.18f;
         [SerializeField] private float thermalRadiusScale = 0.65f;
+        [SerializeField] private float divergenceRadiusScale = 1.8f;
 
         private void OnDrawGizmos()
         {
@@ -34,6 +36,12 @@ namespace Hecton8.Power
                 Gizmos.DrawSphere(position, math.max(0.01f, sphereRadius));
                 Gizmos.color = new Color(1f, 0.35f, 0.05f, math.lerp(0.08f, 0.9f, thermal));
                 Gizmos.DrawWireSphere(position, math.max(sphereRadius, sphereRadius + thermal * thermalRadiusScale));
+                if (drawDivergence && (node.Flags & SubmarineThermalGridStatusFlags.FaultDivergent) != 0u)
+                {
+                    float pulse = 0.5f + 0.5f * math.sin((float)Time.realtimeSinceStartup * 8f);
+                    Gizmos.color = new Color(1f, 0f, 0f, 0.55f + pulse * 0.45f);
+                    Gizmos.DrawWireSphere(position, math.max(sphereRadius, sphereRadius * divergenceRadiusScale * (1f + pulse * 0.25f)));
+                }
             }
         }
     }

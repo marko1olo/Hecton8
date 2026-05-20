@@ -1,3 +1,4 @@
+using Hecton8.Core;
 using Unity.Collections;
 using Unity.Jobs;
 
@@ -36,9 +37,10 @@ namespace Hecton8.AI.Pathfinding
             if (!resultBuffer.IsCreated || resultBuffer.Length <= 0 || !handle.IsCompleted)
                 return false;
 
-            handle.Complete();
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref handle))
+                return false;
+
             result = resultBuffer[0];
-            handle = default;
             return true;
         }
     }

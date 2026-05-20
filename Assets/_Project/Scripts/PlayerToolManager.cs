@@ -44,7 +44,7 @@ namespace Hecton8.Gameplay
 #endif
 
     [DisallowMultipleComponent]
-    public sealed class PlayerToolManager : MonoBehaviour, ITickable, IUpdatable, IModuleStatusEventListener
+    public sealed class PlayerToolManager : MonoBehaviour, ITickable, IUpdatable, IModuleStatusEventListener, IGlobalRegistryHotSwapListener
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -100,6 +100,7 @@ namespace Hecton8.Gameplay
 
         /// <summary>Komponent PlayerTool na tekuschem ekzemplyare.</summary>
         private PlayerTool _currentTool;
+        private uint _currentActiveToolHash;
         // COLD ALLOC: char[512] — zero-GC active tool HUD summary staging buffer — owner: PlayerToolManager
         private FixedCharBuffer _toolSummaryBuffer = new FixedCharBuffer(512);
         // COLD ALLOC: char[512] - zero-GC active tool HUD directive staging buffer - owner: PlayerToolManager
@@ -149,6 +150,12 @@ namespace Hecton8.Gameplay
         private int _batterySiphonItemHashId;
         private float _batterySiphonRemainingSeconds;
         private float _batterySiphonDurationSeconds;
+        private IInputService _inputService;
+        private ObjectPoolManager _objectPool;
+        private ConstructionManager _constructionManager;
+        private PersistentWorldRegistry _persistentWorldRegistry;
+        private ToolDurabilitySystem _toolDurability;
+        private bool _hotSwapListenerRegistered;
 
         private const float BatterySiphonLockoutSeconds = 1.5f;
         private const float BatteryDeadThreshold01 = 0.0001f;
@@ -217,6 +224,8 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             ResolveRuntimeContextDependencies();
+            CacheRegistryServicesCold(forceRefresh: true);
+            TryRegisterHotSwapListener();
             BaselineToolSlotInputSignalSequence();
             TryRegisterToTickManager();
             SubscribeModuleStatusEvents();
@@ -230,6 +239,7 @@ namespace Hecton8.Gameplay
             TryUnregisterFromTickManager();
             UnsubscribeModuleStatusEvents();
             ClearInteriorCarrierCache();
+            TryUnregisterHotSwapListener();
 
             // Despavnim tekuschiy instrument pri otklyuchenii menedzhera
             DespawnCurrentTool();
@@ -270,6 +280,8 @@ namespace Hecton8.Gameplay
             if (ConsumeInventoryChangedSignals())
                 HandleInventoryChanged();
             ConsumeEquippedToolDurabilitySignals();
+            if (_currentTool != null)
+                _currentTool.AdvanceRuntimeActiveIntent(deltaTime);
 
             if (_externallyDockedTool != null)
             {
@@ -334,7 +346,7 @@ namespace Hecton8.Gameplay
 
                 _currentTool.ToolTick(deltaTime);
 
-                IInputService inputService = GlobalRegistry.Input;
+                IInputService inputService = _inputService;
                 PlayerInputState inputState = inputService != null && inputService.IsPlayerInputEnabled
                     ? inputService.GetState()
                     : default;
@@ -396,6 +408,8 @@ namespace Hecton8.Gameplay
         /// <summary>Tekuschiy aktivnyy instrument (mozhet byt null).</summary>
         public PlayerTool CurrentTool => _currentTool;
 
+        public uint CurrentActiveToolHash => _currentActiveToolHash;
+
         public bool TryBeginExternalToolDock(PlayerTool tool)
         {
             if (tool == null ||
@@ -443,7 +457,7 @@ namespace Hecton8.Gameplay
                 return true;
             }
 
-            PersistentWorldRegistry worldRegistry = GlobalRegistry.PersistentWorldRegistry;
+            PersistentWorldRegistry worldRegistry = _persistentWorldRegistry;
             if (worldRegistry == null || playerInventory == null)
             {
                 DespawnCurrentTool();
@@ -647,7 +661,7 @@ namespace Hecton8.Gameplay
                 SourceId = sourceId,
                 Sequence = nextSequence,
                 Frame = unchecked((uint)Time.frameCount),
-                ActiveToolHash = ResolveActiveToolHash(),
+                ActiveToolHash = _currentActiveToolHash,
                 AssignedSlotMask = ComputeAssignedSlotMask(),
                 ActiveSlot = ResolveActiveSlotSignalValue(),
                 SlotCount = ResolveSlotCountSignalValue(),
@@ -666,15 +680,19 @@ namespace Hecton8.Gameplay
             return _toolLoadoutSignalSourceId;
         }
 
-        private uint ResolveActiveToolHash()
+        private static uint ResolveActiveToolHash(PlayerTool tool)
         {
-            if (_currentTool == null || _currentTool.ToolData == null)
+            if (tool == null || tool.ToolData == null)
                 return 0u;
 
-            string persistentId = _currentTool.ToolData.PersistentId;
-            return string.IsNullOrEmpty(persistentId)
-                ? 0u
-                : unchecked((uint)LocHash.Compute(persistentId));
+            string persistentId = tool.ToolData.PersistentId;
+            if (!string.IsNullOrEmpty(persistentId))
+                return unchecked((uint)LocHash.Compute(persistentId));
+
+            ToolMetadata metadata = tool.Metadata;
+            return metadata != null && !string.IsNullOrEmpty(metadata.toolID)
+                ? unchecked((uint)LocHash.Compute(metadata.toolID))
+                : 0u;
         }
 
         private uint ComputeAssignedSlotMask()
@@ -934,7 +952,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (GlobalRegistry.ObjectPool == null)
+            if (_objectPool == null)
                 return;
 
             for (int i = 0; i < toolPrefabs.Length; i++)
@@ -948,8 +966,8 @@ namespace Hecton8.Gameplay
             if (_constructionGhostPoolsWarmed || constructionGhostWarmupCount <= 0)
                 return;
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
-            ConstructionManager constructionManager = Hecton8.Core.GlobalRegistry.ConstructionRuntime;
+            ObjectPoolManager pool = _objectPool;
+            ConstructionManager constructionManager = _constructionManager;
             ModuleCatalog catalog = constructionManager != null ? constructionManager.Catalog : null;
             if (pool == null || catalog == null || catalog.Count <= 0)
                 return;
@@ -966,12 +984,12 @@ namespace Hecton8.Gameplay
             _constructionGhostPoolsWarmed = true;
         }
 
-        private static void EnsurePoolWarmup(GameObject prefab, int minimumReserve)
+        private void EnsurePoolWarmup(GameObject prefab, int minimumReserve)
         {
             if (prefab == null || minimumReserve <= 0)
                 return;
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            ObjectPoolManager pool = _objectPool;
             if (pool == null)
                 return;
 
@@ -1002,6 +1020,88 @@ namespace Hecton8.Gameplay
 
             if (handAnchor == null)
                 handAnchor = runtimeContext.HandAnchor;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Input:
+                    _inputService = currentService as IInputService;
+                    break;
+
+                case GlobalRegistryServiceSlot.ObjectPool:
+                    _objectPool = currentService as ObjectPoolManager;
+                    _assignedPoolsWarmed = false;
+                    _constructionGhostPoolsWarmed = false;
+                    WarmRuntimePoolsIfNeeded();
+                    break;
+
+                case GlobalRegistryServiceSlot.Logistics:
+                    _constructionManager = currentService as ConstructionManager;
+                    _constructionGhostPoolsWarmed = false;
+                    WarmConstructionGhostPoolsIfNeeded();
+                    break;
+
+                case GlobalRegistryServiceSlot.PersistentWorldRegistry:
+                    _persistentWorldRegistry = currentService as PersistentWorldRegistry;
+                    break;
+
+                case GlobalRegistryServiceSlot.ToolDurabilityRuntime:
+                    _toolDurability = currentService as ToolDurabilitySystem;
+                    break;
+            }
+        }
+
+        private void CacheRegistryServicesCold(bool forceRefresh = false)
+        {
+            if (forceRefresh || _inputService == null)
+                _inputService = GlobalRegistry.Input;
+
+            if (forceRefresh || _objectPool == null)
+            {
+                ObjectPoolManager previousPool = _objectPool;
+                _objectPool = GlobalRegistry.ObjectPool;
+                if (!ReferenceEquals(previousPool, _objectPool))
+                {
+                    _assignedPoolsWarmed = false;
+                    _constructionGhostPoolsWarmed = false;
+                }
+            }
+
+            if (forceRefresh || _constructionManager == null)
+            {
+                ConstructionManager previousConstruction = _constructionManager;
+                _constructionManager = GlobalRegistry.ConstructionRuntime;
+                if (!ReferenceEquals(previousConstruction, _constructionManager))
+                    _constructionGhostPoolsWarmed = false;
+            }
+
+            if (forceRefresh || _persistentWorldRegistry == null)
+                _persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
+
+            if (forceRefresh || _toolDurability == null)
+                _toolDurability = GlobalRegistry.ToolDurability;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         private void PublishRuntimeContextState()
@@ -1056,7 +1156,7 @@ namespace Hecton8.Gameplay
             if (!ModuleStatusEvents.TryResolveModule(in payload, out BaseModule module))
                 return;
 
-            if (payload.IsEnter)
+            if (ModuleStatusEvents.IsEnterEvent(in payload))
                 HandleModuleEnter(module);
             else
                 HandleModuleExit(module);
@@ -1405,7 +1505,7 @@ namespace Hecton8.Gameplay
             LogToolDebug("SpawnNewTool begin");
             EnsurePoolWarmup(prefab, toolPoolWarmupCount);
             WarmConstructionGhostPoolsIfNeeded();
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            ObjectPoolManager pool = _objectPool;
             if (pool == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -1440,6 +1540,7 @@ namespace Hecton8.Gameplay
             if (_currentInstance.TryGetComponent(out PlayerTool tool))
             {
                 _currentTool = tool;
+                _currentActiveToolHash = ResolveActiveToolHash(tool);
                 LogToolDebug("SpawnNewTool got PlayerTool");
                 _currentTool.OnEquip();
                 LogToolDebug("SpawnNewTool after OnEquip");
@@ -1450,6 +1551,7 @@ namespace Hecton8.Gameplay
                 Debug.LogError("[PlayerToolManager] Assigned tool prefab has no PlayerTool component.");
 #endif
                 _currentTool = null;
+                _currentActiveToolHash = 0u;
             }
         }
 
@@ -1469,6 +1571,7 @@ namespace Hecton8.Gameplay
             {
                 _currentTool.OnUnequip();
                 _currentTool = null;
+                _currentActiveToolHash = 0u;
             }
 
             if (_currentInstance != null)
@@ -1476,7 +1579,7 @@ namespace Hecton8.Gameplay
                 // Ottseplyaem ot anchor pered despavnom
                 _currentInstance.transform.SetParent(null, false);
 
-                ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+                ObjectPoolManager pool = _objectPool;
                 if (pool != null)
                 {
                     pool.Despawn(_currentInstance);
@@ -1730,7 +1833,7 @@ namespace Hecton8.Gameplay
 
                 if (playerInventory != null && playerInventory.TryFindFirstAnchorByHash(toolHashId, out _))
                 {
-                    ToolDurabilitySystem durabilitySystem = Hecton8.Core.GlobalRegistry.ToolDurability;
+                    ToolDurabilitySystem durabilitySystem = _toolDurability;
                     if (durabilitySystem != null)
                         durabilitySystem.ResetDurability(metadata.toolID, metadata.maxDurability);
 
@@ -1831,12 +1934,12 @@ namespace Hecton8.Gameplay
             return ReferenceEquals(candidateTool.ToolData, brokenToolData);
         }
 
-        private static bool IsPrefabBroken(GameObject prefab)
+        private bool IsPrefabBroken(GameObject prefab)
         {
             if (prefab == null || !prefab.TryGetComponent(out PlayerTool tool) || tool.Metadata == null)
                 return false;
 
-            ToolDurabilitySystem durabilitySystem = Hecton8.Core.GlobalRegistry.ToolDurability;
+            ToolDurabilitySystem durabilitySystem = _toolDurability;
             return durabilitySystem != null && durabilitySystem.IsBroken(tool.Metadata.toolID);
         }
 

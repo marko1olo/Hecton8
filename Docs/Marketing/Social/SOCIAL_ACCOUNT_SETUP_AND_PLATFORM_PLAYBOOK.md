@@ -1,6 +1,6 @@
 # HECTON-8 Social Account Setup And Platform Playbook
 
-Status: pre-public social ops
+Status: pre public social ops
 Owner lane: SHINOBU_81 / social publishing
 Runtime impact: none
 
@@ -12,7 +12,7 @@ Social accounts exist to support Steam conversion, creator trust, and feedback l
 
 | Platform | Priority | Use |
 |---|---|---|
-| Steam News | P0 | Primary conversion and owner-controlled announcements. |
+| Steam News | P0 | Primary conversion and owner controlled announcements. |
 | YouTube | P0 | Trailer, devlogs, clips for creators/press. |
 | Discord | P1 | Community only after proof assets or demo interest. |
 | X/Twitter | P1 | Dev/press/creator visibility, short updates. |
@@ -26,13 +26,13 @@ Social accounts exist to support Steam conversion, creator trust, and feedback l
 
 Preferred:
 
-- `Hecton8Game`
-- `PlayHecton8`
-- `Hecton8`
+  `Hecton8Game`
+  `PlayHecton8`
+  `Hecton8`
 
 Reserve consistent handles before public reveal if possible.
 
-## 2026-05-19 Handle Reservation Work Order
+## 2026 05 19 Handle Reservation Work Order
 
 Do this quietly before public screenshots. Do not post unless an account requires an initial placeholder.
 
@@ -47,7 +47,7 @@ Do this quietly before public screenshots. Do not post unless an account require
 
 If `Hecton8` is unavailable, prefer `Hecton8Game` over novelty handles. Consistency beats cleverness.
 
-## 2026-05-19 Quiet Public Handle Check
+## 2026 05 19 Quiet Public Handle Check
 
 Boundary: this is not account registration. It is a public unauthenticated check only. Final reservation requires the human owner, project email, password manager, 2FA, recovery email, and backup codes.
 
@@ -56,7 +56,7 @@ Boundary: this is not account registration. It is a public unauthenticated check
 | X/Twitter | `@Hecton8` | TAKEN. Public page shows unrelated `Hecton`, London, England, joined May 2017. | Do not use as official handle unless ownership changes. |
 | X/Twitter | `@Hecton8Game` | Public unauthenticated fetch returned 404. | Candidate. Human must confirm while logged in and reserve first if available. |
 | X/Twitter | `@PlayHecton8` | Public unauthenticated fetch returned 404. | Backup candidate. Reserve only if `@Hecton8Game` is unavailable. |
-| YouTube | `@Hecton8` | TAKEN. Public fetch resolves to unrelated `Hector Covanti - YouTube`. | Do not use as official handle. |
+| YouTube | `@Hecton8` | TAKEN. Public fetch resolves to unrelated `Hector Covanti   YouTube`. | Do not use as official handle. |
 | YouTube | `@Hecton8Game` | Public fetch returned 404. | Candidate for project channel. Human must confirm while logged in and reserve with brand account. |
 | YouTube | `@PlayHecton8` | Public fetch returned 404. | Backup candidate. Use only if `@Hecton8Game` cannot be reserved. |
 | Bluesky | `hecton8.bsky.social` | Public resolveHandle check returned 400/not resolved in this pass. | Candidate only; human must confirm during account creation. |
@@ -65,17 +65,73 @@ Boundary: this is not account registration. It is a public unauthenticated check
 | TikTok | `@hecton8game`, `@playhecton8`, `@hecton8` | Public unauthenticated fetch returned generic TikTok HTML, not reliable handle availability. | Must be checked while logged in; do not claim availability from public fetch. |
 | Instagram | `@hecton8game`, `@playhecton8`, `@hecton8` | Public unauthenticated fetch returned generic Instagram HTML, not reliable handle availability. | Must be checked while logged in; do not claim availability from public fetch. |
 
+### 2026 05 19 Public Recheck Addendum V1
+
+This recheck used only public unauthenticated requests. No private browser session, login, account creation, cookie inspection, or credential storage occurred.
+
+| Platform | Handle | Recheck result | Decision |
+|---|---|---|---|
+| X/Twitter | `@Hecton8` | Public page still resolves to an unrelated account in web view. Raw `curl` requests returned 403 for X and are not useful as availability proof. | Treat as taken; do not use. |
+| X/Twitter | `@Hecton8Game` | Public web view returned 404; raw `curl` returned 403. | Candidate only. Must be confirmed while owner is logged in before reservation. |
+| X/Twitter | `@PlayHecton8` | Public web view returned 404; raw `curl` returned 403. | Backup candidate only. Must be confirmed while owner is logged in before reservation. |
+| YouTube | `@hecton8` | Public page returns `Hector Covanti   YouTube`. | Treat as taken/unrelated. |
+| YouTube | `@hecton8game` | Public request returned 404. | Candidate only; reserve with owner controlled brand account if available in logged in flow. |
+| YouTube | `@playhecton8` | Public request returned 404. | Backup candidate only. |
+| Bluesky | `hecton8.bsky.social` | Public `resolveHandle` returned 400/not resolved. | Candidate only; confirm during account creation. |
+| Bluesky | `hecton8game.bsky.social` | Public `resolveHandle` returned 400/not resolved. | Preferred candidate if available in account creation. |
+| Bluesky | `playhecton8.bsky.social` | Public `resolveHandle` returned 400/not resolved. | Backup candidate. |
+
+Current action: no registration. The user has granted permission in chat, but the operating requirement is still project owned email, password manager vault, recovery email, 2FA owner, backup code custody, `official_inbox_custody_gate = ALLOW_OFFICIAL_INBOX_USE_VERIFIED`, and `account_registration_permission_gate = ALLOW_ACCOUNT_REGISTRATION_VERIFIED`. Without those fields, account creation would produce orphaned official surfaces.
+
+## 2026-05-20 Account Registration Preflight Verdict V0
+
+This verdict overrides ad hoc browser/account requests until the fields below change. A logged-in personal browser session, cookies, or chat permission is not account custody proof.
+
+Machine gate: `account_registration_permission_gate = HOLD_ACCOUNT_CREATION`. The only future allow value is `ALLOW_ACCOUNT_REGISTRATION_VERIFIED`, and it requires every row below to leave hold state plus a completed post-registration custody row immediately after creation.
+
+| Requirement | Current state | Registration effect |
+|---|---|---|
+| `account_registration_permission_gate` | HOLD_ACCOUNT_CREATION | HOLD_ACCOUNT_CREATION |
+| `official_inbox_custody_gate` | HOLD_NO_PROJECT_INBOX_CUSTODY | HOLD_ACCOUNT_CREATION |
+| Owner-controlled project inbox recorded | NOT_RECORDED | HOLD_ACCOUNT_CREATION |
+| Password manager vault item ready | NOT_RECORDED | HOLD_ACCOUNT_CREATION |
+| Recovery owner verified | NOT_RECORDED | HOLD_ACCOUNT_CREATION |
+| 2FA owner present and method chosen | NOT_RECORDED | HOLD_ACCOUNT_CREATION |
+| Backup-code destination ready | NOT_RECORDED | HOLD_ACCOUNT_CREATION |
+| Approved handle selected from candidate list | CANDIDATE_ONLY | HOLD_ACCOUNT_CREATION |
+| Approved profile assets | NOT_READY_REAL_ASSET | HOLD_ACCOUNT_CREATION |
+| Exact public URL destination for vault record | NOT_CREATED | HOLD_ACCOUNT_CREATION |
+
+Current verdict: `HOLD_ACCOUNT_CREATION`; `account_registration_permission_gate = HOLD_ACCOUNT_CREATION`.
+
+Allowed agent work while this verdict holds:
+
+- public unauthenticated handle checks;
+- profile copy prep;
+- account field kit maintenance;
+- custody checklist maintenance;
+- no-link content drafts that do not publish.
+
+Blocked agent work while this verdict holds:
+
+- account creation;
+- login through personal browser sessions;
+- cookie/session inspection;
+- publishing first posts;
+- following/commenting/DMing from official handles;
+- storing passwords, 2FA seeds, backup codes, cookies, or session tokens in docs.
+
 Registration order:
 
 1. Try `Hecton8Game`.
 2. If unavailable, try `PlayHecton8`.
 3. Do not use `Hecton8` on X unless the existing unrelated account is no longer present.
-4. Record owner email, recovery email, 2FA method, backup-code custody, and reservation date immediately after creation.
+4. Record owner email, recovery email, 2FA method, backup code custody, and reservation date immediately after creation.
 5. Keep the profile private/blank until the first screenshot pack exists.
 
-## 2026-05-19 Owner Account Creation Handoff
+## 2026 05 19 Owner Account Creation Handoff
 
-This is the exact human-owned registration checklist. Do not delegate credential creation to an agent unless the project email, password manager, recovery channel, 2FA device, and backup-code storage are visible and controlled by the owner.
+This is the exact human owned registration checklist. Do not delegate credential creation to an agent unless the project email, password manager, recovery channel, 2FA device, and backup code storage are visible and controlled by the owner.
 
 ### Required Before Creating Any Account
 
@@ -84,21 +140,23 @@ Project email:
 Recovery email:
 Password manager vault:
 2FA method:
-Backup-code storage path:
+Backup code storage path:
 Owner:
 Date:
 ```
 
 Reject account creation if any field is missing. A blank social profile is acceptable; orphaned credentials are not.
 
-## 2026-05-19 Agent-Assisted Browser Work Boundary V0
+Inbox source of truth: `Website/ONE_PAGE_SITE_AND_PRESSKIT_PLAN.md`  > `Official Project Inbox Gate V0` and `official_inbox_custody_gate`. Account registration source of truth: `account_registration_permission_gate` in this file. Use the same owner controlled inbox/custody record for social account registration, presskit contact, creator access, and future support routing. Do not create a social account from a personal, throwaway, agent owned, or undocumented email even if the platform would allow it.
+
+## 2026 05 19 Agent Assisted Browser Work Boundary V0
 
 Use this if the owner later wants an agent to help inside a browser session. This is not active now; it is the safe operating mode for future account work.
 
 | Action | Agent may do | Agent must not do |
 |---|---|---|
 | Public handle check | Open public profile URLs, record taken/candidate/inconclusive. | Claim availability from login walls or JS placeholders. |
-| Account registration | Fill fields only while owner controls project email, password manager, 2FA, and backup-code storage. | Create accounts under agent-owned, temporary, personal, or unrecorded credentials. |
+| Account registration | Fill fields only while owner controls project email, password manager, 2FA, and backup code storage. | Create accounts under agent owned, temporary, personal, or unrecorded credentials. |
 | Login | Use credentials only when owner is present or has supplied a controlled handoff path. | Extract browser cookies, inspect personal sessions, or store secrets in docs. |
 | Profile setup | Paste approved bio, display name, avatar/banner path, and links. | Publish posts, follow accounts, DM creators, or reveal unapproved assets. |
 | Recovery hardening | Prompt owner to save 2FA and backup codes in the vault. | Move past recovery/2FA screens without documented custody. |
@@ -107,10 +165,11 @@ Use this if the owner later wants an agent to help inside a browser session. Thi
 Minimum proof before an agent registers anything:
 
 ```text
+account_registration_permission_gate = ALLOW_ACCOUNT_REGISTRATION_VERIFIED:
 Project email exists:
 Password manager vault open:
 2FA owner present:
-Backup-code destination ready:
+Backup code destination ready:
 Approved handle:
 Approved display name:
 Approved bio:
@@ -118,27 +177,27 @@ Approved avatar/banner:
 Account URL destination in vault:
 ```
 
-Abort if any field is blank. The correct fallback is a reservation checklist, not a half-owned public account.
+Abort if any field is blank. The correct fallback is a reservation checklist, not a half owned public account.
 
 ### Reservation Order
 
 | Priority | Platform | First try | Second try | Third try | Must record |
 |---:|---|---|---|---|---|
 | 1 | Steam developer/community links | HECTON-8 official name | N/A | N/A | Steamworks owner and public URL when live |
-| 2 | YouTube brand channel | `@Hecton8Game` | `@PlayHecton8` | project-name variant approved by owner | Brand account owner, handle URL, recovery |
+| 2 | YouTube brand channel | `@Hecton8Game` | `@PlayHecton8` | project name variant approved by owner | Brand account owner, handle URL, recovery |
 | 3 | X/Twitter | `@Hecton8Game` | `@PlayHecton8` | no novelty handle without approval | 2FA, backup codes, exact public URL |
 | 4 | Bluesky | `hecton8game.bsky.social` | `playhecton8.bsky.social` | custom domain later | handle, DID/profile URL, recovery |
 | 5 | TikTok | `@hecton8game` | `@playhecton8` | hold | phone/email custody, no first post |
 | 6 | Instagram | `@hecton8game` | `@playhecton8` | hold | Meta owner, recovery, profile URL |
-| 7 | Reddit | `u/Hecton8Game` | owner-named dev account | hold | disclosure policy and rule log |
+| 7 | Reddit | `u/Hecton8Game` | owner named dev account | hold | disclosure policy and rule log |
 
 ### Reservation Notes To Paste Into Password Manager
 
 ```text
 Project: HECTON-8
-Public stance: single-player-first, no co-op promise, no Subnautica-killer copy, no performance claims without receipts.
+Public stance: single player first scope, competitor neutral copy, performance claims require measured proof.
 Profile state: private/blank until first screenshot pack passes QA.
-First public asset gate: Docs/Marketing/QA/MARKETING_ASSET_QA_CHECKLIST.md minimum 9/12 social, 10/12 Steam.
+First public asset gate: Docs/Marketing/QA/MARKETING_ASSET_QA_CHECKLIST.md minimum 9/12 social, 10/12 Steam, plus asset metadata claim checks and official link/custody gates.
 Primary links source: Steam page and presskit only after live.
 ```
 
@@ -155,21 +214,46 @@ Do immediately after account creation:
 7. Do not follow/comment/post from the account before the first screenshot pack exists.
 8. Record the exact public URL in this file or the account vault.
 
+### Post-Registration Custody Record V0
+
+Fill one row immediately after each successful registration. Do not record passwords, 2FA seeds, backup codes, cookies, or session tokens in this document.
+
+| Platform | Handle | Public URL | Login email alias | Vault item name | Recovery owner checked | 2FA enabled | Backup codes stored | Profile visibility | First public asset gate | Current status |
+|---|---|---|---|---|---|---|---|---|---|---|
+| YouTube | TBD | TBD | `accounts@...` or official inbox | TBD | NO | NO | NO | private/blank | screenshot pack QA pass | NOT_CREATED |
+| X/Twitter | TBD | TBD | `accounts@...` or official inbox | TBD | NO | NO | NO | private/blank | screenshot pack QA pass | NOT_CREATED |
+| Bluesky | TBD | TBD | `accounts@...` or official inbox | TBD | NO | NO | NO | private/blank | screenshot pack QA pass | NOT_CREATED |
+| TikTok | TBD | TBD | `accounts@...` or official inbox | TBD | NO | NO | NO | private/blank | screenshot pack QA pass | NOT_CREATED |
+| Instagram | TBD | TBD | `accounts@...` or official inbox | TBD | NO | NO | NO | private/blank | screenshot pack QA pass | NOT_CREATED |
+| Reddit | TBD | TBD | `accounts@...` or official inbox | TBD | NO | NO | NO | blank/disclosed dev | subreddit rule gate | NOT_CREATED |
+
+Allowed `Current status` values:
+
+- `NOT_CREATED`;
+- `CREATED_PRIVATE`;
+- `CREATED_PUBLIC_BLANK`;
+- `PROFILE_READY_NOT_POSTING`;
+- `READY_FOR_FIRST_ASSET_POST`;
+- `LOCKED_RECOVERY_ISSUE`;
+- `ABANDONED_DO_NOT_USE`.
+
+If any row is `LOCKED_RECOVERY_ISSUE` or `ABANDONED_DO_NOT_USE`, add it to `Data/MARKETING_RISK_REGISTER.md` before creating a replacement account.
+
 ### Abort Conditions
 
 Abort registration if:
 
-- the platform asks for a personal phone number that the owner does not want tied to the project;
-- handle availability cannot be confirmed while logged in;
-- a captcha/2FA/recovery step cannot be completed by the owner;
-- the account would need to publish a first post before assets exist;
-- the available handle creates confusion with unrelated `Hecton8` accounts.
+  the platform asks for a personal phone number that the owner does not want tied to the project;
+  handle availability cannot be confirmed while logged in;
+  a captcha/2FA/recovery step cannot be completed by the owner;
+  the account would need to publish a first post before assets exist;
+  the available handle creates confusion with unrelated `Hecton8` accounts.
 
 Minimum X profile if a profile must be public:
 
 ```text
 HECTON-8
-Single-player deep-sea survival about pressure, salvage, machinery, and black water.
+Single player deep sea survival about pressure, salvage, machinery, and black water.
 Public assets not live yet.
 ```
 
@@ -177,50 +261,66 @@ Minimum profile while private/quiet:
 
 ```text
 HECTON-8
-Single-player deep-sea survival about pressure, salvage, machinery, and black water.
+Single player deep sea survival about pressure, salvage, machinery, and black water.
 Public assets not live yet.
 ```
 
 Check for accidental Cyrillic/Latin character substitutions before publishing the name.
 
-## 2026-05-19 Account Page Field Kit V0
+## 2026 05 19 Account Page Field Kit V0
 
-Paste these fields only after the account exists under owner-controlled credentials.
+Paste these fields only after `account_registration_permission_gate = ALLOW_ACCOUNT_REGISTRATION_VERIFIED`, the account exists under owner-controlled credentials, and the post-registration custody row has been filled.
 
 | Field | Primary value | Backup value | Notes |
 |---|---|---|---|
 | Display name | `HECTON-8` | `HECTON-8 Game` | Keep hyphen consistent. |
 | Username/handle | `Hecton8Game` | `PlayHecton8` | Do not use unrelated/taken `Hecton8` handles. |
-| Short bio | `Single-player deep-sea survival about pressure, salvage, machinery, and black water.` | `Deep-sea survival. Pressure, salvage, machinery, black water.` | No co-op, no FPS, no competitor claim. |
-| Long bio | `HECTON-8 is a single-player deep-sea survival game about pressure, salvage, machinery, and the Seed Ship anomaly.` | `Official HECTON-8 account. Public assets are released only when captured from the current build.` | Use on YouTube/About pages. |
+| Short bio | `Single player deep sea survival about pressure, salvage, machinery, and black water.` | `Deep sea survival. Pressure, salvage, machinery, black water.` | Scope neutral; no FPS or competitor claim. |
+| Long bio | `HECTON-8 is a single player deep sea survival game about pressure, salvage, machinery, and the Seed Ship anomaly.` | `Official HECTON-8 account. Public assets are released only when captured from the current build.` | Use on YouTube/About pages. |
 | Location | blank | blank | Avoid fake studio geography. |
-| Website | `[Steam URL when live]` | `[presskit URL when live]` | Do not link placeholders publicly. |
-| Contact | `[project email]` | blank | Use only after inbox is ready. |
-| Avatar | approved logo mark | text-only `HECTON-8` mark | Do not use concept art as proof. |
-| Banner | approved in-game screenshot/capsule | black-water machinery crop | Must pass asset QA. |
+| Website | `[approved Steam URL when live]` | `[approved presskit URL when live]` | Do not link placeholders publicly. |
+| Contact | `[owner-controlled project email]` | blank | Use only after inbox custody passes. |
+| Avatar | approved logo mark | text only `HECTON-8` mark | Do not use concept art as proof. |
+| Banner | approved in game screenshot/capsule | black water machinery crop | Must pass asset QA. |
 
 If a platform forces a first post, use:
 
 ```text
 Official HECTON-8 account reserved.
 
-Public gameplay assets are not live yet. HECTON-8 is single-player deep-sea survival about pressure, salvage, machinery, and black water.
+Public gameplay assets are not live yet. HECTON-8 is single player deep sea survival about pressure, salvage, machinery, and black water.
 ```
 
-Do not add a Steam link until the URL exists and UTM rules are ready.
+Do not add a Steam link until Official CTA Link Activation Gate V0 passes and UTM rules are ready. If this forced reservation post is used, log it as `route_class = no_link_feedback` and do not count replies as anything beyond `consent_provenance = public_comment`.
 
 ## Profile Bio Template
 
 ```text
-HECTON-8 - single-player deep-sea survival about pressure, salvage, machinery, and the Seed Ship anomaly.
-Steam: [URL]
+HECTON-8   single player deep sea survival about pressure, salvage, machinery, and the Seed Ship anomaly.
+Steam: [approved Steam URL after CTA activation packet]
 ```
 
-No co-op. No "Subnautica killer". No performance claim.
+Scope: single player first. No competitor attack copy. No performance claim.
 
-## 2026-05-19 Platform Launch Kit V0
+## 2026 05 19 Platform Launch Kit V0
 
-Status: draft-only / blocked until handle custody, asset QA, and official links exist.
+Status: draft only / blocked until `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED`; public links also require `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`.
+
+## 2026-05-20 Public Post Permission Gate V0
+
+Machine gate: `public_post_permission_gate = HOLD_NO_PUBLIC_POST`. The only future allow value is `ALLOW_PUBLIC_POST_VERIFIED`, and it is post-specific: approving one no-link critique post does not approve a thread, trailer end card, Steam news item, creator ask, or another platform.
+
+Allow requires:
+
+- `account_registration_permission_gate = ALLOW_ACCOUNT_REGISTRATION_VERIFIED`;
+- approved post target/platform and platform rule check where community-driven;
+- real asset IDs for asset-led posts, or an approved quiet pre-asset row that does not imply public proof;
+- asset QA and asset metadata claim checks for any referenced screenshot, clip, capsule, trailer, Steam page, demo, or presskit;
+- Promise Lint pass for every public sentence;
+- `route_class` and `consent_provenance` planned before posting;
+- `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` for any public link, otherwise no-link feedback copy only;
+- no private access link;
+- no unsupported multiplayer, performance, AI, feature-scope, or competitor-attack claim.
 
 ### Bio Variants
 
@@ -228,72 +328,72 @@ Use the shortest variant that fits each platform. Do not add claims to fill spac
 
 | Platform | Bio |
 |---|---|
-| X / Bluesky | `Single-player deep-sea survival about pressure, salvage, machinery, and black water. Official HECTON-8 account.` |
-| YouTube | `HECTON-8 is a single-player deep-sea survival game about pressure, salvage, machinery, and the Seed Ship anomaly. Official clips, trailers, and dev updates.` |
-| TikTok / Shorts | `Deep-sea survival. Pressure, machinery, salvage, black water. Official HECTON-8 clips.` |
-| Instagram | `Official HECTON-8 visuals: single-player deep-sea survival, pressure machinery, salvage, black water.` |
-| Reddit profile | `Developer account for HECTON-8. Single-player deep-sea survival; no co-op promise; public posts disclose dev status.` |
+| X / Bluesky | `Single player deep sea survival about pressure, salvage, machinery, and black water. Official HECTON-8 account.` |
+| YouTube | `HECTON-8 is a single player deep sea survival game about pressure, salvage, machinery, and the Seed Ship anomaly. Official clips, trailers, and dev updates.` |
+| TikTok / Shorts | `Deep sea survival. Pressure, machinery, salvage, black water. Official HECTON-8 clips.` |
+| Instagram | `Official HECTON-8 visuals: single player deep sea survival, pressure machinery, salvage, black water.` |
+| Reddit profile | `Developer account for HECTON-8. Single player first deep sea survival; public posts disclose dev status.` |
 
 ### First Three Public Posts
 
-Run only after `PLAN-SHOT-001`, `PLAN-SHOT-003`, and `PLAN-CAPSULE-001` pass their gates.
+Run only after `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED`, `PLAN-SHOT-001`, `PLAN-SHOT-003`, one agency/decision proof clip from `PLAN-CLIP-001` or `PLAN-CLIP-003`, and `PLAN-CAPSULE-001` pass QA, asset metadata claim checks, AB-009/KPI decision-read fields where the post claims gameplay/pressure/route-risk proof, and official link/custody gates. If no decision clip exists, keep the second public post held instead of replacing it with another mood still.
 
-| Order | Platform | Asset | Copy | CTA | Kill if |
-|---:|---|---|---|---|---|
-| 1 | X / Bluesky | `PLAN-SHOT-001` | `First in-game look at HECTON-8. Single-player deep-sea survival about pressure, salvage, machinery, and black water. Blunt read wanted: does this feel like a distinct survival game, or just generic underwater sci-fi?` | Feedback question only. | Replies mostly say "what do you do?" or "AI/concept art". |
-| 2 | YouTube Community / Short if available | `PLAN-CLIP-001` or `PLAN-CLIP-003` | `A pressure problem should read before the caption. If this clip needs explanation, it failed.` | Feedback question only. | First 3 seconds do not show action/consequence. |
-| 3 | Steam News / X / Bluesky | `PLAN-CAPSULE-001` winner + Steam URL | `HECTON-8 now has an official Steam page: single-player deep-sea survival focused on pressure, salvage, machinery, and black-water route risk.` | Official Steam link only. | Steam URL not live, capsule not cold-read, or copy implies co-op/perf. |
+| Order | Platform | Asset | Copy | CTA | Reporting | Kill if |
+|---|---|---|---|---|---|---|
+| 1 | X / Bluesky | `PLAN-SHOT-001` | `First in game look at HECTON-8. Single player deep sea survival about pressure, salvage, machinery, and black water. Blunt read wanted: does this feel like a distinct survival game, or just generic underwater sci fi?` | Feedback question only. | `route_class = no_link_feedback`; `consent_provenance = public_comment` only. | Replies mostly say "what do you do?" or "AI/concept art". |
+| 2 | YouTube Community / Short if available | `PLAN-CLIP-001` or `PLAN-CLIP-003` | `A pressure problem should read before the caption. If this clip needs explanation, it failed.` | Feedback question only. | `route_class = no_link_feedback`; `consent_provenance = public_comment` only. | First 3 seconds do not show action/consequence. |
+| 3 | Steam News / X / Bluesky | `PLAN-CAPSULE-001` winner + Steam URL | `HECTON-8 now has an official Steam page: single player deep sea survival focused on pressure, salvage, machinery, and black water route risk.` | Official Steam link only. | `route_class = public_cta`; requires `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED`, CTA activation packet, and `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED` before post. | Steam URL not live through the publish gate, capsule not cold read, public post gate missing, or copy implies unsupported multiplayer scope or performance. |
 
 ### Pinned Post V0
 
-Use only after official Steam URL exists.
+Use only after the official Steam URL exists through `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED`, the exact links pass Official CTA Link Activation Gate V0, and the pinned post has `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED`.
 
 ```text
-HECTON-8 is a single-player deep-sea survival game about pressure, salvage, machinery, and the cost of staying alive below the light.
+HECTON-8 is a single player deep sea survival game about pressure, salvage, machinery, and the cost of staying alive below the light.
 
-Steam: [official URL]
-Presskit: [official URL if live]
+Steam: [approved Steam URL after CTA activation packet]
+Presskit: [approved presskit URL after CTA activation packet]
 
-No co-op promise. No performance claims without measured build/hardware context.
+Single player first scope. Performance details require measured build/hardware context.
 ```
 
-### Cross-Post Rule
+### Cross Post Rule
 
 Do not paste the same text everywhere. Keep the same facts, but change the ask:
 
-- X/Bluesky: one blunt question.
-- YouTube: clip retention and comments.
-- Reddit: critique only, with dev disclosure and no wishlist CTA unless rules allow.
-- Steam: official update, no insecurity language.
+  X/Bluesky: one blunt question.
+  YouTube: clip retention and comments.
+  Reddit: critique only, with dev disclosure and no external CTA unless platform rules and CTA activation allow.
+  Steam: official update, no insecurity language.
 
 ## Pinned Post Template
 
 ```text
-HECTON-8 is a single-player-first deep-sea survival game about pressure, salvage, machinery, and the cost of staying alive below the light.
+HECTON-8 is a single player first deep sea survival game about pressure, salvage, machinery, and the cost of staying alive below the light.
 
-Steam: [URL]
-Presskit: [URL]
-Discord: [URL if open]
+Steam: [approved Steam URL after CTA activation packet]
+Presskit: [approved presskit URL after CTA activation packet]
+Discord: [approved Discord URL after server custody and CTA activation packet]
 ```
 
 ## Platform Cadence
 
 Before screenshots:
 
-- 1-2 low-risk dev/process posts per week;
-- no wishlist begging;
-- no daily empty posts.
+  1-2 low risk dev/process posts per week;
+  no wishlist begging;
+  no daily empty posts.
 
 After screenshots:
 
-- 2-3 posts per week;
-- 1 asset per post;
-- one CTA max.
+  2-3 posts per week;
+  1 asset per post;
+  one CTA max.
 
 After demo:
 
-- daily short support/update window for first week;
-- then 2-3 posts/week.
+  daily short support/update window for first week;
+  then 2-3 posts/week.
 
 ## Post Families
 
@@ -303,7 +403,7 @@ After demo:
 | 20s gameplay clip | creator/social conversion. |
 | Tech/dev note | dev credibility. |
 | Failure/fix note | shows honesty. |
-| Steam announcement | owner-controlled update. |
+| Steam announcement | owner controlled update. |
 | Survey/feedback | only with real asset/build. |
 | Patch notes | after demo/launch. |
 
@@ -311,48 +411,50 @@ After demo:
 
 Before posting:
 
-- asset passed QA;
-- platform rules checked if community-driven;
-- CTA works;
-- no duplicate copy across platforms;
-- developer status is clear where needed;
-- no fake player voice;
-- no co-op implication;
-- no unproved performance claim.
+  public_post_permission_gate is ALLOW_PUBLIC_POST_VERIFIED for this exact post;
+  asset passed QA and asset metadata claim checks;
+  official account custody and CTA link gates still pass;
+  platform rules checked if community driven;
+  CTA works;
+  no duplicate copy across platforms;
+  developer status is clear where needed;
+  no fake player voice;
+  no unsupported multiplayer-scope implication;
+  no unproved performance claim.
 
 ## First 10 Public Social Posts
 
-1. First in-game machinery screenshot.
+1. First in game machinery screenshot.
 2. Pressure warning / hatch / leak screenshot.
 3. "What is HECTON-8?" short thread.
 4. Seed Ship anomaly teaser screenshot.
 5. 15s salvage route clip.
 6. Base pressure/failure clip.
 7. Devlog: why pressure must be readable.
-8. Steam page live announcement.
-9. Demo/playtest signup announcement.
+8. Steam page live announcement only after `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED`, Official CTA Link Activation Gate V0, and `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED`.
+9. Demo/playtest signup announcement after approved URL, signup custody, and CTA activation packet pass.
 10. Known issues/feedback request after demo.
 
 ## Reply Rules
 
 Use short direct replies.
 
-### "Is it co-op?"
+### "Is multiplayer planned?"
 
 ```text
-No. HECTON-8 is single-player-first. We are not selling a co-op promise.
+Current public scope is single player first. We will only talk about additional modes if they are real in the build.
 ```
 
 ### "Is this Subnautica?"
 
 ```text
-It shares underwater survival adjacency, but the lane is different: pressure, machinery, salvage, corrosion, and deep-sea noir.
+It shares underwater survival adjacency, but the lane is different: pressure, machinery, salvage, corrosion, and deep sea noir.
 ```
 
 ### "Will it run on my PC?"
 
 ```text
-We will publish performance details only with build, hardware, settings, and frame-time context. No empty FPS promises.
+We will publish performance details only with build, hardware, settings, and frame time context. No empty FPS promises.
 ```
 
 ## Current HECTON-8 Decision

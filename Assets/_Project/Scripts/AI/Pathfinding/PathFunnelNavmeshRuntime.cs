@@ -31,11 +31,11 @@ namespace Hecton8.AI.Pathfinding
         private int _invalidationCapacity = DefaultInvalidationCapacity;
 
         private IDataVault _dataVault;
-        private VaultBufferHandle<PathFunnelActivePath> _activePathsHandle;
-        private VaultBufferHandle<ulong> _activePathCellMasksHandle;
-        private VaultBufferHandle<PathFunnelInvalidation> _invalidationsHandle;
-        private VaultBufferHandle<PathFunnelTelemetryEntry> _telemetryHandle;
-        private VaultBufferHandle<PathFunnelRuntimeState> _runtimeStateHandle;
+        private VaultGenerationHandle<PathFunnelActivePath> _activePathsHandle;
+        private VaultGenerationHandle<ulong> _activePathCellMasksHandle;
+        private VaultGenerationHandle<PathFunnelInvalidation> _invalidationsHandle;
+        private VaultGenerationHandle<PathFunnelTelemetryEntry> _telemetryHandle;
+        private VaultGenerationHandle<PathFunnelRuntimeState> _runtimeStateHandle;
         private bool _registeredFastTick;
         private bool _registeredLateFrame;
         private bool _registeredHotSwap;
@@ -57,7 +57,8 @@ namespace Hecton8.AI.Pathfinding
             if (!Application.isPlaying)
                 return;
 
-            _dataVault = GlobalRegistry.DataVault;
+            if (_dataVault == null && GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latestVault))
+                _dataVault = latestVault;
             EnsureVaultBuffers();
             _registeredFastTick = GlobalRegistry.TryRegisterFastTickable(this, PriorityLayer.Environment);
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
@@ -84,6 +85,7 @@ namespace Hecton8.AI.Pathfinding
                 _registeredHotSwap = false;
             }
 
+            ReleaseVaultHandles(_dataVault);
             ClearVaultHandles();
             _dataVault = null;
         }
@@ -101,6 +103,7 @@ namespace Hecton8.AI.Pathfinding
             }
 
             PathFunnelRuntimeState runtimeState = runtimeStateBuffer[0];
+            AdvanceRuntimeFrame(ref runtimeState);
             NativeArray<byte> wfcGridBitmasks = default;
             TryResolveWfcGrid(out wfcGridBitmasks);
 
@@ -160,6 +163,7 @@ namespace Hecton8.AI.Pathfinding
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
+            ReleaseVaultHandles(_dataVault);
             _dataVault = currentService as IDataVault;
             ClearVaultHandles();
             EnsureVaultBuffers();
@@ -226,7 +230,7 @@ namespace Hecton8.AI.Pathfinding
             path.CorridorHash = corridorHash;
             path.CellCount = (ushort)math.min(validCellCount, ushort.MaxValue);
             path.Flags = PathFunnelActivePathFlags.InUse;
-            path.LastTouchedFrame = (uint)Time.frameCount;
+            path.LastTouchedFrame = ResolveCurrentRuntimeFrame(in runtimeState);
             activePaths[pathIndex] = path;
 
             runtimeState.ActivePathCount = activePathCount;
@@ -333,60 +337,40 @@ namespace Hecton8.AI.Pathfinding
             if (vault == null)
                 return false;
 
-            int activePathCapacity = math.clamp(_activePathCapacity, 1, MaxActivePathCapacity);
+            int activePathCapacity = ResolveActivePathCapacity();
             int cellMaskCapacity = activePathCapacity * PathFunnelConstants.WfcCellMaskWordCount;
-            int invalidationCapacity = math.clamp(_invalidationCapacity, 2, MaxInvalidationCapacity);
+            int invalidationCapacity = ResolveInvalidationCapacity();
 
-            if (!_activePathsHandle.IsCreated || _activePathsHandle.Length < activePathCapacity)
-            {
-                _activePathsHandle = vault.GetBufferHandle<PathFunnelActivePath>(
-                    BufferID.PathFunnelActivePaths,
-                    activePathCapacity,
-                    SystemID.AIPathfinding,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            if (!_activePathCellMasksHandle.IsCreated || _activePathCellMasksHandle.Length < cellMaskCapacity)
-            {
-                _activePathCellMasksHandle = vault.GetBufferHandle<ulong>(
-                    BufferID.PathFunnelCellMasks,
-                    cellMaskCapacity,
-                    SystemID.AIPathfinding,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            if (!_invalidationsHandle.IsCreated || _invalidationsHandle.Length < invalidationCapacity)
-            {
-                _invalidationsHandle = vault.GetBufferHandle<PathFunnelInvalidation>(
-                    BufferID.PathFunnelInvalidations,
-                    invalidationCapacity,
-                    SystemID.AIPathfinding,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            if (!_telemetryHandle.IsCreated || _telemetryHandle.Length < PathFunnelConstants.TelemetryFrames)
-            {
-                _telemetryHandle = vault.GetBufferHandle<PathFunnelTelemetryEntry>(
-                    BufferID.PathFunnelTelemetryRing,
-                    PathFunnelConstants.TelemetryFrames,
-                    SystemID.AIPathfinding,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            if (!_runtimeStateHandle.IsCreated || _runtimeStateHandle.Length < 1)
-            {
-                _runtimeStateHandle = vault.GetBufferHandle<PathFunnelRuntimeState>(
-                    BufferID.PathFunnelRuntimeState,
-                    1,
-                    SystemID.AIPathfinding,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            return _activePathsHandle.IsCreated &&
-                   _activePathCellMasksHandle.IsCreated &&
-                   _invalidationsHandle.IsCreated &&
-                   _telemetryHandle.IsCreated &&
-                   _runtimeStateHandle.IsCreated;
+            return TryResolveOrAcquireVaultBuffer(
+                       vault,
+                       BufferID.PathFunnelActivePaths,
+                       activePathCapacity,
+                       ref _activePathsHandle,
+                       out _) &&
+                   TryResolveOrAcquireVaultBuffer(
+                       vault,
+                       BufferID.PathFunnelCellMasks,
+                       cellMaskCapacity,
+                       ref _activePathCellMasksHandle,
+                       out _) &&
+                   TryResolveOrAcquireVaultBuffer(
+                       vault,
+                       BufferID.PathFunnelInvalidations,
+                       invalidationCapacity,
+                       ref _invalidationsHandle,
+                       out _) &&
+                   TryResolveOrAcquireVaultBuffer(
+                       vault,
+                       BufferID.PathFunnelTelemetryRing,
+                       PathFunnelConstants.TelemetryFrames,
+                       ref _telemetryHandle,
+                       out _) &&
+                   TryResolveOrAcquireVaultBuffer(
+                       vault,
+                       BufferID.PathFunnelRuntimeState,
+                       1,
+                       ref _runtimeStateHandle,
+                       out _);
         }
 
         private void ClearVaultHandles()
@@ -396,6 +380,106 @@ namespace Hecton8.AI.Pathfinding
             _invalidationsHandle = default;
             _telemetryHandle = default;
             _runtimeStateHandle = default;
+        }
+
+        private int ResolveActivePathCapacity()
+        {
+            return math.clamp(_activePathCapacity, 1, MaxActivePathCapacity);
+        }
+
+        private int ResolveInvalidationCapacity()
+        {
+            return math.clamp(_invalidationCapacity, 2, MaxInvalidationCapacity);
+        }
+
+        private int ResolveActivePathLengthForState()
+        {
+            return TryResolveVaultBuffer(in _activePathsHandle, ResolveActivePathCapacity(), out NativeArray<PathFunnelActivePath> activePaths)
+                ? activePaths.Length
+                : ResolveActivePathCapacity();
+        }
+
+        private int ResolveInvalidationLengthForState()
+        {
+            return TryResolveVaultBuffer(in _invalidationsHandle, ResolveInvalidationCapacity(), out NativeArray<PathFunnelInvalidation> invalidations)
+                ? invalidations.Length
+                : ResolveInvalidationCapacity();
+        }
+
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
+        }
+
+        private bool TryResolveVaultBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   IsVaultHandleCreated(in handle) &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static bool TryResolveOrAcquireVaultBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            ref VaultGenerationHandle<T> handle,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null)
+                return false;
+
+            if (IsVaultHandleCreated(in handle) &&
+                vault.TryResolveHandle(in handle, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= requiredLength)
+            {
+                return true;
+            }
+
+            VaultGenerationHandle<T> acquired = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.AIPathfinding,
+                NativeArrayOptions.ClearMemory);
+            if (!IsVaultHandleCreated(in acquired) ||
+                !vault.TryResolveHandle(in acquired, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                return false;
+            }
+
+            handle = acquired;
+            return true;
+        }
+
+        private void ReleaseVaultHandles(IDataVault vault)
+        {
+            if (vault == null)
+                return;
+
+            ReleaseVaultHandle(vault, ref _activePathsHandle);
+            ReleaseVaultHandle(vault, ref _activePathCellMasksHandle);
+            ReleaseVaultHandle(vault, ref _invalidationsHandle);
+            ReleaseVaultHandle(vault, ref _telemetryHandle);
+            ReleaseVaultHandle(vault, ref _runtimeStateHandle);
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (!IsVaultHandleCreated(in handle))
+                return;
+
+            vault.ReleaseBuffer(in handle);
+            handle = default;
         }
 
         private bool TryResolveMutationViews(
@@ -412,24 +496,20 @@ namespace Hecton8.AI.Pathfinding
             if (!EnsureVaultBuffers())
                 return false;
 
-            IDataVault vault = _dataVault;
-            activePaths = _activePathsHandle.Resolve(vault);
-            activePathCellMasks = _activePathCellMasksHandle.Resolve(vault);
-            invalidations = _invalidationsHandle.Resolve(vault);
-            runtimeStateBuffer = _runtimeStateHandle.Resolve(vault);
-            if (!activePaths.IsCreated ||
-                !activePathCellMasks.IsCreated ||
-                !invalidations.IsCreated ||
-                !runtimeStateBuffer.IsCreated ||
-                activePaths.Length <= 0 ||
+            if (!TryResolveVaultBuffer(in _activePathsHandle, ResolveActivePathCapacity(), out activePaths) ||
+                !TryResolveVaultBuffer(
+                    in _activePathCellMasksHandle,
+                    ResolveActivePathCapacity() * PathFunnelConstants.WfcCellMaskWordCount,
+                    out activePathCellMasks) ||
+                !TryResolveVaultBuffer(in _invalidationsHandle, ResolveInvalidationCapacity(), out invalidations) ||
+                !TryResolveVaultBuffer(in _runtimeStateHandle, 1, out runtimeStateBuffer) ||
                 activePathCellMasks.Length < activePaths.Length * PathFunnelConstants.WfcCellMaskWordCount ||
-                invalidations.Length <= 0 ||
-                runtimeStateBuffer.Length <= 0)
+                invalidations.Length <= 0)
             {
                 return false;
             }
 
-            InitializeRuntimeState(runtimeStateBuffer, PathFunnelConstants.TelemetryFrames);
+            InitializeRuntimeState(runtimeStateBuffer, PathFunnelConstants.TelemetryFrames, activePaths.Length, invalidations.Length);
             return true;
         }
 
@@ -445,21 +525,18 @@ namespace Hecton8.AI.Pathfinding
             if (!EnsureVaultBuffers())
                 return false;
 
-            IDataVault vault = _dataVault;
-            activePaths = _activePathsHandle.Resolve(vault);
-            activePathCellMasks = _activePathCellMasksHandle.Resolve(vault);
-            runtimeStateBuffer = _runtimeStateHandle.Resolve(vault);
-            if (!activePaths.IsCreated ||
-                !activePathCellMasks.IsCreated ||
-                !runtimeStateBuffer.IsCreated ||
-                activePaths.Length <= 0 ||
-                activePathCellMasks.Length < activePaths.Length * PathFunnelConstants.WfcCellMaskWordCount ||
-                runtimeStateBuffer.Length <= 0)
+            if (!TryResolveVaultBuffer(in _activePathsHandle, ResolveActivePathCapacity(), out activePaths) ||
+                !TryResolveVaultBuffer(
+                    in _activePathCellMasksHandle,
+                    ResolveActivePathCapacity() * PathFunnelConstants.WfcCellMaskWordCount,
+                    out activePathCellMasks) ||
+                !TryResolveVaultBuffer(in _runtimeStateHandle, 1, out runtimeStateBuffer) ||
+                activePathCellMasks.Length < activePaths.Length * PathFunnelConstants.WfcCellMaskWordCount)
             {
                 return false;
             }
 
-            InitializeRuntimeState(runtimeStateBuffer, PathFunnelConstants.TelemetryFrames);
+            InitializeRuntimeState(runtimeStateBuffer, PathFunnelConstants.TelemetryFrames, activePaths.Length, ResolveInvalidationLengthForState());
             return true;
         }
 
@@ -469,11 +546,10 @@ namespace Hecton8.AI.Pathfinding
             if (!EnsureVaultBuffers())
                 return false;
 
-            runtimeStateBuffer = _runtimeStateHandle.Resolve(_dataVault);
-            if (!runtimeStateBuffer.IsCreated || runtimeStateBuffer.Length <= 0)
+            if (!TryResolveVaultBuffer(in _runtimeStateHandle, 1, out runtimeStateBuffer))
                 return false;
 
-            InitializeRuntimeState(runtimeStateBuffer, PathFunnelConstants.TelemetryFrames);
+            InitializeRuntimeState(runtimeStateBuffer, PathFunnelConstants.TelemetryFrames, ResolveActivePathLengthForState(), ResolveInvalidationLengthForState());
             return true;
         }
 
@@ -486,17 +562,13 @@ namespace Hecton8.AI.Pathfinding
             if (!EnsureVaultBuffers())
                 return false;
 
-            telemetry = _telemetryHandle.Resolve(_dataVault);
-            runtimeStateBuffer = _runtimeStateHandle.Resolve(_dataVault);
-            if (!telemetry.IsCreated ||
-                !runtimeStateBuffer.IsCreated ||
-                telemetry.Length < PathFunnelConstants.TelemetryFrames ||
-                runtimeStateBuffer.Length <= 0)
+            if (!TryResolveVaultBuffer(in _telemetryHandle, PathFunnelConstants.TelemetryFrames, out telemetry) ||
+                !TryResolveVaultBuffer(in _runtimeStateHandle, 1, out runtimeStateBuffer))
             {
                 return false;
             }
 
-            InitializeRuntimeState(runtimeStateBuffer, ResolveTelemetryRingLength(telemetry));
+            InitializeRuntimeState(runtimeStateBuffer, ResolveTelemetryRingLength(telemetry), ResolveActivePathLengthForState(), ResolveInvalidationLengthForState());
             return true;
         }
 
@@ -509,12 +581,11 @@ namespace Hecton8.AI.Pathfinding
             if (!EnsureVaultBuffers())
                 return false;
 
-            activePaths = _activePathsHandle.Resolve(_dataVault);
-            runtimeStateBuffer = _runtimeStateHandle.Resolve(_dataVault);
-            if (!activePaths.IsCreated || !runtimeStateBuffer.IsCreated || activePaths.Length <= 0 || runtimeStateBuffer.Length <= 0)
+            if (!TryResolveVaultBuffer(in _activePathsHandle, ResolveActivePathCapacity(), out activePaths) ||
+                !TryResolveVaultBuffer(in _runtimeStateHandle, 1, out runtimeStateBuffer))
                 return false;
 
-            InitializeRuntimeState(runtimeStateBuffer, PathFunnelConstants.TelemetryFrames);
+            InitializeRuntimeState(runtimeStateBuffer, PathFunnelConstants.TelemetryFrames, activePaths.Length, ResolveInvalidationLengthForState());
             return true;
         }
 
@@ -527,16 +598,19 @@ namespace Hecton8.AI.Pathfinding
             if (!EnsureVaultBuffers())
                 return false;
 
-            invalidations = _invalidationsHandle.Resolve(_dataVault);
-            runtimeStateBuffer = _runtimeStateHandle.Resolve(_dataVault);
-            if (!invalidations.IsCreated || !runtimeStateBuffer.IsCreated || invalidations.Length <= 0 || runtimeStateBuffer.Length <= 0)
+            if (!TryResolveVaultBuffer(in _invalidationsHandle, ResolveInvalidationCapacity(), out invalidations) ||
+                !TryResolveVaultBuffer(in _runtimeStateHandle, 1, out runtimeStateBuffer))
                 return false;
 
-            InitializeRuntimeState(runtimeStateBuffer, PathFunnelConstants.TelemetryFrames);
+            InitializeRuntimeState(runtimeStateBuffer, PathFunnelConstants.TelemetryFrames, ResolveActivePathLengthForState(), invalidations.Length);
             return true;
         }
 
-        private void InitializeRuntimeState(NativeArray<PathFunnelRuntimeState> runtimeStateBuffer, int telemetryLength)
+        private void InitializeRuntimeState(
+            NativeArray<PathFunnelRuntimeState> runtimeStateBuffer,
+            int telemetryLength,
+            int activePathLength,
+            int invalidationLength)
         {
             PathFunnelRuntimeState runtimeState = runtimeStateBuffer[0];
             if (runtimeState.BuffersReady == 0)
@@ -545,19 +619,41 @@ namespace Hecton8.AI.Pathfinding
                 runtimeState.BuffersReady = 1;
             }
 
-            runtimeState.ActivePathCount = math.clamp(runtimeState.ActivePathCount, 0, math.max(1, _activePathsHandle.Length));
-            runtimeState.InvalidationReadCursor = ClampRingCursor(runtimeState.InvalidationReadCursor, math.max(1, _invalidationsHandle.Length));
-            runtimeState.InvalidationWriteCursor = ClampRingCursor(runtimeState.InvalidationWriteCursor, math.max(1, _invalidationsHandle.Length));
+            runtimeState.ActivePathCount = math.clamp(runtimeState.ActivePathCount, 0, math.max(1, activePathLength));
+            runtimeState.InvalidationReadCursor = ClampRingCursor(runtimeState.InvalidationReadCursor, math.max(1, invalidationLength));
+            runtimeState.InvalidationWriteCursor = ClampRingCursor(runtimeState.InvalidationWriteCursor, math.max(1, invalidationLength));
             runtimeState.TelemetryCursor = ClampRingCursor(runtimeState.TelemetryCursor, math.max(1, telemetryLength));
-            runtimeState.VaultGeneration = _runtimeStateHandle.GenerationID;
+            runtimeState.VaultGeneration = _runtimeStateHandle.Generation;
             runtimeStateBuffer[0] = runtimeState;
+        }
+
+        private static uint AdvanceRuntimeFrame(ref PathFunnelRuntimeState runtimeState)
+        {
+            uint next = runtimeState.FrameCounter + 1u;
+            if (next == 0u)
+                next = 1u;
+
+            runtimeState.FrameCounter = next;
+            return next;
+        }
+
+        private static uint ResolveCurrentRuntimeFrame(in PathFunnelRuntimeState runtimeState)
+        {
+            return runtimeState.FrameCounter != 0u ? runtimeState.FrameCounter : 1u;
         }
 
         private bool TryResolveWfcGrid(out NativeArray<byte> wfcGridBitmasks)
         {
             wfcGridBitmasks = default;
             IDataVault vault = _dataVault;
-            return vault != null && vault.TryGetBuffer(BufferID.WfcOutpostGrid, out wfcGridBitmasks);
+            if (vault == null ||
+                !vault.TryGetGenerationHandle<byte>(BufferID.WfcOutpostGrid, out VaultGenerationHandle<byte> handle) ||
+                !vault.TryResolveHandle(in handle, out wfcGridBitmasks))
+            {
+                return false;
+            }
+
+            return wfcGridBitmasks.IsCreated;
         }
 
         private void ProcessWfcStateSignal(
@@ -798,7 +894,7 @@ namespace Hecton8.AI.Pathfinding
             int telemetryCursor = ClampRingCursor(runtimeState.TelemetryCursor, telemetryLength);
             telemetry[telemetryCursor] = new PathFunnelTelemetryEntry
             {
-                Frame = (uint)Time.frameCount,
+                Frame = ResolveCurrentRuntimeFrame(in runtimeState),
                 PathInvalidationCount = runtimeState.PathInvalidationCount,
                 LastSectorHash = runtimeState.LastSectorHash,
                 LastPathId = runtimeState.LastPathId,

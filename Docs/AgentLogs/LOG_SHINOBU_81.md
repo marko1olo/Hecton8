@@ -1,803 +1,965 @@
-# LOG_SHINOBU_81
+# LOG SHINOBU_81
 
-Top=old, bottom=new.
+## 2026-05-19 CTA Activation Propagation
 
-## 2026-05-18 - Competitive Intelligence Pass Started
+What was wrong: the CTA activation gate existed, but active paste surfaces still had raw or semi-ready CTA placeholders: `Steam: [URL]`, `Presskit: [URL]`, `title + Steam wishlist`, trailer/showcase `Steam CTA`, and signup/demo URL stubs.
 
-What was wrong -> The SHINOBU_81 prompt was supplied inline by the user but no matching `<AGENT_PROMPT id="SHINOBU_81">` block was found in `Docs/Tasks/CURRENT_BATCH.md`. Without a local state file, the pass would be vulnerable to context loss and cross-agent prompt contamination.
+What was done: propagated CTA activation into existing social, post-bank, community, trailer, campaign, Steam, audience, and press/showcase docs. Public surfaces now require approved CTA placeholders after `Analytics/MEASUREMENT_AND_UTM_PLAN.md` Official CTA Link Activation Gate V0 or use no-link feedback/end-card copy. Backlog row 117, source ledger, and RISK-048 were updated.
 
-What was done -> Created SHINOBU_81 status/rationale/log files. Read AGENTS, domain boundary, mandate registry, eight task-relevant mandates, active Subnautica 2 HECTON-8 docs, and current documentation actuality ledger. Confirmed this is research/docs-only until the final gap report is written.
+Cinematic cheats used: documentation route-control, not runtime simulation. The cheap fake is no-link qualitative feedback copy until a real official destination exists.
 
-Cinematic Cheats used -> None implemented. Research direction is fake-first: fog LUTs, silt masks, impostors, acoustic cues, scalar pressure, and tiered Overkill presentation.
+Exact microseconds saved: 0us runtime impact; docs/data-only.
 
-Exact Microseconds saved -> 0us measured. No runtime code changed and no profiler artifact exists.
+Validation: Marketing file count 100. CSV parse OK for 9 files. CRM stayed 100 rows with status split `DO_NOT_CONTACT=3`, `LOW_PRIORITY_VERIFY_LATER=52`, `NEEDS_ASSET=22`, `VERIFY_BEFORE_CONTACT=23`; send-log fields remain 0 filled. Asset metadata stayed 13 planned rows, all `creator_send_gate = BLOCKED_PLANNED_CAPTURE`, `creator_utility_score = 0`. Targeted text, legacy/corruption, UTM ID, CTA paste-surface, and backtick path audits returned clean.
 
-## 2026-05-18 - Competitive Intelligence Pass Completed
+## 2026-05-19 Public/Private Access Route Separation
 
-What was wrong -> Subnautica 2 was being treated as an easy target. Evidence does not support that. Public launch data shows a strong Early Access reception, broad platform reach, co-op as a real differentiator, and roughly 60k Steam reviews with very positive aggregate sentiment at the time of capture. The real attack surface is narrower: trust/EULA backlash, DX12/shader/crash/FPS variance, thin Early Access content, weaker fear/pressure fantasy, missing large-sub aspiration, no defensive agency, co-op/save/desync anecdotes, and QoL still on the roadmap.
+What was wrong: public CTA links and private demo/key/playtest/preview access routes were not consistently separated in demo, access, campaign, showcase, and screening docs.
 
-What was done -> Wrote `Docs/REPORTS/COMPETITIVE_GAP_ANALYSIS.md` covering all 13 SHINOBU_81 tasks. Updated `Docs/Tasks/Status_SHINOBU_81.md` with five iterative loops, DOD practice, rejected alternatives, and 0us runtime estimates. Updated `Docs/AgentLogs/Rationale_SHINOBU_81.md` with evidence discipline, scope control, Seed Ship narrative hook, YouTube evidence boundary, co-op attack surface, and scarcity/bounty decisions. Ran `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary`; result was 0 errors, 10 warnings.
+What was done: added public/private route class rules to `Steam/DEMO_PLAYTEST_AND_TELEMETRY_PLAN.md`, `Press/REVIEW_KEYS_EMBARGO_AND_PREVIEW_ACCESS_PROTOCOL.md`, `KEYS_AND_CREATOR_COMPLIANCE.md`, `Campaigns/CAMPAIGN_03_FIRST_DEMO_OUTREACH.md`, `Campaigns/CAMPAIGN_04_NEXT_FEST_AND_DEMO_EVENT.md`, `Press/SHOWCASE_AND_FESTIVAL_SUBMISSION_PLAYBOOK.md`, and `Audience/PLAYTESTER_RECRUITMENT_AND_SCREENING_PLAN.md`. Backlog row 118, source ledger, and RISK-049 were updated.
 
-Cinematic Cheats used -> No runtime cheats implemented. Report prescribes fake-first counter-tactics: fog LUTs, silt masks, impostor ecology, scalar pressure fields, acoustic RT60/occlusion approximations, staged visibility, deterministic base ledgers, material grime masks, and tiered Low/Middle/High/Ultra visual overkill from one gameplay truth.
+Cinematic cheats used: operational route separation instead of account/platform action. Private access remains invisible and controlled until a public CTA route has actual destination/custody/UTM proof.
 
-Exact Microseconds saved -> 0us measured in this pass. Potential future savings are unclaimed until profiler proof exists. The report prevents wasted cycles by rejecting fabricated YouTube top-comment rankings, unproven UE5-stutter claims, and unsupported HECTON-8 superiority language.
+Exact microseconds saved: 0us runtime impact; docs/data-only.
 
-## 2026-05-18 - Marketing Preparation System Added
+Validation: Marketing file count 100. CSV parse OK for 9 files. CRM and asset metadata unchanged. Targeted text, legacy/corruption, UTM ID, public/private route, and backtick path audits returned clean. No public demo, key, Playtest, preview access, account/browser action, outreach, runtime, or build action occurred.
 
-What was wrong -> Agent output had started treating co-op/100km networking as a possible public counter-feature even though the user stated co-op is not currently planned. Marketing direction was also still chat-level instead of a reusable folder structure with creator leads, pitches, Steam rules, and agent workflows.
+## 2026-05-19 Consent/Provenance Route Gates
 
-What was done -> Added a scope correction to `Docs/Reports/COMPETITIVE_GAP_ANALYSIS.md`. Created `Docs/Marketing/` with `README.md`, `NO_COOP_PUBLIC_POSITIONING.md`, `MARKETING_PREP_MASTER_PLAN.md`, `Steam/STEAM_WISHLIST_AND_NEXT_FEST_PLAN.md`, `CreatorOutreach/CREATOR_OUTREACH_DATABASE.md`, `CreatorOutreach/PITCH_BANK.md`, `Community/COMMUNITY_POST_TEMPLATES.md`, `Press/PRESS_KIT_AND_MEDIA_PLAN.md`, `Data/SOURCE_LEDGER.md`, and `AgentOps/AGENT_MARKETING_WORKFLOWS.md`. Closed three marketing subagents after integrating their outputs.
+What was wrong: playtest screening, newsletter signup, support routes, Steam feedback, creator replies, and press contacts could be confused as one generic contact pool if only the email/handle was recorded.
 
-Cinematic Cheats used -> No runtime cheats implemented. Marketing cheat is evidence packaging: sell pressure, machinery, grime, black water, Seed Ship corruption, and proof-backed frame-time only when measured. No paid ads before assets prove a hook.
+What was done: added consent/provenance and route class requirements to `Audience/PLAYTESTER_RECRUITMENT_AND_SCREENING_PLAN.md`, `Audience/OWNED_AUDIENCE_EMAIL_AND_NEWSLETTER_PLAN.md`, `Feedback/PLAYER_FEEDBACK_TAXONOMY_AND_TRIAGE.md`, `Feedback/STEAM_REVIEWS_FORUMS_AND_SUPPORT_RESPONSE_PLAYBOOK.md`, and `Launch/LAUNCH_DAY_AND_FIRST_WEEK_WAR_ROOM.md`. Backlog row 119, source ledger, and RISK-050 were updated.
 
-Exact Microseconds saved -> 0us measured. The saved cost is strategic: prevents budget waste on ads, prevents trust damage from co-op promises, and turns agent labor into a repeatable creator/Steam/press preparation pipeline.
+Cinematic cheats used: consent/source classification before any platform work. No forms or accounts were created; the cheap safe path is a controlled route taxonomy.
 
-## 2026-05-18 - Build Recheck After Marketing Docs
+Exact microseconds saved: 0us runtime impact; docs/data-only.
 
-What was wrong -> A repeat `Hecton8.Core.csproj` build after docs-only marketing edits failed. The errors are in runtime `Assets/_Project/Scripts/PlayerBuilder.cs`: missing `Hecton8.Habitat`, `Hecton8.Construction.MockWorldSampler`, and construction DTO types. `PlayerBuilder.cs` is modified in the worktree by other work; SHINOBU_81 did not edit runtime files.
+Validation: Marketing file count 100. CSV parse OK for 9 files. CRM and asset metadata unchanged. Targeted text, legacy/corruption, UTM ID, consent/provenance, and backtick path audits returned clean. No form was published, no tester recruited, no account/browser action, outreach, runtime, or build action occurred.
 
-What was done -> Recorded the failure as an external dependency break. No rollback was performed because SHINOBU_81 only changed documentation/marketing files and reverting runtime code from another agent would violate ownership.
+## 2026-05-19 Route/Consent Reporting Gates
 
-Cinematic Cheats used -> None.
+What was wrong: consent/provenance and route class were required in route-owner docs, but KPI/analytics/reporting tables could still count generic feedback, forms, support, creator replies, press replies, or links without preserving source permission.
 
-Exact Microseconds saved -> 0us measured. Build failure is unrelated to marketing docs; no runtime optimization claim exists.
+What was done: updated `KPI/MARKETING_DASHBOARD_SPEC.md`, `Analytics/MEASUREMENT_AND_UTM_PLAN.md`, and `Operations/DAILY_AGENT_TASK_LOOP.md` so dashboard rows, campaign event logs, feedback coding, measurement packets, weekly summaries, and KPI clerk output require route class and consent/provenance. Backlog row 120, source ledger, and RISK-050 were updated.
 
-## 2026-05-18 - Marketing Expansion Pass
+Cinematic cheats used: table-level source control instead of platform action. Private access remains measured through access logs, not public UTM traffic.
 
-What was wrong -> The first marketing folder had the core plan, but the user asked for broader autonomous preparation: major directions, larger lead queues, pitch logic, content samples, where to post, what to track, and how to use agents over time.
+Exact microseconds saved: 0us runtime impact; docs/data-only.
 
-What was done -> Added `PREP_DIRECTIONS_NOW.md`, `Content/SCREENSHOT_AND_CLIP_SHOTLIST.md`, `CreatorOutreach/SEGMENT_PITCH_MATRIX.md`, `CreatorOutreach/RAW_LEAD_EXPANSION_QUEUE.md`, `Steam/STORE_PAGE_COPY_MATRIX.md`, `Community/COMMUNITY_TARGETS_AND_RULES.md`, `KPI/MARKETING_DASHBOARD_SPEC.md`, and `Regional/REGIONAL_OUTREACH_PLAN.md`. Updated the marketing README directory map.
+Validation: Marketing file count 100. CSV parse OK for 9 files. CRM stayed 100 rows with status split `DO_NOT_CONTACT=3`, `LOW_PRIORITY_VERIFY_LATER=52`, `NEEDS_ASSET=22`, `VERIFY_BEFORE_CONTACT=23`; send-log fields remain 0 filled. Asset metadata stayed 13 planned rows, all `creator_send_gate = BLOCKED_PLANNED_CAPTURE`, `creator_utility_score = 0`. Targeted text, legacy/corruption, UTM ID, measurement-route table, route/consent field, and backtick path audits returned clean. No public link, form, support route, account/browser action, outreach, runtime, or build action occurred.
 
-Cinematic Cheats used -> No runtime cheats implemented. Marketing direction still prioritizes fake-first visual proof: pressure, silt, machine noise, grime, silhouette, and Seed Ship signal distortion as assets before paid traffic.
+## 2026-05-19 Entry-Doc Route/Consent Propagation
 
-Exact Microseconds saved -> 0us measured. Strategic savings: prevents premature ads, prevents co-op false promises, and turns raw lead mining into a staged verification pipeline.
+What was wrong: the route/consent reporting gate was present in KPI/analytics/operations, but the primary entry docs did not warn agents before they began counting feedback, contact, or link signal.
 
-## 2026-05-18 - Marketing Lead Integration Pass
+What was done: updated `MARKETING_CONTROL_TOWER.md`, `README.md`, and `PREP_DIRECTIONS_NOW.md` so first-read rules require route class and consent/provenance before KPI, analytics, weekly-report, feedback/contact/link, public CTA, private access, creator-reply, or press-reply signal is counted. Backlog row 121 and source ledger were updated. Stale `Marketing/...` backtick paths in the touched control tower were repaired instead of masking them with placeholder files.
 
-What was wrong -> The marketing prep folder had strong structure, but the raw outreach surface was still too shallow for the user's requested long-horizon creator/press preparation. It also needed explicit CRM scoring and key-scam guardrails before scaling beyond a few dozen targets.
+Cinematic cheats used: entry-point guardrail instead of more documents. The cheap path is preventing invalid counting before any platform action happens.
 
-What was done -> Added `CreatorOutreach/ADJACENT_SURVIVAL_CREATOR_LEADS.md`, `Press/PRESS_AND_STEAM_CURATOR_TARGETS.md`, `Regional/REGIONAL_CREATOR_LEADS.md`, `CreatorOutreach/CREATOR_CRM_SCHEMA_AND_SCORING.md`, `OUTREACH_CALENDAR_AND_BATCH_PLAN.md`, and `KEYS_AND_CREATOR_COMPLIANCE.md`. Updated the marketing README map.
+Exact microseconds saved: 0us runtime impact; docs/data-only.
 
-Cinematic Cheats used -> None implemented. Marketing fake-first direction remains: sell screenshot/clip proof of pressure, machinery, black water, grime, sonar, Seed Ship signal corruption, and only measured performance.
+Validation: Marketing file count 100. CSV parse OK for 9 files. CRM and asset metadata unchanged. Targeted text, legacy/corruption, UTM ID, entry route/consent, and backtick path audits returned clean. No public link, form, support route, account/browser action, outreach, runtime, or build action occurred.
 
-Exact Microseconds saved -> 0us measured. Operational savings: future outreach can scale by verified segments instead of spam, and key distribution has an anti-scam workflow before any demo exists.
+## 2026-05-19 Pasteable Post Route Metadata
 
-## 2026-05-18 - Marketing Direction Production Addendum
+What was wrong: no-link and first-public draft copy existed, but the post surfaces did not consistently carry the route/reporting metadata needed to keep comments, CTA clicks, and feedback from becoming generic or mis-consented signal.
 
-What was wrong -> The marketing corpus had strategy and lead lists, but still needed a more executable layer for immediate preparation before screenshots. Top creator pitches needed creator-specific angles, not only segment-level templates. Steam page work needed a dedicated asset/spec/checklist document so capsule/trailer spend does not start blind. The agent labor model needed a single backlog index to prevent scattered docs from becoming inert.
+What was done: updated `Content/POST_BANK_AND_HOOK_LIBRARY.md`, `Community/COMMUNITY_POST_TEMPLATES.md`, and `Social/SOCIAL_ACCOUNT_SETUP_AND_PLATFORM_PLAYBOOK.md` so pre-asset posts, critique templates, forced reservation post, asset-to-post queue, and first three public social posts state route class and consent/provenance handling. Backlog row 122 and source ledger were updated.
 
-What was done -> Added `Docs/Marketing/BRAND_AND_POSITIONING_BIBLE.md`, `Docs/Marketing/Content/POST_BANK_AND_HOOK_LIBRARY.md`, `Docs/Marketing/CreatorOutreach/A_TIER_PERSONALIZED_PITCHES.md`, `Docs/Marketing/Steam/STEAM_PAGE_ASSET_REQUIREMENTS_CHECKLIST.md`, and `Docs/Marketing/Data/MARKETING_BACKLOG_INDEX.md`. Updated `Docs/Marketing/README.md`, `Docs/Marketing/Data/SOURCE_LEDGER.md`, `Docs/Tasks/Status_SHINOBU_81.md`, and `Docs/AgentLogs/Rationale_SHINOBU_81.md`. Repaired corrupted Russian-speaking pitch text in `Docs/Marketing/CreatorOutreach/PITCH_BANK.md` and `Docs/Marketing/Regional/REGIONAL_OUTREACH_PLAN.md`.
+Cinematic cheats used: source-labeling at the copy surface. No browser/platform action needed.
 
-Cinematic Cheats used -> Marketing fake-first rule: sell readable pressure, machinery, silt, floodlights, and systemic consequence through short clips before claiming broad simulation. Avoided legal/brand collision by using competitor contrast internally and banning "Subnautica killer" copy publicly. Converted Seed Ship from lore blob into a repeatable marketing hook: instruments, routes, and systems stop feeling neutral.
+Exact microseconds saved: 0us runtime impact; docs/data-only.
 
-Exact Microseconds saved -> 0us measured runtime impact. Docs-only production assets.
+Validation: Marketing file count 100. CSV parse OK for 9 files. CRM and asset metadata unchanged. Targeted text, legacy/corruption, UTM ID, backtick path, markdown table, and pasteable route metadata audits returned clean. No post, account/browser action, public CTA, outreach, runtime, or build action occurred.
 
-## 2026-05-18 - Mass Lead Extraction Pass
+## 2026-05-19 Creator CRM Route/Provenance Fields
 
-What was wrong -> The marketing package had curated and regional lead lists, but the user explicitly wanted hundreds/thousands of future streamers/YouTubers and pitch preparation. A hand-written list would not scale and a fake contact list would be reputational poison.
+What was wrong: creator replies were now governed by route/consent rules, but the live CRM had no structured send-route or reply-provenance fields. That would force humans to put consent facts into notes and make audits unreliable.
 
-What was done -> Added `Docs/Marketing/AgentOps/scrape_letsplayindex_public_leads.ps1`. Ran it against public LetsPlayIndex pages for Subnautica and adjacent survival/horror/engineering games. Generated `Docs/Marketing/Data/RAW_PUBLIC_CREATOR_LEADS_2026-05-18.csv` with 7155 raw rows, `Docs/Marketing/Data/UNIQUE_CREATOR_VERIFICATION_QUEUE_2026-05-18.csv` with 4970 unique channel profiles, `Docs/Marketing/Data/PRIORITY_CREATOR_SHORTLIST_FROM_RAW_2026-05-18.csv` with 250 first-pass candidates, `Docs/Marketing/Data/RAW_LEAD_FETCH_LOG_2026-05-18.csv`, and `Docs/Marketing/Data/RAW_LEAD_SCRAPE_SUMMARY_2026-05-18.md`. Added `Docs/Marketing/Data/RAW_PUBLIC_CREATOR_LEADS_README.md` and `Docs/Marketing/CreatorOutreach/MASS_LEAD_VERIFICATION_AND_PITCH_WORKFLOW.md`. Updated README and source ledger.
+What was done: added `send_route_class` and `reply_consent_provenance` to `Data/CREATOR_VERIFICATION_TEMPLATE.csv`, `CreatorOutreach/CREATOR_CRM_SCHEMA_AND_SCORING.md`, `CreatorOutreach/MASS_LEAD_VERIFICATION_AND_PITCH_WORKFLOW.md`, `Operations/DAILY_AGENT_TASK_LOOP.md`, `MARKETING_CONTROL_TOWER.md`, `README.md`, and `Data/MARKETING_RISK_REGISTER.md`. Backlog row 123 and source ledger were updated.
 
-Cinematic Cheats used -> None in runtime. Marketing cheat is staged conversion: raw public signal -> verification queue -> asset-matched personalized pitch -> small batch outreach. This keeps the low budget from being burned on spam and prevents co-op/performance/competitor-war lies.
+Cinematic cheats used: structured CRM columns instead of another process doc. No platform action happened.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: agents now have a 4970-profile verification queue instead of inventing leads manually.
+Exact microseconds saved: 0us runtime impact; docs/data-only.
 
-## 2026-05-19 - Campaign And Batch Production Pass
+Validation: Marketing file count 100. CSV parse OK for 9 files. CRM stayed 100 rows with status split `DO_NOT_CONTACT=3`, `LOW_PRIORITY_VERIFY_LATER=52`, `NEEDS_ASSET=22`, `VERIFY_BEFORE_CONTACT=23`; new `send_route_class` and `reply_consent_provenance` headers are present; all creator send/provenance fields remain 0 filled. Asset metadata unchanged. Targeted text, legacy/corruption, UTM ID, markdown table, and backtick path audits returned clean. No CRM row status changed, no outreach, account/browser action, public CTA, runtime, or build action occurred.
 
-What was wrong -> The raw lead extraction produced thousands of prospects, but execution still needed a top-250 pitch sheet, agent-sized verification batches, campaign timing, creative briefs, and budget spend gates. Without this layer, the project would either freeze in analysis or spam creators before screenshots exist.
+## 2026-05-19 Press/Curator Route-Provenance Fields
 
-What was done -> Generated `Docs/Marketing/CreatorOutreach/PRIORITY_250_PITCH_SHEET_FROM_RAW.md`. Generated ten verification batch files under `Docs/Marketing/AgentOps/VerificationBatches_2026-05-19/`. Added `Docs/Marketing/CreatorOutreach/PRIORITY_50_MESSAGE_DRAFTS_FROM_RAW.md` and generator `Docs/Marketing/AgentOps/generate_priority50_messages.ps1`. Added campaign playbooks under `Docs/Marketing/Campaigns/` for pre-screenshot setup, first screenshot drop, Steam page launch, first demo outreach, Next Fest/demo event, and regional push. Added `Docs/Marketing/Budget/LOW_BUDGET_SPEND_DECISION_TREE.md` and `Docs/Marketing/Creative/CAPSULE_TRAILER_THUMBNAIL_BRIEFS.md`. Updated README, status, rationale, and log.
+What was wrong: press and curator trackers could become operating send logs, but had no structured send-route or reply-provenance fields.
 
-Cinematic Cheats used -> Marketing fake-first discipline: sell capsule/screenshot/clip readability before broad claims, and use pressure/machinery/silt/floodlight systems as proof hooks before paying for reach.
+What was done: added `send_route_class` and `reply_consent_provenance` to `Press/PRESS_TARGET_VERIFICATION_TRACKER.csv` and `Press/STEAM_CURATOR_CANDIDATE_TRACKER.csv`; updated press seed map, key compliance, review/access protocol, source ledger, backlog, and RISK-050.
 
-Exact Microseconds saved -> 0us measured runtime impact. Strategic savings: the first several thousand dollars now have explicit gates and stop rules instead of being spent on generic awareness.
+Cinematic cheats used: tracker-level field ownership, not another external process.
 
-## 2026-05-19 - Marketing Infrastructure Direction Pass
+Exact microseconds saved: 0us runtime impact; docs/data-only.
 
-What was wrong -> The marketing pack had creator databases, campaigns, and creative/budget gates, but still lacked operating infrastructure for what happens after the first public interest: measurement, Discord/community setup, crisis replies, feedback triage, site/presskit structure, legal disclosure, paid creator terms, devlog cadence, and localization review.
+Validation: Marketing file count 100. CSV parse OK for 9 files. Press tracker stayed 30 rows and curator tracker stayed 20 rows; both have `send_route_class` and `reply_consent_provenance` headers with 0 filled values. CRM and asset metadata unchanged. Targeted text, legacy/corruption, UTM ID, markdown table, and backtick path audits returned clean. No press send, curator send, key issue, account/browser action, public CTA, runtime, or build action occurred.
 
-What was done -> Added `Docs/Marketing/Analytics/MEASUREMENT_AND_UTM_PLAN.md`, `Docs/Marketing/Community/DISCORD_AND_COMMUNITY_SERVER_SETUP.md`, `Docs/Marketing/Community/CRISIS_AND_MODERATION_PLAYBOOK.md`, `Docs/Marketing/Feedback/PLAYER_FEEDBACK_TAXONOMY_AND_TRIAGE.md`, `Docs/Marketing/Website/ONE_PAGE_SITE_AND_PRESSKIT_PLAN.md`, `Docs/Marketing/Content/DEVLOG_AND_STEAM_NEWS_PIPELINE.md`, `Docs/Marketing/Legal/COMPLIANCE_AND_DISCLOSURE_PLAYBOOK.md`, `Docs/Marketing/Partnerships/CREATOR_CONTRACT_TERMS_AND_RATE_CARD.md`, and `Docs/Marketing/Localization/LOCALIZATION_AND_REGIONAL_ASSET_PIPELINE.md`. Updated README, status, rationale, and log.
+## 2026-05-19 Empty Asset Directory Skeleton
 
-Cinematic Cheats used -> None in runtime. Marketing fake-first discipline continues: show real assets, measure conversion, use short proof loops, and avoid public claims that do not have receipts.
+What was wrong: metadata and shotlist paths pointed to `MarketingAssets/...`, but the local directory tree did not exist.
 
-Exact Microseconds saved -> 0us measured runtime impact. Strategic savings: prevents public-interest collapse from unmeasured campaigns, premature Discord, weak moderation, bad localization, or undisclosed creator deals.
+What was done: created the empty repo-root `MarketingAssets/` skeleton matching the documented layout and updated `Operations/ASSET_LIBRARY_NAMING_AND_VERSION_CONTROL.md`, source ledger, and backlog row 125. No media files or `.gitkeep` placeholders were added.
 
-## 2026-05-19 - Marketing Operations Hardening Pass
+Cinematic cheats used: path custody before capture. The cheap operational fix is removing folder-choice friction without pretending assets exist.
 
-What was wrong -> The marketing folder had strategy, leads, campaigns, and infrastructure, but the repeated user request required a harder execution layer: exact Steam tag/search preparation, asset QA, controlled experiments, 90-day scheduling, daily agent quotas, same-day Reddit rule handling, competitor monitoring, press/email skeletons, and a normalized verification CSV.
+Exact microseconds saved: 0us runtime impact; docs/data plus empty local directories only.
 
-What was done -> Added `Docs/Marketing/SEO/STEAM_TAG_AND_SEARCH_STRATEGY.md`, `Docs/Marketing/Experiments/A_B_TESTING_AND_CREATIVE_EXPERIMENTS.md`, `Docs/Marketing/QA/MARKETING_ASSET_QA_CHECKLIST.md`, `Docs/Marketing/Schedule/90_DAY_MARKETING_OPERATIONS_CALENDAR.md`, `Docs/Marketing/Operations/DAILY_AGENT_TASK_LOOP.md`, `Docs/Marketing/Community/REDDIT_COMMUNITY_RULES_TRACKER.md`, `Docs/Marketing/Monitoring/COMPETITOR_AND_SENTIMENT_MONITORING_QUERIES.md`, `Docs/Marketing/Press/PRESS_RELEASE_AND_EMAIL_TEMPLATES.md`, and `Docs/Marketing/Data/CREATOR_VERIFICATION_TEMPLATE.csv`. Updated README, source ledger, backlog index, status, and rationale.
+Validation: `MarketingAssets/` skeleton returned `MARKETING_ASSETS_EMPTY_SKELETON_OK`. Marketing file count stayed 100. CSV parse OK for 9 files. CRM/asset/press/curator state stayed unchanged except previously documented headers. Targeted text, legacy/corruption, UTM ID, markdown table, and backtick path audits returned clean. No media files, `.gitkeep` placeholders, asset proof, account/browser action, outreach, runtime, or build action occurred.
 
-Cinematic Cheats used -> No runtime cheats implemented. Marketing cheat discipline is now explicit: test visual proof cheaply, score readability before public use, and convert agent labor into verified leads/source checks instead of paid reach.
+## 2026-05-19 Backlog Table Header Repair
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents budget loss from bad tags, weak assets, unmeasured tests, Reddit spam, and press outreach before proof assets exist.
+What was wrong: P1/P2 sections in `Data/MARKETING_BACKLOG_INDEX.md` had three-column headers over two-column task rows.
 
-## 2026-05-19 - Press And Showcase Operations Pass
+What was done: changed the malformed headers to two-column headers and tracked the repair in row 126/source ledger. No task content changed.
 
-What was wrong -> The press target map existed, but press operations were still too shallow for execution. There was no detailed festival/showcase submission gate, no Curator Connect procedure, no embargo/key protocol, no press angle bank tied to proof assets, and no CSV tracker layer for submissions, verified press targets, or curator candidates.
+Cinematic cheats used: table hygiene, not strategy.
 
-What was done -> Added `Docs/Marketing/Press/SHOWCASE_AND_FESTIVAL_SUBMISSION_PLAYBOOK.md`, `Docs/Marketing/Press/STEAM_CURATOR_CONNECT_PLAYBOOK.md`, `Docs/Marketing/Press/REVIEW_KEYS_EMBARGO_AND_PREVIEW_ACCESS_PROTOCOL.md`, `Docs/Marketing/Press/PRESS_ANGLE_AND_SUBJECT_LINE_BANK.md`, `Docs/Marketing/Press/SHOWCASE_SUBMISSION_TRACKER.csv`, `Docs/Marketing/Press/PRESS_TARGET_VERIFICATION_TRACKER.csv`, and `Docs/Marketing/Press/STEAM_CURATOR_CANDIDATE_TRACKER.csv`. Updated README, source ledger, backlog index, status, and rationale.
+Exact microseconds saved: 0us runtime impact; docs-only.
 
-Cinematic Cheats used -> No runtime cheats implemented. Marketing discipline: do not buy showcase visibility or distribute keys until the visual proof, Steam CTA, and playable route can survive public scrutiny.
+Validation: markdown table column audit returned clean on the touched backlog/control files. Marketing file count stayed 100. CSV parse OK for 9 files. Targeted text, legacy/corruption, UTM ID, and backtick path audits returned clean. No task content, priority, owner, account/browser action, outreach, runtime, or build action changed.
 
-Exact Microseconds saved -> 0us measured runtime impact. Strategic savings: avoids weak showcase submissions, curator key scams, embargo confusion, and press copy that promises unsupported features.
+## 2026-05-19 SN2 Steam API V3 Refresh
 
-## 2026-05-19 - Launch Commercial And Support Operations Pass
+What was wrong: the active SN2 pain-to-proof map depended on the prior V2 snapshot while launch-week review volume was still moving.
 
-What was wrong -> The marketing package was strong before first screenshots and press/showcase outreach, but still lacked the hard commercial/support layer needed once real public attention arrives: pricing, discounts, Early Access copy, public demo vs Steam Playtest, page conversion iteration, Steam reviews/forums, launch-day ownership, social account setup, trailer production rules, asset versioning, and risk tracking.
+What was done: fetched public Steam appdetails/review API data for app `1962700` and added V3 to `Monitoring/COMPETITOR_AND_SENTIMENT_MONITORING_QUERIES.md`: all-language 64,212 positive / 5,828 negative / 70,040 total and English 38,715 positive / 2,616 negative / 41,331 total, both `Very Positive`. Recent 100-negative samples keep agency/base/trust/content as private capture-priority signals only. Updated RISK-046, backlog row 127, source ledger, status, and rationale.
 
-What was done -> Added `Docs/Marketing/Steam/PRICING_DISCOUNT_AND_EARLY_ACCESS_POLICY.md`, `Docs/Marketing/Steam/DEMO_PLAYTEST_AND_TELEMETRY_PLAN.md`, `Docs/Marketing/Steam/WISHLIST_CONVERSION_AND_PAGE_ITERATION_PLAN.md`, `Docs/Marketing/Feedback/STEAM_REVIEWS_FORUMS_AND_SUPPORT_RESPONSE_PLAYBOOK.md`, `Docs/Marketing/Launch/LAUNCH_DAY_AND_FIRST_WEEK_WAR_ROOM.md`, `Docs/Marketing/Social/SOCIAL_ACCOUNT_SETUP_AND_PLATFORM_PLAYBOOK.md`, `Docs/Marketing/Content/TRAILER_SCRIPT_CAPTURE_AND_EDITING_BRIEF.md`, `Docs/Marketing/Operations/ASSET_LIBRARY_NAMING_AND_VERSION_CONTROL.md`, and `Docs/Marketing/Data/MARKETING_RISK_REGISTER.md`. Updated README, source ledger, backlog index, status, and rationale.
+Cinematic cheats used: competitor pain stays as internal asset-priority telemetry. Public copy remains HECTON-positive and competitor-neutral.
 
-Cinematic Cheats used -> No runtime cheats implemented. Marketing discipline: demo/trailer/page must show real player verbs and pressure/machinery identity; price, discount, and EA claims stay tied to current build truth.
+Exact microseconds saved: 0us runtime impact; docs/data plus public Steam API reads only.
 
-Exact Microseconds saved -> 0us measured runtime impact. Strategic savings: prevents wrong price anchoring, public demo damage, review-response blowups, stale asset reuse, and launch-day confusion.
+Validation: Marketing file count stayed 100. CSV parse OK for 9 files. CRM stayed 100 rows with status split `DO_NOT_CONTACT=3`, `LOW_PRIORITY_VERIFY_LATER=52`, `NEEDS_ASSET=22`, `VERIFY_BEFORE_CONTACT=23`; creator send-log fields remain 0 filled. Asset metadata stayed 13 planned rows with `creator_send_gate = BLOCKED_PLANNED_CAPTURE` and `creator_utility_score = 0`; all metadata paths resolve into the local empty `MarketingAssets/` skeleton. Press tracker stayed 30 rows and curator tracker stayed 20 rows, with route/provenance fields 0 filled. Targeted text, legacy/corruption, UTM ID, markdown table, and backtick path audits returned clean. No public copy, outreach, account/browser login, asset approval, runtime, or build action occurred.
 
-## 2026-05-19 - Owned Audience And Creative Factory Pass
+## 2026-05-19 Agency/Decision Proof Gate
 
-What was wrong -> The marketing package had strong Steam/press/creator/launch coverage, but still depended too much on external surfaces. It needed direct audience capture, playtester screening, paid microtest discipline, visual identity guardrails, public FAQ/objection answers, roadmap promise control, and asset metadata.
+What was wrong: Campaign 01 could advance from identity, player verb, and base/machinery proof without forcing one readable agency/decision asset, even though the fresh SN2 V3 sample kept agency/no-weapon/base/content terms visible.
 
-What was done -> Added `Docs/Marketing/Audience/OWNED_AUDIENCE_EMAIL_AND_NEWSLETTER_PLAN.md`, `Docs/Marketing/Audience/PLAYTESTER_RECRUITMENT_AND_SCREENING_PLAN.md`, `Docs/Marketing/Ads/PAID_MICROTESTS_AND_AD_CREATIVE_MATRIX.md`, `Docs/Marketing/Creative/VISUAL_IDENTITY_AND_KEY_ART_DIRECTION.md`, `Docs/Marketing/Community/PUBLIC_FAQ_AND_OBJECTION_HANDLING.md`, `Docs/Marketing/Roadmap/PUBLIC_ROADMAP_LANGUAGE_AND_PROMISE_POLICY.md`, and `Docs/Marketing/Data/MARKETING_ASSET_METADATA_TEMPLATE.csv`. Updated README, backlog index, status, and rationale.
+What was done: updated `Content/SCREENSHOT_AND_CLIP_SHOTLIST.md`, `QA/MARKETING_ASSET_QA_CHECKLIST.md`, and `Campaigns/CAMPAIGN_01_FIRST_SCREENSHOT_DROP.md`. First public testing now requires one agency/decision proof asset from `PLAN-SHOT-006`, `PLAN-CLIP-001`, or `PLAN-CLIP-003` in addition to identity, player verb, and base/machinery proof. Added backlog row 128 and source ledger trace.
 
-Cinematic Cheats used -> No runtime cheats implemented. Marketing discipline: build direct audience and creative tests around pressure/machinery proof instead of buying attention or publishing roadmap fantasy.
+Cinematic cheats used: operational proof gating, not competitor attack copy. The cheap fake is a decision-readable screenshot/clip requirement before any broader public campaign.
 
-Exact Microseconds saved -> 0us measured runtime impact. Strategic savings: reduces dependence on algorithms, prevents paid-ad waste, and reduces public trust loss from overpromised roadmaps or defensive replies.
+Exact microseconds saved: 0us runtime impact; docs-only.
 
-## 2026-05-19 - Marketing Control Tower Consolidation
+Validation: Marketing file count stayed 100. CSV parse OK for 9 files. Touched markdown table column audit returned clean. Targeted text, legacy/corruption, UTM ID, backtick path, and asset metadata path audits returned clean. No screenshot, clip, public post, outreach, account/browser action, runtime, or build action occurred.
 
-What was wrong -> The marketing documentation set had become broad enough that adding more files would reduce execution clarity. The user explicitly requested reasonable work instead of document proliferation.
+## 2026-05-19 Post-Bank Agency Gate Alignment
 
-What was done -> Added `Docs/Marketing/MARKETING_CONTROL_TOWER.md` as the single operating entry point. It defines anti-sprawl rules, current gate `G0`, active work lanes, read-first files, allowed current actions, forbidden current actions, top priorities, and stop conditions for new document creation. Updated `Docs/Marketing/README.md`, `Docs/Tasks/Status_SHINOBU_81.md`, and `Docs/AgentLogs/Rationale_SHINOBU_81.md`.
+What was wrong: the first 72-hour post-bank sequence could still execute without making the new agency/decision proof visible in the posting plan.
 
-Cinematic Cheats used -> None. Operational cheat: one control map replaces reading 99 files by default.
+What was done: updated `Content/POST_BANK_AND_HOOK_LIBRARY.md` so the sequence refuses to run without `PLAN-SHOT-006`, `PLAN-CLIP-001`, or `PLAN-CLIP-003`, prioritizes decision proof by Hour 24 if missing, and blocks Hour 72 proceed unless viewers understand one decision/agency proof without a caption. Added backlog row 129 and source ledger trace.
 
-Exact Microseconds saved -> 0us measured runtime impact. Strategic savings: less agent time wasted on duplicate docs and clearer execution before proof assets exist.
+Cinematic cheats used: queue-level proof gate. No new strategy doc.
 
-## 2026-05-19 - Launch-Week Marketing Execution Pass
+Exact microseconds saved: 0us runtime impact; docs-only.
 
-What was wrong -> The user repeated the marketing-prep request with an explicit anti-sprawl correction. Also, SN2 is now a live Early Access product with strong Steam momentum, so old pre-launch assumptions are stale. The creator verification CSV was still example-only despite existing raw lead datasets.
+Validation: Marketing file count stayed 100. CSV parse OK for 9 files. Touched markdown table column audit returned clean. Targeted text, legacy/corruption, UTM ID, and backtick path audits returned clean. No public post, outreach, account/browser action, asset approval, runtime, or build action occurred.
 
-What was done -> Updated `Docs/Marketing/MARKETING_CONTROL_TOWER.md` with the 2026-05-19 external reality update and current launch-week weak signals to monitor. Updated `Docs/Marketing/Monitoring/COMPETITOR_AND_SENTIMENT_MONITORING_QUERIES.md` with a source-labeled SN2 launch-week baseline. Updated `Docs/Marketing/Data/MARKETING_BACKLOG_INDEX.md` with a concrete 8-row execution cut that points to existing files only. Updated `Docs/Marketing/Data/SOURCE_LEDGER.md` with the source boundary. Rewrote `Docs/Marketing/Data/CREATOR_VERIFICATION_TEMPLATE.csv` into a 50-row active verification queue from the priority raw shortlist; all rows remain not contact-ready.
+## 2026-05-19 Entry-Doc Agency Gate Propagation
 
-Cinematic Cheats used -> No runtime cheats. Operational cheat: convert a huge lead corpus into a small verification queue and use launch-week competitor pain only as internal targeting, not public attack copy.
+What was wrong: the new first-packet agency/decision requirement was enforced in deep execution docs, but the primary entry docs still described the first packet too generally.
 
-Exact Microseconds saved -> 0us measured runtime impact. Strategic savings: avoids another document branch, prevents stale SN2 assumptions, and gives agents immediate verification rows instead of making them invent the first batch.
+What was done: updated `MARKETING_CONTROL_TOWER.md`, `README.md`, and `PREP_DIRECTIONS_NOW.md` so first-read surfaces state that the first public packet needs identity, player verb, base/machinery, and one agency/decision proof asset before Campaign 01 or broad outreach can advance. Added backlog row 130 and source ledger trace.
 
-## 2026-05-19 - Active Marketing Work, Not Archive Pass
+Cinematic cheats used: entry-point guardrail. No new document.
 
-What was wrong -> The marketing corpus had enough scaffolding. The user correctly pushed back that more archive-like documentation is not work. The current bottleneck was execution: first CRM rows still needed real statuses, Steam copy needed narrowing, capsule/key-art direction needed a decision table, screenshot QA needed capture gates, and social/playtest/risk docs needed concrete work orders.
+Exact microseconds saved: 0us runtime impact; docs-only.
 
-What was done -> Updated 13 rows in `Docs/Marketing/Data/CREATOR_VERIFICATION_TEMPLATE.csv` using public web/LetsPlayIndex/vendor snapshots. Results: 8 `VERIFY_BEFORE_CONTACT`, 2 `NEEDS_ASSET`, 1 `LOW_PRIORITY_VERIFY_LATER`, 1 `DO_NOT_CONTACT`, and 1 kept raw due unresolved official channel. Updated `Steam/STORE_PAGE_COPY_MATRIX.md` with three executable Steam short-description candidates and a default. Updated `Creative/VISUAL_IDENTITY_AND_KEY_ART_DIRECTION.md` with capsule direction table and paid-art gate. Updated `QA/MARKETING_ASSET_QA_CHECKLIST.md` with first screenshot pack shot jobs and reject rules. Updated `Data/MARKETING_RISK_REGISTER.md`, `Social/SOCIAL_ACCOUNT_SETUP_AND_PLATFORM_PLAYBOOK.md`, and `Audience/PLAYTESTER_RECRUITMENT_AND_SCREENING_PLAN.md` with active risks, handle reservation work order, and playtester screening form V1.
+Validation: Marketing file count stayed 100. CSV parse OK for 9 files. Touched markdown table column audit returned clean. Targeted text, legacy/corruption, UTM ID, and backtick path audits returned clean. No screenshot, clip, public post, outreach, account/browser action, runtime, or build action occurred.
 
-Cinematic Cheats used -> No runtime cheats. Marketing cheat: use proof gates and small executable queues so the first few thousand dollars are spent only after screenshots, Steam copy, and creator targets survive basic verification.
+## 2026-05-19 Steam/Social Agency Gate Alignment
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: fewer fake-ready leads, no random beauty-shot capture, no vague Steam copy, and less chance of wasting paid art/social/playtest effort before proof assets exist.
+What was wrong: social first-post setup and Steam launch surfaces could still advance without the new agency/decision proof requirement.
 
-## 2026-05-19 - CRM Second Pass And Post Bundle Pass
+What was done: updated `Social/SOCIAL_ACCOUNT_SETUP_AND_PLATFORM_PLAYBOOK.md`, `Steam/STORE_PAGE_COPY_MATRIX.md`, `Steam/STEAM_PAGE_ASSET_REQUIREMENTS_CHECKLIST.md`, and `Campaigns/CAMPAIGN_02_STEAM_PAGE_LAUNCH.md`. First public posts and Steam page launch now require `PLAN-SHOT-006`, `PLAN-CLIP-001`, or `PLAN-CLIP-003`; `PLAN-SHOT-007` anomaly/mood proof cannot substitute for decision proof. Added backlog row 131 and source ledger trace.
 
-What was wrong -> The first CRM pass only moved 13 leads. The post bank had many hooks but did not provide ready campaign bundles for the exact future events the project will hit first: screenshot pack, Steam page live, and private playtest recruitment.
+Cinematic cheats used: launch-surface proof gate. No public comparison copy.
 
-What was done -> Updated rows 14-33 in `Docs/Marketing/Data/CREATOR_VERIFICATION_TEMPLATE.csv` from public-source triage. Current status distribution: 16 `VERIFY_BEFORE_CONTACT`, 6 `NEEDS_ASSET`, 3 `LOW_PRIORITY_VERIFY_LATER`, 2 `DO_NOT_CONTACT`, 23 raw. Added ready scenario bundles to `Docs/Marketing/Content/POST_BANK_AND_HOOK_LIBRARY.md`: first screenshot pack, Steam page live, and private playtest recruitment, each with required assets, draft posts/emails, and kill conditions. Updated `Docs/Marketing/Data/SOURCE_LEDGER.md`, status, and rationale.
+Exact microseconds saved: 0us runtime impact; docs-only.
 
-Cinematic Cheats used -> No runtime cheats. Marketing cheat: bind every public post to an asset gate and a kill rule so copy cannot outrun the build.
+Validation: Marketing file count stayed 100. CSV parse OK for 9 files. Touched markdown table column audit returned clean. Targeted text, legacy/corruption, UTM ID, and backtick path audits returned clean. No Steam page, social post, outreach, account/browser action, asset approval, runtime, or build action occurred.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: fewer raw leads blocking the first outreach batch and less copy work once the first screenshot pack or Steam page appears.
+## 2026-05-19 Press/Curator/Demo/Showcase Agency Gate Alignment
 
-## 2026-05-19 - CRM First-50 Closure Pass
+What was wrong: presskit, Curator Connect, wishlist iteration, Next Fest, showcase, and demo/playtest docs still had softer gates: first three screenshots, threat, anomaly, or general loop clarity. That could bypass the Campaign 01 agency/decision gate through a press, curator, event, or demo path.
 
-What was wrong -> The staged first-50 creator queue still had 16 raw public-index rows. That is operational debt: future agents could either re-research the same names or accidentally treat raw profile URLs as usable contacts.
+What was done: updated `Press/STEAM_CURATOR_CONNECT_PLAYBOOK.md`, `Press/PRESS_KIT_AND_MEDIA_PLAN.md`, `Steam/STEAM_WISHLIST_AND_NEXT_FEST_PLAN.md`, `Steam/WISHLIST_CONVERSION_AND_PAGE_ITERATION_PLAN.md`, `Steam/STEAM_PAGE_ASSET_REQUIREMENTS_CHECKLIST.md`, `Press/SHOWCASE_AND_FESTIVAL_SUBMISSION_PLAYBOOK.md`, and `Steam/DEMO_PLAYTEST_AND_TELEMETRY_PLAN.md`. These surfaces now require one readable player decision under threat, leak, route cost, sonar pressure, or salvage failure before send, publish, submit, or expand decisions. Added backlog row 132 and source ledger trace.
 
-What was done -> Updated the remaining rows in `Docs/Marketing/Data/CREATOR_VERIFICATION_TEMPLATE.csv` using public LetsPlayIndex snapshots for SquirrelPlus, Nerdzeitalter, PlayStation Planet, -Players Level-, Farket, Nyxson, BringTheParty, Timm Plays Games, Emmis Zockt, Game Grader, Games Quality Zone, Boubers, LPRosti, D4RE, Stumpt, and Dhalucard. Final staged first-50 distribution: 24 `VERIFY_BEFORE_CONTACT`, 12 `NEEDS_ASSET`, 11 `LOW_PRIORITY_VERIFY_LATER`, 3 `DO_NOT_CONTACT`, 0 raw. Updated `SOURCE_LEDGER.md`, `MARKETING_BACKLOG_INDEX.md`, status, and rationale.
+Cinematic cheats used: execution-surface proof gate. No new strategy doc, no public competitor comparison copy.
 
-Cinematic Cheats used -> No runtime cheats. Marketing cheat: close a small batch completely before scraping more; use proof gates so high-reach creators wait for real assets instead of receiving weak pitches.
+Exact microseconds saved: 0us runtime impact; docs-only.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: the next human/agent can start with official-channel verification and asset-gated outreach instead of repeating raw lead cleanup.
+Validation: Marketing file count stayed 100. CSV parse OK for 9 files. Touched markdown table column audit returned clean. Targeted text, legacy/corruption, UTM ID, and backtick path audits returned clean. CRM stayed 100 rows with status split `DO_NOT_CONTACT=3`, `LOW_PRIORITY_VERIFY_LATER=52`, `NEEDS_ASSET=22`, `VERIFY_BEFORE_CONTACT=23`; creator send fields remain 0 filled. Asset metadata stayed 13 planned rows with `creator_send_gate = BLOCKED_PLANNED_CAPTURE` and `creator_utility_score = 0`. Press tracker stayed 30 rows and curator tracker stayed 20 rows, with route/provenance fields 0 filled. No curator send, press send, demo, public event submission, account/browser action, asset approval, runtime, or build action occurred.
 
-## 2026-05-19 - YouTube RSS Activity Verification Pass
+## 2026-05-19 Community Paste-Surface Agency Gate Alignment
 
-What was wrong -> `VERIFY_BEFORE_CONTACT` still mixed live channels, stale channels, and content-mismatch channels. That status was not sharp enough for a human to know where to spend the next hour.
+What was wrong: community critique templates and target-bucket prompts could still validate threat, anomaly, darkness, or atmosphere without asking whether a player decision reads.
 
-What was done -> Checked official YouTube RSS activity for the 24 verify rows where possible. Resolved official channel URLs for Dad's Gaming Addiction, Games4Kickz, and Kokoplays MB. Wrote RSS-backed activity states and latest video URLs into `Docs/Marketing/Data/CREATOR_VERIFICATION_TEMPLATE.csv`. Demoted Worth A Buy and D4RE to low priority, moved Insym VODS to `NEEDS_ASSET`, and left 21 rows in `VERIFY_BEFORE_CONTACT`. Current SN2-active high-priority checks are Kage848, AldemarHD, Neyreyan, Zombyra, HelyaLP, and SpielbaerLP. Updated `SOURCE_LEDGER.md`, `MARKETING_BACKLOG_INDEX.md`, status, and rationale.
+What was done: updated `Community/COMMUNITY_POST_TEMPLATES.md`, `Community/COMMUNITY_TARGETS_AND_RULES.md`, and `Community/PUBLIC_FAQ_AND_OBJECTION_HANDLING.md`. Community critique posts, target-bucket asks, screenshot-drop focus, short-video beats, and the "where is gameplay" reply now require player-choice readability before threat/anomaly/mood assets can advance first-public testing. Added backlog row 133 and source ledger trace.
 
-Cinematic Cheats used -> No runtime cheats. Marketing cheat: use public RSS as a cheap activity filter before a human spends time on About/contact verification.
+Cinematic cheats used: paste-surface question design. No public post, no account action.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: removes stale/channel-mismatch targets from the immediate queue and points the next manual pass at 6 current SN2-active creators first.
+Exact microseconds saved: 0us runtime impact; docs-only.
 
-## 2026-05-19 - YouTube About Contact-Gate Pass
+Validation: Marketing file count stayed 100. CSV parse OK for 9 files. Touched markdown table column audit returned clean. Targeted text, legacy/corruption, UTM ID, and backtick path audits returned clean. CRM stayed 100 rows with creator send fields 0 filled. Asset metadata stayed 13 planned rows with `creator_send_gate = BLOCKED_PLANNED_CAPTURE` and `creator_utility_score = 0`. Community phrase audit shows decision-choice prompts now sit next to threat/anomaly/mood prompts. No community post, public reply, account/browser action, asset approval, runtime, or build action occurred.
 
-What was wrong -> Activity proof still was not a contact route. The active queue needed a concrete answer for whether a human can later reveal a YouTube business email or whether the channel only exposes social links.
+## 2026-05-19 Surface-Bypass Risk And Daily Stop Rule
 
-What was done -> Fetched YouTube About pages for all 21 remaining `VERIFY_BEFORE_CONTACT` rows. Updated `Docs/Marketing/Data/CREATOR_VERIFICATION_TEMPLATE.csv` with `contact_route`, `email_publicly_listed`, `contact_url`, risk notes, and next actions. Result: 20 rows have `YOUTUBE_ABOUT_EMAIL_GATE_PRESENT_LOGIN_REQUIRED`; HelyaLP has `YOUTUBE_ABOUT_EXTERNAL_LINKS_ONLY_NO_EMAIL_GATE_FOUND`. No hidden emails were scraped, guessed, or stored. Updated source ledger, backlog, status, and rationale.
+What was wrong: agency/decision proof was spread across execution docs, but the risk register and daily agent loop did not yet name the broader surface-bypass failure mode.
 
-Cinematic Cheats used -> No runtime cheats. Marketing cheat: turn the next human step into a narrow action: logged-in YouTube email reveal after assets exist, not cold-DM improvisation.
+What was done: added RISK-051 to `Data/MARKETING_RISK_REGISTER.md` and inserted the matching noon kill-check, community-scout prompt, and asset-critic decision-read check in `Operations/DAILY_AGENT_TASK_LOOP.md`. Added backlog row 134 and source ledger trace.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents time waste on social-link cold pitches and makes the first creator batch executable once screenshots/Steam/demo assets exist.
+Cinematic cheats used: process stop rule instead of another strategy doc.
 
-## 2026-05-19 - Hot SN2 Microbatch And X Handle Pass
+Exact microseconds saved: 0us runtime impact; docs-only.
 
-What was wrong -> The six current SN2-active creator targets were verified enough for preparation, but their message drafts were still generic raw-public-index templates. Separately, handle reservation remained vague, and `@Hecton8` had not been checked publicly.
+Validation: Marketing file count stayed 100. CSV parse OK for 9 files. Touched markdown table column audit returned clean. Targeted text, legacy/corruption, UTM ID, and backtick path audits returned clean. RISK-051 and matching daily-loop stop text are present. CRM stayed 100 rows with creator send fields 0 filled. Asset metadata stayed 13 planned blocked rows. Press tracker stayed 30 rows and curator tracker stayed 20 rows, with route/provenance fields 0 filled. No send, submit, publish, demo, community post, account/browser action, asset approval, runtime, or build action occurred.
 
-What was done -> Updated `Docs/Marketing/CreatorOutreach/PRIORITY_50_MESSAGE_DRAFTS_FROM_RAW.md` with a hot SN2-active microbatch for Kage848, AldemarHD, Neyreyan, Zombyra, HelyaLP, and SpielbaerLP. Updated their CSV pitch angles, personalized openers, and next actions. Updated `Docs/Marketing/Social/SOCIAL_ACCOUNT_SETUP_AND_PLATFORM_PLAYBOOK.md`: public X check shows `@Hecton8` is taken by an unrelated account; `@Hecton8Game` and `@PlayHecton8` returned unauthenticated 404 and remain logged-in reservation candidates. Updated source ledger, backlog, status, and rationale.
+## 2026-05-19 Website/Newsletter/Playtester Agency Gate Alignment
 
-Cinematic Cheats used -> No runtime cheats. Marketing cheat: prepare the first batch as a narrow asset-gated microbatch instead of a broad generic outreach blast.
+What was wrong: one-page site, owned audience, and playtester docs could become soft launch routes from generic screenshot/demo readiness without forcing agency/decision proof.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: after screenshots/Steam/demo exist, the first creator actions are email-gate reveal plus six specific drafts, not another research pass.
+What was done: updated `Website/ONE_PAGE_SITE_AND_PRESSKIT_PLAN.md`, `Audience/OWNED_AUDIENCE_EMAIL_AND_NEWSLETTER_PLAN.md`, and `Audience/PLAYTESTER_RECRUITMENT_AND_SCREENING_PLAN.md`. Site/presskit hero and minimum packet, devlog/signup modes, and playtester feedback now require or measure one readable player decision under pressure. Added backlog row 135 and source ledger trace.
 
-## 2026-05-19 - Press Tracker First 10 Triage
+Cinematic cheats used: soft-launch gate. No public site, form, or tester wave.
 
-What was wrong -> `PRESS_TARGET_VERIFICATION_TRACKER.csv` started as raw seed rows. Press, showcases, demo discovery, and industry newsletters were not separated by readiness gate, which creates a high risk of generic outreach.
+Exact microseconds saved: 0us runtime impact; docs-only.
 
-What was done -> Updated PRESS-001 through PRESS-010 in `Docs/Marketing/Press/PRESS_TARGET_VERIFICATION_TRACKER.csv`. PC Gamer is presskit-gated; RPS, Rely on Horror, and Bloody Disgusting are route-unverified holds; Alpha Beta Gamer is demo-gated; The Indie Game Website is presskit-gated; GameDiscoverCo and How To Market A Game are learning/metrics sources, not review targets; PC Gaming Show and Future Games Show are showcase-asset gates. Updated `SOURCE_LEDGER.md`, status, and rationale.
+Validation: Marketing file count stayed 100. CSV parse OK for 9 files. Touched markdown table column audit returned clean. Targeted text, legacy/corruption, UTM ID, and backtick path audits returned clean. Audience/site decision-proof audit found the new gate text in site, owned-audience, and playtester docs. CRM stayed 100 rows with creator send fields 0 filled. Asset metadata stayed 13 planned blocked rows. Press/curator route fields remain 0 filled. No site, signup form, newsletter, tester recruitment, account/browser action, asset approval, runtime, or build action occurred.
 
-Cinematic Cheats used -> No runtime cheats. Marketing cheat: separate press by required proof asset before any send, so a weak screenshot cannot be pitched where a demo or trailer is required.
+## 2026-05-19 Structured Agency-Proof Asset Metadata
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents the first press batch from becoming generic spam and gives each outlet a stop condition.
+What was wrong: agency/decision proof was enforced in many docs but not in the asset metadata schema. That made the first-packet gate non-filterable and allowed future operators to hide proof or non-proof status in free-text notes.
 
-## 2026-05-19 - Press Tracker Rows 11-30 Expansion
+What was done: added `agency_decision_proof_gate` and `agency_decision_notes` to `Data/MARKETING_ASSET_METADATA_TEMPLATE.csv` and filled all 13 planned rows. `PLAN-SHOT-006`, `PLAN-CLIP-001`, and `PLAN-CLIP-003` are the only pre-capture `AGENCY_PROOF_CANDIDATE` rows. Updated the asset library workflow, QA checklist, KPI dashboard spec, Campaign 01 gate, control tower, and daily loop so the fields are required during capture intake and validation. Added backlog row 136 and source ledger trace.
 
-What was wrong -> The press tracker had only the first 10 rows operationalized. The remaining target map still mixed large outlets, PC-specific sites, indie outlets, tech press, and low-fit/risk outlets without a state that would stop bad sends.
+Cinematic cheats used: structured proof gate instead of another strategy document.
 
-What was done -> Added and triaged PRESS-011 through PRESS-030 in `Docs/Marketing/Press/PRESS_TARGET_VERIFICATION_TRACKER.csv`. The tracker now has 30 rows and 0 `RAW_SEED` rows. Rows were split into presskit-ready-after-assets, route-unverified hold, route-age-risk hold, tech-proof gate, low-priority weird-angle gate, and low-priority risk review. Updated `SOURCE_LEDGER.md`, `MARKETING_BACKLOG_INDEX.md`, status, and rationale.
+Exact microseconds saved: 0us runtime impact; docs/data-only.
 
-Cinematic Cheats used -> No runtime cheats. Marketing cheat: turn a vague press list into a gate table so only indie/PC outlets with real fit move first, while major/tech outlets wait for trailer, Steam page, presskit, or measured proof.
+Validation: Marketing file count stayed 100. CSV parse OK for 9 files. Touched markdown table audit returned clean. Targeted text, legacy/corruption, UTM ID, and backtick path audits returned clean. Asset metadata has 13 rows, no blank agency fields, exactly three `AGENCY_PROOF_CANDIDATE` rows (`PLAN-SHOT-006`, `PLAN-CLIP-001`, `PLAN-CLIP-003`), all 13 `creator_send_gate = BLOCKED_PLANNED_CAPTURE`, and all 13 creator utility scores remain 0. CRM stayed 100 rows with status split `DO_NOT_CONTACT=3`, `LOW_PRIORITY_VERIFY_LATER=52`, `NEEDS_ASSET=22`, `VERIFY_BEFORE_CONTACT=23`; creator send fields remain 0 filled. Press tracker stayed 30 rows and curator tracker stayed 20 rows, with route/provenance fields 0 filled. No screenshot, clip, public post, outreach, account/browser action, asset approval, runtime, or build action occurred.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: avoids wasting major outlets on weak first contact and prevents old/ambiguous route data from being treated as send-ready.
+## 2026-05-19 Agency-Decision Feedback Coding
 
-## 2026-05-19 - Steam Curator Tracker Operational Pass
+What was wrong: feedback taxonomy had `PLAYER_VERB`, but no separate class for a viewer/player failing to name the decision or consequence. Launch, demo outreach, and Next Fest docs could therefore expand traffic from a route that showed action but still read as a passive mood demo.
 
-What was wrong -> The Steam curator tracker was a 5-row seed file. It did not separate real Curator Connect candidates from tag discovery surfaces, stale curator pages, formulaic low-value pages, co-op expectation risks, or competitor-owned curator pages.
+What was done: added `AGENCY_DECISION_READ` to `Feedback/PLAYER_FEEDBACK_TAXONOMY_AND_TRIAGE.md`, including common translation, demo survey, and weekly digest fields. Updated `Launch/LAUNCH_DAY_AND_FIRST_WEEK_WAR_ROOM.md`, `Campaigns/CAMPAIGN_03_FIRST_DEMO_OUTREACH.md`, and `Campaigns/CAMPAIGN_04_NEXT_FEST_AND_DEMO_EVENT.md` so expansion holds when players or creators cannot name a pressure decision. Added backlog row 137 and source ledger trace.
 
-What was done -> Rebuilt `Docs/Marketing/Press/STEAM_CURATOR_CANDIDATE_TRACKER.csv` into a 20-row operational tracker. It now has 8 future one-copy Curator Connect candidates, 4 discovery surfaces, 1 explicit competitor do-not-contact row, and several hold states for stale, low-quality, low-info, regional, or co-op-risk pages. Updated `SOURCE_LEDGER.md`, `MARKETING_BACKLOG_INDEX.md`, status, and rationale.
+Cinematic cheats used: feedback taxonomy gate. No new docs and no public surface.
 
-Cinematic Cheats used -> No runtime cheats. Marketing cheat: Steam-native Curator Connect only, one copy by default, no external key sends, and no curator copy allocation before a public Steam page/build exists.
+Exact microseconds saved: 0us runtime impact; docs-only.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: lowers key-scam exposure and prevents wasting first-wave curator slots on weak or risky pages.
+Validation: Marketing file count stayed 100. CSV parse OK for 9 files. Touched markdown table audit returned clean. Targeted text, legacy/corruption, UTM ID, and backtick path audits returned clean. `AGENCY_DECISION_READ`/pressure-decision audit finds the new feedback, launch, demo, and event gates. Asset metadata still has 13 rows, no blank agency fields, exactly three `AGENCY_PROOF_CANDIDATE` rows, and all 13 `creator_send_gate = BLOCKED_PLANNED_CAPTURE`. No launch, demo, Next Fest commitment, outreach, account/browser action, runtime, or build action occurred.
 
-## 2026-05-19 - Social Handle Cross-Platform Check
+## 2026-05-19 Creator Send Agency-Proof Propagation
 
-What was wrong -> The social playbook only had X handle risk. YouTube, Bluesky, TikTok, and Instagram were still vague, and the user allowed browser/platform work without a credential-custody boundary.
+What was wrong: creator-send gates required claim checks, creator utility, `creator_send_gate`, contact route, Promise Lint, and CRM send-log fields, but did not require the new structured agency-proof metadata. That left a creator-specific bypass for gameplay/pressure/route-risk pitches.
 
-What was done -> Updated `Docs/Marketing/Social/SOCIAL_ACCOUNT_SETUP_AND_PLATFORM_PLAYBOOK.md` with quiet public checks. X `@Hecton8` and YouTube `@Hecton8` are taken by unrelated accounts. X/YouTube `@Hecton8Game` and `@PlayHecton8` remain public-check candidates. Bluesky default handles did not resolve in public checks. TikTok/Instagram public fetches were generic/inconclusive. Updated `SOURCE_LEDGER.md`, `MARKETING_BACKLOG_INDEX.md`, status, and rationale.
+What was done: updated `CreatorOutreach/MASS_LEAD_VERIFICATION_AND_PITCH_WORKFLOW.md`, `CreatorOutreach/CREATOR_CRM_SCHEMA_AND_SCORING.md`, `CreatorOutreach/SEGMENT_PITCH_MATRIX.md`, `CreatorOutreach/A_TIER_PERSONALIZED_PITCHES.md`, `CreatorOutreach/PITCH_BANK.md`, and `CreatorOutreach/PRIORITY_50_MESSAGE_DRAFTS_FROM_RAW.md`. Creator-facing gameplay, pressure, route-risk, threat, salvage-failure, demo-readiness, or first-public-feedback sends now require one factual `AGENCY_PROOF_CANDIDATE` asset with `agency_decision_notes`. Planned candidate status is explicitly not send proof. Added backlog row 138 and source ledger trace.
 
-Cinematic Cheats used -> No runtime cheats. Operational cheat: prepare exact handle order and custody checklist without touching the user's browser or creating orphaned accounts.
+Cinematic cheats used: send-surface proof gate. No browser/account action and no contact.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: avoids account lockout/2FA chaos and prevents future agents from claiming public-handle availability without logged-in confirmation.
+Exact microseconds saved: 0us runtime impact; docs-only.
 
-## 2026-05-19 - Marketing Risk Register Hardening
+Validation: Marketing file count stayed 100. CSV parse OK for 9 files. Touched markdown table audit returned clean. Targeted text, legacy/corruption, UTM ID, and backtick path audits returned clean. Creator agency-gate audit finds the new gate in all touched creator docs. CRM stayed 100 rows with status split `DO_NOT_CONTACT=3`, `LOW_PRIORITY_VERIFY_LATER=52`, `NEEDS_ASSET=22`, `VERIFY_BEFORE_CONTACT=23`; creator send fields remain 0 filled. Asset metadata still has 13 rows, no blank agency fields, exactly three planned `AGENCY_PROOF_CANDIDATE` rows, all 13 `creator_send_gate = BLOCKED_PLANNED_CAPTURE`, and all 13 creator utility scores remain 0. No creator outreach, browser/account action, public post, asset approval, runtime, or build action occurred.
 
-What was wrong -> The risk register had strong general risks, but active execution produced new specific risks: handle collisions, orphaned credentials, stale press routes, wasted curator slots, and public platform fetches being misread as availability.
+## 2026-05-19 Agency-Decision Measurement And AB-009
 
-What was done -> Updated `Docs/Marketing/Data/MARKETING_RISK_REGISTER.md` with RISK-026 through RISK-030 and expanded the current top risks. Updated `SOURCE_LEDGER.md`, `MARKETING_BACKLOG_INDEX.md`, status, and rationale.
+What was wrong: agency proof existed in asset, feedback, launch, demo, and creator gates, but measurement still lacked a canonical cold-read field for whether viewers can name the next player decision.
 
-Cinematic Cheats used -> No runtime cheats. Operational cheat: force new tracker discoveries into the risk table so future agents do not repeat unsafe actions.
+What was done: `Analytics/MEASUREMENT_AND_UTM_PLAN.md` now includes `ab-009`, `AGENCY_DECISION_READ`, agency-decision feedback packet fields, trusted metrics, targets, and creator expansion rules. `Experiments/A_B_TESTING_AND_CREATIVE_EXPERIMENTS.md` now includes AB-009, `what_decision_next`, `agency_decision_read`, scoring, thresholds, and stop rules. Added backlog row 139 and source ledger trace.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: reduces account-custody risk, bad press sends, and wasted curator/key allocation.
+Cinematic cheats used: static measurement gate only; no runtime simulation or browser/account action.
 
-## 2026-05-19 - Creator CRM Next-50 Staging
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; CSV parse OK for 9 files; markdown table audit clean; agency-measurement field audit finds `ab-009`, `what_decision_next`, `agency_decision_read`, and `AGENCY_DECISION_READ`; legacy/corruption, UTM ID, and backtick path audits clean after repairing stale trace paths in backlog/source ledger; CRM stayed 100 rows with status split `DO_NOT_CONTACT=3`, `LOW_PRIORITY_VERIFY_LATER=52`, `NEEDS_ASSET=22`, `VERIFY_BEFORE_CONTACT=23`; creator send fields remain empty; asset metadata still has 13 rows, exactly three planned `AGENCY_PROOF_CANDIDATE` rows, all 13 `creator_send_gate = BLOCKED_PLANNED_CAPTURE`, and all 13 creator utility scores remain 0; press tracker stayed 30 rows and curator tracker stayed 20 rows. No cold-read test, public post, outreach, browser/account action, runtime, or build action occurred.
 
-What was wrong -> The first 50 creator rows were operational, but the next priority names still lived only in the raw shortlist. That forces future agents to jump between files or accidentally create another CRM.
+## 2026-05-19 Agency-Decision KPI Propagation
 
-What was done -> Appended the next 50 non-duplicate entries from `Docs/Marketing/Data/PRIORITY_CREATOR_SHORTLIST_FROM_RAW_2026-05-18.csv` into `Docs/Marketing/Data/CREATOR_VERIFICATION_TEMPLATE.csv`. CRM now has 100 rows: 21 `VERIFY_BEFORE_CONTACT`, 13 `NEEDS_ASSET`, 13 `LOW_PRIORITY_VERIFY_LATER`, 3 `DO_NOT_CONTACT`, and 50 `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`. Updated `SOURCE_LEDGER.md`, `MARKETING_BACKLOG_INDEX.md`, status, and rationale.
+What was wrong: AB-009 and Analytics now collected agency-decision fields, but the KPI dashboard and daily KPI Clerk loop could still report cold-read or first-public signal through generic player-verb/community fields.
 
-Cinematic Cheats used -> No runtime cheats. Operational cheat: grow the one canonical CRM in 50-row chunks and keep raw rows clearly non-contact-ready.
+What was done: `KPI/MARKETING_DASHBOARD_SPEC.md` now includes `cold_read_agency_decision`, `what_decision_next`, `agency_decision_read`, and `agency_decision_read_comments`; weekly summary/report sections include agency proof. `Operations/DAILY_AGENT_TASK_LOOP.md` now holds reports that claim gameplay/pressure/route-risk proof without those fields. Added backlog row 140 and source ledger trace.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: gives the next verification pass a concrete queue without new-document sprawl or unsafe outreach.
+Cinematic cheats used: reporting gate only; no runtime simulation or browser/account action.
 
-## 2026-05-19 - Creator CRM Rows 51-75 Enrichment
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; CSV parse OK for 9 files; markdown table audit clean; agency KPI text audit finds `cold_read_agency_decision`, `what_decision_next`, `agency_decision_read`, `agency_decision_read_comments`, and AB-009 dashboard fields; legacy/corruption, UTM ID, and backtick path audits clean after repairing stale wildcard trace paths; CRM stayed 100 rows with status split `DO_NOT_CONTACT=3`, `LOW_PRIORITY_VERIFY_LATER=52`, `NEEDS_ASSET=22`, `VERIFY_BEFORE_CONTACT=23`; creator send fields remain empty; asset metadata still has 13 rows, exactly three planned `AGENCY_PROOF_CANDIDATE` rows, all 13 `creator_send_gate = BLOCKED_PLANNED_CAPTURE`, and all 13 creator utility scores remain 0; press tracker stayed 30 rows and curator tracker stayed 20 rows. No cold-read test, public post, outreach, browser/account action, runtime, or build action occurred.
 
-What was wrong -> Rows 51-75 were raw priority-shortlist entries with no activity hint inside the canonical CRM. Verifying them externally one by one would waste time if the scrape already showed stale activity.
+## 2026-05-19 Agency-Decision Entry And Risk Propagation
 
-What was done -> Enriched rows 51-75 in `Docs/Marketing/Data/CREATOR_VERIFICATION_TEMPLATE.csv` from `Docs/Marketing/Data/RAW_PUBLIC_CREATOR_LEADS_2026-05-18.csv`. Result: 1 row has a 2026 public-index activity hint, 10 rows have 2024 stale-risk hints, 9 rows have older stale-risk hints, and 5 rows have unparsed dates. All remain `RAW_PUBLIC_INDEX_NOT_CONTACT_READY`. Updated `SOURCE_LEDGER.md`, `MARKETING_BACKLOG_INDEX.md`, status, and rationale.
+What was wrong: the field-level agency-decision guard existed in analytics/KPI, but first-read docs and the risk register still allowed a future operator to remember the concept while losing the field names.
 
-Cinematic Cheats used -> No runtime cheats. Operational cheat: use existing scrape recency as a cheap demotion filter before spending human verification time.
+What was done: `MARKETING_CONTROL_TOWER.md`, `README.md`, and `PREP_DIRECTIONS_NOW.md` now name the AB-009/KPI fields before agency proof can be counted. `Data/MARKETING_RISK_REGISTER.md` adds RISK-052 for agency proof reported without the viewer-named decision field. Added backlog row 141 and source ledger trace.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: narrows rows 51-75 toward official-channel resolution or demotion instead of blind contact research.
+Cinematic cheats used: entry/risk gate only; no runtime simulation or browser/account action.
 
-## 2026-05-19 - Creator CRM High-Signal Row Promotion
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; CSV parse OK for 9 files; markdown table audit clean; entry/risk agency field audit finds RISK-052 and the AB-009/KPI field names; legacy/corruption, UTM ID, and backtick path audits clean after repairing stale README wildcard path; CRM stayed 100 rows with status split `DO_NOT_CONTACT=3`, `LOW_PRIORITY_VERIFY_LATER=52`, `NEEDS_ASSET=22`, `VERIFY_BEFORE_CONTACT=23`; creator send fields remain empty; asset metadata still has 13 rows, exactly three planned `AGENCY_PROOF_CANDIDATE` rows, all 13 `creator_send_gate = BLOCKED_PLANNED_CAPTURE`, and all 13 creator utility scores remain 0; press tracker stayed 30 rows and curator tracker stayed 20 rows. No cold-read test, public post, outreach, browser/account action, runtime, or build action occurred.
 
-What was wrong -> Rows 51-75 enrichment showed mostly stale-risk data, but Keith Ballard and Wanderbots were still buried as raw rows despite public profile evidence of current/relevant YouTube activity.
+## 2026-05-19 Campaign 01 AB-009 Binding
 
-What was done -> Updated Keith Ballard to `VERIFY_BEFORE_CONTACT` with candidate YouTube channel/About route and PR-email caveat. Updated Wanderbots to `NEEDS_ASSET` with candidate YouTube channel/About route, high-fit indie-discovery angle, and explicit AI-asset/contact-policy caution. CRM distribution is now 22 `VERIFY_BEFORE_CONTACT`, 14 `NEEDS_ASSET`, 13 `LOW_PRIORITY_VERIFY_LATER`, 3 `DO_NOT_CONTACT`, and 48 raw. Updated `SOURCE_LEDGER.md`, `MARKETING_BACKLOG_INDEX.md`, status, and rationale.
+What was wrong: Campaign 01 required agency metadata but its T-24h cold-read pass could still run on identity, player-verb, and capsule tests without AB-009 decision-read fields.
 
-Cinematic Cheats used -> No runtime cheats. Operational cheat: promote only high-signal rows and keep third-party-index contact data as a verification prompt, not a send permission.
+What was done: `Campaigns/CAMPAIGN_01_FIRST_SCREENSHOT_DROP.md` now requires one agency candidate in T-24h, adds the 60% agency-decision metric, adds a kill criterion for missing pressure decision, and changes `KEEP` to require an AB-009 agency-proof row. Added backlog row 142 and source ledger trace.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: saves human verification time while avoiding unsafe outreach to high-value indie channels.
+Cinematic cheats used: campaign gate only; no runtime simulation or browser/account action.
 
-## 2026-05-19 - Creator CRM Rows 51-75 Closure
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; CSV parse OK for 9 files; markdown table audit clean; Campaign 01 AB-009 text audit finds agency candidate, `what_decision_next`, `agency_decision_read`, 60% agency-decision metric, and `KEEP` dependency; legacy/corruption, UTM ID, and backtick path audits clean; CRM stayed 100 rows with status split `DO_NOT_CONTACT=3`, `LOW_PRIORITY_VERIFY_LATER=52`, `NEEDS_ASSET=22`, `VERIFY_BEFORE_CONTACT=23`; creator send fields remain empty; asset metadata still has 13 rows, exactly three planned `AGENCY_PROOF_CANDIDATE` rows, all 13 `creator_send_gate = BLOCKED_PLANNED_CAPTURE`, and all 13 creator utility scores remain 0; press tracker stayed 30 rows and curator tracker stayed 20 rows. No cold-read test, public post, outreach, browser/account action, runtime, or build action occurred.
 
-What was wrong -> The second CRM slice still contained 16 raw rows after enrichment. Most of those rows had stale, old, unparsed, archive, podcast, or low-fit signals; leaving them raw would waste the next verification pass.
+## 2026-05-19 Steam Page AB-009 Binding
 
-What was done -> Closed rows 51-75 out of raw state. Aavak, EnterElysium, Praetorian HiJynx, and paulsoaresjr moved to `NEEDS_ASSET`; Chilluminati Podcast, 39daph VODs, Frithgar, and the stale/old/unparsed residual rows moved to `LOW_PRIORITY_VERIFY_LATER`. CRM distribution is now 22 `VERIFY_BEFORE_CONTACT`, 18 `NEEDS_ASSET`, 32 `LOW_PRIORITY_VERIFY_LATER`, 3 `DO_NOT_CONTACT`, and 25 raw. Updated `SOURCE_LEDGER.md`, `MARKETING_BACKLOG_INDEX.md`, status, and rationale.
+What was wrong: Campaign 02 and the Steam asset/copy docs required an agency/decision proof asset, but they could still advance from generic blind-read wording without storing the AB-009/KPI viewer-named decision field.
 
-Cinematic Cheats used -> No runtime cheats. Operational cheat: close CRM work in 25-row slices so future work starts from the next raw block instead of re-triaging stale entries.
+What was done: `Campaigns/CAMPAIGN_02_STEAM_PAGE_LAUNCH.md` now requires AB-009/KPI decision fields in upstream launch gates, asset minimums, and first-week `EXPAND` criteria. `Steam/STEAM_PAGE_ASSET_REQUIREMENTS_CHECKLIST.md` now requires AB-009/KPI rows in the Steam review packet. `Steam/STORE_PAGE_COPY_MATRIX.md` now holds Steam assembly and copy selection when the agency candidate lacks `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`. Added backlog row 143 and source ledger trace.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: cleaner next verification batch and less chance of accidental outreach to stale/archive/low-fit targets.
+Cinematic cheats used: static launch/copy gate only; no runtime simulation or browser/account action.
 
-## 2026-05-19 - Asset-To-Post Content Queue
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; CSV parse OK for 9 files; markdown table audit clean; targeted Steam AB-009 text audit finds AB-009 and viewer-named decision fields across Campaign 02, Steam asset checklist, and copy matrix; legacy/corruption, UTM/experiment ID, backtick path, and rationale-order audits clean; CRM stayed 100 rows with status split `DO_NOT_CONTACT=3`, `LOW_PRIORITY_VERIFY_LATER=52`, `NEEDS_ASSET=22`, `VERIFY_BEFORE_CONTACT=23`; asset metadata stayed 13 rows with exactly three planned `AGENCY_PROOF_CANDIDATE` rows and all 13 `creator_send_gate = BLOCKED_PLANNED_CAPTURE`; press tracker stayed 30 rows and curator tracker stayed 20 rows. No Steam page, cold-read test, public post, outreach, browser/account action, runtime, or build action occurred.
 
-What was wrong -> The post bank had hooks and bundles, but it still required humans to map each future screenshot/clip to a concrete platform post, CTA, and kill condition.
+## 2026-05-19 Creator Send AB-009 Binding
 
-What was done -> Updated `Docs/Marketing/Content/POST_BANK_AND_HOOK_LIBRARY.md` with a 12-row asset-to-post execution queue, first screenshot caption set, five creator warmup lines, and a 72-hour first-screenshot sequence. Updated `SOURCE_LEDGER.md`, `MARKETING_BACKLOG_INDEX.md`, status, and rationale.
+What was wrong: creator send gates had factual agency candidate metadata, but several send surfaces still did not require AB-009/KPI viewer-named decision fields before gameplay/pressure/route-risk outreach.
 
-Cinematic Cheats used -> No runtime cheats. Marketing cheat: every post draft is tied to a required asset and a kill condition, so text cannot hide weak or unreadable footage.
+What was done: `CreatorOutreach/MASS_LEAD_VERIFICATION_AND_PITCH_WORKFLOW.md`, `CreatorOutreach/CREATOR_CRM_SCHEMA_AND_SCORING.md`, `CreatorOutreach/SEGMENT_PITCH_MATRIX.md`, `CreatorOutreach/PITCH_BANK.md`, `CreatorOutreach/A_TIER_PERSONALIZED_PITCHES.md`, `CreatorOutreach/PRIORITY_50_MESSAGE_DRAFTS_FROM_RAW.md`, and `Content/POST_BANK_AND_HOOK_LIBRARY.md` now require AB-009/KPI `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision` for gameplay/pressure/route-risk creator sends. Added backlog row 144 and source ledger trace.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: first screenshot pack can move straight into scored posts instead of another copywriting/review loop.
+Cinematic cheats used: send-surface evidence gate only; no runtime simulation or browser/account action.
 
-## 2026-05-19 - Social Account Owner Handoff
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; CSV parse OK for 9 files; markdown table audit clean; creator AB-009 text audit finds the send gates; active old AB-001/002/004-only send gate absent; legacy/corruption, backtick path, and rationale-order audits clean; CRM remained 100 rows with 0 filled send fields. No creator outreach, cold-read test, public post, account/browser action, runtime, or build action occurred.
 
-What was wrong -> The user authorized browser/social registration, but actually creating accounts without owner-controlled credentials, 2FA, recovery, and backup-code custody would create future lockout risk.
+## 2026-05-19 Stale AB Trace Supersession
 
-What was done -> Updated `Docs/Marketing/Social/SOCIAL_ACCOUNT_SETUP_AND_PLATFORM_PLAYBOOK.md` with a human-owned account creation handoff: required project email/recovery/password-manager/2FA fields, reservation order, password-manager note, first-login hardening, and abort conditions. Updated `SOURCE_LEDGER.md`, `MARKETING_BACKLOG_INDEX.md`, status, and rationale.
+What was wrong: historical backlog/source rows 68-70 still looked like current AB-001/002/004 authority for cold-read, Steam, and creator sends.
 
-Cinematic Cheats used -> No runtime cheats. Operational cheat: turn social registration into a safe checklist that can be executed quickly by the owner without giving the agent custody of accounts.
+What was done: `Data/MARKETING_BACKLOG_INDEX.md` rows 68-70 and `Data/SOURCE_LEDGER.md` addenda now point to rows 139, 143, and 144 for AB-009/KPI agency-decision authority. Added backlog row 145 and Decision 174.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents orphaned handles, lost 2FA, wrong recovery ownership, and premature public profiles.
+Cinematic cheats used: trace correction only; no runtime simulation or browser/account action.
 
-## 2026-05-19 - Creator CRM Rows 76-100 Closure
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; CSV parse OK for 9 files; markdown table audit clean; supersession text audit finds rows 139/143/144/145 references; legacy/corruption, backtick path, and rationale-order audits clean. No cold-read test, creator outreach, public post, account/browser action, runtime, or build action occurred.
 
-What was wrong -> The final staged CRM block still had 25 raw rows. Several were high-value but asset-gated, while the rest were stale, unparsed, platform-mismatched, outlet-like, or low-fit for first-wave outreach.
+## 2026-05-19 Public Soft-Launch AB-009 Binding
 
-What was done -> Enriched rows 76-100 from raw scrape and public web/search signals. GameEdged, Splattercatgaming, TotalXclipse, and Welonz moved to `NEEDS_ASSET`; Accurize2 moved to `VERIFY_BEFORE_CONTACT`; the remaining rows moved to `LOW_PRIORITY_VERIFY_LATER`. The first 100 CRM rows now have 0 raw rows. Updated `SOURCE_LEDGER.md`, `MARKETING_BACKLOG_INDEX.md`, status, and rationale.
+What was wrong: public or semi-public surfaces could still advance from "agency proof asset" language without requiring the measured AB-009/KPI viewer-named decision field.
 
-Cinematic Cheats used -> No runtime cheats. Operational cheat: close the current queue before adding more volume, so the CRM becomes executable instead of aspirational.
+What was done: updated owned-audience/devlog signup, wishlist/Next Fest, wishlist iteration, presskit, Curator Connect, showcase/festival submission, social sequence, and launch war-room gates to require AB-009/KPI decision-read fields when they use first-page agency proof. Added backlog row 146 and Decision 175.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: the next marketing pass can start from verified/asset/low/DNC buckets, not raw prospect cleanup.
+Cinematic cheats used: surface gate only; no runtime simulation or browser/account action.
 
-## 2026-05-19 - CRM-100 High-Signal Creator Drafts
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; CSV parse OK for 9 files; markdown table audit clean; public surface AB-009 text audit finds 25 hits; legacy/corruption, backtick path, and rationale-order audits clean; asset metadata remains 13 rows with three agency candidates and all 13 send gates blocked. No signup, Steam page movement, curator send, presskit publish, showcase submission, social post, launch action, browser/account action, runtime, or build action occurred.
 
-What was wrong -> The first 100 CRM rows were triaged, but the pitch draft file still had many generic raw-public-index drafts. High-signal rows from 51-100 needed copy that matched their new status and asset gate.
+## 2026-05-19 Daily KPI Agency Field-Set Repair
 
-What was done -> Updated `Docs/Marketing/CreatorOutreach/PRIORITY_50_MESSAGE_DRAFTS_FROM_RAW.md` with a CRM-100 high-signal draft section for Keith Ballard, Accurize2, Aavak, EnterElysium, Praetorian HiJynx, paulsoaresjr, Wanderbots, GameEdged, Splattercatgaming, TotalXclipse, and Welonz. Updated matching CRM rows to point at that section. Updated `SOURCE_LEDGER.md`, `MARKETING_BACKLOG_INDEX.md`, status, and rationale.
+What was wrong: daily and KPI enforcement omitted `cold_read_agency_decision` from one agency-proof field set while control tower/risk docs allowed it.
 
-Cinematic Cheats used -> No runtime cheats. Marketing cheat: prepare small creator-specific draft batches by CRM state so real assets can trigger targeted outreach without generic spam.
+What was done: `Operations/DAILY_AGENT_TASK_LOOP.md` and `KPI/MARKETING_DASHBOARD_SPEC.md` now include `cold_read_agency_decision` in the same agency-proof field set as `what_decision_next`, `agency_decision_read`, and `agency_decision_read_comments`. Added backlog row 147 and Decision 176.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: reduces first-outreach writing time and keeps contact/asset gates visible.
+Cinematic cheats used: field-set alignment only; no runtime simulation or browser/account action.
 
-## 2026-05-19 - Planned Asset Metadata Queue
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; CSV parse OK for 9 files; markdown table audit clean; field-set audit finds `cold_read_agency_decision`; legacy/corruption, backtick path, and rationale-order audits clean. No cold-read test, report, public action, browser/account action, runtime, or build action occurred.
 
-What was wrong -> `MARKETING_ASSET_METADATA_TEMPLATE.csv` had only one example row. Once first screenshots/clips appear, that would invite ad hoc filenames and missing build/QA ownership.
+## 2026-05-19 Website AB-009 Binding
 
-What was done -> Replaced the example row with 13 `PLANNED_CAPTURE` rows covering first screenshots, clips, and capsule roughs. Updated `ASSET_LIBRARY_NAMING_AND_VERSION_CONTROL.md` with the new status. Updated source ledger, backlog, status, and rationale.
+What was wrong: the website/presskit shell could publish from readable-decision prose without requiring AB-009/KPI viewer-named decision evidence.
 
-Cinematic Cheats used -> No runtime cheats. Operational cheat: pre-assign asset IDs and gates so future capture can be dropped into known slots with build IDs and QA scores.
+What was done: `Website/ONE_PAGE_SITE_AND_PRESSKIT_PLAN.md` now requires `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision` for the hero proof asset, launch gate, presskit screenshots, and presskit kill conditions. Added backlog row 148 and Decision 177.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents stale/anonymous screenshots, wrong build claims, and asset-review confusion.
+Cinematic cheats used: public-shell gate only; no runtime simulation or browser/account action.
 
-## 2026-05-19 - Steam Page Assembly V0
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; CSV parse OK for 9 files; markdown table audit clean; website AB-009 text audit finds 4 hits; legacy/corruption, backtick path, and rationale-order audits clean. No website publish, presskit send, signup, browser/account action, runtime, or build action occurred.
 
-What was wrong -> Steam copy, screenshot order, tag stack, and asset metadata were prepared but not yet tied into one executable page assembly path. That would force another decision loop once real captures appear.
+## 2026-05-19 Outbound Bypass AB-009 Binding
 
-What was done -> Updated `Docs/Marketing/Steam/STORE_PAGE_COPY_MATRIX.md` with `2026-05-19 Steam Page Assembly V0`: Candidate A default, planned screenshot order, trailer/capsule assumptions, tag stack, evidence requirements, switch conditions, and cold-reader reject rules. Updated `SOURCE_LEDGER.md`, `MARKETING_BACKLOG_INDEX.md`, status, and rationale.
+What was wrong: paid-test, community, Discord, devlog/news, press email, and preview-access docs could still turn readable-decision prose into public movement, spend, or access without requiring AB-009/KPI viewer-named decision fields.
 
-Cinematic Cheats used -> No runtime cheats. Marketing cheat: every Steam page surface must be backed by a planned asset ID and a kill condition, so copy cannot compensate for unreadable or misleading visuals.
+What was done: updated `Ads/PAID_MICROTESTS_AND_AD_CREATIVE_MATRIX.md`, `Community/COMMUNITY_POST_TEMPLATES.md`, `Community/COMMUNITY_TARGETS_AND_RULES.md`, `Community/DISCORD_AND_COMMUNITY_SERVER_SETUP.md`, `Content/DEVLOG_AND_STEAM_NEWS_PIPELINE.md`, `Press/PRESS_RELEASE_AND_EMAIL_TEMPLATES.md`, and `Press/REVIEW_KEYS_EMBARGO_AND_PREVIEW_ACCESS_PROTOCOL.md` so gameplay/pressure/route-risk agency proof requires `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`. Added backlog row 149 and Decision 178.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: first Steam page draft can be assembled immediately after capture/QA instead of restarting strategy work.
+Cinematic cheats used: outbound gate alignment only; no runtime simulation or browser/account action.
 
-## 2026-05-19 - Steam Page Asset Build Ticket
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; CSV parse OK for 9 files; markdown table audit clean; outbound AB-009 text audit finds the field gate in 7 touched outbound files; stale outbound bypass grep returns no matches; actual corruption pattern audit, backtick path audit, and rationale-order audit clean; CRM stays 100 rows with 0 send fields; asset metadata remains 13 rows, 3 planned agency candidates, and 13 blocked send gates; press/curator trackers remain 30/20 rows. No paid spend, community post/server, devlog publish, press email, access send, browser/account action, runtime, or build action occurred.
 
-What was wrong -> Planned asset IDs existed, but the Steam asset checklist did not yet assign exact Steam use, pass threshold, and reject codes to every planned screenshot, clip, and capsule rough.
+## 2026-05-19 Operator Router AB-009 Binding
 
-What was done -> Updated `Docs/Marketing/Steam/STEAM_PAGE_ASSET_REQUIREMENTS_CHECKLIST.md` with `2026-05-19 Steam Page Build Ticket V0`, covering `PLAN-SHOT-001` through `PLAN-SHOT-008`, `PLAN-CLIP-001` through `PLAN-CLIP-004`, and `PLAN-CAPSULE-001`. Updated source ledger, backlog, status, and rationale.
+What was wrong: AgentOps, budget, press angle, and paid creator router docs could still send future work down older asset/spend/angle gates after deeper send surfaces had moved to AB-009/KPI decision-read proof.
 
-Cinematic Cheats used -> No runtime cheats. Marketing cheat: kill bad assets by named failure mode before they consume edit, post, or Steam page time.
+What was done: updated `AgentOps/AGENT_MARKETING_WORKFLOWS.md`, `Budget/LOW_BUDGET_SPEND_DECISION_TREE.md`, `Press/PRESS_ANGLE_AND_SUBJECT_LINE_BANK.md`, and `Partnerships/CREATOR_CONTRACT_TERMS_AND_RATE_CARD.md` so gameplay/pressure/route-risk proof requires `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`, plus route/provenance handling before spend, press angles, paid creator terms, or send packets. Added backlog row 150 and Decision 179.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: reduces capture-review ambiguity and prevents captions/copy from rescuing weak visuals.
+Cinematic cheats used: router alignment only; no runtime simulation or browser/account action.
 
-## 2026-05-19 - Asset-Gated Experiment Briefs
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; CSV parse OK for 9 files; markdown table audit clean; router AB-009/route text audit finds the gate in 4 router files after repairing press-angle route/provenance text; actual corruption pattern audit, backtick path audit, and rationale-order audit clean; CRM stays 100 rows with 0 send fields; asset metadata remains 13 rows, 3 planned agency candidates, and 13 blocked send gates; press/curator trackers remain 30/20 rows. No spend, press send, creator contract, outreach, account/browser action, runtime, or build action occurred.
 
-What was wrong -> The experiment document had a useful framework, but the first tests were still generic. With a small cash budget, generic A/B tests are a path to wasted spend.
+## 2026-05-19 Calendar And Brand AB-009 Binding
 
-What was done -> Updated `Docs/Marketing/Experiments/A_B_TESTING_AND_CREATIVE_EXPERIMENTS.md` with AB-001 through AB-008. The briefs bind `PLAN-*` assets to cold-reader tests, capsule tests, creator micro-pitches, Steam tag proof, and a capped paid micro-test. Updated source ledger, backlog, status, and rationale.
+What was wrong: broad calendars and master/brand docs still contained phase and batch-volume language that could be read as permission to verify/send creators, move Steam, or scale public copy once a date/phase arrived, even if AB-009/KPI agency-decision proof and route/provenance custody were missing.
 
-Cinematic Cheats used -> No runtime cheats. Marketing cheat: force every dollar to follow a no-spend proof path and a named stop rule.
+What was done: updated `OUTREACH_CALENDAR_AND_BATCH_PLAN.md`, `Schedule/90_DAY_MARKETING_OPERATIONS_CALENDAR.md`, `MARKETING_PREP_MASTER_PLAN.md`, and `BRAND_AND_POSITIONING_BIBLE.md` so batch sizes are ceilings, not default instructions. Gameplay/pressure/route-risk/threat/salvage/base-failure/first-public agency proof now requires `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision` plus route/provenance handling before creator, press, community, Steam, paid, or public brand scaling. Added backlog row 151 and Decision 180.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents early paid boosts, vague creator spend, and polish work before assets show conversion signal.
+Cinematic cheats used: calendar/brand gate alignment only; no runtime simulation or browser/account action.
 
-## 2026-05-19 - Experiment ID Collision Fix
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; CSV parse OK for 9 files; markdown table audit clean; calendar AB-009/route text audit clean; actual corruption pattern audit, backtick path audit, and rationale-order audit clean through Decision 180; CRM stays 100 rows with 0 send fields; asset metadata remains 13 rows, 3 planned agency candidates, and 13 blocked send gates; press/curator trackers remain 30/20 rows. No outreach, public post, Steam movement, paid spend, browser/account action, runtime, or build action occurred.
 
-What was wrong -> Validation showed the old concept matrix used AB-001 through AB-006 while the new executable briefs used AB-001 through AB-008. Duplicate IDs would poison later UTM and result logs.
+## 2026-05-19 Access Route AB-009 Binding
 
-What was done -> Renamed the older generic rows to `CONCEPT-001` through `CONCEPT-006`; kept AB-001 through AB-008 as the only executable experiment IDs. Updated status and rationale.
+What was wrong: key/access, legal, playtester, demo telemetry, and demo outreach docs could still use private access/recruitment/demo copy as a softer proof route. They had disclosure and route language, but not every pressure/route-risk claim required the same AB-009/KPI decision-read field used by public and creator gates.
 
-Cinematic Cheats used -> No runtime cheats. Operational cheat: preserve old idea seeds while making the executable ID namespace clean.
+What was done: updated `KEYS_AND_CREATOR_COMPLIANCE.md`, `Legal/COMPLIANCE_AND_DISCLOSURE_PLAYBOOK.md`, `Audience/PLAYTESTER_RECRUITMENT_AND_SCREENING_PLAN.md`, `Steam/DEMO_PLAYTEST_AND_TELEMETRY_PLAN.md`, and `Campaigns/CAMPAIGN_03_FIRST_DEMO_OUTREACH.md` so gameplay/pressure/route-risk proof in key sends, access pitches, tester recruitment, demo outreach, or reused feedback claims requires `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision` plus route/provenance custody. Added backlog row 152 and Decision 181.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents future test-result ambiguity.
+Cinematic cheats used: access-route gate alignment only; no runtime simulation or browser/account action.
 
-## 2026-05-19 - First Screenshot Objection Matrix
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; CSV parse OK for 9 files; markdown table audit clean; access-route AB-009/provenance text audit clean; actual corruption pattern audit, backtick path audit, and rationale-order audit clean through Decision 181; CRM stays 100 rows with 0 send fields; asset metadata remains 13 rows, 3 planned agency candidates, and 13 blocked send gates. No key send, access invite, tester recruitment, demo outreach, public post, browser/account action, runtime, or build action occurred.
 
-What was wrong -> The FAQ had safe baseline answers, but not enough first-screenshot handling for the exact predictable comment traps: co-op, Subnautica clone reads, darkness, AI-looking assets, gameplay clarity, performance, and Steam/demo timing.
+## 2026-05-19 Access Route Reporting Propagation
 
-What was done -> Updated `Docs/Marketing/Community/PUBLIC_FAQ_AND_OBJECTION_HANDLING.md` with `2026-05-19 First Screenshot Response Matrix`, including short replies, forbidden public claims, and internal actions for each trigger. Updated source ledger, backlog, status, and rationale.
+What was wrong: access-route docs had the new proof rule, but entry and reporting docs could still describe key/demo/playtest access without naming the AB-009/KPI field-source requirement. That makes first-read agents vulnerable to following the weaker summary.
 
-Cinematic Cheats used -> No runtime cheats. Marketing cheat: every repeated objection becomes a source-fix signal instead of a public argument.
+What was done: updated `MARKETING_CONTROL_TOWER.md`, `README.md`, `PREP_DIRECTIONS_NOW.md`, `KPI/MARKETING_DASHBOARD_SPEC.md`, and `Data/MARKETING_RISK_REGISTER.md` so key/private-preview/Steam-Playtest/tester/demo outreach copy and reporting require AB-009/KPI field source, access route class, reply-provenance, and access logs where relevant. Added RISK-053, backlog row 153, and Decision 182.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents scope promises and reduces time wasted on defensive comment threads.
+Cinematic cheats used: entry/KPI/risk gate propagation only; no runtime simulation or browser/account action.
 
-## 2026-05-19 - Paid Microtest Execution Rows
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; CSV parse OK for 9 files; markdown table audit clean; entry/KPI/risk access gate text audit clean; actual corruption pattern audit, backtick path audit, and rationale-order audit clean through Decision 182; RISK-053 present; CRM stays 100 rows; asset metadata remains 13 rows. No key send, access invite, tester recruitment, demo outreach, public post, browser/account action, runtime, or build action occurred.
 
-What was wrong -> The paid ads file had budget tiers and creative families, but no capped rows tied to AB winners and planned assets. That left too much room for premature boosts.
+## 2026-05-19 CTA Loose-Language Repair
 
-What was done -> Updated `Docs/Marketing/Ads/PAID_MICROTESTS_AND_AD_CREATIVE_MATRIX.md` with PMT-001 through PMT-004, required AB winners, asset/UTM content, platform candidates, max spend, pass signals, and abort conditions. Updated source ledger, backlog, status, and rationale.
+What was wrong: several operational docs still used shorthand CTA language: "one CTA", "Light CTA if allowed", "Steam page visit/wishlist", "title + wishlist", and "Clean CTA only if page exists". That can bypass the official CTA packet because existence of a page is not enough.
 
-Cinematic Cheats used -> No runtime cheats. Marketing cheat: paid spend must follow a previous no-spend winner and die fast if Steam behavior is absent.
+What was done: updated `AgentOps/AGENT_MARKETING_WORKFLOWS.md`, `Community/REDDIT_COMMUNITY_RULES_TRACKER.md`, `Experiments/A_B_TESTING_AND_CREATIVE_EXPERIMENTS.md`, `Localization/LOCALIZATION_AND_REGIONAL_ASSET_PIPELINE.md`, `PREP_DIRECTIONS_NOW.md`, and `Creative/CAPSULE_TRAILER_THUMBNAIL_BRIEFS.md` so wishlist, Steam, demo, signup, presskit, regional, and trailer/capsule CTA language routes through Official CTA Link Activation Gate V0 or a no-link/private-access fallback. Added backlog row 154 and Decision 183.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: protects the small marketing budget from vague ad buys.
+Cinematic cheats used: CTA gate wording repair only; no runtime simulation or browser/account action.
 
-## 2026-05-19 - Experiment And Asset UTM Registry
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; CSV parse OK for 9 files; markdown table audit clean; CTA loose-language text audit clean; actual corruption pattern audit, backtick path audit, and rationale-order audit clean through Decision 183; CRM stays 100 rows; asset metadata remains 13 rows. No post, CTA, signup, Steam movement, paid spend, browser/account action, runtime, or build action occurred.
 
-What was wrong -> AB, PMT, creator, press, and planned asset IDs were now defined, but UTM naming still allowed later agents to invent inconsistent `utm_content` values.
+## 2026-05-19 Regional Mojibake And Proof-Gate Repair
 
-What was done -> Updated `Docs/Marketing/Analytics/MEASUREMENT_AND_UTM_PLAN.md` with a registry for organic asset links, AB tests, paid microtests, creator links, and press beats, plus canonical AB/PMT IDs and UTM kill rules. Updated source ledger, backlog, status, and rationale.
+What was wrong: regional campaign and outreach docs contained mojibake in the RU/CIS pitch, and regional execution language still allowed lead verification or localized send prep without the same AB-009/KPI, CTA activation, and route/provenance custody required elsewhere.
 
-Cinematic Cheats used -> No runtime cheats. Operational cheat: keep measurement names boring and stable so tiny-budget tests remain readable.
+What was done: repaired RU/CIS pitch text in `Campaigns/CAMPAIGN_05_REGIONAL_PUSH.md` and `Regional/REGIONAL_OUTREACH_PLAN.md`. Added Regional Send Gate V0 to regional campaign/plan/lead-list surfaces and strengthened localization QA so regional sends require native/fluent review, AB-009/KPI decision-read field source, Official CTA Link Activation Gate V0 or no-link/private-access fallback, route class, private access log where relevant, and reply-provenance custody. Added backlog row 155 and Decision 184.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents attribution ambiguity once public links exist.
+Cinematic cheats used: static localization/proof gate only; no runtime simulation or browser/account action.
 
-## 2026-05-19 - Asset-Proof Press Angle Matrix
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; CSV parse OK for 9 files; markdown table audit clean; regional mojibake audit clean; regional proof/CTA/provenance text audit clean; stale regional quota/link grep clean; diff whitespace check clean apart from existing CRLF normalization warnings; rationale-order audit clean through Decision 184; CRM stays 100 rows with 0 filled send fields; asset metadata remains 13 rows, 3 planned agency candidates, and 13 blocked send gates. No regional outreach, public post, CTA, Steam movement, account/browser action, runtime, or build action occurred.
 
-What was wrong -> The press angle bank had strong draft angles, but they were not tied tightly enough to planned proof assets. That could create press emails the first screenshots cannot defend.
+## 2026-05-19 Official-Link Shorthand Repair
 
-What was done -> Updated `Docs/Marketing/Press/PRESS_ANGLE_AND_SUBJECT_LINE_BANK.md` with PA-001 through PA-010 mapped to proof assets, secondary proof, outlet bucket, subject seed, and hold condition. Updated source ledger, backlog, status, and rationale.
+What was wrong: after CTA activation work, older "official link exists", "official links", and "one Steam link" phrases still existed in execution and trace docs. That wording can be misread as "page exists equals send/post/spend ready".
 
-Cinematic Cheats used -> No runtime cheats. Marketing cheat: make every press subject line prove itself with the first linked asset.
+What was done: updated analytics, Campaign 01/02, Steam asset checklist, master plan, control tower, budget, social, launch war-room, risk register, backlog, and source ledger text so public links require Official CTA Link Activation Gate V0 or Official CTA/contact preflight, while private routes use access logs. Added backlog row 156 and Decision 185.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents weak press outreach and reduces rewrite time after assets arrive.
+Cinematic cheats used: static gate wording repair only; no runtime simulation or browser/account action.
 
-## 2026-05-19 - First Creator Human-Send Packet
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; CSV parse OK for 9 files; markdown table audit clean; official-link shorthand grep clean; diff whitespace check clean apart from existing CRLF normalization warnings; rationale-order audit clean through Decision 185; CRM stays 100 rows; asset metadata remains 13 rows, 3 planned agency candidates, and 13 blocked send gates. No public link, Steam movement, post, paid spend, browser/account action, runtime, or build action occurred.
 
-What was wrong -> CRM-100 had closed statuses and drafts, but no concrete first send order. That leaves the next stage exposed to either more scraping or too-broad outreach.
+## 2026-05-19 Page-Exists Route-Opener Repair
 
-What was done -> Updated `Docs/Marketing/CreatorOutreach/MASS_LEAD_VERIFICATION_AND_PITCH_WORKFLOW.md` with `2026-05-19 First Human-Send Packet After Assets`: 10 Wave A screenshot/Steam proof candidates, Wave B demo-only hold list, required asset gates, contact verification gates, and CRM send log fields. Updated source ledger, backlog, status, and rationale.
+What was wrong: multiple execution surfaces still treated "Steam page exists", "link exists", or raw Steam/demo/presskit link text as if existence permitted posting, spend, wishlist asks, creator sends, press sends, or support setup.
 
-Cinematic Cheats used -> No runtime cheats. Marketing cheat: constrain first outreach to a 10-row proof-backed batch instead of chasing volume.
+What was done: updated spend, Next Fest, post bank, website, creator, CRM schema, pitch bank, press, partnership, daily loop, QA, wishlist conversion, owned audience, FAQ, support/forum, outreach calendar, risk, backlog, and source-ledger surfaces so public links require Official CTA Link Activation Gate V0 and private routes require access logs. Added backlog row 157 and Decision 186.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: avoids scattershot creator emails and makes first reply data interpretable.
+Cinematic cheats used: static route-permission gate only; no runtime simulation or browser/account action.
 
-## 2026-05-19 - Social Platform Launch Kit V0
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; CSV parse OK for 9 files; markdown table audit clean; stale route-opener phrase audit clean; diff whitespace check clean apart from existing CRLF normalization warnings; rationale-order audit clean through Decision 186; CRM stays 100 rows; asset metadata remains 13 rows, 3 planned agency candidates, and 13 blocked send gates. No public link, Steam movement, post, paid spend, outreach, browser/account action, runtime, or build action occurred.
 
-What was wrong -> The social playbook had handle custody and general templates, but not a platform-specific first-post kit tied to the new asset gates.
+## 2026-05-19 KPI Reply Provenance Field Alignment
 
-What was done -> Updated `Docs/Marketing/Social/SOCIAL_ACCOUNT_SETUP_AND_PLATFORM_PLAYBOOK.md` with platform bio variants, first three public posts, pinned post V0, and cross-post rules. Updated source ledger, backlog, status, and rationale.
+What was wrong: KPI access reporting used `reply_provenance`, which does not match the live creator CRM, press tracker, or curator tracker field name.
 
-Cinematic Cheats used -> No runtime cheats. Marketing cheat: make social copy a gated amplification layer, not a premature content treadmill.
+What was done: changed KPI access reporting to `reply_consent_provenance` and added backlog/source/rationale trace. No CSV schema changed because the live CSVs were already correct.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents duplicated platform spam and first-post improvisation.
+Cinematic cheats used: schema-name alignment only; no runtime simulation or browser/account action.
 
-## 2026-05-19 - First Screenshot Campaign Execution Checklist
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; CSV parse OK for 9 files; markdown table audit clean; `reply_provenance` alias audit clean; schema field audit confirms `reply_consent_provenance` in CRM 100 rows, press 30 rows, and curator 20 rows; rationale-order audit clean through Decision 187. No dashboard row, CRM row, tracker row, outreach, browser/account action, runtime, or build action occurred.
 
-What was wrong -> Campaign 01 described a screenshot drop, but it was not yet wired to the new asset IDs, QA, experiments, UTM, FAQ, creator wave, and social custody gates.
+## 2026-05-19 Exact Route Field Wording
 
-What was done -> Updated `Docs/Marketing/Campaigns/CAMPAIGN_01_FIRST_SCREENSHOT_DROP.md` with `2026-05-19 Execution Checklist V0`: required inputs, 72-hour sequence, and final keep/revise/kill decision. Updated source ledger, backlog, status, and rationale.
+What was wrong: operational docs still used free-text shorthand like route provenance and reply provenance after the live schemas had settled on exact fields. That could send creator, press, curator, access, and public feedback replies into notes instead of route-specific fields.
 
-Cinematic Cheats used -> No runtime cheats. Marketing cheat: force the first screenshot drop to produce a decision, not vanity engagement.
+What was done: updated entry, calendar, demo/playtest, key, legal, regional, outreach, press, and risk surfaces so creator/press/curator sends name `send_route_class`, private access names `access_route_class`, and reply reuse names `reply_consent_provenance`. Added backlog row 159, source ledger addendum, Decision 188, and Status addendum 161.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents moving into Steam/press/social spend with unclear assets.
+Cinematic cheats used: static schema wording repair only; no runtime simulation, browser login, account creation, public send, or build action.
 
-## 2026-05-19 - Steam Page Launch Gate V0
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; CSV parse OK for 9 files; exact shorthand audit for `reply-provenance`, `reply provenance`, `route/provenance`, and `reply_provenance` clean; markdown table pipe audit clean for touched table files; CRM 100 rows with 0 filled route/reply fields; press tracker 30 rows and curator tracker 20 rows with 0 filled route/reply fields; asset metadata 13 rows with 3 `AGENCY_PROOF_CANDIDATE` and 13 blocked send gates; mojibake audit clean; rationale-order audit clean through Decision 188. No CRM row, press row, curator row, key send, access invite, public post, outreach, browser/account action, runtime, or build action occurred.
 
-What was wrong -> Campaign 02 could still be read as "launch when Steam assets exist". That is insufficient; if Campaign 01 returns revise/kill, Steam traffic only amplifies confusion.
+## 2026-05-19 Public Comment Consent Boundary
 
-What was done -> Updated `Docs/Marketing/Campaigns/CAMPAIGN_02_STEAM_PAGE_LAUNCH.md` with `2026-05-19 Steam Page Launch Gate V0`: upstream dependencies, launch asset minimums, and first-7-days expand/revise/stop rule. Updated source ledger, backlog, status, and rationale.
+What was wrong: public-post/reporting docs still used loose consent wording or bare `public_comment` text. That is enough ambiguity for a future operator to treat a public reply as newsletter, playtest, press, or creator consent.
 
-Cinematic Cheats used -> No runtime cheats. Marketing cheat: block expensive funnel expansion until the first page can survive warm traffic.
+What was done: updated analytics, control tower, README, daily loop, KPI dashboard, post bank, community/social playbooks, playtester screening, preview access protocol, prep directions, master plan, schedule, and risk register. Public comments now use `consent_provenance = public_comment`; creator/press/curator/access replies use `reply_consent_provenance`; route-specific class fields stay separate. Added backlog row 160, source ledger addendum, Decision 189, and Status addendum 162.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents creator/press/paid traffic from being sent to a weak Steam page.
+Cinematic cheats used: static consent boundary repair only; no runtime simulation, browser login, account creation, public post, CRM import, access send, or build action.
 
-## 2026-05-19 - Low-Budget Spend Release Ladder
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; CSV parse OK for 9 files; shorthand audit for `consent/provenance`, `Reply provenance`, `reply-provenance`, `route/provenance`, `reply_provenance`, and bare social `public_comment` wording clean; markdown table pipe audit clean; CRM 100 rows with 0 filled route/reply fields; press tracker 30 rows and curator tracker 20 rows with 0 filled route/reply fields; asset metadata 13 rows with 3 `AGENCY_PROOF_CANDIDATE` and 13 blocked send gates; rationale-order audit clean through Decision 189. No post, signup, CRM import, key send, access invite, outreach, browser/account action, runtime, or build action occurred.
 
-What was wrong -> The budget document described scenarios, but not the current cash release decision. With a small budget, that ambiguity can turn into premature spend.
+## 2026-05-20 CRM Status Proof Binding
 
-What was done -> Updated `Docs/Marketing/Budget/LOW_BUDGET_SPEND_DECISION_TREE.md` with a spend release ladder from 0 USD prep to cold-reader help, capped PMT smoke tests, capsule polish, trailer polish, and creator tests. Current recommendation: 0 USD until real assets and official links exist. Updated source ledger, backlog, status, and rationale.
+What was wrong: KPI and workflow docs still had old status vocabulary risk. `CONTACTED`, `REPLIED`, and `COVERED` could be interpreted as notes-only states, and raw queue docs could tempt a future operator to invent `VERIFIED_NOT_CONTACTED` in the live CRM.
 
-Cinematic Cheats used -> No runtime cheats. Marketing cheat: cash only follows proof; agent labor does the prep.
+What was done: updated the KPI dashboard, raw public lead README, mass lead workflow, and creator CRM schema so live CRM status transitions require structured proof. Raw queue states stay outside the live CRM. `CONTACTED` requires a real human send plus send-log fields; `REPLIED` requires reply status and `reply_consent_provenance`; `COVERED` requires `coverage_url` when public coverage exists. Added backlog row 161, source ledger addendum, Decision 190, and Status addendum 163.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: protects the limited marketing budget from premature ads/creators/polish spend.
+Cinematic cheats used: static schema/status gate only; no runtime simulation, browser login, account creation, public send, CRM promotion, or build action.
 
-## 2026-05-19 - Regional First-Wave Package And Mojibake Repair
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; CSV parse OK for 9 files; live CRM status distribution unchanged; 0 filled send/reply/coverage proof rows across CRM-100; positive `VERIFIED_NOT_CONTACTED` promotion audit clean; markdown table pipe audit clean; rationale-order audit clean through Decision 190. No CRM row promotion, outreach, public post, browser/account action, runtime, or build action occurred.
 
-What was wrong -> `CAMPAIGN_05_REGIONAL_PUSH.md` had corrupted RU/CIS pitch text. That would be unacceptable in the user's native market and would poison regional outreach before assets exist.
+## 2026-05-20 Live CRM Mojibake Cleanup
 
-What was done -> Rewrote `Docs/Marketing/Campaigns/CAMPAIGN_05_REGIONAL_PUSH.md` with corrected RU/CIS copy and a `2026-05-19 Regional First-Wave Package V0`: send caps, proof requirements, one-pager fields, and regional copy kill rules. Updated source ledger, backlog, status, and rationale.
+What was wrong: live creator CRM still had mojibake or decorative scraped Unicode in seven operating rows: one French pitch angle, five stale source-title notes, and two display-name fields. Raw source dumps can preserve public-page artifacts; the live CRM cannot carry broken text into send prep.
 
-Cinematic Cheats used -> No runtime cheats. Marketing cheat: block regional sends until copy is clean, reviewed, and backed by real assets.
+What was done: normalized only `Data/CREATOR_VERIFICATION_TEMPLATE.csv`. The affected rows were STAF_52, MMO-Zone, Tigerfrost, PP Gaming, DaddelBaerTV, Dead Paddy, and Maxim. Row count, statuses, contacts, send fields, route fields, reply fields, and raw archive CSVs were not changed. Added backlog row 162, source ledger addendum, Decision 191, and Status addendum 164.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents a high-damage localization mistake.
+Cinematic cheats used: static data hygiene only; no runtime simulation, browser login, account creation, public send, CRM promotion, or build action.
 
-## 2026-05-19 - Localization QA Gate V0
+Exact microseconds saved: 0us runtime impact. Validation clean: live CRM mojibake audit clean; all 9 marketing CSVs parse; Marketing file count 100; CRM status split unchanged at `VERIFY_BEFORE_CONTACT=23`, `NEEDS_ASSET=22`, `LOW_PRIORITY_VERIFY_LATER=52`, `DO_NOT_CONTACT=3`; 0 filled send/reply/coverage proof rows; rationale-order audit clean through Decision 191. No CRM row promotion, outreach, public post, browser/account action, runtime, or build action occurred.
 
-What was wrong -> Fixing one corrupted regional pitch does not prevent the next localized text from adding promises, using bad idioms, or shipping with broken encoding.
+## 2026-05-20 Key Access Log Proof Fields
 
-What was done -> Updated `Docs/Marketing/Localization/LOCALIZATION_AND_REGIONAL_ASSET_PIPELINE.md` with `2026-05-19 Localization QA Gate V0`: encoding, scope, proof, native-read, regional CTA, creator-fit gates, review form, and known-risk language states. Updated source ledger, backlog, status, and rationale.
+What was wrong: the review-key/preview-access schema still allowed generic `contact_route` and lacked explicit reply/proof fields. The compliance table also used `verified_contact` and `reply_status` shorthand. That can push access proof into notes and break consent custody.
 
-Cinematic Cheats used -> No runtime cheats. Marketing cheat: make localization approval a compact gate instead of a vague "review later" note.
+What was done: updated `Press/REVIEW_KEYS_EMBARGO_AND_PREVIEW_ACCESS_PROTOCOL.md` and `KEYS_AND_CREATOR_COMPLIANCE.md`. Key/access logs now require `verified_contact_route`, `access_route_class`, `reply_status_after_send`, `reply_consent_provenance`, and `agency_decision_field_source` when proof claims are used. Added backlog row 163, source ledger addendum, Decision 192, and Status addendum 165.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: reduces risk of regional trust damage and resend/retraction work.
+Cinematic cheats used: static access-log schema repair only; no runtime simulation, browser login, account creation, key send, access row creation, or build action.
 
-## 2026-05-19 - Playtest Screening Score V0
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; exact access fields present; old key-log `contact_route,purpose` and key table `verified_contact` / `reply_status` shorthand absent; touched markdown table audit clean; touched-file mojibake audit clean; all 9 marketing CSVs parse; rationale-order audit clean through Decision 192. No key/access row creation, key send, outreach, public post, browser/account action, runtime, or build action occurred.
 
-What was wrong -> The playtester plan had form questions and wave sizes, but not a scoring system to reject low-signal testers before the first private wave.
+## 2026-05-20 Private Access Field Propagation
 
-What was done -> Updated `Docs/Marketing/Audience/PLAYTESTER_RECRUITMENT_AND_SCREENING_PLAN.md` with point scoring, hard rejects, first-wave quotas, and feedback tags. Updated source ledger, backlog, status, and rationale.
+What was wrong: key/access schema was exact, but demo, playtest, regional, audience-screening, control-tower, and risk gates still used shorthand like access log, route class, or only `access_route_class` / `reply_consent_provenance`.
 
-Cinematic Cheats used -> No runtime cheats. Research cheat: select testers for the exact failure modes we need to expose, not for enthusiasm.
+What was done: propagated the exact private access-log field set into those execution surfaces: `verified_contact_route`, `access_route_class`, `reply_status_after_send`, `reply_consent_provenance`, and `agency_decision_field_source` where proof claims are used. Added backlog row 164, source ledger addendum, Decision 193, and Status addendum 166.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: reduces noisy feedback and prevents co-op expectation from contaminating first-wave results.
+Cinematic cheats used: static schema propagation only; no runtime simulation, browser login, account creation, access row creation, key send, or build action.
 
-## 2026-05-19 - Playtest Decision Gate V0
+Exact microseconds saved: 0us runtime impact. Validation clean: stale private-access shorthand grep clean for touched surfaces; markdown table pipe audit clean; touched-file mojibake audit clean; all 9 marketing CSVs parse; Marketing file count 100; CRM status/send fields unchanged; asset metadata still 13 rows with 3 agency candidates and 13 blocked creator send gates; rationale-order audit clean through Decision 193. No access row creation, key/playtest/demo invite, outreach, public post, browser/account action, runtime, or build action occurred.
 
-What was wrong -> The demo/playtest plan could still be read as "open once the route runs". That ignores whether the feedback loop can catch repeated confusion tags before public damage.
+## 2026-05-20 SN2 Steam API V4 Refresh
 
-What was done -> Updated `Docs/Marketing/Steam/DEMO_PLAYTEST_AND_TELEMETRY_PLAN.md` with `2026-05-19 Playtest Decision Gate V0`: screening, route proof, known issues, feedback tags, no-coop onboarding, hardware context, expand/revise/stop decisions, and tag escalation rules. Updated source ledger, backlog, status, and rationale.
+What was wrong: SN2 pain buckets still influence capture priority, but the monitoring/risk surface pointed at the 2026-05-19 V3 snapshot. That is stale for a live post-launch Steam app and can push the first asset packet toward yesterday's pain instead of current signal.
 
-Cinematic Cheats used -> No runtime cheats. Research cheat: small waves expand only after repeated failure tags are cleared.
+What was done: fetched the public Steam review summary, recent negative samples, and appdetails API for Subnautica 2 on 2026-05-20. Updated `Monitoring/COMPETITOR_AND_SENTIMENT_MONITORING_QUERIES.md` with V4, updated RISK-046, and added backlog row 165, source ledger addendum, Decision 194, and Status addendum 167.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents public demo exposure from amplifying unclear core-loop feedback.
+Cinematic cheats used: evidence refresh only; no runtime simulation, browser login, account creation, public comparison copy, or outreach.
 
-## 2026-05-19 - Press Kit And Preview Access Gates
+Exact microseconds saved: 0us runtime impact. V4 records 66,106 positive / 5,965 negative / 72,071 all-language reviews and 40,212 positive / 2,708 negative / 42,920 English reviews, both `Very Positive`; term hits remain directional only. No CRM row, asset metadata row, public post, browser/account action, runtime action, or build action occurred.
 
-What was wrong -> Press kit and access docs had policy, but no exact build ticket or first access batch design tied to the current asset/campaign gates.
+## 2026-05-20 Asset Pain Freshness Fields
 
-What was done -> Updated `Docs/Marketing/Press/PRESS_KIT_AND_MEDIA_PLAN.md` with Press Kit Build Ticket V0 and `Docs/Marketing/Press/REVIEW_KEYS_EMBARGO_AND_PREVIEW_ACCESS_PROTOCOL.md` with Preview Access Batch V0. Updated source ledger, backlog, status, and rationale.
+What was wrong: asset metadata could score private SN2/market pain proof but had no structured field naming which monitoring refresh or source date justified that score. That makes stale competitor pain easy to hide in notes.
 
-Cinematic Cheats used -> No runtime cheats. Operational cheat: turn keys/access into small gated batches, not favors or spam responses.
+What was done: added `pain_freshness_source` and `pain_freshness_checked_at` to `Data/MARKETING_ASSET_METADATA_TEMPLATE.csv`, defaulted all 13 planned rows to `PENDING_SAME_DAY_REFRESH` / `PENDING_CAPTURE`, and propagated the fields through asset ops, QA, shotlist, Campaign 01, KPI, control tower, creator segment gating, and monitoring. Added backlog row 166, source ledger addendum, Decision 195, and Status addendum 168.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: reduces key leakage, bad presskit sends, and preview access mistakes.
+Cinematic cheats used: structured metadata gate only; no runtime simulation, browser login, account creation, public copy, or outreach.
 
-## 2026-05-19 - Owned Audience Signup Gate V0
+Exact microseconds saved: 0us runtime impact. Planned rows remain blocked; no asset was promoted, no CRM row changed, no public post, no browser/account action, no runtime action, and no build action occurred.
 
-What was wrong -> The owned-audience plan had useful templates, but a vague email list can turn into dead subscribers or consent mistakes before real value exists.
+## 2026-05-20 Creator-Facing Pain Freshness Gates
 
-What was done -> Updated `Docs/Marketing/Audience/OWNED_AUDIENCE_EMAIL_AND_NEWSLETTER_PLAN.md` with `2026-05-19 Owned Audience Signup Gate V0`: signup modes, copy blocks, stop conditions, and list hygiene. Updated source ledger, backlog, status, and rationale.
+What was wrong: creator send/pitch surfaces did not yet require the new asset metadata freshness fields. A human operator could paste a pain-backed pressure, salvage, or route-risk angle while the matching asset still had `PENDING_SAME_DAY_REFRESH`.
 
-Cinematic Cheats used -> No runtime cheats. Marketing cheat: an email signup must offer one concrete future value, not vague interest capture.
+What was done: updated the first human-send workflow, post bank creator warmup rules, pitch bank, A-tier personalized drafts, and priority-50 draft gates so pain-backed creator copy requires `pain_freshness_source` and `pain_freshness_checked_at` before send or micro-feedback. Added backlog row 167, source ledger addendum, Decision 196, and Status addendum 169.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents premature list growth, consent mistakes, and low-quality email traffic.
+Cinematic cheats used: static send-gate propagation only; no runtime simulation, browser login, account creation, public copy, or outreach.
 
-## 2026-05-19 - Public Incident, Steam Forum, And Agent Control Gates
+Exact microseconds saved: 0us runtime impact. Validation clean: all 9 marketing CSVs parse; Marketing file count remains 100; touched table pipe audit clean; touched-file mojibake audit clean; CRM send/reply/coverage fields remain empty; asset metadata remains 13 rows with 13 pending freshness rows; rationale order clean through Decision 196. No outreach, public post, browser/account action, runtime action, or build action occurred.
 
-What was wrong -> The prep stack had campaign gates, but first public backlash, Steam forum/review routing, and daily agent work still had enough ambiguity to create noise: likes could mask wrong expectations, forums could become ad hoc support, and agents could keep producing more documents instead of decisions.
+## 2026-05-20 Neutral Creator Pitch Seeds
 
-What was done -> Updated `Docs/Marketing/Community/CRISIS_AND_MODERATION_PLAYBOOK.md` with `First Public Incident Triage Gate V0`; updated `Docs/Marketing/Feedback/STEAM_REVIEWS_FORUMS_AND_SUPPORT_RESPONSE_PLAYBOOK.md` with `Steam Forum Launch Moderation Gate V0`; updated `Docs/Marketing/Operations/DAILY_AGENT_TASK_LOOP.md` with `Active Control Tower Loop V0`; updated `Docs/Marketing/Data/MARKETING_RISK_REGISTER.md` with RISK-031 through RISK-038; updated source ledger and backlog index.
+What was wrong: live CRM and generated creator operating sheets still contained pasteable direct-competitor draft seed text: `Your channel has already touched Subnautica/underwater survival`, plus a direct-comparison risk line. That can leak into human outreach despite no-send gates.
 
-Cinematic Cheats used -> No runtime cheats. Operational fake-first move: use small controlled gates, pinned routing, and row/asset/source/risk decisions to avoid expensive reputation recovery later.
+What was done: replaced that seed in `Data/CREATOR_VERIFICATION_TEMPLATE.csv`, `CreatorOutreach/PRIORITY_50_MESSAGE_DRAFTS_FROM_RAW.md`, `CreatorOutreach/PRIORITY_250_PITCH_SHEET_FROM_RAW.md`, all 10 `AgentOps/VerificationBatches_2026-05-19/*.md` files, and `AgentOps/scrape_letsplayindex_public_leads.ps1`. New wording stays neutral: adjacent underwater-survival audience fit, one matched HECTON asset, asset QA, pain freshness fields, and creator-send gates. Added backlog row 168, source ledger addendum, Decision 197, and Status addendum 170.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: reduces public-response thrash, unsupported Steam replies, over-documentation, and premature expansion after misleading engagement.
+Cinematic cheats used: static operating-data cleanup only; no runtime simulation, browser login, account creation, public copy, or outreach.
 
-## 2026-05-19 - Capsule Rough Decision And Test Packet
+Exact microseconds saved: 0us runtime impact. Validation clean: old direct-competitor pitch seed audit clean; all 9 marketing CSVs parse; Marketing file count remains 100; touched table pipe audit clean; touched-file mojibake audit clean; CRM status split unchanged; CRM send/reply/coverage fields remain empty. Raw archive/source CSV dumps remain untouched. No outreach, public post, browser/account action, runtime action, or build action occurred.
 
-What was wrong -> The visual direction file had useful concepts, but the backlog row still lacked an executable rough-test packet tied to planned asset IDs and paid-spend gates.
+## 2026-05-20 Pasteable Competitor Wording Tightening
 
-What was done -> Updated `Docs/Marketing/Creative/VISUAL_IDENTITY_AND_KEY_ART_DIRECTION.md` with `Capsule Rough Decision Packet V0` and `Docs/Marketing/Creative/CAPSULE_TRAILER_THUMBNAIL_BRIEFS.md` with `Capsule Rough Test Packet V0`. Updated source ledger, backlog, status, and rationale.
+What was wrong: after the pitch-seed sweep, several pasteable final-copy lines still carried direct competitor wording: three live CRM personalized openers, one German priority-50 draft line, repeated priority-50 body text listing source games inside outreach copy, and the pitch-bank archetype subject.
 
-Cinematic Cheats used -> No runtime cheats. Marketing fake-first move: test rough compositions and cold-read clarity before spending on final art.
+What was done: rewrote those pasteable lines to neutral audience-fit language while leaving source/evidence lists intact. Added backlog row 169, source ledger addendum, Decision 198, and Status addendum 171.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents paid capsule/key-art spend from polishing a generic or misleading direction.
+Cinematic cheats used: static final-copy cleanup only; no runtime simulation, browser login, account creation, public copy, or outreach.
 
-## 2026-05-19 - SN2 Launch-Week Monitoring Refresh
+Exact microseconds saved: 0us runtime impact. Validation clean: live CRM personalized openers have 0 direct competitor hits; pasteable competitor-copy audit clean; all 9 marketing CSVs parse; Marketing file count remains 100; touched table pipe audit clean; mojibake audit clean; rationale order clean through Decision 198. No outreach, public post, browser/account action, runtime action, or build action occurred.
 
-What was wrong -> The competitor monitoring baseline needed a current evidence split. SN2 complaints exist, but the larger current signal is a massive, highly liked launch.
+## 2026-05-20 Account Browser Custody Preflight
 
-What was done -> Updated `Docs/Marketing/Monitoring/COMPETITOR_AND_SENTIMENT_MONITORING_QUERIES.md` with `Verification Sprint Addendum`, using Steam, PC Gamer, Notebookcheck, and Reddit signals. Updated source ledger, backlog, status, and rationale.
+What was wrong: chat permission to use browser/accounts could be misread as official account custody, even though the project still has no recorded owner-controlled inbox, vault item, recovery, 2FA, backup-code destination, or post-registration custody row.
 
-Cinematic Cheats used -> No runtime cheats. Intelligence cheat: do not fight the competitor's strength; route observations into asset proof and scope honesty.
+What was done: added `Account Registration Preflight Verdict V0` to the social playbook with current verdict `HOLD_ACCOUNT_CREATION`; propagated the rule to the website inbox gate, control tower, README, risk register, backlog, source ledger, status, and rationale. Personal browser sessions, cookies, remembered passwords, and chat permission are now explicitly rejected as custody proof.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents bad "SN2 failed" positioning and keeps HECTON-8 focused on industrial-pressure differentiation.
+Cinematic cheats used: static custody gate only; no browser login, cookie inspection, account creation, credential storage, public post, outreach, runtime simulation, or build action.
 
-## 2026-05-19 - Marketing Control Tower Refresh
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; all 9 marketing CSVs parse; account-preflight text audit confirms `HOLD_ACCOUNT_CREATION` plus personal browser/session/chat-permission boundary in entry/risk docs; touched markdown table pipe audit clean; mojibake audit clean; rationale order clean through Decision 199. No private browser profile, cookie/session state, login, account creation, public post, outreach, credential storage, runtime action, or build action occurred.
 
-What was wrong -> The control tower is the anti-sprawl entry point, but it still contained stale priority text after CRM, asset, budget, capsule, monitoring, and public-ops gates moved forward.
+## 2026-05-20 Capture Packet V4 Alignment
 
-What was done -> Updated `Docs/Marketing/MARKETING_CONTROL_TOWER.md` with current operating state and proof-first priorities. Updated source ledger, backlog, status, and rationale.
+What was wrong: the first capture session call sheet still referenced the 2026-05-19 Steam API V3 snapshot after monitoring/risk had moved to the 2026-05-20 V4 snapshot. Campaign 01 also had a direct competitor audience label and did not name the new social account preflight hold in its social custody row.
 
-Cinematic Cheats used -> No runtime cheats. Operational cheat: route every future agent into the current bottleneck instead of letting them rediscover stale tasks.
+What was done: updated the shotlist call sheet to V4, replaced the `PLAN-SHOT-006` V3-specific pain wording with current agency/defensive-choice language, changed Campaign 01's target label to adjacent underwater-survival players, and made social posting blocked while registration preflight is `HOLD_ACCOUNT_CREATION`. Added backlog row 171, source ledger addendum, Decision 200, and Status addendum 173.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents future agent time from being spent on already-closed raw lead staging or duplicate strategy docs.
+Cinematic cheats used: static capture-planning alignment only; no capture, browser login, account creation, public post, outreach, runtime simulation, or build action.
 
-## 2026-05-19 - Browser/Account Handoff And Quiet Content Pack
+Exact microseconds saved: 0us runtime impact. Validation clean: V3 execution-drift grep clean for shotlist/Campaign 01; Marketing file count 100; all 9 marketing CSVs parse; touched markdown table pipe audit clean; mojibake audit clean; rationale order clean through Decision 200. No capture, public post, account action, outreach, runtime action, or build action occurred.
 
-What was wrong -> The user authorized browser/account work, but account creation without credential custody would create orphaned official accounts. Also, reserved accounts need safe copy if they must exist before screenshots.
+## 2026-05-20 Regional RU/CIS Mojibake Repair
 
-What was done -> Updated `Docs/Marketing/Social/SOCIAL_ACCOUNT_SETUP_AND_PLATFORM_PLAYBOOK.md` with agent-assisted browser/account boundary and account page field kit. Updated `Docs/Marketing/Content/POST_BANK_AND_HOOK_LIBRARY.md` with pre-asset quiet account posts. Updated source ledger, backlog, status, and rationale.
+What was wrong: Campaign 05 and Regional Outreach Plan still had mojibake inside RU/CIS subject/body/ask draft text. Those sections are pasteable send surfaces, so the corruption could leak directly into regional creator or press outreach.
 
-Cinematic Cheats used -> No runtime cheats. Operational fake-first move: prepare exact fields and low-risk copy before touching real accounts.
+What was done: replaced the broken RU/CIS draft text with ASCII-safe transliteration, kept the drafts review-pending, preserved CTA/private-access proof gates, and removed competitor-killer phrasing from the body. Added backlog row 172, source ledger addendum, Decision 201, and Status addendum 174.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents credential loss, premature posting, and empty hype from newly reserved handles.
+Cinematic cheats used: static localization hygiene only; no regional outreach, browser login, account creation, public post, runtime simulation, or build action.
 
-## 2026-05-19 - Capture Packet And Metadata Workflow
+Exact microseconds saved: 0us runtime impact. Validation clean: non-raw marketing mojibake audit clean; Marketing file count 100; all 9 marketing CSVs parse; touched markdown table pipe audit clean; transliteration proof text present; rationale order clean through Decision 201. Raw public lead/source CSVs were intentionally left untouched. No regional outreach, public post, account action, runtime action, or build action occurred.
 
-What was wrong -> Planned asset IDs existed, but the capture team still needed a hard per-shot packet that says what to capture, how to reject it, and how to promote metadata after capture.
+## 2026-05-20 Competitor Label Execution Surface Cleanup
 
-What was done -> Updated `Docs/Marketing/Content/SCREENSHOT_AND_CLIP_SHOTLIST.md` with `Capture Packet V0`; updated `Docs/Marketing/Operations/ASSET_LIBRARY_NAMING_AND_VERSION_CONTROL.md` with `Planned Capture To Metadata Workflow V0`. Updated source ledger, backlog, status, and rationale.
+What was wrong: post, community, segment, and regional execution surfaces still volunteered direct competitor labels where neutral internal wording was enough. That can leak competitor framing into future posts or send-prep work even when FAQ/source/risk contexts legitimately keep exact terms.
 
-Cinematic Cheats used -> No runtime cheats. Operational fake-first move: reject weak capture before editing, posting, or Steam assembly spends time on it.
+What was done: changed post-bank rules/kill checks, community post policy, segment pitch matrix rows, and Campaign 05 regional copy kill rule to neutral competitor or adjacent-underwater-survival wording. Source evidence, risk entries, and explicit FAQ response triggers were left intact. Added backlog row 173, source ledger addendum, Decision 202, and Status addendum 175.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents first screenshots/clips from being approved by taste instead of player-verb, pressure, machinery, and claim-truth checks.
+Cinematic cheats used: static copy hygiene only; no outreach, browser login, account creation, public post, runtime simulation, or build action.
 
-## 2026-05-19 - Proof-Gate Dashboard And Measurement Packet
+Exact microseconds saved: 0us runtime impact. Validation clean: execution-surface competitor-label grep clean for the repaired strings; Marketing file count 100; all 9 marketing CSVs parse; touched markdown table pipe audit clean; mojibake audit clean; rationale order clean through Decision 202. No outreach, public post, account action, runtime action, or build action occurred.
 
-What was wrong -> Measurement existed in broad form, but first public assets still needed a strict proof-gate dashboard and first-link packet before URLs and posts exist.
+## 2026-05-20 Press Curator Tracker Status Boundary
 
-What was done -> Updated `Docs/Marketing/KPI/MARKETING_DASHBOARD_SPEC.md` with `Proof-Gate Dashboard V0`; updated `Docs/Marketing/Analytics/MEASUREMENT_AND_UTM_PLAN.md` with `Minimum Measurement Packet Before Public Links`. Updated source ledger, backlog, status, and rationale.
+What was wrong: press tracker statuses like `READY_FOR_HUMAN_REVIEW_AFTER_PRESSKIT` could be misread as send-ready even though no presskit, Steam page, screenshots, same-day route check, official inbox, or `send_route_class` exists yet.
 
-Cinematic Cheats used -> No runtime cheats. Measurement cheat: force early public signal into counted nouns/confusion/clone/co-op fields instead of arguing about likes.
+What was done: added a press/curator tracker status boundary to the owner doc and surfaced it in the control tower. Tracker status is now explicitly triage-only; press and curator sends still require named artifacts, same-day route checks, official inbox/contact custody, `send_route_class`, reply-provenance rules, and AB-009/KPI decision-read fields where proof claims are used. Added backlog row 174, source ledger addendum, Decision 203, and Status addendum 176.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents first campaign data from becoming unstructured anecdotes.
+Cinematic cheats used: static operations boundary only; no press send, curator offer, browser login, account creation, runtime simulation, or build action.
 
-## 2026-05-19 - Promise, Launch, Demo, And Site Gates
+Exact microseconds saved: 0us runtime impact. Validation clean: press-status boundary grep confirms owner doc and control tower carry triage-only wording; Marketing file count 100; all 9 marketing CSVs parse; touched markdown table pipe audit clean; mojibake audit clean; rationale order clean through Decision 203. No press send, curator offer, account action, runtime action, or build action occurred.
 
-What was wrong -> The stack was close to execution-ready, but public copy, launch ownership, demo access, and site/presskit readiness still relied too much on humans remembering constraints under pressure.
+## 2026-05-20 Press Curator Machine Send Gate
 
-What was done -> Updated `Docs/Marketing/Roadmap/PUBLIC_ROADMAP_LANGUAGE_AND_PROMISE_POLICY.md` with `Promise Lint Gate V0`; updated `Docs/Marketing/Launch/LAUNCH_DAY_AND_FIRST_WEEK_WAR_ROOM.md` with `War Room Dry Run Gate V0`; updated `Docs/Marketing/Campaigns/CAMPAIGN_03_FIRST_DEMO_OUTREACH.md` with `Demo Access Batch Scoring V0`; updated `Docs/Marketing/Website/ONE_PAGE_SITE_AND_PRESSKIT_PLAN.md` with `No-Link Holding State V0` and presskit minimums. Updated source ledger, backlog, status, and rationale.
+What was wrong: press and curator tracker `status` values were documented as triage-only, but the CSVs had no dedicated machine-readable send permission field. A future script or rushed operator could still treat `READY_FOR_HUMAN_REVIEW_AFTER_*` or `CURATOR_CONNECT_AFTER_*` as permission.
 
-Cinematic Cheats used -> No runtime cheats. Operational fake-first move: reject bad public claims, bad launch ownership, bad creator sends, and bad presskit shells before money, keys, or traffic touch them.
+What was done: added `send_permission_gate` to `Press/PRESS_TARGET_VERIFICATION_TRACKER.csv` and `Press/STEAM_CURATOR_CANDIDATE_TRACKER.csv`; all current rows remain blocked or do-not-contact. Updated the press/curator owner doc, control tower, risk register, backlog, source ledger, status, and rationale. Future press sends require `ALLOW_PRESS_SEND_VERIFIED`; future curator sends require `ALLOW_CURATOR_SEND_VERIFIED`.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents retractions, support chaos, key leakage, and weak placeholder pages from becoming first impressions.
+Cinematic cheats used: static data gate only; no press send, curator offer, key issue, account/browser action, runtime simulation, or build action.
 
-## 2026-05-19 - Control Tower And Risk Propagation
+Exact microseconds saved: 0us runtime impact. Validation clean: press rows 30, curator rows 20; bad `send_permission_gate` count 0; press/curator `send_route_class` and `reply_consent_provenance` remain empty; all 9 marketing CSVs parse; Marketing file count 100; touched markdown table pipe audit clean; non-raw mojibake audit clean; git diff check reports line-ending warnings only. No press send, curator offer, key issue, outreach, browser/account action, runtime action, or build action occurred.
 
-What was wrong -> New gates were added in deeper docs, but the top-level control tower and risk register still needed to expose them or future agents could route around them.
+## 2026-05-20 Showcase Submission Machine Gate
 
-What was done -> Updated `Docs/Marketing/MARKETING_CONTROL_TOWER.md` with promise/copy, site/presskit, and launch/demo ops states and priority links. Updated `Docs/Marketing/Data/MARKETING_RISK_REGISTER.md` with RISK-039 through RISK-041. Updated source ledger, backlog, status, and rationale.
+What was wrong: `SHOWCASE_SUBMISSION_TRACKER.csv` had `MONITOR` and `NOT_READY` planning states but no separate machine-readable submission permission field. That leaves event submission eligibility vulnerable to a bad filter or rushed checklist.
 
-Cinematic Cheats used -> No runtime cheats. Operational fake-first move: keep one current map so future work starts from proof gates instead of rediscovering constraints.
+What was done: added `submission_permission_gate` to the tracker. All 8 current rows are blocked. Updated the showcase playbook, control tower, risk register, backlog, source ledger, status, and rationale. Future submissions require `ALLOW_SHOWCASE_SUBMIT_VERIFIED` after same-day rules/deadline, fee/ROI, asset pack, Steam/CTA or private-review route custody, agency-proof, owner, and measurement checks pass.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: reduces stale-instruction risk and prevents launch/site/copy mistakes from escaping through old control-tower paths.
+Cinematic cheats used: static tracker gate only; no showcase submission, public event claim, fee spend, account/browser action, runtime simulation, or build action.
 
-## 2026-05-19 - Entry Index Anti-Sprawl Cleanup
+Exact microseconds saved: 0us runtime impact. Validation clean: showcase rows 8; bad `submission_permission_gate` count 0; all 9 marketing CSVs parse; touched markdown table pipe audit clean; gate propagation grep confirms owner/control/risk/backlog/source. No showcase submission, public event claim, fee spend, browser/account action, runtime action, or build action occurred.
 
-What was wrong -> The main README and prep-directions file could still route future agents into duplicate docs or miss the newest Promise Lint/site/launch gates.
+## 2026-05-20 Key Access Send-Permission Propagation
 
-What was done -> Updated `Docs/Marketing/README.md` with Promise Lint and refreshed directory descriptions. Updated `Docs/Marketing/PREP_DIRECTIONS_NOW.md` to route old "needed next" responsibilities into existing files and explicitly reject duplicate new docs. Updated source ledger, backlog, status, and rationale.
+What was wrong: press/curator trackers had a new machine permission gate, but key/access and Curator Connect docs could still be followed directly without checking it.
 
-Cinematic Cheats used -> No runtime cheats. Operational fake-first move: kill duplicate work at the entry point before it becomes more files.
+What was done: updated key compliance, Curator Connect readiness/current decision, review-key/preview-access approval flow, ACC-002/ACC-003 batch rows, and the press angle checklist to require `ALLOW_PRESS_SEND_VERIFIED` or `ALLOW_CURATOR_SEND_VERIFIED` before press/curator sends or access.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: reduces documentation sprawl and future agent misrouting.
+Cinematic cheats used: static access-control propagation only; no key/access row, Curator Connect offer, press send, curator send, outreach, account/browser action, runtime simulation, or build action.
 
-## 2026-05-19 - Active Loop Lead-Expansion Correction
+Exact microseconds saved: 0us runtime impact. Validation clean: allow-value grep confirms propagation in key/access and Curator Connect docs; all 9 marketing CSVs parse; touched markdown table pipe audit clean; non-raw mojibake audit clean. No key/access row, Curator Connect offer, press send, curator send, outreach, account/browser action, runtime action, or build action occurred.
 
-What was wrong -> Daily agent quotas and Campaign 00 still pointed at more lead verification, even though CRM-100 has 0 raw rows and the current blocker is real screenshot/clip proof.
+## 2026-05-20 Entry Daily Machine Gate Propagation
 
-What was done -> Updated `Docs/Marketing/Operations/DAILY_AGENT_TASK_LOOP.md` with the current cut and changed no-screenshot quotas for the CRM-100/0 raw state. Updated `Docs/Marketing/Campaigns/CAMPAIGN_00_PRE_SCREENSHOT_SETUP.md` so immediate tasks start with planned capture and asset matching. Updated source ledger, backlog, status, and rationale.
+What was wrong: first-read and daily-loop docs did not mention the new machine gates. A future agent could start from README or the daily loop and miss `send_permission_gate` / `submission_permission_gate`.
 
-Cinematic Cheats used -> No runtime cheats. Operational fake-first move: stop easy lead-volume work before it hides the harder missing asset proof.
+What was done: updated README hard rules and directory map, PREP_DIRECTIONS_NOW forbidden actions, and DAILY_AGENT_TASK_LOOP noon kill checks. Added backlog row 178, source ledger addendum, Decision 207, and Status addendum 180.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents agent hours from being burned on additional raw/triage leads before the first public visual proof exists.
+Cinematic cheats used: static execution guardrail only; no press send, curator send, showcase submission, public event claim, outreach, browser/account action, runtime simulation, or build action.
 
-## 2026-05-19 - Master Plan And Calendar Override
+Exact microseconds saved: 0us runtime impact. Validation clean: gate grep confirms README/PREP/daily-loop propagation; all 9 marketing CSVs parse; touched markdown table pipe audit clean; non-raw mojibake audit clean; Marketing file count remains 100. No press send, curator send, showcase submission, public event claim, outreach, account/browser action, runtime action, or build action occurred.
 
-What was wrong -> The broad master plan and 90-day calendar still had older sequence language that could push the next cycle toward lead volume instead of asset proof.
+## 2026-05-20 Current Label Refresh
 
-What was done -> Updated `Docs/Marketing/MARKETING_PREP_MASTER_PLAN.md` with a current execution override and updated `Docs/Marketing/Schedule/90_DAY_MARKETING_OPERATIONS_CALENDAR.md` with a scheduling override. Updated source ledger, backlog, status, and rationale.
+What was wrong: active-current headings still said 2026-05-19 after the 2026-05-20 gate/schema work.
 
-Cinematic Cheats used -> No runtime cheats. Operational fake-first move: keep the broad plan as scaffolding but make the current gate state the authority.
+What was done: updated the control tower current operating state, budget spend ladder, budget current recommendation, and daily-loop current cut to 2026-05-20. Historical source entries were left with their original dates.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents broad planning docs from steering agents away from the missing screenshot/clip proof.
+Cinematic cheats used: static entry-label cleanup only; no spend, public post, outreach, account/browser action, runtime simulation, or build action.
 
-## 2026-05-19 - Weekly Routine Correction
+Exact microseconds saved: 0us runtime impact. Validation clean: grep confirms active 2026-05-20 labels and no stale active-current labels in touched entry docs; all 9 marketing CSVs parse; touched markdown table pipe audit clean. No spend, public post, outreach, browser/account action, runtime action, or build action occurred.
 
-What was wrong -> The master backlog still contained a default "verify 25 raw leads" weekly routine before screenshots, despite CRM-100/0 raw and the current asset-proof bottleneck.
+## 2026-05-20 Paid Microtest Spend Permission Gate
 
-What was done -> Updated `Docs/Marketing/Data/MARKETING_BACKLOG_INDEX.md` so the weekly routine now starts with planned asset packet, asset-to-lead matching, asset-linked hooks, Promise Lint, and source/risk corrections. Updated source ledger, status, and rationale.
+What was wrong: the paid microtest plan had PMT rows, budget tiers, UTM defaults, and stop rules, but no separate machine-readable spend permission field. A future operator or script could treat PMT-001/002, a 50-150 USD tier, or a platform candidate as permission to spend.
 
-Cinematic Cheats used -> No runtime cheats. Operational fake-first move: prevent an easy measurable routine from hiding the missing public proof.
+What was done: added `spend_permission_gate` to the PMT execution table and kept all 4 current rows blocked: `BLOCKED_NO_STEAM_BASELINE` for PMT-001/002/003 and `BLOCKED_NO_CREATOR_SIGNAL_BASELINE` for PMT-004. Defined `ALLOW_PAID_MICROTEST_VERIFIED` as the only future allow value after Steam CTA custody, UTM proof, organic/page baseline, asset QA, AB-009/KPI proof where relevant, capped budget, hypothesis, stop rule, and 48h owner inspection. Propagated the rule to budget ladder, control tower, README, prep directions, daily loop, RISK-057, backlog row 180, source ledger, status, and rationale.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: stops recurring low-value lead work until assets prove a new segment gap.
+Cinematic cheats used: static spend-control gate only; no paid ad launch, browser login, account creation, public post, outreach, runtime simulation, or build action.
 
-## 2026-05-19 - CRM-100 Asset Unlock Map
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; all 9 marketing CSVs parse; PMT rows 4/4 blocked; gate grep confirms `spend_permission_gate`, `ALLOW_PAID_MICROTEST_VERIFIED`, RISK-057, and row 180 propagation; touched markdown table pipe audit clean; non-raw mojibake audit clean; CRM status/send fields unchanged; asset metadata rows/gates unchanged. No spend, ad launch, public post, outreach, browser/account action, runtime action, or build action occurred.
 
-What was wrong -> The CRM and planned asset IDs were both present, but not connected tightly enough to tell capture which first assets unlock actual creator utility.
+## 2026-05-20 Paid Creator Permission Gate
 
-What was done -> Updated `Docs/Marketing/CreatorOutreach/MASS_LEAD_VERIFICATION_AND_PITCH_WORKFLOW.md` with `CRM-100 Asset Unlock Map V0`, mapping `PLAN-SHOT-*` and `PLAN-CLIP-*` assets to current creator rows and regional gates. Updated source ledger, backlog, status, and rationale.
+What was wrong: paid creator spend had rate ranges, disclosure language, and stop rules, but no recipient-level machine gate. A rate-card reply, sponsorship policy, audience fit, organic reply, or creator name could be misread as permission to pay.
 
-Cinematic Cheats used -> No runtime cheats. Operational fake-first move: use planned screenshots/clips as unlock keys for specific creator segments instead of capturing by taste.
+What was done: added `paid_creator_permission_gate` to `Data/CREATOR_VERIFICATION_TEMPLATE.csv` after `creator_utility_score`; all 100 CRM rows are `BLOCKED_NO_PAID_CREATOR_PROOF` and 0 rows are allowed. Defined `ALLOW_PAID_CREATOR_TEST_VERIFIED` as the only future paid creator allow value after verified route, inbox/access custody, disclosure, demo/Steam baseline, asset QA, creator utility, matching `creator_send_gate`, `send_route_class`, AB-009/KPI proof where relevant, capped payment, cancellation, and 48h result inspection pass. Propagated the rule to CRM schema, mass verification workflow, segment matrix, rate card, budget ladder, legal/compliance, key compliance, control tower, README, prep directions, daily loop, RISK-058, backlog row 181, source ledger, status, and rationale.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents first capture work from producing assets that do not unlock outreach.
+Cinematic cheats used: static recipient-level spend gate only; no paid creator deal, key/access row, browser login, account creation, public post, outreach, runtime simulation, or build action.
 
-## 2026-05-19 - Asset Metadata Creator-Unlock Notes
+Exact microseconds saved: 0us runtime impact. Validation clean: CRM rows 100; `paid_creator_permission_gate` header present; 100/100 rows blocked; 0 allow rows; all 9 marketing CSVs parse; gate grep confirms propagation; touched markdown table pipe audit clean. No paid creator deal, key/access row, outreach, public post, browser/account action, runtime action, or build action occurred.
 
-What was wrong -> The asset metadata CSV did not carry creator utility, so future capture/QA operators would need to cross-open outreach docs to understand why a planned asset matters.
+## 2026-05-20 Official Inbox Custody Gate
 
-What was done -> Updated all 13 planned rows in `Docs/Marketing/Data/MARKETING_ASSET_METADATA_TEMPLATE.csv` with creator-unlock notes or explicit no-public-unlock boundaries. Updated source ledger, backlog, status, and rationale.
+What was wrong: official inbox custody existed as prose and checklist state, but not as a single machine-readable gate. That allowed a future operator to treat address text, browser state, chat permission, or a partial checklist as permission to create accounts, publish a contact route, issue access, or start paid routes.
 
-Cinematic Cheats used -> No runtime cheats. Operational fake-first move: put utility in the metadata row so weak assets die before they consume QA, editing, Steam, or outreach time.
+What was done: added `official_inbox_custody_gate = HOLD_NO_PROJECT_INBOX_CUSTODY` to the website/presskit owner doc and defined `ALLOW_OFFICIAL_INBOX_USE_VERIFIED` as the only future allow value. Propagated the rule to social setup, key/access, legal/compliance, control tower, README, prep directions, daily loop, RISK-059, backlog row 182, source ledger, status, and rationale.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: reduces cross-document lookup and helps the first capture packet prioritize outreach value.
+Cinematic cheats used: static custody-control gate only; no browser login, account creation, public contact, key/access row, spend, runtime simulation, or build action.
 
-## 2026-05-19 - Creator Utility Asset QA Gate
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; all 9 marketing CSVs parse; gate grep confirms `official_inbox_custody_gate`, `ALLOW_OFFICIAL_INBOX_USE_VERIFIED`, `HOLD_NO_PROJECT_INBOX_CUSTODY`, RISK-059, and row 182 propagation; touched markdown table pipe audit clean; non-raw mojibake audit clean; CRM paid creator gate remains 100 blocked and 0 allowed. No login, account registration, public contact, key/access row, spend, browser action, runtime action, or build action occurred.
 
-What was wrong -> Creator unlock value could accidentally become an excuse to ship a weak asset.
+## 2026-05-20 Social Account Registration Permission Gate
 
-What was done -> Updated `Docs/Marketing/QA/MARKETING_ASSET_QA_CHECKLIST.md` with a creator utility score and a hard rule that utility cannot override screenshot/clip QA thresholds. Updated source ledger, backlog, status, and rationale.
+What was wrong: social setup had a `HOLD_ACCOUNT_CREATION` verdict, but no named machine permission field. A candidate handle, public 404, personal browser state, or chat permission could still be misread as approval to create an official account.
 
-Cinematic Cheats used -> No runtime cheats. Operational fake-first move: use creator utility to prioritize capture only, then kill weak assets before outreach.
+What was done: added `account_registration_permission_gate = HOLD_ACCOUNT_CREATION` to the social playbook and defined `ALLOW_ACCOUNT_REGISTRATION_VERIFIED` as the only future allow value. Propagated the rule to Campaign 01 social custody, control tower, README, prep directions, daily loop, RISK-060, backlog row 183, source ledger, status, and rationale.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents high-value creator rows from receiving unclear or misleading assets.
+Cinematic cheats used: static account-custody gate only; no browser login, account creation, public contact, follow, DM, post, runtime simulation, or build action.
 
-## 2026-05-19 - First Screenshot Campaign Creator Utility Gate
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; all 9 marketing CSVs parse; gate grep confirms `account_registration_permission_gate`, `ALLOW_ACCOUNT_REGISTRATION_VERIFIED`, `HOLD_ACCOUNT_CREATION`, RISK-060, and row 183 propagation; touched markdown table pipe audit clean; non-raw mojibake audit clean; rationale order clean through Decision 212. No login, account registration, public contact, follow, DM, post, browser action, runtime action, or build action occurred.
 
-What was wrong -> Campaign 01 could still run creator micro-feedback from a visually passable asset pack without requiring that the assets match named creator rows.
+## 2026-05-20 Public CTA Permission Gate
 
-What was done -> Updated `Docs/Marketing/Campaigns/CAMPAIGN_01_FIRST_SCREENSHOT_DROP.md` to require creator utility 3/4+ for Wave A creator micro-feedback, exact CRM row mapping, exact contact route checks, and preservation of visual QA thresholds. Updated source ledger, backlog, status, and rationale.
+What was wrong: Official CTA Link Activation existed as a packet, but not as a named machine gate. A live page, candidate handle, placeholder, private access route, or generic CTA-ready note could still be misread as permission to post a public link.
 
-Cinematic Cheats used -> No runtime cheats. Operational fake-first move: make the first campaign reject mismatched assets before they consume scarce creator attention.
+What was done: added `public_cta_permission_gate = HOLD_NO_PUBLIC_CTA` to the analytics owner doc and defined destination-specific `ALLOW_PUBLIC_CTA_VERIFIED` as the only future allow value. Propagated the rule to control tower, README, prep directions, daily loop, RISK-061, backlog row 184, source ledger, status, and rationale.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: reduces wasted outreach and prevents generic “best screenshot” sends to creators with different audience fit.
+Cinematic cheats used: static public-link control gate only; no public CTA, post, signup, spend, account/browser action, runtime simulation, or build action.
 
-## 2026-05-19 - Post Bank Creator Utility Binding
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; all 9 marketing CSVs parse; gate grep confirms `public_cta_permission_gate`, `ALLOW_PUBLIC_CTA_VERIFIED`, `HOLD_NO_PUBLIC_CTA`, RISK-061, and row 184 propagation; touched markdown table pipe audit clean; non-raw mojibake audit clean; rationale order clean through Decision 213. No public CTA, post, signup, spend, account/browser action, runtime action, or build action occurred.
 
-What was wrong -> The post bank and creator warmup lines could be used as generic copy even after creator utility became a formal gate elsewhere.
+## 2026-05-20 Private Access Permission Gate
 
-What was done -> Updated `Docs/Marketing/Content/POST_BANK_AND_HOOK_LIBRARY.md` so creator-facing use requires utility 3/4+, named CRM row mapping, exact contact route verification, and visual QA. Updated the 72-hour sequence so Hour 48 uses Campaign 01 Wave A only when those gates pass. Updated source ledger, backlog, status, and rationale.
+What was wrong: private demo/key/playtest/preview routes had route and provenance fields, but no named access permission gate. A build, recipient fit, route note, or schema-ready access log could still be misread as approval to distribute access.
 
-Cinematic Cheats used -> No runtime cheats. Operational fake-first move: keep creator outreach locked behind the same utility gate as asset QA and Campaign 01 instead of letting copy momentum create sends.
+What was done: added `private_access_permission_gate = HOLD_NO_PRIVATE_ACCESS` to the review-key/preview-access owner doc and defined recipient/batch-specific `ALLOW_PRIVATE_ACCESS_VERIFIED` as the only future allow value. Propagated the rule to key compliance, Steam demo/playtest telemetry, Campaign 03, control tower, README, prep directions, daily loop, RISK-062, backlog row 185, source ledger, status, and rationale.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents scarce creator replies from being spent on assets that merely look good but do not match the recipient segment.
+Cinematic cheats used: static private-access control gate only; no key, private access, Playtest invite, Curator Connect copy, public CTA, account/browser action, runtime simulation, or build action.
 
-## 2026-05-19 - Creator Send Packet Utility Proof
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; all 9 marketing CSVs parse; gate grep confirms `private_access_permission_gate`, `ALLOW_PRIVATE_ACCESS_VERIFIED`, `HOLD_NO_PRIVATE_ACCESS`, RISK-062, and row 185 propagation; touched markdown table pipe audit clean; non-raw mojibake audit clean; rationale order clean through Decision 214. No key, private access, Playtest invite, Curator Connect copy, public CTA, account/browser action, runtime action, or build action occurred.
 
-What was wrong -> The human-send packet listed required assets, but not per-recipient creator utility proof or a field to log the score.
+## 2026-05-20 Public Post Permission Gate
 
-What was done -> Updated `Docs/Marketing/CreatorOutreach/MASS_LEAD_VERIFICATION_AND_PITCH_WORKFLOW.md` so every creator-facing asset requires utility 3/4+, Wave A rows include per-recipient utility gates, and the send log records `creator_utility_score`. Updated source ledger, backlog, status, and rationale.
+What was wrong: no-link posts had reporting rules and asset-led posts had QA rules, but no named post permission gate. A draft, account, asset QA score, no-link route class, or CTA state could still be misread as permission to publish.
 
-Cinematic Cheats used -> No runtime cheats. Operational fake-first move: make recipient fit a recorded gate, not an assumption derived from asset existence.
+What was done: added `public_post_permission_gate = HOLD_NO_PUBLIC_POST` to the social owner doc and defined post-specific `ALLOW_PUBLIC_POST_VERIFIED` as the only future allow value. Propagated the rule to post bank, asset QA checklist, Campaign 01, control tower, README, prep directions, daily loop, RISK-063, backlog row 186, source ledger, status, and rationale.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents first outreach wave from wasting high-signal recipients on mismatched proof.
+Cinematic cheats used: static public-post control gate only; no public post, public CTA, account/browser action, outreach, runtime simulation, or build action.
 
-## 2026-05-19 - CRM Send-Log Fields
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; all 9 marketing CSVs parse; gate grep confirms `public_post_permission_gate`, `ALLOW_PUBLIC_POST_VERIFIED`, `HOLD_NO_PUBLIC_POST`, RISK-063, and row 186 propagation; touched markdown table pipe audit clean; non-raw mojibake audit clean; rationale order clean through Decision 215. No public post, public CTA, account/browser action, outreach, runtime action, or build action occurred.
 
-What was wrong -> The workflow now required structured send proof, but the CRM schema and live CSV did not have fields for creator utility, asset IDs, UTM, route proof, reply deadline, or follow-up state.
+## 2026-05-20 Owned Audience Permission Gate
 
-What was done -> Updated `Docs/Marketing/CreatorOutreach/CREATOR_CRM_SCHEMA_AND_SCORING.md` and added blank send-log columns to `Docs/Marketing/Data/CREATOR_VERIFICATION_TEMPLATE.csv`: `outreach_batch`, `sent_date`, `contact_route_verified_for_send`, `asset_ids_sent`, `creator_utility_score`, `utm_content`, `reply_deadline`, `followup_allowed`, `reply_status_after_send`, and `coverage_url`. Updated source ledger, backlog, status, and rationale.
+What was wrong: owned-audience signup/list work had consent/provider rules, but no named machine gate. A form draft, provider workspace, public CTA, imported contact set, or vague newsletter/playtest consent could be misread as permission to collect emails, import contacts, send newsletters, or count signup signal.
 
-Cinematic Cheats used -> No runtime cheats. Operational fake-first move: keep all send facts on the CRM row so no separate spreadsheet is needed before the first wave.
+What was done: added `owned_audience_permission_gate = HOLD_NO_OWNED_AUDIENCE` to the owned-audience owner doc and defined mode-specific `ALLOW_OWNED_AUDIENCE_VERIFIED` as the only future allow value. Propagated the rule to playtester recruitment, control tower, README, prep directions, daily loop, RISK-064, backlog row 187, source ledger, status, and rationale.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: avoids free-text send logging and makes future outreach audit-able.
+Cinematic cheats used: static consent/list-control gate only; no signup form, list import, email send, account/browser action, public post, runtime simulation, or build action.
 
-## 2026-05-19 - Asset Metadata Creator Utility Fields
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; all 9 marketing CSVs parse; gate grep confirms `owned_audience_permission_gate`, `ALLOW_OWNED_AUDIENCE_VERIFIED`, `HOLD_NO_OWNED_AUDIENCE`, RISK-064, and row 187 propagation; touched markdown table pipe audit clean; non-raw mojibake audit clean; rationale order clean through Decision 216. No signup form, list import, email send, account/browser action, public post, runtime action, or build action occurred.
 
-What was wrong -> Creator utility existed in QA and CRM logic, but asset metadata did not own the asset-side score or send gate.
+## 2026-05-20 Discord Open Permission Gate
 
-What was done -> Updated `Docs/Marketing/Operations/ASSET_LIBRARY_NAMING_AND_VERSION_CONTROL.md` and `Docs/Marketing/Data/MARKETING_ASSET_METADATA_TEMPLATE.csv` with `creator_rows_unlocked`, `creator_utility_score`, and `creator_send_gate`. Planned assets remain blocked with score 0 until real capture and QA. Updated source ledger, backlog, status, and rationale.
+What was wrong: Discord/community setup had a prose Open Gate, channel list, rules, and FAQ pins, but no named machine gate. A draft server, channel template, invite URL, moderator willingness, community interest, public CTA, or post draft could be misread as permission to open a public server, publish an invite, announce it, or count member signal.
 
-Cinematic Cheats used -> No runtime cheats. Operational fake-first move: put utility state on the asset row so future agents can filter readiness instead of re-reading prose notes.
+What was done: added `discord_open_permission_gate = HOLD_NO_DISCORD_PUBLIC_OPEN` to the Discord owner doc and defined server-specific `ALLOW_DISCORD_OPEN_VERIFIED` as the only future allow value. Propagated the rule to control tower, README, prep directions, daily loop, RISK-014/RISK-065, backlog row 188, source ledger, status, and rationale.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents creator send readiness from being inferred from notes or taste.
+Cinematic cheats used: static server-open control gate only; no Discord server, invite, public CTA, public post, account/browser action, runtime simulation, or build action.
 
-## 2026-05-19 - Control Tower Utility Gate Propagation
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; all 9 marketing CSVs parse; gate grep confirms `discord_open_permission_gate`, `ALLOW_DISCORD_OPEN_VERIFIED`, `HOLD_NO_DISCORD_PUBLIC_OPEN`, RISK-065, and row 188 propagation; touched markdown table pipe audit clean; non-raw mojibake audit clean; rationale order clean through Decision 217. No Discord server, invite, public CTA, public post, account/browser action, runtime action, or build action occurred.
 
-What was wrong -> The top-level control tower still described the older state and did not expose the new structured creator utility gates.
+## 2026-05-20 Steam Support Forum Permission Gate
 
-What was done -> Updated `Docs/Marketing/MARKETING_CONTROL_TOWER.md` so current state, G1 proof, immediate actions, and top priorities mention CRM send-log fields, asset `creator_send_gate`, creator utility 3/4+, and Wave A `asset_ids_sent`/`creator_utility_score` logging. Updated source ledger, backlog, status, and rationale.
+What was wrong: Steam review/forum/support docs had templates, pinned-thread plans, response caps, and support custody prose, but no named machine gate. Steam page existence, demo existence, known-issues drafts, public CTA, Discord setup, or one angry thread could be misread as permission to create pinned threads, publish support links, reply officially in reviews/forums, or count support signal.
 
-Cinematic Cheats used -> No runtime cheats. Operational fake-first move: prevent future agents from bypassing deep gates by starting from stale top-level instructions.
+What was done: rechecked official Steamworks User Reviews, Events/Announcements, and Community Moderation docs, then added `steam_support_permission_gate = HOLD_NO_STEAM_SUPPORT_PUBLIC_ROUTE` to the Steam support owner doc. Defined surface-specific `ALLOW_STEAM_SUPPORT_ROUTE_VERIFIED` as the only future allow value and propagated it to launch war-room, demo/playtest checklist, control tower, README, prep directions, daily loop, RISK-018/RISK-032/RISK-066, backlog row 189, source ledger, status, and rationale.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: reduces routing error and keeps execution focused on real captured assets.
+Cinematic cheats used: static support-route control gate only; no Steam forum thread, support link, review/forum reply, public CTA, account/browser action, runtime simulation, or build action.
 
-## 2026-05-19 - Creator Utility Bypass Risk
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; all 9 marketing CSVs parse; gate grep confirms `steam_support_permission_gate`, `ALLOW_STEAM_SUPPORT_ROUTE_VERIFIED`, `HOLD_NO_STEAM_SUPPORT_PUBLIC_ROUTE`, RISK-066, and row 189 propagation; touched markdown table pipe audit clean; non-raw mojibake audit clean; rationale order clean through Decision 218. No Steam forum thread, support link, review/forum reply, public CTA, account/browser action, runtime action, or build action occurred.
 
-What was wrong -> The risk register did not name the new failure mode where a strong-looking asset or high-value creator bypasses structured utility proof.
+## 2026-05-20 Steam Announcement Permission Gate
 
-What was done -> Updated `Docs/Marketing/Data/MARKETING_RISK_REGISTER.md` with RISK-042 and a top-risk reminder. Prevention is now explicit: no creator-facing send without `creator_utility_score`, `creator_send_gate`, named CRM mapping, and `asset_ids_sent`. Updated source ledger, backlog, status, and rationale.
+What was wrong: devlog and Steam launch docs treated Steam announcement/news/event posts as reusable outputs, but no named machine gate separated draft content from Steamworks publication. A devlog draft, Steam page existence, demo existence, public post approval, CTA approval, or event template could be misread as permission to publish or schedule a Steam announcement.
 
-Cinematic Cheats used -> No runtime cheats. Operational fake-first move: turn a likely human shortcut into a named blocker before any outreach happens.
+What was done: added `steam_announcement_permission_gate = HOLD_NO_STEAM_ANNOUNCEMENT` to the Devlog and Steam News owner doc and defined post-specific `ALLOW_STEAM_ANNOUNCEMENT_VERIFIED` as the only future allow value. Propagated the rule to Campaign 02, Campaign 04, demo/playtest checklist, launch war-room, control tower, README, prep directions, daily loop, RISK-067, backlog row 190, source ledger, status, and rationale.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: reduces reputation damage risk from premature high-value creator contact.
+Cinematic cheats used: static Steamworks-publication control gate only; no Steam announcement, news post, event, support route, public CTA, account/browser action, runtime simulation, or build action.
 
-## 2026-05-19 - Daily Loop Creator Utility Binding
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; all 9 marketing CSVs parse; gate grep confirms `steam_announcement_permission_gate`, `ALLOW_STEAM_ANNOUNCEMENT_VERIFIED`, `HOLD_NO_STEAM_ANNOUNCEMENT`, RISK-067, and row 190 propagation; touched markdown table pipe audit clean; non-raw mojibake audit clean; rationale order clean through Decision 219. No Steam announcement, news post, event, support route, public CTA, account/browser action, runtime action, or build action occurred.
 
-What was wrong -> The daily agent loop could still accept asset/CRM work without the new creator utility and send-log fields.
+## 2026-05-20 Localization Public-Use Permission Gate
 
-What was done -> Updated `Docs/Marketing/Operations/DAILY_AGENT_TASK_LOOP.md` so ASSET_GATE, CRM_CLEANUP, Noon Kill, Asset Critic, and screenshot-era quotas require creator utility, creator send gate, CRM mapping, and send-log fields before outreach escalation. Updated source ledger, backlog, status, and rationale.
+What was wrong: localization and regional outreach docs had native-review and encoding rules, but no named machine gate. Encoding repair, ASCII-safe transliteration, owner-native familiarity, draft translation, raw regional leads, or regional interest could be misread as permission to send or publish localized copy.
 
-Cinematic Cheats used -> No runtime cheats. Operational fake-first move: make daily process reject incomplete utility/send data before it becomes outreach.
+What was done: added `localization_public_permission_gate = HOLD_LOCALIZED_PUBLIC_USE` to the localization owner doc and defined language/surface-specific `ALLOW_LOCALIZED_PUBLIC_USE_VERIFIED` as the only future allow value. Propagated the rule to regional outreach, regional creator leads, Campaign 05, control tower, README, prep directions, daily loop, RISK-038/RISK-068, backlog row 191, source ledger, status, and rationale.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: reduces repeated manual review by forcing every daily asset/CRM pass to update the same fields.
+Cinematic cheats used: static localization-public-use control gate only; no localized send, regional outreach, public post, public CTA, account/browser action, runtime simulation, or build action.
 
-## 2026-05-19 - README Creator Utility Propagation
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; all 9 marketing CSVs parse; gate grep confirms `localization_public_permission_gate`, `ALLOW_LOCALIZED_PUBLIC_USE_VERIFIED`, `HOLD_LOCALIZED_PUBLIC_USE`, RISK-068, and row 191 propagation; touched markdown table pipe audit clean; non-raw mojibake audit clean; rationale order clean through Decision 220. No localized send, regional outreach, public post, public CTA, account/browser action, runtime action, or build action occurred.
 
-What was wrong -> The marketing README did not state the creator utility/send-log gate, so it could become a stale entry path.
+## 2026-05-20 Press Release Public Publication Gate
 
-What was done -> Updated `Docs/Marketing/README.md` hard rules, directory map, and first asset gate. It now states creator outreach cannot proceed from asset existence alone and requires asset QA, utility 3/4+, `creator_send_gate`, named CRM row, exact contact route, and send-log fields. Updated source ledger, backlog, status, and rationale.
+What was wrong: press release templates, presskit publish prose, site presskit blocks, Campaign 02 press notes, and launch-war-room reminders could still be read as public release permission. Existing gates protected targeted press sends, CTAs, public posts, Steam announcements, localization, support, private access, and inbox custody, but release copy itself had no named machine gate.
 
-Cinematic Cheats used -> No runtime cheats. Operational fake-first move: make both entry points reject creator outreach without structured proof.
+What was done: added `press_release_permission_gate = HOLD_NO_PRESS_RELEASE_PUBLICATION` to the press release/templates owner doc and defined surface-specific `ALLOW_PRESS_RELEASE_PUBLISH_VERIFIED` as the only future allow value. Propagated the rule to presskit, website, Campaign 02, launch war-room, control tower, README, prep directions, daily loop, RISK-012/RISK-041/RISK-045/RISK-069, backlog row 192, source ledger, status, and rationale.
 
-Exact Microseconds saved -> 0us measured runtime impact. Operational savings: prevents new agents from missing the utility gate when starting from README.
+Cinematic cheats used: static publication-surface control gate only; no press release, public presskit publication, press send, Steam news reuse, wire copy, public post, CTA, account/browser action, runtime simulation, or build action.
+
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; all 9 marketing CSVs parse; gate grep confirms `press_release_permission_gate`, `ALLOW_PRESS_RELEASE_PUBLISH_VERIFIED`, `HOLD_NO_PRESS_RELEASE_PUBLICATION`, RISK-069, row 192, and Decision 221 propagation; touched markdown table pipe audit clean; non-raw mojibake audit clean; rationale order clean through Decision 221. No press release, presskit publication, press send, Steam news reuse, wire copy, public post, CTA, account/browser action, runtime action, or build action occurred.
+
+## 2026-05-20 Steam Page Publication Gate
+
+What was wrong: Steam page docs had a Launch Gate V0, asset checklist, copy matrix, CTA activation, and announcement gates, but no named machine gate for publishing the public Coming Soon/store page itself. Asset existence, page draft completion, Steamworks app shell, candidate URL, CTA planning, Steam announcement approval, press release approval, or wishlist readiness could be misread as permission to change page visibility or claim "Steam page is live".
+
+What was done: added `steam_page_publish_permission_gate = HOLD_NO_STEAM_PAGE_PUBLICATION` to the Steam page asset/checklist owner doc and defined app/page-specific `ALLOW_STEAM_PAGE_PUBLISH_VERIFIED` as the only future allow value. Propagated the rule to store copy, wishlist/Next Fest, wishlist conversion, Campaign 02, Campaign 04, demo/playtest, launch war-room, analytics, control tower, README, prep directions, daily loop, RISK-045/RISK-070, backlog row 193, source ledger, status, and rationale.
+
+Cinematic cheats used: static app/page-publication control gate only; no Steam page publication, visibility change, public demo/store surface, wishlist campaign, CTA, announcement, press release, public post, spend, account/browser action, runtime simulation, or build action.
+
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; all 9 marketing CSVs parse; gate grep confirms `steam_page_publish_permission_gate`, `ALLOW_STEAM_PAGE_PUBLISH_VERIFIED`, `HOLD_NO_STEAM_PAGE_PUBLICATION`, RISK-070, row 193, and Decision 222 propagation; touched markdown table pipe audit clean; non-raw mojibake audit clean; rationale order clean through Decision 222. No Steam page publication, visibility change, public demo/store surface, wishlist campaign, CTA, announcement, press release, public post, spend, account/browser action, runtime action, or build action occurred.
+
+## 2026-05-20 Public Demo And Playtest Access Gate
+
+What was wrong: Demo/playtest docs separated public CTA links from private access links, and private access had a recipient/batch gate, but public demo exposure itself was still mostly prose. A build launch, Steam page publication, CTA approval, private access approval, known-issues draft, feedback form, announcement draft, or first-route-playable note could be misread as permission to expose a public Steam demo, public Playtest signup/tranche, Next Fest demo availability, demo-live claim, or public demo feedback route.
+
+What was done: added `demo_public_access_permission_gate = HOLD_NO_PUBLIC_DEMO_ACCESS` to the demo/playtest owner doc and defined surface-specific `ALLOW_PUBLIC_DEMO_ACCESS_VERIFIED` as the only future allow value. Propagated the rule to Campaign 03, Campaign 04, playtester recruitment, launch war-room, Steam support/forums, control tower, README, prep directions, daily loop, RISK-008/RISK-071, backlog row 194, source ledger, status, and rationale.
+
+Cinematic cheats used: static public-access control gate only; no public demo, Steam Playtest signup/tranche, Next Fest demo, demo-live claim, public feedback route, private access, CTA, announcement, press release, public post, account/browser action, runtime simulation, or build action.
+
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; all 9 marketing CSVs parse; gate grep confirms `demo_public_access_permission_gate`, `ALLOW_PUBLIC_DEMO_ACCESS_VERIFIED`, `HOLD_NO_PUBLIC_DEMO_ACCESS`, RISK-071, row 194, and Decision 223 propagation; touched markdown table pipe audit clean; non-raw mojibake audit clean; rationale order clean through Decision 223. No public demo, Steam Playtest signup/tranche, Next Fest demo, demo-live claim, public feedback route, private access, CTA, announcement, press release, public post, account/browser action, runtime action, or build action occurred.
+
+## 2026-05-20 Steam Next Fest Commitment Gate Binding
+
+What was wrong: Steam Next Fest already existed as showcase tracker row `SHOW-001`, but the Steam wishlist plan and Campaign 04 readiness prose could still be read as commitment permission once page/demo/CTA readiness existed. That bypassed the event tracker and the one-shot nature of Steam Next Fest.
+
+What was done: bound Next Fest registration, commitment, participation claims, and event-beat reservation to `SHOW-001` in `Press/SHOWCASE_SUBMISSION_TRACKER.csv`. Current row state remains `submission_permission_gate = BLOCKED_NOT_READY`; only `ALLOW_SHOWCASE_SUBMIT_VERIFIED` can permit commitment. Propagated the boundary to the Steam wishlist/Next Fest plan, Campaign 04, showcase playbook, control tower, README, prep directions, daily loop, RISK-056/top-risk 27, backlog row 195, source ledger, status, and rationale.
+
+Cinematic cheats used: static owner-local CSV gate only; no Next Fest registration, commitment, participation claim, event-beat reservation, public demo, CTA, announcement, submission, account/browser action, runtime simulation, or build action.
+
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; all 9 marketing CSVs parse; gate grep confirms `SHOW-001`, `submission_permission_gate = BLOCKED_NOT_READY`, `ALLOW_SHOWCASE_SUBMIT_VERIFIED`, row 195, and Decision 224 propagation; touched markdown table pipe audit clean; non-raw mojibake audit clean; rationale order clean through Decision 224. No Next Fest registration, commitment, participation claim, event-beat reservation, public demo, CTA, announcement, submission, account/browser action, runtime action, or build action occurred.
+
+## 2026-05-20 SN2 Steam API/Page V5 Currentness Refresh
+
+What was wrong: SN2 pain/capture docs still pointed at the V4 Steam API snapshot. The competitor is moving fast after launch, so stale counts could over-weight old pain buckets or let an agent frame SN2 as weak when the current official-platform read is still strong.
+
+What was done: added V5 to the monitoring owner doc using Steam review API, Steam appdetails API, and the public store page. Updated RISK-046, first capture call sheet, `PLAN-SHOT-006` pain modifier, asset-intake `pain_freshness_source` example, backlog row 196, source ledger, status, and rationale. V5 records SN2 as `Very Positive` with API 73,533 all-language reviews and 44,011 English reviews; public page display showed 73,893 total reviews and Korean `Mixed` as a regional watch item.
+
+Cinematic cheats used: static source-freshness gate only; V5 is internal capture-priority evidence, not public comparison copy. No capture, asset promotion, outreach, browser/account action, runtime simulation, or build action.
+
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; all 9 marketing CSVs parse; V5 grep confirms counts, `Monitoring SN2 Steam API/Page Refresh V5`, RISK-046, row 196, Decision 225, and Addendum 198 propagation; touched markdown table pipe audit clean; non-raw mojibake audit clean; rationale order clean through Decision 225. No public comparison copy, outreach, browser/account action, runtime action, or build action occurred.
+
+## 2026-05-20 Creator Pain-Backed Send V5 Binding
+
+What was wrong: the mass outreach owner doc still carried 2026-05-19 SN2 pain fit wording. It required `pain_freshness_source`, but did not state that the current official-platform read remains SN2-positive, leaving a path for stale or hostile pain-backed creator copy.
+
+What was done: renamed the section to V5, added the currentness boundary, required pain-backed send packets to name `Monitoring SN2 Steam API/Page Refresh V5` plus the exact private pain bucket in `pain_freshness_source`, and added a hard gate against "players are angry" framing. Logged backlog row 197, source ledger, status, and rationale.
+
+Cinematic cheats used: static send-packet source gate only; no outreach, no CRM send-log fill, no asset promotion, no public comparison copy, no browser/account action, no runtime simulation, no build action.
+
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; all 9 marketing CSVs parse; grep confirms V5 creator-send binding, `Monitoring SN2 Steam API/Page Refresh V5`, row 197, Decision 226, and Addendum 199; touched markdown table pipe audit clean; non-raw mojibake audit clean; rationale order clean through Decision 226. No creator send, CRM send-log fill, asset promotion, public comparison copy, browser/account action, runtime action, or build action occurred.
+
+## 2026-05-20 Priority-50 SN2-Active Wording Correction
+
+What was wrong: priority creator drafts said the six microbatch creators were "currently covering SN2" from 2026-05-19 RSS checks. That is dated audience-fit evidence, not current-send proof.
+
+What was done: changed the section to V5-gated, renamed `Current signal` to `Recorded signal`, rewrote the six rows as dated 2026-05-19 RSS signals, required same-day channel/contact-route recheck, and added the V5 pain-freshness source rule. Logged backlog row 198, source ledger, status, and rationale.
+
+Cinematic cheats used: static send-draft wording correction only; no outreach, no CRM send-log fill, no asset promotion, no public comparison copy, no browser/account action, no runtime simulation, no build action.
+
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; all 9 marketing CSVs parse; grep confirms row 198, Decision 227, Addendum 200, V5-gated heading, and no `Currently covering SN2` hits in the priority-50 file; touched markdown table pipe audit clean; non-raw mojibake audit clean; rationale order clean through Decision 227. No creator send, CRM send-log fill, asset promotion, public comparison copy, browser/account action, runtime action, or build action occurred.
+
+## 2026-05-20 Raw Lead Expansion Hold
+
+What was wrong: raw lead expansion docs still described "Target: 300 rows" and adding Subnautica 2 launch streamers as next expansion work. That conflicts with the current control state: CRM-100 already exists, no raw rows are staged, and asset proof is the bottleneck.
+
+What was done: parked raw lead expansion behind first asset-gap proof in `RAW_LEAD_EXPANSION_QUEUE.md` and `CREATOR_OUTREACH_DATABASE.md`. SN2 launch-streamer sourcing now requires a proven direct-underwater-survival asset gap plus same-day currentness/contact-route verification plan. Logged backlog row 199, source ledger, status, and rationale.
+
+Cinematic cheats used: static lead-volume throttle only; no lead expansion, no CRM send-log fill, no outreach, no browser/account action, no runtime simulation, no build action.
+
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; all 9 marketing CSVs parse; grep confirms row 199, Decision 228, Addendum 201, `Current hold`, and `Parked Expansion Targets`; touched markdown table pipe audit clean; non-raw mojibake audit clean; rationale order clean through Decision 228. No lead expansion, CRM send-log fill, outreach, browser/account action, runtime action, or build action occurred.
+
+## 2026-05-20 Live CRM SN2-Current Wording Correction
+
+What was wrong: six hot microbatch CRM rows still used "Currently covering SN2" or "Hot current" wording. That is stale current-language in the live recipient surface and can be mistaken for send-day proof.
+
+What was done: updated Kage848, AldemarHD, Neyreyan, Zombyra, HelyaLP, and SpielbaerLP CRM wording to preserve 2026-05-18/19 RSS evidence as dated recorded signals and require current-channel recheck before send. Statuses, paid creator gate, send-log fields, route fields, and asset fields stayed unchanged. Logged backlog row 200, source ledger, status, and rationale.
+
+Cinematic cheats used: static CRM wording correction only; no status promotion, no send-log fill, no asset promotion, no outreach, no browser/account action, no runtime simulation, no build action.
+
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; all 9 marketing CSVs parse; grep confirms no `Currently covering SN2`, no `Hot current`, row 200, Decision 229, and Addendum 202; CRM status/send-log counts unchanged; non-raw mojibake audit clean; rationale order clean through Decision 229. No status promotion, send-log fill, asset promotion, outreach, browser/account action, runtime action, or build action occurred.
+
+## 2026-05-20 Lead-Volume Entry Alignment
+
+What was wrong: README/raw lead/Campaign 00 entry points still had quota-looking language: raw scaling toward 300-1000 leads, verify top 250 per week, and Top 250 verification batches as a current-looking KPI. That could restart broad lead work while asset proof is still absent.
+
+What was done: reworded those entry points so raw lead scaling and Top 250 verification batches are parked until first assets prove a segment gap the live CRM cannot cover. Logged backlog row 201, source ledger, status, and rationale.
+
+Cinematic cheats used: static lead-volume throttle only; no lead expansion, no CRM promotion, no outreach, no browser/account action, no runtime simulation, no build action.
+
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; all 9 marketing CSVs parse; grep confirms row 201, Decision 230, Addendum 203, parked raw lead wording, and no default `Verify only the top 250 per week`; touched markdown table pipe audit clean; non-raw mojibake audit clean; rationale order clean through Decision 230. No lead expansion, CRM promotion, outreach, browser/account action, runtime action, or build action occurred.
+
+## 2026-05-20 Residual Currentness And Raw-Sprint Bypass Cleanup
+
+What was wrong: a second-pass grep still found residual stale SN2-current wording in paste-adjacent creator docs and vague raw-batch "audience gap" wording. That could create false audit noise or let a future agent reopen raw verification volume before asset proof proves the live CRM cannot cover a segment.
+
+What was done: changed `SEGMENT_PITCH_MATRIX.md` competitor-note language to dated recorded audience-fit evidence, changed the Wanderbots Priority-50 angle to recorded fit, tightened `RAW_LEAD_EXPANSION_QUEUE.md` and all ten AgentOps verification batch sheets to require first asset proof plus a segment gap the live CRM cannot cover, and logged backlog row 202/source/status/rationale.
+
+Cinematic cheats used: static operator-text throttle only; no lead expansion, no creator send, no CRM promotion, no browser/account action, no runtime simulation, no build action.
+
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; all 9 marketing CSVs parse; 15 touched markdown files pass table audit; touched mojibake audit clean; stale-bypass grep clean; CRM status split unchanged (`DO_NOT_CONTACT=3`, `LOW_PRIORITY_VERIFY_LATER=52`, `NEEDS_ASSET=22`, `VERIFY_BEFORE_CONTACT=23`); all creator send-log fields remain 0; all 100 paid creator gates remain `BLOCKED_NO_PAID_CREATOR_PROOF`.
+
+## 2026-05-20 Paid Creator Scenario Bypass Cleanup
+
+What was wrong: the live CRM paid creator gate existed, but budget scenarios, the experiment spend order, Campaign 03 demo outreach, brand budget reality, and the backlog P3 paid-spend table still used weaker permission language: organic fit, organic replies, demo stability, strong demo retention, or generic paid-slot readiness.
+
+What was done: patched those existing surfaces so paid creator spend always requires the selected live CRM row to have `paid_creator_permission_gate = ALLOW_PAID_CREATOR_TEST_VERIFIED`. Added backlog row 203, source ledger addendum, Status Addendum 205, and Decision 232.
+
+Cinematic cheats used: static spend-control text only; no payment, no paid brief, no creator contract, no key/access row, no CRM promotion, no browser/account action, no runtime simulation, no build action.
+
+Exact microseconds saved: 0us runtime impact. Targeted paid-bypass grep is clean for the old permissive strings. No paid creator deal, payment, paid brief, key/access row, CRM promotion, outreach, browser/account action, runtime action, or build action occurred.
+
+## 2026-05-20 Key And Private Access Shorthand Bypass Cleanup
+
+What was wrong: several operator-facing docs still used weaker phrases around key/access readiness: key policy ready, keys with tracking, issue small batches, verified recipient list, or QA route. Those can be read as permission to send keys/private access without the recipient/batch machine gate.
+
+What was done: patched A-tier pitch gates, outreach calendar, creator database, CRM scoring fraud checks, legal key distribution, presskit key policy, review-key/access protocol, and Campaign 03 so key/private-preview/Playtest/Curator Connect routes require `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED`, official inbox custody, exact access-log fields, and disclosure. Added backlog row 204, source ledger addendum, Status Addendum 206, and Decision 233.
+
+Cinematic cheats used: static access-control text only; no key, no private access, no Playtest invite, no Curator Connect copy, no CRM promotion, no outreach, no browser/account action, no runtime simulation, no build action.
+
+Exact microseconds saved: 0us runtime impact. Targeted key/access-bypass grep is clean for the old shorthand strings. No key, private access, Playtest invite, Curator Connect copy, CRM promotion, outreach, browser/account action, runtime action, or build action occurred.
+
+## 2026-05-20 Residual Private Access Shorthand Cleanup
+
+What was wrong: second-pass grep still found weaker access wording in paste-adjacent and planning surfaces: `private access log`, `key/access log ready`, key-policy shorthand, and public/private demo-link conflation. Those terms can bypass the recipient/batch `private_access_permission_gate`.
+
+What was done: patched existing docs only: website/signature copy, agent workflow, brand bible, mass outreach workflow, segment matrix, pitch bank, Priority-250 sheet, Curator Connect playbook, press-angle bank, launch war-room, regional campaign/outreach, partnership terms, roadmap Promise Lint, prep directions, presskit plan, backlog row 205, and source ledger. Public links stay under Official CTA Link Activation Gate V0; private routes require recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED`, official inbox custody, disclosure, and exact access-log fields. Also normalized touched `DaddelBaerTV` text to remove an encoding hit.
+
+Cinematic cheats used: static permission firewall only; no key, no private access, no Playtest invite, no Curator Connect copy, no public CTA, no CRM promotion, no browser/account action, no runtime simulation, no build action.
+
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; all 9 marketing CSVs parse; access-shorthand bypass grep clean; touched markdown table audit clean across 16 files; touched mojibake audit clean across 18 files; CRM split unchanged (`DO_NOT_CONTACT=3`, `LOW_PRIORITY_VERIFY_LATER=52`, `NEEDS_ASSET=22`, `VERIFY_BEFORE_CONTACT=23`); creator send-log fields remain 0; all 100 paid creator gates remain `BLOCKED_NO_PAID_CREATOR_PROOF`.
+
+## 2026-05-20 Page Live And Account Exists Shorthand Cleanup
+
+What was wrong: budget, social, post-bank, segment timing, and preview-access text still had weaker execution wording around Steam page live, account exists, Steam URL, and no-embargo publication. That can be misread as spend/post/send/publication permission.
+
+What was done: updated `Budget/LOW_BUDGET_SPEND_DECISION_TREE.md`, `CreatorOutreach/SEGMENT_PITCH_MATRIX.md`, `Social/SOCIAL_ACCOUNT_SETUP_AND_PLATFORM_PLAYBOOK.md`, `Content/POST_BANK_AND_HOOK_LIBRARY.md`, `Press/REVIEW_KEYS_EMBARGO_AND_PREVIEW_ACCESS_PROTOCOL.md`, backlog row 206, and source ledger. The affected surfaces now require exact machine gates: Steam page publish gate, Official CTA Link Activation Gate V0, public post gate, account registration gate, press/public-release gates, or logged preview-access gate depending on the route.
+
+Cinematic cheats used: static route-permission firewall only; no spend, no post, no public CTA, no Steam page action, no account/browser action, no private access, no creator/press send, no runtime simulation, no build action.
+
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; all 9 marketing CSVs parse; page/account shorthand audit clean; touched markdown table audit clean across 6 files; touched mojibake audit clean across 7 files; CRM split unchanged (`DO_NOT_CONTACT=3`, `LOW_PRIORITY_VERIFY_LATER=52`, `NEEDS_ASSET=22`, `VERIFY_BEFORE_CONTACT=23`); creator send-log fields remain 0; all 100 paid creator gates remain `BLOCKED_NO_PAID_CREATOR_PROOF`.
+
+## 2026-05-20 Current-State Label Refresh
+
+What was wrong: top-level Marketing entry files still had active-looking 2026-05-19 labels after the 2026-05-20 V5 Steam/API currentness pass and later gate cleanups. That could send a resumed agent to stale current-state assumptions.
+
+What was done: updated `Data/MARKETING_BACKLOG_INDEX.md` current execution cut to 2026-05-20, changed `MARKETING_CONTROL_TOWER.md` external reality section to 2026-05-20 V5 with the recorded Steam API/page counts, changed `Operations/DAILY_AGENT_TASK_LOOP.md` to `2026-05-20 Active Control Tower Loop V1`, and logged backlog row 207/source ledger.
+
+Cinematic cheats used: static current-state label propagation only; no public copy, no outreach, no account/browser action, no runtime simulation, no build action.
+
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; all 9 marketing CSVs parse; active current-label audit clean; touched markdown table audit clean across 3 files; touched mojibake audit clean across 4 files.
+
+## 2026-05-20 Residual Approved-Link And CTA Shorthand Cleanup
+
+What was wrong: copy templates and event/measurement surfaces still had weak placeholders: `[approved link only]`, `[approved access route only]`, generic approved Steam/demo CTA language, `Demo ready`, and store-page readiness wording. Those can become pasted public links, private access routes, trailer end cards, showcase submissions, or dashboard rows without the actual permission fields.
+
+What was done: updated `Press/PRESS_KIT_AND_MEDIA_PLAN.md`, `CreatorOutreach/A_TIER_PERSONALIZED_PITCHES.md`, `CreatorOutreach/PITCH_BANK.md`, `Press/SHOWCASE_AND_FESTIVAL_SUBMISSION_PLAYBOOK.md`, `Analytics/MEASUREMENT_AND_UTM_PLAN.md`, `KPI/MARKETING_DASHBOARD_SPEC.md`, `Steam/STEAM_PAGE_ASSET_REQUIREMENTS_CHECKLIST.md`, `QA/MARKETING_ASSET_QA_CHECKLIST.md`, and `PREP_DIRECTIONS_NOW.md`. Public links now name Steam/public-demo/public-CTA gates, private access names the recipient/batch private-access gate, public presskit links name the press-release/public-CTA gates, showcase rows name the tracker submission gate, and KPI rows quarantine `unknown` route/provenance values.
+
+Cinematic cheats used: static permission firewall only; no public CTA, no post, no showcase submission, no press send, no creator send, no private access, no browser/account action, no runtime simulation, no build action.
+
+Exact microseconds saved: 0us runtime impact. Validation clean: targeted CTA/showcase shorthand grep clean; Marketing file count 100; all 9 marketing CSVs parse; touched markdown table audit clean across 9 files; touched mojibake audit clean across 9 files; CRM split unchanged (`DO_NOT_CONTACT=3`, `LOW_PRIORITY_VERIFY_LATER=52`, `NEEDS_ASSET=22`, `VERIFY_BEFORE_CONTACT=23`); creator send-log fields remain 0; all 100 paid creator gates remain `BLOCKED_NO_PAID_CREATOR_PROOF`.

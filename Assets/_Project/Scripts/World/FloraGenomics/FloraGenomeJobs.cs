@@ -126,7 +126,7 @@ namespace Hecton8.World
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct FloraGenomeDecoderJob : IJob
     {
         [ReadOnly] public NativeArray<byte> RawBytes;

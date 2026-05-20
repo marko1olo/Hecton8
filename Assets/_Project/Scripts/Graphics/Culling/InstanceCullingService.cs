@@ -267,7 +267,7 @@ namespace Hecton8.Graphics.Culling
                 Matrices = matrices,
                 ShiftMeters = shift
             }.Schedule(safeCount, _threadGroupSize);
-            handle.Complete();
+            DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
             allInstancesBuffer.UnlockBufferAfterWrite<Matrix4x4>(safeCount);
 
             _lastShiftFrameId = shiftFrameId;
@@ -605,7 +605,7 @@ namespace Hecton8.Graphics.Culling
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 40)]
+        [StructLayout(LayoutKind.Sequential, Size = 40)]
         private struct InstanceCullingTelemetryEntry
         {
             public uint Frame;

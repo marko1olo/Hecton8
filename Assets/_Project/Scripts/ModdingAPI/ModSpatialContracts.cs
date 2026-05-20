@@ -10,16 +10,19 @@ namespace Hecton8.Modding
     /// Signed 64-bit integer grid coordinate for AUP payloads.
     /// Unity.Mathematics in this project does not provide long3.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 24)]
     public struct long3
     {
         /// <summary>X cell coordinate.</summary>
+        [FieldOffset(0)]
         public long x;
 
         /// <summary>Y cell coordinate.</summary>
+        [FieldOffset(8)]
         public long y;
 
         /// <summary>Z cell coordinate.</summary>
+        [FieldOffset(16)]
         public long z;
     }
 
@@ -27,14 +30,19 @@ namespace Hecton8.Modding
     /// Absolute Universe Position payload accepted from sandboxed mods.
     /// Grid is measured in 5000 m cells; local is the float precision offset inside the cell.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 40)]
     public struct ModAup
     {
         /// <summary>Signed 64-bit AUP cell coordinates.</summary>
+        [FieldOffset(0)]
         public long3 Grid;
 
         /// <summary>Float local offset inside <see cref="Grid"/>.</summary>
+        [FieldOffset(24)]
         public float3 Local;
+
+        [FieldOffset(36)]
+        private uint _pad0;
     }
 
     /// <summary>
@@ -42,19 +50,23 @@ namespace Hecton8.Modding
     /// The dispatcher rebases this payload against the current floating-origin offset at drain time.
     /// </summary>
     [System.Obsolete("Legacy AUP mod command wrapper is quarantined. Use FutureCommandEnvelope through HectonAPI.Commands.RequestFuture.", false)]
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 120)]
     public struct ModAupCommand
     {
         /// <summary>Base 64-byte command header/payload.</summary>
+        [FieldOffset(0)]
         public ModCommand Command;
 
         /// <summary>AUP anchor for spawn, move, effect, or ray origin.</summary>
+        [FieldOffset(64)]
         public ModAup Position;
 
         /// <summary>Optional normalized direction for ray/effect commands.</summary>
+        [FieldOffset(104)]
         public float3 Direction;
 
         /// <summary>Opcode-specific scalar, normally range, radius, or scale.</summary>
+        [FieldOffset(116)]
         public float Scalar;
     }
 
@@ -109,28 +121,35 @@ namespace Hecton8.Modding
     /// Bytes 52..63 pack opcode-specific data. Flow responses store x/y/z as
     /// math.asuint(float) in Payload.x/y/z.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct ModAupResponse
     {
         /// <summary>Stable mod hash.</summary>
+        [FieldOffset(0)]
         public uint ModHash;
 
         /// <summary>Mod-local request identifier.</summary>
+        [FieldOffset(4)]
         public uint RequestId;
 
         /// <summary><see cref="ModAupResponseKind"/> value.</summary>
+        [FieldOffset(8)]
         public uint ResponseKind;
 
         /// <summary><see cref="ModAupResponseStatus"/> value.</summary>
+        [FieldOffset(12)]
         public uint Status;
 
         /// <summary>AUP grid echoed from the request.</summary>
+        [FieldOffset(16)]
         public long3 Grid;
 
         /// <summary>AUP local offset echoed from the request.</summary>
+        [FieldOffset(40)]
         public float3 Local;
 
         /// <summary>Opcode-specific packed payload. Flow: x/y/z float bits.</summary>
+        [FieldOffset(52)]
         public uint3 Payload;
     }
 
@@ -138,22 +157,27 @@ namespace Hecton8.Modding
     /// Matrix submission packet for the reserved mod instancing layer.
     /// </summary>
     [System.Obsolete("Legacy render-instance mod command wrapper is quarantined. Use FutureCommandEnvelope plus an approved future kernel lane.", false)]
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
     public struct ModRenderInstanceCommand
     {
         /// <summary>Engine-assigned mod hash. User input is overwritten at enqueue time.</summary>
+        [FieldOffset(0)]
         public uint ModHash;
 
         /// <summary>Mod-local request identifier.</summary>
+        [FieldOffset(4)]
         public uint RequestId;
 
         /// <summary>Resource hash previously returned by <see cref="IModResourceProxy"/>.</summary>
+        [FieldOffset(8)]
         public uint ResourceHash;
 
         /// <summary>Reserved flags for future material/kernel routing.</summary>
+        [FieldOffset(12)]
         public uint Flags;
 
         /// <summary>World matrix in current frame-space coordinates.</summary>
+        [FieldOffset(16)]
         public float4x4 Matrix;
     }
 
@@ -175,31 +199,39 @@ namespace Hecton8.Modding
     /// <summary>
     /// Unmanaged next-frame result payload for proxied mod raycasts.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct ModRaycastResultPayload
     {
         /// <summary>Stable mod hash.</summary>
+        [FieldOffset(0)]
         public uint ModHash;
 
         /// <summary>Mod-local request identifier.</summary>
+        [FieldOffset(4)]
         public uint RequestId;
 
         /// <summary><see cref="ModRaycastResultStatus"/> value.</summary>
+        [FieldOffset(8)]
         public uint Status;
 
         /// <summary>Unity instance id of the hit collider, or zero. This is diagnostic only.</summary>
+        [FieldOffset(12)]
         public int ColliderInstanceId;
 
         /// <summary>Hit collider layer, or -1 when absent.</summary>
+        [FieldOffset(16)]
         public int Layer;
 
         /// <summary>Hit distance in meters.</summary>
+        [FieldOffset(20)]
         public float Distance;
 
         /// <summary>Frame-space hit point.</summary>
+        [FieldOffset(24)]
         public float3 Point;
 
         /// <summary>Frame-space hit normal.</summary>
+        [FieldOffset(36)]
         public float3 Normal;
     }
 
@@ -237,19 +269,26 @@ namespace Hecton8.Modding
     /// <summary>
     /// Unmanaged event emitted before a mod is disabled by heap quota enforcement.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 24)]
     public struct ModCriticalMemoryEvictionPayload
     {
         /// <summary>Stable mod hash.</summary>
+        [FieldOffset(0)]
         public uint ModHash;
 
+        [FieldOffset(4)]
+        private uint _pad0;
+
         /// <summary>Tracked managed allocation bytes charged to this mod.</summary>
+        [FieldOffset(8)]
         public ulong TrackedHeapBytes;
 
         /// <summary>Configured quota in bytes.</summary>
+        [FieldOffset(16)]
         public uint LimitBytes;
 
         /// <summary>Reserved reason code.</summary>
+        [FieldOffset(20)]
         public uint Reason;
     }
 }

@@ -93,25 +93,25 @@ namespace Hecton8.Core.Contracts
         public const byte Dirty = 1 << 0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct MacroDatabaseConfig
     {
-        public int NodeSizeBytes;
-        public int SectorSizeMeters;
-        public int LowTierRadiusMeters;
-        public int MiddleTierRadiusMeters;
-        public int HighTierRadiusMeters;
-        public int UltraTierRadiusMeters;
-        public int DehydrateRadiusMeters;
-        public int MaxPayloadBytes;
-        public int NativeCacheCapacity;
-        public int MaxQuerySectors;
-        public long InitialFileBytes;
-        public long MaxFileBytes;
-        public byte CreateIfMissing;
-        public byte DefaultTier;
-        public ushort Reserved;
-        private uint _pad0;
+        [FieldOffset(0)] public int NodeSizeBytes;
+        [FieldOffset(4)] public int SectorSizeMeters;
+        [FieldOffset(8)] public int LowTierRadiusMeters;
+        [FieldOffset(12)] public int MiddleTierRadiusMeters;
+        [FieldOffset(16)] public int HighTierRadiusMeters;
+        [FieldOffset(20)] public int UltraTierRadiusMeters;
+        [FieldOffset(24)] public int DehydrateRadiusMeters;
+        [FieldOffset(28)] public int MaxPayloadBytes;
+        [FieldOffset(32)] public int NativeCacheCapacity;
+        [FieldOffset(36)] public int MaxQuerySectors;
+        [FieldOffset(40)] public long InitialFileBytes;
+        [FieldOffset(48)] public long MaxFileBytes;
+        [FieldOffset(56)] public byte CreateIfMissing;
+        [FieldOffset(57)] public byte DefaultTier;
+        [FieldOffset(58)] public ushort Reserved;
+        [FieldOffset(60)] private uint _pad0;
 
         public static MacroDatabaseConfig Default => new MacroDatabaseConfig
         {
@@ -132,103 +132,103 @@ namespace Hecton8.Core.Contracts
         };
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 40)]
+    [StructLayout(LayoutKind.Explicit, Size = 40)]
     public struct MacroDatabasePayloadHandle
     {
-        public ulong SectorHash;
-        public IntPtr Pointer;
-        public long FileOffset;
-        public int ByteLength;
-        public uint Version;
-        public byte Flags;
-        public byte Reserved0;
-        public ushort Reserved1;
-        private uint _pad0;
+        [FieldOffset(0)] public ulong SectorHash;
+        [FieldOffset(8)] public IntPtr Pointer;
+        [FieldOffset(16)] public long FileOffset;
+        [FieldOffset(24)] public int ByteLength;
+        [FieldOffset(28)] public uint Version;
+        [FieldOffset(32)] public byte Flags;
+        [FieldOffset(33)] public byte Reserved0;
+        [FieldOffset(34)] public ushort Reserved1;
+        [FieldOffset(36)] private uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 24)]
+    [StructLayout(LayoutKind.Explicit, Size = 24)]
     public struct MacroDatabaseNativeCacheStats
     {
-        public long Bytes;
-        public int Entries;
-        public int Capacity;
-        public int Evictions;
-        private uint _pad0;
+        [FieldOffset(0)] public long Bytes;
+        [FieldOffset(8)] public int Entries;
+        [FieldOffset(12)] public int Capacity;
+        [FieldOffset(16)] public int Evictions;
+        [FieldOffset(20)] private uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 80)]
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
     public struct MacroDatabaseStats
     {
-        public long FileBytes;
-        public long DeadBytes;
-        public long CompactionTempBytes;
-        public long RootNodeOffset;
-        public long CacheBytes;
-        public int PendingDirtyPayloads;
-        public int LastCompactionStallMicroseconds;
-        public int CacheEntries;
-        public int PageFaults;
-        public int HydratedSectors;
-        public int EvictedSectors;
-        public int DirtyAppendCount;
-        public uint FrameIndex;
-        public byte IsOpen;
-        public byte Tier;
-        public byte CompactionState;
-        public byte CompactionFlags;
-        private uint _pad0;
+        [FieldOffset(0)] public long FileBytes;
+        [FieldOffset(8)] public long DeadBytes;
+        [FieldOffset(16)] public long CompactionTempBytes;
+        [FieldOffset(24)] public long RootNodeOffset;
+        [FieldOffset(32)] public long CacheBytes;
+        [FieldOffset(40)] public int PendingDirtyPayloads;
+        [FieldOffset(44)] public int LastCompactionStallMicroseconds;
+        [FieldOffset(48)] public int CacheEntries;
+        [FieldOffset(52)] public int PageFaults;
+        [FieldOffset(56)] public int HydratedSectors;
+        [FieldOffset(60)] public int EvictedSectors;
+        [FieldOffset(64)] public int DirtyAppendCount;
+        [FieldOffset(68)] public uint FrameIndex;
+        [FieldOffset(72)] public byte IsOpen;
+        [FieldOffset(73)] public byte Tier;
+        [FieldOffset(74)] public byte CompactionState;
+        [FieldOffset(75)] public byte CompactionFlags;
+        [FieldOffset(76)] private uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct MacroDatabaseCompactionSnapshot
     {
-        public long FileBytes;
-        public long DeadBytes;
-        public long ThresholdBytes;
-        public long TempBytes;
-        public int PendingDirtyPayloads;
-        public int LastSwapMicroseconds;
-        public uint FrameIndex;
-        public byte State;
-        public byte Flags;
-        public byte Tier;
-        public byte Reserved;
+        [FieldOffset(0)] public long FileBytes;
+        [FieldOffset(8)] public long DeadBytes;
+        [FieldOffset(16)] public long ThresholdBytes;
+        [FieldOffset(24)] public long TempBytes;
+        [FieldOffset(32)] public int PendingDirtyPayloads;
+        [FieldOffset(36)] public int LastSwapMicroseconds;
+        [FieldOffset(40)] public uint FrameIndex;
+        [FieldOffset(44)] public byte State;
+        [FieldOffset(45)] public byte Flags;
+        [FieldOffset(46)] public byte Tier;
+        [FieldOffset(47)] public byte Reserved;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct SectorHydratedSignal
     {
-        public ulong SectorHash;
-        public long FileOffset;
-        public int PayloadBytes;
-        public uint FrameIndex;
-        public byte SourceTier;
-        public byte Flags;
-        public ushort Reserved;
-        private uint _pad0;
+        [FieldOffset(0)] public ulong SectorHash;
+        [FieldOffset(8)] public long FileOffset;
+        [FieldOffset(16)] public int PayloadBytes;
+        [FieldOffset(20)] public uint FrameIndex;
+        [FieldOffset(24)] public byte SourceTier;
+        [FieldOffset(25)] public byte Flags;
+        [FieldOffset(26)] public ushort Reserved;
+        [FieldOffset(28)] private uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 72)]
+    [StructLayout(LayoutKind.Explicit, Size = 72)]
     public struct MacroDatabaseTelemetryEntry
     {
-        public ulong PlayerSectorHash;
-        public long RootNodeOffset;
-        public long CacheBytes;
-        public long DeadBytes;
-        public int CacheEntries;
-        public int PageFaults;
-        public int PageFaultsTotal;
-        public int HydratedSectors;
-        public int EvictedSectors;
-        public int LastCompactionStallMicroseconds;
-        public uint FrameIndex;
-        public byte Tier;
-        public byte CompactionState;
-        public byte Flags;
-        private byte _pad0;
-        public ushort Reserved;
-        private ushort _pad1;
-        private uint _pad2;
+        [FieldOffset(0)] public ulong PlayerSectorHash;
+        [FieldOffset(8)] public long RootNodeOffset;
+        [FieldOffset(16)] public long CacheBytes;
+        [FieldOffset(24)] public long DeadBytes;
+        [FieldOffset(32)] public int CacheEntries;
+        [FieldOffset(36)] public int PageFaults;
+        [FieldOffset(40)] public int PageFaultsTotal;
+        [FieldOffset(44)] public int HydratedSectors;
+        [FieldOffset(48)] public int EvictedSectors;
+        [FieldOffset(52)] public int LastCompactionStallMicroseconds;
+        [FieldOffset(56)] public uint FrameIndex;
+        [FieldOffset(60)] public byte Tier;
+        [FieldOffset(61)] public byte CompactionState;
+        [FieldOffset(62)] public byte Flags;
+        [FieldOffset(63)] private byte _pad0;
+        [FieldOffset(64)] public ushort Reserved;
+        [FieldOffset(66)] private ushort _pad1;
+        [FieldOffset(68)] private uint _pad2;
     }
 
     public interface IMacroDatabaseSignalSink

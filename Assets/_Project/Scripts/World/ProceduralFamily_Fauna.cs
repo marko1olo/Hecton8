@@ -36,7 +36,7 @@ namespace Hecton8.World
             public Vector4 phaseOffsetScale;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 48)]
+        [StructLayout(LayoutKind.Sequential, Size = 48)]
         public struct RuntimeDescriptor
         {
             public int FamilyHashId;

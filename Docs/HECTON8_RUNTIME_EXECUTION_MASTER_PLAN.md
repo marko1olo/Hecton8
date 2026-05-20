@@ -4,7 +4,7 @@ Date: 2026-05-14
 Status: PENDING VERIFICATION
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-17 R4 Interior Actuality Boundary
+## 2026-05-20 R45 Root/Architecture Actuality Boundary
 
 This document is active only where it agrees with:
 
@@ -14,9 +14,11 @@ This document is active only where it agrees with:
 - current source files
 - fresh verification logs and artifacts
 
-No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL/POWERSHELL_STATIC evidence. R44 remains the prior internal-residue/exact-route-field/proof-wording correction. R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. R42 remains the prior counter/route-boundary/proof-label correction. R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38 remains the prior source-counter drift and boundary correction; runtime proof remains absent.
 
+No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
+Current DOC_GLOBAL boundary (2026-05-20 R45): `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md` is the latest local static root/architecture R43/R44 residue, proof-artifact wording, source-counter, and atlas-boundary correction. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. Runtime proof remains absent.
+<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 Verification: `PENDING VERIFICATION`
 
 This is the working execution plan for getting HECTON-8 to a stable, optimized, verifiable runtime state.
@@ -26,8 +28,9 @@ Current-state boundary:
 - 2026-05-14 DOC_AUDIT override: read `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` before treating May 11 counters or build-artifact paths as current evidence.
 - The May 11 compile artifact paths cited below are absent from the current filesystem. They are stale report text, not current artifact-backed proof. Historical R43 external root `Hecton8*.csproj` no-restore CLI output is CLI evidence only and not current dirty-workspace proof unless rerun with artifact path, command, timestamp, environment, and output; it is not Unity runtime proof.
 - This stable plan is the runtime execution authority. Dated reports are evidence/counter snapshots only.
-- Read `Docs\README.md`, `.agents-skills\README.md`, `Docs\ARCHITECTURE\README.md`, current source, then DOC_GLOBAL R31 -> R30 -> R29 -> R28 -> R27 -> R26 -> R25 -> R24 -> R23 -> R22 -> subordinate correction reports before May 13 or older evidence.
+- Read `Docs\README.md`, `.agents-skills\README.md`, `Docs\ARCHITECTURE\README.md`, current source, then DOC_GLOBAL R45 -> R44 -> R43 -> R42 -> R41 -> R40 -> R39 -> R38 -> R37 -> R36 -> R35 -> R34 -> R33 -> R32 -> R31 -> R30 -> R29 -> R28 -> R27 -> R26 -> R25 -> R24 -> R23 -> R22 -> subordinate correction reports before May 13 or older evidence.
 - Read `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md`, `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_OPERATING_MODEL.md`, `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_SETUP_PLAYBOOK.md`, `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_ROUTE_CARD_TEMPLATE.md`, `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md`, and `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_MIGRATION_LEDGER.md` before adding or modifying `GlobalRegistry`, `SignalBus<T>`, `GlobalSignals`, `HectonEventBus`, or `GlobalDataVault` routes.
+- Read `Docs/ARCHITECTURE/FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md` before expanding runtime scope. Runtime work must serve the first-20-minutes route or remove a route blocker until that route is proven.
 - This plan is still directionally valid, but it is not a runtime verification report.
 - May 11 report text claimed current compile evidence at `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt`, but DOC_AUDIT did not find that summary or raw log. Treat it as stale report text.
 - Current Unity MCP, Unity Console, Play Mode, profiler, GCMonitor, player build, import, scene wiring, visual quality, zero-GC, frame time, and memory retention remain `PENDING VERIFICATION`.
@@ -54,7 +57,7 @@ No step is considered complete without logs, profiler captures, or Unity verific
 - the current Entities backend is not a proven optimization path.
 - the current Entities backend does not own live placements.
 - `ReservedLiveOwnership` is intentionally gated back to `Shadow`.
-- `SceneBootstrap` is still a large owner; only the read-model extraction has started.
+- No first-party `SceneBootstrap.cs` exists in the current source scan. Scene activation/readiness ownership is in `Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs`, guarded by `Assets/_Project/Scripts/Bootstrap/SceneGuard.cs`; scene-authored LOD registration is in `Assets/_Project/Scripts/World/WorldLODSceneBootstrap.cs`.
 - `HectonFluidEngine`, `ProximityColliderSystem`, `FaunaDirector`, and `HectonVoxelEngine` remain hybrid systems, not valid first-wave ECS migrations.
 
 ### 1.2 Hard findings that must be carried into all future work
@@ -84,6 +87,7 @@ No step is considered complete without logs, profiler captures, or Unity verific
 - Do not add or change a global route without a route card from `GLOBAL_AUTHORITY_ROUTE_CARD_TEMPLATE.md`.
 - Do not merge a new or changed global route without a `GREEN` review disposition from `GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md`.
 - Do not treat H-Phi increases as runtime readiness or as permission to add global references.
+- Do not expand horizontal systems unless the work serves `FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md` or removes a blocker for that route.
 - Any single runtime system cost above `0.1ms` is suspicious until profiler proof and load-shed behavior exist.
 - Do not create a second scatter runtime owner.
 - Do not create a separate coral/rock/ruin runtime stack.
@@ -99,6 +103,7 @@ No step is considered complete without logs, profiler captures, or Unity verific
 
 Reach a runtime state where:
 
+- the first 20 minutes are playable and measurable end to end
 - scatter is stable, maintainable, and measurably optimized
 - bootstrap and world systems remain deterministic
 - no second runtime owner exists
@@ -382,7 +387,7 @@ Goal: make startup, scene handoff, and runtime readiness deterministic and audit
 
 Tasks:
 
-- keep `SceneBootstrap` as owner for now
+- keep `GameBootstrapper` / `SceneGuard` as scene activation and direct-entry owners for now; `WorldLODSceneBootstrap` is only the LOD scene-registration bridge
 - expand use of `BootstrapState` only as a read-model, not as a hidden second owner
 - verify bootstrap scatter prewarm path in real runtime
 - verify world-ready and player-ready ordering
@@ -432,7 +437,7 @@ Owner split:
 
 ## Phase 8 - Final Runtime Hardening
 
-Goal: move from "refactor in progress" to "production-ready and measurable."
+Goal: move from "refactor in progress" to "runtime-verifiable and measurable."
 
 Tasks:
 

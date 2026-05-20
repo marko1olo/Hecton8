@@ -159,7 +159,7 @@ namespace Hecton8.Power.Generators
             if (_slot != s_leaderSlot)
                 return;
 
-            CompleteDecayJobIfReady(false);
+            TryFinalizeDecayJobNoWait();
         }
 
         public void PopulateSaveData(SaveData data)
@@ -167,7 +167,7 @@ namespace Hecton8.Power.Generators
             if (data == null || _slot != s_leaderSlot)
                 return;
 
-            CompleteDecayJobIfReady(true);
+            CompleteDecayJobForTeardown();
             EnsureRtgSaveArrays(data);
             if (!TryResolveRtgFlags(out NativeArray<byte> rtgFlags))
                 return;
@@ -364,7 +364,7 @@ namespace Hecton8.Power.Generators
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            CompleteDecayJobIfReady(true);
+            CompleteDecayJobForTeardown();
             DisposeNativeBuffers();
             s_instances = null;
             s_decayJobHandle = default;
@@ -550,7 +550,7 @@ namespace Hecton8.Power.Generators
             if (_slot < 0)
                 return;
 
-            CompleteDecayJobIfReady(true);
+            CompleteDecayJobForTeardown();
             int slot = _slot;
             if (!TryResolveRtgBuffers(
                     out NativeArray<float> startTimes,
@@ -666,7 +666,7 @@ namespace Hecton8.Power.Generators
 
         private void TryRunDecayCadence(float cadenceSeconds)
         {
-            CompleteDecayJobIfReady(false);
+            TryFinalizeDecayJobNoWait();
             if (s_decayJobPending || s_activeCount <= 0)
                 return;
 
@@ -705,15 +705,33 @@ namespace Hecton8.Power.Generators
             s_decayJobPending = true;
         }
 
-        private static void CompleteDecayJobIfReady(bool force)
+        private static void TryFinalizeDecayJobNoWait()
         {
             if (!s_decayJobPending)
                 return;
 
-            if (!force && !s_decayJobHandle.IsCompleted)
+            if (!s_decayJobHandle.IsCompleted)
                 return;
 
-            s_decayJobHandle.Complete();
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref s_decayJobHandle))
+                return;
+
+            FinishDecayJobCompletion();
+        }
+
+        private static void CompleteDecayJobForTeardown()
+        {
+            if (!s_decayJobPending)
+                return;
+
+            if (!DispatcherJobFence.TryComplete(ref s_decayJobHandle, forceComplete: true))
+                return;
+
+            FinishDecayJobCompletion();
+        }
+
+        private static void FinishDecayJobCompletion()
+        {
             s_decayJobPending = false;
             ApplyDecayResults();
         }
@@ -1095,16 +1113,18 @@ namespace Hecton8.Power.Generators
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 23)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct RtgTelemetryEntry
         {
-            public uint Frame;
-            public uint SourceId;
-            public float OutputWatts;
-            public float NormalizedOutput01;
-            public float AverageHealth01;
-            public ushort ActiveRtgs;
-            public byte Flags;
+            [FieldOffset(0)] public uint Frame;
+            [FieldOffset(4)] public uint SourceId;
+            [FieldOffset(8)] public float OutputWatts;
+            [FieldOffset(12)] public float NormalizedOutput01;
+            [FieldOffset(16)] public float AverageHealth01;
+            [FieldOffset(20)] public ushort ActiveRtgs;
+            [FieldOffset(22)] public byte Flags;
+            [FieldOffset(23)] private byte _pad0;
+            [FieldOffset(24)] private ulong _pad1;
         }
     }
 

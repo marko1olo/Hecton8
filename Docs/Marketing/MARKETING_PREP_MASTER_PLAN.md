@@ -1,4 +1,4 @@
-﻿# HECTON-8 Low-Budget Marketing Preparation Plan
+# HECTON-8 Low-Budget Marketing Preparation Plan
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
 ## R4 Interior Actuality Boundary
@@ -10,13 +10,15 @@ No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler,
 
 Status: pre-screenshot planning
 Budget assumption: a few thousand USD
-Public feature stance: single-player-first, no co-op promise
+Public feature stance: single-player-first / proof-first public scope
 
 ## R19 KPI / Forecast Boundary
 
 All KPI numbers in this plan are internal planning targets and kill-criteria placeholders, not market forecasts, investor language, creator promises, or proof of expected performance. Source state is `INTERNAL_ASSUMPTION / PENDING_BENCHMARK_SOURCE` until real Steam page, UTM, outreach, demo, and wishlist telemetry exists.
 
 Do not publish the targets externally. Replace them with measured baselines after the first public/private campaign data exists.
+
+Gameplay, pressure, route-risk, threat, salvage, base-failure, or first-public agency proof cannot be reported from this plan unless AB-009/KPI stores `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`. Creator, press, community, access, or feedback replies also need a route-specific class field and `reply_consent_provenance` before they become KPI signal.
 
 ## Brutal Premise
 
@@ -39,7 +41,7 @@ Paid ads before proof assets are a budget fire.
 Do now:
 
 1. Lock public positioning.
-2. Build creator and press lead database.
+2. Maintain creator and press lead databases only where asset/route gates show a real gap.
 3. Build Steam page copy variants.
 4. Build pitch templates.
 5. Build post templates.
@@ -58,6 +60,8 @@ Current state:
 - CRM-100 staged queue has 0 raw rows;
 - 13 planned asset slots exist;
 - no real screenshot pack exists;
+- no AB-009/KPI agency-decision proof exists;
+- no filled `send_route_class` / `reply_consent_provenance` fields exist;
 - no Steam page, demo, launch, public account, public post, UTM link, or paid spend exists.
 
 Therefore the next useful work is not more broad lead volume. Use agent time on:
@@ -65,14 +69,17 @@ Therefore the next useful work is not more broad lead volume. Use agent time on:
 1. planned capture readiness;
 2. asset metadata completion after capture;
 3. QA scoring and reject codes;
-4. Promise Lint for any copy that might become public;
-5. source/risk corrections that unblock a concrete gate.
+4. AB-009/KPI agency-decision proof for any gameplay/pressure/route-risk claim;
+5. route-specific class and `reply_consent_provenance` custody for replies, access, creator, press, and community signal;
+6. Promise Lint for any copy that might become public;
+7. source/risk corrections that unblock a concrete gate.
 
 Resume large lead expansion only if:
 
 - the user explicitly asks for a new source-backed lead sprint;
 - first assets prove a segment gap in the current CRM;
-- Wave A outreach cannot be assembled from current verified/needs-asset rows.
+- Wave A outreach cannot be assembled from current verified/needs-asset rows;
+- route-specific class / `reply_consent_provenance` fields and AB-009/KPI requirements for the intended claim are already defined.
 
 Do not do now:
 
@@ -114,8 +121,8 @@ Actions:
 KPIs:
 
 - 20 cold readers can describe the game in one sentence after reading the short description.
-- At least 100 creator leads have verified platform URLs.
-- At least 30 leads are high-fit survival/horror/indie creators, not generic gaming accounts.
+- CRM-100 stays non-raw and only expands when asset/route evidence proves a gap.
+- At least 30 usable rows are high-fit survival/horror/indie creators with route class and asset fit, not generic gaming accounts.
 
 Kill criteria:
 
@@ -140,9 +147,10 @@ Minimum screenshot set:
 
 Asset rule:
 
-- One image, one hook, one Steam link.
+- One image, one hook, one CTA route: approved Steam CTA only after Official CTA Link Activation Gate V0; otherwise no-link feedback.
 - No collage posts unless comparing visual identity.
 - No explanation-heavy screenshots.
+- Any screenshot used as gameplay/pressure/route-risk agency proof needs AB-009/KPI decision-read evidence before creator, Steam, press, spend, or public scaling.
 
 KPIs:
 
@@ -151,6 +159,7 @@ KPIs:
 - Minimum acceptable: 5% after copy iteration.
 - Social save/share rate: >1.5%.
 - Creator reply rate from targeted outreach: >5%.
+- Agency decision read: AB-009/KPI field exists before reporting pressure/route-risk proof.
 
 Kill criteria:
 
@@ -167,7 +176,7 @@ Clip structure:
 - 0-2s: failure/threat/hook.
 - 3-12s: player action.
 - 13-18s: consequence.
-- 19-20s: title + Steam wishlist CTA.
+- 19-20s: title + approved Steam CTA after `Analytics/MEASUREMENT_AND_UTM_PLAN.md` Official CTA Link Activation Gate V0 passes; otherwise use a no-link feedback end card.
 
 Reusable clip formats:
 
@@ -186,6 +195,7 @@ KPIs:
 - Completion on 20s clips: >40%.
 - Wishlist clicks per 1,000 views: >3.
 - Comments name at least one unique feature beyond "underwater".
+- For pressure/route-risk clips, cold viewers name the player decision in `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`.
 
 Kill criteria:
 
@@ -254,11 +264,12 @@ Objective: sell current reality, not future promises.
 Rules:
 
 - page must describe what exists now;
-- no co-op promise;
-- no performance promise without proof;
+- no unsupported multiplayer-scope promise;
+- performance promises require measured proof;
 - no roadmap feature as purchase reason;
 - use keys in small tagged batches;
-- require sponsored/free-key disclosure where applicable.
+- require sponsored/free-key disclosure where applicable;
+- keep route-specific class and `reply_consent_provenance` fields filled before replies are counted outside their original route.
 
 ## Budget Under 2k USD
 
@@ -280,7 +291,7 @@ Rules:
 | Capsule/key art/press visuals | 900 | Largest ROI before ads. |
 | Trailer + 10 vertical cuts | 1200 | Gives multiple tests from one capture session. |
 | Press kit/site/localized one-pager | 600 | Supports creators and press. |
-| Creator outreach/admin/database | 800 | Manual verification and segmentation. |
+| Creator outreach/admin/database | 800 | Manual verification, route-specific class / `reply_consent_provenance` custody, and segmentation. |
 | Demo QA/capture support | 700 | Prevents public slice from embarrassing the project. |
 | Reserve | 700 | Fixes what metrics expose. |
 
@@ -309,3 +320,4 @@ Do not let agents:
 - invent metrics;
 - contact creators without human review;
 - decide paid spend.
+- count replies as KPI proof without route-specific class, `consent_provenance` / `reply_consent_provenance`, and owner-local evidence fields.

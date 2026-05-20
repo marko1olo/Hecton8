@@ -16,11 +16,11 @@ This document is active only where it agrees with:
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
 
-R32 architecture R4/proof-wording correction is the latest artifact-backed local static DOC_GLOBAL boundary for architecture/root documentation. R31 remains the prior current-boundary propagation layer, R30 remains the prior internal-currentness layer, R29 remains the prior stale-gate/global-authority layer, R28 remains the prior interior-boundary layer, and R27 remains the latest source-counter/index snapshot until rerun.
+Current DOC_GLOBAL boundary (2026-05-20 R45): `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md` is present and is the latest local static root/architecture R43/R44 residue, proof-artifact wording, and source-counter correction. R44 remains the prior internal-residue/exact-route-field/proof-wording correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R44_ROOT_ARCHITECTURE_INTERNAL_RESIDUE_EXACT_ROUTE_FIELDS_LOCAL.md`; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R43_ROOT_ARCHITECTURE_ROUTE_CARD_AND_COUNTER_RESIDUE_LOCAL.md`; R42 remains the prior counter/route-boundary/proof-label correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R42_ROOT_ARCHITECTURE_COUNTER_AND_ROUTE_BOUNDARY_LOCAL.md`; R41 remains the prior global-authority/internal-residue correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R41_ROOT_ARCHITECTURE_GLOBAL_AUTHORITY_INTERNAL_RESIDUE_LOCAL.md`; R40 remains the prior R38-residue/source-counter correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R40_ROOT_ARCHITECTURE_R38_RESIDUE_AND_COUNTER_REFRESH_LOCAL.md`; R39 remains the prior authority-counter/proof-wording correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R39_ROOT_ARCHITECTURE_AUTHORITY_COUNTER_AND_PROOF_WORDING_LOCAL.md`; R38 remains the prior source-counter drift and boundary correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R38_ROOT_ARCHITECTURE_SOURCE_COUNTER_DRIFT_AND_BOUNDARY_LOCAL.md`; R37 remains the prior artifact-path/proof-wording/source-counter correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R37_ROOT_ARCHITECTURE_ARTIFACT_PATHS_AND_COUNTERS_LOCAL.md`; R36 remains the prior authority-spine/domain-map correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R36_ROOT_ARCHITECTURE_AUTHORITY_SPINE_LOCAL.md`; R35 remains the prior R4/counter-residue correction at `Docs/Reports/2026-05-19_DOCUMENTATION_R35_ROOT_ARCHITECTURE_R4_AND_COUNTER_RESIDUE_LOCAL.md`; R34 remains the older source-counter and physical-line refresh, superseded by R37/R38/R39/R40/R41/R42/R43/R44/R45 where exact counts, route-card fields, AtlasCheck status, or proof wording differ. R33 remains the prior R32-residue/source-anchor correction; R32 remains the prior R4/proof-wording correction; R31 remains the prior current-boundary propagation layer; R30 remains the prior internal-currentness layer; R29 remains the prior stale-gate/global-authority layer; R28 remains the prior interior-boundary layer; and R27 is historical source-counter/index evidence superseded by R34/R37/R38/R39/R40/R41/R42/R43/R44/R45.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 Evidence Class: STATIC_SOURCE
-Search keywords: H-Phi; HPhi; hphi; ash-fi; ash_phi; ASh-Fi; HФ; Аш-Фи; integration-metric; architecture-integration; token-H-Phi-ROI; compute-H-Phi.
+Search keywords: H-Phi; HPhi; hphi; ash-fi; ash_phi; ASh-Fi; H?; ??-??; integration-metric; architecture-integration; token-H-Phi-ROI; compute-H-Phi.
 
 ## Purpose
 
@@ -284,14 +284,14 @@ with exit summary
 Result: `EXIT=0` on a full source summary JSON budget run at
 `2026-05-15 22:46:22 +04:00`.
 
-Archived 2026-05-15 score floors passed at capture time; rerun H-Phi on the active R27 workspace before treating these as current:
+Archived 2026-05-15 score floors passed at capture time; rerun H-Phi on the active workspace before treating these as current:
 
 - `DataSovereignty=0.021306032`
 - `MemoryAlignment=0.506309148`
 - `RuntimeHPhiRisk=0.000636091`
 - `RiskIntegration=0.058965935`
 
-Archived 2026-05-15 static counters passed at capture time; these are not current compile, Unity, profiler, GC, player-build, or R27 source-counter proof:
+Archived 2026-05-15 static counters passed at capture time; these are not current compile, Unity, profiler, GC, player-build, or current source-counter proof:
 
 - `GlobalRegistrySurface=5060/5060`
 - `GetComponentCalls=321/321`
@@ -324,9 +324,11 @@ profiler proof, GC proof, player-build proof, or visual quality proof.
 
 Prior scalar HFI orientation comes from `../Archive/Batch009/AgentLogs/HPhi_SHINOBU_02_current2.json`
 and is summarized by `../Reports/2026-05-19_HFI_AUDIT_H_PHI_AND_PROJECT_RISK.md`.
-Later SHINOBU_02 audit/trend artifacts reached current21 for SignalCritical/Full
-audit counts, but Current22/23 source cleanup still lacks a fresh scalar H-Phi
-rerun. This is static-source/history evidence only. It is not compile, Unity
+Archived SHINOBU_02 artifacts reached current36 for SignalCritical audit counts and
+current21 for Full audit/trend counts in their capture sequence. Current37 proved only that a stale Core include
+shield works before the Core compile hits external bridge errors; Current38 removed the Core-owned
+runtime `Pack = 1` weather/ocean DTOs in source. Current22 through Current38 cleanup still lacks a
+fresh scalar H-Phi rerun, and R39/R40 did not create a guarded H-Phi trend artifact. This is static-source/history evidence only. It is not a green compile, Unity
 import, Play Mode, profiler, GCMonitor, player-build, scene-wiring, save/load,
 or visual proof.
 
@@ -351,12 +353,12 @@ before treating H-Phi movement as architectural acceptance.
 
 Evidence class: `STATIC_SOURCE_HISTORY` / `STATIC_SOURCE_CLASSIFIED`.
 
-- `../AgentLogs/HPhiTrend_SHINOBU_02_current21.md` scanned `131` artifacts and `393` metric series with signal-audit inclusion. It is history analysis only, not a fresh H-Phi run.
-- Latest artifact-backed SHINOBU_02 SignalCritical audit is `../AgentLogs/SignalBusContractAuditCli_SHINOBU_02_signalcritical_current21.md`: files `7`, shaders `62`, errors `0`, warnings `0`, infos `10`, runtime signal `Pack = 1` layouts `0`, and transitive runtime signal `Pack = 1` field hits `0`.
-- Latest artifact-backed SHINOBU_02 Full audit is `../AgentLogs/SignalBusContractAuditCli_SHINOBU_02_full_current21.md`: files `1761`, shaders `62`, errors `0`, warnings `432`, infos `454`, confirmed/probable errors at confidence `>= 90` `0`, and project-wide `Pack = 1` layouts `230`.
+- `../Archive/Batch010/AgentLogs/HPhiTrend_SHINOBU_02_current21.md` scanned `131` artifacts and `393` metric series with signal-audit inclusion. It is archived history analysis only, not a fresh H-Phi run. The active `Docs/AgentLogs/...` copy is absent after Batch010 archival.
+- Archived SHINOBU_02 SignalCritical audit artifact: `../Archive/Batch010/AgentLogs/SignalBusContractAuditCli_SHINOBU_02_signalcritical_current36.md` reported files `8`, shaders `66`, errors `0`, warnings `0`, infos `13`, runtime signal `Pack = 1` layouts `0`, transitive runtime signal `Pack = 1` field hits `0`, and managed event surface hits `0`. It is historical static-source evidence only; do not call it latest/current unless rerun with artifact path, command/tool, timestamp, environment, and output.
+- Archived SHINOBU_02 Full audit artifact: `../Archive/Batch010/AgentLogs/SignalBusContractAuditCli_SHINOBU_02_full_current21.md` reported files `1761`, shaders `62`, errors `0`, warnings `432`, infos `454`, confirmed/probable errors at confidence `>= 90` `0`, and project-wide `Pack = 1` layouts `230`. It is historical static-source evidence only; do not call it latest/current unless rerun with artifact path, command/tool, timestamp, environment, and output.
 - The same current21 trend still reports duplicate signal-name debt at `10` against the hard `MaxDuplicateSignalNames=0` budget. Do not mistake the clean SignalCritical lane for full-project duplicate closeout.
-- SHINOBU_02 Current22 source inspection reduced Core exact `Pack = 1` rows from `9` to `3`; Current22 is not yet an H-Phi/audit trend point because CPU guard blocked the rerun.
-- Do not tighten or report current H-Phi budgets from Current22 source-only movement until the guarded audit/trend scripts run and produce fresh artifacts.
+- Current22 through Current38 were source/doc-only historical movements: Core exact `Pack = 1` rows were reduced by source edits, but R39/R40 require fresh guarded audit/trend artifacts before any current counter is reported. Current36 adds a scoped SignalCritical audit artifact, and Current37 records the guarded Core compile bridge failure after the stale include shield. None of Current22-Current38 is an H-Phi/Full-audit trend point because guarded reruns were not executed.
+- Do not tighten or report current H-Phi budgets from historical Current22-Current38 source/doc-only movement until the guarded audit/trend scripts run and produce fresh artifacts.
 
 ## 2026-05-15 DOC_HONEST_ANALYSIS R3 Core Graph Prune
 
@@ -523,8 +525,10 @@ Tools/Architecture/HectonPhiAudit.ps1 -Summary -Json -MaxAupPrecisionRisk 0 -Max
 
 Source-count and score-floor gates require a full source scan. `-CoreGraphOnly`
 rejects them by design so graph-only status cannot masquerade as full H-Phi
-proof. The current floors are deliberately just below the latest artifact-backed
-static values in the cited report context; domain owners should lower debt and then tighten these floors.
+proof. The floors above are archived artifact-backed budget values from the
+cited H-Phi report context; do not treat them as current R38/R39/R40 workspace
+budgets until H-Phi is rerun on the active checkout. Domain owners should lower
+debt and then tighten these floors.
 Managed-runtime counters are static risk surfaces, not profiler/GC proof.
 `PrimaryManagedRuntimeRisk` excludes editor, instrumentation, persistence, and
 UI role buckets so smoke/diagnostic/save/UI debt remains visible without being

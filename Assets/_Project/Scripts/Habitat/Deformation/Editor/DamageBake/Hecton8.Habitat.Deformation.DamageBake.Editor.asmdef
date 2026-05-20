@@ -1,0 +1,22 @@
+{
+    "name": "Hecton8.Habitat.Deformation.DamageBake.Editor",
+    "rootNamespace": "Hecton8.Habitat.Deformation.Editor",
+    "references": [
+        "Hecton8.Habitat.Deformation.Contracts",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

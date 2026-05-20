@@ -1,7 +1,7 @@
 # HECTON-8 Post Bank And Hook Library
 
-Status: pre-asset copy bank / do not post without real screenshot, clip, or Steam link
-Public stance: single-player-first / no co-op promise
+Status: pre-asset copy bank / do not post without `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED`; public links require `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`
+Public stance: single-player-first scope / proof-first post copy
 Runtime impact: none
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
@@ -20,6 +20,8 @@ No post readiness, audience response, wishlist conversion, runtime feature proof
 - Do not claim performance, AI, realism, or feature scope without proof.
 - Keep one idea per post.
 - If the comments say "looks like Subnautica", do not argue. Ask what visual cue caused that read.
+- Do not publish a draft from this bank unless the exact post has `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED`.
+- When a draft is posted, log route class before counting it: `no_link_feedback` for critique/no-link posts, `public_cta` only after CTA activation, and `private_access` only through access logs. Comment signal from public posts is `consent_provenance = public_comment`; do not import it into newsletter, creator CRM, press, or playtest buckets.
 
 ## Primary Hook Families
 
@@ -57,9 +59,9 @@ No post readiness, audience response, wishlist conversion, runtime feature proof
 20. The descent always starts clean.
 21. A good salvage route should look like a bad idea.
 22. The ocean is the map border and the threat.
-23. This is not a cozy base. This is a pressure argument.
+23. This base reads as a pressure argument.
 24. Lights, gauges, seals, oxygen. Then the unknown.
-25. The first rule is not "explore". It is "come back".
+25. First rule: come back.
 26. The deeper you build, the less decorative anything should look.
 27. If the room floods, the screenshot should make sense.
 28. The machine should look like it has survived previous players.
@@ -142,7 +144,7 @@ Use these only in communities that permit developer posts or critique requests.
 4. Salvage Routes, Bad Visibility, And Return Risk
 5. Machinery Is Not Decoration
 6. Testing The First Descent
-7. No Co-op Promise: Why HECTON-8 Is Single-Player-First
+7. Proof-First Scope: Why HECTON-8 Is Single-Player-First
 8. The Seed Ship As A Systemic Threat
 9. What We Need From Demo Feedback
 10. Visual Direction: Salt, Metal, Silt, And Black Water
@@ -161,7 +163,7 @@ Use these only in communities that permit developer posts or critique requests.
 5. If the clip needs a paragraph, the clip failed.
 6. A floodlight is not safety. It is evidence.
 7. We are building toward pressure, salvage, and black-water survival.
-8. No clone-war pitch. No co-op promise. Just depth, machines, and consequences.
+8. Proof-first scope. No competitor-war pitch. Just depth, machines, and consequences.
 9. A good warning should make the player blame themselves.
 10. The safest room in the game should still feel borrowed from the ocean.
 11. NASA-punk should look like it has been repaired badly at 3 a.m.
@@ -181,16 +183,18 @@ Use only after official handles are owner-controlled. These posts are optional a
 
 Do not post more than 1-2 of these per week before real screenshots.
 
+Reporting rule: each row below is `route_class = no_link_feedback` unless it contains an approved public CTA after `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`. Replies can be counted only as `consent_provenance = public_comment`; they are not newsletter, playtest, press, or creator consent.
+
 | ID | Platform | Copy | Use when | Kill if |
 |---|---|---|---|---|
-| PRE-001 | X/Bluesky | `HECTON-8 is being built around one constraint: underwater survival should feel like pressure, machinery, salvage, and black water, not a clean aquarium.` | Account needs first public identity line. | People ask for screenshots and none are close. |
-| PRE-002 | X/Bluesky | `No co-op promise. No "killer" pitch. We are keeping HECTON-8 single-player-first until the build proves what it can actually do.` | Scope boundary needs to be visible. | Replies become mostly feature begging. |
+| PRE-001 | X/Bluesky | `HECTON-8 is being built around one constraint: underwater survival should feel like pressure, machinery, salvage, and black water.` | Account needs first public identity line. | People ask for screenshots and none are close. |
+| PRE-002 | X/Bluesky | `Single-player-first, proof-first. We are keeping HECTON-8 inside what the build can actually show.` | Scope boundary needs to be visible. | Replies become mostly feature begging. |
 | PRE-003 | X/Bluesky | `A good screenshot should show what the player can do. If a deep-sea frame needs a paragraph, it is not marketing-ready.` | Before capture work begins. | It sounds like an excuse for no assets. |
-| PRE-004 | X/Bluesky | `The base should read like a pressure machine with rooms inside, not a cozy underwater apartment.` | Base direction needs a public thesis. | No base visual exists within the next asset beat. |
+| PRE-004 | X/Bluesky | `The base should read like a pressure machine with rooms, seals, gauges, and failure paths inside.` | Base direction needs a public thesis. | No base visual exists within the next asset beat. |
 | PRE-005 | X/Bluesky | `Performance claims will come with build, hardware, settings, and measurement context. Until then, no empty FPS promises.` | Performance questions appear. | It invites performance debate before footage. |
 | PRE-006 | X/Bluesky | `HECTON-8 visual target: salt, oil, scratched glass, warning lights, hard metal, and water that always feels heavier than the player.` | Visual identity needs a text-only cue. | It reads as concept-only art direction for too long. |
 | PRE-007 | YouTube Community | `This channel is reserved for HECTON-8 clips, trailers, and dev updates. First gameplay posts will wait until the footage can show pressure, machinery, salvage, and black-water route risk honestly.` | YouTube handle exists but no trailer yet. | YouTube account has no visual identity/avatar. |
-| PRE-008 | Reddit profile only | `Developer account for HECTON-8. Posts will disclose dev status. No fake discovery posts, no co-op promise, no performance claims without receipts.` | Reddit account reserved. | Do not post to subreddits from this yet. |
+| PRE-008 | Reddit profile only | `Developer account for HECTON-8. Posts will disclose dev status. No fake discovery posts; scope and performance details require proof/receipts.` | Reddit account reserved. | Do not post to subreddits from this yet. |
 | PRE-009 | Bluesky | `Deep-sea survival works when the player trusts the machine more than the ocean, and then the machine starts losing.` | Need one atmospheric thesis. | People ask "where game?" repeatedly. |
 | PRE-010 | X/Bluesky | `The first public asset pack has a simple pass/fail: can a stranger identify pressure, machinery, a player verb, and the next risk in five seconds?` | Before first screenshot drop. | First asset pack is not imminent. |
 
@@ -198,7 +202,7 @@ Do not post more than 1-2 of these per week before real screenshots.
 
 - Never pretend assets are ready.
 - Never ask for wishlists.
-- Never compare directly to Subnautica in the post body.
+- Never compare directly to a competitor in the post body.
 - Never post lore without showing or promising a gameplay route.
 - Stop text-only posts after two weeks if no screenshots are near.
 - Every text-only post must make a future asset easier to judge.
@@ -228,7 +232,7 @@ Do not post more than 1-2 of these per week before real screenshots.
 
 ## Discord/Community Replies
 
-Use when people compare the game to Subnautica:
+Use when people compare the game to another underwater survival game:
 
 "Fair comparison by setting, but we are aiming at a different feeling: single-player industrial pressure, machinery, salvage, and black-water dread. If the screenshot reads too close, I want to know which cue caused that."
 
@@ -238,11 +242,11 @@ Use when people ask for co-op:
 
 Use when people ask for performance:
 
-"We are not making public performance claims until we can show the build, hardware, settings, and measurement method."
+"Performance language waits for build, hardware, settings, and measurement context."
 
 Use when people say it is too dark:
 
-"Useful. The target is readable darkness, not black screenshots. Which object or threat did you lose first?"
+"Useful. The target is readable darkness with objects and threats you can parse. Which object or threat did you lose first?"
 
 Use when people say the base looks too clean:
 
@@ -287,10 +291,10 @@ Steam/news body:
 ```text
 These are the first in-game screenshots for HECTON-8.
 
-The target is single-player deep-sea survival where pressure, salvage, machinery, and black water are the first read. We are not showing co-op, not making performance claims, and not asking the screenshots to carry features the build does not prove yet.
+The target is single-player deep-sea survival where pressure, salvage, machinery, and black water are the first read. Public scope stays inside current build proof, performance language waits for measured evidence, and the screenshots only carry features the build can show.
 
 What we are checking now:
-- does the base read as a pressure machine, not a cozy room;
+- does the base read as a pressure machine with a survival function;
 - does the player action read without a paragraph;
 - does the frame feel industrial instead of clean sci-fi;
 - does the darkness stay readable.
@@ -303,7 +307,7 @@ Title: Does this read as industrial underwater survival, or just generic sci-fi?
 
 I am working on HECTON-8, a single-player deep-sea survival game about pressure, salvage, machinery, and black water.
 
-I am not asking for wishlists here. I need the harsher read: in the first 5 seconds, do these screenshots communicate a playable survival loop, or are they just dark mood shots?
+This is feedback-only: in the first 5 seconds, do these screenshots communicate a playable survival loop, or are they just dark mood shots?
 
 Specific question: which frame best sells "pressure-rated machinery"?
 ```
@@ -314,7 +318,7 @@ X/Bluesky:
 First in-game HECTON-8 screenshots.
 
 Goal: pressure, salvage, machinery, black water.
-No co-op promise. No performance claim yet. Just checking whether the visual identity reads in one glance.
+Single-player-first scope. No performance claim yet. Just checking whether the visual identity reads in one glance.
 ```
 
 Creator warmup note:
@@ -325,14 +329,14 @@ I am not sending builds yet. I am checking whether the first HECTON-8 screenshot
 
 Kill if:
 
-- comments mostly say "Subnautica clone";
+- comments mostly say "derivative underwater survival";
 - viewers cannot identify the player verb;
 - dark frames are called unreadable more than atmospheric;
-- people assume co-op/multiplayer.
+- people assume multiplayer scope.
 
 ### Bundle B - Steam Page Live
 
-Required asset: public Steam Coming Soon page, capsule, screenshot order, UTM tags, no co-op language, no fake performance claims.
+Required asset/gate: public Steam Coming Soon page through `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED`, capsule, screenshot order, UTM tags, Official CTA Link Activation Gate V0 for every public link, `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED` for each post, no multiplayer-scope language, no fake performance claims.
 
 Steam/news title:
 
@@ -365,12 +369,12 @@ Hi [Name],
 
 I am reaching out because your audience has shown clear interest in [creator-specific survival/horror/base-building fit].
 
-HECTON-8 is a single-player deep-sea survival game about pressure, salvage, machinery, and keeping a base alive below the light. The Steam page is now live, but I am not pretending this is a finished build and I am not selling a co-op promise.
+HECTON-8 is a single-player deep-sea survival game about pressure, salvage, machinery, and keeping a base alive below the light. The Steam page is now live, but I am not pretending this is a finished build or selling scope the current build cannot prove.
 
 Best fit for your channel: [one specific angle].
 
-Steam: [URL]
-Screenshots/presskit: [URL]
+Steam: [approved Steam URL after CTA activation packet]
+Screenshots/presskit: [approved presskit URL after CTA activation packet]
 
 If the angle fits, I can send a short demo/preview build later when the route is stable.
 ```
@@ -397,7 +401,7 @@ Public post:
 ```text
 We are preparing a small private HECTON-8 playtest.
 
-This is not a launch, not a public demo, and not a co-op test. We need survival players who can give blunt feedback on first-route clarity, pressure/machinery readability, base systems, and performance/readability on real PCs.
+This is not a launch, not a public demo, and not a multiplayer/networking test. We need survival players who can give blunt feedback on first-route clarity, pressure/machinery readability, base systems, and performance/readability on real PCs.
 
 If selected, expect unfinished systems and a short feedback form.
 ```
@@ -416,7 +420,7 @@ I am looking for a small number of survival/base-building/horror players for a p
 
 Reject applicants who:
 
-- expect co-op;
+- expect multiplayer scope;
 - want streaming rights before public permission;
 - refuse feedback forms;
 - cannot provide hardware specs;
@@ -428,22 +432,24 @@ Status: draft-ready / asset-gated / do not post without matching real capture.
 
 Use this table as the first operating queue once screenshots or clips exist. Every row must be linked to an actual file in the asset library before publication.
 
-Creator utility rule: any row used for creator warmup or micro-feedback must also pass `QA/MARKETING_ASSET_QA_CHECKLIST.md` creator utility 3/4+, name the matching CRM rows from `CreatorOutreach/MASS_LEAD_VERIFICATION_AND_PITCH_WORKFLOW.md`, and preserve the normal screenshot/clip QA threshold. Public social posts can run from visual QA alone; creator sends cannot.
+Asset gate rule: any public post must have `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED`, pass normal screenshot/clip QA plus asset metadata claim checks (`multiplayer_scope_check`, `performance_claim_check`, `feature_truth_check`), and pass the relevant `public_cta_permission_gate` for its CTA. Any row using private pain-proof priority must have `pain_freshness_source` and `pain_freshness_checked_at` filled; any row used for creator warmup or micro-feedback must also pass `QA/MARKETING_ASSET_QA_CHECKLIST.md` creator utility 3/4+, name the matching CRM rows from `CreatorOutreach/MASS_LEAD_VERIFICATION_AND_PITCH_WORKFLOW.md`, and have an open `creator_send_gate`.
+
+Reporting rule: every published row needs a dashboard/event-log record with `route_class`, `consent_provenance`, `asset_id`, `campaign_id`, and `beat_id` before any response is summarized. Do not count public comments as creator reply, press reply, playtest consent, or newsletter opt-in.
 
 | Queue ID | Required asset | Primary platform | Draft copy | CTA | Kill if |
 |---|---|---|---|---|---|
-| POST-001 | Identity hero screenshot: black water, industrial silhouette, player light | X/Bluesky | `One floodlight, too much water. HECTON-8 is single-player deep-sea survival about pressure, salvage, machinery, and the cost of coming back.` | `Does the identity read without a caption?` | Viewers read it as empty water or generic Subnautica-like scenery. |
-| POST-002 | Pressure room interior screenshot | Reddit critique | `I am testing whether this room reads as a pressure vessel, not a cozy base. What detail sells or breaks that read first: gauges, seals, grime, lighting, or layout?` | `Ask for critique only, no Steam CTA.` | Comments focus on clean sci-fi room or cannot identify the survival system. |
+| POST-001 | Identity hero screenshot: black water, industrial silhouette, player light | X/Bluesky | `One floodlight, too much water. HECTON-8 is single-player deep-sea survival about pressure, salvage, machinery, and the cost of coming back.` | `Does the identity read without a caption?` | Viewers read it as empty water or generic bright-ocean survival scenery. |
+| POST-002 | Pressure room interior screenshot | Reddit critique | `I am testing whether this room reads as a pressure vessel with survival function. What detail sells or breaks that read first: gauges, seals, grime, lighting, or layout?` | `Ask for critique only, no Steam CTA.` | Comments focus on clean sci-fi room or cannot identify the survival system. |
 | POST-003 | Salvage contact screenshot | X/Bluesky | `A good salvage route should look profitable and stupid. If the player cannot tell what they are risking, the shot failed.` | `Would you go farther?` | Player verb is unclear or the salvage target looks like decorative junk. |
 | POST-004 | Base under stress screenshot | Reddit critique | `Survival players: does this base failure look fair, or does it look like random punishment? I need the harsh read before this becomes Steam material.` | `Ask fairness/readability question.` | Users cannot tell what failed or what the player should do next. |
-| POST-005 | Threat silhouette screenshot | X/Bluesky | `The sonar saw it first. HECTON-8 is aiming for readable dread, not black screenshots.` | `Can you read the threat?` | Silhouette reads as terrain, empty fog, or arbitrary monster pose. |
-| POST-006 | Seed Ship/anomaly screenshot | Steam news/devlog | `The Seed Ship should feel like a system interfering with the world before the lore explains it. This shot is only usable if the instrument corruption is readable.` | `No external CTA unless Steam page exists.` | It reads as abstract glow/noise or requires lore text. |
+| POST-005 | Threat silhouette screenshot | X/Bluesky | `The sonar saw it first. HECTON-8 is aiming for readable dread with a threat you can actually parse.` | `Can you read the threat?` | Silhouette reads as terrain, empty fog, or arbitrary monster pose. |
+| POST-006 | Seed Ship/anomaly screenshot | Steam news/devlog | `The Seed Ship should feel like a system interfering with the world before the lore explains it. This shot is only usable if the instrument corruption is readable.` | `External CTA only after the Steam page and CTA activation packet pass.` | It reads as abstract glow/noise or requires lore text. |
 | POST-007 | Low-spec internal proof frame | Internal only | `Internal readability check. Same scene must still sell pressure/machinery with cheap effects. Do not publish as a performance claim.` | `QA decision: publish later / keep internal / kill.` | Anyone tries to use it as FPS or optimization marketing without measured context. |
 | POST-008 | 20s pressure leak clip | TikTok/Shorts/Reels | `The warning was fair. The decision was not.` | `Watch the gauge.` | First 3 seconds do not show motion/tension or the clip needs explanation. |
-| POST-009 | 20s sonar clip | TikTok/Shorts/Reels | `This is not a monster reveal. This is a bad instrument reading.` | `No wishlist CTA on first test.` | Viewers cannot understand what sonar changed. |
+| POST-009 | 20s sonar clip | TikTok/Shorts/Reels | `This is not a monster reveal. This is a bad instrument reading.` | `Feedback-only first test; external CTA waits for CTA activation.` | Viewers cannot understand what sonar changed. |
 | POST-010 | 20s salvage failure clip | X/Bluesky + creator warmup | `A normal salvage run until the route started charging interest.` | `Ask if the escalation feels fair.` | Clip looks scripted, pre-rendered, or unrelated to player action. |
 | POST-011 | Heavy machinery startup clip | X/Bluesky | `The machine should be louder than the player. Machinery is survival, not decoration.` | `Does it feel heavy?` | Machine movement looks weightless, toy-like, or purely cosmetic. |
-| POST-012 | Steam capsule rough A/B/C image | Reddit critique if rules allow | `Which capsule reads fastest at small size: pressure hatch, salvage floodlight, or Seed Ship signal? I am not asking for wishlists, just thumbnail-read critique.` | `Ask A/B/C choice.` | Community rules disallow self-promo or comments read all variants as clone/generic. |
+| POST-012 | Steam capsule rough A/B/C image | Reddit critique if rules allow | `Which capsule reads fastest at small size: pressure hatch, salvage floodlight, or Seed Ship signal? Feedback-only thumbnail-read critique.` | `Ask A/B/C choice.` | Community rules disallow self-promo or comments read all variants as clone/generic. |
 
 ### First Screenshot Pack Caption Set
 
@@ -474,7 +480,7 @@ Never follow a signal into black water.
 
 ### First Five Creator Warmup Lines
 
-Use only for creators already in `Data/CREATOR_VERIFICATION_TEMPLATE.csv` and only after the matching asset exists, creator utility is 3/4+, and the exact contact route is verified. Do not use these from public comments alone.
+Use only for creators already in `Data/CREATOR_VERIFICATION_TEMPLATE.csv` and only after the matching asset exists, pain-backed angle fields `pain_freshness_source` and `pain_freshness_checked_at` are filled where relevant, creator utility is 3/4+, `creator_send_gate` is open, CRM send-log fields are ready, and the exact contact route is verified. Do not use these from public comments alone.
 
 ```text
 Pressure/salvage angle:
@@ -496,16 +502,17 @@ The hook is not "underwater". The hook is whether pressure, power, salvage, and 
 ### First 72-Hour Posting Sequence After Screenshot Pack
 
 Do not run this if the screenshot pack fails QA.
+Do not run this if Campaign 01 lacks its required agency/decision proof asset: `PLAN-SHOT-006`, `PLAN-CLIP-001`, or `PLAN-CLIP-003`.
 
 | Time | Action | Asset | Notes |
 |---|---|---|---|
-| Hour 0 | Post identity hero on X/Bluesky | POST-001 | No Steam CTA unless page exists. |
-| Hour 4 | Internal comment read | POST-001 | Record clone/readability/co-op/performance confusion. |
+| Hour 0 | Post identity hero on X/Bluesky | POST-001 | No Steam CTA unless Official CTA Link Activation Gate V0 passes. |
+| Hour 4 | Internal comment read | POST-001 | Record clone/readability/multiplayer-scope/performance confusion. |
 | Hour 12 | Reddit critique in one allowed community | POST-002 or POST-004 | Developer disclosure required. No tracking link unless allowed. |
-| Hour 24 | Post salvage or machinery asset | POST-003 or POST-011 | Pick the asset that answers the biggest confusion from Hour 0. |
+| Hour 24 | Post salvage, machinery, or agency/decision asset | POST-003, POST-005, POST-008, POST-010, or POST-011 | Pick the asset that answers the biggest confusion from Hour 0. If agency/decision proof is not already visible, prioritize POST-005, POST-008, or POST-010 over another mood/beauty asset. |
 | Hour 36 | Update CRM pitch notes for matching creator segment | CRM rows only | No outreach if comments exposed unreadable player verb or creator utility is below 3/4. |
-| Hour 48 | Creator micro-feedback or Steam/news draft | Campaign 01 Wave A or Bundle A | Creator path requires utility 3/4+, named CRM row, exact contact route, and no asset mismatch; otherwise keep as devlog draft. |
-| Hour 72 | Decide proceed/revise/kill | All first-pack posts | Proceed only if viewers understand genre, pressure, machinery, and player verb. |
+| Hour 48 | Creator micro-feedback or Steam/news draft | Campaign 01 Wave A or Bundle A | Creator path must pass `CreatorOutreach/MASS_LEAD_VERIFICATION_AND_PITCH_WORKFLOW.md` first human-send packet gates: official inbox custody, utility 3/4+, named CRM row, exact contact route, open `creator_send_gate`, source/date pain freshness fields where pain-backed, required AB-009/KPI decision-read fields for gameplay/pressure/route-risk claims, Promise Lint, and CRM send-log fields; otherwise keep as devlog draft. |
+| Hour 72 | Decide proceed/revise/kill | All first-pack posts | Proceed only if viewers understand genre, pressure, machinery, player verb, and one agency/decision proof without a caption. |
 
 ## Thirty-Day Pre-Screenshot Posting Plan
 

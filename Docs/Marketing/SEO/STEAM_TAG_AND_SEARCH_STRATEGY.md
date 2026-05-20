@@ -28,7 +28,7 @@ Steam's docs state that developers can set tags in the Tag Wizard, top tags carr
 
 HECTON-8 must not use tags that imply missing features:
 
-- no `Co-op`;
+- no multiplayer-mode tag;
 - no `Online Co-Op`;
 - no `Multiplayer`;
 - no `MMO`;
@@ -46,7 +46,7 @@ Use this only after the first playable route and first store screenshots exist.
 | 2 | Exploration | The audience expects unknown depths and routes. | Screenshots must show navigable spaces, not only interiors. |
 | 3 | Base Building | High-intent Subnautica-adjacent audience. | Do not use if base loop is not playable in demo. |
 | 4 | Sci-fi | NASA-punk, hardware, anomaly, Seed Ship. | Visuals must not read as generic horror corridor. |
-| 5 | Singleplayer | Corrects no-coop boundary. | Low information; should not outrank real genre tags if Steam suggests otherwise. |
+| 5 | Singleplayer | Corrects multiplayer-scope boundary. | Low information; should not outrank real genre tags if Steam suggests otherwise. |
 | 6 | Atmospheric | Deep sea noir, pressure, audio dread. | Needs real clips, not copy. |
 | 7 | First-Person | If the first public build is first-person. | Remove if camera plan changes. |
 | 8 | Underwater | High semantic fit if available in Tag Wizard/popular tags. | Verify current tag availability in Steamworks. |
@@ -136,7 +136,7 @@ Forbidden or risky phrases:
 
 - "Subnautica killer" public copy;
 - "like Subnautica but better";
-- "100km co-op";
+- "100km multiplayer";
 - "zero stutter" without current profiler proof;
 - "realistic fluid simulation" if the implementation is cinematic cheat-first;
 - "infinite world" unless technically true in public build;
@@ -178,13 +178,15 @@ If a creator uses those comparisons independently, do not amplify them in offici
 
 ## Tag QA Before Publish
 
-Before publishing tags, run this cold-reader test:
+Before publishing tags, run this valid blind cold-reader test:
 
-1. Show only the top 5 tags and capsule to a person who has not read the docs.
-2. Ask what they think the game is.
-3. If they say "co-op underwater base builder", tags failed.
-4. If they say "horror walking sim", tags failed unless the demo is exactly that.
-5. If they say "single-player sci-fi underwater survival with bases", tags pass.
+1. Use at least 10 readers who have not read the docs, pitch, target nouns, or tag rationale.
+2. Show only the top 5 tags and capsule; do not explain the intended answer.
+3. Record `context_exposure`; only `NONE` counts toward pass rate.
+4. Ask what they think the game is.
+5. If 2+ valid readers say "multiplayer underwater base builder", tags failed.
+6. If 2+ valid readers say "horror walking sim", tags failed unless the demo is exactly that.
+7. If "single-player sci-fi underwater survival with bases/exploration" is the dominant valid read, tags pass.
 
 ## Tag Drift Monitoring
 

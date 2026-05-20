@@ -303,7 +303,7 @@ Resource/content audit: [Resource_Content_Audit_Matrix.md](Resource_Content_Audi
 | `HectonAPI.Recycling` | `ProcessRecycle` | owner-arbitrated gameplay request | Official `ScrapManager` owns inventory mutation. |
 | `HectonAPI.Construction` | `RegisterBuildable`, `TryFindBuildable` | cold buildable overlay | Catalog injection is not scene spawning. |
 | `HectonAPI.Ecosystem` | `RegisterBiomeMutation` | deterministic overlay | Mods provide bias data, not fauna handles. |
-| `HectonAPI.Localization` | `InjectTable` | cold localization overlay | Dictionary/string use is cold only. |
+| `HectonAPI.Localization` | `InjectBabelEnvelope` | rejected binary Babel envelope seam | Runtime dictionary/string localization injection is disabled. |
 | `HectonAPI.UI` | `ShowInfo`, `ShowWarning`, `ShowCritical`, `RegisterSetting` | presentation/settings | UI must reflect engine acceptance, not assumed command success. |
 | `HectonAPI.World` | `IsGameReady`, `TryGetPlayerEntityHash` | read-only hash state | `GameObject`, `Transform`, spawn, and despawn methods are internal and throw. |
 | `HectonAPI.SaveState` | `SetModString`, `GetModString` | mod-owned cold save text | JSON allowed here only, never as event transport. |

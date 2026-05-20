@@ -25,15 +25,15 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-102)]
-    public sealed class AbyssalThermalManager : MonoBehaviour, ITickable, ISlowTickable, IFixedTickable, ILateFrameTickable, IOriginShiftListener, IThermodynamicsService, IRandomEventListener, global::Hecton8.Gameplay.ILaserCutterEventListener
+    public sealed class AbyssalThermalManager : MonoBehaviour, ITickable, ISlowTickable, IFixedTickable, ILateFrameTickable, IOriginShiftListener, IThermodynamicsService, IRandomEventListener, global::Hecton8.Gameplay.ILaserCutterEventListener, IGlobalRegistryHotSwapListener
     {
         public struct ThermalFlowSample
         {
-            public bool HasFlow;
+            public byte HasFlow;
             public Vector3 FlowVelocityWS;
             public float Heat01;
             public float DragMultiplier;
-            public bool IsCableZone;
+            public byte IsCableZone;
             public Vector3 CableAnchorWS;
             public float CableTension01;
             public float CableCutProgress01;
@@ -638,6 +638,8 @@ namespace Hecton8.World
         private Rigidbody _playerRigidbody;
         private PlayerTransportCoordinator _playerTransportCoordinator;
         private HectonPlayerMovement _playerMovement;
+        private IPlayerRuntimeContext _playerRuntimeContext;
+        private ISubmarineRuntimeContext _submarineRuntimeContext;
         private AbyssalFluidDecalManager _fluidDecalManager;
         private bool[] _cableReleasedStates;
         private float[] _cableReleaseProgress;
@@ -673,6 +675,7 @@ namespace Hecton8.World
         private int _thermalMapDiffusionSlicesCompleted;
         private int _thermalMapDiffusionSliceCursor;
         private bool _registeredFixedTick;
+        private bool _registeredHotSwapListener;
         private bool _thermalTelemetryDumped;
         private bool _thermalMapTextureDirty;
         private bool _thermalMapTextureFormatRejected;
@@ -700,8 +703,7 @@ namespace Hecton8.World
         /// <summary>
         /// True once the thermodynamics owner is registered in the global registry.
         /// </summary>
-        public bool IsInitialized => ReferenceEquals(GlobalRegistry.ThermodynamicsService, this) &&
-                                     ReferenceEquals(GlobalRegistry.Thermodynamics, this);
+        public bool IsInitialized => _registeredThermodynamicsRuntime;
 
         internal bool TryResolveParasiteThermalModifier(BaseModule baseModule, out float insulation01, out float bioReactorOverheatMultiplier)
         {
@@ -907,6 +909,7 @@ namespace Hecton8.World
             _instanceId = unchecked((int)EntityId.ToULong(GetEntityId()));
             _supportsGraphicsFence = SystemInfo.supportsGraphicsFence;
             SanitizeSettings();
+            CacheRegistryServicesCold();
             ResolveDependencies();
             EnsureStorage();
             EnsureCableVisuals();
@@ -920,8 +923,9 @@ namespace Hecton8.World
             LaserCutterEvents.Register(this);
             RandomEventEvents.Register(this);
             HectonFloatingOrigin.RegisterListener(this);
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             ResolveDependencies();
-            _simulationBucketer = GlobalRegistry.SimulationBucketer;
             EnsureStorage();
             EnsureCableVisuals();
             EnsureBuffers();
@@ -934,6 +938,7 @@ namespace Hecton8.World
             LaserCutterEvents.Unregister(this);
             RandomEventEvents.Unregister(this);
             HectonFloatingOrigin.UnregisterListener(this);
+            TryUnregisterHotSwapListener();
             _cutterBeamActive = false;
             _activeCutterTransform = null;
             _debugCutterSeveringCable = false;
@@ -958,6 +963,7 @@ namespace Hecton8.World
             LaserCutterEvents.Unregister(this);
             RandomEventEvents.Unregister(this);
             HectonFloatingOrigin.UnregisterListener(this);
+            TryUnregisterHotSwapListener();
             _simulationBucketer = null;
             ClearHazardSources();
             ReleaseBuffers();
@@ -1198,7 +1204,7 @@ namespace Hecton8.World
                 return;
 
             ResolveDependencies();
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             Rigidbody playerBody = playerContext != null ? playerContext.PlayerRigidbody : _playerRigidbody;
             GameObject playerObject = playerContext != null ? playerContext.PlayerObject : playerTransform != null ? playerTransform.gameObject : null;
             Vector3 playerPosition = playerContext != null && playerContext.PlayerTransform != null
@@ -1216,7 +1222,7 @@ namespace Hecton8.World
                 PublishLocalThermalPresentation(playerPosition, playerTemperature, 0f);
             }
 
-            ISubmarineRuntimeContext submarine = GlobalRegistry.Submarine;
+            ISubmarineRuntimeContext submarine = _submarineRuntimeContext;
             Rigidbody submarineBody = submarine != null ? submarine.HullRigidbody : null;
             if (submarineBody != null)
             {
@@ -1344,7 +1350,7 @@ namespace Hecton8.World
                         Vector3 swirlDirection = planarDistance > 0.0001f
                             ? new Vector3(-planarDelta.y / planarDistance, 0f, planarDelta.x / planarDistance)
                             : Vector3.zero;
-                        sample.HasFlow = true;
+                        sample.HasFlow = 1;
                         sample.Heat01 = Mathf.Max(sample.Heat01, vent.HeatIntensity * eruptiveHeatScale * ventWeight);
                         sample.DragMultiplier = Mathf.Max(sample.DragMultiplier, LerpClamped(1f, ventDragMultiplier, ventWeight));
                         sample.FlowVelocityWS += Vector3.up * (vent.UpdraftVelocity * eruptiveUpdraftScale * ventWeight);
@@ -1369,7 +1375,7 @@ namespace Hecton8.World
 
             if (strongestCable > 0f)
             {
-                sample.IsCableZone = true;
+                sample.IsCableZone = 1;
                 sample.CableAnchorWS = strongestCableAnchor;
                 sample.CableCutProgress01 = strongestCableCut;
                 sample.CableEscapeSuppression01 = 1f - strongestCableCut;
@@ -1377,7 +1383,7 @@ namespace Hecton8.World
             }
 
             _debugCableCutProgress01 = strongestCableCut;
-            return sample.HasFlow || sample.IsCableZone;
+            return sample.HasFlow != 0 || sample.IsCableZone != 0;
         }
 
         private bool ProcessThermalGameplayTarget(
@@ -1974,12 +1980,6 @@ namespace Hecton8.World
         private int ResolveThermalMapDiffusionSliceCursor()
         {
             ISimulationBucketer bucketer = _simulationBucketer;
-            if (bucketer == null || !bucketer.IsInitialized)
-            {
-                bucketer = GlobalRegistry.SimulationBucketer;
-                _simulationBucketer = bucketer;
-            }
-
             return bucketer != null && bucketer.IsInitialized
                 ? bucketer.ActiveColdBucket & ThermalMapDiffusionSliceMask
                 : _thermalMapDiffusionSliceCursor & ThermalMapDiffusionSliceMask;
@@ -2038,7 +2038,7 @@ namespace Hecton8.World
             if (playerTransform != null)
                 return playerTransform.position;
 
-            ISubmarineRuntimeContext submarine = GlobalRegistry.Submarine;
+            ISubmarineRuntimeContext submarine = _submarineRuntimeContext;
             if (submarine != null && submarine.HullRigidbody != null)
                 return submarine.HullRigidbody.worldCenterOfMass;
 
@@ -2520,11 +2520,16 @@ namespace Hecton8.World
             if (vegetationBridge == null)
                 WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref vegetationBridge);
 
-            if (cutManager == null)
-                cutManager = Hecton8.Core.GlobalRegistry.SargassumCut;
-
             if (playerTransform == null)
-                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
+            {
+                if (_playerRuntimeContext != null && _playerRuntimeContext.PlayerTransform != null)
+                    playerTransform = _playerRuntimeContext.PlayerTransform;
+                else if (BootstrapState.TryGetCurrentPlayerTransform(out Transform bootstrapPlayer))
+                    playerTransform = bootstrapPlayer;
+            }
+
+            if (_playerRigidbody == null && _playerRuntimeContext != null)
+                _playerRigidbody = _playerRuntimeContext.PlayerRigidbody;
 
             if (_playerRigidbody == null && playerTransform != null)
                 playerTransform.TryGetComponent(out _playerRigidbody);
@@ -2537,8 +2542,7 @@ namespace Hecton8.World
 
             if (viewCamera == null && playerTransform != null)
             {
-                IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
-                viewCamera = playerContext != null ? playerContext.PlayerCamera : null;
+                viewCamera = _playerRuntimeContext != null ? _playerRuntimeContext.PlayerCamera : null;
                 if (viewCamera == null)
                     playerTransform.TryGetComponent(out viewCamera);
             }
@@ -2558,6 +2562,70 @@ namespace Hecton8.World
 
             if (_fluidDecalManager != null && fluidDecalMaterial != null)
                 _fluidDecalManager.ConfigureMaterial(fluidDecalMaterial);
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _playerRuntimeContext = GlobalRegistry.Player;
+            _submarineRuntimeContext = GlobalRegistry.Submarine;
+            if (cutManager == null)
+                cutManager = GlobalRegistry.SargassumCut;
+            if (_simulationBucketer == null)
+                _simulationBucketer = GlobalRegistry.SimulationBucketer;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    if (_playerRuntimeContext != null)
+                    {
+                        playerTransform = _playerRuntimeContext.PlayerTransform != null
+                            ? _playerRuntimeContext.PlayerTransform
+                            : playerTransform;
+                        _playerRigidbody = _playerRuntimeContext.PlayerRigidbody != null
+                            ? _playerRuntimeContext.PlayerRigidbody
+                            : _playerRigidbody;
+                        viewCamera = _playerRuntimeContext.PlayerCamera != null
+                            ? _playerRuntimeContext.PlayerCamera
+                            : viewCamera;
+                    }
+                    break;
+                case GlobalRegistryServiceSlot.Submarine:
+                    _submarineRuntimeContext = currentService as ISubmarineRuntimeContext;
+                    break;
+                case GlobalRegistryServiceSlot.SargassumCutRuntime:
+                    cutManager = currentService as SargassumCutManager;
+                    break;
+                case GlobalRegistryServiceSlot.SimulationBucketerRuntime:
+                    _simulationBucketer = currentService as ISimulationBucketer;
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    TryRegister();
+                    break;
+            }
         }
 
         private void SanitizeSettings()
@@ -2844,10 +2912,6 @@ namespace Hecton8.World
                 cableObject.transform.localPosition = Vector3.zero;
                 cableObject.transform.localRotation = Quaternion.identity;
                 cableObject.transform.localScale = Vector3.one;
-
-                LineRenderer lineRenderer = cableObject.AddComponent<LineRenderer>();
-                lineRenderer.enabled = false;
-                lineRenderer.sharedMaterial = bioCableMaterial;
 
                 // COLD ALLOC: Component[1] - persistent abyssal bio-cable IK rig component - owner: AbyssalThermalManager
                 BioCableIK cableRig = cableObject.AddComponent<BioCableIK>();
@@ -4311,12 +4375,13 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ThermalMapJacobiJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<float> Previous;
-            [ReadOnly] public NativeArray<float> Sources;
-            [ReadOnly] public NativeArray<float> Insulation01;
+            [ReadOnly, NoAlias] public NativeArray<float> Previous;
+            [ReadOnly, NoAlias] public NativeArray<float> Sources;
+            [ReadOnly, NoAlias] public NativeArray<float> Insulation01;
+            [NoAlias]
             public NativeArray<float> Next;
             public int StartIndex;
             public int Width;
@@ -4350,10 +4415,11 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ThermalCrystallizationBoundaryJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<ThermalCrystallizationSample> Samples;
+            [ReadOnly, NoAlias] public NativeArray<ThermalCrystallizationSample> Samples;
+            [NoAlias]
             public NativeArray<ThermalCrystallizationResult> Results;
             public float MinimumSourceTemperatureCelsius;
             public float DeltaTemperatureThresholdCelsius;

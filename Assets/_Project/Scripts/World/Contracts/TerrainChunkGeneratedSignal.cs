@@ -3,7 +3,7 @@ using Unity.Mathematics;
 
 namespace Hecton8.World
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
+    [StructLayout(LayoutKind.Sequential, Size = 64)]
     public struct TerrainChunkGeneratedSignal
     {
         public int ChunkX;

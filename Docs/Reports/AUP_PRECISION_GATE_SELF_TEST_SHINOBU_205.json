@@ -1,0 +1,12 @@
+{
+  "agent": "SHINOBU_205",
+  "evidence": "PY_TOOL_STATIC_GATE_SELF_TEST",
+  "generatedUtc": "2026-05-20T08:53:21.851315Z",
+  "status": "PASS",
+  "tests": [
+    {
+      "name": "test_precision_gate_fixture",
+      "status": "PASS"
+    }
+  ]
+}

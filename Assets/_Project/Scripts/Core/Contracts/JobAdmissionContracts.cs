@@ -93,10 +93,10 @@ namespace Hecton8.Core.Contracts
         void Initialize(IJobAdmissionTelemetrySink telemetrySink);
 
         /// <summary>Refills lane budgets once at the PRE_SIMULATION dispatcher boundary.</summary>
-        /// <param name="scalabilityTierProfile">0 = low/MX350, 1 = higher tier.</param>
+        /// <param name="globalQualityWeight01">Continuous 0..1 quality scalar from HomeostasisBrain.</param>
         /// <param name="deltaTimeSeconds">Unscaled frame delta in seconds.</param>
         /// <param name="previousFrameMissedBudget">True when the previous frame exceeded the target budget.</param>
-        void Refill(byte scalabilityTierProfile, float deltaTimeSeconds, bool previousFrameMissedBudget);
+        void Refill(float globalQualityWeight01, float deltaTimeSeconds, bool previousFrameMissedBudget);
 
         /// <summary>Attempts to reserve tokens for a job before scheduling it.</summary>
         /// <param name="lane">Job lane.</param>

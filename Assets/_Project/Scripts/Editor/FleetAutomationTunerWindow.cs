@@ -124,7 +124,9 @@ namespace Hecton8.EditorTools
                 EditorGUILayout.LabelField("PathIterations", stats.PathIterations.ToString());
                 EditorGUILayout.LabelField("AveragePathfindingMs", stats.AveragePathfindingTimeMs.ToString("0.0000"));
                 EditorGUILayout.LabelField("TasksCompleted", stats.TasksCompleted.ToString());
+                EditorGUILayout.LabelField("AverageBattery", stats.AverageBatteryPercent.ToString("0.00"));
                 EditorGUILayout.LabelField("SteeringModulo", stats.SteeringTickModulo.ToString());
+                EditorGUILayout.LabelField("ChassisSpecs", stats.ChassisSpecCount.ToString());
             }
 
             EditorGUILayout.HelpBox(_status, MessageType.None);

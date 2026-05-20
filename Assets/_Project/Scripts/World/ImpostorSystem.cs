@@ -770,9 +770,7 @@ namespace Hecton8.World
                 }
             }
 
-            _viewerAupCache = _cameraTransform != null
-                ? AbsoluteUniversePosition.FromRuntimePosition(_cameraTransform.position)
-                : default;
+            _viewerAupCache = default;
             return _viewerAupCache;
         }
 

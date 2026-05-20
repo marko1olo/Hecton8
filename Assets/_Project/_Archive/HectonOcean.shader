@@ -27,8 +27,10 @@ Shader "Hecton/HectonOcean"
         LOD 300
 
         HLSLINCLUDE
+        #pragma target 4.5
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+        #include "Assets/_Project/Art/Shaders/Hecton_CustomLightProbeGrid.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareOpaqueTexture.hlsl"
 
@@ -394,7 +396,7 @@ Shader "Hecton/HectonOcean"
                 half3 foamFinal = _FoamColor.rgb * foamMask;
 
                 // Ambient
-                half3 ambient = SampleSH(normalWS) * waterColor.rgb * 0.4;
+                half3 ambient = H8CustomLightProbeResolveAmbient(IN.positionWS, normalWS, half3(0.015h, 0.025h, 0.035h)) * waterColor.rgb * 0.4;
 
                 // Environment reflection
                 float3 reflDir    = reflect(-viewDir, normalWS);

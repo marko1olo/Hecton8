@@ -1,29 +1,27 @@
 #if UNITY_EDITOR
-using System;
-using System.IO;
-using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using UnityEditor;
 using UnityEngine;
 
 namespace Hecton8.EditorTools
 {
     /// <summary>
-    /// Packs Metallic, AO, Smoothness, and Emissive Mask grayscale maps into one linear RGBA mask texture.
+    /// Legacy entrypoint kept for menu/search compatibility. The old M.A.S.K. layout is forbidden for UberNoir.
+    /// Current contract: R=AO, G=Roughness, B=Metallic, A=Emission/default 1.
     /// </summary>
     internal static class HectonMaskChannelPacker
     {
-        private const string MenuPath = "Hecton/Art Optimization/Pack Selected M.A.S.K.";
-        private const string OutputFolder = "Assets/_Project/Art/TEXTURES/PackedMasks";
-        private const int MaxPackedMaskSize = 2048;
+        private const string MenuPath = "Hecton8/Rendering/Texture Channel Packer/Pack Selected A.R.M.";
+        private const string OutputFolder = "Assets/_Project/BakedGeometry/Textures";
+        private const int MaxPackedMaskSize = 4096;
 
         [MenuItem(MenuPath, priority = 210)]
         private static void PackSelectedMasks()
         {
-            Texture2D metallic = null;
             Texture2D ao = null;
-            Texture2D smoothness = null;
-            Texture2D emissive = null;
+            Texture2D roughness = null;
+            Texture2D metallic = null;
+            Texture2D albedo = null;
+            bool invertRoughness = false;
 
             UnityEngine.Object[] selected = Selection.objects;
             for (int i = 0; i < selected.Length; i++)
@@ -34,156 +32,85 @@ namespace Hecton8.EditorTools
 
                 string path = AssetDatabase.GetAssetPath(texture);
                 string lowerPath = path.ToLowerInvariant();
-                if (lowerPath.Contains("metal"))
-                    metallic = texture;
-                else if (lowerPath.Contains("occlusion") || lowerPath.Contains("_ao") || lowerPath.Contains("ambient"))
+                if (lowerPath.Contains("occlusion") || lowerPath.Contains("_ao") || lowerPath.Contains("ambient"))
+                {
                     ao = texture;
-                else if (lowerPath.Contains("smooth") || lowerPath.Contains("rough"))
-                    smoothness = texture;
-                else if (lowerPath.Contains("emiss") || lowerPath.Contains("emit"))
-                    emissive = texture;
+                }
+                else if (lowerPath.Contains("rough"))
+                {
+                    roughness = texture;
+                    invertRoughness = false;
+                }
+                else if (lowerPath.Contains("smooth") && roughness == null)
+                {
+                    roughness = texture;
+                    invertRoughness = true;
+                }
+                else if (lowerPath.Contains("metal"))
+                {
+                    metallic = texture;
+                }
+                else if (lowerPath.Contains("albedo") || lowerPath.Contains("basecolor") || lowerPath.Contains("diffuse"))
+                {
+                    albedo = texture;
+                }
             }
 
-            if (metallic == null || ao == null || smoothness == null || emissive == null)
+            if (ao == null || roughness == null || metallic == null)
             {
-                Debug.LogError("[HectonMaskChannelPacker] Select four textures named with metallic, AO/occlusion, smoothness/roughness, and emissive tokens.");
+                Debug.LogError("[HectonMaskChannelPacker] Select AO/occlusion, roughness-or-smoothness, and metallic textures. Albedo/basecolor is optional for Sobel normals.");
                 return;
             }
 
-            string outputPath = PackMasks(metallic, ao, smoothness, emissive);
-            Debug.Log("[HectonMaskChannelPacker] Packed M.A.S.K. texture: " + outputPath);
-        }
+            uint flags = HectonArmTextureChannelPacker.FlagInjectMacroNoise |
+                         HectonArmTextureChannelPacker.FlagToksvigMipFiltering;
+            if (invertRoughness)
+                flags |= HectonArmTextureChannelPacker.FlagInvertRoughness;
+            if (albedo != null)
+                flags |= HectonArmTextureChannelPacker.FlagGenerateNormals;
 
-        internal static string PackMasks(Texture2D metallic, Texture2D ao, Texture2D smoothness, Texture2D emissive)
-        {
-            int width = ResolvePackDimension(metallic.width, ao.width, smoothness.width, emissive.width);
-            int height = ResolvePackDimension(metallic.height, ao.height, smoothness.height, emissive.height);
-
-            Texture2D packed = null;
-            string outputPath;
-
-            try
+            TexturePackerRequest request = new TexturePackerRequest
             {
-                packed = new Texture2D(width, height, TextureFormat.RGBA32, true, true);
-                NativeArray<Color32> packedPixels = packed.GetRawTextureData<Color32>();
-                CopySourceRedToPackedChannel(metallic, width, height, packedPixels, 0);
-                CopySourceRedToPackedChannel(ao, width, height, packedPixels, 1);
-                CopySourceRedToPackedChannel(smoothness, width, height, packedPixels, 2);
-                CopySourceRedToPackedChannel(emissive, width, height, packedPixels, 3);
+                AoTexture = ao,
+                RoughnessTexture = roughness,
+                MetallicTexture = metallic,
+                AlbedoTexture = albedo,
+                Config = HectonArmTextureChannelPacker.DefaultConfig(flags),
+                OutputFolder = OutputFolder,
+                OutputName = ResolveOutputName(ao, roughness, metallic),
+                MaxSize = MaxPackedMaskSize,
+                MacroNoiseStrength = 0.08f,
+                TileSizeMeters = 4.0f,
+                MacroWorldSpanMeters = 100000.0f,
+                GlobalQualityWeight = 0.55f,
+                Seed = 0x5348494Eu
+            };
 
-                packed.Apply(true, false);
-
-                EnsureFolder(OutputFolder);
-                string outputName = "TX_MASK_" + HectonEditorMeshUtility.SanitizeAssetToken(metallic.name) + ".png";
-                outputPath = AssetDatabase.GenerateUniqueAssetPath(OutputFolder + "/" + outputName);
-                File.WriteAllBytes(outputPath, packed.EncodeToPNG());
-            }
-            finally
+            if (!HectonArmTextureChannelPacker.TryPackArmAsset(request, out TexturePackerRunMetrics metrics))
             {
-                if (packed != null)
-                    UnityEngine.Object.DestroyImmediate(packed);
-            }
-
-            AssetDatabase.ImportAsset(outputPath, ImportAssetOptions.ForceUpdate);
-            TextureImporter importer = AssetImporter.GetAtPath(outputPath) as TextureImporter;
-            if (importer != null)
-            {
-                importer.textureType = TextureImporterType.Default;
-                importer.sRGBTexture = false;
-                importer.mipmapEnabled = true;
-                importer.isReadable = false;
-                importer.textureCompression = TextureImporterCompression.Compressed;
-                importer.maxTextureSize = MaxPackedMaskSize;
-
-                TextureImporterPlatformSettings standalone = importer.GetPlatformTextureSettings("Standalone");
-                standalone.overridden = true;
-                standalone.format = TextureImporterFormat.BC7;
-                standalone.maxTextureSize = MaxPackedMaskSize;
-                standalone.textureCompression = TextureImporterCompression.Compressed;
-                standalone.crunchedCompression = false;
-                importer.SetPlatformTextureSettings(standalone);
-                importer.SaveAndReimport();
-            }
-
-            return outputPath;
-        }
-
-        private static unsafe void CopySourceRedToPackedChannel(Texture source, int width, int height, NativeArray<Color32> packedPixels, int channel)
-        {
-            Texture2D readable = null;
-            try
-            {
-                readable = CaptureReadableTexture(source, width, height);
-                NativeArray<Color32> sourcePixels = readable.GetRawTextureData<Color32>();
-                int pixelCount = Mathf.Min(sourcePixels.Length, packedPixels.Length);
-                CopyRedToPackedChannelUnsafe(sourcePixels, packedPixels, pixelCount, channel);
-            }
-            finally
-            {
-                if (readable != null)
-                    UnityEngine.Object.DestroyImmediate(readable);
-            }
-        }
-
-        private static Texture2D CaptureReadableTexture(Texture texture, int width, int height)
-        {
-            RenderTexture temp = RenderTexture.GetTemporary(width, height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear);
-            RenderTexture previous = RenderTexture.active;
-            Texture2D readable = new Texture2D(width, height, TextureFormat.RGBA32, false, true);
-            bool returned = false;
-
-            try
-            {
-                UnityEngine.Graphics.Blit(texture, temp);
-                RenderTexture.active = temp;
-                readable.ReadPixels(new Rect(0f, 0f, width, height), 0, 0, false);
-                readable.Apply(false, false);
-                returned = true;
-                return readable;
-            }
-            finally
-            {
-                RenderTexture.active = previous;
-                RenderTexture.ReleaseTemporary(temp);
-                if (!returned)
-                    UnityEngine.Object.DestroyImmediate(readable);
-            }
-        }
-
-        private static unsafe void CopyRedToPackedChannelUnsafe(
-            NativeArray<Color32> sourcePixels,
-            NativeArray<Color32> packedPixels,
-            int pixelCount,
-            int channel)
-        {
-            byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(sourcePixels);
-            byte* packed = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(packedPixels);
-            int targetChannel = channel & 3;
-
-            for (int i = 0; i < pixelCount; i++)
-                packed[(i * 4) + targetChannel] = source[i * 4];
-        }
-
-        private static int ResolvePackDimension(int a, int b, int c, int d)
-        {
-            int max = Mathf.Max(Mathf.Max(a, b), Mathf.Max(c, d));
-            return Mathf.Min(MaxPackedMaskSize, Mathf.NextPowerOfTwo(max));
-        }
-
-        private static void EnsureFolder(string path)
-        {
-            if (AssetDatabase.IsValidFolder(path))
+                Debug.LogError("[HectonMaskChannelPacker] ARM packing failed. Check selected texture import state.");
                 return;
+            }
 
-            int slash = path.LastIndexOf('/');
-            if (slash <= 0)
-                return;
+            Debug.Log("[HectonMaskChannelPacker] Packed ARM texture: " + metrics.OutputPath);
+        }
 
-            string parent = path.Substring(0, slash);
-            string folder = path.Substring(slash + 1);
-            EnsureFolder(parent);
-            if (!AssetDatabase.IsValidFolder(path))
-                AssetDatabase.CreateFolder(parent, folder);
+        private static string ResolveOutputName(Texture2D ao, Texture2D roughness, Texture2D metallic)
+        {
+            string sourceName = ao != null ? ao.name : roughness != null ? roughness.name : metallic != null ? metallic.name : "TextureSet";
+            sourceName = RemoveToken(sourceName, "_AmbientOcclusion");
+            sourceName = RemoveToken(sourceName, "_Occlusion");
+            sourceName = RemoveToken(sourceName, "_Roughness");
+            sourceName = RemoveToken(sourceName, "_Metallic");
+            sourceName = RemoveToken(sourceName, "_AO");
+            sourceName = RemoveToken(sourceName, "_R");
+            sourceName = RemoveToken(sourceName, "_M");
+            return "TX_ARM_" + HectonEditorMeshUtility.SanitizeAssetToken(sourceName);
+        }
+
+        private static string RemoveToken(string value, string token)
+        {
+            return string.IsNullOrEmpty(value) ? value : value.Replace(token, string.Empty);
         }
     }
 }

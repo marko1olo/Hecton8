@@ -9,8 +9,6 @@ namespace Hecton8.Construction
     [CreateAssetMenu(fileName = "StructuralIntegrityProfile_", menuName = "Hecton8/Construction/Structural Integrity Profile", order = 22)]
     public sealed class StructuralIntegrityProfile : ScriptableObject
     {
-        public const int DefaultRuptureDecalAtlasIndex = 1;
-
         public enum PipeMaterialVariant : byte
         {
             Glass = 0,
@@ -24,29 +22,26 @@ namespace Hecton8.Construction
             [SerializeField] private PipeMaterialVariant variant;
             [SerializeField, Min(0.1f)] private float maxUnsupportedSpan;
             [SerializeField, Min(1f)] private float baseHP;
-            [SerializeField, Min(0)] private int ruptureDecalAtlasIndex;
 
-            public VariantIntegrity(PipeMaterialVariant variant, float maxUnsupportedSpan, float baseHP, int ruptureDecalAtlasIndex)
+            public VariantIntegrity(PipeMaterialVariant variant, float maxUnsupportedSpan, float baseHP)
             {
                 this.variant = variant;
                 this.maxUnsupportedSpan = maxUnsupportedSpan;
                 this.baseHP = baseHP;
-                this.ruptureDecalAtlasIndex = ruptureDecalAtlasIndex;
             }
 
             public PipeMaterialVariant Variant => variant;
             public float MaxUnsupportedSpan => maxUnsupportedSpan;
             public float BaseHP => baseHP;
-            public int RuptureDecalAtlasIndex => ruptureDecalAtlasIndex;
         }
 
         [Header("Material Variants")]
-        [Tooltip("Per-material structural thresholds and rupture decal atlas entries.")]
+        [Tooltip("Per-material structural thresholds. Visual pressure aging is procedural in UberNoir, not decal-atlas driven.")]
         [SerializeField] private VariantIntegrity[] variants =
         {
-            new VariantIntegrity(PipeMaterialVariant.Glass, 8f, 45f, 0),
-            new VariantIntegrity(PipeMaterialVariant.Titanium, 15f, 120f, 1),
-            new VariantIntegrity(PipeMaterialVariant.Plasteel, 22f, 240f, 2)
+            new VariantIntegrity(PipeMaterialVariant.Glass, 8f, 45f),
+            new VariantIntegrity(PipeMaterialVariant.Titanium, 15f, 120f),
+            new VariantIntegrity(PipeMaterialVariant.Plasteel, 22f, 240f)
         };
 
         public VariantIntegrity[] Variants => variants;

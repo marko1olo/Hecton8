@@ -154,7 +154,9 @@ namespace Hecton8.UI
                 return;
 
             RefreshDistanceCacheIfDirty();
-            float3 cameraToTarget = (float3)(_targetTransform.position - _cameraTransform.position);
+            Vector3 targetPosition = _targetTransform.position;
+            Vector3 cameraPosition = _cameraTransform.position;
+            float3 cameraToTarget = (float3)(targetPosition - cameraPosition);
             float distanceSq = math.lengthsq(cameraToTarget);
             if (!math.isfinite(distanceSq))
                 return;

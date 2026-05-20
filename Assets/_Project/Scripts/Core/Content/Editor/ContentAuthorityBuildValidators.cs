@@ -560,7 +560,7 @@ namespace Hecton8.Core.Content.Editor
         private static void ValidateBinaryLayouts()
         {
             AssertSize<ContentAssetBinaryRecord>(32, nameof(ContentAssetBinaryRecord));
-            AssertSize<ContentBundleRefState>(24, nameof(ContentBundleRefState));
+            AssertSize<ContentBundleRefState>(32, nameof(ContentBundleRefState));
             AssertSize<ContentAuthorityTelemetryEntry>(64, nameof(ContentAuthorityTelemetryEntry));
             AssertSize<ContentPendingLoadState>(16, nameof(ContentPendingLoadState));
             AssertSize<ContentVisualFeatureBudget>(16, nameof(ContentVisualFeatureBudget));

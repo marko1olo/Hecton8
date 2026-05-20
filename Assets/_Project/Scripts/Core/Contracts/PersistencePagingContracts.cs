@@ -16,6 +16,7 @@ namespace Hecton8.Core.Contracts
     public static class H8WorldPagePayloadTypes
     {
         public const uint VoxelDeltaRle = 0x5658524Cu; // VXRL
+        public const uint EntityDeltaRle = 0x4544524Cu; // EDRL
         public const uint InventoryState = 0x494E5654u; // INVT
         public const uint ChunkDehydratedMetadata = 0x43484452u; // CHDR
         public const uint WfcOutpostState = 0x5746434Fu; // WFCO

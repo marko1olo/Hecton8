@@ -34,6 +34,7 @@ Shader "Hecton8/Tools/DecayLit"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
         #include "Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl"
+        #include "Assets/_Project/Art/Shaders/Hecton_CustomLightProbeGrid.hlsl"
 
         TEXTURE2D(_BaseMap);
         SAMPLER(sampler_BaseMap);
@@ -115,7 +116,7 @@ Shader "Hecton8/Tools/DecayLit"
             half ambientOcclusion)
         {
             half caveAmbientFactor = (half)HectonCoreLitEvaluateCaveAmbientFactor(positionWS, normalWS);
-            half3 color = SampleSH(normalWS) * albedo * ambientOcclusion * caveAmbientFactor;
+            half3 color = H8CustomLightProbeResolveAmbient(positionWS, normalWS, half3(0.015h, 0.025h, 0.035h)) * albedo * ambientOcclusion * caveAmbientFactor;
             half specularStrength = lerp(0.04h, 0.18h, metallic);
 
             float4 shadowCoord = TransformWorldToShadowCoord(positionWS);

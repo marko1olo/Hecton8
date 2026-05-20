@@ -10,7 +10,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Audio Waveform Animator")]
-    public sealed class AudioWaveformAnimator : MonoBehaviour, ILateFrameTickable
+    public sealed class AudioWaveformAnimator : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int MaxCueTextChars = 1024;
         private const float AmplitudeIdleEpsilon = 0.001f;
@@ -29,8 +29,10 @@ namespace Hecton8.UI
         [SerializeField, Range(0.1f, 2f)] private float subtitleManagerPollInterval = 0.5f;
 
         private SubtitleManager _subtitleManager;
+        private SubtitleManager _cachedSubtitleManager;
         private bool _tickRegistered;
         private bool _subscribed;
+        private bool _hotSwapRegistered;
         private float _cueTimer;
         private float _cueDuration;
         private float _noisePhase;
@@ -64,6 +66,8 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             EnsureWaveformTargets();
+            CacheSubtitleManagerCold();
+            TryRegisterHotSwapListener();
             TrySubscribeToSubtitleManager();
             ApplyIdlePose();
             RefreshTickRegistration();
@@ -71,12 +75,33 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             UnsubscribeFromSubtitleManager();
             UnregisterFromTickManager();
             _cueTimer = 0f;
             _cueDuration = 0f;
             _amplitude = 0f;
             ApplyIdlePose();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.SubtitleRuntime)
+                return;
+
+            _cachedSubtitleManager = currentService as SubtitleManager;
+            if (_cachedSubtitleManager == null)
+            {
+                UnsubscribeFromSubtitleManager();
+                RefreshTickRegistration();
+                return;
+            }
+
+            TrySubscribeToSubtitleManager();
+            RefreshTickRegistration();
         }
 
         /// <inheritdoc />
@@ -245,7 +270,7 @@ namespace Hecton8.UI
 
         private void TrySubscribeToSubtitleManager()
         {
-            SubtitleManager manager = GlobalRegistry.Subtitles;
+            SubtitleManager manager = _cachedSubtitleManager;
             if (manager == null)
                 return;
 
@@ -256,6 +281,28 @@ namespace Hecton8.UI
             _subtitleManager = manager;
             _subtitleManager.OnCueChanged += HandleCueChanged;
             _subscribed = true;
+        }
+
+        private void CacheSubtitleManagerCold()
+        {
+            _cachedSubtitleManager = GlobalRegistry.Subtitles;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
         }
 
         private void UnsubscribeFromSubtitleManager()

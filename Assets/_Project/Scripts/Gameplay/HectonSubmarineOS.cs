@@ -9,7 +9,6 @@ using Hecton8.Power;
 using Hecton8.UI;
 using Hecton8.Visor;
 using Hecton8.World;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -577,14 +576,7 @@ namespace Hecton8.Gameplay
         private const float EngineHeatQuantizeInv = 0.0322580645f;
         private const float SonarSweepDecayPerSecond = 1.75f;
         private const float VwsRepeatCooldownSeconds = 8f;
-        private const float BrownoutLightIntensityScale = 0.15f;
         private const float BrownoutBlinkFrequency = 8f;
-        private const int BrownoutLightBindingCapacity = 256;
-        private const int BrownoutMaterialBindingCapacity = 384;
-        private const int BrownoutLightResolveCapacity = 32;
-        private const int BrownoutRendererResolveCapacity = 48;
-        private const int BrownoutSharedMaterialResolveCapacity = 8;
-        private const int BrownoutVisualMutationBudgetPerRender = 64;
         private const byte LogPriorityNormal = 1;
         private const byte LogPriorityWarning = 2;
         private const byte LogPriorityCritical = 3;
@@ -599,7 +591,6 @@ namespace Hecton8.Gameplay
         private const string HullBreachCaptionText = "HULL BREACH";
         private const string PressureHighCaptionText = "HULL PRESSURE HIGH";
         private const string ThermalStressCaptionText = "THERMAL STRESS";
-        private static readonly int _EmissionColorId = Shader.PropertyToID("_EmissionColor");
         private static readonly int _HectonBrownoutPulseId = Shader.PropertyToID("_HectonBrownoutPulse");
         private static readonly int _HectonSubOsLightingStateId = Shader.PropertyToID("_HectonSubOsLightingState");
         private static readonly int _SubInteriorLightingStateId = Shader.PropertyToID("_SubInteriorLightingState");
@@ -607,21 +598,6 @@ namespace Hecton8.Gameplay
         private static readonly int _HectonSubOsSonarLodId = Shader.PropertyToID("_HectonSubOsSonarLod");
         private static readonly int _HectonSubOsNavigationId = Shader.PropertyToID("_HectonSubOsNavigation");
         private static readonly int _HectonSubOsEngineDiagnosticsId = Shader.PropertyToID("_HectonSubOsEngineDiagnostics");
-        private static readonly Color BrownoutEmissiveColor = new Color(1f, 0.12f, 0.08f, 1f);
-
-        private struct BrownoutLightBinding
-        {
-            public Light Light;
-            public float BaseIntensity;
-            public Color BaseColor;
-        }
-
-        private struct BrownoutMaterialBinding
-        {
-            public Material Material;
-            public Color BaseEmissionColor;
-        }
-
         [Header("Audio")]
         [Tooltip("Optional helmet warning for low-power transition events.")]
         [SerializeField] private AudioClip lowPowerWarningClip;
@@ -672,22 +648,6 @@ namespace Hecton8.Gameplay
         private SubmarineCoreDirector _submarineCore;
         private SubmarineAtmosphereSystem _atmosphereSystem;
         private SubmarineStationKeepingController _stationKeepingController;
-        // COLD ALLOC: BrownoutLightBinding[256] - fixed brownout point-light cache, no runtime ToArray - owner: HectonSubmarineOS
-        private readonly BrownoutLightBinding[] _brownoutLights = new BrownoutLightBinding[BrownoutLightBindingCapacity];
-        // COLD ALLOC: BrownoutMaterialBinding[384] - fixed brownout emissive-material cache, no runtime ToArray - owner: HectonSubmarineOS
-        private readonly BrownoutMaterialBinding[] _brownoutMaterials = new BrownoutMaterialBinding[BrownoutMaterialBindingCapacity];
-        // COLD ALLOC: List<Light>[32] - reusable module light resolve buffer for brownout cache rebuild - owner: HectonSubmarineOS
-        private readonly List<Light> _brownoutLightResolveBuffer = new List<Light>(BrownoutLightResolveCapacity);
-        // COLD ALLOC: List<Renderer>[48] - reusable module renderer resolve buffer for brownout cache rebuild - owner: HectonSubmarineOS
-        private readonly List<Renderer> _brownoutRendererResolveBuffer = new List<Renderer>(BrownoutRendererResolveCapacity);
-        // COLD ALLOC: List<Material>[8] - reusable renderer shared-material resolve buffer for brownout cache rebuild - owner: HectonSubmarineOS
-        private readonly List<Material> _brownoutSharedMaterialResolveBuffer = new List<Material>(BrownoutSharedMaterialResolveCapacity);
-        private int _brownoutLightCount;
-        private int _brownoutMaterialCount;
-        private int _brownoutLightApplyCursor;
-        private int _brownoutMaterialApplyCursor;
-        private int _brownoutLightRestoreCursor;
-        private int _brownoutMaterialRestoreCursor;
         private HectonSubmarineOsSnapshot _lastPublishedSnapshot;
         private SubsystemStatus _subsystemStatus;
         private SubmarineEmergencyLevel _emergencyLevel;
@@ -716,9 +676,6 @@ namespace Hecton8.Gameplay
         private bool _fatalImplosionLatched;
         private bool _multiSystemFailureLatched;
         private bool _subOsPowered = true;
-        private bool _brownoutCachesBuilt;
-        private bool _brownoutVisualStateApplied;
-        private bool _brownoutRestorePending;
         private bool _registeredUpdatable;
         private bool _registeredRenderable;
         private bool _registeredSlowTick;
@@ -887,19 +844,12 @@ namespace Hecton8.Gameplay
             if (!_cascadingBrownoutActive || _lowPowerModeActive)
             {
                 Shader.SetGlobalFloat(_HectonBrownoutPulseId, 0f);
-                if (_brownoutVisualStateApplied || _brownoutRestorePending)
-                    RestoreBrownoutVisualsBudgeted();
-
                 return;
             }
-
-            if (!_brownoutCachesBuilt)
-                return;
 
             _brownoutPulsePhase = math.frac(_brownoutPulsePhase + math.max(0f, deltaTime) * BrownoutBlinkFrequency);
             float pulse = 1f - math.abs((_brownoutPulsePhase * 2f) - 1f);
             Shader.SetGlobalFloat(_HectonBrownoutPulseId, pulse);
-            ApplyBrownoutVisualsBudgeted();
         }
 
         private void TryStartRuntimeLifecycle()
@@ -908,7 +858,6 @@ namespace Hecton8.Gameplay
                 return;
 
             CacheReferences();
-            RebuildBrownoutCaches();
             Subscribe();
             _fleetSnapshot = DroneFleetManager.CurrentSnapshot;
             TryRegister();
@@ -1809,9 +1758,10 @@ namespace Hecton8.Gameplay
 
             _cascadingBrownoutActive = active;
             if (!active)
-                BeginBrownoutRestore();
-            else
-                ResetBrownoutVisualMutationCursors();
+            {
+                _brownoutPulsePhase = 0f;
+                Shader.SetGlobalFloat(_HectonBrownoutPulseId, 0f);
+            }
         }
 
         private bool ResolveCascadingBrownoutActive()
@@ -1822,216 +1772,10 @@ namespace Hecton8.Gameplay
             return _highestBrownoutTier >= LogisticsBrownoutTier.EssentialOnly || _powerNormalized < CascadingBrownoutThreshold01;
         }
 
-        private void RebuildBrownoutCaches()
-        {
-            System.Array.Clear(_brownoutLights, 0, _brownoutLights.Length);
-            System.Array.Clear(_brownoutMaterials, 0, _brownoutMaterials.Length);
-            _brownoutLightCount = 0;
-            _brownoutMaterialCount = 0;
-            ResetBrownoutVisualMutationCursors();
-            _brownoutLightResolveBuffer.Clear();
-            _brownoutRendererResolveBuffer.Clear();
-            _brownoutSharedMaterialResolveBuffer.Clear();
-
-            int moduleCount = BaseModule.ActiveModuleCount;
-            if (moduleCount <= 0)
-            {
-                _brownoutCachesBuilt = true;
-                return;
-            }
-
-            for (int moduleIndex = 0; moduleIndex < moduleCount; moduleIndex++)
-            {
-                BaseModule module = BaseModule.GetActiveModuleAt(moduleIndex);
-                if (module == null)
-                    continue;
-
-                _brownoutLightResolveBuffer.Clear();
-                module.GetComponentsInChildren(true, _brownoutLightResolveBuffer);
-                for (int lightIndex = 0; lightIndex < _brownoutLightResolveBuffer.Count; lightIndex++)
-                {
-                    Light light = _brownoutLightResolveBuffer[lightIndex];
-                    if (light == null || light.type != LightType.Point)
-                        continue;
-
-                    AddBrownoutLightBinding(new BrownoutLightBinding
-                    {
-                        Light = light,
-                        BaseIntensity = light.intensity,
-                        BaseColor = light.color
-                    });
-                }
-
-                _brownoutRendererResolveBuffer.Clear();
-                module.GetComponentsInChildren(true, _brownoutRendererResolveBuffer);
-                for (int rendererIndex = 0; rendererIndex < _brownoutRendererResolveBuffer.Count; rendererIndex++)
-                {
-                    Renderer renderer = _brownoutRendererResolveBuffer[rendererIndex];
-                    if (renderer == null)
-                        continue;
-
-                    _brownoutSharedMaterialResolveBuffer.Clear();
-                    renderer.GetSharedMaterials(_brownoutSharedMaterialResolveBuffer);
-                    for (int materialIndex = 0; materialIndex < _brownoutSharedMaterialResolveBuffer.Count; materialIndex++)
-                    {
-                        Material material = _brownoutSharedMaterialResolveBuffer[materialIndex];
-                        if (material == null || !material.HasProperty(_EmissionColorId) || ContainsMaterial(material))
-                            continue;
-
-                        AddBrownoutMaterialBinding(new BrownoutMaterialBinding
-                        {
-                            Material = material,
-                            BaseEmissionColor = material.GetColor(_EmissionColorId)
-                        });
-                    }
-                }
-            }
-
-            _brownoutLightResolveBuffer.Clear();
-            _brownoutRendererResolveBuffer.Clear();
-            _brownoutSharedMaterialResolveBuffer.Clear();
-            _brownoutCachesBuilt = true;
-        }
-
-        private void AddBrownoutLightBinding(BrownoutLightBinding binding)
-        {
-            if (_brownoutLightCount >= _brownoutLights.Length)
-                return;
-
-            _brownoutLights[_brownoutLightCount++] = binding;
-        }
-
-        private void AddBrownoutMaterialBinding(BrownoutMaterialBinding binding)
-        {
-            if (_brownoutMaterialCount >= _brownoutMaterials.Length)
-                return;
-
-            _brownoutMaterials[_brownoutMaterialCount++] = binding;
-        }
-
-        private bool ContainsMaterial(Material material)
-        {
-            for (int i = 0; i < _brownoutMaterialCount; i++)
-            {
-                if (ReferenceEquals(_brownoutMaterials[i].Material, material))
-                    return true;
-            }
-
-            return false;
-        }
-
-        private void ResetBrownoutVisualMutationCursors()
-        {
-            _brownoutLightApplyCursor = 0;
-            _brownoutMaterialApplyCursor = 0;
-            _brownoutLightRestoreCursor = 0;
-            _brownoutMaterialRestoreCursor = 0;
-            _brownoutRestorePending = false;
-        }
-
-        private void BeginBrownoutRestore()
-        {
-            _brownoutLightRestoreCursor = 0;
-            _brownoutMaterialRestoreCursor = 0;
-            _brownoutRestorePending =
-                _brownoutVisualStateApplied ||
-                _brownoutLightApplyCursor > 0 ||
-                _brownoutMaterialApplyCursor > 0;
-        }
-
-        private void ApplyBrownoutVisualsBudgeted()
-        {
-            int budget = BrownoutVisualMutationBudgetPerRender;
-            while (budget > 0 && _brownoutLightApplyCursor < _brownoutLightCount)
-            {
-                BrownoutLightBinding binding = _brownoutLights[_brownoutLightApplyCursor++];
-                budget--;
-                if (binding.Light == null)
-                    continue;
-
-                binding.Light.intensity = binding.BaseIntensity * BrownoutLightIntensityScale;
-                binding.Light.color = binding.BaseColor;
-            }
-
-            while (budget > 0 && _brownoutMaterialApplyCursor < _brownoutMaterialCount)
-            {
-                BrownoutMaterialBinding binding = _brownoutMaterials[_brownoutMaterialApplyCursor++];
-                budget--;
-                if (binding.Material == null)
-                    continue;
-
-                binding.Material.SetColor(_EmissionColorId, BrownoutEmissiveColor);
-            }
-
-            _brownoutVisualStateApplied =
-                _brownoutLightApplyCursor >= _brownoutLightCount &&
-                _brownoutMaterialApplyCursor >= _brownoutMaterialCount;
-        }
-
-        private void RestoreBrownoutVisualsBudgeted()
-        {
-            if (!_brownoutRestorePending && !_brownoutVisualStateApplied)
-                return;
-
-            int budget = BrownoutVisualMutationBudgetPerRender;
-            while (budget > 0 && _brownoutLightRestoreCursor < _brownoutLightCount)
-            {
-                BrownoutLightBinding binding = _brownoutLights[_brownoutLightRestoreCursor++];
-                budget--;
-                if (binding.Light == null)
-                    continue;
-
-                binding.Light.intensity = binding.BaseIntensity;
-                binding.Light.color = binding.BaseColor;
-            }
-
-            while (budget > 0 && _brownoutMaterialRestoreCursor < _brownoutMaterialCount)
-            {
-                BrownoutMaterialBinding binding = _brownoutMaterials[_brownoutMaterialRestoreCursor++];
-                budget--;
-                if (binding.Material == null)
-                    continue;
-
-                binding.Material.SetColor(_EmissionColorId, binding.BaseEmissionColor);
-            }
-
-            if (_brownoutLightRestoreCursor < _brownoutLightCount ||
-                _brownoutMaterialRestoreCursor < _brownoutMaterialCount)
-            {
-                return;
-            }
-
-            _brownoutVisualStateApplied = false;
-            _brownoutRestorePending = false;
-            _brownoutLightApplyCursor = 0;
-            _brownoutMaterialApplyCursor = 0;
-        }
-
         private void RestoreBrownoutVisualsImmediate()
         {
+            _brownoutPulsePhase = 0f;
             Shader.SetGlobalFloat(_HectonBrownoutPulseId, 0f);
-
-            for (int i = 0; i < _brownoutLightCount; i++)
-            {
-                BrownoutLightBinding binding = _brownoutLights[i];
-                if (binding.Light == null)
-                    continue;
-
-                binding.Light.intensity = binding.BaseIntensity;
-                binding.Light.color = binding.BaseColor;
-            }
-
-            for (int i = 0; i < _brownoutMaterialCount; i++)
-            {
-                BrownoutMaterialBinding binding = _brownoutMaterials[i];
-                if (binding.Material == null)
-                    continue;
-
-                binding.Material.SetColor(_EmissionColorId, binding.BaseEmissionColor);
-            }
-
-            _brownoutVisualStateApplied = false;
-            ResetBrownoutVisualMutationCursors();
         }
 
         private void QueueVoiceAlarm(uint eventId, string captionText, float intensity, byte warningId, byte warningFlags)

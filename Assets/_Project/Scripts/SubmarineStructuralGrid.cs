@@ -7,7 +7,6 @@ using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
-using Hecton8.Visor;
 using Hecton8.VFX;
 using Hecton8.World;
 using Unity.Burst;
@@ -120,6 +119,8 @@ namespace Hecton8.Physics
         private const float CriticalBreachWarningCadenceSeconds = 1.5f;
         private const uint DamageControlTelemetryInvalidFlag = 1u;
         private const uint DamageControlTelemetryRepairJobInFlightFlag = 2u;
+        private const uint HullDentVisualDamageType = 3u;
+        private const uint HullDentVisualSourceHash = 0xD3CA0149u;
         private const float DefaultLeakPlumeParticleSizeMeters = 0.18f;
         private const float DefaultLeakPlumeRenderBoundsPaddingMeters = 4f;
         private const float Epsilon = 0.0001f;
@@ -398,7 +399,7 @@ namespace Hecton8.Physics
             public uint StateHash;
         }
 
-        [Header("â”€â”€ Grid Authoring â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Header("Grid Authoring")]
         [Tooltip("Voxel columns along the submarine local X axis.")]
         [SerializeField, Min(1)] private int gridWidth = 16;
         [Tooltip("Voxel rows along the submarine local Y axis.")]
@@ -412,7 +413,7 @@ namespace Hecton8.Physics
         [Tooltip("When enabled, the grid bounds derive from the cached hull collider at startup.")]
         [SerializeField] private bool deriveGridBoundsFromHullCollider = true;
 
-        [Header("â”€â”€ Damage Diffusion â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Header("Damage Diffusion")]
         [Tooltip("Minimum spherical damage radius in meters for any structural impact.")]
         [SerializeField, Min(0.05f)] private float minimumImpactRadiusMeters = DefaultMinimumImpactRadiusMeters;
         [Tooltip("Additional damage radius in meters added per impact speed unit.")]
@@ -437,12 +438,6 @@ namespace Hecton8.Physics
         [SerializeField, Min(0f)] private float dentDecalSurfaceOffsetMeters = 0.015f;
         [Tooltip("Lifetime before the pooled decal is returned.")]
         [SerializeField, Min(0.1f)] private float dentDecalLifetimeSeconds = 4f;
-        [Tooltip("Minimum collision kinetic energy before the hull queues structural damage or a visual dent.")]
-        [SerializeField, Min(0f)] private float hullCollisionYieldEnergyJoules = 12000f;
-        [Tooltip("Kinetic energy at or above this value maps to full dent severity.")]
-        [SerializeField, Min(1f)] private float hullCollisionFullDentEnergyJoules = 65000f;
-        [Tooltip("Maximum integrity delta contributed by a single heavy hull collision.")]
-        [SerializeField, Range(1f, 255f)] private float hullCollisionMaxIntegrityDelta = 96f;
         [Tooltip("Optional shared material for GPU-instanced visual-only hull impact sparks.")]
         [SerializeField] private Material hullImpactSparkMaterial;
         [Tooltip("Maximum pooled spark particles reserved for submarine hull impacts.")]
@@ -450,7 +445,7 @@ namespace Hecton8.Physics
         [Tooltip("Maximum visual spark burst emitted at full impact severity.")]
         [SerializeField, Range(1, 64)] private int hullImpactSparkMaxBurstCount = 50;
 
-        [Header("â”€â”€ References â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Header("References")]
         [Tooltip("Optional authored hull collider used for automatic local bounds fitting.")]
         [SerializeField] private Collider hullCollider;
         [Tooltip("Optional authored submarine fluid owner consuming published breach areas.")]
@@ -474,13 +469,13 @@ namespace Hecton8.Physics
         [Tooltip("Extra world-space render-bound padding around the submarine while leak plumes are active.")]
         [SerializeField, Min(0f)] private float leakPlumeRenderBoundsPaddingMeters = DefaultLeakPlumeRenderBoundsPaddingMeters;
 
-        [Header("Ã¢â€â‚¬Ã¢â€â‚¬ Fatigue Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬")]
+        [Header("Fatigue")]
         [Tooltip("Pressure threshold in kPa that counts as one full pressurization cycle.")]
         [SerializeField, Min(0f)] private float fatiguePressureThresholdKPa = DefaultFatiguePressureThresholdKPa;
         [Tooltip("Permanent integrity bytes lost each time a compartment crosses into the high-pressure band.")]
         [SerializeField, Range(1, 32)] private byte fatigueIntegrityLossPerCycle = DefaultFatigueIntegrityLossPerCycle;
 
-        [Header("── Abyssal Compression ──────────────────")]
+        [Header("Abyssal Compression")]
         [Tooltip("Depth threshold in meters where ambient pressure starts compressing compartment volume.")]
         [SerializeField, Min(0f)] private float compressionDepthThresholdMeters = DefaultCompressionDepthThresholdMeters;
         [Tooltip("Hydrostatic pressure in kPa where maximum hull-volume compression is reached.")]
@@ -532,7 +527,6 @@ namespace Hecton8.Physics
         private IDamageSignalEmitter _damageEmitter;
         private Transform _cachedTransform;
         private Rigidbody _cachedHullRigidbody;
-        private SubmarineHullImpactRelay _hullImpactRelay;
         private ParticleSystem _hullImpactSparkParticles;
         private ParticleSystemRenderer _hullImpactSparkRenderer;
         private ParticleSystem.EmitParams _hullImpactSparkEmitParams;
@@ -543,7 +537,7 @@ namespace Hecton8.Physics
         private bool _breachRepairJobRunning;
         private bool _pendingRepairQueued;
         private bool _breachGpuDirty;
-        private readonly List<MonoBehaviour> _componentSearchBuffer = new List<MonoBehaviour>(4); // COLD ALLOC: List<MonoBehaviour>(4) â€” local component search scratch for interface-only wiring â€” owner: SubmarineStructuralGrid
+        private readonly List<MonoBehaviour> _componentSearchBuffer = new List<MonoBehaviour>(4); // COLD ALLOC: List<MonoBehaviour>(4) - local component search scratch for interface-only wiring - owner: SubmarineStructuralGrid
 
         private NativeArray<byte> _cellIntegrityFront;
         private NativeArray<byte> _cellIntegrityBack;
@@ -566,7 +560,7 @@ namespace Hecton8.Physics
         private GraphicsBuffer _leakPlumeParticleBuffer;
         private bool _mappingJobRunning;
         private bool _fatigueJobRunning;
-        // COLD ALLOC: float[8] Ã¢â‚¬â€ previous compartment pressures used to detect fatigue cycles Ã¢â‚¬â€ owner: SubmarineStructuralGrid
+        // COLD ALLOC: float[8] - previous compartment pressures used to detect fatigue cycles - owner: SubmarineStructuralGrid
         private readonly float[] _previousCompartmentPressuresKPa = new float[CompartmentCapacity];
 
         /// <inheritdoc />
@@ -618,14 +612,12 @@ namespace Hecton8.Physics
             GlobalRegistry.RegisterSubmarineHullBreach(this);
             TryRegister();
             TryRegisterDamageReceiver();
-            EnsureHullCollisionRelay();
             EnsureHullImpactSparkParticles();
         }
 
         private void OnDisable()
         {
             StopHullImpactSparkParticles();
-            ClearHullCollisionRelay();
             TryUnregisterDamageReceiver();
             TryUnregister();
             if (ReferenceEquals(GlobalRegistry.SubmarineHullBreach, this))
@@ -638,7 +630,6 @@ namespace Hecton8.Physics
         private void OnDestroy()
         {
             StopHullImpactSparkParticles();
-            ClearHullCollisionRelay();
             TryUnregisterDamageReceiver();
             TryUnregister();
             if (ReferenceEquals(GlobalRegistry.SubmarineHullBreach, this))
@@ -696,66 +687,6 @@ namespace Hecton8.Physics
         public void LateFrameTick()
         {
             RenderLeakPlumeParticles();
-        }
-
-        private void OnCollisionEnter(Collision collision)
-        {
-            ProcessHullCollision(collision);
-        }
-
-        private void ProcessRelayedHullCollision(Collision collision)
-        {
-            ProcessHullCollision(collision);
-        }
-
-        private void ProcessHullCollision(Collision collision)
-        {
-            if (!_nativeStateReady ||
-                collision == null ||
-                collision.contactCount <= 0)
-            {
-                return;
-            }
-
-            Rigidbody hullBody = ResolveHullRigidbody();
-            if (hullBody == null)
-                return;
-
-            ISubmarineRuntimeContext submarine = GlobalRegistry.Submarine;
-            if (submarine == null || !ReferenceEquals(submarine.HullRigidbody, hullBody))
-                return;
-
-            float impactSpeedSq = collision.relativeVelocity.sqrMagnitude;
-            if (impactSpeedSq <= Epsilon * Epsilon)
-                return;
-
-            float effectiveMass = ResolveEffectiveCollisionMass(hullBody, collision.rigidbody);
-            float kineticEnergy = 0.5f * effectiveMass * impactSpeedSq;
-            float yieldEnergy = math.max(Epsilon, hullCollisionYieldEnergyJoules);
-            if (kineticEnergy < yieldEnergy)
-                return;
-
-            float impactSpeed = impactSpeedSq * math.rsqrt(math.max(impactSpeedSq, Epsilon * Epsilon));
-            float fullDentEnergy = math.max(yieldEnergy + Epsilon, hullCollisionFullDentEnergyJoules);
-            float severity01 = math.saturate((kineticEnergy - yieldEnergy) / (fullDentEnergy - yieldEnergy));
-            ContactPoint contact = collision.GetContact(0);
-            if (!TryResolveLocalPointAup(contact.point, out float3 localPoint) ||
-                !TryResolveLocalDirection(contact.normal, out float3 localNormalVector))
-            {
-                return;
-            }
-
-            float3 localNormal = ResolveOutwardHullNormal(
-                localPoint,
-                localNormalVector);
-            byte integrityDelta = (byte)math.clamp(
-                (int)math.round(math.lerp(1f, math.max(1f, hullCollisionMaxIntegrityDelta), severity01)),
-                1,
-                255);
-
-            QueueImpactLocal(localPoint, impactSpeed, integrityDelta);
-            QueueHullImpactDecalLocal(localPoint, localNormal, impactSpeed, severity01);
-            TriggerHullImpactCameraShake(severity01, contact.point, contact.normal);
         }
 
         /// <summary>
@@ -859,13 +790,24 @@ namespace Hecton8.Physics
                 math.max(0f, dentDecalSizeFromSeverityMeters),
                 impactSpeed,
                 severity01);
-            DynamicDecalVaultRuntime.TryEnqueueRuntimeImpact(
-                position,
-                normal,
-                DynamicDecalMaterialHashes.HullDent,
-                size,
-                math.max(0.1f, dentDecalLifetimeSeconds),
-                DynamicDecalFlags.HullImpact);
+            CombatDamageSignal signal = default;
+            float3 direction = default;
+            direction.x = -normal.x;
+            direction.y = -normal.y;
+            direction.z = -normal.z;
+            signal.ImpactAup = CombatDamageSignalCodec.FromRuntimePoint(position);
+            signal.Direction = direction;
+            signal.Magnitude = math.max(size * 18f, impactSpeed * 0.2f);
+            signal.DamageType = HullDentVisualDamageType;
+            signal.TargetHash = unchecked((uint)math.max(1, GetInstanceID()));
+            signal.SourceHash = HullDentVisualSourceHash;
+            signal.Frame = unchecked((uint)Time.frameCount);
+            signal.SourceId = 0;
+            signal.TargetId = 0;
+            signal.Channel = 0;
+            signal.Flags = CombatDamageSignal.DirectRuntimeFlag;
+            signal.IntegrityDelta = (byte)math.clamp(math.round(math.saturate(severity01) * 255f), 0f, 255f);
+            GlobalSignals.Publish(in signal);
         }
 
         private static void TriggerHullImpactCameraShake(float severity01, Vector3 worldPoint, Vector3 worldNormal)
@@ -880,9 +822,9 @@ namespace Hecton8.Physics
 
             Transform cachedTransform = _cachedTransform != null ? _cachedTransform : transform;
             _cachedTransform = cachedTransform;
-            GameObject sparkObject = new GameObject("PFX_SubmarineHull_ImpactSparks"); // COLD ALLOC: GameObject[1] — visual-only hull impact particle owner — owner: SubmarineStructuralGrid
+            GameObject sparkObject = new GameObject("PFX_SubmarineHull_ImpactSparks"); // COLD ALLOC: GameObject[1] - visual-only hull impact particle owner - owner: SubmarineStructuralGrid
             sparkObject.transform.SetParent(cachedTransform, false);
-            _hullImpactSparkParticles = sparkObject.AddComponent<ParticleSystem>(); // COLD ALLOC: ParticleSystem[1] — pooled hull impact sparks — owner: SubmarineStructuralGrid
+            _hullImpactSparkParticles = sparkObject.AddComponent<ParticleSystem>(); // COLD ALLOC: ParticleSystem[1] - pooled hull impact sparks - owner: SubmarineStructuralGrid
             _hullImpactSparkRenderer = sparkObject.GetComponent<ParticleSystemRenderer>();
 
             ParticleSystem.MainModule main = _hullImpactSparkParticles.main;
@@ -1638,16 +1580,6 @@ namespace Hecton8.Physics
             return _cachedHullRigidbody;
         }
 
-        private static float ResolveEffectiveCollisionMass(Rigidbody hullBody, Rigidbody otherBody)
-        {
-            float hullMass = hullBody != null ? math.max(1f, hullBody.mass) : 1f;
-            if (otherBody == null || otherBody.isKinematic)
-                return hullMass;
-
-            float otherMass = math.max(1f, otherBody.mass);
-            return (hullMass * otherMass) / math.max(1f, hullMass + otherMass);
-        }
-
         private bool TryResolveLocalPointAup(Vector3 worldPoint, out float3 localPoint)
         {
             localPoint = default;
@@ -1965,32 +1897,32 @@ namespace Hecton8.Physics
             int cellCount = ResolveCellCount();
             int breachWordCount = (cellCount + 63) >> 6;
 
-            // COLD ALLOC: NativeArray<byte>[cellCount] â€” published hull integrity front buffer â€” owner: SubmarineStructuralGrid
+            // COLD ALLOC: NativeArray<byte>[cellCount] - published hull integrity front buffer - owner: SubmarineStructuralGrid
             _cellIntegrityFront = new NativeArray<byte>(cellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<byte>[cellCount] â€” write-side hull integrity back buffer â€” owner: SubmarineStructuralGrid
+            // COLD ALLOC: NativeArray<byte>[cellCount] - write-side hull integrity back buffer - owner: SubmarineStructuralGrid
             _cellIntegrityBack = new NativeArray<byte>(cellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _cellFatigue = new NativeArray<byte>(cellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<byte>[cellCount] â€” immutable cell-to-compartment lookup â€” owner: SubmarineStructuralGrid
+            // COLD ALLOC: NativeArray<byte>[cellCount] - immutable cell-to-compartment lookup - owner: SubmarineStructuralGrid
             _cellCompartmentIndices = new NativeArray<byte>(cellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<ulong>[breachWordCount] â€” published hull breach bitmask front buffer â€” owner: SubmarineStructuralGrid
+            // COLD ALLOC: NativeArray<ulong>[breachWordCount] - published hull breach bitmask front buffer - owner: SubmarineStructuralGrid
             _hullBreachMaskFront = new NativeArray<ulong>(breachWordCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<ulong>[breachWordCount] â€” write-side hull breach bitmask back buffer â€” owner: SubmarineStructuralGrid
+            // COLD ALLOC: NativeArray<ulong>[breachWordCount] - write-side hull breach bitmask back buffer - owner: SubmarineStructuralGrid
             _hullBreachMaskBack = new NativeArray<ulong>(breachWordCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[8] â€” published per-compartment breach areas â€” owner: SubmarineStructuralGrid
+            // COLD ALLOC: NativeArray<float>[8] - published per-compartment breach areas - owner: SubmarineStructuralGrid
             _compartmentBreachAreasFront = new NativeArray<float>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[8] â€” write-side per-compartment breach areas â€” owner: SubmarineStructuralGrid
+            // COLD ALLOC: NativeArray<float>[8] - write-side per-compartment breach areas - owner: SubmarineStructuralGrid
             _compartmentBreachAreasBack = new NativeArray<float>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<ImpactCommand>[16] â€” queued impact staging buffer â€” owner: SubmarineStructuralGrid
+            // COLD ALLOC: NativeArray<ImpactCommand>[16] - queued impact staging buffer - owner: SubmarineStructuralGrid
             _queuedImpacts = new NativeArray<ImpactCommand>(MaxQueuedImpacts, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<ImpactCommand>[16] â€” scheduled impact snapshot buffer â€” owner: SubmarineStructuralGrid
+            // COLD ALLOC: NativeArray<ImpactCommand>[16] - scheduled impact snapshot buffer - owner: SubmarineStructuralGrid
             _scheduledImpacts = new NativeArray<ImpactCommand>(MaxQueuedImpacts, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float3>[8] — compartment centroids staged for Burst hull mapping — owner: SubmarineStructuralGrid
+            // COLD ALLOC: NativeArray<float3>[8] - compartment centroids staged for Burst hull mapping - owner: SubmarineStructuralGrid
             _compartmentCentroids = new NativeArray<float3>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<byte>[8] — pressure-fatigue compartment flags consumed by Burst job — owner: SubmarineStructuralGrid
+            // COLD ALLOC: NativeArray<byte>[8] - pressure-fatigue compartment flags consumed by Burst job - owner: SubmarineStructuralGrid
             _fatigueCompartmentFlags = new NativeArray<byte>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[8] — pressure-fatigue per-compartment loss scalars consumed by Burst job — owner: SubmarineStructuralGrid
+            // COLD ALLOC: NativeArray<float>[8] - pressure-fatigue per-compartment loss scalars consumed by Burst job - owner: SubmarineStructuralGrid
             _fatigueIntegrityLossPerCycle = new NativeArray<float>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[1] — pressure-fatigue peak metric returned by Burst job — owner: SubmarineStructuralGrid
+            // COLD ALLOC: NativeArray<float>[1] - pressure-fatigue peak metric returned by Burst job - owner: SubmarineStructuralGrid
             _fatiguePeakResult = new NativeArray<float>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             EnsureBreachVaultState();
             // COLD ALLOC: NativeArray<float>[1] - Burst repair severity sum return lane - owner: SubmarineStructuralGrid
@@ -2054,34 +1986,6 @@ namespace Hecton8.Physics
             EnsureCompartmentMappingReady();
             for (int i = 0; i < CompartmentCapacity; i++)
                 _previousCompartmentPressuresKPa[i] = 0f;
-        }
-
-        private void EnsureHullCollisionRelay()
-        {
-            Rigidbody hullBody = ResolveHullRigidbody();
-            if (hullBody == null || hullBody.gameObject == gameObject)
-                return;
-
-            if (_hullImpactRelay != null && _hullImpactRelay.gameObject == hullBody.gameObject)
-            {
-                _hullImpactRelay.Bind(this);
-                return;
-            }
-
-            if (!hullBody.TryGetComponent(out SubmarineHullImpactRelay relay))
-                relay = hullBody.gameObject.AddComponent<SubmarineHullImpactRelay>(); // COLD ALLOC: SubmarineHullImpactRelay[1] — hull-rigidbody collision forwarding to structural grid — owner: SubmarineStructuralGrid
-
-            relay.Bind(this);
-            _hullImpactRelay = relay;
-        }
-
-        private void ClearHullCollisionRelay()
-        {
-            if (_hullImpactRelay == null)
-                return;
-
-            _hullImpactRelay.Clear(this);
-            _hullImpactRelay = null;
         }
 
         private bool EnsureCompartmentMappingReady()
@@ -2418,29 +2322,5 @@ namespace Hecton8.Physics
             NativeMemorySentinel.RegisterNativeArray(_breachSeveritySumResult, NativeMemoryOwner, nameof(_breachSeveritySumResult), NativeMemoryLifetime);
         }
 
-        private sealed class SubmarineHullImpactRelay : MonoBehaviour
-        {
-            private SubmarineStructuralGrid _owner;
-
-            public void Bind(SubmarineStructuralGrid owner)
-            {
-                _owner = owner;
-            }
-
-            public void Clear(SubmarineStructuralGrid owner)
-            {
-                if (ReferenceEquals(_owner, owner))
-                    _owner = null;
-            }
-
-            private void OnCollisionEnter(Collision collision)
-            {
-                SubmarineStructuralGrid owner = _owner;
-                if (owner == null || !owner.isActiveAndEnabled)
-                    return;
-
-                owner.ProcessRelayedHullCollision(collision);
-            }
-        }
     }
 }

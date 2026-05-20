@@ -35,24 +35,29 @@ namespace Hecton8.Core.Editor
                 return;
             }
 
-            VaultBufferHandle<InputProfileDTO> profileHandle = vault.GetBufferHandle<InputProfileDTO>(
+            VaultGenerationHandle<InputProfileDTO> profileHandle = vault.GetGenerationHandle<InputProfileDTO>(
                 BufferID.ShinobuInputProfile,
                 1,
                 SystemID.CoreDeterminism,
                 NativeArrayOptions.UninitializedMemory);
-            VaultBufferHandle<InputStateDTO> inputHandle = vault.GetBufferHandle<InputStateDTO>(
+            VaultGenerationHandle<InputStateDTO> inputHandle = vault.GetGenerationHandle<InputStateDTO>(
                 BufferID.ShinobuInputCurrentDto,
                 1,
                 SystemID.CoreDeterminism,
                 NativeArrayOptions.UninitializedMemory);
 
-            if (!profileHandle.IsCreated || !inputHandle.IsCreated)
+            if (profileHandle.BufferID == 0u ||
+                inputHandle.BufferID == 0u ||
+                !vault.TryResolveHandle(in profileHandle, out NativeArray<InputProfileDTO> profileBuffer) ||
+                !vault.TryResolveHandle(in inputHandle, out NativeArray<InputStateDTO> inputBuffer) ||
+                profileBuffer.Length <= 0 ||
+                inputBuffer.Length <= 0)
             {
                 EditorGUILayout.LabelField("Input deterministic buffers are not ready.");
                 return;
             }
 
-            InputProfileDTO profile = profileHandle.GetElementAsReadOnlyRef(vault, 0);
+            InputProfileDTO profile = profileBuffer[0];
             EditorGUI.BeginChangeCheck();
             profile.InnerDeadzone = EditorGUILayout.Slider("Analog Inner Deadzone", profile.InnerDeadzone, 0f, 0.95f);
             profile.OuterDeadzone = EditorGUILayout.Slider("Analog Outer Deadzone", profile.OuterDeadzone, profile.InnerDeadzone + 0.0001f, 1f);
@@ -65,12 +70,12 @@ namespace Hecton8.Core.Editor
             mockCollision = EditorGUILayout.Toggle("Mock Collision Pulse", mockCollision);
             profile.Flags = mockCollision ? profile.Flags | 1u : profile.Flags & ~1u;
             if (EditorGUI.EndChangeCheck())
-                profileHandle.GetElementAsRef(vault, 0) = profile;
+                profileBuffer[0] = profile;
 
             Rect curveRect = GUILayoutUtility.GetRect(position.width - 20f, 120f);
             DrawCurvePreview(curveRect, profile);
 
-            InputStateDTO state = inputHandle.GetElementAsReadOnlyRef(vault, 0);
+            InputStateDTO state = inputBuffer[0];
             Rect oscilloscopeRect = GUILayoutUtility.GetRect(GridSize, GridSize);
             DrawOscilloscope(oscilloscopeRect, profile, state);
         }

@@ -10,9 +10,10 @@ namespace Hecton8.Core
 {
     public delegate void BurstCallbackDelegate(int eventId);
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 8)]
     public readonly struct BurstCallback
     {
+        [FieldOffset(0)]
         private readonly FunctionPointer<BurstCallbackDelegate> _function;
 
         public BurstCallback(FunctionPointer<BurstCallbackDelegate> function)

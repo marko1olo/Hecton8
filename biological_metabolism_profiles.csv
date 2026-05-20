@@ -1,0 +1,4 @@
+species,maxCalories,maxHydration,baseCalorieDrainPerSecond,baseHydrationDrainPerSecond,thermalConductance,toxinSusceptibility,shiverTemperatureCelsius,hypothermiaTemperatureCelsius,heatHydrationLossScale,toxicDamagePerSecond,recoveryTemperatureCelsius
+Player,100,100,0.0028,0.0035,0.85,1.00,35.0,31.0,0.35,1.00,37.0
+Peeper,22,34,0.0015,0.0020,1.25,1.10,34.2,29.0,0.42,0.55,36.0
+Leviathan,4000,2200,0.0800,0.0350,0.32,0.45,33.0,27.5,0.18,2.25,36.8

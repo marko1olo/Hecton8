@@ -136,7 +136,7 @@ namespace Hecton8.Tools.ToolKinematics
 
         private void OnDisable()
         {
-            CompletePendingFrame(forceComplete: true);
+            CompletePendingFrameForTeardown();
             StopCsvWatcher();
             TryUnregisterFixed();
             TryUnregisterPostFixed();
@@ -209,7 +209,7 @@ namespace Hecton8.Tools.ToolKinematics
 
         public void PostFixedTick(float fixedDeltaTime)
         {
-            CompletePendingFrame(forceComplete: false);
+            TryFinalizePendingFrameNoWait();
         }
 
         public void SlowTick()
@@ -250,16 +250,33 @@ namespace Hecton8.Tools.ToolKinematics
             return true;
         }
 
-        private void CompletePendingFrame(bool forceComplete)
+        private void TryFinalizePendingFrameNoWait()
         {
             if (!_frameScheduled)
                 return;
 
-            if (!forceComplete && !_pendingHandle.IsCompleted)
+            if (!_pendingHandle.IsCompleted)
                 return;
 
-            _pendingHandle.Complete();
-            _pendingHandle = default;
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _pendingHandle))
+                return;
+
+            FinishPendingFrameCompletion();
+        }
+
+        private void CompletePendingFrameForTeardown()
+        {
+            if (!_frameScheduled)
+                return;
+
+            if (!DispatcherJobFence.TryComplete(ref _pendingHandle, forceComplete: true))
+                return;
+
+            FinishPendingFrameCompletion();
+        }
+
+        private void FinishPendingFrameCompletion()
+        {
             _frameScheduled = false;
             if (TryResolveAllBuffers(out ToolKinematicsBufferSet buffers))
             {

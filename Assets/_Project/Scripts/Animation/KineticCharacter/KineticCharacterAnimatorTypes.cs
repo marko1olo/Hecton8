@@ -17,10 +17,11 @@ namespace Hecton8.Animation.KineticCharacter
         public const int IkTargetCount = 4;
         public const int TelemetryCapacity = 300;
         public const int TuningCapacity = 1;
+        public const int CsvScratchBytes = 8192;
         public const int ProceduralBoneBytes = 64;
         public const int ProceduralIkTargetBytes = 32;
         public const int RigBytes = 192;
-        public const int FrameInputBytes = 256;
+        public const int FrameInputBytes = 272;
         public const int TuningBytes = 128;
         public const int FrameStatsBytes = 64;
         public const int TelemetryEntryBytes = 64;
@@ -28,7 +29,7 @@ namespace Hecton8.Animation.KineticCharacter
         public const float MaxDeltaTime = 0.2f;
         public const float TwoPi = 6.283185307179586f;
         public const float Pi = 3.141592653589793f;
-        public const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_136.bin";
+        public const string DumpRelativePath = "Docs/AgentLogs/Dump_KINETIC_ANIMATOR.bin";
 
         public const uint RigFlagEmergencyMock = 1u << 0;
         public const uint RigFlagVisible = 1u << 1;
@@ -39,6 +40,7 @@ namespace Hecton8.Animation.KineticCharacter
         public const uint InputFlagToolActive = 1u << 2;
         public const uint InputFlagDamageImpulse = 1u << 3;
         public const uint InputFlagSurfaceSwim = 1u << 4;
+        public const uint InputFlagToolHashValid = 1u << 5;
 
         public const uint IkTargetFlagLeftHand = 1u << 0;
         public const uint IkTargetFlagRightHand = 1u << 1;
@@ -59,17 +61,18 @@ namespace Hecton8.Animation.KineticCharacter
 
     public static class KineticCharacterAnimatorBufferIds
     {
-        public const BufferID Rigs = (BufferID)71360;
-        public const BufferID FrameInputs = (BufferID)71361;
-        public const BufferID ParentIndices = (BufferID)71362;
-        public const BufferID BindPoses = (BufferID)71363;
-        public const BufferID BoneOutputs = (BufferID)71364;
-        public const BufferID BoneMatrices = (BufferID)71365;
-        public const BufferID IkTargets = (BufferID)71366;
-        public const BufferID FrameStats = (BufferID)71367;
-        public const BufferID TelemetryRing = (BufferID)71368;
-        public const BufferID TelemetryCursor = (BufferID)71369;
-        public const BufferID Tuning = (BufferID)71370;
+        public const BufferID Rigs = (BufferID)13671360;
+        public const BufferID FrameInputs = (BufferID)13671361;
+        public const BufferID ParentIndices = (BufferID)13671362;
+        public const BufferID BindPoses = (BufferID)13671363;
+        public const BufferID BoneOutputs = (BufferID)13671364;
+        public const BufferID BoneMatrices = (BufferID)13671365;
+        public const BufferID IkTargets = (BufferID)13671366;
+        public const BufferID FrameStats = (BufferID)13671367;
+        public const BufferID TelemetryRing = (BufferID)13671368;
+        public const BufferID TelemetryCursor = (BufferID)13671369;
+        public const BufferID Tuning = (BufferID)13671370;
+        public const BufferID CsvScratch = (BufferID)13671371;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = KineticCharacterAnimatorConstants.ProceduralBoneBytes)]
@@ -169,8 +172,11 @@ namespace Hecton8.Animation.KineticCharacter
         [FieldOffset(236)] public float ImmersionDepth;
         [FieldOffset(240)] public float BreathingPhase;
         [FieldOffset(244)] public float ActiveToolWeight01;
-        [FieldOffset(248)] public uint Frame;
-        [FieldOffset(252)] public uint Flags;
+        [FieldOffset(248)] public uint ActiveToolHash;
+        [FieldOffset(252)] public uint Frame;
+        [FieldOffset(256)] public uint Flags;
+        [FieldOffset(260)] public uint _pad0;
+        [FieldOffset(264)] public ulong _pad1;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = KineticCharacterAnimatorConstants.TuningBytes)]
@@ -390,7 +396,7 @@ namespace Hecton8.Animation.KineticCharacter
         {
             float lenSq = math.lengthsq(rotation.value);
             return math.isfinite(lenSq) && lenSq > 0.000001f
-                ? new quaternion(rotation.value * math.rsqrt(lenSq))
+                ? new quaternion(rotation.value * math.rsqrt(math.max(lenSq, 0.000001f)))
                 : quaternion.identity;
         }
 
@@ -448,6 +454,27 @@ namespace Hecton8.Animation.KineticCharacter
 
     public static class KineticCharacterRigCsvParser
     {
+        private const uint HashLocomotionFrequencyHz = 0x708E81BCu;
+        private const uint HashLocomotionAmplitudeMeters = 0xE13CEBE7u;
+        private const uint HashBreathingAmplitudeMeters = 0xC8B77204u;
+        private const uint HashBreathingFrequencyHz = 0x444FCA0Fu;
+        private const uint HashIkToleranceMeters = 0x321B9586u;
+        private const uint HashGlobalQualityWeight = 0xC74CE627u;
+        private const uint HashMinimumIkIterations = 0xB9166753u;
+        private const uint HashUltraIkIterations = 0xCAC6A4B5u;
+        private const uint HashWallBraceDistanceMeters = 0xDEEC8EC1u;
+        private const uint HashToolAlignmentWeight = 0xC2C4D9F0u;
+        private const uint HashDamageFlinchRadians = 0xBA8F2E44u;
+        private const uint HashDamageFlinchSeconds = 0xC14D750Bu;
+        private const uint HashArmUpperLength = 0xEAEEB717u;
+        private const uint HashArmLowerLength = 0x02E247EEu;
+        private const uint HashLegUpperLength = 0x3EDFA299u;
+        private const uint HashLegLowerLength = 0xD4DA94D0u;
+        private const uint HashShoulderWidth = 0x92D7C047u;
+        private const uint HashHipWidth = 0x1049663Au;
+        private const uint HashSpineLength = 0x9C8F3258u;
+        private const uint HashNeckLength = 0x1E0F0D06u;
+
         public static bool TryApply(ReadOnlySpan<char> csv, ref KineticCharacterTuningDTO tuning, ref KineticCharacterRigDTO rig)
         {
             bool any = false;
@@ -470,9 +497,113 @@ namespace Hecton8.Animation.KineticCharacter
                 if (!TryParseFloat(valueSpan, out float value))
                     continue;
 
-                any |= ApplyValue(key, value, ref tuning, ref rig);
+                any |= ApplyValue(HashLowerAscii(key), value, ref tuning, ref rig);
             }
 
+            FinalizeParsedValues(ref tuning, ref rig);
+            return any;
+        }
+
+        public static bool TryApply(ReadOnlySpan<byte> csv, ref KineticCharacterTuningDTO tuning, ref KineticCharacterRigDTO rig)
+        {
+            bool any = false;
+            int index = 0;
+            while (index < csv.Length)
+            {
+                ReadOnlySpan<byte> line = ReadLine(csv, ref index);
+                Trim(ref line);
+                if (line.Length == 0 || line[0] == (byte)'#')
+                    continue;
+
+                int separator = IndexOfSeparator(line);
+                if (separator <= 0 || separator >= line.Length - 1)
+                    continue;
+
+                ReadOnlySpan<byte> key = line.Slice(0, separator);
+                ReadOnlySpan<byte> valueSpan = line.Slice(separator + 1);
+                Trim(ref key);
+                Trim(ref valueSpan);
+                if (!TryParseFloat(valueSpan, out float value))
+                    continue;
+
+                any |= ApplyValue(HashLowerAscii(key), value, ref tuning, ref rig);
+            }
+
+            FinalizeParsedValues(ref tuning, ref rig);
+            return any;
+        }
+
+        private static bool ApplyValue(uint keyHash, float value, ref KineticCharacterTuningDTO tuning, ref KineticCharacterRigDTO rig)
+        {
+            switch (keyHash)
+            {
+                case HashLocomotionFrequencyHz:
+                    tuning.LocomotionFrequencyHz = value;
+                    return true;
+                case HashLocomotionAmplitudeMeters:
+                    tuning.LocomotionAmplitudeMeters = value;
+                    return true;
+                case HashBreathingAmplitudeMeters:
+                    tuning.BreathingAmplitudeMeters = value;
+                    return true;
+                case HashBreathingFrequencyHz:
+                    tuning.BreathingFrequencyHz = value;
+                    return true;
+                case HashIkToleranceMeters:
+                    tuning.IkToleranceMeters = value;
+                    return true;
+                case HashGlobalQualityWeight:
+                    tuning.GlobalQualityWeight = value;
+                    return true;
+                case HashMinimumIkIterations:
+                    tuning.MinimumIkIterations = (int)math.round(value);
+                    return true;
+                case HashUltraIkIterations:
+                    tuning.UltraIkIterations = (int)math.round(value);
+                    return true;
+                case HashWallBraceDistanceMeters:
+                    tuning.WallBraceDistanceMeters = value;
+                    return true;
+                case HashToolAlignmentWeight:
+                    tuning.ToolAlignmentWeight = value;
+                    return true;
+                case HashDamageFlinchRadians:
+                    tuning.DamageFlinchRadians = value;
+                    return true;
+                case HashDamageFlinchSeconds:
+                    tuning.DamageFlinchSeconds = value;
+                    return true;
+                case HashArmUpperLength:
+                    rig.ArmUpperLength = value;
+                    return true;
+                case HashArmLowerLength:
+                    rig.ArmLowerLength = value;
+                    return true;
+                case HashLegUpperLength:
+                    rig.LegUpperLength = value;
+                    return true;
+                case HashLegLowerLength:
+                    rig.LegLowerLength = value;
+                    return true;
+                case HashShoulderWidth:
+                    rig.ShoulderWidth = value;
+                    return true;
+                case HashHipWidth:
+                    rig.HipWidth = value;
+                    return true;
+                case HashSpineLength:
+                    rig.SpineLength = value;
+                    return true;
+                case HashNeckLength:
+                    rig.NeckLength = value;
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private static void FinalizeParsedValues(ref KineticCharacterTuningDTO tuning, ref KineticCharacterRigDTO rig)
+        {
             tuning = KineticCharacterSanitizer.SanitizeTuning(tuning);
             rig.ArmUpperLength = KineticCharacterSanitizer.PositiveFinite(rig.ArmUpperLength, 0.34f);
             rig.ArmLowerLength = KineticCharacterSanitizer.PositiveFinite(rig.ArmLowerLength, 0.32f);
@@ -482,55 +613,6 @@ namespace Hecton8.Animation.KineticCharacter
             rig.HipWidth = KineticCharacterSanitizer.PositiveFinite(rig.HipWidth, 0.32f);
             rig.SpineLength = KineticCharacterSanitizer.PositiveFinite(rig.SpineLength, 0.54f);
             rig.NeckLength = KineticCharacterSanitizer.PositiveFinite(rig.NeckLength, 0.12f);
-            return any;
-        }
-
-        private static bool ApplyValue(ReadOnlySpan<char> key, float value, ref KineticCharacterTuningDTO tuning, ref KineticCharacterRigDTO rig)
-        {
-            if (EqualsKey(key, "locomotion_frequency_hz"))
-                tuning.LocomotionFrequencyHz = value;
-            else if (EqualsKey(key, "locomotion_amplitude_meters"))
-                tuning.LocomotionAmplitudeMeters = value;
-            else if (EqualsKey(key, "breathing_amplitude_meters"))
-                tuning.BreathingAmplitudeMeters = value;
-            else if (EqualsKey(key, "breathing_frequency_hz"))
-                tuning.BreathingFrequencyHz = value;
-            else if (EqualsKey(key, "ik_tolerance_meters"))
-                tuning.IkToleranceMeters = value;
-            else if (EqualsKey(key, "global_quality_weight"))
-                tuning.GlobalQualityWeight = value;
-            else if (EqualsKey(key, "minimum_ik_iterations"))
-                tuning.MinimumIkIterations = (int)math.round(value);
-            else if (EqualsKey(key, "ultra_ik_iterations"))
-                tuning.UltraIkIterations = (int)math.round(value);
-            else if (EqualsKey(key, "wall_brace_distance_meters"))
-                tuning.WallBraceDistanceMeters = value;
-            else if (EqualsKey(key, "tool_alignment_weight"))
-                tuning.ToolAlignmentWeight = value;
-            else if (EqualsKey(key, "damage_flinch_radians"))
-                tuning.DamageFlinchRadians = value;
-            else if (EqualsKey(key, "damage_flinch_seconds"))
-                tuning.DamageFlinchSeconds = value;
-            else if (EqualsKey(key, "arm_upper_length"))
-                rig.ArmUpperLength = value;
-            else if (EqualsKey(key, "arm_lower_length"))
-                rig.ArmLowerLength = value;
-            else if (EqualsKey(key, "leg_upper_length"))
-                rig.LegUpperLength = value;
-            else if (EqualsKey(key, "leg_lower_length"))
-                rig.LegLowerLength = value;
-            else if (EqualsKey(key, "shoulder_width"))
-                rig.ShoulderWidth = value;
-            else if (EqualsKey(key, "hip_width"))
-                rig.HipWidth = value;
-            else if (EqualsKey(key, "spine_length"))
-                rig.SpineLength = value;
-            else if (EqualsKey(key, "neck_length"))
-                rig.NeckLength = value;
-            else
-                return false;
-
-            return true;
         }
 
         private static ReadOnlySpan<char> ReadLine(ReadOnlySpan<char> text, ref int index)
@@ -556,6 +638,29 @@ namespace Hecton8.Animation.KineticCharacter
             return -1;
         }
 
+        private static ReadOnlySpan<byte> ReadLine(ReadOnlySpan<byte> text, ref int index)
+        {
+            int start = index;
+            while (index < text.Length && text[index] != (byte)'\n' && text[index] != (byte)'\r')
+                index++;
+            int end = index;
+            while (index < text.Length && (text[index] == (byte)'\n' || text[index] == (byte)'\r'))
+                index++;
+            return text.Slice(start, end - start);
+        }
+
+        private static int IndexOfSeparator(ReadOnlySpan<byte> line)
+        {
+            for (int i = 0; i < line.Length; i++)
+            {
+                byte c = line[i];
+                if (c == (byte)',' || c == (byte)'=')
+                    return i;
+            }
+
+            return -1;
+        }
+
         private static void Trim(ref ReadOnlySpan<char> span)
         {
             int start = 0;
@@ -565,6 +670,17 @@ namespace Hecton8.Animation.KineticCharacter
             while (end >= start && IsSpace(span[end]))
                 end--;
             span = start <= end ? span.Slice(start, end - start + 1) : ReadOnlySpan<char>.Empty;
+        }
+
+        private static void Trim(ref ReadOnlySpan<byte> span)
+        {
+            int start = 0;
+            int end = span.Length - 1;
+            while (start < span.Length && IsSpace(span[start]))
+                start++;
+            while (end >= start && IsSpace(span[end]))
+                end--;
+            span = start <= end ? span.Slice(start, end - start + 1) : ReadOnlySpan<byte>.Empty;
         }
 
         private static bool TryParseFloat(ReadOnlySpan<char> span, out float value)
@@ -614,20 +730,83 @@ namespace Hecton8.Animation.KineticCharacter
             return math.isfinite(value);
         }
 
-        private static bool EqualsKey(ReadOnlySpan<char> left, string right)
+        private static bool TryParseFloat(ReadOnlySpan<byte> span, out float value)
         {
-            if (left.Length != right.Length)
+            value = 0f;
+            if (span.Length == 0)
                 return false;
 
-            for (int i = 0; i < left.Length; i++)
+            int index = 0;
+            float sign = 1f;
+            if (span[index] == (byte)'-')
             {
-                char a = ToLowerAscii(left[i]);
-                char b = ToLowerAscii(right[i]);
-                if (a != b)
-                    return false;
+                sign = -1f;
+                index++;
+            }
+            else if (span[index] == (byte)'+')
+            {
+                index++;
             }
 
-            return true;
+            bool any = false;
+            double result = 0d;
+            while (index < span.Length && span[index] >= (byte)'0' && span[index] <= (byte)'9')
+            {
+                result = result * 10d + (span[index] - (byte)'0');
+                any = true;
+                index++;
+            }
+
+            if (index < span.Length && span[index] == (byte)'.')
+            {
+                index++;
+                double scale = 0.1d;
+                while (index < span.Length && span[index] >= (byte)'0' && span[index] <= (byte)'9')
+                {
+                    result += (span[index] - (byte)'0') * scale;
+                    scale *= 0.1d;
+                    any = true;
+                    index++;
+                }
+            }
+
+            if (!any)
+                return false;
+
+            value = (float)(result * sign);
+            return math.isfinite(value);
+        }
+
+        private static uint HashLowerAscii(ReadOnlySpan<char> key)
+        {
+            uint hash = 2166136261u;
+            for (int i = 0; i < key.Length; i++)
+            {
+                char c = ToLowerAscii(key[i]);
+                if (c == '_' || c == '-' || c == ' ')
+                    continue;
+
+                hash ^= (uint)c;
+                hash *= 16777619u;
+            }
+
+            return hash;
+        }
+
+        private static uint HashLowerAscii(ReadOnlySpan<byte> key)
+        {
+            uint hash = 2166136261u;
+            for (int i = 0; i < key.Length; i++)
+            {
+                byte c = ToLowerAscii(key[i]);
+                if (c == (byte)'_' || c == (byte)'-' || c == (byte)' ')
+                    continue;
+
+                hash ^= c;
+                hash *= 16777619u;
+            }
+
+            return hash;
         }
 
         private static char ToLowerAscii(char c)
@@ -635,9 +814,19 @@ namespace Hecton8.Animation.KineticCharacter
             return c >= 'A' && c <= 'Z' ? (char)(c + 32) : c;
         }
 
+        private static byte ToLowerAscii(byte c)
+        {
+            return c >= (byte)'A' && c <= (byte)'Z' ? (byte)(c + 32) : c;
+        }
+
         private static bool IsSpace(char c)
         {
             return c == ' ' || c == '\t';
+        }
+
+        private static bool IsSpace(byte c)
+        {
+            return c == (byte)' ' || c == (byte)'\t';
         }
     }
 

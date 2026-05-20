@@ -338,7 +338,7 @@ namespace Hecton8.Gameplay
             if (!ModuleStatusEvents.TryResolveModule(in payload, out BaseModule module))
                 return;
 
-            if (payload.IsEnter)
+            if (ModuleStatusEvents.IsEnterEvent(in payload))
                 HandleModuleEnter(module);
             else
                 HandleModuleExit(module);
@@ -847,21 +847,20 @@ namespace Hecton8.Gameplay
         {
             Vector3 pulsePosition = pulseEvent.RuntimePosition;
             float pulseRadius = math.max(0f, pulseEvent.RadiusMeters);
-            double pulseRadiusSq = (double)pulseRadius * pulseRadius;
-            AbsoluteUniversePosition pulseAup = AbsoluteUniversePosition.FromRuntimePosition(pulsePosition);
+            float pulseRadiusSq = pulseRadius * pulseRadius;
 
             Transform playerTransform = _playerMovement != null ? _playerMovement.transform : transform;
-            if (IsTransformInsidePulseAup(playerTransform, in pulseAup, pulseRadiusSq))
+            if (IsTransformInsidePulsePresentation(playerTransform, pulsePosition, pulseRadiusSq))
                 return true;
 
             if (_activeTransportEmitterBehaviour != null &&
-                IsTransformInsidePulseAup(_activeTransportEmitterBehaviour.transform, in pulseAup, pulseRadiusSq))
+                IsTransformInsidePulsePresentation(_activeTransportEmitterBehaviour.transform, pulsePosition, pulseRadiusSq))
             {
                 return true;
             }
 
             if (_activeHabitatEmitterBehaviour != null &&
-                IsTransformInsidePulseAup(_activeHabitatEmitterBehaviour.transform, in pulseAup, pulseRadiusSq))
+                IsTransformInsidePulsePresentation(_activeHabitatEmitterBehaviour.transform, pulsePosition, pulseRadiusSq))
             {
                 return true;
             }
@@ -869,13 +868,13 @@ namespace Hecton8.Gameplay
             return false;
         }
 
-        private static bool IsTransformInsidePulseAup(Transform target, in AbsoluteUniversePosition pulseAup, double pulseRadiusSq)
+        private static bool IsTransformInsidePulsePresentation(Transform target, Vector3 pulsePosition, float pulseRadiusSq)
         {
             if (target == null)
                 return false;
 
-            AbsoluteUniversePosition targetAup = AbsoluteUniversePosition.FromRuntimePosition(target.position);
-            return AbsoluteUniversePosition.DistanceSq(in targetAup, in pulseAup) <= pulseRadiusSq;
+            Vector3 localDelta = target.position - pulsePosition;
+            return localDelta.sqrMagnitude <= pulseRadiusSq;
         }
     }
 }

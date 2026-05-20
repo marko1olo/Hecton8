@@ -1,11 +1,11 @@
 using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Bootstrap;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
-using Hecton8.Gameplay;
-using Hecton8.World;
+using Hecton8.Core.Memory;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -72,16 +72,16 @@ namespace Hecton8.Core
         private const string SlowJobCompleteWarningMessage = "[SystemDispatcher] JobHandle.Complete slow in foveated simulation swap window.";
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential, Pack = 16)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct ImportanceScoringJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<float3> Positions;
-            public NativeArray<float3> EntityAups;
-            public NativeArray<float> ImportanceScores;
-            public NativeArray<byte> TickRateCodes;
-            public NativeArray<byte> InsideFrustumFlags;
-            public NativeArray<byte> EntitySimTiers;
-            public NativeArray<float> DistancesMeters;
+            [ReadOnly, NoAlias] public NativeArray<float3> Positions;
+            [NoAlias] public NativeArray<float3> EntityAups;
+            [NoAlias] public NativeArray<float> ImportanceScores;
+            [NoAlias] public NativeArray<byte> TickRateCodes;
+            [NoAlias] public NativeArray<byte> InsideFrustumFlags;
+            [NoAlias] public NativeArray<byte> EntitySimTiers;
+            [NoAlias] public NativeArray<float> DistancesMeters;
             public float3 CameraPosition;
             public float3 CameraForward;
             public float3 CameraUp;
@@ -124,12 +124,12 @@ namespace Hecton8.Core
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential, Pack = 16)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct VisualInterpolationJob : IJobParallelForTransform
         {
-            [ReadOnly] public NativeArray<float3> FromPositions;
-            [ReadOnly] public NativeArray<float3> ToPositions;
-            [ReadOnly] public NativeArray<float> Alphas;
+            [ReadOnly, NoAlias] public NativeArray<float3> FromPositions;
+            [ReadOnly, NoAlias] public NativeArray<float3> ToPositions;
+            [ReadOnly, NoAlias] public NativeArray<float> Alphas;
 
             public void Execute(int index, TransformAccess transform)
             {
@@ -137,26 +137,43 @@ namespace Hecton8.Core
                     return;
 
                 float alpha = math.saturate(Alphas[index]);
+                float3 originShiftedPresentationPosition = ResolveOriginShiftedPresentationPosition(
+                    FromPositions[index],
+                    ToPositions[index],
+                    alpha);
+
+                ApplyOriginShiftedPresentationPosition(transform, originShiftedPresentationPosition);
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static float3 ResolveOriginShiftedPresentationPosition(float3 fromPosition, float3 toPosition, float alpha)
+            {
                 float smoothAlpha = alpha * alpha * (3.0f - (2.0f * alpha));
-                transform.position = math.lerp(FromPositions[index], ToPositions[index], smoothAlpha);
+                return math.lerp(fromPosition, toPosition, smoothAlpha);
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static void ApplyOriginShiftedPresentationPosition(TransformAccess transform, float3 originShiftedPresentationPosition)
+            {
+                transform.position = originShiftedPresentationPosition;
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct FoveatedSimulationTelemetryEntry
         {
-            public int Frame;
-            public int TargetCount;
-            public int FrozenEntityCount;
-            public int Tier0Count;
-            public int Tier1Count;
-            public int Tier2Count;
-            public float3 CameraPosition;
-            public float3 CameraForward;
-            public uint Flags;
-            public uint StateHash;
-            public uint Reserved0;
-            public uint Reserved1;
+            [FieldOffset(0)] public int Frame;
+            [FieldOffset(4)] public int TargetCount;
+            [FieldOffset(8)] public int FrozenEntityCount;
+            [FieldOffset(12)] public int Tier0Count;
+            [FieldOffset(16)] public int Tier1Count;
+            [FieldOffset(20)] public int Tier2Count;
+            [FieldOffset(24)] public float3 CameraPosition;
+            [FieldOffset(36)] public float3 CameraForward;
+            [FieldOffset(48)] public uint Flags;
+            [FieldOffset(52)] public uint StateHash;
+            [FieldOffset(56)] public uint Reserved0;
+            [FieldOffset(60)] public uint Reserved1;
         }
 
         private const int ImportanceScoreBatchSize = 32;
@@ -190,8 +207,10 @@ namespace Hecton8.Core
         private const float EcosystemOnlyCullDistanceMeters = 300.0f;
         private const float DefaultActiveDistanceMeters = 100.0f;
         private const float DefaultFrozenDistanceMeters = 300.0f;
-        private const float LowActiveDistanceMeters = 50.0f;
-        private const float LowFrozenDistanceMeters = 150.0f;
+        private const float SurvivalActiveDistanceMeters = 50.0f;
+        private const float SurvivalFrozenDistanceMeters = 150.0f;
+        private const float CriticalSurvivalActiveDistanceMeters = 25.0f;
+        private const float CriticalSurvivalFrozenDistanceMeters = 75.0f;
         private const float FrozenWrapDistanceMeters = 600.0f;
         private const float FrozenWrapForwardDistanceMeters = 200.0f;
         private const float ImportanceEvaluationIntervalSeconds = 0.1f;
@@ -213,9 +232,25 @@ namespace Hecton8.Core
         private const long PersistentNativeBudgetBytes = 393216L;
         private const string MemoryBudgetOwnerName = "FoveatedSimulationManager";
         private const string BlackBoxDumpFileName = "Dump_FOVEATED_SIMULATION_DIRECTOR.bin";
+        private const SystemID VaultOwnerSystemId = SystemID.SystemDispatcher;
+        private const BufferID FoveatedScorePositionsBufferId = (BufferID)73220;
+        private const BufferID FoveatedEntityAupsBufferId = (BufferID)73221;
+        private const BufferID FoveatedImportanceScoresBufferId = (BufferID)73222;
+        private const BufferID FoveatedTickRateCodesBufferId = (BufferID)73223;
+        private const BufferID FoveatedInsideFrustumFlagsBufferId = (BufferID)73224;
+        private const BufferID FoveatedEntitySimTiersBufferId = (BufferID)73225;
+        private const BufferID FoveatedDistancesMetersBufferId = (BufferID)73226;
+        private const BufferID FoveatedFromPositionsBufferId = (BufferID)73227;
+        private const BufferID FoveatedToPositionsBufferId = (BufferID)73228;
+        private const BufferID FoveatedAlphasBufferId = (BufferID)73229;
+        private const BufferID FoveatedPendingRaycastCommandsBufferId = (BufferID)73230;
+        private const BufferID FoveatedPendingRaycastCommandIndicesBufferId = (BufferID)73231;
+        private const BufferID FoveatedDeferredRaycastCommandsBufferId = (BufferID)73232;
+        private const BufferID FoveatedDeferredRaycastResultsBufferId = (BufferID)73233;
+        private const BufferID FoveatedTelemetryRingBufferId = (BufferID)73234;
 
-        // COLD ALLOC: IFoveatedSimulationTarget[512] — dispatcher-owned opt-in simulation targets — owner: FoveatedSimulationManager
-        private readonly IFoveatedSimulationTarget[] _targets = new IFoveatedSimulationTarget[MaxTargets];
+        // COLD ALLOC: object[512] — dispatcher-owned opt-in simulation target slots, object-backed to avoid interface arrays — owner: FoveatedSimulationManager
+        private readonly object[] _targets = new object[MaxTargets];
         // COLD ALLOC: Transform[512] — simulation transform cache for scoring and cadence — owner: FoveatedSimulationManager
         private readonly Transform[] _simulationTransforms = new Transform[MaxTargets];
         // COLD ALLOC: Transform[512] — visual transform cache for 5 Hz interpolation — owner: FoveatedSimulationManager
@@ -245,10 +280,10 @@ namespace Hecton8.Core
         private readonly int[] _framesSinceTickRateChange = new int[MaxTargets];
         // COLD ALLOC: int[512] — compact target-to-visual-transform mapping — owner: FoveatedSimulationManager
         private readonly int[] _visualTargetIndices = new int[MaxTargets];
-        // COLD ALLOC: IFoveatedSimulationTarget[512] — deferred raycast owners for same-frame dispatch — owner: FoveatedSimulationManager
-        private readonly IFoveatedSimulationTarget[] _deferredRaycastOwners = new IFoveatedSimulationTarget[MaxDeferredRaycastCommands];
-        // COLD ALLOC: IFoveatedSimulationTarget[256] — pending deferred raycast owner refs immune to target index swap — owner: FoveatedSimulationManager
-        private readonly IFoveatedSimulationTarget[] _pendingDeferredRaycastOwners = new IFoveatedSimulationTarget[MaxDeferredRaycastCommands];
+        // COLD ALLOC: object[512] — deferred raycast owner slots, object-backed to avoid interface arrays — owner: FoveatedSimulationManager
+        private readonly object[] _deferredRaycastOwners = new object[MaxDeferredRaycastCommands];
+        // COLD ALLOC: object[256] — pending deferred raycast owner refs immune to target index swap, object-backed to avoid interface arrays — owner: FoveatedSimulationManager
+        private readonly object[] _pendingDeferredRaycastOwners = new object[MaxDeferredRaycastCommands];
         private readonly int[] _deferredRaycastCommandIndices = new int[MaxDeferredRaycastCommands];
         private readonly RaycastCommand[] _deferredRaycastScratchCommands = new RaycastCommand[MaxDeferredRaycastCommandsPerTarget];
 
@@ -267,8 +302,23 @@ namespace Hecton8.Core
         private NativeArray<FoveatedSimulationTelemetryEntry> _telemetryRing;
         private NativeArray<RaycastCommand> _pendingDeferredRaycastCommands;
         private NativeArray<int> _pendingDeferredRaycastCommandIndices;
-        private NativeList<RaycastCommand> _deferredRaycastCommands;
+        private NativeArray<RaycastCommand> _deferredRaycastCommands;
         private NativeArray<RaycastHit> _deferredRaycastResults;
+        private VaultGenerationHandle<float3> _jobScorePositionsHandle;
+        private VaultGenerationHandle<float3> _jobEntityAupsHandle;
+        private VaultGenerationHandle<float> _jobImportanceScoresHandle;
+        private VaultGenerationHandle<byte> _jobTickRateCodesHandle;
+        private VaultGenerationHandle<byte> _jobInsideFrustumFlagsHandle;
+        private VaultGenerationHandle<byte> _jobEntitySimTiersHandle;
+        private VaultGenerationHandle<float> _jobDistancesMetersHandle;
+        private VaultGenerationHandle<float3> _jobFromPositionsHandle;
+        private VaultGenerationHandle<float3> _jobToPositionsHandle;
+        private VaultGenerationHandle<float> _jobAlphasHandle;
+        private VaultGenerationHandle<FoveatedSimulationTelemetryEntry> _telemetryRingHandle;
+        private VaultGenerationHandle<RaycastCommand> _pendingDeferredRaycastCommandsHandle;
+        private VaultGenerationHandle<int> _pendingDeferredRaycastCommandIndicesHandle;
+        private VaultGenerationHandle<RaycastCommand> _deferredRaycastCommandsHandle;
+        private VaultGenerationHandle<RaycastHit> _deferredRaycastResultsHandle;
         private JobHandle _importanceHandle;
         private JobHandle _interpolationHandle;
         private JobHandle _deferredRaycastHandle;
@@ -290,7 +340,6 @@ namespace Hecton8.Core
         private bool _deferredRaycastScheduled;
         private bool _listenerStateInitialized;
         private bool _originShiftListenerRegistered;
-        private bool _nativeMemorySentinelRegistered;
         private bool _nativeMemoryBudgetRegistered;
         private bool _voxelTeardownBackpressureActive;
         private bool _forceImmediateImportanceRefresh;
@@ -298,6 +347,7 @@ namespace Hecton8.Core
         private bool _blackBoxDumped;
         private int _voxelTeardownBackpressurePendingCount;
         private int _queuedDeferredRaycastCount;
+        private int _deferredRaycastCommandCount;
         private int _pendingDeferredRaycastHead;
         private int _pendingDeferredRaycastTail;
         private int _lastDeferredRaycastScheduleFrame = -1;
@@ -460,7 +510,7 @@ namespace Hecton8.Core
             int lastIndex = _targetCount - 1;
             if (removedIndex != lastIndex)
             {
-                IFoveatedSimulationTarget swappedTarget = _targets[lastIndex];
+                IFoveatedSimulationTarget swappedTarget = GetTargetAt(lastIndex);
                 _targets[removedIndex] = swappedTarget;
                 _simulationTransforms[removedIndex] = _simulationTransforms[lastIndex];
                 _visualTransforms[removedIndex] = _visualTransforms[lastIndex];
@@ -493,13 +543,15 @@ namespace Hecton8.Core
         public void BeginDispatcherFrame(float frameDeltaTime)
         {
             TryCompleteFrameJobsInternal(true, forceComplete: false);
-            EnsureNativeBuffersAllocated();
+            if (!EnsureNativeBuffersAllocated())
+                return;
+
             ConsumeAupShiftSignals();
             ConsumeCameraSignals();
             _importanceAccumulator += math.max(frameDeltaTime, 0.0f);
 
             if (!_deferredRaycastScheduled && _deferredRaycastCommands.IsCreated)
-                _deferredRaycastCommands.Clear();
+                _deferredRaycastCommandCount = 0;
 
             if (!TryResolveViewCamera(frameDeltaTime) && !_hasSignalCameraPose)
                 return;
@@ -630,12 +682,15 @@ namespace Hecton8.Core
                 DrainDeferredRaycastQueues();
                 int currentFrame = Time.frameCount;
                 if (_deferredRaycastCommands.IsCreated &&
-                    _deferredRaycastCommands.Length > 0 &&
+                    _deferredRaycastResults.IsCreated &&
+                    _deferredRaycastCommandCount > 0 &&
                     _lastDeferredRaycastScheduleFrame != currentFrame)
                 {
+                    NativeArray<RaycastCommand> commandBatch = _deferredRaycastCommands.GetSubArray(0, _deferredRaycastCommandCount);
+                    NativeArray<RaycastHit> hitBatch = _deferredRaycastResults.GetSubArray(0, _deferredRaycastCommandCount);
                     _deferredRaycastHandle = RaycastCommand.ScheduleBatch(
-                        _deferredRaycastCommands.AsDeferredJobArray(),
-                        _deferredRaycastResults,
+                        commandBatch,
+                        hitBatch,
                         MinimumCommandsPerJob,
                         default);
                     _deferredRaycastScheduled = true;
@@ -702,10 +757,10 @@ namespace Hecton8.Core
                 }
                 else
                 {
-                    int raycastCount = _deferredRaycastCommands.Length;
+                    int raycastCount = _deferredRaycastCommandCount;
                     for (int i = 0; i < raycastCount; i++)
                     {
-                        IFoveatedSimulationTarget owner = _deferredRaycastOwners[i];
+                        IFoveatedSimulationTarget owner = GetDeferredRaycastOwnerAt(i);
                         if (IsActiveFoveatedTarget(owner))
                             owner.ConsumeDeferredRaycastHit(_deferredRaycastCommandIndices[i], _deferredRaycastResults[i]);
 
@@ -713,6 +768,7 @@ namespace Hecton8.Core
                         _deferredRaycastCommandIndices[i] = 0;
                     }
 
+                    _deferredRaycastCommandCount = 0;
                     _deferredRaycastScheduled = false;
                 }
             }
@@ -844,11 +900,11 @@ namespace Hecton8.Core
         private static bool TryCompleteJob(ref JobHandle handle, string systemName, bool forceComplete)
         {
             if (!forceComplete)
-                return DispatcherJobSwap.TryFinalizeCompleted(ref handle);
+                return DispatcherJobFence.TryFinalizeCompleted(ref handle);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             long startTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
-            DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+            DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
             long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - startTimestamp;
             double elapsedMilliseconds = elapsedTicks * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
             if (elapsedMilliseconds > SlowJobCompleteWarningMilliseconds)
@@ -856,7 +912,7 @@ namespace Hecton8.Core
                 Debug.LogWarning(SlowJobCompleteWarningMessage);
             }
 #else
-            DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+            DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
 #endif
             return true;
         }
@@ -866,7 +922,9 @@ namespace Hecton8.Core
             if (_targetCount <= 0 || !TryResolveScoringCamera(out Vector3 cameraPosition, out Vector3 cameraForward, out Vector3 cameraUp))
                 return;
 
-            EnsureNativeBuffersAllocated();
+            if (!EnsureNativeBuffersAllocated())
+                return;
+
             ResolveScalabilityThresholds(out _activeDistanceMeters, out _frozenDistanceMeters);
 
             for (int i = 0; i < _targetCount; i++)
@@ -910,7 +968,7 @@ namespace Hecton8.Core
             float now = Time.time;
             for (int i = 0; i < _targetCount; i++)
             {
-                IFoveatedSimulationTarget target = _targets[i];
+                IFoveatedSimulationTarget target = GetTargetAt(i);
                 if (target == null)
                     continue;
 
@@ -1074,27 +1132,35 @@ namespace Hecton8.Core
 
         private void ResolveScalabilityThresholds(out float activeDistance, out float frozenDistance)
         {
-            if (_homeostasisPressureTier >= 3)
-            {
-                activeDistance = LowActiveDistanceMeters * 0.5f;
-                frozenDistance = LowFrozenDistanceMeters * 0.5f;
-                return;
-            }
+            float qualityWeight01 = ResolveGlobalQualityWeight01();
+            float qualitySurvivalPressure01 = 1.0f - SmoothStep01(qualityWeight01);
+            float homeostasisSurvivalPressure01 = SmoothStep01((float)_homeostasisPressureTier * (1.0f / 3.0f));
+            float survivalPressure01 = math.saturate(math.max(qualitySurvivalPressure01, homeostasisSurvivalPressure01));
+            float criticalPressure01 = SmoothStep01(homeostasisSurvivalPressure01);
 
-            HectonQualityTier qualityTier = GlobalRegistry.ScalabilityTier;
-            if (qualityTier == HectonQualityTier.Low || qualityTier == HectonQualityTier.Mx350)
-            {
-                activeDistance = LowActiveDistanceMeters;
-                frozenDistance = LowFrozenDistanceMeters;
-            }
-            else
-            {
-                activeDistance = DefaultActiveDistanceMeters;
-                frozenDistance = DefaultFrozenDistanceMeters;
-            }
+            activeDistance = math.lerp(
+                DefaultActiveDistanceMeters,
+                math.lerp(SurvivalActiveDistanceMeters, CriticalSurvivalActiveDistanceMeters, criticalPressure01),
+                survivalPressure01);
+            frozenDistance = math.lerp(
+                DefaultFrozenDistanceMeters,
+                math.lerp(SurvivalFrozenDistanceMeters, CriticalSurvivalFrozenDistanceMeters, criticalPressure01),
+                survivalPressure01);
 
             if (_thermalFreezeOverrideActive)
                 frozenDistance = math.max(activeDistance, math.min(frozenDistance, _thermalFrozenDistanceMeters));
+        }
+
+        private static float ResolveGlobalQualityWeight01()
+        {
+            float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
+            return math.isfinite(qualityWeight) ? math.saturate(qualityWeight) : 1.0f;
+        }
+
+        private static float SmoothStep01(float value)
+        {
+            float t = math.saturate(value);
+            return t * t * (3.0f - (2.0f * t));
         }
 
         private static FoveatedSimulationTier ResolveTierForPosition(
@@ -1256,7 +1322,8 @@ namespace Hecton8.Core
 
         private void ScheduleInterpolationJob()
         {
-            EnsureNativeBuffersAllocated();
+            if (!EnsureNativeBuffersAllocated())
+                return;
 
             for (int compactIndex = 0; compactIndex < _visualTargetCount; compactIndex++)
             {
@@ -1328,131 +1395,87 @@ namespace Hecton8.Core
             _visualTargetCacheDirty = false;
         }
 
-        private void EnsureNativeBuffersAllocated()
+        private bool EnsureNativeBuffersAllocated()
         {
-            if (!_jobScorePositions.IsCreated)
-            {
-                _jobScorePositions = new NativeArray<float3>(MaxTargets, Allocator.Persistent); // COLD ALLOC: NativeArray<float3>[512] - simulation positions for Burst cadence scoring - owner: FoveatedSimulationManager
-            }
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
+                return false;
 
-            if (!_jobEntityAups.IsCreated)
-            {
-                _jobEntityAups = new NativeArray<float3>(MaxTargets, Allocator.Persistent); // COLD ALLOC: NativeArray<float3>[512] - entity AUP/runtime positions for foveated tiering - owner: FoveatedSimulationManager
-            }
+            bool resolved =
+                TryResolveVaultArray(vault, ref _jobScorePositionsHandle, FoveatedScorePositionsBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobScorePositions) &&
+                TryResolveVaultArray(vault, ref _jobEntityAupsHandle, FoveatedEntityAupsBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobEntityAups) &&
+                TryResolveVaultArray(vault, ref _jobImportanceScoresHandle, FoveatedImportanceScoresBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobImportanceScores) &&
+                TryResolveVaultArray(vault, ref _jobTickRateCodesHandle, FoveatedTickRateCodesBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobTickRateCodes) &&
+                TryResolveVaultArray(vault, ref _jobInsideFrustumFlagsHandle, FoveatedInsideFrustumFlagsBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobInsideFrustumFlags) &&
+                TryResolveVaultArray(vault, ref _jobEntitySimTiersHandle, FoveatedEntitySimTiersBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobEntitySimTiers) &&
+                TryResolveVaultArray(vault, ref _jobDistancesMetersHandle, FoveatedDistancesMetersBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobDistancesMeters) &&
+                TryResolveVaultArray(vault, ref _jobFromPositionsHandle, FoveatedFromPositionsBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobFromPositions) &&
+                TryResolveVaultArray(vault, ref _jobToPositionsHandle, FoveatedToPositionsBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobToPositions) &&
+                TryResolveVaultArray(vault, ref _jobAlphasHandle, FoveatedAlphasBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobAlphas) &&
+                TryResolveVaultArray(vault, ref _pendingDeferredRaycastCommandsHandle, FoveatedPendingRaycastCommandsBufferId, MaxDeferredRaycastCommands, NativeArrayOptions.UninitializedMemory, out _pendingDeferredRaycastCommands) &&
+                TryResolveVaultArray(vault, ref _pendingDeferredRaycastCommandIndicesHandle, FoveatedPendingRaycastCommandIndicesBufferId, MaxDeferredRaycastCommands, NativeArrayOptions.UninitializedMemory, out _pendingDeferredRaycastCommandIndices) &&
+                TryResolveVaultArray(vault, ref _deferredRaycastCommandsHandle, FoveatedDeferredRaycastCommandsBufferId, MaxDeferredRaycastCommands, NativeArrayOptions.UninitializedMemory, out _deferredRaycastCommands) &&
+                TryResolveVaultArray(vault, ref _deferredRaycastResultsHandle, FoveatedDeferredRaycastResultsBufferId, MaxDeferredRaycastCommands, NativeArrayOptions.UninitializedMemory, out _deferredRaycastResults) &&
+                TryResolveVaultArray(vault, ref _telemetryRingHandle, FoveatedTelemetryRingBufferId, TelemetryCapacity, NativeArrayOptions.ClearMemory, out _telemetryRing);
 
-            if (!_jobImportanceScores.IsCreated)
-            {
-                _jobImportanceScores = new NativeArray<float>(MaxTargets, Allocator.Persistent); // COLD ALLOC: NativeArray<float>[512] - Burst importance score output buffer - owner: FoveatedSimulationManager
-            }
-
-            if (!_jobTickRateCodes.IsCreated)
-            {
-                _jobTickRateCodes = new NativeArray<byte>(MaxTargets, Allocator.Persistent); // COLD ALLOC: NativeArray<byte>[512] - Burst raw cadence tier codes before hysteresis - owner: FoveatedSimulationManager
-            }
-
-            if (!_jobInsideFrustumFlags.IsCreated)
-            {
-                _jobInsideFrustumFlags = new NativeArray<byte>(MaxTargets, Allocator.Persistent); // COLD ALLOC: NativeArray<byte>[512] - Burst front hemisphere visibility flags - owner: FoveatedSimulationManager
-            }
-
-            if (!_jobEntitySimTiers.IsCreated)
-            {
-                _jobEntitySimTiers = new NativeArray<byte>(MaxTargets, Allocator.Persistent); // COLD ALLOC: NativeArray<byte>[512] - Burst foveated tier output buffer - owner: FoveatedSimulationManager
-            }
-
-            if (!_jobDistancesMeters.IsCreated)
-            {
-                _jobDistancesMeters = new NativeArray<float>(MaxTargets, Allocator.Persistent); // COLD ALLOC: NativeArray<float>[512] - distance output buffer for wrap policy - owner: FoveatedSimulationManager
-            }
-
-            if (!_jobFromPositions.IsCreated)
-            {
-                _jobFromPositions = new NativeArray<float3>(MaxTargets, Allocator.Persistent); // COLD ALLOC: NativeArray<float3>[512] — interpolation source positions — owner: FoveatedSimulationManager
-            }
-
-            if (!_jobToPositions.IsCreated)
-            {
-                _jobToPositions = new NativeArray<float3>(MaxTargets, Allocator.Persistent); // COLD ALLOC: NativeArray<float3>[512] — interpolation target positions — owner: FoveatedSimulationManager
-            }
-
-            if (!_jobAlphas.IsCreated)
-            {
-                _jobAlphas = new NativeArray<float>(MaxTargets, Allocator.Persistent); // COLD ALLOC: NativeArray<float>[512] — interpolation alpha payloads — owner: FoveatedSimulationManager
-            }
-
-            if (!_pendingDeferredRaycastCommands.IsCreated)
-            {
-                _pendingDeferredRaycastCommands = new NativeArray<RaycastCommand>(MaxDeferredRaycastCommands, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<RaycastCommand>[256] — fixed ring buffer for next-frame deferred fauna sight-line requests — owner: FoveatedSimulationManager
-            }
-
-            if (!_pendingDeferredRaycastCommandIndices.IsCreated)
-            {
-                _pendingDeferredRaycastCommandIndices = new NativeArray<int>(MaxDeferredRaycastCommands, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<int>[256] — fixed ring buffer for deferred fauna sight-line command slot indices — owner: FoveatedSimulationManager
-            }
-
-            if (!_deferredRaycastCommands.IsCreated)
-            {
-                _deferredRaycastCommands = new NativeList<RaycastCommand>(MaxDeferredRaycastCommands, Allocator.Persistent); // COLD ALLOC: NativeList<RaycastCommand>[256] — deferred throttled-entity physics commands — owner: FoveatedSimulationManager
-            }
-
-            if (!_deferredRaycastResults.IsCreated)
-            {
-                _deferredRaycastResults = new NativeArray<RaycastHit>(MaxDeferredRaycastCommands, Allocator.Persistent); // COLD ALLOC: NativeArray<RaycastHit>[256] — deferred throttled-entity raycast hits — owner: FoveatedSimulationManager
-            }
-
-            if (!_telemetryRing.IsCreated)
-            {
-                _telemetryRing = new NativeArray<FoveatedSimulationTelemetryEntry>(TelemetryCapacity, Allocator.Persistent); // COLD ALLOC: NativeArray<FoveatedSimulationTelemetryEntry>[300] - fixed black-box tier telemetry - owner: FoveatedSimulationManager
-            }
-
-            if (!_nativeMemorySentinelRegistered)
-                RegisterNativeMemorySentinel();
+            if (!resolved)
+                return false;
 
             if (!_nativeMemoryBudgetRegistered)
                 RegisterNativeMemoryBudget();
+
+            return true;
         }
 
-        private void RegisterNativeMemorySentinel()
+        private static bool TryResolveVaultArray<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> array) where T : struct
         {
-            NativeMemorySentinel.RegisterNativeArray(_jobScorePositions, nameof(FoveatedSimulationManager), nameof(_jobScorePositions), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_jobEntityAups, nameof(FoveatedSimulationManager), nameof(_jobEntityAups), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_jobImportanceScores, nameof(FoveatedSimulationManager), nameof(_jobImportanceScores), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_jobTickRateCodes, nameof(FoveatedSimulationManager), nameof(_jobTickRateCodes), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_jobInsideFrustumFlags, nameof(FoveatedSimulationManager), nameof(_jobInsideFrustumFlags), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_jobEntitySimTiers, nameof(FoveatedSimulationManager), nameof(_jobEntitySimTiers), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_jobDistancesMeters, nameof(FoveatedSimulationManager), nameof(_jobDistancesMeters), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_jobFromPositions, nameof(FoveatedSimulationManager), nameof(_jobFromPositions), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_jobToPositions, nameof(FoveatedSimulationManager), nameof(_jobToPositions), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_jobAlphas, nameof(FoveatedSimulationManager), nameof(_jobAlphas), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_pendingDeferredRaycastCommands, nameof(FoveatedSimulationManager), nameof(_pendingDeferredRaycastCommands), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_pendingDeferredRaycastCommandIndices, nameof(FoveatedSimulationManager), nameof(_pendingDeferredRaycastCommandIndices), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeList(_deferredRaycastCommands, nameof(FoveatedSimulationManager), nameof(_deferredRaycastCommands), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_deferredRaycastResults, nameof(FoveatedSimulationManager), nameof(_deferredRaycastResults), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_telemetryRing, nameof(FoveatedSimulationManager), nameof(_telemetryRing), NativeAllocationLifetime.Session);
-            _nativeMemorySentinelRegistered = true;
+            if (handle.BufferID == 0u || handle.Generation == 0u)
+                handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, VaultOwnerSystemId, options);
+
+            if (vault.TryResolveHandle(in handle, out array) &&
+                array.IsCreated &&
+                array.Length >= requiredLength)
+            {
+                return true;
+            }
+
+            handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, VaultOwnerSystemId, options);
+            return vault.TryResolveHandle(in handle, out array) &&
+                   array.IsCreated &&
+                   array.Length >= requiredLength;
         }
 
         private void DisposeNativeBuffers(JobHandle dependency)
         {
             MemoryBudgetTracker.Unregister(MemoryBudgetOwnerName);
             JobHandle disposeHandle = dependency;
-            DisposeNativeArray(ref _jobScorePositions, ref disposeHandle);
-            DisposeNativeArray(ref _jobEntityAups, ref disposeHandle);
-            DisposeNativeArray(ref _jobImportanceScores, ref disposeHandle);
-            DisposeNativeArray(ref _jobTickRateCodes, ref disposeHandle);
-            DisposeNativeArray(ref _jobInsideFrustumFlags, ref disposeHandle);
-            DisposeNativeArray(ref _jobEntitySimTiers, ref disposeHandle);
-            DisposeNativeArray(ref _jobDistancesMeters, ref disposeHandle);
-            DisposeNativeArray(ref _jobFromPositions, ref disposeHandle);
-            DisposeNativeArray(ref _jobToPositions, ref disposeHandle);
-            DisposeNativeArray(ref _jobAlphas, ref disposeHandle);
-            NativeMemorySentinel.UnregisterNativeList(nameof(FoveatedSimulationManager), nameof(_deferredRaycastCommands));
-            DisposeNativeArray(ref _pendingDeferredRaycastCommands, ref disposeHandle);
-            DisposeNativeArray(ref _pendingDeferredRaycastCommandIndices, ref disposeHandle);
-            DisposeNativeList(ref _deferredRaycastCommands, ref disposeHandle);
-            DisposeNativeArray(ref _deferredRaycastResults, ref disposeHandle);
-            DisposeNativeArray(ref _telemetryRing, ref disposeHandle);
-            DispatcherJobSwap.TryComplete(ref disposeHandle, forceComplete: true);
+            DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
+
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault != null)
+            {
+                ReleaseVaultHandle(vault, ref _jobScorePositionsHandle);
+                ReleaseVaultHandle(vault, ref _jobEntityAupsHandle);
+                ReleaseVaultHandle(vault, ref _jobImportanceScoresHandle);
+                ReleaseVaultHandle(vault, ref _jobTickRateCodesHandle);
+                ReleaseVaultHandle(vault, ref _jobInsideFrustumFlagsHandle);
+                ReleaseVaultHandle(vault, ref _jobEntitySimTiersHandle);
+                ReleaseVaultHandle(vault, ref _jobDistancesMetersHandle);
+                ReleaseVaultHandle(vault, ref _jobFromPositionsHandle);
+                ReleaseVaultHandle(vault, ref _jobToPositionsHandle);
+                ReleaseVaultHandle(vault, ref _jobAlphasHandle);
+                ReleaseVaultHandle(vault, ref _pendingDeferredRaycastCommandsHandle);
+                ReleaseVaultHandle(vault, ref _pendingDeferredRaycastCommandIndicesHandle);
+                ReleaseVaultHandle(vault, ref _deferredRaycastCommandsHandle);
+                ReleaseVaultHandle(vault, ref _deferredRaycastResultsHandle);
+                ReleaseVaultHandle(vault, ref _telemetryRingHandle);
+            }
 
             _jobScorePositions = default;
             _jobEntityAups = default;
@@ -1469,36 +1492,23 @@ namespace Hecton8.Core
             _deferredRaycastCommands = default;
             _deferredRaycastResults = default;
             _telemetryRing = default;
+            _deferredRaycastCommandCount = 0;
             DrainDeferredRaycastQueueResidue();
-            _nativeMemorySentinelRegistered = false;
             _nativeMemoryBudgetRegistered = false;
         }
 
-        private static void DisposeNativeArray<T>(ref NativeArray<T> array, ref JobHandle dependency) where T : struct
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
         {
-            if (!array.IsCreated)
-                return;
+            if (handle.BufferID != 0u)
+                vault.ReleaseBuffer(in handle);
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            dependency = array.Dispose(dependency);
-            array = default;
-        }
-
-        private static void DisposeNativeList<T>(ref NativeList<T> list, ref JobHandle dependency) where T : unmanaged
-        {
-            if (!list.IsCreated)
-                return;
-
-            dependency = list.Dispose(dependency);
-            list = default;
+            handle = default;
         }
 
         private void DrainDeferredRaycastQueues()
         {
             if (!_deferredRaycastCommands.IsCreated)
                 return;
-
-            _deferredRaycastCommands.Clear();
 
             int commandIndex = 0;
             while (commandIndex < MaxDeferredRaycastCommandsPerFrame &&
@@ -1510,11 +1520,13 @@ namespace Hecton8.Core
                 if (!IsActiveFoveatedTarget(owner))
                     continue;
 
-                _deferredRaycastCommands.AddNoResize(command);
+                _deferredRaycastCommands[commandIndex] = command;
                 _deferredRaycastOwners[commandIndex] = owner;
                 _deferredRaycastCommandIndices[commandIndex] = ownerCommandIndex;
                 commandIndex++;
             }
+
+            _deferredRaycastCommandCount = commandIndex;
         }
 
         private bool TryDequeueDeferredRaycastCommand(
@@ -1535,7 +1547,7 @@ namespace Hecton8.Core
 
             int head = _pendingDeferredRaycastHead;
             command = _pendingDeferredRaycastCommands[head];
-            owner = _pendingDeferredRaycastOwners[head];
+            owner = GetPendingDeferredRaycastOwnerAt(head);
             ownerCommandIndex = _pendingDeferredRaycastCommandIndices[head];
             _pendingDeferredRaycastOwners[head] = null;
             _pendingDeferredRaycastCommandIndices[head] = 0;
@@ -1569,6 +1581,7 @@ namespace Hecton8.Core
             _pendingDeferredRaycastHead = 0;
             _pendingDeferredRaycastTail = 0;
             _queuedDeferredRaycastCount = 0;
+            _deferredRaycastCommandCount = 0;
         }
 
         private static int IncrementDeferredRaycastRingIndex(int index)
@@ -1584,6 +1597,24 @@ namespace Hecton8.Core
 
             int index = target.FoveatedTargetIndex;
             return index >= 0 && index < _targetCount && ReferenceEquals(_targets[index], target);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private IFoveatedSimulationTarget GetTargetAt(int index)
+        {
+            return _targets[index] as IFoveatedSimulationTarget;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private IFoveatedSimulationTarget GetDeferredRaycastOwnerAt(int index)
+        {
+            return _deferredRaycastOwners[index] as IFoveatedSimulationTarget;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private IFoveatedSimulationTarget GetPendingDeferredRaycastOwnerAt(int index)
+        {
+            return _pendingDeferredRaycastOwners[index] as IFoveatedSimulationTarget;
         }
 
         private void InvalidateDeferredRaycastOwner(IFoveatedSimulationTarget target)
@@ -1615,9 +1646,9 @@ namespace Hecton8.Core
                               GetNativeArrayBytes(_jobAlphas) +
                               GetNativeArrayBytes(_pendingDeferredRaycastCommands) +
                               GetNativeArrayBytes(_pendingDeferredRaycastCommandIndices) +
+                              GetNativeArrayBytes(_deferredRaycastCommands) +
                               GetNativeArrayBytes(_deferredRaycastResults) +
-                              GetNativeArrayBytes(_telemetryRing) +
-                              GetNativeListBytes(_deferredRaycastCommands);
+                              GetNativeArrayBytes(_telemetryRing);
             MemoryBudgetTracker.Register(MemoryBudgetOwnerName, totalBytes, PersistentNativeBudgetBytes);
             _nativeMemoryBudgetRegistered = true;
         }
@@ -1625,11 +1656,6 @@ namespace Hecton8.Core
         private static long GetNativeArrayBytes<T>(NativeArray<T> array) where T : struct
         {
             return array.IsCreated ? (long)array.Length * UnsafeUtility.SizeOf<T>() : 0L;
-        }
-
-        private static long GetNativeListBytes<T>(NativeList<T> list) where T : unmanaged
-        {
-            return list.IsCreated ? (long)list.Capacity * UnsafeUtility.SizeOf<T>() : 0L;
         }
 
         private void DisposeVisualTransformAccessArray()

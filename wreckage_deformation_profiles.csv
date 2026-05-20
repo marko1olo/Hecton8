@@ -1,0 +1,4 @@
+profile,globalQualityWeight,blastRadius,tearThreshold,shearTorsion,scorchIntensity,collapseCompression,noiseAmplitude
+Implosion_Crush,0.62,16.0,0.42,1.35,0.85,0.55,0.10
+Thermal_Reactor_Meltdown,0.82,24.0,0.50,0.80,1.75,0.22,0.18
+Kinetic_Tear,0.70,11.5,0.24,2.40,0.70,0.28,0.08

@@ -30,7 +30,7 @@ namespace Hecton8.UI
         private bool _registered;
         private bool _registeredScalabilityListener;
         private bool _dirty;
-        private bool _scrambleAllowed;
+        private float _scrambleIntensity01 = 1f;
 
         /// <summary>
         /// Binds this PDA label to a scanner entity hash and progress value.
@@ -50,7 +50,6 @@ namespace Hecton8.UI
             _entityHash = entityHash;
             _progress01 = clampedProgress;
             _dirty = true;
-            _scrambleProbeCountdown = 0f;
             TryRegister();
         }
 
@@ -65,7 +64,7 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
-            RefreshCachedScalabilityTier();
+            RefreshCachedQualityWeight();
             TryRegisterScalabilityListener();
             TryRegister();
             _dirty = true;
@@ -87,14 +86,15 @@ namespace Hecton8.UI
             }
 
             float deltaTime = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
-            bool scramble = _scrambleAllowed && ShouldScramble(_progress01);
-            _scramblePhase += deltaTime * ScrambleSpeed;
+            float scrambleIntensity01 = ShouldScramble(_progress01) ? _scrambleIntensity01 : 0f;
+            _scramblePhase += deltaTime * ScrambleSpeed * scrambleIntensity01;
             int hash = unchecked((int)_entityHash);
             int progressBucket = (int)math.floor(_progress01 * RevealBucketCount);
-            if (!_dirty && _lastHash == hash && _lastProgressBucket == progressBucket && !scramble)
+            bool scrambleAnimating = scrambleIntensity01 > 0.001f;
+            if (!_dirty && _lastHash == hash && _lastProgressBucket == progressBucket && !scrambleAnimating)
                 return;
 
-            if (!RenderHash(hash, scramble))
+            if (!RenderHash(hash, scrambleIntensity01))
             {
                 _dirty = true;
                 return;
@@ -108,7 +108,7 @@ namespace Hecton8.UI
                 Unregister();
         }
 
-        private bool RenderHash(int hash, bool scramble)
+        private bool RenderHash(int hash, float scrambleIntensity01)
         {
             int sourceLength = LocRegistry.GetLength(hash);
             if (sourceLength <= 0)
@@ -124,10 +124,7 @@ namespace Hecton8.UI
 
             Span<char> destination = lease.Buffer.AsSpan(0, writeLength);
             ReadOnlySpan<char> sourceSpan = source.AsSpan(0, writeLength);
-            if (scramble)
-                Scramble(sourceSpan, destination, _entityHash, _progress01, _scramblePhase);
-            else
-                sourceSpan.CopyTo(destination);
+            Scramble(sourceSpan, destination, _entityHash, _progress01, _scramblePhase, scrambleIntensity01);
 
             targetText.SetCharArray(lease.Buffer, 0, writeLength);
             CharBufferPool.Release(in lease);
@@ -139,9 +136,11 @@ namespace Hecton8.UI
             Span<char> destination,
             uint hash,
             float progress01,
-            float phase)
+            float phase,
+            float scrambleIntensity01)
         {
-            int revealCount = math.clamp((int)math.floor(source.Length * math.saturate(progress01)), 0, source.Length);
+            float effectiveReveal01 = math.lerp(1f, math.saturate(progress01), Sanitize01(scrambleIntensity01));
+            int revealCount = math.clamp((int)math.floor(source.Length * effectiveReveal01), 0, source.Length);
             for (int i = 0; i < revealCount; i++)
                 destination[i] = source[i];
 
@@ -160,21 +159,27 @@ namespace Hecton8.UI
 
         public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
         {
-            _scrambleAllowed = IsScrambleAllowed(payload.CurrentQualityTier);
+            RefreshCachedQualityWeight();
+        }
+
+        private void RefreshCachedQualityWeight()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            quality = math.saturate(math.isfinite(quality) ? quality : 1f);
+            float scaled = math.saturate((quality - 0.2f) * 1.25f);
+            _scrambleIntensity01 = SmoothStep01(scaled);
             _dirty = true;
         }
 
-        private void RefreshCachedScalabilityTier()
+        private static float SmoothStep01(float value)
         {
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            _scrambleAllowed = IsScrambleAllowed(tier);
+            float x = Sanitize01(value);
+            return x * x * (3f - 2f * x);
         }
 
-        private static bool IsScrambleAllowed(HectonQualityTier tier)
+        private static float Sanitize01(float value)
         {
-            return tier != HectonQualityTier.Unknown &&
-                   tier != HectonQualityTier.Low &&
-                   tier != HectonQualityTier.Mx350;
+            return math.isfinite(value) ? math.saturate(value) : 0f;
         }
 
         private void TryRegisterScalabilityListener()
@@ -220,7 +225,7 @@ namespace Hecton8.UI
             _lastHash = 0;
             _lastProgressBucket = -1;
             _dirty = false;
-            _scrambleAllowed = false;
+            _scrambleIntensity01 = 0f;
 
             if (targetText != null)
                 targetText.SetCharArray(EmptyText, 0, 0);

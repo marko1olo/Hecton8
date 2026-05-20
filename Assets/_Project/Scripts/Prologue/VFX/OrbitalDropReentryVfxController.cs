@@ -44,6 +44,7 @@ namespace Hecton8.Prologue.VFX
         private static readonly int _PlasmaAltitudeId = Shader.PropertyToID("_PlasmaAltitude01");
         private static readonly int _PlasmaLowTierId = Shader.PropertyToID("_PlasmaLowTier");
         private static readonly int _PlasmaPhaseId = Shader.PropertyToID("_HectonReentryPhase");
+        private static readonly int _HectonReentryAmbientId = Shader.PropertyToID("_HectonReentryAmbient");
         private static readonly Color _defaultOceanAmbientColor = new Color(0.02f, 0.52f, 0.62f, 1f);
 
         private enum ReentryPhase : byte
@@ -55,7 +56,7 @@ namespace Hecton8.Prologue.VFX
             Complete = 4
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct ReentryVfxTelemetryEntry
         {
             public uint Frame;
@@ -614,11 +615,7 @@ namespace Hecton8.Prologue.VFX
             if (!driveAmbientProbe)
                 return;
 
-            SphericalHarmonicsL2 probe = default;
-            probe[0, 0] = ambient.r;
-            probe[1, 0] = ambient.g;
-            probe[2, 0] = ambient.b;
-            RenderSettings.ambientProbe = probe;
+            Shader.SetGlobalColor(_HectonReentryAmbientId, ambient);
         }
 
         private void BeginAudioCrossfade()

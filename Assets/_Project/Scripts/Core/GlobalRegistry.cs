@@ -7001,10 +7001,9 @@ namespace Hecton8.Core
 
         private static void DispatchRegistryEvent(in RegistryEventPayload payload)
         {
-            IRegistryEventListener[] listeners = _registryEventListeners.RawArray;
             for (int index = _registryEventListeners.Count - 1; index >= 0; index--)
             {
-                IRegistryEventListener listener = listeners[index];
+                IRegistryEventListener listener = _registryEventListeners.GetAt(index);
                 if (listener == null)
                     continue;
 
@@ -7313,10 +7312,9 @@ namespace Hecton8.Core
             object previousService,
             object currentService)
         {
-            IGlobalRegistryHotSwapListener[] listeners = _hotSwapListeners.RawArray;
             for (int index = _hotSwapListeners.Count - 1; index >= 0; index--)
             {
-                IGlobalRegistryHotSwapListener listener = listeners[index];
+                IGlobalRegistryHotSwapListener listener = _hotSwapListeners.GetAt(index);
                 if (listener == null)
                     continue;
 
@@ -7406,6 +7404,8 @@ namespace Hecton8.Core
             if (serviceType == typeof(IProceduralSwayDirector)) return GlobalRegistryServiceSlot.ProceduralSwayDirectorRuntime;
             if (serviceType == typeof(IEncounterDirectorService)) return GlobalRegistryServiceSlot.EncounterDirector;
             if (serviceType == typeof(IQuestSystem)) return GlobalRegistryServiceSlot.QuestSystem;
+            if (serviceType == typeof(ISceneTransitionWorldResidencyBridge)) return GlobalRegistryServiceSlot.PersistentWorldRegistry;
+            if (serviceType == typeof(IRuntimeWatchdogWorldHealthBridge)) return GlobalRegistryServiceSlot.PersistentWorldRegistry;
             if (serviceType == typeof(PersistentWorldRegistry)) return GlobalRegistryServiceSlot.PersistentWorldRegistry;
             if (serviceType == typeof(WorldStateManager)) return GlobalRegistryServiceSlot.WorldStateRuntime;
             if (serviceType == typeof(IPDALogbookService)) return GlobalRegistryServiceSlot.PDALogbook;
@@ -7441,6 +7441,7 @@ namespace Hecton8.Core
             if (serviceType == typeof(AtlasSignalSystem)) return GlobalRegistryServiceSlot.AtlasSignalRuntime;
             if (serviceType == typeof(FirstHourDirector)) return GlobalRegistryServiceSlot.FirstHourRuntime;
             if (serviceType == typeof(EmergencyServiceRelayDirector)) return GlobalRegistryServiceSlot.EmergencyRelayRuntime;
+            if (serviceType == typeof(IAtmosphereRenderSettingsBridge)) return GlobalRegistryServiceSlot.AtmosphereRuntime;
             if (serviceType == typeof(HectonAtmosphereManager)) return GlobalRegistryServiceSlot.AtmosphereRuntime;
             if (serviceType == typeof(ITerrainProvider)) return GlobalRegistryServiceSlot.TerrainProviderRuntime;
             if (serviceType == typeof(MapMagicBridge)) return GlobalRegistryServiceSlot.MapMagicRuntime;

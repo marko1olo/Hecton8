@@ -1,7 +1,7 @@
 # Crisis And Moderation Playbook
 
 Status: future community safety / pre-public
-Public stance: single-player-first / no co-op promise
+Public stance: single-player-first scope / proof-first public copy
 Runtime impact: none
 
 ## Purpose
@@ -29,7 +29,7 @@ Prepare for predictable public failure modes before they happen. Most small proj
 - Do not promise fixes without owner/date.
 - Do not delete criticism unless it breaks rules.
 - Do not litigate design in comment chains.
-- Move real issues to `PLAYER_FEEDBACK_TAXONOMY_AND_TRIAGE.md`.
+- Move real issues to `Feedback/PLAYER_FEEDBACK_TAXONOMY_AND_TRIAGE.md`.
 
 ## Holding Statements
 
@@ -69,7 +69,7 @@ This gate is for the first screenshot, Steam page, demo, or creator preview beat
 | Signal | Threshold | Severity | First 30 minutes | 24-hour owner action | Stop condition |
 |---|---:|---|---|---|---|
 | Clone comparison | 5+ independent comments in one platform thread | S2 | Reply once with identity boundary; ask which visual cue caused it. | Move asset/copy to `REVISE`; update screenshot order or caption. | Do not post same asset again until revised. |
-| Co-op expectation | 3+ comments assume multiplayer or ask "how many players" | S2 | Reply once: single-player-first, no co-op promise. | Add no-coop line to FAQ/pinned reply if needed. | Pull any copy that implies shared world. |
+| Multiplayer-scope expectation | 3+ comments assume multiplayer or ask "how many players" | S2 | Reply once with current single-player-first public scope. | Add multiplayer-scope boundary to FAQ/pinned reply if needed. | Pull any copy that implies shared world. |
 | Dark/unreadable image | 3+ comments cannot parse subject/action | S2 | Do not defend darkness as style. | Re-score asset in QA and adjust exposure/crop/caption. | Asset cannot be used as lead image. |
 | AI-looking/generic asset accusation | 2+ credible comments | S2/S1 if source uncertain | State only verified capture/source facts. | Audit asset metadata and source chain. | Replace asset if source/capture proof is incomplete. |
 | Performance doubt | Any claim challenged or clip visibly stutters | S1 | Remove/avoid performance language. | Collect build/hardware/capture method; update claim gate. | No FPS/zero-stutter claim until measured proof exists. |

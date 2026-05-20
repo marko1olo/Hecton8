@@ -10,7 +10,7 @@ namespace Hecton8.UI
     /// PDA close-focus controller. Performs at most one non-alloc raycast per frame while armed.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class DiegeticPdaFocusDistanceController : MonoBehaviour, ILateFrameTickable
+    public sealed class DiegeticPdaFocusDistanceController : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         [SerializeField] private Camera targetCamera;
         [SerializeField] private Volume targetVolume;
@@ -26,8 +26,12 @@ namespace Hecton8.UI
         private readonly RaycastHit[] _hitBuffer = new RaycastHit[1];
         private DepthOfField _depthOfField;
         private Transform _cameraTransform;
+        private IPlayerRuntimeContext _cachedPlayerContext;
         private bool _registered;
+        private bool _hotSwapListenerRegistered;
         private bool _focusActive;
+        private bool _targetCameraFromPlayerContext;
+        private bool _targetVolumeFromCameraContext;
         private int _lastRaycastFrame = -1;
         private int _nextResolveFrame;
         private float _lastFocusDistance;
@@ -38,6 +42,8 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             ResolveReferences();
             _focusActive = focusActiveOnEnable;
             if (_focusActive)
@@ -46,12 +52,14 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             TryUnregisterTick();
             _focusActive = false;
         }
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             TryUnregisterTick();
         }
 
@@ -116,20 +124,74 @@ namespace Hecton8.UI
             _depthOfField.active = true;
         }
 
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Player)
+                return;
+
+            IPlayerRuntimeContext previousContext = previousService as IPlayerRuntimeContext;
+            IPlayerRuntimeContext currentContext = currentService as IPlayerRuntimeContext;
+            _cachedPlayerContext = currentContext;
+
+            Camera previousCamera = previousContext != null ? previousContext.PlayerCamera : null;
+            Camera currentCamera = currentContext != null ? currentContext.PlayerCamera : null;
+            if (targetCamera == null || _targetCameraFromPlayerContext || ReferenceEquals(targetCamera, previousCamera))
+            {
+                targetCamera = currentCamera;
+                _targetCameraFromPlayerContext = currentCamera != null;
+                _cameraTransform = currentCamera != null ? currentCamera.transform : null;
+                if ((targetVolume == null || _targetVolumeFromCameraContext) && currentCamera != null)
+                {
+                    targetVolume = ResolveCameraVolume(currentCamera.transform);
+                    _targetVolumeFromCameraContext = targetVolume != null;
+                    _depthOfField = null;
+                }
+                else if (currentCamera == null && _targetVolumeFromCameraContext)
+                {
+                    targetVolume = null;
+                    _targetVolumeFromCameraContext = false;
+                    _depthOfField = null;
+                }
+                if (_focusActive)
+                    _nextResolveFrame = 0;
+            }
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedPlayerContext = GlobalRegistry.Player;
+        }
+
         private void ResolveReferences()
         {
             _nextResolveFrame = Time.frameCount + 30;
 
-            if (targetCamera == null && GlobalRegistry.Player != null)
-                targetCamera = GlobalRegistry.Player.PlayerCamera;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (targetCamera == null && playerContext != null)
+            {
+                targetCamera = playerContext.PlayerCamera;
+                _targetCameraFromPlayerContext = targetCamera != null;
+            }
             if (targetCamera == null)
+            {
                 targetCamera = ResolveNearestParentCamera(transform);
+                _targetCameraFromPlayerContext = false;
+            }
             _cameraTransform = targetCamera != null ? targetCamera.transform : null;
 
             if (targetVolume == null && targetCamera != null)
+            {
                 targetVolume = ResolveCameraVolume(targetCamera.transform);
+                _targetVolumeFromCameraContext = targetVolume != null;
+            }
             if (targetVolume == null)
+            {
                 targetVolume = ResolveNearestParentVolume(transform);
+                _targetVolumeFromCameraContext = false;
+            }
 
             if (_depthOfField == null && targetVolume != null && targetVolume.profile != null)
                 targetVolume.profile.TryGet(out _depthOfField);
@@ -141,6 +203,23 @@ namespace Hecton8.UI
                 return;
 
             _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         private void TryUnregisterTick()

@@ -92,7 +92,7 @@ Reject all roughs that:
 - use a generic diver as the only idea;
 - hide the game behind fog;
 - make the title unreadable at Steam small capsule size;
-- imply co-op by showing multiple player silhouettes;
+- imply unsupported multiplayer scope by showing multiple player silhouettes;
 - look like a cinematic poster with no player verb.
 
 First paid-art spend gate: only after one direction survives a 10-person thumbnail test and the screenshot pack scores at least 10/12 in `QA/MARKETING_ASSET_QA_CHECKLIST.md`.
@@ -131,7 +131,7 @@ Use this once `PLAN-SHOT-*` captures exist. The goal is not "pretty key art"; th
 - One clear light source.
 - No text paragraph.
 - No feature claims.
-- No co-op implication.
+- No multiplayer-scope implication.
 - No generic leviathan copy.
 
 ## Screenshot Visual Standards

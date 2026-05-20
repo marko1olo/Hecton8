@@ -2,6 +2,7 @@
     "name": "Hecton8.Habitat.Deformation.Editor",
     "rootNamespace": "Hecton8.Habitat.Deformation.Editor",
     "references": [
+        "Hecton8.Habitat.Deformation.Contracts",
         "Hecton8.Habitat.Deformation",
         "Unity.Mathematics"
     ],

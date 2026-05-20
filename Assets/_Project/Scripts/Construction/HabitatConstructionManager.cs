@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Hecton8.Building;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.World;
@@ -37,7 +38,6 @@ namespace Hecton8.Construction
         private const string NativeMemoryOwner = nameof(HabitatConstructionManager);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
 
-        private readonly List<ModuleSocket> _moduleSocketBuffer;
         private readonly List<int2> _connectionBuffer;
         private readonly Dictionary<SocketKey, SocketMatchEntry> _socketLookup;
 
@@ -64,8 +64,6 @@ namespace Hecton8.Construction
 
         public HabitatConstructionManager()
         {
-            // COLD ALLOC: List<ModuleSocket>[16] — reusable module socket scan buffer for preview and graph assembly — owner: HabitatConstructionManager
-            _moduleSocketBuffer = new List<ModuleSocket>(16);
             // COLD ALLOC: List<int2>[128] — reusable undirected connection list for adjacency assembly — owner: HabitatConstructionManager
             _connectionBuffer = new List<int2>(128);
             // COLD ALLOC: Dictionary<SocketKey,SocketMatchEntry>[256] — reusable quantized socket lookup for O(N) connection assembly — owner: HabitatConstructionManager
@@ -453,6 +451,7 @@ namespace Hecton8.Construction
             _socketLookup.Clear();
 
             int validationGridSize = math.max(1, (int)math.floor(math.max(DefaultGridSize, gridSize) * math.rcp(DefaultSocketQuantization) + 0.5f));
+            IDataVault catalogVault = GlobalRegistry.DataVault;
             if (constructionManager != null && constructionManager.SpawnedModules != null)
             {
                 IReadOnlyList<GameObject> modules = constructionManager.SpawnedModules;
@@ -463,51 +462,101 @@ namespace Hecton8.Construction
                     if (moduleObject == null)
                         continue;
 
-                    IndexSockets(moduleIndex: nodeIndex, root: moduleObject, validationGridSize);
+                    IndexSockets(moduleIndex: nodeIndex, root: moduleObject, data: ResolveBuildableData(moduleObject), validationGridSize, catalogVault);
                     nodeIndex++;
                 }
             }
 
-            IndexSockets(activeNodeCount - 1, candidateGhost, validationGridSize);
+            IndexSockets(activeNodeCount - 1, candidateGhost, candidateData, validationGridSize, catalogVault);
             BuildAdjacency(activeNodeCount);
             return activeNodeCount;
         }
 
-        private void IndexSockets(int moduleIndex, GameObject root, int validationGridSize)
+        private void IndexSockets(int moduleIndex, GameObject root, BuildableData data, int validationGridSize, IDataVault catalogVault)
         {
-            if (root == null)
+            if (root == null || data == null || data.ModuleTemplate == null)
                 return;
 
-            _moduleSocketBuffer.Clear();
-            root.GetComponentsInChildren(true, _moduleSocketBuffer);
-
-            for (int i = 0; i < _moduleSocketBuffer.Count; i++)
+            BaseModuleTemplate template = data.ModuleTemplate;
+            uint prefabHash = unchecked((uint)template.TemplateHashId);
+            if (BaseModuleCatalogRuntime.TryGetModuleSocketRangeFromVault(
+                    catalogVault,
+                    prefabHash,
+                    out NativeArray<SocketDefinitionDTO> catalogSockets,
+                    out int socketStart,
+                    out int socketCount,
+                    out _))
             {
-                ModuleSocket socket = _moduleSocketBuffer[i];
-                if (socket == null)
-                    continue;
-
-                if (!socket.isActiveAndEnabled)
-                    continue;
-
-                Transform socketTransform = socket.transform;
-                int axis = QuantizeAxis(socketTransform.forward);
-                SocketKey oppositeKey = SocketKey.Create(socketTransform.position, OppositeAxis(axis), validationGridSize);
-
-                if (_socketLookup.TryGetValue(oppositeKey, out SocketMatchEntry existing))
-                {
-                    if (existing.ModuleIndex != moduleIndex &&
-                        ModuleSocketTopology.AreCompatible(existing.CompatibleType, existing.Direction, socket.CompatibleType, socket.Direction) &&
-                        Vector3.Dot(existing.Forward, socketTransform.forward) <= OppositeDirectionDotThreshold)
-                    {
-                        _connectionBuffer.Add(new int2(existing.ModuleIndex, moduleIndex));
-                        continue;
-                    }
-                }
-
-                SocketKey ownKey = SocketKey.Create(socketTransform.position, axis, validationGridSize);
-                _socketLookup[ownKey] = new SocketMatchEntry(moduleIndex, socket.CompatibleType, socket.Direction, socketTransform.forward);
+                IndexSocketRange(moduleIndex, root.transform, catalogSockets, socketStart, socketCount, validationGridSize);
+                return;
             }
+
+            if (Application.isPlaying)
+                return;
+
+            BaseModuleTemplate.SocketDefinition[] definitions = template.SocketDefinitions;
+            if (definitions == null || definitions.Length == 0)
+                return;
+
+            for (int i = 0; i < definitions.Length; i++)
+            {
+                if (!BaseModuleCatalogRuntime.TryBuildSocketFromTemplate(template, i, out SocketDefinitionDTO socket))
+                    continue;
+
+                IndexSocket(moduleIndex, root.transform, socket, validationGridSize);
+            }
+        }
+
+        private void IndexSocketRange(int moduleIndex, Transform rootTransform, NativeArray<SocketDefinitionDTO> sockets, int socketStart, int socketCount, int validationGridSize)
+        {
+            int end = math.min(socketStart + socketCount, sockets.Length);
+            for (int i = socketStart; i < end; i++)
+                IndexSocket(moduleIndex, rootTransform, sockets[i], validationGridSize);
+        }
+
+        private void IndexSocket(int moduleIndex, Transform rootTransform, in SocketDefinitionDTO socket, int validationGridSize)
+        {
+            if (!TryResolveSocketPose(rootTransform, in socket, out double3 socketAup, out Vector3 socketForward))
+                return;
+
+            int axis = QuantizeAxis(socketForward);
+            SocketKey oppositeKey = SocketKey.Create(socketAup, OppositeAxis(axis), validationGridSize);
+
+            if (_socketLookup.TryGetValue(oppositeKey, out SocketMatchEntry existing))
+            {
+                if (existing.ModuleIndex != moduleIndex &&
+                    BaseModuleCatalogRuntime.AreSocketMasksCompatible(existing.CompatibilityMask, socket.AllowedConnectionsMask) &&
+                    Vector3.Dot(existing.Forward, socketForward) <= OppositeDirectionDotThreshold)
+                {
+                    _connectionBuffer.Add(new int2(existing.ModuleIndex, moduleIndex));
+                    return;
+                }
+            }
+
+            SocketKey ownKey = SocketKey.Create(socketAup, axis, validationGridSize);
+            _socketLookup[ownKey] = new SocketMatchEntry(moduleIndex, socket.AllowedConnectionsMask, socketForward);
+        }
+
+        private static bool TryResolveSocketPose(Transform rootTransform, in SocketDefinitionDTO socket, out double3 socketAup, out Vector3 socketForward)
+        {
+            socketAup = default;
+            socketForward = Vector3.forward;
+            if (rootTransform == null)
+                return false;
+
+            Quaternion rootRotation = rootTransform.rotation;
+            quaternion rotation = new quaternion(rootRotation.x, rootRotation.y, rootRotation.z, rootRotation.w);
+            float3 worldNormal = math.rotate(rotation, socket.Normal);
+            if (!math.all(math.isfinite(socket.LocalOffset)) || !math.all(math.isfinite(worldNormal)))
+                return false;
+
+            double3 rootAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(rootTransform.position);
+            socketAup = BaseModuleCatalogRuntime.ResolveSocketAup(rootAup, rotation, in socket);
+            if (!math.all(math.isfinite(socketAup)))
+                return false;
+
+            socketForward = new Vector3(worldNormal.x, worldNormal.y, worldNormal.z);
+            return true;
         }
 
         private void BuildAdjacency(int nodeCount)
@@ -810,16 +859,33 @@ namespace Hecton8.Construction
                 _axis = axis;
             }
 
-            public static SocketKey Create(Vector3 position, int axis, int validationGridSize)
+            public static SocketKey Create(double3 socketAup, int axis, int validationGridSize)
             {
-                float scale = validationGridSize > 0 ? validationGridSize : 1;
-                float3 scaledPosition = (float3)position * scale;
-                int3 quantizedPosition = (int3)math.floor(scaledPosition + new float3(0.5f));
+                double scale = validationGridSize > 0 ? validationGridSize : 1d;
+                double3 scaledPosition = socketAup * scale;
+                int3 quantizedPosition = new int3(
+                    QuantizeScaledAup(scaledPosition.x),
+                    QuantizeScaledAup(scaledPosition.y),
+                    QuantizeScaledAup(scaledPosition.z));
                 return new SocketKey(
                     quantizedPosition.x,
                     quantizedPosition.y,
                     quantizedPosition.z,
                     axis);
+            }
+
+            private static int QuantizeScaledAup(double value)
+            {
+                if (!math.isfinite(value))
+                    return 0;
+
+                double rounded = value >= 0d ? math.floor(value + 0.5d) : math.ceil(value - 0.5d);
+                if (rounded > int.MaxValue)
+                    return int.MaxValue;
+                if (rounded < int.MinValue)
+                    return int.MinValue;
+
+                return (int)rounded;
             }
 
             public bool Equals(SocketKey other)
@@ -851,15 +917,13 @@ namespace Hecton8.Construction
         private readonly struct SocketMatchEntry
         {
             public readonly int ModuleIndex;
-            public readonly string CompatibleType;
-            public readonly ModuleSocketDirection Direction;
+            public readonly uint CompatibilityMask;
             public readonly Vector3 Forward;
 
-            public SocketMatchEntry(int moduleIndex, string compatibleType, ModuleSocketDirection direction, Vector3 forward)
+            public SocketMatchEntry(int moduleIndex, uint compatibilityMask, Vector3 forward)
             {
                 ModuleIndex = moduleIndex;
-                CompatibleType = compatibleType;
-                Direction = direction;
+                CompatibilityMask = compatibilityMask;
                 Forward = forward;
             }
         }
@@ -886,15 +950,15 @@ namespace Hecton8.Construction
             IntegrityExceeded = 2
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct IntegrityValidationJob : IJob
         {
-            [ReadOnly] public NativeArray<IntegrityNodeRecord> Nodes;
-            [ReadOnly] public NativeArray<int2> AdjacencyRanges;
-            [ReadOnly] public NativeArray<int> Adjacency;
-            public NativeArray<int> Queue;
-            public NativeArray<int> Depths;
-            public NativeArray<IntegrityValidationResult> Result;
+            [ReadOnly] [NoAlias] public NativeArray<IntegrityNodeRecord> Nodes;
+            [ReadOnly] [NoAlias] public NativeArray<int2> AdjacencyRanges;
+            [ReadOnly] [NoAlias] public NativeArray<int> Adjacency;
+            [NoAlias] public NativeArray<int> Queue;
+            [NoAlias] public NativeArray<int> Depths;
+            [NoAlias] public NativeArray<IntegrityValidationResult> Result;
             public int NodeCount;
             public float IntegrityBudget;
             public float DepthPenalty;

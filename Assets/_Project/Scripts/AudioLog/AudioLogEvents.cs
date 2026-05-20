@@ -14,14 +14,17 @@ namespace Hecton8.Narrative
         PlaybackCompleted = 3
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct AudioLogEventPayload
     {
-        public AudioLogEventType Type;
-        public ulong TimestampTicks;
-        public uint LogHash;
-        public int ReferenceSlot;
-        public float DurationSeconds;
+        [FieldOffset(0)] public ulong TimestampTicks;
+        [FieldOffset(8)] public uint LogHash;
+        [FieldOffset(12)] public int ReferenceSlot;
+        [FieldOffset(16)] public float DurationSeconds;
+        [FieldOffset(20)] public AudioLogEventType Type;
+        [FieldOffset(21)] private byte _pad0;
+        [FieldOffset(22)] private ushort _pad1;
+        [FieldOffset(24)] private ulong _pad2;
     }
 
     public interface IAudioLogEventListener

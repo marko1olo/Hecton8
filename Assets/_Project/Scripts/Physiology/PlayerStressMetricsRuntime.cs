@@ -168,12 +168,15 @@ namespace Hecton8.Physiology
 
         public void OnModuleStatusEvent(in ModuleStatusEventPayload payload)
         {
-            if (!payload.IsPlayerInsideInterior)
+            if (!ModuleStatusEvents.IsPlayerInsideInterior(in payload))
                 return;
 
-            if (payload.IsEnter)
+            if (ModuleStatusEvents.IsEnterEvent(in payload))
             {
-                _insidePoweredBase = payload.HasPower && !payload.IsBreached && !payload.IsFlooded;
+                _insidePoweredBase =
+                    ModuleStatusEvents.HasPower(in payload) &&
+                    !ModuleStatusEvents.IsBreached(in payload) &&
+                    !ModuleStatusEvents.IsFlooded(in payload);
                 return;
             }
 

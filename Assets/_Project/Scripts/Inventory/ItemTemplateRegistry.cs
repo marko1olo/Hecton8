@@ -53,24 +53,27 @@ namespace Hecton8.Inventory
     /// Immutable item-template record used by SOA inventory/runtime systems.
     /// </summary>
     [Serializable]
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 44)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct ItemTemplate
     {
-        [SerializeField] private uint hashID;
-        [SerializeField] private ItemCategoryMask categoryMask;
-        [SerializeField] private float baseDurability;
-        [SerializeField] private float wearMultiplier;
-        [SerializeField] private ushort maxStackSize;
-        [SerializeField] private ushort proxyMeshIndex;
-        [SerializeField] private ushort iconAtlasIndex;
-        [SerializeField] private ushort hlodSilhouetteIndex;
-        [SerializeField] private uint vulnerabilityMask;
-        [SerializeField] private byte audioMaterialId;
-        [SerializeField] private byte physicsMaterialTag;
-        [SerializeField] private ushort _reserved0;
-        [SerializeField] private uint blueprintQuestFlagId;
-        [SerializeField] private float massKg;
-        [SerializeField] private float volumeM3;
+        [FieldOffset(0), SerializeField] private uint hashID;
+        [FieldOffset(4), SerializeField] private ItemCategoryMask categoryMask;
+        [FieldOffset(8), SerializeField] private float baseDurability;
+        [FieldOffset(12), SerializeField] private float wearMultiplier;
+        [FieldOffset(16), SerializeField] private uint vulnerabilityMask;
+        [FieldOffset(20), SerializeField] private uint blueprintQuestFlagId;
+        [FieldOffset(24), SerializeField] private float massKg;
+        [FieldOffset(28), SerializeField] private float volumeM3;
+        [FieldOffset(32), SerializeField] private ushort maxStackSize;
+        [FieldOffset(34), SerializeField] private ushort proxyMeshIndex;
+        [FieldOffset(36), SerializeField] private ushort iconAtlasIndex;
+        [FieldOffset(38), SerializeField] private ushort hlodSilhouetteIndex;
+        [FieldOffset(40), SerializeField] private byte audioMaterialId;
+        [FieldOffset(41), SerializeField] private byte physicsMaterialTag;
+        [FieldOffset(42), SerializeField] private ushort _reserved0;
+        [FieldOffset(44)] private uint _pad0;
+        [FieldOffset(48)] private ulong _pad1;
+        [FieldOffset(56)] private ulong _pad2;
 
         public ItemTemplate(
             uint hashID,
@@ -88,6 +91,7 @@ namespace Hecton8.Inventory
             float volumeM3,
             uint blueprintQuestFlagId = 0u)
         {
+            this = default;
             this.hashID = hashID;
             this.categoryMask = categoryMask;
             this.baseDurability = baseDurability;

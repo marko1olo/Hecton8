@@ -23,25 +23,22 @@ public enum ModuleStatusEventType : byte
 /// Unmanaged module status payload drained by <see cref="SystemDispatcher"/> in LateUpdate.
 /// Managed <see cref="BaseModule"/> references are resolved through the sidecar only during dispatch.
 /// </summary>
-[StructLayout(LayoutKind.Sequential)]
+[StructLayout(LayoutKind.Explicit, Size = 64)]
 public struct ModuleStatusEventPayload
 {
-    public ulong ModuleEntityId;
-    public uint ModuleHashId;
-    public float Integrity01;
-    public float AirReserve01;
-    public float PowerSupply01;
-    public int ReferenceSlot;
-    public ushort EventType;
-    public ushort StatusBits;
-
-    public bool IsEnter => EventType == (ushort)ModuleStatusEventType.Enter;
-    public bool IsFlooded => (StatusBits & 1u) != 0u;
-    public bool IsBreached => (StatusBits & 2u) != 0u;
-    public bool HasPower => (StatusBits & 4u) != 0u;
-    public bool IsPlayerInsideInterior => (StatusBits & 8u) != 0u;
-    public bool IsAirQualityLow => (StatusBits & 16u) != 0u;
-    public bool HasCascadeFailure => (StatusBits & 32u) != 0u;
+    [FieldOffset(0)] public ulong ModuleEntityId;
+    [FieldOffset(8)] public uint ModuleHashId;
+    [FieldOffset(12)] public int ReferenceSlot;
+    [FieldOffset(16)] public float Integrity01;
+    [FieldOffset(20)] public float AirReserve01;
+    [FieldOffset(24)] public float PowerSupply01;
+    [FieldOffset(28)] public uint StatusFlags;
+    [FieldOffset(32)] public ushort EventType;
+    [FieldOffset(34)] public ushort Reserved;
+    [FieldOffset(36)] private uint _pad0;
+    [FieldOffset(40)] private ulong _pad1;
+    [FieldOffset(48)] private ulong _pad2;
+    [FieldOffset(56)] private ulong _pad3;
 }
 
 /// <summary>
@@ -64,12 +61,47 @@ public static class ModuleStatusEvents
     private const int ListenerCapacity = 16;
     private const int PendingEventCapacity = 128;
     private const int ReferenceSlotCapacity = 128;
-    private const ushort FloodedStatusBit = (ushort)(1 << 0);
-    private const ushort BreachedStatusBit = (ushort)(1 << 1);
-    private const ushort HasPowerStatusBit = (ushort)(1 << 2);
-    private const ushort PlayerInsideStatusBit = (ushort)(1 << 3);
-    private const ushort AirQualityLowStatusBit = (ushort)(1 << 4);
-    private const ushort CascadeFailureStatusBit = (ushort)(1 << 5);
+    private const uint FloodedStatusFlag = 1u << 0;
+    private const uint BreachedStatusFlag = 1u << 1;
+    private const uint HasPowerStatusFlag = 1u << 2;
+    private const uint PlayerInsideStatusFlag = 1u << 3;
+    private const uint AirQualityLowStatusFlag = 1u << 4;
+    private const uint CascadeFailureStatusFlag = 1u << 5;
+
+    public static bool IsEnterEvent(in ModuleStatusEventPayload payload)
+    {
+        return payload.EventType == (ushort)ModuleStatusEventType.Enter;
+    }
+
+    public static bool IsFlooded(in ModuleStatusEventPayload payload)
+    {
+        return (payload.StatusFlags & FloodedStatusFlag) != 0u;
+    }
+
+    public static bool IsBreached(in ModuleStatusEventPayload payload)
+    {
+        return (payload.StatusFlags & BreachedStatusFlag) != 0u;
+    }
+
+    public static bool HasPower(in ModuleStatusEventPayload payload)
+    {
+        return (payload.StatusFlags & HasPowerStatusFlag) != 0u;
+    }
+
+    public static bool IsPlayerInsideInterior(in ModuleStatusEventPayload payload)
+    {
+        return (payload.StatusFlags & PlayerInsideStatusFlag) != 0u;
+    }
+
+    public static bool IsAirQualityLow(in ModuleStatusEventPayload payload)
+    {
+        return (payload.StatusFlags & AirQualityLowStatusFlag) != 0u;
+    }
+
+    public static bool HasCascadeFailure(in ModuleStatusEventPayload payload)
+    {
+        return (payload.StatusFlags & CascadeFailureStatusFlag) != 0u;
+    }
 
     private struct ModuleReferenceSlot
     {
@@ -256,7 +288,7 @@ public static class ModuleStatusEvents
             PowerSupply01 = module.PowerSupplyRatio,
             ReferenceSlot = referenceSlot,
             EventType = (ushort)eventType,
-            StatusBits = ComputeStatusBits(module)
+            StatusFlags = ComputeStatusFlags(module)
         });
     }
 
@@ -443,22 +475,22 @@ public static class ModuleStatusEvents
             : 0u;
     }
 
-    private static ushort ComputeStatusBits(BaseModule module)
+    private static uint ComputeStatusFlags(BaseModule module)
     {
-        ushort statusBits = 0;
+        uint statusFlags = 0u;
         if (module.IsFlooded)
-            statusBits |= FloodedStatusBit;
+            statusFlags |= FloodedStatusFlag;
         if (module.IsBreached)
-            statusBits |= BreachedStatusBit;
+            statusFlags |= BreachedStatusFlag;
         if (module.HasPower)
-            statusBits |= HasPowerStatusBit;
+            statusFlags |= HasPowerStatusFlag;
         if (module.IsPlayerInsideInterior)
-            statusBits |= PlayerInsideStatusBit;
+            statusFlags |= PlayerInsideStatusFlag;
         if (module.IsAirQualityLow)
-            statusBits |= AirQualityLowStatusBit;
+            statusFlags |= AirQualityLowStatusFlag;
         if (module.HasCascadeFailure)
-            statusBits |= CascadeFailureStatusBit;
+            statusFlags |= CascadeFailureStatusFlag;
 
-        return statusBits;
+        return statusFlags;
     }
 }

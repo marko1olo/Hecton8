@@ -178,7 +178,7 @@ namespace Hecton8.Core.Memory
         private const int DumpVersion = 1;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_100.bin";
 
-        private static VaultBufferHandle<VaultSovereigntyTelemetryEntry> _ringHandle;
+        private static VaultGenerationHandle<VaultSovereigntyTelemetryEntry> _ringHandle;
         private static IDataVault _ringVault;
         private static int _cursor;
 
@@ -198,9 +198,11 @@ namespace Hecton8.Core.Memory
             if (!EnsureRing(vault))
                 return false;
 
-            NativeArray<VaultSovereigntyTelemetryEntry> ring = _ringHandle.Resolve(vault);
-            if (!ring.IsCreated || ring.Length == 0)
+            if (!TryResolveRing(vault, out NativeArray<VaultSovereigntyTelemetryEntry> ring) ||
+                ring.Length == 0)
+            {
                 return false;
+            }
 
             int cursor = _cursor;
             if ((uint)cursor >= (uint)ring.Length)
@@ -239,17 +241,30 @@ namespace Hecton8.Core.Memory
                 _ringVault = vault;
             }
 
-            if (_ringHandle.IsCreated && _ringHandle.Length >= Capacity)
+            if (TryResolveRing(vault, out NativeArray<VaultSovereigntyTelemetryEntry> existingRing) &&
+                existingRing.Length >= Capacity)
+            {
                 return true;
+            }
             if (vault.IsAllocationLocked)
                 return false;
 
-            _ringHandle = vault.GetBufferHandle<VaultSovereigntyTelemetryEntry>(
+            _ringHandle = vault.GetGenerationHandle<VaultSovereigntyTelemetryEntry>(
                 BufferID.VaultSovereigntyTelemetryRing,
                 Capacity,
                 SystemID.CoreDataVault,
                 NativeArrayOptions.ClearMemory);
-            return _ringHandle.IsCreated && _ringHandle.Length >= Capacity;
+            return TryResolveRing(vault, out NativeArray<VaultSovereigntyTelemetryEntry> ring) &&
+                   ring.Length >= Capacity;
+        }
+
+        private static bool TryResolveRing(IDataVault vault, out NativeArray<VaultSovereigntyTelemetryEntry> ring)
+        {
+            ring = default;
+            return vault != null &&
+                   _ringHandle.BufferID != 0u &&
+                   vault.TryResolveHandle(in _ringHandle, out ring) &&
+                   ring.IsCreated;
         }
 
         public static bool TryDump(IDataVault vault, string projectRoot)
@@ -257,9 +272,12 @@ namespace Hecton8.Core.Memory
             if (!EnsureRing(vault))
                 return false;
 
-            NativeArray<VaultSovereigntyTelemetryEntry> ring = _ringHandle.Resolve(vault);
-            if (!ring.IsCreated || ring.Length == 0 || string.IsNullOrEmpty(projectRoot))
+            if (!TryResolveRing(vault, out NativeArray<VaultSovereigntyTelemetryEntry> ring) ||
+                ring.Length == 0 ||
+                string.IsNullOrEmpty(projectRoot))
+            {
                 return false;
+            }
 
             string path = Path.Combine(projectRoot, DumpRelativePath);
             try
@@ -742,7 +760,7 @@ namespace Hecton8.Core.Memory
             if (scheduled)
             {
                 H8Memory.RegisterActiveJob(SystemID.CoreDataVault, handle);
-                handle.Complete();
+                Hecton8.Core.DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
                 stats.Flags |= FlagCompleted;
             }
 

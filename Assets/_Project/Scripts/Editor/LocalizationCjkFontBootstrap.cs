@@ -316,7 +316,7 @@ namespace Hecton8.Editor
                 return authoredSeed;
 
             string json = File.ReadAllText(fullPath);
-            Dictionary<string, string> table = LocalizationManager.ParseFlatJsonTable(json);
+            Dictionary<string, string> table = LocalizationEditorJsonTableParser.ParseFlatJsonTable(json);
             Dictionary<string, string>.Enumerator enumerator = table.GetEnumerator();
             while (enumerator.MoveNext())
                 AppendSeedCharacters(enumerator.Current.Value, characters);

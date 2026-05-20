@@ -21,18 +21,23 @@ namespace Hecton8.VFX.Bioluminescence.Editor
         private Slider _ambientSlider;
         private Slider _o2Slider;
         private Slider _healthSlider;
+        private Slider _baseFrequencySlider;
+        private Slider _spatialOffsetSlider;
+        private Slider _darknessThresholdSlider;
+        private Slider _predatorPanicSlider;
         private Slider _pulseWaveSpeedSlider;
         private ColorField _pulseColorField;
+        private VisualElement[] _pulseBoxes;
         private Label[] _speciesLabels;
         private ColorField[] _speciesColorFields;
         private Slider[] _speciesFrequencySliders;
         private Slider[] _speciesWaveSpeedSliders;
         private bool _suppressCallbacks;
 
-        [MenuItem("Hecton8/VFX/Bioluminescence Tuner")]
+        [MenuItem("Hecton8/VFX/Abyssal Glow Tuner")]
         private static void Open()
         {
-            GetWindow<BioluminescenceTunerWindow>("Bioluminescence Tuner");
+            GetWindow<BioluminescenceTunerWindow>("Abyssal Glow Tuner");
         }
 
         public void CreateGUI()
@@ -88,6 +93,43 @@ namespace Hecton8.VFX.Bioluminescence.Editor
             Label header = CreateHeader("Global Pulse");
             header.style.marginTop = 10f;
             root.Add(header);
+
+            _baseFrequencySlider = CreateSlider("Base Frequency", MinFrequency, MaxFrequency);
+            _spatialOffsetSlider = CreateSlider("Spatial Offset Multiplier", 0f, 8f);
+            _darknessThresholdSlider = CreateSlider("Darkness Activation Threshold", 0f, 1f);
+            _predatorPanicSlider = CreateSlider("Predator Panic Speed", 1f, 4f);
+            _baseFrequencySlider.RegisterValueChangedCallback(_ => WritePulseControls());
+            _spatialOffsetSlider.RegisterValueChangedCallback(_ => WritePulseControls());
+            _darknessThresholdSlider.RegisterValueChangedCallback(_ => WritePulseControls());
+            _predatorPanicSlider.RegisterValueChangedCallback(_ => WritePulseControls());
+            root.Add(_baseFrequencySlider);
+            root.Add(_spatialOffsetSlider);
+            root.Add(_darknessThresholdSlider);
+            root.Add(_predatorPanicSlider);
+
+            VisualElement pulseBoxRow = new VisualElement();
+            pulseBoxRow.style.flexDirection = FlexDirection.Row;
+            pulseBoxRow.style.height = 34f;
+            pulseBoxRow.style.marginTop = 4f;
+            pulseBoxRow.style.marginBottom = 6f;
+            _pulseBoxes = new VisualElement[BiolumPulseSyncRuntime.SyncGroupCount];
+            for (int i = 0; i < _pulseBoxes.Length; i++)
+            {
+                VisualElement box = new VisualElement();
+                box.style.flexGrow = 1f;
+                box.style.marginRight = 4f;
+                box.style.borderTopWidth = 1f;
+                box.style.borderRightWidth = 1f;
+                box.style.borderBottomWidth = 1f;
+                box.style.borderLeftWidth = 1f;
+                box.style.borderTopColor = new Color(0.12f, 0.45f, 0.52f, 1f);
+                box.style.borderRightColor = new Color(0.12f, 0.45f, 0.52f, 1f);
+                box.style.borderBottomColor = new Color(0.12f, 0.45f, 0.52f, 1f);
+                box.style.borderLeftColor = new Color(0.12f, 0.45f, 0.52f, 1f);
+                pulseBoxRow.Add(box);
+                _pulseBoxes[i] = box;
+            }
+            root.Add(pulseBoxRow);
 
             _pulseWaveSpeedSlider = CreateSlider("Wave Speed", MinWaveSpeed, MaxWaveSpeed);
             _pulseWaveSpeedSlider.SetValueWithoutNotify(DefaultWaveSpeed);
@@ -179,6 +221,20 @@ namespace Hecton8.VFX.Bioluminescence.Editor
                     _healthSlider.SetValueWithoutNotify(weather.SystemHealthIndex01);
                 }
 
+                if (BiolumPulseSyncRuntime.TryReadEditorPulseControls(
+                        out float baseFrequency,
+                        out float spatialOffsetMultiplier,
+                        out float darknessActivationThreshold,
+                        out float predatorPanicSpeed))
+                {
+                    _baseFrequencySlider.SetValueWithoutNotify(math.clamp(baseFrequency, MinFrequency, MaxFrequency));
+                    _spatialOffsetSlider.SetValueWithoutNotify(math.clamp(spatialOffsetMultiplier, 0f, 8f));
+                    _darknessThresholdSlider.SetValueWithoutNotify(math.saturate(darknessActivationThreshold));
+                    _predatorPanicSlider.SetValueWithoutNotify(math.clamp(predatorPanicSpeed, 1f, 4f));
+                }
+
+                RefreshPulseBoxes();
+
                 for (int i = 0; i < _speciesLabels.Length; i++)
                 {
                     if (!BiolumPulseSyncRuntime.TryReadEditorSpeciesTuning(i, out BiolumSpeciesTuningDTO tuning))
@@ -208,6 +264,36 @@ namespace Hecton8.VFX.Bioluminescence.Editor
             weather.O2Level01 = _o2Slider.value;
             weather.SystemHealthIndex01 = _healthSlider.value;
             BiolumPulseSyncRuntime.TryWriteEditorMockWeather(weather);
+        }
+
+        private void WritePulseControls()
+        {
+            if (_suppressCallbacks || !Application.isPlaying)
+                return;
+
+            BiolumPulseSyncRuntime.TryWriteEditorPulseControls(
+                _baseFrequencySlider.value,
+                _spatialOffsetSlider.value,
+                _darknessThresholdSlider.value,
+                _predatorPanicSlider.value);
+        }
+
+        private void RefreshPulseBoxes()
+        {
+            if (_pulseBoxes == null ||
+                !BiolumPulseSyncRuntime.TryReadEditorPulseState(out BiolumPulseStateDTO pulseState))
+            {
+                return;
+            }
+
+            for (int i = 0; i < _pulseBoxes.Length; i++)
+            {
+                float4 row = ResolvePulseRow(in pulseState, i);
+                float wave = 0.5f + 0.5f * math.sin(row.x);
+                float alpha = math.saturate(wave * row.z);
+                Color color = ResolvePulseColor(i, alpha);
+                _pulseBoxes[i].style.backgroundColor = color;
+            }
         }
 
         private void WriteSpecies(int index)
@@ -256,6 +342,36 @@ namespace Hecton8.VFX.Bioluminescence.Editor
             float3 rgb = BiolumPackedColorUtility.UnpackRgb10A2(packed);
             float alpha = ((packed >> 30) & 3u) * (1f / 3f);
             return new Color(rgb.x, rgb.y, rgb.z, alpha);
+        }
+
+        private static float4 ResolvePulseRow(in BiolumPulseStateDTO pulseState, int index)
+        {
+            switch (index)
+            {
+                case 0:
+                    return pulseState.Group1_Params;
+                case 1:
+                    return pulseState.Group2_Params;
+                case 2:
+                    return pulseState.Group3_Params;
+                default:
+                    return pulseState.Group4_Params;
+            }
+        }
+
+        private static Color ResolvePulseColor(int index, float alpha)
+        {
+            switch (index)
+            {
+                case 0:
+                    return new Color(0.18f, 0.88f, 1f, alpha);
+                case 1:
+                    return new Color(0.32f, 1f, 0.62f, alpha);
+                case 2:
+                    return new Color(0.74f, 0.38f, 1f, alpha);
+                default:
+                    return new Color(1f, 0.72f, 0.32f, alpha);
+            }
         }
 
         private static string FormatSpeciesHash(uint hash)

@@ -14,6 +14,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Serialization;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -57,7 +58,8 @@ namespace Hecton8.UI
         [SerializeField] private Material waveMaterial;
         [SerializeField] private Shader waveShader;
         [SerializeField] private Mesh waveMesh;
-        [SerializeField, Min(256)] private int lowTierVideoMemoryMb = 2048;
+        [FormerlySerializedAs("lowTierVideoMemoryMb")]
+        [SerializeField, Min(256)] private int minimumQualityVideoMemoryMb = 2048;
 
         [Header("Input")]
         [SerializeField, Min(0.1f)] private float inputLerpSpeed = 8f;
@@ -119,7 +121,7 @@ namespace Hecton8.UI
         private bool _materialBufferBound;
         private bool _registeredHotSwapListener;
         private bool _registeredScalabilityListener;
-        private HectonQualityTier _cachedScalabilityTier = HectonQualityTier.Unknown;
+        private float _cachedQualityWeight01 = 1f;
 
         private void Awake()
         {
@@ -207,7 +209,10 @@ namespace Hecton8.UI
 
             if (_waveJobScheduled)
             {
-                _waveJobHandle.Complete();
+                if (!_waveJobHandle.IsCompleted)
+                    return;
+
+                Hecton8.Core.DispatcherJobFence.TryFinalizeCompleted(ref _waveJobHandle);
                 _waveJobScheduled = false;
                 CommitWaveResult(_lastTickDeltaTime);
                 UploadGpuWave();
@@ -816,12 +821,39 @@ namespace Hecton8.UI
 
         private int ResolvePointCount()
         {
-            HectonQualityTier tier = _cachedScalabilityTier;
-            bool lowTier = tier == HectonQualityTier.Unknown ||
-                           tier == HectonQualityTier.Low ||
-                           tier == HectonQualityTier.Mx350 ||
-                           (SystemInfo.graphicsMemorySize > 0 && SystemInfo.graphicsMemorySize <= lowTierVideoMemoryMb);
-            return lowTier ? LowPointCount : HighPointCount;
+            float quality01 = math.min(_cachedQualityWeight01, ResolveVideoMemoryQualityClamp01());
+            float curve = SmoothStep01(quality01);
+            int count = (int)math.round(math.lerp(LowPointCount, HighPointCount, curve));
+            return math.clamp(count, LowPointCount, HighPointCount);
+        }
+
+        private void RefreshCachedQualityPolicy(bool rebuildResourcesOnPointChange)
+        {
+            int previousPointCount = _pointCount;
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            _cachedQualityWeight01 = math.saturate(math.isfinite(quality) ? quality : 1f);
+
+            int resolvedPointCount = ResolvePointCount();
+            if (!rebuildResourcesOnPointChange || resolvedPointCount == previousPointCount)
+                return;
+
+            if (_waveJobScheduled)
+                CompleteWaveJobForTeardown();
+
+            _nativeReady = false;
+            _graphicsReady = false;
+            _materialBufferBound = false;
+        }
+
+        private float ResolveVideoMemoryQualityClamp01()
+        {
+            int memoryMb = SystemInfo.graphicsMemorySize;
+            if (memoryMb <= 0)
+                return 1f;
+
+            float denominator = math.max(1f, 6144f - minimumQualityVideoMemoryMb);
+            float memory01 = math.saturate((memoryMb - minimumQualityVideoMemoryMb) / denominator);
+            return math.lerp(0.18f, 1f, SmoothStep01(memory01));
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -843,20 +875,14 @@ namespace Hecton8.UI
 
         public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
         {
-            HectonQualityTier tier = payload.CurrentQualityTier;
-            if (tier == _cachedScalabilityTier)
-                return;
-
-            _cachedScalabilityTier = tier;
-            _nativeReady = false;
-            _graphicsReady = false;
+            RefreshCachedQualityPolicy(rebuildResourcesOnPointChange: true);
         }
 
         private void RefreshCachedRegistryServices()
         {
             _cachedDataVault = GlobalRegistry.DataVault;
             _cachedInputService = GlobalRegistry.Input;
-            _cachedScalabilityTier = GlobalRegistry.ScalabilityTier;
+            RefreshCachedQualityPolicy(rebuildResourcesOnPointChange: false);
         }
 
         private void TryRegisterHotSwapListener()
@@ -925,7 +951,7 @@ namespace Hecton8.UI
             if (!_waveJobScheduled)
                 return;
 
-            _waveJobHandle.Complete();
+            Hecton8.Core.DispatcherJobFence.TryComplete(ref _waveJobHandle, forceComplete: true);
             _waveJobScheduled = false;
         }
 
@@ -1018,6 +1044,12 @@ namespace Hecton8.UI
             return math.isfinite(value) ? math.saturate(value) : 0f;
         }
 
+        private static float SmoothStep01(float value)
+        {
+            float x = Sanitize01(value);
+            return x * x * (3f - 2f * x);
+        }
+
         private static float SanitizePositive(float value, float fallback)
         {
             return math.isfinite(value) ? math.max(0f, value) : fallback;
@@ -1029,12 +1061,12 @@ namespace Hecton8.UI
             return (state & 0x00FFFFFFu) * Hash24ToUnit;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct FrequencyWaveGenerateJob : IJobParallelFor
         {
-            [WriteOnly] public NativeSlice<float> TargetWave;
-            [WriteOnly] public NativeSlice<float> PlayerWave;
-            [NativeDisableParallelForRestriction] public NativeSlice<FrequencyTuningWaveGpuSegment> GpuSegments;
+            [WriteOnly, NoAlias] public NativeSlice<float> TargetWave;
+            [WriteOnly, NoAlias] public NativeSlice<float> PlayerWave;
+            [NativeDisableParallelForRestriction, NoAlias] public NativeSlice<FrequencyTuningWaveGpuSegment> GpuSegments;
             public int PointCount;
             public int SegmentCount;
             public float TargetFrequency;
@@ -1095,12 +1127,12 @@ namespace Hecton8.UI
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct FrequencyWaveErrorJob : IJob
         {
-            [ReadOnly] public NativeSlice<float> TargetWave;
-            [ReadOnly] public NativeSlice<float> PlayerWave;
-            [WriteOnly] public NativeSlice<float> ErrorOutput;
+            [ReadOnly, NoAlias] public NativeSlice<float> TargetWave;
+            [ReadOnly, NoAlias] public NativeSlice<float> PlayerWave;
+            [WriteOnly, NoAlias] public NativeSlice<float> ErrorOutput;
             public int PointCount;
 
             public void Execute()
@@ -1114,33 +1146,48 @@ namespace Hecton8.UI
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 8)]
+        [StructLayout(LayoutKind.Explicit, Size = 8)]
         private struct FrequencyTuningStageTarget
         {
+            [FieldOffset(0)]
             public float Frequency;
+            [FieldOffset(4)]
             public float Amplitude;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 48)]
+        [StructLayout(LayoutKind.Explicit, Size = 48)]
         private struct FrequencyTuningWaveGpuSegment
         {
+            [FieldOffset(0)]
             public float4 CenterRadius;
+            [FieldOffset(16)]
             public float4 TangentLength;
+            [FieldOffset(32)]
             public float4 ColorStage;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct FrequencyTuningTelemetryEntry
         {
+            [FieldOffset(0)]
             public uint Frame;
+            [FieldOffset(4)]
             public uint ArtifactHash;
+            [FieldOffset(8)]
             public float TargetFrequency;
+            [FieldOffset(12)]
             public float TargetAmplitude;
+            [FieldOffset(16)]
             public float PlayerFrequency;
+            [FieldOffset(20)]
             public float PlayerAmplitude;
+            [FieldOffset(24)]
             public float Error01;
+            [FieldOffset(28)]
             public ushort HoldPermille;
+            [FieldOffset(30)]
             public byte Stage;
+            [FieldOffset(31)]
             public byte Flags;
         }
     }

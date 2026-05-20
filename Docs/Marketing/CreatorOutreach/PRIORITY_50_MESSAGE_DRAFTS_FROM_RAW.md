@@ -1,19 +1,19 @@
-﻿# Priority 50 Message Drafts From Raw Public Signals
+# Priority 50 Message Drafts From Raw Public Signals
 
 Status: draft-from-public-index / must verify before sending
 Generated: 2026-05-19
-Public stance: single-player-first / no co-op promise
+Public stance: single-player-first scope / proof-first public copy
 Runtime impact: none
 
 ## Boundary
 
 These messages are not send-ready. They are first drafts generated from public index signals: source games, segment, country candidate, and repeated appearances. Before sending, verify the official channel, recent content, public contact route, brand safety, and a matching real HECTON-8 asset.
 
-## 2026-05-19 Hot SN2-Active Microbatch
+## 2026-05-19 Data / 2026-05-20 V5-Gated SN2-Active Microbatch
 
 Status: prepared / not send-ready
 
-Use this section only after the first screenshot pack, Steam page, or playable demo exists. These six creators are currently covering Subnautica 2 according to YouTube RSS checks recorded in `Data/CREATOR_VERIFICATION_TEMPLATE.csv`. The contact route is still gated: a human must open the YouTube About page with the project account and log the exact email where a business-email gate exists.
+Use this section only after the first screenshot pack, Steam page, or playable demo exists. These six creators were marked SN2-active by 2026-05-19 YouTube RSS checks recorded in `Data/CREATOR_VERIFICATION_TEMPLATE.csv`; this is recorded audience-fit evidence, not current-send proof. The contact route is still gated: a human must open the YouTube About page with the project account and log the exact email where a business-email gate exists.
 
 Hard rules:
 
@@ -21,16 +21,23 @@ Hard rules:
 - Do not mention "Subnautica killer".
 - Do not promise co-op.
 - Do not claim performance, zero-stutter, optimization, or deterministic tech without published proof.
+- Do not put `SN2`, `Subnautica 2`, competitor bugs, EULA, co-op issues, or performance pain in a subject line.
+- Treat recent Subnautica 2 coverage as CRM evidence only. Final send copy should say `recent underwater-survival coverage` or another neutral audience-fit phrase unless a human approves a direct title reference.
+- Before any pain-backed send, recheck the current monitoring section and record `Monitoring SN2 Steam API/Page Refresh V5` plus the exact private bucket in `pain_freshness_source`; V5 competitor-positive read forbids "players are angry" framing.
 - If the only route is Twitch/Discord/Twitter, do not cold-DM unless that profile explicitly allows business contact.
+- Do not send any draft unless matching asset metadata claim checks pass, pain-backed angles have `pain_freshness_source` and `pain_freshness_checked_at`, creator utility is 3/4+, `creator_send_gate` is open, and CRM send-log fields are ready.
+- If the draft references gameplay proof, pressure decisions, route risk, threat, salvage failure, demo readiness, or first-public feedback, the packet must include one factual `AGENCY_PROOF_CANDIDATE` asset with `agency_decision_notes` and AB-009/KPI `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`.
 
-| Lead | Current signal | Contact gate | Required H8 asset | Pitch stance | Send decision |
+| Lead | Recorded signal | Contact gate | Required H8 asset | Pitch stance | Send decision |
 |---|---|---|---|---|---|
-| Kage848 | Currently covering SN2 base-building. | YouTube About email gate. | Playable demo or 20s loop clip plus Steam page. | Survival-crafting loop: scavenge, build, repair, descend, return. | Hold until demo/Steam page. |
-| AldemarHD | Currently covering SN2 in German. | YouTube About email gate. | German-safe screenshot pack plus Steam page. | German long-form survival: pressure, salvage, machinery, black-water identity. | Hold until German asset copy exists. |
-| Neyreyan | Currently covering SN2. | YouTube About email gate. | Demo/private playtest route. | Smaller creator for blunt first-route feedback. | Good private playtest candidate. |
-| Zombyra | Currently covering SN2 co-op in German. | YouTube About email gate. | German screenshot pack or demo. | Single-player pressure survival; explicitly no co-op promise. | Use only if copy controls co-op expectation. |
-| HelyaLP | Currently covering SN2 in German. | External links only; no email gate found in fetch. | German screenshot pack or demo. | German survival first-look, but route is weak. | Skip unless a public business route is verified. |
-| SpielbaerLP | Currently covering SN2 in German. | YouTube About email gate. | German base/machinery screenshots plus Steam page. | Engineering/base systems: pressure habitats as machines. | Good German systems target after asset proof. |
+| Kage848 | 2026-05-19 RSS marked SN2 base-building coverage. | YouTube About email gate. | Playable demo or 20s loop clip plus Steam page. | Survival-crafting loop: scavenge, build, repair, descend, return. | Hold until demo/Steam page and same-day channel/route recheck. |
+| AldemarHD | 2026-05-19 RSS marked SN2 German coverage. | YouTube About email gate. | German-safe screenshot pack plus Steam page. | German long-form survival: pressure, salvage, machinery, black-water identity. | Hold until German asset copy exists and same-day channel/route recheck. |
+| Neyreyan | 2026-05-19 RSS marked SN2 coverage. | YouTube About email gate. | Demo/private playtest route. | Smaller creator for blunt first-route feedback. | Good private playtest candidate after same-day route recheck. |
+| Zombyra | 2026-05-19 RSS marked SN2 co-op German coverage. | YouTube About email gate. | German screenshot pack or demo. | Single-player pressure survival with proof-first public scope. | Use only if copy controls multiplayer-scope expectation and route recheck passes. |
+| HelyaLP | 2026-05-19 RSS marked SN2 German coverage. | External links only; no email gate found in fetch. | German screenshot pack or demo. | German survival first-look, but route is weak. | Skip unless a public business route is verified same day. |
+| SpielbaerLP | 2026-05-19 RSS marked SN2 German coverage. | YouTube About email gate. | German base/machinery screenshots plus Steam page. | Engineering/base systems: pressure habitats as machines. | Good German systems target after asset proof and same-day route recheck. |
+
+The `Recorded signal` column is internal targeting metadata. Do not paste it into final outreach copy.
 
 ### Kage848 Draft
 
@@ -39,9 +46,9 @@ Subject: HECTON-8 - single-player pressure survival with a real loop
 ```text
 Hi Kage848,
 
-I saw you are currently covering Subnautica 2, including base and survival progression. HECTON-8 may fit your audience later, but only when we can show the actual loop instead of just mood shots.
+I saw your recent underwater-survival coverage around base and survival progression. HECTON-8 may fit your audience later, but only when we can show the actual loop instead of just mood shots.
 
-HECTON-8 is single-player deep-sea survival focused on pressure, salvage, machinery, and bases that behave like survival infrastructure. This is not a co-op pitch and not a Subnautica-killer angle.
+HECTON-8 is single-player deep-sea survival focused on pressure, salvage, machinery, and bases that behave like survival infrastructure. The pitch stays competitor-neutral and proof-first.
 
 The useful video angle would be: scavenge, build, repair, descend, return, and understand why the base matters.
 
@@ -57,9 +64,9 @@ Subject: HECTON-8 - deutsches Preview zu Druck, Bergung und Maschinen
 ```text
 Hallo AldemarHD,
 
-ich habe gesehen, dass du gerade Subnautica 2 spielst. HECTON-8 waere spaeter nur dann sinnvoll fuer deinen Kanal, wenn wir echte Screenshots oder eine Demo zeigen koennen, nicht nur Versprechen.
+ich habe gesehen, dass dein aktuelles Underwater-Survival-Format zu einem harten Proof-Check passt. HECTON-8 waere spaeter nur dann sinnvoll fuer deinen Kanal, wenn wir echte Screenshots oder eine Demo zeigen koennen, nicht nur Versprechen.
 
-HECTON-8 ist ein Singleplayer-Deep-Sea-Survival-Spiel ueber Druck, Bergung, Maschinen und schwarze Tiefe. Kein Koop-Versprechen, kein "Subnautica Killer".
+HECTON-8 ist ein Singleplayer-Deep-Sea-Survival-Spiel ueber Druck, Bergung, Maschinen und schwarze Tiefe. Singleplayer-Fokus, keine Wettbewerber-Angriffspositionierung.
 
 Der konkrete Winkel fuer dein Publikum: eine Basis als Ueberlebensmaschine, Expeditionen unter Druck, schlechte Sicht und Entscheidungen, ob man noch tiefer geht oder zurueckkehrt.
 
@@ -70,14 +77,14 @@ Wenn das zu deinem Format passt, schicke ich dir Material, sobald der spielbare 
 
 ### Neyreyan Draft
 
-Subject: HECTON-8 - small private demo candidate after your SN2 coverage
+Subject: HECTON-8 - small private demo candidate
 
 ```text
 Hi Neyreyan,
 
-I saw your recent Subnautica 2 coverage. HECTON-8 could be a better fit for a small private playtest or demo look than for a loud reveal email.
+Your recent underwater-survival coverage is the reason I would treat HECTON-8 as a small private playtest or demo look, not a loud reveal email.
 
-It is single-player deep-sea survival about pressure, salvage, machinery, and black-water route risk. No co-op promise, no performance claims, no clone-war pitch.
+It is single-player deep-sea survival about pressure, salvage, machinery, and black-water route risk. Scope is single-player-first, competitor-neutral, and performance details wait for measured build proof.
 
 The useful angle would be blunt first-route feedback: does the player understand why they descend, what the machine is doing, and when the route becomes too risky?
 
@@ -88,16 +95,16 @@ If that fits your format, I can send a short build note when the route is stable
 
 ### Zombyra Draft
 
-Subject: HECTON-8 - Singleplayer-Drucksurvival, kein Koop-Versprechen
+Subject: HECTON-8 - Singleplayer-Drucksurvival unter Druck
 
 ```text
 Hallo Zombyra,
 
-ich habe gesehen, dass du aktuell Subnautica 2 spielst. HECTON-8 ist aber kein Koop-Pitch. Wenn wir dir spaeter Material schicken, dann nur als Singleplayer-Survival mit einem anderen Fokus.
+dein aktuelles Underwater-Survival-Format passt nur dann zu HECTON-8, wenn wir den Unterschied klar halten: Singleplayer-Survival mit einem klar anderen Fokus.
 
 Der Kern: Druck, Bergung, Maschinen, Wartung, schlechte Sicht und eine Basis, die wie eine Ueberlebensmaschine funktioniert.
 
-Der passende Video-Winkel waere nicht "mehr Subnautica", sondern: Wie lange kann man eine riskante Route unter Druck treiben, bevor Sauerstoff, Energie und Sicht die Rueckkehr erzwingen?
+Der passende Video-Winkel waere nicht "mehr vom selben", sondern: Wie lange kann man eine riskante Route unter Druck treiben, bevor Sauerstoff, Energie und Sicht die Rueckkehr erzwingen?
 
 Asset: [deutsche Screenshots / Steam / Demo - TBD]
 
@@ -111,9 +118,9 @@ Subject: HECTON-8 - deutsches Survival-Material, falls ein Business-Kontakt pass
 ```text
 Hallo HelyaLP,
 
-ich habe gesehen, dass du gerade Subnautica 2 spielst. HECTON-8 koennte spaeter als deutsches Survival-Preview passen, aber ich habe aktuell keinen klaren Business-E-Mail-Weg gesehen.
+dein aktuelles Survival-Format koennte spaeter zu HECTON-8 passen, aber ich habe aktuell keinen klaren Business-E-Mail-Weg gesehen.
 
-Kurzfassung: HECTON-8 ist Singleplayer-Deep-Sea-Survival ueber Druck, Bergung, Maschinen und schwarze Tiefe. Kein Koop-Versprechen, keine Performance-Behauptungen ohne Messdaten.
+Kurzfassung: HECTON-8 ist Singleplayer-Deep-Sea-Survival ueber Druck, Bergung, Maschinen und schwarze Tiefe. Singleplayer-Fokus, keine Performance-Behauptungen ohne Messdaten.
 
 Der sinnvolle Winkel waere: langsamer Abstieg, Maschinenstress, schlechte Sicht, Basis-Sicherheit und die Frage, ob man noch eine Route riskiert.
 
@@ -129,9 +136,9 @@ Subject: HECTON-8 - deutsche Base/Maschinen-Survival-Demo
 ```text
 Hallo SpielbaerLP,
 
-ich habe gesehen, dass du Subnautica 2 spielst und dein Kanal auch fuer Systeme, Aufbau und Maschinenlogik passt. HECTON-8 sollte dir erst geschickt werden, wenn wir die Base- und Maschinenebene wirklich zeigen koennen.
+dein Kanal passt auch fuer Systeme, Aufbau und Maschinenlogik. HECTON-8 sollte dir erst geschickt werden, wenn wir die Base- und Maschinenebene wirklich zeigen koennen.
 
-HECTON-8 ist Singleplayer-Deep-Sea-Survival ueber Druck, Bergung, Maschinen und Habitate, die funktional lesbar sein muessen. Kein Koop-Pitch.
+HECTON-8 ist Singleplayer-Deep-Sea-Survival ueber Druck, Bergung, Maschinen und Habitate, die funktional lesbar sein muessen. Singleplayer-Fokus.
 
 Der konkrete Winkel: Die Basis ist nicht Deko, sondern ein Druckgefaess mit Energie, Sauerstoff, Wartung und Fehlern, die der Spieler verstehen kann.
 
@@ -162,9 +169,9 @@ Hard rules:
 | Accurize2 | `VERIFY_BEFORE_CONTACT` | Survival-demo clip plus Steam page. | Survival niche: route risk and return pressure. | Verify official RSS/About first. |
 | Aavak | `NEEDS_ASSET` | Machinery/base systems clip. | Systems-heavy survival and route planning. | Hold until machinery loop is visible. |
 | EnterElysium | `NEEDS_ASSET` | Indie first-look clip or playable route. | Indie/systems first-look, not mood pitch. | Hold until playable verb is clear. |
-| Praetorian HiJynx | `NEEDS_ASSET` | Demo/clip with explicit single-player boundary. | Survival LP, but control co-op expectation. | Hold until official channel route resolved. |
+| Praetorian HiJynx | `NEEDS_ASSET` | Demo/clip with explicit single-player boundary. | Survival LP, but control multiplayer-scope expectation. | Hold until official channel route resolved. |
 | paulsoaresjr | `NEEDS_ASSET` | Playable first route or polished demo clip. | Legacy survival audience, high inbox noise. | Hold until demo-quality proof. |
-| Wanderbots | `NEEDS_ASSET` | Real gameplay footage, Steam page, no AI-asset ambiguity. | Indie discovery and current SN2/survival interest. | Hold until official policy/contact confirmed. |
+| Wanderbots | `NEEDS_ASSET` | Real gameplay footage, Steam page, no AI-asset ambiguity. | Indie discovery and recorded SN2/survival audience fit. | Hold until official policy/contact confirmed. |
 | GameEdged | `NEEDS_ASSET` | Open-world survival demo or 20s base/salvage loop. | Practical survival progression. | Hold until playable proof. |
 | Splattercatgaming | `NEEDS_ASSET` | Excellent 20s indie-discovery clip or demo. | A-tier indie discovery; no concept-art ambiguity. | Hold until presskit/Steam/demo. |
 | TotalXclipse | `NEEDS_ASSET` | Base machinery, power, pipes, systems proof. | Engineering/base systems rather than horror. | Hold until systems asset exists. |
@@ -179,7 +186,7 @@ Hi Keith,
 
 I found your channel while checking long-form survival and systems LP fit. HECTON-8 should only be pitched to you once we can show a real route, not a mood screenshot.
 
-HECTON-8 is single-player deep-sea survival about pressure, salvage, machinery, and keeping a base alive below the light. No co-op promise, no clone-war angle, no performance claims without measurements.
+HECTON-8 is single-player deep-sea survival about pressure, salvage, machinery, and keeping a base alive below the light. Scope is single-player-first, competitor-neutral, and performance details wait for measured build proof.
 
 The angle that could fit your format: descend, salvage, manage pressure/machines, decide whether to keep pushing, and get back before the route becomes too expensive.
 
@@ -197,7 +204,7 @@ Hi Accurize2,
 
 Your channel is a better fit for a practical survival pitch than a cinematic reveal. HECTON-8 should only be sent when we can show the actual survival loop.
 
-HECTON-8 is single-player deep-sea survival about pressure, salvage, black water, and machines that keep the player alive. No co-op pitch and no "Subnautica killer" framing.
+HECTON-8 is single-player deep-sea survival about pressure, salvage, black water, and machines that keep the player alive. Single-player-first scope and no competitor-attack framing.
 
 The useful angle for your audience: a route where oxygen, pressure, power, and salvage value force the player to decide when to turn back.
 
@@ -244,12 +251,12 @@ If the loop is clear enough, I can send a preview note later.
 
 ### Praetorian HiJynx Draft
 
-Subject: HECTON-8 - single-player survival, no co-op promise
+Subject: HECTON-8 - single-player survival route under pressure
 
 ```text
 Hi Praetorian HiJynx,
 
-I am flagging the boundary first: HECTON-8 is not a co-op pitch. If I send material later, it will be for a single-player deep-sea survival game.
+I am flagging the boundary first: HECTON-8 is a single-player deep-sea survival pitch. If I send material later, it will stay inside that scope.
 
 The focus is pressure, salvage, machinery, poor visibility, and a base that functions like survival infrastructure.
 
@@ -323,7 +330,7 @@ Hi Splattercat,
 
 I am holding this until HECTON-8 has a strong enough clip for an indie discovery audience. It needs to show the playable verb in seconds.
 
-HECTON-8 is single-player deep-sea survival about pressure, salvage, machinery, and black water. No co-op promise, no "Subnautica killer" framing, no concept-art bait.
+HECTON-8 is single-player deep-sea survival about pressure, salvage, machinery, and black water. Single-player-first scope, no competitor-attack framing, no concept-art bait.
 
 The possible fit: a first-look demo where the hook is not "underwater", but the pressure/base/salvage loop.
 
@@ -381,11 +388,11 @@ Subject: HECTON-8 - darker single-player underwater survival for your audience
 ```text
 Hi CohhCarnage,
 
-I found your channel while mapping public creator coverage around Barotrauma; Forever Skies; Pacific Drive; Raft; Satisfactory; Sons of the Forest; Subnautica; Subnautica Below Zero; The Forest; The Long Dark. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
+I found your channel while mapping public creator coverage around adjacent survival, systems, and underwater-audience sources. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
-The specific angle for your audience would be: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
+The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
 Assets: [Steam/screenshots/clip/demo - TBD]
 
@@ -412,11 +419,11 @@ Subject: HECTON-8 - darker single-player underwater survival for your audience
 ```text
 Hi Kage848,
 
-I found your channel while mapping public creator coverage around Forever Skies; Pacific Drive; Raft; Satisfactory; Sons of the Forest; Space Engineers; Subnautica; Subnautica Below Zero; The Forest; The Long Dark. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
+I found your channel while mapping public creator coverage around adjacent survival, systems, and underwater-audience sources. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
-The specific angle for your audience would be: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
+The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
 Assets: [Steam/screenshots/clip/demo - TBD]
 
@@ -443,11 +450,11 @@ Subject: HECTON-8 - darker single-player underwater survival for your audience
 ```text
 Hi Hirnsturz,
 
-I found your channel while mapping public creator coverage around Abiotic Factor; Barotrauma; Forever Skies; Raft; Satisfactory; Sons of the Forest; Space Engineers; Subnautica; Subnautica Below Zero; The Forest; The Long Dark. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
+I found your channel while mapping public creator coverage around adjacent survival, systems, and underwater-audience sources. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
-The specific angle for your audience would be: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
+The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
 Assets: [Steam/screenshots/clip/demo - TBD]
 
@@ -474,11 +481,11 @@ Subject: HECTON-8 - darker single-player underwater survival for your audience
 ```text
 Hi Dr. Incompetent,
 
-I found your channel while mapping public creator coverage around Abiotic Factor; Pacific Drive; Satisfactory; Space Engineers; Subnautica; Subnautica Below Zero; The Forest; The Long Dark. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
+I found your channel while mapping public creator coverage around adjacent survival, systems, and underwater-audience sources. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
-The specific angle for your audience would be: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
+The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
 Assets: [Steam/screenshots/clip/demo - TBD]
 
@@ -505,11 +512,11 @@ Subject: HECTON-8 - darker single-player underwater survival for your audience
 ```text
 Hi Insym VODS,
 
-I found your channel while mapping public creator coverage around Abiotic Factor; Barotrauma; Raft; Sons of the Forest; Subnautica; Subnautica Below Zero; The Forest. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
+I found your channel while mapping public creator coverage around adjacent survival, systems, and underwater-audience sources. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
-The specific angle for your audience would be: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
+The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
 Assets: [Steam/screenshots/clip/demo - TBD]
 
@@ -536,11 +543,11 @@ Subject: HECTON-8 - darker single-player underwater survival for your audience
 ```text
 Hi SquirrelPlus,
 
-I found your channel while mapping public creator coverage around Raft; Satisfactory; Sons of the Forest; Space Engineers; Subnautica; Subnautica Below Zero; The Forest; The Long Dark. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
+I found your channel while mapping public creator coverage around adjacent survival, systems, and underwater-audience sources. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
-The specific angle for your audience would be: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
+The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
 Assets: [Steam/screenshots/clip/demo - TBD]
 
@@ -567,11 +574,11 @@ Subject: HECTON-8 - darker single-player underwater survival for your audience
 ```text
 Hi Dad's Gaming Addiction,
 
-I found your channel while mapping public creator coverage around Barotrauma; Forever Skies; Raft; Satisfactory; Sons of the Forest; Subnautica; Subnautica Below Zero; The Long Dark. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
+I found your channel while mapping public creator coverage around adjacent survival, systems, and underwater-audience sources. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
-The specific angle for your audience would be: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
+The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
 Assets: [Steam/screenshots/clip/demo - TBD]
 
@@ -598,11 +605,11 @@ Subject: HECTON-8 - darker single-player underwater survival for your audience
 ```text
 Hi Jade PG,
 
-I found your channel while mapping public creator coverage around Raft; Satisfactory; Sons of the Forest; Space Engineers; Subnautica; Subnautica Below Zero; The Forest; The Long Dark. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
+I found your channel while mapping public creator coverage around adjacent survival, systems, and underwater-audience sources. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
-The specific angle for your audience would be: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
+The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
 Assets: [Steam/screenshots/clip/demo - TBD]
 
@@ -629,11 +636,11 @@ Subject: HECTON-8 - darker single-player underwater survival for your audience
 ```text
 Hi BB Steam Review,
 
-I found your channel while mapping public creator coverage around Barotrauma; Forever Skies; Pacific Drive; Raft; Sons of the Forest; Subnautica; Subnautica Below Zero; The Forest; The Long Dark. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
+I found your channel while mapping public creator coverage around adjacent survival, systems, and underwater-audience sources. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
-The specific angle for your audience would be: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
+The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
 Assets: [Steam/screenshots/clip/demo - TBD]
 
@@ -662,7 +669,7 @@ Hi LetsPlay,
 
 I found your channel while mapping public creator coverage around Barotrauma; Raft; Satisfactory; Sons of the Forest; The Forest; The Long Dark. Before any outreach this still needs manual verification, but the apparent fit is horror tension, instruments, and hostile depth.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
 The specific angle for your audience would be: Your audience responds to horror/abyss tension. HECTON-8 should be pitched through instruments, sound, pressure, and black-water dread rather than creature spam or jump scares.
 
@@ -691,11 +698,11 @@ Subject: HECTON-8 - darker single-player underwater survival for your audience
 ```text
 Hi KeysJore,
 
-I found your channel while mapping public creator coverage around Abiotic Factor; Pacific Drive; Raft; Sons of the Forest; Subnautica; The Forest. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
+I found your channel while mapping public creator coverage around adjacent survival, systems, and underwater-audience sources. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
-The specific angle for your audience would be: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
+The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
 Assets: [Steam/screenshots/clip/demo - TBD]
 
@@ -722,11 +729,11 @@ Subject: HECTON-8 - darker single-player underwater survival for your audience
 ```text
 Hi Worth A Buy,
 
-I found your channel while mapping public creator coverage around Barotrauma; Raft; Satisfactory; Sons of the Forest; Space Engineers; Subnautica; The Forest; The Long Dark. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
+I found your channel while mapping public creator coverage around adjacent survival, systems, and underwater-audience sources. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
-The specific angle for your audience would be: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
+The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
 Assets: [Steam/screenshots/clip/demo - TBD]
 
@@ -753,11 +760,11 @@ Subject: HECTON-8 - darker single-player underwater survival for your audience
 ```text
 Hi AldemarHD,
 
-I found your channel while mapping public creator coverage around Barotrauma; Pacific Drive; Raft; Satisfactory; Subnautica; The Long Dark. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
+I found your channel while mapping public creator coverage around adjacent survival, systems, and underwater-audience sources. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
-The specific angle for your audience would be: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
+The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
 Assets: [Steam/screenshots/clip/demo - TBD]
 
@@ -784,11 +791,11 @@ Subject: HECTON-8 - darker single-player underwater survival for your audience
 ```text
 Hi Michael J. Gets The Job Done,
 
-I found your channel while mapping public creator coverage around Pacific Drive; Raft; Sons of the Forest; Subnautica; Subnautica Below Zero; The Forest. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
+I found your channel while mapping public creator coverage around adjacent survival, systems, and underwater-audience sources. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
-The specific angle for your audience would be: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
+The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
 Assets: [Steam/screenshots/clip/demo - TBD]
 
@@ -815,11 +822,11 @@ Subject: HECTON-8 - darker single-player underwater survival for your audience
 ```text
 Hi STAF_52,
 
-I found your channel while mapping public creator coverage around Forever Skies; Pacific Drive; Subnautica; Subnautica Below Zero; The Forest; The Long Dark. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
+I found your channel while mapping public creator coverage around adjacent survival, systems, and underwater-audience sources. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
-The specific angle for your audience would be: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
+The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
 Assets: [Steam/screenshots/clip/demo - TBD]
 
@@ -846,11 +853,11 @@ Subject: HECTON-8 - darker single-player underwater survival for your audience
 ```text
 Hi Zvergy,
 
-I found your channel while mapping public creator coverage around Forever Skies; Raft; Satisfactory; Sons of the Forest; Space Engineers; Subnautica. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
+I found your channel while mapping public creator coverage around adjacent survival, systems, and underwater-audience sources. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
-The specific angle for your audience would be: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
+The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
 Assets: [Steam/screenshots/clip/demo - TBD]
 
@@ -877,11 +884,11 @@ Subject: HECTON-8 - darker single-player underwater survival for your audience
 ```text
 Hi Edes Lets Plays,
 
-I found your channel while mapping public creator coverage around Forever Skies; Raft; Satisfactory; Sons of the Forest; Subnautica. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
+I found your channel while mapping public creator coverage around adjacent survival, systems, and underwater-audience sources. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
-The specific angle for your audience would be: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
+The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
 Assets: [Steam/screenshots/clip/demo - TBD]
 
@@ -910,7 +917,7 @@ Hi Neyreyan,
 
 I found your channel while mapping public creator coverage around Abiotic Factor; Barotrauma; Pacific Drive; Sons of the Forest; The Long Dark. Before any outreach this still needs manual verification, but the apparent fit is horror tension, instruments, and hostile depth.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
 The specific angle for your audience would be: Your audience responds to horror/abyss tension. HECTON-8 should be pitched through instruments, sound, pressure, and black-water dread rather than creature spam or jump scares.
 
@@ -939,11 +946,11 @@ Subject: HECTON-8 - darker single-player underwater survival for your audience
 ```text
 Hi Zombyra,
 
-I found your channel while mapping public creator coverage around Forever Skies; Pacific Drive; Raft; Subnautica; Subnautica Below Zero; The Forest. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
+I found your channel while mapping public creator coverage around adjacent survival, systems, and underwater-audience sources. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
-The specific angle for your audience would be: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
+The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
 Assets: [Steam/screenshots/clip/demo - TBD]
 
@@ -972,7 +979,7 @@ Hi Nerdzeitalter,
 
 I found your channel while mapping public creator coverage around Forever Skies; Pacific Drive; Satisfactory; Space Engineers. Before any outreach this still needs manual verification, but the apparent fit is systems, base building, and machinery.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
 The specific angle for your audience would be: Your audience values systems and construction. HECTON-8 should be pitched as habitat/base survival where pumps, oxygen, power, salvage, and pressure-rated machinery visibly matter.
 
@@ -1003,7 +1010,7 @@ Hi El Ruobuob,
 
 I found your channel while mapping public creator coverage around Barotrauma; Forever Skies; Satisfactory; Space Engineers. Before any outreach this still needs manual verification, but the apparent fit is horror tension, instruments, and hostile depth.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
 The specific angle for your audience would be: Your audience responds to horror/abyss tension. HECTON-8 should be pitched through instruments, sound, pressure, and black-water dread rather than creature spam or jump scares.
 
@@ -1034,7 +1041,7 @@ Hi PlayStation Planet,
 
 I found your channel while mapping public creator coverage around Forever Skies; Pacific Drive; Sons of the Forest; The Long Dark. Before any outreach this still needs manual verification, but the apparent fit is systems, base building, and machinery.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
 The specific angle for your audience would be: Your audience values systems and construction. HECTON-8 should be pitched as habitat/base survival where pumps, oxygen, power, salvage, and pressure-rated machinery visibly matter.
 
@@ -1065,7 +1072,7 @@ Hi Benny Harvey,
 
 I found your channel while mapping public creator coverage around Forever Skies; Pacific Drive; Sons of the Forest; The Long Dark. Before any outreach this still needs manual verification, but the apparent fit is systems, base building, and machinery.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
 The specific angle for your audience would be: Your audience values systems and construction. HECTON-8 should be pitched as habitat/base survival where pumps, oxygen, power, salvage, and pressure-rated machinery visibly matter.
 
@@ -1094,11 +1101,11 @@ Subject: HECTON-8 - darker single-player underwater survival for your audience
 ```text
 Hi HelyaLP,
 
-I found your channel while mapping public creator coverage around Forever Skies; Pacific Drive; Raft; Sons of the Forest; Subnautica Below Zero. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
+I found your channel while mapping public creator coverage around adjacent survival, systems, and underwater-audience sources. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
-The specific angle for your audience would be: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
+The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
 Assets: [Steam/screenshots/clip/demo - TBD]
 
@@ -1127,7 +1134,7 @@ Hi -Players Level-,
 
 I found your channel while mapping public creator coverage around Satisfactory; Sons of the Forest; Space Engineers; The Long Dark. Before any outreach this still needs manual verification, but the apparent fit is systems, base building, and machinery.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
 The specific angle for your audience would be: Your audience values systems and construction. HECTON-8 should be pitched as habitat/base survival where pumps, oxygen, power, salvage, and pressure-rated machinery visibly matter.
 
@@ -1156,11 +1163,11 @@ Subject: HECTON-8 - darker single-player underwater survival for your audience
 ```text
 Hi SpielbaerLP,
 
-I found your channel while mapping public creator coverage around Raft; Satisfactory; Sons of the Forest; Subnautica; Subnautica Below Zero; The Forest; The Long Dark. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
+I found your channel while mapping public creator coverage around adjacent survival, systems, and underwater-audience sources. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
-The specific angle for your audience would be: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
+The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
 Assets: [Steam/screenshots/clip/demo - TBD]
 
@@ -1189,7 +1196,7 @@ Hi BigVladGaming,
 
 I found your channel while mapping public creator coverage around Abiotic Factor; Forever Skies; Satisfactory; Sons of the Forest. Before any outreach this still needs manual verification, but the apparent fit is systems, base building, and machinery.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
 The specific angle for your audience would be: Your audience values systems and construction. HECTON-8 should be pitched as habitat/base survival where pumps, oxygen, power, salvage, and pressure-rated machinery visibly matter.
 
@@ -1220,7 +1227,7 @@ Hi NOOBLETS,
 
 I found your channel while mapping public creator coverage around Forever Skies; Raft; Sons of the Forest; Space Engineers; The Forest. Before any outreach this still needs manual verification, but the apparent fit is systems, base building, and machinery.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
 The specific angle for your audience would be: Your audience values systems and construction. HECTON-8 should be pitched as habitat/base survival where pumps, oxygen, power, salvage, and pressure-rated machinery visibly matter.
 
@@ -1249,11 +1256,11 @@ Subject: HECTON-8 - darker single-player underwater survival for your audience
 ```text
 Hi Farket,
 
-I found your channel while mapping public creator coverage around Sons of the Forest; Subnautica; Subnautica Below Zero; The Forest. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
+I found your channel while mapping public creator coverage around adjacent survival, systems, and underwater-audience sources. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
-The specific angle for your audience would be: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
+The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
 Assets: [Steam/screenshots/clip/demo - TBD]
 
@@ -1280,11 +1287,11 @@ Subject: HECTON-8 - darker single-player underwater survival for your audience
 ```text
 Hi Games4Kickz,
 
-I found your channel while mapping public creator coverage around Raft; Satisfactory; Subnautica; Subnautica Below Zero; The Forest. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
+I found your channel while mapping public creator coverage around adjacent survival, systems, and underwater-audience sources. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
-The specific angle for your audience would be: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
+The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
 Assets: [Steam/screenshots/clip/demo - TBD]
 
@@ -1311,11 +1318,11 @@ Subject: HECTON-8 - darker single-player underwater survival for your audience
 ```text
 Hi Kokoplays MB,
 
-I found your channel while mapping public creator coverage around Barotrauma; Satisfactory; Subnautica; The Long Dark. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
+I found your channel while mapping public creator coverage around adjacent survival, systems, and underwater-audience sources. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
-The specific angle for your audience would be: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
+The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
 Assets: [Steam/screenshots/clip/demo - TBD]
 
@@ -1342,11 +1349,11 @@ Subject: HECTON-8 - darker single-player underwater survival for your audience
 ```text
 Hi IGP,
 
-I found your channel while mapping public creator coverage around Raft; Satisfactory; Subnautica; Subnautica Below Zero; The Forest; The Long Dark. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
+I found your channel while mapping public creator coverage around adjacent survival, systems, and underwater-audience sources. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
-The specific angle for your audience would be: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
+The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
 Assets: [Steam/screenshots/clip/demo - TBD]
 
@@ -1373,11 +1380,11 @@ Subject: HECTON-8 - darker single-player underwater survival for your audience
 ```text
 Hi Nyxson,
 
-I found your channel while mapping public creator coverage around Forever Skies; Satisfactory; Space Engineers; Subnautica; The Forest; The Long Dark. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
+I found your channel while mapping public creator coverage around adjacent survival, systems, and underwater-audience sources. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
-The specific angle for your audience would be: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
+The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
 Assets: [Steam/screenshots/clip/demo - TBD]
 
@@ -1404,11 +1411,11 @@ Subject: HECTON-8 - darker single-player underwater survival for your audience
 ```text
 Hi Forsen Plays,
 
-I found your channel while mapping public creator coverage around Pacific Drive; Raft; Sons of the Forest; Subnautica Below Zero. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
+I found your channel while mapping public creator coverage around adjacent survival, systems, and underwater-audience sources. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
-The specific angle for your audience would be: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
+The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
 Assets: [Steam/screenshots/clip/demo - TBD]
 
@@ -1437,7 +1444,7 @@ Hi BringTheParty,
 
 I found your channel while mapping public creator coverage around Raft; Satisfactory; The Long Dark. Before any outreach this still needs manual verification, but the apparent fit is systems, base building, and machinery.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
 The specific angle for your audience would be: Your audience values systems and construction. HECTON-8 should be pitched as habitat/base survival where pumps, oxygen, power, salvage, and pressure-rated machinery visibly matter.
 
@@ -1468,7 +1475,7 @@ Hi Game Advisor,
 
 I found your channel while mapping public creator coverage around Barotrauma; Raft; Satisfactory; Sons of the Forest; Space Engineers; The Forest. Before any outreach this still needs manual verification, but the apparent fit is horror tension, instruments, and hostile depth.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
 The specific angle for your audience would be: Your audience responds to horror/abyss tension. HECTON-8 should be pitched through instruments, sound, pressure, and black-water dread rather than creature spam or jump scares.
 
@@ -1497,11 +1504,11 @@ Subject: HECTON-8 - darker single-player underwater survival for your audience
 ```text
 Hi Timm Plays Games,
 
-I found your channel while mapping public creator coverage around Raft; Satisfactory; Sons of the Forest; Subnautica Below Zero. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
+I found your channel while mapping public creator coverage around adjacent survival, systems, and underwater-audience sources. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
-The specific angle for your audience would be: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
+The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
 Assets: [Steam/screenshots/clip/demo - TBD]
 
@@ -1528,11 +1535,11 @@ Subject: HECTON-8 - darker single-player underwater survival for your audience
 ```text
 Hi Emmis Zockt,
 
-I found your channel while mapping public creator coverage around Raft; Satisfactory; Subnautica; Subnautica Below Zero; The Long Dark. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
+I found your channel while mapping public creator coverage around adjacent survival, systems, and underwater-audience sources. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
-The specific angle for your audience would be: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
+The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
 Assets: [Steam/screenshots/clip/demo - TBD]
 
@@ -1559,11 +1566,11 @@ Subject: HECTON-8 - darker single-player underwater survival for your audience
 ```text
 Hi Luckless Lovelocks,
 
-I found your channel while mapping public creator coverage around Forever Skies; Pacific Drive; Subnautica; Subnautica Below Zero. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
+I found your channel while mapping public creator coverage around adjacent survival, systems, and underwater-audience sources. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
-The specific angle for your audience would be: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
+The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
 Assets: [Steam/screenshots/clip/demo - TBD]
 
@@ -1590,11 +1597,11 @@ Subject: HECTON-8 - darker single-player underwater survival for your audience
 ```text
 Hi Game Grader,
 
-I found your channel while mapping public creator coverage around Raft; Satisfactory; Sons of the Forest; Subnautica; The Forest; The Long Dark. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
+I found your channel while mapping public creator coverage around adjacent survival, systems, and underwater-audience sources. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
-The specific angle for your audience would be: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
+The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
 Assets: [Steam/screenshots/clip/demo - TBD]
 
@@ -1623,7 +1630,7 @@ Hi Games Quality Zone,
 
 I found your channel while mapping public creator coverage around Abiotic Factor; Forever Skies; Pacific Drive; Sons of the Forest. Before any outreach this still needs manual verification, but the apparent fit is systems, base building, and machinery.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
 The specific angle for your audience would be: Your audience values systems and construction. HECTON-8 should be pitched as habitat/base survival where pumps, oxygen, power, salvage, and pressure-rated machinery visibly matter.
 
@@ -1654,7 +1661,7 @@ Hi Boubers,
 
 I found your channel while mapping public creator coverage around Forever Skies; Raft; Satisfactory; Space Engineers. Before any outreach this still needs manual verification, but the apparent fit is systems, base building, and machinery.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
 The specific angle for your audience would be: Your audience values systems and construction. HECTON-8 should be pitched as habitat/base survival where pumps, oxygen, power, salvage, and pressure-rated machinery visibly matter.
 
@@ -1683,11 +1690,11 @@ Subject: HECTON-8 - darker single-player underwater survival for your audience
 ```text
 Hi KenneDeinePixel,
 
-I found your channel while mapping public creator coverage around Abiotic Factor; Forever Skies; Satisfactory; Subnautica; Subnautica Below Zero. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
+I found your channel while mapping public creator coverage around adjacent survival, systems, and underwater-audience sources. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
-The specific angle for your audience would be: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
+The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
 Assets: [Steam/screenshots/clip/demo - TBD]
 
@@ -1716,7 +1723,7 @@ Hi LPRosti,
 
 I found your channel while mapping public creator coverage around Satisfactory; Sons of the Forest; Space Engineers; The Forest. Before any outreach this still needs manual verification, but the apparent fit is systems, base building, and machinery.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
 The specific angle for your audience would be: Your audience values systems and construction. HECTON-8 should be pitched as habitat/base survival where pumps, oxygen, power, salvage, and pressure-rated machinery visibly matter.
 
@@ -1745,11 +1752,11 @@ Subject: HECTON-8 - darker single-player underwater survival for your audience
 ```text
 Hi D4RE,
 
-I found your channel while mapping public creator coverage around Raft; Sons of the Forest; Subnautica; Subnautica Below Zero; The Forest. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
+I found your channel while mapping public creator coverage around adjacent survival, systems, and underwater-audience sources. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
-The specific angle for your audience would be: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
+The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
 Assets: [Steam/screenshots/clip/demo - TBD]
 
@@ -1776,11 +1783,11 @@ Subject: HECTON-8 - darker single-player underwater survival for your audience
 ```text
 Hi IGN,
 
-I found your channel while mapping public creator coverage around Pacific Drive; Sons of the Forest; Subnautica; Subnautica Below Zero; The Forest. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
+I found your channel while mapping public creator coverage around adjacent survival, systems, and underwater-audience sources. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
-The specific angle for your audience would be: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
+The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
 Assets: [Steam/screenshots/clip/demo - TBD]
 
@@ -1809,7 +1816,7 @@ Hi Stumpt,
 
 I found your channel while mapping public creator coverage around Abiotic Factor; Pacific Drive; Sons of the Forest. Before any outreach this still needs manual verification, but the apparent fit is systems, base building, and machinery.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
 The specific angle for your audience would be: Your audience values systems and construction. HECTON-8 should be pitched as habitat/base survival where pumps, oxygen, power, salvage, and pressure-rated machinery visibly matter.
 
@@ -1838,11 +1845,11 @@ Subject: HECTON-8 - darker single-player underwater survival for your audience
 ```text
 Hi Dhalucard,
 
-I found your channel while mapping public creator coverage around Barotrauma; Sons of the Forest; Subnautica; The Forest. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
+I found your channel while mapping public creator coverage around adjacent survival, systems, and underwater-audience sources. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
-The specific angle for your audience would be: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
+The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
 Assets: [Steam/screenshots/clip/demo - TBD]
 
@@ -1869,11 +1876,11 @@ Subject: HECTON-8 - darker single-player underwater survival for your audience
 ```text
 Hi TobinatorLetsPlay,
 
-I found your channel while mapping public creator coverage around Raft; Subnautica; Subnautica Below Zero; The Forest. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
+I found your channel while mapping public creator coverage around adjacent survival, systems, and underwater-audience sources. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
-The specific angle for your audience would be: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
+The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
 Assets: [Steam/screenshots/clip/demo - TBD]
 
@@ -1900,11 +1907,11 @@ Subject: HECTON-8 - darker single-player underwater survival for your audience
 ```text
 Hi Crowmeda,
 
-I found your channel while mapping public creator coverage around Raft; Subnautica; Subnautica Below Zero. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
+I found your channel while mapping public creator coverage around adjacent survival, systems, and underwater-audience sources. Before any outreach this still needs manual verification, but the apparent fit is underwater survival history.
 
-HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a "Subnautica killer" pitch.
+HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is single-player-first scope with no competitor-attack framing.
 
-The specific angle for your audience would be: Your channel has already touched Subnautica/underwater survival. HECTON-8 should be pitched as a single-player darker industrial pressure/salvage survival angle, not as a clone or co-op promise.
+The specific angle for your audience would be: Audience-fit signal: adjacent underwater-survival coverage. Final copy must stay neutral, use one matched HECTON asset, and mention only pressure/salvage/industrial identity after asset QA, pain freshness fields, and creator-send gates pass.
 
 Assets: [Steam/screenshots/clip/demo - TBD]
 

@@ -3823,7 +3823,7 @@ namespace Hecton8.AI
             AbsoluteUniversePosition selfAup = AbsoluteUniversePosition.FromRuntimePosition(selfPosition);
             AbsoluteUniversePosition sourceAup = AbsoluteUniversePosition.FromRuntimePosition(sourcePosition);
             double3 awayAbsolute = AbsoluteUniversePosition.DeltaMetersClamped(in selfAup, in sourceAup);
-            float3 away = new float3((float)awayAbsolute.x, (float)awayAbsolute.y, (float)awayAbsolute.z);
+            float3 away = AupPrecisionMath.DowncastLocalDelta(awayAbsolute, float3.zero);
             float awaySq = math.lengthsq(away);
             if (awaySq <= 0.0001f)
             {
@@ -6413,12 +6413,12 @@ namespace Hecton8.AI
                 PositionAup = selfAup.ToAlignedBlit(),
                 InstanceUid = _uniqueInstanceUid,
                 SpeciesId = PackTier1SpeciesId(ComputeStableSpeciesId()),
-                Flags = flags,
-                HeadingOctant = ResolveTier1HeadingOctant(),
-                Health01 = PackTier1UnitByte(HealthNormalized),
-                Hunger01 = PackTier1UnitByte(CurrentHunger01),
-                QualityTier = 1,
-                Reserved0 = 0,
+                StatusFlags = FaunaTier1LodProxyEntry.PackStatusFlags(
+                    flags,
+                    ResolveTier1HeadingOctant(),
+                    PackTier1UnitByte(HealthNormalized),
+                    PackTier1UnitByte(CurrentHunger01),
+                    1),
                 Reserved1 = 0u
             };
         }

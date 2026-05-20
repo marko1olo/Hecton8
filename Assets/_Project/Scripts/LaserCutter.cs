@@ -936,8 +936,7 @@ namespace Hecton8.Gameplay
 
         private void SyncCentralThermalBatteryState()
         {
-            IModularEquipmentService service = GlobalRegistry.ModularEquipment;
-            if (service == null || !service.IsInitialized || RuntimeToolId == 0u)
+            if (!TryGetModularEquipment(out IModularEquipmentService service) || RuntimeToolId == 0u)
                 return;
 
             if (!service.TryGetToolState(RuntimeToolId, out ToolState state))
@@ -1133,8 +1132,9 @@ namespace Hecton8.Gameplay
             if (_cachedPlayerMovement == null || !_cachedPlayerMovement.IsPlayerSubmerged)
                 return;
 
-            ISubmarineRuntimeContext submarine = GlobalRegistry.Submarine;
-            SubmarineFluidDynamics fluidDynamics = submarine != null ? submarine.FluidDynamics : null;
+            SubmarineFluidDynamics fluidDynamics = TryGetSubmarineRuntimeContext(out ISubmarineRuntimeContext submarine)
+                ? submarine.FluidDynamics
+                : null;
             if (fluidDynamics == null || !fluidDynamics.isActiveAndEnabled)
                 return;
 

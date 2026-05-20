@@ -16,7 +16,7 @@ This document is active only where it agrees with:
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
 
-R32 architecture R4/proof-wording correction is the latest artifact-backed local static DOC_GLOBAL boundary for architecture/root documentation. R31 remains the prior current-boundary propagation layer, R30 remains the prior internal-currentness layer, R29 remains the prior stale-gate/global-authority layer, R28 remains the prior interior-boundary layer, and R27 remains the latest source-counter/index snapshot until rerun.
+R45 root/architecture R43/R44 residue/proof-artifact/source-counter correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 ## Runtime Truth
@@ -73,18 +73,18 @@ Managed fields present: no
 UnityEngine.Object fields present: no
 Layout proof: FluidCompartmentDTO 32 bytes exact; telemetry and mass DTOs 64 bytes.
 Capacity: 256 compartments, 1024 directed edges, 300 telemetry frames.
-Overflow/failure mode: clamp invalid water, set NonFinite flag, dump black box once.
+Overflow/failure: clamp invalid water, set NonFinite flag, dump black box once.
 Telemetry fields: frame, state hash, water mass, flooded/breached counts, solver wall microseconds, invalid count.
 Black-box fields: same telemetry ring dumped to Dump_FLUID_INCURSION.bin.
 Profiler marker: pending Unity profiler proof.
 GC proof required: GCMonitor/profiler 0 B during solver cadence.
-Shutdown/disposal rule: Vault owns native memory; director releases only GraphicsBuffers and unlocks locked handles.
+Shutdown/disposal: Vault owns native memory; director releases only GraphicsBuffers and unlocks locked handles.
 Scene unload behavior: OnDisable completes active handoff if scheduled, unlocks, unregisters from dispatcher.
 Stale-handle behavior: every access resolves VaultBufferHandle and checks IsCreated/Length.
 Rejected alternatives: owner-local native arrays; concrete graph/integrity references; managed queues; physical particles.
 Why this does not increase global monolith risk: one owner owns one narrow DTO set; bridge consumers get snapshots/signals, not mutation authority.
 H-Phi impact expected: static DataVault surface grows by one domain-owned buffer family.
-Runtime proof required before acceptance: Unity import, Play Mode flood mock, profiler/GC, Frame Debugger shader buffer.
+Proof required before GREEN: Unity import, Play Mode flood mock, profiler/GC, Frame Debugger shader buffer.
 Reviewer: pending integrator
 Status: YELLOW / STATIC PROOF ONLY
 ```
@@ -109,18 +109,18 @@ Managed fields present: no
 UnityEngine.Object fields present: no
 Layout proof: existing PhysicsEventPayload lane.
 Capacity: existing PhysicsEventBus capacity.
-Overflow/failure mode: existing PhysicsEventBus overflow/circuit-breaker telemetry.
+Overflow/failure: existing PhysicsEventBus overflow/circuit-breaker telemetry.
 Telemetry fields: frame, source body id, fill ratio, mass, math LOD, flags.
 Black-box fields: flood telemetry ring records same source frame and mass.
 Profiler marker: pending.
 GC proof required: PhysicsEventBus/SignalBus profiler proof.
-Shutdown/disposal rule: existing PhysicsEventBus shutdown.
+Shutdown/disposal: existing PhysicsEventBus shutdown.
 Scene unload behavior: no retained Unity object payload.
 Stale-handle behavior: event is value payload only.
 Rejected alternatives: direct Rigidbody mass edits; direct submarine class reference.
 Why this does not increase global monolith risk: one existing physics route extended with a specific event type, no new registry slot.
 H-Phi impact expected: minimal; no new GlobalRegistry surface.
-Runtime proof required before acceptance: physics listener smoke and profiler/GC.
+Proof required before GREEN: physics listener smoke and profiler/GC.
 Reviewer: pending integrator
 Status: YELLOW / STATIC PROOF ONLY
 ```
@@ -145,18 +145,18 @@ Managed fields present: no
 UnityEngine.Object fields present: no
 Layout proof: 8-byte long grid fields first, float3 at 24, uint/float, byte flags, explicit padding to 64.
 Capacity: 32 signals, 8 low-tier frame signals.
-Overflow/failure mode: SignalBus drops/load-sheds with lane telemetry.
+Overflow/failure: SignalBus drops/load-sheds with lane telemetry.
 Telemetry fields: pending SignalBus telemetry plus flood black-box summary intensity.
 Black-box fields: flood intensity and max fill in frame summary.
 Profiler marker: pending.
 GC proof required: SignalBus profiler/GC proof.
-Shutdown/disposal rule: SignalBus global lane shutdown; director carries no audio object refs.
+Shutdown/disposal: SignalBus global lane shutdown; director carries no audio object refs.
 Scene unload behavior: value lane only.
 Stale-handle behavior: no handle; signal snapshot lifecycle is SignalBus-owned.
 Rejected alternatives: direct AudioMixer writes; audio assembly reference from flood director; acoustic ray simulation.
 Why this does not increase global monolith risk: typed lane, one payload, no managed data, no registry slot.
 H-Phi impact expected: one typed signal lane.
-Runtime proof required before acceptance: audio consumer smoke, profiler/GC, overflow counters.
+Proof required before GREEN: audio consumer smoke, profiler/GC, overflow counters.
 Reviewer: pending integrator
 Status: YELLOW / STATIC PROOF ONLY
 ```

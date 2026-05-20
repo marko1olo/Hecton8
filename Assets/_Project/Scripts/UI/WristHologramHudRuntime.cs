@@ -18,130 +18,212 @@ using Object = UnityEngine.Object;
 
 namespace Hecton8.UI
 {
-    [StructLayout(LayoutKind.Sequential, Size = 112)]
+    [StructLayout(LayoutKind.Explicit, Size = 112)]
     public struct WristHudQuadTransformDTO
     {
+        [FieldOffset(0)]
         public float4x4 Matrix;
+        [FieldOffset(64)]
         public float4 Color;
+        [FieldOffset(80)]
         public float4 UVRect;
+        [FieldOffset(96)]
         public uint CharacterCode;
+        [FieldOffset(100)]
         public float GlitchIntensity;
+        [FieldOffset(104)]
         public uint _pad0;
+        [FieldOffset(108)]
         public uint _pad1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 248)]
+    [StructLayout(LayoutKind.Explicit, Size = 248)]
     public struct WristHudStateDTO
     {
+        [FieldOffset(0)]
         public float4 WristPositionAndDistance;
+        [FieldOffset(16)]
         public float4 WristRotation;
+        [FieldOffset(32)]
         public float4 HeadPositionAndO2;
+        [FieldOffset(48)]
         public float4 HeadForwardAndDepth;
+        [FieldOffset(64)]
         public float4 WristRightAndSafeDepth;
+        [FieldOffset(80)]
         public float4 WristUpAndPressure;
+        [FieldOffset(96)]
         public float4 WristForwardAndRadiation;
+        [FieldOffset(112)]
         public float4 LowColor;
+        [FieldOffset(128)]
         public float4 MidColor;
+        [FieldOffset(144)]
         public float4 DangerColor;
+        [FieldOffset(160)]
         public float4 PdaGridCenterAndCell;
+        [FieldOffset(176)]
         public float4 CompassAndVitals;
+        [FieldOffset(192)]
         public int FrameIndex;
+        [FieldOffset(196)]
         public int ActiveQuadCount;
+        [FieldOffset(200)]
         public int GlyphQuadCount;
+        [FieldOffset(204)]
         public int BarQuadCount;
+        [FieldOffset(208)]
         public int PdaGridQuadCount;
+        [FieldOffset(212)]
         public int RadarQuadCount;
+        [FieldOffset(216)]
         public int Culled;
+        [FieldOffset(220)]
         public int Flags;
+        [FieldOffset(224)]
         public int TelemetryCursor;
+        [FieldOffset(228)]
         public int LastJobMicrosecondsQ16;
-        public int QualityTier;
+        [FieldOffset(232)]
+        public int QualityWeightQ8;
+        [FieldOffset(236)]
         public int _pad0;
+        [FieldOffset(240)]
         public int _pad1;
+        [FieldOffset(244)]
         public int _pad2;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct WristHudFontGlyphDTO
     {
+        [FieldOffset(0)]
         public float4 UVRect;
+        [FieldOffset(16)]
         public float Advance;
+        [FieldOffset(20)]
         public float BearingX;
+        [FieldOffset(24)]
         public float BearingY;
+        [FieldOffset(28)]
         public uint CharacterCode;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct WristHudTelemetryEntry
     {
+        [FieldOffset(0)]
         public uint FrameIndex;
+        [FieldOffset(4)]
         public uint StateHash;
+        [FieldOffset(8)]
         public uint Flags;
+        [FieldOffset(12)]
         public uint ActiveQuadCount;
+        [FieldOffset(16)]
         public uint GlyphQuadCount;
+        [FieldOffset(20)]
         public uint RadarCount;
+        [FieldOffset(24)]
         public uint JobMicrosecondsQ16;
+        [FieldOffset(28)]
         public uint TelemetryCursor;
+        [FieldOffset(32)]
         public float Oxygen01;
+        [FieldOffset(36)]
         public float DepthMeters;
+        [FieldOffset(40)]
         public float SafeDepthMeters;
+        [FieldOffset(44)]
         public float Radiation01;
+        [FieldOffset(48)]
         public float Toxemia01;
+        [FieldOffset(52)]
         public float AttentionDot;
+        [FieldOffset(56)]
         public float HeadingDegrees;
+        [FieldOffset(60)]
         public float PdaOpen01;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct WristHudBlackBoxDumpHeader
     {
+        [FieldOffset(0)]
         public uint Magic;
+        [FieldOffset(4)]
         public uint Version;
+        [FieldOffset(8)]
         public uint FrameIndex;
+        [FieldOffset(12)]
         public uint Flags;
+        [FieldOffset(16)]
         public int TelemetryCapacity;
+        [FieldOffset(20)]
         public int TelemetryCursor;
+        [FieldOffset(24)]
         public int TelemetryEntrySizeBytes;
+        [FieldOffset(28)]
         public int PayloadBytes;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public partial struct PlayerVitalsSignal
     {
+        [FieldOffset(0)]
         public float Oxygen01;
+        [FieldOffset(4)]
         public float Health01;
+        [FieldOffset(8)]
         public float Power01;
+        [FieldOffset(12)]
         public float DepthMeters;
+        [FieldOffset(16)]
         public float SafeDepthMeters;
+        [FieldOffset(20)]
         public float Radiation01;
+        [FieldOffset(24)]
         public float Toxemia01;
+        [FieldOffset(28)]
         public uint Flags;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 8)]
+    [StructLayout(LayoutKind.Explicit, Size = 8)]
     public partial struct O2LevelChangedSignal
     {
+        [FieldOffset(0)]
         public float Oxygen01;
+        [FieldOffset(4)]
         public uint Flags;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public partial struct PdaOpenedSignal
     {
+        [FieldOffset(0)]
         public uint IsOpen;
+        [FieldOffset(4)]
         public int ActiveTab;
+        [FieldOffset(8)]
         public uint Sequence;
+        [FieldOffset(12)]
         public uint Flags;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public partial struct AcousticEchoTap
     {
+        [FieldOffset(0)]
         public float3 RelativePositionMeters;
+        [FieldOffset(12)]
         public float Amplitude01;
+        [FieldOffset(16)]
         public uint StableId;
+        [FieldOffset(20)]
         public float AgeSeconds;
+        [FieldOffset(24)]
         public uint Flags;
+        [FieldOffset(28)]
         public uint _pad0;
     }
 
@@ -174,7 +256,7 @@ namespace Hecton8.UI
 
         private const int StateFlagCulled = 1 << 0;
         private const int StateFlagPdaOpen = 1 << 1;
-        private const int StateFlagLowTier = 1 << 2;
+        private const int StateFlagSurvivalMath = 1 << 2;
         private const int StateFlagJobOverBudget = 1 << 3;
         private const int StateFlagNaNDetected = 1 << 4;
         private const int StateFlagCsvLoaded = 1 << 5;
@@ -247,7 +329,7 @@ namespace Hecton8.UI
         private int _lastUploadCount = -1;
         private int _lastUploadedFrameIndex = -1;
         private int _frontQuadCount;
-        private HectonQualityTier _cachedTier = HectonQualityTier.Unknown;
+        private float _cachedQualityWeight01 = 1f;
         private PlayerVitalsSignal _latestVitals;
         private PdaOpenedSignal _latestPdaSignal;
         private readonly byte[] _csvReadBuffer = new byte[CsvOverrideMaxBytes]; // COLD ALLOC: byte[8192] - editor/manual font metrics CSV scratch - owner: SHINOBU_07
@@ -265,7 +347,7 @@ namespace Hecton8.UI
         private DateTime _lastCsvWriteUtc;
         private float _csvPollTimer;
         private float _globalSystemPressure01;
-        private int _lowTierHoldFrames;
+        private int _survivalPressureHoldFrames;
         private string _projectRoot;
         private string _csvOverridePath;
 
@@ -406,7 +488,7 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
-            CompletePendingJob();
+            CompletePendingJob(forceComplete: true);
             TryUnregisterTickLanes();
             TryUnregisterScalabilityListener();
             TryUnregisterHotSwapListener();
@@ -417,7 +499,7 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
-            CompletePendingJob();
+            CompletePendingJob(forceComplete: true);
             TryUnregisterTickLanes();
             TryUnregisterScalabilityListener();
             TryUnregisterHotSwapListener();
@@ -436,7 +518,7 @@ namespace Hecton8.UI
                 return;
 
             if (_jobScheduled)
-                CompletePendingJob();
+                CompletePendingJob(forceComplete: false);
 
             DrainSignalQueues(deltaTime);
             RefreshUiStateStoreInputs();
@@ -449,7 +531,7 @@ namespace Hecton8.UI
 
         public void LateFrameTick()
         {
-            CompletePendingJob();
+            CompletePendingJob(forceComplete: false);
             UploadAndDraw();
         }
 
@@ -727,7 +809,7 @@ namespace Hecton8.UI
             state.DangerColor = ToFloat4(dangerColor);
             state.PdaGridCenterAndCell.w = pdaGridCellSizeMeters;
             state.CompassAndVitals.w = glitchMultiplier;
-            state.QualityTier = (int)_cachedTier;
+            state.QualityWeightQ8 = EncodeQualityWeightQ8(_cachedQualityWeight01);
             if (_legacyMissing)
                 state.Flags |= StateFlagLegacyMissing;
             if (_csvLoaded)
@@ -741,15 +823,15 @@ namespace Hecton8.UI
 
         private void DrainSignalQueues(float deltaTime)
         {
-            bool wasLowTier = IsEffectiveLowTier();
+            float previousMathLodPressure = ResolveMathLodPressure01();
             DrainGlobalSignalSnapshots();
 
             if (enableMockSignals)
                 RunMockSignalInjector(deltaTime);
 
-            if (_lowTierHoldFrames > 0)
-                _lowTierHoldFrames--;
-            if (wasLowTier != IsEffectiveLowTier())
+            if (_survivalPressureHoldFrames > 0)
+                _survivalPressureHoldFrames--;
+            if (math.abs(previousMathLodPressure - ResolveMathLodPressure01()) > 0.02f)
                 ApplyMaterialColdState();
 
             while (_vitalsQueue.IsCreated && _vitalsQueue.TryDequeue(out PlayerVitalsSignal signal))
@@ -787,7 +869,7 @@ namespace Hecton8.UI
                 SystemHealthIndexSignal signal = health[i];
                 _globalSystemPressure01 = math.saturate(signal.Pressure01);
                 if (signal.State >= SystemHealthIndexSignal.StateCritical || _globalSystemPressure01 >= 0.8f)
-                    _lowTierHoldFrames = math.max(_lowTierHoldFrames, 300);
+                    _survivalPressureHoldFrames = math.max(_survivalPressureHoldFrames, 300);
             }
 
             ReadOnlySpan<PdaExchangeStateChangedSignal> pdaChanges = SignalBus<PdaExchangeStateChangedSignal>.GetFrameSnapshot();
@@ -827,7 +909,7 @@ namespace Hecton8.UI
             if (!TryResolveAcousticBuffers(out NativeArray<AcousticEchoTap> acousticTaps, out NativeArray<uint> counters))
                 return;
 
-            int max = IsEffectiveLowTier() ? 12 : 36;
+            int max = ResolveMockAcousticTapCapacity();
             int count = math.min(max, acousticTaps.Length);
             float t = Time.unscaledTime;
             for (int i = 0; i < count; i++)
@@ -995,7 +1077,8 @@ namespace Hecton8.UI
                 TimeSeconds = Time.unscaledTime,
                 DeltaTime = math.max(0f, deltaTime),
                 FrameIndex = Time.frameCount,
-                QualityTier = IsEffectiveLowTier() ? (int)HectonQualityTier.Mx350 : (int)_cachedTier,
+                QualityWeight01 = _cachedQualityWeight01,
+                MathLodPressure01 = ResolveMathLodPressure01(),
                 PdaOpen = _latestPdaSignal.IsOpen,
                 AcousticTapCount = acousticTapCount,
                 LowColor = ToFloat4(lowColor),
@@ -1008,12 +1091,15 @@ namespace Hecton8.UI
             _jobScheduled = true;
         }
 
-        private void CompletePendingJob()
+        private void CompletePendingJob(bool forceComplete)
         {
             if (!_jobScheduled)
                 return;
 
-            _pendingJob.Complete();
+            if (!forceComplete && !_pendingJob.IsCompleted)
+                return;
+
+            Hecton8.Core.DispatcherJobFence.TryComplete(ref _pendingJob, forceComplete);
             _jobScheduled = false;
             long elapsedTicks = Stopwatch.GetTimestamp() - _jobStartTimestamp;
             int elapsedQ16 = (int)math.round((float)elapsedTicks * 1000000f * 16f / Stopwatch.Frequency);
@@ -1742,14 +1828,35 @@ namespace Hecton8.UI
             return math.isfinite(value) ? math.max(0f, value) : 0f;
         }
 
-        private static bool IsLowTier(HectonQualityTier tier)
+        private static float SmoothStep01(float value)
         {
-            return tier == HectonQualityTier.Unknown || tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350;
+            float saturated = math.saturate(value);
+            return saturated * saturated * (3f - 2f * saturated);
         }
 
-        private bool IsEffectiveLowTier()
+        private static int EncodeQualityWeightQ8(float qualityWeight01)
         {
-            return IsLowTier(_cachedTier) || _lowTierHoldFrames > 0 || _globalSystemPressure01 >= 0.8f;
+            return (int)math.round(math.saturate(math.select(1f, qualityWeight01, math.isfinite(qualityWeight01))) * 255f);
+        }
+
+        private void RefreshQualityPolicy()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            _cachedQualityWeight01 = math.saturate(math.select(_cachedQualityWeight01, quality, math.isfinite(quality)));
+        }
+
+        private float ResolveMathLodPressure01()
+        {
+            float qualityPressure = 1f - SmoothStep01(_cachedQualityWeight01);
+            float stressPressure = SmoothStep01(math.saturate((_globalSystemPressure01 - 0.62f) * math.rcp(0.38f)));
+            float holdPressure = math.select(0f, 1f, _survivalPressureHoldFrames > 0);
+            return math.saturate(math.max(math.max(qualityPressure, stressPressure), holdPressure));
+        }
+
+        private int ResolveMockAcousticTapCapacity()
+        {
+            float visualBudget01 = math.saturate(SmoothStep01(_cachedQualityWeight01) * (1f - ResolveMathLodPressure01() * 0.75f));
+            return math.clamp((int)math.round(math.lerp(12f, 36f, visualBudget01)), 12, 36);
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -1770,18 +1877,15 @@ namespace Hecton8.UI
 
         public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
         {
-            HectonQualityTier tier = payload.CurrentQualityTier;
-            if (tier == _cachedTier)
-                return;
-
-            _cachedTier = tier;
+            _ = payload;
+            RefreshQualityPolicy();
             ApplyMaterialColdState();
         }
 
         private void RefreshCachedRegistryServices()
         {
             _cachedDataVault = GlobalRegistry.DataVault;
-            _cachedTier = GlobalRegistry.ScalabilityTier;
+            RefreshQualityPolicy();
         }
 
         private void TryRegisterHotSwapListener()
@@ -1864,12 +1968,13 @@ namespace Hecton8.UI
         }
 #endif
 
-        [BurstCompile]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct MockVitalsGeneratorJob : IJob
         {
             public PlayerVitalsSignal Previous;
             public float DeltaTime;
             public float TimeSeconds;
+            [NoAlias]
             public NativeQueue<PlayerVitalsSignal>.ParallelWriter Output;
 
             public void Execute()
@@ -1888,15 +1993,19 @@ namespace Hecton8.UI
             }
         }
 
-        [BurstCompile]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct TextToQuadsJob : IJob
         {
+            [NoAlias]
             public NativeArray<WristHudStateDTO> States;
+            [NoAlias]
             public NativeArray<WristHudQuadTransformDTO> Quads;
-            [ReadOnly] public NativeArray<WristHudFontGlyphDTO> FontAtlas;
+            [ReadOnly, NoAlias] public NativeArray<WristHudFontGlyphDTO> FontAtlas;
+            [NoAlias]
             public NativeArray<WristHudTelemetryEntry> Telemetry;
+            [NoAlias]
             public NativeArray<uint> Counters;
-            [ReadOnly] public NativeArray<AcousticEchoTap> AcousticTaps;
+            [ReadOnly, NoAlias] public NativeArray<AcousticEchoTap> AcousticTaps;
 
             public FixedString64Bytes O2Text;
             public FixedString64Bytes DepthText;
@@ -1930,7 +2039,8 @@ namespace Hecton8.UI
             public float TimeSeconds;
             public float DeltaTime;
             public int FrameIndex;
-            public int QualityTier;
+            public float QualityWeight01;
+            public float MathLodPressure01;
             public uint PdaOpen;
             public int AcousticTapCount;
             public float4 LowColor;
@@ -1944,7 +2054,10 @@ namespace Hecton8.UI
 
                 WristHudStateDTO state = States[0];
                 state.FrameIndex = FrameIndex;
-                state.QualityTier = QualityTier;
+                float qualityWeight01 = math.saturate(math.select(1f, QualityWeight01, math.isfinite(QualityWeight01)));
+                float mathLodPressure01 = math.saturate(math.select(0f, MathLodPressure01, math.isfinite(MathLodPressure01)));
+                float visualBudget01 = math.saturate(SmoothStep01(qualityWeight01) * (1f - mathLodPressure01 * 0.75f));
+                state.QualityWeightQ8 = (int)math.round(qualityWeight01 * 255f);
                 state.LowColor = LowColor;
                 state.MidColor = MidColor;
                 state.DangerColor = DangerColor;
@@ -1954,11 +2067,10 @@ namespace Hecton8.UI
                 state.WristUpAndPressure = new float4(WristUp, Power01);
                 state.WristForwardAndRadiation = new float4(WristForward, Radiation01);
                 state.CompassAndVitals.w = GlitchMultiplier;
-                state.Flags &= ~(StateFlagCulled | StateFlagPdaOpen | StateFlagLowTier | StateFlagNaNDetected);
+                state.Flags &= ~(StateFlagCulled | StateFlagPdaOpen | StateFlagSurvivalMath | StateFlagNaNDetected);
 
-                bool lowTier = QualityTier <= (int)HectonQualityTier.Mx350;
-                if (lowTier)
-                    state.Flags |= StateFlagLowTier;
+                if (mathLodPressure01 >= 0.75f)
+                    state.Flags |= StateFlagSurvivalMath;
 
                 float attentionDot = math.dot(HeadForward, WristNormal);
                 bool culled = attentionDot < AttentionDotThreshold;
@@ -1976,9 +2088,10 @@ namespace Hecton8.UI
 
                 float3 smoothedPosition = CurrentWristPosition;
                 quaternion wristRotation = new quaternion(CurrentWristRotation);
-                if (!lowTier && math.lengthsq(state.WristRotation) > 0.25f)
+                bool hasPreviousWristRotation = math.lengthsq(state.WristRotation) > 0.25f;
+                if (hasPreviousWristRotation)
                 {
-                    float alpha = math.saturate(DeltaTime * 14f);
+                    float alpha = math.lerp(1f, math.saturate(DeltaTime * 14f), visualBudget01);
                     smoothedPosition = math.lerp(state.WristPositionAndDistance.xyz, CurrentWristPosition, alpha);
                     quaternion previous = new quaternion(state.WristRotation);
                     float4 targetValue = CurrentWristRotation;
@@ -2007,7 +2120,7 @@ namespace Hecton8.UI
                 AppendText(ref quadIndex, ref glyphCount, wristMatrix, DepthText, new float2(-0.11f, 0.035f), TextScale, math.lerp(MidColor, DangerColor, depth01), hazard);
                 AppendText(ref quadIndex, ref glyphCount, wristMatrix, HeadingText, new float2(-0.11f, 0.005f), TextScale * 0.86f, LowColor, hazard * 0.55f);
                 AppendText(ref quadIndex, ref glyphCount, wristMatrix, LoadText, new float2(-0.11f, -0.025f), TextScale * 0.86f, math.lerp(LowColor, DangerColor, InventoryLoad01), hazard * 0.45f);
-                AppendDepthBar(ref quadIndex, ref barCount, wristMatrix, depth01, hazard, lowTier);
+                AppendDepthBar(ref quadIndex, ref barCount, wristMatrix, depth01, hazard, visualBudget01);
                 AppendCompass(ref quadIndex, wristMatrix, hazard);
                 if (PdaOpen != 0u)
                 {
@@ -2018,7 +2131,7 @@ namespace Hecton8.UI
                 if (Oxygen01 < 0.2f)
                     AppendVignette(ref quadIndex, visorMatrix, math.saturate((0.2f - Oxygen01) * 5f), hazard);
 
-                AppendRadar(ref quadIndex, ref radarCount, wristMatrix, hazard, lowTier);
+                AppendRadar(ref quadIndex, ref radarCount, wristMatrix, hazard, visualBudget01);
 
                 state.ActiveQuadCount = quadIndex;
                 state.GlyphQuadCount = glyphCount;
@@ -2068,7 +2181,7 @@ namespace Hecton8.UI
                 }
             }
 
-            private void AppendDepthBar(ref int quadIndex, ref int barCount, float4x4 anchor, float depth01, float hazard, bool lowTier)
+            private void AppendDepthBar(ref int quadIndex, ref int barCount, float4x4 anchor, float depth01, float hazard, float visualBudget01)
             {
                 const int segments = 20;
                 float filled = depth01 * segments;
@@ -2076,7 +2189,9 @@ namespace Hecton8.UI
                 {
                     float fill01 = math.saturate(filled - i);
                     float critical = math.saturate((depth01 - 0.82f) * 5.555555f);
-                    float wave = lowTier ? TriangleWave(TimeSeconds * 7f + i * 0.17f) : math.sin(TimeSeconds * 22f + i * 0.73f);
+                    float triangleWave = TriangleWave(TimeSeconds * 7f + i * 0.17f);
+                    float sineWave = math.sin(TimeSeconds * 22f + i * 0.73f);
+                    float wave = math.lerp(triangleWave, sineWave, visualBudget01);
                     float shiver = 1f + critical * wave * 0.12f;
                     float4 color = math.lerp(LowColor, DangerColor, math.saturate((float)i / (segments - 1f) + critical * 0.6f));
                     color.w *= math.lerp(0.18f, 1f, fill01);
@@ -2148,9 +2263,9 @@ namespace Hecton8.UI
                 };
             }
 
-            private void AppendRadar(ref int quadIndex, ref int radarCount, float4x4 anchor, float hazard, bool lowTier)
+            private void AppendRadar(ref int quadIndex, ref int radarCount, float4x4 anchor, float hazard, float visualBudget01)
             {
-                int max = lowTier ? 12 : 100;
+                int max = math.clamp((int)math.round(math.lerp(12f, 100f, visualBudget01)), 12, 100);
                 int count = math.min(math.min(AcousticTapCount, max), AcousticTaps.IsCreated ? AcousticTaps.Length : 0);
                 for (int i = 0; i < count && quadIndex < Quads.Length; i++)
                 {
@@ -2246,6 +2361,12 @@ namespace Hecton8.UI
             private static float TriangleWave(float x)
             {
                 return math.abs(math.frac(x) * 2f - 1f) * 2f - 1f;
+            }
+
+            private static float SmoothStep01(float value)
+            {
+                float saturated = math.saturate(value);
+                return saturated * saturated * (3f - 2f * saturated);
             }
 
             private static uint HashState(int quadCount, int glyphCount, int radarCount, int flags)

@@ -1,7 +1,6 @@
 using Hecton8.Core;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace Hecton8.World
 {
@@ -10,7 +9,6 @@ namespace Hecton8.World
     /// Manager-driven only: no Update, no per-frame allocations.
     /// </summary>
     [DisallowMultipleComponent]
-    [RequireComponent(typeof(LineRenderer))]
     public sealed class BioCableIK : MonoBehaviour
     {
         private const float SegmentDistanceEpsilonSq = 0.00000001f;
@@ -19,11 +17,7 @@ namespace Hecton8.World
 
         [Header("── Runtime Wiring ──────────────────")]
         [SerializeField]
-        [Tooltip("Cached line renderer used to draw the abyssal cable.")]
-        private LineRenderer lineRenderer;
-
-        [SerializeField]
-        [Tooltip("Shared authored line material used by the runtime cable renderer. Runtime fallback material creation is forbidden.")]
+        [Tooltip("Shared authored material used by cable spark particles. Runtime fallback material creation is forbidden.")]
         private Material cableMaterial;
 
         [Header("── Cable Shape ─────────────────────")]
@@ -116,16 +110,31 @@ namespace Hecton8.World
         private bool _initialized;
         private bool _pendingElasticRupture;
         private bool _loggedMissingCableMaterial;
+        private bool _isCableActive;
+        private int _splineLinkId;
+        private Color _currentCableColor = new Color(0.12f, 0.52f, 0.46f, 0.92f);
+        private float _currentCableRadius = 0.12f;
         private Vector3 _pendingElasticRuptureVelocityWS;
         private ParticleSystem _sparkParticles;
         private ParticleSystemRenderer _sparkRenderer;
 
         private void Awake()
         {
+            _splineLinkId = GetInstanceID();
             ResolveRuntimeWiring();
             EnsureStorage();
             EnsureChargeEffects();
             InitializeAt(transform.position, Vector3.up);
+        }
+
+        private void OnDisable()
+        {
+            ConnectionSplineBatchRenderer.RemovePipeLink(_splineLinkId);
+        }
+
+        private void OnDestroy()
+        {
+            ConnectionSplineBatchRenderer.RemovePipeLink(_splineLinkId);
         }
 
         /// <summary>
@@ -346,42 +355,27 @@ namespace Hecton8.World
         /// </summary>
         public void SetCableActive(bool isActive)
         {
-            if (lineRenderer != null)
-                lineRenderer.enabled = isActive;
+            _isCableActive = isActive;
 
             if (!isActive && _sparkParticles != null && _sparkParticles.isPlaying)
                 _sparkParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
 
             if (!isActive)
             {
+                ConnectionSplineBatchRenderer.RemovePipeLink(_splineLinkId);
                 _pendingElasticRupture = false;
                 _pendingElasticRuptureVelocityWS = Vector3.zero;
                 _elasticBreakTimer = 0f;
+                return;
             }
+
+            SyncRenderer();
         }
 
         private void ResolveRuntimeWiring()
         {
-            if (lineRenderer == null)
-                TryGetComponent(out lineRenderer);
-
-            if (lineRenderer != null)
-            {
-                lineRenderer.positionCount = Mathf.Max(2, segmentCount);
-                lineRenderer.widthMultiplier = 1f;
-                lineRenderer.startWidth = ResolveRange(rootWidth, 0.01f, 1f, 0.18f);
-                lineRenderer.endWidth = ResolveRange(tipWidth, 0.01f, ResolveRange(rootWidth, 0.01f, 1f, 0.18f), 0.06f);
-                Color safeBaseColor = SanitizeColor(baseCableColor, new Color(0.12f, 0.52f, 0.46f, 0.92f));
-                lineRenderer.startColor = safeBaseColor;
-                lineRenderer.endColor = safeBaseColor;
-                lineRenderer.shadowCastingMode = ShadowCastingMode.Off;
-                lineRenderer.receiveShadows = false;
-                lineRenderer.motionVectorGenerationMode = MotionVectorGenerationMode.ForceNoMotion;
-                lineRenderer.alignment = LineAlignment.View;
-                lineRenderer.textureMode = LineTextureMode.Stretch;
-                if (lineRenderer.sharedMaterial == null)
-                    lineRenderer.sharedMaterial = ResolveCableMaterial();
-            }
+            _currentCableColor = SanitizeColor(baseCableColor, new Color(0.12f, 0.52f, 0.46f, 0.92f));
+            _currentCableRadius = ResolveCableRadius();
         }
 
         private void EnsureStorage()
@@ -511,22 +505,17 @@ namespace Hecton8.World
             if (_sparkRenderer == null && _sparkParticles != null)
                 _sparkParticles.TryGetComponent(out _sparkRenderer);
 
-            if (_sparkRenderer != null && _sparkRenderer.sharedMaterial == null && lineRenderer != null)
-                _sparkRenderer.sharedMaterial = lineRenderer.sharedMaterial;
+            if (_sparkRenderer != null && _sparkRenderer.sharedMaterial == null)
+                _sparkRenderer.sharedMaterial = ResolveCableMaterial();
         }
 
         private void ApplyVisualState()
         {
-            if (lineRenderer != null)
-            {
-                float chargeBlend = Clamp01Finite(_empCharge01 * LerpClamped(0.35f, 1f, _empPulse01));
-                Color safeBaseColor = SanitizeColor(baseCableColor, new Color(0.12f, 0.52f, 0.46f, 0.92f));
-                Color safeChargeColor = SanitizeColor(empChargeColor, new Color(0.95f, 0.98f, 1f, 0.98f));
-                Color drawColor = Color.Lerp(safeBaseColor, safeChargeColor, chargeBlend);
-                lineRenderer.startColor = drawColor;
-                lineRenderer.endColor = Color.Lerp(drawColor, safeChargeColor, chargeBlend * 0.5f);
-                lineRenderer.widthMultiplier = 1f + ResolveRange(empWidthBoost, 0f, 4f, 0.3f) * chargeBlend;
-            }
+            float chargeBlend = Clamp01Finite(_empCharge01 * LerpClamped(0.35f, 1f, _empPulse01));
+            Color safeBaseColor = SanitizeColor(baseCableColor, new Color(0.12f, 0.52f, 0.46f, 0.92f));
+            Color safeChargeColor = SanitizeColor(empChargeColor, new Color(0.95f, 0.98f, 1f, 0.98f));
+            _currentCableColor = Color.Lerp(safeBaseColor, safeChargeColor, chargeBlend);
+            _currentCableRadius = ResolveCableRadius() * (1f + ResolveRange(empWidthBoost, 0f, 4f, 0.3f) * chargeBlend);
 
             if (_sparkParticles != null)
             {
@@ -536,7 +525,7 @@ namespace Hecton8.World
                 emission.rateOverTime = ResolveRange(sparkEmissionRate, 0f, 128f, 42f) * sparkGate * LerpClamped(0.25f, 1f, _empPulse01);
                 if (!_sparkParticles.isPlaying && sparkGate > 0f)
                     _sparkParticles.Play();
-                else if (_sparkParticles.isPlaying && sparkGate <= 0f && (lineRenderer == null || !lineRenderer.enabled))
+                else if (_sparkParticles.isPlaying && sparkGate <= 0f && !_isCableActive)
                     _sparkParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             }
         }
@@ -624,6 +613,13 @@ namespace Hecton8.World
             return ResolveRange(segmentLength, 0.1f, 128f, 1.25f);
         }
 
+        private float ResolveCableRadius()
+        {
+            float safeRoot = ResolveRange(rootWidth, 0.01f, 1f, 0.18f);
+            float safeTip = ResolveRange(tipWidth, 0.01f, safeRoot, 0.06f);
+            return math.max(0.005f, (safeRoot + safeTip) * 0.25f);
+        }
+
         private static float LerpClamped(float from, float to, float t)
         {
             return from + (to - from) * math.saturate(t);
@@ -657,12 +653,9 @@ namespace Hecton8.World
 
         private void SyncRenderer()
         {
-            if (lineRenderer == null || _points == null)
+            if (!_isCableActive || _points == null)
                 return;
 
-            lineRenderer.positionCount = _points.Length;
-            lineRenderer.startWidth = ResolveRange(rootWidth, 0.01f, 1f, 0.18f);
-            lineRenderer.endWidth = ResolveRange(tipWidth, 0.01f, ResolveRange(rootWidth, 0.01f, 1f, 0.18f), 0.06f);
             float safeSegmentLength = ResolveSegmentLength();
             for (int i = 0; i < _points.Length; i++)
             {
@@ -670,7 +663,18 @@ namespace Hecton8.World
                 _points[i] = SanitizePosition(_points[i], fallback);
             }
 
-            lineRenderer.SetPositions(_points);
+            Vector3 start = _points[0];
+            Vector3 end = _points[_points.Length - 1];
+            Vector3 startForward = _points.Length > 1 ? ResolveSafeDirection(_points[1] - start, _anchorUpWS) : _anchorUpWS;
+            Vector3 endForward = _points.Length > 1 ? ResolveSafeDirection(_points[_points.Length - 2] - end, -_anchorUpWS) : -_anchorUpWS;
+            SplineDescriptor descriptor = LogisticsPipeBuilder.CreateSocketDescriptor(
+                start,
+                end,
+                startForward,
+                endForward,
+                _currentCableRadius,
+                PipeRenderFlags.None);
+            ConnectionSplineBatchRenderer.SubmitPipeLink(_splineLinkId, descriptor, _currentCableColor);
         }
 
         private Material ResolveCableMaterial()
@@ -714,17 +718,6 @@ namespace Hecton8.World
             elasticStretchLimit = ResolveRange(elasticStretchLimit, 1f, 2.5f, 1.42f);
             elasticBreakHoldTime = ResolveRange(elasticBreakHoldTime, 0.02f, 1f, 0.14f);
             elasticBreakRecoilMultiplier = ResolveRange(elasticBreakRecoilMultiplier, 0f, 4f, 1.35f);
-
-            if (lineRenderer == null)
-                TryGetComponent(out lineRenderer);
-
-            if (lineRenderer != null)
-            {
-                lineRenderer.positionCount = Mathf.Max(2, segmentCount);
-                lineRenderer.widthMultiplier = 1f;
-                lineRenderer.startWidth = ResolveRange(rootWidth, 0.01f, 1f, 0.18f);
-                lineRenderer.endWidth = ResolveRange(tipWidth, 0.01f, ResolveRange(rootWidth, 0.01f, 1f, 0.18f), 0.06f);
-            }
 
             if (_initialized && _points != null && _points.Length == Mathf.Clamp(segmentCount, 4, 24))
             {

@@ -3,11 +3,11 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Hecton8.Core;
 using Hecton8.Core.Memory;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
-using Hecton8.Physics;
-using Hecton8.Physics.Determinism;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
 using Unity.Collections;
@@ -36,122 +36,122 @@ namespace Hecton8.Core.Determinism
     /// <summary>
     /// Blittable player truth snapshot hashed by the lockstep validator.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 96)]
+    [StructLayout(LayoutKind.Explicit, Size = 96)]
     public struct LockstepPlayerKinematicState
     {
-        public long SectorX;
-        public long SectorY;
-        public long SectorZ;
-        public float3 LocalPosition;
-        public float3 Velocity;
-        public float3 Forward;
-        public uint Frame;
-        public uint Flags;
-        public uint InputActions;
-        public uint StableId;
-        public uint HashCadenceFrames;
-        public uint Reserved1;
-        public uint Reserved2;
-        public uint Reserved3;
-        public uint Reserved4;
+        [FieldOffset(0)] public long SectorX;
+        [FieldOffset(8)] public long SectorY;
+        [FieldOffset(16)] public long SectorZ;
+        [FieldOffset(24)] public float3 LocalPosition;
+        [FieldOffset(36)] public float3 Velocity;
+        [FieldOffset(48)] public float3 Forward;
+        [FieldOffset(60)] public uint Frame;
+        [FieldOffset(64)] public uint Flags;
+        [FieldOffset(68)] public uint InputActions;
+        [FieldOffset(72)] public uint StableId;
+        [FieldOffset(76)] public uint HashCadenceFrames;
+        [FieldOffset(80)] public uint Reserved1;
+        [FieldOffset(84)] public uint Reserved2;
+        [FieldOffset(88)] public uint Reserved3;
+        [FieldOffset(92)] public uint Reserved4;
     }
 
     /// <summary>
     /// Fixed-size replay input frame stored in `.h8replay` blocks.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct LockstepReplayInputFrame
     {
-        public uint Frame;
-        public uint ActionsBitmask;
-        public float2 MoveDelta;
-        public float2 LookDelta;
-        public float VerticalDelta;
-        public uint CurrentInputSchemeHash;
-        public uint Flags;
-        public uint Sequence;
-        public uint Reserved0;
-        public uint Reserved1;
+        [FieldOffset(0)] public uint Frame;
+        [FieldOffset(4)] public uint ActionsBitmask;
+        [FieldOffset(8)] public float2 MoveDelta;
+        [FieldOffset(16)] public float2 LookDelta;
+        [FieldOffset(24)] public float VerticalDelta;
+        [FieldOffset(28)] public uint CurrentInputSchemeHash;
+        [FieldOffset(32)] public uint Flags;
+        [FieldOffset(36)] public uint Sequence;
+        [FieldOffset(40)] public uint Reserved0;
+        [FieldOffset(44)] public uint Reserved1;
     }
 
     /// <summary>
     /// Fixed-size replay block header followed by 300 input frames.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct LockstepReplayBlockHeader
     {
-        public ulong Magic;
-        public uint Version;
-        public uint HeaderSizeBytes;
-        public uint StartFrame;
-        public uint HashFrame;
-        public uint InputCount;
-        public uint Flags;
-        public ulong MasterHash;
-        public uint RigidbodyHash;
-        public uint PlayerHash;
-        public uint RoomHash;
-        public uint EntityHash;
-        public uint RigidbodyCount;
-        public uint PlayerCount;
-        public uint RoomCount;
-        public uint EntityCount;
-        public uint MissingMask;
-        public uint NonFiniteMask;
-        public uint BlockSequence;
-        public uint HashCadenceFrames;
-        public ulong Reserved1;
-        public ulong Reserved2;
-        public ulong Reserved3;
-        public ulong Reserved4;
-        public ulong Reserved5;
+        [FieldOffset(0)] public ulong Magic;
+        [FieldOffset(8)] public uint Version;
+        [FieldOffset(12)] public uint HeaderSizeBytes;
+        [FieldOffset(16)] public uint StartFrame;
+        [FieldOffset(20)] public uint HashFrame;
+        [FieldOffset(24)] public uint InputCount;
+        [FieldOffset(28)] public uint Flags;
+        [FieldOffset(32)] public ulong MasterHash;
+        [FieldOffset(40)] public uint RigidbodyHash;
+        [FieldOffset(44)] public uint PlayerHash;
+        [FieldOffset(48)] public uint RoomHash;
+        [FieldOffset(52)] public uint EntityHash;
+        [FieldOffset(56)] public uint RigidbodyCount;
+        [FieldOffset(60)] public uint PlayerCount;
+        [FieldOffset(64)] public uint RoomCount;
+        [FieldOffset(68)] public uint EntityCount;
+        [FieldOffset(72)] public uint MissingMask;
+        [FieldOffset(76)] public uint NonFiniteMask;
+        [FieldOffset(80)] public uint BlockSequence;
+        [FieldOffset(84)] public uint HashCadenceFrames;
+        [FieldOffset(88)] public ulong Reserved1;
+        [FieldOffset(96)] public ulong Reserved2;
+        [FieldOffset(104)] public ulong Reserved3;
+        [FieldOffset(112)] public ulong Reserved4;
+        [FieldOffset(120)] public ulong Reserved5;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal struct LockstepArrayHash
     {
-        public uint CategoryId;
-        public uint Hash;
-        public uint Count;
-        public uint Flags;
-        public uint FirstElementHash;
-        public uint LastElementHash;
-        public uint Reserved0;
-        public uint Reserved1;
+        [FieldOffset(0)] public uint CategoryId;
+        [FieldOffset(4)] public uint Hash;
+        [FieldOffset(8)] public uint Count;
+        [FieldOffset(12)] public uint Flags;
+        [FieldOffset(16)] public uint FirstElementHash;
+        [FieldOffset(20)] public uint LastElementHash;
+        [FieldOffset(24)] public uint Reserved0;
+        [FieldOffset(28)] public uint Reserved1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct LockstepTelemetryEntry
     {
-        public uint Frame;
-        public uint HashLo;
-        public uint HashHi;
-        public uint RigidbodyHash;
-        public uint PlayerHash;
-        public uint RoomHash;
-        public uint EntityHash;
-        public uint Flags;
-        public uint RigidbodyCount;
-        public uint PlayerCount;
-        public uint RoomCount;
-        public uint EntityCount;
-        public uint MissingMask;
-        public uint NonFiniteMask;
-        public uint ReplayBlock;
-        public uint Reserved0;
+        [FieldOffset(0)] public uint Frame;
+        [FieldOffset(4)] public uint HashLo;
+        [FieldOffset(8)] public uint HashHi;
+        [FieldOffset(12)] public uint RigidbodyHash;
+        [FieldOffset(16)] public uint PlayerHash;
+        [FieldOffset(20)] public uint RoomHash;
+        [FieldOffset(24)] public uint EntityHash;
+        [FieldOffset(28)] public uint Flags;
+        [FieldOffset(32)] public uint RigidbodyCount;
+        [FieldOffset(36)] public uint PlayerCount;
+        [FieldOffset(40)] public uint RoomCount;
+        [FieldOffset(44)] public uint EntityCount;
+        [FieldOffset(48)] public uint MissingMask;
+        [FieldOffset(52)] public uint NonFiniteMask;
+        [FieldOffset(56)] public uint ReplayBlock;
+        [FieldOffset(60)] public uint Reserved0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal struct LockstepMasterHashHistoryEntry
     {
-        public uint Frame;
-        public uint HashLo;
-        public uint HashHi;
-        public uint Flags;
-        public uint MissingMask;
-        public uint NonFiniteMask;
-        public uint ReplayBlock;
-        public uint Reserved0;
+        [FieldOffset(0)] public uint Frame;
+        [FieldOffset(4)] public uint HashLo;
+        [FieldOffset(8)] public uint HashHi;
+        [FieldOffset(12)] public uint Flags;
+        [FieldOffset(16)] public uint MissingMask;
+        [FieldOffset(20)] public uint NonFiniteMask;
+        [FieldOffset(24)] public uint ReplayBlock;
+        [FieldOffset(28)] public uint Reserved0;
     }
 
     internal enum LockstepHashCategory : int
@@ -174,7 +174,7 @@ namespace Hecton8.Core.Determinism
     public sealed unsafe class LockstepStateValidator : MonoBehaviour, IPostFixedTickable, IScalabilityChangedEventListener
     {
         private const int HashCadenceFrames = 300;
-        private const int HighEndHashCadenceFrames = 60;
+        private const int PrecisionHashCadenceFrames = 60;
         private const int HighStressHashCadenceFrames = 1200;
         private const int ReplayInputFrameCapacity = 300;
         private const int TelemetryFrameCapacity = 300;
@@ -205,7 +205,6 @@ namespace Hecton8.Core.Determinism
         private const uint TelemetryFlagTruncated = 1u << 2;
         private const uint TelemetryFlagNonFinite = 1u << 3;
         private const uint TelemetryFlagReplayMode = 1u << 4;
-        private const uint TelemetryFlagLowTierSkipped = 1u << 5;
         private const uint TelemetryFlagDesync = 1u << 6;
         private const uint TelemetryFlagWriterBusy = 1u << 7;
         private const uint TelemetryFlagLayoutInvalid = 1u << 8;
@@ -216,7 +215,6 @@ namespace Hecton8.Core.Determinism
         private const uint PlayerStateFlagNonFinite = 1u << 31;
         private const float DesyncGlitchIntensity01 = 1f;
         private const float DesyncGlitchDurationSeconds = 1f;
-        private const float HashStressDeferralThreshold = 0.9f;
         private const string ReplayFileName = "lockstep_state.h8replay";
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_LOCKSTEP_STATE_VALIDATOR.bin";
 
@@ -233,7 +231,7 @@ namespace Hecton8.Core.Determinism
         private IPlayerRuntimeContext _player;
         private IHabitatGraphService _habitat;
         private SystemDispatcher _dispatcher;
-        private HectonQualityTier _cachedScalabilityTier;
+        private float _cachedQualityWeight01 = 1f;
         private uint _postSimulationFrame;
         private uint _lastReplayBlockSequence;
         private uint _lastMasterHashLo;
@@ -328,12 +326,6 @@ namespace Hecton8.Core.Determinism
                 return;
             }
 
-            if (IsLowTierDisabledForNormalPlay())
-            {
-                WriteTelemetry(frame, flags | TelemetryFlagLowTierSkipped);
-                return;
-            }
-
             InputStateSignal inputSignal = default;
             bool hasInputSignal = false;
             if (ghostReplayActive)
@@ -410,14 +402,14 @@ namespace Hecton8.Core.Determinism
             validator._ghostInputCount = 0;
             validator._ghostExpectedBlockIndex = 0;
             validator._lastAppliedInputActions = 0u;
-            PhysicsDeterminismSignals.ClearInputOverride();
+            CoreDeterminismSignals.ClearInputOverride();
             validator._dispatcher?.RequestTimeDilation(1f, ReasonGhostReplayHash);
         }
 
         /// <inheritdoc />
         public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
         {
-            _cachedScalabilityTier = payload.CurrentQualityTier;
+            RefreshCachedQualityWeight01();
         }
 
         private void RefreshDependenciesFromRegistry()
@@ -426,7 +418,7 @@ namespace Hecton8.Core.Determinism
             _player = GlobalRegistry.Player;
             _habitat = GlobalRegistry.HabitatGraph;
             _dispatcher = GlobalRegistry.Dispatcher;
-            _cachedScalabilityTier = GlobalRegistry.ScalabilityTier;
+            RefreshCachedQualityWeight01();
         }
 
         private static void ConfigureSignalLanes()
@@ -448,27 +440,39 @@ namespace Hecton8.Core.Determinism
                 UnsafeUtility.SizeOf<SystemGlitchSignal>() == SignalPayloadBytes;
         }
 
-        private bool IsLowTierDisabledForNormalPlay()
-        {
-            if (Volatile.Read(ref _ghostReplayActive) != 0)
-                return false;
-
-            return _cachedScalabilityTier == HectonQualityTier.Low || _cachedScalabilityTier == HectonQualityTier.Mx350;
-        }
-
         private int ResolveHashCadenceFrames()
         {
+            float qualityWeight01 = RefreshCachedQualityWeight01();
+            float systemStress01 = ResolveSystemStress01();
+            float qualityCurve01 = SmoothStep01(qualityWeight01);
+            float stressCurve01 = SmoothStep01(systemStress01);
+            float qualityCadenceFrames = math.lerp(HashCadenceFrames, PrecisionHashCadenceFrames, qualityCurve01);
+            float cadenceFrames = math.lerp(qualityCadenceFrames, HighStressHashCadenceFrames, stressCurve01);
+            return math.clamp((int)math.round(cadenceFrames), PrecisionHashCadenceFrames, HighStressHashCadenceFrames);
+        }
+
+        private float RefreshCachedQualityWeight01()
+        {
+            _cachedQualityWeight01 = ResolveGlobalQualityWeight01();
+            return _cachedQualityWeight01;
+        }
+
+        private static float ResolveGlobalQualityWeight01()
+        {
+            float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
+            return math.isfinite(qualityWeight) ? math.saturate(qualityWeight) : 1.0f;
+        }
+
+        private static float ResolveSystemStress01()
+        {
             float systemStress01 = HomeostasisBrain.SystemHealthIndex01;
-            if (!math.isfinite(systemStress01))
-                systemStress01 = 1f;
+            return math.isfinite(systemStress01) ? math.saturate(systemStress01) : 1.0f;
+        }
 
-            if (systemStress01 > HashStressDeferralThreshold)
-                return HighStressHashCadenceFrames;
-
-            HectonQualityTier tier = _cachedScalabilityTier;
-            return tier == HectonQualityTier.High || tier == HectonQualityTier.Ultra
-                ? HighEndHashCadenceFrames
-                : HashCadenceFrames;
+        private static float SmoothStep01(float value)
+        {
+            float t = math.saturate(value);
+            return t * t * (3.0f - (2.0f * t));
         }
 
         private bool CaptureInputFrame(uint frame, out InputStateSignal signal)
@@ -551,7 +555,7 @@ namespace Hecton8.Core.Determinism
             state.ActionsBitmask = ghost.ActionsBitmask;
             state.CurrentInputSchemeHash = ghost.CurrentInputSchemeHash;
             _lastAppliedInputActions = ghost.ActionsBitmask;
-            PhysicsDeterminismSignals.PublishInputOverride(in state, (uint)Time.frameCount);
+            CoreDeterminismSignals.PublishInputOverride(in state, (uint)Time.frameCount);
             return false;
         }
 
@@ -762,7 +766,7 @@ namespace Hecton8.Core.Determinism
 
             // [BLOCKING_SYNC_POINT] 300-frame POST_SIMULATION hash fence.
             // The replay block must contain frame-N truth before any owner can mutate the sampled DataVault arrays.
-            masterHandle.Complete();
+            Hecton8.Core.DispatcherJobFence.TryComplete(ref masterHandle, forceComplete: true);
 
             uint flags = masterFlags[0];
             if ((flags & ArrayFlagMissing) != 0u)
@@ -1069,7 +1073,7 @@ namespace Hecton8.Core.Determinism
             signal.SourceId = ReasonDesyncHash;
             signal.LastFenceFrame = expected.HashFrame;
             signal.Flags = (byte)flags;
-            PhysicsDeterminismSignals.Publish(in signal);
+            CoreDeterminismSignals.Publish(in signal);
             PublishSystemGlitchSignal(frame, in expected, (byte)flags);
             _dispatcher?.RequestSimulationPause(true, ReasonDesyncHash);
             StopGhostReplayAfterFault();
@@ -1117,7 +1121,7 @@ namespace Hecton8.Core.Determinism
             _ghostInputCount = 0;
             _ghostExpectedBlockIndex = 0;
             _lastAppliedInputActions = 0u;
-            PhysicsDeterminismSignals.ClearInputOverride();
+            CoreDeterminismSignals.ClearInputOverride();
         }
 
         private void StageReplayWrite(uint frame, int hashCadenceFrames, ref uint telemetryFlags)
@@ -1407,7 +1411,7 @@ namespace Hecton8.Core.Determinism
                 return false;
 
             StopReplayWriter();
-            PhysicsDeterminismSignals.ClearInputOverride();
+            CoreDeterminismSignals.ClearInputOverride();
             Volatile.Write(ref _ghostReplayActive, 0);
             EnsureGhostReplayBuffers();
             if (!TryGetVaultBuffer(BufferID.LockstepGhostReplayHeaders, MaxGhostReplayBlocks, out NativeArray<LockstepReplayBlockHeader> ghostHeaders) ||
@@ -1582,15 +1586,25 @@ namespace Hecton8.Core.Determinism
             buffer = default;
             IDataVault vault = ResolveDataVault();
             if (vault == null ||
-                !vault.TryGetBufferHandle(bufferId, out VaultBufferHandle<T> handle) ||
-                !handle.IsCreated ||
-                !IsAlignedForNativeView<T>(handle.ptr))
+                !vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) ||
+                handle.BufferID == 0u ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated)
             {
+                buffer = default;
                 return false;
             }
 
-            buffer = handle.Resolve(vault);
-            return buffer.IsCreated;
+            unsafe
+            {
+                if (!IsAlignedForNativeView<T>(buffer.GetUnsafeReadOnlyPtr()))
+                {
+                    buffer = default;
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private static bool IsAlignedForNativeView<T>(void* pointer)
@@ -1803,6 +1817,11 @@ namespace Hecton8.Core.Determinism
         private const uint FnvPrime32 = 16777619u;
         private const ulong FnvOffset64 = 14695981039346656037UL;
         private const ulong FnvPrime64 = 1099511628211UL;
+        private const float MillimeterScale = HectonPhysicsContract.DeterministicMillimeterScale;
+        private const float MaxQuantizedMillimeterFloat = HectonPhysicsContract.DeterministicMaxQuantizedMillimeterFloat;
+        private const float MinQuantizedMillimeterFloat = HectonPhysicsContract.DeterministicMinQuantizedMillimeterFloat;
+        private const int MaxQuantizedMillimeter = HectonPhysicsContract.DeterministicMaxQuantizedMillimeter;
+        private const int MinQuantizedMillimeter = HectonPhysicsContract.DeterministicMinQuantizedMillimeter;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint Fnv1A(uint hash, uint value)
@@ -1828,7 +1847,22 @@ namespace Hecton8.Core.Determinism
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint Fnv1AQuantized(uint hash, float value)
         {
-            return Fnv1A(hash, DeterministicPhysicsMath.QuantizeMillimeter(value));
+            return Fnv1A(hash, QuantizeMillimeter(value));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int QuantizeMillimeter(float value)
+        {
+            if (!(value <= float.MaxValue && value >= -float.MaxValue))
+                return 0;
+
+            float scaled = value * MillimeterScale;
+            if (scaled >= MaxQuantizedMillimeterFloat)
+                return MaxQuantizedMillimeter;
+            if (scaled <= MinQuantizedMillimeterFloat)
+                return MinQuantizedMillimeter;
+
+            return scaled >= 0f ? (int)(scaled + 0.5f) : (int)(scaled - 0.5f);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

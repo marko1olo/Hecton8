@@ -10,7 +10,6 @@ using Hecton8.Economy;
 using Hecton8.Input;
 using Hecton8.Inventory;
 using Hecton8.Items;
-using Hecton8.World;
 using Hecton.Localization;
 using TMPro;
 using Unity.Collections;
@@ -186,9 +185,6 @@ namespace Hecton8.UI
         private float _selectedHologramYawRadians;
         private float _selectedHologramCachedSize;
         private Transform _selectedHologramAnchor;
-        private Transform _selectedHologramAupAnchor;
-        private AbsoluteUniversePosition _selectedHologramAnchorAup;
-        private bool _selectedHologramAnchorAupCached;
         private int _hologramMatrixRecipeHash;
         private int _hologramMatrixLayoutVersion = int.MinValue;
         private Transform _hologramMatrixAnchor;
@@ -313,7 +309,6 @@ namespace Hecton8.UI
                 _recipeListRoot.hasChanged = true;
 
             _selectedHologramMatrixInitialized = false;
-            _selectedHologramAnchorAupCached = false;
             InvalidateHologramMatrixCache();
         }
 
@@ -955,14 +950,8 @@ namespace Hecton8.UI
 
         private float3 ResolveSelectedHologramAnchorRuntimePosition(Transform anchor)
         {
-            if (!_selectedHologramAnchorAupCached || !ReferenceEquals(_selectedHologramAupAnchor, anchor))
-            {
-                _selectedHologramAnchorAup = AbsoluteUniversePosition.FromRuntimePosition(anchor.position);
-                _selectedHologramAupAnchor = anchor;
-                _selectedHologramAnchorAupCached = true;
-            }
-
-            return _selectedHologramAnchorAup.ToRuntimeFloat3();
+            Vector3 visualPosition = anchor.position;
+            return new float3(visualPosition.x, visualPosition.y, visualPosition.z);
         }
 
         private static float4x4 BuildYRotationMatrix(float radians)

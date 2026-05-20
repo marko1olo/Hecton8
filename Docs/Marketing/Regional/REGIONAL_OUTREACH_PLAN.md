@@ -1,4 +1,4 @@
-﻿# Regional Outreach Plan
+# Regional Outreach Plan
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
 ## R4 Interior Actuality Boundary
@@ -14,7 +14,19 @@ Status: planning / no outreach without verified leads
 
 Do not machine-translate mass spam. For high-value leads, use a short localized pitch and keep the game promise simple.
 
-R19 localization boundary: all localized pitch drafts below are `LOCALIZATION_REVIEW_PENDING / DO_NOT_SEND` until a native speaker or professional reviewer approves them. Do not send raw machine-translated or mojibake text to creators.
+R19 localization boundary: all localized pitch drafts below are `LOCALIZATION_REVIEW_PENDING / DO_NOT_SEND` until a native speaker or professional reviewer approves them. Do not send raw machine-translated or mojibake text to creators. Public regional use additionally requires `localization_public_permission_gate = ALLOW_LOCALIZED_PUBLIC_USE_VERIFIED` for the exact language/surface.
+
+## Regional Send Gate V0
+
+Regional outreach cannot bypass English proof gates. Before any regional email, DM, press note, key/demo access ask, or public community post:
+
+- `localization_public_permission_gate = ALLOW_LOCALIZED_PUBLIC_USE_VERIFIED` must pass for the exact language/surface;
+- the English asset packet must pass current asset QA;
+- the localized pitch must be native/fluent reviewed and encoding-clean;
+- gameplay, pressure, route-risk, threat, salvage, base-failure, or first-public agency proof must name an AB-009/KPI source field: `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`;
+- public Steam, wishlist, demo, signup, presskit, or trailer links must pass Official CTA Link Activation Gate V0;
+- if the public CTA is not activated, use a no-link feedback ask or private access route with `verified_contact_route`, `access_route_class`, `reply_status_after_send`, `reply_consent_provenance`, and `agency_decision_field_source` where proof claims are used;
+- new regional lead verification happens only when the current CRM has a source-backed asset/route gap.
 
 ## Priority Regions
 
@@ -33,15 +45,15 @@ R19 localization boundary: all localized pitch drafts below are `LOCALIZATION_RE
 
 Subject:
 
-HECTON-8 - мрачное подводное выживание в NASA-punk стиле
+HECTON-8 - mrachnoe podvodnoe vyzhivanie v NASA-punk stile
 
 Short pitch:
 
-HECTON-8 — одиночное подводное выживание про давление, технику, поиск ресурсов и выживание в черной воде. Это не "убийца Subnautica" и не обещание кооператива. Главный крюк: база как машина, глубина как угроза, Seed Ship как аномалия, которая портит приборы, флору, фауну и саму навигацию.
+HECTON-8 - odinochnoe podvodnoe vyzhivanie pro davlenie, tekhniku, poisk resursov i chernuyu vodu. Eto ne obeshchanie kooperativa i ne popytka prodavat igru cherez sravnenie s konkurentami. Glavnyi kryuchok: baza kak mashina, glubina kak ugroza, Seed Ship kak anomalya, kotoraya portit pribory, marshruty i oshchushchenie bezopasnosti.
 
 Ask:
 
-Если визуальный стиль и демо подойдут вашему формату, могу позже прислать пресс-кит, Steam-страницу или ключ демо.
+Esli format podoidet, mozhno obsudit demo ili press-kit, kogda build, dostup, `verified_contact_route`, `access_route_class` i `reply_consent_provenance` budut gotovy. Materialy otpravlyat tolko posle Official CTA Link Activation Gate V0 dlya public-linkov ili recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED` plus exact access-log fields dlya private-route.
 
 ## German Pitch Draft
 
@@ -51,7 +63,7 @@ HECTON-8 - Deep-sea noir survival with pressure and machinery
 
 Short pitch:
 
-HECTON-8 ist ein single-player-first Unterwasser-Survival-Spiel mit NASA-punk Maschinen, schwarzem Tiefseewasser, Bergung, Drucksystemen und industrieller Isolation. Kein Co-op-Versprechen, kein "Subnautica killer" Pitch. Der Fokus liegt auf lesbaren Survival-Systemen und schwerer Technik.
+HECTON-8 ist ein single-player-first Unterwasser-Survival-Spiel mit NASA-punk Maschinen, schwarzem Tiefseewasser, Bergung, Drucksystemen und industrieller Isolation. Der Fokus bleibt single-player-first und proof-first; kein Wettbewerber-Angriff. Der Fokus liegt auf lesbaren Survival-Systemen und schwerer Technik.
 
 ## French Pitch Draft
 
@@ -61,7 +73,7 @@ HECTON-8 - survie sous-marine industrielle / deep-sea noir
 
 Short pitch:
 
-HECTON-8 est un jeu de survie sous-marine single-player-first autour de la pression, des machines, de la recuperation, de la corrosion et de l'isolation en eaux profondes. Ce n'est pas une promesse de co-op ni un pitch "Subnautica killer".
+HECTON-8 est un jeu de survie sous-marine single-player-first autour de la pression, des machines, de la recuperation, de la corrosion et de l'isolation en eaux profondes. Le positionnement reste single-player-first et fonde sur les preuves; pas d'attaque concurrentielle.
 
 ## Spanish Pitch Draft
 
@@ -71,7 +83,7 @@ HECTON-8 - supervivencia submarina industrial y terror de profundidad
 
 Short pitch:
 
-HECTON-8 es un juego de supervivencia submarina single-player-first centrado en presion, maquinaria, rescate, oscuridad y sistemas que pueden fallar. No es una promesa de cooperativo ni un "Subnautica killer".
+HECTON-8 es un juego de supervivencia submarina single-player-first centrado en presion, maquinaria, rescate, oscuridad y sistemas que pueden fallar. El enfoque se mantiene single-player-first y basado en pruebas; sin ataque a competidores.
 
 ## Portuguese/Brazil Pitch Draft
 
@@ -81,27 +93,32 @@ HECTON-8 - sobrevivencia submarina industrial em aguas escuras
 
 Short pitch:
 
-HECTON-8 e um jogo single-player-first de sobrevivencia submarina sobre pressao, maquinas, salvamento, corrosao e isolamento no fundo do mar. Nao e uma promessa de cooperativo nem um pitch de "Subnautica killer".
+HECTON-8 e um jogo single-player-first de sobrevivencia submarina sobre pressao, maquinas, salvamento, corrosao e isolamento no fundo do mar. O foco continua single-player-first e baseado em prova; sem ataque a concorrentes.
 
 ## Regional Lead Workflows
 
 For each region:
 
-1. collect 30 raw leads;
-2. verify top 10;
+1. record the source-backed asset/route gap that English CRM cannot cover;
+2. verify only the rows needed for that gap; 30 raw leads is a ceiling, not a default quota;
 3. write native or reviewed pitch;
 4. prepare one localized one-page PDF/Markdown;
-5. do not translate technical claims unless proven;
-6. track replies separately from English outreach.
+5. do not translate gameplay, pressure, route-risk, threat, salvage, or base-failure claims unless AB-009/KPI field source exists;
+6. route public CTA through Official CTA Link Activation Gate V0 or use a no-link/private-access fallback;
+7. track `send_route_class` for sends, exact private access-log fields if private, and `reply_consent_provenance` separately from English outreach.
 
 ## Regional One-Pager Fields
 
 - Title.
 - One-sentence pitch.
 - What exists now.
-- What does not exist / no co-op promise.
+- Proof boundaries / unsupported scope.
 - Screenshots.
-- Steam link.
+- Steam link only after Official CTA Link Activation Gate V0.
 - Demo status.
+- CTA activation packet or no-link route.
+- AB-009/KPI agency field source: `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`.
+- `send_route_class` for sends, or exact private access-log fields if private.
+- `reply_consent_provenance`.
 - Contact.
-- Disclosure/key policy.
+- Disclosure/private access policy.

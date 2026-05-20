@@ -6,7 +6,7 @@ using Unity.Mathematics;
 
 namespace Hecton8.Construction
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential)]
     internal struct HabitatDirtyRegionResult
     {
         public int NodeCount;
@@ -18,7 +18,7 @@ namespace Hecton8.Construction
         public int QueueOverflow;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential)]
     internal struct HabitatFloodPropagationSummary
     {
         public int ProcessedNodeCount;

@@ -4,7 +4,6 @@ using System.Runtime.CompilerServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
-using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -136,7 +135,7 @@ namespace Hecton8.Physiology
 
         private void OnDisable()
         {
-            CompleteFrameJob(forceComplete: true);
+            CompleteFrameJobForTeardown();
             TryUnregisterTicks();
             TryUnregisterHotSwapListener();
             UnlockJobBuffers();
@@ -150,7 +149,7 @@ namespace Hecton8.Physiology
         {
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
-                CompleteFrameJob(forceComplete: true);
+                CompleteFrameJobForTeardown();
                 UnlockJobBuffers();
                 _dataVault = currentService as IDataVault;
                 ClearCachedHandles();
@@ -297,7 +296,7 @@ namespace Hecton8.Physiology
 
         public void LateFrameTick()
         {
-            CompleteFrameJob(forceComplete: false);
+            TryFinalizeFrameJobNoWait();
         }
 
         /// <summary>
@@ -372,15 +371,17 @@ namespace Hecton8.Physiology
             if (!samples.IsCreated || samples.Length <= 0)
                 return false;
 
-            JobHandle handle = new MockDiveProfileJob
+            MockDiveProfileJob job = new MockDiveProfileJob
             {
                 Samples = samples,
                 SampleStepSeconds = 10f,
                 Frame = _simulationFrameCounter,
                 Count = samples.Length
-            }.Schedule(samples.Length, ShinobuPhysiologyConstants.FrameJobBatchSize);
+            };
             // COLD SYNC JOB: explicit smoke-test profile generation, not part of the frame simulation chain.
-            handle.Complete();
+            for (int i = 0; i < samples.Length; i++)
+                job.Execute(i);
+
             return true;
         }
 
@@ -653,14 +654,15 @@ namespace Hecton8.Physiology
 
             if (tissues.IsCreated && tissues.Length > 0)
             {
-                JobHandle initHandle = new InitTissueCompartmentsJob
+                InitTissueCompartmentsJob initJob = new InitTissueCompartmentsJob
                 {
                     TissueCompartments = tissues,
                     TissueCoefficients = coefficients,
                     EntityCapacity = count
-                }.Schedule(tissues.Length, ShinobuPhysiologyConstants.FrameJobBatchSize);
+                };
                 // COLD SYNC JOB: boot-time Vault initialization fence, never a gameplay tick dependency.
-                initHandle.Complete();
+                for (int i = 0; i < tissues.Length; i++)
+                    initJob.Execute(i);
             }
 
             _defaultsInitialized = true;
@@ -737,13 +739,25 @@ namespace Hecton8.Physiology
             IPlayerRuntimeContext player = _playerContext;
             if (player != null && player.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
             {
-                double3 playerAup = ToDouble3(snapshot.Aup);
-                double3 seaLevelAup = new double3(playerAup.x, seaLevelAupY, playerAup.z);
-                double depth = ResolveDepthMetersFromAup(playerAup, seaLevelAup);
-                if (math.isfinite(depth))
+                var snapshotAup = snapshot.Aup;
+                if (math.isfinite(snapshotAup.LocalX) &&
+                    math.isfinite(snapshotAup.LocalY) &&
+                    math.isfinite(snapshotAup.LocalZ))
                 {
-                    depthMeters = (float)math.clamp(depth, 0d, 12000d);
-                    _playerDepthValid = true;
+                    double3 playerAup = snapshotAup.ToAbsoluteDouble3();
+                    if (math.all(math.isfinite(playerAup)))
+                    {
+                        double3 seaLevelAup = default;
+                        seaLevelAup.x = playerAup.x;
+                        seaLevelAup.y = seaLevelAupY;
+                        seaLevelAup.z = playerAup.z;
+                        double depth = ResolveDepthMetersFromAup(playerAup, seaLevelAup);
+                        if (math.isfinite(depth))
+                        {
+                            depthMeters = (float)math.clamp(depth, 0d, 12000d);
+                            _playerDepthValid = true;
+                        }
+                    }
                 }
             }
 
@@ -824,15 +838,6 @@ namespace Hecton8.Physiology
             return true;
         }
 
-        private static double3 ToDouble3(in AbsoluteUniversePosition aup)
-        {
-            double cell = AbsoluteUniversePosition.CellSizeMeters;
-            return new double3(
-                (double)aup.GridX * cell + aup.LocalX,
-                (double)aup.GridY * cell + aup.LocalY,
-                (double)aup.GridZ * cell + aup.LocalZ);
-        }
-
         private static double ResolveDepthMetersFromAup(double3 playerAup, double3 seaLevelAup)
         {
             double3 delta = seaLevelAup - playerAup;
@@ -867,17 +872,34 @@ namespace Hecton8.Physiology
             return math.saturate(HomeostasisBrain.SystemHealthIndex01);
         }
 
-        private void CompleteFrameJob(bool forceComplete)
+        private void TryFinalizeFrameJobNoWait()
         {
             if (!_jobScheduled)
                 return;
 
-            if (!forceComplete && !_activeJobHandle.IsCompleted)
+            if (!_activeJobHandle.IsCompleted)
                 return;
 
-            _activeJobHandle.Complete();
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _activeJobHandle))
+                return;
+
+            FinishFrameJobCompletion();
+        }
+
+        private void CompleteFrameJobForTeardown()
+        {
+            if (!_jobScheduled)
+                return;
+
+            if (!DispatcherJobFence.TryComplete(ref _activeJobHandle, forceComplete: true))
+                return;
+
+            FinishFrameJobCompletion();
+        }
+
+        private void FinishFrameJobCompletion()
+        {
             float elapsedMicroseconds = ResolveElapsedMicroseconds(_jobScheduleTimestamp, Stopwatch.GetTimestamp());
-            _activeJobHandle = default;
             _jobScheduled = false;
             UnlockJobBuffers();
 
@@ -936,17 +958,15 @@ namespace Hecton8.Physiology
             if ((export.StatusMask & ShinobuPhysiologyFlags.FatalOxygen) != 0u)
                 flags |= SurvivalVitalsChangedSignalFlags.Death;
 
-            SurvivalVitalsChangedSignal signal = new SurvivalVitalsChangedSignal
-            {
-                SourceId = ShinobuPhysiologyConstants.SourceHash,
-                Frame = _simulationFrameCounter,
-                Sequence = unchecked((uint)_telemetryCursor),
-                Flags = flags,
-                Oxygen01 = math.saturate(export.BloodOxygen),
-                Energy01 = 1f,
-                Integrity01 = (export.StatusMask & ShinobuPhysiologyFlags.Bends) != 0u ? 0.65f : 1f,
-                DeathCause = (byte)(((export.StatusMask & ShinobuPhysiologyFlags.FatalOxygen) != 0u) ? 1 : 0)
-            };
+            SurvivalVitalsChangedSignal signal = default;
+            signal.SourceId = ShinobuPhysiologyConstants.SourceHash;
+            signal.Frame = _simulationFrameCounter;
+            signal.Sequence = unchecked((uint)_telemetryCursor);
+            signal.Flags = flags;
+            signal.Oxygen01 = math.saturate(export.BloodOxygen);
+            signal.Energy01 = 1f;
+            signal.Integrity01 = (export.StatusMask & ShinobuPhysiologyFlags.Bends) != 0u ? 0.65f : 1f;
+            signal.DeathCause = (byte)(((export.StatusMask & ShinobuPhysiologyFlags.FatalOxygen) != 0u) ? 1 : 0);
             GlobalSignals.Publish(in signal);
         }
 
@@ -962,12 +982,12 @@ namespace Hecton8.Physiology
             if (environment.IsCreated && environment.Length > 0)
                 ambient = math.max(0f, environment[0].AmbientPressureAtm);
 
-            HectonShaderGlobalDataVaultBridge.PublishPhysiologyDecompression(
-                new Vector4(
-                    math.saturate(scalar.BendsRisk),
-                    math.saturate(scalar.NarcosisSeverity),
-                    ambient,
-                    ResolveGlobalQualityWeight()));
+            Vector4 payload = default;
+            payload.x = math.saturate(scalar.BendsRisk);
+            payload.y = math.saturate(scalar.NarcosisSeverity);
+            payload.z = ambient;
+            payload.w = ResolveGlobalQualityWeight();
+            HectonShaderGlobalDataVaultBridge.PublishPhysiologyDecompression(payload);
         }
 
         private void TryDumpAutopsyIfFatal(IDataVault vault)

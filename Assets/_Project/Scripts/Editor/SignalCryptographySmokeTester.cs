@@ -189,7 +189,7 @@ namespace Hecton8.Editor
             string unregisterMissBody = ExtractMethodBody(atlasSignalEvents, "private static void ReportUnregisterMiss()");
             string decodedCollisionBody = ExtractMethodBody(atlasSignalEvents, "private static void ReportDecodedMessageHashCollision(uint messageHash)");
 
-            AssertContains(atlasSignalEvents, "[StructLayout(LayoutKind.Sequential)]", "Atlas signal event payload has sequential layout", report, ref failureCount);
+            AssertContains(atlasSignalEvents, "[StructLayout(LayoutKind.Explicit, Size = 32)]", "Atlas signal event payload has explicit 32-byte layout", report, ref failureCount);
             AssertContains(atlasSignalEvents, "NativeQueue<AtlasSignalEventPayload>", "Atlas signal events use NativeQueue payload lanes", report, ref failureCount);
             AssertContains(ensureBody, "PrewarmQueue(ref _pendingEvents, PendingEventCapacity)", "Atlas signal front queue is cold-prewarmed before gameplay enqueue", report, ref failureCount);
             AssertContains(ensureBody, "PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity)", "Atlas signal reentrant queue is cold-prewarmed before gameplay enqueue", report, ref failureCount);
@@ -446,7 +446,7 @@ namespace Hecton8.Editor
             string biomeOverflowBody = ExtractMethodBody(biomeMatrixDirector, "private static void ReportQueueOverflow(byte eventType)");
             string profileOverflowBody = ExtractMethodBody(biomeMatrixDirector, "private static void ReportProfileSlotOverflow()");
 
-            AssertContains(biomeMatrixDirector, "[StructLayout(LayoutKind.Sequential)]", "Biome matrix event payload has sequential layout", report, ref failureCount);
+            AssertContains(biomeMatrixDirector, "[StructLayout(LayoutKind.Explicit, Size = 16)]", "Biome matrix event payload has explicit 16-byte layout", report, ref failureCount);
             AssertContains(biomeMatrixDirector, "public static int DroppedEventCount => _droppedEventCount", "Biome matrix events expose dropped-event counter", report, ref failureCount);
             AssertContains(biomeMatrixDirector, "public static int DroppedProfileSlotCount => _droppedProfileSlotCount", "Biome matrix events expose profile-slot exhaustion counter", report, ref failureCount);
             AssertContains(raiseMatrixBody, "ReportQueueOverflow(MatrixBiomeChangedEventType)", "Biome matrix biome-change queue overflow preserves event-type context", report, ref failureCount);

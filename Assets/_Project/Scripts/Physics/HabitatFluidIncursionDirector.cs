@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Diagnostics;
 using Hecton8.Core;
@@ -258,7 +259,9 @@ namespace Hecton8.Physics
             if (!_hasScheduled)
                 return;
 
-            CompleteScheduledSimulation();
+            if (!TryFinalizeScheduledSimulation())
+                return;
+
             uint solverWallMicroseconds = ResolveElapsedMicroseconds(_simulationScheduleTimestamp);
             UnlockJobBuffers();
             _frontIsA = !_frontIsA;
@@ -412,12 +415,14 @@ namespace Hecton8.Physics
                 IngressRateM3PerSecond = math.max(0f, ingressRateM3PerSecond)
             };
             // COLD SYNC JOB: explicit damage-control/profiling breach injection outside fixed solver cadence.
-            breachFront.Schedule().Complete();
+            JobHandle breachFrontHandle = breachFront.Schedule();
+            DispatcherJobFence.TryComplete(ref breachFrontHandle, forceComplete: true);
 
             MockHullBreachJob breachBack = breachFront;
             breachBack.Compartments = (FluidCompartmentDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(back);
             // COLD SYNC JOB: mirror seed preserves deterministic double-buffer state.
-            breachBack.Schedule().Complete();
+            JobHandle breachBackHandle = breachBack.Schedule();
+            DispatcherJobFence.TryComplete(ref breachBackHandle, forceComplete: true);
             _waterlineUploadDirty = true;
             return true;
         }
@@ -427,7 +432,9 @@ namespace Hecton8.Physics
             if (_cachedTransform == null)
                 _cachedTransform = transform;
 
-            _vault = GlobalRegistry.DataVault;
+            if (_vault == null && GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latestVault))
+                _vault = latestVault;
+
             if (_vault == null)
                 return false;
 
@@ -488,12 +495,14 @@ namespace Hecton8.Physics
                 ActiveCount = safeCount
             };
             // COLD SYNC JOB: boot-only explicit initialization of uninitialized Vault memory.
-            clearFront.Schedule(safeCount, 32).Complete();
+            JobHandle clearFrontHandle = clearFront.Schedule(safeCount, 32);
+            DispatcherJobFence.TryComplete(ref clearFrontHandle, forceComplete: true);
 
             FluidCompartmentClearJob clearBack = clearFront;
             clearBack.Compartments = backPtr;
             // COLD SYNC JOB: boot-only mirror clear for deterministic double-buffer start state.
-            clearBack.Schedule(safeCount, 32).Complete();
+            JobHandle clearBackHandle = clearBack.Schedule(safeCount, 32);
+            DispatcherJobFence.TryComplete(ref clearBackHandle, forceComplete: true);
 
             BuildDefaultLineTopology(safeCount);
             InitializeTuningBuffer(safeCount);
@@ -526,11 +535,13 @@ namespace Hecton8.Physics
                     IngressRateM3PerSecond = HabitatFluidIncursionConstants.DefaultIngressRateM3PerSecond
                 };
                 // COLD SYNC JOB: isolated profile breach seed before runtime ticks start.
-                breachFront.Schedule().Complete();
+                JobHandle breachFrontHandle = breachFront.Schedule();
+                DispatcherJobFence.TryComplete(ref breachFrontHandle, forceComplete: true);
                 MockHullBreachJob breachBack = breachFront;
                 breachBack.Compartments = backPtr;
                 // COLD SYNC JOB: mirror seed keeps both buffers identical at frame zero.
-                breachBack.Schedule().Complete();
+                JobHandle breachBackHandle = breachBack.Schedule();
+                DispatcherJobFence.TryComplete(ref breachBackHandle, forceComplete: true);
             }
         }
 
@@ -716,8 +727,22 @@ namespace Hecton8.Physics
             if (!_hasScheduled)
                 return;
 
-            _simulationHandle.Complete();
+            if (!DispatcherJobFence.TryComplete(ref _simulationHandle, forceComplete: true))
+                return;
+
             _hasScheduled = false;
+        }
+
+        private bool TryFinalizeScheduledSimulation()
+        {
+            if (!_hasScheduled)
+                return true;
+
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _simulationHandle))
+                return false;
+
+            _hasScheduled = false;
+            return true;
         }
 
         private bool TryLockJobBuffers()
@@ -916,13 +941,11 @@ namespace Hecton8.Physics
             Directory.CreateDirectory("Docs/AgentLogs");
             int bytes = math.min(telemetry.Length, HabitatFluidIncursionConstants.TelemetryFrameCount) *
                         UnsafeUtility.SizeOf<FluidIncursionTelemetryEntry>();
-            byte[] managed = new byte[bytes];
-            fixed (byte* destination = managed)
+            byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
+            using (FileStream stream = new FileStream(DumpPath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
             {
-                void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                UnsafeUtility.MemCpy(destination, source, bytes);
+                stream.Write(new ReadOnlySpan<byte>(source, bytes));
             }
-            File.WriteAllBytes(DumpPath, managed);
         }
 
         private void OnDrawGizmos()

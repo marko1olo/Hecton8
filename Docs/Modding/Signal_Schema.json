@@ -210,11 +210,11 @@
     {
       "surface": "HectonAPI.Localization",
       "methods": [
-        "InjectTable"
+        "InjectBabelEnvelope"
       ],
-      "access": "cold_runtime_localization_overlay",
-      "hotPathRisk": "Dictionary<string,string> allowed only outside event hot paths",
-      "notes": "Requires active ModExecutionScope."
+      "access": "rejected_binary_babel_envelope_seam",
+      "hotPathRisk": "runtime Dictionary<string,string> localization injection is disabled",
+      "notes": "Throws until modded Babel binary/hash envelopes are supported."
     },
     {
       "surface": "HectonAPI.UI",
@@ -538,7 +538,7 @@
       "RegisterBuildable",
       "TryFindBuildable",
       "RegisterBiomeMutation",
-      "InjectTable",
+      "InjectBabelEnvelope",
       "ShowInfo",
       "ShowWarning",
       "ShowCritical",

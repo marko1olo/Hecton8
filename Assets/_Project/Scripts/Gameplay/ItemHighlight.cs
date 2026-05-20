@@ -21,8 +21,9 @@
 //   â€¢ No string operations in Tick
 // ============================================================================
 
-using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Scavenging;
+using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -72,8 +73,7 @@ namespace Hecton8.Gameplay
         //  CACHED STATE
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        private Transform _playerTransform;
-        private Transform _cachedTransform;
+        private ResourceNode _resourceNode;
         private MaterialPropertyBlock _mpb;
         private bool _isHighlighted;
         private float _currentIntensity;
@@ -106,7 +106,7 @@ namespace Hecton8.Gameplay
         {
             // COLD ALLOC: MaterialPropertyBlock[1] â€” per-object highlight props â€” owner: self
             _mpb = new MaterialPropertyBlock();
-            _cachedTransform = transform;
+            _resourceNode = GetComponent<ResourceNode>();
 
             if (targetRenderer == null)
                 targetRenderer = GetComponent<Renderer>();
@@ -123,14 +123,12 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
-            TryFindPlayer();
             TryRegisterTick();
         }
 
         private void OnDisable()
         {
             TryUnregisterTick();
-            _playerTransform = null;
 
             // Reset highlight on disable
             if (targetRenderer != null && _mpb != null)
@@ -151,15 +149,14 @@ namespace Hecton8.Gameplay
             if (targetRenderer == null) return;
 
             // â”€â”€ Find player if not cached â”€â”€
-            if (_playerTransform == null)
+            if (!TryResolveHighlightDistanceSq(out float sqrDist))
             {
-                TryFindPlayer();
-                if (_playerTransform == null) return;
+                _targetIntensity = 0f;
+                ApplyHighlightProperties();
+                return;
             }
 
             // â”€â”€ Calculate distance to player â”€â”€
-            float sqrDist = (_cachedTransform.position - _playerTransform.position).sqrMagnitude;
-
             // â”€â”€ Determine target intensity â”€â”€
             if (sqrDist <= _fullIntensitySqrDist)
             {
@@ -218,16 +215,6 @@ namespace Hecton8.Gameplay
             targetRenderer.SetPropertyBlock(_mpb);
         }
 
-        private void TryFindPlayer()
-        {
-            if (_playerTransform != null) return;
-
-            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform player))
-            {
-                _playerTransform = player;
-            }
-        }
-
         private void TryRegisterTick()
         {
             if (_tickRegistered) return;
@@ -274,6 +261,63 @@ namespace Hecton8.Gameplay
         /// Whether the item is currently being highlighted.
         /// </summary>
         public bool IsHighlighted => _currentIntensity > 0.1f;
+
+        private bool TryResolveHighlightDistanceSq(out float sqrDist)
+        {
+            sqrDist = float.MaxValue;
+            if (!TryResolveItemAup(out AbsoluteUniversePosition itemAup) ||
+                !TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
+            {
+                return false;
+            }
+
+            double distanceSq = AbsoluteUniversePosition.DistanceSq(in itemAup, in playerAup);
+            if (!(distanceSq >= 0d))
+                return false;
+
+            const double MaxFloatAsDouble = 3.4028234663852886e38d;
+            sqrDist = distanceSq > MaxFloatAsDouble ? float.MaxValue : (float)distanceSq;
+            return true;
+        }
+
+        private bool TryResolveItemAup(out AbsoluteUniversePosition itemAup)
+        {
+            if (_resourceNode != null &&
+                _resourceNode.TryGetPersistentAup(out itemAup) &&
+                MathGuard.IsFinite(in itemAup))
+            {
+                return true;
+            }
+
+            itemAup = default;
+            return false;
+        }
+
+        private static bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
+        {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null &&
+                playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                MathGuard.IsFinite(in snapshot.Aup))
+            {
+                playerAup = snapshot.Aup;
+                return true;
+            }
+
+            var playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
+            if (playerMovement != null)
+            {
+                AbsoluteUniversePosition currentAup = playerMovement.CurrentAup;
+                if (MathGuard.IsFinite(in currentAup))
+                {
+                    playerAup = currentAup;
+                    return true;
+                }
+            }
+
+            playerAup = default;
+            return false;
+        }
 
         private static float EvaluateSignedTriangle(float phase)
         {

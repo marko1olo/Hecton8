@@ -27,7 +27,7 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-10000)]
-    public sealed class HectonFloatingOrigin : MonoBehaviour, ITickable, IUpdatable, IServiceHeartbeat, IServiceShutdown
+    public sealed class HectonFloatingOrigin : MonoBehaviour, ITickable, IUpdatable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct OriginShiftTranslateJob : IJobParallelForTransform
@@ -114,6 +114,7 @@ namespace Hecton8.Core
         private Transform[] _shiftTargetArray = Array.Empty<Transform>();
         private bool _shiftTargetsDirty = true;
         private bool _isRegistered;
+        private bool _hotSwapListenerRegistered;
         private bool _sceneEventsSubscribed;
         private bool _isShiftInProgress;
         private bool _hasPendingShift;
@@ -541,6 +542,7 @@ namespace Hecton8.Core
 
             GlobalRegistry.RegisterFloatingOriginRuntime(this);
             _dataVault = GlobalRegistry.DataVault;
+            TryRegisterHotSwapListener();
             RefreshThresholdCache();
             AupOriginShiftCoordinator.GenerateEmergencyMockThresholds(_dataVault);
             TryResolveAnchor(force: true);
@@ -551,6 +553,7 @@ namespace Hecton8.Core
 
         private void OnEnable()
         {
+            TryRegisterHotSwapListener();
             TryRegister();
             MarkShiftTargetsDirty();
             TryPrepareShiftTargets();
@@ -559,6 +562,7 @@ namespace Hecton8.Core
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterHotSwapListener();
         }
 
         private void OnDestroy()
@@ -571,10 +575,30 @@ namespace Hecton8.Core
             ShutdownServiceState();
         }
 
+        /// <inheritdoc />
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
+                return;
+
+            _dataVault = currentService as IDataVault;
+            if (_dataVault == null)
+                return;
+
+            RefreshThresholdCache();
+            AupOriginShiftCoordinator.GenerateEmergencyMockThresholds(_dataVault);
+            EnsureDriftCheckBuffers();
+            PublishGlobalOffsets();
+        }
+
         private void ShutdownServiceState()
         {
             ReleaseSceneRebaseTickLock();
             TryUnregister();
+            TryUnregisterHotSwapListener();
             UnsubscribeSceneEvents();
             DisposeShiftTargetAccessArray();
             DisposeDriftCheckState();
@@ -600,6 +624,7 @@ namespace Hecton8.Core
                 GlobalRegistry.RegisterFloatingOriginRuntime(this);
 
             _dataVault = GlobalRegistry.DataVault;
+            TryRegisterHotSwapListener();
             RefreshThresholdCache();
             AupOriginShiftCoordinator.GenerateEmergencyMockThresholds(_dataVault);
             TryResolveAnchor(force: true);
@@ -648,8 +673,9 @@ namespace Hecton8.Core
 
             Vector3 anchorRuntimePosition = Vector3.zero;
             bool hasAnchorRuntimePosition = _anchor != null && TryGetTransformWorldPosition(_anchor, out anchorRuntimePosition);
+            IDataVault vault = _dataVault;
             if (AupOriginShiftCoordinator.TickPreSimulation(
-                    _dataVault ?? GlobalRegistry.DataVault,
+                    vault,
                     deltaTime,
                     hasAnchorRuntimePosition,
                     anchorRuntimePosition,
@@ -790,7 +816,7 @@ namespace Hecton8.Core
             try
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+                IDataVault vault = _dataVault;
                 if (vault != null)
                 {
                     AupOriginShiftCoordinator.EnsureRuntimeState(vault, out _);
@@ -798,7 +824,6 @@ namespace Hecton8.Core
                     vaultAllocationLockActive = true;
                 }
 
-                GlobalSignals.FlushPreSimulation();
                 PhysicsApplySystem.PrepareTrackedBodiesForOriginShift();
                 trackedBodiesPrepared = true;
 
@@ -893,7 +918,7 @@ namespace Hecton8.Core
 
                 if (vaultAllocationLockActive)
                 {
-                    IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+                    IDataVault vault = _dataVault;
                     vault?.UnlockAllocationsAfterAupShift(nextShiftSequence);
                 }
 
@@ -1582,11 +1607,10 @@ namespace Hecton8.Core
             runtimePositions = default;
             absolutePositions = default;
             invalidMask = default;
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
-            _dataVault = vault;
             if (!_driftCheckRuntimePositionsHandle.IsCreated ||
                 _driftCheckRuntimePositionsHandle.Length < DriftCheckEntityCapacity)
             {
@@ -1628,7 +1652,7 @@ namespace Hecton8.Core
             runtimePositions = default;
             absolutePositions = default;
             invalidMask = default;
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null ||
                 !_driftCheckRuntimePositionsHandle.IsCreated ||
                 !_driftCheckAbsolutePositionsHandle.IsCreated ||
@@ -1637,7 +1661,6 @@ namespace Hecton8.Core
                 return false;
             }
 
-            _dataVault = vault;
             runtimePositions = _driftCheckRuntimePositionsHandle.Resolve(vault);
             absolutePositions = _driftCheckAbsolutePositionsHandle.Resolve(vault);
             invalidMask = _driftCheckInvalidMaskHandle.Resolve(vault);
@@ -1836,6 +1859,23 @@ namespace Hecton8.Core
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
             _isRegistered = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         private void SubscribeSceneEvents()

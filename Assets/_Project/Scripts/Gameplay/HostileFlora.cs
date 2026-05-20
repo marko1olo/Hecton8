@@ -3,25 +3,24 @@
 // Stationary turret plant (Tiger Plant equivalent) that shoots at the player.
 //
 // ARCHITECTURE:
-//   • Standalone prop — uses ISlowTickable via GameTickManager (no Update).
+//   • Standalone prop — uses ISlowTickable via Core registry dispatcher (no Update).
 //   • Distance-based aggro detection.
 //   • Smooth rotation towards target using Quaternion.Slerp.
-//   • Cooldown-based projectile spawning.
+//   • Cooldown-based mathematical trajectory queueing.
 //
 // ZERO GC:
-//   • ISlowTickable.SlowTick() — called ~2x per second, no per-frame allocations.
+//   • ISlowTickable.SlowTick() — dispatcher slow lane, no per-frame allocations.
 //   • Cached Transform, aiming bone.
-//   • CompareTag for player detection.
-//   • Pre-cached player reference via tag.
+//   • Core registry player lookup.
+//   • Core registry player reference.
 //
 // USAGE:
 //   1. Place on plant GameObject with visual mesh.
 //   2. Assign aimingBone Transform (the part that rotates to face player).
-//   3. Assign projectilePrefab (must have FloraProjectile component).
+//   3. Assign muzzlePoint and aimingBone.
 //   4. Configure aggro radius and shoot cooldown.
 // ============================================================================
 
-using Hecton8.Audio;
 using Hecton8.Core;
 using Unity.Mathematics;
 using UnityEngine;
@@ -35,12 +34,12 @@ namespace Hecton8.Gameplay
     {
         Idle,       // No target, waiting
         Tracking,   // Target in range, rotating to face
-        Shooting,   // Firing projectile
+        Shooting,   // Queueing mathematical shot
         Cooldown    // Waiting for next shot
     }
 
     /// <summary>
-    /// Stationary hostile plant that shoots projectiles at nearby players.
+    /// Stationary hostile plant that queues mathematical shots at nearby players.
     /// Subnautica Tiger Plant equivalent.
     /// </summary>
     [DisallowMultipleComponent]
@@ -56,9 +55,6 @@ namespace Hecton8.Gameplay
 
         [Tooltip("Minimum distance to maintain (won't shoot if too close).")]
         [SerializeField, Range(0f, 5f)] private float minDistance = 1f;
-
-        [Tooltip("Layer mask for player detection.")]
-        [SerializeField] private LayerMask playerLayerMask;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — AIMING
@@ -79,16 +75,16 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         [Header("── Shooting ────────────────────────────────────")]
-        [Tooltip("Legacy visual projectile prefab. Fast combat shots are queued into BallisticsRuntime instead of spawned.")]
+        [Tooltip("Legacy visual shell reference retained for prefab compatibility. Combat authority ignores this field.")]
         [SerializeField] private GameObject projectilePrefab;
 
-        [Tooltip("Transform where projectiles spawn.")]
+        [Tooltip("Transform used as the ballistic muzzle origin.")]
         [SerializeField] private Transform muzzlePoint;
 
         [Tooltip("Time between shots in seconds.")]
         [SerializeField, Range(0.5f, 10f)] private float shootCooldown = 2f;
 
-        [Tooltip("Initial speed of spawned projectile.")]
+        [Tooltip("Authored ballistic shot speed.")]
         [SerializeField, Range(1f, 30f)] private float projectileSpeed = 10f;
 
         [Tooltip("Inaccuracy in degrees (random spread).")]
@@ -113,14 +109,14 @@ namespace Hecton8.Gameplay
         private Transform _playerTarget;
         private FloraState _state = FloraState.Idle;
         private float _cooldownTimer;
+        private uint _sourceEntityId;
         private uint _shotSeed;
-        private uint _shotOrdinal;
         private bool _isRegistered;
         private bool _playerFound;
 
-        // Pre-cached player tag
-        private const string PlayerTag = "Player";
         private const float FacingDotThresholdSq = 0.81f; // 0.9^2, avoids normalizing target vector.
+        private const float NominalSlowTickSeconds = 0.1f;
+        private const double SectorHashInvMeters = 0.001;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC ACCESSORS
@@ -139,7 +135,8 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             _transform = transform;
-            _shotSeed = MixHash(unchecked((uint)EntityId.ToULong(GetEntityId())) ^ 0x48464C52u);
+            _sourceEntityId = GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId()));
+            _shotSeed = MixHash(_sourceEntityId ^ 0x48464C52u);
 
             // Use self as muzzle if not assigned
             if (muzzlePoint == null)
@@ -153,11 +150,6 @@ namespace Hecton8.Gameplay
                 aimingBone = _transform;
             }
 
-            // Set default layer mask if not assigned
-            if (playerLayerMask == 0)
-            {
-                playerLayerMask = HectonLayerMasks.PlayerLayerMask;
-            }
         }
 
         private void OnEnable()
@@ -182,15 +174,15 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Called by GameTickManager ~2x per second.
-        /// Handles target detection, aiming, and shooting.
+        /// Called by the dispatcher slow lane.
+        /// Handles target detection, aiming, and mathematical shot queueing.
         /// </summary>
         public void SlowTick()
         {
             // Update cooldown
             if (_cooldownTimer > 0f)
             {
-                _cooldownTimer -= 0.5f; // Approximate slow tick interval
+                _cooldownTimer = math.max(0f, _cooldownTimer - NominalSlowTickSeconds);
             }
 
             // Find or update player target
@@ -225,7 +217,8 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            Hecton8.World.WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _playerTarget);
+            IPlayerRuntimeContext player = GlobalRegistry.Player;
+            _playerTarget = player != null && player.IsInitialized ? player.PlayerTransform : null;
             _playerFound = _playerTarget != null;
         }
 
@@ -297,7 +290,7 @@ namespace Hecton8.Gameplay
             if (flatDirection.sqrMagnitude < 0.01f) return;
 
             float pitch = Vector3.SignedAngle(flatDirection, direction, Vector3.right);
-            pitch = Mathf.Clamp(pitch, -maxPitchAngle, maxPitchAngle);
+            pitch = math.clamp(pitch, -maxPitchAngle, maxPitchAngle);
 
             // Calculate target rotation
             Quaternion yawRotation = Quaternion.LookRotation(flatDirection, Vector3.up);
@@ -305,7 +298,10 @@ namespace Hecton8.Gameplay
             Quaternion targetRotation = yawRotation * pitchRotation;
 
             // Smooth rotation
-            aimingBone.rotation = Quaternion.Slerp(aimingBone.rotation, targetRotation, rotationSpeed * 0.5f);
+            aimingBone.rotation = Quaternion.Slerp(
+                aimingBone.rotation,
+                targetRotation,
+                math.saturate(rotationSpeed * NominalSlowTickSeconds));
         }
 
         private bool IsFacingTarget()
@@ -335,7 +331,7 @@ namespace Hecton8.Gameplay
             Vector3 spawnPos = muzzle.position;
             Quaternion spawnRot = muzzle.rotation;
 
-            float randomAngle = ResolveShotSpreadAngle();
+            float randomAngle = ResolveShotSpreadAngle(spawnPos);
             spawnRot = Quaternion.AngleAxis(randomAngle, Vector3.up) * spawnRot;
 
             Vector3 projectileVelocity = ResolveSafeProjectileVelocity(spawnRot, projectileSpeed);
@@ -344,7 +340,7 @@ namespace Hecton8.Gameplay
                 projectileVelocity,
                 BallisticsRuntime.FloraSpikeMassKg,
                 BallisticWeaponHashes.FloraSpike,
-                _shotSeed,
+                _sourceEntityId,
                 BallisticTrajectoryFlags.HostileFlora);
 
             // Play shoot sound
@@ -412,19 +408,40 @@ namespace Hecton8.Gameplay
             return IsFinite(velocity) ? velocity : Vector3.zero;
         }
 
-        private float ResolveShotSpreadAngle()
+        private float ResolveShotSpreadAngle(Vector3 spawnPos)
         {
             float authoredSpread = math.max(0f, inaccuracy);
             if (authoredSpread <= 0f)
                 return 0f;
 
-            uint value = _shotSeed + (_shotOrdinal++ * 0x9E3779B9u);
-            return ((HashToUnit01(value) * 2f) - 1f) * authoredSpread;
+            uint sectorHash = ResolveSectorHash(spawnPos);
+            uint frameCounter = BallisticsRuntime.ResolveNextSimulationFrameCounter();
+            Unity.Mathematics.Random rng = CreateDeterministicShotRandom(sectorHash, frameCounter, _shotSeed);
+            return rng.NextFloat(-authoredSpread, authoredSpread);
         }
 
-        private static float HashToUnit01(uint value)
+        private static Unity.Mathematics.Random CreateDeterministicShotRandom(uint sectorHash, uint simulationFrameCounter, uint salt)
         {
-            return (MixHash(value) & 0x00FFFFFFu) * (1f / 16777215f);
+            uint seed = MixHash(sectorHash ^ 0xB5297A4Du);
+            seed = MixHash(seed ^ simulationFrameCounter);
+            seed = MixHash(seed ^ salt);
+            return new Unity.Mathematics.Random(seed == 0u ? 1u : seed);
+        }
+
+        private static uint ResolveSectorHash(Vector3 worldPosition)
+        {
+            double3 aup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPosition);
+            if (!math.all(math.isfinite(aup)))
+                return 1u;
+
+            int sectorX = (int)math.floor(aup.x * SectorHashInvMeters);
+            int sectorY = (int)math.floor(aup.y * SectorHashInvMeters);
+            int sectorZ = (int)math.floor(aup.z * SectorHashInvMeters);
+
+            uint hash = MixHash(unchecked((uint)sectorX) ^ 0x8DA6B343u);
+            hash = MixHash(hash ^ unchecked((uint)sectorY) ^ 0xD8163841u);
+            hash = MixHash(hash ^ unchecked((uint)sectorZ) ^ 0xCB1AB31Fu);
+            return hash == 0u ? 1u : hash;
         }
 
         private static uint MixHash(uint value)

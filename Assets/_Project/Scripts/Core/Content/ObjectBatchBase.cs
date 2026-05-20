@@ -6,25 +6,28 @@ using UnityEngine.Rendering;
 namespace Hecton8.Core.Content
 {
     [Serializable]
-    [StructLayout(LayoutKind.Sequential, Size = 80)]
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
     public struct ObjectBatchInstance
     {
-        public Matrix4x4 LocalToWorld;
-        public uint AssetHash;
-        public uint Flags;
-        public int MeshIndex;
-        public int MaterialIndex;
+        [FieldOffset(0)] public Matrix4x4 LocalToWorld;
+        [FieldOffset(64)] public uint AssetHash;
+        [FieldOffset(68)] public uint Flags;
+        [FieldOffset(72)] public int MeshIndex;
+        [FieldOffset(76)] public int MaterialIndex;
     }
 
     [Serializable]
-    [StructLayout(LayoutKind.Sequential, Size = 40)]
+    [StructLayout(LayoutKind.Explicit, Size = 40)]
     public struct ObjectBatchChunk
     {
-        public Bounds Bounds;
-        public int StartIndex;
-        public int Count;
-        public uint ChunkHash;
-        public byte LodLevel;
+        [FieldOffset(0)] public Bounds Bounds;
+        [FieldOffset(24)] public int StartIndex;
+        [FieldOffset(28)] public int Count;
+        [FieldOffset(32)] public uint ChunkHash;
+        [FieldOffset(36)] public byte LodLevel;
+        [FieldOffset(37)] private byte _pad0;
+        [FieldOffset(38)] private byte _pad1;
+        [FieldOffset(39)] private byte _pad2;
     }
 
     /// <summary>

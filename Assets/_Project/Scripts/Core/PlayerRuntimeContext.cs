@@ -32,72 +32,77 @@ namespace Hecton8.Core
         Underwater = 1u << 12,
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 128)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct PlayerMovementRuntimeState
     {
-        public float3 WorldPosition;
-        public float3 PredictedWorldPosition;
-        public AbsoluteUniversePosition PredictedAup;
-        public float3 Velocity;
-        public float3 Forward;
-        public float3 CameraForward;
-        public float DepthMeters;
-        public float TransportSpeedMultiplier;
-        public float UnderwaterStressIntensity01;
-        public uint Flags;
-        private uint _padding0;
+        [FieldOffset(0)] public float3 WorldPosition;
+        [FieldOffset(12)] public float3 PredictedWorldPosition;
+        [FieldOffset(24)] public AbsoluteUniversePosition PredictedAup;
+        [FieldOffset(72)] public float3 Velocity;
+        [FieldOffset(84)] public float3 Forward;
+        [FieldOffset(96)] public float3 CameraForward;
+        [FieldOffset(108)] public float DepthMeters;
+        [FieldOffset(112)] public float TransportSpeedMultiplier;
+        [FieldOffset(116)] public float UnderwaterStressIntensity01;
+        [FieldOffset(120)] public uint Flags;
+        [FieldOffset(124)] private uint _padding0;
     }
 
     /// <summary>
     /// Headless-safe player gaze snapshot. Presentation cameras may seed it, but gameplay reads only this data.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct PlayerLookState
     {
-        public float3 EyePosition;
-        public float3 AimForward;
-        public uint Flags;
-        private uint _padding0;
+        [FieldOffset(0)] public float3 EyePosition;
+        [FieldOffset(12)] public float3 AimForward;
+        [FieldOffset(24)] public uint Flags;
+        [FieldOffset(28)] private uint _padding0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 88)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct PlayerSurvivalRuntimeState
     {
-        public float OxygenNormalized;
-        public float EnergyNormalized;
-        public float IntegrityNormalized;
-        public float PressureExposureSeverity01;
-        public float ThermalStressSeverity01;
-        public float HungerNormalized;
-        public float ThirstNormalized;
-        public float OxygenGraceVisionBlur01;
-        public float ColdStressSeverity01;
-        public float HeatStressSeverity01;
-        public float RapidAscentRisk01;
-        public float NitrogenBuildUp01;
-        public float NitrogenLoad01;
-        public float NitrogenNarcosis01;
-        public float Toxicity01;
-        public float CoreTemperatureCelsius;
-        public float RadiationDose;
-        public float RadiationIntensity01;
-        public float RadiationMaxHealthPenalty01;
-        public uint StatusMask;
-        public uint Flags;
-        private uint _padding0;
+        [FieldOffset(0)] public float OxygenNormalized;
+        [FieldOffset(4)] public float EnergyNormalized;
+        [FieldOffset(8)] public float IntegrityNormalized;
+        [FieldOffset(12)] public float PressureExposureSeverity01;
+        [FieldOffset(16)] public float ThermalStressSeverity01;
+        [FieldOffset(20)] public float HungerNormalized;
+        [FieldOffset(24)] public float ThirstNormalized;
+        [FieldOffset(28)] public float OxygenGraceVisionBlur01;
+        [FieldOffset(32)] public float ColdStressSeverity01;
+        [FieldOffset(36)] public float HeatStressSeverity01;
+        [FieldOffset(40)] public float RapidAscentRisk01;
+        [FieldOffset(44)] public float NitrogenBuildUp01;
+        [FieldOffset(48)] public float NitrogenLoad01;
+        [FieldOffset(52)] public float NitrogenNarcosis01;
+        [FieldOffset(56)] public float Toxicity01;
+        [FieldOffset(60)] public float CoreTemperatureCelsius;
+        [FieldOffset(64)] public float RadiationDose;
+        [FieldOffset(68)] public float RadiationIntensity01;
+        [FieldOffset(72)] public float RadiationMaxHealthPenalty01;
+        [FieldOffset(76)] public uint StatusMask;
+        [FieldOffset(80)] public uint Flags;
+        [FieldOffset(84)] private uint _padding0;
+        [FieldOffset(88)] private ulong _padding1;
+        [FieldOffset(96)] private ulong _padding2;
+        [FieldOffset(104)] private ulong _padding3;
+        [FieldOffset(112)] private ulong _padding4;
+        [FieldOffset(120)] private ulong _padding5;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct PlayerInteractionRuntimeState
     {
-        public int ActiveToolSlot;
-        public int PendingToolSlot;
-        public float SwapProgress01;
-        public float TransportBoost01;
-        public uint Flags;
-        private uint _padding0;
-        private uint _padding1;
-        private uint _padding2;
+        [FieldOffset(0)] public int ActiveToolSlot;
+        [FieldOffset(4)] public int PendingToolSlot;
+        [FieldOffset(8)] public float SwapProgress01;
+        [FieldOffset(12)] public float TransportBoost01;
+        [FieldOffset(16)] public uint Flags;
+        [FieldOffset(20)] private uint _padding0;
+        [FieldOffset(24)] private uint _padding1;
+        [FieldOffset(28)] private uint _padding2;
     }
 
     /// <summary>

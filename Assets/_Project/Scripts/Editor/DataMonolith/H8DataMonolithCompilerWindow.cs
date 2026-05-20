@@ -42,8 +42,11 @@ namespace Hecton8.EditorValidation
 
             VisualElement toolbar = new VisualElement();
             toolbar.style.flexDirection = FlexDirection.Row;
+            toolbar.style.alignItems = Align.Center;
             Button bakeButton = MakeButton("BAKE MONOLITH", Bake);
-            bakeButton.style.width = 160f;
+            bakeButton.style.width = 260f;
+            bakeButton.style.height = 42f;
+            bakeButton.style.unityFontStyleAndWeight = FontStyle.Bold;
             toolbar.Add(bakeButton);
             toolbar.Add(MakeButton("Schemas", GenerateSchemas));
             toolbar.Add(MakeButton("Inspect", InspectBinary));
@@ -241,9 +244,16 @@ namespace Hecton8.EditorValidation
 
             _binaryList.Clear();
             _binaryList.Add(MakeHeader("Binary Inspector"));
-            if (!string.IsNullOrEmpty(H8DataMonolithCompiler.LastError))
-                _binaryList.Add(new Label("Last validation error: " + H8DataMonolithCompiler.LastError));
             string path = H8DataMonolithCompiler.OutputAssetPath;
+            string lastBakerError = H8DataMonolithCompiler.LastError;
+            if (!string.IsNullOrEmpty(lastBakerError))
+                _binaryList.Add(new Label("last-baker-error=" + lastBakerError));
+
+            bool validatorPassed = H8DataMonolithCompiler.TryValidateOutputBlob(out string validationError, updateLastError: false);
+            _binaryList.Add(new Label("prebuild-validator=" + (validatorPassed ? "PASS" : "FAIL")));
+            if (!validatorPassed)
+                _binaryList.Add(new Label("validation-error=" + validationError));
+
             if (!File.Exists(path))
             {
                 _binaryList.Add(new Label("Missing: " + path));

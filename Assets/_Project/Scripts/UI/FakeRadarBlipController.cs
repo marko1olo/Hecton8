@@ -16,6 +16,7 @@ using Stopwatch = System.Diagnostics.Stopwatch;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
+using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 
 namespace Hecton8.UI
 {
@@ -24,7 +25,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Fake Radar Blip Controller")]
-    public sealed class FakeRadarBlipController : MonoBehaviour, IUpdatable, ILateFrameTickable, IRenderable, IScanEventListener
+    public sealed class FakeRadarBlipController : MonoBehaviour, IUpdatable, ILateFrameTickable, IRenderable, IScanEventListener, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
     {
         private const int MaxBlips = 64;
         private const int HudInternalLayerIndex = 17;
@@ -46,6 +47,7 @@ namespace Hecton8.UI
         private const float BlipFillAlpha = 0.36f;
         private const int SurvivalSystemResolveIntervalFrames = 30;
         private const int PlayerTransformResolveIntervalFrames = 30;
+        private const int MinimumQualityBlipCapacity = 16;
         private const uint ThermalNoiseHashSalt = 0x54484E31u;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private const double RadarSolveBudgetWarningMilliseconds = 0.1d;
@@ -67,25 +69,29 @@ namespace Hecton8.UI
         // COLD ALLOC: Vector2[16] — deterministic thermal ghost direction LUT — owner: FakeRadarBlipController
         private static readonly Vector2[] s_thermalGhostDirections = CreateThermalGhostDirections();
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 8)]
         private struct RadarCullCandidate
         {
+            [FieldOffset(0)]
             public float2 FlatDelta;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
         private struct RadarCullResult
         {
+            [FieldOffset(0)]
             public float2 PlaneOffset;
+            [FieldOffset(8)]
             public int Visible;
+            [FieldOffset(12)]
+            public int Padding;
         }
 
-        [BurstCompile(FloatPrecision.Low, FloatMode.Fast)]
-        [StructLayout(LayoutKind.Sequential)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct RadarBlip2DCullJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<RadarCullCandidate> Candidates;
-            [WriteOnly] public NativeArray<RadarCullResult> Results;
+            [ReadOnly, NoAlias] public NativeArray<RadarCullCandidate> Candidates;
+            [WriteOnly, NoAlias] public NativeArray<RadarCullResult> Results;
             public float2 RadarCenter;
             public float2 BoundsMin;
             public float2 BoundsMax;
@@ -133,11 +139,17 @@ namespace Hecton8.UI
         private bool _registeredLateFrame;
         private bool _registeredRenderable;
         private bool _scanEventsRegistered;
+        private bool _hotSwapListenerRegistered;
+        private bool _scalabilityListenerRegistered;
         private bool _radarCullScheduled;
         private bool _radarBlipMaterialPropertiesDirty = true;
         private int _scheduledCandidateCount;
+        private int _scheduledBlipCapacity = MaxBlips;
+        private int _qualityBlipCapacity = MaxBlips;
+        private int _qualityThermalGhostCapacity = ThermalNoiseMaxGhostBlips;
         private Transform _playerTransform;
         private HectonSurvivalSystem _survivalSystem;
+        private IPlayerRuntimeContext _cachedPlayerContext;
         private int _nextPlayerTransformResolveFrame;
         private int _nextSurvivalSystemResolveFrame;
         private Camera _projectionCamera;
@@ -180,6 +192,9 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
+            TryRegisterScalabilityListener();
             ResolvePlayerTransform();
             EnsureRuntimeResources();
             TryRegisterScanEvents();
@@ -188,6 +203,8 @@ namespace Hecton8.UI
 
         private void Start()
         {
+            CacheRegistryServicesCold();
+            TryRegisterScalabilityListener();
             ResolvePlayerTransform();
             ResolveProjectionCamera();
             EnsureRuntimeResources();
@@ -201,12 +218,16 @@ namespace Hecton8.UI
             ClearVisibleBlipHandoff();
             TryUnregisterScanEvents();
             TryUnregister();
+            TryUnregisterScalabilityListener();
+            TryUnregisterHotSwapListener();
         }
 
         private void OnDestroy()
         {
             TryUnregisterScanEvents();
             TryUnregister();
+            TryUnregisterScalabilityListener();
+            TryUnregisterHotSwapListener();
             DisposeRuntimeResources();
         }
 
@@ -365,9 +386,10 @@ namespace Hecton8.UI
 
         private void AppendVisibleBlipMatrix(Matrix4x4 matrix, ref int visibleCount)
         {
-            if (!_visibleBlipMatrices.IsCreated || visibleCount >= MaxBlips)
+            int blipCapacity = math.clamp(_scheduledBlipCapacity, MinimumQualityBlipCapacity, MaxBlips);
+            if (!_visibleBlipMatrices.IsCreated || visibleCount >= blipCapacity)
             {
-                visibleCount = math.min(visibleCount, MaxBlips);
+                visibleCount = math.min(visibleCount, blipCapacity);
                 return;
             }
 
@@ -394,6 +416,7 @@ namespace Hecton8.UI
             {
                 ClearVisibleBlipHandoff();
                 _scheduledCandidateCount = 0;
+                _scheduledBlipCapacity = math.clamp(_qualityBlipCapacity, MinimumQualityBlipCapacity, MaxBlips);
                 _radarCullScheduled = false;
                 _radarCullHandle = default;
                 RefreshLateFrameRegistration();
@@ -405,6 +428,7 @@ namespace Hecton8.UI
                 radarRangeMeters,
                 SpatialTargetKind.Bioform,
                 _queryHits);
+            int blipCapacity = math.clamp(_qualityBlipCapacity, MinimumQualityBlipCapacity, MaxBlips);
 
             float range = math.max(1f, radarRangeMeters);
             float rangeSqr = range * range;
@@ -447,7 +471,7 @@ namespace Hecton8.UI
             float3 radarRightFlatF3 = new float3(radarForwardFlatF3.z, 0f, -radarForwardFlatF3.x);
 
             int candidateCount = 0;
-            for (int i = 0; i < hitCount && candidateCount < MaxBlips; i++)
+            for (int i = 0; i < hitCount && candidateCount < blipCapacity; i++)
             {
                 SpatialQueryHit hit = _queryHits[i];
                 if (!(hit.Owner is FaunaBrain brain) || !brain.isAggressive)
@@ -473,6 +497,7 @@ namespace Hecton8.UI
             }
 
             _scheduledCandidateCount = candidateCount;
+            _scheduledBlipCapacity = blipCapacity;
             _radarCullScheduled = true;
             _discardScheduledCullResult = false;
             if (candidateCount > 0)
@@ -496,7 +521,88 @@ namespace Hecton8.UI
             RefreshLateFrameRegistration();
         }
 
-        private static bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Player)
+                return;
+
+            _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+            AssignPlayerTransform(_cachedPlayerContext != null ? _cachedPlayerContext.PlayerTransform : null);
+            _projectionCamera = null;
+            _projectionCameraRequiresHudLayer = false;
+        }
+
+        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            RefreshQualityPolicy();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
+        private void TryRegisterScalabilityListener()
+        {
+            if (_scalabilityListenerRegistered || !Application.isPlaying)
+                return;
+
+            ScalabilityEvents.Register(this);
+            _scalabilityListenerRegistered = true;
+        }
+
+        private void TryUnregisterScalabilityListener()
+        {
+            if (!_scalabilityListenerRegistered)
+                return;
+
+            ScalabilityEvents.Unregister(this);
+            _scalabilityListenerRegistered = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            RefreshQualityPolicy();
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (ReferenceEquals(_cachedPlayerContext, playerContext))
+                return;
+
+            _cachedPlayerContext = playerContext;
+            AssignPlayerTransform(playerContext != null ? playerContext.PlayerTransform : null);
+            _projectionCamera = null;
+            _projectionCameraRequiresHudLayer = false;
+        }
+
+        private void RefreshQualityPolicy()
+        {
+            float qualityWeight01 = math.saturate(HomeostasisBrain.GlobalQualityWeight);
+            float qualityCurve = SmoothStep01(qualityWeight01);
+            _qualityBlipCapacity = math.clamp(
+                (int)math.round(math.lerp(MinimumQualityBlipCapacity, MaxBlips, qualityCurve)),
+                MinimumQualityBlipCapacity,
+                MaxBlips);
+            _qualityThermalGhostCapacity = math.clamp(
+                (int)math.round(math.lerp(0f, ThermalNoiseMaxGhostBlips, qualityCurve)),
+                0,
+                ThermalNoiseMaxGhostBlips);
+        }
+
+        private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
             if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
             {
@@ -508,7 +614,7 @@ namespace Hecton8.UI
                 }
             }
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
             if (playerMovement != null)
             {
@@ -536,7 +642,8 @@ namespace Hecton8.UI
                 _visibleBlipMatrices.Clear();
             if (_scheduledCandidateCount > 0)
             {
-                for (int i = 0; i < _scheduledCandidateCount && visibleCount < MaxBlips; i++)
+                int blipCapacity = math.clamp(_scheduledBlipCapacity, MinimumQualityBlipCapacity, MaxBlips);
+                for (int i = 0; i < _scheduledCandidateCount && visibleCount < blipCapacity; i++)
                 {
                     RadarCullResult cullResult = _radarCullResults[i];
                     if (cullResult.Visible == 0)
@@ -565,7 +672,8 @@ namespace Hecton8.UI
 
         private void AppendWreckSignalDistortion(ref int visibleCount)
         {
-            if (_wreckSignalDistortionTime <= 0f || visibleCount >= MaxBlips)
+            int blipCapacity = math.clamp(_scheduledBlipCapacity, MinimumQualityBlipCapacity, MaxBlips);
+            if (_wreckSignalDistortionTime <= 0f || visibleCount >= blipCapacity)
                 return;
 
             float pulse01 = math.saturate(_wreckSignalDistortionTime / WreckSignalDistortionSeconds);
@@ -667,7 +775,9 @@ namespace Hecton8.UI
             Quaternion planeRotation,
             Vector3 planeScale)
         {
-            if (_survivalSystem == null || visibleCount >= MaxBlips)
+            int blipCapacity = math.clamp(_scheduledBlipCapacity, MinimumQualityBlipCapacity, MaxBlips);
+            int ghostCapacity = math.clamp(_qualityThermalGhostCapacity, 0, ThermalNoiseMaxGhostBlips);
+            if (_survivalSystem == null || visibleCount >= blipCapacity || ghostCapacity <= 0)
                 return;
 
             float depthMeters = math.max(0f, _survivalSystem.Depth);
@@ -678,14 +788,14 @@ namespace Hecton8.UI
                 return;
 
             int ghostCount = math.clamp(
-                1 + (int)math.floor(thermalNoise01 * ThermalNoiseMaxGhostBlips),
+                1 + (int)math.floor(thermalNoise01 * ghostCapacity),
                 1,
-                ThermalNoiseMaxGhostBlips);
+                ghostCapacity);
             uint depthBucket = unchecked((uint)(int)math.floor(depthMeters));
             float acceptance = 0.35f + 0.57f * thermalNoise01;
             uint acceptanceThreshold = (uint)math.clamp((int)(acceptance * 255f), 0, 255);
             float radiusWorld = radius * worldPerPixel;
-            for (int i = 0; i < ghostCount && visibleCount < MaxBlips; i++)
+            for (int i = 0; i < ghostCount && visibleCount < blipCapacity; i++)
             {
                 uint hash = HashThermalNoiseGhost(_thermalNoiseCycleIndex, depthBucket, unchecked((uint)i));
                 if (((hash >> 24) & 0xFFu) > acceptanceThreshold)
@@ -770,6 +880,12 @@ namespace Hecton8.UI
             return value;
         }
 
+        private static float SmoothStep01(float value)
+        {
+            float t = math.saturate(math.isfinite(value) ? value : 1f);
+            return t * t * (3f - 2f * t);
+        }
+
         private void ResolvePlayerTransform()
         {
             if (_playerTransform != null)
@@ -778,7 +894,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             if (playerContext != null && playerContext.PlayerTransform != null)
             {
                 AssignPlayerTransform(playerContext.PlayerTransform);
@@ -846,7 +962,7 @@ namespace Hecton8.UI
                     return;
             }
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             if (playerContext != null && TryAssignProjectionCamera(playerContext.PlayerCamera, true))
                 return;
 

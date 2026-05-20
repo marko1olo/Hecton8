@@ -134,7 +134,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Acoustic Echolocation Translator")]
-    public sealed class AcousticEcholocationTranslator : MonoBehaviour, ITickable, IUpdatable, ISonarPulseEventListener, ISonarPingEventListener, ISonarSnapshotEventListener, ILocalizationLanguageChangedListener, IAcousticEcholocationBarkListener, IPhysicsAcousticImpulseEventListener
+    public sealed class AcousticEcholocationTranslator : MonoBehaviour, ITickable, IUpdatable, ISonarPulseEventListener, ISonarPingEventListener, ISonarSnapshotEventListener, ILocalizationLanguageChangedListener, IAcousticEcholocationBarkListener, IPhysicsAcousticImpulseEventListener, IGlobalRegistryHotSwapListener
     {
         private enum ContactClassification : byte
         {
@@ -205,9 +205,13 @@ namespace Hecton8.UI
         private Image _background;
         private TextMeshProUGUI _headerLabel;
         private TextMeshProUGUI _classificationLabel;
+        private IPlayerRuntimeContext _cachedPlayerContext;
+        private LocalizationManager _cachedLocalization;
+        private HectonAtmosphereManager _cachedAtmosphere;
         private bool _headerDirty = true;
         private bool _plainClassificationDirty = true;
         private bool _storageCapacityBarkActive;
+        private bool _hotSwapListenerRegistered;
         private ContactClassification _lastRenderedClassification = ContactClassification.None;
         private int _lastRenderedDistanceMeters = int.MinValue;
 
@@ -215,6 +219,8 @@ namespace Hecton8.UI
         {
             labelFont = LocalizedFontResolver.ResolveReadableFont(labelFont);
             numericFont = LocalizedFontResolver.ResolveNumericFont(numericFont, labelFont);
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             ResolveAcousticOwners();
             EnsureUiBuilt();
             RefreshLocalizedCache();
@@ -234,7 +240,11 @@ namespace Hecton8.UI
             SpectrumEvents.UnregisterSonarSnapshotListener(this);
             AcousticEcholocationBarkEvents.Unregister(this);
             PhysicsEventBus.Unregister(this);
+            TryUnregisterHotSwapListener();
             _pendingSnapshotPulseCount = 0;
+            _cachedPlayerContext = null;
+            _cachedLocalization = null;
+            _cachedAtmosphere = null;
             UnregisterFromTickManager();
             ApplyRootAlpha(0f);
         }
@@ -247,6 +257,7 @@ namespace Hecton8.UI
             SpectrumEvents.UnregisterSonarSnapshotListener(this);
             AcousticEcholocationBarkEvents.Unregister(this);
             PhysicsEventBus.Unregister(this);
+            TryUnregisterHotSwapListener();
             _pendingSnapshotPulseCount = 0;
             UnregisterFromTickManager();
         }
@@ -349,6 +360,29 @@ namespace Hecton8.UI
 
             HandleLanguageChanged((GameLanguage)payload.Language);
 
+        }
+
+        /// <inheritdoc />
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime)
+            {
+                _cachedLocalization = currentService as LocalizationManager ?? GlobalRegistry.Localization;
+                RefreshLocalizedCache();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.AtmosphereRuntime)
+                _cachedAtmosphere = currentService as HectonAtmosphereManager;
         }
 
 
@@ -584,8 +618,7 @@ namespace Hecton8.UI
                 return true;
             }
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            HectonPlayerMovement movement = playerContext != null ? playerContext.PlayerMovement : null;
+            HectonPlayerMovement movement = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerMovement : null;
             if (movement != null)
             {
                 originAup = movement.CurrentAup;
@@ -615,7 +648,7 @@ namespace Hecton8.UI
                 ? ResolveLocalizedSpan(LeviathanClassKeyHash, DefaultLeviathanClass.AsSpan())
                 : ResolveLocalizedSpan(WreckageClassKeyHash, DefaultWreckageClass.AsSpan());
 
-            LocalizationManager localization = GlobalRegistry.Localization;
+            LocalizationManager localization = _cachedLocalization;
             bool useStressMutation = ShouldUseStressMutation(localization);
             if (useStressMutation)
             {
@@ -685,13 +718,13 @@ namespace Hecton8.UI
                     localization.IsMadnessWhisperVisualActive());
         }
 
-        private static bool ShouldRenderVisualSoundWave()
+        private bool ShouldRenderVisualSoundWave()
         {
-            LocalizationManager localization = GlobalRegistry.Localization;
+            LocalizationManager localization = _cachedLocalization;
             if (ShouldUseStressMutation(localization))
                 return true;
 
-            HectonAtmosphereManager atmosphere = GlobalRegistry.Atmosphere;
+            HectonAtmosphereManager atmosphere = _cachedAtmosphere;
             if (atmosphere == null)
                 return false;
 
@@ -898,6 +931,13 @@ namespace Hecton8.UI
             return canvas;
         }
 
+        private void CacheRegistryServicesCold()
+        {
+            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedLocalization = GlobalRegistry.Localization;
+            _cachedAtmosphere = GlobalRegistry.Atmosphere;
+        }
+
         private void RegisterToTickManager()
         {
             if (_tickRegistered || !Application.isPlaying)
@@ -919,6 +959,23 @@ namespace Hecton8.UI
             _tickRegistered = false;
         }
 
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
         private void ApplyRootAlpha(float alpha)
         {
             if (_group != null && math.abs(_group.alpha - alpha) > 0.0001f)
@@ -938,9 +995,9 @@ namespace Hecton8.UI
             return canvas;
         }
 
-        private static ReadOnlySpan<char> ResolveLocalizedSpan(int keyHash, ReadOnlySpan<char> fallback)
+        private ReadOnlySpan<char> ResolveLocalizedSpan(int keyHash, ReadOnlySpan<char> fallback)
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
+            LocalizationManager manager = _cachedLocalization;
             return manager != null ? manager.GetRawSpanOrFallback(keyHash, fallback) : fallback;
         }
 
@@ -1381,7 +1438,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Audio Caption Overlay")]
-    public sealed class AudioCaptionOverlay : MonoBehaviour, ITickable, IUpdatable, IAudioCaptionEventListener
+    public sealed class AudioCaptionOverlay : MonoBehaviour, ITickable, IUpdatable, IAudioCaptionEventListener, IGlobalRegistryHotSwapListener
     {
         private const int SlotCount = 8;
         private const float DefaultDuration = 1.65f;
@@ -1443,14 +1500,18 @@ namespace Hecton8.UI
         private Camera _viewCamera;
         private Transform _viewTransform;
         private RectTransform _overlayRoot;
+        private IPlayerRuntimeContext _cachedPlayerContext;
         private bool _tickRegistered;
         private bool _uiBuilt;
+        private bool _hotSwapListenerRegistered;
         // COLD ALLOC: CaptionSlot[8] — pooled spatial audio caption slots — owner: AudioCaptionOverlay
         private readonly CaptionSlot[] _slots = new CaptionSlot[SlotCount];
 
         private void OnEnable()
         {
             labelFont = LocalizedFontResolver.ResolveReadableFont(labelFont);
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             EnsureUiBuilt(allowComponentFallback: true);
             AudioCaptionEvents.Register(this);
         }
@@ -1458,14 +1519,33 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             AudioCaptionEvents.Unregister(this);
+            TryUnregisterHotSwapListener();
             UnregisterFromTickManager();
             HideAllSlots();
+            _cachedPlayerContext = null;
+            _viewCamera = null;
+            _viewTransform = null;
         }
 
         private void OnDestroy()
         {
             AudioCaptionEvents.Unregister(this);
+            TryUnregisterHotSwapListener();
             UnregisterFromTickManager();
+        }
+
+        /// <inheritdoc />
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Player)
+                return;
+
+            _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+            _viewCamera = null;
+            _viewTransform = null;
         }
 
         public void Tick(float dt)
@@ -1674,10 +1754,9 @@ namespace Hecton8.UI
                 return;
             }
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            if (playerContext != null && playerContext.PlayerCamera != null)
+            if (_cachedPlayerContext != null && _cachedPlayerContext.PlayerCamera != null)
             {
-                _viewCamera = playerContext.PlayerCamera;
+                _viewCamera = _cachedPlayerContext.PlayerCamera;
                 _viewTransform = _viewCamera.transform;
                 return;
             }
@@ -1808,7 +1887,7 @@ namespace Hecton8.UI
             return planar / math.max(approximateMagnitude, 0.0001f);
         }
 
-        private static AbsoluteUniversePosition ResolveCaptionOriginAup(Vector3 viewPosition, out bool hasOriginAup)
+        private AbsoluteUniversePosition ResolveCaptionOriginAup(Vector3 viewPosition, out bool hasOriginAup)
         {
             if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
             {
@@ -1822,8 +1901,7 @@ namespace Hecton8.UI
                 }
             }
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            HectonPlayerMovement movement = playerContext != null ? playerContext.PlayerMovement : null;
+            HectonPlayerMovement movement = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerMovement : null;
             if (movement != null)
             {
                 hasOriginAup = true;
@@ -1961,6 +2039,11 @@ namespace Hecton8.UI
             return captionText[index];
         }
 
+        private void CacheRegistryServicesCold()
+        {
+            _cachedPlayerContext = GlobalRegistry.Player;
+        }
+
         private void RegisterToTickManager()
         {
             if (_tickRegistered || !Application.isPlaying)
@@ -1980,6 +2063,23 @@ namespace Hecton8.UI
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _tickRegistered = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         private static Canvas ResolveTargetCanvas(bool allowComponentFallback)

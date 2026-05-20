@@ -1,11 +1,7 @@
 using System;
-using Hecton8.Audio;
 using Hecton8.Bootstrap;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
-using Hecton8.Physics;
-using Hecton8.VFX;
-using Hecton8.World;
 using TMPro;
 using Unity.Mathematics;
 using UnityEngine;
@@ -410,18 +406,16 @@ namespace Hecton8.Core
             GlobalRegistry.ClearRuntimeBuckets();
             ThreadSafeCommandQueue.Clear();
 
-            if (GlobalRegistry.Physics != null)
+            if (GlobalRegistry.Physics is ISceneTransitionPhysicsBridge scenePhysics)
+                scenePhysics.ClearSceneTransitionRuntimeState();
+            else if (GlobalRegistry.Physics != null)
                 GlobalRegistry.Physics.ClearQueuedPackets();
-            else
-                PhysicsApplySystem.ClearQueuedPacketsStatic();
 
             if (GlobalRegistry.InteractionSignals != null)
                 GlobalRegistry.InteractionSignals.ClearQueuedSignals();
 
             if (GlobalRegistry.DebrisCompute != null)
                 GlobalRegistry.DebrisCompute.ClearGpuDebris();
-
-            GlobalPhysicsStateManager.ClearRuntimeStateStatic();
 
             SceneRuntimeService runtime = GlobalRegistry.SceneRuntime;
             if (runtime != null)
@@ -539,7 +533,7 @@ namespace Hecton8.Core
             if (!GameBootstrapper.ArePreWarmAssetsReady)
                 return false;
 
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            ISceneTransitionWorldResidencyBridge registry = GlobalRegistry.PersistentWorldRegistry;
             if (registry == null)
                 return false;
 
@@ -775,7 +769,7 @@ namespace Hecton8.Core
 
         private static void BeginWorldDroneCrossfade()
         {
-            if (GlobalRegistry.Audio is SpatialAudioManager spatialAudio)
+            if (GlobalRegistry.Audio is ISceneTransitionAudioBridge spatialAudio)
             {
                 spatialAudio.BeginWorldDroneTransition(
                     WorldDroneLoadDb,
@@ -786,7 +780,7 @@ namespace Hecton8.Core
 
         private static void UpdateWorldDroneCrossfade(float normalized)
         {
-            if (GlobalRegistry.Audio is SpatialAudioManager spatialAudio)
+            if (GlobalRegistry.Audio is ISceneTransitionAudioBridge spatialAudio)
                 spatialAudio.SetWorldDroneTransitionProgress(normalized);
         }
 

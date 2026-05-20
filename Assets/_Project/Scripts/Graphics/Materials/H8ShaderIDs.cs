@@ -85,6 +85,8 @@ namespace Hecton8.Graphics.Materials
         public static readonly int TotalUniverseOffset = Shader.PropertyToID("_TotalUniverseOffset");
         /// <summary>Global bioluminescence phase vector.</summary>
         public static readonly int BiolumMasterPhase = Shader.PropertyToID("_BiolumMasterPhase");
+        /// <summary>Global base power brownout vector: supply, severity, phase, quality.</summary>
+        public static readonly int HectonPowerBrownoutParams = Shader.PropertyToID("_HectonPowerBrownoutParams");
         /// <summary>Projected caustics world rectangle.</summary>
         public static readonly int HectonProjectedCausticsWorldRect = Shader.PropertyToID("_HectonProjectedCausticsWorldRect");
         /// <summary>Projected caustics scalar parameters.</summary>

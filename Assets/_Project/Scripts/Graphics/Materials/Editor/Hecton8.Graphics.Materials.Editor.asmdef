@@ -2,7 +2,9 @@
     "name": "Hecton8.Graphics.Materials.Editor",
     "rootNamespace": "Hecton8.Graphics.Materials.Editor",
     "references": [
-        "Hecton8.Graphics.Materials"
+        "Hecton8.Graphics.Materials",
+        "Unity.Collections",
+        "Unity.Mathematics"
     ],
     "includePlatforms": [
         "Editor"

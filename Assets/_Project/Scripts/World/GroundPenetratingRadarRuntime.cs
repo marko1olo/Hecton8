@@ -141,8 +141,8 @@ namespace Hecton8.World
             _ecosystemDirector = null;
             if (_scanJobScheduled)
             {
-                _scanJobHandle.Complete();
-                _scanJobScheduled = false;
+                if (DispatcherJobFence.TryComplete(ref _scanJobHandle, forceComplete: true))
+                    _scanJobScheduled = false;
             }
 
             ReleaseGraphicsBuffer(ref _gprPingBuffer);
@@ -204,10 +204,12 @@ namespace Hecton8.World
 
         public void LateFrameTick()
         {
-            if (!_scanJobScheduled || !_scanJobHandle.IsCompleted)
+            if (!_scanJobScheduled)
                 return;
 
-            _scanJobHandle.Complete();
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _scanJobHandle))
+                return;
+
             _scanJobScheduled = false;
             CommitCompletedScan();
         }

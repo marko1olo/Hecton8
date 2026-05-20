@@ -168,7 +168,7 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(24)] private ulong _pad2;
     }
 
-    /// <summary>Cheap bullet-time post-process control signal. Size: 32 bytes.</summary>
+    /// <summary>Cheap bullet-time post-process control signal. Size: 32 bytes. QualityWeightBits stores math.asuint(0..1).</summary>
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct BulletTimeVisualSignal : ISignal
     {
@@ -176,7 +176,7 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(4)] public float Scalar;
         [FieldOffset(8)] public uint Frame;
         [FieldOffset(12)] public uint Sequence;
-        [FieldOffset(16)] public uint QualityTier;
+        [FieldOffset(16)] public uint QualityWeightBits;
         [FieldOffset(20)] public byte Flags;
         [FieldOffset(21)] private byte _pad0;
         [FieldOffset(22)] private ushort _pad1;
@@ -315,6 +315,9 @@ namespace Hecton8.Core.Contracts
         public const byte ToolAcousticSignal = 125;
         public const byte WaterTransitionSignal = 126;
         public const byte CameraJuiceImpactSignal = 127;
+        public const byte DynamicMusicScalarSignal = 128;
+        public const byte PlayerRespawnSignal = 129;
+        public const uint PlayerRespawnSignalStableHash = 0x5253504Eu;
         public const uint ScalabilityChangedEventStableHash = 0x53434C54u;
         public const uint SignalLaneRegistryHash = 0x83E4FE14u;
     }

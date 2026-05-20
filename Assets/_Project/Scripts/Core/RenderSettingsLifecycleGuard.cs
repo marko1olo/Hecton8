@@ -1,5 +1,4 @@
 using System;
-using Hecton8.Atmosphere;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -45,7 +44,7 @@ namespace Hecton8.Core
                     AmbientGroundColor = RenderSettings.ambientGroundColor,
                     AmbientIntensity = RenderSettings.ambientIntensity,
                     ReflectionIntensity = RenderSettings.reflectionIntensity,
-                    Skybox = AtmosphereDirector.Skybox,
+                    Skybox = CaptureSkybox(),
                     Sun = RenderSettings.sun
                 };
             }
@@ -68,7 +67,7 @@ namespace Hecton8.Core
                     RenderSettings.ambientIntensity = AmbientIntensity;
                 }
                 RenderSettings.reflectionIntensity = ReflectionIntensity;
-                AtmosphereDirector.SetSkybox(Skybox);
+                RestoreSkybox(Skybox);
                 RenderSettings.sun = Sun;
                 if (!giRelayAmbientAuthority)
                     DynamicGI.UpdateEnvironment();
@@ -190,6 +189,27 @@ namespace Hecton8.Core
                 newCapacity = requiredCount;
 
             Array.Resize(ref _ownerIds, newCapacity);
+        }
+
+        private static Material CaptureSkybox()
+        {
+            IAtmosphereRenderSettingsBridge bridge = GlobalRegistry.Atmosphere;
+            return bridge != null
+                ? bridge.Skybox
+                : RenderSettings.skybox;
+        }
+
+        private static void RestoreSkybox(Material skybox)
+        {
+            IAtmosphereRenderSettingsBridge bridge = GlobalRegistry.Atmosphere;
+            if (bridge != null)
+            {
+                bridge.SetSkybox(skybox);
+                return;
+            }
+
+            if (!ReferenceEquals(RenderSettings.skybox, skybox))
+                RenderSettings.skybox = skybox;
         }
 
 #if UNITY_EDITOR

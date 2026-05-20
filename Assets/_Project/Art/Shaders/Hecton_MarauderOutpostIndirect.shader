@@ -40,6 +40,7 @@ Shader "Hecton8/Environment/MarauderOutpostIndirect"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl"
+            #include "Assets/_Project/Art/Shaders/Hecton_CustomLightProbeGrid.hlsl"
 
             StructuredBuffer<float4x4> _OutpostMatrices;
             StructuredBuffer<uint> _OutpostCellTypes;
@@ -108,7 +109,7 @@ Shader "Hecton8/Environment/MarauderOutpostIndirect"
 
             half3 EvaluateOutpostLighting(float3 positionWS, float4 positionCS, half3 normalWS, half3 albedo, half metallic, half smoothness)
             {
-                half3 color = SampleSH(normalWS) * albedo;
+                half3 color = H8CustomLightProbeResolveAmbient(positionWS, normalWS, half3(0.015h, 0.025h, 0.035h)) * albedo;
                 Light mainLight = GetMainLight(TransformWorldToShadowCoord(positionWS));
                 half nDotL = saturate(dot(normalWS, (half3)mainLight.direction));
                 half specularBase = 0.04h + metallic * 0.18h;

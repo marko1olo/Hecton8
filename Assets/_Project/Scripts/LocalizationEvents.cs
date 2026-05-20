@@ -19,14 +19,15 @@ namespace Hecton.Localization
     /// <summary>
     /// Deferred unmanaged localization event payload flushed by <see cref="SystemDispatcher"/>.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct LocalizationEventPayload
     {
-        public uint Frame;
-        public ushort EventType;
-        public ushort Language;
-        public ushort VisualBucket;
-        public ushort StatusBits;
+        [FieldOffset(0)] public uint Frame;
+        [FieldOffset(4)] public ushort EventType;
+        [FieldOffset(6)] public ushort Language;
+        [FieldOffset(8)] public ushort VisualBucket;
+        [FieldOffset(10)] public ushort StatusBits;
+        [FieldOffset(12)] private uint _pad0;
     }
 
     /// <summary>

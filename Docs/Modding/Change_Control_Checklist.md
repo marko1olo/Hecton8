@@ -51,6 +51,7 @@ Required result: `Status = PASS`.
 | Change mod save payload boundary | `Loader_Save_Audit_Matrix.md`, `Signal_Schema.json.loaderSaveAudit`, runtime playbook, save storage source | Payload cap, namespace prefix, active scope, no first-party save-owner mutation. |
 | Change runtime verification criteria | `Runtime_Verification_Playbook.md`, `Signal_Schema.json.staticValidation`, this checklist | Exact Unity steps, GC/profiler evidence format, failure handling. |
 | Change sample mod spec | `Sample_InfiniteO2_Mod.md`, `Mod_API_Specification.md`, `Signal_Schema.json.sampleModSpecs`, validator source | Public facade signatures, no direct gameplay authority, future kernel requirements. |
+| Change future command envelope allowlist or kernel tuning CSV | `allowed_opcodes.csv`, `kernel_tuning_profiles.csv`, `Validate_Mod_API_Static.ps1`, validator source | Exact opcode hash set, duplicate-free rows, fail-closed reload behavior, command-kernel telemetry proof. |
 | Change SDK authoring model | `SDK_Authoring_Interface_Plan.md`, `SDK_Product_Blueprint.md`, `README.md`, `Mod_API_Specification.md`, `Runtime_Verification_Playbook.md` | Prove the SDK emits packages/envelopes only; no runtime C# callback promise. |
 | Change envelope-only quarantine | `Mod_API_Sandbox_Quarantine.md`, `Mod_API_Specification.md`, `Runtime_Verification_Playbook.md`, relevant audit matrices, validator source | Legacy surface state, allowed ingress, rejection behavior, GC/profiler proof path. |
 | Change package manifest or packer output | `SDK_Authoring_Interface_Plan.md`, `Loader_Save_Audit_Matrix.md`, `Runtime_Verification_Playbook.md`, static validator or SDK validator | Required fields, capability mapping, package hash, no loose runtime ingress. |
@@ -77,3 +78,5 @@ Required result: `Status = PASS`.
 - `Docs/Modding/Resource_Content_Audit_Matrix.md`
 - `Docs/Modding/Runtime_Verification_Playbook.md`
 - `Docs/Modding/Sample_InfiniteO2_Mod.md`
+- `Docs/Modding/allowed_opcodes.csv`
+- `Docs/Modding/kernel_tuning_profiles.csv`

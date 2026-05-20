@@ -67,10 +67,12 @@ namespace Hecton8.Core.Memory
                 return false;
 
             VaultMemoryLayoutConfig config = VaultMemoryMath.BuildMockConfig(0);
-            if (vault.TryGetBufferHandle(BufferID.VaultMemoryLayoutConfig, out VaultBufferHandle<VaultMemoryLayoutConfig> existing) &&
-                existing.IsCreated)
+            if (vault.TryGetGenerationHandle<VaultMemoryLayoutConfig>(BufferID.VaultMemoryLayoutConfig, out VaultGenerationHandle<VaultMemoryLayoutConfig> existing) &&
+                vault.TryResolveHandle(in existing, out NativeArray<VaultMemoryLayoutConfig> existingBuffer) &&
+                existingBuffer.IsCreated &&
+                existingBuffer.Length > 0)
             {
-                config = existing.GetElementAsReadOnlyRef(vault, 0);
+                config = existingBuffer[0];
             }
 
             NativeArray<byte> scratch = vault.GetBuffer<byte>(
@@ -331,16 +333,19 @@ namespace Hecton8.Core.Memory
 
         private static void WriteConfigToVault(IDataVault vault, in VaultMemoryLayoutConfig config)
         {
-            VaultBufferHandle<VaultMemoryLayoutConfig> handle = vault.GetBufferHandle<VaultMemoryLayoutConfig>(
+            VaultGenerationHandle<VaultMemoryLayoutConfig> handle = vault.GetGenerationHandle<VaultMemoryLayoutConfig>(
                 BufferID.VaultMemoryLayoutConfig,
                 1,
                 SystemID.CoreDataVault,
                 NativeArrayOptions.UninitializedMemory);
-            if (!handle.IsCreated)
+            if (!vault.TryResolveHandle(in handle, out NativeArray<VaultMemoryLayoutConfig> buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length == 0)
+            {
                 return;
+            }
 
-            ref VaultMemoryLayoutConfig stored = ref handle.GetElementAsRef(vault, 0);
-            stored = config;
+            buffer[0] = config;
         }
 
         private static ReadOnlySpan<byte> Trim(ReadOnlySpan<byte> span)

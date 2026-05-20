@@ -15,7 +15,7 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     [RequireComponent(typeof(BoxCollider))]
     [AddComponentMenu("Hecton8/UI/Physical Panel Button")]
-    public sealed class PhysicalPanelButton : MonoBehaviour, ITickable, IUpdatable, IInteractionSignalConsumer, IPhysicalPanelButtonReceiver
+    public sealed class PhysicalPanelButton : MonoBehaviour, ITickable, IUpdatable, IInteractionSignalConsumer, IPhysicalPanelButtonReceiver, IGlobalRegistryHotSwapListener
     {
         private const uint PhysicalPanelToolId = 0x50414E4Cu;
         private const byte LeftMotorMask = 0b0001;
@@ -115,8 +115,11 @@ namespace Hecton8.UI
         private float _resolvedPressHapticFrequencyHz = 54f;
         private float _resolvedClickVolume = 0.42f;
         private float _resolvedClickPitch = 1f;
+        private IAudioService _cachedAudioService;
+        private IPlayerRuntimeContext _cachedPlayerContext;
         private bool _registered;
         private bool _receiverRegistered;
+        private bool _hotSwapListenerRegistered;
         private bool _pressDispatched;
         private bool _acousticRuntimeAcquired;
         private Collider _registeredActivationVolume;
@@ -139,6 +142,7 @@ namespace Hecton8.UI
         {
             _cachedTransform = transform;
             _clickOcclusionMask = AcousticOcclusionUtility.BuildSensoryMask();
+            CacheRegistryServicesCold();
             CacheScalarConfig();
             ResolveReferences();
             if (buttonMesh != null)
@@ -147,9 +151,11 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
             CacheScalarConfig();
             ResolveReferences();
             RegisterCollider();
+            TryRegisterHotSwapListener();
             AcquireAcousticRuntime();
             RefreshTickRegistration(false);
         }
@@ -160,6 +166,7 @@ namespace Hecton8.UI
                 DispatchPanelEvent(DiegeticPanelInputEventType.Up);
 
             Unregister();
+            TryUnregisterHotSwapListener();
             ReleaseAcousticRuntime();
             UnregisterCollider();
             _lastHandInsideFrame = -1;
@@ -175,6 +182,7 @@ namespace Hecton8.UI
         private void OnDestroy()
         {
             Unregister();
+            TryUnregisterHotSwapListener();
             ReleaseAcousticRuntime();
             UnregisterCollider();
         }
@@ -469,7 +477,7 @@ namespace Hecton8.UI
 
         private void PlayDiegeticClick(Vector3 runtimeHitPoint)
         {
-            IAudioService audio = GlobalRegistry.Audio;
+            IAudioService audio = _cachedAudioService;
             if (audio == null)
                 return;
 
@@ -533,9 +541,9 @@ namespace Hecton8.UI
             audio.PlayAtPoint(pressClickSound, sourcePosition, resolvedVolume, _resolvedClickPitch);
         }
 
-        private static Transform ResolveListenerTransform()
+        private Transform ResolveListenerTransform()
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             if (playerContext == null)
                 return null;
 
@@ -543,6 +551,45 @@ namespace Hecton8.UI
                 return playerContext.PlayerCamera.transform;
 
             return playerContext.PlayerTransform;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Audio:
+                    _cachedAudioService = currentService as IAudioService;
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                    break;
+            }
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedAudioService = GlobalRegistry.Audio;
+            _cachedPlayerContext = GlobalRegistry.Player;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
         }
 
         private void AcquireAcousticRuntime()

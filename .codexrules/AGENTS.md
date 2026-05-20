@@ -19,6 +19,9 @@ NOT a creative director — execute within existing architecture.
 [WARN] If unsure about side effects: "WARNING: Regression risk in [X]".
 AA commercial product — Master Grade, enterprise-level, visually premium.
 [RULE] Global authority: owner-local first; one fact -> one owner -> one route -> one proof; route card + `GREEN` review before merge; H-Phi never justifies new global surface.
+[RULE] Product direction: until `Docs/ARCHITECTURE/FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md` is proven, every task must state which first-20-minutes route moment it improves or which route blocker it removes.
+[RULE] Platform readiness: follow `Docs/ARCHITECTURE/PLATFORM_PORTABILITY_PROOF_LADDER.md`; Windows/Copper Wire proof comes before Steam Deck, macOS, XR, Quest/PICO, or console readiness claims.
+[RULE] No global/platform readiness claim from prose alone: run the current static gates in `Docs/QUALITY_GATES.md`; runtime readiness still requires Unity/player/profiler/device artifacts.
 
 ---
 

@@ -10,7 +10,7 @@ namespace Hecton8.Gameplay
     /// Centralized player-noise emitter that reports locomotion, transport, light, and tool-use state.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class PlayerNoiseEmitter : MonoBehaviour, ITickable, IUpdatable
+    public sealed class PlayerNoiseEmitter : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
     {
         private const float ToolUsePulseDuration = 0.6f;
         private const float PrimaryToolNoisePulse = 1f;
@@ -24,7 +24,9 @@ namespace Hecton8.Gameplay
         private PlayerToolManager _playerToolManager;
         private PlayerTransportCoordinator _playerTransportCoordinator;
         private PlayerTool _observedTool;
+        private IPlayerRuntimeContext _cachedPlayerContext;
         private bool _registered;
+        private bool _hotSwapListenerRegistered;
         private float _toolUsePulseTimer;
         private float _toolUsePulseAmplitude;
         private float _referenceRefreshTimer;
@@ -47,11 +49,14 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             _cachedTransform = transform;
+            CacheRegistryServicesCold();
             ResolveReferences();
         }
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             ResolveReferences();
             RefreshObservedToolReference();
             ConsumeObservedToolUsePulse();
@@ -60,6 +65,7 @@ namespace Hecton8.Gameplay
 
         private void Start()
         {
+            CacheRegistryServicesCold();
             ResolveReferences();
             RefreshObservedToolReference();
             TryRegister();
@@ -71,8 +77,14 @@ namespace Hecton8.Gameplay
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
 
             _registered = false;
+            TryUnregisterHotSwapListener();
             ClearObservedToolReference();
             NoiseSystem.ClearPlayerSignal();
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregisterHotSwapListener();
         }
 
         /// <inheritdoc />
@@ -152,7 +164,7 @@ namespace Hecton8.Gameplay
             if (_cachedTransform == null)
                 _cachedTransform = transform;
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
 
             if (_playerMovement == null && playerContext != null)
                 _playerMovement = playerContext.PlayerMovement;
@@ -174,6 +186,41 @@ namespace Hecton8.Gameplay
                 if (playerContext != null)
                     _playerToolManager = playerContext.ToolManager;
             }
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Player)
+                return;
+
+            _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+            if (_playerMovement == null || _playerToolManager == null)
+                ResolveReferences();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedPlayerContext = GlobalRegistry.Player;
         }
 
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)

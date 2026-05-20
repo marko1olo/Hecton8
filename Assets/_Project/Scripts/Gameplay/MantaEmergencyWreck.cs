@@ -72,14 +72,13 @@ namespace Hecton8.Gameplay
                 if (!Application.isPlaying || s_activeDehydratedResidencySlotCount <= 0)
                     return;
 
-                if (!TryResolvePlayerTransform(deltaTime, out Transform playerTransform))
+                if (!TryResolveCurrentPlayerAup(out AbsoluteUniversePosition playerAup))
                     return;
 
                 ObjectPoolManager poolManager = s_cachedObjectPool;
                 if (poolManager == null)
                     return;
 
-                AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerTransform.position);
                 for (int i = s_activeDehydratedResidencySlotCount - 1; i >= 0; i--)
                 {
                     int slotIndex = s_activeDehydratedResidencySlots[i];
@@ -265,6 +264,9 @@ namespace Hecton8.Gameplay
         private float _dehydrationCheckTimer;
         private GameObject _residencyPrefabSource;
         private int _residencySlotIndex = InvalidResidencySlotIndex;
+        private AbsoluteUniversePosition _currentAup;
+        private Vector3 _currentRuntimePosition;
+        private bool _hasCurrentAup;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetResidencyStatics()
@@ -299,6 +301,8 @@ namespace Hecton8.Gameplay
             _emergencyActive = true;
             _remainingLifetime = math.max(0.05f, bailoutLifetime);
             _dehydrationCheckTimer = DehydrationCheckIntervalSeconds;
+            _currentRuntimePosition = ResolveCurrentRuntimePosition();
+            _hasCurrentAup = TryResolveAupFromPlayerObserver(_currentRuntimePosition, out _currentAup);
 
             if (_pickupItem != null)
                 _pickupItem.enabled = false;
@@ -466,6 +470,9 @@ namespace Hecton8.Gameplay
             _remainingLifetime = 0f;
             _collisionDamageCooldownTimer = 0f;
             _dehydrationCheckTimer = 0f;
+            _currentAup = default;
+            _currentRuntimePosition = default;
+            _hasCurrentAup = false;
             TryUnregisterFixedTick();
             if (releaseResidencySlot)
                 ReleaseAssignedResidencySlot();
@@ -542,6 +549,9 @@ namespace Hecton8.Gameplay
             _collisionDamageCooldownTimer = math.max(0f, state.collisionDamageCooldownTimer);
             _dehydrationCheckTimer = DehydrationCheckIntervalSeconds;
             _preserveResidencyOnDespawn = false;
+            _currentAup = ReadPoolSlotPosition(s_residencySlots[slotIndex]);
+            _currentRuntimePosition = runtimePosition;
+            _hasCurrentAup = MathGuard.IsFinite(in _currentAup);
 
             transform.SetPositionAndRotation(runtimePosition, state.rotation);
 
@@ -570,14 +580,14 @@ namespace Hecton8.Gameplay
             if (!_emergencyActive ||
                 !IsValidResidencySlot(_residencySlotIndex) ||
                 _residencyPrefabSource == null ||
-                !GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) ||
-                playerTransform == null)
+                !TryResolveCurrentPlayerAup(out AbsoluteUniversePosition playerAup))
             {
                 return false;
             }
 
-            AbsoluteUniversePosition wreckAup = AbsoluteUniversePosition.FromRuntimePosition(transform.position);
-            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerTransform.position);
+            if (!TryResolveActiveWreckAup(out AbsoluteUniversePosition wreckAup))
+                return false;
+
             if (AbsoluteUniversePosition.DistanceSq(in wreckAup, in playerAup) <= DehydrationDistanceSq)
                 return false;
 
@@ -618,8 +628,10 @@ namespace Hecton8.Gameplay
 
             EnsureResidencyStateInitialized();
 
+            if (!TryResolveActiveWreckAup(out AbsoluteUniversePosition positionAup))
+                return;
+
             PoolSlotData slotData = s_residencySlots[_residencySlotIndex];
-            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(transform.position);
             slotData.BoundGuid = unchecked((ulong)(_residencySlotIndex + 1));
             slotData.AupCell = new int3((int)positionAup.GridX, (int)positionAup.GridY, (int)positionAup.GridZ);
             slotData.LocalOffset = new float3(positionAup.LocalX, positionAup.LocalY, positionAup.LocalZ);
@@ -794,6 +806,28 @@ namespace Hecton8.Gameplay
             return slotIndex >= 0 && s_residencySlots != null && slotIndex < s_residencySlots.Length;
         }
 
+        private static bool TryResolveCurrentPlayerAup(out AbsoluteUniversePosition playerAup)
+        {
+            playerAup = default;
+            if (!PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) ||
+                runtimeContext == null ||
+                !runtimeContext.IsBound)
+            {
+                return false;
+            }
+
+            playerAup = runtimeContext.MovementState.PredictedAup;
+            if (MathGuard.IsFinite(in playerAup))
+                return true;
+
+            HectonPlayerMovement playerMovement = runtimeContext.PlayerMovement;
+            if (playerMovement == null)
+                return false;
+
+            playerAup = playerMovement.CurrentAup;
+            return MathGuard.IsFinite(in playerAup);
+        }
+
         private static AbsoluteUniversePosition ReadPoolSlotPosition(PoolSlotData slotData)
         {
             return new AbsoluteUniversePosition
@@ -805,6 +839,84 @@ namespace Hecton8.Gameplay
                 LocalY = slotData.LocalOffset.y,
                 LocalZ = slotData.LocalOffset.z
             };
+        }
+
+        private Vector3 ResolveCurrentRuntimePosition()
+        {
+            if (_rigidbody != null)
+                return _rigidbody.position;
+
+            return transform.position;
+        }
+
+        private bool TryResolveActiveWreckAup(out AbsoluteUniversePosition wreckAup)
+        {
+            wreckAup = default;
+            Vector3 runtimePosition = ResolveCurrentRuntimePosition();
+            if (!IsFinite(runtimePosition))
+                return false;
+
+            if (_hasCurrentAup &&
+                IsFinite(_currentRuntimePosition) &&
+                MathGuard.IsFinite(in _currentAup) &&
+                TryOffsetAupByRuntimeDelta(in _currentAup, _currentRuntimePosition, runtimePosition, out wreckAup))
+            {
+                _currentAup = wreckAup;
+                _currentRuntimePosition = runtimePosition;
+                return true;
+            }
+
+            if (!TryResolveAupFromPlayerObserver(runtimePosition, out wreckAup))
+                return false;
+
+            _currentAup = wreckAup;
+            _currentRuntimePosition = runtimePosition;
+            _hasCurrentAup = true;
+            return true;
+        }
+
+        private static bool TryResolveAupFromPlayerObserver(
+            Vector3 targetRuntimePosition,
+            out AbsoluteUniversePosition targetAup)
+        {
+            targetAup = default;
+            if (!IsFinite(targetRuntimePosition) ||
+                !TryResolveCurrentPlayerAup(out AbsoluteUniversePosition playerAup))
+            {
+                return false;
+            }
+
+            float3 playerRuntime = playerAup.ToRuntimeFloat3();
+            if (!math.all(math.isfinite(playerRuntime)))
+                return false;
+
+            return TryOffsetAupByRuntimeDelta(
+                in playerAup,
+                new Vector3(playerRuntime.x, playerRuntime.y, playerRuntime.z),
+                targetRuntimePosition,
+                out targetAup);
+        }
+
+        private static bool TryOffsetAupByRuntimeDelta(
+            in AbsoluteUniversePosition referenceAup,
+            Vector3 referenceRuntimePosition,
+            Vector3 targetRuntimePosition,
+            out AbsoluteUniversePosition targetAup)
+        {
+            targetAup = default;
+            if (!MathGuard.IsFinite(in referenceAup) ||
+                !IsFinite(referenceRuntimePosition) ||
+                !IsFinite(targetRuntimePosition))
+            {
+                return false;
+            }
+
+            double3 localDelta = new double3(
+                (double)targetRuntimePosition.x - referenceRuntimePosition.x,
+                (double)targetRuntimePosition.y - referenceRuntimePosition.y,
+                (double)targetRuntimePosition.z - referenceRuntimePosition.z);
+            targetAup = AbsoluteUniversePosition.OffsetMeters(in referenceAup, localDelta);
+            return MathGuard.IsFinite(in targetAup);
         }
     }
 }

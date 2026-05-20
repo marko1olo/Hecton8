@@ -1,22 +1,74 @@
 using System.Runtime.InteropServices;
+using Hecton8.Core.Memory.Layout;
 using Hecton8.World;
 using Unity.Collections;
 
 namespace Hecton8.AI
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 64)]
+    [BinaryBlittableSafe]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct FaunaTier1LodProxyEntry
     {
+        private const int FlagsShift = 0;
+        private const int HeadingShift = 8;
+        private const int HealthShift = 12;
+        private const int HungerShift = 20;
+        private const int QualityShift = 28;
+        private const uint ByteMask = 0xFFu;
+        private const uint NibbleMask = 0x0Fu;
+
+        [FieldOffset(0)]
         public AbsoluteUniversePositionBlit128 PositionAup;
+
+        [FieldOffset(48)]
         public uint InstanceUid;
+
+        [FieldOffset(52)]
         public ushort SpeciesId;
-        public byte Flags;
-        public byte HeadingOctant;
-        public byte Health01;
-        public byte Hunger01;
-        public byte QualityTier;
-        public byte Reserved0;
+
+        [FieldOffset(54)]
+        private ushort _pad0;
+
+        [FieldOffset(56)]
+        public uint StatusFlags;
+
+        [FieldOffset(60)]
         public uint Reserved1;
+
+        public static uint PackStatusFlags(byte flags, byte headingOctant, byte health01, byte hunger01, byte qualityTier)
+        {
+            uint packed = flags;
+            packed |= (uint)(headingOctant & NibbleMask) << HeadingShift;
+            packed |= (uint)health01 << HealthShift;
+            packed |= (uint)hunger01 << HungerShift;
+            packed |= (uint)(qualityTier & NibbleMask) << QualityShift;
+            return packed;
+        }
+
+        public static byte ReadFlags(uint statusFlags)
+        {
+            return (byte)((statusFlags >> FlagsShift) & ByteMask);
+        }
+
+        public static byte ReadHeadingOctant(uint statusFlags)
+        {
+            return (byte)((statusFlags >> HeadingShift) & NibbleMask);
+        }
+
+        public static byte ReadHealth01(uint statusFlags)
+        {
+            return (byte)((statusFlags >> HealthShift) & ByteMask);
+        }
+
+        public static byte ReadHunger01(uint statusFlags)
+        {
+            return (byte)((statusFlags >> HungerShift) & ByteMask);
+        }
+
+        public static byte ReadQualityTier(uint statusFlags)
+        {
+            return (byte)((statusFlags >> QualityShift) & NibbleMask);
+        }
     }
 
     internal static class FaunaTier1LodProxyRegistry

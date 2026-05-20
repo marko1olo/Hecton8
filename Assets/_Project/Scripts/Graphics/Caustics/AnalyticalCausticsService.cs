@@ -14,7 +14,7 @@ namespace Hecton8.Graphics.Caustics
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9210)]
-    public sealed class AnalyticalCausticsService : MonoBehaviour, ICausticsService, ILateFrameTickable, IWeatherEventListener, IOriginShiftListener, IServiceHeartbeat, IServiceShutdown
+    public sealed class AnalyticalCausticsService : MonoBehaviour, ICausticsService, ILateFrameTickable, IWeatherEventListener, IOriginShiftListener, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private const int CausticsResolution = 512;
         private const int MaxWaveCount = 16;
@@ -27,6 +27,9 @@ namespace Hecton8.Graphics.Caustics
         private const string DumpPath = "Docs/AgentLogs/Dump_CAUSTICS_PROJECTION_ENGINEER.bin";
         private const uint TelemetryStateHash = 0x43415354u; // "CAST"
         private const uint TelemetryContextHash = 0x43415831u; // "CAX1"
+        private const SystemID OwnerSystemId = SystemID.GraphicsScalability;
+        private const BufferID WaveUploadScratchBufferId = (BufferID)0x43415841; // "CAXA"
+        private const BufferID BlackBoxBufferId = (BufferID)0x43415842; // "CAXB"
 
         private static readonly int _ResultId = Shader.PropertyToID("_Result");
         private static readonly int _WaveDataId = Shader.PropertyToID("_WaveData");
@@ -69,8 +72,13 @@ namespace Hecton8.Graphics.Caustics
 
         private RenderTexture _causticsMap;
         private GraphicsBuffer _waveBuffer;
+        private IDataVault _dataVault;
+        private IPlayerRuntimeContext _playerRuntimeContext;
+        private Hecton8.Physics.HectonFluidEngine _fluidEngine;
         private NativeArray<CausticsWaveGpuData> _waveUploadScratch;
         private NativeArray<CausticTelemetryEntry> _blackBox;
+        private VaultBufferHandle<CausticsWaveGpuData> _waveUploadScratchHandle;
+        private VaultBufferHandle<CausticTelemetryEntry> _blackBoxHandle;
         private Vector4 _causticsAup;
         private Vector4 _worldRect;
         private Vector3 _lastAnchor;
@@ -89,6 +97,8 @@ namespace Hecton8.Graphics.Caustics
         private bool _registeredLateFrame;
         private bool _registeredWeather;
         private bool _registeredOriginShift;
+        private bool _registeredHotSwap;
+        private bool _ownsRegistrySlot;
         private bool _hasPublishedTexture;
         private bool _waveUploadDirty = true;
         private bool _computeKernelMissing;
@@ -140,6 +150,8 @@ namespace Hecton8.Graphics.Caustics
             if (!ReferenceEquals(GlobalRegistry.Caustics, this))
                 return;
 
+            CacheRegistryServicesCold(forceRefresh: true);
+            TryRegisterHotSwap();
             EnsureBlackBoxState();
             TryRegisterLateFrame();
             TryRegisterWeather();
@@ -154,32 +166,34 @@ namespace Hecton8.Graphics.Caustics
             if (!_isInitialized)
             {
                 InitializeService();
-                if (!_isInitialized || !ReferenceEquals(GlobalRegistry.Caustics, this))
+                if (!_isInitialized || !_ownsRegistrySlot)
                     return;
             }
 
             Vector3 anchor = ResolveRuntimeAnchor();
             float waterLevel = ResolveWaterLevel();
-            bool lowTier = IsLowTier();
+            float quality01 = ResolveGlobalQualityWeight01();
+            float survivalPressure01 = ResolveSurvivalPressure01(quality01);
             bool depthDisabled = ResolveDepthGateDisabled(anchor.y);
-            if (lowTier || depthDisabled)
+            int maxDispatchWaveCount = ResolveDispatchWaveCount(MaxWaveCount, quality01);
+            if (maxDispatchWaveCount <= 0 || depthDisabled)
                 ReleaseComputeOnlyResources();
 
             int waveCount = 0;
-            if (!lowTier && !depthDisabled)
+            if (maxDispatchWaveCount > 0 && !depthDisabled)
             {
                 EnsureComputeDispatchState();
                 if (_waveUploadScratch.IsCreated)
                     waveCount = ResolveWaveUploadScratch();
             }
 
-            int dispatchWaveCount = ResolveDispatchWaveCount(waveCount);
-            uint stateFlags = ResolveStateFlags(anchor, waveCount, lowTier, depthDisabled);
+            int dispatchWaveCount = math.min(maxDispatchWaveCount, ResolveDispatchWaveCount(waveCount, quality01));
+            uint stateFlags = ResolveStateFlags(anchor, waveCount, survivalPressure01, depthDisabled);
             bool computeAllowed = dispatchWaveCount > 0 &&
                                   (stateFlags & ((uint)CausticStateFlags.LowTierFallback | (uint)CausticStateFlags.DepthDisabled | (uint)CausticStateFlags.ComputeMissing)) == 0u;
             _isComputeActive = computeAllowed;
 
-            PublishShaderGlobals(anchor, waterLevel, dispatchWaveCount, computeAllowed, lowTier, depthDisabled);
+            PublishShaderGlobals(anchor, waterLevel, dispatchWaveCount, computeAllowed, survivalPressure01, depthDisabled);
             WriteBlackBox(anchor, waterLevel, waveCount, dispatchWaveCount, stateFlags);
             PublishStateTelemetryIfChanged(stateFlags, waveCount, dispatchWaveCount);
 
@@ -223,6 +237,8 @@ namespace Hecton8.Graphics.Caustics
             }
 
             s_runtimeInstance = this;
+            CacheRegistryServicesCold(forceRefresh: true);
+            TryRegisterHotSwap();
             EnsureSingletonOwnership();
         }
 
@@ -235,12 +251,15 @@ namespace Hecton8.Graphics.Caustics
             }
 
             s_runtimeInstance = this;
+            CacheRegistryServicesCold(forceRefresh: false);
+            TryRegisterHotSwap();
             if (_isInitialized)
             {
                 TryRegisterLateFrame();
                 TryRegisterWeather();
                 TryRegisterOriginShift();
                 GlobalRegistry.RegisterCausticsService(this);
+                _ownsRegistrySlot = true;
             }
         }
 
@@ -249,13 +268,44 @@ namespace Hecton8.Graphics.Caustics
             TryUnregisterLateFrame();
             TryUnregisterWeather();
             TryUnregisterOriginShift();
+            TryUnregisterHotSwap();
             if (ReferenceEquals(GlobalRegistry.Caustics, this))
                 GlobalRegistry.UnregisterCausticsService(this);
+            _ownsRegistrySlot = false;
             if (ReferenceEquals(s_runtimeInstance, this))
                 s_runtimeInstance = null;
             _isComputeActive = false;
             PublishDisabledGlobals();
             ReleaseComputeOnlyResources();
+        }
+
+        /// <inheritdoc />
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.DataVault:
+                    _dataVault = currentService as IDataVault;
+                    _blackBox = default;
+                    _blackBoxHandle = default;
+                    _waveUploadScratch = default;
+                    _waveUploadScratchHandle = default;
+                    _lastWaveMetaVersion = int.MinValue;
+                    _waveUploadDirty = true;
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    break;
+                case GlobalRegistryServiceSlot.FluidRuntime:
+                    _fluidEngine = currentService as Hecton8.Physics.HectonFluidEngine;
+                    break;
+                case GlobalRegistryServiceSlot.CausticsRuntime:
+                    _ownsRegistrySlot = ReferenceEquals(currentService, this);
+                    break;
+            }
         }
 
         private void OnDestroy()
@@ -268,21 +318,31 @@ namespace Hecton8.Graphics.Caustics
             ICausticsService registered = GlobalRegistry.Caustics;
             if (registered != null && !ReferenceEquals(registered, this))
             {
+                _ownsRegistrySlot = false;
                 Destroy(gameObject);
                 return;
             }
 
             if (!ReferenceEquals(registered, this))
                 GlobalRegistry.RegisterCausticsService(this);
+            _ownsRegistrySlot = true;
         }
 
         private void EnsureBlackBoxState()
         {
-            if (!_blackBox.IsCreated)
-            {
-                _blackBox = new NativeArray<CausticTelemetryEntry>(BlackBoxCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<CausticTelemetryEntry>[300] - caustics black box - owner: AnalyticalCausticsService
-                NativeMemorySentinel.RegisterNativeArray(_blackBox, nameof(AnalyticalCausticsService), nameof(_blackBox), NativeAllocationLifetime.Session);
-            }
+            if (_blackBox.IsCreated)
+                return;
+
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return;
+
+            _blackBoxHandle = vault.GetBufferHandle<CausticTelemetryEntry>(
+                BlackBoxBufferId,
+                BlackBoxCapacity,
+                OwnerSystemId,
+                NativeArrayOptions.ClearMemory);
+            _blackBox = _blackBoxHandle.Resolve(vault);
         }
 
         private void EnsureComputeDispatchState()
@@ -297,8 +357,19 @@ namespace Hecton8.Graphics.Caustics
 
             if (!_waveUploadScratch.IsCreated)
             {
-                _waveUploadScratch = new NativeArray<CausticsWaveGpuData>(MaxWaveCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<CausticsWaveGpuData>[16] - compute upload scratch - owner: AnalyticalCausticsService
-                NativeMemorySentinel.RegisterNativeArray(_waveUploadScratch, nameof(AnalyticalCausticsService), nameof(_waveUploadScratch), NativeAllocationLifetime.Session);
+                IDataVault vault = _dataVault;
+                if (vault == null)
+                    return;
+
+                _waveUploadScratchHandle = vault.GetBufferHandle<CausticsWaveGpuData>(
+                    WaveUploadScratchBufferId,
+                    MaxWaveCount,
+                    OwnerSystemId,
+                    NativeArrayOptions.ClearMemory);
+                _waveUploadScratch = _waveUploadScratchHandle.Resolve(vault);
+                if (!_waveUploadScratch.IsCreated || _waveUploadScratch.Length < MaxWaveCount)
+                    return;
+
                 _lastWaveMetaVersion = int.MinValue;
                 _waveUploadDirty = true;
             }
@@ -366,7 +437,7 @@ namespace Hecton8.Graphics.Caustics
         private int TryFillWaveUploadScratchFromVault(out bool vaultBound)
         {
             vaultBound = false;
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null ||
                 !vault.TryGetBuffer(BufferID.OceanGerstnerWaves, out NativeArray<GerstnerWaveComponent> waves) ||
                 !vault.TryGetBuffer(BufferID.OceanGerstnerWaveMeta, out NativeArray<OceanGerstnerWaveBufferMeta> meta) ||
@@ -468,20 +539,28 @@ namespace Hecton8.Graphics.Caustics
             WriteGpuWave(index, wave, active && waveB.w > 0.5f);
         }
 
-        private static int ResolveDispatchWaveCount(int waveCount)
+        private static float ResolveGlobalQualityWeight01()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.isfinite(quality) ? quality : 0f);
+        }
+
+        private static float Smooth01(float value)
+        {
+            value = math.saturate(value);
+            return value * value * (3f - (2f * value));
+        }
+
+        private static int ResolveDispatchWaveCount(int waveCount, float quality01)
         {
             int clamped = math.clamp(waveCount, 0, MaxWaveCount);
             if (clamped <= 0)
                 return 0;
 
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            if (tier == HectonQualityTier.Ultra)
-                return clamped;
-            if (tier == HectonQualityTier.High)
-                return math.min(clamped, 12);
-            if (tier == HectonQualityTier.Mid)
-                return math.min(clamped, 8);
-            return 0;
+            float quality = math.saturate(math.isfinite(quality01) ? quality01 : 0f);
+            float waveCurve01 = Smooth01(math.saturate((quality - 0.24f) * 1.3157895f));
+            int qualityBudget = (int)math.floor(math.lerp(0f, MaxWaveCount, waveCurve01) + 0.0001f);
+            return math.min(clamped, math.clamp(qualityBudget, 0, MaxWaveCount));
         }
 
         private bool ResolveDepthGateDisabled(float playerAupY)
@@ -499,12 +578,12 @@ namespace Hecton8.Graphics.Caustics
             return _depthGateDisabled;
         }
 
-        private uint ResolveStateFlags(in Vector3 anchor, int waveCount, bool lowTier, bool depthDisabled)
+        private uint ResolveStateFlags(in Vector3 anchor, int waveCount, float survivalPressure01, bool depthDisabled)
         {
             uint flags = (uint)CausticStateFlags.Initialized;
             if (causticsCompute == null || _kernelIndex < 0 || _causticsMap == null || _waveBuffer == null)
                 flags |= (uint)CausticStateFlags.ComputeMissing;
-            if (lowTier)
+            if (math.saturate(survivalPressure01) > 0.985f)
                 flags |= (uint)CausticStateFlags.LowTierFallback;
             if (depthDisabled)
                 flags |= (uint)CausticStateFlags.DepthDisabled;
@@ -515,21 +594,19 @@ namespace Hecton8.Graphics.Caustics
             return flags;
         }
 
-        private static bool IsLowTier()
+        private static float ResolveSurvivalPressure01(float quality01)
         {
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            return GlobalRegistry.H8_LOW_MEMORY_PROFILE ||
-                   tier == HectonQualityTier.Unknown ||
-                   tier == HectonQualityTier.Low ||
-                   tier == HectonQualityTier.Mx350;
+            float quality = math.saturate(math.isfinite(quality01) ? quality01 : 0f);
+            return 1f - Smooth01(math.saturate((quality - 0.12f) * 1.1363636f));
         }
 
-        private void PublishShaderGlobals(in Vector3 anchor, float waterLevel, int waveCount, bool computeActive, bool lowTier, bool depthDisabled)
+        private void PublishShaderGlobals(in Vector3 anchor, float waterLevel, int waveCount, bool computeActive, float survivalPressure01, bool depthDisabled)
         {
             float size = math.max(32f, worldSizeMeters);
             float invSize = math.rcp(size);
             float halfSize = size * 0.5f;
-            float intensity = (lowTier || depthDisabled) ? 0f : baseIntensity * (1f - _weatherCloudCover01 * cloudFadePenalty);
+            float survivalWeight = math.saturate(survivalPressure01);
+            float intensity = depthDisabled ? 0f : baseIntensity * (1f - _weatherCloudCover01 * cloudFadePenalty) * (1f - survivalWeight);
             intensity = math.max(0f, intensity);
 
             _lastAnchor = anchor;
@@ -590,7 +667,7 @@ namespace Hecton8.Graphics.Caustics
             return _lastAnchor;
         }
 
-        private static bool TryResolvePlayerAupRuntimePosition(out Vector3 runtimePosition)
+        private bool TryResolvePlayerAupRuntimePosition(out Vector3 runtimePosition)
         {
             if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
             {
@@ -603,7 +680,7 @@ namespace Hecton8.Graphics.Caustics
                 }
             }
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
             if (playerMovement != null)
             {
@@ -616,9 +693,9 @@ namespace Hecton8.Graphics.Caustics
             return false;
         }
 
-        private static float ResolveWaterLevel()
+        private float ResolveWaterLevel()
         {
-            Hecton8.Physics.HectonFluidEngine fluidEngine = GlobalRegistry.Fluid;
+            Hecton8.Physics.HectonFluidEngine fluidEngine = _fluidEngine;
             return fluidEngine != null ? fluidEngine.WaterLevel : 4900f;
         }
 
@@ -780,24 +857,55 @@ namespace Hecton8.Graphics.Caustics
             _registeredOriginShift = false;
         }
 
+        private void TryRegisterHotSwap()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwap()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
+        }
+
+        private void CacheRegistryServicesCold(bool forceRefresh)
+        {
+            if (forceRefresh || _dataVault == null)
+            {
+                _dataVault = GlobalRegistry.DataVault;
+                _lastWaveMetaVersion = int.MinValue;
+                _waveUploadDirty = true;
+            }
+
+            if (forceRefresh || _playerRuntimeContext == null)
+                _playerRuntimeContext = GlobalRegistry.Player;
+
+            if (forceRefresh || _fluidEngine == null)
+                _fluidEngine = GlobalRegistry.Fluid;
+        }
+
         private void ShutdownServiceState()
         {
             TryUnregisterLateFrame();
             TryUnregisterWeather();
             TryUnregisterOriginShift();
+            TryUnregisterHotSwap();
             if (ReferenceEquals(GlobalRegistry.Caustics, this))
                 GlobalRegistry.UnregisterCausticsService(this);
+            _ownsRegistrySlot = false;
             if (ReferenceEquals(s_runtimeInstance, this))
                 s_runtimeInstance = null;
 
             ReleaseComputeOnlyResources();
 
-            if (_blackBox.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_blackBox);
-                _blackBox.Dispose();
-                _blackBox = default;
-            }
+            _blackBox = default;
+            _blackBoxHandle = default;
 
             _isInitialized = false;
             _isComputeActive = false;
@@ -810,10 +918,9 @@ namespace Hecton8.Graphics.Caustics
         {
             if (_waveUploadScratch.IsCreated)
             {
-                NativeMemorySentinel.UnregisterNativeArray(_waveUploadScratch);
-                _waveUploadScratch.Dispose();
                 _waveUploadScratch = default;
             }
+            _waveUploadScratchHandle = default;
 
             _waveBuffer?.Release();
             _waveBuffer = null;
@@ -830,27 +937,41 @@ namespace Hecton8.Graphics.Caustics
             _isComputeActive = false;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct CausticsWaveGpuData
         {
+            [FieldOffset(0)]
             public Vector4 WaveA;
+            [FieldOffset(16)]
             public Vector4 WaveB;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 48)]
+        [StructLayout(LayoutKind.Explicit, Size = 48)]
         private struct CausticTelemetryEntry
         {
+            [FieldOffset(0)]
             public uint FrameIndex;
+            [FieldOffset(4)]
             public uint StateHash;
+            [FieldOffset(8)]
             public uint ContextHash;
+            [FieldOffset(12)]
             public uint Flags;
+            [FieldOffset(16)]
             public float AnchorX;
+            [FieldOffset(20)]
             public float AnchorY;
+            [FieldOffset(24)]
             public float AnchorZ;
+            [FieldOffset(28)]
             public float WaterY;
+            [FieldOffset(32)]
             public int WaveCount;
+            [FieldOffset(36)]
             public int DispatchWaveCount;
+            [FieldOffset(40)]
             public float Intensity;
+            [FieldOffset(44)]
             public float CloudCover01;
         }
 

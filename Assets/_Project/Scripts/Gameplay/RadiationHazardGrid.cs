@@ -549,8 +549,9 @@ namespace Hecton8.Gameplay
             if (!_diffusionJobActive || !_diffusionJobHandle.IsCompleted)
                 return;
 
-            _diffusionJobHandle.Complete();
-            _diffusionJobHandle = default;
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _diffusionJobHandle))
+                return;
+
             _diffusionJobActive = false;
             NativeArray<float> previousRead = _gridRead;
             _gridRead = _gridWrite;
@@ -563,8 +564,7 @@ namespace Hecton8.Gameplay
             if (!_diffusionJobActive)
                 return;
 
-            _diffusionJobHandle.Complete();
-            _diffusionJobHandle = default;
+            DispatcherJobFence.TryComplete(ref _diffusionJobHandle, forceComplete: true);
             _diffusionJobActive = false;
             NativeArray<float> previousRead = _gridRead;
             _gridRead = _gridWrite;
@@ -702,8 +702,20 @@ namespace Hecton8.Gameplay
 
         private static AbsoluteUniversePosition ResolvePlayerAup(PlayerRuntimeContext playerContext)
         {
-            if (playerContext != null && playerContext.PlayerTransform != null)
-                return AbsoluteUniversePosition.FromRuntimePosition(playerContext.PlayerTransform.position);
+            if (playerContext != null)
+            {
+                var playerMovement = playerContext.PlayerMovement;
+                if (playerMovement != null)
+                {
+                    AbsoluteUniversePosition currentAup = playerMovement.CurrentAup;
+                    if (MathGuard.IsFinite(in currentAup))
+                        return currentAup;
+                }
+
+                AbsoluteUniversePosition predictedAup = playerContext.MovementState.PredictedAup;
+                if (MathGuard.IsFinite(in predictedAup))
+                    return predictedAup;
+            }
 
             return AbsoluteUniversePosition.FromRuntimePosition(Vector3.zero);
         }

@@ -9,7 +9,6 @@
 
 namespace Hecton8.Gameplay
 {
-    using System;
     using Hecton.Localization;
     using Unity.Mathematics;
     using UnityEngine;
@@ -25,11 +24,12 @@ namespace Hecton8.Gameplay
     /// Bazovyy klass dlya vseh instrumentov, kotorye igrok
     /// mozhet derzhat v rukah. Upravlyaetsya cherez <see cref="PlayerToolManager"/>.
     /// </summary>
-    public abstract class PlayerTool : MonoBehaviour, IPoolable
+    public abstract class PlayerTool : MonoBehaviour, IPoolable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         private const uint ToolLifecycleTelemetryHash = 0x544C4946u; // TLIF
         private const uint ToolLifecycleSpawnHash = 0x544C5350u; // TLSP
         private const uint ToolLifecycleDespawnHash = 0x544C4453u; // TLDS
+        private const float RuntimeActiveIntentHoldSeconds = 0.075f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -89,7 +89,7 @@ namespace Hecton8.Gameplay
             get
             {
                 if (_toolMetadata == null) return 0f;
-                var system = Hecton8.Core.GlobalRegistry.ToolDurability;
+                ToolDurabilitySystem system = _toolDurabilityService;
                 if (system == null) return _toolMetadata.maxDurability;
                 return system.GetDurability(_toolMetadata.toolID, _toolMetadata.maxDurability);
             }
@@ -109,7 +109,7 @@ namespace Hecton8.Gameplay
             get
             {
                 if (_toolMetadata == null) return false;
-                var system = Hecton8.Core.GlobalRegistry.ToolDurability;
+                ToolDurabilitySystem system = _toolDurabilityService;
                 if (system == null) return false;
                 return system.IsBroken(_toolMetadata.toolID);
             }
@@ -123,18 +123,28 @@ namespace Hecton8.Gameplay
         //  PRIVATE STATE
         // ══════════════════════════════════════════════════════════
 
-        [NonSerialized] private HectonSurvivalSystem _survivalSystem;
         private bool _lowDurabilityWarningFired;
         private bool _swimContractResolved;
         private bool _transportFeelContractResolved;
         private string _cachedOperationalToolName;
         private float _lastUseTime = float.NegativeInfinity;
+        private float _runtimeActiveIntentSeconds;
         private ulong _queuedRaycastRequesterId;
         private uint _runtimeToolId;
+        private uint _runtimeToolSpecHashId;
         private uint _cachedToolItemHashId;
         private bool _runtimeToolRegistered;
+        private bool _modularHotSwapRegistered;
         private bool _lastUseWasPrimary;
         private Transform _cachedBaseTransform;
+        private IModularEquipmentService _modularEquipmentService;
+        private IPowerGridService _powerGridService;
+        private ISubmarineRuntimeContext _submarineRuntimeContext;
+        private IPlayerRuntimeContext _playerRuntimeContext;
+        private IPlayerInventoryService _playerInventoryService;
+        private IInputService _inputService;
+        private IInteractionSignalService _interactionSignalService;
+        private ToolDurabilitySystem _toolDurabilityService;
         private FixedCharBuffer _legacyOperationalBuffer = new FixedCharBuffer(256); // COLD ALLOC: char[256] - legacy string bridge for non-HUD callers - owner: PlayerTool
 
         // ══════════════════════════════════════════════════════════
@@ -148,18 +158,15 @@ namespace Hecton8.Gameplay
             IsEquipped = false;
             _lowDurabilityWarningFired = false;
             _lastUseTime = float.NegativeInfinity;
+            _runtimeActiveIntentSeconds = 0f;
             _lastUseWasPrimary = false;
             RefreshQueuedRaycastRequesterId();
             RefreshOperationalToolNameCache();
             CacheToolItemHash();
             ResolveSwimContract();
             ResolveTransportFeelContract();
-
-            if (_survivalSystem == null && enableEnergyConsumption)
-            {
-                if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform))
-                    playerTransform.TryGetComponent(out _survivalSystem);
-            }
+            CacheToolRegistryDependenciesCold();
+            TryRegisterModularHotSwap();
 
             EnsureModularRuntimeRegistration();
             SyncModularBattery();
@@ -176,12 +183,23 @@ namespace Hecton8.Gameplay
             IsEquipped = false;
             _lowDurabilityWarningFired = false;
             _lastUseTime = float.NegativeInfinity;
+            _runtimeActiveIntentSeconds = 0f;
             _lastUseWasPrimary = false;
             _cachedOperationalToolName = null;
             _queuedRaycastRequesterId = 0UL;
             _runtimeToolId = 0u;
+            _runtimeToolSpecHashId = 0u;
             _cachedToolItemHashId = 0u;
             _runtimeToolRegistered = false;
+            TryUnregisterModularHotSwap();
+            _modularEquipmentService = null;
+            _powerGridService = null;
+            _submarineRuntimeContext = null;
+            _playerRuntimeContext = null;
+            _playerInventoryService = null;
+            _inputService = null;
+            _interactionSignalService = null;
+            _toolDurabilityService = null;
         }
 
         protected void RefreshQueuedRaycastRequesterId()
@@ -191,7 +209,7 @@ namespace Hecton8.Gameplay
 
         protected bool TryResolveQueuedRaycast(Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction qti, out RaycastHit hit)
         {
-            IInteractionSignalService interactionService = GlobalRegistry.InteractionSignals;
+            IInteractionSignalService interactionService = _interactionSignalService;
             if (interactionService != null && interactionService.IsInitialized)
             {
                 if (_queuedRaycastRequesterId == 0UL) RefreshQueuedRaycastRequesterId();
@@ -245,6 +263,7 @@ namespace Hecton8.Gameplay
         public virtual void OnUnequip()
         {
             IsEquipped = false;
+            _runtimeActiveIntentSeconds = 0f;
             if (TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered)
                 service.SetToolActive(_runtimeToolId, false);
         }
@@ -260,6 +279,14 @@ namespace Hecton8.Gameplay
         }
 
         public virtual void ToolTick(float deltaTime) { }
+
+        internal void AdvanceRuntimeActiveIntent(float deltaTime)
+        {
+            if (_runtimeActiveIntentSeconds <= 0f)
+                return;
+
+            _runtimeActiveIntentSeconds = math.max(0f, _runtimeActiveIntentSeconds - FiniteNonNegativeOrZero(deltaTime));
+        }
 
         // ══════════════════════════════════════════════════════════
         //  OPERATIONAL SUMMARIES (ZERO-GC)
@@ -414,10 +441,11 @@ namespace Hecton8.Gameplay
         protected bool TryGetWirelessBrownoutFlicker(out float flickerScalar)
         {
             flickerScalar = 0f;
-            if (!_runtimeToolRegistered || !(GlobalRegistry.ModularEquipment is ModularEquipmentEngine runtime))
+            if (!_runtimeToolRegistered ||
+                !TryGetModularEquipment(out IModularEquipmentService service))
                 return false;
 
-            if (!runtime.TryGetWirelessBrownoutFeedback(_runtimeToolId, out flickerScalar) || !math.isfinite(flickerScalar))
+            if (!service.TryGetWirelessBrownoutFeedback(_runtimeToolId, out flickerScalar) || !math.isfinite(flickerScalar))
             {
                 flickerScalar = 0f;
                 return false;
@@ -430,10 +458,11 @@ namespace Hecton8.Gameplay
         protected bool TryGetToolBrownoutFlicker(out float flickerScalar)
         {
             flickerScalar = 0f;
-            if (!_runtimeToolRegistered || !(GlobalRegistry.ModularEquipment is ModularEquipmentEngine runtime))
+            if (!_runtimeToolRegistered ||
+                !TryGetModularEquipment(out IModularEquipmentService service))
                 return false;
 
-            if (!runtime.TryGetToolBrownoutFeedback(_runtimeToolId, out flickerScalar) || !math.isfinite(flickerScalar))
+            if (!service.TryGetToolBrownoutFeedback(_runtimeToolId, out flickerScalar) || !math.isfinite(flickerScalar))
             {
                 flickerScalar = 0f;
                 return false;
@@ -448,10 +477,11 @@ namespace Hecton8.Gameplay
             if (GetRuntimeBatteryNormalized(0f) > 0.0001f)
                 return true;
 
+            ISubmarineRuntimeContext submarine = _submarineRuntimeContext;
             return HasModularUpgrade(ToolUpgradeBits.WirelessCharging) &&
-                   GlobalRegistry.Submarine != null &&
-                   GlobalRegistry.Submarine.AtmosphereSystem != null &&
-                   GlobalRegistry.PowerGrid != null;
+                   submarine != null &&
+                   submarine.AtmosphereSystem != null &&
+                   _powerGridService != null;
         }
 
         protected float GetConditionPerformanceScale()
@@ -468,10 +498,11 @@ namespace Hecton8.Gameplay
 
         private void ApplyDurabilityDrain(float deltaTime, bool isPrimary)
         {
-            var system = Hecton8.Core.GlobalRegistry.ToolDurability;
+            ToolDurabilitySystem system = _toolDurabilityService;
             if (system == null || _toolMetadata == null) return;
             float safeDeltaTime = FiniteNonNegativeOrZero(deltaTime);
             float drainRate = FiniteNonNegativeOrZero(isPrimary ? _toolMetadata.durabilityDrainRate : _toolMetadata.durabilityDrainRateSecondary);
+            float safeMaxDurability = FiniteAtLeast(_toolMetadata.maxDurability, 1f);
             float multiplier = TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
                 ? service.GetDurabilityDrainMultiplier(_runtimeToolId, 1f)
                 : 1f;
@@ -479,8 +510,8 @@ namespace Hecton8.Gameplay
             system.DrainDurabilityByTime(
                 _toolMetadata.toolID,
                 ResolveToolItemHash(),
-                drainRate * safeMultiplier * safeDeltaTime,
-                FiniteAtLeast(_toolMetadata.maxDurability, 1f));
+                drainRate * math.rcp(safeMaxDurability) * safeMultiplier * safeDeltaTime,
+                safeMaxDurability);
             SyncModularDurability();
         }
 
@@ -581,7 +612,6 @@ namespace Hecton8.Gameplay
             if (requestedDrain <= 0f)
                 return true;
 
-            service.SetToolActive(_runtimeToolId, true);
             return HasToolEnergyOrWirelessPath();
         }
 
@@ -600,7 +630,7 @@ namespace Hecton8.Gameplay
             if (ToolHitUtility.TryApplyRelativeCarrierImpulse(safeDirection, impulseMagnitude))
                 return true;
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             Rigidbody playerBody = playerContext != null ? playerContext.PlayerRigidbody : null;
             if (playerBody == null)
                 return false;
@@ -681,18 +711,26 @@ namespace Hecton8.Gameplay
                     return false;
             }
 
-            if (enableDurabilityDrain && _toolMetadata != null)
+            _lastUseWasPrimary = isPrimary;
+            if (enableDurabilityDrain && _toolMetadata != null && !UsesCentralizedRuntimeWear())
                 ApplyDurabilityDrain(safeDeltaTime, isPrimary);
 
+            _runtimeActiveIntentSeconds = math.max(_runtimeActiveIntentSeconds, RuntimeActiveIntentHoldSeconds);
             _lastUseTime = Time.time;
-            _lastUseWasPrimary = isPrimary;
             CheckLowDurability();
             return true;
         }
 
+        private bool UsesCentralizedRuntimeWear()
+        {
+            return _runtimeToolRegistered &&
+                   TryGetModularEquipment(out IModularEquipmentService service) &&
+                   service.IsInitialized;
+        }
+
         internal bool IsRuntimeOverchargeRequested()
         {
-            IInputService inputService = GlobalRegistry.Input;
+            IInputService inputService = _inputService;
             if (inputService == null || !inputService.IsPlayerInputEnabled || !IsEquipped)
                 return false;
 
@@ -707,11 +745,16 @@ namespace Hecton8.Gameplay
             {
                 int toolHashId = LocHash.Compute(_toolData.PersistentId);
                 if (toolHashId != 0)
-                    Hecton8.Core.GlobalRegistry.PlayerInventoryRuntime?.TryRemoveFirstMatchingItemByHash(toolHashId);
+                {
+                    PlayerInventory inventory = _playerInventoryService != null
+                        ? _playerInventoryService.Inventory
+                        : null;
+                    inventory?.TryRemoveFirstMatchingItemByHash(toolHashId);
+                }
             }
 
             HectonPlayerHealth playerHealth = null;
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             if (playerContext != null && playerContext.PlayerTransform != null)
                 playerContext.PlayerTransform.TryGetComponent(out playerHealth);
 
@@ -724,11 +767,46 @@ namespace Hecton8.Gameplay
             if (_runtimeToolId != 0u)
                 return _runtimeToolId;
 
-            string toolIdSource = _toolMetadata != null && !string.IsNullOrWhiteSpace(_toolMetadata.toolID)
+            string toolIdSource = ResolveRuntimeToolIdSource();
+            _runtimeToolId = unchecked((uint)Animator.StringToHash(toolIdSource));
+            _runtimeToolSpecHashId = HashRuntimeToolSpecId(toolIdSource);
+            return _runtimeToolId;
+        }
+
+        private uint ResolveRuntimeToolSpecHashId()
+        {
+            if (_runtimeToolSpecHashId != 0u)
+                return _runtimeToolSpecHashId;
+
+            string toolIdSource = ResolveRuntimeToolIdSource();
+            _runtimeToolSpecHashId = HashRuntimeToolSpecId(toolIdSource);
+            return _runtimeToolSpecHashId;
+        }
+
+        private string ResolveRuntimeToolIdSource()
+        {
+            return _toolMetadata != null && !string.IsNullOrWhiteSpace(_toolMetadata.toolID)
                 ? _toolMetadata.toolID
                 : (_toolData != null && !string.IsNullOrWhiteSpace(_toolData.itemName) ? _toolData.itemName : GetType().Name);
-            _runtimeToolId = unchecked((uint)Animator.StringToHash(toolIdSource));
-            return _runtimeToolId;
+        }
+
+        private static uint HashRuntimeToolSpecId(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return 0u;
+
+            uint hash = 2166136261u;
+            for (int i = 0; i < value.Length; i++)
+            {
+                char c = value[i];
+                if (c >= 'A' && c <= 'Z')
+                    c = (char)(c + 32);
+
+                hash ^= c <= 0x7F ? (byte)c : (byte)'?';
+                hash *= 16777619u;
+            }
+
+            return hash;
         }
 
         private void EnsureModularRuntimeRegistration()
@@ -741,6 +819,7 @@ namespace Hecton8.Gameplay
                 return;
 
             runtime.InitializeService();
+            _modularEquipmentService = runtime.IsInitialized ? runtime : _modularEquipmentService;
 
             if (!TryGetModularEquipment(out IModularEquipmentService service))
                 return;
@@ -760,17 +839,157 @@ namespace Hecton8.Gameplay
             _runtimeToolRegistered = false;
         }
 
-        private bool TryGetModularEquipment(out IModularEquipmentService service)
+        protected bool TryGetModularEquipment(out IModularEquipmentService service)
         {
-            service = GlobalRegistry.ModularEquipment;
+            service = _modularEquipmentService;
             return service != null && service.IsInitialized;
+        }
+
+        protected bool TryGetSubmarineRuntimeContext(out ISubmarineRuntimeContext submarine)
+        {
+            submarine = _submarineRuntimeContext;
+            return submarine != null;
+        }
+
+        protected bool TryGetPlayerRuntimeContext(out IPlayerRuntimeContext playerContext)
+        {
+            playerContext = _playerRuntimeContext;
+            return playerContext != null && playerContext.IsInitialized;
+        }
+
+        private void CacheToolRegistryDependenciesCold()
+        {
+            _modularEquipmentService = GlobalRegistry.ModularEquipment;
+            _powerGridService = GlobalRegistry.PowerGrid;
+            _submarineRuntimeContext = GlobalRegistry.Submarine;
+            _playerRuntimeContext = GlobalRegistry.Player;
+            _playerInventoryService = GlobalRegistry.PlayerInventory;
+            _inputService = GlobalRegistry.Input;
+            _interactionSignalService = GlobalRegistry.InteractionSignals;
+            _toolDurabilityService = GlobalRegistry.ToolDurability;
+        }
+
+        private void TryRegisterModularHotSwap()
+        {
+            if (_modularHotSwapRegistered)
+                return;
+
+            _modularHotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterModularHotSwap()
+        {
+            if (!_modularHotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _modularHotSwapRegistered = false;
+        }
+
+        private void ApplyRegistryServiceRebind(GlobalRegistryServiceSlot serviceSlot, object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.ModularEquipment:
+                    _modularEquipmentService = currentService as IModularEquipmentService;
+                    break;
+                case GlobalRegistryServiceSlot.PowerGrid:
+                    _powerGridService = currentService as IPowerGridService;
+                    break;
+                case GlobalRegistryServiceSlot.Submarine:
+                    _submarineRuntimeContext = currentService as ISubmarineRuntimeContext;
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    break;
+                case GlobalRegistryServiceSlot.PlayerInventory:
+                    _playerInventoryService = currentService as IPlayerInventoryService;
+                    break;
+                case GlobalRegistryServiceSlot.Input:
+                    _inputService = currentService as IInputService;
+                    break;
+                case GlobalRegistryServiceSlot.InteractionSignals:
+                    _interactionSignalService = currentService as IInteractionSignalService;
+                    break;
+                case GlobalRegistryServiceSlot.ToolDurabilityRuntime:
+                    _toolDurabilityService = currentService as ToolDurabilitySystem;
+                    break;
+            }
+        }
+
+        void IGlobalRegistryHotSwapRefListener.OnGlobalRegistryServiceRebound(GlobalRegistryServiceSlot serviceSlot, ref object currentService)
+        {
+            ApplyRegistryServiceRebind(serviceSlot, currentService);
+        }
+
+        void IGlobalRegistryHotSwapListener.OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
+        {
+            ApplyRegistryServiceRebind(serviceSlot, currentService);
         }
 
         internal ToolMetadata RuntimeMetadata => _toolMetadata;
         internal uint RuntimeToolId => _runtimeToolId;
+        internal uint RuntimeToolSpecHashId => ResolveRuntimeToolSpecHashId();
         internal float LastUseTime => _lastUseTime;
         internal bool LastUseWasPrimary => _lastUseWasPrimary;
+        internal bool HasRuntimeActiveIntent => IsEquipped && _runtimeActiveIntentSeconds > 0f;
         internal bool WasRecentlyUsed(float maxIdleSeconds) => IsEquipped && (Time.time - _lastUseTime <= FiniteAtLeast(maxIdleSeconds, 0.05f));
+
+        internal bool TryResolveCachedRuntimePosition(out float3 runtimePosition)
+        {
+            runtimePosition = default;
+            if (_cachedBaseTransform == null)
+                _cachedBaseTransform = transform;
+
+            if (_cachedBaseTransform == null)
+                return false;
+
+            Vector3 position = _cachedBaseTransform.position;
+            if (!IsFiniteVector(position))
+                return false;
+
+            runtimePosition = new float3(position.x, position.y, position.z);
+            return true;
+        }
+
+        internal bool TryResolveCachedAup(out double3 absoluteAup)
+        {
+            absoluteAup = default;
+            if (!TryResolveCachedRuntimePosition(out float3 runtimePosition))
+                return false;
+
+            absoluteAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(new Vector3(
+                runtimePosition.x,
+                runtimePosition.y,
+                runtimePosition.z));
+            return math.all(math.isfinite(absoluteAup));
+        }
+
+        internal bool TryGetDurabilityMirror(out string toolId, out uint itemHashId, out float maxDurability)
+        {
+            toolId = null;
+            itemHashId = 0u;
+            maxDurability = 1f;
+            if (_toolMetadata == null || string.IsNullOrEmpty(_toolMetadata.toolID))
+                return false;
+
+            toolId = _toolMetadata.toolID;
+            itemHashId = ResolveToolItemHash();
+            maxDurability = FiniteAtLeast(_toolMetadata.maxDurability, 1f);
+            return true;
+        }
+
+        internal float ResolveActiveDurabilityDrainRateNormalized()
+        {
+            if (!enableDurabilityDrain || _toolMetadata == null)
+                return 0f;
+
+            float drainRate = _lastUseWasPrimary
+                ? _toolMetadata.durabilityDrainRate
+                : _toolMetadata.durabilityDrainRateSecondary;
+            float safeMaxDurability = FiniteAtLeast(_toolMetadata.maxDurability, 1f);
+            return FiniteNonNegativeOrZero(drainRate) * math.rcp(safeMaxDurability);
+        }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private void PublishLifecycleDebug(uint markerHash)
         {

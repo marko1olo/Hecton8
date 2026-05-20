@@ -454,7 +454,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
     private const int WorldGenerationAlgorithmVersionId = 1;
     private static readonly ProfilerMarker _tickProfilerMarker = new ProfilerMarker("H8.WorldGenerator.Tick");
     private static readonly ProfilerMarker _physicsBakeBatchProfilerMarker = new ProfilerMarker("H8.WorldGenerator.PhysicsBakeBatch");
-    public bool IsInitialized => ReferenceEquals(GlobalRegistry.WorldSeedProvider, this);
+    public bool IsInitialized => _registeredWorldSeedProvider;
     public int RuntimeWorldSeed => ComputeRuntimeWorldSeed();
     public int RuntimeWorldGenerationVersionId => WorldGenerationAlgorithmVersionId;
 
@@ -758,6 +758,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
     bool _streaming;
     bool _registeredToTickManager;
     bool _registeredToLateFrame;
+    bool _registeredWorldSeedProvider;
 
     [HideInInspector] public GameObject previewObj;
 
@@ -817,6 +818,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
             return;
 
         GlobalRegistry.RegisterWorldSeedProvider(this);
+        _registeredWorldSeedProvider = ReferenceEquals(GlobalRegistry.WorldSeedProvider, this);
         StartStreaming();
         RegisterToTickManager();
     }
@@ -824,6 +826,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
     void OnDisable()
     {
         GlobalRegistry.UnregisterWorldSeedProvider(this);
+        _registeredWorldSeedProvider = false;
 
         UnregisterFromTickManager();
 
@@ -835,9 +838,12 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
     {
         using (_tickProfilerMarker.Auto())
         {
-            if (!_streaming || viewer == null) return;
+            if (!_streaming) return;
 
-            int2 cur = WorldToChunk(viewer.position);
+            if (!TryResolveViewerAup(out AbsoluteUniversePosition viewerAup))
+                return;
+
+            int2 cur = WorldToChunk(in viewerAup);
             if (!cur.Equals(_lastChunk))
             {
                 _lastChunk = cur;
@@ -1074,15 +1080,14 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
 
     #region Streaming
 
-    int2 WorldToChunk(Vector3 p)
+    int2 WorldToChunk(in AbsoluteUniversePosition viewerAup)
     {
-        Long2 absoluteChunk = ResolveAbsoluteChunkCoord(p);
+        Long2 absoluteChunk = ResolveAbsoluteChunkCoord(in viewerAup);
         return new int2(SaturateLongToInt(absoluteChunk.x), SaturateLongToInt(absoluteChunk.y));
     }
 
-    Long2 ResolveAbsoluteChunkCoord(Vector3 runtimePosition)
+    Long2 ResolveAbsoluteChunkCoord(in AbsoluteUniversePosition viewerAup)
     {
-        AbsoluteUniversePosition viewerAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
         double3 absolutePosition = viewerAup.ToAbsoluteDouble3();
         double safeChunkSize = math.max(1d, (double)chunkSize);
         return new Long2(
@@ -1092,9 +1097,37 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
 
     double2 ResolveViewerAbsoluteXZ()
     {
-        AbsoluteUniversePosition viewerAup = AbsoluteUniversePosition.FromRuntimePosition(viewer.position);
+        if (!TryResolveViewerAup(out AbsoluteUniversePosition viewerAup))
+            return double2.zero;
+
         double3 absolutePosition = viewerAup.ToAbsoluteDouble3();
         return new double2(absolutePosition.x, absolutePosition.z);
+    }
+
+    bool TryResolveViewerAup(out AbsoluteUniversePosition viewerAup)
+    {
+        IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+        if (playerContext != null &&
+            playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+            MathGuard.IsFinite(in snapshot.Aup))
+        {
+            viewerAup = snapshot.Aup;
+            return true;
+        }
+
+        var playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
+        if (playerMovement != null)
+        {
+            AbsoluteUniversePosition currentAup = playerMovement.CurrentAup;
+            if (MathGuard.IsFinite(in currentAup))
+            {
+                viewerAup = currentAup;
+                return true;
+            }
+        }
+
+        viewerAup = default;
+        return false;
     }
 
     double2 ResolveChunkCenterAbsoluteXZ(int2 chunkCoord)
@@ -2872,6 +2905,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
     void OnDestroy()
     {
         GlobalRegistry.UnregisterWorldSeedProvider(this);
+        _registeredWorldSeedProvider = false;
 
         if (!Application.isPlaying && !_streaming && _pendingChunks.Count == 0 && !_lutsReady)
         {

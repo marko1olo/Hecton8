@@ -120,7 +120,7 @@ namespace Hecton8.World.SeedShipAnomaly
 
         private void OnDisable()
         {
-            CompleteFrameJob(forceComplete: true);
+            CompleteFrameJobForTeardown();
             TryUnregisterTicks();
             TryUnregisterHotSwapListener();
             UnlockJobBuffers();
@@ -131,7 +131,7 @@ namespace Hecton8.World.SeedShipAnomaly
         {
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
-                CompleteFrameJob(forceComplete: true);
+                CompleteFrameJobForTeardown();
                 UnlockJobBuffers();
                 _dataVault = currentService as IDataVault;
                 ClearCachedHandles();
@@ -243,7 +243,7 @@ namespace Hecton8.World.SeedShipAnomaly
 
         public void LateFrameTick()
         {
-            CompleteFrameJob(forceComplete: false);
+            TryFinalizeFrameJobNoWait();
         }
 
         public void SlowTick()
@@ -725,15 +725,33 @@ namespace Hecton8.World.SeedShipAnomaly
             if (lockedCount >= 1) vault.TryUnlockBuffer(BufferID.ShinobuSeedShipAnomalyField, OwnerSystem);
         }
 
-        private void CompleteFrameJob(bool forceComplete)
+        private void TryFinalizeFrameJobNoWait()
         {
             if (!_jobScheduled)
                 return;
 
-            if (!forceComplete && !_activeJobHandle.IsCompleted)
+            if (!_activeJobHandle.IsCompleted)
                 return;
 
-            _activeJobHandle.Complete();
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _activeJobHandle))
+                return;
+
+            FinishFrameJobCompletion();
+        }
+
+        private void CompleteFrameJobForTeardown()
+        {
+            if (!_jobScheduled)
+                return;
+
+            if (!DispatcherJobFence.TryComplete(ref _activeJobHandle, forceComplete: true))
+                return;
+
+            FinishFrameJobCompletion();
+        }
+
+        private void FinishFrameJobCompletion()
+        {
             float elapsedMs = (float)((Stopwatch.GetTimestamp() - _jobStartTimestamp) * 1000.0 / Stopwatch.Frequency);
             IDataVault vault = _dataVault;
             if (vault != null &&

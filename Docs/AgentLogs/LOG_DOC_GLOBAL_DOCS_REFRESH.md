@@ -1,78 +1,379 @@
 # DOC_GLOBAL_DOCS_REFRESH Log
 
-Date: 2026-05-19
-Status: ACTIVE R32 / PRIOR HISTORY ARCHIVED
+Date: 2026-05-20
+Domain: Echelon 9.83 Chronicler / Project Documentation Currency
 
-Prior full log history is archived at `Docs/Archive/Batch009/AgentLogs/LOG_DOC_GLOBAL_DOCS_REFRESH.md`. The active file was absent during R27 closeout, so this file records the current live completion without rewriting archived history.
+## R37 Root / Architecture Pass
 
-## R27 Root / Architecture Index Counter Local
+What was wrong:
+- Active root and architecture docs still promoted R36/R35-era boundaries after R37 edits and Batch010 archival.
+- Active docs pointed at missing `Docs/AgentLogs` artifact paths.
+- R34 source counters and large-owner line counts were stale.
+- Architecture docs carried R36 boundary residue after R37 became the latest local static correction.
+- Static atlas generation succeeded, but `AtlasCheck` remained red.
 
-What was wrong: R26 was still advertised as latest in active root/architecture/report/Archivarius entrypoints after the user requested continued root/architecture documentation work. Source line counters had drifted, active HPhi paths pointed to files now under `Docs/Archive/Batch009`, generated atlas JSON lacked machine-readable AtlasCheck red-gate status, and global authority docs carried inconsistent recapture values.
+What was done:
+- Added `Docs/Reports/2026-05-20_DOCUMENTATION_R37_ROOT_ARCHITECTURE_ARTIFACT_PATHS_AND_COUNTERS_LOCAL.md`.
+- Updated `Docs/README.md`, `Docs/DOC_GOVERNANCE.md`, `Docs/ROOT_DOCS_REFERENCE.md`, `Docs/Reports/README.md`, `Docs/ARCHITECTURE/README.md`, `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`, `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md`, and `Docs/PROJECT_STATE_STATIC_XRAY.md`.
+- Propagated R37 boundary wording across active architecture docs; R36 is now prior authority-spine/domain-map correction.
+- Corrected archived artifact paths for SHINOBU_02 / SHINOBU_143 / SHINOBU_154 / SHINOBU_160 surfaces.
+- Recaptured current static source counters and large-owner data.
+- Regenerated `Docs/DEPENDENCY_GRAPH.md` and `Docs/DEPENDENCY_GRAPH.json`.
 
-What was done: Wrote `Docs/Reports/2026-05-19_DOCUMENTATION_R27_ROOT_ARCHITECTURE_INDEX_COUNTER_LOCAL.md`; promoted R27 through root README, governance, root reference, static X-Ray, global architecture map, runtime plan, systems contracts, quality gates, Reports README, architecture README/actuality ledger, H-Phi metric doc, global authority docs, signal corridor, dispatch/boot docs, SHINOBU pages, Archivarius indexes, and the HFI report; recaptured counters at `1818 / 1761 / 1797` C# files and `1204221 / 1184559 / 1199376` physical lines; fixed active HPhi archive paths; added generated atlas `atlas_check_status`; regenerated dependency graph markdown/json.
+Cinematic cheats used:
+- Documentation-only pass; no simulation, rendering, or runtime fake was introduced.
+- Evidence-text filter used as the primary cheat: static evidence stays static, runtime claims stay pending.
 
-Cinematic Cheats used: none; documentation/tooling-only pass.
+Exact microseconds saved:
+- Runtime frame time: `0 us`; no runtime code changed.
+- Documentation review savings estimate: `6000000 us` future manual chase avoided by R37 read-order and artifact-path cleanup.
 
-Exact Microseconds saved: 0 claimed. R27 did not run Unity/profiler/GCMonitor/player-build proof.
+Validation:
+- `python Tools\BuildArchitectureAtlas.py`: exit `0`.
+- `python Tools\test_architecture_atlas.py`: exit `0`, `10` tests.
+- `python -m py_compile Tools\BuildArchitectureAtlas.py Tools\AtlasCheck.py Tools\test_architecture_atlas.py`: exit `0`.
+- `python Tools\AtlasCheck.py`: exit `1`, `ATLAS_CHECK_FAIL references=6638 missing=58`.
+- `Docs\Modding\Validate_Mod_API_Static.ps1`: exit `0`, `Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`.
+- JSON parse: `JsonFiles=130`, `Bad=0`.
+- Active root/architecture/report-index R4 scan: `ScopeFiles=106`, `Missing=0`, `Duplicate=0`.
+- Markdown links: `ScopeFiles=285`, `MarkdownLinksChecked=62`, `Missing=0`.
+- `git diff --check`: exit `0`, line-ending warnings only.
 
-Validation: `BuildArchitectureAtlas.py` regenerated dependency graph markdown/json; atlas unit tests passed (`10`); atlas tools `py_compile` passed; JSON parse spot check passed (`5`, bad `0`, missing `0`); R27 scoped R4 scan `111`, missing `0`, duplicate `0`; generated atlas JSON exposes the current AtlasCheck red-gate status; `AtlasCheck` still fails with `ATLAS_CHECK_FAIL references=6549 missing=57` on RealtimeCSG vendor image/readme references; Mod API static validator still fails on `[MOD_API_STATIC_VALIDATION] Missing ModCommand sequential size declaration.`; scoped root/architecture `git diff --check` excluding volatile `Docs/Tasks`, `Docs/AgentLogs`, `Docs/Archive`, and unrelated `Docs/Modding` exited `0` with line-ending warnings only. Wider all-doc diff-check is red on unrelated concurrent trailing whitespace in four `Docs/Modding` files. Runtime proof remains absent.
+Residual blockers:
+- `Tools\AtlasCheck.py` remains red on Dynamic Decals / RealtimeCSG vendor refs.
+- Architecture source-anchor scan reports `20` documented absent/blocker paths, not hidden current proof.
+- Unity import, Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load, platform, analytics, network, and visual proof remain absent.
 
-## R28 Root / Architecture Interior Boundary Local
+## R38 Root / Architecture Source-Counter Drift Pass
 
-What was wrong: R27 was current for source counters/indexes, but 25 active architecture documents still carried only generic R4 actuality text without explicit current DOC_GLOBAL root/architecture blocker context. The active HFI report lacked a R4/R28 boundary. After validation, the previous Mod API static validator blocker was stale because `Validate_Mod_API_Static.ps1` now passes.
+What was wrong:
+- Active root/architecture entrypoints had R37 as the newest local DOC_GLOBAL layer after R38 source-counter drift was already being written.
+- R37 physical-line totals were stale under concurrent source churn.
+- Global-authority orientation counts drifted for registry, publish/subscribe, native collection, queue, and typed lane surfaces.
+- `Docs/README.md` and `Docs/Reports/README.md` contained malformed CRLF escape text from mechanical replacement.
+- Static atlas generation succeeded, but `AtlasCheck` remained red and had to stay red in docs.
 
-What was done: Wrote `Docs/Reports/2026-05-19_DOCUMENTATION_R28_ROOT_ARCHITECTURE_INTERIOR_BOUNDARY_LOCAL.md`; added explicit R28 interior notes to 25 active architecture docs; promoted R28 in root README, governance, root reference, global architecture map, runtime execution plan, systems contracts, quality gates, project atlas, architecture README, actuality ledger, and Reports README; added the missing R4/R28 boundary to the HFI report; changed active current-gate wording so Mod API static validation is PASS and only AtlasCheck remains red.
+What was done:
+- Added and linked `Docs/Reports/2026-05-20_DOCUMENTATION_R38_ROOT_ARCHITECTURE_SOURCE_COUNTER_DRIFT_AND_BOUNDARY_LOCAL.md`.
+- Promoted R38 through `Docs/README.md`, `Docs/DOC_GOVERNANCE.md`, `Docs/ROOT_DOCS_REFERENCE.md`, `Docs/Reports/README.md`, `Docs/ARCHITECTURE/README.md`, and `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`.
+- Updated root/architecture source counters: `1960` project C# files, `1901` script C# files, `1936` non-test C# files, `1167207` project physical lines, `1149917` script physical lines, `1161785` non-test physical lines, `347/342` broad interface-token hits, `272` direct interface declarations, `62` direct public `GlobalRegistryContracts` interfaces, `133/131` asmdefs.
+- Updated global-authority orientation counts: `6069` `GlobalRegistry.` hits, `526` publish/subscribe hits, `21454` native-collection hits, `115` `NativeQueue<...>` refs, `73` `CreateQueue(...)` slots, `135` typed lanes inside `GlobalSignals.cs`, `271` configure/ensure hits inside `GlobalSignals.cs`, and `266` script-level typed lane matches.
+- Updated `Tools/BuildArchitectureAtlas.py`, `Tools/test_architecture_atlas.py`, `Docs/DEPENDENCY_GRAPH.md`, and `Docs/DEPENDENCY_GRAPH.json` so generated atlas metadata records the R38 AtlasCheck red state.
+- Removed malformed CRLF escape residue from current entrypoint docs.
 
-Cinematic Cheats used: none. This was documentation evidence hygiene, not runtime simulation.
+Cinematic cheats used:
+- Documentation-only pass; no simulation, rendering, or runtime fake was introduced.
+- Evidence filter applied: STATIC_DOC / STATIC_SOURCE / FILESYSTEM / PY_TOOL / POWERSHELL_STATIC only.
 
-Exact Microseconds saved: 0 claimed. R28 did not run Unity/profiler/GCMonitor/player-build proof.
+Exact microseconds saved:
+- Runtime frame time: `0 us`; no runtime code changed.
+- Documentation review savings estimate: `7000000 us` future manual chase avoided by R38 read-order, source-counter, and malformed-index cleanup.
 
-Validation: R28 interior note scan `25`; scoped R4 scan `ScopeFiles=325`, missing `0`, duplicate `0`; scoped local markdown link scan `MissingCount=0`, `Files=0`, `ScopeFiles=157`; stale Mod API red-blocker scan over active root/architecture/report surfaces returned no hits; `python Tools\test_architecture_atlas.py` passed `10` tests; JSON parse spot check passed `5`, bad `0`, missing `0`; `python Tools\AtlasCheck.py` still fails with `ATLAS_CHECK_FAIL references=6549 missing=57`; `Docs\Modding\Validate_Mod_API_Static.ps1` now passes (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`); scoped root/architecture `git diff --check` excluding volatile task/log/archive/modding paths exited `0` with line-ending warnings only. Runtime proof remains absent.
+Validation:
+- `python Tools\BuildArchitectureAtlas.py`: exit `0`.
+- `python Tools\test_architecture_atlas.py`: exit `0`, `10` tests.
+- `python -m py_compile Tools\BuildArchitectureAtlas.py Tools\AtlasCheck.py Tools\test_architecture_atlas.py`: exit `0`.
+- `python Tools\AtlasCheck.py`: exit `1`, `ATLAS_CHECK_FAIL references=6638 missing=58`.
+- `Docs\Modding\Validate_Mod_API_Static.ps1`: exit `0`, `Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`.
+- JSON parse: `JsonFiles=130`, `Bad=0`.
+- Active root/architecture/report-index R4 scan: `ScopeFiles=88`, `Missing=0`, `Duplicate=0`.
+- Root/index markdown links: `ScopeFiles=14`, `MarkdownLinksChecked=54`, `Missing=0`.
+- Targeted stale R36/R37-current scan: no current-boundary residue requiring patch; one historical `PROJECT_STATE_STATIC_XRAY.md` R37 paragraph is superseded inline by R38/R43.
+- CRLF escape residue scan: no hits.
+- `git diff --check`: exit `0`, line-ending warnings only.
 
-## R29 Root / Architecture Stale Gate + Global Authority Local
+Residual blockers:
+- `Tools\AtlasCheck.py` remains red on `Assets/Dynamic Decals/Resources/Decal.obj` plus RealtimeCSG vendor icon/readme image references.
+- Unity import, Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load, platform, analytics, network, and visual proof remain absent.
 
-What was wrong: Active root/architecture docs still contained stale current-red Mod API validator wording after the validator had passed. Several global-authority docs still carried R27 boundary headings, and the review checklist could be read as allowing `GREEN` with only a proof plan. `TRAUMA_GLITCH_SYSTEM.md` treated code-level validation too close to compile/Console/GC proof. R29 edits existed and therefore root/architecture entrypoints needed to stop advertising R28 as the latest DOC_GLOBAL boundary.
+## R39 Root / Architecture Authority-Counter And Proof-Wording Pass
 
-What was done: Wrote `Docs/Reports/2026-05-19_DOCUMENTATION_R29_ROOT_ARCHITECTURE_STALE_GATE_GLOBAL_AUTHORITY_LOCAL.md`; promoted R29 through root README, governance, root reference, global architecture map, runtime execution plan, systems contracts, quality gates, project atlas, architecture README, actuality ledger, and Reports README; corrected stale Mod API PASS/blocked wording in active surfaces; updated six `GLOBAL_AUTHORITY_*` docs; tightened `GREEN` review semantics; renamed the route-card example to proposed; demoted Trauma GC/compile/Console wording; scoped Signal Corridor and Dispatch inventory to the R27 source-counter snapshot.
+What was wrong:
+- Active root/architecture docs still had R38 as latest after R39 proof-wording and authority-counter corrections were needed.
+- `HECTON8_GLOBAL_ARCHITECTURE_MAP.md` carried R37/R38 residue in asmdef and physical-line sections.
+- Active docs treated R43 no-restore compile rows, Python harness text, "clean scan" wording, and H-Phi floors too close to current proof without full artifact tuples.
+- Some docs cited absent active `Docs/AgentLogs/...` or active route-card paths after Batch010 archival.
+- Root reference docs still described former root mirrors/snapshots as live root surfaces.
 
-Cinematic Cheats used: none. This was documentation evidence hygiene, not runtime simulation.
+What was done:
+- Added `Docs/Reports/2026-05-20_DOCUMENTATION_R39_ROOT_ARCHITECTURE_AUTHORITY_COUNTER_AND_PROOF_WORDING_LOCAL.md`.
+- Promoted R39 through root anchors, active Docs indexes, `Docs/ARCHITECTURE/*.md`, `Docs/Reports/README.md`, `MASTER_RELEASE_WORK_PLAN.md`, and `BUILD_PLAYTEST_ISSUES.md`.
+- Updated `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md` to use R38 source-counter facts as prior source-scale orientation and to demote R43 compile rows to historical CLI report text unless full artifact tuple exists.
+- Updated `Docs/ROOT_DOCS_REFERENCE.md` and `Docs/PROJECT_ATLAS.md` for absent root mirrors and static generated atlas wording.
+- Updated `Docs/SYSTEMS_CONTRACTS.md`, `Docs/QUALITY_GATES.md`, and `Docs/PROJECT_STATE_STATIC_XRAY.md` with archived SHINOBU_02 SignalCritical/Full audit paths.
+- Updated architecture long-tail files for SHINOBU_160, SHINOBU_145, SHINOBU_149, SHINOBU_125, SHINOBU_157, SHINOBU_121, NetProtocolGate, H-Phi, organic entropy, SystemDispatcher phase labels, and future-seam ownership wording.
+- Regenerated `Docs/DEPENDENCY_GRAPH.md` and `Docs/DEPENDENCY_GRAPH.json`.
 
-Exact Microseconds saved: 0 claimed. R29 did not run Unity/profiler/GCMonitor/player-build proof.
+Cinematic cheats used:
+- Documentation-only pass; no runtime fake, rendering fake, simulation, or gameplay code path was introduced.
+- Evidence-language filter used as the workhorse: static scans remain static, historical command text remains historical, runtime acceptance remains pending.
 
-Validation: targeted stale red-gate/proof-plan scan returned no hits; disallowed stale R28-latest scan returned no disallowed hits; scoped R4 scan `ScopeFiles=162`, missing `0`, duplicate `0`; scoped local markdown link scan `ScopeFiles=162`, missing links `0`; `python Tools\test_architecture_atlas.py` passed `10` tests; JSON parse spot check passed `5`, bad `0`, missing `0`; `Docs\Modding\Validate_Mod_API_Static.ps1` passed (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`); `python Tools\AtlasCheck.py` still fails with `ATLAS_CHECK_FAIL references=6549 missing=57`; scoped `git diff --check` excluding volatile task/log/archive/modding paths exited `0` with line-ending warnings only. Runtime proof remains absent.
+Exact microseconds saved:
+- Runtime frame time: `0 us`; no runtime code changed.
+- Documentation review savings estimate: `8000000 us` future manual chase avoided by correcting stale authority paths, artifact paths, and proof-class wording.
 
-## R30 Root / Architecture Internal Currentness Local
+Validation:
+- `python Tools\BuildArchitectureAtlas.py`: exit `0`.
+- `python Tools\test_architecture_atlas.py`: exit `0`, `10` tests.
+- `python -m py_compile Tools\BuildArchitectureAtlas.py Tools\AtlasCheck.py Tools\test_architecture_atlas.py`: exit `0`.
+- `Docs\Modding\Validate_Mod_API_Static.ps1`: exit `0`, `Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`.
+- Active non-archive Docs JSON parse: `JsonFiles=133`, `Bad=0`.
+- Active root/architecture/report-index R4 scan: `ScopeFiles=106`, `Missing=0`, `Duplicate=0`.
+- Root/index markdown links: `ScopeFiles=8`, `MarkdownLinksChecked=54`, `Missing=0`.
+- Targeted stale R38-current / proof-overclaim scan: no active root/architecture residue requiring patch.
+- `python Tools\AtlasCheck.py`: exit `1`, `ATLAS_CHECK_FAIL references=6638 missing=58`.
+- Scoped root/architecture/R39 report/generated atlas `git diff --check`: exit `0`, line-ending warnings only.
 
-What was wrong: After R29, active architecture files still used R28 as current boundary text, global-authority headings still named the R28 interior boundary, old May report entries in root/report indexes still used latest/current/clean wording, `BINARY_PAYLOAD_INTEGRATION_LEDGER.md` cited absent active `Docs/AgentLogs/BinaryHygiene_SHINOBU_50.json`, and Mod API static `Status=PASS` wording lacked enough artifact-tuple caution for reuse as proof.
+Residual blockers:
+- `Tools\AtlasCheck.py` remains red on `Assets/Dynamic Decals/Resources/Decal.obj` plus RealtimeCSG vendor icon/readme image references.
+- Full `git diff --check -- Docs Tools ...` is polluted by unrelated modified `Docs/DEPRECATED/External_And_Log_Bundles/2026-04-20_Deepseek_Ideas_Reality_Audit/*` trailing whitespace and blank-EOF issues.
+- Unity import, Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load, platform, analytics, network, and visual proof remain absent.
 
-What was done: Wrote `Docs/Reports/2026-05-19_DOCUMENTATION_R30_ROOT_ARCHITECTURE_INTERNAL_CURRENTNESS_LOCAL.md`; promoted R30 through root README, governance, root reference, global architecture map, runtime plan, systems contracts, quality gates, project atlas, architecture README, actuality ledger, and Reports README; changed R28-as-current architecture wording to R29/R30 context; corrected six global-authority headings; demoted stale May latest/current labels; changed BinaryHygiene citation to `Docs/Archive/Batch009/AgentLogs/BinaryHygiene_SHINOBU_50.json`; changed acoustic LUT wording to static source/prefab evidence only; and added static-tool caveats to repeated Mod API PASS text.
+## R40 Root / Architecture R38-Residue And Counter Refresh Pass
 
-Cinematic Cheats used: none. This was documentation evidence hygiene, not runtime simulation.
+What was wrong:
+- Active root/architecture entrypoints had R40 top boundaries but still carried R38/R39 interior current-read residue.
+- `Docs/Actual Domains of Project.txt` remained at the R39 DOC_GLOBAL boundary.
+- `Docs/ROOT_DOCS_REFERENCE.md` still advertised the R38 report as the latest DOC_GLOBAL boundary.
+- Active docs still used latest/current wording for archived SHINOBU_02 SignalCritical/Full audit artifacts.
+- Early R40 source counters drifted during validation and had to be recaptured.
+- Global-authority route-card inventories needed clearer orientation-only versus route-approval wording.
 
-Exact Microseconds saved: 0 claimed. R30 did not run Unity/profiler/GCMonitor/player-build proof.
+What was done:
+- Added and linked `Docs/Reports/2026-05-20_DOCUMENTATION_R40_ROOT_ARCHITECTURE_R38_RESIDUE_AND_COUNTER_REFRESH_LOCAL.md`.
+- Promoted R40 through `Docs/README.md`, `Docs/DOC_GOVERNANCE.md`, `Docs/ROOT_DOCS_REFERENCE.md`, `Docs/Reports/README.md`, `Docs/ARCHITECTURE/README.md`, `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`, `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md`, `Docs/PROJECT_STATE_STATIC_XRAY.md`, and `Docs/Actual Domains of Project.txt`.
+- Updated current source counters to `1960` project C# files, `1901` script C# files, `1936` non-test C# files, `1341123` project physical lines, `1321033` script physical lines, `1335006` non-test physical lines, `324/321` broad interface-token hits, `271` direct interface declarations, `62` direct public `GlobalRegistryContracts` interfaces, and `133/131` asmdefs.
+- Updated global-authority orientation counts to `6056` `GlobalRegistry.` hits, `571` publish/subscribe hits, `15465` native-collection hits, `115` `NativeQueue<...>` refs, `73` `CreateQueue(...)` slots, `135` typed lanes inside `GlobalSignals.cs`, `271` configure/ensure hits inside `GlobalSignals.cs`, and `266` script-level typed lane matches.
+- Demoted archived SHINOBU_02 audit wording to historical static-source artifacts until fresh current reruns exist.
+- Regenerated `Docs/DEPENDENCY_GRAPH.md` and `Docs/DEPENDENCY_GRAPH.json`.
 
-Validation: targeted stale R28/latest/proof-current scan returned `missing=0`; markdown/txt R4 marker scan `ScopeFiles=88`, missing `0`, duplicate `0`; local markdown link scan `ScopeFiles=88`, missing links `0`; `python Tools\test_architecture_atlas.py` passed `10` tests; JSON parse spot check passed `5`, bad `0`, missing `0`; `Docs\Modding\Validate_Mod_API_Static.ps1` passed (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`); `python Tools\AtlasCheck.py` still fails with `ATLAS_CHECK_FAIL references=6549 missing=57`; scoped `git diff --check` excluding volatile task/log/archive/modding paths exited `0` with line-ending warnings only. Runtime proof remains absent.
+Cinematic cheats used:
+- Documentation-only pass; no runtime fake, rendering fake, simulation, or gameplay code path was introduced.
+- Evidence-language filter used as the workhorse: static scans remain static, historical command text remains historical, runtime acceptance remains pending.
 
-## R31 Architecture Current-Boundary Propagation Local
+Exact microseconds saved:
+- Runtime frame time: `0 us`; no runtime code changed.
+- Documentation review savings estimate: `9000000 us` future manual chase avoided by correcting R38/R39 residue, current read order, source counters, and route-card proof wording.
 
-What was wrong: After R30, active root/architecture docs still had boundary propagation residue. Architecture notes and global-authority surfaces could still point at R30/R29/R28 as current, direct root/report entrypoints still carried old May 3/May 11/May 17 latest/current wording, `DISPATCH_PIPELINE.md` still said the global boundary was R29, seven active architecture docs lacked R4 actuality boundaries, and several docs cited absent or shorthand artifact/source paths.
+Validation:
+- `python Tools\BuildArchitectureAtlas.py`: exit `0`.
+- `python Tools\test_architecture_atlas.py`: exit `0`, `10` tests.
+- `python -m py_compile Tools\BuildArchitectureAtlas.py Tools\AtlasCheck.py Tools\test_architecture_atlas.py`: blocked by pycache filesystem permissions; no bytecode PASS claimed.
+- AST parse fallback for atlas tools: exit `0`, `Files=3`.
+- `Docs\Modding\Validate_Mod_API_Static.ps1`: exit `0`, `Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`.
+- Active non-archive/non-deprecated Docs JSON parse: `JsonFiles=130`, `Bad=0`.
+- Active root/architecture/report-index R4 scan: `ScopeFiles=106`, `Missing=0`, `Duplicate=0`.
+- Root/index markdown links: `MarkdownLinksChecked=54`, `Missing=0`.
+- Targeted stale R38/R39-current / archived-proof wording scan: `TargetedStaleHits=0` in active root/architecture scope after excluding archives, deprecated docs, task files, and agent logs.
+- `python Tools\AtlasCheck.py`: exit `1`, `ATLAS_CHECK_FAIL references=6638 missing=58`.
+- Scoped root/architecture/R40 report/generated atlas/status/rationale/log `git diff --check`: exit `0`, line-ending warnings only.
 
-What was done: Wrote `Docs/Reports/2026-05-19_DOCUMENTATION_R31_ARCHITECTURE_CURRENT_BOUNDARY_PROPAGATION_LOCAL.md`; promoted R31 through root README, governance, root reference, global architecture map, runtime plan, systems contracts, quality gates, project atlas, architecture README, actuality ledger, Reports README, and architecture body notes; corrected six `GLOBAL_AUTHORITY_*` headings; corrected Dispatch boundary text; demoted old May latest/current rows to historical evidence; marked missing May 3 batch artifact, missing orphaned-script CSV, absent `SaveCompressionDictionary.cs`, and shorthand haptics/performance source paths; and added R4 boundaries to seven active architecture documents.
+Residual blockers:
+- `Tools\AtlasCheck.py` remains red on `Assets/Dynamic Decals/Resources/Decal.obj` plus RealtimeCSG vendor icon/readme image references.
+- `py_compile` remains blocked by filesystem pycache permissions; AST parse passed but is not bytecode proof.
+- Full `git diff --check -- Docs Tools ...` is polluted by unrelated modified `Docs/DEPRECATED/External_And_Log_Bundles/2026-04-20_Deepseek_Ideas_Reality_Audit/*` trailing whitespace and blank-EOF issues.
+- Unity import, Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load, platform, analytics, network, and visual proof remain absent.
 
-Cinematic Cheats used: none. This was documentation evidence hygiene, not runtime simulation.
+## R41 Root / Architecture Global-Authority Internal-Residue Pass
 
-Exact Microseconds saved: 0 claimed. R31 did not run Unity/profiler/GCMonitor/player-build proof.
+What was wrong:
+- Active root/architecture surfaces had R41 wording without a report artifact.
+- Several Global Authority and route-card docs still carried R37/R40-current interior residue or lacked explicit review-disposition fields.
+- R40 source counters were stale under concurrent source churn.
+- Generated atlas tests still asserted the old R38 blocker label.
+- `Tools/BuildArchitectureAtlas.py` overcounted newline-terminated source files by one line.
 
-Validation: targeted stale-current/proof scan returned `missing=0`; markdown/txt R4 marker scan `ScopeFiles=89`, missing `0`, duplicate `0`; local markdown link scan `ScopeFiles=88`, missing links `0`; `python Tools\test_architecture_atlas.py` passed `10` tests; JSON parse spot check passed `5`, bad `0`, missing `0`; `Docs\Modding\Validate_Mod_API_Static.ps1` passed (`Status=PASS`, `SchemaRevision=14`, `SourceSignals=160`, `ModCommandSizeBytes=64`); `python Tools\AtlasCheck.py` still fails with `ATLAS_CHECK_FAIL references=6549 missing=57`; scoped `git diff --check` excluding volatile task/log/archive/modding paths exited `0` with line-ending warnings only. Runtime proof remains absent.
+What was done:
+- Added and linked `Docs/Reports/2026-05-20_DOCUMENTATION_R41_ROOT_ARCHITECTURE_GLOBAL_AUTHORITY_INTERNAL_RESIDUE_LOCAL.md`.
+- Promoted R41 through root anchors, active Docs indexes, `Docs/ARCHITECTURE/*.md`, and generated atlas boundary text.
+- Updated current source counters to `1962` project C# files, `1903` script C# files, `1938` non-test C# files, `1344787` project physical lines, `1324687` script physical lines, `1338671` non-test physical lines, `324/321` broad interface hits, `270` direct interface declarations, `62` registry interfaces, and `133/131` asmdefs.
+- Updated global-authority orientation counts to `6060` `GlobalRegistry.` hits, `340` publish/subscribe hits, `15291` native-collection hits, `115` `NativeQueue<...>` refs, `73` `CreateQueue(...)` slots, `135` typed lanes, `271` configure/ensure hits, and `267` script-level typed-lane matches.
+- Fixed atlas source-line counting and updated atlas tests for R41.
+- Added `YELLOW / STATIC_SOURCE_ONLY` review-disposition fields to SHINOBU_113, SHINOBU_138, SHINOBU_151, and SHINOBU_125 route cards.
+- Regenerated `Docs/DEPENDENCY_GRAPH.md` and `Docs/DEPENDENCY_GRAPH.json`.
 
-## R32 Architecture R4 And Proof-Wording Local
+Cinematic cheats used:
+- Documentation-only pass; no runtime fake, rendering fake, simulation, or gameplay code path was introduced.
+- Evidence-language filter used as the workhorse: static scans remain static, historical command text remains historical, runtime acceptance remains pending.
 
-What was wrong: R31 did not close the next interior layer. Active architecture docs still labeled a May 17 actuality manifest as current, `SHINOBU_125_SCAVENGING_LOOT_ORACLE_ROUTE_CARD.md` used `STATIC GREEN` without a linked GREEN review artifact tuple, `PDA_ENCYCLOPEDIA_STREAMER.md` and the procedural-wreckage global-authority route card lacked R4 boundaries, several runtime-contract docs lacked local source anchors, Subnautica2 sections used current-proof wording for static snapshots, temporary Roslyn/net10 wording was too strong, and concurrent SHINOBU_02 edits marked R32 absent before the R32 report artifact existed.
+Exact microseconds saved:
+- Runtime frame time: `0 us`; no runtime code changed.
+- Documentation review savings estimate: `9500000 us` future manual chase avoided by making R41 disk-backed, correcting route-card disposition, and removing stale counter/atlas wording.
 
-What was done: Wrote `Docs/Reports/2026-05-19_DOCUMENTATION_R32_ARCHITECTURE_R4_AND_PROOF_WORDING_LOCAL.md`; promoted R32 through active root/architecture/report entrypoints; added R4/current-boundary wording; added source anchors for thermodynamics, flora sway, HFI, macro ecosystem, procedural wreckage, loot oracle, PDA streamer, voxel surface nets, and flora/fauna symbiosis; demoted the May 17 actuality manifest to historical snapshot wording; demoted `STATIC GREEN`; corrected Mod API static validator tuple to `SchemaRevision=16`, `SourceSignals=162`; and preserved runtime-proof absence.
+Validation:
+- `python Tools\BuildArchitectureAtlas.py`: exit `0`.
+- `python Tools\test_architecture_atlas.py`: exit `0`, `10` tests.
+- `python -m py_compile Tools\BuildArchitectureAtlas.py Tools\AtlasCheck.py Tools\test_architecture_atlas.py`: blocked by pycache filesystem permissions; no bytecode PASS claimed.
+- AST parse fallback for atlas tools: exit `0`, `Files=3`.
+- `Docs\Modding\Validate_Mod_API_Static.ps1`: exit `0`, `Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`.
+- Active non-archive/non-deprecated Docs JSON parse: `JsonFiles=130`, `Bad=0`.
+- Active root/architecture/report-index R4 scan: `ScopeFiles=98`, `Missing=0`, `Duplicate=0`.
+- Targeted stale R37/R40-current/R41-absent wording scan: no active root/architecture residue.
+- `python Tools\AtlasCheck.py`: exit `1`, `ATLAS_CHECK_FAIL references=6642 missing=58`.
+- Scoped root/architecture/R41 report/generated atlas/status/rationale/log `git diff --check`: exit `0`, line-ending warnings only.
 
-Cinematic Cheats used: none. This was documentation evidence hygiene, not runtime simulation.
+Residual blockers:
+- `Tools\AtlasCheck.py` remains red on `Assets/Dynamic Decals/Resources/Decal.obj` plus RealtimeCSG vendor icon/readme image references.
+- `py_compile` remains blocked by filesystem pycache permissions; AST parse passed but is not bytecode proof.
+- Full `git diff --check -- Docs Tools ...` is polluted by unrelated dirty deprecated files in the workspace.
+- Unity import, Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load, platform, analytics, network, and visual proof remain absent.
 
-Exact Microseconds saved: 0 claimed. R32 did not run Unity/profiler/GCMonitor/player-build proof.
+## 2026-05-20 R42 Root/Architecture Documentation Refresh
 
-Validation: targeted stale-current/proof scan returned no hits; R4 marker scan `ScopeFiles=81`, missing `0`, duplicate `0`; local markdown link scan `ScopeFiles=81`, missing links `0`; `python Tools\test_architecture_atlas.py` passed `10` tests; active non-archive docs JSON parse `JsonFiles=131`, ok `131`, bad `0`; `Docs\Modding\Validate_Mod_API_Static.ps1` passed (`Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`); `python Tools\AtlasCheck.py` still fails with `ATLAS_CHECK_FAIL references=6549 missing=59`; scoped `git diff --check` excluding volatile task/log/archive/modding paths exited `0` with line-ending warnings only. Runtime proof remains absent.
+What was wrong:
+- Active root/architecture docs mixed R40/R41/R42 currentness, including report indexes, architecture actuality ledger, root read-order text, and generated atlas status.
+- Several newly active architecture/root docs had no current R42 actuality boundary and could be read outside the current authority spine.
+- Earlier R42 source counters were already stale under concurrent source churn.
+- Root playtest/roadmap language used capture-time runtime/editor observations too close to current proof wording.
+
+What was done:
+- Promoted R42 as the current local static DOC_GLOBAL root/architecture boundary across active root docs, architecture docs, Reports index, generated atlas metadata, and R42 report.
+- Added R42 actuality boundaries to the missing active root/architecture docs until the wide scan reached `ScopeFiles=125`, `Missing=0`.
+- Updated source-scale orientation to `2029/1970/2003` C# files, `1382236/1362107/1375742` lines, `302` direct interface declarations, `66` registry interfaces, `139/137` asmdefs, `6101` registry hits, `1200` publish/subscribe hits, and `16397` native-collection hits.
+- Regenerated dependency graph markdown/JSON and updated atlas generator/test expectations to carry the current R42 red AtlasCheck state.
+- Demoted runtime/proof wording to static/capture-time language unless a fresh artifact tuple exists.
+
+Cinematic Cheats used:
+- Documentation-only pass. No physical simulation, visual fake, shader, or runtime system was changed.
+
+Exact Microseconds saved:
+- 0 us frame-time saved. This pass changes documentation/tool metadata only.
+- Review-time savings estimate: 5600000 us avoided by one current root/architecture boundary and one current source-counter tuple instead of mixed R40/R41/R42 claims.
+
+Validation:
+- Atlas generator: PASS.
+- Atlas tests: PASS, `10` tests.
+- Atlas py_compile: PASS, `3` files.
+- Mod API static validator: PASS, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`.
+- JSON parse: PASS, `JsonFiles=157`, `Bad=0`, `Utf16Fallback=1`.
+- R42 boundary scan: PASS, `ScopeFiles=125`, `Missing=0`.
+- Stale-current scan: no active root/architecture hits.
+- AtlasCheck: FAIL, `ATLAS_CHECK_FAIL references=6728 missing=58`; one Dynamic Decals missing vendor asset ref plus RealtimeCSG vendor icon/readme image refs remain unresolved.
+- Runtime proof: NOT RUN. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, save/load, platform run, or visual-route proof.
+## 2026-05-20 R43 Root/Architecture Route-Card And Counter-Residue Refresh
+
+What was wrong:
+- Active root/architecture docs still exposed R42 or older wording as current after R43 route-card and AtlasCheck red-state corrections existed.
+- Final R43 source counters drifted to `2047/1986/2021` C# files, `1394096/1373895/1387908` physical lines, and `141/139` first-party asmdefs; earlier `2029/1970/2003` and `139/137` values were no longer current.
+- Several route-card docs lacked exact `Proof required before GREEN` / `Review disposition` wording, and the initial route-card scan covered only 8 files instead of all active architecture `*ROUTE_CARD*.md` files.
+- AtlasCheck remained red, and the current missing set includes Dynamic Decals, RealtimeCSG vendor assets, and `Assets/_Project/Scripts/Habitat/Deformation/Editor/HabitatDamageBakePipeline.cs`.
+
+What was done:
+- Promoted R43 through `AGENTS.md`, active root Docs entrypoints, `Docs/Reports/README.md`, generated atlas metadata, and active architecture docs.
+- Updated `Tools/BuildArchitectureAtlas.py`, `Tools/test_architecture_atlas.py`, `Docs/DEPENDENCY_GRAPH.md`, and `Docs/DEPENDENCY_GRAPH.json` to the R43 boundary and current AtlasCheck tuple.
+- Normalized all active architecture route-card fields until `RouteCardFiles=14`, `Missing=0`.
+- Added missing R43 boundaries until `R43BoundaryScope=116`, `Missing=0`.
+- Wrote `Docs/Reports/2026-05-20_DOCUMENTATION_R43_ROOT_ARCHITECTURE_ROUTE_CARD_AND_COUNTER_RESIDUE_LOCAL.md` and updated this status/rationale/log chain.
+
+Cinematic cheats used:
+- Documentation-only pass. No simulation, water, light, deformation, physics, or visual-cheat implementation was changed.
+
+Exact microseconds saved:
+- Runtime: `0 us`; no player-frame code changed.
+- Human verification debt reduced by keeping source counters, route-card gates, and AtlasCheck red state discoverable from the active entrypoints instead of stale R42/R41 text.
+
+Validation:
+- `python Tools\BuildArchitectureAtlas.py`: PASS.
+- `python Tools\test_architecture_atlas.py`: PASS, `10` tests.
+- `python -m py_compile Tools\BuildArchitectureAtlas.py Tools\AtlasCheck.py Tools\test_architecture_atlas.py`: PASS.
+- `Docs\Modding\Validate_Mod_API_Static.ps1`: PASS, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`.
+- Active non-archive/non-deprecated Docs JSON parse: PASS, `JsonFiles=168`, `Bad=0`, `Utf16Fallback=0`.
+- R43 boundary scan: PASS, `R43BoundaryScope=116`, `Missing=0`.
+- Route-card field scan: PASS, `RouteCardFiles=14`, `Missing=0`.
+- Targeted stale scan: PASS, `StaleScan=0`.
+- Scoped root/architecture/status/rationale/log/generated-atlas `git diff --check`: PASS, exit `0`, line-ending warnings only.
+- `python Tools\AtlasCheck.py`: expected FAIL, `ATLAS_CHECK_FAIL references=6736 missing=59`.
+- Runtime proof: absent; no Unity import, Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load, platform run, analytics endpoint, network send, or visual-route proof was run.
+
+## 2026-05-20 R44 Root/Architecture Internal Residue and Exact Route Fields
+
+What was wrong:
+
+- Root/architecture interiors still carried R42/R43 currentness residue after the R43 pass.
+- `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md` still contained stale current-state counters and active-source orientation text.
+- Several route cards used loose labels (`Overflow / failure`, `Overflow/failure mode`, `Shutdown`) instead of exact review fields.
+- Static fixture/build/scanner prose in binary/AUP/construction architecture docs read stronger than the linked evidence allowed.
+- AtlasCheck red tuple drifted from `references=6736 missing=59` to `references=6739 missing=59` after R44 report/atlas regeneration.
+
+What was done:
+
+- Promoted R44 as the current local static root/architecture DOC_GLOBAL boundary in `AGENTS.md`, root docs, Reports index, architecture index/actuality ledger, active architecture boundary notes, and generated atlas metadata.
+- Added `Docs/Reports/2026-05-20_DOCUMENTATION_R44_ROOT_ARCHITECTURE_INTERNAL_RESIDUE_EXACT_ROUTE_FIELDS_LOCAL.md`.
+- Updated current source-scale counters to `2050/1989/2024` C# files, `1399032/1378730/1392642` physical lines, `345/342` broad interface hits, `279` interface declarations, `62` registry interfaces, `141/139` asmdefs, `6201` registry hits, `526` publish/subscribe hits, `17840` native hits, `116` `NativeQueue` refs, `73` create slots, `135` typed lanes, `271` configure/ensure hits, and `1345` script typed-lane matches.
+- Normalized route-card fields across all `14` active architecture route-card files to include exact `Overflow/failure`, `Shutdown/disposal`, `Proof required before GREEN`, and `Review disposition`.
+- Demoted unlinked static/fixture/build wording to STATIC_SOURCE/PY_TOOL/CLI_ATTEMPTED where no artifact tuple exists.
+- Regenerated `Docs/DEPENDENCY_GRAPH.md` and `Docs/DEPENDENCY_GRAPH.json` from `Tools/BuildArchitectureAtlas.py`; updated atlas tests.
+
+Cinematic cheats used:
+
+- None. Documentation-only pass. No runtime simulation, rendering, Unity, or C# gameplay code was changed.
+
+Exact microseconds saved:
+
+- Runtime frame time: `0 us`. Documentation-only.
+- Review time saved: route-card exact-label scan reduced manual route-card review from ad hoc text inspection to `14` files / `0` missing exact fields.
+- Failure-avoidance value: stale proof wording no longer promotes static scans or historical CLI attempts to runtime/platform proof.
+
+Validation:
+
+- `python Tools\BuildArchitectureAtlas.py`: PASS.
+- `python Tools\test_architecture_atlas.py`: PASS, `10` tests.
+- `python -m py_compile Tools\BuildArchitectureAtlas.py Tools\AtlasCheck.py Tools\test_architecture_atlas.py`: PASS.
+- `Docs\Modding\Validate_Mod_API_Static.ps1`: PASS, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`.
+- Active non-archive/non-deprecated Docs JSON parse: `JsonFiles=169`, `Bad=0`.
+- R44 root/architecture boundary scan: `R44BoundaryScope=117`, `Missing=0`.
+- Route-card exact-label scan: `RouteCardFiles=14`, `Missing=0`.
+- Targeted stale-current/proof scan: no scoped hits.
+- Scoped `git diff --check`: PASS, exit `0`, line-ending warnings only.
+- `python Tools\AtlasCheck.py`: FAIL, `ATLAS_CHECK_FAIL references=6739 missing=59`; missing refs remain one Dynamic Decals vendor asset ref, RealtimeCSG vendor icon/readme image refs, and `Assets/_Project/Scripts/Habitat/Deformation/Editor/HabitatDamageBakePipeline.cs`.
+
+Runtime proof remains absent: no Unity import, clean Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load, platform run, network send, or visual-route proof.
+
+## 2026-05-20 R45 Root/Architecture R43/R44 Residue, Proof Artifacts, and Counters
+
+What was wrong:
+
+- Root/architecture interiors still carried R43/R44 currentness residue after the R44 pass.
+- `Docs/PROJECT_ATLAS.md`, `Docs/H8_GLOSSARY.md`, `Docs/TECHNICAL_FAQ.md`, architecture indexes, and generated atlas metadata needed a consistent R45 boundary.
+- Proof wording in binary/architecture ledgers treated local scan text and `git diff --check` prose as stronger than artifact-backed proof.
+- `MASTER_RELEASE_WORK_PLAN.md` and `BUILD_PLAYTEST_ISSUES.md` still started their current-state boundary at R42.
+- Multiple active architecture files had a stale first boundary paragraph that still said `Current root/architecture boundary is R44` before a later R45 paragraph.
+- R44 counters drifted under concurrent source changes.
+- AtlasCheck red tuple drifted from `references=6739 missing=59` to `references=6741 missing=59` after R45 report/atlas regeneration.
+
+What was done:
+
+- Added `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`.
+- Promoted R45 through `AGENTS.md`, root Docs entrypoints, Reports index, architecture README/actuality ledger, active architecture boundary notes, and generated atlas metadata.
+- Promoted `MASTER_RELEASE_WORK_PLAN.md` and `BUILD_PLAYTEST_ISSUES.md` to R45 current-state boundary.
+- Replaced stale R40-R44 `Current root/architecture boundary is ...` paragraphs inside active architecture boundary blocks until the specific stale-current scan reached `0`.
+- Updated current source-scale counters to `2052/1991/2026` C# files, `1401183/1380785/1394758` physical lines, `345/342` broad interface hits, `280` interface declarations, `63` registry interfaces, `141/139` asmdefs, `6199` registry hits, `575` publish/subscribe hits, `18045` native hits, `116` `NativeQueue` refs, `73` create slots, `135` typed lanes, `271` configure/ensure hits, and `1345` script typed-lane matches.
+- Closed strict R45 boundary coverage to `R45BoundaryScope=112`, `Missing=0`.
+- Regenerated `Docs/DEPENDENCY_GRAPH.md` and `Docs/DEPENDENCY_GRAPH.json` from `Tools/BuildArchitectureAtlas.py`; updated atlas tests.
+- Demoted prose-only evidence rows to static documentation/source/tool evidence where no artifact tuple exists.
+
+Cinematic cheats used:
+
+- None. Documentation-only pass. No runtime simulation, rendering, Unity, or C# gameplay code was changed.
+
+Exact microseconds saved:
+
+- Runtime frame time: `0 us`. Documentation-only.
+- Review time saved: R45 boundary scan reduced currentness review to `112` active root/architecture/index files / `0` missing.
+- Failure-avoidance value: stale proof wording no longer promotes static scans, prose, or historical CLI attempts to runtime/platform proof.
+
+Validation:
+
+- `python Tools\BuildArchitectureAtlas.py`: PASS.
+- `python Tools\test_architecture_atlas.py`: PASS, `10` tests.
+- `python -m py_compile Tools\BuildArchitectureAtlas.py Tools\AtlasCheck.py Tools\test_architecture_atlas.py`: PASS.
+- `Docs\Modding\Validate_Mod_API_Static.ps1`: PASS, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`.
+- Active non-archive/non-deprecated Docs JSON parse: `JsonFiles=169`, `Bad=0`.
+- R45 root/architecture boundary scan: `R45BoundaryScope=112`, `Missing=0`.
+- Route-card exact-label scan: `RouteCardFiles=14`, `Missing=0`.
+- Specific stale-current scan: `SpecificStaleCurrentHits=0`.
+- Strict proof-overclaim scan: `StrictProofOverclaimHits=0`.
+- Scoped root/architecture/status/rationale/log/generated-atlas `git diff --check`: PASS, exit `0`, line-ending warnings only.
+- `python Tools\AtlasCheck.py`: FAIL, `ATLAS_CHECK_FAIL references=6741 missing=59`; missing refs remain one Dynamic Decals vendor asset ref, RealtimeCSG vendor icon/readme image refs, and `Assets/_Project/Scripts/Habitat/Deformation/Editor/HabitatDamageBakePipeline.cs`.
+
+Runtime proof remains absent: no Unity import, clean Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load, platform run, network send, or visual-route proof.

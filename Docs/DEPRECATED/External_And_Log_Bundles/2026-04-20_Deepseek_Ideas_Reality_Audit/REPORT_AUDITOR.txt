@@ -1,0 +1,147 @@
+OTChETY AGENTOV
+
+NIZhE PREDSTAVLENY V FORMATE NIK AGENTA (NAZVANIE ChATA) - OTChET
+_______________________________
+Fix memory leaks and job violations — eto Inquisitor 1 (Lead Sanitary Engineer). 
+-----------------------
+
+
+
+
+
+
+
+
+
+
+
+________________________________
+Refactor procedural scatter system — eto Inquisitor 4 (World Architect).
+------------------------
+
+
+
+
+
+
+
+
+
+
+______________________________
+Fix WFC serialization crashes — eto Inquisitor 7 (Data & Save Architect).
+---------------------------------
+
+
+
+
+
+
+
+
+
+___________________________________-
+Stabilize encounter director — eto Inquisitor 8 (AI & Audio Lead). 
+------------------------------
+
+
+
+
+
+
+
+
+
+
+
+_____________________________________
+Fix URP fog pipeline crashes — eto Inquisitor 5 (Graphics & VFX Director).
+-----------------------------------
+
+
+
+
+
+
+
+
+
+
+________________________________________-
+Fix UI and audio allocations — eto Inquisitor 2 (Memory & UI Executioner).
+---------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+__________________________________________-
+Fix fluid and energy stability — eto Inquisitor 6 (Logistics & Systems Engineer). 
+-------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+___________________________________-
+Fix player kinematics stability — eto Inquisitor 3 (Physics & Locomotion Lead).
+-----------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+______________________________
+KONETs OTChETA
+
+VNIMANIE! V OTVETE UPOMINAY NAZVANIYa ChATOV ChTOBY MNE BYLO PROSchE ORIENTIROVATSYa. VNIMANIE! POMNI PRO TO ChTO NEOBHODIMO PROVERIT I POChINIT VSE FAYLY U KOTORYH EST PROBLEMY. KROME TOGO, NEOBHODIMO VYDELYaT 2-3 AGENTOV NA PRIVEDENIE VSEY KODOVOY BAZY K NAShIM MANDATAM! KORREKTNYY ANALIZ, ISPARVLENIE, PEREPISYVANIE. KOMANDUY IMI!
+
+
+NE POZVOLYaY SVOEMU POLYu ZRENIYa SUZhATSYa! DUMAY!
+PIShI BOLShIE, ChETKIE MASTER PROMPTY! DAVAY AGENTU REKOMENDATsII KAKIE MANDATY EMU PROChITAT, NO DAVAY EMU PARVO VYBRAT DOPOLNITELNYE PO SVOEMU USMOTRENIYu.
+
+
+ESLI OTVET AGENTA BYL PRERVAN (NET VYVODA, ZAVIS PO TOKENAM) - REShI - DAT EMU ZAKONChIT ILI NAPISAT "PRODOLZhAY RABOTU Po zadaniyu potom idi k sleduyuschemu::""
+
+
+

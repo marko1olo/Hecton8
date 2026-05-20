@@ -104,6 +104,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/LODCrossFade.hlsl"
         #include "Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl"
+        #include "Assets/_Project/Art/Shaders/Hecton_CustomLightProbeGrid.hlsl"
 
         CBUFFER_START(UnityPerMaterial)
             float4 _Instance_Color;
@@ -742,7 +743,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         half3 EvaluateLighting(float3 positionWS, float4 positionCS, half3 normalWS, half3 viewDirWS, half3 albedo, half metallic, half smoothness, half occlusion, half localCausticMask)
         {
             half caveAmbientFactor = (half)HectonCoreLitEvaluateCaveAmbientFactor(positionWS, normalWS);
-            half3 color = SampleSH(normalWS) * albedo * occlusion * caveAmbientFactor;
+            half3 color = H8CustomLightProbeResolveAmbient(positionWS, normalWS, half3(0.015h, 0.025h, 0.035h)) * albedo * occlusion * caveAmbientFactor;
             half specularStrength = lerp(0.04h, 0.22h, metallic);
 
             float4 shadowCoord = TransformWorldToShadowCoord(positionWS);

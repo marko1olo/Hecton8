@@ -1,0 +1,1860 @@
+using System;
+using System.Diagnostics;
+using System.IO;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Threading;
+using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
+using Unity.Jobs;
+using Unity.Mathematics;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using Debug = UnityEngine.Debug;
+
+namespace Hecton8.Audio.Synthesis
+{
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct SynthVoiceDTO
+    {
+        [FieldOffset(0)] public float CurrentPhase;
+        [FieldOffset(4)] public float PhaseIncrement;
+        [FieldOffset(8)] public float EnvelopeState;
+        [FieldOffset(12)] public uint SoundHash;
+        [FieldOffset(16)] public float TargetPitch;
+        [FieldOffset(20)] public float TargetVolume;
+        [FieldOffset(24)] public uint _pad0;
+        [FieldOffset(28)] public uint _pad1;
+        [FieldOffset(32)] public uint _pad2;
+        [FieldOffset(36)] public uint _pad3;
+        [FieldOffset(40)] public uint _pad4;
+        [FieldOffset(44)] public uint _pad5;
+        [FieldOffset(48)] public uint _pad6;
+        [FieldOffset(52)] public uint _pad7;
+        [FieldOffset(56)] public uint _pad8;
+        [FieldOffset(60)] public uint _pad9;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct DynamicMusicSynthScalarDTO
+    {
+        [FieldOffset(0)] public uint Frame;
+        [FieldOffset(4)] public uint Flags;
+        [FieldOffset(8)] public float TensionIndex;
+        [FieldOffset(12)] public float DepthMeters;
+        [FieldOffset(16)] public float Depth01;
+        [FieldOffset(20)] public float GlobalQualityWeight;
+        [FieldOffset(24)] public float DamageImpulse01;
+        [FieldOffset(28)] public float StingerImpulse;
+        [FieldOffset(32)] public float BaseDensity;
+        [FieldOffset(36)] public float TargetPitch;
+        [FieldOffset(40)] public float TargetVolume;
+        [FieldOffset(44)] public float LfoFrequency;
+        [FieldOffset(48)] public float LpfCutoffHz;
+        [FieldOffset(52)] public int ActiveVoices;
+        [FieldOffset(56)] public float OutputPeak;
+        [FieldOffset(60)] public float OutputRms;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
+    public struct DynamicMusicSynthTuningDTO
+    {
+        [FieldOffset(0)] public float BasePitchHz;
+        [FieldOffset(4)] public float BaseGrainDensity;
+        [FieldOffset(8)] public float TensionMultiplier;
+        [FieldOffset(12)] public float LfoFrequency;
+        [FieldOffset(16)] public float BaseVolume;
+        [FieldOffset(20)] public float GrainSizeSeconds;
+        [FieldOffset(24)] public float QualityMin;
+        [FieldOffset(28)] public float QualityMax;
+        [FieldOffset(32)] public float DepthMaxMeters;
+        [FieldOffset(36)] public float LpfMinHz;
+        [FieldOffset(40)] public float LpfDepthHzPerMeter;
+        [FieldOffset(44)] public float StereoWidth;
+        [FieldOffset(48)] public float DensityTensionScale;
+        [FieldOffset(52)] public float DetuneCentsMax;
+        [FieldOffset(56)] public float StingerDecaySeconds;
+        [FieldOffset(60)] public float NoiseFoldback;
+        [FieldOffset(64)] public uint SeedBase;
+        [FieldOffset(68)] public uint WaveformHash;
+        [FieldOffset(72)] public uint PresetHash;
+        [FieldOffset(76)] public uint Flags;
+        [FieldOffset(80)] public ulong _pad0;
+        [FieldOffset(88)] public ulong _pad1;
+        [FieldOffset(96)] public ulong _pad2;
+        [FieldOffset(104)] public ulong _pad3;
+        [FieldOffset(112)] public ulong _pad4;
+        [FieldOffset(120)] public ulong _pad5;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct DynamicMusicBiquadStateDTO
+    {
+        [FieldOffset(0)] public float Z1Left;
+        [FieldOffset(4)] public float Z2Left;
+        [FieldOffset(8)] public float Z1Right;
+        [FieldOffset(12)] public float Z2Right;
+        [FieldOffset(16)] public float LastCutoffHz;
+        [FieldOffset(20)] public float A0;
+        [FieldOffset(24)] public float A1;
+        [FieldOffset(28)] public float A2;
+        [FieldOffset(32)] public float B1;
+        [FieldOffset(36)] public float B2;
+        [FieldOffset(40)] public float LastSampleRate;
+        [FieldOffset(44)] public uint Flags;
+        [FieldOffset(48)] public ulong _pad0;
+        [FieldOffset(56)] public ulong _pad1;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct DynamicMusicPresetRuleDTO
+    {
+        [FieldOffset(0)] public uint PresetHash;
+        [FieldOffset(4)] public uint BiomeHash;
+        [FieldOffset(8)] public uint NarrativeHash;
+        [FieldOffset(12)] public uint WaveformHash;
+        [FieldOffset(16)] public float BasePitchHz;
+        [FieldOffset(20)] public float GrainSizeSeconds;
+        [FieldOffset(24)] public float BaseDensity;
+        [FieldOffset(28)] public float TensionMultiplier;
+        [FieldOffset(32)] public float LfoFrequency;
+        [FieldOffset(36)] public float BaseVolume;
+        [FieldOffset(40)] public float QualityMin;
+        [FieldOffset(44)] public float QualityMax;
+        [FieldOffset(48)] public float DepthMaxMeters;
+        [FieldOffset(52)] public float LpfMinHz;
+        [FieldOffset(56)] public float LpfDepthHzPerMeter;
+        [FieldOffset(60)] public uint Flags;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct DynamicMusicSharedStateDTO
+    {
+        [FieldOffset(0)] public int ReadyBufferIndex;
+        [FieldOffset(4)] public int ReadySampleCount;
+        [FieldOffset(8)] public int PendingBufferIndex;
+        [FieldOffset(12)] public int AudioCopyBufferIndex;
+        [FieldOffset(16)] public uint PublishedFrame;
+        [FieldOffset(20)] public int Channels;
+        [FieldOffset(24)] public int AudioUnderrunCount;
+        [FieldOffset(28)] public int AudioOverflowCount;
+        [FieldOffset(32)] public float LastDspMicroseconds;
+        [FieldOffset(36)] public int LastActiveVoices;
+        [FieldOffset(40)] public float LastTensionIndex;
+        [FieldOffset(44)] public float LastDepthMeters;
+        [FieldOffset(48)] public float LastCutoffHz;
+        [FieldOffset(52)] public uint Flags;
+        [FieldOffset(56)] public ulong _pad0;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct AudioDSPTelemetryEntry
+    {
+        [FieldOffset(0)] public uint Frame;
+        [FieldOffset(4)] public int ActiveVoices;
+        [FieldOffset(8)] public uint Flags;
+        [FieldOffset(12)] public int ReadyBufferIndex;
+        [FieldOffset(16)] public float TensionIndex;
+        [FieldOffset(20)] public float DepthMeters;
+        [FieldOffset(24)] public float LpfCutoffHz;
+        [FieldOffset(28)] public float DspJobMicroseconds;
+        [FieldOffset(32)] public float QualityWeight;
+        [FieldOffset(36)] public float GrainDensity;
+        [FieldOffset(40)] public float TargetPitch;
+        [FieldOffset(44)] public float StingerImpulse;
+        [FieldOffset(48)] public float OutputPeak;
+        [FieldOffset(52)] public float OutputRms;
+        [FieldOffset(56)] public int AudioUnderrunCount;
+        [FieldOffset(60)] public uint _pad0;
+    }
+
+    [DisallowMultipleComponent]
+    [DefaultExecutionOrder(-3880)]
+    [RequireComponent(typeof(AudioSource))]
+    [AddComponentMenu("Hecton8/Audio/Dynamic Music Granular Synthesizer")]
+    public sealed unsafe class DynamicMusicGranularSynthesizer : MonoBehaviour, IUpdatable, ILateFrameTickable, ISlowTickable, IGlobalRegistryHotSwapListener
+    {
+        public const int VoiceCapacity = 128;
+        public const int TelemetryCapacity = 300;
+        public const int PresetRuleCapacity = 32;
+        public const int GrainBankSampleCapacity = 2048;
+        public const int OutputSampleCapacity = 8192;
+
+        private const int CsvScratchBytes = 8192;
+        private const int DefaultAudioChannels = 2;
+        private const int DefaultScheduleSamples = 2048;
+        private const float DefaultBasePitchHz = 73.416f;
+        private const float DefaultBaseGrainDensity = 32f;
+        private const float DefaultTensionMultiplier = 1.35f;
+        private const float DefaultLfoFrequency = 1.35f;
+        private const float DefaultBaseVolume = 0.22f;
+        private const float DefaultGrainSizeSeconds = 0.075f;
+        private const float DefaultDepthMaxMeters = 1800f;
+        private const float DefaultLpfMinHz = 400f;
+        private const float DefaultLpfDepthHzPerMeter = 10f;
+        private const float DefaultStereoWidth = 0.82f;
+        private const float DefaultDetuneCentsMax = 31f;
+        private const float DefaultStingerDecaySeconds = 0.7f;
+        private const float DspDumpThresholdMicroseconds = 1500f;
+        private const float MinimumDeltaSeconds = 0.0001f;
+        private const float MaximumDeltaSeconds = 0.25f;
+        private const uint DefaultSynthSeed = 0x51350B75u;
+        private const uint DefaultWaveformHash = 0xC31105E5u;
+        private const uint FlagNonFinite = 1u << 0;
+        private const uint FlagUsingMockTension = 1u << 1;
+        private const uint FlagAudioUnderrun = 1u << 2;
+        private const uint FlagCsvApplied = 1u << 3;
+        private const uint FlagProceduralOnly = 1u << 4;
+        private const string CsvDefaultRelativePath = "Docs/Audio/synth_presets.csv";
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_SYNTH_SURGEON.bin";
+        private const string DriverClipName = "H8_DynamicMusicSynth_FilterDriver";
+        private const SystemID VaultOwner = SystemID.AudioDynamicSynth;
+        private const int CsvPollSlowTickInterval = 2;
+
+        private const uint CsvBasePitchHash = 0x3D2A4071u;
+        private const uint CsvGrainSizeHash = 0x1EC2CD18u;
+        private const uint CsvWaveformHash = 0xFE78C747u;
+        private const uint CsvBaseDensityHash = 0x31457F5Bu;
+        private const uint CsvTensionMultiplierHash = 0x98F16469u;
+        private const uint CsvLfoFrequencyHash = 0x8558D531u;
+        private const uint CsvBaseVolumeHash = 0xF90B5C4Fu;
+        private const uint CsvQualityMinHash = 0x1F25AA6Du;
+        private const uint CsvQualityMaxHash = 0x09106D13u;
+        private const uint CsvDepthMaxMetersHash = 0x5003D7DEu;
+        private const uint CsvLpfMinHzHash = 0xA00FDE5Du;
+        private const uint CsvLpfDepthHzPerMeterHash = 0xF27ED764u;
+        private const uint CsvStereoWidthHash = 0xFB212D22u;
+        private const uint CsvPresetHash = 0xE7B52233u;
+        private const uint CsvBiomeHash = 0xB709D014u;
+        private const uint CsvNarrativeHash = 0xC05354D2u;
+
+        private static DynamicMusicGranularSynthesizer _activeInstance;
+
+        [Header("Cold Tuning")]
+        [SerializeField] private string _csvRelativePath = CsvDefaultRelativePath;
+        [SerializeField, Range(0f, 1f)] private float _mockTensionBias01;
+        [SerializeField, Min(0f)] private float _mockDepthMeters = 900f;
+        [SerializeField, Range(0f, 1f)] private float _mockQualityBias01 = 1f;
+        [SerializeField] private bool _autoCreateRuntimeInstance = true;
+
+        private NativeArray<SynthVoiceDTO> _voices; // Vault alias; GlobalDataVault owns backing memory.
+        private NativeArray<DynamicMusicSynthScalarDTO> _scalar; // Vault alias; GlobalDataVault owns backing memory.
+        private NativeArray<DynamicMusicSynthTuningDTO> _tuning; // Vault alias; GlobalDataVault owns backing memory.
+        private NativeArray<float> _outputA; // Vault alias; GlobalDataVault owns backing memory.
+        private NativeArray<float> _outputB; // Vault alias; GlobalDataVault owns backing memory.
+        private NativeArray<DynamicMusicBiquadStateDTO> _biquad; // Vault alias; GlobalDataVault owns backing memory.
+        private NativeArray<AudioDSPTelemetryEntry> _telemetryRing; // Vault alias; GlobalDataVault owns backing memory.
+        private NativeArray<int> _telemetryCursor; // Vault alias; GlobalDataVault owns backing memory.
+        private NativeArray<byte> _csvScratch; // Vault alias; GlobalDataVault owns backing memory.
+        private NativeArray<DynamicMusicPresetRuleDTO> _presetRules; // Vault alias; GlobalDataVault owns backing memory.
+        private NativeArray<float> _grainBank; // Vault alias; GlobalDataVault owns backing memory.
+        private NativeArray<DynamicMusicSharedStateDTO> _sharedState; // Vault alias; GlobalDataVault owns backing memory.
+        private NativeArray<ScalabilityStateDTO> _scalabilityState; // Vault alias; HardwareHomeostasis owns backing memory.
+
+        private VaultBufferHandle<SynthVoiceDTO> _voicesHandle;
+        private VaultBufferHandle<DynamicMusicSynthScalarDTO> _scalarHandle;
+        private VaultBufferHandle<DynamicMusicSynthTuningDTO> _tuningHandle;
+        private VaultBufferHandle<float> _outputAHandle;
+        private VaultBufferHandle<float> _outputBHandle;
+        private VaultBufferHandle<DynamicMusicBiquadStateDTO> _biquadHandle;
+        private VaultBufferHandle<AudioDSPTelemetryEntry> _telemetryRingHandle;
+        private VaultBufferHandle<int> _telemetryCursorHandle;
+        private VaultBufferHandle<byte> _csvScratchHandle;
+        private VaultBufferHandle<DynamicMusicPresetRuleDTO> _presetRulesHandle;
+        private VaultBufferHandle<float> _grainBankHandle;
+        private VaultBufferHandle<DynamicMusicSharedStateDTO> _sharedStateHandle;
+        private VaultBufferHandle<ScalabilityStateDTO> _scalabilityStateHandle;
+
+        private IDataVault _dataVault;
+        private AudioSource _hostSource;
+        private AudioClip _driverClip;
+        private string _resolvedCsvPath;
+        private string _lastResolvedCsvRelativePath;
+        private DateTime _lastCsvWriteUtc;
+        private float _cachedGlobalQualityWeight = 1f;
+        private float _externalTension01;
+        private float _externalDepthMeters;
+        private float _externalQualityWeight = 1f;
+        private float _externalDamageImpulse01;
+        private int _externalScalarPublished;
+        private float _pendingDamageImpulse;
+        private float _pendingStingerImpulse;
+        private int _nativeAllocated;
+        private int _registeredUpdate;
+        private int _registeredLateFrame;
+        private int _registeredSlowTick;
+        private int _registeredHotSwap;
+        private int _synthJobPending;
+        private int _jobBufferIndex = -1;
+        private int _jobSampleCount;
+        private int _jobChannels = DefaultAudioChannels;
+        private int _readyBufferIndex = -1;
+        private int _readySampleCount;
+        private int _audioCopyBufferIndex = -1;
+        private int _lastAudioRequestSamples = DefaultScheduleSamples;
+        private int _lastAudioChannels = DefaultAudioChannels;
+        private int _audioUnderrunCount;
+        private int _audioOverflowCount;
+        private int _csvPollCountdown;
+        private int _telemetryDumped;
+        private uint _simulationFrameCounter;
+        private long _synthJobStartTicks;
+        private JobHandle _synthJobHandle;
+        private void* _outputPtrA;
+        private void* _outputPtrB;
+
+        public static bool TryGetActive(out DynamicMusicGranularSynthesizer synth)
+        {
+            synth = _activeInstance;
+            return synth != null && Volatile.Read(ref synth._nativeAllocated) != 0;
+        }
+
+        public static void EnsureRuntimeInstanceForScene(Scene scene)
+        {
+            if (!Application.isPlaying)
+                return;
+
+            if (_activeInstance != null)
+                return;
+
+#if UNITY_2023_1_OR_NEWER
+            DynamicMusicGranularSynthesizer existing = UnityEngine.Object.FindAnyObjectByType<DynamicMusicGranularSynthesizer>();
+#else
+            DynamicMusicGranularSynthesizer existing = UnityEngine.Object.FindObjectOfType<DynamicMusicGranularSynthesizer>();
+#endif
+            if (existing != null)
+            {
+                _activeInstance = existing;
+                return;
+            }
+
+            GameObject host = new GameObject("H8 Dynamic Music Synth");
+            if (scene.IsValid())
+                SceneManager.MoveGameObjectToScene(host, scene);
+
+            host.AddComponent<AudioSource>();
+            host.AddComponent<DynamicMusicGranularSynthesizer>();
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void EnsureRuntimeInstanceAfterSceneLoad()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            EnsureDynamicMusicSignalLaneCold();
+            EnsureRuntimeInstanceForScene(SceneManager.GetActiveScene());
+        }
+
+        public bool TryGetEditorTuning(out DynamicMusicSynthTuningDTO tuning)
+        {
+            if (Volatile.Read(ref _nativeAllocated) == 0 || !_tuning.IsCreated)
+            {
+                tuning = default;
+                return false;
+            }
+
+            TryFlushCompletedSynthJob();
+            tuning = _tuning[0];
+            return true;
+        }
+
+        public bool TryWriteEditorTuning(in DynamicMusicSynthTuningDTO tuning)
+        {
+            if (Volatile.Read(ref _nativeAllocated) == 0 || !_tuning.IsCreated)
+                return false;
+
+            if (!TryFlushCompletedSynthJob())
+                return false;
+
+            _tuning[0] = SanitizeTuning(tuning);
+            return true;
+        }
+
+        public bool TryGetEditorTelemetry(int offsetFromNewest, out AudioDSPTelemetryEntry entry)
+        {
+            entry = default;
+            if (Volatile.Read(ref _nativeAllocated) == 0 || !_telemetryRing.IsCreated || !_telemetryCursor.IsCreated)
+                return false;
+
+            TryFlushCompletedSynthJob();
+            int cursor = math.max(0, _telemetryCursor[0]);
+            int offset = math.clamp(offsetFromNewest, 0, TelemetryCapacity - 1);
+            int index = cursor - 1 - offset;
+            while (index < 0)
+                index += TelemetryCapacity;
+
+            entry = _telemetryRing[index % TelemetryCapacity];
+            return true;
+        }
+
+        public bool TryGetEditorOutputSample(int sampleIndex, out float sample)
+        {
+            sample = 0f;
+            if (Volatile.Read(ref _nativeAllocated) == 0)
+                return false;
+
+            int readyIndex = Volatile.Read(ref _readyBufferIndex);
+            int readySamples = Volatile.Read(ref _readySampleCount);
+            int safeIndex = math.clamp(sampleIndex, 0, math.max(0, readySamples - 1));
+            if (readyIndex == 0 && _outputA.IsCreated && safeIndex < _outputA.Length)
+            {
+                sample = _outputA[safeIndex];
+                return true;
+            }
+
+            if (readyIndex == 1 && _outputB.IsCreated && safeIndex < _outputB.Length)
+            {
+                sample = _outputB[safeIndex];
+                return true;
+            }
+
+            return false;
+        }
+
+        public bool ReloadSynthPresetCsvCold()
+        {
+            if (Volatile.Read(ref _nativeAllocated) == 0 || !_csvScratch.IsCreated)
+                return false;
+
+            string path = ResolveCachedCsvPathCold();
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+                return false;
+
+            try
+            {
+                int bytesRead;
+                byte* scratch = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_csvScratch);
+                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    int safeLength = (int)math.min(stream.Length, CsvScratchBytes);
+                    bytesRead = 0;
+                    while (bytesRead < safeLength)
+                    {
+                        Span<byte> scratchSpan = new Span<byte>(scratch + bytesRead, safeLength - bytesRead);
+                        int read = stream.Read(scratchSpan);
+                        if (read <= 0)
+                            break;
+
+                        bytesRead += read;
+                    }
+                }
+
+                ParseSynthPresetCsv(bytesRead);
+                _lastCsvWriteUtc = File.GetLastWriteTimeUtc(path);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("[SHINOBU_135] synth_presets.csv parse failed. " + ex.Message, this);
+                return false;
+            }
+        }
+
+        public void InjectStingerImpulse(float impulse01, float pitchKick01)
+        {
+            float impulse = math.saturate(FiniteOrFallback(impulse01, 0f));
+            float pitchKick = math.saturate(FiniteOrFallback(pitchKick01, 0f));
+            _pendingStingerImpulse = math.saturate(math.max(_pendingStingerImpulse, impulse));
+            _pendingDamageImpulse = math.saturate(math.max(_pendingDamageImpulse, pitchKick));
+        }
+
+        public void PublishPresentationScalars(float tension01, float depthMeters, float globalQualityWeight, float damageImpulse01)
+        {
+            _externalTension01 = math.saturate(FiniteOrFallback(tension01, 0f));
+            _externalDepthMeters = math.max(0f, FiniteOrFallback(depthMeters, 0f));
+            _externalQualityWeight = math.saturate(FiniteOrFallback(globalQualityWeight, 1f));
+            _externalDamageImpulse01 = math.saturate(FiniteOrFallback(damageImpulse01, 0f));
+            _externalScalarPublished = 1;
+        }
+
+        private void Awake()
+        {
+            EnsureDynamicMusicSignalLaneCold();
+            EnsureVaultStorage();
+            RefreshCsvPathCold();
+            ConfigureAudioHostCold();
+            GenerateDefaultGrainBankCold();
+            GenerateEmergencyMockAudioProfiles();
+            ReloadSynthPresetCsvCold();
+        }
+
+        private void OnEnable()
+        {
+            EnsureDynamicMusicSignalLaneCold();
+            EnsureVaultStorage();
+            RefreshCsvPathCold();
+            ConfigureAudioHostCold();
+            if (_autoCreateRuntimeInstance || _activeInstance == null)
+                _activeInstance = this;
+
+            if (GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment))
+                _registeredUpdate = 1;
+            if (GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment))
+                _registeredLateFrame = 1;
+            if (GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment))
+                _registeredSlowTick = 1;
+            if (GlobalRegistry.TryRegisterHotSwapListener(this))
+                _registeredHotSwap = 1;
+        }
+
+        private void OnDisable()
+        {
+            UnregisterRuntime();
+        }
+
+        private void OnDestroy()
+        {
+            UnregisterRuntime();
+            if (_driverClip != null)
+            {
+                Destroy(_driverClip);
+                _driverClip = null;
+            }
+
+            DisposeVaultStorage();
+        }
+
+        public void Tick(float deltaTime)
+        {
+            if (Volatile.Read(ref _nativeAllocated) == 0)
+            {
+                EnsureVaultStorage();
+                if (Volatile.Read(ref _nativeAllocated) == 0)
+                    return;
+            }
+
+            TryFlushCompletedSynthJob();
+            if (Volatile.Read(ref _synthJobPending) != 0)
+                return;
+
+            unchecked
+            {
+                _simulationFrameCounter++;
+                if (_simulationFrameCounter == 0u)
+                    _simulationFrameCounter = 1u;
+            }
+
+            DrainSignalInputs();
+            ScheduleSynthJobs(math.clamp(deltaTime, MinimumDeltaSeconds, MaximumDeltaSeconds));
+        }
+
+        public void LateFrameTick()
+        {
+            if (Volatile.Read(ref _nativeAllocated) == 0)
+                return;
+
+            TryFlushCompletedSynthJob();
+        }
+
+        public void SlowTick()
+        {
+            if (Volatile.Read(ref _nativeAllocated) == 0)
+                return;
+
+            TryRefreshScalabilityStateAliasCold();
+            RefreshGlobalQualitySnapshotCold();
+            PollCsvRulesCold();
+            ConfigureAudioHostCold();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Unknown)
+                return;
+
+            EnsureVaultStorage();
+            TryRefreshScalabilityStateAliasCold();
+            RefreshGlobalQualitySnapshotCold();
+            _ = previousService;
+            _ = currentService;
+        }
+
+        private void OnAudioFilterRead(float[] data, int channels)
+        {
+            int safeChannels = math.clamp(channels, 1, 2);
+            Volatile.Write(ref _lastAudioChannels, safeChannels);
+            Volatile.Write(ref _lastAudioRequestSamples, math.min(data != null ? data.Length : 0, OutputSampleCapacity));
+
+            if (data == null || data.Length == 0)
+                return;
+
+            int readyIndex = Volatile.Read(ref _readyBufferIndex);
+            int readySamples = Volatile.Read(ref _readySampleCount);
+            if (readyIndex < 0 || readySamples <= 0)
+            {
+                Interlocked.Increment(ref _audioUnderrunCount);
+                ZeroManagedAudioBuffer(data, 0, data.Length);
+                return;
+            }
+
+            void* source = readyIndex == 0 ? _outputPtrA : _outputPtrB;
+            if (source == null)
+            {
+                Interlocked.Increment(ref _audioUnderrunCount);
+                ZeroManagedAudioBuffer(data, 0, data.Length);
+                return;
+            }
+
+            Interlocked.Exchange(ref _audioCopyBufferIndex, readyIndex);
+            int copySamples = math.min(data.Length, readySamples);
+            fixed (float* destination = data)
+            {
+                UnsafeUtility.MemCpy(destination, source, (long)copySamples * sizeof(float));
+            }
+
+            if (copySamples < data.Length)
+            {
+                Interlocked.Increment(ref _audioUnderrunCount);
+                ZeroManagedAudioBuffer(data, copySamples, data.Length - copySamples);
+            }
+
+            Volatile.Write(ref _audioCopyBufferIndex, -1);
+        }
+
+        private void UnregisterRuntime()
+        {
+            if (ReferenceEquals(_activeInstance, this))
+                _activeInstance = null;
+            if (Interlocked.Exchange(ref _registeredHotSwap, 0) != 0)
+                GlobalRegistry.UnregisterHotSwapListener(this);
+            if (Interlocked.Exchange(ref _registeredSlowTick, 0) != 0)
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            if (Interlocked.Exchange(ref _registeredLateFrame, 0) != 0)
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            if (Interlocked.Exchange(ref _registeredUpdate, 0) != 0)
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            ForceFlushSynthJobForShutdown();
+        }
+
+        private void EnsureVaultStorage()
+        {
+            if (Volatile.Read(ref _nativeAllocated) != 0)
+            {
+                if (TryRefreshVaultAliases())
+                    return;
+
+                DisposeVaultStorage();
+            }
+
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
+                return;
+
+            _dataVault = vault;
+            _voicesHandle = vault.GetBufferHandle<SynthVoiceDTO>(BufferID.AudioDynamicSynthVoices, VoiceCapacity, VaultOwner, NativeArrayOptions.UninitializedMemory);
+            _scalarHandle = vault.GetBufferHandle<DynamicMusicSynthScalarDTO>(BufferID.AudioDynamicSynthScalar, 1, VaultOwner, NativeArrayOptions.UninitializedMemory);
+            _tuningHandle = vault.GetBufferHandle<DynamicMusicSynthTuningDTO>(BufferID.AudioDynamicSynthTuning, 1, VaultOwner, NativeArrayOptions.UninitializedMemory);
+            _outputAHandle = vault.GetBufferHandle<float>(BufferID.AudioDynamicSynthOutputA, OutputSampleCapacity, VaultOwner, NativeArrayOptions.UninitializedMemory);
+            _outputBHandle = vault.GetBufferHandle<float>(BufferID.AudioDynamicSynthOutputB, OutputSampleCapacity, VaultOwner, NativeArrayOptions.UninitializedMemory);
+            _biquadHandle = vault.GetBufferHandle<DynamicMusicBiquadStateDTO>(BufferID.AudioDynamicSynthBiquad, 1, VaultOwner, NativeArrayOptions.UninitializedMemory);
+            _telemetryRingHandle = vault.GetBufferHandle<AudioDSPTelemetryEntry>(BufferID.AudioDynamicSynthTelemetry, TelemetryCapacity, VaultOwner, NativeArrayOptions.UninitializedMemory);
+            _telemetryCursorHandle = vault.GetBufferHandle<int>(BufferID.AudioDynamicSynthTelemetryCursor, 1, VaultOwner, NativeArrayOptions.UninitializedMemory);
+            _csvScratchHandle = vault.GetBufferHandle<byte>(BufferID.AudioDynamicSynthCsvScratch, CsvScratchBytes, VaultOwner, NativeArrayOptions.UninitializedMemory);
+            _presetRulesHandle = vault.GetBufferHandle<DynamicMusicPresetRuleDTO>(BufferID.AudioDynamicSynthPresetRules, PresetRuleCapacity, VaultOwner, NativeArrayOptions.UninitializedMemory);
+            _grainBankHandle = vault.GetBufferHandle<float>(BufferID.AudioDynamicSynthGrainBank, GrainBankSampleCapacity, VaultOwner, NativeArrayOptions.UninitializedMemory);
+            _sharedStateHandle = vault.GetBufferHandle<DynamicMusicSharedStateDTO>(BufferID.AudioDynamicSynthSharedState, 1, VaultOwner, NativeArrayOptions.UninitializedMemory);
+
+            if (!TryRefreshVaultAliases())
+            {
+                DisposeVaultStorage();
+                return;
+            }
+
+            MemClearArray(_voices);
+            MemClearArray(_scalar);
+            MemClearArray(_tuning);
+            MemClearArray(_outputA);
+            MemClearArray(_outputB);
+            MemClearArray(_biquad);
+            MemClearArray(_telemetryRing);
+            MemClearArray(_telemetryCursor);
+            MemClearArray(_csvScratch);
+            MemClearArray(_presetRules);
+            MemClearArray(_sharedState);
+
+            Volatile.Write(ref _readyBufferIndex, -1);
+            Volatile.Write(ref _readySampleCount, 0);
+            Volatile.Write(ref _audioCopyBufferIndex, -1);
+            TryRefreshScalabilityStateAliasCold();
+            RefreshGlobalQualitySnapshotCold();
+            Volatile.Write(ref _nativeAllocated, 1);
+        }
+
+        private bool TryRefreshVaultAliases()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            if (vault.IsCompactionFenceActive)
+                return AreVaultAliasesCreated();
+
+            NativeArray<SynthVoiceDTO> voices = _voicesHandle.Resolve(vault);
+            NativeArray<DynamicMusicSynthScalarDTO> scalar = _scalarHandle.Resolve(vault);
+            NativeArray<DynamicMusicSynthTuningDTO> tuning = _tuningHandle.Resolve(vault);
+            NativeArray<float> outputA = _outputAHandle.Resolve(vault);
+            NativeArray<float> outputB = _outputBHandle.Resolve(vault);
+            NativeArray<DynamicMusicBiquadStateDTO> biquad = _biquadHandle.Resolve(vault);
+            NativeArray<AudioDSPTelemetryEntry> telemetryRing = _telemetryRingHandle.Resolve(vault);
+            NativeArray<int> telemetryCursor = _telemetryCursorHandle.Resolve(vault);
+            NativeArray<byte> csvScratch = _csvScratchHandle.Resolve(vault);
+            NativeArray<DynamicMusicPresetRuleDTO> presetRules = _presetRulesHandle.Resolve(vault);
+            NativeArray<float> grainBank = _grainBankHandle.Resolve(vault);
+            NativeArray<DynamicMusicSharedStateDTO> sharedState = _sharedStateHandle.Resolve(vault);
+
+            if (!voices.IsCreated ||
+                !scalar.IsCreated ||
+                !tuning.IsCreated ||
+                !outputA.IsCreated ||
+                !outputB.IsCreated ||
+                !biquad.IsCreated ||
+                !telemetryRing.IsCreated ||
+                !telemetryCursor.IsCreated ||
+                !csvScratch.IsCreated ||
+                !presetRules.IsCreated ||
+                !grainBank.IsCreated ||
+                !sharedState.IsCreated)
+            {
+                return false;
+            }
+
+            _voices = voices;
+            _scalar = scalar;
+            _tuning = tuning;
+            _outputA = outputA;
+            _outputB = outputB;
+            _biquad = biquad;
+            _telemetryRing = telemetryRing;
+            _telemetryCursor = telemetryCursor;
+            _csvScratch = csvScratch;
+            _presetRules = presetRules;
+            _grainBank = grainBank;
+            _sharedState = sharedState;
+            _outputPtrA = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(outputA);
+            _outputPtrB = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(outputB);
+            return true;
+        }
+
+        private bool AreVaultAliasesCreated()
+        {
+            return _voices.IsCreated &&
+                   _scalar.IsCreated &&
+                   _tuning.IsCreated &&
+                   _outputA.IsCreated &&
+                   _outputB.IsCreated &&
+                   _biquad.IsCreated &&
+                   _telemetryRing.IsCreated &&
+                   _telemetryCursor.IsCreated &&
+                   _csvScratch.IsCreated &&
+                   _presetRules.IsCreated &&
+                   _grainBank.IsCreated &&
+                   _sharedState.IsCreated &&
+                   _outputPtrA != null &&
+                   _outputPtrB != null;
+        }
+
+        private void DisposeVaultStorage()
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null)
+                vault.ReleaseOwnerBuffers(VaultOwner, out _);
+
+            _voices = default;
+            _scalar = default;
+            _tuning = default;
+            _outputA = default;
+            _outputB = default;
+            _biquad = default;
+            _telemetryRing = default;
+            _telemetryCursor = default;
+            _csvScratch = default;
+            _presetRules = default;
+            _grainBank = default;
+            _sharedState = default;
+            _scalabilityState = default;
+            _voicesHandle = default;
+            _scalarHandle = default;
+            _tuningHandle = default;
+            _outputAHandle = default;
+            _outputBHandle = default;
+            _biquadHandle = default;
+            _telemetryRingHandle = default;
+            _telemetryCursorHandle = default;
+            _csvScratchHandle = default;
+            _presetRulesHandle = default;
+            _grainBankHandle = default;
+            _sharedStateHandle = default;
+            _scalabilityStateHandle = default;
+            _outputPtrA = null;
+            _outputPtrB = null;
+            _dataVault = null;
+            _resolvedCsvPath = null;
+            _lastResolvedCsvRelativePath = null;
+            Volatile.Write(ref _nativeAllocated, 0);
+        }
+
+        private void ConfigureAudioHostCold()
+        {
+            if (_hostSource == null && !TryGetComponent(out _hostSource))
+                return;
+
+            int sampleRate = math.max(8000, AudioSettings.outputSampleRate);
+            _hostSource.playOnAwake = true;
+            _hostSource.loop = true;
+            _hostSource.spatialBlend = 0f;
+            _hostSource.dopplerLevel = 0f;
+            _hostSource.volume = 1f;
+
+            if (_driverClip == null || _driverClip.frequency != sampleRate)
+            {
+                if (_driverClip != null)
+                    Destroy(_driverClip);
+
+                // COLD ALLOC: 1-frame procedural driver clip keeps Unity's audio filter graph alive; waveform is overwritten in OnAudioFilterRead.
+                _driverClip = AudioClip.Create(DriverClipName, 1, DefaultAudioChannels, sampleRate, false);
+                _hostSource.clip = _driverClip;
+            }
+
+            if (!_hostSource.isPlaying && Application.isPlaying)
+                _hostSource.Play();
+        }
+
+        private void TryRefreshScalabilityStateAliasCold()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+            {
+                _scalabilityState = default;
+                _scalabilityStateHandle = default;
+                return;
+            }
+
+            if (!vault.TryGetBufferHandle<ScalabilityStateDTO>(BufferID.ShinobuScalabilityState, out _scalabilityStateHandle))
+            {
+                _scalabilityState = default;
+                _scalabilityStateHandle = default;
+                return;
+            }
+
+            _scalabilityState = _scalabilityStateHandle.Resolve(vault);
+        }
+
+        private void RefreshGlobalQualitySnapshotCold()
+        {
+            if (_scalabilityState.IsCreated && _scalabilityState.Length > 0)
+            {
+                ScalabilityStateDTO state = _scalabilityState[0];
+                if (math.isfinite(state.GlobalQualityWeight))
+                    _cachedGlobalQualityWeight = math.saturate(state.GlobalQualityWeight);
+            }
+            else
+            {
+                _cachedGlobalQualityWeight = math.saturate(HomeostasisBrain.GlobalQualityWeight);
+            }
+        }
+
+        private void GenerateEmergencyMockAudioProfiles()
+        {
+            if (!_tuning.IsCreated || !_scalar.IsCreated || !_voices.IsCreated)
+                return;
+
+            DynamicMusicSynthTuningDTO tuning = default;
+            tuning.BasePitchHz = DefaultBasePitchHz;
+            tuning.BaseGrainDensity = DefaultBaseGrainDensity;
+            tuning.TensionMultiplier = DefaultTensionMultiplier;
+            tuning.LfoFrequency = DefaultLfoFrequency;
+            tuning.BaseVolume = DefaultBaseVolume;
+            tuning.GrainSizeSeconds = DefaultGrainSizeSeconds;
+            tuning.QualityMin = 0f;
+            tuning.QualityMax = 1f;
+            tuning.DepthMaxMeters = DefaultDepthMaxMeters;
+            tuning.LpfMinHz = DefaultLpfMinHz;
+            tuning.LpfDepthHzPerMeter = DefaultLpfDepthHzPerMeter;
+            tuning.StereoWidth = DefaultStereoWidth;
+            tuning.DensityTensionScale = 0.85f;
+            tuning.DetuneCentsMax = DefaultDetuneCentsMax;
+            tuning.StingerDecaySeconds = DefaultStingerDecaySeconds;
+            tuning.NoiseFoldback = 0.23f;
+            tuning.SeedBase = DefaultSynthSeed;
+            tuning.WaveformHash = DefaultWaveformHash;
+            tuning.PresetHash = 0xA8A55335u;
+            tuning.Flags = FlagProceduralOnly;
+            _tuning[0] = SanitizeTuning(tuning);
+
+            DynamicMusicSynthScalarDTO scalar = default;
+            scalar.GlobalQualityWeight = ResolveGlobalQualityWeightFromSnapshot();
+            scalar.DepthMeters = math.max(0f, _mockDepthMeters);
+            scalar.Depth01 = math.saturate(scalar.DepthMeters / math.max(0.0001f, tuning.DepthMaxMeters));
+            scalar.TensionIndex = math.saturate(_mockTensionBias01);
+            scalar.LpfCutoffHz = math.max(tuning.LpfMinHz, 22000f - scalar.DepthMeters * tuning.LpfDepthHzPerMeter);
+            scalar.ActiveVoices = 16;
+            _scalar[0] = scalar;
+
+            for (int i = 0; i < _voices.Length; i++)
+            {
+                uint hash = Hash32((uint)i ^ tuning.SeedBase);
+                SynthVoiceDTO voice = default;
+                voice.CurrentPhase = HashToUnit(hash);
+                voice.PhaseIncrement = tuning.BasePitchHz / math.max(8000f, AudioSettings.outputSampleRate);
+                voice.EnvelopeState = 1f;
+                voice.SoundHash = hash == 0u ? 1u : hash;
+                voice.TargetPitch = tuning.BasePitchHz;
+                voice.TargetVolume = 0f;
+                _voices[i] = voice;
+            }
+        }
+
+        private void GenerateDefaultGrainBankCold()
+        {
+            if (!_grainBank.IsCreated)
+                return;
+
+            for (int i = 0; i < _grainBank.Length; i++)
+            {
+                float phase = i / math.max(1f, (float)_grainBank.Length);
+                float scrape = math.sin(phase * math.PI * 2f) * 0.55f;
+                scrape += math.sin(phase * math.PI * 9.7f + 0.8f) * 0.22f;
+                scrape += math.sin(phase * math.PI * 37.1f + 1.7f) * 0.08f;
+                float bow = (HashToUnit(Hash32((uint)i * 747796405u + DefaultSynthSeed)) - 0.5f) * 0.16f;
+                float envelope = math.sin(phase * math.PI);
+                _grainBank[i] = math.clamp((scrape + bow) * envelope, -1f, 1f);
+            }
+        }
+
+        private void DrainSignalInputs()
+        {
+            float damageImpulse = math.saturate(_pendingDamageImpulse);
+            float stingerImpulse = math.saturate(_pendingStingerImpulse);
+            _pendingDamageImpulse = 0f;
+
+            ReadOnlySpan<DynamicMusicScalarSignal> musicSignals = SignalBus<DynamicMusicScalarSignal>.GetFrameSnapshot();
+            for (int i = 0; i < musicSignals.Length; i++)
+            {
+                DynamicMusicScalarSignal signal = musicSignals[i];
+                if ((signal.Flags & DynamicMusicScalarSignal.FlagExternalScalars) != 0u)
+                {
+                    _externalTension01 = math.saturate(FiniteOrFallback(signal.Tension01, 0f));
+                    _externalDepthMeters = math.max(0f, FiniteOrFallback(signal.DepthMeters, 0f));
+                    _externalQualityWeight = math.saturate(FiniteOrFallback(signal.GlobalQualityWeight, 1f));
+                    _externalDamageImpulse01 = math.saturate(FiniteOrFallback(signal.DamageImpulse01, 0f));
+                    _externalScalarPublished = 1;
+                }
+
+                damageImpulse = math.max(damageImpulse, math.saturate(FiniteOrFallback(signal.DamageImpulse01, 0f)));
+                damageImpulse = math.max(damageImpulse, math.saturate(FiniteOrFallback(signal.PitchKick01, 0f)));
+                stingerImpulse = math.max(stingerImpulse, math.saturate(FiniteOrFallback(signal.StingerImpulse01, 0f)));
+            }
+
+            ReadOnlySpan<CombatDamageSignal> damageSignals = SignalBus<CombatDamageSignal>.GetFrameSnapshot();
+            for (int i = 0; i < damageSignals.Length; i++)
+            {
+                CombatDamageSignal signal = damageSignals[i];
+                float magnitude01 = math.saturate(signal.Magnitude * 0.01f);
+                damageImpulse = math.max(damageImpulse, magnitude01);
+                stingerImpulse = math.max(stingerImpulse, math.saturate(magnitude01 * 1.25f));
+            }
+
+            ReadOnlySpan<HullDeformedSignal> hullSignals = SignalBus<HullDeformedSignal>.GetFrameSnapshot();
+            for (int i = 0; i < hullSignals.Length; i++)
+            {
+                HullDeformedSignal signal = hullSignals[i];
+                float hullImpulse = math.saturate(math.max(signal.Intensity01, math.abs(signal.Depth) * 0.2f));
+                damageImpulse = math.max(damageImpulse, hullImpulse * 0.65f);
+                stingerImpulse = math.max(stingerImpulse, hullImpulse * 1.15f);
+            }
+
+            ReadOnlySpan<WaterlineBreachSignal> breachSignals = SignalBus<WaterlineBreachSignal>.GetFrameSnapshot();
+            for (int i = 0; i < breachSignals.Length; i++)
+            {
+                WaterlineBreachSignal signal = breachSignals[i];
+                float breachImpulse = math.saturate(signal.Intensity01);
+                damageImpulse = math.max(damageImpulse, breachImpulse * 0.45f);
+                stingerImpulse = math.max(stingerImpulse, breachImpulse * 1.35f);
+            }
+
+            _pendingStingerImpulse = math.saturate(stingerImpulse);
+            _pendingDamageImpulse = damageImpulse;
+        }
+
+        private static void EnsureDynamicMusicSignalLaneCold()
+        {
+            SignalBus<DynamicMusicScalarSignal>.Configure(
+                expectedCapacity: 32,
+                maxFrameSignals: 64,
+                lowTierFrameSignals: 8,
+                laneHash: DynamicMusicScalarSignal.LaneHash);
+            SignalBus<DynamicMusicScalarSignal>.EnsureInitialized();
+        }
+
+        private void ScheduleSynthJobs(float deltaSeconds)
+        {
+            if (!_voices.IsCreated || !_scalar.IsCreated || !_tuning.IsCreated || !_grainBank.IsCreated)
+                return;
+
+            int readyIndex = Volatile.Read(ref _readyBufferIndex);
+            int copyIndex = Volatile.Read(ref _audioCopyBufferIndex);
+            int targetBuffer = readyIndex == 0 ? 1 : 0;
+            if (targetBuffer == copyIndex)
+                return;
+
+            int requestedSamples = Volatile.Read(ref _lastAudioRequestSamples);
+            int requestedChannels = math.clamp(Volatile.Read(ref _lastAudioChannels), 1, 2);
+            int sampleCount = math.clamp(requestedSamples > 0 ? requestedSamples : DefaultScheduleSamples, requestedChannels, OutputSampleCapacity);
+            sampleCount -= sampleCount % requestedChannels;
+            if (sampleCount <= 0)
+                return;
+
+            float* output = targetBuffer == 0
+                ? (float*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_outputA)
+                : (float*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_outputB);
+
+            DynamicMusicSynthTuningDTO tuning = _tuning[0];
+            float globalQuality = ResolveGlobalQualityWeightFromSnapshot();
+            bool hasExternalScalars = _externalScalarPublished != 0;
+            float externalTension = math.saturate(_externalTension01);
+            float externalDepthMeters = math.max(0f, _externalDepthMeters);
+            float externalQuality = hasExternalScalars ? math.saturate(_externalQualityWeight) : 1f;
+            float damageImpulse = math.saturate(_pendingDamageImpulse);
+            damageImpulse = math.saturate(math.max(damageImpulse, _externalDamageImpulse01));
+            float stingerImpulse = math.saturate(_pendingStingerImpulse);
+            _pendingDamageImpulse = 0f;
+            _externalDamageImpulse01 = 0f;
+
+            GenerateMockTensionJob mockJob = new GenerateMockTensionJob
+            {
+                Scalar = (DynamicMusicSynthScalarDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_scalar),
+                Tuning = (DynamicMusicSynthTuningDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_tuning),
+                FrameIndex = _simulationFrameCounter,
+                DeltaSeconds = deltaSeconds,
+                HasExternalScalars = hasExternalScalars ? 1 : 0,
+                ExternalTension01 = math.saturate(math.max(math.max(_mockTensionBias01, hasExternalScalars ? externalTension : 0f), damageImpulse)),
+                ExternalDepthMeters = hasExternalScalars ? externalDepthMeters : math.max(0f, _mockDepthMeters),
+                DamageImpulse01 = damageImpulse,
+                StingerImpulse01 = math.max(stingerImpulse, damageImpulse),
+                GlobalQualityWeight = math.saturate(globalQuality * math.saturate(_mockQualityBias01) * externalQuality)
+            };
+            JobHandle mockHandle = mockJob.Schedule();
+
+            ModulateSynthParametersJob modulateJob = new ModulateSynthParametersJob
+            {
+                Voices = (SynthVoiceDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_voices),
+                Scalar = (DynamicMusicSynthScalarDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_scalar),
+                Tuning = (DynamicMusicSynthTuningDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_tuning),
+                VoiceCapacityValue = VoiceCapacity,
+                SampleRate = math.max(8000, AudioSettings.outputSampleRate)
+            };
+            JobHandle modulateHandle = modulateJob.Schedule(mockHandle);
+
+            GranularSynthesisJob synthJob = new GranularSynthesisJob
+            {
+                Voices = (SynthVoiceDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_voices),
+                Scalar = (DynamicMusicSynthScalarDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_scalar),
+                Tuning = (DynamicMusicSynthTuningDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_tuning),
+                Biquad = (DynamicMusicBiquadStateDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_biquad),
+                GrainBank = (float*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_grainBank),
+                Output = output,
+                GrainBankLength = _grainBank.Length,
+                OutputSampleCount = sampleCount,
+                Channels = requestedChannels,
+                SampleRate = math.max(8000, AudioSettings.outputSampleRate),
+                FrameIndex = _simulationFrameCounter
+            };
+
+            _jobBufferIndex = targetBuffer;
+            _jobSampleCount = sampleCount;
+            _jobChannels = requestedChannels;
+            _synthJobStartTicks = Stopwatch.GetTimestamp();
+            _synthJobHandle = synthJob.Schedule(modulateHandle);
+            Volatile.Write(ref _synthJobPending, 1);
+
+            _ = tuning;
+        }
+
+        private bool TryFlushCompletedSynthJob()
+        {
+            if (Volatile.Read(ref _synthJobPending) == 0)
+                return true;
+
+            if (!_synthJobHandle.IsCompleted)
+                return false;
+
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _synthJobHandle))
+                return false;
+
+            Volatile.Write(ref _synthJobPending, 0);
+            float elapsedMicroseconds = ResolveElapsedMicroseconds(_synthJobStartTicks);
+            PublishReadyBuffer(elapsedMicroseconds);
+            return true;
+        }
+
+        private void ForceFlushSynthJobForShutdown()
+        {
+            if (Volatile.Read(ref _synthJobPending) == 0)
+                return;
+
+            DispatcherJobFence.TryComplete(ref _synthJobHandle, forceComplete: true);
+            Volatile.Write(ref _synthJobPending, 0);
+            PublishReadyBuffer(ResolveElapsedMicroseconds(_synthJobStartTicks));
+        }
+
+        private void PublishReadyBuffer(float elapsedMicroseconds)
+        {
+            int publishedBuffer = _jobBufferIndex;
+            if (publishedBuffer < 0)
+                return;
+
+            int sampleCount = math.clamp(_jobSampleCount, 0, OutputSampleCapacity);
+            int channels = math.clamp(_jobChannels, 1, 2);
+            sampleCount -= sampleCount % channels;
+            DynamicMusicSynthScalarDTO scalar = _scalar.IsCreated ? _scalar[0] : default;
+            uint flags = scalar.Flags;
+            if (HasNonFiniteScalar(in scalar))
+                flags |= FlagNonFinite;
+
+            Volatile.Write(ref _readySampleCount, sampleCount);
+            Volatile.Write(ref _readyBufferIndex, publishedBuffer);
+            WriteSharedState(publishedBuffer, sampleCount, channels, elapsedMicroseconds, flags);
+            WriteTelemetry(elapsedMicroseconds, publishedBuffer, sampleCount, flags);
+            if (elapsedMicroseconds > DspDumpThresholdMicroseconds || (flags & FlagNonFinite) != 0u)
+                DumpTelemetryOnce();
+
+            float decaySeconds = _tuning.IsCreated ? math.max(0.0001f, _tuning[0].StingerDecaySeconds) : DefaultStingerDecaySeconds;
+            _pendingStingerImpulse = math.saturate(_pendingStingerImpulse * math.exp(-MaximumDeltaSeconds / decaySeconds));
+        }
+
+        private void WriteSharedState(int readyBuffer, int sampleCount, int channels, float elapsedMicroseconds, uint flags)
+        {
+            if (!_sharedState.IsCreated)
+                return;
+
+            DynamicMusicSynthScalarDTO scalar = _scalar[0];
+            DynamicMusicSharedStateDTO state = default;
+            state.ReadyBufferIndex = readyBuffer;
+            state.ReadySampleCount = sampleCount;
+            state.PendingBufferIndex = Volatile.Read(ref _synthJobPending) != 0 ? _jobBufferIndex : -1;
+            state.AudioCopyBufferIndex = Volatile.Read(ref _audioCopyBufferIndex);
+            state.PublishedFrame = scalar.Frame;
+            state.Channels = channels;
+            state.AudioUnderrunCount = Volatile.Read(ref _audioUnderrunCount);
+            state.AudioOverflowCount = Volatile.Read(ref _audioOverflowCount);
+            state.LastDspMicroseconds = elapsedMicroseconds;
+            state.LastActiveVoices = scalar.ActiveVoices;
+            state.LastTensionIndex = scalar.TensionIndex;
+            state.LastDepthMeters = scalar.DepthMeters;
+            state.LastCutoffHz = scalar.LpfCutoffHz;
+            state.Flags = flags;
+            _sharedState[0] = state;
+        }
+
+        private void WriteTelemetry(float elapsedMicroseconds, int readyBuffer, int sampleCount, uint flags)
+        {
+            if (!_telemetryRing.IsCreated || !_telemetryCursor.IsCreated)
+                return;
+
+            DynamicMusicSynthScalarDTO scalar = _scalar[0];
+            int cursor = _telemetryCursor[0];
+            int index = cursor % TelemetryCapacity;
+            AudioDSPTelemetryEntry entry = default;
+            entry.Frame = scalar.Frame;
+            entry.ActiveVoices = scalar.ActiveVoices;
+            entry.Flags = flags;
+            entry.ReadyBufferIndex = readyBuffer;
+            entry.TensionIndex = scalar.TensionIndex;
+            entry.DepthMeters = scalar.DepthMeters;
+            entry.LpfCutoffHz = scalar.LpfCutoffHz;
+            entry.DspJobMicroseconds = elapsedMicroseconds;
+            entry.QualityWeight = scalar.GlobalQualityWeight;
+            entry.GrainDensity = scalar.BaseDensity;
+            entry.TargetPitch = scalar.TargetPitch;
+            entry.StingerImpulse = scalar.StingerImpulse;
+            entry.OutputPeak = scalar.OutputPeak;
+            entry.OutputRms = scalar.OutputRms;
+            entry.AudioUnderrunCount = Volatile.Read(ref _audioUnderrunCount);
+            entry._pad0 = (uint)sampleCount;
+            _telemetryRing[index] = entry;
+            _telemetryCursor[0] = (cursor + 1) % TelemetryCapacity;
+        }
+
+        private bool HasNonFiniteScalar(in DynamicMusicSynthScalarDTO scalar)
+        {
+            return !math.isfinite(scalar.TensionIndex) ||
+                   !math.isfinite(scalar.DepthMeters) ||
+                   !math.isfinite(scalar.GlobalQualityWeight) ||
+                   !math.isfinite(scalar.LpfCutoffHz) ||
+                   !math.isfinite(scalar.OutputPeak) ||
+                   !math.isfinite(scalar.OutputRms);
+        }
+
+        private void DumpTelemetryOnce()
+        {
+            if (Interlocked.Exchange(ref _telemetryDumped, 1) != 0)
+                return;
+
+            try
+            {
+                string repoRoot = ResolveRepoRootPath();
+                string dumpPath = Path.Combine(repoRoot, DumpRelativePath);
+                string directory = Path.GetDirectoryName(dumpPath);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                void* source = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_telemetryRing);
+                int byteCount = TelemetryCapacity * UnsafeUtility.SizeOf<AudioDSPTelemetryEntry>();
+                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                {
+                    stream.Write(new ReadOnlySpan<byte>(source, byteCount));
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("[SHINOBU_135] Failed to dump synth telemetry. " + ex.Message, this);
+            }
+        }
+
+        private void PollCsvRulesCold()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (!_csvScratch.IsCreated)
+                return;
+
+            if (_csvPollCountdown > 0)
+            {
+                _csvPollCountdown--;
+                return;
+            }
+
+            _csvPollCountdown = CsvPollSlowTickInterval;
+            string path = ResolveCachedCsvPathCold();
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+                return;
+
+            DateTime writeTime = File.GetLastWriteTimeUtc(path);
+            if (writeTime == _lastCsvWriteUtc)
+                return;
+
+            ReloadSynthPresetCsvCold();
+#endif
+        }
+
+        private void ParseSynthPresetCsv(int byteCount)
+        {
+            if (byteCount <= 0 || !_tuning.IsCreated)
+                return;
+
+            DynamicMusicSynthTuningDTO tuning = _tuning[0];
+            DynamicMusicPresetRuleDTO rule = default;
+            int ruleIndex = 0;
+            int index = 0;
+            while (index < byteCount)
+            {
+                while (index < byteCount && IsLineBreakOrSpace(_csvScratch[index]))
+                    index++;
+                if (index >= byteCount)
+                    break;
+
+                if (_csvScratch[index] == (byte)'#')
+                {
+                    while (index < byteCount && !IsLineBreak(_csvScratch[index]))
+                        index++;
+                    continue;
+                }
+
+                int keyStart = index;
+                while (index < byteCount && _csvScratch[index] != (byte)',' && !IsLineBreak(_csvScratch[index]))
+                    index++;
+
+                int keyEnd = index;
+                if (index >= byteCount || _csvScratch[index] != (byte)',')
+                {
+                    while (index < byteCount && !IsLineBreak(_csvScratch[index]))
+                        index++;
+                    continue;
+                }
+
+                index++;
+                int valueStart = index;
+                while (index < byteCount && !IsLineBreak(_csvScratch[index]))
+                    index++;
+
+                uint keyHash = HashCsvKey(_csvScratch, keyStart, keyEnd);
+                if (TryParseFloat(_csvScratch, valueStart, index, out float value))
+                {
+                    ApplyCsvTuning(ref tuning, ref rule, keyHash, value);
+                }
+                else
+                {
+                    uint valueHash = HashCsvKey(_csvScratch, valueStart, index);
+                    ApplyCsvHash(ref tuning, ref rule, keyHash, valueHash);
+                }
+
+                while (index < byteCount && IsLineBreak(_csvScratch[index]))
+                    index++;
+            }
+
+            if (_presetRules.IsCreated && ruleIndex < _presetRules.Length && rule.PresetHash != 0u)
+            {
+                _presetRules[ruleIndex] = SanitizePresetRule(rule);
+                ruleIndex++;
+            }
+
+            tuning.Flags |= FlagCsvApplied | FlagProceduralOnly;
+            _tuning[0] = SanitizeTuning(tuning);
+        }
+
+        private static void ApplyCsvTuning(ref DynamicMusicSynthTuningDTO tuning, ref DynamicMusicPresetRuleDTO rule, uint hash, float value)
+        {
+            if (hash == CsvBasePitchHash)
+            {
+                tuning.BasePitchHz = value;
+                rule.BasePitchHz = value;
+            }
+            else if (hash == CsvGrainSizeHash)
+            {
+                tuning.GrainSizeSeconds = value;
+                rule.GrainSizeSeconds = value;
+            }
+            else if (hash == CsvBaseDensityHash)
+            {
+                tuning.BaseGrainDensity = value;
+                rule.BaseDensity = value;
+            }
+            else if (hash == CsvTensionMultiplierHash)
+            {
+                tuning.TensionMultiplier = value;
+                rule.TensionMultiplier = value;
+            }
+            else if (hash == CsvLfoFrequencyHash)
+            {
+                tuning.LfoFrequency = value;
+                rule.LfoFrequency = value;
+            }
+            else if (hash == CsvBaseVolumeHash)
+            {
+                tuning.BaseVolume = value;
+                rule.BaseVolume = value;
+            }
+            else if (hash == CsvQualityMinHash)
+            {
+                tuning.QualityMin = value;
+                rule.QualityMin = value;
+            }
+            else if (hash == CsvQualityMaxHash)
+            {
+                tuning.QualityMax = value;
+                rule.QualityMax = value;
+            }
+            else if (hash == CsvDepthMaxMetersHash)
+            {
+                tuning.DepthMaxMeters = value;
+                rule.DepthMaxMeters = value;
+            }
+            else if (hash == CsvLpfMinHzHash)
+            {
+                tuning.LpfMinHz = value;
+                rule.LpfMinHz = value;
+            }
+            else if (hash == CsvLpfDepthHzPerMeterHash)
+            {
+                tuning.LpfDepthHzPerMeter = value;
+                rule.LpfDepthHzPerMeter = value;
+            }
+            else if (hash == CsvStereoWidthHash)
+            {
+                tuning.StereoWidth = value;
+            }
+        }
+
+        private static void ApplyCsvHash(ref DynamicMusicSynthTuningDTO tuning, ref DynamicMusicPresetRuleDTO rule, uint keyHash, uint valueHash)
+        {
+            if (keyHash == CsvWaveformHash)
+            {
+                tuning.WaveformHash = valueHash;
+                rule.WaveformHash = valueHash;
+            }
+            else if (keyHash == CsvPresetHash)
+            {
+                tuning.PresetHash = valueHash;
+                rule.PresetHash = valueHash;
+            }
+            else if (keyHash == CsvBiomeHash)
+            {
+                rule.BiomeHash = valueHash;
+            }
+            else if (keyHash == CsvNarrativeHash)
+            {
+                rule.NarrativeHash = valueHash;
+            }
+        }
+
+        private void RefreshCsvPathCold()
+        {
+            _resolvedCsvPath = null;
+            _lastResolvedCsvRelativePath = null;
+            _lastCsvWriteUtc = default;
+            _csvPollCountdown = 0;
+            ResolveCachedCsvPathCold();
+        }
+
+        private string ResolveCachedCsvPathCold()
+        {
+            string relative = string.IsNullOrEmpty(_csvRelativePath) ? CsvDefaultRelativePath : _csvRelativePath;
+            if (!string.IsNullOrEmpty(_resolvedCsvPath) &&
+                string.Equals(_lastResolvedCsvRelativePath, relative, StringComparison.Ordinal))
+            {
+                return _resolvedCsvPath;
+            }
+
+            _lastCsvWriteUtc = default;
+            _lastResolvedCsvRelativePath = relative;
+            _resolvedCsvPath = Path.IsPathRooted(relative)
+                ? relative
+                : Path.Combine(ResolveRepoRootPath(), relative);
+            return _resolvedCsvPath;
+        }
+
+        private float ResolveGlobalQualityWeightFromSnapshot()
+        {
+            if (_scalabilityState.IsCreated && _scalabilityState.Length > 0)
+            {
+                ScalabilityStateDTO state = _scalabilityState[0];
+                if (math.isfinite(state.GlobalQualityWeight))
+                {
+                    _cachedGlobalQualityWeight = math.saturate(state.GlobalQualityWeight);
+                    return _cachedGlobalQualityWeight;
+                }
+            }
+
+            return math.saturate(_cachedGlobalQualityWeight);
+        }
+
+        private static DynamicMusicSynthTuningDTO SanitizeTuning(DynamicMusicSynthTuningDTO tuning)
+        {
+            tuning.BasePitchHz = math.clamp(FiniteOrFallback(tuning.BasePitchHz, DefaultBasePitchHz), 8f, 880f);
+            tuning.BaseGrainDensity = math.clamp(FiniteOrFallback(tuning.BaseGrainDensity, DefaultBaseGrainDensity), 1f, 128f);
+            tuning.TensionMultiplier = math.clamp(FiniteOrFallback(tuning.TensionMultiplier, DefaultTensionMultiplier), 0f, 4f);
+            tuning.LfoFrequency = math.clamp(FiniteOrFallback(tuning.LfoFrequency, DefaultLfoFrequency), 0.01f, 12f);
+            tuning.BaseVolume = math.clamp(FiniteOrFallback(tuning.BaseVolume, DefaultBaseVolume), 0f, 1f);
+            tuning.GrainSizeSeconds = math.clamp(FiniteOrFallback(tuning.GrainSizeSeconds, DefaultGrainSizeSeconds), 0.01f, 0.5f);
+            tuning.QualityMin = math.saturate(FiniteOrFallback(tuning.QualityMin, 0f));
+            tuning.QualityMax = math.max(tuning.QualityMin + 0.0001f, math.saturate(FiniteOrFallback(tuning.QualityMax, 1f)));
+            tuning.DepthMaxMeters = math.max(1f, FiniteOrFallback(tuning.DepthMaxMeters, DefaultDepthMaxMeters));
+            tuning.LpfMinHz = math.clamp(FiniteOrFallback(tuning.LpfMinHz, DefaultLpfMinHz), 20f, 22000f);
+            tuning.LpfDepthHzPerMeter = math.clamp(FiniteOrFallback(tuning.LpfDepthHzPerMeter, DefaultLpfDepthHzPerMeter), 0.01f, 40f);
+            tuning.StereoWidth = math.saturate(FiniteOrFallback(tuning.StereoWidth, DefaultStereoWidth));
+            tuning.DensityTensionScale = math.clamp(FiniteOrFallback(tuning.DensityTensionScale, 0.85f), 0f, 3f);
+            tuning.DetuneCentsMax = math.clamp(FiniteOrFallback(tuning.DetuneCentsMax, DefaultDetuneCentsMax), 0f, 120f);
+            tuning.StingerDecaySeconds = math.clamp(FiniteOrFallback(tuning.StingerDecaySeconds, DefaultStingerDecaySeconds), 0.01f, 8f);
+            tuning.NoiseFoldback = math.saturate(FiniteOrFallback(tuning.NoiseFoldback, 0.23f));
+            if (tuning.SeedBase == 0u)
+                tuning.SeedBase = DefaultSynthSeed;
+            if (tuning.WaveformHash == 0u)
+                tuning.WaveformHash = DefaultWaveformHash;
+            return tuning;
+        }
+
+        private static DynamicMusicPresetRuleDTO SanitizePresetRule(DynamicMusicPresetRuleDTO rule)
+        {
+            rule.BasePitchHz = math.clamp(FiniteOrFallback(rule.BasePitchHz, DefaultBasePitchHz), 20f, 1000f);
+            rule.GrainSizeSeconds = math.clamp(FiniteOrFallback(rule.GrainSizeSeconds, DefaultGrainSizeSeconds), 0.01f, 0.4f);
+            rule.BaseDensity = math.clamp(FiniteOrFallback(rule.BaseDensity, DefaultBaseGrainDensity), 1f, 256f);
+            rule.TensionMultiplier = math.clamp(FiniteOrFallback(rule.TensionMultiplier, DefaultTensionMultiplier), 0f, 4f);
+            rule.LfoFrequency = math.clamp(FiniteOrFallback(rule.LfoFrequency, DefaultLfoFrequency), 0f, 16f);
+            rule.BaseVolume = math.clamp(FiniteOrFallback(rule.BaseVolume, DefaultBaseVolume), 0f, 1f);
+            rule.QualityMin = math.saturate(FiniteOrFallback(rule.QualityMin, 0f));
+            rule.QualityMax = math.saturate(FiniteOrFallback(rule.QualityMax, 1f));
+            rule.DepthMaxMeters = math.max(1f, FiniteOrFallback(rule.DepthMaxMeters, DefaultDepthMaxMeters));
+            rule.LpfMinHz = math.clamp(FiniteOrFallback(rule.LpfMinHz, DefaultLpfMinHz), 20f, 22000f);
+            rule.LpfDepthHzPerMeter = math.clamp(FiniteOrFallback(rule.LpfDepthHzPerMeter, DefaultLpfDepthHzPerMeter), 0.01f, 40f);
+            rule.Flags |= FlagCsvApplied | FlagProceduralOnly;
+            return rule;
+        }
+
+        private static bool TryParseFloat(NativeArray<byte> bytes, int start, int end, out float value)
+        {
+            value = 0f;
+            int index = start;
+            while (index < end && IsHorizontalSpace(bytes[index]))
+                index++;
+
+            float sign = 1f;
+            if (index < end && bytes[index] == (byte)'-')
+            {
+                sign = -1f;
+                index++;
+            }
+            else if (index < end && bytes[index] == (byte)'+')
+            {
+                index++;
+            }
+
+            float integer = 0f;
+            bool hasDigit = false;
+            while (index < end)
+            {
+                byte b = bytes[index];
+                if (b < (byte)'0' || b > (byte)'9')
+                    break;
+
+                integer = integer * 10f + (b - (byte)'0');
+                hasDigit = true;
+                index++;
+            }
+
+            float fraction = 0f;
+            float divisor = 1f;
+            if (index < end && bytes[index] == (byte)'.')
+            {
+                index++;
+                while (index < end)
+                {
+                    byte b = bytes[index];
+                    if (b < (byte)'0' || b > (byte)'9')
+                        break;
+
+                    fraction = fraction * 10f + (b - (byte)'0');
+                    divisor *= 10f;
+                    hasDigit = true;
+                    index++;
+                }
+            }
+
+            if (!hasDigit)
+                return false;
+
+            value = sign * (integer + fraction / math.max(1f, divisor));
+            return math.isfinite(value);
+        }
+
+        private static uint HashCsvKey(NativeArray<byte> bytes, int start, int end)
+        {
+            uint hash = 2166136261u;
+            for (int i = start; i < end; i++)
+            {
+                byte b = bytes[i];
+                if (b == (byte)' ' || b == (byte)'\t')
+                    continue;
+
+                if (b >= (byte)'A' && b <= (byte)'Z')
+                    b = (byte)(b + 32);
+
+                hash ^= b;
+                hash *= 16777619u;
+            }
+
+            return hash;
+        }
+
+        private static bool IsLineBreak(byte value)
+        {
+            return value == (byte)'\r' || value == (byte)'\n';
+        }
+
+        private static bool IsHorizontalSpace(byte value)
+        {
+            return value == (byte)' ' || value == (byte)'\t';
+        }
+
+        private static bool IsLineBreakOrSpace(byte value)
+        {
+            return IsLineBreak(value) || IsHorizontalSpace(value);
+        }
+
+        private static void ZeroManagedAudioBuffer(float[] data, int start, int count)
+        {
+            int end = math.min(data.Length, start + count);
+            for (int i = math.max(0, start); i < end; i++)
+                data[i] = 0f;
+        }
+
+        private static float ResolveElapsedMicroseconds(long startTicks)
+        {
+            long elapsedTicks = Stopwatch.GetTimestamp() - startTicks;
+            return elapsedTicks * (1000000f / math.max(1f, (float)Stopwatch.Frequency));
+        }
+
+        private static string ResolveRepoRootPath()
+        {
+            return Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+        }
+
+        private static float FiniteOrFallback(float value, float fallback)
+        {
+            return math.isfinite(value) ? value : fallback;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float Smooth01(float value)
+        {
+            float x = math.saturate(value);
+            return x * x * (3f - 2f * x);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint Hash32(uint value)
+        {
+            value ^= value >> 16;
+            value *= 0x7FEB352Du;
+            value ^= value >> 15;
+            value *= 0x846CA68Bu;
+            value ^= value >> 16;
+            return value == 0u ? 1u : value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float HashToUnit(uint hash)
+        {
+            return (hash & 0x00FFFFFFu) * (1f / 16777215f);
+        }
+
+        private static void MemClearArray<T>(NativeArray<T> array)
+            where T : unmanaged
+        {
+            if (!array.IsCreated || array.Length == 0)
+                return;
+
+            void* ptr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(array);
+            UnsafeUtility.MemClear(ptr, (long)UnsafeUtility.SizeOf<T>() * array.Length);
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private unsafe struct GenerateMockTensionJob : IJob
+        {
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public DynamicMusicSynthScalarDTO* Scalar;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public DynamicMusicSynthTuningDTO* Tuning;
+            public uint FrameIndex;
+            public int HasExternalScalars;
+            public float DeltaSeconds;
+            public float ExternalTension01;
+            public float ExternalDepthMeters;
+            public float DamageImpulse01;
+            public float StingerImpulse01;
+            public float GlobalQualityWeight;
+
+            public void Execute()
+            {
+                ref DynamicMusicSynthScalarDTO scalar = ref UnsafeUtility.AsRef<DynamicMusicSynthScalarDTO>(Scalar);
+                ref readonly DynamicMusicSynthTuningDTO tuning = ref UnsafeUtility.AsRef<DynamicMusicSynthTuningDTO>(Tuning);
+
+                float frame = FrameIndex;
+                float slowPhase = frame * 0.00137f;
+                float dangerWave = 0.5f + 0.5f * math.sin(frame * 0.021f + math.sin(frame * 0.0031f));
+                float depthWave = 0.5f + 0.5f * math.sin(slowPhase);
+                float fallbackDepthMeters = math.max(ExternalDepthMeters, depthWave * tuning.DepthMaxMeters);
+                float depthMeters = HasExternalScalars != 0 ? ExternalDepthMeters : fallbackDepthMeters;
+                float fallbackTension = dangerWave * 0.35f + DamageImpulse01 * 0.85f;
+                float tension = HasExternalScalars != 0
+                    ? math.saturate(math.max(ExternalTension01, DamageImpulse01 * 0.85f))
+                    : math.saturate(math.max(ExternalTension01, fallbackTension));
+                float depth01 = math.saturate(depthMeters / math.max(0.0001f, tuning.DepthMaxMeters));
+                float cutoff = math.max(tuning.LpfMinHz, 22000f - depthMeters * tuning.LpfDepthHzPerMeter);
+
+                scalar.Frame = FrameIndex;
+                scalar.Flags = (HasExternalScalars != 0 ? 0u : FlagUsingMockTension) | tuning.Flags;
+                scalar.TensionIndex = math.saturate(FiniteOrFallback(tension, 0f));
+                scalar.DepthMeters = FiniteOrFallback(depthMeters, 0f);
+                scalar.Depth01 = depth01;
+                scalar.GlobalQualityWeight = math.saturate(FiniteOrFallback(GlobalQualityWeight, 1f));
+                scalar.DamageImpulse01 = math.saturate(FiniteOrFallback(DamageImpulse01, 0f));
+                scalar.StingerImpulse = math.saturate(math.max(FiniteOrFallback(StingerImpulse01, 0f), scalar.StingerImpulse));
+                scalar.LfoFrequency = tuning.LfoFrequency;
+                scalar.LpfCutoffHz = math.clamp(FiniteOrFallback(cutoff, 22000f), tuning.LpfMinHz, 22000f);
+                _ = DeltaSeconds;
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private unsafe struct ModulateSynthParametersJob : IJob
+        {
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public SynthVoiceDTO* Voices;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public DynamicMusicSynthScalarDTO* Scalar;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public DynamicMusicSynthTuningDTO* Tuning;
+            public int VoiceCapacityValue;
+            public int SampleRate;
+
+            public void Execute()
+            {
+                ref DynamicMusicSynthScalarDTO scalar = ref UnsafeUtility.AsRef<DynamicMusicSynthScalarDTO>(Scalar);
+                ref readonly DynamicMusicSynthTuningDTO tuning = ref UnsafeUtility.AsRef<DynamicMusicSynthTuningDTO>(Tuning);
+                float qualityDenominator = math.max(0.0001f, tuning.QualityMax - tuning.QualityMin);
+                float q = math.saturate((scalar.GlobalQualityWeight - tuning.QualityMin) / qualityDenominator);
+                float qSmooth = Smooth01(q);
+                int activeVoices = math.clamp((int)math.lerp(16f, 128f, qSmooth), 1, math.max(1, VoiceCapacityValue));
+                float tension = math.saturate(scalar.TensionIndex * tuning.TensionMultiplier);
+                float density = tuning.BaseGrainDensity * math.lerp(0.55f, 1.85f, tension) * math.lerp(0.5f, 1.15f, qSmooth);
+                float lfoPhase = scalar.Frame * tuning.LfoFrequency * 0.016666668f;
+                float heartbeat = 0.55f + 0.45f * math.sin(lfoPhase * math.PI * 2f);
+                float pitchBend = 1f + tension * 0.18f + scalar.DamageImpulse01 * 0.32f;
+                float baseVolume = tuning.BaseVolume * math.lerp(0.72f, 1.15f, tension) * math.lerp(0.7f, 1f, qSmooth);
+                float normalization = math.rsqrt(math.max(1f, activeVoices));
+                float safeSampleRate = math.max(8000f, SampleRate);
+
+                scalar.BaseDensity = density;
+                scalar.TargetPitch = tuning.BasePitchHz * pitchBend;
+                scalar.TargetVolume = baseVolume * heartbeat;
+                scalar.ActiveVoices = activeVoices;
+
+                for (int i = 0; i < VoiceCapacityValue; i++)
+                {
+                    ref SynthVoiceDTO voice = ref UnsafeUtility.AsRef<SynthVoiceDTO>(Voices + i);
+                    uint hash = voice.SoundHash != 0u ? voice.SoundHash : Hash32((uint)i ^ tuning.SeedBase);
+                    float signedUnit = HashToUnit(hash) * 2f - 1f;
+                    float cents = signedUnit * tuning.DetuneCentsMax * tension;
+                    float detune = math.pow(2f, cents / 1200f);
+                    float densityPush = math.lerp(0.75f, 1.5f, math.saturate(density / 128f));
+                    float targetPitch = tuning.BasePitchHz * pitchBend * detune * densityPush;
+                    float activeMask = i < activeVoices ? 1f : 0f;
+                    voice.PhaseIncrement = math.clamp(targetPitch / safeSampleRate, 0.000001f, 0.25f);
+                    voice.TargetPitch = targetPitch;
+                    voice.TargetVolume = activeMask * baseVolume * normalization * (0.82f + HashToUnit(Hash32(hash ^ 0xA53A9D1Du)) * 0.36f);
+                    voice.EnvelopeState = math.saturate(math.max(voice.EnvelopeState, activeMask));
+                    voice.SoundHash = hash;
+                    voice._pad0 = 0u;
+                    voice._pad1 = 0u;
+                    voice._pad2 = 0u;
+                    voice._pad3 = 0u;
+                    voice._pad4 = 0u;
+                    voice._pad5 = 0u;
+                    voice._pad6 = 0u;
+                    voice._pad7 = 0u;
+                    voice._pad8 = 0u;
+                    voice._pad9 = 0u;
+                }
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private unsafe struct GranularSynthesisJob : IJob
+        {
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public SynthVoiceDTO* Voices;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public DynamicMusicSynthScalarDTO* Scalar;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public DynamicMusicSynthTuningDTO* Tuning;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public DynamicMusicBiquadStateDTO* Biquad;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public float* GrainBank;
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public float* Output;
+            public int GrainBankLength;
+            public int OutputSampleCount;
+            public int Channels;
+            public int SampleRate;
+            public uint FrameIndex;
+
+            public void Execute()
+            {
+                ref DynamicMusicSynthScalarDTO scalar = ref UnsafeUtility.AsRef<DynamicMusicSynthScalarDTO>(Scalar);
+                ref readonly DynamicMusicSynthTuningDTO tuning = ref UnsafeUtility.AsRef<DynamicMusicSynthTuningDTO>(Tuning);
+                ref DynamicMusicBiquadStateDTO biquad = ref UnsafeUtility.AsRef<DynamicMusicBiquadStateDTO>(Biquad);
+
+                int safeChannels = math.clamp(Channels, 1, 2);
+                int frameCount = OutputSampleCount / safeChannels;
+                int safeBankLength = math.max(1, GrainBankLength);
+                int safeSampleRate = math.max(8000, SampleRate);
+                int activeVoices = math.clamp(scalar.ActiveVoices, 1, VoiceCapacity);
+                float lpfCutoff = math.clamp(scalar.LpfCutoffHz, tuning.LpfMinHz, safeSampleRate * 0.45f);
+                float stinger = math.saturate(scalar.StingerImpulse);
+                float stereoWidth = math.saturate(tuning.StereoWidth);
+                float qualityWeight = math.saturate(scalar.GlobalQualityWeight);
+                float interpolationAdmission = math.step(0.3f, qualityWeight);
+                float interpolationCurve = Smooth01(math.saturate((qualityWeight - 0.3f) / math.max(0.0001f, 0.7f))) * interpolationAdmission;
+                float totalPeak = 0f;
+                float totalEnergy = 0f;
+                ComputeLowPassCoefficients(ref biquad, lpfCutoff, safeSampleRate);
+
+                for (int frame = 0; frame < frameCount; frame++)
+                {
+                    float left = 0f;
+                    float right = 0f;
+                    for (int voiceIndex = 0; voiceIndex < activeVoices; voiceIndex++)
+                    {
+                        ref SynthVoiceDTO voice = ref UnsafeUtility.AsRef<SynthVoiceDTO>(Voices + voiceIndex);
+                        uint hash = voice.SoundHash;
+                        float phase = math.frac(voice.CurrentPhase);
+                        float grainWindow = math.sin(phase * math.PI);
+                        float offset = HashToUnit(Hash32(hash ^ tuning.WaveformHash));
+                        float samplePhase = math.frac(phase + offset);
+                        float position = samplePhase * (safeBankLength - 1);
+                        int baseIndex = (int)position;
+                        int nextIndex = math.min(baseIndex + (int)interpolationAdmission, safeBankLength - 1);
+                        float frac = (position - baseIndex) * interpolationCurve;
+                        float grainSample = math.lerp(GrainBank[baseIndex], GrainBank[nextIndex], frac);
+                        float fold = math.sin((grainSample + (HashToUnit(Hash32(hash ^ (uint)frame)) - 0.5f) * tuning.NoiseFoldback * scalar.TensionIndex) * math.PI);
+                        float sample = math.lerp(grainSample, fold, math.saturate(scalar.TensionIndex * 0.35f + stinger * 0.55f));
+                        sample *= grainWindow * voice.TargetVolume * (1f + stinger * 1.8f);
+
+                        float pan = (HashToUnit(Hash32(hash ^ 0x9E3779B9u)) - 0.5f) * stereoWidth;
+                        left += sample * (1f - math.max(0f, pan));
+                        right += sample * (1f + math.min(0f, pan));
+
+                        voice.CurrentPhase = math.frac(phase + voice.PhaseIncrement * math.lerp(0.65f, 1.45f, scalar.TensionIndex));
+                    }
+
+                    left = ApplyLowPass(ref biquad.Z1Left, ref biquad.Z2Left, biquad.A0, biquad.A1, biquad.A2, biquad.B1, biquad.B2, left);
+                    right = ApplyLowPass(ref biquad.Z1Right, ref biquad.Z2Right, biquad.A0, biquad.A1, biquad.A2, biquad.B1, biquad.B2, right);
+                    left = math.clamp(FiniteOrFallback(left, 0f), -1f, 1f);
+                    right = math.clamp(FiniteOrFallback(right, 0f), -1f, 1f);
+                    if (safeChannels == 1)
+                    {
+                        float mono = (left + right) * 0.5f;
+                        Output[frame] = mono;
+                        totalPeak = math.max(totalPeak, math.abs(mono));
+                        totalEnergy += mono * mono;
+                    }
+                    else
+                    {
+                        int outIndex = frame << 1;
+                        Output[outIndex] = left;
+                        Output[outIndex + 1] = right;
+                        totalPeak = math.max(totalPeak, math.max(math.abs(left), math.abs(right)));
+                        totalEnergy += left * left + right * right;
+                    }
+                }
+
+                scalar.Frame = FrameIndex;
+                scalar.OutputPeak = totalPeak;
+                scalar.OutputRms = math.sqrt(totalEnergy / math.max(1f, (float)OutputSampleCount));
+                scalar.StingerImpulse = math.saturate(stinger * math.exp(-frameCount / math.max(1f, tuning.StingerDecaySeconds * safeSampleRate)));
+                if (!math.isfinite(scalar.OutputPeak) || !math.isfinite(scalar.OutputRms))
+                    scalar.Flags |= FlagNonFinite;
+            }
+
+            private static void ComputeLowPassCoefficients(ref DynamicMusicBiquadStateDTO biquad, float cutoffHz, int sampleRate)
+            {
+                float safeRate = math.max(8000f, sampleRate);
+                float normalized = math.clamp(cutoffHz / math.max(0.0001f, safeRate), 0.0001f, 0.45f);
+                float k = math.tan(math.PI * normalized);
+                float q = 0.70710678f;
+                float norm = 1f / math.max(0.0001f, 1f + k / q + k * k);
+                float a0 = k * k * norm;
+                biquad.A0 = a0;
+                biquad.A1 = 2f * a0;
+                biquad.A2 = a0;
+                biquad.B1 = 2f * (k * k - 1f) * norm;
+                biquad.B2 = (1f - k / q + k * k) * norm;
+                biquad.LastCutoffHz = cutoffHz;
+                biquad.LastSampleRate = safeRate;
+            }
+
+            private static float ApplyLowPass(
+                ref float z1,
+                ref float z2,
+                float a0,
+                float a1,
+                float a2,
+                float b1,
+                float b2,
+                float input)
+            {
+                float output = a0 * input + z1;
+                z1 = a1 * input - b1 * output + z2;
+                z2 = a2 * input - b2 * output;
+                return output;
+            }
+        }
+    }
+}

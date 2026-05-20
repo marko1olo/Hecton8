@@ -16,12 +16,23 @@ This document is active only where it agrees with:
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
 
-R32 architecture R4/proof-wording correction is the latest artifact-backed local static DOC_GLOBAL boundary for architecture/root documentation. R31 remains the prior current-boundary propagation layer, R30 remains the prior internal-currentness layer, R29 remains the prior stale-gate/global-authority layer, R28 remains the prior interior-boundary layer, and R27 remains the latest source-counter/index snapshot until rerun.
+R45 root/architecture R43/R44 residue/proof-artifact/source-counter correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
-## 2026-05-19 DOC_GLOBAL R32 Current Boundary Note
+## 2026-05-20 DOC_GLOBAL R44 Root/Architecture Boundary Note
 
-R32 artifact-backed reread evidence keeps this file as static input-determinism orientation, not runtime input-device, replay, or platform proof. Current root/architecture boundary is `Docs/Reports/2026-05-19_DOCUMENTATION_R32_ARCHITECTURE_R4_AND_PROOF_WORDING_LOCAL.md`; R31 remains the prior current-boundary propagation correction. R30 remains the prior internal-currentness correction, R29 remains the prior stale-gate/global-authority correction, R28 remains the prior interior-boundary correction, and R27 source counters are retained until a newer counter pass reruns them. Current static gates: `Tools/AtlasCheck.py` remains red on `59` missing refs (RealtimeCSG vendor refs plus absent `VaultXRayWindow.cs` and `HectonMapMagicVegetationBridgeFloraCollisionProxies.cs`); `Docs/Modding/Validate_Mod_API_Static.ps1` now passes (`Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`) as static-tool orientation only; do not treat PASS as current proof without artifact path, command, timestamp, environment, and output. Unity/runtime/profiler/player-build proof remains absent.
+R45 root/architecture R43/R44 residue/proof-artifact/source-counter correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`) (R44 prior internal-residue/exact-route-field/proof-wording correction) keeps this file as static input-determinism orientation, not runtime input-device, replay, or platform proof. Current DOC_GLOBAL boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`; R44 remains prior at `Docs/Reports/2026-05-20_DOCUMENTATION_R44_ROOT_ARCHITECTURE_INTERNAL_RESIDUE_EXACT_ROUTE_FIELDS_LOCAL.md`; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. Current static gates: `Tools/AtlasCheck.py` remains red on `ATLAS_CHECK_FAIL references=6741 missing=59` (one Dynamic Decals missing vendor asset ref, RealtimeCSG vendor icon/readme image refs, and missing HabitatDamageBakePipeline source ref in the current atlas); `Docs/Modding/Validate_Mod_API_Static.ps1` passes (`Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`) as static-tool orientation only. Runtime proof remains absent.
+
+## Source Anchors
+
+Evidence class: STATIC_SOURCE / FILESYSTEM path check. These anchors prove current path visibility only, not input-device runtime, replay determinism, haptics route, profiler, or player-build proof.
+
+- `Assets/_Project/Scripts/Core/InputDispatcher.cs`
+- `Assets/_Project/Scripts/Core/InputDeterminismDtos.cs`
+- `Assets/_Project/Scripts/Input/Determinism/DeterministicInputContracts.cs`
+- `Assets/_Project/Scripts/Input/InputManager.cs`
+
+## Runtime Contract Notes
 
 Authoritative input sampling lives in `InputDispatcher.PreSimulationInputTick`.
 
@@ -46,6 +57,6 @@ Input path:
 
 Designer control:
 - `HECTON-8/Input Curve & Haptics Tuner` edits profile floats in Vault during Play Mode.
-- `input_profiles.csv` in the project root is monitored by a cold `FileSystemWatcher`; file I/O and byte parsing are staged from the watcher path into a scalar `InputProfileDTO`, and the next PRE_SIMULATION pass only copies that staged DTO into Vault.
+- `input_profiles.csv` in the project root is the intended cold-profile artifact for the `FileSystemWatcher` path, but the current root scan does not find the file. Treat watcher/profile reload as pending artifact wiring until the CSV exists and a fresh artifact tuple records the path, parse output, and runtime/editor environment.
 - Supported CSV keys: `inner_deadzone`, `outer_deadzone`, `move_exponent`, `mouse_sensitivity`, `mouse_acceleration`, `haptic_power_scale`, `haptic_thermal_scale`, `haptic_thermal_amplitude_scale`, `haptic_dispatch_interval_seconds`, `haptic_dispatch_interval`, and `mock_collision`.
 - The CSV loader is event-gated. No steady-state per-frame file existence check or stream read occurs after initialization, and no dirty-load `FileStream` runs from the gameplay tick.

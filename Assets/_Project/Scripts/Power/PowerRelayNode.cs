@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Hecton8.Core;
-using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -17,9 +16,6 @@ namespace Hecton8.Power
         private const float PositionRefreshEpsilonSqr = 0.0004f;
 
         [Header("── Cable Visualization ──────────────────")]
-        [Tooltip("Optional LineRenderer used to visualize relay cable spokes to neighboring PowerNode links.")]
-        [SerializeField] private LineRenderer cableRenderer;
-
         [Tooltip("Cable color while the relay still has power.")]
         [SerializeField] private Color poweredCableColor = new Color(0.25f, 0.95f, 1f, 0.95f);
 
@@ -129,8 +125,6 @@ namespace Hecton8.Power
             if (_powerNode == null)
                 TryGetComponent(out _powerNode);
 
-            if (cableRenderer == null)
-                TryGetComponent(out cableRenderer);
         }
 
         private void TryRegister()
@@ -172,7 +166,6 @@ namespace Hecton8.Power
 
             _lastPosition = relayPosition;
             _lastTopologyRevision = topologyRevision;
-            AbsoluteUniversePosition relayAup = AbsoluteUniversePosition.FromRuntimePosition(relayPosition);
             float totalHalfCableLength = 0f;
             int relayNeighborCount = 0;
 
@@ -182,7 +175,7 @@ namespace Hecton8.Power
                 if (neighbor == null)
                     continue;
 
-                totalHalfCableLength += ResolveAupCableLengthApproxMeters(in relayAup, neighbor.transform) * 0.5f;
+                totalHalfCableLength += ResolvePresentationCableLengthApproxMeters(relayPosition, neighbor.transform) * 0.5f;
 
                 if (neighbor.TryGetComponent(out PowerRelayNode relayNeighbor) && relayNeighbor != null)
                     relayNeighborCount++;
@@ -203,8 +196,6 @@ namespace Hecton8.Power
 
         private void RefreshCableVisuals(Vector3 relayPosition, List<PowerNode> neighbors, int neighborCount)
         {
-            DisableLegacyCableRenderer();
-
             if (neighborCount <= 0)
             {
                 ClearCableVisuals();
@@ -248,29 +239,14 @@ namespace Hecton8.Power
             _lastVisualPointCount = submittedCount;
         }
 
-        private void UpdateCableColor()
-        {
-            DisableLegacyCableRenderer();
-        }
-
         private void ClearCableVisuals()
         {
             for (int linkIndex = _submittedLinkIds.Count - 1; linkIndex >= 0; linkIndex--)
                 ConnectionSplineBatchRenderer.RemoveRelayLink(_submittedLinkIds[linkIndex]);
 
             _submittedLinkIds.Clear();
-            DisableLegacyCableRenderer();
 
             _lastVisualPointCount = -1;
-        }
-
-        private void DisableLegacyCableRenderer()
-        {
-            if (cableRenderer == null)
-                return;
-
-            cableRenderer.positionCount = 0;
-            cableRenderer.enabled = false;
         }
 
         private static long ComposeRelayLinkId(PowerNode sourceNode, PowerNode destinationNode)
@@ -297,15 +273,16 @@ namespace Hecton8.Power
             return false;
         }
 
-        private static float ResolveAupCableLengthApproxMeters(in AbsoluteUniversePosition sourceAup, Transform destinationTransform)
+        private static float ResolvePresentationCableLengthApproxMeters(Vector3 sourcePosition, Transform destinationTransform)
         {
             if (destinationTransform == null)
                 return 0f;
 
-            AbsoluteUniversePosition destinationAup = AbsoluteUniversePosition.FromRuntimePosition(destinationTransform.position);
-            double3 source = sourceAup.ToAbsoluteDouble3();
-            double3 destination = destinationAup.ToAbsoluteDouble3();
-            double3 delta = math.abs(destination - source);
+            Vector3 destinationPosition = destinationTransform.position;
+            double3 delta = math.abs(new double3(
+                (double)destinationPosition.x - sourcePosition.x,
+                (double)destinationPosition.y - sourcePosition.y,
+                (double)destinationPosition.z - sourcePosition.z));
             double maxAxis = math.max(delta.x, math.max(delta.y, delta.z));
             double minAxis = math.min(delta.x, math.min(delta.y, delta.z));
             double midAxis = delta.x + delta.y + delta.z - maxAxis - minAxis;

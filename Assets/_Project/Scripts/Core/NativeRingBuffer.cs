@@ -31,7 +31,7 @@ namespace Hecton8.Core
             if (!IsPowerOfTwo(capacity))
                 throw new ArgumentOutOfRangeException(nameof(capacity));
 
-            _buffer = new NativeArray<T>(capacity, allocator, options);
+            _buffer = new NativeArray<T>(capacity, allocator, (NativeArrayOptions)options);
             _capacity = capacity;
             _indexMask = capacity - 1;
             _writeCursor = 0L;

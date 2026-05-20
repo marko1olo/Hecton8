@@ -60,21 +60,21 @@ namespace Hecton8.Gameplay
         private const float HapticSideThreshold = 0.2f;
         private const float JerkEventDebounceSeconds = 0.2f;
         private const float VrComfortTelemetryStep01 = 0.05f;
-        private const float Quest2ComfortVignetteMaximum = 0.52f;
-        private const float Quest2ComfortAccelerationSoftTunnelStartRadS2 = 42f;
-        private const float Quest2ComfortAccelerationEmergencyClampRadS2 = 150f;
-        private const float Quest2ComfortAccelerationReleaseBelowRadS2 = 24f;
-        private const float Quest2ComfortAccelerationReleaseHysteresisSeconds = 0.25f;
-        private const float Quest2ComfortVignetteAttackSlewPerFrame = 0.055f;
-        private const float Quest2ComfortVignetteReleaseSlewPerFrame = 0.025f;
-        private const float Quest2ComfortFrameSafetyDeltaSeconds = 0.01667f;
-        private const float Quest2ComfortFrameSafetyMinOpacity = 0.12f;
-        private const int Quest2ComfortFrameSafetyConsecutiveFrames = 2;
-        private const int Quest2ComfortFrameSafetyReleaseStableFrames = 12;
-        private const float Quest3ComfortFrameSafetyDeltaSeconds = 0.01389f;
-        private const float Quest3ComfortFrameSafetyMinOpacity = 0.10f;
-        private const int Quest3ComfortFrameSafetyConsecutiveFrames = 2;
-        private const int Quest3ComfortFrameSafetyReleaseStableFrames = 12;
+        private const float PressureFallbackComfortVignetteMaximum = 0.52f;
+        private const float PressureFallbackAccelerationSoftTunnelStartRadS2 = 42f;
+        private const float PressureFallbackAccelerationEmergencyClampRadS2 = 150f;
+        private const float PressureFallbackAccelerationReleaseBelowRadS2 = 24f;
+        private const float PressureFallbackAccelerationReleaseHysteresisSeconds = 0.25f;
+        private const float PressureFallbackVignetteAttackSlewPerFrame = 0.055f;
+        private const float PressureFallbackVignetteReleaseSlewPerFrame = 0.025f;
+        private const float PressureFallbackFrameSafetyDeltaSeconds = 0.01667f;
+        private const float PressureFallbackFrameSafetyMinOpacity = 0.12f;
+        private const int PressureFallbackFrameSafetyConsecutiveFrames = 2;
+        private const int PressureFallbackFrameSafetyReleaseStableFrames = 12;
+        private const float NominalFrameSafetyDeltaSeconds = 0.01389f;
+        private const float NominalFrameSafetyMinOpacity = 0.10f;
+        private const int NominalFrameSafetyConsecutiveFrames = 2;
+        private const int NominalFrameSafetyReleaseStableFrames = 12;
         private const float KccAngularVelocityMaxRadiansPerSecond = 16f;
         private const float KccAngularAccelerationMaxRadiansPerSecondSq = 240f;
         private const int KccVelocitySignalStaleFrameLimit = 12;
@@ -82,6 +82,8 @@ namespace Hecton8.Gameplay
         private const uint VrComfortJerkEventHash = 0x4A524B31u; // JRK1
         private const uint VrComfortMaxVignetteHash = 0x4D565231u; // MVR1
         private const uint BlackBoxMagic = 0x5652534Du; // VRSM
+        private const uint BlackBoxDumpFaultHash = 0x56524446u; // VRDF
+        private const uint ComfortDumpFaultHash = 0x56434446u; // VCDF
         private const uint BlackBoxVersion = 3u;
         private const int BlackBoxFrameCapacity = 300;
         private const ushort BlackBoxFlagActive = 1 << 0;
@@ -94,7 +96,7 @@ namespace Hecton8.Gameplay
         private const ushort BlackBoxFlagAupShiftSeen = 1 << 7;
         private const ushort BlackBoxFlagLowTier = 1 << 8;
         private const ushort BlackBoxFlagFramePressure = 1 << 9;
-        private const ushort BlackBoxFlagQuest2Fallback = 1 << 10;
+        private const ushort BlackBoxFlagProtectiveFallback = 1 << 10;
         private const ushort BlackBoxFlagAccelerationTunnel = 1 << 11;
         private const ushort BlackBoxFlagKccSignal = 1 << 12;
         private const ushort BlackBoxFlagKccAccelerationTunnel = 1 << 13;
@@ -210,9 +212,9 @@ namespace Hecton8.Gameplay
         private float comfortVignetteAngularSpeedFull = 8f;
         [SerializeField, Range(0f, 1f), Tooltip("Maximum scalar written to the VR comfort vignette globals.")]
         private float comfortVignetteMaximum = 0.46f;
-        [SerializeField, Range(10f, 180f), Tooltip("Angular acceleration where the Quest 3 somatic tunnel starts.")]
+        [SerializeField, Range(10f, 180f), Tooltip("Angular acceleration where the somatic tunnel starts.")]
         private float comfortAccelerationSoftTunnelStartRadS2 = 50f;
-        [SerializeField, Range(20f, 240f), Tooltip("Angular acceleration where the Quest 3 somatic tunnel reaches maximum opacity.")]
+        [SerializeField, Range(20f, 240f), Tooltip("Angular acceleration where the somatic tunnel reaches maximum opacity.")]
         private float comfortAccelerationEmergencyClampRadS2 = 180f;
         [SerializeField, Range(0f, 120f), Tooltip("Angular acceleration below which the acceleration tunnel can release after hysteresis.")]
         private float comfortAccelerationReleaseBelowRadS2 = 30f;
@@ -348,7 +350,7 @@ namespace Hecton8.Gameplay
         private int _blackBoxLastRecordedFrame = -1;
         private bool _blackBoxDumped;
         private bool _comfortFramePressureActive;
-        private bool _useQuest2ComfortFallback;
+        private float _comfortPressureFallbackWeight01;
         private bool _cachedLowMemoryProfile;
         private bool _registeredScalability;
         private VRSomaticChestSocketPose _pdaSocketPose;
@@ -635,6 +637,7 @@ namespace Hecton8.Gameplay
         public void OnScalabilityChanged(in Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent payload)
         {
             _cachedQualityTier = payload.CurrentQualityTier;
+            RefreshComfortProfileSelection();
         }
 
         private void RefreshCachedGlobalState()
@@ -642,6 +645,7 @@ namespace Hecton8.Gameplay
             _cachedQualityTier = GlobalRegistry.ScalabilityTier;
             _cachedLowMemoryProfile = GlobalRegistry.H8_LOW_MEMORY_PROFILE;
             _globalQualityWeight01 = ResolveGlobalQualityWeight01();
+            RefreshComfortProfileSelection();
             _cachedPlayerCamera = null;
             if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
                 _cachedPlayerCamera = runtimeContext.PlayerCamera;
@@ -700,7 +704,7 @@ namespace Hecton8.Gameplay
 
             if (!isActive)
             {
-                _useQuest2ComfortFallback = false;
+                _comfortPressureFallbackWeight01 = 0f;
                 bool hadRuntimeState = HasRuntimeRegistrationOrActiveSnapshot();
                 TryUnregisterLateFrame();
                 TryUnregisterUpdate();
@@ -711,7 +715,6 @@ namespace Hecton8.Gameplay
             }
 
             RefreshCachedGlobalState();
-            RefreshComfortProfileSelection();
             EnsureNativeBuffers();
             TryRegisterService();
             TryRegisterUpdate();
@@ -840,25 +843,15 @@ namespace Hecton8.Gameplay
 
         private void RefreshComfortProfileSelection()
         {
-            _useQuest2ComfortFallback = IsQuest2LikeRuntime();
-        }
-
-        private static bool IsQuest2LikeRuntime()
-        {
-            if (HardwareTierDetector.IsQuest3Like)
-                return false;
-
-            return ContainsIgnoreCase(SystemInfo.deviceModel, "quest 2") ||
-                   ContainsIgnoreCase(SystemInfo.deviceModel, "quest2") ||
-                   ContainsIgnoreCase(SystemInfo.deviceName, "quest 2") ||
-                   ContainsIgnoreCase(SystemInfo.deviceName, "quest2") ||
-                   ContainsIgnoreCase(SystemInfo.operatingSystem, "quest 2");
-        }
-
-        private static bool ContainsIgnoreCase(string value, string token)
-        {
-            return !string.IsNullOrEmpty(value) &&
-                   value.IndexOf(token, System.StringComparison.OrdinalIgnoreCase) >= 0;
+            float qualityPressure01 = 1f - ResolveGlobalQualityWeight01();
+            float frameInterval = math.select(
+                NominalFrameSafetyDeltaSeconds,
+                HectonXRRuntimeState.FrameIntervalSeconds,
+                math.isfinite(HectonXRRuntimeState.FrameIntervalSeconds));
+            float framePressure01 = math.saturate(
+                (frameInterval - NominalFrameSafetyDeltaSeconds) *
+                math.rcp(math.max(PressureFallbackFrameSafetyDeltaSeconds - NominalFrameSafetyDeltaSeconds, MinimumDeltaTime)));
+            _comfortPressureFallbackWeight01 = Smoothstep01(math.max(Sanitize01(qualityPressure01, 0f), framePressure01));
         }
 
         private static bool IsFiniteVector(Vector3 value)
@@ -1089,6 +1082,7 @@ namespace Hecton8.Gameplay
         {
             float safeDeltaTime = math.isfinite(deltaTime) ? math.max(deltaTime, MinimumDeltaTime) : MinimumDeltaTime;
             _globalQualityWeight01 = ResolveGlobalQualityWeight01();
+            RefreshComfortProfileSelection();
             if (!TryResolveLatestKccVelocitySignal(out KccVelocitySignal signal))
             {
                 ReleaseKccAngularComfortState(safeDeltaTime, _lastConsumedKccVelocityFrame == 0u || IsKccVelocitySignalStale(_lastConsumedKccVelocityFrame));
@@ -1311,57 +1305,63 @@ namespace Hecton8.Gameplay
 
         private float ResolveComfortVignetteMaximum()
         {
-            return _useQuest2ComfortFallback ? Quest2ComfortVignetteMaximum : comfortVignetteMaximum;
+            return math.lerp(comfortVignetteMaximum, PressureFallbackComfortVignetteMaximum, Sanitize01(_comfortPressureFallbackWeight01, 0f));
         }
 
         private float ResolveComfortAccelerationSoftTunnelStartRadS2()
         {
-            return _useQuest2ComfortFallback ? Quest2ComfortAccelerationSoftTunnelStartRadS2 : comfortAccelerationSoftTunnelStartRadS2;
+            return math.lerp(comfortAccelerationSoftTunnelStartRadS2, PressureFallbackAccelerationSoftTunnelStartRadS2, Sanitize01(_comfortPressureFallbackWeight01, 0f));
         }
 
         private float ResolveComfortAccelerationEmergencyClampRadS2()
         {
-            return _useQuest2ComfortFallback ? Quest2ComfortAccelerationEmergencyClampRadS2 : comfortAccelerationEmergencyClampRadS2;
+            return math.lerp(comfortAccelerationEmergencyClampRadS2, PressureFallbackAccelerationEmergencyClampRadS2, Sanitize01(_comfortPressureFallbackWeight01, 0f));
         }
 
         private float ResolveComfortAccelerationReleaseBelowRadS2()
         {
-            return _useQuest2ComfortFallback ? Quest2ComfortAccelerationReleaseBelowRadS2 : comfortAccelerationReleaseBelowRadS2;
+            return math.lerp(comfortAccelerationReleaseBelowRadS2, PressureFallbackAccelerationReleaseBelowRadS2, Sanitize01(_comfortPressureFallbackWeight01, 0f));
         }
 
         private float ResolveComfortAccelerationReleaseHysteresisSeconds()
         {
-            return _useQuest2ComfortFallback ? Quest2ComfortAccelerationReleaseHysteresisSeconds : comfortAccelerationReleaseHysteresisSeconds;
+            return math.lerp(comfortAccelerationReleaseHysteresisSeconds, PressureFallbackAccelerationReleaseHysteresisSeconds, Sanitize01(_comfortPressureFallbackWeight01, 0f));
         }
 
         private float ResolveComfortVignetteAttackSlewPerFrame()
         {
-            return _useQuest2ComfortFallback ? Quest2ComfortVignetteAttackSlewPerFrame : comfortVignetteAttackSlewPerFrame;
+            return math.lerp(comfortVignetteAttackSlewPerFrame, PressureFallbackVignetteAttackSlewPerFrame, Sanitize01(_comfortPressureFallbackWeight01, 0f));
         }
 
         private float ResolveComfortVignetteReleaseSlewPerFrame()
         {
-            return _useQuest2ComfortFallback ? Quest2ComfortVignetteReleaseSlewPerFrame : comfortVignetteReleaseSlewPerFrame;
+            return math.lerp(comfortVignetteReleaseSlewPerFrame, PressureFallbackVignetteReleaseSlewPerFrame, Sanitize01(_comfortPressureFallbackWeight01, 0f));
         }
 
         private float ResolveComfortFrameSafetyDeltaSeconds()
         {
-            return _useQuest2ComfortFallback ? Quest2ComfortFrameSafetyDeltaSeconds : Quest3ComfortFrameSafetyDeltaSeconds;
+            return math.lerp(NominalFrameSafetyDeltaSeconds, PressureFallbackFrameSafetyDeltaSeconds, Sanitize01(_comfortPressureFallbackWeight01, 0f));
         }
 
         private float ResolveComfortFrameSafetyMinOpacity()
         {
-            return _useQuest2ComfortFallback ? Quest2ComfortFrameSafetyMinOpacity : Quest3ComfortFrameSafetyMinOpacity;
+            return math.lerp(NominalFrameSafetyMinOpacity, PressureFallbackFrameSafetyMinOpacity, Sanitize01(_comfortPressureFallbackWeight01, 0f));
         }
 
         private int ResolveComfortFrameSafetyConsecutiveFrames()
         {
-            return _useQuest2ComfortFallback ? Quest2ComfortFrameSafetyConsecutiveFrames : Quest3ComfortFrameSafetyConsecutiveFrames;
+            return (int)math.round(math.lerp(
+                (float)NominalFrameSafetyConsecutiveFrames,
+                (float)PressureFallbackFrameSafetyConsecutiveFrames,
+                Sanitize01(_comfortPressureFallbackWeight01, 0f)));
         }
 
         private int ResolveComfortFrameSafetyReleaseStableFrames()
         {
-            return _useQuest2ComfortFallback ? Quest2ComfortFrameSafetyReleaseStableFrames : Quest3ComfortFrameSafetyReleaseStableFrames;
+            return (int)math.round(math.lerp(
+                (float)NominalFrameSafetyReleaseStableFrames,
+                (float)PressureFallbackFrameSafetyReleaseStableFrames,
+                Sanitize01(_comfortPressureFallbackWeight01, 0f)));
         }
 
         private void RefreshPlayerSignalsIfDue()
@@ -2246,8 +2246,8 @@ namespace Hecton8.Gameplay
                 flags |= BlackBoxFlagLowTier;
             if (_comfortFramePressureActive)
                 flags |= BlackBoxFlagFramePressure;
-            if (_useQuest2ComfortFallback)
-                flags |= BlackBoxFlagQuest2Fallback;
+            if (_comfortPressureFallbackWeight01 > 0.001f)
+                flags |= BlackBoxFlagProtectiveFallback;
             if (_accelerationComfortVignette01 > 0.001f)
                 flags |= BlackBoxFlagAccelerationTunnel;
             if (_lastConsumedKccVelocitySequence != 0u)
@@ -2378,9 +2378,7 @@ namespace Hecton8.Gameplay
             }
             catch (System.Exception exception)
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[VRSomaticProvider] Black box dump failed: " + exception.Message);
-#endif
+                GlobalTelemetryBus.PublishPerformanceWarning(BlackBoxDumpFaultHash, BlackBoxMagic, exception.HResult);
             }
         }
 
@@ -2418,15 +2416,23 @@ namespace Hecton8.Gameplay
                 UnsafeUtility.SizeOf<VrComfortProfileLookupSlotDTO>() != 16 ||
                 UnsafeUtility.SizeOf<SomaticKinematicHistoryDTO>() != 96 ||
                 UnsafeUtility.SizeOf<SomaticDerivativeDTO>() != 64 ||
-                UnsafeUtility.SizeOf<ComfortTelemetryEntry>() != 64 ||
+                UnsafeUtility.SizeOf<ComfortTelemetryEntry>() != 80 ||
                 UnsafeUtility.SizeOf<SomaticMockSicknessSampleDTO>() != 64 ||
                 OffsetOf<SomaticComfortStateDTO>(nameof(SomaticComfortStateDTO.FovTunnelingIntensity)) != 0 ||
                 OffsetOf<SomaticComfortStateDTO>(nameof(SomaticComfortStateDTO.HorizonLockBlend)) != 4 ||
                 OffsetOf<SomaticComfortStateDTO>(nameof(SomaticComfortStateDTO.FoveatedScaleMultiplier)) != 8 ||
                 OffsetOf<SomaticComfortStateDTO>(nameof(SomaticComfortStateDTO.ActiveComfortFlags)) != 12 ||
-                OffsetOf<SomaticComfortStateDTO>(nameof(SomaticComfortStateDTO.ReservedParameters)) != 16)
+                OffsetOf<SomaticComfortStateDTO>(nameof(SomaticComfortStateDTO.ReservedParameters)) != 16 ||
+                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry.VramPressure01)) != 44 ||
+                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry.ThermalPressure01)) != 48 ||
+                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry.SystemPressure01)) != 52 ||
+                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry.StateHash)) != 56 ||
+                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry.Sequence)) != 60 ||
+                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry.AupHash)) != 64 ||
+                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry._pad0)) != 68 ||
+                OffsetOf<ComfortTelemetryEntry>(nameof(ComfortTelemetryEntry._pad1)) != 72)
             {
-                Debug.LogError("[VRSomaticProvider] Native layout contract drift.");
+                throw new System.InvalidOperationException("VRSomaticProvider native layout contract drift.");
             }
         }
 
@@ -2848,7 +2854,7 @@ namespace Hecton8.Gameplay
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential, Pack = 16)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct VRSomaticRootSyncJob : IJob
         {
             [ReadOnly, NoAlias] public NativeArray<VRSomaticRootSyncInput> Input;
@@ -2929,7 +2935,7 @@ namespace Hecton8.Gameplay
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential, Pack = 16)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct VRSomaticHandKinematicsJob : IJobParallelFor
         {
             public float DeltaTime;
@@ -3007,7 +3013,7 @@ namespace Hecton8.Gameplay
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential, Pack = 16)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct BuildHeadCapsulecastCommandsJob : IJobParallelFor
         {
             public float3 HeadPosition;
@@ -3052,7 +3058,7 @@ namespace Hecton8.Gameplay
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential, Pack = 16)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct ProcessHeadCapsulecastHitsJob : IJobParallelFor
         {
             [ReadOnly, NoAlias] public NativeArray<RaycastHit> Hits;

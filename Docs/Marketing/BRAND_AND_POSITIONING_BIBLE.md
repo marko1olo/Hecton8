@@ -1,7 +1,7 @@
 # HECTON-8 Brand And Positioning Bible
 
 Status: pre-screenshot positioning system / do not publish as-is
-Public stance: single-player-first / no co-op promise / no competitor-war copy
+Public stance: single-player-first scope / proof-first public copy / no competitor-war copy
 Runtime impact: none
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
@@ -25,6 +25,8 @@ Before public use, every claim must be backed by one of:
 - profiler/performance artifact;
 - current platform rule;
 - creator-specific public contact route.
+
+If the claim sells gameplay, pressure, route risk, threat, salvage failure, base failure, or first-public agency proof, the evidence must also include AB-009/KPI decision-read fields: `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`. Creator, press, community, or feedback replies are not brand proof unless their route-specific class field and `reply_consent_provenance` are recorded.
 
 ## The Core Position
 
@@ -52,7 +54,7 @@ The visual identity is not bright alien wonder. It is salt, corrosion, floodligh
 |---|---|---|---|
 | Pressure is the antagonist | Depth should feel like a constant system cost. | UI warning clip, base leak clip, vehicle strain clip. | Saying "realistic pressure sim" without proof. |
 | Machines are verbs | Pumps, doors, tools, vehicles, power, and floodlights should look used and necessary. | Clip where a machine changes the outcome. | Decorative sci-fi panels that do nothing. |
-| The base is a pressure vessel | A habitat is survival infrastructure, not a cozy house. | Screenshot/clip showing seals, power, damage, oxygen, flooding, or repair. | Cozy-base marketing before mechanics exist. |
+| The base is a pressure vessel | A habitat is survival infrastructure with seals, power, damage, oxygen, flooding, and repair. | Screenshot/clip showing seals, power, damage, oxygen, flooding, or repair. | Cozy-base marketing before mechanics exist. |
 | The ocean hides structure | Black water should contain silhouettes, wrecks, cables, routes, and implied infrastructure. | Screenshot with readable foreground/midground/background. | Empty fog with no navigational read. |
 | Horror is systemic | Fear comes from being under-equipped, not from random jump scares. | Clip where a warning, sonar, or machine noise creates dread. | Monster thumbnail spam. |
 | Salvage has weight | Every expedition should imply cost, route risk, and recovery. | Clip showing planning, extraction, or return. | Generic resource sparkle pickups. |
@@ -142,6 +144,7 @@ Every first-pack screenshot must answer at least one of these:
 - What am I going toward?
 - Why is this not a clean sci-fi ocean?
 - What is the player doing besides looking?
+- What decision could the player make next under pressure?
 
 Reject screenshots that show:
 
@@ -154,6 +157,8 @@ Reject screenshots that show:
 ## Clip Identity Rules
 
 A 15-20 second clip must communicate without caption dependency.
+
+Any clip used as agency proof must survive AB-009/KPI: cold viewers name the next player decision without being prompted by caption, thread context, or prior explanation.
 
 Best structures:
 
@@ -205,7 +210,7 @@ With only a few thousand USD, the project cannot buy broad awareness. It can buy
 
 - a strong Steam capsule/key art pass;
 - trailer editing polish;
-- a small number of paid creator spots after organic proof;
+- a small number of paid creator spots only after organic proof, selected CRM row `paid_creator_permission_gate = ALLOW_PAID_CREATOR_TEST_VERIFIED`, AB-009/KPI decision-read evidence where relevant, and route-specific class / `reply_consent_provenance` custody;
 - localized subtitles/copy for highest-fit regions;
 - basic tracking tools;
 - Steam page visual QA.
@@ -229,7 +234,8 @@ Stop a marketing direction if:
 - screenshots cannot be understood by cold viewers;
 - store page click-to-wishlist conversion is weak after capsule/copy revisions;
 - posts get comments that the game looks generic or derivative;
-- the strongest hook requires explaining planned features that are not visible.
+- the strongest hook requires explaining planned features that are not visible;
+- gameplay/pressure/route-risk proof cannot produce a viewer-named decision in AB-009/KPI fields.
 
 ## Minimum Public Asset Set
 
@@ -238,9 +244,11 @@ Do not run broad outreach until this exists:
 - 1 Steam capsule candidate;
 - 6 screenshots with distinct player-readable hooks;
 - 2 clips under 20 seconds;
+- 1 AB-009/KPI row proving a cold viewer can name the player decision for any agency-proof screenshot or clip;
 - 1 clean factsheet;
-- 1 no-coop positioning answer;
+- 1 multiplayer-scope boundary answer;
 - 1 press-kit folder;
-- 1 demo/key policy;
+- 1 demo/key policy with recipient/batch `private_access_permission_gate` requirements;
 - 1 tracked CRM sheet;
+- route-specific class field and `reply_consent_provenance` for any creator, press, community, access, or feedback reply route;
 - 1 proof that no public performance claim is being made without measurement.

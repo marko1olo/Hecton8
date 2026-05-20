@@ -95,6 +95,21 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
+        /// Returns the summed hazard intensity at an absolute-universe point without exposing the World AUP type to callers.
+        /// </summary>
+        public static float GetHazardIntensity(double3 absolutePoint, HazardType type)
+        {
+            if (!math.all(math.isfinite(absolutePoint)))
+                return 0f;
+
+            AbsoluteUniversePosition pointAup = AbsoluteUniversePosition.FromAbsolutePosition(absolutePoint);
+            HazardZoneManager zoneManager = TryResolveZoneManager();
+            return zoneManager != null
+                ? zoneManager.GetHazardIntensity(in pointAup, type)
+                : 0f;
+        }
+
+        /// <summary>
         /// Returns the summed hazard intensity at an absolute-universe point.
         /// </summary>
         public static float GetHazardIntensity(in AbsoluteUniversePosition pointAup, HazardType type)

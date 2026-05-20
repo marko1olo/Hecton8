@@ -1,89 +1,17 @@
 using System;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
-using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
+// The AUP type is compiled by Hecton8.Core.asmdef even though its namespace is Hecton8.World.
+using AbsoluteUniversePosition = Hecton8.World.AbsoluteUniversePosition;
 
 namespace Hecton8.Habitat.Deformation
 {
-    public static class StructuralIntegrityConstants
-    {
-        public const int MaxNodeCapacity = 4096;
-        public const int MaxEdgeCapacity = MaxNodeCapacity * 4;
-        public const int TelemetryFrameCapacity = 300;
-        public const int MaterialStrengthCapacity = 32;
-        public const int CsvScratchBytes = 16 * 1024;
-        public const uint AgentHash = 0x73313135u; // s115
-        public const uint DefaultBaseHash = 0x53313135u; // S115
-        public const uint SignalLaneHash = 0x53494331u; // SIC1
-        public const uint DumpMagic = 0x53494344u; // SICD
-        public const uint DumpVersion = 1u;
-
-        public const uint StateFlagAnchor = 1u << 0;
-        public const uint StateFlagCollapsed = 1u << 1;
-        public const uint StateFlagLeakEmitted = 1u << 2;
-        public const uint StateFlagWarn80Emitted = 1u << 3;
-        public const uint StateFlagWarn90Emitted = 1u << 4;
-        public const uint StateFlagNonFinite = 1u << 31;
-
-        public const byte EdgeFlagSevered = 1 << 0;
-
-        public const uint TelemetryFlagNonFinite = 1u << 0;
-        public const uint TelemetryFlagMassCollapse = 1u << 1;
-        public const uint TelemetryFlagSdfFallback = 1u << 2;
-    }
-
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
-    public unsafe struct IntegrityStateDTO
-    {
-        [FieldOffset(0)] public uint NodeHash;
-        [FieldOffset(4)] public float BaseStrength;
-        [FieldOffset(8)] public float CurrentStress;
-        [FieldOffset(12)] public float AppliedPressure;
-        [FieldOffset(16)] public uint Flags;
-        [FieldOffset(20)] public float BucklingScalar;
-        [FieldOffset(24)] private byte _pad0;
-        [FieldOffset(25)] private byte _pad1;
-        [FieldOffset(26)] private byte _pad2;
-        [FieldOffset(27)] private byte _pad3;
-        [FieldOffset(28)] private byte _pad4;
-        [FieldOffset(29)] private byte _pad5;
-        [FieldOffset(30)] private byte _pad6;
-        [FieldOffset(31)] private byte _pad7;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ref IntegrityStateDTO AsRef(NativeArray<IntegrityStateDTO> states, int index)
-        {
-            void* basePtr = NativeArrayUnsafeUtility.GetUnsafePtr(states);
-            return ref UnsafeUtility.AsRef<IntegrityStateDTO>((byte*)basePtr + (index * UnsafeUtility.SizeOf<IntegrityStateDTO>()));
-        }
-    }
-
-    [StructLayout(LayoutKind.Explicit, Size = 96)]
-    public struct StructuralTuningDTO
-    {
-        [FieldOffset(0)] public double3 SeaLevelAup;
-        [FieldOffset(24)] public double3 SdfOriginAup;
-        [FieldOffset(48)] public float BasePressureKPa;
-        [FieldOffset(52)] public float PressureGradientKPaPerMeter;
-        [FieldOffset(56)] public float PressureToStressScale;
-        [FieldOffset(60)] public float MaterialStrengthFactor;
-        [FieldOffset(64)] public float BucklingStart01;
-        [FieldOffset(68)] public float BucklingVisualIntensity;
-        [FieldOffset(72)] public float SupportDamping;
-        [FieldOffset(76)] public float CollapseStress01;
-        [FieldOffset(80)] public float GlobalQualityWeight;
-        [FieldOffset(84)] public float SdfMetersPerVoxel;
-        [FieldOffset(88)] public float SdfRangeMeters;
-        [FieldOffset(92)] public int ActiveNodeCount;
-    }
-
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct StructuralTelemetryEntry
     {
@@ -152,24 +80,124 @@ namespace Hecton8.Habitat.Deformation
                    UnsafeUtility.SizeOf<StructuralTuningDTO>() == 96 &&
                    UnsafeUtility.SizeOf<StructuralTelemetryEntry>() == 64 &&
                    UnsafeUtility.SizeOf<StructuralMaterialStrengthEntry>() == 16 &&
-                   UnsafeUtility.SizeOf<BaseIntegrityEventPayload>() == 64;
+                   UnsafeUtility.SizeOf<StructuralTelemetryDumpHeader>() == 32 &&
+                   UnsafeUtility.SizeOf<BaseIntegrityEventPayload>() == 64 &&
+                   UnsafeUtility.SizeOf<AbsoluteUniversePosition>() == 48;
 #if UNITY_EDITOR
             return sizeValid &&
-                   Offset<IntegrityStateDTO>(nameof(IntegrityStateDTO.NodeHash)) == 0 &&
-                   Offset<IntegrityStateDTO>(nameof(IntegrityStateDTO.BaseStrength)) == 4 &&
-                   Offset<IntegrityStateDTO>(nameof(IntegrityStateDTO.CurrentStress)) == 8 &&
-                   Offset<IntegrityStateDTO>(nameof(IntegrityStateDTO.AppliedPressure)) == 12 &&
-                   Offset<IntegrityStateDTO>(nameof(IntegrityStateDTO.Flags)) == 16 &&
-                   Offset<IntegrityStateDTO>(nameof(IntegrityStateDTO.BucklingScalar)) == 20;
+                   ValidateIntegrityStateOffsets() &&
+                   ValidateTuningOffsets() &&
+                   ValidateTelemetryOffsets() &&
+                   ValidateMaterialOffsets() &&
+                   ValidateDumpHeaderOffsets() &&
+                   ValidateEventPayloadOffsets() &&
+                   ValidateAupOffsets();
 #else
             return sizeValid;
 #endif
         }
 
 #if UNITY_EDITOR
+        private static bool ValidateIntegrityStateOffsets()
+        {
+            return Offset<IntegrityStateDTO>(nameof(IntegrityStateDTO.NodeHash)) == 0 &&
+                   Offset<IntegrityStateDTO>(nameof(IntegrityStateDTO.BaseStrength)) == 4 &&
+                   Offset<IntegrityStateDTO>(nameof(IntegrityStateDTO.CurrentStress)) == 8 &&
+                   Offset<IntegrityStateDTO>(nameof(IntegrityStateDTO.AppliedPressure)) == 12 &&
+                   Offset<IntegrityStateDTO>(nameof(IntegrityStateDTO.Flags)) == 16 &&
+                   Offset<IntegrityStateDTO>(nameof(IntegrityStateDTO.BucklingScalar)) == 20 &&
+                   Offset<IntegrityStateDTO>("_pad0") == 24 &&
+                   Offset<IntegrityStateDTO>("_pad7") == 31;
+        }
+
+        private static bool ValidateTuningOffsets()
+        {
+            return Offset<StructuralTuningDTO>(nameof(StructuralTuningDTO.SeaLevelAup)) == 0 &&
+                   Offset<StructuralTuningDTO>(nameof(StructuralTuningDTO.SdfOriginAup)) == 24 &&
+                   Offset<StructuralTuningDTO>(nameof(StructuralTuningDTO.BasePressureKPa)) == 48 &&
+                   Offset<StructuralTuningDTO>(nameof(StructuralTuningDTO.PressureGradientKPaPerMeter)) == 52 &&
+                   Offset<StructuralTuningDTO>(nameof(StructuralTuningDTO.PressureToStressScale)) == 56 &&
+                   Offset<StructuralTuningDTO>(nameof(StructuralTuningDTO.MaterialStrengthFactor)) == 60 &&
+                   Offset<StructuralTuningDTO>(nameof(StructuralTuningDTO.BucklingStart01)) == 64 &&
+                   Offset<StructuralTuningDTO>(nameof(StructuralTuningDTO.BucklingVisualIntensity)) == 68 &&
+                   Offset<StructuralTuningDTO>(nameof(StructuralTuningDTO.SupportDamping)) == 72 &&
+                   Offset<StructuralTuningDTO>(nameof(StructuralTuningDTO.CollapseStress01)) == 76 &&
+                   Offset<StructuralTuningDTO>(nameof(StructuralTuningDTO.GlobalQualityWeight)) == 80 &&
+                   Offset<StructuralTuningDTO>(nameof(StructuralTuningDTO.SdfMetersPerVoxel)) == 84 &&
+                   Offset<StructuralTuningDTO>(nameof(StructuralTuningDTO.SdfRangeMeters)) == 88 &&
+                   Offset<StructuralTuningDTO>(nameof(StructuralTuningDTO.ActiveNodeCount)) == 92;
+        }
+
+        private static bool ValidateTelemetryOffsets()
+        {
+            return Offset<StructuralTelemetryEntry>(nameof(StructuralTelemetryEntry.Frame)) == 0 &&
+                   Offset<StructuralTelemetryEntry>(nameof(StructuralTelemetryEntry.StateHash)) == 4 &&
+                   Offset<StructuralTelemetryEntry>(nameof(StructuralTelemetryEntry.MaxPressureKPa)) == 8 &&
+                   Offset<StructuralTelemetryEntry>(nameof(StructuralTelemetryEntry.MaxStress01)) == 12 &&
+                   Offset<StructuralTelemetryEntry>(nameof(StructuralTelemetryEntry.ActiveNodeCount)) == 16 &&
+                   Offset<StructuralTelemetryEntry>(nameof(StructuralTelemetryEntry.EdgeCount)) == 20 &&
+                   Offset<StructuralTelemetryEntry>(nameof(StructuralTelemetryEntry.CriticalNodeCount)) == 24 &&
+                   Offset<StructuralTelemetryEntry>(nameof(StructuralTelemetryEntry.CollapsedNodeCount)) == 28 &&
+                   Offset<StructuralTelemetryEntry>(nameof(StructuralTelemetryEntry.GlobalQualityWeight)) == 32 &&
+                   Offset<StructuralTelemetryEntry>(nameof(StructuralTelemetryEntry.FramesBetweenUpdates)) == 36 &&
+                   Offset<StructuralTelemetryEntry>(nameof(StructuralTelemetryEntry.EstimatedMicroseconds)) == 40 &&
+                   Offset<StructuralTelemetryEntry>(nameof(StructuralTelemetryEntry.FaultFlags)) == 44 &&
+                   Offset<StructuralTelemetryEntry>(nameof(StructuralTelemetryEntry.WeakestNodeHash)) == 48 &&
+                   Offset<StructuralTelemetryEntry>(nameof(StructuralTelemetryEntry.WeakestBucklingScalar)) == 52 &&
+                   Offset<StructuralTelemetryEntry>(nameof(StructuralTelemetryEntry.BaseHash)) == 56 &&
+                   Offset<StructuralTelemetryEntry>(nameof(StructuralTelemetryEntry.Sequence)) == 60;
+        }
+
+        private static bool ValidateMaterialOffsets()
+        {
+            return Offset<StructuralMaterialStrengthEntry>(nameof(StructuralMaterialStrengthEntry.MaterialHash)) == 0 &&
+                   Offset<StructuralMaterialStrengthEntry>(nameof(StructuralMaterialStrengthEntry.BaseStrength)) == 4 &&
+                   Offset<StructuralMaterialStrengthEntry>(nameof(StructuralMaterialStrengthEntry.BucklingStart01)) == 8 &&
+                   Offset<StructuralMaterialStrengthEntry>(nameof(StructuralMaterialStrengthEntry.PressureScale)) == 12;
+        }
+
+        private static bool ValidateDumpHeaderOffsets()
+        {
+            return Offset<StructuralTelemetryDumpHeader>(nameof(StructuralTelemetryDumpHeader.Magic)) == 0 &&
+                   Offset<StructuralTelemetryDumpHeader>(nameof(StructuralTelemetryDumpHeader.Version)) == 4 &&
+                   Offset<StructuralTelemetryDumpHeader>(nameof(StructuralTelemetryDumpHeader.Frame)) == 8 &&
+                   Offset<StructuralTelemetryDumpHeader>(nameof(StructuralTelemetryDumpHeader.EntrySize)) == 12 &&
+                   Offset<StructuralTelemetryDumpHeader>(nameof(StructuralTelemetryDumpHeader.EntryCount)) == 16 &&
+                   Offset<StructuralTelemetryDumpHeader>(nameof(StructuralTelemetryDumpHeader.Cursor)) == 20 &&
+                   Offset<StructuralTelemetryDumpHeader>(nameof(StructuralTelemetryDumpHeader.FaultFlags)) == 24 &&
+                   Offset<StructuralTelemetryDumpHeader>(nameof(StructuralTelemetryDumpHeader.StateHash)) == 28;
+        }
+
+        private static bool ValidateEventPayloadOffsets()
+        {
+            return Offset<BaseIntegrityEventPayload>(nameof(BaseIntegrityEventPayload.NodeAup)) == 0 &&
+                   Offset<BaseIntegrityEventPayload>(nameof(BaseIntegrityEventPayload.NodeHash)) == 48 &&
+                   Offset<BaseIntegrityEventPayload>(nameof(BaseIntegrityEventPayload.Frame)) == 52 &&
+                   Offset<BaseIntegrityEventPayload>(nameof(BaseIntegrityEventPayload.Stress01)) == 56 &&
+                   Offset<BaseIntegrityEventPayload>(nameof(BaseIntegrityEventPayload.Severity)) == 60 &&
+                   Offset<BaseIntegrityEventPayload>(nameof(BaseIntegrityEventPayload.Flags)) == 61 &&
+                   Offset<BaseIntegrityEventPayload>(nameof(BaseIntegrityEventPayload.SourceId)) == 62;
+        }
+
+        private static bool ValidateAupOffsets()
+        {
+            return Offset<AbsoluteUniversePosition>(nameof(AbsoluteUniversePosition.GridX)) == 0 &&
+                   Offset<AbsoluteUniversePosition>(nameof(AbsoluteUniversePosition.GridY)) == 8 &&
+                   Offset<AbsoluteUniversePosition>(nameof(AbsoluteUniversePosition.GridZ)) == 16 &&
+                   Offset<AbsoluteUniversePosition>(nameof(AbsoluteUniversePosition.LocalX)) == 24 &&
+                   Offset<AbsoluteUniversePosition>(nameof(AbsoluteUniversePosition.LocalY)) == 28 &&
+                   Offset<AbsoluteUniversePosition>(nameof(AbsoluteUniversePosition.LocalZ)) == 32 &&
+                   Offset<AbsoluteUniversePosition>("_pad0") == 36 &&
+                   Offset<AbsoluteUniversePosition>("_pad1") == 40;
+        }
+
         private static int Offset<T>(string fieldName)
         {
-            System.Reflection.FieldInfo field = typeof(T).GetField(fieldName);
+            System.Reflection.FieldInfo field = typeof(T).GetField(
+                fieldName,
+                System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.Public |
+                System.Reflection.BindingFlags.NonPublic);
             return field == null ? -1 : UnsafeUtility.GetFieldOffset(field);
         }
 #endif
@@ -178,13 +206,13 @@ namespace Hecton8.Habitat.Deformation
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal unsafe struct StructuralIntegrityClearJob : IJob
     {
-        [NoAlias] public NativeArray<IntegrityStateDTO> States;
-        [NoAlias] public NativeArray<double3> NodeAups;
-        [NoAlias] public NativeArray<int> CsrOffsets;
-        [NoAlias] public NativeArray<int> CsrDestinations;
-        [NoAlias] public NativeArray<byte> EdgeFlags;
-        [NoAlias] public NativeArray<StructuralTelemetryEntry> Telemetry;
-        [NoAlias] public NativeArray<int> TelemetryCursor;
+        [WriteOnly] [NoAlias] public NativeArray<IntegrityStateDTO> States;
+        [WriteOnly] [NoAlias] public NativeArray<double3> NodeAups;
+        [WriteOnly] [NoAlias] public NativeArray<int> CsrOffsets;
+        [WriteOnly] [NoAlias] public NativeArray<int> CsrDestinations;
+        [WriteOnly] [NoAlias] public NativeArray<byte> EdgeFlags;
+        [WriteOnly] [NoAlias] public NativeArray<StructuralTelemetryEntry> Telemetry;
+        [WriteOnly] [NoAlias] public NativeArray<int> TelemetryCursor;
 
         public void Execute()
         {
@@ -210,11 +238,11 @@ namespace Hecton8.Habitat.Deformation
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal struct GenerateMockStructuralStressJob : IJob
     {
-        [NoAlias] public NativeArray<IntegrityStateDTO> States;
-        [NoAlias] public NativeArray<double3> NodeAups;
-        [NoAlias] public NativeArray<int> CsrOffsets;
-        [NoAlias] public NativeArray<int> CsrDestinations;
-        [NoAlias] public NativeArray<byte> EdgeFlags;
+        [WriteOnly] [NoAlias] public NativeArray<IntegrityStateDTO> States;
+        [WriteOnly] [NoAlias] public NativeArray<double3> NodeAups;
+        [WriteOnly] [NoAlias] public NativeArray<int> CsrOffsets;
+        [WriteOnly] [NoAlias] public NativeArray<int> CsrDestinations;
+        [WriteOnly] [NoAlias] public NativeArray<byte> EdgeFlags;
         [ReadOnly] [NoAlias] public NativeArray<StructuralMaterialStrengthEntry> Materials;
 
         public int NodeCount;
@@ -226,7 +254,7 @@ namespace Hecton8.Habitat.Deformation
 
         public void Execute()
         {
-            int safeNodeCount = math.clamp(NodeCount, 1, math.min(States.Length, math.min(NodeAups.Length, CsrOffsets.Length - 1)));
+            int maxNodeCount = math.min(States.Length, math.min(NodeAups.Length, math.max(0, CsrOffsets.Length - 1)));
             int edgeCapacity = math.min(CsrDestinations.Length, EdgeFlags.Length);
             for (int i = 0; i < States.Length; i++)
                 States[i] = default;
@@ -240,6 +268,10 @@ namespace Hecton8.Habitat.Deformation
                 EdgeFlags[i] = 0;
             }
 
+            if (maxNodeCount <= 0)
+                return;
+
+            int safeNodeCount = math.clamp(NodeCount, 1, maxNodeCount);
             int gridWidth = math.max(1, (int)math.ceil(math.sqrt((float)safeNodeCount)));
             int edgeCursor = 0;
             for (int i = 0; i < safeNodeCount; i++)
@@ -332,9 +364,40 @@ namespace Hecton8.Habitat.Deformation
             StructuralTuningDTO tuning = Tuning[0];
             ref IntegrityStateDTO state = ref IntegrityStateDTO.AsRef(States, index);
             double3 depthDelta = tuning.SeaLevelAup - NodeAups[index];
-            float depthMeters = (float)math.max(0d, depthDelta.y);
-            float pressure = tuning.BasePressureKPa + depthMeters * tuning.PressureGradientKPaPerMeter;
-            state.AppliedPressure = math.isfinite(pressure) ? math.max(0f, pressure) : 0f;
+            if (!math.all(math.isfinite(depthDelta)))
+            {
+                state.AppliedPressure = 0f;
+                state.CurrentStress = 1f;
+                state.BucklingScalar = 1f;
+                state.Flags |= StructuralIntegrityConstants.StateFlagNonFinite;
+                return;
+            }
+
+            const double maxStructuralDepthMeters = 1000000d;
+            double rawDepthMeters = math.max(0d, depthDelta.y);
+            if (!math.isfinite(rawDepthMeters) || rawDepthMeters > maxStructuralDepthMeters)
+            {
+                state.AppliedPressure = 0f;
+                state.CurrentStress = 1f;
+                state.BucklingScalar = 1f;
+                state.Flags |= StructuralIntegrityConstants.StateFlagNonFinite;
+                return;
+            }
+
+            float depthMeters = (float)rawDepthMeters;
+            float basePressure = math.isfinite(tuning.BasePressureKPa) ? tuning.BasePressureKPa : 0f;
+            float pressureGradient = math.isfinite(tuning.PressureGradientKPaPerMeter) ? tuning.PressureGradientKPaPerMeter : 0f;
+            float pressure = basePressure + depthMeters * pressureGradient;
+            if (!math.isfinite(pressure))
+            {
+                state.AppliedPressure = 0f;
+                state.CurrentStress = 1f;
+                state.BucklingScalar = 1f;
+                state.Flags |= StructuralIntegrityConstants.StateFlagNonFinite;
+                return;
+            }
+
+            state.AppliedPressure = math.max(0f, pressure);
         }
     }
 
@@ -406,20 +469,39 @@ namespace Hecton8.Habitat.Deformation
             uint flags = state.Flags & ~StructuralIntegrityConstants.StateFlagAnchor;
             bool anchored = false;
 
-            if (VoxelSdfTexture3D.IsCreated && SdfDimension > 1 && VoxelSdfTexture3D.Length >= SdfDimension * SdfDimension * SdfDimension)
+            long voxelCount = (long)SdfDimension * SdfDimension * SdfDimension;
+            if (VoxelSdfTexture3D.IsCreated && SdfDimension > 1 && VoxelSdfTexture3D.Length >= voxelCount)
             {
                 StructuralTuningDTO tuning = Tuning[0];
                 float cellSize = math.max(0.01f, FiniteOr(tuning.SdfMetersPerVoxel, 1f));
                 float range = math.max(0.01f, FiniteOr(tuning.SdfRangeMeters, 8f));
                 double3 relativeD = NodeAups[index] - tuning.SdfOriginAup;
+                if (!math.all(math.isfinite(relativeD)))
+                {
+                    state.CurrentStress = 1f;
+                    state.BucklingScalar = 1f;
+                    state.Flags = flags | StructuralIntegrityConstants.StateFlagNonFinite;
+                    return;
+                }
+
+                double halfExtentMeters = math.min(math.max((double)SdfDimension * (double)cellSize * 0.5d, (double)cellSize), 1000000d);
+                relativeD = math.clamp(relativeD, new double3(-halfExtentMeters), new double3(halfExtentMeters));
                 float3 relative = new float3((float)relativeD.x, (float)relativeD.y, (float)relativeD.z);
+                if (!math.all(math.isfinite(relative)))
+                {
+                    state.CurrentStress = 1f;
+                    state.BucklingScalar = 1f;
+                    state.Flags = flags | StructuralIntegrityConstants.StateFlagNonFinite;
+                    return;
+                }
+
                 int3 voxel = (int3)math.floor(relative / cellSize + SdfDimension * 0.5f);
                 int3 maxVoxel = new int3(SdfDimension - 1);
                 voxel = math.clamp(voxel, int3.zero, maxVoxel);
                 float nearestDistance = SampleSdfMeters(voxel, maxVoxel, range);
                 float quality = math.saturate(FiniteOr(tuning.GlobalQualityWeight, 1f));
                 float curvedQuality = quality * quality * (3f - 2f * quality);
-                float highTapWeight = curvedQuality * math.step(0.3f, quality);
+                float highTapWeight = curvedQuality * math.smoothstep(0.25f, 0.75f, quality);
                 float signedDistance = nearestDistance;
                 if (highTapWeight > 0f)
                 {
@@ -472,7 +554,7 @@ namespace Hecton8.Habitat.Deformation
 
         public void Execute(int index)
         {
-            if ((uint)index >= (uint)ActiveNodeCount)
+            if ((uint)index >= (uint)ActiveNodeCount || index + 1 >= CsrOffsets.Length)
                 return;
 
             StructuralTuningDTO tuning = Tuning[0];
@@ -480,15 +562,17 @@ namespace Hecton8.Habitat.Deformation
             uint flags = state.Flags;
             if ((flags & StructuralIntegrityConstants.StateFlagCollapsed) != 0)
             {
-                state.CurrentStress = math.max(1f, state.CurrentStress);
+                float priorStress = math.isfinite(state.CurrentStress) ? state.CurrentStress : 1f;
+                state.CurrentStress = math.max(1f, priorStress);
                 state.BucklingScalar = 1f;
                 return;
             }
 
+            int edgeLimit = math.min(CsrDestinations.Length, EdgeFlags.Length);
             int start = CsrOffsets[index];
             int end = CsrOffsets[index + 1];
-            start = math.clamp(start, 0, CsrDestinations.Length);
-            end = math.clamp(end, start, CsrDestinations.Length);
+            start = math.clamp(start, 0, edgeLimit);
+            end = math.clamp(end, start, edgeLimit);
 
             float support = (flags & StructuralIntegrityConstants.StateFlagAnchor) != 0 ? 2f : 0f;
             float collapsedNeighborLoad = 0f;
@@ -552,7 +636,7 @@ namespace Hecton8.Habitat.Deformation
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    internal struct StructuralCollapseSignalJob : IJobParallelFor
+    internal struct StructuralCollapseSignalJob : IJob
     {
         [NoAlias] public NativeArray<IntegrityStateDTO> States;
         [ReadOnly] [NoAlias] public NativeArray<double3> NodeAups;
@@ -563,15 +647,32 @@ namespace Hecton8.Habitat.Deformation
         public int ActiveNodeCount;
         public uint Frame;
 
-        public void Execute(int index)
+        public void Execute()
         {
-            if ((uint)index >= (uint)ActiveNodeCount)
+            if (!States.IsCreated || !NodeAups.IsCreated || !Tuning.IsCreated || Tuning.Length == 0)
                 return;
 
+            int safeCount = math.clamp(ActiveNodeCount, 0, math.min(States.Length, NodeAups.Length));
+            for (int index = 0; index < safeCount; index++)
+                ExecuteNode(index);
+        }
+
+        private void ExecuteNode(int index)
+        {
             StructuralTuningDTO tuning = Tuning[0];
             ref IntegrityStateDTO state = ref IntegrityStateDTO.AsRef(States, index);
             float stress = math.isfinite(state.CurrentStress) ? math.max(0f, state.CurrentStress) : 1f;
             uint flags = state.Flags;
+            double3 rawNodeAup = NodeAups[index];
+            bool nodeAupFinite = math.all(math.isfinite(rawNodeAup));
+            if (!nodeAupFinite)
+            {
+                flags |= StructuralIntegrityConstants.StateFlagNonFinite;
+                stress = 1f;
+            }
+
+            double3 nodeAup = nodeAupFinite ? rawNodeAup : double3.zero;
+            double3 relativeToSea = SafeDouble3(nodeAup - tuning.SeaLevelAup);
             byte severity = 0;
 
             if (stress >= 0.8f && (flags & StructuralIntegrityConstants.StateFlagWarn80Emitted) == 0)
@@ -590,7 +691,8 @@ namespace Hecton8.Habitat.Deformation
             if (collapsedNow && (flags & StructuralIntegrityConstants.StateFlagCollapsed) == 0)
             {
                 flags |= StructuralIntegrityConstants.StateFlagCollapsed;
-                state.BucklingScalar = math.max(state.BucklingScalar, 1f);
+                float priorBuckling = math.isfinite(state.BucklingScalar) ? state.BucklingScalar : 0f;
+                state.BucklingScalar = math.max(priorBuckling, 1f);
                 severity = BaseIntegrityEventPayload.SeverityCollapse;
             }
 
@@ -598,7 +700,7 @@ namespace Hecton8.Habitat.Deformation
             {
                 BaseIntegrityEventPayload evt = new BaseIntegrityEventPayload
                 {
-                    NodeAup = BuildAup(NodeAups[index]),
+                    NodeAup = BuildAup(nodeAup),
                     NodeHash = state.NodeHash,
                     Frame = Frame,
                     Stress01 = math.saturate(stress),
@@ -614,7 +716,7 @@ namespace Hecton8.Habitat.Deformation
                 flags |= StructuralIntegrityConstants.StateFlagLeakEmitted;
                 FluidIncursionSignal flood = new FluidIncursionSignal
                 {
-                    LeakAup = BuildAup(NodeAups[index]),
+                    LeakAup = BuildAup(nodeAup),
                     CompartmentId = state.NodeHash,
                     FloodLevel01 = 1f,
                     FlowRate01 = math.saturate(stress),
@@ -622,10 +724,10 @@ namespace Hecton8.Habitat.Deformation
                 };
                 BaseModuleCompromisedSignal compromised = new BaseModuleCompromisedSignal
                 {
-                    ModuleCenter = ToFloat3(NodeAups[index] - tuning.SeaLevelAup),
+                    ModuleCenter = ToFiniteFloat3(relativeToSea),
                     Stress01 = math.saturate(stress),
                     PeakStress01 = math.saturate(stress),
-                    DepthMeters = (float)math.max(0d, tuning.SeaLevelAup.y - NodeAups[index].y),
+                    DepthMeters = SafePositiveSignalFloat(tuning.SeaLevelAup.y - nodeAup.y),
                     NodeId = state.NodeHash,
                     ModuleHash = StructuralIntegrityConstants.DefaultBaseHash,
                     Frame = Frame,
@@ -633,7 +735,7 @@ namespace Hecton8.Habitat.Deformation
                     SourceId = (ushort)(StructuralIntegrityConstants.AgentHash & 0xFFFFu),
                     Flags = BaseModuleCompromisedSignal.MaxDeformationFlag,
                     StressIndex = (byte)math.min(255, index),
-                    QualityTier = ResolveSignalProfileByte(tuning.GlobalQualityWeight)
+                    QualityTier = ResolveSignalQualityByte(tuning.GlobalQualityWeight)
                 };
                 FluidEvents.Enqueue(flood);
                 CompromisedEvents.Enqueue(compromised);
@@ -642,33 +744,63 @@ namespace Hecton8.Habitat.Deformation
             state.Flags = flags;
         }
 
-        private static byte ResolveSignalProfileByte(float quality)
+        private static byte ResolveSignalQualityByte(float quality)
         {
             float q = math.saturate(math.isfinite(quality) ? quality : 1f);
-            int profile = (int)math.step(0.5f, q);
-            return (byte)math.clamp(profile, (int)ScalabilityTierProfiles.LowMx350, (int)ScalabilityTierProfiles.HighRtx);
+            int quantized = (int)math.round(q * 255f);
+            return (byte)math.clamp(quantized, 0, 255);
         }
 
         private static AbsoluteUniversePosition BuildAup(double3 absolute)
         {
-            double cellSize = AbsoluteUniversePosition.CellSizeMeters;
-            long gridX = (long)math.floor(absolute.x / cellSize);
-            long gridY = (long)math.floor(absolute.y / cellSize);
-            long gridZ = (long)math.floor(absolute.z / cellSize);
+            absolute = SafeDouble3(absolute);
+            double cellSize = math.max(1d, (double)AbsoluteUniversePosition.CellSizeMeters);
+            const double gridClamp = 1000000000d;
+            double gridXD = math.clamp(math.floor(absolute.x / cellSize), -gridClamp, gridClamp);
+            double gridYD = math.clamp(math.floor(absolute.y / cellSize), -gridClamp, gridClamp);
+            double gridZD = math.clamp(math.floor(absolute.z / cellSize), -gridClamp, gridClamp);
+            long gridX = (long)gridXD;
+            long gridY = (long)gridYD;
+            long gridZ = (long)gridZD;
             return new AbsoluteUniversePosition
             {
                 GridX = gridX,
                 GridY = gridY,
                 GridZ = gridZ,
-                LocalX = (float)(absolute.x - gridX * cellSize),
-                LocalY = (float)(absolute.y - gridY * cellSize),
-                LocalZ = (float)(absolute.z - gridZ * cellSize)
+                LocalX = SafeSignalFloat(absolute.x - gridX * cellSize),
+                LocalY = SafeSignalFloat(absolute.y - gridY * cellSize),
+                LocalZ = SafeSignalFloat(absolute.z - gridZ * cellSize)
             };
         }
 
-        private static float3 ToFloat3(double3 value)
+        private static float3 ToFiniteFloat3(double3 value)
         {
-            return new float3((float)value.x, (float)value.y, (float)value.z);
+            value = SafeDouble3(value);
+            return new float3(SafeSignalFloat(value.x), SafeSignalFloat(value.y), SafeSignalFloat(value.z));
+        }
+
+        private static double3 SafeDouble3(double3 value)
+        {
+            return math.all(math.isfinite(value)) ? value : double3.zero;
+        }
+
+        private static double SafeFinite(double value, double fallback)
+        {
+            return math.isfinite(value) ? value : fallback;
+        }
+
+        private static float SafeSignalFloat(double value)
+        {
+            const double signalClampMeters = 1000000d;
+            double safe = SafeFinite(value, 0d);
+            return (float)math.clamp(safe, -signalClampMeters, signalClampMeters);
+        }
+
+        private static float SafePositiveSignalFloat(double value)
+        {
+            const double signalClampMeters = 1000000d;
+            double safe = SafeFinite(value, 0d);
+            return (float)math.clamp(safe, 0d, signalClampMeters);
         }
     }
 
@@ -683,16 +815,17 @@ namespace Hecton8.Habitat.Deformation
 
         public void Execute(int index)
         {
-            if ((uint)index >= (uint)ActiveNodeCount)
+            if ((uint)index >= (uint)ActiveNodeCount || index + 1 >= CsrOffsets.Length)
                 return;
 
-            int start = math.clamp(CsrOffsets[index], 0, EdgeFlags.Length);
-            int end = math.clamp(CsrOffsets[index + 1], start, EdgeFlags.Length);
+            int edgeLimit = math.min(EdgeFlags.Length, CsrDestinations.Length);
+            int start = math.clamp(CsrOffsets[index], 0, edgeLimit);
+            int end = math.clamp(CsrOffsets[index + 1], start, edgeLimit);
             bool sourceCollapsed = (States[index].Flags & StructuralIntegrityConstants.StateFlagCollapsed) != 0;
             for (int edge = start; edge < end; edge++)
             {
                 bool destinationCollapsed = false;
-                if (!sourceCollapsed && edge < CsrDestinations.Length)
+                if (!sourceCollapsed)
                 {
                     int destination = CsrDestinations[edge];
                     destinationCollapsed = (uint)destination < (uint)ActiveNodeCount &&
@@ -722,11 +855,15 @@ namespace Hecton8.Habitat.Deformation
 
         public void Execute()
         {
-            if (!Telemetry.IsCreated || Telemetry.Length == 0 || !TelemetryCursor.IsCreated || TelemetryCursor.Length == 0)
+            if (!Telemetry.IsCreated || Telemetry.Length == 0 ||
+                !TelemetryCursor.IsCreated || TelemetryCursor.Length == 0 ||
+                !States.IsCreated || !CsrOffsets.IsCreated ||
+                !Tuning.IsCreated || Tuning.Length == 0)
                 return;
 
             StructuralTuningDTO tuning = Tuning[0];
-            int safeCount = math.clamp(ActiveNodeCount, 0, States.Length);
+            int maxNodeCount = math.min(States.Length, math.max(0, CsrOffsets.Length - 1));
+            int safeCount = math.clamp(ActiveNodeCount, 0, maxNodeCount);
             float maxPressure = 0f;
             float maxStress = 0f;
             float weakestBuckle = 0f;
@@ -739,9 +876,13 @@ namespace Hecton8.Habitat.Deformation
             for (int i = 0; i < safeCount; i++)
             {
                 IntegrityStateDTO state = States[i];
-                if (!math.isfinite(state.CurrentStress) ||
-                    !math.isfinite(state.AppliedPressure) ||
-                    !math.isfinite(state.BucklingScalar))
+                bool nonFiniteState = !math.isfinite(state.CurrentStress) ||
+                                      !math.isfinite(state.AppliedPressure) ||
+                                      !math.isfinite(state.BucklingScalar);
+                float stress = math.isfinite(state.CurrentStress) ? state.CurrentStress : 1f;
+                float pressure = math.isfinite(state.AppliedPressure) ? state.AppliedPressure : 0f;
+                float buckling = math.isfinite(state.BucklingScalar) ? state.BucklingScalar : 1f;
+                if (nonFiniteState)
                 {
                     flags |= StructuralIntegrityConstants.TelemetryFlagNonFinite;
                 }
@@ -750,28 +891,33 @@ namespace Hecton8.Habitat.Deformation
                     flags |= StructuralIntegrityConstants.TelemetryFlagNonFinite;
                 if ((state.Flags & StructuralIntegrityConstants.StateFlagCollapsed) != 0)
                     collapsedCount++;
-                if (state.CurrentStress >= 0.8f)
+                if (stress >= 0.8f)
                     criticalCount++;
-                if (state.CurrentStress > maxStress)
+                if (stress > maxStress)
                 {
-                    maxStress = state.CurrentStress;
+                    maxStress = stress;
                     weakestHash = state.NodeHash;
-                    weakestBuckle = state.BucklingScalar;
+                    weakestBuckle = buckling;
                 }
 
-                maxPressure = math.max(maxPressure, state.AppliedPressure);
+                maxPressure = math.max(maxPressure, pressure);
                 stateHash = Hash(stateHash, state.NodeHash);
-                stateHash = Hash(stateHash, math.asuint(state.CurrentStress));
-                stateHash = Hash(stateHash, math.asuint(state.AppliedPressure));
+                stateHash = Hash(stateHash, math.asuint(stress));
+                stateHash = Hash(stateHash, math.asuint(pressure));
+                stateHash = Hash(stateHash, math.asuint(buckling));
                 stateHash = Hash(stateHash, state.Flags);
             }
 
             if (safeCount > 0 && collapsedCount * 2 >= safeCount)
                 flags |= StructuralIntegrityConstants.TelemetryFlagMassCollapse;
 
+            int capacity = math.min(Telemetry.Length, StructuralIntegrityConstants.TelemetryFrameCapacity);
             int cursor = TelemetryCursor[0];
-            int slot = math.abs(cursor) % StructuralIntegrityConstants.TelemetryFrameCapacity;
-            int edgeCount = safeCount >= 0 && safeCount < CsrOffsets.Length ? CsrOffsets[safeCount] : 0;
+            if (cursor < 0)
+                cursor = 0;
+            cursor %= capacity;
+            int slot = cursor;
+            int edgeCount = safeCount >= 0 && safeCount < CsrOffsets.Length ? math.max(0, CsrOffsets[safeCount]) : 0;
             Telemetry[slot] = new StructuralTelemetryEntry
             {
                 Frame = Frame,
@@ -791,7 +937,7 @@ namespace Hecton8.Habitat.Deformation
                 BaseHash = BaseHash,
                 Sequence = (uint)cursor
             };
-            TelemetryCursor[0] = (cursor + 1) % StructuralIntegrityConstants.TelemetryFrameCapacity;
+            TelemetryCursor[0] = (cursor + 1) % capacity;
         }
 
         private static uint Hash(uint hash, uint value)

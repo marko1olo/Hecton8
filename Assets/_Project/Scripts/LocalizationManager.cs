@@ -3,7 +3,6 @@
 #endif
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 #if HECTON8_BABEL_MMF_AVAILABLE
 using System.IO.MemoryMappedFiles;
@@ -22,9 +21,6 @@ using Hecton8.World;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using UnityEngine;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 namespace Hecton.Localization
 {
@@ -53,15 +49,11 @@ namespace Hecton.Localization
     }
 
     /// <summary>
-    /// Runtime owner for string localization tables and language switching.
+    /// Runtime owner for Babel localization compatibility and language switching.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class LocalizationManager : MonoBehaviour, IBabelLocalization, IDispatcherSystem
     {
-        // COLD ALLOC: Regex[1] â€” flat JSON key/value extraction for localization tables â€” owner: LocalizationManager
-        private static readonly Regex FlatJsonEntryRegex = new Regex(
-            "\"(?<key>(?:\\\\.|[^\"\\\\])*)\"\\s*:\\s*\"(?<value>(?:\\\\.|[^\"\\\\])*)\"",
-            RegexOptions.Compiled | RegexOptions.CultureInvariant);
         // COLD ALLOC: Regex[1] — button token replacement for localized TMP text — owner: LocalizationManager
         private static readonly Regex ButtonTokenRegex = new Regex(
             "<button:(?<token>[a-zA-Z0-9_\\-]+)>",
@@ -83,7 +75,6 @@ namespace Hecton.Localization
         private static readonly MatchEvaluator StatusTokenEvaluator = EvaluateStatusToken;
         private static readonly MatchEvaluator TechTokenEvaluator = EvaluateTechToken;
         private static readonly MatchEvaluator KeyTokenEvaluator = EvaluateKeyToken;
-        private const string DefaultLanguageTableFolder = "Assets/_Project/Scripts";
         private const int MaxExpansionPasses = 3;
         private const string AnalyzerTechKeyPrefix = "TECH_";
         private const string AnalyzerPrefabToken = "EnvAnalyzer";
@@ -143,16 +134,9 @@ namespace Hecton.Localization
         [Header("=== Config ===")]
         [SerializeField] private GameLanguage defaultLanguage = GameLanguage.English;
 
-        [Header("=== Localization Data (JSON TextAssets) ===")]
-        [Tooltip("Each TextAsset is a flat JSON object: { \"KEY\": \"Value\" }. File name must match the GameLanguage enum name.")]
-        [SerializeField] private TextAsset[] languageFiles;
-
         // Shared user-options key owned by UserOptionsPersistence.
         private const string PrefsLanguageKey = UserOptionsPersistence.LanguageKey;
 
-        // COLD ALLOC: Dictionary[20] â€” language tables for UI/content lookup â€” owner: LocalizationManager
-        private readonly Dictionary<GameLanguage, Dictionary<string, string>> _tables =
-            new Dictionary<GameLanguage, Dictionary<string, string>>(20);
         private PlayerToolManager _cachedPlayerToolManager;
         private HectonPlayerMovement _cachedPlayerMovement;
         private int _cachedAnalyzerFrame = -1;
@@ -161,11 +145,11 @@ namespace Hecton.Localization
         private float _cachedHullStress01;
         private float _cachedHullStressCorruptionIntensity;
         private float _externalPdaCorrosionIntensity;
-        private float _externalPdaCorrosionEndTime;
+        private uint _externalPdaCorrosionEndFrame;
         private GameLanguage _savedLanguage = GameLanguage.English;
         private bool _transientLanguageOverrideActive;
         private bool _intrusionGlyphModeActive;
-        private float _madnessOverrideEndTime;
+        private uint _madnessOverrideEndFrame;
         private int _madnessActiveWindowId = -1;
         private int _madnessLastRollBucket = int.MinValue;
         private int _lastMadnessAudioWindowId = -1;
@@ -178,6 +162,7 @@ namespace Hecton.Localization
         private bool _registeredBabelLocalizationRuntime;
         private BabelDictionaryStage _pendingBabelStage;
         private GameLanguage _pendingBabelLanguage;
+        private GameLanguage _currentLanguage = GameLanguage.English;
         private int _pendingBabelSwapState;
         private int _pendingBabelReadFault;
         private bool _registeredBabelDispatcher;
@@ -190,10 +175,10 @@ namespace Hecton.Localization
         /// <summary>
         /// Active language for runtime lookups.
         /// </summary>
-        public GameLanguage CurrentLanguage { get; private set; } = GameLanguage.English;
+        public GameLanguage CurrentLanguage => _currentLanguage;
 
         /// <inheritdoc />
-        public ushort ActiveLanguageId => (ushort)CurrentLanguage;
+        public ushort ActiveLanguageId => (ushort)_currentLanguage;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -218,23 +203,11 @@ namespace Hecton.Localization
             if (!TryGetComponent<FontStreamingManager>(out _))
                 gameObject.AddComponent<FontStreamingManager>(); // COLD ALLOC: FontStreamingManager[1] — runtime staged localized font swap owner — owner: LocalizationManager
 
-            LoadAllTables();
+            LoadLegacyCompatibilityTables();
             RestoreSavedLanguage();
             RefreshRuntimeRegistry();
             TryRegisterBabelDispatcher();
         }
-
-#if UNITY_EDITOR
-        private void Reset()
-        {
-            SyncLanguageFilesFromDefaultFolder();
-        }
-
-        private void OnValidate()
-        {
-            SyncLanguageFilesFromDefaultFolder();
-        }
-#endif
 
         private void OnDestroy()
         {
@@ -413,8 +386,11 @@ namespace Hecton.Localization
             if (clampedIntensity <= 0f || clampedDuration <= 0f)
                 return;
 
+            uint nowFrame = ResolvePresentationAudioFrame();
+            uint requestedEndFrame = AddAudioFramesWrapped(nowFrame, SecondsToAudioFrames(clampedDuration));
             _externalPdaCorrosionIntensity = Mathf.Max(_externalPdaCorrosionIntensity, clampedIntensity);
-            _externalPdaCorrosionEndTime = Mathf.Max(_externalPdaCorrosionEndTime, Time.unscaledTime + clampedDuration);
+            if (!IsAudioFrameBefore(requestedEndFrame, _externalPdaCorrosionEndFrame))
+                _externalPdaCorrosionEndFrame = requestedEndFrame;
             _cachedHullStressFrame = -1;
             LocalizationEvents.PublishCorruptionVisualStateChanged(CurrentLanguage, _lastPublishedVisualBucket);
         }
@@ -496,7 +472,7 @@ namespace Hecton.Localization
             EvaluateMadnessOverrideState();
             int cycle = _madnessActiveWindowId >= 0
                 ? _madnessActiveWindowId
-                : Mathf.Max(0, Mathf.FloorToInt(Time.unscaledTime / MadnessRollInterval));
+                : ResolveMadnessRollBucket();
             int seed = ComputeMadnessSeed("HUD", cycle, (int)CurrentLanguage);
             string whisperKey = ResolveMadnessWhisperKey(seed);
             return GetOrFallback(CurrentLanguage, whisperKey, fallback);
@@ -514,7 +490,7 @@ namespace Hecton.Localization
             EvaluateMadnessOverrideState();
             int cycle = _madnessActiveWindowId >= 0
                 ? _madnessActiveWindowId
-                : Mathf.Max(0, Mathf.FloorToInt(Time.unscaledTime / MadnessRollInterval));
+                : ResolveMadnessRollBucket();
             int seed = ComputeMadnessSeed("HUD".AsSpan(), cycle, (int)CurrentLanguage);
             int keyHash = ResolveMadnessWhisperKeyHash(seed);
             ReadOnlySpan<char> whisper = LocRegistry.TryGetRawBuffer(keyHash, out char[] rawBuffer, out int rawLength) && rawLength > 0
@@ -574,6 +550,12 @@ namespace Hecton.Localization
                 return false;
             }
 
+            if (language == CurrentLanguage &&
+                TryGetBabelLegacyString(LocHash.Compute(key.AsSpan()), out value))
+            {
+                return true;
+            }
+
             if (TryGetFromTable(language, key, out value))
                 return true;
 
@@ -582,6 +564,24 @@ namespace Hecton.Localization
 
             value = string.Empty;
             return false;
+        }
+
+        private static bool TryGetBabelLegacyString(int keyHash, out string value)
+        {
+            value = string.Empty;
+            if (keyHash == 0)
+                return false;
+
+            if (!LocRegistry.TryGetVisualBufferFromUtf8(keyHash, out char[] buffer, out int length) ||
+                buffer == null ||
+                length <= 0)
+            {
+                return false;
+            }
+
+            // Legacy string API only. Zero-GC UI paths use LocRegistry.TryWriteVisualSpanFromUtf8.
+            value = new string(buffer, 0, length);
+            return true;
         }
 
         /// <summary>
@@ -610,7 +610,7 @@ namespace Hecton.Localization
             if (CurrentLanguage == language && !_intrusionGlyphModeActive)
                 return;
 
-            CurrentLanguage = language;
+            _currentLanguage = language;
             _intrusionGlyphModeActive = false;
             PublishVisualLanguageState();
 
@@ -848,7 +848,7 @@ namespace Hecton.Localization
             if (savedChanged)
                 SavePersistentLanguagePreference(language);
 
-            CurrentLanguage = language;
+            _currentLanguage = language;
             _transientLanguageOverrideActive = false;
             _intrusionGlyphModeActive = false;
             _lastPublishedVisualBucket = int.MinValue;
@@ -1072,7 +1072,7 @@ namespace Hecton.Localization
 
             _transientLanguageOverrideActive = true;
             _intrusionGlyphModeActive = enableGlyphMode;
-            CurrentLanguage = language;
+            _currentLanguage = language;
 
             if (!languageChanged && !glyphChanged)
                 return;
@@ -1090,7 +1090,7 @@ namespace Hecton.Localization
 
             _transientLanguageOverrideActive = false;
             _intrusionGlyphModeActive = false;
-            CurrentLanguage = _savedLanguage;
+            _currentLanguage = _savedLanguage;
             PublishVisualLanguageState();
         }
 
@@ -1103,134 +1103,9 @@ namespace Hecton.Localization
             SetLanguage((GameLanguage)next);
         }
 
-        private void LoadAllTables()
+        private void LoadLegacyCompatibilityTables()
         {
-            _tables.Clear();
-
-            if (languageFiles == null || languageFiles.Length == 0)
-            {
-                LoadBuiltInTables();
-                return;
-            }
-
-            for (int i = 0; i < languageFiles.Length; i++)
-            {
-                TextAsset file = languageFiles[i];
-                if (file == null)
-                    continue;
-
-                if (!Enum.TryParse(file.name, true, out GameLanguage language))
-                {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogWarning(
-                        $"[Localization] Cannot parse language from filename: \"{file.name}\". " +
-                        $"Expected one of: {string.Join(", ", Enum.GetNames(typeof(GameLanguage)))}");
-#endif
-                    continue;
-                }
-
-                _tables[language] = ParseJsonTable(file.text);
-            }
-
-            if (!_tables.ContainsKey(GameLanguage.English))
-                LoadBuiltInTables();
-        }
-
-        /// <summary>
-        /// Injects additional localization entries into the live table for a language.
-        /// Intended for mod content and other cold-path runtime table extensions after first-party tables are loaded.
-        /// </summary>
-        /// <param name="language">Target language table to extend.</param>
-        /// <param name="entries">Flat key/value map to merge into the live table.</param>
-        /// <param name="sourceId">Diagnostic source label used in warnings and editor logs.</param>
-        /// <param name="overwriteExisting">
-        /// True to replace existing keys with injected values.
-        /// False to preserve first-writer ownership and only add missing keys.
-        /// </param>
-        public void InjectEntries(
-            GameLanguage language,
-            Dictionary<string, string> entries,
-            string sourceId,
-            bool overwriteExisting = true)
-        {
-            if (entries == null || entries.Count == 0)
-                return;
-
-            if (!_tables.TryGetValue(language, out Dictionary<string, string> table) || table == null)
-            {
-                table = new Dictionary<string, string>(Mathf.Max(32, entries.Count));
-                _tables[language] = table;
-            }
-
-            Dictionary<string, string>.Enumerator enumerator = entries.GetEnumerator();
-            while (enumerator.MoveNext())
-            {
-                string key = enumerator.Current.Key;
-                if (string.IsNullOrWhiteSpace(key))
-                    continue;
-
-                if (!overwriteExisting && table.ContainsKey(key))
-                    continue;
-
-                table[key] = enumerator.Current.Value ?? string.Empty;
-            }
-
-            if (CurrentLanguage == language || language == GameLanguage.English)
-                RefreshRuntimeRegistry();
-
-            if (CurrentLanguage == language)
-                LocalizationEvents.PublishLanguageChanged(language);
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[Localization] Injected {entries.Count} entries into {language} from '{sourceId}'.");
-#endif
-        }
-
-        /// <summary>
-        /// Parses a flat JSON localization object into the dictionary format consumed by the runtime localization owner.
-        /// Expected schema: <c>{ "KEY": "Value" }</c>.
-        /// </summary>
-        /// <param name="json">Raw JSON text to parse.</param>
-        /// <returns>
-        /// Parsed key/value pairs.
-        /// Invalid or empty input returns an empty dictionary instead of throwing.
-        /// </returns>
-        public static Dictionary<string, string> ParseFlatJsonTable(string json)
-        {
-            return ParseJsonTable(json);
-        }
-
-        private static Dictionary<string, string> ParseJsonTable(string json)
-        {
-            // COLD ALLOC: Dictionary[128] â€” parsed localization table entries â€” owner: LocalizationManager
-            var result = new Dictionary<string, string>(128);
-            if (string.IsNullOrWhiteSpace(json))
-                return result;
-
-            try
-            {
-                MatchCollection matches = FlatJsonEntryRegex.Matches(json);
-                for (int i = 0; i < matches.Count; i++)
-                {
-                    Match match = matches[i];
-                    if (!match.Success)
-                        continue;
-
-                    string key = Regex.Unescape(match.Groups["key"].Value);
-                    string value = Regex.Unescape(match.Groups["value"].Value);
-
-                    if (!string.IsNullOrWhiteSpace(key))
-                        result[key] = value;
-                }
-            }
-            catch (Exception exception)
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError($"[Localization] JSON parse error: {exception.Message}");
-#endif
-            }
-
-            return result;
+            LoadBuiltInTables();
         }
 
         private string ExpandRuntimeTokens(string text)
@@ -1417,9 +1292,9 @@ namespace Hecton.Localization
 
         private float ResolveExternalPdaCorrosionIntensity()
         {
-            if (_externalPdaCorrosionEndTime <= Time.unscaledTime)
+            if (!IsAudioFrameBefore(ResolvePresentationAudioFrame(), _externalPdaCorrosionEndFrame))
             {
-                _externalPdaCorrosionEndTime = 0f;
+                _externalPdaCorrosionEndFrame = 0u;
                 _externalPdaCorrosionIntensity = 0f;
                 return 0f;
             }
@@ -1517,8 +1392,8 @@ namespace Hecton.Localization
         private void EvaluateMadnessOverrideState()
         {
             float intensity = GetHullStressCorruptionIntensity();
-            float now = Time.unscaledTime;
-            bool isActive = now < _madnessOverrideEndTime;
+            uint nowFrame = ResolvePresentationAudioFrame();
+            bool isActive = IsAudioFrameBefore(nowFrame, _madnessOverrideEndFrame);
 
             if (!IsMadnessEligible())
             {
@@ -1531,7 +1406,7 @@ namespace Hecton.Localization
             if (isActive)
                 return;
 
-            int rollBucket = Mathf.FloorToInt(now / MadnessRollInterval);
+            int rollBucket = ResolveMadnessRollBucket();
             if (rollBucket == _madnessLastRollBucket)
                 return;
 
@@ -1549,7 +1424,7 @@ namespace Hecton.Localization
                 return;
 
             _madnessActiveWindowId = rollBucket;
-            _madnessOverrideEndTime = now + MadnessBlinkDuration;
+            _madnessOverrideEndFrame = AddAudioFramesWrapped(nowFrame, SecondsToAudioFrames(MadnessBlinkDuration));
         }
 
         private bool IsMadnessEligible()
@@ -1592,7 +1467,7 @@ namespace Hecton.Localization
 
         private bool IsMadnessOverrideActive()
         {
-            if (Time.unscaledTime < _madnessOverrideEndTime)
+            if (IsAudioFrameBefore(ResolvePresentationAudioFrame(), _madnessOverrideEndFrame))
                 return true;
 
             if (_madnessActiveWindowId >= 0)
@@ -1601,9 +1476,68 @@ namespace Hecton.Localization
             return false;
         }
 
+        private static uint ResolvePresentationAudioFrame()
+        {
+            double frame = ResolvePresentationAudioFrameDouble();
+            if (double.IsNaN(frame) || double.IsInfinity(frame) || frame <= 0d)
+                return BabelSubtitleSyncRuntime.CurrentAudioFrame;
+
+            frame %= (uint.MaxValue + 1d);
+            if (frame < 0d)
+                frame += uint.MaxValue + 1d;
+
+            return (uint)frame;
+        }
+
+        private static double ResolvePresentationAudioFrameDouble()
+        {
+            int sampleRate = Mathf.Max(1, AudioSettings.outputSampleRate);
+            return AudioSettings.dspTime * sampleRate;
+        }
+
+        private static uint SecondsToAudioFrames(float seconds)
+        {
+            double frames = Math.Ceiling(Mathf.Max(0f, seconds) * Mathf.Max(1, AudioSettings.outputSampleRate));
+            if (frames <= 0d)
+                return 0u;
+
+            return frames >= int.MaxValue ? int.MaxValue - 1u : (uint)frames;
+        }
+
+        private static uint AddAudioFramesWrapped(uint frame, uint delta)
+        {
+            return frame + delta;
+        }
+
+        private static bool IsAudioFrameBefore(uint lhs, uint rhs)
+        {
+            return unchecked((int)(rhs - lhs)) > 0;
+        }
+
+        private static int ResolveMadnessRollBucket()
+        {
+            double intervalFrames = Math.Max(1d, MadnessRollInterval * Mathf.Max(1, AudioSettings.outputSampleRate));
+            double bucket = ResolvePresentationAudioFrameDouble() / intervalFrames;
+            if (double.IsNaN(bucket) || double.IsInfinity(bucket) || bucket <= 0d)
+                return 0;
+
+            return bucket >= int.MaxValue ? int.MaxValue : (int)bucket;
+        }
+
+        private static int ResolveCorruptionSeedBucket()
+        {
+            double sampleRate = Math.Max(1d, AudioSettings.outputSampleRate);
+            double bucketFrames = Math.Max(1d, sampleRate / 12d);
+            double bucket = ResolvePresentationAudioFrameDouble() / bucketFrames;
+            if (double.IsNaN(bucket) || double.IsInfinity(bucket) || bucket <= 0d)
+                return 0;
+
+            return bucket >= int.MaxValue ? int.MaxValue : (int)bucket;
+        }
+
         private void ClearMadnessOverride()
         {
-            _madnessOverrideEndTime = 0f;
+            _madnessOverrideEndFrame = 0u;
             _madnessActiveWindowId = -1;
             _lastMadnessAudioWindowId = -1;
             _lastMadnessResolvedWindowId = -1;
@@ -1914,7 +1848,7 @@ namespace Hecton.Localization
         {
             unchecked
             {
-                int seed = 17 ^ Mathf.RoundToInt(Time.unscaledTime * 12f);
+                int seed = 17 ^ ResolveCorruptionSeedBucket();
                 for (int i = 0; i < text.Length; i++)
                     seed = (seed * 31) + text[i];
                 return seed;
@@ -1925,7 +1859,7 @@ namespace Hecton.Localization
         {
             unchecked
             {
-                int seed = 17 ^ Mathf.RoundToInt(Time.unscaledTime * 12f);
+                int seed = 17 ^ ResolveCorruptionSeedBucket();
                 for (int i = 0; i < text.Length; i++)
                     seed = (seed * 31) + text[i];
                 return seed;
@@ -2068,78 +2002,341 @@ namespace Hecton.Localization
 
         private static string FormatLocalized(string template, string key, params object[] args)
         {
-            if (args == null || args.Length == 0)
+            if (string.IsNullOrEmpty(template) || args == null || args.Length == 0)
                 return template;
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            try
-            {
-                return string.Format(template, args);
-            }
-            catch (FormatException)
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError(
-                    $"[Localization] Format error for key \"{key}\", template: \"{template}\", args count: {args.Length}");
-#endif
-                return template;
-            }
-#else
+            if (TryMeasureLocalizedFormat(template, args, out int formattedLength))
+                return string.Create(formattedLength, new LegacyFormatState(template, args), WriteLocalizedFormat);
+
+#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
             GlobalTelemetryBus.PublishPerformanceWarning(
                 _formatStringApiWarningHash,
                 unchecked((uint)LocHash.Compute(key)),
                 args.Length);
-            return template;
+#else
+            Debug.LogError(
+                $"[Localization] Format fallback for key \"{key}\", template: \"{template}\", args count: {args.Length}");
 #endif
+            return template;
+        }
+
+        private static bool TryMeasureLocalizedFormat(string template, object[] args, out int formattedLength)
+        {
+            formattedLength = 0;
+            for (int i = 0; i < template.Length; i++)
+            {
+                char c = template[i];
+                if (c == '{')
+                {
+                    if (i + 1 < template.Length && template[i + 1] == '{')
+                    {
+                        formattedLength++;
+                        i++;
+                        continue;
+                    }
+
+                    if (!TryParseFormatPlaceholder(
+                            template,
+                            i,
+                            out int argIndex,
+                            out int endIndex,
+                            out int formatStart,
+                            out int formatLength) ||
+                        (uint)argIndex >= (uint)args.Length ||
+                        !TryMeasureFormatArg(args[argIndex], template.AsSpan(formatStart, formatLength), out int argLength))
+                    {
+                        formattedLength = 0;
+                        return false;
+                    }
+
+                    formattedLength += argLength;
+                    i = endIndex;
+                    continue;
+                }
+
+                if (c == '}')
+                {
+                    if (i + 1 < template.Length && template[i + 1] == '}')
+                    {
+                        formattedLength++;
+                        i++;
+                        continue;
+                    }
+
+                    formattedLength = 0;
+                    return false;
+                }
+
+                formattedLength++;
+            }
+
+            return true;
+        }
+
+        private static void WriteLocalizedFormat(Span<char> destination, LegacyFormatState state)
+        {
+            int cursor = 0;
+            string template = state.Template;
+            object[] args = state.Args;
+            for (int i = 0; i < template.Length && cursor < destination.Length; i++)
+            {
+                char c = template[i];
+                if (c == '{')
+                {
+                    if (i + 1 < template.Length && template[i + 1] == '{')
+                    {
+                        destination[cursor++] = '{';
+                        i++;
+                        continue;
+                    }
+
+                    if (TryParseFormatPlaceholder(
+                            template,
+                            i,
+                            out int argIndex,
+                            out int endIndex,
+                            out int formatStart,
+                            out int formatLength) &&
+                        (uint)argIndex < (uint)args.Length &&
+                        TryWriteFormatArg(
+                            args[argIndex],
+                            template.AsSpan(formatStart, formatLength),
+                            destination.Slice(cursor),
+                            out int written))
+                    {
+                        cursor += written;
+                        i = endIndex;
+                        continue;
+                    }
+
+                    return;
+                }
+
+                if (c == '}')
+                {
+                    if (i + 1 < template.Length && template[i + 1] == '}')
+                    {
+                        destination[cursor++] = '}';
+                        i++;
+                    }
+
+                    continue;
+                }
+
+                destination[cursor++] = c;
+            }
+        }
+
+        private static bool TryParseFormatPlaceholder(
+            string template,
+            int startIndex,
+            out int argIndex,
+            out int endIndex,
+            out int formatStart,
+            out int formatLength)
+        {
+            argIndex = 0;
+            endIndex = startIndex;
+            formatStart = 0;
+            formatLength = 0;
+            int cursor = startIndex + 1;
+            if ((uint)cursor >= (uint)template.Length || !char.IsDigit(template[cursor]))
+                return false;
+
+            while ((uint)cursor < (uint)template.Length && char.IsDigit(template[cursor]))
+            {
+                argIndex = (argIndex * 10) + (template[cursor] - '0');
+                cursor++;
+            }
+
+            if ((uint)cursor < (uint)template.Length && template[cursor] == ':')
+            {
+                cursor++;
+                formatStart = cursor;
+                while ((uint)cursor < (uint)template.Length && template[cursor] != '}')
+                    cursor++;
+
+                formatLength = cursor - formatStart;
+            }
+
+            if ((uint)cursor >= (uint)template.Length || template[cursor] != '}')
+                return false;
+
+            if (formatLength == 0)
+                formatStart = cursor;
+            endIndex = cursor;
+            return true;
+        }
+
+        private static bool TryMeasureFormatArg(object arg, ReadOnlySpan<char> format, out int length)
+        {
+            length = 0;
+            if (arg == null)
+                return format.Length == 0;
+
+            switch (arg)
+            {
+                case string value:
+                    if (format.Length != 0)
+                        return false;
+                    length = value.Length;
+                    return true;
+                case char:
+                    if (format.Length != 0)
+                        return false;
+                    length = 1;
+                    return true;
+                case bool value:
+                    if (format.Length != 0)
+                        return false;
+                    length = value ? 4 : 5;
+                    return true;
+                case int value:
+                    return TryMeasureInt(value, format, out length);
+                case uint value:
+                    return TryMeasureUInt(value, format, out length);
+                case long value:
+                    return TryMeasureLong(value, format, out length);
+                case ulong value:
+                    return TryMeasureULong(value, format, out length);
+                case short value:
+                    return TryMeasureInt(value, format, out length);
+                case ushort value:
+                    return TryMeasureUInt(value, format, out length);
+                case byte value:
+                    return TryMeasureUInt(value, format, out length);
+                case sbyte value:
+                    return TryMeasureInt(value, format, out length);
+                case float value:
+                    return TryMeasureFloat(value, format, out length);
+                case double value:
+                    return TryMeasureDouble(value, format, out length);
+                case decimal value:
+                    return TryMeasureDecimal(value, format, out length);
+                default:
+                    return false;
+            }
+        }
+
+        private static bool TryWriteFormatArg(
+            object arg,
+            ReadOnlySpan<char> format,
+            Span<char> destination,
+            out int written)
+        {
+            written = 0;
+            if (arg == null)
+                return format.Length == 0;
+
+            switch (arg)
+            {
+                case string value:
+                    if (format.Length != 0)
+                        return false;
+                    if (!value.AsSpan().TryCopyTo(destination))
+                        return false;
+                    written = value.Length;
+                    return true;
+                case char value:
+                    if (format.Length != 0)
+                        return false;
+                    if (destination.Length < 1)
+                        return false;
+                    destination[0] = value;
+                    written = 1;
+                    return true;
+                case bool value:
+                    if (format.Length != 0)
+                        return false;
+                    ReadOnlySpan<char> boolText = value ? "True".AsSpan() : "False".AsSpan();
+                    if (!boolText.TryCopyTo(destination))
+                        return false;
+                    written = boolText.Length;
+                    return true;
+                case int value:
+                    return value.TryFormat(destination, out written, format);
+                case uint value:
+                    return value.TryFormat(destination, out written, format);
+                case long value:
+                    return value.TryFormat(destination, out written, format);
+                case ulong value:
+                    return value.TryFormat(destination, out written, format);
+                case short value:
+                    return value.TryFormat(destination, out written, format);
+                case ushort value:
+                    return value.TryFormat(destination, out written, format);
+                case byte value:
+                    return value.TryFormat(destination, out written, format);
+                case sbyte value:
+                    return value.TryFormat(destination, out written, format);
+                case float value:
+                    return value.TryFormat(destination, out written, format);
+                case double value:
+                    return value.TryFormat(destination, out written, format);
+                case decimal value:
+                    return value.TryFormat(destination, out written, format);
+                default:
+                    return false;
+            }
+        }
+
+        private static bool TryMeasureInt(int value, ReadOnlySpan<char> format, out int length)
+        {
+            Span<char> scratch = stackalloc char[16];
+            return value.TryFormat(scratch, out length, format);
+        }
+
+        private static bool TryMeasureUInt(uint value, ReadOnlySpan<char> format, out int length)
+        {
+            Span<char> scratch = stackalloc char[16];
+            return value.TryFormat(scratch, out length, format);
+        }
+
+        private static bool TryMeasureLong(long value, ReadOnlySpan<char> format, out int length)
+        {
+            Span<char> scratch = stackalloc char[32];
+            return value.TryFormat(scratch, out length, format);
+        }
+
+        private static bool TryMeasureULong(ulong value, ReadOnlySpan<char> format, out int length)
+        {
+            Span<char> scratch = stackalloc char[32];
+            return value.TryFormat(scratch, out length, format);
+        }
+
+        private static bool TryMeasureFloat(float value, ReadOnlySpan<char> format, out int length)
+        {
+            Span<char> scratch = stackalloc char[32];
+            return value.TryFormat(scratch, out length, format);
+        }
+
+        private static bool TryMeasureDouble(double value, ReadOnlySpan<char> format, out int length)
+        {
+            Span<char> scratch = stackalloc char[32];
+            return value.TryFormat(scratch, out length, format);
+        }
+
+        private static bool TryMeasureDecimal(decimal value, ReadOnlySpan<char> format, out int length)
+        {
+            Span<char> scratch = stackalloc char[64];
+            return value.TryFormat(scratch, out length, format);
+        }
+
+        private readonly struct LegacyFormatState
+        {
+            public LegacyFormatState(string template, object[] args)
+            {
+                Template = template;
+                Args = args;
+            }
+
+            public readonly string Template;
+            public readonly object[] Args;
         }
 
         private void LoadBuiltInTables()
         {
-            if (!_tables.ContainsKey(GameLanguage.English))
-            {
-                _tables[GameLanguage.English] = new Dictionary<string, string>(160)
-                {
-                    { LocalizationKeys.MENU_NEW_GAME, "New Game" },
-                    { LocalizationKeys.MENU_LOAD_GAME, "Load Game" },
-                    { LocalizationKeys.MENU_SETTINGS, "Settings" },
-                    { LocalizationKeys.MENU_QUIT, "Quit" },
-                    { LocalizationKeys.MODAL_CONFIRM, "Confirm" },
-                    { LocalizationKeys.MODAL_CANCEL, "Cancel" },
-                    { LocalizationKeys.MODAL_NEW_GAME_TITLE, "New Game" },
-                    { LocalizationKeys.MODAL_NEW_GAME_MESSAGE, "Start a new game?" },
-                    { LocalizationKeys.MODAL_LOAD_TITLE, "Load Game" },
-                    { LocalizationKeys.MODAL_LOAD_MESSAGE, "Load save \"{0}\"?" },
-                    { LocalizationKeys.MODAL_QUIT_TITLE, "Quit" },
-                    { LocalizationKeys.MODAL_QUIT_MESSAGE, "Quit the game?" },
-                    { LocalizationKeys.SLOT_PREFIX, "SLOT" },
-                    { LocalizationKeys.SLOT_NO_DATA, "NO DATA" },
-                    { LocalizationKeys.SLOT_PLAYTIME, "Playtime" },
-                    { LocalizationKeys.LOADING_PERCENT, "{0}%" },
-                };
-            }
-
-                        if (!_tables.ContainsKey(GameLanguage.Russian))
-            {
-                _tables[GameLanguage.Russian] = new Dictionary<string, string>(160)
-                {
-                    { LocalizationKeys.MENU_NEW_GAME, "Novaya igra" },
-                    { LocalizationKeys.MENU_LOAD_GAME, "Zagruzit" },
-                    { LocalizationKeys.MENU_SETTINGS, "Nastroyki" },
-                    { LocalizationKeys.MENU_QUIT, "Vyhod" },
-                    { LocalizationKeys.MODAL_CONFIRM, "Podtverdit" },
-                    { LocalizationKeys.MODAL_CANCEL, "Otmena" },
-                    { LocalizationKeys.MODAL_NEW_GAME_TITLE, "Novaya igra" },
-                    { LocalizationKeys.MODAL_NEW_GAME_MESSAGE, "Nachat novuyu igru?" },
-                    { LocalizationKeys.MODAL_LOAD_TITLE, "Zagruzka" },
-                    { LocalizationKeys.MODAL_LOAD_MESSAGE, "Zagruzit sohranenie \"{0}\"?" },
-                    { LocalizationKeys.MODAL_QUIT_TITLE, "Vyhod" },
-                    { LocalizationKeys.MODAL_QUIT_MESSAGE, "Vyyti iz igry?" },
-                    { LocalizationKeys.SLOT_PREFIX, "SLOT" },
-                    { LocalizationKeys.SLOT_NO_DATA, "NET DANNYH" },
-                    { LocalizationKeys.SLOT_PLAYTIME, "Vremya igry" },
-                    { LocalizationKeys.LOADING_PERCENT, "{0}%" },
-                };
-            }
+            // Built-in compatibility strings are resolved by switch dispatch in TryGetFromTable.
         }
 
         private void RestoreSavedLanguage()
@@ -2151,78 +2348,73 @@ namespace Hecton.Localization
                 if (Enum.IsDefined(typeof(GameLanguage), saved))
                 {
                     _savedLanguage = (GameLanguage)saved;
-                    CurrentLanguage = _savedLanguage;
+                    _currentLanguage = _savedLanguage;
                     return;
                 }
 
                 _savedLanguage = defaultLanguage;
-                CurrentLanguage = _savedLanguage;
+                _currentLanguage = _savedLanguage;
                 return;
             }
 
             _savedLanguage = defaultLanguage;
-            CurrentLanguage = _savedLanguage;
+            _currentLanguage = _savedLanguage;
         }
 
-#if UNITY_EDITOR
-        private void SyncLanguageFilesFromDefaultFolder()
+        private static bool TryGetFromTable(GameLanguage language, string key, out string value)
         {
-            Array languages = Enum.GetValues(typeof(GameLanguage));
-            int languageCount = languages.Length;
-            TextAsset[] discovered = new TextAsset[languageCount];
-            int discoveredCount = 0;
-
-            for (int i = 0; i < languageCount; i++)
-            {
-                GameLanguage language = (GameLanguage)languages.GetValue(i);
-                string path = DefaultLanguageTableFolder + "/" + language + ".json";
-                TextAsset asset = AssetDatabase.LoadAssetAtPath<TextAsset>(path);
-                if (asset == null)
-                    continue;
-
-                discovered[discoveredCount++] = asset;
-            }
-
-            if (HasSameLanguageFiles(languageFiles, discovered, discoveredCount))
-                return;
-
-            TextAsset[] trimmed = new TextAsset[discoveredCount];
-            for (int i = 0; i < discoveredCount; i++)
-                trimmed[i] = discovered[i];
-
-            languageFiles = trimmed;
-            EditorUtility.SetDirty(this);
-        }
-
-        private static bool HasSameLanguageFiles(TextAsset[] existing, TextAsset[] candidate, int candidateCount)
-        {
-            if (existing == null)
-                return candidateCount == 0;
-
-            if (existing.Length != candidateCount)
-                return false;
-
-            for (int i = 0; i < candidateCount; i++)
-            {
-                if (existing[i] != candidate[i])
-                    return false;
-            }
-
-            return true;
-        }
-#endif
-
-        private bool TryGetFromTable(GameLanguage language, string key, out string value)
-        {
-            if (_tables.TryGetValue(language, out Dictionary<string, string> table) &&
-                table != null &&
-                table.TryGetValue(key, out value))
-            {
+            if (language == GameLanguage.Russian && TryGetBuiltInRussian(key, out value))
                 return true;
-            }
 
-            value = string.Empty;
-            return false;
+            return TryGetBuiltInEnglish(key, out value);
+        }
+
+        private static bool TryGetBuiltInEnglish(string key, out string value)
+        {
+            switch (key)
+            {
+                case LocalizationKeys.MENU_NEW_GAME: value = "New Game"; return true;
+                case LocalizationKeys.MENU_LOAD_GAME: value = "Load Game"; return true;
+                case LocalizationKeys.MENU_SETTINGS: value = "Settings"; return true;
+                case LocalizationKeys.MENU_QUIT: value = "Quit"; return true;
+                case LocalizationKeys.MODAL_CONFIRM: value = "Confirm"; return true;
+                case LocalizationKeys.MODAL_CANCEL: value = "Cancel"; return true;
+                case LocalizationKeys.MODAL_NEW_GAME_TITLE: value = "New Game"; return true;
+                case LocalizationKeys.MODAL_NEW_GAME_MESSAGE: value = "Start a new game?"; return true;
+                case LocalizationKeys.MODAL_LOAD_TITLE: value = "Load Game"; return true;
+                case LocalizationKeys.MODAL_LOAD_MESSAGE: value = "Load save \"{0}\"?"; return true;
+                case LocalizationKeys.MODAL_QUIT_TITLE: value = "Quit"; return true;
+                case LocalizationKeys.MODAL_QUIT_MESSAGE: value = "Quit the game?"; return true;
+                case LocalizationKeys.SLOT_PREFIX: value = "SLOT"; return true;
+                case LocalizationKeys.SLOT_NO_DATA: value = "NO DATA"; return true;
+                case LocalizationKeys.SLOT_PLAYTIME: value = "Playtime"; return true;
+                case LocalizationKeys.LOADING_PERCENT: value = "{0}%"; return true;
+                default: value = string.Empty; return false;
+            }
+        }
+
+        private static bool TryGetBuiltInRussian(string key, out string value)
+        {
+            switch (key)
+            {
+                case LocalizationKeys.MENU_NEW_GAME: value = "Novaya igra"; return true;
+                case LocalizationKeys.MENU_LOAD_GAME: value = "Zagruzit"; return true;
+                case LocalizationKeys.MENU_SETTINGS: value = "Nastroyki"; return true;
+                case LocalizationKeys.MENU_QUIT: value = "Vyhod"; return true;
+                case LocalizationKeys.MODAL_CONFIRM: value = "Podtverdit"; return true;
+                case LocalizationKeys.MODAL_CANCEL: value = "Otmena"; return true;
+                case LocalizationKeys.MODAL_NEW_GAME_TITLE: value = "Novaya igra"; return true;
+                case LocalizationKeys.MODAL_NEW_GAME_MESSAGE: value = "Nachat novuyu igru?"; return true;
+                case LocalizationKeys.MODAL_LOAD_TITLE: value = "Zagruzka"; return true;
+                case LocalizationKeys.MODAL_LOAD_MESSAGE: value = "Zagruzit sohranenie \"{0}\"?"; return true;
+                case LocalizationKeys.MODAL_QUIT_TITLE: value = "Vyhod"; return true;
+                case LocalizationKeys.MODAL_QUIT_MESSAGE: value = "Vyyti iz igry?"; return true;
+                case LocalizationKeys.SLOT_PREFIX: value = "SLOT"; return true;
+                case LocalizationKeys.SLOT_NO_DATA: value = "NET DANNYH"; return true;
+                case LocalizationKeys.SLOT_PLAYTIME: value = "Vremya igry"; return true;
+                case LocalizationKeys.LOADING_PERCENT: value = "{0}%"; return true;
+                default: value = string.Empty; return false;
+            }
         }
 
         private void PublishVisualLanguageState()
@@ -2235,7 +2427,7 @@ namespace Hecton.Localization
 
         private void RefreshRuntimeRegistry()
         {
-            LocRegistry.Reload(_tables, CurrentLanguage);
+            LocRegistry.ReloadBinaryOrMock(CurrentLanguage);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             ResetBabelOverrideCsvMonitor();
 #endif

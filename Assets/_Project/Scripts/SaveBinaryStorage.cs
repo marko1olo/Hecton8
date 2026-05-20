@@ -1216,24 +1216,24 @@ namespace Hecton8.SaveSystem
 
         internal static int LastReadErrorCode => Volatile.Read(ref s_lastReadErrorCode);
 
-        [StructLayout(LayoutKind.Sequential, Size = TokenizedPayloadHeaderSize)]
+        [StructLayout(LayoutKind.Explicit, Size = TokenizedPayloadHeaderSize)]
         private struct TokenizedPayloadHeader
         {
-            public uint ExpandedPayloadLength;
-            public ushort TokenCount;
-            public ushort Reserved;
+            [FieldOffset(0)] public uint ExpandedPayloadLength;
+            [FieldOffset(4)] public ushort TokenCount;
+            [FieldOffset(6)] public ushort Reserved;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 32)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct IndexedSectorGroup
         {
-            public long SectorHash;
-            public int DirectorySlot;
-            public int StartIndex;
-            public int Count;
-            public int WriteCount;
-            public int Reserved0;
-            public int Reserved1;
+            [FieldOffset(0)] public long SectorHash;
+            [FieldOffset(8)] public int DirectorySlot;
+            [FieldOffset(12)] public int StartIndex;
+            [FieldOffset(16)] public int Count;
+            [FieldOffset(20)] public int WriteCount;
+            [FieldOffset(24)] public int Reserved0;
+            [FieldOffset(28)] public int Reserved1;
         }
 
         private struct IndexedSectorGroupBuffer : IDisposable
@@ -1392,24 +1392,24 @@ namespace Hecton8.SaveSystem
             public EntityDataRecord Record;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 16)]
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
         internal struct SectorCompactEntityStateRecord16
         {
-            public uint PackedSectorPosition;
-            public uint InstanceUid;
-            public ushort Quantity;
-            public ushort PackedAux;
-            public uint PackedState;
+            [FieldOffset(0)] public uint PackedSectorPosition;
+            [FieldOffset(4)] public uint InstanceUid;
+            [FieldOffset(8)] public ushort Quantity;
+            [FieldOffset(10)] public ushort PackedAux;
+            [FieldOffset(12)] public uint PackedState;
         }
 
         [BinaryBlittableSafe]
-        [StructLayout(LayoutKind.Sequential, Size = 8)]
+        [StructLayout(LayoutKind.Explicit, Size = 8)]
         internal struct QuantizedAupLocalOffsetShort3
         {
-            public short XMillimeters;
-            public short YMillimeters;
-            public short ZMillimeters;
-            public ushort Reserved0;
+            [FieldOffset(0)] public short XMillimeters;
+            [FieldOffset(2)] public short YMillimeters;
+            [FieldOffset(4)] public short ZMillimeters;
+            [FieldOffset(6)] public ushort Reserved0;
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -1721,35 +1721,35 @@ namespace Hecton8.SaveSystem
             return packedTime * SectorCompactTimeQuantumSeconds;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = IndexedSectorDirectoryHeaderSize)]
+        [StructLayout(LayoutKind.Explicit, Size = IndexedSectorDirectoryHeaderSize)]
         private struct IndexedSectorDirectoryHeader
         {
-            public uint SectorCount;
-            public int ChunkSizeMeters;
-            public int MetadataCompressedSize;
-            public int MetadataDecompressedSize;
+            [FieldOffset(0)] public uint SectorCount;
+            [FieldOffset(4)] public int ChunkSizeMeters;
+            [FieldOffset(8)] public int MetadataCompressedSize;
+            [FieldOffset(12)] public int MetadataDecompressedSize;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = IndexedSectorBlockHeaderSize)]
+        [StructLayout(LayoutKind.Explicit, Size = IndexedSectorBlockHeaderSize)]
         private struct IndexedSectorBlockHeader
         {
-            public uint Flags;
-            public uint Reserved;
+            [FieldOffset(0)] public uint Flags;
+            [FieldOffset(4)] public uint Reserved;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = ProtectedCompressedBlockHeaderBytes)]
+        [StructLayout(LayoutKind.Explicit, Size = ProtectedCompressedBlockHeaderBytes)]
         private struct ProtectedCompressedBlockHeader
         {
-            public int CompressedLength;
-            public int RawLength;
-            public uint RawChecksumLow32;
-            public uint Magic;
-            public ulong Reserved0;
-            public ulong Reserved1;
-            public ulong Reserved2;
-            public ulong Reserved3;
-            public ulong Reserved4;
-            public ulong Reserved5;
+            [FieldOffset(0)] public int CompressedLength;
+            [FieldOffset(4)] public int RawLength;
+            [FieldOffset(8)] public uint RawChecksumLow32;
+            [FieldOffset(12)] public uint Magic;
+            [FieldOffset(16)] public ulong Reserved0;
+            [FieldOffset(24)] public ulong Reserved1;
+            [FieldOffset(32)] public ulong Reserved2;
+            [FieldOffset(40)] public ulong Reserved3;
+            [FieldOffset(48)] public ulong Reserved4;
+            [FieldOffset(56)] public ulong Reserved5;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = LegacySectorEntryBytes)]
@@ -1832,24 +1832,24 @@ namespace Hecton8.SaveSystem
             UnsafeUtility.CopyStructureToPtr(ref aligned, entryPtr);
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 24)]
+        [StructLayout(LayoutKind.Explicit, Size = 24)]
         private struct SectorOverrideFileHeader
         {
-            public long SectorHash;
-            public int CompressedSize;
-            public int DecompressedSize;
-            public uint Checksum;
-            public uint Flags;
+            [FieldOffset(0)] public long SectorHash;
+            [FieldOffset(8)] public int CompressedSize;
+            [FieldOffset(12)] public int DecompressedSize;
+            [FieldOffset(16)] public uint Checksum;
+            [FieldOffset(20)] public uint Flags;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 24)]
+        [StructLayout(LayoutKind.Explicit, Size = 24)]
         private struct SectorEntityStateFileHeader
         {
-            public long SectorHash;
-            public int CompressedSize;
-            public int DecompressedSize;
-            public uint RecordCount;
-            public uint Checksum;
+            [FieldOffset(0)] public long SectorHash;
+            [FieldOffset(8)] public int CompressedSize;
+            [FieldOffset(12)] public int DecompressedSize;
+            [FieldOffset(16)] public uint RecordCount;
+            [FieldOffset(20)] public uint Checksum;
         }
 
         internal readonly struct IndexedSectorEntryInfo
@@ -1870,18 +1870,18 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = ModPayloadHeaderSizeBytes)]
+        [StructLayout(LayoutKind.Explicit, Size = ModPayloadHeaderSizeBytes)]
         private struct ModPayloadSubSectorHeader
         {
-            public uint Magic;
-            public ushort Version;
-            public ushort HeaderSize;
-            public uint ModHash;
-            public ushort PayloadLength;
-            public ushort Flags;
-            public long PagedSectorHash;
-            public uint PayloadChecksum;
-            public uint Reserved;
+            [FieldOffset(0)] public uint Magic;
+            [FieldOffset(4)] public ushort Version;
+            [FieldOffset(6)] public ushort HeaderSize;
+            [FieldOffset(8)] public uint ModHash;
+            [FieldOffset(12)] public ushort PayloadLength;
+            [FieldOffset(14)] public ushort Flags;
+            [FieldOffset(16)] public long PagedSectorHash;
+            [FieldOffset(24)] public uint PayloadChecksum;
+            [FieldOffset(28)] public uint Reserved;
         }
 
         internal readonly struct ModPayloadSectorInfo
@@ -1908,31 +1908,31 @@ namespace Hecton8.SaveSystem
             int payloadLength,
             out string error);
 
-        [StructLayout(LayoutKind.Sequential, Size = SaveFileHeaderPrefixSize)]
+        [StructLayout(LayoutKind.Explicit, Size = SaveFileHeaderPrefixSize)]
         private struct SaveFileHeaderPrefix
         {
-            public uint MagicValue;
-            public ushort Version;
-            public byte CompatMask;
-            public byte Flags;
+            [FieldOffset(0)] public uint MagicValue;
+            [FieldOffset(4)] public ushort Version;
+            [FieldOffset(6)] public byte CompatMask;
+            [FieldOffset(7)] public byte Flags;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = CurrentHeaderSize)]
+        [StructLayout(LayoutKind.Explicit, Size = CurrentHeaderSize)]
         internal struct SaveFileHeader
         {
-            public uint MagicValue;
-            public ushort Version;
-            public byte CompatMask;
-            public byte Flags;
-            public ulong TimestampUnixMs;
-            public uint Checksum;
-            public uint DeltaCount;
-            public uint EntityCount;
-            public uint PlayerOffset;
-            public uint DeltaOffset;
-            public uint EntityOffset;
-            public ulong HashPayload64;
-            public ulong HashHeader64;
+            [FieldOffset(0)] public uint MagicValue;
+            [FieldOffset(4)] public ushort Version;
+            [FieldOffset(6)] public byte CompatMask;
+            [FieldOffset(7)] public byte Flags;
+            [FieldOffset(8)] public ulong TimestampUnixMs;
+            [FieldOffset(16)] public uint Checksum;
+            [FieldOffset(20)] public uint DeltaCount;
+            [FieldOffset(24)] public uint EntityCount;
+            [FieldOffset(28)] public uint PlayerOffset;
+            [FieldOffset(32)] public uint DeltaOffset;
+            [FieldOffset(36)] public uint EntityOffset;
+            [FieldOffset(40)] public ulong HashPayload64;
+            [FieldOffset(48)] public ulong HashHeader64;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = IndexedHeaderV8Size)]
@@ -1959,45 +1959,50 @@ namespace Hecton8.SaveSystem
             [FieldOffset(32)]
             public uint EntityOffset;
             [FieldOffset(36)]
-            public ulong HashPayload64;
+            public uint HashPayload64Lo;
+            [FieldOffset(40)]
+            public uint HashPayload64Hi;
             [FieldOffset(44)]
-            public ulong HashHeader64;
+            public uint HashHeader64Lo;
+            [FieldOffset(48)]
+            public uint HashHeader64Hi;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 24)]
+        [StructLayout(LayoutKind.Explicit, Size = 24)]
         private struct LegacyIndexedChecksumLeaf
         {
-            public long SectorHash;
-            public uint Checksum;
-            public int CompressedSize;
-            public int DecompressedSize;
-            public uint Reserved;
+            [FieldOffset(0)] public long SectorHash;
+            [FieldOffset(8)] public uint Checksum;
+            [FieldOffset(12)] public int CompressedSize;
+            [FieldOffset(16)] public int DecompressedSize;
+            [FieldOffset(20)] public uint Reserved;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 128)]
+        [StructLayout(LayoutKind.Explicit, Size = 128)]
         internal struct SaveCloudMetadataHeader
         {
-            public ulong TimestampUnixMs;
-            public ulong HashPayload64;
-            public ulong HashHeader64;
-            public uint MagicValue;
-            public uint Checksum;
-            public uint PlayerOffset;
-            public uint DeltaOffset;
-            public uint EntityOffset;
-            public ushort Version;
-            public byte CompatMask;
-            public byte Flags;
-            public uint Reserved0;
-            public ulong Reserved1;
-            public ulong Reserved2;
-            public ulong Reserved3;
-            public ulong Reserved4;
-            public ulong Reserved5;
-            public ulong Reserved6;
-            public ulong Reserved7;
-            public ulong Reserved8;
-            public ulong Reserved9;
+            [FieldOffset(0)] public ulong TimestampUnixMs;
+            [FieldOffset(8)] public ulong HashPayload64;
+            [FieldOffset(16)] public ulong HashHeader64;
+            [FieldOffset(24)] public uint MagicValue;
+            [FieldOffset(28)] public uint Checksum;
+            [FieldOffset(32)] public uint PlayerOffset;
+            [FieldOffset(36)] public uint DeltaOffset;
+            [FieldOffset(40)] public uint EntityOffset;
+            [FieldOffset(44)] public ushort Version;
+            [FieldOffset(46)] public byte CompatMask;
+            [FieldOffset(47)] public byte Flags;
+            [FieldOffset(48)] public uint Reserved0;
+            [FieldOffset(52)] private uint _pad0;
+            [FieldOffset(56)] public ulong Reserved1;
+            [FieldOffset(64)] public ulong Reserved2;
+            [FieldOffset(72)] public ulong Reserved3;
+            [FieldOffset(80)] public ulong Reserved4;
+            [FieldOffset(88)] public ulong Reserved5;
+            [FieldOffset(96)] public ulong Reserved6;
+            [FieldOffset(104)] public ulong Reserved7;
+            [FieldOffset(112)] public ulong Reserved8;
+            [FieldOffset(120)] public ulong Reserved9;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = LegacyHeaderSize)]
@@ -2031,48 +2036,48 @@ namespace Hecton8.SaveSystem
 
         [BinaryBlittableSafe]
         [Serializable]
-        [StructLayout(LayoutKind.Sequential, Size = 24)]
+        [StructLayout(LayoutKind.Explicit, Size = 24)]
         public struct DeltaCell
         {
             /// <summary>
             /// Packed universe-space cell key.
             /// </summary>
-            public ulong UniverseKey;
+            [FieldOffset(0)] public ulong UniverseKey;
 
             /// <summary>
             /// Signed-distance delta in meters.
             /// </summary>
-            public float SdfValue;
+            [FieldOffset(8)] public float SdfValue;
 
             /// <summary>
             /// Material palette index.
             /// </summary>
-            public byte MaterialId;
+            [FieldOffset(12)] public byte MaterialId;
 
             /// <summary>
             /// Packed per-cell state flags.
             /// </summary>
-            public byte Flags;
+            [FieldOffset(13)] public byte Flags;
 
             /// <summary>
             /// Material-specific metadata payload.
             /// </summary>
-            public ushort Metadata;
+            [FieldOffset(14)] public ushort Metadata;
 
             /// <summary>
             /// Reserved expansion bytes required by the 24-byte aligned runtime layout.
             /// </summary>
-            public uint Reserved;
-            public uint Reserved1;
+            [FieldOffset(16)] public uint Reserved;
+            [FieldOffset(20)] public uint Reserved1;
         }
 
         [BinaryBlittableSafe]
-        [StructLayout(LayoutKind.Sequential, Size = 8)]
+        [StructLayout(LayoutKind.Explicit, Size = 8)]
         internal struct ThermalGridRleRun
         {
-            public ushort StartIndex;
-            public ushort Count;
-            public float TemperatureCelsius;
+            [FieldOffset(0)] public ushort StartIndex;
+            [FieldOffset(2)] public ushort Count;
+            [FieldOffset(4)] public float TemperatureCelsius;
         }
 
         internal static bool TryStageThermalGridRleDelta(
@@ -2279,16 +2284,16 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 16)]
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
         private struct PersistentWorldSaveRecord16
         {
-            public uint PackedLocalPosition;
-            public uint InstanceUid;
-            public ushort Quantity;
-            public byte ItemFlags;
-            public byte Reserved;
-            public ushort ChunkIndex;
-            public ushort ItemHashIndex;
+            [FieldOffset(0)] public uint PackedLocalPosition;
+            [FieldOffset(4)] public uint InstanceUid;
+            [FieldOffset(8)] public ushort Quantity;
+            [FieldOffset(10)] public byte ItemFlags;
+            [FieldOffset(11)] public byte Reserved;
+            [FieldOffset(12)] public ushort ChunkIndex;
+            [FieldOffset(14)] public ushort ItemHashIndex;
         }
 
         internal static void WarmRuntime()
@@ -7145,7 +7150,8 @@ namespace Hecton8.SaveSystem
             if (header.Version >= First64BitHashVersion && header.Version < HeaderChecksumVersion)
             {
                 IndexedSaveFileHeaderV8 legacyHeader = ConvertToIndexedHeaderV8(in header);
-                legacyHeader.HashHeader64 = 0UL;
+                legacyHeader.HashHeader64Lo = 0u;
+                legacyHeader.HashHeader64Hi = 0u;
                 return Hash64(UnsafeUtility.AddressOf(ref legacyHeader), IndexedHeaderV8HashSizeBytes);
             }
 
@@ -8117,6 +8123,8 @@ namespace Hecton8.SaveSystem
 
         private static SaveFileHeader ConvertIndexedHeaderV8(in IndexedSaveFileHeaderV8 legacyHeader)
         {
+            ulong hashPayload64 = ComposeUInt64(legacyHeader.HashPayload64Lo, legacyHeader.HashPayload64Hi);
+            ulong hashHeader64 = ComposeUInt64(legacyHeader.HashHeader64Lo, legacyHeader.HashHeader64Hi);
             return new SaveFileHeader
             {
                 MagicValue = legacyHeader.MagicValue,
@@ -8124,19 +8132,21 @@ namespace Hecton8.SaveSystem
                 CompatMask = legacyHeader.CompatMask,
                 Flags = legacyHeader.Flags,
                 TimestampUnixMs = legacyHeader.TimestampUnixMs,
-                Checksum = unchecked((uint)legacyHeader.HashPayload64),
+                Checksum = unchecked((uint)hashPayload64),
                 DeltaCount = legacyHeader.DeltaCount,
                 EntityCount = legacyHeader.EntityCount,
                 PlayerOffset = legacyHeader.PlayerOffset,
                 DeltaOffset = legacyHeader.DeltaOffset,
                 EntityOffset = legacyHeader.EntityOffset,
-                HashPayload64 = legacyHeader.HashPayload64,
-                HashHeader64 = legacyHeader.HashHeader64
+                HashPayload64 = hashPayload64,
+                HashHeader64 = hashHeader64
             };
         }
 
         private static IndexedSaveFileHeaderV8 ConvertToIndexedHeaderV8(in SaveFileHeader header)
         {
+            SplitUInt64(header.HashPayload64, out uint hashPayloadLo, out uint hashPayloadHi);
+            SplitUInt64(header.HashHeader64, out uint hashHeaderLo, out uint hashHeaderHi);
             return new IndexedSaveFileHeaderV8
             {
                 MagicValue = header.MagicValue,
@@ -8149,9 +8159,24 @@ namespace Hecton8.SaveSystem
                 PlayerOffset = header.PlayerOffset,
                 DeltaOffset = header.DeltaOffset,
                 EntityOffset = header.EntityOffset,
-                HashPayload64 = header.HashPayload64,
-                HashHeader64 = header.HashHeader64
+                HashPayload64Lo = hashPayloadLo,
+                HashPayload64Hi = hashPayloadHi,
+                HashHeader64Lo = hashHeaderLo,
+                HashHeader64Hi = hashHeaderHi
             };
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static ulong ComposeUInt64(uint low, uint high)
+        {
+            return ((ulong)high << 32) | low;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void SplitUInt64(ulong value, out uint low, out uint high)
+        {
+            low = (uint)value;
+            high = (uint)(value >> 32);
         }
 
         private static SaveFileHeader ReadVersionedSaveFileHeader(byte* filePtr, ushort version)

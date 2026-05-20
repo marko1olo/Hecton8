@@ -1,4 +1,4 @@
-# SHINOBU_02 Rationale
+﻿# SHINOBU_02 Rationale
 
 Date: 2026-05-19
 Status: PENDING VERIFICATION - CURRENT25 STATIC DOC/TOOL ACTUALITY PATCHED; CURRENT22 BUILD/AUDIT/H-PHI STILL PENDING
@@ -662,3 +662,148 @@ Evidence:
 - Active R32 stale-absence scan returned `R32_STALE_SCAN_OK=1`.
 - Touched save-doc scan found no `preimageEnd=80`, `activeWriterSentinels=2`, `current save truth is v9/v10`, or active-v9 residue.
 - Scoped `git diff --check` on touched docs/tools returned exit 0 with CRLF warnings only.
+
+## 2026-05-20 - Current40 Boundary Rationale
+
+Problem: Current Core build had SHINOBU-owned compile defects plus stale docs and generated-project dependency bleed. Active SHINOBU_02 state files were also missing from the live tree.
+
+Solution: Patched documentation truth boundary, corrected Directory.Build.targets overlay instead of generated csproj, added IKineticCharacterPresentationSink contract, qualified ToolDepletedSignal collision, fixed GlobalSignals value-copy and weather quality byte helper, and added a stale-contract byte bridge that normalizes back to continuous 0..1 inside bucketing.
+
+Rejected Alternatives: Directly editing generated Hecton8.Core.csproj; pulling sibling runtime domains into Core; claiming Unity/runtime proof; claiming profiler microseconds without profiler data.
+
+Scalability potential: Low/Middle/High/Ultra quality still routes through normalized quality inside runtime policy. Kinetic presentation is scalar intent so low devices stay cheap and high devices can layer presentation overkill without gameplay coupling.
+
+Hardware Impact: Measured microseconds saved: 0. Build remains red, profiler unavailable. Expected impact is compile-wall reduction and removal of hot concrete presentation dependency, not runtime-proven speed.
+
+Evidence: Guarded post-patch Core build ran with PRE_BUILD_GUARD_CURRENT40_FINAL CPU=45 PROCS=0 and failed with 311 errors / 19 warnings. Previous SystemDispatcher float-to-byte error did not appear in post-patch stdout. Remaining failures are external generated-project/domain-owner walls: Fauna math.reversebytes, DispatcherJobFence consumers, Fabrication/Babel/Tether missing symbols, PDA IDataVault binary/source identity mismatch, BinaryLayoutManifest save DTO gaps, Visor unsafe/buffer errors, and related non-SHINOBU owners. Raw Tee file was not retained in active Docs/AgentLogs after build, so this rationale records the stdout evidence boundary.
+
+## 2026-05-20 - Current41 Dispatcher Fence And Generated Overlay Triage
+
+Problem: Core-generated build evidence still showed `DispatcherJobFence` consumers and direct Core calls into `Hecton8.World.DispatcherJobSwap`, plus `Directory.Build.targets` re-included files it had already removed. The same overlay compiled Core Memory source next to `Hecton8.Core.Memory.dll`, which can create `IDataVault` source/binary identity splits for UI/PDA consumers.
+
+Solution: Added source-backed Core `DispatcherJobFence` to the Core overlay, rewired `SystemDispatcher`, `FoveatedSimulationManager`, and `UIStateStore` to use it, and pruned the overlay so it no longer source-includes `Core/BinaryLayoutManifest.cs`, Core Memory source files, Fauna source echoes, or removed non-Core runtime files. Generated `.csproj` files were not edited.
+
+Rejected Alternatives: Blindly editing Fauna/Save/UI/Visor owner files was rejected. Removing `World/DispatcherJobSwap.cs` from the generated Core build was deferred because the generated project still drags many non-Core files that call the World helper; deleting it now would likely convert one Core-owned issue into broad cross-domain fallout. Removing all Core contract source echoes was rejected because several contract binaries are stale and the current overlay still needs explicit source-backed contract types.
+
+Scalability potential: Low devices get fewer generated-project compile-wall false dependencies and no extra runtime allocations. Middle/high/ultra behavior is unchanged; this is dependency routing, not visual or simulation math.
+
+Hardware Impact: 0 measured us. No profiler proof. Expected impact is iteration safety and type-identity cleanup only.
+
+Evidence: Core `rg` for `DispatcherJobSwap` returned no hits after the patch. `git diff --check` passed for touched files with line-ending warnings only. Guarded build was skipped by hardware rule: `PRE_BUILD_GUARD_CURRENT41 CPU=100 PROCS=0`. Last actual Core build evidence remains Current40, `311 errors / 19 warnings`, until CPU permits a new build.
+
+## 2026-05-20 - Current41 Documentation Boundary Reconciliation
+
+Problem: Peirce initially found active docs citing an absent R41 report. During this pass the R41 report appeared on disk as an untracked but substantive static report.
+
+Solution: Updated active root/architecture/Archivarius boundary docs to treat `Docs/Reports/2026-05-20_DOCUMENTATION_R41_ROOT_ARCHITECTURE_GLOBAL_AUTHORITY_INTERNAL_RESIDUE_LOCAL.md` as the current static DOC_GLOBAL boundary and kept runtime proof explicitly absent.
+
+Rejected Alternatives: Keeping the R41-absent demotion after the file appeared was rejected because current filesystem truth changed. Treating R41 as Unity/runtime proof was rejected; the report itself is static-only.
+
+Scalability potential: Process-only. Current docs now stop sending agents toward stale R40/R35 boundaries while preserving no-runtime-proof caveats.
+
+Hardware Impact: 0 us runtime.
+
+Evidence: `Test-Path` for the R41 report returned true; the file is untracked and substantive. Targeted stale scans no longer find R41-absent/current-R40 lines in the patched active docs, only R41-current static boundary lines.
+
+## 2026-05-20 - Current42 Core Overlay Correction
+
+Problem: Current41 status claimed Core Memory source echo was removed from the generated Core overlay, but read-only subagent Hume found generated `Hecton8.Core.csproj` still source-includes `Assets\_Project\Scripts\Core\Memory\MemorySentinelContracts.cs` while also referencing `Hecton8.Core.Memory.dll`. This can preserve the same source/binary identity split Current41 tried to reduce.
+
+Solution: Added a `Directory.Build.targets` `Compile Remove` for `Assets\_Project\Scripts\Core\Memory\MemorySentinelContracts.cs`. Generated `.csproj` files remain untouched. Also removed an unused `using Hecton8.World;` from Core-owned `SystemDispatcher.cs`; that file has no remaining World/AUP symbol reference after the edit.
+
+Rejected Alternatives: Editing generated `Hecton8.Core.csproj` was rejected because Unity regenerates it. Removing all Core.Contracts source-backed overlays was rejected because active rationale says those overlays compensate stale contract binaries. Removing cross-domain Lighting/UI/AI/Audio source includes from the generated overlay was rejected because Hume classified them as unsafe for SHINOBU_02 without owner/integrator coordination. Splitting `DispatcherTimingDTO` semantic overlays was deferred because it changes API semantics and needs compile proof after the current overlay fix.
+
+Scalability potential: Low/Middle/High/Ultra runtime behavior is unchanged. This pass narrows compile-wall/type-identity debt so low-end iteration and future DataVault consumers do not inherit duplicate Core Memory types from source and binary at once.
+
+Hardware Impact: 0 measured us. No profiler or compile timing proof. Expected impact is build graph hygiene only.
+
+Evidence:
+- Hume static finding: `Hecton8.Core.csproj` includes `Core\Memory\MemorySentinelContracts.cs` and references `Library\ScriptAssemblies\Hecton8.Core.Memory.dll`.
+- `Directory.Build.targets` now contains `Compile Remove="Assets\_Project\Scripts\Core\Memory\MemorySentinelContracts.cs"`.
+- `rg -n "DispatcherJobSwap" Assets/_Project/Scripts/Core -g '*.cs'` returned no hits.
+- `rg -n "Hecton8\.World|AbsoluteUniversePosition|World\." Assets/_Project/Scripts/Core/SystemDispatcher.cs` returned no hits after removing the unused using.
+- `git diff --check -- Directory.Build.targets Assets/_Project/Scripts/Core/SystemDispatcher.cs Assets/_Project/Scripts/Core/DispatcherJobFence.cs` returned exit 0 with CRLF warnings only.
+- Build skipped by hardware guard: `PRE_BUILD_GUARD_CURRENT42 CPU=92 PROCS=0`; final retry `PRE_BUILD_GUARD_CURRENT42_FINAL CPU=89 PROCS=0`.
+
+## 2026-05-20 - Current43 Dispatcher Dependency Rebind And Bounded Retry
+
+Problem: `SystemDispatcher.RunDispatcherUpdate()` cached InputDeterminism, JobAdmission, and SimulationBucketer fields, but still re-read `GlobalRegistry` every pre-simulation frame when those services were null or not initialized. That violates the Global Authority rule by leaving registry polling in the dispatcher hot path. A pure listener-only patch would be unsafe because Noether verified initial service registration from null may not queue a rebound event, so late first registrations could be missed.
+
+Solution: Made `SystemDispatcher` implement `IGlobalRegistryHotSwapListener` and `IGlobalRegistryHotSwapRefListener`, registered it during `InitializeService`, and unregistered it during shutdown. The ref callback updates cached DataVault, InputDeterminism, JobAdmission, SimulationBucketer, VRAM, MacroDatabase, and ObjectPool references from service rebound events. The pre-simulation path now retries registry refresh only when a required service is null and only once every 8 frames; it no longer re-polls the registry when a cached service exists but reports `IsInitialized == false`. DataVault fallback was intentionally retained because it feeds vault/raycast recovery paths and was classified unsafe to remove without runtime proof.
+
+Rejected Alternatives: Removing all hot fallback reads was rejected after subagent evidence that null-to-first-registration rebound can be missed. Changing `GlobalRegistry` to queue rebound events for every initial registration was rejected because it changes global registry semantics and late-frame fanout for all domains. Removing `TryResolveCachedDataVault()` was rejected because Noether identified static dispatcher/vault/raycast recovery dependencies. Removing Core.Contracts source overlays was rejected because Sartre confirmed they are intentional until contract DLL freshness is proven.
+
+Scalability potential: Low = missing services no longer cause registry polling every 16.6 ms on weak devices; bounded retry caps failure-mode overhead. Middle = normal cached-service frames execute direct field reads. High/Ultra = rebound events preserve hot-swapped richer services without adding per-frame lookup cost, leaving budget for presentation overkill.
+
+Hardware Impact: 0 measured us. No profiler/runtime build available. Expected impact is eliminating three per-frame registry fallback probes in the steady missing-uninitialized state and replacing them with at most one probe per dependency every 8 frames.
+
+Evidence:
+- Noether classified the hot fallback rows and recommended hot-swap listener plus null-only bounded retry, not pure listener removal.
+- Sartre confirmed Current42 `MemorySentinelContracts.cs` overlay removal is correct and that Core.Contracts overlays remain intentional known-risk debt.
+- `SystemDispatcher.cs` now implements `IGlobalRegistryHotSwapListener` and `IGlobalRegistryHotSwapRefListener`.
+- `RunDispatcherUpdate()` now retries InputDeterminism, JobAdmission, and SimulationBucketer refresh only when the cached reference is null and `ShouldRetryDependencyResolve` permits it.
+- `rg -n "Hecton8\.World|AbsoluteUniversePosition|World\." Assets/_Project/Scripts/Core/SystemDispatcher.cs` returned no hits.
+- `git diff --check -- Assets/_Project/Scripts/Core/SystemDispatcher.cs Directory.Build.targets Assets/_Project/Scripts/Core/DispatcherJobFence.cs` returned exit 0 with CRLF warnings only.
+- Build skipped by hardware guard: `PRE_BUILD_GUARD_CURRENT43 CPU=100 PROCS=0`; final retry `PRE_BUILD_GUARD_CURRENT43_FINAL CPU=100 PROCS=0`. Last actual Core build evidence remains Current40: 311 errors / 19 warnings.
+
+## 2026-05-20 - Current44 Listener Lifecycle And R42 Doc Boundary Reconciliation
+
+Problem: Current43's hot-swap listener patch was compile-shaped correctly, but Volta identified a lifecycle edge: `SystemDispatcher` registered as a hot-swap listener during `InitializeService` and unregistered during shutdown/destruction, but a Unity component disable without destruction could leave a disabled dispatcher subscribed to registry hot-swap events. Separately, active architecture docs had mixed DOC_GLOBAL current-boundary wording: root docs and `Actual Domains of Project.txt` point to R42, while multiple architecture files still declared R41 as current.
+
+Solution: Added `SystemDispatcher.OnEnable` and `SystemDispatcher.OnDisable` hooks that register/unregister the hot-swap listener only when `_serviceRegistered` is true. This keeps boot/InitializeService as the authoritative service-registration point and closes the disabled-listener edge without adding Awake self-registration. Reconciled scoped architecture documentation from R41-current to R42-current wording, including `BINARY_PAYLOAD_INTEGRATION_LEDGER.md`, `GLOBAL_REGISTRY_SERVICE_LOCATOR.md`, `SYSTEM_INTERCONNECT_MATRIX.md`, `CORE_REPLAY_DETERMINISM.md`, and other architecture orientation files that matched the stale R41-current boundary pattern. Removed self-cancelling Core reference add-blocks for `Hecton8.AI.Ecology.Migration`, `Hecton8.Audio.Propagation`, and `Hecton8.Environment.Fluids.Contracts` from `Directory.Build.targets` while keeping the Core remove backstops.
+
+Rejected Alternatives: Calling `ShutdownServiceState()` from `OnDisable` was rejected because component disable can be a transient Unity lifecycle state and full shutdown would dispose dispatcher-owned buffers. Registering in `Awake` was rejected because project policy forbids classic Awake self-registration; the new `OnEnable` path only re-registers an already initialized service. Leaving R41-current docs untouched was rejected because current root/domain docs already establish R42 as the latest static boundary. Removing the Core reference remove backstops was rejected because generated projects may still carry those references; deleting only the add-blocks preserves final Core behavior with less churn.
+
+Scalability potential: Low = disabled dispatcher instances no longer receive registry callbacks while inactive. Middle/High/Ultra = hot-swapped richer services remain event-driven without per-frame registry polling. Documentation correction is process-only and prevents agents from following stale root-boundary guidance.
+
+Hardware Impact: 0 measured us. Runtime effect is listener hygiene only; no profiler proof. Documentation has 0 runtime impact. Directory overlay impact is compile-graph hygiene only; no compile-time microsecond claim.
+
+Evidence:
+- Volta verified interface signatures and slot compatibility, and flagged disabled dispatcher lifecycle as the main risk.
+- Avicenna identified three self-cancelling Core reference add-blocks in `Directory.Build.targets`; the corresponding Core remove backstops remain.
+- `SystemDispatcher.cs` now has `_serviceRegistered`-guarded `OnEnable` and `OnDisable` hot-swap listener registration.
+- `rg -n 'Current DOC_GLOBAL boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R41_ROOT_ARCHITECTURE_GLOBAL_AUTHORITY_INTERNAL_RESIDUE_LOCAL\.md`|R41 root/architecture global-authority/internal-residue correction keeps|DOC_GLOBAL R41 Root/Architecture Boundary Note|DOC_GLOBAL R40 Current Boundary Note' Docs/ARCHITECTURE -g '*.md'` returned no hits.
+- `git diff --check` over touched code/docs returned exit 0 with CRLF warnings only.
+- Build skipped by hardware guard: `PRE_BUILD_GUARD_CURRENT44 CPU=100 PROCS=0`; retries `PRE_BUILD_GUARD_CURRENT44_FINAL CPU=100 PROCS=0` and `PRE_BUILD_GUARD_CURRENT44_FINAL2 CPU=100 PROCS=0`. Last actual Core build evidence remains Current40: 311 errors / 19 warnings.
+
+## 2026-05-20 - Current45 Signal ABI Explicit Tail Padding
+
+Problem: Static SignalBus ABI scan still found explicit-layout `ISignal` payloads in `GlobalSignals.cs` whose declared `Size` relied on implicit CLR tail padding. That is ARM64-safe at runtime when the declared size is correct, but it fails the project evidence standard: the byte layout is not fully self-documenting for replay snapshots, memcpy lanes, and forensic reports.
+
+Solution: Added private `[FieldOffset]` tail padding fields to Core-owned explicit-layout signal DTOs without changing public field offsets, declared struct sizes, lane hashes, queue capacities, or dispatch logic. The patch is pure ABI documentation/enforcement: private scalar padding only, no allocations, no new using directives, no runtime branching, no `GlobalRegistry` calls, no LINQ.
+
+Rejected Alternatives: Reordering fields was rejected because it would mutate public ABI. Replacing `Hecton8.World.AbsoluteUniversePosition` across `GlobalSignals.cs` was rejected after Ampere evidence: it is real compile-wall debt, but the current public signal surface has many active consumers and a mass AUP type swap would be broad API churn. Editing generated `.csproj` files was not needed and remains forbidden. Running `dotnet build` was rejected by the hardware guard because CPU was 100%.
+
+Scalability potential: Low = signal snapshots retain fixed 32/64/128-byte shapes with explicit evidence and no hidden reflection/GC cost. Middle = replay/memcpy auditors can reason about padding without runtime probing. High/Ultra = the same fixed lanes feed richer presentation systems without public ABI ambiguity. This pass does not add visual overkill; it preserves the transport budget used by other systems.
+
+Hardware Impact: 0 measured us. No profiler/runtime build. Expected impact is ABI auditability and avoiding future ARM64/replay layout ambiguity, not a measured frame-time gain.
+
+Evidence:
+- Read-only sidecar Maxwell found no `Pack=1` or Sequential `ISignal` matches and prioritized private tail padding fixes.
+- Read-only sidecar Ampere found `GlobalSignals.cs` imports `Hecton8.World` and many `AbsoluteUniversePosition` fields; no minimal safe same-pass replacement exists without broad consumer migration.
+- `SIGNAL_TAIL_PADDING_SCAN=PASS explicit ISignal tails filled (AudioEvent union excluded: nested audio payload size unknown to static map)`.
+- `SIGNAL_PACK_SCAN=PASS no Pack=1 or Sequential ISignal matches in Core signal scope`.
+- `git diff --check -- Assets/_Project/Scripts/Core/GlobalSignals.cs` returned exit 0 with line-ending warning only.
+- Build skipped by hardware guard: `PRE_BUILD_GUARD_CURRENT45 CPU=100 PROCS=0`. Last actual Core build evidence remains Current40: 311 errors / 19 warnings.
+
+## 2026-05-20 - Current46 AudioEvent Union Tail And SignalCritical Audit
+
+Problem: Current45 static tail scan deliberately excluded `AudioEvent` because its largest union member lives in Audio-owned source, so the 128-byte signal had an unproven implicit tail from byte 112 to byte 127. Goodall verified the nested payloads: `AudioPingTriggerInfo` is explicit 48 bytes, `StructuralStressAudioInfo` is explicit 96 bytes, and both are placed at union offset 16. That makes the largest union member end at byte 112 inside the 128-byte `AudioEvent` payload.
+
+Solution: Added two private explicit padding fields to `AudioEvent`: `_padTail0` at offset 112 and `_padTail1` at offset 120. No public field offset, declared size, lane registration, dispatch policy, or dependency edge changed. The patch documents/enforces the existing ABI tail only.
+
+Rejected Alternatives: Moving `AudioEvent` or the nested audio payload DTOs into `Hecton8.Core.Contracts.asmdef` was rejected for this pass because the source currently has a hidden Core-to-Audio/World payload-shape dependency and real contract isolation would require a coordinated Audio/World migration. Replacing `SignalBus<T>._queue` with Vault memory was rejected because `GlobalDataVault` exposes buffers, not an MPSC queue primitive, and existing Burst producers depend on `NativeQueue<T>.ParallelWriter`. Waiting for the H-Phi sidecar was rejected after timeout; it was closed without edits.
+
+Scalability potential: Low = fixed 128-byte audio signal snapshots avoid hidden tail ambiguity on ARM64 and replay lanes. Middle = SignalCritical audit remains error-free while sync-I/O warnings stay classified as review-only. High/Ultra = richer procedural audio consumers can keep using the same typed lane without inflating gameplay truth or adding managed event traffic.
+
+Hardware Impact: 0 measured us. No profiler, Unity import, IL2CPP, or player build proof. Expected impact is ABI auditability only; no runtime speed claim.
+
+Evidence:
+- Goodall verified `AudioEvent` layout: header bytes 0..15, union offset 16, `AudioPingTriggerInfo` ends at 64, `StructuralStressAudioInfo` ends at 112, explicit padding now fills 112..127.
+- `AUDIO_EVENT_TAIL_PADDING_SCAN Size128=1 Pad112=1 Pad120=1 EndLargestUnion=112 Total=128`.
+- `powershell -NoProfile -ExecutionPolicy Bypass -File Tools/SignalBusContractAudit.ps1 -ProjectRoot . -Scope SignalCritical -OutputJson Docs/AgentLogs/SignalBusContractAudit_Current46_SHINOBU_02.json -OutputMarkdown Docs/AgentLogs/SignalBusContractAudit_Current46_SHINOBU_02.md -FailOnError` -> files 8 C# / 68 compute, errors 0, warnings 15, infos 2, confirmedErrors 0.
+- SignalCritical warning set is sync-I/O review only in `SystemDispatcher` and `SignalWardenRuntime`; managed event surface 0, runtime signal Pack=1 0.
+- `git diff --check -- Assets/_Project/Scripts/Core/GlobalSignals.cs` returned exit 0 with line-ending warning only.
+- Current46 report chronology was repaired after detecting the first insertion landed above older entries; `LOG_SHINOBU_02.md` now lists Current41 through Current46 in bottom-appended order.
+- Full Current46 `git diff --check` over code/status/rationale/log/audit artifacts returned exit 0 with line-ending warnings only.
+- Build skipped by hardware guard: `PRE_BUILD_GUARD_CURRENT46 CPU=100 PROCS=0`; final retry `PRE_BUILD_GUARD_CURRENT46_FINAL2 CPU=78 PROCS=0`. Last actual Core build evidence remains Current40: 311 errors / 19 warnings.

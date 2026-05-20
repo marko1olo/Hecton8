@@ -22,7 +22,7 @@ namespace Hecton8.Gameplay
         [Tooltip("Legacy lifetime field retained for prefab compatibility. Mathematical shots despawn immediately.")]
         [SerializeField, Range(1f, 30f)] private float maxLifetime = 5f;
 
-        [Header("VFX / Audio")]
+        [Header("VFX and Audio")]
         [Tooltip("Legacy impact particle reference retained for serialized prefab compatibility.")]
         [SerializeField] private ParticleSystem impactParticles;
 
@@ -78,7 +78,7 @@ namespace Hecton8.Gameplay
             if (safeVelocity.sqrMagnitude > 0.000001f)
             {
                 float mass = math.max(0.001f, damage * 0.0018f);
-                uint source = unchecked((uint)EntityId.ToULong(gameObject.GetEntityId()));
+                uint source = GlobalSignals.FoldEntityIdToSourceId(EntityId.ToULong(gameObject.GetEntityId()));
                 BallisticsRuntime.QueueTrajectoryFromVelocity(
                     _cachedTransform != null ? _cachedTransform.position : transform.position,
                     safeVelocity,
@@ -126,7 +126,7 @@ namespace Hecton8.Gameplay
 
             return speedSq <= MaxProjectileSpeedSq
                 ? velocity
-                : velocity * (MaxProjectileSpeedMetersPerSecond * math.rsqrt(speedSq));
+                : velocity * (MaxProjectileSpeedMetersPerSecond * math.rsqrt(math.max(speedSq, 0.000001f)));
         }
 
         private static bool IsFinite(Vector3 value)

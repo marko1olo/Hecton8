@@ -136,7 +136,7 @@ float3 _SpatialGridOrigin;
 float3 _SpatialGridResolution;
 float  _SpatialGridCellSize;
 uint   _SpatialGridMaxBoidsPerCell;
-uint   _BoidMathLodMode;
+float  _BoidMathLodMode;
 float4 _CameraFrustumPlanes[6];
 float  _BoidCullingRadius;
 uint   _GpuFrustumCullingActive;
@@ -688,7 +688,7 @@ void CSMain(
     // ── Pre-squared radii (avoid sqrt in inner loop where possible) ─────────
     float perceptionSqr = _PerceptionRadius * _PerceptionRadius;
     float separationSqr = _SeparationRadius * _SeparationRadius;
-    float socialLodMask = step(0.5, (float)_BoidMathLodMode);
+    float socialLodMask = saturate(_BoidMathLodMode);
 
     uint3 selfCell = uint3(0, 0, 0);
     uint selfFlatCell;

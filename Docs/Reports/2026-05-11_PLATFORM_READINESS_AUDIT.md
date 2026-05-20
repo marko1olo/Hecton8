@@ -58,7 +58,7 @@ Current state:
 - `ProjectSettings/XRSettings.asset` contains only legacy VR keys.
 - `ProjectSettings/ProjectSettings.asset` has empty `m_BuildTargetVRSettings`.
 - All three configured quality tiers exclude Android and iPhone.
-- Addressables package is installed, but no `Assets/AddressableAssetsData` directory exists.
+- Addressables package is installed. 2026-05-11 scan found no `Assets/AddressableAssetsData` directory; 2026-05-19 filesystem supersession: directory exists but contains 0 files/settings/groups.
 - Runtime loading policy is internally split: `AsyncLoadHelper` says runtime Resources/Addressables loading is disabled, while `GameBootstrapper`, `ItemCatalog`, and `AssetLifecycleGovernor` contain Addressables-dependent runtime paths.
 - Save/telemetry systems still use `System.IO.MemoryMappedFiles` in selected paths and 8 strict unsafe mapped-pointer blocker rows remain in `SaveBinaryStorage`; first-party runtime `kernel32.dll` P/Invoke has been removed. LZ4 is still Windows-binary-only locally.
 - Native plugin inventory contains Windows-only or editor/native third-party binaries. Platform metadata for `liblz4.dll` and `HectonAudioKernel.dll` is minimal GUID-only `.meta`, not an explicit per-platform PluginImporter config.
@@ -205,7 +205,7 @@ Required work:
 Evidence:
 
 - Addressables package `2.7.6` is installed.
-- No `Assets/AddressableAssetsData` directory was found.
+- 2026-05-11 scan found no `Assets/AddressableAssetsData` directory; 2026-05-19 filesystem supersession: directory exists but contains 0 files/settings/groups.
 - `AsyncLoadHelper` says runtime Resources/Addressables loading is disabled.
 - `GameBootstrapper`, `ItemCatalog`, and `AssetLifecycleGovernor` contain runtime Addressables calls and `UNITY_ADDRESSABLES_EXIST` branches.
 

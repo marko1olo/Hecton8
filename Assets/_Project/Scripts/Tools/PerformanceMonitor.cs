@@ -345,7 +345,7 @@ namespace Hecton8.Tools
     /// Snapshot of performance data at a point in time.
     /// </summary>
     [Serializable]
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential)]
     public struct PerformanceSnapshot
     {
         public DateTime Timestamp;

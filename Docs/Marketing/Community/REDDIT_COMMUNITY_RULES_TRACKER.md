@@ -19,6 +19,7 @@ Community rules change often and must be read same day before posting. This file
 - Do not hide developer affiliation.
 - Do not post the same asset/copy across multiple subreddits.
 - Do not use tracking links where they are not allowed.
+- Do not use wishlist, Steam, signup, Discord, demo, or presskit CTAs unless the Official CTA Link Activation Gate V0 passes; otherwise ask a no-link critique question.
 - Do not argue with moderators.
 - Do not ask agents to manufacture conversation.
 - Do not use fake accounts to simulate interest.
@@ -28,11 +29,11 @@ Community rules change often and must be read same day before posting. This file
 | Type | When to use | CTA |
 |---|---|---|
 | Critique request | Before Steam page and first screenshot drop. | Ask one specific question. |
-| Technical devlog | When the post teaches something real. | No wishlist push unless rules allow. |
-| Screenshot Saturday | In communities with recurring promo threads. | Light CTA if allowed. |
-| Playtest request | Only when build exists. | Signup/Steam page if allowed. |
+| Technical devlog | When the post teaches something real. | No wishlist push unless rules and CTA activation allow. |
+| Screenshot Saturday | In communities with recurring promo threads. | Light CTA only if rules and CTA activation allow. |
+| Playtest request | Only when build exists. | Signup/Steam page only if rules and CTA activation allow; private access uses an access log, not a public CTA. |
 | Failure post | When a real problem was solved and can teach devs. | No sales push. |
-| Launch/demo post | Only in promo-allowed spaces. | Steam/demo CTA. |
+| Launch/demo post | Only in promo-allowed spaces. | Steam/demo CTA only after activation. |
 
 ## Candidate Communities
 
@@ -90,7 +91,7 @@ Use:
 - short answers;
 - no defensive tone;
 - no competitor attack;
-- no "wishlist please" replies unless context allows it.
+- no "wishlist please" replies unless context and CTA activation allow it.
 
 Example:
 

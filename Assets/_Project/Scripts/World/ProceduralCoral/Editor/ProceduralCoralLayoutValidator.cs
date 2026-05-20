@@ -34,6 +34,14 @@ namespace Hecton8.World.ProceduralCoral.Editor
             ok &= ValidateOffset<CoralBranchDTO>(nameof(CoralBranchDTO.StableId), 112);
             ok &= ValidateOffset<CoralBranchDTO>(nameof(CoralBranchDTO.SectorHash), 116);
             ok &= ValidateSize<CoralLSystemRuleDTO>(64);
+            ok &= ValidateOffset<CoralLSystemRuleDTO>(nameof(CoralLSystemRuleDTO.SourceOpcode), 0);
+            ok &= ValidateOffset<CoralLSystemRuleDTO>(nameof(CoralLSystemRuleDTO.ReplacementCount), 36);
+            ok &= ValidateOffset<CoralLSystemRuleDTO>(nameof(CoralLSystemRuleDTO.BranchAngleRadians), 40);
+            ok &= ValidateOffset<CoralLSystemRuleDTO>(nameof(CoralLSystemRuleDTO.LengthScale), 44);
+            ok &= ValidateOffset<CoralLSystemRuleDTO>(nameof(CoralLSystemRuleDTO.RadiusScale), 48);
+            ok &= ValidateOffset<CoralLSystemRuleDTO>(nameof(CoralLSystemRuleDTO.PrefabHash), 52);
+            ok &= ValidateOffset<CoralLSystemRuleDTO>(nameof(CoralLSystemRuleDTO.Flags), 56);
+            ok &= ValidateOffset<CoralLSystemRuleDTO>(nameof(CoralLSystemRuleDTO.WeightHash), 60);
             ok &= ValidateSize<CoralSectorTriggerDTO>(64);
             ok &= ValidateSize<CoralSectorSaveDTO>(16);
             ok &= ValidateSize<CoralTuningDTO>(64);
@@ -42,10 +50,32 @@ namespace Hecton8.World.ProceduralCoral.Editor
             ok &= ValidateSize<CapsuleColliderDTO>(64);
             ok &= ValidateSize<SyncPulseDTO>(32);
             ok &= ValidateSize<CoralGenerationTelemetryEntry>(64);
+            ok &= ValidateOffset<CoralGenerationTelemetryEntry>(nameof(CoralGenerationTelemetryEntry.RootAUP), 0);
+            ok &= ValidateOffset<CoralGenerationTelemetryEntry>(nameof(CoralGenerationTelemetryEntry.BurstComputeUs), 40);
+            ok &= ValidateOffset<CoralGenerationTelemetryEntry>(nameof(CoralGenerationTelemetryEntry.FaultFlags), 52);
+            ok &= ValidateOffset<CoralGenerationTelemetryEntry>(nameof(CoralGenerationTelemetryEntry.MatrixCount), 60);
             ok &= ValidateSize<CoralDebugSegmentDTO>(64);
             ok &= ValidateSize<CoralPaddedCounterDTO>(64);
+            ok &= ValidateOffset<CoralPaddedCounterDTO>(nameof(CoralPaddedCounterDTO.BranchCount), 0);
+            ok &= ValidateOffset<CoralPaddedCounterDTO>(nameof(CoralPaddedCounterDTO.FaultFlags), 24);
+            ok &= ValidateOffset<CoralPaddedCounterDTO>(nameof(CoralPaddedCounterDTO.CollisionProxyCount), 12);
+            ok &= ValidateOffset<CoralPaddedCounterDTO>(nameof(CoralPaddedCounterDTO.RenderMatrixCount), 16);
+            ok &= ValidateOffset<CoralPaddedCounterDTO>(nameof(CoralPaddedCounterDTO.SyncPulseCount), 20);
+            ok &= ValidateOffset<CoralPaddedCounterDTO>(nameof(CoralPaddedCounterDTO.SpatialCellCount), 56);
+            ok &= ValidateOffset<CoralPaddedCounterDTO>(nameof(CoralPaddedCounterDTO.EffectiveQualityWeight), 60);
             ok &= ValidateSize<CoralGpuSwayDTO>(64);
+            ok &= ValidateOffset<CoralGpuSwayDTO>(nameof(CoralGpuSwayDTO.FlowAndAmplitude), 0);
+            ok &= ValidateOffset<CoralGpuSwayDTO>(nameof(CoralGpuSwayDTO.BoundsAndDensity), 16);
+            ok &= ValidateOffset<CoralGpuSwayDTO>(nameof(CoralGpuSwayDTO.FaultAndFrame), 32);
+            ok &= ValidateOffset<CoralGpuSwayDTO>(nameof(CoralGpuSwayDTO.SectorHash), 48);
+            ok &= ValidateOffset<CoralGpuSwayDTO>(nameof(CoralGpuSwayDTO.StateHash), 52);
             ok &= ValidateSize<CoralSelfAuditResultDTO>(64);
+            ok &= ValidateOffset<CoralSelfAuditResultDTO>(nameof(CoralSelfAuditResultDTO.Frame), 0);
+            ok &= ValidateOffset<CoralSelfAuditResultDTO>(nameof(CoralSelfAuditResultDTO.SectorHash), 4);
+            ok &= ValidateOffset<CoralSelfAuditResultDTO>(nameof(CoralSelfAuditResultDTO.Flags), 8);
+            ok &= ValidateOffset<CoralSelfAuditResultDTO>(nameof(CoralSelfAuditResultDTO.MaxOverlapDepth), 32);
+            ok &= ValidateOffset<CoralSelfAuditResultDTO>(nameof(CoralSelfAuditResultDTO.BranchUtilization), 36);
+            ok &= ValidateSize<CoralHzbTileDTO>(16);
 
             if (ok && logSuccess)
                 Debug.Log("[SHINOBU_139] Procedural coral DTO layout validated.");

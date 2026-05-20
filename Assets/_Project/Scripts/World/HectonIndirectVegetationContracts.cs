@@ -59,7 +59,7 @@ namespace Hecton8.World
         DefensiveBurst = 2
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential)]
     public struct HectonFloraSporeEvent
     {
         public AbsoluteUniversePositionBlit PositionAup;

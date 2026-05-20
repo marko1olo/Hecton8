@@ -1,0 +1,5 @@
+# endpoint,https://telemetry.example.invalid/h8
+# api_key,replace_in_local_untracked_config
+timeout_ms,3000
+batch_bytes,32768
+heatmap_seconds,5

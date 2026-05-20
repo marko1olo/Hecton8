@@ -23,7 +23,7 @@ namespace Hecton8.World
     [DisallowMultipleComponent]
     public sealed partial class HectonMapMagicVegetationBridge : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IMapMagicTerrainTileEventListener
     {
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
+        [StructLayout(LayoutKind.Sequential, Size = 32)]
         private struct PredatorFearNodeSnapshot
         {
             public float3 Position;

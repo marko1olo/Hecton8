@@ -11,6 +11,7 @@ using Hecton8.World;
 using TMPro;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -26,7 +27,7 @@ namespace Hecton8.UI
     /// Dispatcher-owned diegetic submarine cockpit bridge: analytical controls, off-screen screens, and GPU sonar radar.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class VehicleSubOsCockpitRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IRenderable, ISubmarineOsEventListener, IPowerGridTelemetryListener
+    public sealed class VehicleSubOsCockpitRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IRenderable, ISubmarineOsEventListener, IPowerGridTelemetryListener, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
     {
         private const int MaxRadarPoints = 4096;
         private const int MidRadarPoints = 2048;
@@ -34,6 +35,11 @@ namespace Hecton8.UI
         private const int HighRadarPointsPerTap = 256;
         private const int MidRadarPointsPerTap = 128;
         private const int LowRadarPointsPerTap = 32;
+        private const float CheapVisualQualityThreshold = 0.3f;
+        private const float CheapVisualQualityRampInv = 5.5555553f;
+        private const float ExternalFeedEnableThreshold = 0.18f;
+        private const float RadarCapacityQuantumInv = 0.0078125f;
+        private const float RadarPointTapQuantumInv = 0.0625f;
         private const int MaxButtons = 32;
         private const int MaxDamageHologramPoints = 512;
         private const int LowTierDamageWarningPoints = 7;
@@ -254,12 +260,20 @@ namespace Hecton8.UI
         private readonly MaterialPropertyBlock _screenPropertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - cockpit screen per-renderer properties - owner: VehicleSubOsCockpitRuntime
         private RenderTexture _uiRenderTexture;
         private RenderTexture _externalRenderTexture;
+        private RenderTexturePool _externalRenderTexturePoolOwner;
+        private RenderTexturePool _cachedRenderTexturePool;
+        private PlayerCriticalProceduralAudioRenderer _cachedPlayerCriticalAudio;
+        private IGroundRadarService _cachedGroundRadar;
+        private IHabitatGraphService _cachedHabitatGraph;
+        private IPowerGridService _cachedPowerGrid;
 
         private JobHandle _buttonJobHandle;
         private bool _buttonJobScheduled;
         private bool _registeredUpdate;
         private bool _registeredLateFrame;
         private bool _registeredRenderable;
+        private bool _hotSwapListenerRegistered;
+        private bool _scalabilityListenerRegistered;
         private bool _externalFeedRequested;
         private bool _externalFeedActive;
         private bool _lastExternalFeedActive;
@@ -279,7 +293,6 @@ namespace Hecton8.UI
         private bool _damageHologramLowTierWarningActive;
         private bool _damageHologramHadSignal;
         private bool _radarUsingGpr;
-        private HectonQualityTier _lastScalabilityTier = HectonQualityTier.Unknown;
         private RenderTextureFormat _uiRenderTextureFormat = RenderTextureFormat.ARGB32;
         private int _radarKernel = -1;
         private int _radarCapacity;
@@ -330,6 +343,9 @@ namespace Hecton8.UI
         private Vector4 _damageProxyBounds = new Vector4(-0.75f, 0.75f, -0.45f, 0.35f);
         private Vector3[] _damageProxyUploadVertices;
         private int _lastDamageArgsInstanceCount = int.MinValue;
+        private float _qualityWeight01 = 1f;
+        private float _cheapVisualWeight01;
+        private float _externalFeedWeight01 = 1f;
 
         /// <summary>
         /// GPU matrix buffer for cockpit button presentation consumers.
@@ -358,7 +374,8 @@ namespace Hecton8.UI
         {
             InvalidateOffscreenTextCache();
             ResolveColdAssetReferences();
-            ResolveScalabilityTier();
+            CacheRegistryServicesCold();
+            RefreshQualityPolicy();
             EnsureNativeResources();
             EnsureGraphicsResources();
             EnsureRenderTargets();
@@ -368,12 +385,15 @@ namespace Hecton8.UI
         {
             InvalidateOffscreenTextCache();
             ResolveColdAssetReferences();
-            ResolveScalabilityTier();
+            CacheRegistryServicesCold();
+            RefreshQualityPolicy();
             EnsureNativeResources();
             EnsureGraphicsResources();
             EnsureRenderTargets();
             HectonSubmarineOsEvents.Register(this);
             PowerGridTelemetryEvents.Register(this);
+            TryRegisterHotSwapListener();
+            TryRegisterScalabilityListener();
             TryRegisterRuntime();
             ApplyScreenMaterial();
             ApplyOffscreenUiCameraState();
@@ -384,6 +404,8 @@ namespace Hecton8.UI
             CompleteButtonJobForTeardown();
             HectonSubmarineOsEvents.Unregister(this);
             PowerGridTelemetryEvents.Unregister(this);
+            TryUnregisterScalabilityListener();
+            TryUnregisterHotSwapListener();
             UnregisterRuntime();
             ReleaseExternalRenderTexture();
             if (offscreenUiCamera != null)
@@ -394,6 +416,8 @@ namespace Hecton8.UI
         private void OnDestroy()
         {
             CompleteButtonJobForTeardown();
+            TryUnregisterScalabilityListener();
+            TryUnregisterHotSwapListener();
             ReleaseExternalRenderTexture();
             DisposeGraphicsResources();
             DisposeNativeResources();
@@ -434,7 +458,6 @@ namespace Hecton8.UI
                     return;
             }
 
-            ResolveScalabilityTier();
             if (ShouldRetryRadarGraphicsResources())
                 EnsureGraphicsResources();
             EnsureRenderTargets();
@@ -603,6 +626,41 @@ namespace Hecton8.UI
             }
         }
 
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapListenerRegistered = false;
+        }
+
+        private void TryRegisterScalabilityListener()
+        {
+            if (_scalabilityListenerRegistered || !Application.isPlaying)
+                return;
+
+            ScalabilityEvents.Register(this);
+            _scalabilityListenerRegistered = true;
+        }
+
+        private void TryUnregisterScalabilityListener()
+        {
+            if (!_scalabilityListenerRegistered)
+                return;
+
+            ScalabilityEvents.Unregister(this);
+            _scalabilityListenerRegistered = false;
+        }
+
         private void ResolveColdAssetReferences()
         {
 #if UNITY_EDITOR
@@ -615,27 +673,71 @@ namespace Hecton8.UI
 #endif
         }
 
-        private void ResolveScalabilityTier()
+        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
         {
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            if (tier == _lastScalabilityTier && _radarCapacity > 0)
-                return;
+            RefreshQualityPolicy();
+        }
 
-            _lowTier = tier == HectonQualityTier.Low ||
-                       tier == HectonQualityTier.Mx350 ||
-                       tier == HectonQualityTier.Unknown;
-            int capacity = _lowTier
-                ? LowRadarPoints
-                : tier == HectonQualityTier.Mid
-                    ? MidRadarPoints
-                    : MaxRadarPoints;
-            _radarPointsPerTap = _lowTier
-                ? LowRadarPointsPerTap
-                : tier == HectonQualityTier.Mid
-                    ? MidRadarPointsPerTap
-                    : HighRadarPointsPerTap;
-            _uiRenderTextureFormat = ResolveUiRenderTextureFormat(_lowTier);
-            _lastScalabilityTier = tier;
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.RenderTexturePoolRuntime:
+                    _cachedRenderTexturePool = currentService as RenderTexturePool;
+                    break;
+                case GlobalRegistryServiceSlot.PlayerCriticalAudioRuntime:
+                    _cachedPlayerCriticalAudio = currentService as PlayerCriticalProceduralAudioRenderer;
+                    InvalidateRadarDispatchCache();
+                    break;
+                case GlobalRegistryServiceSlot.GroundRadarRuntime:
+                    _cachedGroundRadar = currentService as IGroundRadarService;
+                    InvalidateRadarDispatchCache();
+                    InvalidateRadarMaterialBinding();
+                    break;
+                case GlobalRegistryServiceSlot.PowerGrid:
+                    _cachedPowerGrid = currentService as IPowerGridService;
+                    break;
+                case GlobalRegistryServiceSlot.Logistics:
+                    if (currentService is IHabitatGraphService || previousService is IHabitatGraphService)
+                        _cachedHabitatGraph = currentService as IHabitatGraphService;
+                    break;
+            }
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedRenderTexturePool = GlobalRegistry.RenderTexturePool;
+            _cachedPlayerCriticalAudio = GlobalRegistry.PlayerCriticalAudio;
+            _cachedGroundRadar = GlobalRegistry.GroundRadar;
+            _cachedHabitatGraph = GlobalRegistry.HabitatGraph;
+            _cachedPowerGrid = GlobalRegistry.PowerGrid;
+        }
+
+        private void RefreshQualityPolicy()
+        {
+            float quality = math.saturate(HomeostasisBrain.GlobalQualityWeight);
+            int capacity = ResolveRadarCapacity(quality);
+            int pointsPerTap = ResolveRadarPointsPerTap(quality);
+            bool cheapVisualPath = ResolveCheapVisualWeight(quality) >= 0.5f;
+            RenderTextureFormat format = ResolveUiRenderTextureFormat(quality);
+            if (math.abs(quality - _qualityWeight01) <= 0.0001f &&
+                capacity == _radarCapacity &&
+                pointsPerTap == _radarPointsPerTap &&
+                cheapVisualPath == _lowTier &&
+                format == _uiRenderTextureFormat)
+            {
+                return;
+            }
+
+            _qualityWeight01 = quality;
+            _cheapVisualWeight01 = ResolveCheapVisualWeight(quality);
+            _externalFeedWeight01 = ResolveExternalFeedWeight(quality);
+            _lowTier = cheapVisualPath;
+            _radarPointsPerTap = pointsPerTap;
+            _uiRenderTextureFormat = format;
             _screenDirty = true;
             if (capacity != _radarCapacity)
             {
@@ -647,6 +749,40 @@ namespace Hecton8.UI
                 _buttonUploadDirty = true;
                 _buttonAnimationActive = true;
             }
+        }
+
+        private static int ResolveRadarCapacity(float qualityWeight01)
+        {
+            float curve = SmoothQuality(qualityWeight01);
+            float continuous = math.lerp(LowRadarPoints, MaxRadarPoints, curve);
+            int quantized = (int)math.round(continuous * RadarCapacityQuantumInv) << 7;
+            return math.clamp(quantized, LowRadarPoints, MaxRadarPoints);
+        }
+
+        private static int ResolveRadarPointsPerTap(float qualityWeight01)
+        {
+            float curve = SmoothQuality(qualityWeight01);
+            float continuous = math.lerp(LowRadarPointsPerTap, HighRadarPointsPerTap, curve);
+            int quantized = (int)math.round(continuous * RadarPointTapQuantumInv) << 4;
+            return math.clamp(quantized, LowRadarPointsPerTap, HighRadarPointsPerTap);
+        }
+
+        private static float ResolveCheapVisualWeight(float qualityWeight01)
+        {
+            float normalized = math.saturate((CheapVisualQualityThreshold - qualityWeight01) * CheapVisualQualityRampInv);
+            return normalized * normalized * (3f - 2f * normalized);
+        }
+
+        private static float ResolveExternalFeedWeight(float qualityWeight01)
+        {
+            float normalized = math.saturate((qualityWeight01 - ExternalFeedEnableThreshold) * 2.7777777f);
+            return normalized * normalized * (3f - 2f * normalized);
+        }
+
+        private static float SmoothQuality(float qualityWeight01)
+        {
+            float quality = math.saturate(qualityWeight01);
+            return quality * quality * (3f - 2f * quality);
         }
 
         private void EnsureNativeResources()
@@ -975,21 +1111,42 @@ namespace Hecton8.UI
 
         private int ResolveUiWidth()
         {
-            return _lowTier
-                ? math.clamp(uiRenderTextureWidth, MinUiRenderTextureWidth, LowUiRenderTextureMaxWidth)
-                : math.max(MinUiRenderTextureWidth, uiRenderTextureWidth);
+            int lowWidth = math.clamp(uiRenderTextureWidth, MinUiRenderTextureWidth, LowUiRenderTextureMaxWidth);
+            int highWidth = math.max(MinUiRenderTextureWidth, uiRenderTextureWidth);
+            return ResolveQualityDimension(lowWidth, highWidth);
         }
 
         private int ResolveUiHeight()
         {
-            return _lowTier
-                ? math.clamp(uiRenderTextureHeight, MinUiRenderTextureHeight, LowUiRenderTextureMaxHeight)
-                : math.max(MinUiRenderTextureHeight, uiRenderTextureHeight);
+            int lowHeight = math.clamp(uiRenderTextureHeight, MinUiRenderTextureHeight, LowUiRenderTextureMaxHeight);
+            int highHeight = math.max(MinUiRenderTextureHeight, uiRenderTextureHeight);
+            return ResolveQualityDimension(lowHeight, highHeight);
         }
 
-        private static RenderTextureFormat ResolveUiRenderTextureFormat(bool lowTier)
+        private int ResolveExternalWidth()
         {
-            if (!lowTier)
+            int lowWidth = math.max(MinExternalRenderTextureWidth, math.min(externalRenderTextureWidth, LowUiRenderTextureMaxWidth));
+            int highWidth = math.max(MinExternalRenderTextureWidth, externalRenderTextureWidth);
+            return ResolveQualityDimension(lowWidth, highWidth);
+        }
+
+        private int ResolveExternalHeight()
+        {
+            int lowHeight = math.max(MinExternalRenderTextureHeight, math.min(externalRenderTextureHeight, LowUiRenderTextureMaxHeight));
+            int highHeight = math.max(MinExternalRenderTextureHeight, externalRenderTextureHeight);
+            return ResolveQualityDimension(lowHeight, highHeight);
+        }
+
+        private int ResolveQualityDimension(int lowValue, int highValue)
+        {
+            float curve = SmoothQuality(_qualityWeight01);
+            int resolved = (int)math.round(math.lerp(lowValue, highValue, curve));
+            return math.max(16, (resolved + 1) & ~1);
+        }
+
+        private static RenderTextureFormat ResolveUiRenderTextureFormat(float qualityWeight01)
+        {
+            if (ResolveCheapVisualWeight(qualityWeight01) < 0.5f)
                 return RenderTextureFormat.ARGB32;
 
             return SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.RGB565)
@@ -1014,7 +1171,7 @@ namespace Hecton8.UI
 
         private void UpdateExternalFeedState()
         {
-            if (_lowTier)
+            if (_externalFeedWeight01 <= 0.0001f)
             {
                 ReleaseExternalRenderTexture();
                 _externalFeedActive = false;
@@ -1036,12 +1193,13 @@ namespace Hecton8.UI
         {
             if (_externalRenderTexture == null)
             {
-                int width = math.max(MinExternalRenderTextureWidth, externalRenderTextureWidth);
-                int height = math.max(MinExternalRenderTextureHeight, externalRenderTextureHeight);
-                RenderTexturePool pool = GlobalRegistry.RenderTexturePool;
+                int width = ResolveExternalWidth();
+                int height = ResolveExternalHeight();
+                RenderTexturePool pool = _cachedRenderTexturePool;
                 _externalRenderTexture = pool != null
                     ? pool.Rent(width, height, RenderTextureFormat.ARGB32, this, 16)
                     : CreateRenderTexture(width, height, RenderTextureFormat.ARGB32, "VSOS_EXTCAM_RT");
+                _externalRenderTexturePoolOwner = pool;
                 if (_externalRenderTexture != null)
                 {
                     _externalRenderTexture.name = "VSOS_EXTCAM_RT";
@@ -1077,7 +1235,8 @@ namespace Hecton8.UI
             RenderTexture released = _externalRenderTexture;
             _externalRenderTexture = null;
 
-            RenderTexturePool pool = GlobalRegistry.RenderTexturePool;
+            RenderTexturePool pool = _externalRenderTexturePoolOwner;
+            _externalRenderTexturePoolOwner = null;
             if (pool != null)
                 pool.Return(released);
             else
@@ -1170,14 +1329,14 @@ namespace Hecton8.UI
         {
             if (_externalFeedActive && _externalRenderTexture != null)
                 return false;
-            if (_lowTier && _externalFeedRequested && staticExternalNoiseTexture != null)
+            if (_externalFeedWeight01 <= 0.0001f && _externalFeedRequested && staticExternalNoiseTexture != null)
                 return false;
             return true;
         }
 
         private int ResolveStatusDisplayMode()
         {
-            if (_lowTier && _externalFeedRequested)
+            if (_externalFeedWeight01 <= 0.0001f && _externalFeedRequested)
                 return staticExternalNoiseTexture != null ? StatusModeLowStatic : StatusModeLowLocked;
             if (_externalFeedActive)
                 return StatusModeExternalLive;
@@ -1266,7 +1425,7 @@ namespace Hecton8.UI
             if (TryUploadGroundRadarPingsAndDispatchRadar())
                 return;
 
-            PlayerCriticalProceduralAudioRenderer audioRuntime = GlobalRegistry.PlayerCriticalAudio;
+            PlayerCriticalProceduralAudioRenderer audioRuntime = _cachedPlayerCriticalAudio;
             if (audioRuntime == null ||
                 !audioRuntime.TryGetCockpitSonarEchoTaps(out NativeArray<SonarEchoTap>.ReadOnly taps, out int tapCount, out int sequence))
             {
@@ -1323,7 +1482,7 @@ namespace Hecton8.UI
 
         private bool TryUploadGroundRadarPingsAndDispatchRadar()
         {
-            IGroundRadarService groundRadar = GlobalRegistry.GroundRadar;
+            IGroundRadarService groundRadar = _cachedGroundRadar;
             if (groundRadar == null ||
                 !groundRadar.TryGetGprPingBuffer(out GraphicsBuffer buffer, out int activeCount, out int sequence) ||
                 buffer == null)
@@ -1416,7 +1575,7 @@ namespace Hecton8.UI
 
         private void RefreshDamageHologramFloodState()
         {
-            IHabitatGraphService habitatGraph = GlobalRegistry.HabitatGraph;
+            IHabitatGraphService habitatGraph = _cachedHabitatGraph;
             if (habitatGraph == null || !habitatGraph.IsInitialized || habitatGraph.RoomCount <= 0)
             {
                 if (_damageRoomCount != 0)
@@ -1712,7 +1871,7 @@ namespace Hecton8.UI
             _damageRuntimeMaterial.SetMatrix(DamageHologramLocalToWorldId, hologramLocalToWorld);
             _damageRuntimeMaterial.SetVector(
                 DamageHologramParamsId,
-                new Vector4(Time.time, ResolveDamageHologramAlpha(), _damageRoomCount, _lowTier ? 1f : 0f));
+                new Vector4(Time.time, ResolveDamageHologramAlpha(), _damageRoomCount, _cheapVisualWeight01));
             _damageRuntimeMaterial.SetVector(DamageHologramBoundsId, _damageProxyBounds);
             _damageRuntimeMaterial.SetFloat(DamageHologramFlickerId, ResolveDamageHologramFlicker());
         }
@@ -1790,9 +1949,9 @@ namespace Hecton8.UI
             return (value & 0x00ffffffu) * Hash24Inv;
         }
 
-        private static bool TryResolveGroundRadarRenderBinding(out IGroundRadarService groundRadar, out GraphicsBuffer buffer)
+        private bool TryResolveGroundRadarRenderBinding(out IGroundRadarService groundRadar, out GraphicsBuffer buffer)
         {
-            groundRadar = GlobalRegistry.GroundRadar;
+            groundRadar = _cachedGroundRadar;
             if (groundRadar != null && groundRadar.TryGetGprPingBuffer(out buffer, out int activeCount, out _) && activeCount > 0)
                 return true;
 
@@ -1928,7 +2087,7 @@ namespace Hecton8.UI
 
         private float ResolveNodeVoltageSupplyRatio()
         {
-            IPowerGridService powerGrid = GlobalRegistry.PowerGrid;
+            IPowerGridService powerGrid = _cachedPowerGrid;
             if (powerGrid != null &&
                 powerGrid.TryGetGridPowerPotentialsReadOnly(math.max(0, submarinePowerGridIndex), out NativeArray<float>.ReadOnly potentials) &&
                 (uint)submarineNodeVoltageIndex < (uint)potentials.Length)
@@ -1972,7 +2131,7 @@ namespace Hecton8.UI
 
         private Texture ResolveActiveScreenTexture()
         {
-            if (_lowTier && _externalFeedRequested && staticExternalNoiseTexture != null)
+            if (_externalFeedWeight01 <= 0.0001f && _externalFeedRequested && staticExternalNoiseTexture != null)
                 return staticExternalNoiseTexture;
             if (_externalFeedActive && _externalRenderTexture != null)
                 return _externalRenderTexture;
@@ -2256,14 +2415,20 @@ namespace Hecton8.UI
             OnValidate();
         }
 
-        [BurstCompile]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ButtonKinematicJob : IJobParallelFor
         {
+            [NoAlias]
             public NativeArray<byte> States;
+            [NoAlias]
             public NativeArray<byte> Targets;
+            [NoAlias]
             public NativeArray<float> Progress;
+            [NoAlias]
             public NativeArray<float> Offsets;
-            [ReadOnly] public NativeArray<float3> BaseLocalPositions;
+            [ReadOnly, NoAlias]
+            public NativeArray<float3> BaseLocalPositions;
+            [NoAlias]
             public NativeArray<float4x4> Matrices;
             public float DeltaTime;
             public float TravelSecondsInv;
@@ -2309,29 +2474,45 @@ namespace Hecton8.UI
             }
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct RadarBlipGpuData
         {
+            [FieldOffset(0)]
             public float4 LocalPositionSize;
+            [FieldOffset(16)]
             public float4 ColorAlpha;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct CockpitTelemetryEntry
         {
+            [FieldOffset(0)]
             public int Frame;
+            [FieldOffset(4)]
             public int RadarActivePoints;
+            [FieldOffset(8)]
             public int CockpitInteractions;
+            [FieldOffset(12)]
             public uint Flags;
+            [FieldOffset(16)]
             public float Power;
+            [FieldOffset(20)]
             public float Oxygen;
+            [FieldOffset(24)]
             public float Co2;
+            [FieldOffset(28)]
             public float SpeedKnots;
+            [FieldOffset(32)]
             public Vector3 AnchorPosition;
+            [FieldOffset(44)]
             public int HoloDamagePoints;
+            [FieldOffset(48)]
             public int HoloProxyVertices;
+            [FieldOffset(52)]
             public float HoloFlicker;
+            [FieldOffset(56)]
             public float HoloFlood01;
+            [FieldOffset(60)]
             public uint HoloFlags;
         }
     }

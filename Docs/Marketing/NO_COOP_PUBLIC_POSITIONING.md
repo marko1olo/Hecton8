@@ -1,4 +1,4 @@
-﻿# No-Coop Public Positioning
+# Multiplayer-Scope Public Positioning
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
 ## R4 Interior Actuality Boundary
@@ -13,9 +13,9 @@ Date: 2026-05-18
 
 ## Rule
 
-HECTON-8 is marketed as single-player-first.
+HECTON-8 public scope is single-player-first and proof-first.
 
-Do not publicly promise:
+Do not publicly promise unsupported multiplayer scope:
 
 - co-op;
 - multiplayer;
@@ -26,13 +26,13 @@ Do not publicly promise:
 - player trading;
 - host migration;
 - cross-platform co-op;
-- "coming later" multiplayer unless explicitly promoted by the user.
+- "coming later" multiplayer unless explicitly promoted by the user and backed by build proof.
 
 ## Why
 
-The user corrected the agent hallucination: co-op is not currently planned. Marketing a feature that is not planned creates legal, trust, production, and community damage.
+The user corrected the agent hallucination: multiplayer scope is not current public scope. Marketing a feature that is not planned or not build-proven creates legal, trust, production, and community damage.
 
-Competitor positioning note, source-check before public use: the Subnautica 2 Steam page currently presents co-op/multiplayer positioning. Do not extrapolate beyond storefront/source text. HECTON-8 does not need to counter by lying. HECTON-8 counters with a different fantasy:
+Competitor positioning note, source-check before public use: the Subnautica 2 Steam page currently presents co-op/multiplayer positioning. Do not extrapolate beyond storefront/source text. HECTON-8 does not need to counter by lying. HECTON-8 uses a different fantasy:
 
 - isolation;
 - pressure;
@@ -48,8 +48,8 @@ Competitor positioning note, source-check before public use: the Subnautica 2 St
 - "single-player-first"
 - "focused on isolation"
 - "built around pressure, salvage, machinery, and hostile depth"
-- "co-op is not part of the current public plan"
-- "we are not selling future multiplayer promises"
+- "public scope stays inside what the current build can show"
+- "additional modes are discussed only if they are real in the build"
 
 ## Forbidden Language
 

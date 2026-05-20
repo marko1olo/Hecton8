@@ -17,7 +17,7 @@ namespace Hecton8.MockDomain.Contracts
     /// <summary>
     /// Explicitly padded mock state used by dependency inversion smoke tests.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32, Pack = 8)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct MockDomainState
     {
         [FieldOffset(0)] public double3 AnchorAup;

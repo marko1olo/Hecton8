@@ -2,14 +2,17 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Physics;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Hecton8.Atmosphere
 {
@@ -23,6 +26,11 @@ namespace Hecton8.Atmosphere
         private const float SimulationTickDeltaSeconds = 1f / 60f;
         private const float MinWaveEvaluationHz = 5f;
         private const float MaxWaveEvaluationHz = 60f;
+        private const int WaveSamplerThreadGroupSizeFallback = 64;
+        private const int TelemetryDumpCooldownFrames = OceanSurfaceAtmosphereConstants.TelemetryFrameCount;
+        private const uint QualityStepTuningHash = OceanSurfaceAtmosphereConstants.QualityStepTuningHash;
+        private const string WaveHeightSamplerKernelName = "SampleWaveHeights";
+        private const string WaveHeightSamplerComputeGuid = "60f3dfa702904496933e12041a3e1764";
 
         private static readonly int OceanTimeId = Shader.PropertyToID("_H8OceanSurfaceTime");
         private static readonly int OceanQualityId = Shader.PropertyToID("_H8OceanGlobalQualityWeight");
@@ -36,8 +44,15 @@ namespace Hecton8.Atmosphere
         private static readonly int OceanWaveBufferId = Shader.PropertyToID("_H8OceanWaveParameters");
         private static readonly int OceanLodId = Shader.PropertyToID("_H8OceanRadialGridLod");
         private static readonly int OceanLocalProjectionId = Shader.PropertyToID("_H8OceanCameraAupLocalProjection");
+        private static readonly int OceanWavePhaseBase0Id = Shader.PropertyToID("_H8OceanWavePhaseBase0");
+        private static readonly int OceanWavePhaseBase1Id = Shader.PropertyToID("_H8OceanWavePhaseBase1");
         private static readonly int GlobalFlowVectorId = Shader.PropertyToID("_GlobalFlowVector");
         private static readonly int H8GlobalFlowId = Shader.PropertyToID("_H8GlobalFlow");
+        private static readonly int WaveSamplePositionsId = Shader.PropertyToID("_H8WaveSamplePositions");
+        private static readonly int WaveSampleResultsId = Shader.PropertyToID("_H8WaveSampleResults");
+        private static readonly int WaveSampleCountId = Shader.PropertyToID("_H8WaveSampleCount");
+        private static readonly int WaveSampleSeaLevelId = Shader.PropertyToID("_H8WaveSeaLevel");
+        private static readonly int WaveSampleLodId = Shader.PropertyToID("_H8WaveSampleLod");
 
         [Header("Ocean Authority")]
         [Tooltip("Optional camera transform used for AUP-local wave projection and waterline breach checks.")]
@@ -52,21 +67,44 @@ namespace Hecton8.Atmosphere
         [SerializeField] private float seaLevel = OceanSurfaceAtmosphereConstants.DefaultSeaLevel;
         [Tooltip("Provider priority for the global ocean kinematics selector. Higher wins.")]
         [SerializeField] private int providerPriority = 170;
+        [Header("GPU Height Sampling")]
+        [Tooltip("Compute shader that evaluates Gerstner height for the tiny physics query footprint.")]
+        [SerializeField] private ComputeShader waveHeightSamplerCompute;
+        [SerializeField, Range(0f, 1f)] private float qualityStepLimitMin = 0f;
+        [SerializeField, Range(0f, 1f)] private float qualityStepLimitMax = 1f;
 
         private IDataVault _vault;
         private VaultBufferHandle<WaveParametersDTO> _waveHandle;
         private VaultBufferHandle<AtmosphereDTO> _atmosphereHandle;
         private VaultBufferHandle<WeatherStateDTO> _weatherHandle;
-        private VaultBufferHandle<MockBuoyancyQuery> _mockQueryHandle;
-        private VaultBufferHandle<MockBuoyancyResult> _mockResultHandle;
         private VaultBufferHandle<OceanSurfaceTelemetryEntry> _telemetryHandle;
         private VaultBufferHandle<byte> _csvScratchHandle;
         private VaultBufferHandle<byte> _dumpScratchHandle;
         private VaultBufferHandle<OceanSurfaceLodDTO> _lodHandle;
+        private VaultBufferHandle<float4> _readbackQueryHandle;
+        private VaultBufferHandle<float4> _readbackResultHandle;
+        private VaultBufferHandle<float4> _readbackCompletedQueryHandle;
+        private VaultBufferHandle<float4> _readbackRingQueryHandle;
+        private VaultBufferHandle<BeaufortProfileDTO> _beaufortProfileHandle;
+        private VaultBufferHandle<float4> _surfaceSwellHandle;
         private GraphicsBuffer _waveGraphicsBufferA;
         private GraphicsBuffer _waveGraphicsBufferB;
+        private GraphicsBuffer _activeWaveGraphicsBuffer;
+        private GraphicsBuffer _waveSampleQueryBuffer0;
+        private GraphicsBuffer _waveSampleQueryBuffer1;
+        private GraphicsBuffer _waveSampleQueryBuffer2;
+        private GraphicsBuffer _waveSampleResultBuffer0;
+        private GraphicsBuffer _waveSampleResultBuffer1;
+        private GraphicsBuffer _waveSampleResultBuffer2;
+        private AsyncGPUReadbackRequest _readbackRequest0;
+        private AsyncGPUReadbackRequest _readbackRequest1;
+        private AsyncGPUReadbackRequest _readbackRequest2;
+        private static uint s_wavePayloadMutationVersion;
+        private static int s_activeWaveParameterJobCount;
         private float _timeSeconds;
         private float _globalQualityWeight = 1f;
+        private float _cachedSeaLevel = OceanSurfaceAtmosphereConstants.DefaultSeaLevel;
+        private float3 _cachedSurfaceFlow;
         private bool _registeredUpdate;
         private bool _registeredSlow;
         private bool _registeredLate;
@@ -75,29 +113,61 @@ namespace Hecton8.Atmosphere
         private bool _loadedCsv;
         private bool _lastCameraAboveSurface;
         private bool _hasCameraState;
+        private bool _waveSamplerKernelResolved;
         private int _telemetryCursor;
         private int _lastUploadedWaveCount = -1;
         private int _waveGraphicsBufferWriteIndex;
+        private int _waveSamplerKernel = -1;
+        private int _waveSamplerThreadGroupSize = WaveSamplerThreadGroupSizeFallback;
+        private int _readbackActiveMask;
+        private int _readbackWriteIndex;
+        private int _readbackFrame0;
+        private int _readbackFrame1;
+        private int _readbackFrame2;
+        private int _readbackCount0;
+        private int _readbackCount1;
+        private int _readbackCount2;
+        private int _queuedReadbackCount;
+        private int _queryWriteCursor;
+        private int _lastReadbackLatencyFrames;
+        private int _lastReadbackSampleCount;
         private long _lastWaveComputeNs;
+        private JobHandle _waveParameterJobHandle;
         private uint _lastStateHash;
         private uint _lastUploadedWaveHash;
         private uint _lastPublishedShaderStateHash;
+        private uint _lastTelemetryDumpFrame;
+        private uint _observedWavePayloadMutationVersion;
         private uint _simulationFrameCounter;
         private float _rawSimulationTimeSeconds;
+        private bool _vaultBuffersReady;
+        private bool _readbackDispatchEnabled = true;
+        private bool _readbackDisposePending;
+        private bool _telemetryDumpRequested;
+        private bool _waveParameterJobScheduled;
+        private bool _waveParameterPayloadDirty = true;
 
         public int Priority => providerPriority;
 
         public bool IsAvailable => ResolveWaveBuffer(out NativeArray<WaveParametersDTO> waves) && waves.Length >= OceanSurfaceAtmosphereConstants.MinQualityWaveCount;
 
-        public float SeaLevel => ResolveWeather(out WeatherStateDTO state) ? state.SurfaceScalars.x : seaLevel;
+        public float SeaLevel => _cachedSeaLevel;
+
+        public static bool IsWaveParameterMutationLocked => Volatile.Read(ref s_activeWaveParameterJobCount) != 0;
 
         private void OnEnable()
         {
+            _readbackDispatchEnabled = true;
             ConfigureSignalLanes();
             ResolveCameraTransformCold();
-            EnsureVaultBuffers();
+            EnsureVaultBuffersCold();
             if (!_initializedWeather)
                 LoadLegacyWeatherOrGenerateEmergency();
+
+            RefreshCachedSurfaceSnapshot();
+            EnsureWaveGraphicsBuffers();
+            EnsureWaveReadbackGraphicsBuffers();
+            UploadWaveBufferToGpu(false);
 
             if (registerAsOceanAuthority && !_registeredOcean)
             {
@@ -113,6 +183,9 @@ namespace Hecton8.Atmosphere
 
         private void OnDisable()
         {
+            _readbackDispatchEnabled = false;
+            CompleteWaveParameterKernelForShutdown();
+
             if (_registeredOcean)
             {
                 OceanKinematicsRuntimeService.UnregisterProvider(this);
@@ -131,36 +204,66 @@ namespace Hecton8.Atmosphere
                 _registeredSlow = false;
             }
 
-            if (_registeredLate)
+            if (TryDisposeWaveReadbackGraphicsBuffers())
             {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-                _registeredLate = false;
+                DisposeWaveGraphicsBuffers();
+                if (_registeredLate)
+                {
+                    GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                    _registeredLate = false;
+                }
             }
-
-            DisposeWaveGraphicsBuffers();
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            qualityStepLimitMin = math.saturate(qualityStepLimitMin);
+            qualityStepLimitMax = math.saturate(qualityStepLimitMax);
+            if (qualityStepLimitMax < qualityStepLimitMin)
+                qualityStepLimitMax = qualityStepLimitMin;
+
+            if (waveHeightSamplerCompute != null)
+                return;
+
+            string computePath = UnityEditor.AssetDatabase.GUIDToAssetPath(WaveHeightSamplerComputeGuid);
+            if (!string.IsNullOrEmpty(computePath))
+                waveHeightSamplerCompute = UnityEditor.AssetDatabase.LoadAssetAtPath<ComputeShader>(computePath);
+        }
+#endif
 
         public void Tick(float deltaTime)
         {
-            if (!EnsureVaultBuffers())
+            _ = deltaTime;
+            if (!_vaultBuffersReady || _readbackDisposePending)
                 return;
 
-            AdvanceSimulationClock();
+            AdvanceSimulationClock(SimulationTickDeltaSeconds);
             _globalQualityWeight = ResolveGlobalQualityWeight();
             _timeSeconds = ResolveWaveEvaluationTime(_rawSimulationTimeSeconds, _globalQualityWeight);
+
+            ConsumeWaveHeightReadbacks();
+            if (!TryCompleteWaveParameterKernel())
+                return;
 
             EvaluateCameraWaterline();
             RecordTelemetry();
             PublishShaderGlobals();
+            DispatchWaveHeightReadback();
+            ScheduleWaveParameterKernel();
         }
 
         public void SlowTick()
         {
-            if (!EnsureVaultBuffers())
+            if (!EnsureVaultBuffersCold())
                 return;
 
             ResolveCameraTransformCold();
             EnsureWaveGraphicsBuffers();
+            EnsureWaveReadbackGraphicsBuffers();
+            if (!TryCompleteWaveParameterKernel())
+                return;
+
             if (loadWeatherProfilesCsv && !_loadedCsv)
                 _loadedCsv = TryLoadWeatherProfilesCsv();
 
@@ -170,13 +273,33 @@ namespace Hecton8.Atmosphere
 
         public void LateFrameTick()
         {
+            if (_readbackDisposePending)
+            {
+                if (TryDisposeWaveReadbackGraphicsBuffers())
+                {
+                    DisposeWaveGraphicsBuffers();
+                    if (_registeredLate && !_registeredUpdate && !_registeredSlow)
+                    {
+                        GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                        _registeredLate = false;
+                    }
+                }
+
+                return;
+            }
+
             if (_lastWaveComputeNs > OceanSurfaceAtmosphereConstants.TelemetryDumpBudgetNs)
-                DumpTelemetryToDisk();
+                _telemetryDumpRequested = true;
+            if (_telemetryDumpRequested && TryDumpTelemetryToDiskThrottled())
+                _telemetryDumpRequested = false;
         }
 
         public bool TryGetSurfaceWeatherState(out HectonOceanSurfaceWeatherState state)
         {
             state = default;
+            if (!TryCompleteWaveParameterKernel())
+                return false;
+
             if (!ResolveWeather(out WeatherStateDTO weather))
                 return false;
 
@@ -194,6 +317,9 @@ namespace Hecton8.Atmosphere
 
         public bool ApplySurfaceWeatherState(in HectonOceanSurfaceWeatherState state)
         {
+            if (!TryCompleteWaveParameterKernel())
+                return false;
+
             if (!ResolveWeatherArray(out NativeArray<WeatherStateDTO> weatherArray))
                 return false;
 
@@ -207,12 +333,16 @@ namespace Hecton8.Atmosphere
             if ((state.Flags & (uint)HectonOceanSurfaceWeatherStateFlags.SupportsFoamStrength) != 0u)
                 weather.SurfaceScalars.z = math.saturate(state.FoamStrength);
             weatherArray[0] = weather;
+            RefreshCachedSurfaceSnapshot();
             PublishShaderGlobals();
             return true;
         }
 
         public bool TryAssignPrimaryLight(Light primaryLight)
         {
+            if (!TryCompleteWaveParameterKernel())
+                return false;
+
             if (primaryLight == null || !ResolveAtmosphereArray(out NativeArray<AtmosphereDTO> atmosphereArray))
                 return false;
 
@@ -253,21 +383,12 @@ namespace Hecton8.Atmosphere
             surfaceVelocity = ResolveSurfaceFlow();
             displacement = float3.zero;
 
-            if (!ResolveWaveBuffer(out NativeArray<WaveParametersDTO> waves))
+            QueueWaveHeightSample(position);
+            if (!TryResolveCompletedWaveSample(position, minSpatialLength, out float relativeHeight, out waveNormal))
                 return false;
 
-            double3 aup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(new Vector3(position.x, position.y, position.z));
-            HectonOceanSurfaceMath.EvaluateWavesDetailed(
-                aup,
-                _timeSeconds,
-                waves,
-                _globalQualityWeight,
-                out float relativeHeight,
-                out waveNormal,
-                out displacement,
-                out _,
-                out _);
             waterHeight = SeaLevel + relativeHeight;
+            displacement.y = relativeHeight;
             return true;
         }
 
@@ -277,16 +398,13 @@ namespace Hecton8.Atmosphere
                 return false;
 
             int count = math.min(sampleCount, math.min(samplePositions.Length, waterHeights.Length));
-            if (!ResolveWaveBuffer(out NativeArray<WaveParametersDTO> waves))
-                return false;
-
-            double3 origin = HectonFloatingOrigin.CurrentTotalOffsetDouble;
             float currentSeaLevel = SeaLevel;
             for (int i = 0; i < count; i++)
             {
                 Vector3 position = samplePositions[i];
-                double3 aup = origin + new double3(position.x, position.y, position.z);
-                HectonOceanSurfaceMath.EvaluateWaves(aup, _timeSeconds, waves, _globalQualityWeight, out float relativeHeight, out _);
+                float3 sample = new float3(position.x, position.y, position.z);
+                QueueWaveHeightSample(sample);
+                TryResolveCompletedWaveSample(sample, minSpatialLength, out float relativeHeight, out _);
                 waterHeights[i] = currentSeaLevel + relativeHeight;
             }
 
@@ -299,16 +417,13 @@ namespace Hecton8.Atmosphere
                 return false;
 
             int count = math.min(sampleCount, math.min(samplePositions.Length, waterHeights.Length));
-            if (!ResolveWaveBuffer(out NativeArray<WaveParametersDTO> waves))
-                return false;
-
-            double3 origin = HectonFloatingOrigin.CurrentTotalOffsetDouble;
             float currentSeaLevel = SeaLevel;
             for (int i = 0; i < count; i++)
             {
                 Vector3 position = samplePositions[i];
-                double3 aup = origin + new double3(position.x, position.y, position.z);
-                HectonOceanSurfaceMath.EvaluateWaves(aup, _timeSeconds, waves, _globalQualityWeight, out float relativeHeight, out _);
+                float3 sample = new float3(position.x, position.y, position.z);
+                QueueWaveHeightSample(sample);
+                TryResolveCompletedWaveSample(sample, minSpatialLength, out float relativeHeight, out _);
                 waterHeights[i] = currentSeaLevel + relativeHeight;
             }
 
@@ -355,26 +470,15 @@ namespace Hecton8.Atmosphere
                 return false;
 
             int count = math.min(sampleCount, math.min(samplePositions.Length, math.min(waveNormals.Length, math.min(surfaceVelocities.Length, displacements.Length))));
-            if (!ResolveWaveBuffer(out NativeArray<WaveParametersDTO> waves))
-                return false;
-
-            double3 origin = HectonFloatingOrigin.CurrentTotalOffsetDouble;
             float3 flow = ResolveSurfaceFlow();
             Vector3 flowVector = new Vector3(flow.x, flow.y, flow.z);
             for (int i = 0; i < count; i++)
             {
                 Vector3 position = samplePositions[i];
-                double3 aup = origin + new double3(position.x, position.y, position.z);
-                HectonOceanSurfaceMath.EvaluateWavesDetailed(
-                    aup,
-                    _timeSeconds,
-                    waves,
-                    _globalQualityWeight,
-                    out _,
-                    out float3 normal,
-                    out float3 displacement,
-                    out _,
-                    out _);
+                float3 sample = new float3(position.x, position.y, position.z);
+                QueueWaveHeightSample(sample);
+                TryResolveCompletedWaveSample(sample, minSpatialLength, out float relativeHeight, out float3 normal);
+                float3 displacement = new float3(0f, relativeHeight, 0f);
                 waveNormals[i] = new Vector3(normal.x, normal.y, normal.z);
                 surfaceVelocities[i] = flowVector;
                 displacements[i] = new Vector3(displacement.x, displacement.y, displacement.z);
@@ -395,26 +499,15 @@ namespace Hecton8.Atmosphere
                 return false;
 
             int count = math.min(sampleCount, math.min(samplePositions.Length, math.min(waveNormals.Length, math.min(surfaceVelocities.Length, displacements.Length))));
-            if (!ResolveWaveBuffer(out NativeArray<WaveParametersDTO> waves))
-                return false;
-
-            double3 origin = HectonFloatingOrigin.CurrentTotalOffsetDouble;
             float3 flow = ResolveSurfaceFlow();
             Vector3 flowVector = new Vector3(flow.x, flow.y, flow.z);
             for (int i = 0; i < count; i++)
             {
                 Vector3 position = samplePositions[i];
-                double3 aup = origin + new double3(position.x, position.y, position.z);
-                HectonOceanSurfaceMath.EvaluateWavesDetailed(
-                    aup,
-                    _timeSeconds,
-                    waves,
-                    _globalQualityWeight,
-                    out _,
-                    out float3 normal,
-                    out float3 displacement,
-                    out _,
-                    out _);
+                float3 sample = new float3(position.x, position.y, position.z);
+                QueueWaveHeightSample(sample);
+                TryResolveCompletedWaveSample(sample, minSpatialLength, out float relativeHeight, out float3 normal);
+                float3 displacement = new float3(0f, relativeHeight, 0f);
                 waveNormals[i] = new Vector3(normal.x, normal.y, normal.z);
                 surfaceVelocities[i] = flowVector;
                 displacements[i] = new Vector3(displacement.x, displacement.y, displacement.z);
@@ -431,6 +524,13 @@ namespace Hecton8.Atmosphere
         public float GetWaveHeight(float3 position)
         {
             return TrySampleWaveHeight(position, 1f, out float waterHeight) ? waterHeight : SeaLevel;
+        }
+
+        public void AssignWaveHeightSamplerCompute(ComputeShader computeShader)
+        {
+            waveHeightSamplerCompute = computeShader;
+            _waveSamplerKernelResolved = false;
+            _waveSamplerKernel = -1;
         }
 
         public static bool TryGetVaultSnapshot(
@@ -450,8 +550,28 @@ namespace Hecton8.Atmosphere
             return hasWaves && hasWeather && hasAtmosphere;
         }
 
-        public static bool TryApplyTunerValues(float windSpeed, float waveSteepness, float gasGiantGlow, float foamThreshold)
+        public static bool TryGetReadbackDebugSnapshot(
+            out NativeArray<float4> completedQueries,
+            out NativeArray<float4> completedResults,
+            out NativeArray<OceanSurfaceTelemetryEntry> telemetry)
         {
+            completedQueries = default;
+            completedResults = default;
+            telemetry = default;
+            if (!TryResolveVault(out IDataVault vault))
+                return false;
+
+            bool hasQueries = vault.TryGetBuffer(BufferID.ShinobuOceanWaveReadbackCompletedQueries, out completedQueries) && completedQueries.IsCreated;
+            bool hasResults = vault.TryGetBuffer(BufferID.ShinobuOceanWaveReadbackResults, out completedResults) && completedResults.IsCreated;
+            bool hasTelemetry = vault.TryGetBuffer(BufferID.ShinobuOceanTelemetryRing, out telemetry) && telemetry.IsCreated;
+            return hasQueries && hasResults && hasTelemetry;
+        }
+
+        public static bool TryApplyTunerValues(float windSpeed, float waveSteepness, float gasGiantGlow, float foamThreshold, float qualityMin = 0f, float qualityMax = 1f)
+        {
+            if (IsWaveParameterMutationLocked)
+                return false;
+
             if (!TryResolveVault(out IDataVault vault) ||
                 !vault.TryGetBuffer(BufferID.ShinobuOceanWaveParameters, out NativeArray<WaveParametersDTO> waves) ||
                 !vault.TryGetBuffer(BufferID.ShinobuOceanWeatherState, out NativeArray<WeatherStateDTO> weather) ||
@@ -463,7 +583,13 @@ namespace Hecton8.Atmosphere
             for (int i = 0; i < waves.Length; i++)
             {
                 WaveParametersDTO wave = waves[i];
-                wave.DirectionAndSteepness.w = math.saturate(waveSteepness);
+                for (int laneIndex = 0; laneIndex < OceanSurfaceAtmosphereConstants.WavesPerParameters; laneIndex++)
+                {
+                    float4 lane = HectonOceanSurfaceMath.GetWaveLane(wave, laneIndex);
+                    lane.y = math.saturate(waveSteepness);
+                    HectonOceanSurfaceMath.SetWaveLane(ref wave, laneIndex, lane);
+                }
+
                 waves[i] = HectonOceanSurfaceMath.SanitizeWave(wave);
             }
 
@@ -475,6 +601,25 @@ namespace Hecton8.Atmosphere
             AtmosphereDTO dto = atmosphere[0];
             dto.ScatteringParams.y = math.max(0f, gasGiantGlow);
             atmosphere[0] = dto;
+
+            if (vault.TryGetBuffer(BufferID.ShinobuOceanBeaufortProfiles, out NativeArray<BeaufortProfileDTO> profiles) &&
+                profiles.IsCreated &&
+                profiles.Length > 0)
+            {
+                BeaufortProfileDTO tuning = profiles[0];
+                tuning.StateHash = QualityStepTuningHash;
+                tuning.BaseSteepness = math.saturate(qualityMin);
+                tuning.StormIntensity = math.saturate(waveSteepness);
+                tuning.FoamThreshold = math.saturate(foamThreshold);
+                tuning.FrequencyScale = math.saturate(qualityMax);
+                tuning.Flags = 1u;
+                profiles[0] = tuning;
+            }
+
+            unchecked
+            {
+                s_wavePayloadMutationVersion++;
+            }
             return true;
         }
 
@@ -503,9 +648,13 @@ namespace Hecton8.Atmosphere
             SignalBus<WaterlineBreachSignal>.EnsureInitialized();
         }
 
-        private bool EnsureVaultBuffers()
+        private bool EnsureVaultBuffersCold()
         {
-            if (!TryResolveVault(out IDataVault vault))
+            if (_vaultBuffersReady)
+                return true;
+
+            IDataVault vault = _vault;
+            if (vault == null && !TryResolveVault(out vault))
                 return false;
 
             _vault = vault;
@@ -515,10 +664,6 @@ namespace Hecton8.Atmosphere
                 _atmosphereHandle = vault.GetBufferHandle<AtmosphereDTO>(BufferID.ShinobuOceanAtmosphere, 1, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
             if (!_weatherHandle.IsCreated)
                 _weatherHandle = vault.GetBufferHandle<WeatherStateDTO>(BufferID.ShinobuOceanWeatherState, 1, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
-            if (!_mockQueryHandle.IsCreated)
-                _mockQueryHandle = vault.GetBufferHandle<MockBuoyancyQuery>(BufferID.ShinobuOceanMockBuoyancyQueries, OceanSurfaceAtmosphereConstants.MockBuoyancyQueryCount, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
-            if (!_mockResultHandle.IsCreated)
-                _mockResultHandle = vault.GetBufferHandle<MockBuoyancyResult>(BufferID.ShinobuOceanMockBuoyancyResults, OceanSurfaceAtmosphereConstants.MockBuoyancyQueryCount, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
             if (!_telemetryHandle.IsCreated)
                 _telemetryHandle = vault.GetBufferHandle<OceanSurfaceTelemetryEntry>(BufferID.ShinobuOceanTelemetryRing, OceanSurfaceAtmosphereConstants.TelemetryFrameCount, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
             if (!_csvScratchHandle.IsCreated)
@@ -527,8 +672,21 @@ namespace Hecton8.Atmosphere
                 _dumpScratchHandle = vault.GetBufferHandle<byte>(BufferID.ShinobuOceanDumpScratch, DumpScratchBytes, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
             if (!_lodHandle.IsCreated)
                 _lodHandle = vault.GetBufferHandle<OceanSurfaceLodDTO>(BufferID.ShinobuOceanLodState, 1, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
+            if (!_readbackQueryHandle.IsCreated)
+                _readbackQueryHandle = vault.GetBufferHandle<float4>(BufferID.ShinobuOceanWaveReadbackQueries, OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
+            if (!_readbackResultHandle.IsCreated)
+                _readbackResultHandle = vault.GetBufferHandle<float4>(BufferID.ShinobuOceanWaveReadbackResults, OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
+            if (!_readbackCompletedQueryHandle.IsCreated)
+                _readbackCompletedQueryHandle = vault.GetBufferHandle<float4>(BufferID.ShinobuOceanWaveReadbackCompletedQueries, OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
+            if (!_readbackRingQueryHandle.IsCreated)
+                _readbackRingQueryHandle = vault.GetBufferHandle<float4>(BufferID.ShinobuOceanWaveReadbackRingQueries, OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity * OceanSurfaceAtmosphereConstants.WaveReadbackRingSize, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
+            if (!_beaufortProfileHandle.IsCreated)
+                _beaufortProfileHandle = vault.GetBufferHandle<BeaufortProfileDTO>(BufferID.ShinobuOceanBeaufortProfiles, OceanSurfaceAtmosphereConstants.BeaufortProfileCapacity, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
+            if (!_surfaceSwellHandle.IsCreated)
+                _surfaceSwellHandle = vault.GetBufferHandle<float4>(BufferID.ShinobuOceanSurfaceSwell, 1, SystemID.HabitatAtmosphere, NativeArrayOptions.UninitializedMemory);
 
-            return ResolveWaveBuffer(out _) && ResolveWeatherArray(out _) && ResolveAtmosphereArray(out _);
+            _vaultBuffersReady = ResolveWaveBuffer(out _) && ResolveWeatherArray(out _) && ResolveAtmosphereArray(out _);
+            return _vaultBuffersReady;
         }
 
         private void LoadLegacyWeatherOrGenerateEmergency()
@@ -557,7 +715,7 @@ namespace Hecton8.Atmosphere
                 EnsureAtmosphereDefaults();
 
             _initializedWeather = true;
-            UploadWaveBufferToGpu(true);
+            UploadWaveBufferToGpu(false);
         }
 
         private bool TryLoadLegacyWeatherFile(string relativePath)
@@ -573,7 +731,7 @@ namespace Hecton8.Atmosphere
             if (!ResolveCsvScratch(out NativeArray<byte> scratch))
                 return false;
 
-            int requiredBytes = OceanSurfaceAtmosphereConstants.WaveCapacity * LegacyWaveRecordBytes;
+            int requiredBytes = OceanSurfaceAtmosphereConstants.MaxWaveOctaves * LegacyWaveRecordBytes;
             int read;
             using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
             read = ReadStreamToScratch(stream, scratch, math.min(requiredBytes, scratch.Length));
@@ -581,7 +739,7 @@ namespace Hecton8.Atmosphere
             if (read < requiredBytes)
                 return false;
 
-            for (int i = 0; i < OceanSurfaceAtmosphereConstants.WaveCapacity; i++)
+            for (int i = 0; i < OceanSurfaceAtmosphereConstants.MaxWaveOctaves; i++)
             {
                 int offset = i * LegacyWaveRecordBytes;
                 float dirX = ReadFloatLE(scratch, offset);
@@ -592,15 +750,18 @@ namespace Hecton8.Atmosphere
                 float safeWavelength = math.max(OceanSurfaceAtmosphereConstants.MinimumWavelength, wavelength);
                 float waveNumber = OceanSurfaceAtmosphereConstants.TwoPi / safeWavelength;
 
-                WaveParametersDTO wave = default;
-                wave.DirectionAndSteepness = new float4(dirX, dirZ, i * 0.6180339f, math.saturate(steepness));
-                wave.PhaseSpeed = math.sqrt(9.81f * waveNumber);
-                wave.Amplitude = math.max(0.01f, amplitude);
-                wave.Wavelength = safeWavelength;
-                waves[i] = HectonOceanSurfaceMath.SanitizeWave(wave);
+                int waveIndex = i / OceanSurfaceAtmosphereConstants.WavesPerParameters;
+                int laneIndex = i - (waveIndex * OceanSurfaceAtmosphereConstants.WavesPerParameters);
+                WaveParametersDTO wave = waves[waveIndex];
+                float resolvedSteepness = math.max(math.saturate(steepness), math.saturate(amplitude * waveNumber));
+                float phaseSpeed = math.sqrt(9.81f * waveNumber);
+                float4 lane = HectonOceanSurfaceMath.CreateWaveLaneFromDirection(new float2(dirX, dirZ), resolvedSteepness, safeWavelength, phaseSpeed);
+                HectonOceanSurfaceMath.SetWaveLane(ref wave, laneIndex, lane);
+                waves[waveIndex] = HectonOceanSurfaceMath.SanitizeWave(wave);
             }
 
             EnsureWeatherDefaultsFromWaves();
+            _waveParameterPayloadDirty = true;
             return true;
         }
 
@@ -613,40 +774,22 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
-            float maxAmplitude = 0f;
-            for (int i = 0; i < OceanSurfaceAtmosphereConstants.WaveCapacity; i++)
+            NativeArray<float4> swell = default;
+            ResolveSurfaceSwellArray(out swell);
+            GenerateMockStormJob mockStormJob = new GenerateMockStormJob
             {
-                float t = i * (1f / (OceanSurfaceAtmosphereConstants.WaveCapacity - 1));
-                float angle = (i * 2.3999631f) + 0.37f;
-                math.sincos(angle, out float s, out float c);
-                float wavelength = math.lerp(18f, 180f, t);
-                float waveNumber = OceanSurfaceAtmosphereConstants.TwoPi / wavelength;
-                float amplitude = math.lerp(0.28f, 2.4f, t * t);
-                maxAmplitude = math.max(maxAmplitude, amplitude);
-
-                WaveParametersDTO wave = default;
-                wave.DirectionAndSteepness = new float4(c, s, i * 0.7548777f, math.lerp(0.18f, 0.78f, t));
-                wave.PhaseSpeed = math.sqrt(9.81f * waveNumber) * math.lerp(0.72f, 1.18f, t);
-                wave.Amplitude = amplitude;
-                wave.Wavelength = wavelength;
-                waves[i] = HectonOceanSurfaceMath.SanitizeWave(wave);
-            }
-
-            WeatherStateDTO state = default;
-            state.WindDirectionSpeedStorm = new float4(0.78f, 0.62f, 11f, 0.42f);
-            state.SurfaceScalars = new float4(seaLevel, 1f, DefaultFoamThreshold, 0.25f);
-            state.SkyTintAndSurge = new float4(0.33f, 0.21f, 0.48f, 0.12f);
-            state.StateMask = 1u;
-            state.GlobalQualityWeight = ResolveGlobalQualityWeight();
-            state.MaxWaveAmplitude = maxAmplitude;
-            weather[0] = state;
-
-            AtmosphereDTO atmo = default;
-            atmo.RayleighBeta = new float4(0.0048f, 0.0118f, 0.0285f, 0f);
-            atmo.MieBeta = new float4(0.021f, 0.018f, 0.014f, 0.72f);
-            atmo.ScatteringParams = new float4(2.4f, 1.15f, 0.82f, 0.34f);
-            atmo.PlanetParams = new float4(0.62f, 0.17f, 0.88f, 0f);
-            atmosphere[0] = atmo;
+                Waves = waves,
+                Weather = weather,
+                Atmosphere = atmosphere,
+                SurfaceSwell = swell,
+                SeaLevel = seaLevel,
+                TimeSeconds = _timeSeconds,
+                GlobalQualityWeight = ResolveGlobalQualityWeight(),
+                SimulationFrame = _simulationFrameCounter
+            };
+            mockStormJob.Execute();
+            _waveParameterPayloadDirty = true;
+            RefreshCachedSurfaceSnapshot();
         }
 
         private void EnsureAtmosphereDefaults()
@@ -675,10 +818,6 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
-            float maxAmplitude = 0f;
-            for (int i = 0; i < math.min(waves.Length, OceanSurfaceAtmosphereConstants.WaveCapacity); i++)
-                maxAmplitude = math.max(maxAmplitude, math.abs(waves[i].Amplitude));
-
             WeatherStateDTO state = weather[0];
             if (!math.all(math.isfinite(state.WindDirectionSpeedStorm)) || state.WindDirectionSpeedStorm.z <= 0f)
                 state.WindDirectionSpeedStorm = new float4(0.78f, 0.62f, 11f, 0.42f);
@@ -688,7 +827,7 @@ namespace Hecton8.Atmosphere
                 state.SkyTintAndSurge = new float4(0.33f, 0.21f, 0.48f, 0.12f);
 
             state.GlobalQualityWeight = ResolveGlobalQualityWeight();
-            state.MaxWaveAmplitude = maxAmplitude;
+            state.MaxWaveAmplitude = HectonOceanSurfaceMath.ResolveMaxAmplitude(waves);
             weather[0] = state;
         }
 
@@ -712,16 +851,55 @@ namespace Hecton8.Atmosphere
             if (!File.Exists(path))
                 path = Path.Combine(root, "Data/Precomputed/weather_profiles.csv");
             if (!File.Exists(path))
-                return false;
+                return TryLoadBeaufortProfilesCsv(root, scratch);
 
             try
             {
                 using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                 int read = ReadStreamToScratch(stream, scratch, scratch.Length);
                 bool changed = OceanWeatherCsvParser.TryApply(scratch, read, waves, weather, atmosphere);
+                changed |= TryLoadBeaufortProfilesCsv(root, scratch);
                 if (changed)
-                    UploadWaveBufferToGpu(true);
+                {
+                    _waveParameterPayloadDirty = true;
+                    RefreshCachedSurfaceSnapshot();
+                    UploadWaveBufferToGpu(false);
+                }
                 return changed;
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+        }
+
+        private bool TryLoadBeaufortProfilesCsv(string root, NativeArray<byte> scratch)
+        {
+            if (string.IsNullOrEmpty(root) ||
+                !scratch.IsCreated ||
+                !ResolveBeaufortProfiles(out NativeArray<BeaufortProfileDTO> profiles))
+            {
+                return false;
+            }
+
+            string path = Path.Combine(root, "Assets/StreamingAssets/beaufort_scale_profiles.csv");
+            if (!File.Exists(path))
+                path = Path.Combine(root, "StreamingAssets/beaufort_scale_profiles.csv");
+            if (!File.Exists(path))
+                path = Path.Combine(root, "Data/Precomputed/beaufort_scale_profiles.csv");
+            if (!File.Exists(path))
+                return false;
+
+            try
+            {
+                using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                int read = ReadStreamToScratch(stream, scratch, scratch.Length);
+                byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(scratch);
+                return OceanWeatherCsvParser.TryApplyBeaufort(new ReadOnlySpan<byte>(scratchPtr, read), profiles);
             }
             catch (IOException)
             {
@@ -774,27 +952,493 @@ namespace Hecton8.Atmosphere
                    ((value & 0xFF000000u) >> 24);
         }
 
+        private void ScheduleWaveParameterKernel()
+        {
+            if (_waveParameterJobScheduled)
+                return;
+
+            if (!ResolveWaveBuffer(out NativeArray<WaveParametersDTO> waves) ||
+                !ResolveWeatherArray(out NativeArray<WeatherStateDTO> weather))
+            {
+                return;
+            }
+
+            NativeArray<float4> swell = default;
+            NativeArray<BeaufortProfileDTO> tuningProfiles = default;
+            ResolveSurfaceSwellArray(out swell);
+            ResolveBeaufortProfiles(out tuningProfiles);
+            CalculateWaveParametersJob job = new CalculateWaveParametersJob
+            {
+                Waves = waves,
+                Weather = weather,
+                SurfaceSwell = swell,
+                TuningProfiles = tuningProfiles,
+                TimeSeconds = _timeSeconds,
+                GlobalQualityWeight = _globalQualityWeight
+            };
+            _waveParameterJobHandle = job.Schedule();
+            _waveParameterJobScheduled = true;
+            Interlocked.Increment(ref s_activeWaveParameterJobCount);
+        }
+
+        private bool TryCompleteWaveParameterKernel()
+        {
+            if (!_waveParameterJobScheduled)
+                return true;
+
+            if (!_waveParameterJobHandle.IsCompleted)
+                return false;
+
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _waveParameterJobHandle))
+                return false;
+
+            _waveParameterJobScheduled = false;
+            ReleaseWaveParameterJobLease();
+            _waveParameterPayloadDirty = true;
+            RefreshCachedSurfaceSnapshot();
+            return true;
+        }
+
+        private void CompleteWaveParameterKernelForShutdown()
+        {
+            if (!_waveParameterJobScheduled)
+                return;
+
+            DispatcherJobFence.TryComplete(ref _waveParameterJobHandle, forceComplete: true);
+            _waveParameterJobScheduled = false;
+            ReleaseWaveParameterJobLease();
+            _waveParameterPayloadDirty = true;
+            RefreshCachedSurfaceSnapshot();
+        }
+
+        private void QueueWaveHeightSample(float3 position)
+        {
+            if (!ResolveReadbackQueries(out NativeArray<float4> queries))
+                return;
+
+            int budget = ResolveReadbackSampleBudget(_globalQualityWeight);
+            int cursor = _queryWriteCursor;
+            if (cursor < 0 || cursor >= budget)
+                cursor = 0;
+
+            Vector3 cameraPosition = cameraTransform != null ? cameraTransform.position : Vector3.zero;
+            float localX = position.x - cameraPosition.x;
+            float localZ = position.z - cameraPosition.z;
+            queries[cursor] = new float4(localX, localZ, position.x, position.z);
+            _queryWriteCursor = cursor + 1 >= budget ? 0 : cursor + 1;
+            _queuedReadbackCount = math.min(budget, math.max(_queuedReadbackCount, cursor + 1));
+        }
+
+        private bool TryResolveCompletedWaveSample(float3 position, float minSpatialLength, out float relativeHeight, out float3 normal)
+        {
+            relativeHeight = 0f;
+            normal = new float3(0f, 1f, 0f);
+            if (_lastReadbackSampleCount <= 0 ||
+                !ResolveReadbackCompletedQueries(out NativeArray<float4> queries) ||
+                !ResolveReadbackResults(out NativeArray<float4> results))
+            {
+                return false;
+            }
+
+            float threshold = math.max(0.25f, minSpatialLength);
+            float thresholdSq = threshold * threshold;
+            int count = math.min(_lastReadbackSampleCount, math.min(queries.Length, results.Length));
+            int bestIndex = -1;
+            float bestDistanceSq = thresholdSq;
+            for (int i = 0; i < count; i++)
+            {
+                float4 query = queries[i];
+                float dx = query.z - position.x;
+                float dz = query.w - position.z;
+                float distanceSq = (dx * dx) + (dz * dz);
+                if (distanceSq <= bestDistanceSq)
+                {
+                    bestDistanceSq = distanceSq;
+                    bestIndex = i;
+                }
+            }
+
+            if (bestIndex < 0)
+                return false;
+
+            float4 sample = results[bestIndex];
+            if (!math.isfinite(sample.x))
+                return false;
+
+            relativeHeight = sample.x;
+            float nx = math.isfinite(sample.y) ? sample.y : 0f;
+            float nz = math.isfinite(sample.z) ? sample.z : 0f;
+            float lateralSq = (nx * nx) + (nz * nz);
+            if (lateralSq <= 0.000001f)
+            {
+                normal = new float3(0f, 1f, 0f);
+                return true;
+            }
+
+            float ny = math.sqrt(math.max(0.0001f, 1f - math.saturate(lateralSq)));
+            normal = math.normalize(new float3(nx, ny, nz));
+            return math.all(math.isfinite(normal));
+        }
+
+        private void ConsumeWaveHeightReadbacks()
+        {
+            for (int slot = 0; slot < OceanSurfaceAtmosphereConstants.WaveReadbackRingSize; slot++)
+            {
+                if (!IsReadbackSlotActive(slot))
+                    continue;
+
+                ref AsyncGPUReadbackRequest request = ref ResolveReadbackRequest(slot);
+                if (!request.done)
+                    continue;
+
+                ClearReadbackSlotActive(slot);
+                int readCount = ResolveReadbackCount(slot);
+                if (request.hasError || readCount <= 0)
+                    continue;
+
+                if (!ResolveReadbackResults(out NativeArray<float4> results) ||
+                    !ResolveReadbackCompletedQueries(out NativeArray<float4> completedQueries) ||
+                    !ResolveReadbackRingQueries(out NativeArray<float4> ringQueries))
+                {
+                    continue;
+                }
+
+                NativeArray<float4> readbackData = request.GetData<float4>();
+                int count = math.min(readCount, math.min(results.Length, readbackData.Length));
+                int ringBase = slot * OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity;
+                for (int i = 0; i < count; i++)
+                {
+                    results[i] = readbackData[i];
+                    completedQueries[i] = ringQueries[ringBase + i];
+                }
+
+                _lastReadbackSampleCount = count;
+                _lastReadbackLatencyFrames = math.max(0, unchecked((int)_simulationFrameCounter) - ResolveReadbackFrame(slot));
+                if (_lastReadbackLatencyFrames > 4)
+                    _telemetryDumpRequested = true;
+            }
+        }
+
+        private void DispatchWaveHeightReadback()
+        {
+            if (!_readbackDispatchEnabled ||
+                !TryResolveWaveSamplerKernel() ||
+                !ResolveWaveBuffer(out NativeArray<WaveParametersDTO> waves) ||
+                !ResolveReadbackQueries(out NativeArray<float4> queries))
+            {
+                return;
+            }
+
+            int budget = ResolveReadbackSampleBudget(_globalQualityWeight);
+            int count = math.min(_queuedReadbackCount, budget);
+            if (count <= 0)
+            {
+                Transform cam = cameraTransform;
+                if (cam == null)
+                    return;
+
+                Vector3 position = cam.position;
+                QueueWaveHeightSample(new float3(position.x, position.y, position.z));
+                count = math.min(_queuedReadbackCount, budget);
+                if (count <= 0)
+                    return;
+            }
+
+            if (!HasWaveGraphicsBuffers() || !HasWaveReadbackGraphicsBuffers())
+                return;
+
+            double3 cameraAup = ResolveCameraAupDouble();
+            float maxWavelength = HectonOceanSurfaceMath.ResolveMaxWavelength(waves);
+            int activeWaveCount = HectonOceanSurfaceMath.ResolveFullWaveCount(_globalQualityWeight, OceanSurfaceAtmosphereConstants.MaxWaveOctaves);
+            OceanWaveAupPhaseDTO phase = HectonOceanSurfaceMath.ResolveAupPhaseBases(cameraAup, waves, _simulationFrameCounter, _globalQualityWeight, activeWaveCount);
+            UploadWaveBufferToGpu(false);
+            if (_activeWaveGraphicsBuffer == null)
+                return;
+
+            int slot = _readbackWriteIndex;
+            if (IsReadbackSlotActive(slot))
+                return;
+
+            if (ResolveReadbackRingQueries(out NativeArray<float4> ringQueries))
+            {
+                int ringBase = slot * OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity;
+                for (int i = 0; i < count; i++)
+                    ringQueries[ringBase + i] = queries[i];
+            }
+
+            GraphicsBuffer queryBuffer = ResolveWaveSampleQueryBuffer(slot);
+            GraphicsBuffer resultBuffer = ResolveWaveSampleResultBuffer(slot);
+            if (queryBuffer == null || resultBuffer == null)
+                return;
+
+            GraphicsBufferUploadUtility.UploadNativeArray(queryBuffer, queries, count);
+            OceanSurfaceLodDTO lod = HectonOceanSurfaceMath.ResolveRadialGridLod(cameraAup, _globalQualityWeight, maxWavelength);
+
+            waveHeightSamplerCompute.SetBuffer(_waveSamplerKernel, OceanWaveBufferId, _activeWaveGraphicsBuffer);
+            waveHeightSamplerCompute.SetBuffer(_waveSamplerKernel, WaveSamplePositionsId, queryBuffer);
+            waveHeightSamplerCompute.SetBuffer(_waveSamplerKernel, WaveSampleResultsId, resultBuffer);
+            waveHeightSamplerCompute.SetInt(WaveSampleCountId, count);
+            waveHeightSamplerCompute.SetFloat(WaveSampleSeaLevelId, SeaLevel);
+            waveHeightSamplerCompute.SetFloat(OceanTimeId, _timeSeconds);
+            waveHeightSamplerCompute.SetFloat(OceanQualityId, _globalQualityWeight);
+            waveHeightSamplerCompute.SetInt(OceanWaveCountId, activeWaveCount);
+            waveHeightSamplerCompute.SetVector(OceanLocalProjectionId, ToVector4(lod.CameraAupLocalXZ));
+            waveHeightSamplerCompute.SetVector(OceanWavePhaseBase0Id, ToVector4(phase.PhaseBase0));
+            waveHeightSamplerCompute.SetVector(OceanWavePhaseBase1Id, ToVector4(phase.PhaseBase1));
+            waveHeightSamplerCompute.SetVector(WaveSampleLodId, new Vector4(maxWavelength, activeWaveCount, _globalQualityWeight, _timeSeconds));
+
+            int groupSize = math.max(1, _waveSamplerThreadGroupSize);
+            int groupCount = math.max(1, (count + groupSize - 1) / groupSize);
+            waveHeightSamplerCompute.Dispatch(_waveSamplerKernel, groupCount, 1, 1);
+            ref AsyncGPUReadbackRequest request = ref ResolveReadbackRequest(slot);
+            request = AsyncGPUReadback.Request(resultBuffer);
+            SetReadbackFrame(slot, unchecked((int)_simulationFrameCounter));
+            SetReadbackCount(slot, count);
+            SetReadbackSlotActive(slot);
+            _readbackWriteIndex = (_readbackWriteIndex + 1) % OceanSurfaceAtmosphereConstants.WaveReadbackRingSize;
+            _queuedReadbackCount = 0;
+        }
+
+        private bool TryResolveWaveSamplerKernel()
+        {
+            if (_waveSamplerKernelResolved)
+                return _waveSamplerKernel >= 0 && waveHeightSamplerCompute != null;
+
+            _waveSamplerKernelResolved = true;
+            _waveSamplerKernel = -1;
+            if (waveHeightSamplerCompute == null)
+                return false;
+
+            if (!waveHeightSamplerCompute.HasKernel(WaveHeightSamplerKernelName))
+                return false;
+
+            _waveSamplerKernel = waveHeightSamplerCompute.FindKernel(WaveHeightSamplerKernelName);
+            waveHeightSamplerCompute.GetKernelThreadGroupSizes(_waveSamplerKernel, out uint threadGroupX, out _, out _);
+            _waveSamplerThreadGroupSize = threadGroupX > 0u ? math.clamp((int)threadGroupX, 1, 1024) : WaveSamplerThreadGroupSizeFallback;
+            return _waveSamplerKernel >= 0;
+        }
+
+        private bool EnsureWaveReadbackGraphicsBuffers()
+        {
+            if (_waveSampleQueryBuffer0 == null)
+            {
+                // COLD ALLOC: GraphicsBuffer[64 float4] - targeted wave height query upload buffer slot 0 - owner: ShinobuOceanSurfaceAtmosphereRuntime
+                _waveSampleQueryBuffer0 = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity);
+            }
+
+            if (_waveSampleQueryBuffer1 == null)
+            {
+                // COLD ALLOC: GraphicsBuffer[64 float4] - targeted wave height query upload buffer slot 1 - owner: ShinobuOceanSurfaceAtmosphereRuntime
+                _waveSampleQueryBuffer1 = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity);
+            }
+
+            if (_waveSampleQueryBuffer2 == null)
+            {
+                // COLD ALLOC: GraphicsBuffer[64 float4] - targeted wave height query upload buffer slot 2 - owner: ShinobuOceanSurfaceAtmosphereRuntime
+                _waveSampleQueryBuffer2 = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity);
+            }
+
+            if (_waveSampleResultBuffer0 == null)
+            {
+                // COLD ALLOC: GraphicsBuffer[64 float4] - targeted wave height async readback result buffer slot 0 - owner: ShinobuOceanSurfaceAtmosphereRuntime
+                _waveSampleResultBuffer0 = new GraphicsBuffer(GraphicsBuffer.Target.Structured, OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity, UnsafeUtility.SizeOf<float4>());
+            }
+
+            if (_waveSampleResultBuffer1 == null)
+            {
+                // COLD ALLOC: GraphicsBuffer[64 float4] - targeted wave height async readback result buffer slot 1 - owner: ShinobuOceanSurfaceAtmosphereRuntime
+                _waveSampleResultBuffer1 = new GraphicsBuffer(GraphicsBuffer.Target.Structured, OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity, UnsafeUtility.SizeOf<float4>());
+            }
+
+            if (_waveSampleResultBuffer2 == null)
+            {
+                // COLD ALLOC: GraphicsBuffer[64 float4] - targeted wave height async readback result buffer slot 2 - owner: ShinobuOceanSurfaceAtmosphereRuntime
+                _waveSampleResultBuffer2 = new GraphicsBuffer(GraphicsBuffer.Target.Structured, OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity, UnsafeUtility.SizeOf<float4>());
+            }
+
+            return _waveSampleQueryBuffer0 != null &&
+                _waveSampleQueryBuffer1 != null &&
+                _waveSampleQueryBuffer2 != null &&
+                _waveSampleResultBuffer0 != null &&
+                _waveSampleResultBuffer1 != null &&
+                _waveSampleResultBuffer2 != null;
+        }
+
+        private bool HasWaveReadbackGraphicsBuffers()
+        {
+            return _waveSampleQueryBuffer0 != null &&
+                _waveSampleQueryBuffer1 != null &&
+                _waveSampleQueryBuffer2 != null &&
+                _waveSampleResultBuffer0 != null &&
+                _waveSampleResultBuffer1 != null &&
+                _waveSampleResultBuffer2 != null;
+        }
+
+        private bool TryDisposeWaveReadbackGraphicsBuffers()
+        {
+            ConsumeWaveHeightReadbacks();
+            if (HasPendingReadbackRequest())
+            {
+                _readbackDisposePending = true;
+                return false;
+            }
+
+            DisposeGraphicsBuffer(ref _waveSampleQueryBuffer0);
+            DisposeGraphicsBuffer(ref _waveSampleQueryBuffer1);
+            DisposeGraphicsBuffer(ref _waveSampleQueryBuffer2);
+            DisposeGraphicsBuffer(ref _waveSampleResultBuffer0);
+            DisposeGraphicsBuffer(ref _waveSampleResultBuffer1);
+            DisposeGraphicsBuffer(ref _waveSampleResultBuffer2);
+
+            _readbackDisposePending = false;
+            _readbackActiveMask = 0;
+            _readbackWriteIndex = 0;
+            _lastReadbackLatencyFrames = 0;
+            _lastReadbackSampleCount = 0;
+            _queuedReadbackCount = 0;
+            _queryWriteCursor = 0;
+            return true;
+        }
+
+        private bool HasPendingReadbackRequest()
+        {
+            for (int slot = 0; slot < OceanSurfaceAtmosphereConstants.WaveReadbackRingSize; slot++)
+            {
+                if (!IsReadbackSlotActive(slot))
+                    continue;
+
+                ref AsyncGPUReadbackRequest request = ref ResolveReadbackRequest(slot);
+                if (!request.done)
+                    return true;
+
+                ClearReadbackSlotActive(slot);
+            }
+
+            return false;
+        }
+
+        private static void DisposeGraphicsBuffer(ref GraphicsBuffer buffer)
+        {
+            if (buffer == null)
+                return;
+
+            buffer.Dispose();
+            buffer = null;
+        }
+
+        private GraphicsBuffer ResolveWaveSampleQueryBuffer(int slot)
+        {
+            if (slot == 0)
+                return _waveSampleQueryBuffer0;
+            if (slot == 1)
+                return _waveSampleQueryBuffer1;
+            return _waveSampleQueryBuffer2;
+        }
+
+        private GraphicsBuffer ResolveWaveSampleResultBuffer(int slot)
+        {
+            if (slot == 0)
+                return _waveSampleResultBuffer0;
+            if (slot == 1)
+                return _waveSampleResultBuffer1;
+            return _waveSampleResultBuffer2;
+        }
+
+        private int ResolveReadbackSampleBudget(float globalQualityWeight)
+        {
+            float q = HectonOceanSurfaceMath.SanitizeQualityWeight(globalQualityWeight);
+            float low = math.min(qualityStepLimitMin, qualityStepLimitMax);
+            float high = math.max(qualityStepLimitMin, qualityStepLimitMax);
+            if (ResolveBeaufortProfiles(out NativeArray<BeaufortProfileDTO> profiles) &&
+                profiles.Length > 0 &&
+                profiles[0].StateHash == QualityStepTuningHash)
+            {
+                low = math.saturate(profiles[0].BaseSteepness);
+                high = math.saturate(profiles[0].FrequencyScale);
+            }
+
+            q = math.saturate(math.lerp(low, high, q));
+            float curve = q * q * (3f - (2f * q));
+            return math.clamp((int)math.ceil(math.lerp(4f, OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity, curve)), 1, OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity);
+        }
+
+        private bool IsReadbackSlotActive(int slot)
+        {
+            return (_readbackActiveMask & (1 << slot)) != 0;
+        }
+
+        private void SetReadbackSlotActive(int slot)
+        {
+            _readbackActiveMask |= 1 << slot;
+        }
+
+        private void ClearReadbackSlotActive(int slot)
+        {
+            _readbackActiveMask &= ~(1 << slot);
+        }
+
+        private ref AsyncGPUReadbackRequest ResolveReadbackRequest(int slot)
+        {
+            if (slot == 0)
+                return ref _readbackRequest0;
+            if (slot == 1)
+                return ref _readbackRequest1;
+            return ref _readbackRequest2;
+        }
+
+        private int ResolveReadbackFrame(int slot)
+        {
+            if (slot == 0)
+                return _readbackFrame0;
+            if (slot == 1)
+                return _readbackFrame1;
+            return _readbackFrame2;
+        }
+
+        private void SetReadbackFrame(int slot, int frame)
+        {
+            if (slot == 0)
+                _readbackFrame0 = frame;
+            else if (slot == 1)
+                _readbackFrame1 = frame;
+            else
+                _readbackFrame2 = frame;
+        }
+
+        private int ResolveReadbackCount(int slot)
+        {
+            if (slot == 0)
+                return _readbackCount0;
+            if (slot == 1)
+                return _readbackCount1;
+            return _readbackCount2;
+        }
+
+        private void SetReadbackCount(int slot, int count)
+        {
+            if (slot == 0)
+                _readbackCount0 = count;
+            else if (slot == 1)
+                _readbackCount1 = count;
+            else
+                _readbackCount2 = count;
+        }
+
         private void EvaluateCameraWaterline()
         {
             Transform cam = cameraTransform;
-            if (cam == null || !ResolveWaveBuffer(out NativeArray<WaveParametersDTO> waves))
+            if (cam == null)
                 return;
 
             Vector3 runtime = cam.position;
             double3 aup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtime);
             long start = Stopwatch.GetTimestamp();
-            HectonOceanSurfaceMath.EvaluateWavesDetailed(
-                aup,
-                _timeSeconds,
-                waves,
-                _globalQualityWeight,
-                out float relativeHeight,
-                out float3 normal,
-                out _,
-                out float jacobian,
-                out _);
+            QueueWaveHeightSample(new float3(runtime.x, runtime.y, runtime.z));
+            bool hasCompleted = TryResolveCompletedWaveSample(new float3(runtime.x, runtime.y, runtime.z), 6f, out float relativeHeight, out float3 normal);
             long end = Stopwatch.GetTimestamp();
             _lastWaveComputeNs = TicksToNanoseconds(end - start);
+            if (!hasCompleted)
+                return;
 
             float surfaceY = SeaLevel + relativeHeight;
             bool aboveSurface = runtime.y > surfaceY;
@@ -809,7 +1453,7 @@ namespace Hecton8.Atmosphere
                 signal.SourceId = OceanSurfaceAtmosphereConstants.SourceHash;
                 signal.Frame = _simulationFrameCounter;
                 signal.IsAboveSurface = aboveSurface ? (byte)1 : (byte)0;
-                signal.Flags = math.isfinite(jacobian) && math.all(math.isfinite(normal)) ? (byte)1 : (byte)2;
+                signal.Flags = math.all(math.isfinite(normal)) ? (byte)1 : (byte)2;
                 SignalBus<WaterlineBreachSignal>.Push(in signal);
                 _lastCameraAboveSurface = aboveSurface;
                 _hasCameraState = true;
@@ -830,8 +1474,14 @@ namespace Hecton8.Atmosphere
             for (int i = 0; i < waves.Length; i++)
             {
                 WaveParametersDTO wave = waves[i];
-                wave.Amplitude = math.max(15f, wave.Amplitude);
-                wave.DirectionAndSteepness.w = math.max(wave.DirectionAndSteepness.w, 0.84f);
+                for (int laneIndex = 0; laneIndex < OceanSurfaceAtmosphereConstants.WavesPerParameters; laneIndex++)
+                {
+                    float4 lane = HectonOceanSurfaceMath.GetWaveLane(wave, laneIndex);
+                    lane.y = math.max(lane.y, 0.84f);
+                    lane.z = math.max(lane.z, 72f + (laneIndex * 36f));
+                    HectonOceanSurfaceMath.SetWaveLane(ref wave, laneIndex, lane);
+                }
+
                 waves[i] = HectonOceanSurfaceMath.SanitizeWave(wave);
             }
 
@@ -848,7 +1498,8 @@ namespace Hecton8.Atmosphere
             dto.ScatteringParams.y = math.max(dto.ScatteringParams.y, 2.4f);
             dto.PlanetParams.z = math.max(dto.PlanetParams.z, 1.4f);
             atmosphere[0] = dto;
-            UploadWaveBufferToGpu(true);
+            RefreshCachedSurfaceSnapshot();
+            UploadWaveBufferToGpu(false);
         }
 
         private bool HasSeedShipNarrativeSignal()
@@ -886,10 +1537,8 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
-            float maxAmplitude = 0f;
-            int limit = math.min(waves.Length, OceanSurfaceAtmosphereConstants.WaveCapacity);
-            for (int i = 0; i < limit; i++)
-                maxAmplitude = math.max(maxAmplitude, math.abs(waves[i].Amplitude));
+            float maxAmplitude = HectonOceanSurfaceMath.ResolveMaxAmplitude(waves);
+            int limit = math.min(waves.Length * OceanSurfaceAtmosphereConstants.WavesPerParameters, OceanSurfaceAtmosphereConstants.MaxWaveOctaves);
 
             OceanSurfaceTelemetryEntry entry = default;
             entry.Frame = _simulationFrameCounter;
@@ -901,8 +1550,10 @@ namespace Hecton8.Atmosphere
             entry.SurfaceDisturbance = weather.SurfaceScalars.w;
             entry.FoamScalar = math.saturate((weather.WindDirectionSpeedStorm.w + weather.SurfaceScalars.w) * 0.5f);
             entry.LastNormal = new float3(0f, 1f, 0f);
-            entry.StateHash = HectonOceanSurfaceMath.HashWaveState(waves, limit, _timeSeconds, _globalQualityWeight);
-            entry.Flags = _lastWaveComputeNs > OceanSurfaceAtmosphereConstants.TelemetryDumpBudgetNs ? 1u : 0u;
+            entry.StateHash = HectonOceanSurfaceMath.HashWaveState(waves, math.min(waves.Length, OceanSurfaceAtmosphereConstants.WaveCapacity), _timeSeconds, _globalQualityWeight);
+            entry.Flags = _lastReadbackLatencyFrames > 4 || _lastWaveComputeNs > OceanSurfaceAtmosphereConstants.TelemetryDumpBudgetNs ? 1u : 0u;
+            entry.ReadbackLatencyFrames = _lastReadbackLatencyFrames;
+            entry.ReadbackSampleCount = _lastReadbackSampleCount;
             _lastStateHash = entry.StateHash;
 
             int index = math.clamp(_telemetryCursor, 0, telemetry.Length - 1);
@@ -921,7 +1572,7 @@ namespace Hecton8.Atmosphere
                 if (string.IsNullOrEmpty(root))
                     return false;
 
-                string path = Path.Combine(root, "Docs/AgentLogs/Dump_SURFACE_SURGEON.bin");
+                string path = Path.Combine(root, "Docs/AgentLogs/Dump_SHINOBU_147.bin");
                 string directory = Path.GetDirectoryName(path);
                 if (!string.IsNullOrEmpty(directory))
                     Directory.CreateDirectory(directory);
@@ -951,6 +1602,19 @@ namespace Hecton8.Atmosphere
             }
         }
 
+        private bool TryDumpTelemetryToDiskThrottled()
+        {
+            uint frame = _simulationFrameCounter == 0u ? 1u : _simulationFrameCounter;
+            if (_lastTelemetryDumpFrame != 0u && unchecked((int)(frame - _lastTelemetryDumpFrame)) < TelemetryDumpCooldownFrames)
+                return false;
+
+            if (!DumpTelemetryToDisk())
+                return false;
+
+            _lastTelemetryDumpFrame = frame;
+            return true;
+        }
+
         private void PublishShaderGlobals()
         {
             if (!ResolveWaveBuffer(out NativeArray<WaveParametersDTO> waves) ||
@@ -960,15 +1624,15 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
-            double3 cameraAup = cameraTransform != null
-                ? HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(cameraTransform.position)
-                : HectonFloatingOrigin.CurrentTotalOffsetDouble;
-            OceanSurfaceLodDTO lod = HectonOceanSurfaceMath.ResolveRadialGridLod(cameraAup, _globalQualityWeight);
+            double3 cameraAup = ResolveCameraAupDouble();
+            float maxWavelength = HectonOceanSurfaceMath.ResolveMaxWavelength(waves);
+            OceanSurfaceLodDTO lod = HectonOceanSurfaceMath.ResolveRadialGridLod(cameraAup, _globalQualityWeight, maxWavelength);
             lod.Frame = _simulationFrameCounter;
             if (ResolveLodArray(out NativeArray<OceanSurfaceLodDTO> lodArray))
                 lodArray[0] = lod;
 
-            int activeWaveCount = HectonOceanSurfaceMath.ResolveFullWaveCount(_globalQualityWeight, math.min(waves.Length, OceanSurfaceAtmosphereConstants.WaveCapacity));
+            int activeWaveCount = HectonOceanSurfaceMath.ResolveFullWaveCount(_globalQualityWeight, math.min(waves.Length * OceanSurfaceAtmosphereConstants.WavesPerParameters, OceanSurfaceAtmosphereConstants.MaxWaveOctaves));
+            OceanWaveAupPhaseDTO phase = HectonOceanSurfaceMath.ResolveAupPhaseBases(cameraAup, waves, _simulationFrameCounter, _globalQualityWeight, activeWaveCount);
             Vector4 weatherVector = new Vector4(
                 weather.WindDirectionSpeedStorm.x,
                 weather.WindDirectionSpeedStorm.y,
@@ -986,7 +1650,8 @@ namespace Hecton8.Atmosphere
                 activeWaveCount,
                 weather,
                 atmosphere,
-                lod);
+                lod,
+                phase);
             if (_lastPublishedShaderStateHash == shaderStateHash)
             {
                 UploadWaveBufferToGpu(false);
@@ -1006,10 +1671,35 @@ namespace Hecton8.Atmosphere
             Shader.SetGlobalVector(OceanPlanetId, ToVector4(atmosphere.PlanetParams));
             Shader.SetGlobalVector(OceanLodId, ToVector4(lod.GridParams));
             Shader.SetGlobalVector(OceanLocalProjectionId, ToVector4(lod.CameraAupLocalXZ));
+            Shader.SetGlobalVector(OceanWavePhaseBase0Id, ToVector4(phase.PhaseBase0));
+            Shader.SetGlobalVector(OceanWavePhaseBase1Id, ToVector4(phase.PhaseBase1));
             Shader.SetGlobalVector(GlobalFlowVectorId, flowVector);
             Shader.SetGlobalVector(H8GlobalFlowId, flowVector);
 
             UploadWaveBufferToGpu(false);
+        }
+
+        private static double3 ResolveCameraAupDouble()
+        {
+            IPlayerRuntimeContext player = GlobalRegistry.Player;
+            if (player != null)
+            {
+                if (player.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                    MathGuard.IsFinite(in snapshot.Aup))
+                {
+                    return snapshot.Aup.ToAbsoluteDouble3();
+                }
+
+                var playerMovement = player.PlayerMovement;
+                if (playerMovement != null)
+                {
+                    AbsoluteUniversePosition currentAup = playerMovement.CurrentAup;
+                    if (MathGuard.IsFinite(in currentAup))
+                        return currentAup.ToAbsoluteDouble3();
+                }
+            }
+
+            return HectonFloatingOrigin.CurrentTotalOffsetDouble;
         }
 
         private void UploadWaveBufferToGpu(bool allowColdCreate)
@@ -1017,6 +1707,7 @@ namespace Hecton8.Atmosphere
             if (!ResolveWaveBuffer(out NativeArray<WaveParametersDTO> waves))
                 return;
 
+            ObserveExternalWavePayloadMutation();
             if (_waveGraphicsBufferA == null || _waveGraphicsBufferB == null)
             {
                 if (!allowColdCreate || !EnsureWaveGraphicsBuffers())
@@ -1025,31 +1716,42 @@ namespace Hecton8.Atmosphere
 
             int count = math.min(waves.Length, OceanSurfaceAtmosphereConstants.WaveCapacity);
             uint waveHash = HashWavePayload(waves, count);
-            if (_lastUploadedWaveCount == count && _lastUploadedWaveHash == waveHash)
+            if (!_waveParameterPayloadDirty && _lastUploadedWaveCount == count && _lastUploadedWaveHash == waveHash)
+            {
+                if (_activeWaveGraphicsBuffer == null)
+                    _activeWaveGraphicsBuffer = _waveGraphicsBufferWriteIndex == 0 ? _waveGraphicsBufferB : _waveGraphicsBufferA;
                 return;
+            }
 
             GraphicsBuffer target = _waveGraphicsBufferWriteIndex == 0 ? _waveGraphicsBufferA : _waveGraphicsBufferB;
             GraphicsBufferUploadUtility.UploadNativeArray(target, waves, count);
             Shader.SetGlobalBuffer(OceanWaveBufferId, target);
+            _activeWaveGraphicsBuffer = target;
             _waveGraphicsBufferWriteIndex ^= 1;
             _lastUploadedWaveCount = count;
             _lastUploadedWaveHash = waveHash;
+            _waveParameterPayloadDirty = false;
         }
 
         private bool EnsureWaveGraphicsBuffers()
         {
             if (_waveGraphicsBufferA == null)
             {
-                // COLD ALLOC: GraphicsBuffer[16 WaveParametersDTO] - ocean wave upload buffer A - owner: ShinobuOceanSurfaceAtmosphereRuntime
+                // COLD ALLOC: GraphicsBuffer[2 WaveParametersDTO] - ocean wave upload buffer A - owner: ShinobuOceanSurfaceAtmosphereRuntime
                 _waveGraphicsBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<WaveParametersDTO>(OceanSurfaceAtmosphereConstants.WaveCapacity);
             }
 
             if (_waveGraphicsBufferB == null)
             {
-                // COLD ALLOC: GraphicsBuffer[16 WaveParametersDTO] - ocean wave upload buffer B - owner: ShinobuOceanSurfaceAtmosphereRuntime
+                // COLD ALLOC: GraphicsBuffer[2 WaveParametersDTO] - ocean wave upload buffer B - owner: ShinobuOceanSurfaceAtmosphereRuntime
                 _waveGraphicsBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<WaveParametersDTO>(OceanSurfaceAtmosphereConstants.WaveCapacity);
             }
 
+            return _waveGraphicsBufferA != null && _waveGraphicsBufferB != null;
+        }
+
+        private bool HasWaveGraphicsBuffers()
+        {
             return _waveGraphicsBufferA != null && _waveGraphicsBufferB != null;
         }
 
@@ -1071,16 +1773,38 @@ namespace Hecton8.Atmosphere
             _lastUploadedWaveHash = 0u;
             _lastPublishedShaderStateHash = 0u;
             _waveGraphicsBufferWriteIndex = 0;
+            _activeWaveGraphicsBuffer = null;
         }
 
         private float3 ResolveSurfaceFlow()
         {
-            if (!ResolveWeather(out WeatherStateDTO weather))
-                return float3.zero;
+            return _cachedSurfaceFlow;
+        }
 
+        private void RefreshCachedSurfaceSnapshot()
+        {
+            if (!ResolveWeather(out WeatherStateDTO weather))
+            {
+                _cachedSeaLevel = math.isfinite(seaLevel) ? seaLevel : OceanSurfaceAtmosphereConstants.DefaultSeaLevel;
+                _cachedSurfaceFlow = float3.zero;
+                return;
+            }
+
+            _cachedSeaLevel = math.isfinite(weather.SurfaceScalars.x) ? weather.SurfaceScalars.x : seaLevel;
+            _cachedSurfaceFlow = CalculateSurfaceFlow(weather);
+        }
+
+        private static float3 CalculateSurfaceFlow(in WeatherStateDTO weather)
+        {
             float2 direction = HectonOceanSurfaceMath.Normalize2OrDefault(weather.WindDirectionSpeedStorm.xy, new float2(1f, 0f));
             float speed = math.max(0f, weather.WindDirectionSpeedStorm.z) * math.lerp(0.08f, 0.42f, math.saturate(weather.WindDirectionSpeedStorm.w));
             return new float3(direction.x * speed, 0f, direction.y * speed);
+        }
+
+        private static void ReleaseWaveParameterJobLease()
+        {
+            if (Volatile.Read(ref s_activeWaveParameterJobCount) > 0)
+                Interlocked.Decrement(ref s_activeWaveParameterJobCount);
         }
 
         private bool ResolveWaveBuffer(out NativeArray<WaveParametersDTO> waves)
@@ -1119,6 +1843,42 @@ namespace Hecton8.Atmosphere
             return _vault != null && _lodHandle.IsCreated && (lod = _lodHandle.Resolve(_vault)).IsCreated && lod.Length > 0;
         }
 
+        private bool ResolveReadbackQueries(out NativeArray<float4> queries)
+        {
+            queries = default;
+            return _vault != null && _readbackQueryHandle.IsCreated && (queries = _readbackQueryHandle.Resolve(_vault)).IsCreated && queries.Length > 0;
+        }
+
+        private bool ResolveReadbackResults(out NativeArray<float4> results)
+        {
+            results = default;
+            return _vault != null && _readbackResultHandle.IsCreated && (results = _readbackResultHandle.Resolve(_vault)).IsCreated && results.Length > 0;
+        }
+
+        private bool ResolveReadbackCompletedQueries(out NativeArray<float4> queries)
+        {
+            queries = default;
+            return _vault != null && _readbackCompletedQueryHandle.IsCreated && (queries = _readbackCompletedQueryHandle.Resolve(_vault)).IsCreated && queries.Length > 0;
+        }
+
+        private bool ResolveReadbackRingQueries(out NativeArray<float4> queries)
+        {
+            queries = default;
+            return _vault != null && _readbackRingQueryHandle.IsCreated && (queries = _readbackRingQueryHandle.Resolve(_vault)).IsCreated && queries.Length >= OceanSurfaceAtmosphereConstants.WaveReadbackSampleCapacity * OceanSurfaceAtmosphereConstants.WaveReadbackRingSize;
+        }
+
+        private bool ResolveBeaufortProfiles(out NativeArray<BeaufortProfileDTO> profiles)
+        {
+            profiles = default;
+            return _vault != null && _beaufortProfileHandle.IsCreated && (profiles = _beaufortProfileHandle.Resolve(_vault)).IsCreated && profiles.Length > 0;
+        }
+
+        private bool ResolveSurfaceSwellArray(out NativeArray<float4> swell)
+        {
+            swell = default;
+            return _vault != null && _surfaceSwellHandle.IsCreated && (swell = _surfaceSwellHandle.Resolve(_vault)).IsCreated && swell.Length > 0;
+        }
+
         private bool ResolveWeather(out WeatherStateDTO weather)
         {
             weather = default;
@@ -1142,16 +1902,17 @@ namespace Hecton8.Atmosphere
         private float ResolveGlobalQualityWeight()
         {
             float weight = HomeostasisBrain.GlobalQualityWeight;
-            return math.isfinite(weight) && weight > 0f ? math.saturate(weight) : 1f;
+            return HectonOceanSurfaceMath.SanitizeQualityWeight(weight);
         }
 
-        private void AdvanceSimulationClock()
+        private void AdvanceSimulationClock(float simulationTickDeltaSeconds)
         {
             _simulationFrameCounter++;
             if (_simulationFrameCounter == 0u)
                 _simulationFrameCounter = 1u;
 
-            _rawSimulationTimeSeconds += SimulationTickDeltaSeconds;
+            float safeDelta = math.isfinite(simulationTickDeltaSeconds) ? math.max(0f, simulationTickDeltaSeconds) : SimulationTickDeltaSeconds;
+            _rawSimulationTimeSeconds += safeDelta;
             if (!math.isfinite(_rawSimulationTimeSeconds) || _rawSimulationTimeSeconds > 86400f)
                 _rawSimulationTimeSeconds = 0f;
         }
@@ -1165,7 +1926,7 @@ namespace Hecton8.Atmosphere
 
         private static float ResolveWaveEvaluationStepSeconds(float globalQualityWeight)
         {
-            float q = math.saturate(globalQualityWeight);
+            float q = HectonOceanSurfaceMath.SanitizeQualityWeight(globalQualityWeight);
             float curve = q * q * (3f - (2f * q));
             float hz = math.lerp(MinWaveEvaluationHz, MaxWaveEvaluationHz, curve);
             return 1f / math.max(MinWaveEvaluationHz, hz);
@@ -1199,16 +1960,23 @@ namespace Hecton8.Atmosphere
             for (int i = 0; i < safeCount; i++)
             {
                 WaveParametersDTO wave = waves[i];
-                hash = Hash(hash, math.asuint(wave.DirectionAndSteepness.x));
-                hash = Hash(hash, math.asuint(wave.DirectionAndSteepness.y));
-                hash = Hash(hash, math.asuint(wave.DirectionAndSteepness.z));
-                hash = Hash(hash, math.asuint(wave.DirectionAndSteepness.w));
-                hash = Hash(hash, math.asuint(wave.PhaseSpeed));
-                hash = Hash(hash, math.asuint(wave.Amplitude));
-                hash = Hash(hash, math.asuint(wave.Wavelength));
+                hash = HashFloat4(hash, wave.Wave1);
+                hash = HashFloat4(hash, wave.Wave2);
+                hash = HashFloat4(hash, wave.Wave3);
+                hash = HashFloat4(hash, wave.GlobalWindAndStorm);
             }
 
             return Hash(hash, (uint)safeCount);
+        }
+
+        private void ObserveExternalWavePayloadMutation()
+        {
+            uint version = s_wavePayloadMutationVersion;
+            if (_observedWavePayloadMutationVersion == version)
+                return;
+
+            _observedWavePayloadMutationVersion = version;
+            _waveParameterPayloadDirty = true;
         }
 
         private static uint HashShaderState(
@@ -1217,7 +1985,8 @@ namespace Hecton8.Atmosphere
             int activeWaveCount,
             in WeatherStateDTO weather,
             in AtmosphereDTO atmosphere,
-            in OceanSurfaceLodDTO lod)
+            in OceanSurfaceLodDTO lod,
+            in OceanWaveAupPhaseDTO phase)
         {
             uint hash = 2166136261u;
             hash = Hash(hash, math.asuint(timeSeconds));
@@ -1235,6 +2004,8 @@ namespace Hecton8.Atmosphere
             hash = HashFloat4(hash, lod.CameraAupLocalXZ);
             hash = HashFloat4(hash, lod.GridParams);
             hash = HashFloat4(hash, lod.RingParams);
+            hash = HashFloat4(hash, phase.PhaseBase0);
+            hash = HashFloat4(hash, phase.PhaseBase1);
             return hash;
         }
 

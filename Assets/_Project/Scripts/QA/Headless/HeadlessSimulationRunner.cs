@@ -227,10 +227,12 @@ namespace Hecton8.QA.Headless
 
         public void LateFrameTick()
         {
-            if (!_started || _finished || !_ghostJobPending || !_ghostJobHandle.IsCompleted)
+            if (!_started || _finished || !_ghostJobPending)
                 return;
 
-            _ghostJobHandle.Complete();
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _ghostJobHandle))
+                return;
+
             _ghostJobPending = false;
             GhostState previous = _ghostState[0];
             GhostState next = _ghostNextState[0];

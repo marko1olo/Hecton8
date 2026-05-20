@@ -49,7 +49,7 @@ namespace Hecton8.Gameplay
     /// <summary>
     /// Canonical event packet for integrity/power/clarity damage signals.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential)]
     public struct HabitatDamageSignal
     {
         public float magnitude;
@@ -190,14 +190,22 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>Current breathable reserve across all non-flooded habitat modules.</summary>
-        public static float GlobalBaseOxygenReserve => s_globalBaseOxygenReserve;
+        public static float GlobalBaseOxygenReserve
+            => BaseAtmosphereLogisticsRuntime.TryGetGlobalOxygenSnapshot(out float reserve, out _, out _)
+                ? reserve
+                : s_globalBaseOxygenReserve;
 
         /// <summary>Total breathable reserve capacity across all non-flooded habitat modules.</summary>
-        public static float GlobalBaseOxygenCapacity => s_globalBaseOxygenCapacity;
+        public static float GlobalBaseOxygenCapacity
+            => BaseAtmosphereLogisticsRuntime.TryGetGlobalOxygenSnapshot(out _, out float capacity, out _)
+                ? capacity
+                : s_globalBaseOxygenCapacity;
 
         /// <summary>Normalized breathable reserve ratio across all currently serviceable habitat modules.</summary>
         public static float GlobalBaseOxygenReserveNormalized
-            => s_globalBaseOxygenCapacity > 0.01f
+            => BaseAtmosphereLogisticsRuntime.TryGetGlobalOxygenSnapshot(out _, out _, out float normalized)
+                ? normalized
+                : s_globalBaseOxygenCapacity > 0.01f
                 ? Mathf.Clamp01(s_globalBaseOxygenReserve / s_globalBaseOxygenCapacity)
                 : 1f;
 
@@ -719,6 +727,12 @@ namespace Hecton8.Gameplay
 
         private void SyncOxygenContribution()
         {
+            if (BaseAtmosphereLogisticsRuntime.TryGetGlobalOxygenSnapshot(out _, out _, out _))
+            {
+                RemoveOxygenContribution();
+                return;
+            }
+
             float reserveContribution = 0f;
             float capacityContribution = 0f;
 
@@ -887,9 +901,33 @@ namespace Hecton8.Gameplay
                 seaLevelY = Hecton8.Core.GlobalRegistry.Atmosphere.SeaLevelY;
 
             Transform hostTransform = _cachedTransform != null ? _cachedTransform : transform;
-            AbsoluteUniversePosition moduleAup = AbsoluteUniversePosition.FromRuntimePosition(hostTransform.position);
+            if (!TryResolveAupFromRuntimeOrigin(hostTransform.position, out AbsoluteUniversePosition moduleAup))
+                return 0f;
+
             double absoluteModuleY = (moduleAup.GridY * AbsoluteUniversePosition.CellSizeMeters) + moduleAup.LocalY;
             return Mathf.Max(0f, (float)(seaLevelY - absoluteModuleY));
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(
+            Vector3 runtimePosition,
+            out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!float.IsFinite(runtimePosition.x) ||
+                !float.IsFinite(runtimePosition.y) ||
+                !float.IsFinite(runtimePosition.z))
+            {
+                return false;
+            }
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!MathGuard.IsFinite(in originAup))
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return MathGuard.IsFinite(in positionAup);
         }
 
         private static float ResolvePressureDelta(float depthMeters)
@@ -937,7 +975,7 @@ namespace Hecton8.Gameplay
             _debugFloodLevel = _floodLevel;
             _debugPressureDelta = _pressureDelta;
             _debugPowerNodeRuptured = _powerNode != null && _powerNode.IsRuptured;
-            _debugGlobalBaseOxygenReserve = s_globalBaseOxygenReserve;
+            _debugGlobalBaseOxygenReserve = GlobalBaseOxygenReserve;
             _debugGlobalBaseOxygenNormalized = GlobalBaseOxygenReserveNormalized;
             _debugModuleAmbientTemperatureCelsius = _moduleAmbientTemperatureCelsius;
             _debugFullyFloodedDurationSeconds = _fullyFloodedDurationSeconds;

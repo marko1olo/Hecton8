@@ -1,7 +1,7 @@
 # Capsule, Trailer, And Thumbnail Briefs
 
 Status: creative production brief / pre-asset
-Public stance: single-player-first / no co-op promise
+Public stance: single-player-first scope / proof-first public copy
 Runtime impact: none
 
 ## Creative Objective
@@ -15,7 +15,7 @@ Make HECTON-8 readable in one glance:
 - hostile depth;
 - not clean sci-fi;
 - not bright reef wonder;
-- not co-op.
+- single-player-first scope.
 
 ## Steam Capsule Brief
 
@@ -50,7 +50,7 @@ Use 2-3, not all:
 - unreadable black rectangle;
 - tiny UI detail;
 - "from fans of Subnautica" text;
-- co-op/player group imagery.
+- multiplayer-mode/player group imagery.
 
 ### Three Capsule Concepts
 
@@ -92,7 +92,7 @@ Spend 0 USD on final key art until:
 
 - one rough passes at small capsule size;
 - matching gameplay screenshot source is approved;
-- the rough does not imply co-op or fake performance;
+- the rough does not imply unsupported multiplayer scope or fake performance;
 - clone comparison is not the first association from cold readers;
 - Steam short description Candidate A still matches the image;
 - the project owner has reserved/confirmed official social/Steam contact links.
@@ -112,7 +112,7 @@ Target: 60 seconds reveal; cut into 20s and 6s versions.
 | 28-38 | Route risk/threat/instrument | Build tension through readable system. |
 | 38-48 | Consequence: leak, power, hull, oxygen | Show failure and recovery. |
 | 48-55 | Seed Ship/anomaly tease | Myth hook, not lore dump. |
-| 55-60 | Title + Steam CTA | Clean CTA only if page exists. |
+| 55-60 | Title + Steam CTA | Clean CTA only after Official CTA Link Activation Gate V0 passes; otherwise no-link feedback end card. |
 
 ### Audio Notes
 

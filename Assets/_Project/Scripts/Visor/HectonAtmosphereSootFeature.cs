@@ -204,7 +204,7 @@ namespace Hecton8.Visor
                        Vector4Equals(left.SootCenter, right.SootCenter);
             }
 
-            [StructLayout(LayoutKind.Sequential, Pack = 4, Size = SootGlobalsStrideBytes)]
+            [StructLayout(LayoutKind.Sequential, Size = SootGlobalsStrideBytes)]
             private struct SootGlobalsDTO
             {
                 public Vector4 SootParams;

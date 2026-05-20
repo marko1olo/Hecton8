@@ -30,7 +30,7 @@ $lines.Add("# Priority 50 Message Drafts From Raw Public Signals") | Out-Null
 $lines.Add("") | Out-Null
 $lines.Add("Status: draft-from-public-index / must verify before sending") | Out-Null
 $lines.Add("Generated: 2026-05-19") | Out-Null
-$lines.Add("Public stance: single-player-first / no co-op promise") | Out-Null
+$lines.Add("Public stance: single-player-first scope / proof-first creator copy") | Out-Null
 $lines.Add("Runtime impact: none") | Out-Null
 $lines.Add("") | Out-Null
 $lines.Add("## Boundary") | Out-Null
@@ -61,7 +61,7 @@ foreach ($row in $rows) {
     $lines.Add("") | Out-Null
     $lines.Add("I found your channel while mapping public creator coverage around $games. Before any outreach this still needs manual verification, but the apparent fit is $angle.") | Out-Null
     $lines.Add("") | Out-Null
-    $lines.Add("HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. This is not a co-op promise and not a `"Subnautica killer`" pitch.") | Out-Null
+    $lines.Add("HECTON-8 is a single-player-first underwater survival game about pressure, machinery, salvage, black-water exploration, and habitats that behave like survival infrastructure. The angle stays inside proven scope and avoids competitor-attack positioning.") | Out-Null
     $lines.Add("") | Out-Null
     $lines.Add("The specific angle for your audience would be: $($row.personalized_pitch_stub)") | Out-Null
     $lines.Add("") | Out-Null

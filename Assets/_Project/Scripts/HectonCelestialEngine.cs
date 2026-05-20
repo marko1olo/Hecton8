@@ -74,7 +74,6 @@ using Unity.Mathematics;
 using Unity.Collections;
 using Unity.Jobs;
 using Hecton8.Atmosphere;
-using Hecton8.Modding;
 using Hecton8.World;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -82,19 +81,6 @@ using UnityEditor;
 
 namespace Hecton8.Celestial
 {
-    /// <summary>
-    /// Unmanaged Mega-Bus payload fired when a sky occluder starts a solar eclipse.
-    /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct EclipseStartedEvent
-    {
-        public float OcclusionFactor;
-        public float SunElevationDegrees;
-        public float3 SunDirection;
-        public float3 AegirDirection;
-        public byte HasAegirDirection;
-    }
-
     /// <summary>
     /// Main-thread listener for deferred celestial events.
     /// </summary>
@@ -537,29 +523,40 @@ namespace Hecton8.Celestial
             public float Fullness01;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Explicit, Size = 192)]
         private struct CelestialOrbitJobOutput
         {
-            public CelestialRuntimeSnapshot Snapshot;
-            public byte Valid;
+            [FieldOffset(0)] public CelestialRuntimeSnapshot Snapshot;
+            [FieldOffset(144)] public byte Valid;
+            [FieldOffset(145)] private byte _pad0;
+            [FieldOffset(146)] private ushort _pad1;
+            [FieldOffset(148)] private uint _pad2;
+            [FieldOffset(152)] private ulong _pad3;
+            [FieldOffset(160)] private ulong _pad4;
+            [FieldOffset(168)] private ulong _pad5;
+            [FieldOffset(176)] private ulong _pad6;
+            [FieldOffset(184)] private ulong _pad7;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct CelestialBlackBoxEntry
         {
-            public uint FrameIndex;
-            public uint Sequence;
-            public uint Flags;
-            public float TimeOfDay01;
-            public float EclipseState01;
-            public float SunDirectionY;
-            public float AegirDirectionY;
-            public float StormCloudDensity01;
-            public float LightningFlash01;
-            public float DepthMeters;
+            [FieldOffset(0)] public uint FrameIndex;
+            [FieldOffset(4)] public uint Sequence;
+            [FieldOffset(8)] public uint Flags;
+            [FieldOffset(12)] public float TimeOfDay01;
+            [FieldOffset(16)] public float EclipseState01;
+            [FieldOffset(20)] public float SunDirectionY;
+            [FieldOffset(24)] public float AegirDirectionY;
+            [FieldOffset(28)] public float StormCloudDensity01;
+            [FieldOffset(32)] public float LightningFlash01;
+            [FieldOffset(36)] public float DepthMeters;
+            [FieldOffset(40)] private ulong _pad0;
+            [FieldOffset(48)] private ulong _pad1;
+            [FieldOffset(56)] private ulong _pad2;
         }
 
-        [BurstCompile(FloatPrecision.Low, FloatMode.Fast, CompileSynchronously = false)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct CelestialOrbitMathJob : IJob
         {
             public double AbsoluteUniverseTime;
@@ -3533,9 +3530,7 @@ namespace Hecton8.Celestial
                             dimming;
             ambient.a = 1f;
 
-            SphericalHarmonicsL2 probe = default;
-            probe.AddAmbientLight(ambient);
-            RenderSettings.ambientProbe = probe;
+            Shader.SetGlobalColor(_ID_HectonAtmosphereColor, ambient);
             _ambientProbeEclipseActive = eclipse01 > 0.001f;
         }
 
@@ -4633,11 +4628,11 @@ namespace Hecton8.Celestial
             if (sunVisualTransform == null || sunLight == null) return;
 
             Vector3 towardSun = -sunLight.transform.forward;
-            Vector3 observerPos = playerTransform != null ? playerTransform.position : Vector3.zero;
+            bool hasObserver = TryResolvePlayerRuntimePosition(out Vector3 observerPos);
 
             sunVisualTransform.position = observerPos + towardSun * sunDistance;
 
-            if (playerTransform != null)
+            if (hasObserver)
                 OrientSunVisualTowardObserver(observerPos);
         }
 
@@ -5585,10 +5580,9 @@ namespace Hecton8.Celestial
 
         private float2 ResolveAupOceanShadowCenterRuntimeXZ(float2 planarDirection, float signedTravelMeters)
         {
-            if (playerTransform == null)
+            if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
                 return planarDirection * signedTravelMeters;
 
-            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerTransform.position);
             double3 playerAbsolute = playerAup.ToAbsoluteDouble3();
             double2 shadowAbsoluteXZ = new double2(playerAbsolute.x, playerAbsolute.z) +
                                        (new double2(planarDirection.x, planarDirection.y) * signedTravelMeters);
@@ -5598,15 +5592,66 @@ namespace Hecton8.Celestial
             return new float2(shadowRuntime.x, shadowRuntime.z);
         }
 
+        private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
+        {
+            playerAup = default;
+
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext == null)
+                return false;
+
+            if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
+            {
+                playerAup = snapshot.Aup;
+                return MathGuard.IsFinite(in playerAup);
+            }
+
+            HectonPlayerMovement playerMovement = playerContext.PlayerMovement;
+            if (playerMovement == null)
+                return false;
+
+            playerAup = playerMovement.CurrentAup;
+            return MathGuard.IsFinite(in playerAup);
+        }
+
+        private bool TryResolvePlayerRuntimePosition(out Vector3 runtimePosition)
+        {
+            runtimePosition = Vector3.zero;
+
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext == null)
+                return false;
+
+            if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                math.all(math.isfinite(snapshot.RuntimePosition)))
+            {
+                runtimePosition = new Vector3(
+                    snapshot.RuntimePosition.x,
+                    snapshot.RuntimePosition.y,
+                    snapshot.RuntimePosition.z);
+                return true;
+            }
+
+            HectonPlayerMovement playerMovement = playerContext.PlayerMovement;
+            if (playerMovement == null)
+                return false;
+
+            float3 runtime = playerMovement.CurrentAup.ToRuntimeFloat3();
+            if (!math.all(math.isfinite(runtime)))
+                return false;
+
+            runtimePosition = new Vector3(runtime.x, runtime.y, runtime.z);
+            return true;
+        }
+
         private static float ResolveAupDistanceMeters(Transform fromTransform, Transform toTransform)
         {
             if (fromTransform == null || toTransform == null)
                 return 0f;
 
-            AbsoluteUniversePosition fromAup = AbsoluteUniversePosition.FromRuntimePosition(fromTransform.position);
-            AbsoluteUniversePosition toAup = AbsoluteUniversePosition.FromRuntimePosition(toTransform.position);
-            double cinematicDistance = AbsoluteUniversePosition.ApproximateDistanceMetersClamped(in toAup, in fromAup);
-            return (float)math.min(cinematicDistance, (double)float.MaxValue);
+            Vector3 visualDelta = toTransform.position - fromTransform.position;
+            float distanceSq = math.lengthsq((float3)visualDelta);
+            return math.sqrt(math.max(0f, distanceSq));
         }
 
         private static float3 ResolveAupDirectionBetweenTransforms(Transform fromTransform, Transform toTransform)
@@ -5614,10 +5659,8 @@ namespace Hecton8.Celestial
             if (fromTransform == null || toTransform == null)
                 return float3.zero;
 
-            AbsoluteUniversePosition fromAup = AbsoluteUniversePosition.FromRuntimePosition(fromTransform.position);
-            AbsoluteUniversePosition toAup = AbsoluteUniversePosition.FromRuntimePosition(toTransform.position);
-            double3 delta = AbsoluteUniversePosition.DeltaMetersClamped(in toAup, in fromAup);
-            return NormalizeVisualRsqrt(new float3((float)delta.x, (float)delta.y, (float)delta.z), float3.zero);
+            Vector3 visualDelta = toTransform.position - fromTransform.position;
+            return NormalizeVisualRsqrt((float3)visualDelta, float3.zero);
         }
 
         private void DisableLegacySunFlare()
@@ -5821,28 +5864,11 @@ namespace Hecton8.Celestial
             if (!wasActive && isActive)
             {
                 CelestialEvents.RaiseEclipseStarted();
-                PublishEclipseStartedMegaBus();
             }
             else if (wasActive && !isActive)
             {
                 CelestialEvents.RaiseEclipseEnded();
             }
-        }
-
-        private void PublishEclipseStartedMegaBus()
-        {
-            EclipseStartedEvent eclipseEvent = default;
-            eclipseEvent.OcclusionFactor = _penumbraFactor;
-            eclipseEvent.SunElevationDegrees = _currentSunAngle;
-            eclipseEvent.SunDirection = _resolvedSunDirection;
-
-            if (TryResolveAegirSkyDirection(out float3 aegirDirection))
-            {
-                eclipseEvent.AegirDirection = aegirDirection;
-                eclipseEvent.HasAegirDirection = 1;
-            }
-
-            HectonEventBus.Publish(in eclipseEvent);
         }
 
         private void DetectLunarResonance()
@@ -6237,10 +6263,10 @@ namespace Hecton8.Celestial
 #if UNITY_EDITOR
         private void OnDrawGizmosSelected()
         {
-            if (aegirTransform == null || playerTransform == null) return;
+            if (aegirTransform == null || !TryResolvePlayerRuntimePosition(out Vector3 playerRuntimePosition)) return;
 
             float3 aegirPos  = (float3)aegirTransform.position;
-            float3 playerPos = (float3)playerTransform.position;
+            float3 playerPos = new float3(playerRuntimePosition.x, playerRuntimePosition.y, playerRuntimePosition.z);
 
             Gizmos.color = planetShineColor;
             Gizmos.DrawLine((Vector3)aegirPos, (Vector3)playerPos);

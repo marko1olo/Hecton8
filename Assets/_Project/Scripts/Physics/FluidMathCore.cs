@@ -9,7 +9,7 @@ namespace Hecton8.Physics
     /// <summary>
     /// Burst-safe water ingress, transfer, and mass-shift math for submarine fluid simulation.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public sealed class FluidMathCore : IFluidSim
     {
         public const float WaterDensityKgPerCubicMeter = HectonPhysicsContract.WaterDensityKgPerCubicMeterConst;

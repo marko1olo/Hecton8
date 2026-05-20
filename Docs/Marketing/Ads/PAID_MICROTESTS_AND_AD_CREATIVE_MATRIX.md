@@ -12,13 +12,26 @@ Paid ads are last-mile tests, not a rescue strategy. If the Steam page, capsule,
 
 No paid ads until:
 
-- Steam page exists;
+- Official CTA Link Activation Gate V0 passes for the Steam destination;
 - UTM tracking works;
 - capsule passes cold-read;
 - first screenshot/clip passes QA;
+- any ad that uses gameplay, pressure, route-risk, threat, salvage failure, or first-public proof has one factual agency candidate with AB-009/KPI decision-read fields: `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`;
 - conversion baseline exists from organic traffic;
 - one hypothesis is written;
 - stop rule is written.
+
+## 2026-05-20 Paid Spend Permission Boundary V0
+
+PMT rows are hypotheses, not spend permission.
+
+Use `spend_permission_gate` as the only machine-readable field for paid ad spend:
+
+- current rows must stay `BLOCKED_*`;
+- a PMT row can launch only when `spend_permission_gate = ALLOW_PAID_MICROTEST_VERIFIED`;
+- `ALLOW_PAID_MICROTEST_VERIFIED` requires Official CTA Link Activation Gate V0 for the Steam destination, Steam URL custody, UTM proof, Campaign 01 `KEEP` or an equivalent organic page baseline, asset QA, AB-009/KPI decision-read fields where the ad sells gameplay/pressure/route-risk proof, a capped budget, a written hypothesis, a written stop rule, and an owner able to inspect Steam/UTM results within 48 hours.
+
+Do not infer paid permission from budget tier, PMT ID, platform candidate, or a completed creative row.
 
 ## Budget Tiers
 
@@ -43,24 +56,24 @@ No paid ads until:
 
 | Family | Asset | Headline | CTA |
 |---|---|---|---|
-| Pressure | hatch/leak/gauge | Survive below the light | Wishlist on Steam |
-| Machinery | pump/base/tool | Keep the machines alive | Wishlist on Steam |
-| Seed Ship | anomaly/signal | Something is buried below | Wishlist on Steam |
-| Salvage | route/wreck | Salvage under pressure | Play demo / Wishlist |
-| Base risk | flooded module | Your base can fail | Play demo / Wishlist |
+| Pressure | hatch/leak/gauge | Survive below the light | Wishlist on Steam after CTA activation |
+| Machinery | pump/base/tool | Keep the machines alive | Wishlist on Steam after CTA activation |
+| Seed Ship | anomaly/signal | Something is buried below | Wishlist on Steam after CTA activation |
+| Salvage | route/wreck | Salvage under pressure | Play demo or wishlist only after route activation |
+| Base risk | flooded module | Your base can fail | Play demo or wishlist only after route activation |
 
-## 2026-05-19 Paid Microtest Execution Plan
+## 2026-05-20 Paid Microtest Execution Plan
 
 Status: blocked until Steam page, UTM, cold-read, and organic baseline exist.
 
 The first paid spend is not a campaign. It is AB-008 from `Experiments/A_B_TESTING_AND_CREATIVE_EXPERIMENTS.md`: a capped smoke test to see whether the winning capsule/copy can move tracked Steam traffic.
 
-| Paid test | Required winner before spend | Platform candidate | Max spend | Asset/UTM content | Audience | Pass signal | Stop rule |
-|---|---|---|---:|---|---|---|---|
-| PMT-001 Pressure identity smoke | AB-001 screenshot winner + AB-002 capsule winner | Reddit ads or X small test | 50 USD | `PLAN-SHOT-001` or `PLAN-SHOT-003` + `PLAN-CAPSULE-001` | Survival/exploration/underwater-adjacent | At least 50 clicks and no dominant confusion comments. | Stop if "what do you do?", "AI art", or co-op confusion dominates. |
-| PMT-002 Clip hook smoke | AB-006 trailer opening winner | YouTube Shorts/Google or TikTok small test | 75 USD | `PLAN-CLIP-001` or `PLAN-CLIP-002` | Short-form PC survival/horror-adjacent | First 3 seconds holds attention and sends measurable Steam visits. | Stop if platform gives views but no Steam behavior. |
-| PMT-003 Steam copy/capsule smoke | AB-004 copy winner + AB-002 capsule winner | Reddit/X/Meta tiny test | 100 USD | `PLAN-CAPSULE-001` + short description winner | PC survival players | Steam cold traffic reaches 2-5% wishlist conversion directionally. | Stop within 48h if cold traffic is under 1% or comments show premise confusion. |
-| PMT-004 Creator-retarget support | AB-005 creator signal positive | Platform matching creator audience | 150 USD | Best creator/clip asset | Only after organic creator reply/coverage exists | Paid traffic reinforces a proven hook. | Stop if creator traffic does not produce Steam actions. |
+| Paid test | Spend permission gate | Required winner before spend | Platform candidate | Max spend | Asset/UTM content | Audience | Pass signal | Stop rule |
+|---|---|---|---|---:|---|---|---|---|
+| PMT-001 Pressure identity smoke | `BLOCKED_NO_STEAM_BASELINE` | AB-001 screenshot winner + AB-002 capsule winner + AB-009 agency candidate if copy implies route risk | Reddit ads or X small test | 50 USD | `PLAN-SHOT-001` or `PLAN-SHOT-003` + `PLAN-CAPSULE-001`; add `PLAN-SHOT-006`, `PLAN-CLIP-001`, or `PLAN-CLIP-003` only after AB-009/KPI decision-read fields exist | Survival/exploration/underwater-adjacent | At least 50 clicks and no dominant confusion comments. | Stop if "what do you do?", "AI art", or unsupported multiplayer-scope expectation dominates. |
+| PMT-002 Clip hook smoke | `BLOCKED_NO_STEAM_BASELINE` | AB-006 trailer opening winner + AB-009/KPI decision-read evidence if clip is sold as pressure gameplay | YouTube Shorts/Google or TikTok small test | 75 USD | `PLAN-CLIP-001` or `PLAN-CLIP-003` if agency proof is claimed; `PLAN-CLIP-002` only for identity/mood hook, not agency proof | Short-form PC survival/horror-adjacent | First 3 seconds holds attention and sends measurable Steam visits. | Stop if platform gives views but no Steam behavior or viewers cannot name the pressure decision. |
+| PMT-003 Steam copy/capsule smoke | `BLOCKED_NO_STEAM_BASELINE` | AB-004 copy winner + AB-002 capsule winner | Reddit/X/Meta tiny test | 100 USD | `PLAN-CAPSULE-001` + short description winner | PC survival players | Steam cold traffic reaches 2-5% wishlist conversion directionally. | Stop within 48h if cold traffic is under 1% or comments show premise confusion. |
+| PMT-004 Creator-retarget support | `BLOCKED_NO_CREATOR_SIGNAL_BASELINE` | AB-005 creator signal positive | Platform matching creator audience | 150 USD | Best creator/clip asset | Only after organic creator reply/coverage exists | Paid traffic reinforces a proven hook. | Stop if creator traffic does not produce Steam actions. |
 
 ### Paid UTM Defaults
 
@@ -87,7 +100,7 @@ Abort all paid tests if:
 
 - Steam page warm traffic is below 3% visit-to-wishlist before cold paid traffic starts;
 - no capsule/copy winner exists;
-- comments show co-op expectation;
+- comments show unsupported multiplayer-scope expectation;
 - screenshots read as AI/concept art;
 - the page needs obvious copy or asset changes;
 - the owner cannot inspect Steam/UTM results within 48 hours.
@@ -108,6 +121,7 @@ Reject:
 
 ```text
 Test ID:
+Spend permission gate:
 Budget:
 Platform:
 Audience:
@@ -133,11 +147,12 @@ Stop if:
 
 - CTR is bad and comments indicate confusion;
 - Steam visits do not wishlist after enough sample;
-- people ask if it is co-op due to ad copy;
+- ad or landing row claims gameplay/pressure/route-risk proof without `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`;
+- people ask if it is multiplayer/co-op due to ad copy;
 - ad comments compare asset to AI/concept art;
 - cost per useful action exceeds realistic low-budget tolerance;
 - platform gives traffic with no Steam behavior.
 
 ## Current HECTON-8 Decision
 
-No paid ads now. Prepare creative matrix and UTMs. First spend should be 50-150 USD only after Steam page and organic baseline exist.
+No paid ads now. Current PMT rows remain blocked. Prepare creative matrix and UTMs only; first spend should be 50-150 USD only after Steam page and organic baseline exist and the selected PMT row is explicitly `ALLOW_PAID_MICROTEST_VERIFIED`.

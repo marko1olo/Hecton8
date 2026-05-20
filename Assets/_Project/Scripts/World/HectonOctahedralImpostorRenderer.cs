@@ -14,7 +14,6 @@ namespace Hecton8.World
     public sealed class HectonOctahedralImpostorRenderer : MonoBehaviour, IUpdatable, IOriginShiftListener, IStreamingHlodMatrixRenderer
     {
         private const int TelemetryIntervalFrames = 60;
-        private const int QualityFlagLowTier = 1 << 0;
         private const uint TelemetryHash = 0x4F435449u; // "OCTI"
         private const float ImpostorFadeSecondsRcp = 0.6666667f;
 
@@ -26,12 +25,13 @@ namespace Hecton8.World
         private static readonly int GlobalFloatingOffsetId = Shader.PropertyToID("_GlobalFloatingOffset");
         private static readonly int AlbedoDepthAtlasId = Shader.PropertyToID("_ImpostorAlbedoDepthAtlas");
         private static readonly int NormalDepthAtlasId = Shader.PropertyToID("_ImpostorNormalDepthAtlas");
-        private static readonly int QualityFlagsId = Shader.PropertyToID("_HectonImpostorQualityFlags");
+        private static readonly int AtlasGridId = Shader.PropertyToID("_HectonImpostorAtlasGrid");
+        private static readonly int DepthScaleMetersId = Shader.PropertyToID("_HectonImpostorDepthScaleMeters");
+        private static readonly int GlobalQualityWeightId = Shader.PropertyToID("_HectonGlobalQualityWeight");
 
         [Header("-- Rendering ----------------")]
         [SerializeField] private Mesh _quadMesh;
         [SerializeField] private Material _material;
-        [SerializeField] private Shader _shader;
         [SerializeField] private HectonOctahedralImpostorData _impostorData;
         [SerializeField, Min(0)] private int _subMeshIndex;
         [SerializeField] private Camera _cameraOverride;
@@ -42,29 +42,38 @@ namespace Hecton8.World
 
         [Header("-- Diagnostics --------------")]
         [SerializeField] private int _debugBoundInstanceCount;
-        [SerializeField] private HectonQualityTier _debugQualityTier = HectonQualityTier.Unknown;
 
-        private NativeArray<OctahedralImpostorInstance> _uploadedInstances;
         private GraphicsBuffer _instanceBuffer;
         private GraphicsBuffer _matrixSourceBuffer;
         private GraphicsBuffer _argsBuffer;
         private Mesh _argsMesh;
-        private Mesh _runtimeQuadMesh;
-        private Material _runtimeMaterial;
         private Bounds _drawBounds;
         private int _instanceCount;
         private int _lastArgsInstanceCount = -1;
-        private int _lastQualityFlags = int.MinValue;
-        private int _lastTelemetryFrame = -TelemetryIntervalFrames;
+        private int _lastQualityMilli = int.MinValue;
+        private int _lastTelemetryTick = -TelemetryIntervalFrames;
+        private int _telemetryTickCounter;
         private int _matrixSourceCapacity;
         private int _matrixSourceUploadedCount;
         private float _lastBoundsRadius = 1f;
+        private float _impostorTimeSeconds;
         private bool _useVisibleMatrixStream;
         private bool _hasBoundsOverride;
         private bool _registeredTick;
         private IInstanceCullingService _instanceCullingService;
         private Texture2D _lastAlbedoAtlas;
         private Texture2D _lastNormalAtlas;
+        private Vector4 _lastAtlasGrid = new Vector4(-1f, -1f, -1f, -1f);
+        private float _lastDepthScaleMeters = -1f;
+        private float _lastGlobalQualityWeight = -1f;
+        private Vector3 _lastGlobalFloatingOffset;
+        private Material _lastStaticMaterial;
+        private Material _lastQualityMaterial;
+        private Material _lastFloatingOffsetMaterial;
+        private HectonOctahedralImpostorData _lastStaticData;
+        private bool _staticMaterialDirty = true;
+        private bool _staticPayloadValid;
+        private bool _floatingOffsetDirty = true;
 
         public int BoundInstanceCount => _instanceCount;
 
@@ -81,8 +90,16 @@ namespace Hecton8.World
         private void OnEnable()
         {
             HectonFloatingOrigin.RegisterListener(this);
+            InvalidateMaterialCaches();
             RegisterTick();
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            InvalidateMaterialCaches();
+        }
+#endif
 
         private void OnDisable()
         {
@@ -98,7 +115,10 @@ namespace Hecton8.World
 
         public void Tick(float deltaTime)
         {
-            _ = deltaTime;
+            _telemetryTickCounter++;
+            if (deltaTime > 0f && math.isfinite(deltaTime))
+                _impostorTimeSeconds += math.min(deltaTime, 0.25f);
+
             if (_instanceCount <= 0)
                 return;
 
@@ -107,8 +127,10 @@ namespace Hecton8.World
             if (mesh == null || material == null)
                 return;
 
-            ApplyDataToMaterial(material);
-            ApplyQualityFlags(material);
+            if (!ApplyStaticDataToMaterialIfNeeded(material))
+                return;
+
+            ApplyQualityWeight(material);
 
             bool useMatrixStream = _useVisibleMatrixStream &&
                                    _instanceCullingService != null &&
@@ -120,14 +142,14 @@ namespace Hecton8.World
             if (!useMatrixStream)
                 EnsureIndirectArgsBuffer(mesh);
 
-            Shader.SetGlobalInt(UseVisibleMatrixStreamId, useMatrixStream ? 1 : 0);
-            Shader.SetGlobalFloat(ImpostorTimeSecondsId, Time.time);
-            Shader.SetGlobalFloat(ImpostorFadeOutSecondsId, 1.5f);
+            material.SetInt(UseVisibleMatrixStreamId, useMatrixStream ? 1 : 0);
+            material.SetFloat(ImpostorTimeSecondsId, _impostorTimeSeconds);
+            material.SetFloat(ImpostorFadeOutSecondsId, 1.5f);
             if (useMatrixStream)
-                Shader.SetGlobalBuffer(VisibleInstancesId, _instanceCullingService.VisibleInstancesBuffer);
+                material.SetBuffer(VisibleInstancesId, _instanceCullingService.VisibleInstancesBuffer);
             else
-                Shader.SetGlobalBuffer(ImpostorInstancesId, _instanceBuffer);
-            Shader.SetGlobalVector(GlobalFloatingOffsetId, ResolveGlobalFloatingOffset());
+                material.SetBuffer(ImpostorInstancesId, _instanceBuffer);
+            ApplyGlobalFloatingOffset(material);
 
             RenderParams renderParams = new RenderParams(material)
             {
@@ -150,8 +172,8 @@ namespace Hecton8.World
                 return;
             }
 
-            EnsureOwnedUploadCapacity(instanceCount);
-            if (!_uploadedInstances.IsCreated || _instanceBuffer == null)
+            EnsureInstanceBufferCapacity(instanceCount);
+            if (_instanceBuffer == null || !_instanceBuffer.IsValid())
             {
                 ClearBinding();
                 return;
@@ -163,7 +185,6 @@ namespace Hecton8.World
             for (int i = 0; i < instanceCount; i++)
             {
                 OctahedralImpostorInstance instance = instances[i];
-                _uploadedInstances[i] = instance;
 
                 Bounds runtimeBounds = instance.ToUniverseBounds();
                 runtimeBounds.center += floatingOffset;
@@ -176,7 +197,7 @@ namespace Hecton8.World
                 }
             }
 
-            GraphicsBufferUploadUtility.UploadNativeArray(_instanceBuffer, _uploadedInstances, instanceCount);
+            GraphicsBufferUploadUtility.UploadNativeArray(_instanceBuffer, instances, instanceCount);
             _instanceCount = instanceCount;
             _debugBoundInstanceCount = instanceCount;
             _drawBounds = hasCombinedBounds ? combinedBounds : new Bounds(transform.position + _fallbackBoundsCenterOffset, _fallbackBoundsSize);
@@ -239,7 +260,7 @@ namespace Hecton8.World
                 BoundsRadius = _lastBoundsRadius,
                 MaxCullDistanceMeters = Mathf.Max(1000f, _lastBoundsRadius * 64f),
                 VramUsedMb = VRAMBudgetTracker.EstimatedVRAMBytes * GlobalTelemetryBus.BytesToMegabytes,
-                QualityTier = ResolveCullingQualityTier(GlobalRegistry.ScalabilityTier),
+                QualityTier = ResolveCullingQualityTier(ResolveGlobalQualityWeight01()),
                 Flags = InstanceCullingDispatchFlags.None,
                 IndirectArgs = new InstanceCullingIndirectArgs
                 {
@@ -268,8 +289,8 @@ namespace Hecton8.World
                 return;
             }
 
-            EnsureOwnedUploadCapacity(hlodCount);
-            if (!_uploadedInstances.IsCreated || _instanceBuffer == null)
+            EnsureInstanceBufferCapacity(hlodCount);
+            if (_instanceBuffer == null || !_instanceBuffer.IsValid())
             {
                 ClearBinding();
                 return;
@@ -278,33 +299,40 @@ namespace Hecton8.World
             Bounds combinedBounds = default;
             bool hasCombinedBounds = false;
             Vector3 floatingOffset = ResolveGlobalFloatingOffset();
-            for (int i = 0; i < hlodCount; i++)
+            NativeArray<OctahedralImpostorInstance> upload = _instanceBuffer.LockBufferForWrite<OctahedralImpostorInstance>(0, hlodCount);
+            try
             {
-                HLODData entry = hlodEntries[i];
-                Vector3 size = new Vector3(
-                    Mathf.Max(0.5f, entry.Size.x),
-                    Mathf.Max(0.5f, entry.Size.y),
-                    Mathf.Max(0.5f, entry.Size.z));
-                OctahedralImpostorInstance instance = OctahedralImpostorInstance.Create(
-                    entry.Center,
-                    size,
-                    entry.Fade01,
-                    0f,
-                    HectonChunkImpostorResidency.FlagUseImpostor);
-                _uploadedInstances[i] = instance;
-
-                Bounds runtimeBounds = instance.ToUniverseBounds();
-                runtimeBounds.center += floatingOffset;
-                if (hasCombinedBounds)
-                    combinedBounds.Encapsulate(runtimeBounds);
-                else
+                for (int i = 0; i < hlodCount; i++)
                 {
-                    combinedBounds = runtimeBounds;
-                    hasCombinedBounds = true;
+                    HLODData entry = hlodEntries[i];
+                    Vector3 size = new Vector3(
+                        Mathf.Max(0.5f, entry.Size.x),
+                        Mathf.Max(0.5f, entry.Size.y),
+                        Mathf.Max(0.5f, entry.Size.z));
+                    OctahedralImpostorInstance instance = OctahedralImpostorInstance.Create(
+                        entry.Center,
+                        size,
+                        entry.Fade01,
+                        0f,
+                        HectonChunkImpostorResidency.FlagUseImpostor);
+                    upload[i] = instance;
+
+                    Bounds runtimeBounds = instance.ToUniverseBounds();
+                    runtimeBounds.center += floatingOffset;
+                    if (hasCombinedBounds)
+                        combinedBounds.Encapsulate(runtimeBounds);
+                    else
+                    {
+                        combinedBounds = runtimeBounds;
+                        hasCombinedBounds = true;
+                    }
                 }
             }
+            finally
+            {
+                _instanceBuffer.UnlockBufferAfterWrite<OctahedralImpostorInstance>(hlodCount);
+            }
 
-            GraphicsBufferUploadUtility.UploadNativeArray(_instanceBuffer, _uploadedInstances, hlodCount);
             _instanceCount = hlodCount;
             _debugBoundInstanceCount = hlodCount;
             _drawBounds = hasCombinedBounds ? combinedBounds : new Bounds(transform.position + _fallbackBoundsCenterOffset, _fallbackBoundsSize);
@@ -315,8 +343,8 @@ namespace Hecton8.World
 
         private void BindMatricesAsOctahedralFallback(NativeArray<float4x4> matrices, int instanceCount)
         {
-            EnsureOwnedUploadCapacity(instanceCount);
-            if (!_uploadedInstances.IsCreated || _instanceBuffer == null)
+            EnsureInstanceBufferCapacity(instanceCount);
+            if (_instanceBuffer == null || !_instanceBuffer.IsValid())
             {
                 ClearBinding();
                 return;
@@ -325,35 +353,42 @@ namespace Hecton8.World
             Bounds combinedBounds = default;
             bool hasCombinedBounds = false;
             Vector3 floatingOffset = ResolveGlobalFloatingOffset();
-            for (int i = 0; i < instanceCount; i++)
+            NativeArray<OctahedralImpostorInstance> upload = _instanceBuffer.LockBufferForWrite<OctahedralImpostorInstance>(0, instanceCount);
+            try
             {
-                float4x4 matrix = matrices[i];
-                Vector3 center = new Vector3(matrix.c3.x, matrix.c3.y, matrix.c3.z);
-                Vector3 size = new Vector3(
-                    Mathf.Max(0.5f, math.abs(matrix.c0.x)),
-                    Mathf.Max(0.5f, math.abs(matrix.c1.y)),
-                    Mathf.Max(0.5f, math.abs(matrix.c2.z)));
-                float age01 = math.saturate((Time.time - matrix.c3.w) * ImpostorFadeSecondsRcp);
-                float fadeAge = matrix.c0.w < 0f ? 1f - age01 : age01;
-                uint flags = math.asuint(matrix.c2.w);
-                _uploadedInstances[i] = OctahedralImpostorInstance.Create(
-                    center,
-                    size,
-                    fadeAge,
-                    0f,
-                    flags == 0u ? HectonChunkImpostorResidency.FlagUseImpostor : flags);
-
-                Bounds bounds = new Bounds(center + floatingOffset, size);
-                if (hasCombinedBounds)
-                    combinedBounds.Encapsulate(bounds);
-                else
+                for (int i = 0; i < instanceCount; i++)
                 {
-                    combinedBounds = bounds;
-                    hasCombinedBounds = true;
+                    float4x4 matrix = matrices[i];
+                    Vector3 center = new Vector3(matrix.c3.x, matrix.c3.y, matrix.c3.z);
+                    Vector3 size = new Vector3(
+                        Mathf.Max(0.5f, math.abs(matrix.c0.x)),
+                        Mathf.Max(0.5f, math.abs(matrix.c1.y)),
+                        Mathf.Max(0.5f, math.abs(matrix.c2.z)));
+                    float age01 = math.saturate((_impostorTimeSeconds - matrix.c3.w) * ImpostorFadeSecondsRcp);
+                    float fadeAge = matrix.c0.w < 0f ? 1f - age01 : age01;
+                    uint flags = math.asuint(matrix.c2.w);
+                    upload[i] = OctahedralImpostorInstance.Create(
+                        center,
+                        size,
+                        fadeAge,
+                        0f,
+                        flags == 0u ? HectonChunkImpostorResidency.FlagUseImpostor : flags);
+
+                    Bounds bounds = new Bounds(center + floatingOffset, size);
+                    if (hasCombinedBounds)
+                        combinedBounds.Encapsulate(bounds);
+                    else
+                    {
+                        combinedBounds = bounds;
+                        hasCombinedBounds = true;
+                    }
                 }
             }
+            finally
+            {
+                _instanceBuffer.UnlockBufferAfterWrite<OctahedralImpostorInstance>(instanceCount);
+            }
 
-            GraphicsBufferUploadUtility.UploadNativeArray(_instanceBuffer, _uploadedInstances, instanceCount);
             _useVisibleMatrixStream = false;
             _instanceCount = instanceCount;
             _debugBoundInstanceCount = instanceCount;
@@ -420,14 +455,15 @@ namespace Hecton8.World
             return _instanceCullingService;
         }
 
-        private static InstanceCullingQualityTier ResolveCullingQualityTier(HectonQualityTier tier)
+        private static InstanceCullingQualityTier ResolveCullingQualityTier(float globalQualityWeight)
         {
-            if (tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350)
+            float q = math.saturate(math.select(1f, globalQualityWeight, math.isfinite(globalQualityWeight)));
+            if (q < 0.25f)
                 return InstanceCullingQualityTier.Low;
-            if (tier == HectonQualityTier.High)
-                return InstanceCullingQualityTier.High;
-            if (tier == HectonQualityTier.Ultra)
+            if (q >= 0.82f)
                 return InstanceCullingQualityTier.Ultra;
+            if (q >= 0.58f)
+                return InstanceCullingQualityTier.High;
             return InstanceCullingQualityTier.Middle;
         }
 
@@ -449,6 +485,16 @@ namespace Hecton8.World
             Bounds drawBounds = _drawBounds;
             drawBounds.center -= shiftData.ShiftOffset;
             _drawBounds = drawBounds;
+            _floatingOffsetDirty = true;
+        }
+
+        private void InvalidateMaterialCaches()
+        {
+            _staticMaterialDirty = true;
+            _staticPayloadValid = false;
+            _floatingOffsetDirty = true;
+            _lastQualityMaterial = null;
+            _lastFloatingOffsetMaterial = null;
         }
 
         private void RegisterTick()
@@ -469,21 +515,14 @@ namespace Hecton8.World
             _registeredTick = false;
         }
 
-        private void EnsureOwnedUploadCapacity(int instanceCount)
+        private void EnsureInstanceBufferCapacity(int instanceCount)
         {
             int nextCapacity = Mathf.NextPowerOfTwo(Mathf.Max(1, instanceCount));
-            if (_uploadedInstances.IsCreated &&
-                _uploadedInstances.Length >= nextCapacity &&
-                _instanceBuffer != null &&
+            if (_instanceBuffer != null &&
+                _instanceBuffer.IsValid() &&
                 _instanceBuffer.count >= nextCapacity)
             {
                 return;
-            }
-
-            if (_uploadedInstances.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_uploadedInstances);
-                _uploadedInstances.Dispose();
             }
 
             if (_instanceBuffer != null)
@@ -492,15 +531,17 @@ namespace Hecton8.World
                 _instanceBuffer = null;
             }
 
-            _uploadedInstances = new NativeArray<OctahedralImpostorInstance>(nextCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<OctahedralImpostorInstance>[NextPowerOfTwo(requiredCount)] - impostor upload cache - owner: HectonOctahedralImpostorRenderer
-            NativeMemorySentinel.RegisterNativeArray(_uploadedInstances, nameof(HectonOctahedralImpostorRenderer), nameof(_uploadedInstances), NativeAllocationLifetime.Session);
             _instanceBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<OctahedralImpostorInstance>(nextCapacity); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(requiredCount)] - impostor instance buffer - owner: HectonOctahedralImpostorRenderer
         }
 
         private void EnsureIndirectArgsBuffer(Mesh mesh)
         {
             if (_argsBuffer == null)
+            {
                 _argsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - impostor indirect draw args - owner: HectonOctahedralImpostorRenderer
+                _argsMesh = null;
+                _lastArgsInstanceCount = -1;
+            }
 
             if (mesh == null)
                 return;
@@ -511,103 +552,131 @@ namespace Hecton8.World
             int safeSubMesh = Mathf.Clamp(_subMeshIndex, 0, Mathf.Max(0, mesh.subMeshCount - 1));
             NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs> argsWrite =
                 _argsBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
-            argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+            try
             {
-                indexCountPerInstance = mesh.GetIndexCount(safeSubMesh),
-                instanceCount = unchecked((uint)Mathf.Max(0, _instanceCount)),
-                startIndex = mesh.GetIndexStart(safeSubMesh),
-                baseVertexIndex = unchecked((uint)Mathf.Max(0, mesh.GetBaseVertex(safeSubMesh))),
-                startInstance = 0u
-            };
-            _argsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+                argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+                {
+                    indexCountPerInstance = mesh.GetIndexCount(safeSubMesh),
+                    instanceCount = unchecked((uint)Mathf.Max(0, _instanceCount)),
+                    startIndex = mesh.GetIndexStart(safeSubMesh),
+                    baseVertexIndex = unchecked((uint)Mathf.Max(0, mesh.GetBaseVertex(safeSubMesh))),
+                    startInstance = 0u
+                };
+            }
+            finally
+            {
+                _argsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+            }
+
             _argsMesh = mesh;
             _lastArgsInstanceCount = _instanceCount;
         }
 
         private Mesh ResolveQuadMesh()
         {
-            if (_quadMesh != null)
-                return _quadMesh;
-
-            if (_runtimeQuadMesh != null)
-                return _runtimeQuadMesh;
-
-            _runtimeQuadMesh = new Mesh
-            {
-                name = "H8 Runtime Impostor Quad",
-                hideFlags = HideFlags.HideAndDontSave
-            };
-            _runtimeQuadMesh.vertices = new[]
-            {
-                new Vector3(-0.5f, -0.5f, 0f),
-                new Vector3(0.5f, -0.5f, 0f),
-                new Vector3(0.5f, 0.5f, 0f),
-                new Vector3(-0.5f, 0.5f, 0f)
-            }; // COLD ALLOC: Vector3[4] - fallback impostor quad vertices - owner: HectonOctahedralImpostorRenderer
-            _runtimeQuadMesh.uv = new[]
-            {
-                new Vector2(0f, 0f),
-                new Vector2(1f, 0f),
-                new Vector2(1f, 1f),
-                new Vector2(0f, 1f)
-            }; // COLD ALLOC: Vector2[4] - fallback impostor quad UVs - owner: HectonOctahedralImpostorRenderer
-            _runtimeQuadMesh.triangles = new[] { 0, 1, 2, 0, 2, 3 }; // COLD ALLOC: int[6] - fallback impostor quad indices - owner: HectonOctahedralImpostorRenderer
-            _runtimeQuadMesh.RecalculateBounds();
-            return _runtimeQuadMesh;
+            return _quadMesh;
         }
 
         private Material ResolveMaterial()
         {
-            if (_material != null)
-                return _material;
-
-            if (_runtimeMaterial != null)
-                return _runtimeMaterial;
-
-            Shader shader = _shader != null ? _shader : Shader.Find("Hecton8/Environment/Hecton_OctahedralImpostor");
-            if (shader == null)
-                return null;
-
-            _runtimeMaterial = new Material(shader)
-            {
-                name = "H8 Runtime Octahedral Impostor",
-                hideFlags = HideFlags.HideAndDontSave
-            }; // COLD ALLOC: Material[1] - fallback impostor material - owner: HectonOctahedralImpostorRenderer
-            return _runtimeMaterial;
+            return _material;
         }
 
-        private void ApplyDataToMaterial(Material material)
+        private bool ApplyStaticDataToMaterialIfNeeded(Material material)
         {
             HectonOctahedralImpostorData data = _impostorData;
+            if (!_staticMaterialDirty &&
+                ReferenceEquals(_lastStaticMaterial, material) &&
+                ReferenceEquals(_lastStaticData, data))
+            {
+                return _staticPayloadValid;
+            }
+
+            _staticMaterialDirty = false;
+            _staticPayloadValid = false;
+            _lastStaticMaterial = material;
+            _lastStaticData = data;
+            _lastAlbedoAtlas = null;
+            _lastNormalAtlas = null;
+            _lastAtlasGrid = new Vector4(-1f, -1f, -1f, -1f);
+            _lastDepthScaleMeters = -1f;
+
             if (data == null)
-                return;
+                return false;
 
             Texture2D albedo = data.AlbedoDepthAtlas;
             Texture2D normal = data.NormalDepthAtlas;
+            if (albedo == null || normal == null)
+                return false;
 
-            if (!ReferenceEquals(_lastAlbedoAtlas, albedo) && albedo != null)
+            if (!ReferenceEquals(_lastAlbedoAtlas, albedo))
             {
                 material.SetTexture(AlbedoDepthAtlasId, albedo);
                 _lastAlbedoAtlas = albedo;
             }
 
-            if (!ReferenceEquals(_lastNormalAtlas, normal) && normal != null)
+            if (!ReferenceEquals(_lastNormalAtlas, normal))
             {
                 material.SetTexture(NormalDepthAtlasId, normal);
                 _lastNormalAtlas = normal;
             }
+
+            Vector2Int grid = data.AtlasGrid;
+            Vector4 atlasGrid = new Vector4(
+                Mathf.Max(1, grid.x),
+                Mathf.Max(1, grid.y),
+                1f / Mathf.Max(1, grid.x),
+                1f / Mathf.Max(1, grid.y));
+            if (_lastAtlasGrid != atlasGrid)
+            {
+                material.SetVector(AtlasGridId, atlasGrid);
+                _lastAtlasGrid = atlasGrid;
+            }
+
+            float depthScale = Mathf.Max(0.01f, data.DepthScaleMeters);
+            if (!Mathf.Approximately(_lastDepthScaleMeters, depthScale))
+            {
+                material.SetFloat(DepthScaleMetersId, depthScale);
+                _lastDepthScaleMeters = depthScale;
+            }
+
+            _staticPayloadValid = true;
+            return true;
         }
 
-        private void ApplyQualityFlags(Material material)
+        private void ApplyQualityWeight(Material material)
         {
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            _debugQualityTier = tier;
-            int flags = HectonChunkImpostorResidency.IsLowTier(tier) ? QualityFlagLowTier : 0;
-            if (_lastQualityFlags == flags)
-                return;
+            float quality = ResolveGlobalQualityWeight01();
+            if (!ReferenceEquals(_lastQualityMaterial, material) || !Mathf.Approximately(_lastGlobalQualityWeight, quality))
+            {
+                material.SetFloat(GlobalQualityWeightId, quality);
+                _lastGlobalQualityWeight = quality;
+                _lastQualityMaterial = material;
+            }
 
-            material.SetInt(QualityFlagsId, flags);
-            _lastQualityFlags = flags;
+            _lastQualityMilli = Mathf.RoundToInt(quality * 1000f);
+        }
+
+        private void ApplyGlobalFloatingOffset(Material material)
+        {
+            Vector3 floatingOffset = ResolveGlobalFloatingOffset();
+            if (!_floatingOffsetDirty &&
+                ReferenceEquals(_lastFloatingOffsetMaterial, material) &&
+                _lastGlobalFloatingOffset == floatingOffset)
+            {
+                return;
+            }
+
+            material.SetVector(GlobalFloatingOffsetId, floatingOffset);
+            _lastGlobalFloatingOffset = floatingOffset;
+            _lastFloatingOffsetMaterial = material;
+            _floatingOffsetDirty = false;
+        }
+
+        private static float ResolveGlobalQualityWeight01()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.select(1f, quality, math.isfinite(quality)));
         }
 
         private Bounds ResolveDrawBounds()
@@ -620,22 +689,16 @@ namespace Hecton8.World
 
         private void ReportTelemetryIfDue()
         {
-            int frame = Time.frameCount;
-            if (frame - _lastTelemetryFrame < TelemetryIntervalFrames)
+            int frame = _telemetryTickCounter;
+            if (frame - _lastTelemetryTick < TelemetryIntervalFrames)
                 return;
 
-            _lastTelemetryFrame = frame;
-            CrashTelemetryBuffer.ReportActiveImpostors(_instanceCount, _lastQualityFlags, TelemetryHash);
+            _lastTelemetryTick = frame;
+            CrashTelemetryBuffer.ReportActiveImpostors(_instanceCount, _lastQualityMilli, TelemetryHash);
         }
 
         private void ReleaseResources()
         {
-            if (_uploadedInstances.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_uploadedInstances);
-                _uploadedInstances.Dispose();
-            }
-
             if (_instanceBuffer != null)
             {
                 _instanceBuffer.Release();
@@ -655,22 +718,20 @@ namespace Hecton8.World
                 _argsBuffer = null;
             }
 
-            if (_runtimeMaterial != null)
-            {
-                Destroy(_runtimeMaterial);
-                _runtimeMaterial = null;
-            }
-
-            if (_runtimeQuadMesh != null)
-            {
-                Destroy(_runtimeQuadMesh);
-                _runtimeQuadMesh = null;
-            }
+            _argsMesh = null;
+            _instanceCount = 0;
+            _debugBoundInstanceCount = 0;
+            _lastArgsInstanceCount = -1;
+            _matrixSourceCapacity = 0;
+            _matrixSourceUploadedCount = 0;
+            _useVisibleMatrixStream = false;
+            _hasBoundsOverride = false;
+            _staticPayloadValid = false;
         }
 
         private static Vector3 ResolveGlobalFloatingOffset()
         {
-            return HectonMapMagicVegetationBridge.GlobalTotalUniverseOffset;
+            return HectonFloatingOrigin.CurrentTotalOffset;
         }
     }
 }

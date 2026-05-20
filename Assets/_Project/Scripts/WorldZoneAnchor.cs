@@ -291,11 +291,10 @@ namespace Hecton8.World
 
         private void GetFlatDelta(in AbsoluteUniversePosition playerPosition, out double deltaX, out double deltaZ)
         {
-            AbsoluteUniversePosition anchorPosition = AbsoluteUniversePosition.FromRuntimePosition(transform.position);
-            double3 anchorAbsolute = anchorPosition.ToAbsoluteDouble3();
-            double3 playerAbsolute = playerPosition.ToAbsoluteDouble3();
-            deltaX = anchorAbsolute.x - playerAbsolute.x;
-            deltaZ = anchorAbsolute.z - playerAbsolute.z;
+            Vector3 anchorRuntime = transform.position;
+            float3 playerRuntime = playerPosition.ToRuntimeFloat3();
+            deltaX = (double)anchorRuntime.x - playerRuntime.x;
+            deltaZ = (double)anchorRuntime.z - playerRuntime.z;
         }
 
         private static float FastPlanarDistance(double x, double z)

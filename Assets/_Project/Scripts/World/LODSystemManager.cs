@@ -122,8 +122,8 @@ namespace Hecton8.World
         // COLD ALLOC: List<Transform>[500] — cached transforms — owner: LODSystemManager
         private readonly List<Transform> _lodGroupTransforms = new List<Transform>(500);
 
-        // COLD ALLOC: List<AbsoluteUniversePosition>[500] — static LOD anchors — owner: LODSystemManager
-        private readonly List<AbsoluteUniversePosition> _lodGroupAupPositions = new List<AbsoluteUniversePosition>(500);
+        // COLD ALLOC: List<Vector3>[500] — presentation-only LOD anchors — owner: LODSystemManager
+        private readonly List<Vector3> _lodGroupPresentationPositions = new List<Vector3>(500);
 
         // COLD ALLOC: HashSet<LODGroup>[500] — O(1) duplicate check — owner: LODSystemManager
         private readonly HashSet<LODGroup> _registeredLODGroupsSet = new HashSet<LODGroup>(500);
@@ -400,7 +400,7 @@ namespace Hecton8.World
             Transform lodTransform = lodGroup.transform;
             _registeredLODGroups.Add(lodGroup);
             _lodGroupTransforms.Add(lodTransform);
-            _lodGroupAupPositions.Add(AbsoluteUniversePosition.FromRuntimePosition(lodTransform.position));
+            _lodGroupPresentationPositions.Add(lodTransform.position);
             lodTransform.hasChanged = false;
             _registeredLODGroupsSet.Add(lodGroup);
             TryRegisterImpostorCandidate(lodGroup);
@@ -438,11 +438,11 @@ namespace Hecton8.World
                     {
                         _registeredLODGroups[i] = _registeredLODGroups[lastIndex];
                         _lodGroupTransforms[i] = _lodGroupTransforms[lastIndex];
-                        _lodGroupAupPositions[i] = _lodGroupAupPositions[lastIndex];
+                        _lodGroupPresentationPositions[i] = _lodGroupPresentationPositions[lastIndex];
                     }
                     _registeredLODGroups.RemoveAt(lastIndex);
                     _lodGroupTransforms.RemoveAt(lastIndex);
-                    _lodGroupAupPositions.RemoveAt(lastIndex);
+                    _lodGroupPresentationPositions.RemoveAt(lastIndex);
                     break;
                 }
             }
@@ -491,7 +491,7 @@ namespace Hecton8.World
             if (_registeredLODGroups.Count == 0) return;
 
             EnsureDistanceScratchAllocated();
-            AbsoluteUniversePosition cameraAup = ResolveViewerAup();
+            Vector3 cameraPosition = _cameraTransform != null ? _cameraTransform.position : Vector3.zero;
             int count = ResolveHotPathLODGroupBatchCount();
             if (_lodHotPathCursor >= _registeredLODGroups.Count)
                 _lodHotPathCursor = 0;
@@ -510,10 +510,9 @@ namespace Hecton8.World
                 }
 
                 RefreshLODAnchorIfChanged(lodGroupIndex, lodTransform);
-                AbsoluteUniversePosition lodGroupAup = _lodGroupAupPositions[lodGroupIndex];
-                _lodGroupSquaredDistances[i] = ResolveCameraDistanceSqr(
-                    in cameraAup,
-                    in lodGroupAup);
+                _lodGroupSquaredDistances[i] = ResolvePresentationDistanceSqr(
+                    cameraPosition,
+                    _lodGroupPresentationPositions[lodGroupIndex]);
             }
         }
 
@@ -522,7 +521,7 @@ namespace Hecton8.World
             if (!lodTransform.hasChanged)
                 return;
 
-            _lodGroupAupPositions[lodGroupIndex] = AbsoluteUniversePosition.FromRuntimePosition(lodTransform.position);
+            _lodGroupPresentationPositions[lodGroupIndex] = lodTransform.position;
             lodTransform.hasChanged = false;
         }
 
@@ -584,6 +583,16 @@ namespace Hecton8.World
 
             double distanceSqr = AbsoluteUniversePosition.DistanceSq(in cameraAup, in objectAup);
             return distanceSqr >= float.MaxValue ? float.MaxValue : (float)distanceSqr;
+        }
+
+        private static float ResolvePresentationDistanceSqr(Vector3 cameraPosition, Vector3 objectPosition)
+        {
+            float3 localDelta = new float3(
+                objectPosition.x - cameraPosition.x,
+                objectPosition.y - cameraPosition.y,
+                objectPosition.z - cameraPosition.z);
+            float distanceSq = math.lengthsq(localDelta);
+            return math.isfinite(distanceSq) ? distanceSq : float.MaxValue;
         }
 
         private void PublishLODPerformanceWarningIfNeeded(float elapsedMilliseconds)
@@ -658,6 +667,14 @@ namespace Hecton8.World
 
             _viewerAupCacheFrame = frame;
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null &&
+                playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                MathGuard.IsFinite(in snapshot.Aup))
+            {
+                _viewerAupCache = snapshot.Aup;
+                return _viewerAupCache;
+            }
+
             var playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
             if (playerMovement != null)
             {
@@ -665,9 +682,7 @@ namespace Hecton8.World
                 return _viewerAupCache;
             }
 
-            _viewerAupCache = _cameraTransform != null
-                ? AbsoluteUniversePosition.FromRuntimePosition(_cameraTransform.position)
-                : default;
+            _viewerAupCache = default;
             return _viewerAupCache;
         }
 
@@ -818,12 +833,12 @@ namespace Hecton8.World
                 {
                     _registeredLODGroups[i] = _registeredLODGroups[lastIndex];
                     _lodGroupTransforms[i] = _lodGroupTransforms[lastIndex];
-                    _lodGroupAupPositions[i] = _lodGroupAupPositions[lastIndex];
+                    _lodGroupPresentationPositions[i] = _lodGroupPresentationPositions[lastIndex];
                 }
 
                 _registeredLODGroups.RemoveAt(lastIndex);
                 _lodGroupTransforms.RemoveAt(lastIndex);
-                _lodGroupAupPositions.RemoveAt(lastIndex);
+                _lodGroupPresentationPositions.RemoveAt(lastIndex);
                 if (_nullCleanupCursor >= _registeredLODGroups.Count)
                     _nullCleanupCursor = 0;
             }
@@ -861,7 +876,6 @@ namespace Hecton8.World
             if (_mainCamera == null) return;
 
             Vector3 camPos = _mainCamera.transform.position;
-            AbsoluteUniversePosition cameraAup = AbsoluteUniversePosition.FromRuntimePosition(camPos);
 
             // Draw transition distance spheres
             if (_showTransitionSpheres)
@@ -875,9 +889,9 @@ namespace Hecton8.World
                 LODGroup lodGroup = _registeredLODGroups[i];
                 if (lodGroup == null) continue;
 
-                Vector3 objPos = _lodGroupTransforms[i].position;
-                AbsoluteUniversePosition objectAup = AbsoluteUniversePosition.FromRuntimePosition(objPos);
-                float sqrDist = ResolveCameraDistanceSqr(in cameraAup, in objectAup);
+                RefreshLODAnchorIfChanged(i, _lodGroupTransforms[i]);
+                Vector3 objPos = _lodGroupPresentationPositions[i];
+                float sqrDist = ResolvePresentationDistanceSqr(camPos, objPos);
 
                 // Show current LOD level label
                 if (_showLODLabels)

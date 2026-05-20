@@ -18,77 +18,79 @@ namespace Hecton8.Core
     /// <summary>
     /// Sixteen-byte dump header prefix. Do not add fields here; use the sealed 1024-byte dump header extension.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct TelemetryHeaderDTO
     {
-        public ulong Timestamp;
-        public uint FrameNumber;
-        public uint FatalHash;
+        [FieldOffset(0)] public ulong Timestamp;
+        [FieldOffset(8)] public uint FrameNumber;
+        [FieldOffset(12)] public uint FatalHash;
     }
 
     /// <summary>
     /// Sixteen-byte event marker used as the allocation-free callstack surrogate.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct TelemetryEventDTO
     {
-        public uint EventHash;
-        public float ScalarValue;
-        public uint EntityId;
-        public uint _pad0;
+        [FieldOffset(0)] public uint EventHash;
+        [FieldOffset(4)] public float ScalarValue;
+        [FieldOffset(8)] public uint EntityId;
+        [FieldOffset(12)] public uint _pad0;
     }
 
     /// <summary>
     /// Blind physics probe payload. Exactly 64 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct MockPhysicsState
     {
-        public float3 Position;
-        public uint EntityId;
-        public float3 Velocity;
-        public uint Flags;
-        public quaternion Rotation;
-        public float AngularSpeed;
-        public float Mass;
-        public float Drag;
-        public float Buoyancy;
+        [FieldOffset(0)] public float3 Position;
+        [FieldOffset(12)] public uint EntityId;
+        [FieldOffset(16)] public float3 Velocity;
+        [FieldOffset(28)] public uint Flags;
+        [FieldOffset(32)] public quaternion Rotation;
+        [FieldOffset(48)] public float AngularSpeed;
+        [FieldOffset(52)] public float Mass;
+        [FieldOffset(56)] public float Drag;
+        [FieldOffset(60)] public float Buoyancy;
     }
 
     /// <summary>
     /// Blind origin-shift signal used by SHINOBU_33 without depending on the real origin-shift owner.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public partial struct MockOriginShiftSignal
     {
-        public long SectorX;
-        public long SectorY;
-        public long SectorZ;
-        public float3 DeltaLocalMeters;
-        public uint FrameNumber;
-        public uint ShiftId;
-        public uint Flags;
-        public uint SourceHash;
-        public float3 ImpactPosition;
+        [FieldOffset(0)] public long SectorX;
+        [FieldOffset(8)] public long SectorY;
+        [FieldOffset(16)] public long SectorZ;
+        [FieldOffset(24)] public float3 DeltaLocalMeters;
+        [FieldOffset(36)] public uint FrameNumber;
+        [FieldOffset(40)] public uint ShiftId;
+        [FieldOffset(44)] public uint Flags;
+        [FieldOffset(48)] public uint SourceHash;
+        [FieldOffset(52)] public float3 ImpactPosition;
     }
 
     /// <summary>
     /// Raw view over the SHINOBU blackbox. Fields are intentionally public to avoid CS1612 copies.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public unsafe struct BlackboxRingBufferDTO
     {
-        public byte* Bytes;
-        public int FrameCapacity;
-        public int ActiveFrameCount;
-        public int FrameStrideBytes;
-        public int ValidFrameCount;
-        public int WriteIndex;
-        public int TotalWrites;
-        public uint FatalHash;
-        public uint _pad0;
-        public uint _pad1;
-        public uint _pad2;
+        [FieldOffset(0)] public byte* Bytes;
+        [FieldOffset(8)] public int FrameCapacity;
+        [FieldOffset(12)] public int ActiveFrameCount;
+        [FieldOffset(16)] public int FrameStrideBytes;
+        [FieldOffset(20)] public int ValidFrameCount;
+        [FieldOffset(24)] public int WriteIndex;
+        [FieldOffset(28)] public int TotalWrites;
+        [FieldOffset(32)] public uint FatalHash;
+        [FieldOffset(36)] public uint _pad0;
+        [FieldOffset(40)] public uint _pad1;
+        [FieldOffset(44)] public uint _pad2;
+        [FieldOffset(48)] private ulong _pad3;
+        [FieldOffset(56)] private ulong _pad4;
 
         public ref byte GetFrameByteRef(int frameIndex)
         {
@@ -109,36 +111,42 @@ namespace Hecton8.Core
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     internal struct TelemetryLoggingMaskDTO
     {
-        public uint SystemHash;
-        public uint Mask;
-        public uint Version;
-        public uint _pad0;
+        [FieldOffset(0)] public uint SystemHash;
+        [FieldOffset(4)] public uint Mask;
+        [FieldOffset(8)] public uint Version;
+        [FieldOffset(12)] public uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal unsafe struct BlackboxSourceSlot
     {
-        public byte* SourcePtr;
-        public uint SourceHash;
-        public uint Flags;
-        public int PayloadBytes;
-        public int _pad0;
+        [FieldOffset(0)] public byte* SourcePtr;
+        [FieldOffset(8)] public uint SourceHash;
+        [FieldOffset(12)] public uint Flags;
+        [FieldOffset(16)] public int PayloadBytes;
+        [FieldOffset(20)] public int _pad0;
+        [FieldOffset(24)] private ulong _pad1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
-    [BurstCompile]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct NanSweeperJob : IJob
     {
-        [NativeDisableUnsafePtrRestriction]
+        [FieldOffset(0)]
+        [NoAlias] [NativeDisableUnsafePtrRestriction]
         public byte* Payload;
+        [FieldOffset(8)]
         public int PayloadBytes;
+        [FieldOffset(12)]
         public uint FatalHash;
-        [NativeDisableUnsafePtrRestriction]
+        [FieldOffset(16)]
+        [NoAlias] [NativeDisableUnsafePtrRestriction]
         public int* IsCatastrophicFailure;
-        [NativeDisableUnsafePtrRestriction]
+        [FieldOffset(24)]
+        [NoAlias] [NativeDisableUnsafePtrRestriction]
         public int* FatalHashOutput;
 
         public void Execute()
@@ -161,17 +169,25 @@ namespace Hecton8.Core
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
-    [BurstCompile]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct MockOriginShiftFireJob : IJob
     {
-        [NativeDisableUnsafePtrRestriction]
+        [FieldOffset(0)]
+        [NoAlias] [NativeDisableUnsafePtrRestriction]
         public MockOriginShiftSignal* Output;
+        [FieldOffset(8)]
         public int OutputLength;
+        [FieldOffset(12)]
         public uint Seed;
+        [FieldOffset(16)]
         public uint FrameNumber;
+        [FieldOffset(20)]
         public uint _pad0;
+        [FieldOffset(24)]
         public uint _pad1;
+        [FieldOffset(28)]
+        private uint _pad2;
 
         public void Execute()
         {
@@ -200,7 +216,6 @@ namespace Hecton8.Core
     public static partial class GlobalTelemetryBus
     {
         public const int ShinobuBlackboxHighFrameCount = 300;
-        public const int ShinobuBlackboxLowFrameCount = 60;
         public const int ShinobuBlackboxFrameStrideBytes = BlackboxFrameStrideBytes;
         public const int ShinobuBlackboxMainThreadWatchdogLane = 0;
         public const uint ShinobuBlackboxSourceFlagFloatScan = BlackboxSourceFlagFloatScan;
@@ -248,29 +263,18 @@ namespace Hecton8.Core
         private const int BlackboxMmfQueued = 1;
         private const int BlackboxMmfWriting = 2;
 
-        private static NativeArray<byte> _blackboxBytes;
-        private static NativeArray<byte> _blackboxMmfScratch;
-        private static NativeArray<byte> _blackboxDumpHeader;
-        private static NativeArray<TelemetryEventDTO> _blackboxEvents;
-        private static NativeArray<BlackboxSourceSlot> _blackboxSources;
-        private static NativeArray<TelemetryLoggingMaskDTO> _blackboxLoggingMasks;
-        private static NativeArray<int> _blackboxAtomicState;
-        private static NativeArray<int> _blackboxWatchdogCounters;
-        private static NativeArray<int> _blackboxWatchdogSamples;
-        private static NativeArray<int> _blackboxWatchdogStaleProbes;
-        private static NativeArray<int> _blackboxWatchdogActive;
         private static IDataVault _blackboxVault;
-        private static VaultBufferHandle<byte> _blackboxBytesHandle;
-        private static VaultBufferHandle<byte> _blackboxMmfScratchHandle;
-        private static VaultBufferHandle<byte> _blackboxDumpHeaderHandle;
-        private static VaultBufferHandle<TelemetryEventDTO> _blackboxEventsHandle;
-        private static VaultBufferHandle<BlackboxSourceSlot> _blackboxSourcesHandle;
-        private static VaultBufferHandle<TelemetryLoggingMaskDTO> _blackboxLoggingMasksHandle;
-        private static VaultBufferHandle<int> _blackboxAtomicStateHandle;
-        private static VaultBufferHandle<int> _blackboxWatchdogCountersHandle;
-        private static VaultBufferHandle<int> _blackboxWatchdogSamplesHandle;
-        private static VaultBufferHandle<int> _blackboxWatchdogStaleProbesHandle;
-        private static VaultBufferHandle<int> _blackboxWatchdogActiveHandle;
+        private static VaultGenerationHandle<byte> _blackboxBytesHandle;
+        private static VaultGenerationHandle<byte> _blackboxMmfScratchHandle;
+        private static VaultGenerationHandle<byte> _blackboxDumpHeaderHandle;
+        private static VaultGenerationHandle<TelemetryEventDTO> _blackboxEventsHandle;
+        private static VaultGenerationHandle<BlackboxSourceSlot> _blackboxSourcesHandle;
+        private static VaultGenerationHandle<TelemetryLoggingMaskDTO> _blackboxLoggingMasksHandle;
+        private static VaultGenerationHandle<int> _blackboxAtomicStateHandle;
+        private static VaultGenerationHandle<int> _blackboxWatchdogCountersHandle;
+        private static VaultGenerationHandle<int> _blackboxWatchdogSamplesHandle;
+        private static VaultGenerationHandle<int> _blackboxWatchdogStaleProbesHandle;
+        private static VaultGenerationHandle<int> _blackboxWatchdogActiveHandle;
         private static int _blackboxActiveFrameCount;
         private static int _blackboxFrameWriteIndex;
         private static int _blackboxValidFrameCount;
@@ -312,6 +316,25 @@ namespace Hecton8.Core
 
         public static int BlackboxValidFrameCount => Volatile.Read(ref _blackboxValidFrameCount);
 
+        private static bool IsBlackboxBufferBound()
+        {
+            return _blackboxVault != null &&
+                   _blackboxBytesHandle.BufferID != 0u &&
+                   _blackboxBytesHandle.Generation != 0u;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool TryResolveBlackboxBuffer<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _blackboxVault;
+            return vault != null &&
+                   handle.BufferID != 0u &&
+                   handle.Generation != 0u &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated;
+        }
+
         /// <summary>
         /// Pushes a 16-byte telemetry event into the atomic unmanaged event ring.
         /// </summary>
@@ -328,13 +351,13 @@ namespace Hecton8.Core
             if (eventHash == 0u)
                 return;
 
-            if (!_blackboxEvents.IsCreated)
+            if (!TryResolveBlackboxBuffer(in _blackboxEventsHandle, out NativeArray<TelemetryEventDTO> events))
             {
                 if (Thread.CurrentThread.ManagedThreadId != _mainThreadId)
                     return;
 
                 EnsureBlackboxInitialized();
-                if (!_blackboxEvents.IsCreated)
+                if (!TryResolveBlackboxBuffer(in _blackboxEventsHandle, out events))
                     return;
             }
 
@@ -353,8 +376,8 @@ namespace Hecton8.Core
             telemetryEvent.EntityId = entityId;
             try
             {
-                if (_blackboxEvents.IsCreated && _blackboxEvents.Length > 0)
-                    _blackboxEvents[slot] = telemetryEvent;
+                if (events.Length > 0)
+                    events[slot] = telemetryEvent;
             }
             catch (Exception)
             {
@@ -376,7 +399,7 @@ namespace Hecton8.Core
             if (sourceHash == 0u || sourcePtr == null || payloadBytes <= 0 || payloadBytes > BlackboxSourceStrideBytes)
                 return false;
 
-            if (!_blackboxSources.IsCreated)
+            if (!TryResolveBlackboxBuffer(in _blackboxSourcesHandle, out NativeArray<BlackboxSourceSlot> sources))
             {
                 if (Thread.CurrentThread.ManagedThreadId != _mainThreadId)
                     return false;
@@ -384,7 +407,7 @@ namespace Hecton8.Core
                 EnsureBlackboxInitialized();
             }
 
-            if (!_blackboxSources.IsCreated)
+            if (!TryResolveBlackboxBuffer(in _blackboxSourcesHandle, out sources))
                 return false;
 
             lock (_blackboxGate)
@@ -392,14 +415,14 @@ namespace Hecton8.Core
                 int count = math.min(_blackboxSourceCount, BlackboxMaxSourceCount);
                 for (int i = 0; i < count; i++)
                 {
-                    BlackboxSourceSlot existing = _blackboxSources[i];
+                    BlackboxSourceSlot existing = sources[i];
                     if (existing.SourceHash != sourceHash)
                         continue;
 
                     existing.SourcePtr = (byte*)sourcePtr;
                     existing.PayloadBytes = payloadBytes;
                     existing.Flags = flags;
-                    _blackboxSources[i] = existing;
+                    sources[i] = existing;
                     slot = i;
                     return true;
                 }
@@ -412,7 +435,7 @@ namespace Hecton8.Core
                 sourceSlot.SourcePtr = (byte*)sourcePtr;
                 sourceSlot.PayloadBytes = payloadBytes;
                 sourceSlot.Flags = flags;
-                _blackboxSources[count] = sourceSlot;
+                sources[count] = sourceSlot;
                 _blackboxSourceCount = count + 1;
                 slot = count;
                 return true;
@@ -424,7 +447,7 @@ namespace Hecton8.Core
         /// </summary>
         public static void UnregisterBlackboxSource(uint sourceHash)
         {
-            if (sourceHash == 0u || !_blackboxSources.IsCreated)
+            if (sourceHash == 0u || !TryResolveBlackboxBuffer(in _blackboxSourcesHandle, out NativeArray<BlackboxSourceSlot> sources))
                 return;
 
             lock (_blackboxGate)
@@ -432,12 +455,12 @@ namespace Hecton8.Core
                 int count = math.min(_blackboxSourceCount, BlackboxMaxSourceCount);
                 for (int i = 0; i < count; i++)
                 {
-                    if (_blackboxSources[i].SourceHash != sourceHash)
+                    if (sources[i].SourceHash != sourceHash)
                         continue;
 
                     int last = count - 1;
-                    _blackboxSources[i] = _blackboxSources[last];
-                    _blackboxSources[last] = default;
+                    sources[i] = sources[last];
+                    sources[last] = default;
                     _blackboxSourceCount = last;
                     return;
                 }
@@ -450,7 +473,7 @@ namespace Hecton8.Core
         public static unsafe bool TryGetBlackboxRingBuffer(out BlackboxRingBufferDTO dto)
         {
             dto = default;
-            if (!_blackboxBytes.IsCreated)
+            if (!TryResolveBlackboxBuffer(in _blackboxBytesHandle, out NativeArray<byte> bytes))
             {
                 if (Thread.CurrentThread.ManagedThreadId != _mainThreadId)
                     return false;
@@ -458,11 +481,11 @@ namespace Hecton8.Core
                 EnsureBlackboxInitialized();
             }
 
-            if (!_blackboxBytes.IsCreated)
+            if (!TryResolveBlackboxBuffer(in _blackboxBytesHandle, out bytes))
                 return false;
 
-            dto.Bytes = (byte*)_blackboxBytes.GetUnsafePtr();
-            dto.FrameCapacity = _blackboxBytes.Length / BlackboxFrameStrideBytes;
+            dto.Bytes = (byte*)bytes.GetUnsafePtr();
+            dto.FrameCapacity = bytes.Length / BlackboxFrameStrideBytes;
             dto.ActiveFrameCount = Volatile.Read(ref _blackboxActiveFrameCount);
             dto.FrameStrideBytes = BlackboxFrameStrideBytes;
             dto.ValidFrameCount = Volatile.Read(ref _blackboxValidFrameCount);
@@ -477,7 +500,7 @@ namespace Hecton8.Core
         /// </summary>
         public static void PushMockPhysicsState(in MockPhysicsState state)
         {
-            if (!_blackboxBytes.IsCreated && Thread.CurrentThread.ManagedThreadId != _mainThreadId)
+            if (!IsBlackboxBufferBound() && Thread.CurrentThread.ManagedThreadId != _mainThreadId)
                 return;
 
             EnsureBlackboxInitialized();
@@ -495,7 +518,7 @@ namespace Hecton8.Core
         /// </summary>
         public static void PushMockOriginShift(in MockOriginShiftSignal signal)
         {
-            if (!_blackboxBytes.IsCreated && Thread.CurrentThread.ManagedThreadId != _mainThreadId)
+            if (!IsBlackboxBufferBound() && Thread.CurrentThread.ManagedThreadId != _mainThreadId)
                 return;
 
             EnsureBlackboxInitialized();
@@ -535,12 +558,12 @@ namespace Hecton8.Core
         /// </summary>
         public static uint GetActiveLoggingMask(uint systemHash)
         {
-            if (systemHash == 0u || !_blackboxLoggingMasks.IsCreated)
+            if (systemHash == 0u || !TryResolveBlackboxBuffer(in _blackboxLoggingMasksHandle, out NativeArray<TelemetryLoggingMaskDTO> loggingMasks))
                 return 0u;
 
-            for (int i = 0; i < _blackboxLoggingMasks.Length; i++)
+            for (int i = 0; i < loggingMasks.Length; i++)
             {
-                TelemetryLoggingMaskDTO entry = _blackboxLoggingMasks[i];
+                TelemetryLoggingMaskDTO entry = loggingMasks[i];
                 if (entry.SystemHash == systemHash)
                     return entry.Mask;
             }
@@ -553,7 +576,7 @@ namespace Hecton8.Core
         /// </summary>
         public static bool TryDumpBlackboxNow(uint fatalHash)
         {
-            if (!_blackboxBytes.IsCreated && Thread.CurrentThread.ManagedThreadId != _mainThreadId)
+            if (!IsBlackboxBufferBound() && Thread.CurrentThread.ManagedThreadId != _mainThreadId)
                 return false;
 
             EnsureBlackboxInitialized();
@@ -566,7 +589,7 @@ namespace Hecton8.Core
             if ((uint)lane >= BlackboxWatchdogLaneCount)
                 return;
 
-            if (!_blackboxWatchdogCounters.IsCreated)
+            if (!TryResolveBlackboxBuffer(in _blackboxWatchdogCountersHandle, out NativeArray<int> watchdogCounters))
             {
                 if (Thread.CurrentThread.ManagedThreadId != _mainThreadId)
                     return;
@@ -574,15 +597,16 @@ namespace Hecton8.Core
                 EnsureBlackboxInitialized();
             }
 
-            if (!_blackboxWatchdogCounters.IsCreated || !_blackboxWatchdogActive.IsCreated)
+            if (!TryResolveBlackboxBuffer(in _blackboxWatchdogCountersHandle, out watchdogCounters) ||
+                !TryResolveBlackboxBuffer(in _blackboxWatchdogActiveHandle, out NativeArray<int> watchdogActive))
                 return;
 
             unsafe
             {
                 try
                 {
-                    int* counters = (int*)_blackboxWatchdogCounters.GetUnsafePtr();
-                    int* active = (int*)_blackboxWatchdogActive.GetUnsafePtr();
+                    int* counters = (int*)watchdogCounters.GetUnsafePtr();
+                    int* active = (int*)watchdogActive.GetUnsafePtr();
                     Volatile.Write(ref active[lane], 1);
                     Interlocked.Increment(ref counters[lane]);
                 }
@@ -601,12 +625,12 @@ namespace Hecton8.Core
 
         private static void EnsureBlackboxInitialized()
         {
-            if (_blackboxBytes.IsCreated)
+            if (IsBlackboxBufferBound())
                 return;
 
             lock (_blackboxGate)
             {
-                if (_blackboxBytes.IsCreated)
+                if (IsBlackboxBufferBound())
                     return;
 
                 DisposeBlackboxArraysNoLock();
@@ -641,75 +665,77 @@ namespace Hecton8.Core
             int mmfFrames = math.min(BlackboxMmfFlushFrameCount, desiredFrameCount);
             int mmfByteCount = mmfFrames * BlackboxFrameStrideBytes;
 
-            VaultBufferHandle<byte> bytesHandle = vault.GetBufferHandle<byte>(
+            VaultGenerationHandle<byte> bytesHandle = vault.GetGenerationHandle<byte>(
                 BufferID.ShinobuCrashBlackboxBytes,
                 byteCount,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.UninitializedMemory);
-            VaultBufferHandle<byte> mmfScratchHandle = vault.GetBufferHandle<byte>(
+            VaultGenerationHandle<byte> mmfScratchHandle = vault.GetGenerationHandle<byte>(
                 BufferID.ShinobuCrashMmfScratch,
                 mmfByteCount,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.UninitializedMemory);
-            VaultBufferHandle<byte> dumpHeaderHandle = vault.GetBufferHandle<byte>(
+            VaultGenerationHandle<byte> dumpHeaderHandle = vault.GetGenerationHandle<byte>(
                 BufferID.ShinobuCrashDumpHeader,
                 BlackboxDumpHeaderBytes,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.ClearMemory);
-            VaultBufferHandle<TelemetryEventDTO> eventsHandle = vault.GetBufferHandle<TelemetryEventDTO>(
+            VaultGenerationHandle<TelemetryEventDTO> eventsHandle = vault.GetGenerationHandle<TelemetryEventDTO>(
                 BufferID.ShinobuCrashTelemetryEvents,
                 BlackboxEventCapacity,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.UninitializedMemory);
-            VaultBufferHandle<BlackboxSourceSlot> sourcesHandle = vault.GetBufferHandle<BlackboxSourceSlot>(
+            VaultGenerationHandle<BlackboxSourceSlot> sourcesHandle = vault.GetGenerationHandle<BlackboxSourceSlot>(
                 BufferID.ShinobuCrashSourceSlots,
                 BlackboxMaxSourceCount,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.ClearMemory);
-            VaultBufferHandle<TelemetryLoggingMaskDTO> loggingMasksHandle = vault.GetBufferHandle<TelemetryLoggingMaskDTO>(
+            VaultGenerationHandle<TelemetryLoggingMaskDTO> loggingMasksHandle = vault.GetGenerationHandle<TelemetryLoggingMaskDTO>(
                 BufferID.ShinobuCrashLoggingMasks,
                 BlackboxLoggingMaskCapacity,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.ClearMemory);
-            VaultBufferHandle<int> atomicStateHandle = vault.GetBufferHandle<int>(
+            VaultGenerationHandle<int> atomicStateHandle = vault.GetGenerationHandle<int>(
                 BufferID.ShinobuCrashAtomicState,
                 2,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.ClearMemory);
-            VaultBufferHandle<int> watchdogCountersHandle = vault.GetBufferHandle<int>(
+            VaultGenerationHandle<int> watchdogCountersHandle = vault.GetGenerationHandle<int>(
                 BufferID.ShinobuCrashWatchdogCounters,
                 BlackboxWatchdogLaneCount,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.ClearMemory);
-            VaultBufferHandle<int> watchdogSamplesHandle = vault.GetBufferHandle<int>(
+            VaultGenerationHandle<int> watchdogSamplesHandle = vault.GetGenerationHandle<int>(
                 BufferID.ShinobuCrashWatchdogSamples,
                 BlackboxWatchdogLaneCount,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.ClearMemory);
-            VaultBufferHandle<int> watchdogStaleProbesHandle = vault.GetBufferHandle<int>(
+            VaultGenerationHandle<int> watchdogStaleProbesHandle = vault.GetGenerationHandle<int>(
                 BufferID.ShinobuCrashWatchdogStaleProbes,
                 BlackboxWatchdogLaneCount,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.ClearMemory);
-            VaultBufferHandle<int> watchdogActiveHandle = vault.GetBufferHandle<int>(
+            VaultGenerationHandle<int> watchdogActiveHandle = vault.GetGenerationHandle<int>(
                 BufferID.ShinobuCrashWatchdogActive,
                 BlackboxWatchdogLaneCount,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.ClearMemory);
 
-            NativeArray<byte> bytes = bytesHandle.Resolve(vault);
-            NativeArray<byte> mmfScratch = mmfScratchHandle.Resolve(vault);
-            NativeArray<byte> dumpHeader = dumpHeaderHandle.Resolve(vault);
-            NativeArray<TelemetryEventDTO> events = eventsHandle.Resolve(vault);
-            NativeArray<BlackboxSourceSlot> sources = sourcesHandle.Resolve(vault);
-            NativeArray<TelemetryLoggingMaskDTO> loggingMasks = loggingMasksHandle.Resolve(vault);
-            NativeArray<int> atomicState = atomicStateHandle.Resolve(vault);
-            NativeArray<int> watchdogCounters = watchdogCountersHandle.Resolve(vault);
-            NativeArray<int> watchdogSamples = watchdogSamplesHandle.Resolve(vault);
-            NativeArray<int> watchdogStaleProbes = watchdogStaleProbesHandle.Resolve(vault);
-            NativeArray<int> watchdogActive = watchdogActiveHandle.Resolve(vault);
+            bool resolved =
+                vault.TryResolveHandle(in bytesHandle, out NativeArray<byte> bytes) &&
+                vault.TryResolveHandle(in mmfScratchHandle, out NativeArray<byte> mmfScratch) &&
+                vault.TryResolveHandle(in dumpHeaderHandle, out NativeArray<byte> dumpHeader) &&
+                vault.TryResolveHandle(in eventsHandle, out NativeArray<TelemetryEventDTO> events) &&
+                vault.TryResolveHandle(in sourcesHandle, out NativeArray<BlackboxSourceSlot> sources) &&
+                vault.TryResolveHandle(in loggingMasksHandle, out NativeArray<TelemetryLoggingMaskDTO> loggingMasks) &&
+                vault.TryResolveHandle(in atomicStateHandle, out NativeArray<int> atomicState) &&
+                vault.TryResolveHandle(in watchdogCountersHandle, out NativeArray<int> watchdogCounters) &&
+                vault.TryResolveHandle(in watchdogSamplesHandle, out NativeArray<int> watchdogSamples) &&
+                vault.TryResolveHandle(in watchdogStaleProbesHandle, out NativeArray<int> watchdogStaleProbes) &&
+                vault.TryResolveHandle(in watchdogActiveHandle, out NativeArray<int> watchdogActive);
 
-            if (!bytes.IsCreated || bytes.Length < byteCount ||
+            if (!resolved ||
+                !bytes.IsCreated || bytes.Length < byteCount ||
                 !mmfScratch.IsCreated || mmfScratch.Length < mmfByteCount ||
                 !dumpHeader.IsCreated || dumpHeader.Length < BlackboxDumpHeaderBytes ||
                 !events.IsCreated || events.Length < BlackboxEventCapacity ||
@@ -721,6 +747,17 @@ namespace Hecton8.Core
                 !watchdogStaleProbes.IsCreated || watchdogStaleProbes.Length < BlackboxWatchdogLaneCount ||
                 !watchdogActive.IsCreated || watchdogActive.Length < BlackboxWatchdogLaneCount)
             {
+                TryReleaseBlackboxVaultBufferNoThrow(vault, in bytesHandle);
+                TryReleaseBlackboxVaultBufferNoThrow(vault, in mmfScratchHandle);
+                TryReleaseBlackboxVaultBufferNoThrow(vault, in dumpHeaderHandle);
+                TryReleaseBlackboxVaultBufferNoThrow(vault, in eventsHandle);
+                TryReleaseBlackboxVaultBufferNoThrow(vault, in sourcesHandle);
+                TryReleaseBlackboxVaultBufferNoThrow(vault, in loggingMasksHandle);
+                TryReleaseBlackboxVaultBufferNoThrow(vault, in atomicStateHandle);
+                TryReleaseBlackboxVaultBufferNoThrow(vault, in watchdogCountersHandle);
+                TryReleaseBlackboxVaultBufferNoThrow(vault, in watchdogSamplesHandle);
+                TryReleaseBlackboxVaultBufferNoThrow(vault, in watchdogStaleProbesHandle);
+                TryReleaseBlackboxVaultBufferNoThrow(vault, in watchdogActiveHandle);
                 return false;
             }
 
@@ -736,17 +773,6 @@ namespace Hecton8.Core
             _blackboxWatchdogSamplesHandle = watchdogSamplesHandle;
             _blackboxWatchdogStaleProbesHandle = watchdogStaleProbesHandle;
             _blackboxWatchdogActiveHandle = watchdogActiveHandle;
-            _blackboxBytes = bytes;
-            _blackboxMmfScratch = mmfScratch;
-            _blackboxDumpHeader = dumpHeader;
-            _blackboxEvents = events;
-            _blackboxSources = sources;
-            _blackboxLoggingMasks = loggingMasks;
-            _blackboxAtomicState = atomicState;
-            _blackboxWatchdogCounters = watchdogCounters;
-            _blackboxWatchdogSamples = watchdogSamples;
-            _blackboxWatchdogStaleProbes = watchdogStaleProbes;
-            _blackboxWatchdogActive = watchdogActive;
             _blackboxVaultBacked = true;
             _blackboxVaultLocksHeld = 0;
 
@@ -759,22 +785,22 @@ namespace Hecton8.Core
 
         private static unsafe void ClearBlackboxControlStateNoLock()
         {
-            if (_blackboxDumpHeader.IsCreated)
-                UnsafeUtility.MemClear(_blackboxDumpHeader.GetUnsafePtr(), _blackboxDumpHeader.Length);
-            if (_blackboxSources.IsCreated)
-                UnsafeUtility.MemClear(_blackboxSources.GetUnsafePtr(), _blackboxSources.Length * UnsafeUtility.SizeOf<BlackboxSourceSlot>());
-            if (_blackboxLoggingMasks.IsCreated)
-                UnsafeUtility.MemClear(_blackboxLoggingMasks.GetUnsafePtr(), _blackboxLoggingMasks.Length * UnsafeUtility.SizeOf<TelemetryLoggingMaskDTO>());
-            if (_blackboxAtomicState.IsCreated)
-                UnsafeUtility.MemClear(_blackboxAtomicState.GetUnsafePtr(), _blackboxAtomicState.Length * UnsafeUtility.SizeOf<int>());
-            if (_blackboxWatchdogCounters.IsCreated)
-                UnsafeUtility.MemClear(_blackboxWatchdogCounters.GetUnsafePtr(), _blackboxWatchdogCounters.Length * UnsafeUtility.SizeOf<int>());
-            if (_blackboxWatchdogSamples.IsCreated)
-                UnsafeUtility.MemClear(_blackboxWatchdogSamples.GetUnsafePtr(), _blackboxWatchdogSamples.Length * UnsafeUtility.SizeOf<int>());
-            if (_blackboxWatchdogStaleProbes.IsCreated)
-                UnsafeUtility.MemClear(_blackboxWatchdogStaleProbes.GetUnsafePtr(), _blackboxWatchdogStaleProbes.Length * UnsafeUtility.SizeOf<int>());
-            if (_blackboxWatchdogActive.IsCreated)
-                UnsafeUtility.MemClear(_blackboxWatchdogActive.GetUnsafePtr(), _blackboxWatchdogActive.Length * UnsafeUtility.SizeOf<int>());
+            if (TryResolveBlackboxBuffer(in _blackboxDumpHeaderHandle, out NativeArray<byte> dumpHeader))
+                UnsafeUtility.MemClear(dumpHeader.GetUnsafePtr(), dumpHeader.Length);
+            if (TryResolveBlackboxBuffer(in _blackboxSourcesHandle, out NativeArray<BlackboxSourceSlot> sources))
+                UnsafeUtility.MemClear(sources.GetUnsafePtr(), sources.Length * UnsafeUtility.SizeOf<BlackboxSourceSlot>());
+            if (TryResolveBlackboxBuffer(in _blackboxLoggingMasksHandle, out NativeArray<TelemetryLoggingMaskDTO> loggingMasks))
+                UnsafeUtility.MemClear(loggingMasks.GetUnsafePtr(), loggingMasks.Length * UnsafeUtility.SizeOf<TelemetryLoggingMaskDTO>());
+            if (TryResolveBlackboxBuffer(in _blackboxAtomicStateHandle, out NativeArray<int> atomicState))
+                UnsafeUtility.MemClear(atomicState.GetUnsafePtr(), atomicState.Length * UnsafeUtility.SizeOf<int>());
+            if (TryResolveBlackboxBuffer(in _blackboxWatchdogCountersHandle, out NativeArray<int> watchdogCounters))
+                UnsafeUtility.MemClear(watchdogCounters.GetUnsafePtr(), watchdogCounters.Length * UnsafeUtility.SizeOf<int>());
+            if (TryResolveBlackboxBuffer(in _blackboxWatchdogSamplesHandle, out NativeArray<int> watchdogSamples))
+                UnsafeUtility.MemClear(watchdogSamples.GetUnsafePtr(), watchdogSamples.Length * UnsafeUtility.SizeOf<int>());
+            if (TryResolveBlackboxBuffer(in _blackboxWatchdogStaleProbesHandle, out NativeArray<int> watchdogStaleProbes))
+                UnsafeUtility.MemClear(watchdogStaleProbes.GetUnsafePtr(), watchdogStaleProbes.Length * UnsafeUtility.SizeOf<int>());
+            if (TryResolveBlackboxBuffer(in _blackboxWatchdogActiveHandle, out NativeArray<int> watchdogActive))
+                UnsafeUtility.MemClear(watchdogActive.GetUnsafePtr(), watchdogActive.Length * UnsafeUtility.SizeOf<int>());
         }
 
         private static bool TryLockBlackboxVaultBuffersNoLock(IDataVault vault)
@@ -829,6 +855,21 @@ namespace Hecton8.Core
                 TryUnlockBlackboxVaultBufferNoThrow(vault, BufferID.ShinobuCrashWatchdogActive);
             }
 
+            if (vault != null)
+            {
+                TryReleaseBlackboxVaultBufferNoThrow(vault, in _blackboxBytesHandle);
+                TryReleaseBlackboxVaultBufferNoThrow(vault, in _blackboxMmfScratchHandle);
+                TryReleaseBlackboxVaultBufferNoThrow(vault, in _blackboxDumpHeaderHandle);
+                TryReleaseBlackboxVaultBufferNoThrow(vault, in _blackboxEventsHandle);
+                TryReleaseBlackboxVaultBufferNoThrow(vault, in _blackboxSourcesHandle);
+                TryReleaseBlackboxVaultBufferNoThrow(vault, in _blackboxLoggingMasksHandle);
+                TryReleaseBlackboxVaultBufferNoThrow(vault, in _blackboxAtomicStateHandle);
+                TryReleaseBlackboxVaultBufferNoThrow(vault, in _blackboxWatchdogCountersHandle);
+                TryReleaseBlackboxVaultBufferNoThrow(vault, in _blackboxWatchdogSamplesHandle);
+                TryReleaseBlackboxVaultBufferNoThrow(vault, in _blackboxWatchdogStaleProbesHandle);
+                TryReleaseBlackboxVaultBufferNoThrow(vault, in _blackboxWatchdogActiveHandle);
+            }
+
             ClearBlackboxVaultBindingsNoLock();
         }
 
@@ -837,6 +878,20 @@ namespace Hecton8.Core
             try
             {
                 vault.TryUnlockBuffer(bufferId, SystemID.CoreDiagnostics);
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        private static void TryReleaseBlackboxVaultBufferNoThrow<T>(IDataVault vault, in VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (vault == null || handle.BufferID == 0u || handle.Generation == 0u)
+                return;
+
+            try
+            {
+                vault.ReleaseBuffer(in handle);
             }
             catch (Exception)
             {
@@ -857,17 +912,6 @@ namespace Hecton8.Core
             _blackboxWatchdogSamplesHandle = default;
             _blackboxWatchdogStaleProbesHandle = default;
             _blackboxWatchdogActiveHandle = default;
-            _blackboxBytes = default;
-            _blackboxMmfScratch = default;
-            _blackboxDumpHeader = default;
-            _blackboxEvents = default;
-            _blackboxSources = default;
-            _blackboxLoggingMasks = default;
-            _blackboxAtomicState = default;
-            _blackboxWatchdogCounters = default;
-            _blackboxWatchdogSamples = default;
-            _blackboxWatchdogStaleProbes = default;
-            _blackboxWatchdogActive = default;
             _blackboxVaultBacked = false;
             _blackboxVaultLocksHeld = 0;
         }
@@ -901,10 +945,10 @@ namespace Hecton8.Core
 
         private static void CommitBlackboxFrame()
         {
-            if (!_blackboxBytes.IsCreated)
+            if (!TryResolveBlackboxBuffer(in _blackboxBytesHandle, out NativeArray<byte> bytes))
             {
                 EnsureBlackboxInitialized();
-                if (!_blackboxBytes.IsCreated)
+                if (!TryResolveBlackboxBuffer(in _blackboxBytesHandle, out bytes))
                     return;
             }
 
@@ -919,7 +963,7 @@ namespace Hecton8.Core
                     if ((uint)frameSlot >= activeFrames)
                         frameSlot = 0;
 
-                byte* basePtr = (byte*)_blackboxBytes.GetUnsafePtr();
+                byte* basePtr = (byte*)bytes.GetUnsafePtr();
                 byte* framePtr = basePtr + (frameSlot * BlackboxFrameStrideBytes);
                 uint fatalHash = unchecked((uint)ReadBlackboxAtomic(1));
                 TelemetryHeaderDTO header = default;
@@ -972,6 +1016,13 @@ namespace Hecton8.Core
         private static unsafe void CopyBlackboxEventHashes(byte* destination)
         {
             uint* hashDestination = (uint*)destination;
+            if (!TryResolveBlackboxBuffer(in _blackboxEventsHandle, out NativeArray<TelemetryEventDTO> events))
+            {
+                for (int i = 0; i < BlackboxHashHistoryCount; i++)
+                    hashDestination[i] = 0u;
+                return;
+            }
+
             int cursor = Volatile.Read(ref _blackboxEventWriteCursor);
             int available = math.min(math.max(0, cursor), BlackboxHashHistoryCount);
             int start = cursor - available;
@@ -980,7 +1031,7 @@ namespace Hecton8.Core
                 hashDestination[i] = 0u;
             for (int i = 0; i < available; i++)
             {
-                TelemetryEventDTO entry = _blackboxEvents[(start + i) & BlackboxEventMask];
+                TelemetryEventDTO entry = events[(start + i) & BlackboxEventMask];
                 hashDestination[pad + i] = entry.EventHash;
             }
         }
@@ -988,7 +1039,8 @@ namespace Hecton8.Core
         private static unsafe bool CopyBlackboxSourcePayloads(byte* destination)
         {
             bool nonFinite = false;
-            int sourceCount = math.min(_blackboxSourceCount, BlackboxMaxSourceCount);
+            bool hasSources = TryResolveBlackboxBuffer(in _blackboxSourcesHandle, out NativeArray<BlackboxSourceSlot> sources);
+            int sourceCount = hasSources ? math.min(_blackboxSourceCount, BlackboxMaxSourceCount) : 0;
             for (int i = 0; i < BlackboxMaxSourceCount; i++)
             {
                 byte* target = destination + (i * BlackboxSourceStrideBytes);
@@ -996,7 +1048,7 @@ namespace Hecton8.Core
                 if (i >= sourceCount)
                     continue;
 
-                BlackboxSourceSlot source = _blackboxSources[i];
+                BlackboxSourceSlot source = sources[i];
                 if (source.SourcePtr == null || source.PayloadBytes <= 0)
                     continue;
 
@@ -1104,7 +1156,7 @@ namespace Hecton8.Core
 #if UNITY_EDITOR
             return false;
 #else
-            if (!_blackboxBytes.IsCreated || string.IsNullOrEmpty(_blackboxAgentLogDirectory))
+            if (!IsBlackboxBufferBound() || string.IsNullOrEmpty(_blackboxAgentLogDirectory))
                 return false;
 
             return WriteBlackboxDumpToPaths(fatalHash);
@@ -1113,7 +1165,7 @@ namespace Hecton8.Core
 
         private static bool TryWriteBlackboxDumpSynchronous(uint fatalHash)
         {
-            if (!_blackboxBytes.IsCreated)
+            if (!IsBlackboxBufferBound())
             {
                 if (Thread.CurrentThread.ManagedThreadId != _mainThreadId)
                     return false;
@@ -1121,7 +1173,7 @@ namespace Hecton8.Core
                 EnsureBlackboxInitialized();
             }
 
-            if (!_blackboxBytes.IsCreated)
+            if (!IsBlackboxBufferBound())
                 return false;
 
             return WriteBlackboxDumpToPaths(fatalHash);
@@ -1171,13 +1223,18 @@ namespace Hecton8.Core
         {
             if (string.IsNullOrEmpty(path) || validFrames <= 0 || activeFrames <= 0)
                 return false;
+            if (!TryResolveBlackboxBuffer(in _blackboxDumpHeaderHandle, out NativeArray<byte> dumpHeader) ||
+                !TryResolveBlackboxBuffer(in _blackboxBytesHandle, out NativeArray<byte> bytes))
+            {
+                return false;
+            }
 
             using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
             {
-                byte* headerPtr = (byte*)_blackboxDumpHeader.GetUnsafeReadOnlyPtr();
+                byte* headerPtr = (byte*)dumpHeader.GetUnsafeReadOnlyPtr();
                 stream.Write(new ReadOnlySpan<byte>(headerPtr, BlackboxDumpHeaderBytes));
 
-                byte* basePtr = (byte*)_blackboxBytes.GetUnsafeReadOnlyPtr();
+                byte* basePtr = (byte*)bytes.GetUnsafeReadOnlyPtr();
                 int oldestSlot = validFrames >= activeFrames ? writeIndex : 0;
                 for (int i = 0; i < validFrames; i++)
                 {
@@ -1196,8 +1253,11 @@ namespace Hecton8.Core
 
         private static unsafe int WriteBlackboxDumpHeader(uint fatalHash, DateTime generatedUtc, int validFrames, int activeFrames)
         {
+            if (!TryResolveBlackboxBuffer(in _blackboxDumpHeaderHandle, out NativeArray<byte> dumpHeader))
+                return 0;
+
             int payloadBytes = validFrames * BlackboxFrameStrideBytes;
-            byte* headerPtr = (byte*)_blackboxDumpHeader.GetUnsafePtr();
+            byte* headerPtr = (byte*)dumpHeader.GetUnsafePtr();
             UnsafeUtility.MemClear(headerPtr, BlackboxDumpHeaderBytes);
 
             TelemetryHeaderDTO prefix = default;
@@ -1235,10 +1295,10 @@ namespace Hecton8.Core
             validFrames = 0;
             activeFrames = 0;
             writeIndex = 0;
-            if (!_blackboxBytes.IsCreated)
+            if (!TryResolveBlackboxBuffer(in _blackboxBytesHandle, out NativeArray<byte> bytes))
                 return false;
 
-            int bufferFrames = _blackboxBytes.Length / BlackboxFrameStrideBytes;
+            int bufferFrames = bytes.Length / BlackboxFrameStrideBytes;
             activeFrames = Volatile.Read(ref _blackboxActiveFrameCount);
             if (activeFrames <= 0 || activeFrames > bufferFrames)
                 activeFrames = bufferFrames;
@@ -1297,13 +1357,14 @@ namespace Hecton8.Core
             if (fatalHash == 0u)
                 fatalHash = BlackboxEmergencyFlushHash;
 
-            if (_blackboxAtomicState.IsCreated && _blackboxAtomicState.Length >= 2)
+            if (TryResolveBlackboxBuffer(in _blackboxAtomicStateHandle, out NativeArray<int> atomicState) &&
+                atomicState.Length >= 2)
             {
                 try
                 {
                     unsafe
                     {
-                        int* state = (int*)_blackboxAtomicState.GetUnsafePtr();
+                        int* state = (int*)atomicState.GetUnsafePtr();
                         Interlocked.Exchange(ref state[0], 1);
                         Interlocked.Exchange(ref state[1], unchecked((int)fatalHash));
                     }
@@ -1317,14 +1378,15 @@ namespace Hecton8.Core
 
         private static int ReadBlackboxAtomic(int index)
         {
-            if (!_blackboxAtomicState.IsCreated || (uint)index >= _blackboxAtomicState.Length)
+            if (!TryResolveBlackboxBuffer(in _blackboxAtomicStateHandle, out NativeArray<int> atomicState) ||
+                (uint)index >= atomicState.Length)
                 return 0;
 
             try
             {
                 unsafe
                 {
-                    return Volatile.Read(ref _blackboxAtomicState.GetUnsafePtrAsIntRef(index));
+                    return Volatile.Read(ref atomicState.GetUnsafePtrAsIntRef(index));
                 }
             }
             catch (Exception)
@@ -1350,8 +1412,13 @@ namespace Hecton8.Core
 
         private static void RequestBlackboxMmfFlushAsync()
         {
-            if (!_blackboxBytes.IsCreated || !_blackboxMmfScratch.IsCreated)
+            if (!TryResolveBlackboxBuffer(in _blackboxBytesHandle, out NativeArray<byte> bytes) ||
+                !TryResolveBlackboxBuffer(in _blackboxMmfScratchHandle, out NativeArray<byte> mmfScratch) ||
+                !bytes.IsCreated ||
+                !mmfScratch.IsCreated)
+            {
                 return;
+            }
             if (Interlocked.CompareExchange(ref _blackboxMmfState, BlackboxMmfQueued, BlackboxMmfIdle) != BlackboxMmfIdle)
                 return;
 
@@ -1384,13 +1451,18 @@ namespace Hecton8.Core
         {
             if (!TryReadBlackboxFrameBounds(out int validFrames, out int activeFrames, out int writeIndex))
                 return 0;
+            if (!TryResolveBlackboxBuffer(in _blackboxBytesHandle, out NativeArray<byte> bytes) ||
+                !TryResolveBlackboxBuffer(in _blackboxMmfScratchHandle, out NativeArray<byte> mmfScratch))
+            {
+                return 0;
+            }
 
-            int frameCount = math.min(validFrames, _blackboxMmfScratch.Length / BlackboxFrameStrideBytes);
+            int frameCount = math.min(validFrames, mmfScratch.Length / BlackboxFrameStrideBytes);
             if (frameCount <= 0)
                 return 0;
 
-            byte* sourceBase = (byte*)_blackboxBytes.GetUnsafeReadOnlyPtr();
-            byte* destinationBase = (byte*)_blackboxMmfScratch.GetUnsafePtr();
+            byte* sourceBase = (byte*)bytes.GetUnsafeReadOnlyPtr();
+            byte* destinationBase = (byte*)mmfScratch.GetUnsafePtr();
             int oldestSlot = validFrames >= activeFrames ? writeIndex : 0;
             for (int i = 0; i < frameCount; i++)
             {
@@ -1513,8 +1585,12 @@ namespace Hecton8.Core
             {
                 int pendingBytes = Volatile.Read(ref _blackboxMmfPendingBytes);
                 string path = _blackboxMmfPath;
-                if (pendingBytes <= 0 || string.IsNullOrEmpty(path) || !_blackboxMmfScratch.IsCreated)
+                if (pendingBytes <= 0 ||
+                    string.IsNullOrEmpty(path) ||
+                    !TryResolveBlackboxBuffer(in _blackboxMmfScratchHandle, out NativeArray<byte> mmfScratch))
+                {
                     return;
+                }
 
                 string directory = Path.GetDirectoryName(path);
                 if (!string.IsNullOrEmpty(directory))
@@ -1529,7 +1605,7 @@ namespace Hecton8.Core
                         accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref destination);
                         try
                         {
-                            byte* source = (byte*)_blackboxMmfScratch.GetUnsafeReadOnlyPtr();
+                            byte* source = (byte*)mmfScratch.GetUnsafeReadOnlyPtr();
                             UnsafeUtility.MemCpy(destination, source, pendingBytes);
                         }
                         finally
@@ -1632,20 +1708,20 @@ namespace Hecton8.Core
 
         private static unsafe bool ProbeBlackboxWatchdog()
         {
-            if (!_blackboxWatchdogCounters.IsCreated ||
-                !_blackboxWatchdogSamples.IsCreated ||
-                !_blackboxWatchdogStaleProbes.IsCreated ||
-                !_blackboxWatchdogActive.IsCreated)
+            if (!TryResolveBlackboxBuffer(in _blackboxWatchdogCountersHandle, out NativeArray<int> watchdogCounters) ||
+                !TryResolveBlackboxBuffer(in _blackboxWatchdogSamplesHandle, out NativeArray<int> watchdogSamples) ||
+                !TryResolveBlackboxBuffer(in _blackboxWatchdogStaleProbesHandle, out NativeArray<int> watchdogStaleProbes) ||
+                !TryResolveBlackboxBuffer(in _blackboxWatchdogActiveHandle, out NativeArray<int> watchdogActive))
             {
                 return false;
             }
 
             try
             {
-                int* counters = (int*)_blackboxWatchdogCounters.GetUnsafePtr();
-                int* samples = (int*)_blackboxWatchdogSamples.GetUnsafePtr();
-                int* staleProbes = (int*)_blackboxWatchdogStaleProbes.GetUnsafePtr();
-                int* active = (int*)_blackboxWatchdogActive.GetUnsafePtr();
+                int* counters = (int*)watchdogCounters.GetUnsafePtr();
+                int* samples = (int*)watchdogSamples.GetUnsafePtr();
+                int* staleProbes = (int*)watchdogStaleProbes.GetUnsafePtr();
+                int* active = (int*)watchdogActive.GetUnsafePtr();
                 for (int i = 0; i < BlackboxWatchdogLaneCount; i++)
                 {
                     if (Volatile.Read(ref active[i]) == 0)
@@ -1681,36 +1757,12 @@ namespace Hecton8.Core
                 return;
             }
 
-            DisposeNativeArrayNoJob(ref _blackboxBytes);
-            DisposeNativeArrayNoJob(ref _blackboxMmfScratch);
-            DisposeNativeArrayNoJob(ref _blackboxDumpHeader);
-            DisposeNativeArrayNoJob(ref _blackboxEvents);
-            DisposeNativeArrayNoJob(ref _blackboxSources);
-            DisposeNativeArrayNoJob(ref _blackboxLoggingMasks);
-            DisposeNativeArrayNoJob(ref _blackboxAtomicState);
-            DisposeNativeArrayNoJob(ref _blackboxWatchdogCounters);
-            DisposeNativeArrayNoJob(ref _blackboxWatchdogSamples);
-            DisposeNativeArrayNoJob(ref _blackboxWatchdogStaleProbes);
-            DisposeNativeArrayNoJob(ref _blackboxWatchdogActive);
             ClearBlackboxVaultBindingsNoLock();
-        }
-
-        private static void DisposeNativeArrayNoJob<T>(ref NativeArray<T> array) where T : struct
-        {
-            if (!array.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
         }
 
         private static int ResolveBlackboxFrameCount()
         {
-            return GlobalRegistry.ScalabilityTierProfileByte == ScalabilityTierProfiles.LowMx350 ||
-                   HardwareTierDetector.SharedMemoryModeActive
-                ? ShinobuBlackboxLowFrameCount
-                : ShinobuBlackboxHighFrameCount;
+            return ShinobuBlackboxHighFrameCount;
         }
 
         private static string ResolveAgentLogDirectory()
@@ -1724,18 +1776,18 @@ namespace Hecton8.Core
                 return;
 
             EnsureBlackboxInitialized();
-            if (!_blackboxLoggingMasks.IsCreated)
+            if (!TryResolveBlackboxBuffer(in _blackboxLoggingMasksHandle, out NativeArray<TelemetryLoggingMaskDTO> loggingMasks))
                 return;
 
-            for (int i = 0; i < _blackboxLoggingMasks.Length; i++)
+            for (int i = 0; i < loggingMasks.Length; i++)
             {
-                TelemetryLoggingMaskDTO entry = _blackboxLoggingMasks[i];
+                TelemetryLoggingMaskDTO entry = loggingMasks[i];
                 if (entry.SystemHash == systemHash || entry.SystemHash == 0u)
                 {
                     entry.SystemHash = systemHash;
                     entry.Mask = mask;
                     entry.Version++;
-                    _blackboxLoggingMasks[i] = entry;
+                    loggingMasks[i] = entry;
                     return;
                 }
             }
@@ -1826,21 +1878,25 @@ namespace Hecton8.Core
         }
 
 #if UNITY_EDITOR
-        [StructLayout(LayoutKind.Sequential, Size = 32)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         public struct BlackboxEditorFrame
         {
-            public uint FrameNumber;
-            public uint FatalHash;
-            public uint LastEventHash;
-            public Vector3 ImpactPosition;
-            public int Slot;
-            public uint _pad0;
+            [FieldOffset(0)] public uint FrameNumber;
+            [FieldOffset(4)] public uint FatalHash;
+            [FieldOffset(8)] public uint LastEventHash;
+            [FieldOffset(12)] public Vector3 ImpactPosition;
+            [FieldOffset(24)] public int Slot;
+            [FieldOffset(28)] public uint _pad0;
         }
 
         public static unsafe int CopyBlackboxEditorFrames(BlackboxEditorFrame[] destination)
         {
-            if (destination == null || destination.Length <= 0 || !_blackboxBytes.IsCreated)
+            if (destination == null ||
+                destination.Length <= 0 ||
+                !TryResolveBlackboxBuffer(in _blackboxBytesHandle, out NativeArray<byte> bytes))
+            {
                 return 0;
+            }
 
             if (!TryReadBlackboxFrameBounds(out int validFrames, out int activeFrames, out int writeIndex))
                 return 0;
@@ -1849,7 +1905,7 @@ namespace Hecton8.Core
             if (copyCount <= 0)
                 return 0;
 
-            byte* basePtr = (byte*)_blackboxBytes.GetUnsafeReadOnlyPtr();
+            byte* basePtr = (byte*)bytes.GetUnsafeReadOnlyPtr();
             int oldestSlot = validFrames >= activeFrames ? writeIndex : 0;
             int skip = validFrames - copyCount;
             for (int i = 0; i < copyCount; i++)
@@ -1876,14 +1932,18 @@ namespace Hecton8.Core
 
         public static int CopyBlackboxEditorEvents(TelemetryEventDTO[] destination)
         {
-            if (destination == null || destination.Length <= 0 || !_blackboxEvents.IsCreated)
+            if (destination == null ||
+                destination.Length <= 0 ||
+                !TryResolveBlackboxBuffer(in _blackboxEventsHandle, out NativeArray<TelemetryEventDTO> events))
+            {
                 return 0;
+            }
 
             int cursor = Volatile.Read(ref _blackboxEventWriteCursor);
             int available = math.min(math.max(0, cursor), math.min(destination.Length, BlackboxEventCapacity));
             int start = cursor - available;
             for (int i = 0; i < available; i++)
-                destination[i] = _blackboxEvents[(start + i) & BlackboxEventMask];
+                destination[i] = events[(start + i) & BlackboxEventMask];
 
             return available;
         }

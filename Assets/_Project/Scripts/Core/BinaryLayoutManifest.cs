@@ -81,11 +81,21 @@ namespace Hecton8.Core
 
         private static void VerifyWeatherContractLayouts()
         {
-            AssertSize<CurrentMeta>(24);
+            AssertSize<CurrentMeta>(32);
             AssertOffset<CurrentMeta>(nameof(CurrentMeta.GlobalBaseVector), 0);
             AssertOffset<CurrentMeta>(nameof(CurrentMeta.GlobalScale), 12);
             AssertOffset<CurrentMeta>(nameof(CurrentMeta.ThermalIntensity), 16);
             AssertOffset<CurrentMeta>(nameof(CurrentMeta.TimeAccumulator), 20);
+
+            AssertSize<WeatherRuntimeSnapshot>(192);
+            AssertOffset<WeatherRuntimeSnapshot>(nameof(WeatherRuntimeSnapshot.StateMask), 0);
+            AssertOffset<WeatherRuntimeSnapshot>(nameof(WeatherRuntimeSnapshot.WeatherIntensity), 4);
+            AssertOffset<WeatherRuntimeSnapshot>(nameof(WeatherRuntimeSnapshot.GlobalCurrentVector), 8);
+            AssertOffset<WeatherRuntimeSnapshot>(nameof(WeatherRuntimeSnapshot.GlobalWindVector), 20);
+            AssertOffset<WeatherRuntimeSnapshot>(nameof(WeatherRuntimeSnapshot.CurrentMeta), 32);
+            AssertOffset<WeatherRuntimeSnapshot>(nameof(WeatherRuntimeSnapshot.Wave0), 64);
+            AssertOffset<WeatherRuntimeSnapshot>(nameof(WeatherRuntimeSnapshot.Wave1), 96);
+            AssertOffset<WeatherRuntimeSnapshot>(nameof(WeatherRuntimeSnapshot.Wave2), 128);
 
             AssertSize<OceanGerstnerWaveBufferMeta>(16);
             AssertOffset<OceanGerstnerWaveBufferMeta>(nameof(OceanGerstnerWaveBufferMeta.ActiveWaveCount), 0);
@@ -192,6 +202,67 @@ namespace Hecton8.Core
             AssertSize<VoxelDeltaMockSchemaDTO>(64);
             AssertOffset<VoxelDeltaMockSchemaDTO>(nameof(VoxelDeltaMockSchemaDTO.Magic), 0);
             AssertOffset<VoxelDeltaMockSchemaDTO>(nameof(VoxelDeltaMockSchemaDTO.Seed), 40);
+
+            AssertSize<EntityDeltaHeaderDTO>(32);
+            AssertOffset<EntityDeltaHeaderDTO>(nameof(EntityDeltaHeaderDTO.SectorHash), 0);
+            AssertOffset<EntityDeltaHeaderDTO>(nameof(EntityDeltaHeaderDTO.CompressedSize), 8);
+            AssertOffset<EntityDeltaHeaderDTO>(nameof(EntityDeltaHeaderDTO.UncompressedSize), 12);
+            AssertOffset<EntityDeltaHeaderDTO>(nameof(EntityDeltaHeaderDTO.XXHash3Checksum), 16);
+            AssertOffset<EntityDeltaHeaderDTO>(nameof(EntityDeltaHeaderDTO._pad0), 24);
+            AssertOffset<EntityDeltaHeaderDTO>(nameof(EntityDeltaHeaderDTO._pad1), 28);
+
+            AssertSize<EntityDeltaRleStreamHeaderDTO>(16);
+            AssertOffset<EntityDeltaRleStreamHeaderDTO>(nameof(EntityDeltaRleStreamHeaderDTO.Magic), 0);
+            AssertOffset<EntityDeltaRleStreamHeaderDTO>(nameof(EntityDeltaRleStreamHeaderDTO.Flags), 4);
+            AssertOffset<EntityDeltaRleStreamHeaderDTO>(nameof(EntityDeltaRleStreamHeaderDTO.DenseBytes), 8);
+            AssertOffset<EntityDeltaRleStreamHeaderDTO>(nameof(EntityDeltaRleStreamHeaderDTO.StoredBytes), 12);
+
+            AssertSize<EntityDeltaDataRecordDTO>(80);
+            AssertOffset<EntityDeltaDataRecordDTO>(nameof(EntityDeltaDataRecordDTO.SectorX), 0);
+            AssertOffset<EntityDeltaDataRecordDTO>(nameof(EntityDeltaDataRecordDTO.SectorY), 8);
+            AssertOffset<EntityDeltaDataRecordDTO>(nameof(EntityDeltaDataRecordDTO.SectorZ), 16);
+            AssertOffset<EntityDeltaDataRecordDTO>(nameof(EntityDeltaDataRecordDTO.LocalX), 24);
+            AssertOffset<EntityDeltaDataRecordDTO>(nameof(EntityDeltaDataRecordDTO.EntityKindHash), 36);
+            AssertOffset<EntityDeltaDataRecordDTO>(nameof(EntityDeltaDataRecordDTO.StableEntityHash), 40);
+            AssertOffset<EntityDeltaDataRecordDTO>(nameof(EntityDeltaDataRecordDTO.InstanceUid), 56);
+            AssertOffset<EntityDeltaDataRecordDTO>(nameof(EntityDeltaDataRecordDTO.Flags), 68);
+            AssertOffset<EntityDeltaDataRecordDTO>(nameof(EntityDeltaDataRecordDTO.SimulationTick), 76);
+
+            AssertSize<EntityDeltaBlockCounter64>(64);
+            AssertOffset<EntityDeltaBlockCounter64>(nameof(EntityDeltaBlockCounter64.DeltaCount), 0);
+            AssertOffset<EntityDeltaBlockCounter64>(nameof(EntityDeltaBlockCounter64.SectorHash), 16);
+            AssertOffset<EntityDeltaBlockCounter64>(nameof(EntityDeltaBlockCounter64.HashXor), 32);
+
+            AssertSize<EntityCompressionTelemetryEntry>(64);
+            AssertOffset<EntityCompressionTelemetryEntry>(nameof(EntityCompressionTelemetryEntry.SectorHash), 0);
+            AssertOffset<EntityCompressionTelemetryEntry>(nameof(EntityCompressionTelemetryEntry.PayloadHash), 8);
+            AssertOffset<EntityCompressionTelemetryEntry>(nameof(EntityCompressionTelemetryEntry.GlobalQualityWeight), 48);
+
+            AssertSize<EntityDeltaCompressionTuningDTO>(64);
+            AssertOffset<EntityDeltaCompressionTuningDTO>(nameof(EntityDeltaCompressionTuningDTO.ProfileHash), 0);
+            AssertOffset<EntityDeltaCompressionTuningDTO>(nameof(EntityDeltaCompressionTuningDTO.TombstoneMaxDays), 16);
+            AssertOffset<EntityDeltaCompressionTuningDTO>(nameof(EntityDeltaCompressionTuningDTO.MaxBytesPerFrame), 44);
+            AssertOffset<EntityDeltaCompressionTuningDTO>(nameof(EntityDeltaCompressionTuningDTO._pad0), 60);
+
+            AssertSize<EntityDeltaSectorStatsDTO>(64);
+            AssertOffset<EntityDeltaSectorStatsDTO>(nameof(EntityDeltaSectorStatsDTO.SectorHash), 0);
+            AssertOffset<EntityDeltaSectorStatsDTO>(nameof(EntityDeltaSectorStatsDTO.FullSnapshotBytes), 20);
+            AssertOffset<EntityDeltaSectorStatsDTO>(nameof(EntityDeltaSectorStatsDTO.CompressionRatio01), 44);
+            AssertOffset<EntityDeltaSectorStatsDTO>(nameof(EntityDeltaSectorStatsDTO._pad0), 56);
+
+            AssertSize<EntityCompressionProfileDTO>(32);
+            AssertOffset<EntityCompressionProfileDTO>(nameof(EntityCompressionProfileDTO.ProfileHash), 0);
+            AssertOffset<EntityCompressionProfileDTO>(nameof(EntityCompressionProfileDTO.EntityKindHash), 8);
+            AssertOffset<EntityCompressionProfileDTO>(nameof(EntityCompressionProfileDTO.StateMask), 24);
+
+            AssertSize<EntityDeltaMockSchemaDTO>(64);
+            AssertOffset<EntityDeltaMockSchemaDTO>(nameof(EntityDeltaMockSchemaDTO.Magic), 0);
+            AssertOffset<EntityDeltaMockSchemaDTO>(nameof(EntityDeltaMockSchemaDTO.Seed), 40);
+
+            AssertSize<EntityDeltaTelemetryDumpHeaderDTO>(64);
+            AssertOffset<EntityDeltaTelemetryDumpHeaderDTO>(nameof(EntityDeltaTelemetryDumpHeaderDTO.Magic), 0);
+            AssertOffset<EntityDeltaTelemetryDumpHeaderDTO>(nameof(EntityDeltaTelemetryDumpHeaderDTO.EntryStride), 12);
+            AssertOffset<EntityDeltaTelemetryDumpHeaderDTO>(nameof(EntityDeltaTelemetryDumpHeaderDTO.FirstSectorHash), 32);
 
             AssertSize<PackedEntityState32>(8);
             AssertSize<PackedSuitUpgradeState64>(8);

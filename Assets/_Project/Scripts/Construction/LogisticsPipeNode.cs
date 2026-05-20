@@ -3,7 +3,6 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Items;
-using Hecton8.Modding;
 using Hecton8.Power;
 using Unity.Mathematics;
 using Hecton8.SaveSystem;
@@ -44,9 +43,6 @@ namespace Hecton8.Construction
 
         [Tooltip("Optional item filter. When empty, the pipe exports the first available unreserved item.")]
         [SerializeField] private ItemData filterItem;
-
-        [Tooltip("Optional line renderer used to visualize the cargo pipe between the source and destination.")]
-        [SerializeField] private LineRenderer cableRenderer;
 
         [Header("── Throughput ─────────────────────────────")]
         [Tooltip("Seconds between export attempts while the pipe has power and no item is currently in transit.")]
@@ -452,7 +448,6 @@ namespace Hecton8.Construction
 
         private void RefreshCableVisuals(bool force)
         {
-            DisableLegacyCableRenderer();
             if (sourceCrate == null || destinationCrate == null || ReferenceEquals(sourceCrate, destinationCrate))
             {
                 ConnectionSplineBatchRenderer.RemovePipeLink(_pipeLinkId);
@@ -536,16 +531,6 @@ namespace Hecton8.Construction
         private void ClearCableVisuals()
         {
             ConnectionSplineBatchRenderer.RemovePipeLink(_pipeLinkId);
-            DisableLegacyCableRenderer();
-        }
-
-        private void DisableLegacyCableRenderer()
-        {
-            if (cableRenderer == null)
-                return;
-
-            cableRenderer.positionCount = 0;
-            cableRenderer.enabled = false;
         }
 
         private void NotifyGridBalanceChanged()
@@ -600,14 +585,6 @@ namespace Hecton8.Construction
             }
 
             Vector3 rupturePosition = _cachedTransform != null ? _cachedTransform.position : Vector3.zero;
-            int leakedItemHashId = _inFlightItemHashId;
-            LogisticsPipeOverpressureLeakEvent leakEvent = new LogisticsPipeOverpressureLeakEvent(
-                _pipeLinkId,
-                rupturePosition,
-                _overpressureStress,
-                leakedItemHashId);
-            HectonEventBus.Publish(in leakEvent);
-
             PublishRuptureSignals(rupturePosition);
 
             ResolveInFlightLossToWorldOrRollback(rupturePosition);

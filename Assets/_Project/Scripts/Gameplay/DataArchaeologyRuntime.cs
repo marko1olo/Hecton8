@@ -10,6 +10,7 @@ using Hecton8.SaveSystem;
 using Hecton8.Tools;
 using Hecton8.World;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -111,59 +112,61 @@ namespace Hecton8.Gameplay
     /// <summary>
     /// Burst-compatible input packet for scanner frequency tuning.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 28)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct DataArchaeologyFrequencyInput
     {
-        public uint ArtifactHash;
-        public float SignalPhase01;
-        public float NoisePhase01;
-        public float Threshold;
-        public float Interference01;
-        public float Battery01;
-        public float DeltaTime;
+        [FieldOffset(0)] public uint ArtifactHash;
+        [FieldOffset(4)] public float SignalPhase01;
+        [FieldOffset(8)] public float NoisePhase01;
+        [FieldOffset(12)] public float Threshold;
+        [FieldOffset(16)] public float Interference01;
+        [FieldOffset(20)] public float Battery01;
+        [FieldOffset(24)] public float DeltaTime;
+        [FieldOffset(28)] private uint _pad0;
     }
 
     /// <summary>
     /// Burst-compatible scanner tuning result.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct DataArchaeologyFrequencyResult
     {
-        public float Signal;
-        public float Noise;
-        public float Difference;
-        public float Match01;
-        public float ProgressDeltaSeconds;
-        public float FeedbackPitchScale;
-        public float FeedbackFrequency01;
-        public byte Matched;
-        public byte Reserved0;
-        public ushort Reserved1;
+        [FieldOffset(0)] public float Signal;
+        [FieldOffset(4)] public float Noise;
+        [FieldOffset(8)] public float Difference;
+        [FieldOffset(12)] public float Match01;
+        [FieldOffset(16)] public float ProgressDeltaSeconds;
+        [FieldOffset(20)] public float FeedbackPitchScale;
+        [FieldOffset(24)] public float FeedbackFrequency01;
+        [FieldOffset(28)] public byte Matched;
+        [FieldOffset(29)] public byte Reserved0;
+        [FieldOffset(30)] public ushort Reserved1;
     }
 
     /// <summary>
     /// Zero-allocation notification payload for HUD/PDA consumers.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 8)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct DataArchaeologyNotification
     {
-        public uint EntryHash;
-        public ushort ProgressPermille;
-        public byte Kind;
-        public byte Flags;
+        [FieldOffset(0)] public uint EntryHash;
+        [FieldOffset(4)] public ushort ProgressPermille;
+        [FieldOffset(6)] public byte Kind;
+        [FieldOffset(7)] public byte Flags;
+        [FieldOffset(8)] private ulong _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal struct DataArchaeologyTelemetryEntry
     {
-        public uint Frame;
-        public uint Hash;
-        public float3 Position;
-        public float Match01;
-        public byte Flags;
-        public byte Reserved0;
-        public ushort ProgressPermille;
-        public uint Reserved1;
+        [FieldOffset(0)] public uint Frame;
+        [FieldOffset(4)] public uint Hash;
+        [FieldOffset(8)] public float3 Position;
+        [FieldOffset(20)] public float Match01;
+        [FieldOffset(24)] public byte Flags;
+        [FieldOffset(25)] public byte Reserved0;
+        [FieldOffset(26)] public ushort ProgressPermille;
+        [FieldOffset(28)] public uint Reserved1;
     }
 
     /// <summary>
@@ -255,11 +258,11 @@ namespace Hecton8.Gameplay
     /// <summary>
     /// Burst wrapper for scanner frequency tuning batch tests.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct DataArchaeologyFrequencyTuningJob : IJob
     {
         public DataArchaeologyFrequencyInput Input;
-        public NativeSlice<DataArchaeologyFrequencyResult> Output;
+        [NoAlias] public NativeSlice<DataArchaeologyFrequencyResult> Output;
 
         /// <inheritdoc />
         public void Execute()

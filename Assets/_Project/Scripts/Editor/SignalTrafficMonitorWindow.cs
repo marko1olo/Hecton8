@@ -1,7 +1,6 @@
 #if UNITY_EDITOR
 using System.IO;
 using Hecton8.Core.Contracts.Signals;
-using Hecton8.World;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEditor;
@@ -305,10 +304,7 @@ namespace Hecton8.Editor
                 }
                 case InjectKind.AcousticBurst:
                 {
-                    AbsoluteUniversePosition origin = default;
-                    origin.LocalX = _xField.value;
-                    origin.LocalY = _yField.value;
-                    origin.LocalZ = _zField.value;
+                    float3 origin = new float3(_xField.value, _yField.value, _zField.value);
                     MockSignalGenerators.InjectAcousticBurst(
                         in origin,
                         32,

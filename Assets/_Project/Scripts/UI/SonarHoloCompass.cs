@@ -40,20 +40,28 @@ namespace Hecton8.UI
         private static readonly Color DotFrontColor = new Color(0.70f, 0.98f, 0.96f, 0.94f);
         private static readonly Color DotRearColor = new Color(0.62f, 0.78f, 0.82f, 0.34f);
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
         private struct AcousticRadarBlipInput
         {
+            [FieldOffset(0)]
             public float3 ListenerRelativePosition;
+            [FieldOffset(12)]
             public float Amplitude;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Explicit, Size = 24)]
         private struct AcousticRadarBlipOutput
         {
+            [FieldOffset(0)]
             public float2 AnchoredPosition;
+            [FieldOffset(8)]
             public float Energy;
+            [FieldOffset(12)]
             public float DepthBlend;
+            [FieldOffset(16)]
             public int Visible;
+            [FieldOffset(20)]
+            public uint _pad0;
         }
 
         private bool _registeredToTick;

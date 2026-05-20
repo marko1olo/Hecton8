@@ -1,0 +1,14 @@
+{
+  "agent": "SHINOBU_210",
+  "verdict": "Runtime Habitat Deformations Eradicated",
+  "evidenceClass": "STATIC_SOURCE_SCAN",
+  "scannerMode": "COMMENT_STRING_AWARE_NATIVE_BYTE_TOKEN_SCAN",
+  "forbiddenRuntimePatternCount": 0,
+  "runtimeUnityObjectBridge": "REMOVED_FROM_SHINOBU_210_RUNTIME_SURFACE",
+  "runtimeTruth": "Baked mesh state index plus immutable mesh hashes; Editor-only manifest owns managed Mesh references.",
+  "netcodeFence": "Baked mesh assets are immutable environmental data; runtime netcode synchronizes integer damage state, not geometry.",
+  "previousReportPreserved": true,
+  "previousReportAgent": "SHINOBU_209",
+  "previousReportVerdict": "Runtime Mesh Deformations Eradicated",
+  "findings": []
+}

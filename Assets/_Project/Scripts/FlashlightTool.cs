@@ -94,6 +94,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private Color _powerOnColor = new Color(1f, 0.9f, 0.5f);
 
         private ItemData _installedBattery;
+        private float _batteryCharge = 1f;
 
         // MaterialPropertyBlock for power indicator
         private MaterialPropertyBlock _mpb; // COLD ALLOC: MaterialPropertyBlock[1] — power indicator emission — owner: FlashlightTool
@@ -108,7 +109,7 @@ namespace Hecton8.Gameplay
         public bool HasBattery => _installedBattery != null;
 
         /// <summary>Current battery charge level (0-1). Returns 0 if no battery.</summary>
-        public float BatteryCharge => _installedBattery != null ? GetRuntimeBatteryNormalized(0f) : 0f;
+        public float BatteryCharge => _installedBattery != null ? GetRuntimeBatteryNormalized(_batteryCharge) : 0f;
 
         /// <summary>The battery item currently installed (null if none).</summary>
         public ItemData BatteryItem => _installedBattery;
@@ -123,6 +124,7 @@ namespace Hecton8.Gameplay
 
             ItemData removed = _installedBattery;
             _installedBattery = null;
+            _batteryCharge = 0f;
 
             SetRuntimeBatteryNormalized(0f);
             UpdateBatteryVisuals();
@@ -140,7 +142,8 @@ namespace Hecton8.Gameplay
                 return false;
 
             _installedBattery = battery;
-            SetRuntimeBatteryNormalized(math.saturate(charge));
+            _batteryCharge = math.saturate(charge);
+            SetRuntimeBatteryNormalized(_batteryCharge);
             UpdateBatteryVisuals();
             UpdatePowerIndicator();
 
@@ -223,7 +226,7 @@ namespace Hecton8.Gameplay
 
         internal override float ResolveModularBatteryNormalized()
         {
-            return _installedBattery != null ? GetRuntimeBatteryNormalized(1f) : 0f;
+            return _installedBattery != null ? BatteryCharge : 0f;
         }
 
         protected override void ConfigureModularRuntimeProfile(ref ToolRuntimeProfile profile)
@@ -236,6 +239,7 @@ namespace Hecton8.Gameplay
 
         public override void OnUnequip()
         {
+            SyncFlashlightChargeMirrorFromCentral();
             if (autoTurnOffOnUnequip &&
                 _flashlight != null &&
                 !_stateBeforeEquip &&
@@ -252,10 +256,16 @@ namespace Hecton8.Gameplay
 
         public override void OnDespawn()
         {
+            SyncFlashlightChargeMirrorFromCentral();
             if (_flashlight != null)
                 _flashlight.UnbindExternalBatteryTool(this);
 
             base.OnDespawn();
+        }
+
+        private void SyncFlashlightChargeMirrorFromCentral()
+        {
+            _batteryCharge = _installedBattery != null ? BatteryCharge : 0f;
         }
 
         public override void UsePrimary(float deltaTime)
@@ -391,8 +401,7 @@ namespace Hecton8.Gameplay
 
         private void SyncCentralFlashlightState()
         {
-            IModularEquipmentService service = GlobalRegistry.ModularEquipment;
-            if (service == null || !service.IsInitialized || RuntimeToolId == 0u)
+            if (!TryGetModularEquipment(out IModularEquipmentService service) || RuntimeToolId == 0u)
                 return;
 
             if (!service.TryGetToolState(RuntimeToolId, out ToolState state))
@@ -405,8 +414,7 @@ namespace Hecton8.Gameplay
 
         private bool MarkFlashlightActiveForCentralSolver()
         {
-            IModularEquipmentService service = GlobalRegistry.ModularEquipment;
-            if (service == null || !service.IsInitialized || RuntimeToolId == 0u)
+            if (!TryGetModularEquipment(out IModularEquipmentService service) || RuntimeToolId == 0u)
                 return HasToolEnergyOrWirelessPath();
 
             service.SetToolActive(RuntimeToolId, true);
@@ -425,8 +433,7 @@ namespace Hecton8.Gameplay
 
         private void MarkFlashlightInactiveForCentralSolver()
         {
-            IModularEquipmentService service = GlobalRegistry.ModularEquipment;
-            if (service != null && service.IsInitialized && RuntimeToolId != 0u)
+            if (TryGetModularEquipment(out IModularEquipmentService service) && RuntimeToolId != 0u)
                 service.SetToolActive(RuntimeToolId, false);
         }
 
@@ -440,11 +447,15 @@ namespace Hecton8.Gameplay
                 if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                     playerTransform != null)
                 {
-                    IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
-                    if (playerContext != null && playerContext.Flashlight != null)
+                    if (TryGetPlayerRuntimeContext(out IPlayerRuntimeContext playerContext) &&
+                        playerContext.Flashlight != null)
+                    {
                         _flashlight = playerContext.Flashlight;
+                    }
                     else
+                    {
                         playerTransform.TryGetComponent(out _flashlight);
+                    }
                 }
             }
 

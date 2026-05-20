@@ -1,0 +1,5 @@
+name,views,atlas,dilation,padding,swap_distance,hemisphere
+Massive_Wreck,16,4096,4,0.75,500,false
+Medium_Base_Module,16,2048,3,0.50,420,false
+Ultra_Horizon_Setpiece,32,8192,8,1.50,900,false
+SteamDeck_Survival,8,2048,2,0.35,290,true

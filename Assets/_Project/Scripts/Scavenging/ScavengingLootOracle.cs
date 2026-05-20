@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Data;
 using Hecton8.Core.Generated;
 using Hecton8.Core.Memory;
 using Hecton8.World;
@@ -13,30 +14,6 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
-
-namespace Hecton8.Core.Contracts.Signals
-{
-    public static class ItemAcquiredSignalSourceKinds
-    {
-        public const byte ScavengingLootOracle = 13;
-    }
-
-    /// <summary>Visual-only scavenging pickup fake. Size: 80 bytes.</summary>
-    [StructLayout(LayoutKind.Explicit, Size = 80)]
-    public struct VisualScavengeSignal : ISignal
-    {
-        [FieldOffset(0)] public AbsoluteUniversePosition PositionAup;
-        [FieldOffset(48)] public ulong ResourceNodeHash;
-        [FieldOffset(56)] public uint ItemHashID;
-        [FieldOffset(60)] public uint OreHash;
-        [FieldOffset(64)] public uint Quantity;
-        [FieldOffset(68)] public uint Frame;
-        [FieldOffset(72)] public float VfxEmissionMultiplier;
-        [FieldOffset(76)] public byte SourceKind;
-        [FieldOffset(77)] public byte Flags;
-        [FieldOffset(78)] public ushort _pad0;
-    }
-}
 
 namespace Hecton8.Scavenging
 {
@@ -61,6 +38,8 @@ namespace Hecton8.Scavenging
         public const byte ItemSourceKind = ItemAcquiredSignalSourceKinds.ScavengingLootOracle;
         public const byte VisualSourceKind = ItemAcquiredSignalSourceKinds.ScavengingLootOracle;
         public const byte HudSeverityWarning = 2;
+        public const byte ItemSignalFlagQuantityClamped = 1 << 0;
+        public const uint ItemSignalMaxQuantity = ushort.MaxValue;
         public const uint ToolMaskAny = 0u;
         public const uint ToolMaskKnife = 1u << 0;
         public const uint ToolMaskCutter = 1u << 1;
@@ -68,14 +47,19 @@ namespace Hecton8.Scavenging
         public const uint ToolMaskExtractor = 1u << 3;
         public const uint RequestFlagInventoryFull = 1u << 0;
         public const uint RequestFlagForcedItem = 1u << 1;
+        public const uint RequestFlagSuppressDepletionDelta = 1u << 2;
+        public const uint RequestFlagQuantityClamped = 1u << 3;
         public const uint ResultFlagResolved = 1u << 0;
         public const uint ResultFlagInventoryFull = 1u << 1;
         public const uint ResultFlagNoEligibleEntry = 1u << 2;
         public const uint ResultFlagForcedItem = 1u << 3;
+        public const uint ResultFlagSuppressDepletionDelta = 1u << 4;
+        public const uint ResultFlagQuantityClamped = 1u << 5;
         public const uint InventoryFullMessageHash = 0x4946554Cu; // IFUL
         public const uint VisualScavengeLaneHash = 0x56534356u; // VSCV
         public const uint LootOracleSourceHash = 0x4C4F5243u; // LORC
         public const uint EmergencyTableHash = 0x454D4C54u; // EMLT
+        public const uint MonolithTableVersion = 0x4838444Du; // H8DM
         public const uint EditorPreviewBiomeHash = 0x45504249u; // EPBI
         public const uint DefaultSessionSalt = 0x1251255Du;
         public const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_LOOT_ORACLE.bin";
@@ -87,6 +71,15 @@ namespace Hecton8.Scavenging
         public static readonly BufferID TelemetryRingBufferId = (BufferID)70934;
         public static readonly BufferID DistributionAuditBufferId = (BufferID)70935;
         public static readonly BufferID CsvScratchBufferId = (BufferID)70936;
+    }
+
+    internal static class ScavengingLootOracleMath
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float SanitizeQualityWeight(float value)
+        {
+            return math.saturate(math.select(0f, value, math.isfinite(value)));
+        }
     }
 
     /// <summary>Cumulative integer CDF entry. Size: 16 bytes.</summary>
@@ -289,7 +282,7 @@ namespace Hecton8.Scavenging
                     QuantityMin = 1u,
                     QuantityMax = 1u,
                     ForcedItemHashID = 0u,
-                    GlobalQualityWeight = math.saturate(GlobalQualityWeight),
+                    GlobalQualityWeight = ScavengingLootOracleMath.SanitizeQualityWeight(GlobalQualityWeight),
                     Capacity = new InventoryCapacityDTO
                     {
                         FreeSlots = 1,
@@ -333,28 +326,26 @@ namespace Hecton8.Scavenging
 
         private ScavengingResolvedYieldDTO ResolveRequest(in ScavengingHarvestRequestDTO request, int requestIndex)
         {
-            float quality = math.saturate(math.select(1f, request.GlobalQualityWeight, math.isfinite(request.GlobalQualityWeight)));
+            float quality = ScavengingLootOracleMath.SanitizeQualityWeight(request.GlobalQualityWeight);
             ulong resourceHash = request.ResourceNodeHash != 0UL
                 ? request.ResourceNodeHash
                 : BuildResourceNodeHash(in request.NodeAup, request.OreHash);
             ushort wordIndex = unchecked((ushort)((resourceHash >> 6) & 0xFFFFUL));
-            ScavengingResolvedYieldDTO result = new ScavengingResolvedYieldDTO
-            {
-                NodeAup = request.NodeAup,
-                ResourceNodeHash = resourceHash,
-                ItemHashID = 0u,
-                OreHash = request.OreHash,
-                Quantity = 0u,
-                Frame = Frame,
-                VfxEmissionMultiplier = math.lerp(0.1f, 1.0f, quality),
-                Roll = 0u,
-                TotalWeight = 0u,
-                DepletionWordIndex = wordIndex,
-                SourceKind = ScavengingLootOracleConstants.ItemSourceKind,
-                Flags = 0,
-                TableHash = request.TableHash,
-                RequestId = unchecked((uint)requestIndex)
-            };
+            ScavengingResolvedYieldDTO result = default;
+            result.NodeAup = request.NodeAup;
+            result.ResourceNodeHash = resourceHash;
+            result.ItemHashID = 0u;
+            result.OreHash = request.OreHash;
+            result.Quantity = 0u;
+            result.Frame = Frame;
+            result.VfxEmissionMultiplier = math.lerp(0.1f, 1.0f, quality);
+            result.Roll = 0u;
+            result.TotalWeight = 0u;
+            result.DepletionWordIndex = wordIndex;
+            result.SourceKind = ScavengingLootOracleConstants.ItemSourceKind;
+            result.Flags = 0;
+            result.TableHash = request.TableHash;
+            result.RequestId = unchecked((uint)requestIndex);
 
             if ((request.Capacity.Flags & ScavengingLootOracleConstants.RequestFlagInventoryFull) != 0u ||
                 (request.Capacity.FreeSlots == 0 && request.Capacity.FreeStackCapacity == 0))
@@ -377,7 +368,15 @@ namespace Hecton8.Scavenging
                 result.Quantity = quantity;
                 result.Roll = rollBits;
                 result.TotalWeight = 1u;
-                result.Flags = (byte)(ScavengingLootOracleConstants.ResultFlagResolved | ScavengingLootOracleConstants.ResultFlagForcedItem);
+                result.Flags = BuildResultFlags(
+                    in request,
+                    ScavengingLootOracleConstants.ResultFlagResolved | ScavengingLootOracleConstants.ResultFlagForcedItem);
+                return result;
+            }
+
+            if (request.TableHash == 0u && request.LootEntryCount == 0u)
+            {
+                result.Flags = (byte)ScavengingLootOracleConstants.ResultFlagNoEligibleEntry;
                 return result;
             }
 
@@ -393,7 +392,7 @@ namespace Hecton8.Scavenging
             bool hasBiomeModifier = HasBiomeModifier(request.BiomeHash);
             if (!hasBiomeModifier)
             {
-                uint totalWeight = ResolveBaseTotalWeight(start, entryCount, request.ToolHashID);
+                uint totalWeight = ResolveBaseTotalWeight(start, entryCount, request.ToolHashID, out bool canUseRawCdf);
                 if (totalWeight == 0u)
                 {
                     result.Flags = (byte)ScavengingLootOracleConstants.ResultFlagNoEligibleEntry;
@@ -401,13 +400,15 @@ namespace Hecton8.Scavenging
                 }
 
                 uint threshold = MapUIntToRange(rollBits, totalWeight);
-                uint selectedIndex = BinarySearchEligible(start, entryCount, request.ToolHashID, threshold);
+                uint selectedIndex = canUseRawCdf
+                    ? BinarySearchRawCdf(start, entryCount, threshold)
+                    : SelectBaseItemLinear(start, entryCount, request.ToolHashID, threshold);
                 LootTableEntryDTO selected = LootEntries[(int)selectedIndex];
                 result.ItemHashID = selected.ItemHashID;
                 result.Quantity = quantity;
                 result.Roll = threshold;
                 result.TotalWeight = totalWeight;
-                result.Flags = (byte)ScavengingLootOracleConstants.ResultFlagResolved;
+                result.Flags = BuildResultFlags(in request, ScavengingLootOracleConstants.ResultFlagResolved);
                 return result;
             }
 
@@ -425,9 +426,21 @@ namespace Hecton8.Scavenging
             result.Roll = modifiedThreshold;
             result.TotalWeight = modifiedTotal;
             result.Flags = itemHash != 0u
-                ? (byte)ScavengingLootOracleConstants.ResultFlagResolved
+                ? BuildResultFlags(in request, ScavengingLootOracleConstants.ResultFlagResolved)
                 : (byte)ScavengingLootOracleConstants.ResultFlagNoEligibleEntry;
             return result;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static byte BuildResultFlags(in ScavengingHarvestRequestDTO request, uint baseFlags)
+        {
+            uint flags = baseFlags;
+            if ((request.Capacity.Flags & ScavengingLootOracleConstants.RequestFlagSuppressDepletionDelta) != 0u)
+                flags |= ScavengingLootOracleConstants.ResultFlagSuppressDepletionDelta;
+            if ((request.Capacity.Flags & ScavengingLootOracleConstants.RequestFlagQuantityClamped) != 0u)
+                flags |= ScavengingLootOracleConstants.ResultFlagQuantityClamped;
+
+            return (byte)flags;
         }
 
         private void WriteTelemetry(in ScavengingHarvestRequestDTO request, in ScavengingResolvedYieldDTO result, int index)
@@ -436,51 +449,56 @@ namespace Hecton8.Scavenging
                 return;
 
             int slot = PositiveMod(TelemetryCursor + index, TelemetryRing.Length);
-            TelemetryRing[slot] = new ScavengingTelemetryEntry
-            {
-                NodeAup = result.NodeAup,
-                ResourceNodeHash = result.ResourceNodeHash,
-                SelectedItemHashID = result.ItemHashID,
-                OreHash = result.OreHash,
-                Frame = Frame,
-                TotalWeight = result.TotalWeight,
-                Roll = result.Roll,
-                Flags = result.Flags,
-                EstimatedCpuMicroseconds = 5u,
-                TableHash = request.TableHash,
-                RequestId = result.RequestId,
-                GlobalQualityWeight = math.saturate(request.GlobalQualityWeight),
-                DepletionWordIndex = result.DepletionWordIndex,
-                DistributionBucket = result.TotalWeight > 0u ? result.Roll : 0u,
-                DepletionMask = 1UL << (int)(result.ResourceNodeHash & 63UL),
-                _pad0 = 0UL,
-                _pad1 = 0UL
-            };
+            ScavengingTelemetryEntry telemetry = default;
+            telemetry.NodeAup = result.NodeAup;
+            telemetry.ResourceNodeHash = result.ResourceNodeHash;
+            telemetry.SelectedItemHashID = result.ItemHashID;
+            telemetry.OreHash = result.OreHash;
+            telemetry.Frame = Frame;
+            telemetry.TotalWeight = result.TotalWeight;
+            telemetry.Roll = result.Roll;
+            telemetry.Flags = result.Flags;
+            telemetry.EstimatedCpuMicroseconds = 5u;
+            telemetry.TableHash = request.TableHash;
+            telemetry.RequestId = result.RequestId;
+            telemetry.GlobalQualityWeight = ScavengingLootOracleMath.SanitizeQualityWeight(request.GlobalQualityWeight);
+            telemetry.DepletionWordIndex = result.DepletionWordIndex;
+            telemetry.DistributionBucket = result.TotalWeight > 0u ? result.Roll : 0u;
+            telemetry.DepletionMask = 1UL << (int)(result.ResourceNodeHash & 63UL);
+            telemetry._pad0 = 0UL;
+            telemetry._pad1 = 0UL;
+            TelemetryRing[slot] = telemetry;
         }
 
-        private uint ResolveBaseTotalWeight(uint start, uint entryCount, uint toolMask)
+        private uint ResolveBaseTotalWeight(uint start, uint entryCount, uint toolMask, out bool canUseRawCdf)
         {
             uint previousCdf = 0u;
             uint total = 0u;
+            bool allEntriesEligible = true;
+            bool cdfMonotonic = true;
             for (uint i = 0u; i < entryCount; i++)
             {
                 LootTableEntryDTO entry = LootEntries[(int)(start + i)];
+                bool eligible = PassesToolMask(entry.ConditionMask, toolMask);
+                cdfMonotonic &= entry.DropWeight >= previousCdf;
                 uint weight = entry.DropWeight > previousCdf ? entry.DropWeight - previousCdf : 0u;
                 previousCdf = math.max(previousCdf, entry.DropWeight);
-                total += PassesToolMask(entry.ConditionMask, toolMask) ? weight : 0u;
+                allEntriesEligible &= eligible;
+                total += eligible ? weight : 0u;
             }
 
+            canUseRawCdf = allEntriesEligible && cdfMonotonic;
             return total;
         }
 
-        private uint BinarySearchEligible(uint start, uint entryCount, uint toolMask, uint threshold)
+        private uint BinarySearchRawCdf(uint start, uint entryCount, uint threshold)
         {
             uint low = 0u;
             uint high = entryCount;
             while (low < high)
             {
                 uint mid = low + ((high - low) >> 1);
-                uint prefix = ResolveBasePrefixWeight(start, mid + 1u, toolMask);
+                uint prefix = LootEntries[(int)(start + mid)].DropWeight;
                 if (threshold < prefix)
                     high = mid;
                 else
@@ -490,19 +508,26 @@ namespace Hecton8.Scavenging
             return start + math.min(low, entryCount - 1u);
         }
 
-        private uint ResolveBasePrefixWeight(uint start, uint count, uint toolMask)
+        private uint SelectBaseItemLinear(uint start, uint entryCount, uint toolMask, uint threshold)
         {
             uint previousCdf = 0u;
-            uint total = 0u;
-            for (uint i = 0u; i < count; i++)
+            uint cumulative = 0u;
+            uint fallback = start;
+            for (uint i = 0u; i < entryCount; i++)
             {
                 LootTableEntryDTO entry = LootEntries[(int)(start + i)];
                 uint weight = entry.DropWeight > previousCdf ? entry.DropWeight - previousCdf : 0u;
                 previousCdf = math.max(previousCdf, entry.DropWeight);
-                total += PassesToolMask(entry.ConditionMask, toolMask) ? weight : 0u;
+                if (!PassesToolMask(entry.ConditionMask, toolMask))
+                    continue;
+
+                fallback = start + i;
+                cumulative += weight;
+                if (threshold < cumulative)
+                    return fallback;
             }
 
-            return total;
+            return fallback;
         }
 
         private uint ResolveModifiedTotalWeight(uint start, uint entryCount, uint toolMask, uint biomeHash)
@@ -595,9 +620,9 @@ namespace Hecton8.Scavenging
             ulong x = (ulong)request.NodeAup.GridX;
             ulong y = (ulong)request.NodeAup.GridY;
             ulong z = (ulong)request.NodeAup.GridZ;
-            ulong lx = math.asuint(request.NodeAup.LocalX);
-            ulong ly = math.asuint(request.NodeAup.LocalY);
-            ulong lz = math.asuint(request.NodeAup.LocalZ);
+            ulong lx = QuantizeLocalMillimetersForHash(request.NodeAup.LocalX);
+            ulong ly = QuantizeLocalMillimetersForHash(request.NodeAup.LocalY);
+            ulong lz = QuantizeLocalMillimetersForHash(request.NodeAup.LocalZ);
             ulong mixed =
                 x * 0x9E3779B185EBCA87UL ^
                 y * 0xC2B2AE3D27D4EB4FUL ^
@@ -625,9 +650,9 @@ namespace Hecton8.Scavenging
                 ((ulong)aup.GridX * 0x9E3779B185EBCA87UL) ^
                 ((ulong)aup.GridY * 0xC2B2AE3D27D4EB4FUL) ^
                 ((ulong)aup.GridZ * 0x165667B19E3779F9UL) ^
-                ((ulong)math.asuint(aup.LocalX) << 32) ^
-                ((ulong)math.asuint(aup.LocalY) << 1) ^
-                math.asuint(aup.LocalZ) ^
+                (QuantizeLocalMillimetersForHash(aup.LocalX) << 32) ^
+                (QuantizeLocalMillimetersForHash(aup.LocalY) << 1) ^
+                QuantizeLocalMillimetersForHash(aup.LocalZ) ^
                 typeHash;
 
             mixed ^= mixed >> 30;
@@ -636,6 +661,14 @@ namespace Hecton8.Scavenging
             mixed *= 0x94D049BB133111EBUL;
             mixed ^= mixed >> 31;
             return mixed != 0UL ? mixed : 0xA125125UL;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static ulong QuantizeLocalMillimetersForHash(float value)
+        {
+            float finite = math.select(0f, value, math.isfinite(value));
+            float clamped = math.clamp(finite, 0f, (float)AbsoluteUniversePosition.CellSizeMeters);
+            return (ulong)(long)math.round(clamped * 1000f);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -667,58 +700,74 @@ namespace Hecton8.Scavenging
                 ScavengingResolvedYieldDTO yield = ResolvedYields[i];
                 if (((uint)yield.Flags & ScavengingLootOracleConstants.ResultFlagInventoryFull) != 0u)
                 {
-                    HudWriter.Enqueue(new HUDNotificationSignal
-                    {
-                        MessageHash = ScavengingLootOracleConstants.InventoryFullMessageHash,
-                        ContextHash = yield.OreHash,
-                        SourceId = ScavengingLootOracleConstants.LootOracleSourceHash,
-                        Frame = yield.Frame,
-                        Severity = ScavengingLootOracleConstants.HudSeverityWarning,
-                        Flags = 0
-                    });
+                    HUDNotificationSignal hudSignal = default;
+                    hudSignal.MessageHash = ScavengingLootOracleConstants.InventoryFullMessageHash;
+                    hudSignal.ContextHash = yield.OreHash;
+                    hudSignal.SourceId = ScavengingLootOracleConstants.LootOracleSourceHash;
+                    hudSignal.Frame = yield.Frame;
+                    hudSignal.Severity = ScavengingLootOracleConstants.HudSeverityWarning;
+                    hudSignal.Flags = 0;
+                    HudWriter.Enqueue(hudSignal);
                     continue;
                 }
 
                 if (((uint)yield.Flags & ScavengingLootOracleConstants.ResultFlagResolved) == 0u || yield.ItemHashID == 0u || yield.Quantity == 0u)
                     continue;
 
-                ushort signalQuantity = (ushort)math.min(yield.Quantity, (uint)ushort.MaxValue);
-                ItemWriter.Enqueue(new ItemAcquiredSignal
-                {
-                    PositionAup = yield.NodeAup,
-                    ItemHash = yield.ItemHashID,
-                    OreHash = yield.OreHash,
-                    Quantity = signalQuantity,
-                    SourceKind = ScavengingLootOracleConstants.ItemSourceKind,
-                    Flags = 0,
-                    Frame = yield.Frame
-                });
+                ushort signalQuantity = (ushort)math.min(yield.Quantity, ScavengingLootOracleConstants.ItemSignalMaxQuantity);
+                ItemAcquiredSignal itemSignal = default;
+                itemSignal.PositionAup = yield.NodeAup;
+                itemSignal.ItemHash = yield.ItemHashID;
+                itemSignal.OreHash = yield.OreHash;
+                itemSignal.Quantity = signalQuantity;
+                itemSignal.SourceKind = ScavengingLootOracleConstants.ItemSourceKind;
+                itemSignal.Flags = (byte)(((uint)yield.Flags & ScavengingLootOracleConstants.ResultFlagQuantityClamped) != 0u
+                    ? ScavengingLootOracleConstants.ItemSignalFlagQuantityClamped
+                    : 0);
+                itemSignal.Frame = yield.Frame;
+                ItemWriter.Enqueue(itemSignal);
 
-                VisualWriter.Enqueue(new VisualScavengeSignal
-                {
-                    PositionAup = yield.NodeAup,
-                    ResourceNodeHash = yield.ResourceNodeHash,
-                    ItemHashID = yield.ItemHashID,
-                    OreHash = yield.OreHash,
-                    Quantity = yield.Quantity,
-                    Frame = yield.Frame,
-                    VfxEmissionMultiplier = yield.VfxEmissionMultiplier,
-                    SourceKind = ScavengingLootOracleConstants.VisualSourceKind,
-                    Flags = 0,
-                    _pad0 = 0
-                });
+                VisualScavengeSignal visualSignal = default;
+                visualSignal.PositionAup = ToVisualSignalAup(in yield.NodeAup);
+                visualSignal.ResourceNodeHash = yield.ResourceNodeHash;
+                visualSignal.ItemHashID = yield.ItemHashID;
+                visualSignal.OreHash = yield.OreHash;
+                visualSignal.Quantity = yield.Quantity;
+                visualSignal.Frame = yield.Frame;
+                visualSignal.VfxEmissionMultiplier = yield.VfxEmissionMultiplier;
+                visualSignal.SourceKind = ScavengingLootOracleConstants.VisualSourceKind;
+                visualSignal.Flags = yield.Flags;
+                visualSignal._pad0 = 0;
+                VisualWriter.Enqueue(visualSignal);
 
-                DepletionWriter.Enqueue(new ResourceDepletionDeltaSignal
-                {
-                    SectorHash = unchecked((long)(yield.ResourceNodeHash ^ (yield.ResourceNodeHash >> 32))),
-                    DepletionMask = 1UL << (int)(yield.ResourceNodeHash & 63UL),
-                    OreHash = yield.OreHash,
-                    Frame = yield.Frame,
-                    WordIndex = yield.DepletionWordIndex,
-                    Operation = 1,
-                    Flags = 0
-                });
+                if (((uint)yield.Flags & ScavengingLootOracleConstants.ResultFlagSuppressDepletionDelta) != 0u)
+                    continue;
+
+                ResourceDepletionDeltaSignal depletionSignal = default;
+                depletionSignal.SectorHash = unchecked((long)(yield.ResourceNodeHash ^ (yield.ResourceNodeHash >> 32)));
+                depletionSignal.DepletionMask = 1UL << (int)(yield.ResourceNodeHash & 63UL);
+                depletionSignal.OreHash = yield.OreHash;
+                depletionSignal.Frame = yield.Frame;
+                depletionSignal.WordIndex = yield.DepletionWordIndex;
+                depletionSignal.Operation = 1;
+                depletionSignal.Flags = 0;
+                DepletionWriter.Enqueue(depletionSignal);
             }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static VisualScavengeAup48 ToVisualSignalAup(in AbsoluteUniversePosition aup)
+        {
+            VisualScavengeAup48 visualAup = default;
+            visualAup.GridX = aup.GridX;
+            visualAup.GridY = aup.GridY;
+            visualAup.GridZ = aup.GridZ;
+            visualAup.LocalX = aup.LocalX;
+            visualAup.LocalY = aup.LocalY;
+            visualAup.LocalZ = aup.LocalZ;
+            visualAup._pad0 = 0f;
+            visualAup._pad1 = 0UL;
+            return visualAup;
         }
     }
 
@@ -983,11 +1032,18 @@ namespace Hecton8.Scavenging
         private VaultBufferHandle<byte> _csvScratchHandle;
         private int _queuedCount;
         private int _telemetryCursor;
+        private JobHandle _pendingPublishHandle;
+        private int _pendingPublishCount;
+        private bool _publishPending;
+        private uint _simulationFrameCounter;
         private int _activeLootEntryCount;
         private int _activeBiomeModifierCount;
         private uint _activeBiomeHash;
         private bool _vaultReady;
         private bool _emergencyTableGenerated;
+        private bool _lootTableHydrated;
+        private uint _activeLootTableHash;
+        private uint _activeLootTableVersion;
         private bool _registeredLateFrame;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -1011,7 +1067,8 @@ namespace Hecton8.Scavenging
             uint forcedItemHash,
             uint quantity,
             uint toolMask,
-            bool inventoryCapacityAvailable)
+            bool inventoryCapacityAvailable,
+            bool emitDepletionDelta = true)
         {
             ScavengingLootOracleRuntime host = EnsureHost();
             if (host == null || !host.EnsureVault())
@@ -1021,42 +1078,54 @@ namespace Hecton8.Scavenging
             if (!views.HasAllBuffers() || host._queuedCount >= views.Requests.Length)
                 return false;
 
+            host.TryPrimeMonolithLootTable();
             bool full = !inventoryCapacityAvailable;
             int slot = host._queuedCount++;
-            float quality = math.saturate(HomeostasisBrain.GlobalQualityWeight);
-            uint frame = unchecked((uint)Time.frameCount);
-            uint clampedQuantity = math.max(1u, quantity);
+            float quality = ScavengingLootOracleMath.SanitizeQualityWeight(HomeostasisBrain.GlobalQualityWeight);
+            uint frame = host.PeekNextSimulationFrame();
+            uint clampedQuantity = ClampItemSignalQuantity(quantity);
+            uint quantityClampFlag = clampedQuantity != quantity
+                ? ScavengingLootOracleConstants.RequestFlagQuantityClamped
+                : 0u;
             uint lootEntryCount = host._activeLootEntryCount > 0
                 ? (uint)math.min(host._activeLootEntryCount, views.LootEntries.Length)
-                : 4u;
-            views.Requests[slot] = new ScavengingHarvestRequestDTO
-            {
-                NodeAup = nodeAup,
-                SessionID = ResolveSessionId(),
-                ResourceNodeHash = 0UL,
-                OreHash = oreHash != 0u ? oreHash : forcedItemHash,
-                ToolHashID = toolMask != 0u ? toolMask : ScavengingLootOracleConstants.ToolMaskAny,
-                BiomeHash = host._activeBiomeHash,
-                TableHash = ScavengingLootOracleConstants.EmergencyTableHash,
-                TableVersion = 1u,
-                RollIndex = 0u,
-                LootStartIndex = 0u,
-                LootEntryCount = lootEntryCount,
-                QuantityMin = clampedQuantity,
-                QuantityMax = clampedQuantity,
-                ForcedItemHashID = forcedItemHash,
-                GlobalQualityWeight = quality,
-                Capacity = new InventoryCapacityDTO
-                {
-                    FreeSlots = full ? (ushort)0 : (ushort)1,
-                    FreeStackCapacity = full ? (ushort)0 : (ushort)1,
-                    InventoryHash = 0u,
-                    Flags = full ? ScavengingLootOracleConstants.RequestFlagInventoryFull : 0u,
-                    _pad0 = frame
-                }
-            };
+                : 0u;
+            InventoryCapacityDTO capacity = default;
+            capacity.FreeSlots = full ? (ushort)0 : (ushort)1;
+            capacity.FreeStackCapacity = full ? (ushort)0 : (ushort)1;
+            capacity.InventoryHash = 0u;
+            capacity.Flags = (full ? ScavengingLootOracleConstants.RequestFlagInventoryFull : 0u) |
+                             (forcedItemHash != 0u ? ScavengingLootOracleConstants.RequestFlagForcedItem : 0u) |
+                             (!emitDepletionDelta ? ScavengingLootOracleConstants.RequestFlagSuppressDepletionDelta : 0u) |
+                             quantityClampFlag;
+            capacity._pad0 = frame;
+
+            ScavengingHarvestRequestDTO request = default;
+            request.NodeAup = nodeAup;
+            request.SessionID = ResolveSessionId();
+            request.ResourceNodeHash = 0UL;
+            request.OreHash = oreHash != 0u ? oreHash : forcedItemHash;
+            request.ToolHashID = toolMask != 0u ? toolMask : ScavengingLootOracleConstants.ToolMaskAny;
+            request.BiomeHash = host._activeBiomeHash;
+            request.TableHash = host._activeLootTableHash;
+            request.TableVersion = host._activeLootTableVersion;
+            request.RollIndex = 0u;
+            request.LootStartIndex = 0u;
+            request.LootEntryCount = lootEntryCount;
+            request.QuantityMin = clampedQuantity;
+            request.QuantityMax = clampedQuantity;
+            request.ForcedItemHashID = forcedItemHash;
+            request.GlobalQualityWeight = quality;
+            request.Capacity = capacity;
+            views.Requests[slot] = request;
 
             return !full;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint ClampItemSignalQuantity(uint quantity)
+        {
+            return math.min(math.max(1u, quantity), ScavengingLootOracleConstants.ItemSignalMaxQuantity);
         }
 
         public static bool TryValidateLootTableEntryLayout(out string failure)
@@ -1088,7 +1157,7 @@ namespace Hecton8.Scavenging
 
             JobHandle handle = host.EnsureEmergencyLootTableJob(default);
             // COLD SYNC JOB: manual/editor fallback generation must finish before the caller inspects the table.
-            handle.Complete();
+            DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
             return true;
         }
 
@@ -1268,14 +1337,14 @@ namespace Hecton8.Scavenging
             if (!views.HasAllBuffers())
                 return false;
 
-            JobHandle dependency = host.EnsureEmergencyLootTableJob(default);
+            JobHandle dependency = host.EnsureLootTableJob(default);
             ScavengingLootOracleSelfAuditJob auditJob = new ScavengingLootOracleSelfAuditJob
             {
                 LootEntries = views.LootEntries,
                 BiomeModifiers = views.BiomeModifiers,
                 DistributionAudit = views.DistributionAudit,
                 RollCount = ScavengingLootOracleConstants.SelfAuditRollCount,
-                EntryCount = host._activeLootEntryCount > 0 ? (uint)host._activeLootEntryCount : 4u,
+                EntryCount = host._activeLootEntryCount > 0 ? (uint)host._activeLootEntryCount : 0u,
                 BiomeModifierCount = host._activeBiomeModifierCount,
                 ToolHashID = ScavengingLootOracleConstants.ToolMaskKnife |
                              ScavengingLootOracleConstants.ToolMaskCutter |
@@ -1286,7 +1355,7 @@ namespace Hecton8.Scavenging
             };
             JobHandle handle = auditJob.Schedule(dependency);
             // COLD SYNC JOB: editor self-audit returns the Vault audit buffer to the inspector button.
-            handle.Complete();
+            DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
             auditCounts = views.DistributionAudit;
             return true;
         }
@@ -1301,9 +1370,9 @@ namespace Hecton8.Scavenging
             ScavengingLootOracleRuntime host = Application.isPlaying ? EnsureHost() : null;
             if (host != null && host.EnsureVault())
             {
-                JobHandle dependency = host.EnsureEmergencyLootTableJob(default);
+                JobHandle dependency = host.EnsureLootTableJob(default);
                 // COLD SYNC JOB: editor gizmo needs the preview table before reading Vault rows.
-                dependency.Complete();
+                DispatcherJobFence.TryComplete(ref dependency, forceComplete: true);
                 NativeArray<LootTableEntryDTO> entries = host._lootEntriesHandle.Resolve(host._vault);
                 int count = host._activeLootEntryCount > 0 ? math.min(host._activeLootEntryCount, entries.Length) : 0;
                 if (entries.IsCreated && count > 0)
@@ -1336,12 +1405,16 @@ namespace Hecton8.Scavenging
 
         private void OnDisable()
         {
+            TryCompletePendingPublish(forceComplete: true);
             TryUnregisterLateFrame();
         }
 
         public void LateFrameTick()
         {
             DrainBiomeSignals();
+            if (!TryCompletePendingPublish(forceComplete: false))
+                return;
+
             if (_queuedCount <= 0)
                 return;
 
@@ -1357,35 +1430,47 @@ namespace Hecton8.Scavenging
             if (!views.HasAllBuffers())
                 return;
 
-            JobHandle dependency = EnsureEmergencyLootTableJob(default);
-            LootResolutionJob resolveJob = new LootResolutionJob
-            {
-                Requests = views.Requests,
-                LootEntries = views.LootEntries,
-                BiomeModifiers = views.BiomeModifiers,
-                ResolvedYields = views.ResolvedYields,
-                TelemetryRing = views.TelemetryRing,
-                RequestCount = count,
-                BiomeModifierCount = _activeBiomeModifierCount,
-                Frame = unchecked((uint)Time.frameCount),
-                TelemetryCursor = _telemetryCursor
-            };
+            JobHandle dependency = EnsureLootTableJob(default);
+            LootResolutionJob resolveJob = default;
+            resolveJob.Requests = views.Requests;
+            resolveJob.LootEntries = views.LootEntries;
+            resolveJob.BiomeModifiers = views.BiomeModifiers;
+            resolveJob.ResolvedYields = views.ResolvedYields;
+            resolveJob.TelemetryRing = views.TelemetryRing;
+            resolveJob.RequestCount = count;
+            resolveJob.BiomeModifierCount = _activeBiomeModifierCount;
+            resolveJob.Frame = AdvanceSimulationFrame();
+            resolveJob.TelemetryCursor = _telemetryCursor;
             JobHandle resolveHandle = resolveJob.Schedule(dependency);
 
-            PublishLootYieldsJob publishJob = new PublishLootYieldsJob
-            {
-                ResolvedYields = views.ResolvedYields,
-                YieldCount = count,
-                ItemWriter = SignalBus<ItemAcquiredSignal>.ParallelWriter,
-                VisualWriter = SignalBus<VisualScavengeSignal>.ParallelWriter,
-                DepletionWriter = SignalBus<ResourceDepletionDeltaSignal>.ParallelWriter,
-                HudWriter = SignalBus<HUDNotificationSignal>.ParallelWriter
-            };
+            PublishLootYieldsJob publishJob = default;
+            publishJob.ResolvedYields = views.ResolvedYields;
+            publishJob.YieldCount = count;
+            publishJob.ItemWriter = SignalBus<ItemAcquiredSignal>.ParallelWriter;
+            publishJob.VisualWriter = SignalBus<VisualScavengeSignal>.ParallelWriter;
+            publishJob.DepletionWriter = SignalBus<ResourceDepletionDeltaSignal>.ParallelWriter;
+            publishJob.HudWriter = SignalBus<HUDNotificationSignal>.ParallelWriter;
 
             JobHandle publishHandle = publishJob.Schedule(resolveHandle);
-            // [BLOCKING_SYNC_POINT] Core late-frame signal flush fence; SignalBus<T>.ParallelWriter has no producer-handle registration route.
-            publishHandle.Complete();
-            _telemetryCursor = (_telemetryCursor + count) % ScavengingLootOracleConstants.TelemetryRingCapacity;
+            _pendingPublishHandle = publishHandle;
+            _pendingPublishCount = count;
+            _publishPending = true;
+            H8Memory.RegisterActiveJob(SystemID.GameplayLoot, _pendingPublishHandle);
+        }
+
+        private bool TryCompletePendingPublish(bool forceComplete)
+        {
+            if (!_publishPending)
+                return true;
+
+            if (!DispatcherJobFence.TryComplete(ref _pendingPublishHandle, forceComplete))
+                return false;
+
+            _publishPending = false;
+            _telemetryCursor = (_telemetryCursor + _pendingPublishCount) % ScavengingLootOracleConstants.TelemetryRingCapacity;
+            _pendingPublishCount = 0;
+            H8Memory.RegisterActiveJob(SystemID.GameplayLoot, default);
+            return true;
         }
 
         private static ScavengingLootOracleRuntime EnsureHost()
@@ -1401,6 +1486,21 @@ namespace Hecton8.Scavenging
             hostObject.hideFlags = HideFlags.HideAndDontSave;
             _host = hostObject.AddComponent<ScavengingLootOracleRuntime>(); // COLD ALLOC: MonoBehaviour[1] - late-frame job owner - owner: SHINOBU_125
             return _host;
+        }
+
+        private uint PeekNextSimulationFrame()
+        {
+            uint next = _simulationFrameCounter + 1u;
+            return next != 0u ? next : 1u;
+        }
+
+        private uint AdvanceSimulationFrame()
+        {
+            _simulationFrameCounter++;
+            if (_simulationFrameCounter == 0u)
+                _simulationFrameCounter = 1u;
+
+            return _simulationFrameCounter;
         }
 
         private static void ConfigureSignalLanes()
@@ -1468,16 +1568,15 @@ namespace Hecton8.Scavenging
 
         private ScavengingLootOracleVaultViews ResolveViews()
         {
-            return new ScavengingLootOracleVaultViews
-            {
-                LootEntries = _lootEntriesHandle.Resolve(_vault),
-                Requests = _requestsHandle.Resolve(_vault),
-                ResolvedYields = _resolvedYieldsHandle.Resolve(_vault),
-                BiomeModifiers = _biomeModifiersHandle.Resolve(_vault),
-                TelemetryRing = _telemetryRingHandle.Resolve(_vault),
-                DistributionAudit = _distributionAuditHandle.Resolve(_vault),
-                CsvScratch = _csvScratchHandle.Resolve(_vault)
-            };
+            ScavengingLootOracleVaultViews views = default;
+            views.LootEntries = _lootEntriesHandle.Resolve(_vault);
+            views.Requests = _requestsHandle.Resolve(_vault);
+            views.ResolvedYields = _resolvedYieldsHandle.Resolve(_vault);
+            views.BiomeModifiers = _biomeModifiersHandle.Resolve(_vault);
+            views.TelemetryRing = _telemetryRingHandle.Resolve(_vault);
+            views.DistributionAudit = _distributionAuditHandle.Resolve(_vault);
+            views.CsvScratch = _csvScratchHandle.Resolve(_vault);
+            return views;
         }
 
         private JobHandle EnsureEmergencyLootTableJob(JobHandle dependency)
@@ -1494,8 +1593,78 @@ namespace Hecton8.Scavenging
                 LootEntries = entries
             };
             _emergencyTableGenerated = true;
+            _lootTableHydrated = true;
             _activeLootEntryCount = math.min(4, entries.Length);
+            _activeLootTableHash = ScavengingLootOracleConstants.EmergencyTableHash;
+            _activeLootTableVersion = 1u;
             return job.Schedule(dependency);
+        }
+
+        private void TryPrimeMonolithLootTable()
+        {
+            if (!_lootTableHydrated)
+                TryImportLootCdfFromDataMonolith();
+        }
+
+        private JobHandle EnsureLootTableJob(JobHandle dependency)
+        {
+            if (_lootTableHydrated)
+                return dependency;
+
+            if (TryImportLootCdfFromDataMonolith())
+                return dependency;
+
+#if UNITY_EDITOR
+            return EnsureEmergencyLootTableJob(dependency);
+#else
+            _lootTableHydrated = true;
+            _activeLootEntryCount = 0;
+            _activeLootTableHash = 0u;
+            _activeLootTableVersion = 0u;
+            return dependency;
+#endif
+        }
+
+        private bool TryImportLootCdfFromDataMonolith()
+        {
+            NativeArray<LootTableEntryDTO> entries = _lootEntriesHandle.Resolve(_vault);
+            if (!entries.IsCreated ||
+                !H8StaticDataArena.TryGetSectionSpan(H8DataSectionId.LootCdf, out ReadOnlySpan<H8LootCdfRecord> records) ||
+                records.Length <= 0)
+            {
+                return false;
+            }
+
+            uint tableHash = records[0].TableHash;
+            if (tableHash == 0u)
+                return false;
+
+            int count = 0;
+            int maxCount = math.min(entries.Length, records.Length);
+            for (int i = 0; i < maxCount; i++)
+            {
+                H8LootCdfRecord source = records[i];
+                if (source.TableHash != tableHash)
+                    break;
+
+                entries[count++] = new LootTableEntryDTO
+                {
+                    ItemHashID = source.ItemHash,
+                    DropWeight = source.CumulativeWeight,
+                    ConditionMask = ScavengingLootOracleConstants.ToolMaskAny,
+                    _pad0 = source.TotalWeight
+                };
+            }
+
+            if (count <= 0)
+                return false;
+
+            _activeLootEntryCount = count;
+            _activeLootTableHash = tableHash;
+            _activeLootTableVersion = ScavengingLootOracleConstants.MonolithTableVersion;
+            _lootTableHydrated = true;
+            _emergencyTableGenerated = false;
+            return true;
         }
 
         private void DrainBiomeSignals()
@@ -1632,7 +1801,7 @@ namespace Hecton8.Scavenging.Editor
             _auditLabel.text = $"10k: {c0}/{c1}/{c2}/{c3}";
         }
 
-        private void LoadCsv()
+        private unsafe void LoadCsv()
         {
             if (_auditLabel == null)
                 return;
@@ -1641,11 +1810,35 @@ namespace Hecton8.Scavenging.Editor
             if (string.IsNullOrEmpty(path) || !File.Exists(path))
                 return;
 
-            byte[] bytes = File.ReadAllBytes(path);
-            using (NativeArray<byte> nativeBytes = new NativeArray<byte>(bytes.Length, Allocator.Temp, NativeArrayOptions.UninitializedMemory))
+            FileInfo info = new FileInfo(path);
+            if (info.Length <= 0L || info.Length > int.MaxValue)
             {
-                for (int i = 0; i < bytes.Length; i++)
-                    nativeBytes[i] = bytes[i];
+                _auditLabel.text = "CSV ingest failed: invalid byte length.";
+                return;
+            }
+
+            using (NativeArray<byte> nativeBytes = new NativeArray<byte>((int)info.Length, Allocator.Temp, NativeArrayOptions.UninitializedMemory))
+            {
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(nativeBytes);
+                int total = 0;
+                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+                {
+                    Span<byte> span = new Span<byte>(destination, nativeBytes.Length);
+                    while (total < nativeBytes.Length)
+                    {
+                        int read = stream.Read(span.Slice(total));
+                        if (read <= 0)
+                            break;
+
+                        total += read;
+                    }
+                }
+
+                if (total != nativeBytes.Length)
+                {
+                    _auditLabel.text = "CSV ingest failed: incomplete file read.";
+                    return;
+                }
 
                 _auditLabel.text = ScavengingLootOracleRuntime.TryIngestLootDistributionCsvBytes(nativeBytes, out int entryCount)
                     ? $"CSV entries loaded: {entryCount}"

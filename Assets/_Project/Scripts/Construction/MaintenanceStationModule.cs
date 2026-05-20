@@ -16,7 +16,7 @@ namespace Hecton8.Construction
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PowerNode))]
-    public sealed class MaintenanceStationModule : MonoBehaviour, ITickable, IUpdatable, IPoolable, IPowerComponent, IInteractable
+    public sealed class MaintenanceStationModule : MonoBehaviour, ITickable, IUpdatable, IPoolable, IPowerComponent, IInteractable, IGlobalRegistryHotSwapListener
     {
         private const string DefaultTitaniumRepairItemId = "Data_TitaniumScrap";
         private const string DefaultLubricantItemId = "Comp_LubricantResin";
@@ -78,6 +78,10 @@ namespace Hecton8.Construction
         private int _reservationCostCount;
         private bool _reservationCostOverflowed;
         private bool _isRepairing;
+        private ToolDurabilitySystem _toolDurabilitySystem;
+        private IPlayerInventoryService _playerInventoryService;
+        private bool _toolManagerFromRegistry;
+        private bool _hotSwapRegistered;
 
         /// <summary>Idle bay draw plus active repair draw when service is in progress.</summary>
         public float PowerRating
@@ -107,12 +111,14 @@ namespace Hecton8.Construction
         private void Awake()
         {
             _powerNode = GetComponent<PowerNode>();
-            ResolveRuntimeReferences();
+            CacheRegistryServicesCold();
             ResolveFallbackItems();
         }
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
+            TryRegisterHotSwapListener();
             TryRegister();
         }
 
@@ -120,12 +126,14 @@ namespace Hecton8.Construction
         {
             CancelActiveRepair();
             TryUnregister();
+            TryUnregisterHotSwapListener();
         }
 
         private void OnDestroy()
         {
             CancelActiveRepair();
             TryUnregister();
+            TryUnregisterHotSwapListener();
         }
 
         public void OnSpawn()
@@ -134,8 +142,9 @@ namespace Hecton8.Construction
             _debugHasPower = true;
             _reservationRetryCooldownSeconds = 0f;
             ClearSlotState();
-            ResolveRuntimeReferences();
+            CacheRegistryServicesCold();
             ResolveFallbackItems();
+            TryRegisterHotSwapListener();
             TryRegister();
         }
 
@@ -147,6 +156,7 @@ namespace Hecton8.Construction
             _debugHasPower = true;
             _reservationRetryCooldownSeconds = 0f;
             TryUnregister();
+            TryUnregisterHotSwapListener();
         }
 
         public void Tick(float deltaTime)
@@ -158,7 +168,7 @@ namespace Hecton8.Construction
                 return;
             }
 
-            ToolDurabilitySystem durabilitySystem = Hecton8.Core.GlobalRegistry.ToolDurability;
+            ToolDurabilitySystem durabilitySystem = _toolDurabilitySystem;
             if (durabilitySystem == null || string.IsNullOrEmpty(_slottedToolMetadata.toolID))
             {
                 _debugIsRepairing = false;
@@ -280,7 +290,7 @@ namespace Hecton8.Construction
             if (!TryResolveToolMetadata(item, out metadata))
                 return false;
 
-            ToolDurabilitySystem durabilitySystem = Hecton8.Core.GlobalRegistry.ToolDurability;
+            ToolDurabilitySystem durabilitySystem = _toolDurabilitySystem;
             if (durabilitySystem == null || string.IsNullOrEmpty(metadata.toolID))
                 return false;
 
@@ -343,7 +353,7 @@ namespace Hecton8.Construction
             _repairTargetDurability = Mathf.Max(1f, metadata.maxDurability);
             _debugToolId = metadata.toolID;
 
-            ToolDurabilitySystem durabilitySystem = Hecton8.Core.GlobalRegistry.ToolDurability;
+            ToolDurabilitySystem durabilitySystem = _toolDurabilitySystem;
             if (durabilitySystem != null && !string.IsNullOrEmpty(metadata.toolID))
             {
                 float maxDurability = Mathf.Max(1f, metadata.maxDurability);
@@ -394,10 +404,57 @@ namespace Hecton8.Construction
             _registered = false;
         }
 
-        private void ResolveRuntimeReferences()
+        private void TryRegisterHotSwapListener()
         {
-            if (playerToolManager == null)
-                playerToolManager = Hecton8.Core.GlobalRegistry.Player != null ? Hecton8.Core.GlobalRegistry.Player.ToolManager : null;
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.ToolDurabilityRuntime:
+                    _toolDurabilitySystem = currentService as ToolDurabilitySystem;
+                    break;
+                case GlobalRegistryServiceSlot.PlayerInventory:
+                    _playerInventoryService = currentService as IPlayerInventoryService;
+                    ResolveFallbackItems();
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    RebindPlayerToolManager(currentService as IPlayerRuntimeContext);
+                    break;
+            }
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _toolDurabilitySystem = GlobalRegistry.ToolDurability;
+            _playerInventoryService = GlobalRegistry.PlayerInventory;
+            RebindPlayerToolManager(GlobalRegistry.Player);
+        }
+
+        private void RebindPlayerToolManager(IPlayerRuntimeContext playerContext)
+        {
+            if (playerToolManager != null && !_toolManagerFromRegistry)
+                return;
+
+            playerToolManager = playerContext != null ? playerContext.ToolManager : null;
+            _toolManagerFromRegistry = playerToolManager != null;
         }
 
         private void ResolveFallbackItems()
@@ -448,7 +505,7 @@ namespace Hecton8.Construction
         private bool TryResolveToolMetadata(ItemData item, out ToolMetadata metadata)
         {
             metadata = null;
-            ResolveRuntimeReferences();
+            CacheRegistryServicesCold();
             if (item == null || playerToolManager == null)
                 return false;
 
@@ -490,9 +547,9 @@ namespace Hecton8.Construction
             return true;
         }
 
-        private static PlayerInventory ResolvePlayerInventory()
+        private PlayerInventory ResolvePlayerInventory()
         {
-            IPlayerInventoryService inventoryService = GlobalRegistry.PlayerInventory;
+            IPlayerInventoryService inventoryService = _playerInventoryService;
             return inventoryService != null && inventoryService.IsInitialized
                 ? inventoryService.Inventory
                 : null;
@@ -570,7 +627,7 @@ namespace Hecton8.Construction
 
         private void CompleteActiveRepair()
         {
-            ToolDurabilitySystem durabilitySystem = Hecton8.Core.GlobalRegistry.ToolDurability;
+            ToolDurabilitySystem durabilitySystem = _toolDurabilitySystem;
             if (durabilitySystem != null && _slottedToolMetadata != null && !string.IsNullOrEmpty(_slottedToolMetadata.toolID))
                 durabilitySystem.RepairToolFull(_slottedToolMetadata.toolID, Mathf.Max(1f, _slottedToolMetadata.maxDurability));
 

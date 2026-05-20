@@ -24,6 +24,7 @@ namespace Hecton8.Construction
     {
         private const string WireShaderPath = "Assets/_Project/Art/Shaders/Hecton_BlueprintWireInstanced.shader";
         private const int MaxDrawMeshInstancedBatch = 1023;
+        private const float DefaultDearLieWiggleSpeed = 18f;
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildPreviewMatricesJob : IJobParallelFor
@@ -108,17 +109,34 @@ namespace Hecton8.Construction
         private bool _registeredRenderable;
         private bool _registeredLateFrame;
         private bool _hasBaseColorProperty;
+        private bool _hasDearLieDampenProperty;
+        private bool _hasDearLieWiggleSpeedProperty;
+        private bool _hasDearLieQualityProperty;
         private bool _baseColorApplied;
+        private bool _dearLiePropertiesApplied;
         private bool _instancesDirty = true;
         private int _activeCount;
         private int _scheduledCount;
         private int _drawCount;
         private Color _appliedBaseColor;
+        private float _lastDearLieDampen;
+        private float _lastDearLieQuality = 1f;
+        private float _lastDearLieWiggleSpeed = DefaultDearLieWiggleSpeed;
+        private float _appliedDearLieDampen = -1f;
+        private float _appliedDearLieQuality = -1f;
+        private float _appliedDearLieWiggleSpeed = -1f;
+        private float _dearLieStartTime;
+        private uint _lastDearLieResultHash;
+        private uint _lastDearLieModuleHash;
+        private bool _lastDearLieActive;
         private Material _cachedMaterialForProperties;
         private int _lastPreviewSignalFrame = -1;
         private bool _lastPreviewAllowed = true;
 
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+        private static readonly int DearLieDampenId = Shader.PropertyToID("_H8SnapDampen");
+        private static readonly int DearLieWiggleSpeedId = Shader.PropertyToID("_H8SnapWiggleSpeed");
+        private static readonly int DearLieQualityId = Shader.PropertyToID("_H8GlobalQualityWeight");
 
         private void Awake()
         {
@@ -276,6 +294,8 @@ namespace Hecton8.Construction
                 _baseColorApplied = true;
             }
 
+            ApplyDearLieMaterialProperties();
+
             UnityEngine.Graphics.DrawMeshInstanced(
                 previewMesh,
                 0,
@@ -373,6 +393,7 @@ namespace Hecton8.Construction
                     SpinRadiansPerSecond = 0.22f,
                     FlickerAmplitude = 1f
                 };
+                ConsumeDearLieSignal(in signal);
                 _lastPreviewAllowed = signal.IsValid != 0;
                 _lastPreviewSignalFrame = Time.frameCount;
                 writeCount++;
@@ -558,7 +579,88 @@ namespace Hecton8.Construction
             if (previewMaterial != null && !previewMaterial.enableInstancing)
                 previewMaterial.enableInstancing = true;
             _hasBaseColorProperty = previewMaterial != null && previewMaterial.HasProperty(BaseColorId);
+            _hasDearLieDampenProperty = previewMaterial != null && previewMaterial.HasProperty(DearLieDampenId);
+            _hasDearLieWiggleSpeedProperty = previewMaterial != null && previewMaterial.HasProperty(DearLieWiggleSpeedId);
+            _hasDearLieQualityProperty = previewMaterial != null && previewMaterial.HasProperty(DearLieQualityId);
             _baseColorApplied = false;
+            _dearLiePropertiesApplied = false;
+        }
+
+        private void ConsumeDearLieSignal(in ConstructionPreviewSignal signal)
+        {
+            bool active = (signal.Flags & ConstructionPreviewSignal.FlagDearLieActive) != 0 &&
+                          math.isfinite(signal.DearLieDampen) &&
+                          signal.DearLieDampen > 0.0001f;
+            if (!active)
+            {
+                _lastDearLieActive = false;
+                _lastDearLieDampen = 0f;
+                _lastDearLieQuality = SanitizeUnit(signal.GlobalQualityWeight, 1f);
+                _lastDearLieWiggleSpeed = SanitizePositive(signal.DearLieWiggleSpeed, DefaultDearLieWiggleSpeed);
+                return;
+            }
+
+            bool resetEnvelope = !_lastDearLieActive ||
+                                 signal.ResultHash != _lastDearLieResultHash ||
+                                 signal.ModuleHash != _lastDearLieModuleHash;
+            if (resetEnvelope)
+                _dearLieStartTime = Time.time;
+
+            _lastDearLieActive = true;
+            _lastDearLieResultHash = signal.ResultHash;
+            _lastDearLieModuleHash = signal.ModuleHash;
+            _lastDearLieDampen = math.clamp(signal.DearLieDampen, 0f, 1f);
+            _lastDearLieQuality = SanitizeUnit(signal.GlobalQualityWeight, 1f);
+            _lastDearLieWiggleSpeed = SanitizePositive(signal.DearLieWiggleSpeed, DefaultDearLieWiggleSpeed);
+        }
+
+        private void ApplyDearLieMaterialProperties()
+        {
+            if (previewMaterial == null)
+                return;
+
+            float quality = SanitizeUnit(_lastDearLieQuality, 1f);
+            float smoothQuality = quality * quality * (3f - (2f * quality));
+            float decaySeconds = math.lerp(0.08f, 0.22f, smoothQuality);
+            float elapsed = math.max(0f, Time.time - _dearLieStartTime);
+            float decay01 = _lastDearLieActive
+                ? math.saturate(1f - (elapsed / math.max(0.001f, decaySeconds)))
+                : 0f;
+            float dampen = _lastDearLieDampen * decay01 * decay01;
+            float wiggle = SanitizePositive(_lastDearLieWiggleSpeed, DefaultDearLieWiggleSpeed);
+
+            if (_hasDearLieDampenProperty &&
+                (!_dearLiePropertiesApplied || math.abs(_appliedDearLieDampen - dampen) > 0.0001f))
+            {
+                previewMaterial.SetFloat(DearLieDampenId, dampen);
+                _appliedDearLieDampen = dampen;
+            }
+
+            if (_hasDearLieWiggleSpeedProperty &&
+                (!_dearLiePropertiesApplied || math.abs(_appliedDearLieWiggleSpeed - wiggle) > 0.0001f))
+            {
+                previewMaterial.SetFloat(DearLieWiggleSpeedId, wiggle);
+                _appliedDearLieWiggleSpeed = wiggle;
+            }
+
+            if (_hasDearLieQualityProperty &&
+                (!_dearLiePropertiesApplied || math.abs(_appliedDearLieQuality - quality) > 0.0001f))
+            {
+                previewMaterial.SetFloat(DearLieQualityId, quality);
+                _appliedDearLieQuality = quality;
+            }
+
+            _dearLiePropertiesApplied = true;
+        }
+
+        private static float SanitizeUnit(float value, float fallback)
+        {
+            return math.saturate(math.isfinite(value) ? value : fallback);
+        }
+
+        private static float SanitizePositive(float value, float fallback)
+        {
+            return math.isfinite(value) && value > 0.0001f ? value : fallback;
         }
     }
 }

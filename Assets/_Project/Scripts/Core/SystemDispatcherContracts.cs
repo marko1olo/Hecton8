@@ -1,7 +1,10 @@
 using System;
 using System.Runtime.InteropServices;
+using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
+using Unity.Mathematics;
 
 namespace Hecton8.Core
 {
@@ -17,56 +20,190 @@ namespace Hecton8.Core
         VisualSync = 4
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    /// <summary>
+    /// Independent fence timelines owned by SystemDispatcher.
+    /// </summary>
+    public enum DispatcherFenceDomain : byte
+    {
+        Simulation = 0,
+        Physics = 1,
+        Audio = 2,
+        Netcode = 3
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct DispatcherStateDTO
     {
-        public uint CurrentPhaseId;
-        public uint CurrentFrame;
-        public uint ActiveBucket;
-        public uint ActiveBucketMask;
-        public uint SortedSystemCount;
-        public uint DisabledSystemCount;
-        public uint PendingSimulationJobCount;
-        public uint Flags;
+        [FieldOffset(0)] public uint CurrentPhaseId;
+        [FieldOffset(4)] public uint CurrentFrame;
+        [FieldOffset(8)] public uint ActiveBucket;
+        [FieldOffset(12)] public uint ActiveBucketMask;
+        [FieldOffset(16)] public uint SortedSystemCount;
+        [FieldOffset(20)] public uint DisabledSystemCount;
+        [FieldOffset(24)] public uint PendingSimulationJobCount;
+        [FieldOffset(28)] public uint Flags;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct DispatcherTimingDTO
     {
-        public float FrameDelta;
-        public float FixedDelta;
-        public float TimeScale;
-        public uint ActiveBucketMask;
+        [FieldOffset(0)] public float FrameDelta;
+        [FieldOffset(4)] public float FixedDelta;
+        [FieldOffset(8)] public float TimeScale;
+        [FieldOffset(12)] public uint ActiveBucketMask;
+
+        [FieldOffset(0)] public float PreSimMs;
+        [FieldOffset(4)] public float SimWaitMs;
+        [FieldOffset(8)] public float PostSimMs;
+        [FieldOffset(12)] public float VisualSyncMs;
+        [FieldOffset(16)] public uint FrameId;
+        [FieldOffset(20)] public byte _pad0;
+        [FieldOffset(21)] public byte _pad1;
+        [FieldOffset(22)] public byte _pad2;
+        [FieldOffset(23)] public byte _pad3;
+        [FieldOffset(24)] public byte _pad4;
+        [FieldOffset(25)] public byte _pad5;
+        [FieldOffset(26)] public byte _pad6;
+        [FieldOffset(27)] public byte _pad7;
+        [FieldOffset(28)] public byte _pad8;
+        [FieldOffset(29)] public byte _pad9;
+        [FieldOffset(30)] public byte _pad10;
+        [FieldOffset(31)] public byte _pad11;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    public static class DispatcherTimingLayoutGuard
+    {
+        public const int SizeBytes = 32;
+
+        public static bool ValidateLayout()
+        {
+            return UnsafeUtility.SizeOf<DispatcherTimingDTO>() == SizeBytes &&
+                   GetOffset(nameof(DispatcherTimingDTO.PreSimMs)) == 0 &&
+                   GetOffset(nameof(DispatcherTimingDTO.SimWaitMs)) == 4 &&
+                   GetOffset(nameof(DispatcherTimingDTO.PostSimMs)) == 8 &&
+                   GetOffset(nameof(DispatcherTimingDTO.VisualSyncMs)) == 12 &&
+                   GetOffset(nameof(DispatcherTimingDTO.FrameId)) == 16 &&
+                   GetOffset(nameof(DispatcherTimingDTO._pad0)) == 20 &&
+                   GetOffset(nameof(DispatcherTimingDTO._pad11)) == 31;
+        }
+
+        private static int GetOffset(string fieldName)
+        {
+            return Marshal.OffsetOf<DispatcherTimingDTO>(fieldName).ToInt32();
+        }
+    }
+
+    public static class DispatcherPresentationSuppressionFlags
+    {
+        public const uint None = 0u;
+        public const uint VisualSyncSuppressed = 1u << 0;
+        public const uint RollbackFence = 1u << 1;
+        public const uint HealthPressure = 1u << 2;
+        public const uint AudioSuppression = 1u << 3;
+        public const uint ParticleSuppression = 1u << 4;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct DispatcherPresentationSuppressionDTO
+    {
+        [FieldOffset(0)] public uint FrameId;
+        [FieldOffset(4)] public uint Flags;
+        [FieldOffset(8)] public float GlobalQualityWeight;
+        [FieldOffset(12)] public float Suppression01;
+        [FieldOffset(16)] public uint RollbackFlags;
+        [FieldOffset(20)] public byte _pad0;
+        [FieldOffset(21)] public byte _pad1;
+        [FieldOffset(22)] public byte _pad2;
+        [FieldOffset(23)] public byte _pad3;
+        [FieldOffset(24)] public byte _pad4;
+        [FieldOffset(25)] public byte _pad5;
+        [FieldOffset(26)] public byte _pad6;
+        [FieldOffset(27)] public byte _pad7;
+        [FieldOffset(28)] public byte _pad8;
+        [FieldOffset(29)] public byte _pad9;
+        [FieldOffset(30)] public byte _pad10;
+        [FieldOffset(31)] public byte _pad11;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct JobDependencyDTO
     {
-        public ulong JobHandlePtr;
-        public uint SystemIdHash;
-        public uint _pad0;
+        [FieldOffset(0)] public ulong JobHandlePtr;
+        [FieldOffset(8)] public uint SystemIdHash;
+        [FieldOffset(12)] public uint FrameId;
+        [FieldOffset(16)] public uint DependencyHash0;
+        [FieldOffset(20)] public byte PhaseId;
+        [FieldOffset(21)] public byte DomainId;
+        [FieldOffset(22)] public byte DependencyCount;
+        [FieldOffset(23)] public byte BucketId;
+        [FieldOffset(24)] public uint Flags;
+        [FieldOffset(28)] public uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct DispatcherFenceTelemetryEntry
+    {
+        [FieldOffset(0)] public uint FrameId;
+        [FieldOffset(4)] public uint ScheduledJobCount;
+        [FieldOffset(8)] public uint SafetyBypassCount;
+        [FieldOffset(12)] public uint DomainMask;
+        [FieldOffset(16)] public float SimulationWaitMs;
+        [FieldOffset(20)] public float FixedWaitMs;
+        [FieldOffset(24)] public float AupHardFenceMs;
+        [FieldOffset(28)] public float GlobalQualityWeight;
+        [FieldOffset(32)] public ulong MasterSimulationHandleBits;
+        [FieldOffset(40)] public ulong PhysicsHandleBits;
+        [FieldOffset(48)] public ulong AudioHandleBits;
+        [FieldOffset(56)] public ulong NetcodeHandleBits;
+    }
+
+    public static class DispatcherFenceTelemetryLayoutGuard
+    {
+        public const int SizeBytes = 64;
+
+        public static bool ValidateLayout()
+        {
+            return UnsafeUtility.SizeOf<DispatcherFenceTelemetryEntry>() == SizeBytes &&
+                   GetOffset(nameof(DispatcherFenceTelemetryEntry.FrameId)) == 0 &&
+                   GetOffset(nameof(DispatcherFenceTelemetryEntry.ScheduledJobCount)) == 4 &&
+                   GetOffset(nameof(DispatcherFenceTelemetryEntry.SafetyBypassCount)) == 8 &&
+                   GetOffset(nameof(DispatcherFenceTelemetryEntry.DomainMask)) == 12 &&
+                   GetOffset(nameof(DispatcherFenceTelemetryEntry.SimulationWaitMs)) == 16 &&
+                   GetOffset(nameof(DispatcherFenceTelemetryEntry.FixedWaitMs)) == 20 &&
+                   GetOffset(nameof(DispatcherFenceTelemetryEntry.AupHardFenceMs)) == 24 &&
+                   GetOffset(nameof(DispatcherFenceTelemetryEntry.GlobalQualityWeight)) == 28 &&
+                   GetOffset(nameof(DispatcherFenceTelemetryEntry.MasterSimulationHandleBits)) == 32 &&
+                   GetOffset(nameof(DispatcherFenceTelemetryEntry.PhysicsHandleBits)) == 40 &&
+                   GetOffset(nameof(DispatcherFenceTelemetryEntry.AudioHandleBits)) == 48 &&
+                   GetOffset(nameof(DispatcherFenceTelemetryEntry.NetcodeHandleBits)) == 56;
+        }
+
+        private static int GetOffset(string fieldName)
+        {
+            return Marshal.OffsetOf<DispatcherFenceTelemetryEntry>(fieldName).ToInt32();
+        }
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct DispatcherPipelineTelemetryEntry
     {
-        public uint Frame;
-        public float PreSimulationTimeMs;
-        public float SimWaitTimeMs;
-        public float PostSimulationTimeMs;
-        public float VisualSyncTimeMs;
-        public uint ActiveBucket;
-        public uint SystemCount;
-        public uint Flags;
+        [FieldOffset(0)] public uint Frame;
+        [FieldOffset(4)] public float PreSimulationTimeMs;
+        [FieldOffset(8)] public float SimWaitTimeMs;
+        [FieldOffset(12)] public float PostSimulationTimeMs;
+        [FieldOffset(16)] public float VisualSyncTimeMs;
+        [FieldOffset(20)] public uint ActiveBucket;
+        [FieldOffset(24)] public uint SystemCount;
+        [FieldOffset(28)] public uint Flags;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public partial struct MockTimeDilationSignal
     {
-        public float TimeScale;
-        public float FrameDelta;
-        public uint Frame;
-        public uint SourceHash;
+        [FieldOffset(0)] public float TimeScale;
+        [FieldOffset(4)] public float FrameDelta;
+        [FieldOffset(8)] public uint Frame;
+        [FieldOffset(12)] public uint SourceHash;
     }
 
     public interface IRequire<T>
@@ -112,6 +249,11 @@ namespace Hecton8.Core
         public NativeArray<JobDependencyDTO> JobDependencyTelemetry;
         public uint Frame;
         public uint ActiveBucket;
+    }
+
+    public interface IDispatcherFenceDomainProvider
+    {
+        DispatcherFenceDomain GetFenceDomain();
     }
 
     public sealed class FatalArchitectureException : Exception
@@ -184,9 +326,10 @@ namespace Hecton8.Core
         }
     }
 
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct MockTimeDilationSignalJob : IJob
     {
-        public NativeArray<MockTimeDilationSignal> Signals;
+        [NoAlias] public NativeArray<MockTimeDilationSignal> Signals;
         public int SignalIndex;
         public uint Frame;
         public uint SystemHash;
@@ -204,6 +347,32 @@ namespace Hecton8.Core
             signal.Frame = Frame;
             signal.SourceHash = SystemHash;
             Signals[SignalIndex] = signal;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    public struct DispatcherMockDependencyStressJob : IJob
+    {
+        [NoAlias] public NativeArray<uint> Results;
+        public uint Seed;
+        public int Index;
+        public int Iterations;
+
+        public void Execute()
+        {
+            uint x = Seed ^ unchecked((uint)(Index * 747796405));
+            int count = math.max(64, Iterations);
+            for (int i = 0; i < count; i++)
+            {
+                x ^= x >> 16;
+                x *= 2246822519u;
+                x ^= x >> 13;
+                x *= 3266489917u;
+                x ^= x >> 16;
+            }
+
+            if (Results.IsCreated && (uint)Index < (uint)Results.Length)
+                Results[Index] = x;
         }
     }
 }

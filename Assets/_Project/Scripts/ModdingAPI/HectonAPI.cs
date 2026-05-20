@@ -519,39 +519,22 @@ namespace Hecton8.Modding
         }
 
         /// <summary>
-        /// Localization-facing mod API for runtime translation injection.
+        /// Localization-facing mod API for binary translation envelopes.
         /// </summary>
         public static class Localization
         {
             /// <summary>
-            /// Injects a flat translation table into the live localization owner.
-            /// This is the code-driven equivalent of shipping a <c>lang_xx.json</c> file in the mod directory.
+            /// Rejects runtime localization injection until modded Babel binary envelopes are supported.
             /// </summary>
             /// <param name="language">Target language table to extend.</param>
-            /// <param name="entries">Flat key/value pairs to merge into the live localization table.</param>
-            /// <param name="overwriteExisting">
-            /// True to replace an existing key with the injected value.
-            /// False to preserve the current key owner and only add missing translations.
-            /// </param>
-            public static void InjectTable(
+            /// <param name="babelEnvelope">Future binary/hash localization envelope bytes.</param>
+            public static void InjectBabelEnvelope(
                 GameLanguage language,
-                Dictionary<string, string> entries,
-                bool overwriteExisting = true)
+                ReadOnlySpan<byte> babelEnvelope)
             {
-                if (!ModExecutionScope.HasActiveMod)
-                    throw new IllegalContractException("Mod localization injection must originate from an active mod execution scope.");
-
-                if (entries == null || entries.Count == 0)
-                    return;
-
-                Hecton.Localization.LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
-                if (manager == null)
-                {
-                    Debug.LogWarning("[HectonAPI.Localization] LocalizationManager is unavailable. Injection was skipped.");
-                    return;
-                }
-
-                manager.InjectEntries(language, entries, ModExecutionScope.CurrentModId, overwriteExisting);
+                _ = language;
+                _ = babelEnvelope;
+                throw new IllegalContractException("Mod localization injection is disabled until Babel binary/hash envelopes are supported.");
             }
         }
 

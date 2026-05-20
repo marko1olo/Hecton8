@@ -5,7 +5,6 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Determinism;
 using Hecton8.Core.Memory;
-using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -29,6 +28,19 @@ namespace Hecton8.Networking
         private const string LegacyProfileRelativePath = "Docs/Archive/netcode_latency_profiles.h8bin";
         private const string CsvProfileRelativePath = "netcode_latency_profiles.csv";
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_NETCODE_SURGEON.bin";
+        private const uint CsvHashMaxRollbackFrames = 0x09632D65u;
+        private const uint CsvHashMaxRollbackDepth = 0x5E49FC48u;
+        private const uint CsvHashVisualInterpolationFrames = 0xD47FD347u;
+        private const uint CsvHashVisualInterpolationSeconds = 0x241D8D82u;
+        private const uint CsvHashInputPredictionAggressiveness = 0x9E6F9FA1u;
+        private const uint CsvHashMinQualityForLookRollback = 0xE3B8571Au;
+        private const uint CsvHashInputDelayTicks = 0x5D051806u;
+        private const uint CsvHashInputDelayFrames = 0x3EC0325Eu;
+        private const uint CsvHashRedundancyCount = 0x90EDE57Au;
+        private const uint CsvHashPacketLossPermille = 0xC5CC60C2u;
+        private const uint CsvHashDuplicatePermille = 0x38E0BA0Bu;
+        private const uint CsvHashCadenceFrames = 0x155ED66Cu;
+        private const uint CsvHashMaxMerkleLeaves = 0x49982615u;
 
         private static HectonRollbackNetcodeRuntime _activeInstance;
         private static uint _modeFlags;
@@ -62,6 +74,9 @@ namespace Hecton8.Networking
         private uint _nextCsvPollFrame;
         private int _telemetryWriteIndex;
         private uint _frame;
+        private uint _previousScheduledFrame;
+        private uint _lastScheduledFrame;
+        private int _hasScheduledFrame;
         private uint _lastDumpFrame = uint.MaxValue;
         private string _projectRoot;
         private string _legacyProfilePath;
@@ -206,7 +221,7 @@ namespace Hecton8.Networking
             {
                 Input = input,
                 Frame = frame,
-                Flags = flags | RemoteInputFlags.Received
+                Flags = flags | RemoteInputFlags.Received | RemoteInputFlags.Valid
             };
 
             return true;
@@ -321,6 +336,10 @@ namespace Hecton8.Networking
                 return dependsOn;
 
             uint currentFrame = _frame++;
+            uint previousFrame = _hasScheduledFrame != 0 ? _lastScheduledFrame : currentFrame;
+            _previousScheduledFrame = previousFrame;
+            _lastScheduledFrame = currentFrame;
+            _hasScheduledFrame = 1;
             float quality = ResolveGlobalQualityWeight();
             NativeArray<RollbackTuningDTO> tuningBuffer = _tuningHandle.Resolve(_vault);
             NativeArray<RollbackRuntimeStateDTO> runtime = _runtimeStateHandle.Resolve(_vault);
@@ -349,7 +368,7 @@ namespace Hecton8.Networking
             NativeArray<MockNetworkJitterState64> jitterState = _mockJitterStateHandle.Resolve(_vault);
             NativeArray<double3> rigidbodyAups = ResolveLiveBuffer<double3>(BufferID.RigidbodyAUPs);
             NativeArray<LockstepPlayerKinematicState> playerStates = ResolveLiveBuffer<LockstepPlayerKinematicState>(BufferID.PlayerKinematicState);
-            NativeArray<AbsoluteUniversePosition> entityAups = ResolveLiveBuffer<AbsoluteUniversePosition>(BufferID.EntityAUPs);
+            NativeArray<RollbackAup48> entityAups = ResolveLiveBuffer<RollbackAup48>(BufferID.EntityAUPs);
             NativeArray<float3> entityVelocities = ResolveLiveBuffer<float3>(BufferID.EntityVelocities);
             NativeArray<float> roomWaterLevels = ResolveLiveBuffer<float>(BufferID.RoomWaterLevels);
             NativeArray<uint> entityFlags = ResolveLiveBuffer<uint>(BufferID.EntityFlags);
@@ -447,6 +466,7 @@ namespace Hecton8.Networking
                 QuestMasks = questMasks,
                 PredatorChosenStates = predatorChosenStates,
                 CurrentFrame = currentFrame,
+                PreviousFrame = previousFrame,
                 ModeFlags = _modeFlags,
                 RingFrameCapacity = RollbackNetcodeConstants.StateRingFrameCapacity,
                 SnapshotStrideBytes = _snapshotStrideBytes,
@@ -517,6 +537,7 @@ namespace Hecton8.Networking
 #endif
         }
 
+#if UNITY_EDITOR
         private void OnDrawGizmos()
         {
             if (_activeInstance != this || !TryEnsureBuffers())
@@ -538,6 +559,7 @@ namespace Hecton8.Networking
                 Gizmos.DrawWireSphere(ToVector3(state.InterpolatedLocalMeters), 0.24f);
             }
         }
+#endif
 
         private bool ApplyModeFlags(uint flags)
         {
@@ -571,9 +593,9 @@ namespace Hecton8.Networking
             _stateRingHandle = _vault.GetBufferHandle<byte>(RollbackNetcodeVault.StateRingBuffer, stateRingBytes, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
             _frameSnapshotHandle = _vault.GetBufferHandle<FrameSnapshotDTO>(RollbackNetcodeVault.FrameSnapshots, RollbackNetcodeConstants.StateRingFrameCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
             _runtimeStateHandle = _vault.GetBufferHandle<RollbackRuntimeStateDTO>(RollbackNetcodeVault.RuntimeState, 1, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
-            _remoteInputHandle = _vault.GetBufferHandle<RemoteInputFrameDTO>(RollbackNetcodeVault.RemoteInputRing, RollbackNetcodeConstants.InputRingCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
+            _remoteInputHandle = _vault.GetBufferHandle<RemoteInputFrameDTO>(RollbackNetcodeVault.RemoteInputRing, RollbackNetcodeConstants.InputRingCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
             _tickCommandHandle = _vault.GetBufferHandle<MockTickCommand>(RollbackNetcodeVault.TickCommands, RollbackNetcodeConstants.CommandCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            _visualStateHandle = _vault.GetBufferHandle<VisualStateDTO>(RollbackNetcodeVault.VisualStates, RollbackNetcodeConstants.VisualStateCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.UninitializedMemory);
+            _visualStateHandle = _vault.GetBufferHandle<VisualStateDTO>(RollbackNetcodeVault.VisualStates, RollbackNetcodeConstants.VisualStateCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
             _visualHistoryHandle = _vault.GetBufferHandle<VisualStateHistoryDTO>(RollbackNetcodeVault.VisualHistory, RollbackNetcodeConstants.VisualHistoryCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
             _telemetryHandle = _vault.GetBufferHandle<NetTelemetryEntry64>(RollbackNetcodeVault.TelemetryRing, RollbackNetcodeConstants.TelemetryFrameCapacity, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
             _tuningHandle = _vault.GetBufferHandle<RollbackTuningDTO>(RollbackNetcodeVault.Tuning, 1, RollbackNetcodeVault.OwnerSystem, NativeArrayOptions.ClearMemory);
@@ -797,7 +819,11 @@ namespace Hecton8.Networking
             if (!journal.IsCreated || journal.Length <= 0)
                 return false;
 
-            uint frame = _frame > (uint)delayedFrames ? _frame - (uint)delayedFrames : 0u;
+            uint age = (uint)math.max(0, delayedFrames);
+            uint previousFrame = _hasScheduledFrame != 0 ? _previousScheduledFrame : _frame;
+            if (!RollbackNetcodeMath.TryResolveHistoricalFrame(_frame, previousFrame, age, out uint frame))
+                frame = 0u;
+
             InputStateDTO input = journal[(int)(frame % (uint)journal.Length)];
             input.ButtonMask ^= 1u;
             return InjectRemoteInput(frame, in input, RemoteInputFlags.Received);
@@ -815,7 +841,7 @@ namespace Hecton8.Networking
                 CurrentFrame = frame,
                 GlobalQualityWeight = quality
             };
-            job.Run();
+            job.Execute();
         }
 
         private NativeArray<T> ResolveLiveBuffer<T>(BufferID bufferId) where T : struct
@@ -839,7 +865,7 @@ namespace Hecton8.Networking
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool HasFrameReached(uint currentFrame, uint targetFrame)
         {
-            return (int)(currentFrame - targetFrame) >= 0;
+            return RollbackNetcodeMath.HasFrameReached(currentFrame, targetFrame);
         }
 
         private static RollbackTuningDTO SanitizeTuning(in RollbackTuningDTO source)
@@ -865,11 +891,6 @@ namespace Hecton8.Networking
             return tuning;
         }
 
-        private static Vector3 ToVector3(float3 value)
-        {
-            return new Vector3(value.x, value.y, value.z);
-        }
-
         private void TryRegisterDispatch()
         {
             if (!Application.isPlaying)
@@ -880,6 +901,13 @@ namespace Hecton8.Networking
             if (_registeredLateFrame == 0 && GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core))
                 _registeredLateFrame = 1;
         }
+
+#if UNITY_EDITOR
+        private static Vector3 ToVector3(float3 value)
+        {
+            return new Vector3(value.x, value.y, value.z);
+        }
+#endif
 
         private void ResolveColdPaths()
         {
@@ -1007,36 +1035,28 @@ namespace Hecton8.Networking
         private static void ApplyCsvValue(uint keyHash, int rawValue, int decimalDivisor, ref RollbackTuningDTO tuning)
         {
             float value = decimalDivisor > 1 ? rawValue / (float)decimalDivisor : rawValue;
-            if (keyHash == HashLowerAscii("max_rollback_frames") || keyHash == HashLowerAscii("max_rollback_depth"))
+            if (keyHash == CsvHashMaxRollbackFrames || keyHash == CsvHashMaxRollbackDepth)
                 tuning.MaxRollbackFrames = (int)value;
-            else if (keyHash == HashLowerAscii("visual_interpolation_frames"))
+            else if (keyHash == CsvHashVisualInterpolationFrames)
                 tuning.VisualInterpolationFrames = (int)value;
-            else if (keyHash == HashLowerAscii("visual_interpolation_seconds"))
+            else if (keyHash == CsvHashVisualInterpolationSeconds)
                 tuning.VisualInterpolationSeconds = value;
-            else if (keyHash == HashLowerAscii("input_prediction_aggressiveness"))
+            else if (keyHash == CsvHashInputPredictionAggressiveness)
                 tuning.InputPredictionAggressiveness = value;
-            else if (keyHash == HashLowerAscii("min_quality_for_look_rollback"))
+            else if (keyHash == CsvHashMinQualityForLookRollback)
                 tuning.MinQualityForLookRollback = value;
-            else if (keyHash == HashLowerAscii("input_delay_ticks") || keyHash == HashLowerAscii("input_delay_frames"))
+            else if (keyHash == CsvHashInputDelayTicks || keyHash == CsvHashInputDelayFrames)
                 tuning.InputDelayFrames = (uint)math.max(0, (int)value);
-            else if (keyHash == HashLowerAscii("redundancy_count"))
+            else if (keyHash == CsvHashRedundancyCount)
                 tuning.RedundancyCount = (uint)math.max(1, (int)value);
-            else if (keyHash == HashLowerAscii("packet_loss_permille"))
+            else if (keyHash == CsvHashPacketLossPermille)
                 tuning.PacketLossPermille = (uint)math.max(0, (int)value);
-            else if (keyHash == HashLowerAscii("duplicate_permille"))
+            else if (keyHash == CsvHashDuplicatePermille)
                 tuning.DuplicatePermille = (uint)math.max(0, (int)value);
-            else if (keyHash == HashLowerAscii("hash_cadence_frames"))
+            else if (keyHash == CsvHashCadenceFrames)
                 tuning.HashCadenceFrames = (uint)math.max(1, (int)value);
-            else if (keyHash == HashLowerAscii("max_merkle_leaves"))
+            else if (keyHash == CsvHashMaxMerkleLeaves)
                 tuning.MaxMerkleLeaves = (uint)math.max(1, (int)value);
-        }
-
-        private static uint HashLowerAscii(string key)
-        {
-            uint hash = 2166136261u;
-            for (int i = 0; i < key.Length; i++)
-                hash = (hash ^ (byte)key[i]) * 16777619u;
-            return hash;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

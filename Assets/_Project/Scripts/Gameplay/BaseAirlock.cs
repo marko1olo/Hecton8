@@ -129,18 +129,15 @@ namespace Hecton8.Gameplay
         [Tooltip("Sound played when airlock cycle completes.")]
         [SerializeField] private AudioClip cycleEndSound;
 
-        [Header("Cinematic Bulkhead")]
-        [Tooltip("Door mesh moved by emergency lockdown. No controller-driven animation is used.")]
-        [SerializeField] private Transform emergencyBulkheadDoorMesh;
+        [Header("Mathematical Bulkhead")]
+        [Tooltip("Optional preauthored CSR edge hash. Zero derives a stable hash from this airlock entity id.")]
+        [SerializeField] private uint emergencyBulkheadEdgeHash;
 
-        [Tooltip("Local-space offset applied from the authored open position when the emergency bulkhead seals.")]
-        [SerializeField] private Vector3 emergencyBulkheadClosedLocalOffset = new Vector3(0f, -2.25f, 0f);
+        [Tooltip("Mathematical blocking plane width in meters. Visual closure is GPU shader deformation, not Transform motion.")]
+        [SerializeField, Min(0.25f)] private float emergencyBulkheadWidthMeters = 2.6f;
 
-        [Tooltip("Seconds required for the emergency bulkhead to close or reopen.")]
-        [SerializeField, Min(0.01f)] private float emergencyBulkheadSlideDurationSeconds = 0.5f;
-
-        [Tooltip("Heavy metallic impact played when the lockdown slide reaches the sealed position.")]
-        [SerializeField] private AudioClip emergencyBulkheadClangSound;
+        [Tooltip("Mathematical blocking plane height in meters. KCC reads the data plane instead of colliders.")]
+        [SerializeField, Min(0.25f)] private float emergencyBulkheadHeightMeters = 3.2f;
 
         [Header("Airlock Audio Snapshots")]
         [Tooltip("Audio mixer snapshot used while the player is inside dry base volume.")]
@@ -204,13 +201,10 @@ namespace Hecton8.Gameplay
         private bool _snapBodyUseGravity;
         private float _snapBodyLinearDamping;
         private float _snapBodyAngularDamping;
-        private Vector3 _bulkheadOpenLocalPosition;
-        private Vector3 _bulkheadClosedLocalPosition;
-        private float _bulkheadSlide01;
-        private float _bulkheadSlideTarget01;
-        private bool _bulkheadPoseCaptured;
-        private bool _bulkheadClangPlayed;
+        private float _bulkheadClosureIntent01;
         private int _pressureWhistleFrameOffset;
+        private bool _bulkheadContainmentPublishPending;
+        private byte _bulkheadContainmentRetryTicks;
 
         // Cached references
         private Transform _cachedTransform;
@@ -270,7 +264,7 @@ namespace Hecton8.Gameplay
                 statusLightRenderer = cachedRenderer;
 
             CacheOwningModule();
-            CaptureBulkheadPose();
+            _bulkheadClosureIntent01 = _emergencyLockedDown ? 1f : 0f;
             _pressureWhistleFrameOffset = unchecked((int)EntityId.ToULong(GetEntityId())) & PressureWhistleFrameMask;
         }
 
@@ -283,14 +277,15 @@ namespace Hecton8.Gameplay
             _state = AirlockState.Ready;
             _weldOverrideProgressSeconds = 0f;
             UpdateStatusLight(_emergencyLockedDown ? lockedDownColor : readyColor);
-            SetBulkheadSlideTarget(_emergencyLockedDown ? 1f : 0f);
-            ApplyBulkheadSlideImmediate(_bulkheadSlideTarget01);
+            SetBulkheadClosureIntent(_emergencyLockedDown ? 1f : 0f);
+            PublishBulkheadContainmentState(_emergencyLockedDown);
         }
 
         private void Start()
         {
             CacheOwningModule();
             TryRegister();
+            PublishBulkheadContainmentState(_emergencyLockedDown);
         }
 
         private void OnDisable()
@@ -339,7 +334,9 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void Tick(float deltaTime)
         {
-            AdvanceBulkheadSlide(deltaTime);
+            if (_bulkheadContainmentPublishPending)
+                RetryBulkheadContainmentPublish();
+
             EmitPressureDifferentialWhistle();
 
             if (_playerDockingSnapActive)
@@ -440,6 +437,29 @@ namespace Hecton8.Gameplay
             leftHandAup = default;
             rightHandAup = default;
             toolRotation = Quaternion.identity;
+            if (!TryResolveRepairSnapRuntimePoints(
+                    runtimeHitPoint,
+                    out Vector3 leftRuntime,
+                    out Vector3 rightRuntime,
+                    out toolRotation))
+            {
+                return false;
+            }
+
+            leftHandAup = AbsoluteUniversePosition.FromRuntimePosition(leftRuntime);
+            rightHandAup = AbsoluteUniversePosition.FromRuntimePosition(rightRuntime);
+            return IsFinite(toolRotation);
+        }
+
+        private bool TryResolveRepairSnapRuntimePoints(
+            Vector3 runtimeHitPoint,
+            out Vector3 leftRuntime,
+            out Vector3 rightRuntime,
+            out Quaternion toolRotation)
+        {
+            leftRuntime = default;
+            rightRuntime = default;
+            toolRotation = Quaternion.identity;
             if (!IsFinite(runtimeHitPoint))
                 return false;
 
@@ -449,10 +469,10 @@ namespace Hecton8.Gameplay
             Vector3 forward = NormalizeFiniteOrFallback(airlockTransform.forward, Vector3.forward);
 
             Vector3 handCenter = runtimeHitPoint + up * RepairHandVerticalBiasMeters;
-            leftHandAup = AbsoluteUniversePosition.FromRuntimePosition(handCenter - right * RepairHandHalfSpanMeters);
-            rightHandAup = AbsoluteUniversePosition.FromRuntimePosition(handCenter + right * RepairHandHalfSpanMeters);
+            leftRuntime = handCenter - right * RepairHandHalfSpanMeters;
+            rightRuntime = handCenter + right * RepairHandHalfSpanMeters;
             toolRotation = ResolveBasisRotationNoTrig(forward, up);
-            return IsFinite(toolRotation);
+            return IsFinite(leftRuntime) && IsFinite(rightRuntime) && IsFinite(toolRotation);
         }
 
         public bool TryResolveKinematicRepairSnap(
@@ -462,30 +482,34 @@ namespace Hecton8.Gameplay
             snapPoint = default;
             float3 runtimeHit = probe.HitAup.ToRuntimeFloat3();
             Vector3 runtimeHitPoint = new Vector3(runtimeHit.x, runtimeHit.y, runtimeHit.z);
-            if (!TryResolveRepairSnapPoints(
+            if (!TryResolveRepairSnapRuntimePoints(
                     runtimeHitPoint,
-                    out AbsoluteUniversePosition leftHandAup,
-                    out AbsoluteUniversePosition rightHandAup,
+                    out Vector3 leftRuntimePoint,
+                    out Vector3 rightRuntimePoint,
                     out Quaternion toolRotation))
             {
                 return false;
             }
 
-            float3 leftRuntime = leftHandAup.ToRuntimeFloat3();
-            float3 rightRuntime = rightHandAup.ToRuntimeFloat3();
-            Vector3 runtimeAnchor = new Vector3(
-                (leftRuntime.x + rightRuntime.x) * 0.5f,
-                (leftRuntime.y + rightRuntime.y) * 0.5f,
-                (leftRuntime.z + rightRuntime.z) * 0.5f);
+            if (!TryOffsetAupByRuntimeDelta(in probe.HitAup, runtimeHitPoint, leftRuntimePoint, out AbsoluteUniversePosition leftHandAup) ||
+                !TryOffsetAupByRuntimeDelta(in probe.HitAup, runtimeHitPoint, rightRuntimePoint, out AbsoluteUniversePosition rightHandAup))
+            {
+                return false;
+            }
+
+            Vector3 runtimeAnchor = (leftRuntimePoint + rightRuntimePoint) * 0.5f;
             if (!IsFinite(runtimeAnchor))
                 runtimeAnchor = runtimeHitPoint;
+
+            if (!TryOffsetAupByRuntimeDelta(in probe.HitAup, runtimeHitPoint, runtimeAnchor, out AbsoluteUniversePosition anchorAup))
+                return false;
 
             Vector3 surfaceNormal = TryNormalizeFinite(probe.HitNormal, out Vector3 normalizedHitNormal)
                 ? normalizedHitNormal
                 : toolRotation * Vector3.forward;
             snapPoint = new global::Hecton8.Interaction.KinematicRepairSnapPoint
             {
-                AnchorAup = AbsoluteUniversePosition.FromRuntimePosition(runtimeAnchor),
+                AnchorAup = anchorAup,
                 LeftHandAup = leftHandAup,
                 RightHandAup = rightHandAup,
                 RuntimePosition = runtimeAnchor,
@@ -496,6 +520,28 @@ namespace Hecton8.Gameplay
                 ColliderInstanceId = probe.ColliderInstanceId
             };
             return true;
+        }
+
+        private static bool TryOffsetAupByRuntimeDelta(
+            in AbsoluteUniversePosition referenceAup,
+            Vector3 referenceRuntimePosition,
+            Vector3 targetRuntimePosition,
+            out AbsoluteUniversePosition targetAup)
+        {
+            targetAup = default;
+            if (!MathGuard.IsFinite(in referenceAup) ||
+                !IsFinite(referenceRuntimePosition) ||
+                !IsFinite(targetRuntimePosition))
+            {
+                return false;
+            }
+
+            double3 localDelta = new double3(
+                (double)targetRuntimePosition.x - referenceRuntimePosition.x,
+                (double)targetRuntimePosition.y - referenceRuntimePosition.y,
+                (double)targetRuntimePosition.z - referenceRuntimePosition.z);
+            targetAup = AbsoluteUniversePosition.OffsetMeters(in referenceAup, localDelta);
+            return MathGuard.IsFinite(in targetAup);
         }
 
         /// <inheritdoc />
@@ -874,71 +920,123 @@ namespace Hecton8.Gameplay
                 insideDryVolume ? DryOceanRoarLowPassHz : WetOceanRoarLowPassHz);
         }
 
-        private void CaptureBulkheadPose()
+        private void SetBulkheadClosureIntent(float target01)
         {
-            if (emergencyBulkheadDoorMesh == null || _bulkheadPoseCaptured)
-                return;
-
-            _bulkheadOpenLocalPosition = emergencyBulkheadDoorMesh.localPosition;
-            _bulkheadClosedLocalPosition = _bulkheadOpenLocalPosition + emergencyBulkheadClosedLocalOffset;
-            _bulkheadSlide01 = _emergencyLockedDown ? 1f : 0f;
-            _bulkheadSlideTarget01 = _bulkheadSlide01;
-            _bulkheadPoseCaptured = true;
+            _bulkheadClosureIntent01 = math.saturate(target01);
         }
 
-        private void SetBulkheadSlideTarget(float target01)
+        private static double3 ToBulkheadAbsoluteDouble3(in AbsoluteUniversePosition aup)
         {
-            CaptureBulkheadPose();
-            _bulkheadSlideTarget01 = math.saturate(target01);
-            if (_bulkheadSlideTarget01 >= 1f && _bulkheadSlide01 < 0.999f)
-                _bulkheadClangPlayed = false;
+            double cell = AbsoluteUniversePosition.CellSizeMeters;
+            return new double3(
+                aup.GridX * cell + aup.LocalX,
+                aup.GridY * cell + aup.LocalY,
+                aup.GridZ * cell + aup.LocalZ);
         }
 
-        private void ApplyBulkheadSlideImmediate(float target01)
+        private bool PublishBulkheadContainmentState(bool lockedDown)
         {
-            CaptureBulkheadPose();
-            if (emergencyBulkheadDoorMesh == null)
-                return;
+            uint edgeHash = ResolveBulkheadEdgeHash();
+            Transform frame = _cachedTransform != null ? _cachedTransform : transform;
+            if (!TryResolveAupFromRuntimeOrigin(frame.position, out AbsoluteUniversePosition centerAup))
+            {
+                _bulkheadContainmentPublishPending = true;
+                return false;
+            }
 
-            _bulkheadSlide01 = math.saturate(target01);
-            float eased = SmoothStep01(_bulkheadSlide01);
-            emergencyBulkheadDoorMesh.localPosition = LerpUnclampedVector(
-                _bulkheadOpenLocalPosition,
-                _bulkheadClosedLocalPosition,
-                eased);
-            _bulkheadClangPlayed = _bulkheadSlide01 >= 0.999f;
+            float3 normal = (float3)frame.forward;
+            uint siblingHash = ResolveBulkheadSiblingHash(edgeHash);
+            bool published = BulkheadContainmentIntentBus.TryWriteAirlockBulkheadIntent(
+                GlobalRegistry.DataVault,
+                edgeHash,
+                lockedDown,
+                ToBulkheadAbsoluteDouble3(in centerAup),
+                normal,
+                emergencyBulkheadWidthMeters,
+                emergencyBulkheadHeightMeters,
+                ResolveBulkheadParentIntegrity01(),
+                siblingHash,
+                0u);
+            _bulkheadContainmentPublishPending = !published;
+            if (published)
+                _bulkheadContainmentRetryTicks = 0;
+            return published;
         }
 
-        private void AdvanceBulkheadSlide(float deltaTime)
+        private static bool TryResolveAupFromRuntimeOrigin(
+            Vector3 runtimePosition,
+            out AbsoluteUniversePosition positionAup)
         {
-            CaptureBulkheadPose();
-            if (emergencyBulkheadDoorMesh == null)
+            positionAup = default;
+            if (!IsFinite(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!MathGuard.IsFinite(in originAup))
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return MathGuard.IsFinite(in positionAup);
+        }
+
+        private void RetryBulkheadContainmentPublish()
+        {
+            if (_bulkheadContainmentRetryTicks > 0)
+            {
+                _bulkheadContainmentRetryTicks--;
                 return;
+            }
 
-            float previousSlide = _bulkheadSlide01;
-            float duration = math.max(0.01f, emergencyBulkheadSlideDurationSeconds);
-            float step = math.max(0f, deltaTime) / duration;
-            _bulkheadSlide01 = MoveTowards(_bulkheadSlide01, _bulkheadSlideTarget01, step);
-            if (Approximately(previousSlide, _bulkheadSlide01))
-                return;
+            _bulkheadContainmentRetryTicks = 15;
+            PublishBulkheadContainmentState(_emergencyLockedDown);
+        }
 
-            float eased = SmoothStep01(_bulkheadSlide01);
-            emergencyBulkheadDoorMesh.localPosition = LerpUnclampedVector(
-                _bulkheadOpenLocalPosition,
-                _bulkheadClosedLocalPosition,
-                eased);
+        private uint ResolveBulkheadEdgeHash()
+        {
+            if (emergencyBulkheadEdgeHash != 0u)
+                return emergencyBulkheadEdgeHash;
 
-            if (_bulkheadSlideTarget01 < 1f || _bulkheadSlide01 < 0.999f || _bulkheadClangPlayed)
-                return;
+            ulong entity = EntityId.ToULong(GetEntityId());
+            uint low = (uint)entity;
+            uint high = (uint)(entity >> 32);
+            uint hash = 2166136261u;
+            hash = HashBulkheadLane(hash, low);
+            hash = HashBulkheadLane(hash, high);
+            return hash == 0u ? 1u : hash;
+        }
 
-            _bulkheadClangPlayed = true;
-            if (emergencyBulkheadClangSound != null && GlobalRegistry.Audio != null)
-                GlobalRegistry.Audio.PlayAtPoint(emergencyBulkheadClangSound, _cachedTransform.position, 1f, 0.92f);
+        private uint ResolveBulkheadSiblingHash(uint edgeHash)
+        {
+            BaseModule module = owningModule;
+            if (module == null)
+                return HashBulkheadLane(edgeHash, 0xA11A0C4u);
+
+            ulong moduleEntity = EntityId.ToULong(module.GetEntityId());
+            return HashBulkheadLane(edgeHash, (uint)(moduleEntity ^ (moduleEntity >> 32)));
+        }
+
+        private float ResolveBulkheadParentIntegrity01()
+        {
+            BaseModule module = owningModule;
+            if (module == null || module.MaxIntegrity <= 0.01f)
+                return 1f;
+
+            return math.saturate(module.CurrentIntegrity / math.max(0.01f, module.MaxIntegrity));
+        }
+
+        private static uint HashBulkheadLane(uint hash, uint value)
+        {
+            hash ^= value;
+            hash *= 16777619u;
+            hash ^= hash >> 13;
+            return hash;
         }
 
         private void EmitPressureDifferentialWhistle()
         {
-            if (!_emergencyLockedDown && _bulkheadSlide01 < 0.5f)
+            if (!_emergencyLockedDown && _bulkheadClosureIntent01 < 0.5f)
                 return;
 
             if (((Time.frameCount + _pressureWhistleFrameOffset) & PressureWhistleFrameMask) != 0)
@@ -1246,6 +1344,10 @@ namespace Hecton8.Gameplay
             if (maximumEqualizationSeconds < cycleDuration) maximumEqualizationSeconds = cycleDuration;
             if (environmentSnapshotTransitionSeconds < MinimumEnvironmentSnapshotTransitionSeconds)
                 environmentSnapshotTransitionSeconds = MinimumEnvironmentSnapshotTransitionSeconds;
+            if (emergencyBulkheadWidthMeters < 0.25f)
+                emergencyBulkheadWidthMeters = 0.25f;
+            if (emergencyBulkheadHeightMeters < 0.25f)
+                emergencyBulkheadHeightMeters = 0.25f;
             RebuildLocalizedTextCache();
         }
 
@@ -1319,7 +1421,8 @@ namespace Hecton8.Gameplay
             if (!lockedDown)
                 _lockdownOverrideBlockedByFloodedNeighbor = false;
             _weldOverrideProgressSeconds = 0f;
-            SetBulkheadSlideTarget(lockedDown ? 1f : 0f);
+            SetBulkheadClosureIntent(lockedDown ? 1f : 0f);
+            PublishBulkheadContainmentState(lockedDown);
             if (_state == AirlockState.Ready)
                 UpdateStatusLight(_emergencyLockedDown ? lockedDownColor : readyColor);
 

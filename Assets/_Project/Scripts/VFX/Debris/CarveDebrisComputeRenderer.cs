@@ -798,13 +798,14 @@ namespace Hecton8.VFX.Debris
                 return;
 
             float lifeDelta = dt * lifetimeRcp;
-            new AgeCarveDebrisMirrorJob
+            AgeCarveDebrisMirrorJob ageJob = new AgeCarveDebrisMirrorJob
             {
                 Positions = debrisPositions,
                 Capacity = activeCapacity,
                 LifeDelta = lifeDelta,
                 JobState = jobState
-            }.Run();
+            };
+            ageJob.Execute();
             _activeMirrorCount = math.clamp(jobState[JobStateActiveIndex], 0, activeCapacity);
         }
 
@@ -883,7 +884,7 @@ namespace Hecton8.VFX.Debris
             if (requestCount <= 0)
                 return 0;
 
-            new CarveDebrisInjectBatchJob
+            CarveDebrisInjectBatchJob injectJob = new CarveDebrisInjectBatchJob
             {
                 Positions = debrisPositions,
                 Velocities = debrisVelocities,
@@ -891,7 +892,8 @@ namespace Hecton8.VFX.Debris
                 RequestCount = requestCount,
                 Capacity = activeCapacity,
                 JobState = jobState
-            }.Run();
+            };
+            injectJob.Execute();
 
             int dirtyMin = jobState[JobStateDirtyMinIndex];
             int dirtyMax = jobState[JobStateDirtyMaxIndex];
@@ -2140,7 +2142,7 @@ namespace Hecton8.VFX.Debris
             destination.UnlockBufferAfterWrite<T>(safeCount);
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct AgeCarveDebrisMirrorJob : IJob
         {
             public NativeArray<float4> Positions;
@@ -2192,7 +2194,7 @@ namespace Hecton8.VFX.Debris
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct CarveDebrisInjectBatchJob : IJob
         {
             public NativeArray<float4> Positions;

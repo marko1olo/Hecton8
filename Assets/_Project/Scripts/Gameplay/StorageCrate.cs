@@ -51,7 +51,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
-    public sealed class StorageCrate : MonoBehaviour, IInteractable, ILocalizationLanguageChangedListener
+    public sealed class StorageCrate : MonoBehaviour, IInteractable, ILocalizationLanguageChangedListener, IStorageReservationCommitTarget
     {
         private const string DefaultOpenText = "Open Crate";
         private const string DefaultAccessText = "Access Crate";

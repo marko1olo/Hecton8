@@ -1,0 +1,2328 @@
+{
+  "criticalCount": 290,
+  "filesScanned": 1580,
+  "findings": [
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 316,
+      "path": "Assets/_Project/Scripts/AtlasSignal/Atlas6DirectiveSystem.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 328,
+      "path": "Assets/_Project/Scripts/AtlasSignal/Atlas6DirectiveSystem.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 308,
+      "path": "Assets/_Project/Scripts/AtlasSignal/AtlasSignalEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 320,
+      "path": "Assets/_Project/Scripts/AtlasSignal/AtlasSignalEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 789,
+      "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 790,
+      "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 5932,
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 5933,
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 5935,
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 657,
+      "path": "Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 669,
+      "path": "Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 355,
+      "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 248,
+      "path": "Assets/_Project/Scripts/AudioLog/AudioLogEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 260,
+      "path": "Assets/_Project/Scripts/AudioLog/AudioLogEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 793,
+      "path": "Assets/_Project/Scripts/AudioLog/AudioLogSystem.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 274,
+      "path": "Assets/_Project/Scripts/BiomeMatrixDirector.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 286,
+      "path": "Assets/_Project/Scripts/BiomeMatrixDirector.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 240,
+      "path": "Assets/_Project/Scripts/Bootstrap/BootstrapEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 252,
+      "path": "Assets/_Project/Scripts/Bootstrap/BootstrapEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 609,
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 621,
+      "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 174,
+      "path": "Assets/_Project/Scripts/CaveGraphGenerator.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 178,
+      "path": "Assets/_Project/Scripts/CaveGraphGenerator.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 182,
+      "path": "Assets/_Project/Scripts/CaveGraphGenerator.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 186,
+      "path": "Assets/_Project/Scripts/CaveGraphGenerator.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 239,
+      "path": "Assets/_Project/Scripts/CaveGraphGenerator.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 552,
+      "path": "Assets/_Project/Scripts/CaveGraphGenerator.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1544,
+      "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 292,
+      "path": "Assets/_Project/Scripts/Construction/FluidPipeGraphRuntime.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 198,
+      "path": "Assets/_Project/Scripts/Construction/RepairDroneEntity.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 210,
+      "path": "Assets/_Project/Scripts/Construction/RepairDroneEntity.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1112,
+      "path": "Assets/_Project/Scripts/ConstructionManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 488,
+      "path": "Assets/_Project/Scripts/CraftingEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 500,
+      "path": "Assets/_Project/Scripts/CraftingEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 280,
+      "path": "Assets/_Project/Scripts/EncounterDirector.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 281,
+      "path": "Assets/_Project/Scripts/EncounterDirector.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 282,
+      "path": "Assets/_Project/Scripts/EncounterDirector.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 283,
+      "path": "Assets/_Project/Scripts/EncounterDirector.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 284,
+      "path": "Assets/_Project/Scripts/EncounterDirector.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 285,
+      "path": "Assets/_Project/Scripts/EncounterDirector.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 290,
+      "path": "Assets/_Project/Scripts/EncounterDirector.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 252,
+      "path": "Assets/_Project/Scripts/Environment/WeatherEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 264,
+      "path": "Assets/_Project/Scripts/Environment/WeatherEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1343,
+      "path": "Assets/_Project/Scripts/Fabricator.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 654,
+      "path": "Assets/_Project/Scripts/FlowFieldVisualizer.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 669,
+      "path": "Assets/_Project/Scripts/FlowFieldVisualizer.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 939,
+      "path": "Assets/_Project/Scripts/FlowFieldVisualizer.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 940,
+      "path": "Assets/_Project/Scripts/FlowFieldVisualizer.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1119,
+      "path": "Assets/_Project/Scripts/FlowFieldVisualizer.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 363,
+      "path": "Assets/_Project/Scripts/Gameplay/BaseAirlockEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 374,
+      "path": "Assets/_Project/Scripts/Gameplay/BaseAirlockEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 937,
+      "path": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 947,
+      "path": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 941,
+      "path": "Assets/_Project/Scripts/Gameplay/DataArchaeologyRuntime.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 947,
+      "path": "Assets/_Project/Scripts/Gameplay/DataArchaeologyRuntime.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 262,
+      "path": "Assets/_Project/Scripts/Gameplay/EclipseGameplaySystem.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 274,
+      "path": "Assets/_Project/Scripts/Gameplay/EclipseGameplaySystem.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 300,
+      "path": "Assets/_Project/Scripts/Gameplay/EndingSystem.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 312,
+      "path": "Assets/_Project/Scripts/Gameplay/EndingSystem.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 257,
+      "path": "Assets/_Project/Scripts/Gameplay/FirstHourDirector.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 269,
+      "path": "Assets/_Project/Scripts/Gameplay/FirstHourDirector.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 688,
+      "path": "Assets/_Project/Scripts/Gameplay/HazardZoneManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 404,
+      "path": "Assets/_Project/Scripts/Gameplay/HectonSubmarineOS.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 416,
+      "path": "Assets/_Project/Scripts/Gameplay/HectonSubmarineOS.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 226,
+      "path": "Assets/_Project/Scripts/Gameplay/PlayerExpressionManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 238,
+      "path": "Assets/_Project/Scripts/Gameplay/PlayerExpressionManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 323,
+      "path": "Assets/_Project/Scripts/Gameplay/PlayerSignalEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 334,
+      "path": "Assets/_Project/Scripts/Gameplay/PlayerSignalEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 345,
+      "path": "Assets/_Project/Scripts/Gameplay/PlayerSignalEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 356,
+      "path": "Assets/_Project/Scripts/Gameplay/PlayerSignalEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 367,
+      "path": "Assets/_Project/Scripts/Gameplay/PlayerSignalEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 378,
+      "path": "Assets/_Project/Scripts/Gameplay/PlayerSignalEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 455,
+      "path": "Assets/_Project/Scripts/Gameplay/RandomEventSystem.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 466,
+      "path": "Assets/_Project/Scripts/Gameplay/RandomEventSystem.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 477,
+      "path": "Assets/_Project/Scripts/Gameplay/RandomEventSystem.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 488,
+      "path": "Assets/_Project/Scripts/Gameplay/RandomEventSystem.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 499,
+      "path": "Assets/_Project/Scripts/Gameplay/RandomEventSystem.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 510,
+      "path": "Assets/_Project/Scripts/Gameplay/RandomEventSystem.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 124,
+      "path": "Assets/_Project/Scripts/Gameplay/SuitMeshUpdateEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 136,
+      "path": "Assets/_Project/Scripts/Gameplay/SuitMeshUpdateEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 151,
+      "path": "Assets/_Project/Scripts/Gameplay/VehicleCommandSignals.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 163,
+      "path": "Assets/_Project/Scripts/Gameplay/VehicleCommandSignals.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 271,
+      "path": "Assets/_Project/Scripts/HectonAtmosphereManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 283,
+      "path": "Assets/_Project/Scripts/HectonAtmosphereManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 334,
+      "path": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 346,
+      "path": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 327,
+      "path": "Assets/_Project/Scripts/HectonDirectorAI.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 339,
+      "path": "Assets/_Project/Scripts/HectonDirectorAI.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 4528,
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 129,
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 392,
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 6525,
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 6998,
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1042,
+      "path": "Assets/_Project/Scripts/HectonWorldGenerator.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 396,
+      "path": "Assets/_Project/Scripts/Interaction/InteractionEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 408,
+      "path": "Assets/_Project/Scripts/Interaction/InteractionEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1084,
+      "path": "Assets/_Project/Scripts/Interaction/PhysicalHandController.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1087,
+      "path": "Assets/_Project/Scripts/Interaction/PhysicalHandController.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1090,
+      "path": "Assets/_Project/Scripts/Interaction/PhysicalHandController.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1093,
+      "path": "Assets/_Project/Scripts/Interaction/PhysicalHandController.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1096,
+      "path": "Assets/_Project/Scripts/Interaction/PhysicalHandController.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 80,
+      "path": "Assets/_Project/Scripts/Interaction/PhysicalToolGripOffsets.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 414,
+      "path": "Assets/_Project/Scripts/InventoryEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 426,
+      "path": "Assets/_Project/Scripts/InventoryEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 605,
+      "path": "Assets/_Project/Scripts/LocalizationEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 617,
+      "path": "Assets/_Project/Scripts/LocalizationEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 130,
+      "path": "Assets/_Project/Scripts/MapMagicBridge.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 142,
+      "path": "Assets/_Project/Scripts/MapMagicBridge.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 311,
+      "path": "Assets/_Project/Scripts/ModdingAPI/ModCommandDispatcher.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 317,
+      "path": "Assets/_Project/Scripts/ModdingAPI/ModCommandDispatcher.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 323,
+      "path": "Assets/_Project/Scripts/ModdingAPI/ModCommandDispatcher.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 329,
+      "path": "Assets/_Project/Scripts/ModdingAPI/ModCommandDispatcher.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 335,
+      "path": "Assets/_Project/Scripts/ModdingAPI/ModCommandDispatcher.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 341,
+      "path": "Assets/_Project/Scripts/ModdingAPI/ModCommandDispatcher.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 347,
+      "path": "Assets/_Project/Scripts/ModdingAPI/ModCommandDispatcher.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 141,
+      "path": "Assets/_Project/Scripts/ModdingAPI/ModEventProjectionBridge.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 313,
+      "path": "Assets/_Project/Scripts/ModdingAPI/ModRegistryEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 325,
+      "path": "Assets/_Project/Scripts/ModdingAPI/ModRegistryEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 299,
+      "path": "Assets/_Project/Scripts/ModuleStatusEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 311,
+      "path": "Assets/_Project/Scripts/ModuleStatusEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 390,
+      "path": "Assets/_Project/Scripts/Narrative/Campaign/MetaCampaignService.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 396,
+      "path": "Assets/_Project/Scripts/Narrative/Campaign/MetaCampaignService.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 402,
+      "path": "Assets/_Project/Scripts/NarrativeEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 414,
+      "path": "Assets/_Project/Scripts/NarrativeEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 493,
+      "path": "Assets/_Project/Scripts/ObjectPoolDiagnostics.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 505,
+      "path": "Assets/_Project/Scripts/ObjectPoolDiagnostics.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 320,
+      "path": "Assets/_Project/Scripts/Optimization/AssetLoadDispatcher.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 865,
+      "path": "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 188,
+      "path": "Assets/_Project/Scripts/PerformanceMonitor.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 200,
+      "path": "Assets/_Project/Scripts/PerformanceMonitor.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 198,
+      "path": "Assets/_Project/Scripts/PlayerFlashlight.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 210,
+      "path": "Assets/_Project/Scripts/PlayerFlashlight.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 367,
+      "path": "Assets/_Project/Scripts/PlayerPDA.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 379,
+      "path": "Assets/_Project/Scripts/PlayerPDA.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1515,
+      "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1518,
+      "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1521,
+      "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1524,
+      "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1527,
+      "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1538,
+      "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1541,
+      "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1544,
+      "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1909,
+      "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 3773,
+      "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 3801,
+      "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 229,
+      "path": "Assets/_Project/Scripts/Power/PowerGridTelemetryEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 241,
+      "path": "Assets/_Project/Scripts/Power/PowerGridTelemetryEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 35,
+      "path": "Assets/_Project/Scripts/Power/WfcOutpostGridRegistry.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 239,
+      "path": "Assets/_Project/Scripts/Quest/QuestEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 251,
+      "path": "Assets/_Project/Scripts/Quest/QuestEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 60,
+      "path": "Assets/_Project/Scripts/Quest/QuestGraphEvaluator.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 409,
+      "path": "Assets/_Project/Scripts/Quest/QuestStateManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 410,
+      "path": "Assets/_Project/Scripts/Quest/QuestStateManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 376,
+      "path": "Assets/_Project/Scripts/RaycastBatchHelper.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 387,
+      "path": "Assets/_Project/Scripts/RaycastBatchHelper.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 494,
+      "path": "Assets/_Project/Scripts/SaveEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 506,
+      "path": "Assets/_Project/Scripts/SaveEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 586,
+      "path": "Assets/_Project/Scripts/ScanEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 598,
+      "path": "Assets/_Project/Scripts/ScanEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 52,
+      "path": "Assets/_Project/Scripts/SeamRegistry.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 7190,
+      "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 7202,
+      "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 7215,
+      "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 7367,
+      "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 7373,
+      "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 7434,
+      "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 7444,
+      "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 9703,
+      "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 9715,
+      "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 261,
+      "path": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 273,
+      "path": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 526,
+      "path": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 538,
+      "path": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 213,
+      "path": "Assets/_Project/Scripts/SubmarineElectrolysisModule.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 225,
+      "path": "Assets/_Project/Scripts/SubmarineElectrolysisModule.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 86,
+      "path": "Assets/_Project/Scripts/TerrainChunkGeneratedEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 304,
+      "path": "Assets/_Project/Scripts/UI/BaseIntegrityHUD.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 316,
+      "path": "Assets/_Project/Scripts/UI/BaseIntegrityHUD.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1032,
+      "path": "Assets/_Project/Scripts/UI/FakeRadarBlipController.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 325,
+      "path": "Assets/_Project/Scripts/UI/NotificationEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 337,
+      "path": "Assets/_Project/Scripts/UI/NotificationEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 233,
+      "path": "Assets/_Project/Scripts/UI/PDAIntrusionManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 245,
+      "path": "Assets/_Project/Scripts/UI/PDAIntrusionManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 592,
+      "path": "Assets/_Project/Scripts/UI/WristHologramHudRuntime.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 598,
+      "path": "Assets/_Project/Scripts/UI/WristHologramHudRuntime.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 930,
+      "path": "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 698,
+      "path": "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 709,
+      "path": "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 720,
+      "path": "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 731,
+      "path": "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 742,
+      "path": "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 753,
+      "path": "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 764,
+      "path": "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 775,
+      "path": "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 786,
+      "path": "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 797,
+      "path": "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 808,
+      "path": "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 819,
+      "path": "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 147,
+      "path": "Assets/_Project/Scripts/VoxelChunkModifiedEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 616,
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1278,
+      "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 191,
+      "path": "Assets/_Project/Scripts/World/DepthZoneDirector.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 203,
+      "path": "Assets/_Project/Scripts/World/DepthZoneDirector.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 684,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 686,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 692,
+      "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 208,
+      "path": "Assets/_Project/Scripts/World/EmergencyServiceRelayEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 220,
+      "path": "Assets/_Project/Scripts/World/EmergencyServiceRelayEvents.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 649,
+      "path": "Assets/_Project/Scripts/World/FaunaSpatialHashRegistry.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1668,
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1669,
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1670,
+      "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 336,
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 339,
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 342,
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 348,
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 357,
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 363,
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 366,
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 345,
+      "path": "Assets/_Project/Scripts/World/HectonDistantLandmarkRenderer.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 236,
+      "path": "Assets/_Project/Scripts/World/HectonHLODRenderer.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 219,
+      "path": "Assets/_Project/Scripts/World/HectonIndirectVegetationContracts.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1314,
+      "path": "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1315,
+      "path": "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1933,
+      "path": "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 121,
+      "path": "Assets/_Project/Scripts/World/HectonSpatialHash.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 271,
+      "path": "Assets/_Project/Scripts/World/HectonSpatialHash.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 274,
+      "path": "Assets/_Project/Scripts/World/HectonSpatialHash.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 277,
+      "path": "Assets/_Project/Scripts/World/HectonSpatialHash.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 289,
+      "path": "Assets/_Project/Scripts/World/HectonSpatialHash.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 314,
+      "path": "Assets/_Project/Scripts/World/HectonSpatialHash.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 317,
+      "path": "Assets/_Project/Scripts/World/HectonSpatialHash.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 320,
+      "path": "Assets/_Project/Scripts/World/HectonSpatialHash.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 323,
+      "path": "Assets/_Project/Scripts/World/HectonSpatialHash.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 962,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 966,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 978,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 982,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 986,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 988,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1001,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1003,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 2412,
+      "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1780,
+      "path": "Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1793,
+      "path": "Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1796,
+      "path": "Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 160,
+      "path": "Assets/_Project/Scripts/World/ProxyLightRegistry.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 161,
+      "path": "Assets/_Project/Scripts/World/ProxyLightRegistry.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 163,
+      "path": "Assets/_Project/Scripts/World/ProxyLightRegistry.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 987,
+      "path": "Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 999,
+      "path": "Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1011,
+      "path": "Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1023,
+      "path": "Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 3110,
+      "path": "Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 4530,
+      "path": "Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 435,
+      "path": "Assets/_Project/Scripts/World/SoundscapeSystem.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 447,
+      "path": "Assets/_Project/Scripts/World/SoundscapeSystem.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1086,
+      "path": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1095,
+      "path": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1378,
+      "path": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1795,
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1807,
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1819,
+      "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1607,
+      "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1623,
+      "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1625,
+      "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1627,
+      "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1629,
+      "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1631,
+      "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1633,
+      "path": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1156,
+      "path": "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 212,
+      "path": "Assets/_Project/Scripts/World/WreckMaterialRegistry.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 213,
+      "path": "Assets/_Project/Scripts/World/WreckMaterialRegistry.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 214,
+      "path": "Assets/_Project/Scripts/World/WreckMaterialRegistry.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 215,
+      "path": "Assets/_Project/Scripts/World/WreckMaterialRegistry.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 227,
+      "path": "Assets/_Project/Scripts/World/WreckMaterialRegistry.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 233,
+      "path": "Assets/_Project/Scripts/World/WreckMaterialRegistry.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 239,
+      "path": "Assets/_Project/Scripts/World/WreckMaterialRegistry.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 618,
+      "path": "Assets/_Project/Scripts/World/WreckMaterialRegistry.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 1400,
+      "path": "Assets/_Project/Scripts/WorldGenerativeGeologyVoxelBridgeDirector.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 203,
+      "path": "Assets/_Project/Scripts/WorldProceduralScatterDirectorMigratorySargassum.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 205,
+      "path": "Assets/_Project/Scripts/WorldProceduralScatterDirectorMigratorySargassum.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 207,
+      "path": "Assets/_Project/Scripts/WorldProceduralScatterDirectorMigratorySargassum.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 209,
+      "path": "Assets/_Project/Scripts/WorldProceduralScatterDirectorMigratorySargassum.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 211,
+      "path": "Assets/_Project/Scripts/WorldProceduralScatterDirectorMigratorySargassum.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 213,
+      "path": "Assets/_Project/Scripts/WorldProceduralScatterDirectorMigratorySargassum.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 152,
+      "path": "Assets/_Project/Scripts/WorldProceduralScatterWorkingMemory.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 159,
+      "path": "Assets/_Project/Scripts/WorldProceduralScatterWorkingMemory.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 160,
+      "path": "Assets/_Project/Scripts/WorldProceduralScatterWorkingMemory.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
+      "line": 161,
+      "path": "Assets/_Project/Scripts/WorldProceduralScatterWorkingMemory.cs",
+      "rule": "DIRECT_NATIVE_ALLOCATION",
+      "scanner": "Vault_Sovereignty",
+      "severity": 2
+    }
+  ],
+  "scanner": "Vault_Sovereignty",
+  "warningCount": 0
+}

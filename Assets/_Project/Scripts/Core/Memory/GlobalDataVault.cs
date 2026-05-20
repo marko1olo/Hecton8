@@ -4,9 +4,11 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Core.Contracts;
+using Unity.Burst;
 using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using Unity.Jobs;
 using Unity.Mathematics;
 
 namespace Hecton8.Core.Memory
@@ -107,11 +109,54 @@ namespace Hecton8.Core.Memory
         /// <summary>Returns a generation-checked handle for a persistent buffer, growing the vault buffer when required.</summary>
         VaultBufferHandle<T> GetBufferHandle<T>(BufferID bufferId, int requiredLength, SystemID requester, NativeArrayOptions options = NativeArrayOptions.ClearMemory) where T : struct;
 
+        /// <summary>Returns the 16-byte generation descriptor for a persistent buffer, growing the vault buffer when required.</summary>
+        VaultGenerationHandle<T> GetGenerationHandle<T>(BufferID bufferId, int requiredLength, SystemID requester, NativeArrayOptions options = NativeArrayOptions.ClearMemory) where T : struct;
+
         /// <summary>Attempts to read an existing buffer without creating or growing it.</summary>
         bool TryGetBuffer<T>(BufferID bufferId, out NativeArray<T> buffer) where T : struct;
 
         /// <summary>Attempts to read an existing generation-checked handle without creating or growing it.</summary>
         bool TryGetBufferHandle<T>(BufferID bufferId, out VaultBufferHandle<T> handle) where T : struct;
+
+        /// <summary>Attempts to read an existing 16-byte generation descriptor without creating or growing it.</summary>
+        bool TryGetGenerationHandle<T>(BufferID bufferId, out VaultGenerationHandle<T> handle) where T : struct;
+
+        /// <summary>Resolves a 16-byte generation descriptor into a transient native view for the current phase.</summary>
+        bool TryResolveHandle<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct;
+
+        /// <summary>Legacy bridge: resolves a cached VaultBufferHandle without trusting its cached pointer.</summary>
+        bool TryResolveHandle<T>(in VaultBufferHandle<T> handle, out NativeArray<T> buffer) where T : struct;
+
+        /// <summary>Resolves a generation slice descriptor into a transient native sub-view for the current phase.</summary>
+        bool TryResolveSlice<T>(in VaultSliceHandle<T> handle, out NativeArray<T> slice) where T : struct;
+
+        /// <summary>Returns a safe slice descriptor without exposing a raw pointer across phases.</summary>
+        bool TryAcquireSliceHandle<T>(
+            BufferID bufferId,
+            int requiredLength,
+            int startIndex,
+            int count,
+            SystemID requester,
+            out VaultSliceHandle<T> slice,
+            NativeArrayOptions options = NativeArrayOptions.UninitializedMemory) where T : struct;
+
+        /// <summary>Attempts to acquire an explicit writer fence for one generation handle.</summary>
+        bool TryAcquireWriteLock<T>(in VaultGenerationHandle<T> handle, SystemID systemID, out NativeArray<T> buffer) where T : struct;
+
+        /// <summary>Legacy bridge: attempts to acquire a writer fence without trusting the cached pointer.</summary>
+        bool TryAcquireWriteLock<T>(in VaultBufferHandle<T> handle, SystemID systemID, out NativeArray<T> buffer) where T : struct;
+
+        /// <summary>Releases a writer fence acquired by <see cref="TryAcquireWriteLock{T}"/>.</summary>
+        bool ReleaseWriteLock<T>(in VaultGenerationHandle<T> handle, SystemID systemID) where T : struct;
+
+        /// <summary>Legacy bridge: releases a writer fence without trusting the cached pointer.</summary>
+        bool ReleaseWriteLock<T>(in VaultBufferHandle<T> handle, SystemID systemID) where T : struct;
+
+        /// <summary>Releases one reference to a vault buffer and invalidates stale generation descriptors.</summary>
+        bool ReleaseBuffer<T>(in VaultGenerationHandle<T> handle) where T : struct;
+
+        /// <summary>Legacy bridge: releases one reference to a vault buffer without trusting the cached pointer.</summary>
+        bool ReleaseBuffer<T>(in VaultBufferHandle<T> handle) where T : struct;
 
         /// <summary>Attempts to acquire a pointer slice from a cache-line-aligned vault block; non-zero startIndex alignment depends on stride and offset.</summary>
         bool TryAcquireSlice<T>(
@@ -124,6 +169,7 @@ namespace Hecton8.Core.Memory
             NativeArrayOptions options = NativeArrayOptions.UninitializedMemory) where T : struct;
 
         /// <summary>Validates or refreshes a generation-checked handle; unsafe stale metadata fails fast.</summary>
+        [Obsolete("Legacy pointer-refresh path. Use TryResolveHandle(in handle, out NativeArray<T>) so cached ptr is ignored.", false)]
         bool ResolveBuffer<T>(ref VaultBufferHandle<T> handle) where T : struct;
 
         /// <summary>Attempts to read the current generation for a buffer.</summary>
@@ -140,6 +186,14 @@ namespace Hecton8.Core.Memory
 
         /// <summary>Releases scene-owned vault buffers and reports any locked or corrupt survivors.</summary>
         int ReleaseSceneOwnedBuffers(out long releasedBytes, out int remainingCount, out long remainingBytes, out int lockedCount);
+
+        /// <summary>PRE_SIMULATION orphan sweep using an unmanaged live-owner table; returns reclaimed buffer count.</summary>
+        int SweepOrphanedHandles(
+            NativeArray<SystemID> liveOwners,
+            int liveOwnerCount,
+            MemoryDefragPhase phase,
+            uint activeBurstLockMask,
+            out long releasedBytes);
 
         /// <summary>Counts scene-owned vault buffers that still occupy the reusable arena.</summary>
         int CountSceneOwnedBuffers(out long bytes, out int lockedCount);
@@ -186,16 +240,33 @@ namespace Hecton8.Core.Memory
 
         /// <summary>Runs cold fragmentation maintenance from a dispatcher phase with explicit job-lock state.</summary>
         void FrostTickDefrag(float elapsedSeconds, float systemStress01, MemoryDefragPhase phase, uint activeBurstLockMask);
+
+        /// <summary>Editor-only command hook; actual relocation still runs through the PRE_SIMULATION fence.</summary>
+        void RequestEditorForceDefragmentation();
+    }
+
+    /// <summary>
+    /// Raw 16-byte generation descriptor. No pointer, no properties, no managed state.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    public struct VaultGenerationHandle<T> where T : struct
+    {
+        [FieldOffset(0)] public uint BufferID;
+        [FieldOffset(4)] public uint SystemID;
+        [FieldOffset(8)] public uint Generation;
+        [FieldOffset(12)] public uint Flags;
     }
 
     /// <summary>
     /// Generation-checked vault buffer handle. Resolve before dereferencing across frames.
     /// </summary>
     /// <typeparam name="T">Blittable element type.</typeparam>
+    [Obsolete("Legacy pointer-bearing handle. Persist VaultGenerationHandle<T>; use this type only as a migration bridge.", false)]
     [StructLayout(LayoutKind.Sequential, Size = 24)]
     public unsafe struct VaultBufferHandle<T> where T : struct
     {
         /// <summary>Cached raw pointer. Resolver refreshes it after allowed generation bumps; unsafe stale metadata fails fast.</summary>
+        [Obsolete("Do not store or dereference cached Vault pointers. Persist VaultGenerationHandle<T> and resolve a transient NativeArray each phase.", false)]
         public void* ptr;
 
         /// <summary>Cached buffer generation.</summary>
@@ -216,17 +287,30 @@ namespace Hecton8.Core.Memory
         /// <summary>True when the handle currently points at a vault buffer.</summary>
         public bool IsCreated => ptr != null && BufferId != BufferID.Unknown && Length > 0;
 
+        /// <summary>Returns the pointer-free descriptor form used by the strict generation resolver.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public VaultGenerationHandle<T> ToGenerationHandle(SystemID requester = SystemID.Unknown)
+        {
+            VaultGenerationHandle<T> handle = default;
+            handle.BufferID = unchecked((uint)(int)BufferId);
+            handle.SystemID = requester == SystemID.Unknown ? 0u : (uint)requester;
+            handle.Generation = generation;
+            handle.Flags = 0u;
+            return handle;
+        }
+
         /// <summary>
         /// Resolves the handle and returns a NativeArray view over the current pointer.
         /// </summary>
         /// <param name="vault">Owning vault.</param>
         /// <returns>Current buffer view, or default when unavailable.</returns>
+        [Obsolete("Use IDataVault.TryResolveHandle(in handle, out NativeArray<T>) and keep the NativeArray local to the execution phase.", false)]
         public NativeArray<T> Resolve(IDataVault vault)
         {
-            if (vault == null || !vault.ResolveBuffer(ref this))
+            if (vault == null || !vault.TryResolveHandle(in this, out NativeArray<T> buffer))
                 return default;
 
-            return H8Memory.CreateNativeArrayView<T>(ptr, Length);
+            return buffer;
         }
 
         /// <summary>
@@ -234,9 +318,13 @@ namespace Hecton8.Core.Memory
         /// </summary>
         /// <param name="vault">Owning vault.</param>
         /// <returns>Current pointer, or null when unavailable.</returns>
+        [Obsolete("Raw pointer leases are phase-local only. Prefer TryResolveHandle and pass NativeArray<T> into the job immediately.", false)]
         public void* ResolvePointer(IDataVault vault)
         {
-            return vault != null && vault.ResolveBuffer(ref this) ? ptr : null;
+            if (vault == null || !vault.TryResolveHandle(in this, out NativeArray<T> buffer) || !buffer.IsCreated)
+                return null;
+
+            return NativeArrayUnsafeUtility.GetUnsafePtr(buffer);
         }
 
         /// <summary>
@@ -245,17 +333,18 @@ namespace Hecton8.Core.Memory
         /// <param name="vault">Owning vault.</param>
         /// <param name="index">Element index inside the buffer.</param>
         /// <returns>Reference to the exact element address.</returns>
+        [Obsolete("Resolve a phase-local NativeArray through IDataVault.TryResolveHandle, then take refs from that local view.", false)]
         public ref T GetElementAsRef(IDataVault vault, int index)
         {
-            void* basePtr = ResolvePointer(vault);
-            if (basePtr == null || (uint)index >= (uint)Length || Stride != UnsafeUtility.SizeOf<T>())
+            NativeArray<T> buffer = Resolve(vault);
+            if (!buffer.IsCreated || (uint)index >= (uint)buffer.Length)
                 FatalMemoryException.ThrowStaleVaultHandle();
 
+            void* basePtr = NativeArrayUnsafeUtility.GetUnsafePtr(buffer);
             Hint.Assume(basePtr != null);
             Hint.Assume(index >= 0);
-            Hint.Assume(index < Length);
-            Hint.Assume(Stride == UnsafeUtility.SizeOf<T>());
-            return ref UnsafeUtility.AsRef<T>((byte*)basePtr + (index * Stride));
+            Hint.Assume(index < buffer.Length);
+            return ref UnsafeUtility.AsRef<T>((byte*)basePtr + (index * UnsafeUtility.SizeOf<T>()));
         }
 
         /// <summary>
@@ -264,6 +353,7 @@ namespace Hecton8.Core.Memory
         /// <param name="vault">Owning vault.</param>
         /// <param name="index">Element index inside the buffer.</param>
         /// <returns>Read-only reference to the exact element address.</returns>
+        [Obsolete("Resolve a phase-local NativeArray through IDataVault.TryResolveHandle, then take refs from that local view.", false)]
         public ref readonly T GetElementAsReadOnlyRef(IDataVault vault, int index)
         {
             return ref GetElementAsRef(vault, index);
@@ -276,19 +366,38 @@ namespace Hecton8.Core.Memory
         /// <param name="index">Element index to clear.</param>
         /// <param name="aliveMask">Single 64-entity alive mask owned by the caller.</param>
         /// <returns>True when the payload was cleared.</returns>
+        [Obsolete("Use a generation-resolved phase-local NativeArray and tombstone through the owning system's write phase.", false)]
         public bool TryTombstoneElement(IDataVault vault, int index, ref ulong aliveMask)
         {
-            void* basePtr = ResolvePointer(vault);
-            if (basePtr == null || (uint)index >= (uint)Length || Stride <= 0)
+            NativeArray<T> buffer = Resolve(vault);
+            if (!buffer.IsCreated || (uint)index >= (uint)buffer.Length)
                 return false;
 
             aliveMask &= ~(1UL << (index & 63));
+            void* basePtr = NativeArrayUnsafeUtility.GetUnsafePtr(buffer);
+            int stride = UnsafeUtility.SizeOf<T>();
             Hint.Assume(basePtr != null);
             Hint.Assume(index >= 0);
-            Hint.Assume(index < Length);
-            UnsafeUtility.MemClear((byte*)basePtr + (index * Stride), Stride);
+            Hint.Assume(index < buffer.Length);
+            UnsafeUtility.MemClear((byte*)basePtr + (index * stride), stride);
             return true;
         }
+    }
+
+    /// <summary>
+    /// Pointer-free slice descriptor derived from a generation handle. Size: 32 bytes.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct VaultSliceHandle<T> where T : struct
+    {
+        [FieldOffset(0)] public uint BufferID;
+        [FieldOffset(4)] public uint SystemID;
+        [FieldOffset(8)] public uint Generation;
+        [FieldOffset(12)] public uint HandleFlags;
+        [FieldOffset(16)] public int StartIndex;
+        [FieldOffset(20)] public int Length;
+        [FieldOffset(24)] public uint Flags;
+        [FieldOffset(28)] public uint Reserved0;
     }
 
     /// <summary>
@@ -360,7 +469,7 @@ namespace Hecton8.Core.Memory
         [FieldOffset(30)] public ushort Reserved;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct VaultBufferMeta
     {
         [FieldOffset(0)] public long OffsetBytes;
@@ -373,7 +482,40 @@ namespace Hecton8.Core.Memory
         [FieldOffset(36)] public uint Version;
         [FieldOffset(40)] public SystemID Owner;
         [FieldOffset(42)] public SystemID LastAliasRequester;
-        [FieldOffset(44)] public uint Reserved0;
+        [FieldOffset(44)] public int ActiveWriterSystemID;
+        [FieldOffset(48)] public uint TypeHash;
+        [FieldOffset(52)] public uint RefCount;
+        [FieldOffset(56)] public uint Flags;
+        [FieldOffset(60)] public int BufferKey;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct VaultTelemetrySnapshot
+    {
+        [FieldOffset(0)] public long AllocatedBytes;
+        [FieldOffset(8)] public long ArenaBytes;
+        [FieldOffset(16)] public long LastMovedBytes;
+        [FieldOffset(24)] public long ResolutionTicks;
+        [FieldOffset(32)] public uint VaultGenerationID;
+        [FieldOffset(36)] public uint GenerationMismatchCount;
+        [FieldOffset(40)] public int LastFaultBufferID;
+        [FieldOffset(44)] public uint LastFaultHandleGeneration;
+        [FieldOffset(48)] public uint LastFaultMetaGeneration;
+        [FieldOffset(52)] public byte LastDefragFlags;
+        [FieldOffset(53)] public byte Reserved0;
+        [FieldOffset(54)] public ushort Reserved1;
+        [FieldOffset(56)] public long ResolvedHandleCount;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct VaultMemoryBudgetEntry
+    {
+        [FieldOffset(0)] public uint SystemHash;
+        [FieldOffset(4)] public int BufferID;
+        [FieldOffset(8)] public long BudgetBytes;
+        [FieldOffset(16)] public long DefragThresholdBytes;
+        [FieldOffset(24)] public uint Flags;
+        [FieldOffset(28)] public uint Reserved0;
     }
 
     /// <summary>
@@ -433,11 +575,13 @@ namespace Hecton8.Core.Memory
         [FieldOffset(89)] public byte IsFragmented;
         [FieldOffset(90)] public byte WatchdogExceeded;
         [FieldOffset(91)] public byte MemoryStarvationWarnings;
-        [FieldOffset(92)] public uint Reserved32;
-        [FieldOffset(96)] public long ReservedLong0;
-        [FieldOffset(104)] public long ReservedLong1;
-        [FieldOffset(112)] public long ReservedLong2;
-        [FieldOffset(120)] public long ReservedLong3;
+        [FieldOffset(92)] public uint GenerationMismatchCount;
+        [FieldOffset(96)] public long ResolutionTicks;
+        [FieldOffset(104)] public long ResolvedHandleCount;
+        [FieldOffset(112)] public int LastFaultBufferID;
+        [FieldOffset(116)] public uint LastFaultHandleGeneration;
+        [FieldOffset(120)] public uint LastFaultMetaGeneration;
+        [FieldOffset(124)] public uint Reserved32;
     }
 
     /// <summary>
@@ -447,6 +591,7 @@ namespace Hecton8.Core.Memory
     {
         private const int DefaultBufferCapacity = 128;
         private const int MaxBufferCapacity = 32768;
+        private const int MaxGenerationHandleCapacity = 100000;
         private const int MaxBlockCapacity = MaxBufferCapacity << 1;
         internal const int VaultBlockAlignment = 64;
         private const long DefaultArenaBytes = 128L * 1024L * 1024L;
@@ -461,12 +606,14 @@ namespace Hecton8.Core.Memory
         private const byte MacroDatabasePayloadDirtyFlag = 1 << 0;
         private const int MaxMacroDatabasePayloadBytes = 256 * 1024;
         private const int MaxRelocationRecordCount = 64;
+        private const int MaxMemoryBudgetEntries = 128;
         private const int EmergencyOverflowBufferBytes = 256 * 1024;
         private const int ReadOnlyDummyBufferBytes = 64;
         internal const byte BlockStateFree = 0;
         internal const byte BlockStateOccupied = 1;
         private const byte BlockFlagExternalView = 1 << 0;
         private const byte BlockFlagLocked = 1 << 1;
+        private const uint VaultMetaFlagOrphanCandidate = 1u << 31;
         private const byte DefragFlagFragmented = 1 << 0;
         private const byte DefragFlagHeartbeat = 1 << 1;
         private const byte DefragFlagStressHalt = 1 << 2;
@@ -477,24 +624,31 @@ namespace Hecton8.Core.Memory
         private const byte DefragFlagAliasBlocked = 1 << 7;
         private const int DefragBlackBoxFrameCount = 300;
         private const int VaultBufferHandleSizeBytes = 24;
+        private const int VaultGenerationHandleSizeBytes = 16;
+        private const int VaultSliceHandleSizeBytes = 32;
         private const int VaultRelocationRecordSizeBytes = 32;
-        private const int VaultBufferMetaSizeBytes = 48;
+        private const int VaultBufferMetaSizeBytes = 64;
         private const int VaultMemoryBlockSnapshotSizeBytes = 48;
         private const int VaultArenaBlockSizeBytes = 32;
         private const int MemoryDefragTelemetryEntrySizeBytes = 128;
+        private const int VaultTelemetrySnapshotSizeBytes = 64;
+        private const int VaultMemoryBudgetEntrySizeBytes = 32;
         private const ulong DefragDumpMagic = 0x3147445648384848UL; // HH8HVDG1
         private const int DefragDumpVersion = 2;
         private const string DefragDumpPath = "Docs/AgentLogs/Dump_MEMORY_DEFRAGMENTATION_OVERSEER.bin";
         private const string PhiVodDumpPath = "Docs/AgentLogs/Dump_MEMORY_DEFRAGMENTATION_OVERSEER_PHIVOD.bin";
         private const string ShinobuDumpPath = "Docs/AgentLogs/Dump_SHINOBU_01.bin";
         private const string ShinobuH8DumpPath = "Docs/AgentLogs/Dump_SHINOBU_01.h8dump";
+        private const string Shinobu202DumpPath = "Docs/AgentLogs/Dump_SHINOBU_202.bin";
 
         private UnsafeHashMap<int, IntPtr> _buffers;
         private UnsafeHashMap<int, VaultBufferMeta> _metadata;
+        private NativeArray<VaultBufferMeta> _metadataByBufferId;
         private NativeList<int> _keys;
         private NativeList<VaultArenaBlock> _blocks;
         private NativeArray<MemoryDefragTelemetryEntry> _defragBlackBox;
         private NativeArray<VaultRelocationRecord> _lastRelocationRecords;
+        private NativeArray<VaultMemoryBudgetEntry> _memoryBudgetEntries;
         private NativeParallelHashMap<ulong, MacroDatabasePayloadHandle> _macroDatabasePayloadCache;
         private NativeParallelHashMap<ulong, uint> _macroDatabasePayloadAccessTicks;
         private NativeList<ulong> _macroDatabasePayloadKeys;
@@ -520,7 +674,16 @@ namespace Hecton8.Core.Memory
         private int _defragBlackBoxCursor;
         private int _defragBlackBoxRecordedCount;
         private int _lastRelocationRecordCount;
+        private int _memoryBudgetCount;
         private int _generationHandleMissCount;
+        private int _lastFaultBufferId;
+        private uint _lastFaultHandleGeneration;
+        private uint _lastFaultMetaGeneration;
+        private long _resolvedHandleCount;
+        private long _resolutionTickAccumulator;
+        private int _forceDefragRequested;
+        private int _lastOrphanSweepCandidateCount;
+        private int _lastOrphanReclaimCount;
         private int _compactionWatchdogBreachCount;
         private long _totalDefragMovedBytes;
         private uint _defragTickSequence;
@@ -528,6 +691,7 @@ namespace Hecton8.Core.Memory
         private SystemID _lastRelocatedSystemId;
         private bool _defragDumpWritten;
         private bool _phiVodDumpWritten;
+        private bool _shinobu202DumpWritten;
         private bool _initialized;
         private static GlobalDataVault _latestCreated;
 
@@ -640,6 +804,17 @@ namespace Hecton8.Core.Memory
             H8Memory.Initialize();
             _buffers = new UnsafeHashMap<int, IntPtr>(safeCapacity, Allocator.Persistent);
             _metadata = new UnsafeHashMap<int, VaultBufferMeta>(safeCapacity, Allocator.Persistent);
+            _metadataByBufferId = H8Memory.Allocate<VaultBufferMeta>(
+                MaxGenerationHandleCapacity,
+                SystemID.CoreDataVault,
+                Allocator.Persistent,
+                NativeArrayOptions.UninitializedMemory);
+            InitializeVaultMetadataJob metadataJob = new InitializeVaultMetadataJob
+            {
+                Metadata = _metadataByBufferId
+            };
+            for (int i = 0; i < _metadataByBufferId.Length; i++)
+                metadataJob.Execute(i);
             _keys = new NativeList<int>(safeCapacity, Allocator.Persistent);
             _blocks = new NativeList<VaultArenaBlock>(blockCapacity, Allocator.Persistent);
             _defragBlackBox = H8Memory.Allocate<MemoryDefragTelemetryEntry>(
@@ -652,6 +827,17 @@ namespace Hecton8.Core.Memory
                 SystemID.CoreDataVault,
                 Allocator.Persistent,
                 NativeArrayOptions.ClearMemory);
+            _memoryBudgetEntries = H8Memory.Allocate<VaultMemoryBudgetEntry>(
+                MaxMemoryBudgetEntries,
+                SystemID.CoreDataVault,
+                Allocator.Persistent,
+                NativeArrayOptions.UninitializedMemory);
+            InitializeVaultBudgetEntriesJob budgetJob = new InitializeVaultBudgetEntriesJob
+            {
+                Entries = _memoryBudgetEntries
+            };
+            for (int i = 0; i < _memoryBudgetEntries.Length; i++)
+                budgetJob.Execute(i);
             _macroDatabasePayloadCache = new NativeParallelHashMap<ulong, MacroDatabasePayloadHandle>(safeCapacity, Allocator.Persistent);
             _macroDatabasePayloadAccessTicks = new NativeParallelHashMap<ulong, uint>(safeCapacity, Allocator.Persistent);
             _macroDatabasePayloadKeys = new NativeList<ulong>(safeCapacity, Allocator.Persistent);
@@ -701,7 +887,16 @@ namespace Hecton8.Core.Memory
             _defragBlackBoxCursor = 0;
             _defragBlackBoxRecordedCount = 0;
             _lastRelocationRecordCount = 0;
+            _memoryBudgetCount = 0;
             _generationHandleMissCount = 0;
+            _lastFaultBufferId = 0;
+            _lastFaultHandleGeneration = 0u;
+            _lastFaultMetaGeneration = 0u;
+            _resolvedHandleCount = 0L;
+            _resolutionTickAccumulator = 0L;
+            _forceDefragRequested = 0;
+            _lastOrphanSweepCandidateCount = 0;
+            _lastOrphanReclaimCount = 0;
             _compactionWatchdogBreachCount = 0;
             _totalDefragMovedBytes = 0L;
             _defragTickSequence = 0u;
@@ -709,6 +904,7 @@ namespace Hecton8.Core.Memory
             _lastRelocatedSystemId = SystemID.Unknown;
             _defragDumpWritten = false;
             _phiVodDumpWritten = false;
+            _shinobu202DumpWritten = false;
             ResetDefragTelemetry();
             if (_arenaBase != null && _blocks.Capacity > 0)
             {
@@ -741,12 +937,16 @@ namespace Hecton8.Core.Memory
         private static void ValidateAbiLayout()
         {
             if (UnsafeUtility.SizeOf<VaultBufferHandle<byte>>() != VaultBufferHandleSizeBytes ||
+                UnsafeUtility.SizeOf<VaultGenerationHandle<byte>>() != VaultGenerationHandleSizeBytes ||
+                UnsafeUtility.SizeOf<VaultSliceHandle<byte>>() != VaultSliceHandleSizeBytes ||
                 UnsafeUtility.SizeOf<VaultBufferSlice<byte>>() != VaultArenaBlockSizeBytes ||
                 UnsafeUtility.SizeOf<VaultRelocationRecord>() != VaultRelocationRecordSizeBytes ||
                 UnsafeUtility.SizeOf<VaultBufferMeta>() != VaultBufferMetaSizeBytes ||
                 UnsafeUtility.SizeOf<VaultMemoryBlockSnapshot>() != VaultMemoryBlockSnapshotSizeBytes ||
                 UnsafeUtility.SizeOf<VaultArenaBlock>() != VaultArenaBlockSizeBytes ||
-                UnsafeUtility.SizeOf<MemoryDefragTelemetryEntry>() != MemoryDefragTelemetryEntrySizeBytes)
+                UnsafeUtility.SizeOf<MemoryDefragTelemetryEntry>() != MemoryDefragTelemetryEntrySizeBytes ||
+                UnsafeUtility.SizeOf<VaultTelemetrySnapshot>() != VaultTelemetrySnapshotSizeBytes ||
+                UnsafeUtility.SizeOf<VaultMemoryBudgetEntry>() != VaultMemoryBudgetEntrySizeBytes)
             {
                 FatalMemoryException.ThrowAbiLayoutMismatch();
             }
@@ -790,6 +990,29 @@ namespace Hecton8.Core.Memory
                     out _,
                     out _) ||
                 !TryBuildHandle(bufferId, out VaultBufferHandle<T> handle))
+            {
+                return default;
+            }
+
+            return handle;
+        }
+
+        /// <inheritdoc />
+        public VaultGenerationHandle<T> GetGenerationHandle<T>(
+            BufferID bufferId,
+            int requiredLength,
+            SystemID requester,
+            NativeArrayOptions options = NativeArrayOptions.ClearMemory) where T : struct
+        {
+            if (!TryEnsureVaultBuffer<T>(
+                    bufferId,
+                    requiredLength,
+                    requester,
+                    options,
+                    exposeExternalView: false,
+                    out _,
+                    out _) ||
+                !TryBuildGenerationHandle(bufferId, out VaultGenerationHandle<T> handle))
             {
                 return default;
             }
@@ -857,6 +1080,17 @@ namespace Hecton8.Core.Memory
                 }
 
                 ValidateType<T>(bufferId, existingMeta, stride, alignment);
+                if (existingMeta.BufferKey != key ||
+                    existingMeta.TypeHash == 0u ||
+                    existingMeta.RefCount == 0u)
+                {
+                    existingMeta.BufferKey = key;
+                    existingMeta.TypeHash = ComputeTypeHash<T>();
+                    if (existingMeta.RefCount == 0u)
+                        existingMeta.RefCount = 1u;
+                    WriteMetadata(key, in existingMeta);
+                }
+
                 if (!EnsureBufferKeyRegistered(key))
                 {
                     DumpPhiVodBlackBox();
@@ -898,7 +1132,7 @@ namespace Hecton8.Core.Memory
                 }
 
                 _buffers[key] = resizedPointer;
-                _metadata[key] = resizedMeta;
+                WriteMetadata(key, in resizedMeta);
                 BumpVaultGeneration();
                 if (!IsPointerAligned(resizedPointer, VaultBlockAlignment))
                 {
@@ -956,17 +1190,22 @@ namespace Hecton8.Core.Memory
                 Bytes = requiredBytes,
                 Owner = requester,
                 Allocator = Allocator.Persistent,
-                Version = 1u
+                Version = ResolveInitialGenerationForAllocation(key),
+                ActiveWriterSystemID = 0,
+                TypeHash = ComputeTypeHash<T>(),
+                RefCount = 1u,
+                Flags = 0u,
+                BufferKey = key
             };
 
             bool bufferAdded = _buffers.TryAdd(key, pointer);
-            bool metadataAdded = bufferAdded && _metadata.TryAdd(key, meta);
+            bool metadataAdded = bufferAdded && TryAddMetadata(key, in meta);
             if (!bufferAdded || !metadataAdded)
             {
                 if (bufferAdded)
                     _buffers.Remove(key);
                 if (!metadataAdded)
-                    _metadata.Remove(key);
+                    RemoveMetadata(key);
 
                 FreeBlock(blockIndex);
                 DumpPhiVodBlackBox();
@@ -976,7 +1215,7 @@ namespace Hecton8.Core.Memory
             if (!EnsureBufferKeyRegistered(key))
             {
                 _buffers.Remove(key);
-                _metadata.Remove(key);
+                RemoveMetadata(key);
                 FreeBlock(blockIndex);
                 DumpPhiVodBlackBox();
                 return false;
@@ -987,7 +1226,7 @@ namespace Hecton8.Core.Memory
             {
                 RemoveBufferKey(key);
                 _buffers.Remove(key);
-                _metadata.Remove(key);
+                RemoveMetadata(key);
                 _allocatedBytes = _allocatedBytes > requiredBytes ? _allocatedBytes - requiredBytes : 0L;
                 FreeBlock(blockIndex);
                 DumpPhiVodBlackBox();
@@ -1075,6 +1314,296 @@ namespace Hecton8.Core.Memory
         }
 
         /// <inheritdoc />
+        public bool TryGetGenerationHandle<T>(BufferID bufferId, out VaultGenerationHandle<T> handle) where T : struct
+        {
+            handle = default;
+            if (!_initialized || _compactionFence != 0)
+                return false;
+
+            return TryBuildGenerationHandle(bufferId, out handle);
+        }
+
+        /// <inheritdoc />
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryResolveHandle<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+            long startTicks = System.Diagnostics.Stopwatch.GetTimestamp();
+#endif
+            if (!_initialized || _compactionFence != 0 || _arenaBase == null)
+            {
+                RecordGenerationFault(unchecked((int)handle.BufferID), handle.Generation, 0u);
+                return false;
+            }
+
+            int key = unchecked((int)handle.BufferID);
+            if (key == 0 || !TryReadFlatMetadata(key, out VaultBufferMeta meta))
+            {
+                RecordGenerationFault(key, handle.Generation, 0u);
+                return false;
+            }
+
+            if (handle.Generation != meta.Version)
+            {
+                RecordGenerationFault(key, handle.Generation, meta.Version);
+                return false;
+            }
+
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+            if (handle.SystemID != 0u && handle.SystemID != (uint)meta.Owner)
+            {
+                RecordGenerationFault(key, handle.Generation, meta.Version);
+                return false;
+            }
+
+            int stride = UnsafeUtility.SizeOf<T>();
+            int alignment = UnsafeUtility.AlignOf<T>();
+            uint typeHash = ComputeTypeHash<T>();
+            if (meta.Stride != stride ||
+                meta.Alignment != alignment ||
+                (meta.TypeHash != 0u && meta.TypeHash != typeHash) ||
+                meta.OffsetBytes < 0L ||
+                meta.Bytes <= 0L ||
+                meta.OffsetBytes > _arenaBytes - meta.Bytes)
+            {
+                RecordGenerationFault(key, handle.Generation, meta.Version);
+                return false;
+            }
+#endif
+
+            buffer = H8Memory.CreateNativeArrayView<T>((byte*)_arenaBase + meta.OffsetBytes, meta.Length);
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+            Interlocked.Increment(ref _resolvedHandleCount);
+            Interlocked.Add(ref _resolutionTickAccumulator, System.Diagnostics.Stopwatch.GetTimestamp() - startTicks);
+#endif
+            return buffer.IsCreated;
+        }
+
+        /// <inheritdoc />
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryResolveHandle<T>(in VaultBufferHandle<T> handle, out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (handle.BufferId == BufferID.Unknown ||
+                handle.generation == 0u ||
+                handle.Length <= 0 ||
+                handle.Stride != UnsafeUtility.SizeOf<T>())
+            {
+                return false;
+            }
+
+            VaultGenerationHandle<T> descriptor = handle.ToGenerationHandle();
+            return TryResolveHandle(in descriptor, out buffer);
+        }
+
+        /// <inheritdoc />
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryResolveSlice<T>(in VaultSliceHandle<T> handle, out NativeArray<T> slice) where T : struct
+        {
+            slice = default;
+            if (handle.Length <= 0 || handle.StartIndex < 0 || handle.StartIndex > int.MaxValue - handle.Length)
+                return false;
+
+            VaultGenerationHandle<T> baseHandle = default;
+            baseHandle.BufferID = handle.BufferID;
+            baseHandle.SystemID = handle.SystemID;
+            baseHandle.Generation = handle.Generation;
+            baseHandle.Flags = handle.HandleFlags;
+            if (!TryResolveHandle(in baseHandle, out NativeArray<T> full))
+                return false;
+
+            int end = handle.StartIndex + handle.Length;
+            if (end > full.Length)
+            {
+                RecordGenerationFault(unchecked((int)handle.BufferID), handle.Generation, handle.Generation);
+                return false;
+            }
+
+            slice = full.GetSubArray(handle.StartIndex, handle.Length);
+            return slice.IsCreated;
+        }
+
+        /// <inheritdoc />
+        public bool TryAcquireSliceHandle<T>(
+            BufferID bufferId,
+            int requiredLength,
+            int startIndex,
+            int count,
+            SystemID requester,
+            out VaultSliceHandle<T> slice,
+            NativeArrayOptions options = NativeArrayOptions.UninitializedMemory) where T : struct
+        {
+            slice = default;
+            if (count <= 0 || startIndex < 0 || requiredLength <= 0 || startIndex > int.MaxValue - count)
+                return false;
+
+            int endIndex = startIndex + count;
+            int actualRequiredLength = requiredLength >= endIndex ? requiredLength : endIndex;
+            if (!TryEnsureVaultBuffer<T>(
+                    bufferId,
+                    actualRequiredLength,
+                    requester,
+                    options,
+                    exposeExternalView: false,
+                    out _,
+                    out _,
+                    sanitizeFinite: false) ||
+                !TryBuildGenerationHandle(bufferId, out VaultGenerationHandle<T> handle))
+            {
+                return false;
+            }
+
+            slice.BufferID = handle.BufferID;
+            slice.SystemID = handle.SystemID;
+            slice.Generation = handle.Generation;
+            slice.HandleFlags = handle.Flags;
+            slice.StartIndex = startIndex;
+            slice.Length = count;
+            slice.Flags = 0u;
+            slice.Reserved0 = 0u;
+            return true;
+        }
+
+        /// <inheritdoc />
+        public bool TryAcquireWriteLock<T>(in VaultGenerationHandle<T> handle, SystemID systemID, out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (systemID == SystemID.Unknown || !_metadataByBufferId.IsCreated)
+                return false;
+
+            int key = unchecked((int)handle.BufferID);
+            if ((uint)key >= (uint)_metadataByBufferId.Length || !TryReadFlatMetadata(key, out VaultBufferMeta meta))
+                return false;
+
+            if (handle.Generation != meta.Version)
+            {
+                RecordGenerationFault(key, handle.Generation, meta.Version);
+                return false;
+            }
+
+            VaultBufferMeta* metadata = (VaultBufferMeta*)NativeArrayUnsafeUtility.GetUnsafePtr(_metadataByBufferId);
+            ref int activeWriter = ref metadata[key].ActiveWriterSystemID;
+            if (Interlocked.CompareExchange(ref activeWriter, (int)systemID, 0) != 0)
+                return false;
+
+            WriteMetadata(key, in metadata[key]);
+            if (TryResolveHandle(in handle, out buffer))
+                return true;
+
+            ReleaseWriteLock(in handle, systemID);
+            buffer = default;
+            return false;
+        }
+
+        /// <inheritdoc />
+        public bool TryAcquireWriteLock<T>(in VaultBufferHandle<T> handle, SystemID systemID, out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (handle.BufferId == BufferID.Unknown ||
+                handle.generation == 0u ||
+                handle.Length <= 0 ||
+                handle.Stride != UnsafeUtility.SizeOf<T>())
+            {
+                return false;
+            }
+
+            VaultGenerationHandle<T> descriptor = handle.ToGenerationHandle(systemID);
+            return TryAcquireWriteLock(in descriptor, systemID, out buffer);
+        }
+
+        /// <inheritdoc />
+        public bool ReleaseWriteLock<T>(in VaultGenerationHandle<T> handle, SystemID systemID) where T : struct
+        {
+            if (systemID == SystemID.Unknown || !_metadataByBufferId.IsCreated)
+                return false;
+
+            int key = unchecked((int)handle.BufferID);
+            if ((uint)key >= (uint)_metadataByBufferId.Length || !TryReadFlatMetadata(key, out VaultBufferMeta meta))
+                return false;
+
+            if (handle.Generation != meta.Version)
+            {
+                RecordGenerationFault(key, handle.Generation, meta.Version);
+                return false;
+            }
+
+            VaultBufferMeta* metadata = (VaultBufferMeta*)NativeArrayUnsafeUtility.GetUnsafePtr(_metadataByBufferId);
+            ref int activeWriter = ref metadata[key].ActiveWriterSystemID;
+            if (Interlocked.CompareExchange(ref activeWriter, 0, (int)systemID) != (int)systemID)
+                return false;
+
+            WriteMetadata(key, in metadata[key]);
+            return true;
+        }
+
+        /// <inheritdoc />
+        public bool ReleaseWriteLock<T>(in VaultBufferHandle<T> handle, SystemID systemID) where T : struct
+        {
+            if (handle.BufferId == BufferID.Unknown ||
+                handle.generation == 0u ||
+                handle.Length <= 0 ||
+                handle.Stride != UnsafeUtility.SizeOf<T>())
+            {
+                return false;
+            }
+
+            VaultGenerationHandle<T> descriptor = handle.ToGenerationHandle(systemID);
+            return ReleaseWriteLock(in descriptor, systemID);
+        }
+
+        /// <inheritdoc />
+        public bool ReleaseBuffer<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            int key = unchecked((int)handle.BufferID);
+            if (!_initialized || key == 0 || !TryReadFlatMetadata(key, out VaultBufferMeta meta))
+                return false;
+
+            if (handle.Generation != meta.Version)
+            {
+                RecordGenerationFault(key, handle.Generation, meta.Version);
+                return false;
+            }
+
+            if (meta.ActiveWriterSystemID != 0)
+                return false;
+
+            if (meta.RefCount > 1u)
+            {
+                meta.RefCount--;
+                meta.Version = NextGeneration(meta.Version);
+                WriteMetadata(key, in meta);
+                BumpVaultGeneration();
+                return true;
+            }
+
+            if (!TryFindOccupiedBlockIndex(key, meta.OffsetBytes, out int blockIndex))
+                return false;
+
+            _allocatedBytes = _allocatedBytes > meta.Bytes ? _allocatedBytes - meta.Bytes : 0L;
+            _buffers.Remove(key);
+            RemoveMetadata(key);
+            RemoveBufferKey(key);
+            FreeBlock(blockIndex, clearPayload: true);
+            return true;
+        }
+
+        /// <inheritdoc />
+        public bool ReleaseBuffer<T>(in VaultBufferHandle<T> handle) where T : struct
+        {
+            if (handle.BufferId == BufferID.Unknown ||
+                handle.generation == 0u ||
+                handle.Length <= 0 ||
+                handle.Stride != UnsafeUtility.SizeOf<T>())
+            {
+                return false;
+            }
+
+            VaultGenerationHandle<T> descriptor = handle.ToGenerationHandle();
+            return ReleaseBuffer(in descriptor);
+        }
+
+        /// <inheritdoc />
         public bool TryAcquireSlice<T>(
             BufferID bufferId,
             int requiredLength,
@@ -1138,6 +1667,7 @@ namespace Hecton8.Core.Memory
         }
 
         /// <inheritdoc />
+        [Obsolete("Legacy pointer-refresh path. Use TryResolveHandle(in handle, out NativeArray<T>) so cached ptr is ignored.", false)]
         public bool ResolveBuffer<T>(ref VaultBufferHandle<T> handle) where T : struct
         {
             bool hasCachedIdentity =
@@ -1295,6 +1825,98 @@ namespace Hecton8.Core.Memory
                 DumpPhiVodBlackBox();
 
             return releasedCount;
+        }
+
+        /// <inheritdoc />
+        public int SweepOrphanedHandles(
+            NativeArray<SystemID> liveOwners,
+            int liveOwnerCount,
+            MemoryDefragPhase phase,
+            uint activeBurstLockMask,
+            out long releasedBytes)
+        {
+            releasedBytes = 0L;
+            _lastOrphanSweepCandidateCount = 0;
+            _lastOrphanReclaimCount = 0;
+            if (!_initialized ||
+                phase != MemoryDefragPhase.PreSimulation ||
+                HasActiveBurstLocks(activeBurstLockMask) ||
+                _compactionFence != 0 ||
+                !_metadataByBufferId.IsCreated ||
+                !_metadata.IsCreated ||
+                !_buffers.IsCreated ||
+                !_blocks.IsCreated ||
+                !_keys.IsCreated ||
+                !liveOwners.IsCreated ||
+                liveOwnerCount < 0)
+            {
+                return 0;
+            }
+
+            if (Interlocked.Exchange(ref _compactionFence, 1) != 0)
+                return 0;
+
+            int reclaimedCount = 0;
+            int candidateCount = 0;
+            try
+            {
+                SweepOrphanedHandlesJob sweepJob = new SweepOrphanedHandlesJob
+                {
+                    Metadata = _metadataByBufferId,
+                    LiveOwners = liveOwners,
+                    LiveOwnerCount = liveOwnerCount
+                };
+                for (int i = 0; i < _metadataByBufferId.Length; i++)
+                    sweepJob.Execute(i);
+
+                for (int i = _keys.Length - 1; i >= 0; i--)
+                {
+                    int key = _keys[i];
+                    if (!TryReadFlatMetadata(key, out VaultBufferMeta meta))
+                    {
+                        RemoveBufferKey(key);
+                        DumpPhiVodBlackBox();
+                        continue;
+                    }
+
+                    if (_metadata.TryGetValue(key, out VaultBufferMeta storedMeta) && storedMeta.Flags != meta.Flags)
+                        WriteMetadata(key, in meta);
+
+                    if ((meta.Flags & VaultMetaFlagOrphanCandidate) == 0u)
+                        continue;
+
+                    candidateCount++;
+                    if (TryReleaseOrphanedBuffer(key, in meta, out long bytes))
+                    {
+                        releasedBytes += bytes;
+                        reclaimedCount++;
+                    }
+                    else
+                    {
+                        meta.Flags &= ~VaultMetaFlagOrphanCandidate;
+                        WriteMetadata(key, in meta);
+                    }
+                }
+
+                if (reclaimedCount > 0)
+                {
+                    _allocatedBytes = _allocatedBytes > releasedBytes ? _allocatedBytes - releasedBytes : 0L;
+                    LastDefragFlags = (byte)(LastDefragFlags | DefragFlagRelocated);
+                    BumpVaultGeneration();
+                    DumpShinobu202BlackBox();
+                }
+
+                _lastOrphanSweepCandidateCount = candidateCount;
+                _lastOrphanReclaimCount = reclaimedCount;
+                RecordDefragBlackBox(
+                    ++_defragTickSequence,
+                    reclaimedCount > 0 ? DefragFlagRelocated : (byte)0);
+                return reclaimedCount;
+            }
+            finally
+            {
+                Volatile.Write(ref _compactionFence, 0);
+            }
         }
 
         /// <inheritdoc />
@@ -1631,6 +2253,112 @@ namespace Hecton8.Core.Memory
             Volatile.Write(ref _emergencyOverflowCursorBytes, 0);
             _memoryStarvationWarnings = 0;
             RecordDefragBlackBox(++_defragTickSequence, DefragFlagHeartbeat);
+            if (_arenaBytes > 0L && (_allocatedBytes * 10L) >= (_arenaBytes * 9L))
+                DumpShinobu202BlackBox();
+        }
+
+        /// <inheritdoc />
+        public void RequestEditorForceDefragmentation()
+        {
+            Interlocked.Exchange(ref _forceDefragRequested, 1);
+        }
+
+        public bool GenerateMockVaultRelocationForValidation(uint seed, int maxMutations, MemoryDefragPhase phase, uint activeBurstLockMask)
+        {
+            if (!_initialized ||
+                phase != MemoryDefragPhase.PreSimulation ||
+                HasActiveBurstLocks(activeBurstLockMask) ||
+                _compactionFence != 0 ||
+                !_metadataByBufferId.IsCreated)
+            {
+                return false;
+            }
+
+            int mutations = math.clamp(maxMutations, 1, 1024);
+            if (Interlocked.Exchange(ref _compactionFence, 1) != 0)
+                return false;
+
+            try
+            {
+                GenerateMockVaultRelocationJob relocationJob = new GenerateMockVaultRelocationJob
+                {
+                    Metadata = _metadataByBufferId,
+                    Seed = seed,
+                    MaxMutations = mutations
+                };
+                relocationJob.Execute();
+
+                if (_keys.IsCreated)
+                {
+                    for (int i = 0; i < _keys.Length; i++)
+                    {
+                        int key = _keys[i];
+                        if (TryReadFlatMetadata(key, out VaultBufferMeta meta))
+                            WriteMetadata(key, in meta);
+                    }
+                }
+
+                LastDefragFlags = (byte)(LastDefragFlags | DefragFlagRelocated);
+                BumpVaultGeneration();
+                RecordDefragBlackBox(++_defragTickSequence, DefragFlagRelocated);
+                return true;
+            }
+            finally
+            {
+                Interlocked.Exchange(ref _compactionFence, 0);
+            }
+        }
+
+        public bool TryGetVaultTelemetrySnapshot(int ageFromNewest, out VaultTelemetrySnapshot snapshot)
+        {
+            snapshot = default;
+            if (!_defragBlackBox.IsCreated || _defragBlackBoxRecordedCount <= 0)
+                return false;
+
+            int safeAge = math.clamp(ageFromNewest, 0, _defragBlackBoxRecordedCount - 1);
+            int index = _defragBlackBoxCursor - 1 - safeAge;
+            while (index < 0)
+                index += _defragBlackBox.Length;
+
+            MemoryDefragTelemetryEntry entry = _defragBlackBox[index];
+            snapshot.AllocatedBytes = _allocatedBytes;
+            snapshot.ArenaBytes = _arenaBytes;
+            snapshot.LastMovedBytes = entry.LastMovedBytes;
+            snapshot.ResolutionTicks = entry.ResolutionTicks;
+            snapshot.VaultGenerationID = entry.VaultGenerationID;
+            snapshot.GenerationMismatchCount = entry.GenerationMismatchCount;
+            snapshot.LastFaultBufferID = entry.LastFaultBufferID;
+            snapshot.LastFaultHandleGeneration = entry.LastFaultHandleGeneration;
+            snapshot.LastFaultMetaGeneration = entry.LastFaultMetaGeneration;
+            snapshot.LastDefragFlags = entry.Flags;
+            snapshot.ResolvedHandleCount = entry.ResolvedHandleCount;
+            return true;
+        }
+
+        public bool TryApplyMemoryBudgetCsv(ReadOnlySpan<byte> csvBytes)
+        {
+            if (!_memoryBudgetEntries.IsCreated || csvBytes.Length == 0)
+                return false;
+
+            int count = 0;
+            int lineStart = 0;
+            while (lineStart < csvBytes.Length && count < _memoryBudgetEntries.Length)
+            {
+                int lineEnd = lineStart;
+                while (lineEnd < csvBytes.Length && csvBytes[lineEnd] != (byte)'\n' && csvBytes[lineEnd] != (byte)'\r')
+                    lineEnd++;
+
+                ReadOnlySpan<byte> line = csvBytes.Slice(lineStart, lineEnd - lineStart);
+                if (TryParseBudgetLine(line, out VaultMemoryBudgetEntry entry))
+                    _memoryBudgetEntries[count++] = entry;
+
+                lineStart = lineEnd + 1;
+                while (lineStart < csvBytes.Length && (csvBytes[lineStart] == (byte)'\n' || csvBytes[lineStart] == (byte)'\r'))
+                    lineStart++;
+            }
+
+            _memoryBudgetCount = count;
+            return count > 0;
         }
 
         /// <inheritdoc />
@@ -1690,7 +2418,8 @@ namespace Hecton8.Core.Memory
                 return;
             }
 
-            if (IsFragmented)
+            bool forceDefrag = Interlocked.Exchange(ref _forceDefragRequested, 0) != 0;
+            if (IsFragmented || forceDefrag)
             {
                 PendingMassiveMoveBytes = EstimateLargestOccupiedMoveCandidate();
                 if (PendingMassiveMoveBytes >= MassiveMoveThresholdBytes)
@@ -1949,6 +2678,10 @@ namespace Hecton8.Core.Memory
                 _buffers.Dispose();
             if (_metadata.IsCreated)
                 _metadata.Dispose();
+            if (_metadataByBufferId.IsCreated)
+            {
+                H8Memory.Release(ref _metadataByBufferId, SystemID.CoreDataVault);
+            }
             if (_blocks.IsCreated)
                 _blocks.Dispose();
             if (_defragBlackBox.IsCreated)
@@ -1958,6 +2691,10 @@ namespace Hecton8.Core.Memory
             if (_lastRelocationRecords.IsCreated)
             {
                 H8Memory.Release(ref _lastRelocationRecords, SystemID.CoreDataVault);
+            }
+            if (_memoryBudgetEntries.IsCreated)
+            {
+                H8Memory.Release(ref _memoryBudgetEntries, SystemID.CoreDataVault);
             }
             _allocatedBytes = 0L;
             _arenaBytes = 0L;
@@ -1972,7 +2709,14 @@ namespace Hecton8.Core.Memory
             _defragBlackBoxCursor = 0;
             _defragBlackBoxRecordedCount = 0;
             _lastRelocationRecordCount = 0;
+            _memoryBudgetCount = 0;
             _generationHandleMissCount = 0;
+            _lastFaultBufferId = 0;
+            _lastFaultHandleGeneration = 0u;
+            _lastFaultMetaGeneration = 0u;
+            _resolvedHandleCount = 0L;
+            _resolutionTickAccumulator = 0L;
+            _forceDefragRequested = 0;
             _compactionWatchdogBreachCount = 0;
             _totalDefragMovedBytes = 0L;
             _defragTickSequence = 0u;
@@ -1981,6 +2725,7 @@ namespace Hecton8.Core.Memory
             _vaultGenerationId = 0u;
             _defragDumpWritten = false;
             _phiVodDumpWritten = false;
+            _shinobu202DumpWritten = false;
             ResetDefragTelemetry();
             _initialized = false;
             if (ReferenceEquals(_latestCreated, this))
@@ -2044,6 +2789,98 @@ namespace Hecton8.Core.Memory
 
             _macroDatabasePayloadKeys.AddNoResize(sectorHash);
             return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool TryReadFlatMetadata(int key, out VaultBufferMeta meta)
+        {
+            meta = default;
+            if (!_metadataByBufferId.IsCreated || (uint)key >= (uint)_metadataByBufferId.Length)
+                return false;
+
+            meta = _metadataByBufferId[key];
+            return meta.BufferKey == key && meta.Version != 0u && meta.Length > 0;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool TryReadMetadata(int key, out VaultBufferMeta meta)
+        {
+            if (TryReadFlatMetadata(key, out meta))
+                return true;
+
+            return _metadata.IsCreated && _metadata.TryGetValue(key, out meta);
+        }
+
+        private bool TryAddMetadata(int key, in VaultBufferMeta meta)
+        {
+            if (!_metadata.IsCreated)
+                return false;
+
+            VaultBufferMeta stored = meta;
+            stored.BufferKey = key;
+            if (!_metadata.TryAdd(key, stored))
+                return false;
+
+            WriteFlatMetadata(key, in stored);
+            return true;
+        }
+
+        private void WriteMetadata(int key, in VaultBufferMeta meta)
+        {
+            if (!_metadata.IsCreated)
+                return;
+
+            VaultBufferMeta stored = meta;
+            stored.BufferKey = key;
+            _metadata[key] = stored;
+            WriteFlatMetadata(key, in stored);
+        }
+
+        private void WriteFlatMetadata(int key, in VaultBufferMeta meta)
+        {
+            if (!_metadataByBufferId.IsCreated || (uint)key >= (uint)_metadataByBufferId.Length)
+                return;
+
+            _metadataByBufferId[key] = meta;
+        }
+
+        private void RemoveMetadata(int key)
+        {
+            uint tombstoneGeneration = ResolveTombstoneGeneration(key);
+            if (_metadata.IsCreated)
+                _metadata.Remove(key);
+            ClearFlatMetadata(key, tombstoneGeneration);
+        }
+
+        private uint ResolveInitialGenerationForAllocation(int key)
+        {
+            uint previous = ReadFlatMetadataGeneration(key);
+            return previous == 0u ? 1u : NextGeneration(previous);
+        }
+
+        private uint ResolveTombstoneGeneration(int key)
+        {
+            uint previous = ReadFlatMetadataGeneration(key);
+            return previous == 0u ? 1u : NextGeneration(previous);
+        }
+
+        private uint ReadFlatMetadataGeneration(int key)
+        {
+            if (!_metadataByBufferId.IsCreated || (uint)key >= (uint)_metadataByBufferId.Length)
+                return 0u;
+
+            return _metadataByBufferId[key].Version;
+        }
+
+        private void ClearFlatMetadata(int key, uint tombstoneGeneration)
+        {
+            if (!_metadataByBufferId.IsCreated || (uint)key >= (uint)_metadataByBufferId.Length)
+                return;
+
+            VaultBufferMeta tombstone = default;
+            tombstone.BufferKey = -1;
+            tombstone.Version = tombstoneGeneration;
+            _metadataByBufferId[key] = tombstone;
         }
 
         private void RemoveBufferKey(int key)
@@ -2116,7 +2953,7 @@ namespace Hecton8.Core.Memory
 
                 releasedBytes += meta.Bytes;
                 _buffers.Remove(key);
-                _metadata.Remove(key);
+                RemoveMetadata(key);
                 RemoveBufferKey(key);
                 FreeBlock(blockIndex, clearPayload: true);
                 releasedCount++;
@@ -2126,6 +2963,46 @@ namespace Hecton8.Core.Memory
                 _allocatedBytes = _allocatedBytes > releasedBytes ? _allocatedBytes - releasedBytes : 0L;
 
             return releasedCount;
+        }
+
+        private bool TryReleaseOrphanedBuffer(int key, in VaultBufferMeta meta, out long releasedBytes)
+        {
+            releasedBytes = 0L;
+            if (!_metadata.IsCreated ||
+                !_buffers.IsCreated ||
+                key == 0 ||
+                meta.RefCount == 0u ||
+                meta.ActiveWriterSystemID != 0)
+            {
+                return false;
+            }
+
+            if (!TryFindOccupiedBlockIndex(key, meta.OffsetBytes, out int blockIndex))
+            {
+                DumpPhiVodBlackBox();
+                return false;
+            }
+
+            VaultArenaBlock block = _blocks[blockIndex];
+            if ((block.Reserved0 & (BlockFlagLocked | BlockFlagExternalView)) != 0 || block.Reserved1 != 0)
+            {
+                LastDefragFlags = (byte)(LastDefragFlags | DefragFlagAliasBlocked);
+                DumpPhiVodBlackBox();
+                return false;
+            }
+
+            VaultBufferMeta tombstone = meta;
+            tombstone.Version = NextGeneration(tombstone.Version);
+            tombstone.RefCount = 0u;
+            tombstone.Flags |= VaultMetaFlagOrphanCandidate;
+            WriteMetadata(key, in tombstone);
+
+            releasedBytes = meta.Bytes;
+            _buffers.Remove(key);
+            RemoveMetadata(key);
+            RemoveBufferKey(key);
+            FreeBlock(blockIndex, clearPayload: true);
+            return true;
         }
 
         private static bool IsSceneOwnedVaultOwner(SystemID owner)
@@ -2531,7 +3408,7 @@ namespace Hecton8.Core.Memory
             meta.BlockIndex = freeIndex;
             meta.OffsetBytes = movedBlock.OffsetBytes;
             meta.Version = movedBlock.Version;
-            _metadata[key] = meta;
+            WriteMetadata(key, in meta);
             PublishMovedBufferPointer(key, newPointer);
             RecordRelocation(key, in meta, oldPointer, newPointer, occupiedBlock.Bytes, movedBlock.Version);
             movedBytes += occupiedBlock.Bytes;
@@ -2560,7 +3437,7 @@ namespace Hecton8.Core.Memory
                     meta.BlockIndex = blockIndex;
                     meta.OffsetBytes = block.OffsetBytes;
                     meta.Version = block.Version;
-                    _metadata[key] = meta;
+                    WriteMetadata(key, in meta);
                     BumpVaultGeneration();
                 }
 
@@ -2575,7 +3452,7 @@ namespace Hecton8.Core.Memory
             meta.BlockIndex = blockIndex;
             meta.OffsetBytes = block.OffsetBytes;
             meta.Version = block.Version;
-            _metadata[key] = meta;
+            WriteMetadata(key, in meta);
             BumpVaultGeneration();
             return true;
         }
@@ -2592,7 +3469,7 @@ namespace Hecton8.Core.Memory
             }
 
             meta.LastAliasRequester = requester;
-            _metadata[key] = meta;
+            WriteMetadata(key, in meta);
             return true;
         }
 
@@ -2626,6 +3503,15 @@ namespace Hecton8.Core.Memory
             entry.IsFragmented = IsFragmented ? (byte)1 : (byte)0;
             entry.WatchdogExceeded = LastDefragWatchdogExceeded ? (byte)1 : (byte)0;
             entry.MemoryStarvationWarnings = _memoryStarvationWarnings;
+            entry.GenerationMismatchCount = unchecked((uint)Volatile.Read(ref _generationHandleMissCount));
+            entry.ResolutionTicks = Volatile.Read(ref _resolutionTickAccumulator);
+            entry.ResolvedHandleCount = Volatile.Read(ref _resolvedHandleCount);
+            entry.LastFaultBufferID = Volatile.Read(ref _lastFaultBufferId);
+            entry.LastFaultHandleGeneration = _lastFaultHandleGeneration;
+            entry.LastFaultMetaGeneration = _lastFaultMetaGeneration;
+            entry.Reserved32 =
+                ((uint)(ushort)Volatile.Read(ref _lastOrphanSweepCandidateCount) << 16) |
+                (ushort)Volatile.Read(ref _lastOrphanReclaimCount);
             _defragBlackBox[cursor] = entry;
 
             cursor++;
@@ -2650,6 +3536,7 @@ namespace Hecton8.Core.Memory
                 WriteDefragBlackBoxFile(DefragDumpPath);
                 WriteDefragBlackBoxFile(ShinobuDumpPath);
                 WriteDefragBlackBoxFile(ShinobuH8DumpPath);
+                WriteDefragBlackBoxFile(Shinobu202DumpPath);
 
                 _defragDumpWritten = true;
             }
@@ -2672,8 +3559,28 @@ namespace Hecton8.Core.Memory
                 WriteDefragBlackBoxFile(PhiVodDumpPath);
                 WriteDefragBlackBoxFile(ShinobuDumpPath);
                 WriteDefragBlackBoxFile(ShinobuH8DumpPath);
+                WriteDefragBlackBoxFile(Shinobu202DumpPath);
 
                 _phiVodDumpWritten = true;
+            }
+            catch
+            {
+            }
+        }
+
+        private void DumpShinobu202BlackBox()
+        {
+            if (_shinobu202DumpWritten || !_defragBlackBox.IsCreated)
+                return;
+
+            try
+            {
+                string directory = Path.GetDirectoryName(Shinobu202DumpPath);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                WriteDefragBlackBoxFile(Shinobu202DumpPath);
+                _shinobu202DumpWritten = true;
             }
             catch
             {
@@ -2744,6 +3651,50 @@ namespace Hecton8.Core.Memory
             handle.Length = meta.Length;
             handle.Stride = meta.Stride;
             return true;
+        }
+
+        private bool TryBuildGenerationHandle<T>(BufferID bufferId, out VaultGenerationHandle<T> handle) where T : struct
+        {
+            handle = default;
+            int key = (int)bufferId;
+            if (key == 0 || !TryReadMetadata(key, out VaultBufferMeta meta) || meta.Length <= 0)
+                return false;
+
+            int stride = UnsafeUtility.SizeOf<T>();
+            int alignment = UnsafeUtility.AlignOf<T>();
+            ValidateType<T>(bufferId, meta, stride, alignment);
+            handle.BufferID = unchecked((uint)key);
+            handle.SystemID = (uint)meta.Owner;
+            handle.Generation = meta.Version;
+            handle.Flags = meta.Flags;
+            return true;
+        }
+
+        private void RecordGenerationFault(int key, uint handleGeneration, uint metaGeneration)
+        {
+            if (key < 0)
+                key = 0;
+
+            Interlocked.Increment(ref _generationHandleMissCount);
+            Volatile.Write(ref _lastFaultBufferId, key);
+            _lastFaultHandleGeneration = handleGeneration;
+            _lastFaultMetaGeneration = metaGeneration;
+            LastDefragFlags = (byte)(LastDefragFlags | DefragFlagFault);
+            RecordDefragBlackBox(++_defragTickSequence, DefragFlagFault);
+            DumpShinobu202BlackBox();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint ComputeTypeHash<T>() where T : struct
+        {
+            unchecked
+            {
+                uint hash = 2166136261u;
+                hash = (hash ^ (uint)UnsafeUtility.SizeOf<T>()) * 16777619u;
+                hash = (hash ^ (uint)UnsafeUtility.AlignOf<T>()) * 16777619u;
+                hash = (hash ^ (uint)typeof(T).TypeHandle.Value.ToInt64()) * 16777619u;
+                return hash == 0u ? 1u : hash;
+            }
         }
 
         private static uint NextGeneration(uint generation)
@@ -2958,7 +3909,7 @@ namespace Hecton8.Core.Memory
                         meta.BlockIndex = i;
                         meta.OffsetBytes = block.OffsetBytes;
                         meta.Version = block.Version;
-                        _metadata[block.BufferKey] = meta;
+                        WriteMetadata(block.BufferKey, in meta);
                         PublishMovedBufferPointer(block.BufferKey, newPointer);
                         RecordRelocation(block.BufferKey, in meta, oldPointer, newPointer, block.Bytes, block.Version);
                     }
@@ -3284,7 +4235,7 @@ namespace Hecton8.Core.Memory
                 meta.BlockIndex = i;
                 meta.OffsetBytes = block.OffsetBytes;
                 meta.Version = block.Version;
-                _metadata[block.BufferKey] = meta;
+                WriteMetadata(block.BufferKey, in meta);
                 _buffers[block.BufferKey] = (IntPtr)((byte*)_arenaBase + block.OffsetBytes);
             }
         }
@@ -3433,8 +4384,249 @@ namespace Hecton8.Core.Memory
 
         private static void ValidateType<T>(BufferID bufferId, VaultBufferMeta meta, int stride, int alignment) where T : struct
         {
-            if (meta.Stride != stride || meta.Alignment != alignment)
+            uint typeHash = ComputeTypeHash<T>();
+            if (meta.Stride != stride ||
+                meta.Alignment != alignment ||
+                (meta.TypeHash != 0u && meta.TypeHash != typeHash))
+            {
                 FatalMemoryException.ThrowVaultTypeMismatch();
+            }
+        }
+
+        private static bool TryParseBudgetLine(ReadOnlySpan<byte> line, out VaultMemoryBudgetEntry entry)
+        {
+            entry = default;
+            line = TrimAscii(line);
+            if (line.Length == 0 || line[0] == (byte)'#')
+                return false;
+
+            if (!TryTakeCsvCell(line, 0, out ReadOnlySpan<byte> systemName, out int next) ||
+                !TryTakeCsvCell(line, next, out ReadOnlySpan<byte> budgetCell, out next) ||
+                !TryTakeCsvCell(line, next, out ReadOnlySpan<byte> defragCell, out next))
+            {
+                return false;
+            }
+
+            systemName = TrimAscii(systemName);
+            if (systemName.Length == 0 || IsCsvHeader(systemName))
+                return false;
+
+            if (!TryParsePositiveLong(TrimAscii(budgetCell), out long budgetBytes) ||
+                !TryParsePositiveLong(TrimAscii(defragCell), out long defragBytes))
+            {
+                return false;
+            }
+
+            entry.SystemHash = Fnv1a(systemName);
+            entry.BufferID = 0;
+            entry.BudgetBytes = budgetBytes;
+            entry.DefragThresholdBytes = defragBytes;
+            entry.Flags = 0u;
+            return true;
+        }
+
+        private static bool TryTakeCsvCell(ReadOnlySpan<byte> line, int start, out ReadOnlySpan<byte> cell, out int next)
+        {
+            cell = default;
+            next = start;
+            if ((uint)start > (uint)line.Length)
+                return false;
+
+            int end = start;
+            while (end < line.Length && line[end] != (byte)',')
+                end++;
+
+            cell = line.Slice(start, end - start);
+            next = end < line.Length ? end + 1 : line.Length;
+            return true;
+        }
+
+        private static ReadOnlySpan<byte> TrimAscii(ReadOnlySpan<byte> value)
+        {
+            int start = 0;
+            int end = value.Length - 1;
+            while (start <= end && value[start] <= (byte)' ')
+                start++;
+            while (end >= start && value[end] <= (byte)' ')
+                end--;
+            return start <= end ? value.Slice(start, end - start + 1) : ReadOnlySpan<byte>.Empty;
+        }
+
+        private static bool TryParsePositiveLong(ReadOnlySpan<byte> value, out long parsed)
+        {
+            parsed = 0L;
+            if (value.Length == 0)
+                return false;
+
+            long result = 0L;
+            for (int i = 0; i < value.Length; i++)
+            {
+                byte digit = value[i];
+                if (digit < (byte)'0' || digit > (byte)'9')
+                    return false;
+
+                long next = (result * 10L) + (digit - (byte)'0');
+                if (next < result)
+                    return false;
+
+                result = next;
+            }
+
+            parsed = result;
+            return parsed > 0L;
+        }
+
+        private static uint Fnv1a(ReadOnlySpan<byte> value)
+        {
+            uint hash = 2166136261u;
+            for (int i = 0; i < value.Length; i++)
+                hash = (hash ^ value[i]) * 16777619u;
+            return hash == 0u ? 1u : hash;
+        }
+
+        private static bool IsCsvHeader(ReadOnlySpan<byte> value)
+        {
+            return value.Length == 6 &&
+                ToLowerAscii(value[0]) == (byte)'s' &&
+                ToLowerAscii(value[1]) == (byte)'y' &&
+                ToLowerAscii(value[2]) == (byte)'s' &&
+                ToLowerAscii(value[3]) == (byte)'t' &&
+                ToLowerAscii(value[4]) == (byte)'e' &&
+                ToLowerAscii(value[5]) == (byte)'m';
+        }
+
+        private static byte ToLowerAscii(byte value)
+        {
+            return value >= (byte)'A' && value <= (byte)'Z' ? (byte)(value + 32) : value;
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct InitializeVaultMetadataJob : IJobParallelFor
+        {
+            [NoAlias] public NativeArray<VaultBufferMeta> Metadata;
+
+            public void Execute(int index)
+            {
+                VaultBufferMeta meta = default;
+                meta.BufferKey = -1;
+                Metadata[index] = meta;
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct InitializeVaultBudgetEntriesJob : IJobParallelFor
+        {
+            [NoAlias] public NativeArray<VaultMemoryBudgetEntry> Entries;
+
+            public void Execute(int index)
+            {
+                Entries[index] = default;
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct GenerateMockVaultRelocationJob : IJob
+        {
+            [NoAlias] public NativeArray<VaultBufferMeta> Metadata;
+            public uint Seed;
+            public int MaxMutations;
+
+            public void Execute()
+            {
+                uint state = Seed == 0u ? 0x9E3779B9u : Seed;
+                int mutations = 0;
+                int length = Metadata.IsCreated ? Metadata.Length : 0;
+                for (int i = 1; i < length && mutations < MaxMutations; i++)
+                {
+                    state = (state * 1664525u) + 1013904223u;
+                    if ((state & 7u) != 0u)
+                        continue;
+
+                    VaultBufferMeta meta = Metadata[i];
+                    if (meta.BufferKey != i || meta.Version == 0u || meta.Length <= 0)
+                        continue;
+
+                    meta.Version = NextGenerationStatic(meta.Version);
+                    meta.Flags ^= 1u;
+                    Metadata[i] = meta;
+                    mutations++;
+                }
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct SweepOrphanedHandlesJob : IJobParallelFor
+        {
+            [NoAlias] public NativeArray<VaultBufferMeta> Metadata;
+            [ReadOnly] [NoAlias] public NativeArray<SystemID> LiveOwners;
+            public int LiveOwnerCount;
+
+            public void Execute(int index)
+            {
+                VaultBufferMeta meta = Metadata[index];
+                if (meta.BufferKey != index ||
+                    meta.Version == 0u ||
+                    meta.Length <= 0 ||
+                    meta.RefCount == 0u)
+                {
+                    return;
+                }
+
+                if (!IsSceneOwnedVaultOwner(meta.Owner))
+                {
+                    meta.Flags &= ~VaultMetaFlagOrphanCandidate;
+                    Metadata[index] = meta;
+                    return;
+                }
+
+                int liveCount = math.min(math.max(0, LiveOwnerCount), LiveOwners.Length);
+                for (int i = 0; i < liveCount; i++)
+                {
+                    if (LiveOwners[i] != meta.Owner)
+                        continue;
+
+                    meta.Flags &= ~VaultMetaFlagOrphanCandidate;
+                    Metadata[index] = meta;
+                    return;
+                }
+
+                meta.Flags |= VaultMetaFlagOrphanCandidate;
+                Metadata[index] = meta;
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private unsafe struct VaultDefragmentationJob : IJob
+        {
+            [NoAlias] [NativeDisableUnsafePtrRestriction] public void* ArenaBase;
+            [NoAlias] public NativeArray<VaultBufferMeta> Metadata;
+            public int StartBufferID;
+            public int EndBufferID;
+
+            public void Execute()
+            {
+                if (ArenaBase == null || !Metadata.IsCreated)
+                    return;
+
+                int start = math.max(1, StartBufferID);
+                int end = math.min(EndBufferID, Metadata.Length - 1);
+                for (int i = start; i <= end; i++)
+                {
+                    VaultBufferMeta meta = Metadata[i];
+                    if (meta.BufferKey != i || meta.Version == 0u || meta.Bytes <= 0L)
+                        continue;
+
+                    meta.Version = NextGenerationStatic(meta.Version);
+                    Metadata[i] = meta;
+                }
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint NextGenerationStatic(uint generation)
+        {
+            uint next = generation + 1u;
+            return next == 0u ? 1u : next;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

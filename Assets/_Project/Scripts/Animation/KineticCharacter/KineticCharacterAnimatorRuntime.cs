@@ -4,7 +4,6 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Determinism;
 using Hecton8.Core.Memory;
-using Hecton8.Gameplay;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -15,8 +14,8 @@ using UnityEngine.Rendering;
 namespace Hecton8.Animation.KineticCharacter
 {
     [DisallowMultipleComponent]
-    [AddComponentMenu("Hecton8/Animation/Kinetic Character Animator Runtime")]
-    public sealed class KineticCharacterAnimatorRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IDisposable
+    [AddComponentMenu("Hecton8/Animation/Kinetic Character Matrix Runtime")]
+    public sealed class KineticCharacterAnimatorRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IKineticCharacterPresentationSink, IDisposable
     {
         private const int LockRigs = 1 << 0;
         private const int LockInputs = 1 << 1;
@@ -30,7 +29,6 @@ namespace Hecton8.Animation.KineticCharacter
         private const int LockCursor = 1 << 9;
         private const int LockTuning = 1 << 10;
         private const int LockSdf = 1 << 11;
-        private const int LockPlayerHands = 1 << 12;
 
         private static readonly int KineticBoneMatricesId = Shader.PropertyToID("_H8KineticCharacterBoneMatrices");
         private static readonly int KineticBoneMatrixCountId = Shader.PropertyToID("_H8KineticCharacterBoneMatrixCount");
@@ -62,6 +60,7 @@ namespace Hecton8.Animation.KineticCharacter
         private VaultBufferHandle<KineticAnimationTelemetryEntry> _telemetryHandle;
         private VaultBufferHandle<int> _telemetryCursorHandle;
         private VaultBufferHandle<KineticCharacterTuningDTO> _tuningHandle;
+        private VaultBufferHandle<byte> _csvScratchHandle;
 
         private GraphicsBuffer _matrixBufferA;
         private GraphicsBuffer _matrixBufferB;
@@ -79,6 +78,7 @@ namespace Hecton8.Animation.KineticCharacter
         private float3 _submittedDamageImpulseLocal;
         private float _submittedDamageImpulse01;
         private float4x4 _submittedToolPose = float4x4.identity;
+        private uint _submittedToolHash;
         private uint _latestStateHash;
         private uint _uploadedStateHash;
         private int _gpuUploadBufferIndex;
@@ -129,7 +129,7 @@ namespace Hecton8.Animation.KineticCharacter
         public bool TryResolveTuningForEditor(out NativeArray<KineticCharacterTuningDTO> tuning)
         {
             tuning = default;
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            IDataVault vault = ResolveDataVaultCold();
             if (vault == null)
                 return false;
 
@@ -148,7 +148,7 @@ namespace Hecton8.Animation.KineticCharacter
             if (_solverScheduled)
                 return false;
 
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            IDataVault vault = ResolveDataVaultCold();
             if (vault == null)
                 return false;
 
@@ -166,7 +166,7 @@ namespace Hecton8.Animation.KineticCharacter
             if (string.IsNullOrEmpty(csvText) || !TryResolveTuningForEditor(out NativeArray<KineticCharacterTuningDTO> tuning))
                 return false;
 
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            IDataVault vault = ResolveDataVaultCold();
             if (vault == null)
                 return false;
 
@@ -184,6 +184,49 @@ namespace Hecton8.Animation.KineticCharacter
             tuning[0] = tuningDto;
             rigs[0] = rig;
             return result;
+        }
+
+        public bool TryApplyCsvProfileBytes(ReadOnlySpan<byte> csvBytes)
+        {
+            if (csvBytes.Length <= 0 || !TryResolveTuningForEditor(out NativeArray<KineticCharacterTuningDTO> tuning))
+                return false;
+
+            IDataVault vault = ResolveDataVaultCold();
+            if (vault == null)
+                return false;
+
+            NativeArray<KineticCharacterRigDTO> rigs = _rigsHandle.Resolve(vault);
+            if (!rigs.IsCreated || rigs.Length <= 0)
+                return false;
+
+            if (rigs[0].BoneCount <= 0)
+                GenerateEmergencyMockRig();
+
+            rigs = _rigsHandle.Resolve(vault);
+            KineticCharacterTuningDTO tuningDto = tuning[0];
+            KineticCharacterRigDTO rig = rigs[0];
+            bool result = KineticCharacterRigCsvParser.TryApply(csvBytes, ref tuningDto, ref rig);
+            tuning[0] = tuningDto;
+            rigs[0] = rig;
+            return result;
+        }
+
+        public bool TryApplyCsvProfileFromVaultScratch(int byteCount)
+        {
+            IDataVault vault = ResolveDataVaultCold();
+            if (vault == null || !EnsureVaultBuffers())
+                return false;
+
+            NativeArray<byte> scratch = _csvScratchHandle.Resolve(vault);
+            if (!scratch.IsCreated || byteCount <= 0)
+                return false;
+
+            int safeCount = math.min(byteCount, scratch.Length);
+            unsafe
+            {
+                byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(scratch);
+                return TryApplyCsvProfileBytes(new ReadOnlySpan<byte>(ptr, safeCount));
+            }
         }
 
         public void SubmitSwimPresentation(
@@ -210,16 +253,25 @@ namespace Hecton8.Animation.KineticCharacter
         {
             if (KineticCharacterMath.IsFinite(localToCameraMatrix))
                 _submittedToolPose = localToCameraMatrix;
-            _submittedToolWeight = math.max(_submittedToolWeight, math.saturate(weight01));
+
+            float weight = math.saturate(weight01);
+            _submittedToolWeight = math.max(_submittedToolWeight, weight);
+            if (weight > 0.0001f)
+                _submittedToolHash = toolHash;
         }
 
         public void SubmitDamageImpulse(Vector3 localImpulse, float weight01)
+        {
+            SubmitDamageImpulse(new float3(localImpulse.x, localImpulse.y, localImpulse.z), weight01);
+        }
+
+        public void SubmitDamageImpulse(float3 localImpulse, float weight01)
         {
             float weight = math.saturate(weight01);
             if (weight <= 0f)
                 return;
 
-            float3 impulse = new float3(localImpulse.x, localImpulse.y, localImpulse.z);
+            float3 impulse = KineticCharacterMath.SanitizeFinite(localImpulse, float3.zero);
             _submittedDamageImpulseLocal = KineticCharacterMath.SanitizeFinite(_submittedDamageImpulseLocal + impulse * weight, float3.zero);
             _submittedDamageImpulse01 = math.max(_submittedDamageImpulse01, weight);
         }
@@ -241,7 +293,7 @@ namespace Hecton8.Animation.KineticCharacter
             if (_disposed || !Application.isPlaying)
                 return;
 
-            CompletePendingSolver(true);
+            CompletePendingSolverForTeardown();
             RefreshColdDependencies();
             if (EnsureVaultBuffers())
                 EnsureGraphicsBuffers();
@@ -256,7 +308,7 @@ namespace Hecton8.Animation.KineticCharacter
                 return;
 
             TryUnregister();
-            CompletePendingSolver(true);
+            CompletePendingSolverForTeardown();
             ClearGpuSkinningBinding();
         }
 
@@ -271,7 +323,7 @@ namespace Hecton8.Animation.KineticCharacter
                 return;
 
             TryUnregister();
-            CompletePendingSolver(true);
+            CompletePendingSolverForTeardown();
             UnlockJobBuffers();
             ClearGpuSkinningBinding();
             ReleaseGraphicsBuffers();
@@ -286,10 +338,10 @@ namespace Hecton8.Animation.KineticCharacter
             if (_disposed || !Application.isPlaying)
                 return;
 
-            if (_solverScheduled && !CompletePendingSolver(false))
+            if (_solverScheduled && !TryFinalizePendingSolverNoWait())
                 return;
 
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null || !EnsureVaultBuffers())
                 return;
 
@@ -318,16 +370,11 @@ namespace Hecton8.Animation.KineticCharacter
 
             bool hasPlayerState = WriteFrameInput(vault, inputs, dt, quality);
             bool includeSdf = vault.TryGetBuffer<byte>(BufferID.VoxelSdfTexture3D, out NativeArray<byte> sdf) && sdf.IsCreated && sdf.Length > 0;
-            bool includeHands = vault.TryGetBuffer<PlayerKinematicsHandTarget>(BufferID.PlayerKinematicSmoothedHandTargets, out NativeArray<PlayerKinematicsHandTarget> playerHands) &&
-                                playerHands.IsCreated &&
-                                playerHands.Length >= 2;
-            if (!TryLockJobBuffers(vault, ref includeSdf, ref includeHands))
+            if (!TryLockJobBuffers(vault, ref includeSdf))
                 return;
 
             if (!includeSdf)
                 sdf = default;
-            if (!includeHands)
-                playerHands = default;
 
             JobHandle dependency = default;
             if (!hasPlayerState)
@@ -347,7 +394,6 @@ namespace Hecton8.Animation.KineticCharacter
                 Inputs = inputs,
                 Targets = ikTargets,
                 VoxelSdfTexture3D = sdf,
-                PlayerHandTargets = playerHands,
                 SdfDimensions = new int3(math.max(0, _sdfDimensions.x), math.max(0, _sdfDimensions.y), math.max(0, _sdfDimensions.z)),
                 SdfOrigin = new float3(_sdfOrigin.x, _sdfOrigin.y, _sdfOrigin.z),
                 SdfCellSize = new float3(math.max(0.0001f, _sdfCellSize.x), math.max(0.0001f, _sdfCellSize.y), math.max(0.0001f, _sdfCellSize.z)),
@@ -397,7 +443,7 @@ namespace Hecton8.Animation.KineticCharacter
             if (_disposed || !Application.isPlaying)
                 return;
 
-            CompletePendingSolver(false);
+            TryFinalizePendingSolverNoWait();
             if (_gpuUploadDirty)
                 UploadMatricesToGpu();
             else if (_gpuConstantsDirty)
@@ -409,10 +455,11 @@ namespace Hecton8.Animation.KineticCharacter
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
-            CompletePendingSolver(true);
+            CompletePendingSolverForTeardown();
             UnlockJobBuffers();
             _dataVault = currentService as IDataVault;
             ClearHandles();
+            ClearGpuSkinningBinding();
             _dumpedFault = false;
             if (_dataVault != null)
             {
@@ -424,7 +471,7 @@ namespace Hecton8.Animation.KineticCharacter
 
         public void GenerateEmergencyMockRig()
         {
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            IDataVault vault = ResolveDataVaultCold();
             if (vault == null || !EnsureVaultBuffers())
                 return;
 
@@ -523,7 +570,7 @@ namespace Hecton8.Animation.KineticCharacter
 
         private void RefreshColdDependencies()
         {
-            _dataVault = GlobalRegistry.DataVault;
+            ResolveDataVaultCold();
             if (_cameraTransform == null)
             {
                 Camera camera = GetComponentInChildren<Camera>();
@@ -534,7 +581,7 @@ namespace Hecton8.Animation.KineticCharacter
 
         private bool EnsureVaultBuffers()
         {
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null || !KineticCharacterAnimatorLayout.Validate())
                 return false;
 
@@ -595,6 +642,11 @@ namespace Hecton8.Animation.KineticCharacter
                 KineticCharacterAnimatorConstants.TuningCapacity,
                 SystemID.AnimationLocomotion,
                 NativeArrayOptions.ClearMemory);
+            _csvScratchHandle = vault.GetBufferHandle<byte>(
+                KineticCharacterAnimatorBufferIds.CsvScratch,
+                KineticCharacterAnimatorConstants.CsvScratchBytes,
+                SystemID.AnimationLocomotion,
+                NativeArrayOptions.UninitializedMemory);
 
             if (_tuningHandle.IsCreated)
             {
@@ -613,7 +665,8 @@ namespace Hecton8.Animation.KineticCharacter
                    _statsHandle.IsCreated &&
                    _telemetryHandle.IsCreated &&
                    _telemetryCursorHandle.IsCreated &&
-                   _tuningHandle.IsCreated;
+                   _tuningHandle.IsCreated &&
+                   _csvScratchHandle.IsCreated;
         }
 
         private bool TryResolveRuntimeBuffers(
@@ -692,10 +745,13 @@ namespace Hecton8.Animation.KineticCharacter
             input.ImmersionDepth = _submittedImmersionDepth;
             input.BreathingPhase = _submittedBreathingPhase;
             input.ActiveToolWeight01 = _submittedToolWeight;
-            input.Frame = player.Frame != 0u ? player.Frame : _frameCounter;
+            input.ActiveToolHash = _submittedToolHash;
+            input.Frame = _frameCounter;
             input.Flags = KineticCharacterAnimatorConstants.InputFlagVisible;
             if (_submittedToolWeight > 0.0001f)
                 input.Flags |= KineticCharacterAnimatorConstants.InputFlagToolActive;
+            if (_submittedToolHash != 0u)
+                input.Flags |= KineticCharacterAnimatorConstants.InputFlagToolHashValid;
             if (_submittedDamageImpulse01 > 0.0001f)
                 input.Flags |= KineticCharacterAnimatorConstants.InputFlagDamageImpulse;
             if (_submittedLeanWeight > 0.0001f || _submittedCrestReach > 0.0001f || _submittedDescentTuck > 0.0001f)
@@ -705,12 +761,15 @@ namespace Hecton8.Animation.KineticCharacter
             _submittedDamageImpulseLocal = math.lerp(_submittedDamageImpulseLocal, float3.zero, math.saturate(dt * 8f));
             _submittedDamageImpulse01 = math.max(0f, _submittedDamageImpulse01 - dt * 3f);
             _submittedToolWeight = math.saturate(_submittedToolWeight * math.exp(-dt * 2f));
+            if (_submittedToolWeight <= 0.0001f)
+                _submittedToolHash = 0u;
             return true;
         }
 
         private quaternion ResolveRootRotation(float3 forward)
         {
-            float3 safeForward = KineticCharacterMath.NormalizeSafe(forward, transform.forward);
+            Vector3 fallback = transform.forward;
+            float3 safeForward = KineticCharacterMath.NormalizeSafe(forward, new float3(fallback.x, fallback.y, fallback.z));
             return quaternion.LookRotationSafe(safeForward, KineticCharacterMath.Float3(0f, 1f, 0f));
         }
 
@@ -732,16 +791,33 @@ namespace Hecton8.Animation.KineticCharacter
             return KineticCharacterMath.NormalizeSafe(new float3(forward.x, forward.y, forward.z), math.mul(fallbackRotation, KineticCharacterMath.Float3(0f, 0f, 1f)));
         }
 
-        private bool CompletePendingSolver(bool forceComplete)
+        private bool TryFinalizePendingSolverNoWait()
         {
             if (!_solverScheduled)
                 return true;
 
-            if (!forceComplete && !_pendingHandle.IsCompleted)
+            if (!_pendingHandle.IsCompleted)
                 return false;
 
-            _pendingHandle.Complete();
-            _pendingHandle = default;
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _pendingHandle))
+                return false;
+
+            return FinishPendingSolverCompletion();
+        }
+
+        private bool CompletePendingSolverForTeardown()
+        {
+            if (!_solverScheduled)
+                return true;
+
+            if (!DispatcherJobFence.TryComplete(ref _pendingHandle, forceComplete: true))
+                return false;
+
+            return FinishPendingSolverCompletion();
+        }
+
+        private bool FinishPendingSolverCompletion()
+        {
             _solverScheduled = false;
             UnlockJobBuffers();
             _frameCounter++;
@@ -752,7 +828,7 @@ namespace Hecton8.Animation.KineticCharacter
             return true;
         }
 
-        private bool TryLockJobBuffers(IDataVault vault, ref bool includeSdf, ref bool includeHands)
+        private bool TryLockJobBuffers(IDataVault vault, ref bool includeSdf)
         {
             _lockedBuffers = 0;
             if (!TryLockRequired(vault, KineticCharacterAnimatorBufferIds.Rigs, LockRigs) ||
@@ -769,7 +845,6 @@ namespace Hecton8.Animation.KineticCharacter
             {
                 UnlockJobBuffers();
                 includeSdf = false;
-                includeHands = false;
                 return false;
             }
 
@@ -778,12 +853,15 @@ namespace Hecton8.Animation.KineticCharacter
             else
                 includeSdf = false;
 
-            if (includeHands && vault.TryLockBuffer(BufferID.PlayerKinematicSmoothedHandTargets, SystemID.AnimationLocomotion))
-                _lockedBuffers |= LockPlayerHands;
-            else
-                includeHands = false;
-
             return true;
+        }
+
+        private IDataVault ResolveDataVaultCold()
+        {
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
+
+            return _dataVault;
         }
 
         private bool TryLockRequired(IDataVault vault, BufferID bufferId, int bit)
@@ -818,7 +896,6 @@ namespace Hecton8.Animation.KineticCharacter
             Unlock(vault, KineticCharacterAnimatorBufferIds.TelemetryCursor, LockCursor);
             Unlock(vault, KineticCharacterAnimatorBufferIds.Tuning, LockTuning);
             Unlock(vault, BufferID.VoxelSdfTexture3D, LockSdf);
-            Unlock(vault, BufferID.PlayerKinematicSmoothedHandTargets, LockPlayerHands);
             _lockedBuffers = 0;
         }
 
@@ -857,12 +934,13 @@ namespace Hecton8.Animation.KineticCharacter
             int index = KineticCharacterMath.PositiveModulo(cursor[0] - 1, telemetry.Length);
             KineticAnimationTelemetryEntry entry = telemetry[index];
             int matrixCount = math.clamp(entry.BonesEvaluated, 0, _boneCapacity);
+            int activeCharacters = entry.BonesEvaluated > 0 ? 1 : 0;
             float quality = math.saturate(math.select(_lastQuality, entry.GlobalQualityWeight, math.isfinite(entry.GlobalQualityWeight)));
             _gpuConstantsDirty |= matrixCount != _uploadedMatrixCount ||
-                                  _activeCharacterCount != _uploadedCharacterCount ||
+                                  activeCharacters != _uploadedCharacterCount ||
                                   math.abs(quality - _uploadedQuality) > 0.0001f;
             _activeMatrixUploadCount = matrixCount;
-            _activeCharacterCount = entry.BonesEvaluated > 0 ? 1 : 0;
+            _activeCharacterCount = activeCharacters;
             _latestStateHash = entry.StateHash;
             _lastQuality = quality;
         }
@@ -1046,6 +1124,7 @@ namespace Hecton8.Animation.KineticCharacter
             _telemetryHandle = default;
             _telemetryCursorHandle = default;
             _tuningHandle = default;
+            _csvScratchHandle = default;
         }
 
         private void TryRegister()
@@ -1122,7 +1201,7 @@ namespace Hecton8.Animation.KineticCharacter
 
     internal static class KineticCharacterGraphicsBufferUpload
     {
-        public static GraphicsBuffer CreateStructuredLockBuffer<T>(int count) where T : struct
+        public static GraphicsBuffer CreateStructuredLockBuffer<T>(int count) where T : unmanaged
         {
             return new GraphicsBuffer(
                 GraphicsBuffer.Target.Structured,
@@ -1131,7 +1210,7 @@ namespace Hecton8.Animation.KineticCharacter
                 UnsafeUtility.SizeOf<T>());
         }
 
-        public static void UploadNativeArray<T>(GraphicsBuffer destination, NativeArray<T> source, int count) where T : struct
+        public static void UploadNativeArray<T>(GraphicsBuffer destination, NativeArray<T> source, int count) where T : unmanaged
         {
             int safeCount = ResolveSafeWriteCount<T>(destination, source.IsCreated ? source.Length : 0, count);
             if (safeCount <= 0)
@@ -1148,7 +1227,7 @@ namespace Hecton8.Animation.KineticCharacter
             destination.UnlockBufferAfterWrite<T>(safeCount);
         }
 
-        private static int ResolveSafeWriteCount<T>(GraphicsBuffer destination, int sourceLength, int requestedCount) where T : struct
+        private static int ResolveSafeWriteCount<T>(GraphicsBuffer destination, int sourceLength, int requestedCount) where T : unmanaged
         {
             if (destination == null || requestedCount <= 0 || sourceLength <= 0 || destination.count <= 0)
                 return 0;

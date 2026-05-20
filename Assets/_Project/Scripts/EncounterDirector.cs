@@ -43,7 +43,7 @@ namespace Hecton8.Systems.AI
         DespairModeActive = 1 << 4
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential)]
     internal struct EncounterDirectorState
     {
         public float StressLevel;
@@ -62,7 +62,7 @@ namespace Hecton8.Systems.AI
         public uint Padding1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential)]
     internal struct EncounterEnemyToken
     {
         public int EntityId;
@@ -86,7 +86,7 @@ namespace Hecton8.Systems.AI
         Apex = 1 << 2
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential)]
     internal struct HeadlessEntity
     {
         public int EntityId;
@@ -100,7 +100,7 @@ namespace Hecton8.Systems.AI
         public ushort AgeColdTicks;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential)]
     internal struct EncounterDirectorBlackBoxEntry
     {
         public uint FrameIndex;
@@ -151,7 +151,7 @@ namespace Hecton8.Systems.AI
         public int NewPhase;
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential)]
     internal struct EncounterSpawnRequest
     {
         public int ThreatClass;

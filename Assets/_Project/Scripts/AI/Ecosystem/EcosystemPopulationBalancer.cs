@@ -75,6 +75,7 @@ namespace Hecton8.AI.Ecosystem
         private JobHandle _balancerHandle;
         private int _sectorCount;
         private int _telemetryCursor;
+        private uint _simulationFrameCounter;
         private bool _coefficientsLoaded;
         private bool _registeredColdTick;
         private bool _registeredLateFrame;
@@ -98,7 +99,7 @@ namespace Hecton8.AI.Ecosystem
 
         private void OnDisable()
         {
-            CompleteScheduledJob(forceComplete: true);
+            CompleteScheduledJobForTeardown();
             TryUnregisterTicks();
             TryUnregisterHotSwapListener();
             _jobScheduled = false;
@@ -113,12 +114,13 @@ namespace Hecton8.AI.Ecosystem
         {
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
-                CompleteScheduledJob(forceComplete: true);
+                CompleteScheduledJobForTeardown();
                 _dataVault = currentService as IDataVault;
                 ResetVaultHandles();
                 _coefficientsLoaded = false;
                 _sectorCount = 0;
                 _telemetryCursor = 0;
+                _simulationFrameCounter = 0u;
                 _dumpedFault = false;
 
                 if (_dataVault == null)
@@ -161,19 +163,20 @@ namespace Hecton8.AI.Ecosystem
             if (vault == null)
                 return;
 
-            if (!TryBuildSectorState(vault, out int entityCount, out int totalActiveEntities))
+            uint frame = AdvanceSimulationFrame();
+            if (!TryBuildSectorState(vault, frame, out int entityCount, out int totalActiveEntities))
             {
-                RecordEmptyTelemetry(vault, totalActiveEntities);
+                RecordEmptyTelemetry(vault, frame, totalActiveEntities);
                 return;
             }
 
             if (_sectorCount <= 0 || entityCount <= 0)
             {
-                RecordEmptyTelemetry(vault, totalActiveEntities);
+                RecordEmptyTelemetry(vault, frame, totalActiveEntities);
                 return;
             }
 
-            ScheduleBalancerJob(vault, entityCount, totalActiveEntities);
+            ScheduleBalancerJob(vault, frame, entityCount, totalActiveEntities);
         }
 
         public void LateFrameTick()
@@ -181,7 +184,7 @@ namespace Hecton8.AI.Ecosystem
             if (!_jobScheduled)
                 return;
 
-            if (!DispatcherJobSwap.TryComplete(ref _balancerHandle, forceComplete: false))
+            if (!DispatcherJobFence.TryComplete(ref _balancerHandle, forceComplete: false))
                 return;
 
             _jobScheduled = false;
@@ -275,8 +278,11 @@ namespace Hecton8.AI.Ecosystem
             if (vault != null)
                 return vault;
 
-            vault = GlobalRegistry.DataVault;
-            _dataVault = vault;
+            if (GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
+            {
+                vault = latest;
+                _dataVault = vault;
+            }
             return vault;
         }
 
@@ -370,7 +376,7 @@ namespace Hecton8.AI.Ecosystem
             return coefficient.PreyCarryingCapacity > 0f;
         }
 
-        private bool TryBuildSectorState(IDataVault vault, out int entityCount, out int totalActiveEntities)
+        private bool TryBuildSectorState(IDataVault vault, uint frame, out int entityCount, out int totalActiveEntities)
         {
             entityCount = 0;
             totalActiveEntities = 0;
@@ -402,7 +408,6 @@ namespace Hecton8.AI.Ecosystem
             for (int i = 0; i < freeRingLength; i++)
                 freeRing[i] = default;
             int rebuiltFreeCount = 0;
-            uint frame = unchecked((uint)Time.frameCount);
             _runtimeFlags &= ~TelemetryFreeRingOverflowFlag;
 
             int scanCount = math.min(maxEntities, math.min(entityAups.Length, entityFlags.Length));
@@ -506,7 +511,7 @@ namespace Hecton8.AI.Ecosystem
             return true;
         }
 
-        private void ScheduleBalancerJob(IDataVault vault, int entityCount, int totalActiveEntities)
+        private void ScheduleBalancerJob(IDataVault vault, uint frame, int entityCount, int totalActiveEntities)
         {
             if (!TryLockJobBuffers(vault))
                 return;
@@ -548,7 +553,7 @@ namespace Hecton8.AI.Ecosystem
                 EntityCount = entityCount,
                 TotalActiveEntities = totalActiveEntities,
                 TelemetryIndex = telemetryIndex,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = frame,
                 DeltaSeconds = ColdTickDeltaSeconds,
                 SystemStress01 = SignalBusRegistry.SystemStress01,
                 BiomassPerEntity = math.max(1f, biomassPerEntity),
@@ -573,7 +578,7 @@ namespace Hecton8.AI.Ecosystem
             _jobLocksHeld = true;
         }
 
-        private void RecordEmptyTelemetry(IDataVault vault, int totalActiveEntities)
+        private void RecordEmptyTelemetry(IDataVault vault, uint frame, int totalActiveEntities)
         {
             var telemetry = _telemetryHandle.Resolve(vault);
             var counters = _counterHandle.Resolve(vault);
@@ -587,7 +592,7 @@ namespace Hecton8.AI.Ecosystem
             float systemStress01 = math.saturate(SignalBusRegistry.SystemStress01);
             telemetry[telemetryIndex] = new EcosystemPopulationTelemetryEntry
             {
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = frame,
                 TotalActiveEntities = totalActiveEntities,
                 SectorCount = 0,
                 FreeRingCount = freeRingCount,
@@ -598,6 +603,16 @@ namespace Hecton8.AI.Ecosystem
 
             if (counters.Length > EcosystemPopulationCounters.TotalActiveEntities)
                 counters[EcosystemPopulationCounters.TotalActiveEntities] = totalActiveEntities;
+        }
+
+        private uint AdvanceSimulationFrame()
+        {
+            uint next = _simulationFrameCounter + 1u;
+            if (next == 0u)
+                next = 1u;
+
+            _simulationFrameCounter = next;
+            return next;
         }
 
         private int ReserveTelemetryIndex(int telemetryLength)
@@ -663,7 +678,7 @@ namespace Hecton8.AI.Ecosystem
             }
         }
 
-        private void CompleteScheduledJob(bool forceComplete)
+        private void CompleteScheduledJobForTeardown()
         {
             if (!_jobScheduled)
             {
@@ -671,12 +686,11 @@ namespace Hecton8.AI.Ecosystem
                 return;
             }
 
-            if (!DispatcherJobSwap.TryComplete(ref _balancerHandle, forceComplete))
+            if (!DispatcherJobFence.TryComplete(ref _balancerHandle, forceComplete: true))
                 return;
 
             _jobScheduled = false;
-            if (forceComplete)
-                PublishCompletedCullSignals();
+            PublishCompletedCullSignals();
             UnlockJobBuffers();
         }
 
@@ -818,6 +832,7 @@ namespace Hecton8.AI.Ecosystem
             _coefficientsLoaded = false;
             _sectorCount = 0;
             _telemetryCursor = 0;
+            _simulationFrameCounter = 0u;
             _dumpedFault = false;
             ResetVaultHandles();
         }
@@ -941,17 +956,17 @@ namespace Hecton8.AI.Ecosystem
             return result < 0 ? result + length : result;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct EcosystemBalancerJob : IJob
         {
-            [ReadOnly] public NativeArray<EcosystemPopulationCoefficient> Coefficients;
-            public NativeArray<EcosystemPopulationSectorState> SectorStates;
-            [ReadOnly] public NativeArray<AbsoluteUniversePosition> EntityAups;
-            public NativeArray<uint> EntityFlags;
-            public NativeArray<EcosystemPopulationCullEvent> CullEvents;
-            public NativeArray<EcosystemPopulationFreeSlot> FreeRing;
-            public NativeArray<EcosystemPopulationTelemetryEntry> TelemetryRing;
-            public NativeArray<int> Counters;
+            [ReadOnly, NoAlias] public NativeArray<EcosystemPopulationCoefficient> Coefficients;
+            [NoAlias] public NativeArray<EcosystemPopulationSectorState> SectorStates;
+            [ReadOnly, NoAlias] public NativeArray<AbsoluteUniversePosition> EntityAups;
+            [NoAlias] public NativeArray<uint> EntityFlags;
+            [NoAlias] public NativeArray<EcosystemPopulationCullEvent> CullEvents;
+            [NoAlias] public NativeArray<EcosystemPopulationFreeSlot> FreeRing;
+            [NoAlias] public NativeArray<EcosystemPopulationTelemetryEntry> TelemetryRing;
+            [NoAlias] public NativeArray<int> Counters;
             public int CullEventLimit;
             public int SectorCount;
             public int EntityCount;

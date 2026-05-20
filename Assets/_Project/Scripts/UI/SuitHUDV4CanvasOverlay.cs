@@ -32,7 +32,7 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Suit HUD V4 Canvas Overlay")]
     [RequireComponent(typeof(Canvas))]
-    public sealed class SuitHUDV4CanvasOverlay : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IUIService, IScannerInterferenceUiSink, IGameBootstrapperEventListener, IPlayerSignalEventListener, ILocalizationLanguageChangedListener, ILocalizationCorruptionVisualStateListener, ISaveEventListener, IGlobalRegistryHotSwapListener
+    public sealed class SuitHUDV4CanvasOverlay : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IUIService, IScannerInterferenceUiSink, IGameBootstrapperEventListener, IPlayerSignalEventListener, ILocalizationLanguageChangedListener, ILocalizationCorruptionVisualStateListener, ISaveEventListener, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
     {
         // COLD ALLOC: List<SuitHUDV4CanvasOverlay>[4] — active HUD overlay registry — owner: SuitHUDV4CanvasOverlay
         private static readonly List<SuitHUDV4CanvasOverlay> s_activeOverlays = new List<SuitHUDV4CanvasOverlay>(4);
@@ -159,7 +159,7 @@ namespace Hecton8.UI
         private const string WorldGeometrySortingLayer = "WorldGeometry";
         private const int MaxThreatChevronCount = 4;
         private const int HudInternalLayerIndex = 17;
-        private const int LowTierDirtyCadenceFrameMask = 3;
+        private const int MaxReactiveUiCadenceStride = 4;
         private const float ThreatChevronPlaneBiasMeters = 0.0004f;
         private const float VrLazyFollowPositionSharpness = 18f;
         private const float VrLazyFollowRotationSharpness = 22f;
@@ -674,7 +674,8 @@ namespace Hecton8.UI
         private bool _inventorySignalDirty = true;
         private bool _playerStateSignalDirty;
         private bool _inputStateSignalDirty;
-        private bool _lowTierDirtyThrottleActive;
+        private int _reactiveUiCadenceStride = 1;
+        private float _qualityWeight01 = 1f;
         private uint _lastInventorySignalRevision;
         private uint _lastInputSchemeHash;
         private byte _playerStateFlags;
@@ -1064,10 +1065,12 @@ namespace Hecton8.UI
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct ThreatChevronState
         {
+            [FieldOffset(0)]
             public AbsoluteUniversePosition PositionAup;
+            [FieldOffset(48)]
             public float Threat01;
         }
 
@@ -1082,6 +1085,7 @@ namespace Hecton8.UI
 
         private bool _ownsGlobalUiSlot;
         private bool _hotSwapRegistered;
+        private bool _scalabilityRegistered;
         private int _hudProxyLightKey;
         private bool _hudProxyLightRegistered;
 
@@ -1130,6 +1134,7 @@ namespace Hecton8.UI
             HectonFloatingOrigin.RegisterListener(this);
             TryRegisterUiService();
             TryRegisterHotSwapListener();
+            TryRegisterScalabilityListener();
             ToolHapticsRuntime.EnsureRuntimeInstance();
             QueueRuntimeCanvasRefresh(forceResolve: true, refreshDepthSignal: true);
             TryRegisterRuntimeTick();
@@ -1155,6 +1160,7 @@ namespace Hecton8.UI
             SaveEvents.Unregister(this);
             HectonFloatingOrigin.UnregisterListener(this);
             TryUnregisterHotSwapListener();
+            TryUnregisterScalabilityListener();
             UnregisterUiService();
             UnregisterActiveOverlay();
             UnregisterRuntimeTick();
@@ -1194,6 +1200,7 @@ namespace Hecton8.UI
         {
             SaveEvents.Unregister(this);
             TryUnregisterHotSwapListener();
+            TryUnregisterScalabilityListener();
             UnregisterUiService();
             UnregisterHudProxyLight();
             DisposeDitheredUiBackgroundRuntimeResources();
@@ -1432,17 +1439,18 @@ namespace Hecton8.UI
             UpdateSavingProgressHud(deltaTime);
             int cadenceFrame = Time.frameCount;
             bool reactiveDirty = ConsumeReactiveSignals();
-            bool lowTierGateOpen = !_lowTierDirtyThrottleActive ||
+            int cadenceStride = math.max(1, _reactiveUiCadenceStride);
+            bool cadenceGateOpen = cadenceStride <= 1 ||
                 reactiveDirty ||
-                (cadenceFrame & LowTierDirtyCadenceFrameMask) == 0;
+                cadenceFrame % cadenceStride == 0;
             bool refreshMediumCadence = reactiveDirty ||
-                (lowTierGateOpen && cadenceFrame % MediumCadenceFrameModulo == 0);
+                (cadenceGateOpen && cadenceFrame % MediumCadenceFrameModulo == 0);
             bool refreshSlowCadence = reactiveDirty ||
-                (lowTierGateOpen && cadenceFrame % SlowCadenceFrameModulo == 0);
+                (cadenceGateOpen && cadenceFrame % SlowCadenceFrameModulo == 0);
             RefreshAcousticRadarPayload();
             if (_threatChevronActiveMask != 0u)
                 _threatChevronPulseTime += math.max(0f, deltaTime);
-            if (lowTierGateOpen)
+            if (cadenceGateOpen)
             {
                 RefreshVisuals(deltaTime, refreshMediumCadence, refreshSlowCadence);
                 HphiReactiveUiTelemetry.RecordActiveUiUpdate();
@@ -1471,7 +1479,7 @@ namespace Hecton8.UI
             if (!Application.isPlaying)
                 return;
 
-            _lowTierDirtyThrottleActive = IsLowTierUiThrottle(GlobalRegistry.ScalabilityTier);
+            RefreshQualityPolicy();
             TryRegisterRuntimeTick();
             ProcessPendingRuntimeCanvasRefresh();
             RefreshThreatChevronTargets();
@@ -1655,7 +1663,7 @@ namespace Hecton8.UI
         {
         }
 
-        void IPlayerSignalEventListener.OnToolDepletedSignal(in ToolDepletedSignal signal)
+        void IPlayerSignalEventListener.OnToolDepletedSignal(in Hecton8.Gameplay.ToolDepletedSignal signal)
         {
             HandleToolDepletedSignal(in signal);
         }
@@ -1671,7 +1679,7 @@ namespace Hecton8.UI
             InvalidateVisualCaches();
         }
 
-        private void HandleToolDepletedSignal(in ToolDepletedSignal signal)
+        private void HandleToolDepletedSignal(in Hecton8.Gameplay.ToolDepletedSignal signal)
         {
             _toolDepletedHashId = signal.ToolHashId;
             _toolDepletedWarningTimer = ToolDepletedWarningDurationSeconds;
@@ -1866,7 +1874,7 @@ namespace Hecton8.UI
             _spatialAudioManager = GlobalRegistry.Audio;
             _playerRuntimeContext = GlobalRegistry.Player;
             RebindInventoryService(GlobalRegistry.PlayerInventory);
-            _lowTierDirtyThrottleActive = IsLowTierUiThrottle(GlobalRegistry.ScalabilityTier);
+            RefreshQualityPolicy();
             return localizationChanged;
         }
 
@@ -1923,6 +1931,27 @@ namespace Hecton8.UI
             TryRegisterRuntimeTick();
         }
 
+        /// <inheritdoc />
+        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
+        {
+            RefreshQualityPolicy();
+            if (!isActiveAndEnabled)
+                return;
+
+            QueueRuntimeCanvasRefresh(forceResolve: false, refreshDepthSignal: false);
+            TryRegisterRuntimeTick();
+        }
+
+        private void RefreshQualityPolicy()
+        {
+            _qualityWeight01 = math.saturate(HomeostasisBrain.GlobalQualityWeight);
+            float curve = SmoothStep01(_qualityWeight01);
+            _reactiveUiCadenceStride = math.clamp(
+                (int)math.round(math.lerp(MaxReactiveUiCadenceStride, 1f, curve)),
+                1,
+                MaxReactiveUiCadenceStride);
+        }
+
         private void ClearPlayerRuntimeBindings(IPlayerRuntimeContext previousContext)
         {
             if (previousContext == null)
@@ -1956,6 +1985,24 @@ namespace Hecton8.UI
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapRegistered = false;
+        }
+
+        private void TryRegisterScalabilityListener()
+        {
+            if (_scalabilityRegistered || !Application.isPlaying)
+                return;
+
+            ScalabilityEvents.Register(this);
+            _scalabilityRegistered = true;
+        }
+
+        private void TryUnregisterScalabilityListener()
+        {
+            if (!_scalabilityRegistered)
+                return;
+
+            ScalabilityEvents.Unregister(this);
+            _scalabilityRegistered = false;
         }
 
         private void CacheGlitchTableVaultCold()
@@ -7042,9 +7089,10 @@ namespace Hecton8.UI
             _slowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
         }
 
-        private static bool IsLowTierUiThrottle(HectonQualityTier tier)
+        private static float SmoothStep01(float value)
         {
-            return tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350;
+            float t = math.saturate(value);
+            return t * t * (3f - 2f * t);
         }
 
         private void UnregisterRuntimeTick()

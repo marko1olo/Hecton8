@@ -177,7 +177,7 @@ namespace Hecton8.Visor
 
         private void OnDisable()
         {
-            CompleteScheduledWork(force: true);
+            CompleteScheduledWorkForTeardown();
             UploadGpuGlobals();
             ScalabilityEvents.Unregister(this);
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
@@ -221,7 +221,7 @@ namespace Hecton8.Visor
 
         public void LateFrameTick()
         {
-            CompleteScheduledWork(force: false);
+            TryFinalizeScheduledWorkNoWait();
             UploadGpuGlobals();
         }
 
@@ -544,15 +544,33 @@ namespace Hecton8.Visor
             _hasScheduledWork = true;
         }
 
-        private bool CompleteScheduledWork(bool force)
+        private bool TryFinalizeScheduledWorkNoWait()
         {
             if (!_hasScheduledWork)
                 return true;
 
-            if (!force && !_scheduledHandle.IsCompleted)
+            if (!_scheduledHandle.IsCompleted)
                 return false;
 
-            _scheduledHandle.Complete();
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _scheduledHandle))
+                return false;
+
+            return FinishScheduledWork();
+        }
+
+        private bool CompleteScheduledWorkForTeardown()
+        {
+            if (!_hasScheduledWork)
+                return true;
+
+            if (!DispatcherJobFence.TryComplete(ref _scheduledHandle, forceComplete: true))
+                return false;
+
+            return FinishScheduledWork();
+        }
+
+        private bool FinishScheduledWork()
+        {
             _hasScheduledWork = false;
 
             IDataVault vault = EnsureVault();

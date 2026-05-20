@@ -16,8 +16,19 @@ This document is active only where it agrees with:
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
 
-R32 architecture R4/proof-wording correction is the latest artifact-backed local static DOC_GLOBAL boundary for architecture/root documentation. R31 remains the prior current-boundary propagation layer, R30 remains the prior internal-currentness layer, R29 remains the prior stale-gate/global-authority layer, R28 remains the prior interior-boundary layer, and R27 remains the latest source-counter/index snapshot until rerun.
+R45 root/architecture R43/R44 residue/proof-artifact/source-counter correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
+
+## Source Anchors
+
+Evidence class: STATIC_SOURCE / FILESYSTEM path check. These anchors prove current path visibility only, not Play Mode traversal, physics stability, save/load, profiler, GC, or player-build proof.
+
+- `Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs`
+- `Assets/_Project/Scripts/Physics/CCD/KinematicCcdMath.cs`
+- `Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs`
+- `Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs`
+- `Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs`
+- `Assets/_Project/Scripts/World/AUPMath.cs`
 
 Verification: PENDING VERIFICATION
 
@@ -28,7 +39,7 @@ Verification: PENDING VERIFICATION
 - Historical actuality manifest: `Docs/Reports/2026-05-17_ACTIVE_DOCUMENTATION_ACTUALITY_MANIFEST.json` (historical snapshot only; do not use for current counts or proof).
 - Current actuality ledger: `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`.
 - Visual-realistic-fake doctrine snapshot: `Docs/Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md`; re-check `.agents-skills` for newer mandates before implementation.
-- Historical May 14/R43 CLI compile wording is stale report text, not current proof. Current static/tool boundary is R32; R31 remains the prior current-boundary propagation layer; R30 remains the prior internal-currentness layer; R29 remains the prior stale-gate/global-authority layer; R28 remains the prior interior-boundary layer; R27 remains the latest source-counter/index snapshot until rerun; AtlasCheck fails `59` missing refs (RealtimeCSG vendor refs plus absent `VaultXRayWindow.cs` and `HectonMapMagicVegetationBridgeFloraCollisionProxies.cs`); Mod API static validation now passes (`Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`) as static-tool orientation only; do not treat PASS as current proof without artifact path, command, timestamp, environment, and output. Unity import, Console, Play Mode, profiler, GCMonitor, player build, scene wiring, save/load, and visual proof remain PENDING VERIFICATION.
+- Historical May 14/R43 CLI compile wording is stale report text, not current proof. Current static/tool boundary is R45 root/architecture R43/R44 residue/proof-artifact/source-counter correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`) (R44 prior internal-residue/exact-route-field/proof-wording correction); R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers; AtlasCheck fails `ATLAS_CHECK_FAIL references=6741 missing=59` (one Dynamic Decals missing vendor asset ref, RealtimeCSG vendor icon/readme image refs, and missing HabitatDamageBakePipeline source ref in the current atlas); Mod API static validation passes (`Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`) as static-tool orientation only; do not treat PASS as current proof without artifact path, command, timestamp, environment, and output. Unity import, Console, Play Mode, profiler, GCMonitor, player build, scene wiring, save/load, and visual proof remain PENDING VERIFICATION.
 - Existing May 4 boundary sections in this file are historical unless they describe local system intent not contradicted by newer reports.
 - Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, and visual quality remain `PENDING VERIFICATION`.
 Historical 2026-05-04 boundary:
@@ -63,9 +74,11 @@ Current runtime ownership is `Rigidbody + CapsuleCollider + HectonPlayerMovement
 
 ## 2026-05-19 SHINOBU_113 Hydrodynamic KCC Seam
 
+Route card: `Docs/ARCHITECTURE/SHINOBU_113_HYDRODYNAMIC_KCC_ROUTE_CARD.md`.
+
 `Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs` adds the owner-local hydrodynamic KCC route. Its authoritative state is the 64-byte `KinematicStateDTO` stored in `GlobalDataVault` under `ShinobuHydroKcc*` buffer IDs. The state owns `double3 AUP_Position`, local velocity, angular velocity, mass, and drag scalar; no hot movement state is exposed through C# properties.
 
-The KCC input lane is intentionally named `HydrodynamicKccInputDTO`, not `InputStateDTO`. Canonical device/rollback input remains owned by `Hecton8.Core.InputStateDTO` and `BufferID.ShinobuInputCurrentDto`; the KCC DTO is an owner-local movement command packet stored in `BufferID.ShinobuHydroKccInputs`. External producers must call `TryRegisterExternalInputWriter(JobHandle)` after writing/scheduling their writer, and KCC combines that handle before integration; registration is rejected while mock input is enabled. If mock input is disabled and no external writer was armed for the frame, a Burst zero-input job clears that lane before integration so uninitialized Vault memory cannot steer the solver.
+The KCC input lane is intentionally named `HydrodynamicKccInputDTO`, not `InputStateDTO`. Canonical device/rollback input remains owned by `Hecton8.Core.InputStateDTO` and `BufferID.ShinobuInputCurrentDto`; the KCC DTO is an owner-local movement command packet stored in `BufferID.ShinobuHydroKccInputs`. External producers must build packets through `HydrodynamicKccInputContract.BuildExternalInput(...)`, write/schedule their writer, then call `TryRegisterExternalInputWriter(JobHandle)`. KCC combines that handle before integration; registration is rejected while mock input is enabled. If mock input is disabled and no external writer was armed for the frame, a Burst zero-input job clears that lane before integration so uninitialized Vault memory cannot steer the solver. The sanitizer rejects stale packets by simulation frame, entity sequence, source hash, sector-generation stamp, finite vector fields, and local AUP range.
 
 The KCC path localizes every physics/collision calculation by subtracting the active sector/origin `double3` before casting to `float3`. Simulation schedules input, hydrodynamic integration, capsule command generation, and deferred `CapsulecastCommand.ScheduleBatch`; post-simulation extracts Unity `RaycastHit` results into 64-byte `HydrodynamicKccCollisionHitDTO` records before the deterministic resolver projects velocity and updates quantized AUP. Visual sync is the final EWMA interpolation pass and writes local float output for transform presentation only.
 
@@ -73,11 +86,11 @@ The local float conversion seam clamps only the transient post-subtraction delta
 
 Each scheduled capsule batch freezes its exact max-hit stride in the KCC runtime before calling `ScheduleBatch`. `PostFixedTick` uses that stored stride for raw-hit extraction and resolution, so live `GlobalQualityWeight` changes cannot reinterpret the hit buffer layout between simulation and post-simulation phases. Vault buffer readiness is fail-closed: every per-entity lane, multi-hit lane, rollback byte span, telemetry ring, cursor, tuning record, and CSV profile table must prove requested capacity before any job schedules. `EnsureVaultBuffers()` uses the cached DataVault service only; it does not poll `GlobalRegistry.DataVault` from the fixed/post/late hot chain.
 
-Fault telemetry uses a 64-byte `HydrodynamicKccFaultFlagDTO` per entity so parallel NaN writers do not contend on one cache line. The 300-frame `KinematicTelemetryEntry` ring records speed, turbulence, iteration count, collision/fault flags, state hash, and deterministic solver compute-use estimate. The estimate is not profiler proof; Unity Profiler/Burst timing remains required before any measured-frame claim.
+Fault telemetry uses a 64-byte `HydrodynamicKccFaultFlagDTO` per entity so parallel NaN writers do not contend on one cache line. The 300-frame `KinematicTelemetryEntry` ring is written by a single aggregate job after resolution, folding all active entity hashes/flags and recording max speed, average velocity, turbulence, iteration count, and deterministic solver compute-use estimate. NaN/fault export writes the same native telemetry span to `Docs/AgentLogs/Dump_SHINOBU_113.bin` and XML-task alias `Docs/AgentLogs/Dump_KINEMATICS_SURGEON.bin`. The estimate is not profiler proof; Unity Profiler/Burst timing remains required before any measured-frame claim.
 
 Wake output stays within the existing `WakeGeneratedSignal` Core contract. KCC owns `HydrodynamicWakePacketDTO` with radius and magnitude, then emits `WakeGeneratedSignal` with magnitude carried by velocity length and radius/magnitude quantized into the high bits of `SourceFlags`; the low byte remains the player wake source kind for existing consumers. No global signal DTO was expanded by this seam.
 
-Fluid profile CSV ingestion is exposed through `TryIngestFluidProfiles(ReadOnlySpan<byte>)` and `TryApplyFluidProfile(uint)`. Storage is a Vault-backed flat profile array plus bucket indices, not a private `NativeHashMap`, because current `IDataVault` owns typed arrays/slices rather than hash-map containers.
+Fluid profile CSV ingestion is exposed through `TryIngestFluidProfiles(ReadOnlySpan<byte>)` and `TryApplyFluidProfile(uint)`. Storage is a Vault-backed flat profile array plus bucket indices, not a private `NativeHashMap`, because current `IDataVault` owns typed arrays/slices rather than hash-map containers. The editor tuner reads Vault telemetry only when the KCC runtime has no scheduled collision/post batch; it does not read job-owned live NativeArrays while solver jobs are in flight. Its velocity graph resolves one diagnostic Vault view per repaint and then reads graph samples directly from that view.
 
 Legacy `Rigidbody.MovePosition` calls remain documented as presentation/compatibility debt until player prefab handoff is explicitly authorized. New integrations should consume Vault buffers or `SignalBus<WakeGeneratedSignal>` and must not call legacy movement MonoBehaviours directly.
 
@@ -452,6 +465,18 @@ The same projection rule is used for deferred scheduled sweeps:
 ```csharp
 projectedVelocity = velocity - hit.normal * dot(velocity, hit.normal);
 ```
+
+Deferred KCC sweep resolution must not apply a full projected timestep after already advancing to contact. The resolved displacement is:
+
+```csharp
+consumedFraction = saturate(allowedDistance / max(castDistance, epsilon));
+remainingDt = dt * (1 - consumedFraction);
+displacement = direction * allowedDistance + projectedVelocity * remainingDt;
+```
+
+Telemetry hashes for AUP-owned KCC state use millimeter-quantized full AUP axes, not only fractional local meters. Wake signal emission uses KCC-owned double3-to-AUP48 conversion before publishing `WakeGeneratedSignal`; downstream wake systems receive scalar metadata and never become movement authority.
+
+KCC vector magnitude in authority-adjacent jobs uses `HydrodynamicKccMath.LengthSafe(v)`, defined as `lenSq * rsqrt(max(lenSq, epsilon))` with finite/zero guards. Do not reintroduce `math.length`, `math.sqrt`, or `Vector3.normalized` in the hydrodynamic KCC hot path unless a Burst Inspector/player capture proves the replacement is worse.
 
 ## Voxel Collider Publish Chain
 

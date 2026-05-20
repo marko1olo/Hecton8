@@ -32,12 +32,19 @@ namespace Hecton8.Core
     /// <summary>
     /// Blittable snapshot of the dispatcher-owned time state.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public readonly struct H8TimeSnapshot
     {
+        [FieldOffset(0)]
         public readonly double Time;
+
+        [FieldOffset(8)]
         public readonly double DeltaTime;
+
+        [FieldOffset(16)]
         public readonly double UnscaledTime;
+
+        [FieldOffset(24)]
         public readonly double UnscaledDeltaTime;
 
         public H8TimeSnapshot(double time, double deltaTime, double unscaledTime, double unscaledDeltaTime)

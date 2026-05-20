@@ -18,8 +18,13 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 MAGIC = b"H8LR"
 VERSION = 1
 ALIGNMENT = 16
+CACHE_LINE_BYTES = 64
+BTREE_KEY_CAPACITY = 7
+BTREE_CHILD_CAPACITY = 8
+BTREE_LEAF_FLAG = 0x00000100
 HEADER_STRUCT = struct.Struct("<4sIII")
 RECORD_STRUCT = struct.Struct("<IIII")
+BTREE_NODE_STRUCT = struct.Struct("<16I")
 FNV_OFFSET_BASIS = 0x811C9DC5
 FNV_PRIME = 0x01000193
 DEFAULT_SOURCE_DIR = REPO_ROOT / "Docs" / "Lore"
@@ -55,6 +60,107 @@ class LoreRecord:
 
 def align_up(value: int, alignment: int = ALIGNMENT) -> int:
     return (value + alignment - 1) & ~(alignment - 1)
+
+
+def make_leaf_meta(key_count: int) -> int:
+    return BTREE_LEAF_FLAG | (key_count & 0xFF)
+
+
+def make_internal_meta(key_count: int) -> int:
+    return key_count & 0xFF
+
+
+def pack_btree_node(keys: list[int], children: list[int], meta: int) -> bytes:
+    lanes = [0] * 16
+    for index, value in enumerate(keys[:BTREE_KEY_CAPACITY]):
+        lanes[index] = value & 0xFFFFFFFF
+    for index, value in enumerate(children[:BTREE_CHILD_CAPACITY]):
+        lanes[7 + index] = value & 0xFFFFFFFF
+    lanes[15] = meta & 0xFFFFFFFF
+    return BTREE_NODE_STRUCT.pack(*lanes)
+
+
+def build_cache_btree(hash_to_record_index: list[tuple[int, int]], tree_offset: int) -> bytes:
+    if tree_offset % CACHE_LINE_BYTES != 0:
+        raise ValueError("H8LR B-Tree offset must be 64-byte aligned")
+
+    sorted_pairs = sorted(hash_to_record_index, key=lambda item: item[0])
+    if not sorted_pairs:
+        return pack_btree_node([], [], make_leaf_meta(0))
+
+    nodes: list[bytes] = []
+    current_level: list[tuple[int, int]] = []
+    cursor = 0
+    while cursor < len(sorted_pairs):
+        chunk = sorted_pairs[cursor : cursor + BTREE_KEY_CAPACITY]
+        keys = [hash_value for hash_value, _ in chunk]
+        values = [record_index for _, record_index in chunk]
+        nodes.append(pack_btree_node(keys, values, make_leaf_meta(len(chunk))))
+        current_level.append((len(nodes) - 1, chunk[-1][0]))
+        cursor += len(chunk)
+
+    while len(current_level) > 1:
+        next_level: list[tuple[int, int]] = []
+        cursor = 0
+        while cursor < len(current_level):
+            children = current_level[cursor : cursor + BTREE_CHILD_CAPACITY]
+            child_offsets = [tree_offset + (node_index * CACHE_LINE_BYTES) for node_index, _ in children]
+            separator_keys = [max_key for _, max_key in children[:-1]]
+            nodes.append(pack_btree_node(separator_keys, child_offsets, make_internal_meta(len(separator_keys))))
+            next_level.append((len(nodes) - 1, children[-1][1]))
+            cursor += len(children)
+        current_level = next_level
+
+    return b"".join(nodes)
+
+
+def find_btree_value(blob: bytes, tree_offset: int, tree_end: int, target_hash: int) -> int | None:
+    if tree_offset % CACHE_LINE_BYTES != 0 or tree_end <= tree_offset or (tree_end - tree_offset) % CACHE_LINE_BYTES != 0:
+        return None
+
+    current = tree_end - CACHE_LINE_BYTES
+    for _ in range(16):
+        if current < tree_offset or current + CACHE_LINE_BYTES > tree_end or current % CACHE_LINE_BYTES != 0:
+            return None
+
+        lanes = BTREE_NODE_STRUCT.unpack_from(blob, current)
+        keys = lanes[:BTREE_KEY_CAPACITY]
+        children = lanes[7:15]
+        meta = lanes[15]
+        key_count = meta & 0xFF
+        if key_count > BTREE_KEY_CAPACITY:
+            return None
+
+        if (meta & BTREE_LEAF_FLAG) != 0:
+            for key_index in range(key_count):
+                if keys[key_index] == target_hash:
+                    return children[key_index]
+            return None
+
+        child_index = key_count
+        for key_index in range(key_count):
+            if target_hash <= keys[key_index]:
+                child_index = key_index
+                break
+        current = children[child_index]
+
+    return None
+
+
+def validate_cache_btree(blob: bytes, records: list["LoreRecord"]) -> None:
+    if not records:
+        raise ValueError("H8LR B-Tree requires at least one record")
+
+    table_end = HEADER_STRUCT.size + (len(records) * RECORD_STRUCT.size)
+    tree_offset = align_up(table_end, CACHE_LINE_BYTES)
+    payload_start = min(record.offset for record in records)
+    if payload_start <= tree_offset or (payload_start - tree_offset) % CACHE_LINE_BYTES != 0:
+        raise ValueError("H8LR cache B-Tree section missing or not 64-byte aligned")
+
+    for index, record in enumerate(records):
+        resolved = find_btree_value(blob, tree_offset, payload_start, record.hash_value)
+        if resolved != index:
+            raise ValueError(f"H8LR B-Tree lookup mismatch for {format_hash(record.hash_value)}")
 
 
 def fnv1a32_ascii_lower(value: str) -> int:
@@ -136,8 +242,10 @@ def load_source_entries(source_dir: Path = DEFAULT_SOURCE_DIR) -> list[SourceEnt
 
 def bake_blob(entries: list[SourceEntry]) -> tuple[bytes, list[LoreRecord]]:
     records: list[LoreRecord] = []
-    cursor = HEADER_STRUCT.size + (len(entries) * RECORD_STRUCT.size)
-    cursor = align_up(cursor)
+    record_table_end = HEADER_STRUCT.size + (len(entries) * RECORD_STRUCT.size)
+    tree_offset = align_up(record_table_end, CACHE_LINE_BYTES)
+    btree = build_cache_btree([(entry.hash_value, index) for index, entry in enumerate(entries)], tree_offset)
+    cursor = align_up(tree_offset + len(btree))
     payload = bytearray()
     for entry in entries:
         aligned_cursor = align_up(cursor)
@@ -152,8 +260,9 @@ def bake_blob(entries: list[SourceEntry]) -> tuple[bytes, list[LoreRecord]]:
         payload.extend(b"\0" * (final_size - cursor))
     header = HEADER_STRUCT.pack(MAGIC, VERSION, len(entries), 0)
     table = b"".join(RECORD_STRUCT.pack(row.hash_value, row.offset, row.length, row.pad) for row in records)
-    prefix_padding = b"\0" * (align_up(len(header) + len(table)) - len(header) - len(table))
-    blob = header + table + prefix_padding + bytes(payload)
+    tree_prefix_padding = b"\0" * (tree_offset - len(header) - len(table))
+    payload_prefix_padding = b"\0" * (align_up(tree_offset + len(btree)) - tree_offset - len(btree))
+    blob = header + table + tree_prefix_padding + btree + payload_prefix_padding + bytes(payload)
     if len(blob) % ALIGNMENT != 0:
         raise AssertionError("H8LR blob is not 16-byte aligned")
     return blob, records
@@ -187,6 +296,7 @@ def parse_blob(blob: bytes) -> list[LoreRecord]:
         raise ValueError("H8LR duplicate record hashes")
     if len(blob) % ALIGNMENT != 0:
         raise ValueError("H8LR blob length is not 16-byte aligned")
+    validate_cache_btree(blob, records)
     return records
 
 
@@ -217,8 +327,11 @@ def build_manifest(blob: bytes, records: list[LoreRecord], entries: list[SourceE
         "struct_pack_prefix": "<",
         "header_struct_format": "<4sIII",
         "record_struct_format": "<IIII",
+        "btree_node_struct_format": "<16I",
         "alignment_bytes": ALIGNMENT,
+        "btree_alignment_bytes": CACHE_LINE_BYTES,
         "record_layout": "uint32 hash, uint32 raw_offset, uint32 raw_length, uint32 pad",
+        "lookup_layout": "64-byte cache-conscious B-Tree between record table and payload; leaf values are record indices",
         "blob": repo_relative(DEFAULT_BLOB),
         "blob_length": len(blob),
         "blob_sha256": hashlib.sha256(blob).hexdigest().upper(),
@@ -244,17 +357,17 @@ def build_manifest(blob: bytes, records: list[LoreRecord], entries: list[SourceE
         },
         "h_phi_audit": {
             "data_sovereignty_static_score": 1.0,
-            "lookup_model": "stateless binary search over sorted 16-byte records; payload is raw UTF-8 slice",
+            "lookup_model": "stateless 64-byte cache-conscious B-Tree over sorted 16-byte records; payload is raw UTF-8 slice",
             "private_runtime_state_required": False,
             "unity_runtime_proof": "PENDING VERIFICATION",
         },
         "scalability_profiles": {
             "toaster": {
-                "lookup": "binary-search 16-byte records; stream one raw UTF-8 slice",
+                "lookup": "B-Tree traversal with prefetch weight near zero; stream one raw UTF-8 slice",
                 "preview_bytes": 512,
             },
             "rtx_overkill": {
-                "lookup": "prefetch adjacent raw slices",
+                "lookup": "same B-Tree topology with higher prefetch stride and richer presentation outside lookup truth",
                 "extra_data": ["high_res_gradient_4096", "complex_harmonic_noise_tags", "noir_signal_density"],
             },
         },
@@ -323,8 +436,12 @@ def verify_manifest(blob: bytes, records: list[LoreRecord], entries: list[Source
         raise ValueError("Lore manifest endian drift")
     if manifest.get("header_struct_format") != "<4sIII" or manifest.get("record_struct_format") != "<IIII":
         raise ValueError("Lore manifest struct format drift")
+    if manifest.get("btree_node_struct_format") != "<16I":
+        raise ValueError("Lore manifest B-Tree struct format drift")
     if int(manifest.get("alignment_bytes", 0)) != ALIGNMENT:
         raise ValueError("Lore manifest alignment drift")
+    if int(manifest.get("btree_alignment_bytes", 0)) != CACHE_LINE_BYTES:
+        raise ValueError("Lore manifest B-Tree alignment drift")
     if int(manifest.get("blob_length", -1)) != len(blob):
         raise ValueError("Lore manifest blob length drift")
     if str(manifest.get("blob_sha256", "")).upper() != hashlib.sha256(blob).hexdigest().upper():

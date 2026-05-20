@@ -28,6 +28,7 @@ DEFAULT_REPORT_PATH = (
 )
 AUDIT_SCHEMA = "hecton8.datavault_sovereignty_audit.v2"
 BASELINE_SCHEMA = "hecton8.datavault_sovereignty_baseline.v2"
+REPORT_SCHEMA = "hecton8.datavault_sovereignty_audit_report.v1"
 NATIVE_ARRAY_CONSTRUCTOR_RE = re.compile(r"\bnew\s+NativeArray\s*<")
 NATIVE_ARRAY_DECLARATION_RE = re.compile(
     r"^\s*(?:\[[^\]]+\]\s*)*"
@@ -354,11 +355,28 @@ def forbidden_declarations_by_file(payload: dict[str, Any]) -> dict[str, int]:
     return result
 
 
-def detect_regressions(payload: dict[str, Any], baseline: dict[str, Any] | None) -> list[str]:
+def extract_domain(relative_path: str) -> str:
+    normalized = relative_path.replace("\\", "/")
+    prefix = "Assets/_Project/Scripts/"
+    if not normalized.startswith(prefix):
+        return "External"
+
+    remainder = normalized[len(prefix) :]
+    if "/" not in remainder:
+        return "Root"
+
+    return remainder.split("/", 1)[0] or "Root"
+
+
+def collect_regression_details(
+    payload: dict[str, Any],
+    baseline: dict[str, Any] | None,
+) -> tuple[list[str], list[dict[str, Any]]]:
     if baseline is None:
-        return ["Baseline missing; no-regression gate fails closed."]
+        return ["Baseline missing; no-regression gate fails closed."], []
 
     errors: list[str] = []
+    details: list[dict[str, Any]] = []
     if baseline.get("schema") != BASELINE_SCHEMA:
         errors.append(f"Baseline schema mismatch: {baseline.get('schema')!r}.")
 
@@ -378,8 +396,19 @@ def detect_regressions(payload: dict[str, Any], baseline: dict[str, Any] | None)
     for path, count in sorted(forbidden_by_file(payload).items()):
         baseline_count = int(baseline_by_file.get(path, 0))
         if count > baseline_count:
+            delta = count - baseline_count
             errors.append(
                 f"{path}: forbidden direct constructors increased from {baseline_count} to {count}."
+            )
+            details.append(
+                {
+                    "kind": "directConstructor",
+                    "domain": extract_domain(path),
+                    "path": path,
+                    "baseline": baseline_count,
+                    "current": count,
+                    "delta": delta,
+                }
             )
 
     if "forbiddenNativeArrayDeclarations" in payload or "declarationFindings" in payload:
@@ -399,11 +428,87 @@ def detect_regressions(payload: dict[str, Any], baseline: dict[str, Any] | None)
         for path, count in sorted(forbidden_declarations_by_file(payload).items()):
             baseline_count = int(baseline_declarations_by_file.get(path, 0))
             if count > baseline_count:
+                delta = count - baseline_count
                 errors.append(
                     f"{path}: forbidden NativeArray field declarations increased from {baseline_count} to {count}."
                 )
+                details.append(
+                    {
+                        "kind": "fieldDeclaration",
+                        "domain": extract_domain(path),
+                        "path": path,
+                        "baseline": baseline_count,
+                        "current": count,
+                        "delta": delta,
+                    }
+                )
 
+    return errors, details
+
+
+def detect_regressions(payload: dict[str, Any], baseline: dict[str, Any] | None) -> list[str]:
+    errors, _ = collect_regression_details(payload, baseline)
     return errors
+
+
+def aggregate_regression_details(details: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
+    aggregate: dict[str, dict[str, Any]] = {}
+    for detail in details:
+        domain = str(detail.get("domain", "Unknown"))
+        entry = aggregate.setdefault(
+            domain,
+            {
+                "domain": domain,
+                "delta": 0,
+                "directConstructorDelta": 0,
+                "fieldDeclarationDelta": 0,
+                "fileCount": 0,
+                "files": set(),
+            },
+        )
+        delta = int(detail.get("delta", 0))
+        entry["delta"] += delta
+        if detail.get("kind") == "directConstructor":
+            entry["directConstructorDelta"] += delta
+        elif detail.get("kind") == "fieldDeclaration":
+            entry["fieldDeclarationDelta"] += delta
+        path = str(detail.get("path", ""))
+        if path:
+            entry["files"].add(path)
+
+    rows: list[dict[str, Any]] = []
+    for entry in aggregate.values():
+        files = sorted(entry["files"])
+        rows.append(
+            {
+                "domain": entry["domain"],
+                "delta": entry["delta"],
+                "directConstructorDelta": entry["directConstructorDelta"],
+                "fieldDeclarationDelta": entry["fieldDeclarationDelta"],
+                "fileCount": len(files),
+                "files": files,
+            }
+        )
+
+    return sorted(rows, key=lambda item: (-int(item["delta"]), str(item["domain"])))
+
+
+def build_report_payload(
+    payload: dict[str, Any],
+    baseline_path: Path,
+    baseline: dict[str, Any] | None,
+    regression_errors: Sequence[str],
+    regression_details: Sequence[dict[str, Any]],
+) -> dict[str, Any]:
+    return {
+        "schema": REPORT_SCHEMA,
+        "audit": payload,
+        "baselinePath": normalize_path(baseline_path),
+        "baselineSchema": None if baseline is None else baseline.get("schema"),
+        "regressionErrors": list(regression_errors),
+        "regressionDetails": list(regression_details),
+        "regressionByDomain": aggregate_regression_details(regression_details),
+    }
 
 
 def top_findings(payload: dict[str, Any], allowed: bool, limit: int) -> list[dict[str, Any]]:
@@ -430,6 +535,7 @@ def write_markdown_report(
     baseline_path: Path,
     baseline: dict[str, Any] | None,
     regression_errors: Sequence[str],
+    regression_details: Sequence[dict[str, Any]],
     top_limit: int,
 ) -> None:
     status = "PASS_NO_REGRESSION_WITH_LEGACY_DEBT"
@@ -471,6 +577,47 @@ def write_markdown_report(
         lines.extend(["## Regression Findings", ""])
         for error in regression_errors:
             lines.append(f"- {error}")
+        lines.append("")
+
+    domain_regressions = aggregate_regression_details(regression_details)
+    if domain_regressions:
+        lines.extend(
+            [
+                "## Regression Delta By Domain",
+                "",
+                "| Domain | Delta | Direct constructor delta | Field declaration delta | Files |",
+                "|---|---:|---:|---:|---:|",
+            ]
+        )
+        for item in domain_regressions:
+            lines.append(
+                f"| `{item['domain']}` | {item['delta']} | "
+                f"{item['directConstructorDelta']} | {item['fieldDeclarationDelta']} | "
+                f"{item['fileCount']} |"
+            )
+        lines.append("")
+
+        lines.extend(
+            [
+                "## Regression Delta Details",
+                "",
+                "| Kind | Domain | Baseline | Current | Delta | Path |",
+                "|---|---|---:|---:|---:|---|",
+            ]
+        )
+        for item in sorted(
+            regression_details,
+            key=lambda detail: (
+                -int(detail.get("delta", 0)),
+                str(detail.get("domain", "")),
+                str(detail.get("path", "")),
+            ),
+        ):
+            lines.append(
+                f"| `{item['kind']}` | `{item['domain']}` | "
+                f"{item['baseline']} | {item['current']} | {item['delta']} | "
+                f"`{item['path']}` |"
+            )
         lines.append("")
 
     lines.extend(
@@ -569,6 +716,7 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser.add_argument("--root", type=Path, default=DEFAULT_SOURCE_ROOT, help="Source tree to scan.")
     parser.add_argument("--baseline", type=Path, default=DEFAULT_BASELINE_PATH, help="No-regression baseline JSON.")
     parser.add_argument("--report", type=Path, default=DEFAULT_REPORT_PATH, help="Markdown report path.")
+    parser.add_argument("--audit-json", type=Path, default=None, help="Optional JSON report path.")
     parser.add_argument("--write-baseline", action="store_true", help="Overwrite the baseline with the current audit.")
     parser.add_argument("--fail-on-regression", action="store_true", help="Exit nonzero if forbidden constructor debt increases.")
     parser.add_argument("--fail-on-any", action="store_true", help="Exit nonzero if any forbidden constructors remain.")
@@ -587,9 +735,25 @@ def main(argv: Sequence[str] | None = None) -> int:
         baseline = build_baseline(payload)
         write_json(args.baseline, baseline)
 
-    regression_errors = detect_regressions(payload, baseline) if args.fail_on_regression else []
+    if args.fail_on_regression:
+        regression_errors, regression_details = collect_regression_details(payload, baseline)
+    else:
+        regression_errors, regression_details = [], []
     if not args.no_report:
-        write_markdown_report(args.report, payload, args.baseline, baseline, regression_errors, max(args.top, 1))
+        write_markdown_report(
+            args.report,
+            payload,
+            args.baseline,
+            baseline,
+            regression_errors,
+            regression_details,
+            max(args.top, 1),
+        )
+    if args.audit_json is not None:
+        write_json(
+            args.audit_json,
+            build_report_payload(payload, args.baseline, baseline, regression_errors, regression_details),
+        )
 
     failure_reasons = list(regression_errors)
     if args.fail_on_any and int(payload["forbiddenDirectConstructors"]) > 0:

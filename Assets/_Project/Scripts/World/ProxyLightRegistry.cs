@@ -22,24 +22,41 @@ namespace Hecton8.World
         Panel = 1
     }
 
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     internal struct ProxyLightData
     {
+        [FieldOffset(0)]
         public AbsoluteUniversePosition PositionAup;
+        [FieldOffset(48)]
         public float3 RuntimePosition;
+        [FieldOffset(60)]
         public float RangeMeters;
+        [FieldOffset(64)]
         public float3 ColorLinear;
+        [FieldOffset(76)]
         public float Intensity;
+        [FieldOffset(80)]
         public float3 Forward;
+        [FieldOffset(92)]
         public float SpotCosine;
+        [FieldOffset(96)]
         public float ShadowPhase01;
+        [FieldOffset(100)]
         public float PowerFlicker01;
+        [FieldOffset(104)]
         public float OxygenStress01;
+        [FieldOffset(108)]
         public float LastUpdateUnscaledTime;
+        [FieldOffset(112)]
         public uint Flags;
+        [FieldOffset(116)]
         public byte Type;
+        [FieldOffset(117)]
         public byte Lod;
+        [FieldOffset(118)]
         private ushort _reserved;
+        [FieldOffset(120)]
+        private ulong _pad0;
 
         public static ProxyLightData CreateUiPanel(
             in AbsoluteUniversePosition positionAup,
@@ -462,7 +479,7 @@ namespace Hecton8.World
                 ? math.saturate(powerGrid.TotalGeneration / powerGrid.TotalConsumption)
                 : 1f;
             BatteryRuntimeSnapshot batterySnapshot = powerGrid.BatterySnapshot;
-            brownoutActive = supplyRatio < 0.85f || batterySnapshot.EmergencyReserveActive;
+            brownoutActive = supplyRatio < 0.85f || batterySnapshot.EmergencyReserveActive != 0;
             return true;
         }
     }

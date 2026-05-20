@@ -19,6 +19,8 @@ namespace Hecton8.Core
         internal const int UberNoirRuntimeSlot = 5;
         internal const int UberNoirFeatureMaskSlot = 6;
         internal const int PhysiologyDecompressionSlot = 7;
+        internal const int PowerBrownoutSlot = 8;
+        internal const int RespawnDearLieSlot = 19;
         // Shared with GlobalShaderDispatcher: slots 64-363 are the 300-frame CBuffer blackbox.
         internal const int SlotCount = 512;
 
@@ -36,10 +38,13 @@ namespace Hecton8.Core
         private static readonly int _HectonDcsPhysiologyParamsId = Shader.PropertyToID("_HectonDcsPhysiologyParams");
         private static readonly int _HectonSupersaturationScalarId = Shader.PropertyToID("_HectonSupersaturationScalar");
         private static readonly int _HectonNarcosisScalarId = Shader.PropertyToID("_HectonNarcosisScalar");
+        private static readonly int _HectonPowerBrownoutParamsId = Shader.PropertyToID("_HectonPowerBrownoutParams");
+        private static readonly int _HectonRespawnDearLieParamsId = Shader.PropertyToID("_HectonRespawnDearLieParams");
+        private static readonly int _HectonDeathFadeIntensityId = Shader.PropertyToID("_HectonDeathFadeIntensity");
 
         private static IDataVault _cachedVault;
         private static uint _cachedVaultGeneration;
-        private static VaultBufferHandle<float4> _slotsHandle;
+        private static VaultGenerationHandle<float4> _slotsHandle;
         private static float4 _fallbackBiolumMasterPhase;
         private static float4 _fallbackAupShiftOffset;
         private static float4 _fallbackWaterExtinctionRuntime;
@@ -48,6 +53,8 @@ namespace Hecton8.Core
         private static float4 _fallbackUberNoirRuntime;
         private static float4 _fallbackUberNoirFeatureMask;
         private static float4 _fallbackPhysiologyDecompression;
+        private static float4 _fallbackPowerBrownout;
+        private static float4 _fallbackRespawnDearLie;
         private static bool _visualSyncDispatcherActive;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -58,12 +65,14 @@ namespace Hecton8.Core
             _slotsHandle = default;
             _fallbackBiolumMasterPhase = default;
             _fallbackAupShiftOffset = default;
-            _fallbackWaterExtinctionRuntime = new float4(0f, 1f, 1f, 0f);
+            _fallbackWaterExtinctionRuntime = CreateFloat4(0f, 1f, 1f, 0f);
             _fallbackWaterExtinctionWeather = default;
-            _fallbackWaterExtinctionParams = new float4(1500f, 2.5f, 0f, 0f);
-            _fallbackUberNoirRuntime = new float4(0f, 1f, 0f, 0f);
+            _fallbackWaterExtinctionParams = CreateFloat4(1500f, 2.5f, 0f, 0f);
+            _fallbackUberNoirRuntime = CreateFloat4(0f, 1f, 0f, 0f);
             _fallbackUberNoirFeatureMask = default;
             _fallbackPhysiologyDecompression = default;
+            _fallbackPowerBrownout = CreateFloat4(1f, 0f, 0f, 0f);
+            _fallbackRespawnDearLie = default;
             _visualSyncDispatcherActive = false;
         }
 
@@ -169,8 +178,8 @@ namespace Hecton8.Core
         /// </summary>
         public static void ResetWaterExtinctionGlobals()
         {
-            PublishWaterExtinctionParams(new Vector4(1500f, 2.5f, 0f, 0f));
-            PublishWaterExtinctionRuntime(new Vector4(0f, 1f, 1f, 0f));
+            PublishWaterExtinctionParams(CreateVector4(1500f, 2.5f, 0f, 0f));
+            PublishWaterExtinctionRuntime(CreateVector4(0f, 1f, 1f, 0f));
             PublishWaterExtinctionWeather(Vector4.zero);
         }
 
@@ -179,8 +188,8 @@ namespace Hecton8.Core
         /// </summary>
         public static void PublishWaterExtinctionAnalyticalFallback()
         {
-            PublishWaterExtinctionParams(new Vector4(1500f, 2.5f, 1f, 0f));
-            PublishWaterExtinctionRuntime(new Vector4(0f, 1f, 1f, 1f));
+            PublishWaterExtinctionParams(CreateVector4(1500f, 2.5f, 1f, 0f));
+            PublishWaterExtinctionRuntime(CreateVector4(0f, 1f, 1f, 1f));
             PublishWaterExtinctionWeather(Vector4.zero);
         }
 
@@ -207,7 +216,7 @@ namespace Hecton8.Core
                 16777215f);
             float4 storedMask = WriteReadSlot(
                 UberNoirFeatureMaskSlot,
-                new float4(safeFeatureMask, 0f, 0f, 0f),
+                CreateFloat4(safeFeatureMask, 0f, 0f, 0f),
                 ref _fallbackUberNoirFeatureMask);
 
             if (!_visualSyncDispatcherActive)
@@ -241,15 +250,73 @@ namespace Hecton8.Core
             }
         }
 
+        /// <summary>
+        /// Publishes base-grid brownout state once per telemetry tick; x=supply, y=severity, z=phase seconds, w=GlobalQualityWeight.
+        /// </summary>
+        public static void PublishPowerBrownout(Vector4 brownoutVector)
+        {
+            float4 value = ToFiniteFloat4(brownoutVector);
+            value.x = math.saturate(value.x);
+            value.y = math.saturate(value.y);
+            value.z = math.max(0f, value.z);
+            value.w = math.saturate(value.w);
+            float4 stored = WriteReadSlot(
+                PowerBrownoutSlot,
+                value,
+                ref _fallbackPowerBrownout);
+
+            if (!_visualSyncDispatcherActive)
+                Shader.SetGlobalVector(_HectonPowerBrownoutParamsId, ToVector4(stored));
+        }
+
+        /// <summary>
+        /// Publishes the player-death visual cover: x=fade, y=chromatic, z=grain, w=GlobalQualityWeight.
+        /// </summary>
+        public static void PublishRespawnDearLie(Vector4 dearLieVector)
+        {
+            PublishRespawnDearLie(ResolveSlotsVault(), dearLieVector);
+        }
+
+        /// <summary>
+        /// Publishes the player-death visual cover through a caller-cached Vault route.
+        /// </summary>
+        public static void PublishRespawnDearLie(IDataVault vault, Vector4 dearLieVector)
+        {
+            float4 value = ToFiniteFloat4(dearLieVector);
+            value.x = math.saturate(value.x);
+            value.y = math.saturate(value.y);
+            value.z = math.saturate(value.z);
+            value.w = math.saturate(value.w);
+            float4 stored = WriteReadSlot(
+                vault,
+                RespawnDearLieSlot,
+                value,
+                ref _fallbackRespawnDearLie);
+
+            if (!_visualSyncDispatcherActive)
+            {
+                Vector4 vector = ToVector4(stored);
+                Shader.SetGlobalVector(_HectonRespawnDearLieParamsId, vector);
+                Shader.SetGlobalFloat(_HectonDeathFadeIntensityId, vector.x);
+            }
+        }
+
         private static float4 WriteReadSlot(int slot, float4 value, ref float4 fallback)
         {
-            IDataVault vault = ResolveSlotsVault();
-            if (vault != null && vault.TryLockBuffer(BufferID.ShaderGlobalState, SystemID.GraphicsScalability))
+            return WriteReadSlot(ResolveSlotsVault(), slot, value, ref fallback);
+        }
+
+        private static float4 WriteReadSlot(IDataVault vault, int slot, float4 value, ref float4 fallback)
+        {
+            if (TryPrepareSlotsVault(vault) &&
+                vault.TryLockBuffer(BufferID.ShaderGlobalState, SystemID.GraphicsScalability))
             {
                 try
                 {
-                    var slots = _slotsHandle.Resolve(vault);
-                    if (slots.IsCreated && slot >= 0 && slot < slots.Length)
+                    if (vault.TryResolveHandle(in _slotsHandle, out NativeArray<float4> slots) &&
+                        slots.IsCreated &&
+                        slot >= 0 &&
+                        slot < slots.Length)
                     {
                         slots[slot] = value;
                         return slots[slot];
@@ -268,56 +335,103 @@ namespace Hecton8.Core
         private static IDataVault ResolveSlotsVault()
         {
             IDataVault vault = GlobalRegistry.DataVault;
+            return TryPrepareSlotsVault(vault) ? vault : null;
+        }
+
+        private static bool TryPrepareSlotsVault(IDataVault vault)
+        {
             if (vault == null)
-                return null;
+                return false;
 
             uint generation = vault.VaultGenerationID;
             if (ReferenceEquals(vault, _cachedVault) &&
                 _cachedVaultGeneration == generation &&
-                _slotsHandle.IsCreated &&
-                _slotsHandle.Length >= SlotCount)
+                IsSlotsHandleCreated(in _slotsHandle) &&
+                vault.TryResolveHandle(in _slotsHandle, out NativeArray<float4> cachedSlots) &&
+                cachedSlots.IsCreated &&
+                cachedSlots.Length >= SlotCount)
             {
-                return vault;
+                return true;
             }
 
-            if (vault.TryGetBufferHandle(BufferID.ShaderGlobalState, out VaultBufferHandle<float4> existing) &&
-                existing.IsCreated &&
-                existing.Length >= SlotCount)
+            if (vault.TryGetGenerationHandle<float4>(BufferID.ShaderGlobalState, out VaultGenerationHandle<float4> existing) &&
+                vault.TryResolveHandle(in existing, out NativeArray<float4> existingSlots) &&
+                existingSlots.IsCreated &&
+                existingSlots.Length >= SlotCount)
             {
                 _cachedVault = vault;
                 _cachedVaultGeneration = generation;
                 _slotsHandle = existing;
-                return vault;
+                return true;
             }
 
             if (vault.IsAllocationLocked)
-                return null;
+                return false;
 
-            VaultBufferHandle<float4> allocated = vault.GetBufferHandle<float4>(
+            VaultGenerationHandle<float4> allocated = vault.GetGenerationHandle<float4>(
                 BufferID.ShaderGlobalState,
                 SlotCount,
                 SystemID.GraphicsScalability,
                 NativeArrayOptions.ClearMemory);
-            if (!allocated.IsCreated || allocated.Length < SlotCount)
-                return null;
+            if (!vault.TryResolveHandle(in allocated, out NativeArray<float4> allocatedSlots) ||
+                !allocatedSlots.IsCreated ||
+                allocatedSlots.Length < SlotCount)
+                return false;
 
             _cachedVault = vault;
             _cachedVaultGeneration = generation;
             _slotsHandle = allocated;
-            return vault;
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsSlotsHandleCreated(in VaultGenerationHandle<float4> handle)
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float4 CreateFloat4(float x, float y, float z, float w)
+        {
+            float4 value = default;
+            value.x = x;
+            value.y = y;
+            value.z = z;
+            value.w = w;
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static Vector4 CreateVector4(float x, float y, float z, float w)
+        {
+            Vector4 value = default;
+            value.x = x;
+            value.y = y;
+            value.z = z;
+            value.w = w;
+            return value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float4 ToFiniteFloat4(Vector4 value)
         {
-            float4 packed = new float4(value.x, value.y, value.z, value.w);
+            float4 packed = default;
+            packed.x = value.x;
+            packed.y = value.y;
+            packed.z = value.z;
+            packed.w = value.w;
             return math.all(math.isfinite(packed)) ? packed : default;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static Vector4 ToVector4(float4 value)
         {
-            return new Vector4(value.x, value.y, value.z, value.w);
+            Vector4 vector = default;
+            vector.x = value.x;
+            vector.y = value.y;
+            vector.z = value.z;
+            vector.w = value.w;
+            return vector;
         }
     }
 }

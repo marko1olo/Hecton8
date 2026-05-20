@@ -2,6 +2,7 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -11,10 +12,13 @@ namespace Hecton8.World
     /// Centers are authored in universe space; the shader applies the current AUP render offset.
     /// </summary>
     [Serializable]
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct OctahedralImpostorInstance
     {
+        [FieldOffset(0)]
         public Vector4 CenterFade;
+
+        [FieldOffset(16)]
         public Vector4 SizeFlags;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -42,8 +46,20 @@ namespace Hecton8.World
                     safeSize.x,
                     safeSize.y,
                     safeSize.z,
-                    flags)
+                    math.asfloat(flags))
             };
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static OctahedralImpostorInstance CreateCameraRelative(
+            in AbsoluteUniversePosition impostorAup,
+            in AbsoluteUniversePosition cameraAup,
+            Vector3 size,
+            float fade01,
+            uint flags)
+        {
+            float3 local = AbsoluteUniversePosition.ToCameraRelativeFloat3(in impostorAup, in cameraAup);
+            return Create(new Vector3(local.x, local.y, local.z), size, fade01, 0f, flags);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -53,6 +69,68 @@ namespace Hecton8.World
                 new Vector3(CenterFade.x, CenterFade.y, CenterFade.z),
                 new Vector3(SizeFlags.x, SizeFlags.y, SizeFlags.z));
         }
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    public struct ImpostorConfigDTO
+    {
+        [FieldOffset(0)]
+        public float2 AtlasGridSize;
+
+        [FieldOffset(8)]
+        public float DepthScale;
+
+        [FieldOffset(12)]
+        public uint Flags;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ImpostorConfigDTO Create(float2 atlasGridSize, float depthScale, uint flags)
+        {
+            return new ImpostorConfigDTO
+            {
+                AtlasGridSize = math.max(atlasGridSize, new float2(1f, 1f)),
+                DepthScale = math.max(0.01f, depthScale),
+                Flags = flags
+            };
+        }
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 160)]
+    public struct HlodImpostorCaptureAngleRecord
+    {
+        [FieldOffset(0)]
+        public float3 Direction;
+
+        [FieldOffset(12)]
+        public float OrthoSize;
+
+        [FieldOffset(16)]
+        public float3 CameraPosition;
+
+        [FieldOffset(28)]
+        public float CameraDistance;
+
+        [FieldOffset(32)]
+        public float4x4 ViewMatrix;
+
+        [FieldOffset(96)]
+        public float4x4 ProjectionMatrix;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    public struct HlodImpostorMockPoint
+    {
+        [FieldOffset(0)]
+        public float3 Position;
+
+        [FieldOffset(12)]
+        public float RadiusMeters;
+
+        [FieldOffset(16)]
+        public float3 Normal;
+
+        [FieldOffset(28)]
+        public uint StableHash;
     }
 
     /// <summary>
@@ -75,6 +153,19 @@ namespace Hecton8.World
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveContinuousEnterDistanceMeters(float baseDistanceMeters, float globalQualityWeight)
+        {
+            float q = math.saturate(math.select(1f, globalQualityWeight, math.isfinite(globalQualityWeight)));
+            float survival = math.max(1f, baseDistanceMeters * 0.58f);
+            float middle = math.max(survival, baseDistanceMeters);
+            float overkill = math.max(middle, baseDistanceMeters * 1.65f);
+            float shaped = q * q * (3f - 2f * q);
+            return q < 0.5f
+                ? math.lerp(survival, middle, shaped * 2f)
+                : math.lerp(middle, overkill, (shaped - 0.5f) * 2f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsLowTier(HectonQualityTier tier)
         {
             return tier == HectonQualityTier.Unknown ||
@@ -85,11 +176,29 @@ namespace Hecton8.World
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte ResolveFlags(double distanceSq, float enterDistanceMeters, HectonQualityTier tier)
         {
+            return ResolveFlags(distanceSq, enterDistanceMeters, ResolveTierRepresentativeQuality(tier));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static byte ResolveFlags(double distanceSq, float baseEnterDistanceMeters, float globalQualityWeight)
+        {
+            float enterDistanceMeters = ResolveContinuousEnterDistanceMeters(baseEnterDistanceMeters, globalQualityWeight);
             bool impostor = ShouldUseImpostor(distanceSq, enterDistanceMeters);
-            bool lowTier = IsLowTier(tier);
             byte flags = impostor ? FlagUseImpostor : FlagRealGeometry;
-            flags |= lowTier ? FlagLowTierSnap : FlagDitherBlend;
+            flags |= FlagDitherBlend;
             return flags;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveTierRepresentativeQuality(HectonQualityTier tier)
+        {
+            if (tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350)
+                return 0.12f;
+            if (tier == HectonQualityTier.High)
+                return 0.72f;
+            if (tier == HectonQualityTier.Ultra)
+                return 1f;
+            return 0.5f;
         }
     }
 }

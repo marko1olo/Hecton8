@@ -286,7 +286,7 @@ namespace Hecton8.VFX
     /// <summary>
     /// Immutable compute-particle budget row.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 28)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct VfxComputeParticleBudget
     {
         /// <summary>Low-tier budget row.</summary>
@@ -330,25 +330,35 @@ namespace Hecton8.VFX
             VfxComputeParticleBudgetCatalog.UltraFlowResampleFrames);
 
         /// <summary>Total particle count budget.</summary>
+        [FieldOffset(0)]
         public readonly int ParticleCount;
 
         /// <summary>Marine-snow pool count.</summary>
+        [FieldOffset(4)]
         public readonly int MarineSnowCount;
 
         /// <summary>Bubble pool count.</summary>
+        [FieldOffset(8)]
         public readonly int BubbleCount;
 
         /// <summary>Debris pool count.</summary>
+        [FieldOffset(12)]
         public readonly int DebrisCount;
 
         /// <summary>Collision/integration step distance in meters.</summary>
+        [FieldOffset(16)]
         public readonly float StepDistanceMeters;
 
         /// <summary>Fake depth/fog occlusion tap count. Particle shadow casting remains forbidden.</summary>
+        [FieldOffset(20)]
         public readonly int ShadowTaps;
 
         /// <summary>Flow resample cadence in frames. Zero disables flow resampling.</summary>
+        [FieldOffset(24)]
         public readonly int FlowResampleFrames;
+
+        [FieldOffset(28)]
+        private readonly int _pad0;
 
         /// <summary>
         /// Creates an immutable VFX compute-particle budget row.
@@ -376,6 +386,7 @@ namespace Hecton8.VFX
             StepDistanceMeters = stepDistanceMeters;
             ShadowTaps = shadowTaps;
             FlowResampleFrames = flowResampleFrames;
+            _pad0 = 0;
         }
 
         /// <summary>

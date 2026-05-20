@@ -191,7 +191,7 @@ namespace Hecton8.Animation.FaunaProcedural
             if (_disposed || !Application.isPlaying)
                 return;
 
-            CompletePendingSolver(true);
+            CompletePendingSolverForTeardown();
             RefreshColdDependencies();
             if (EnsureVaultBuffers())
                 EnsureGraphicsBuffers();
@@ -206,7 +206,7 @@ namespace Hecton8.Animation.FaunaProcedural
                 return;
 
             TryUnregister();
-            CompletePendingSolver(true);
+            CompletePendingSolverForTeardown();
             ClearGpuSkinningBinding();
         }
 
@@ -225,7 +225,7 @@ namespace Hecton8.Animation.FaunaProcedural
                 _activeRuntimeInstance = null;
 
             TryUnregister();
-            CompletePendingSolver(true);
+            CompletePendingSolverForTeardown();
             ClearGpuSkinningBinding();
             ReleaseGraphicsBuffers();
             ClearHandles();
@@ -328,7 +328,7 @@ namespace Hecton8.Animation.FaunaProcedural
             if (_disposed)
                 return;
 
-            if (_solverScheduled && !CompletePendingSolver(false))
+            if (_solverScheduled && !TryFinalizePendingSolverNoWait())
                 return;
 
             if (_gpuUploadDirty)
@@ -345,7 +345,7 @@ namespace Hecton8.Animation.FaunaProcedural
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
-            CompletePendingSolver(true);
+            CompletePendingSolverForTeardown();
             _dataVault = currentService as IDataVault;
             ClearHandles();
             if (EnsureVaultBuffers())
@@ -630,16 +630,33 @@ namespace Hecton8.Animation.FaunaProcedural
                    cursor.Length >= 1;
         }
 
-        private bool CompletePendingSolver(bool forceComplete)
+        private bool TryFinalizePendingSolverNoWait()
         {
             if (!_solverScheduled)
                 return true;
 
-            if (!forceComplete && !_pendingHandle.IsCompleted)
+            if (!_pendingHandle.IsCompleted)
                 return false;
 
-            _pendingHandle.Complete();
-            _pendingHandle = default;
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _pendingHandle))
+                return false;
+
+            return FinishPendingSolverCompletion();
+        }
+
+        private bool CompletePendingSolverForTeardown()
+        {
+            if (!_solverScheduled)
+                return true;
+
+            if (!DispatcherJobFence.TryComplete(ref _pendingHandle, forceComplete: true))
+                return false;
+
+            return FinishPendingSolverCompletion();
+        }
+
+        private bool FinishPendingSolverCompletion()
+        {
             _solverScheduled = false;
             UnlockJobBuffers();
             _frameCounter++;
