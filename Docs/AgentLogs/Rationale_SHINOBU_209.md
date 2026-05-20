@@ -311,3 +311,19 @@ Solution: Check `la` and `lb` for finiteness and minimum length before reciproca
 Rejected Alternatives: Relying exclusively on upstream vertex sanitization was rejected because normal recomputation is a last defensive wall before baked mesh serialization. Throwing from the job was rejected because bad triangles should be skipped/zero-weighted, not abort an entire batch.
 Scalability potential: Runtime behavior unchanged across Low/Middle/High/Ultra; higher-tier dense source meshes gain stronger corrupt-import tolerance without changing the O(1) runtime mesh swap.
 Hardware Impact: Runtime 0 us. Editor adds finite checks inside the normal bake job; this is cold-path correctness cost.
+
+## 2026-05-20 Ultra-Think Polish Pass 22 Decisions
+
+Problem: The deformation path still trusted scalar inputs in several Burst kernels. Bad CSV/UI values for `GlobalQualityWeight`, radius, torsion, damage scale, split distance, or scorch intensity could reach `sqrt`, `rsqrt`, `rcp`, trigonometry, or `smoothstep` before the final position fallback.
+Solution: Sanitize scalar and vector inputs inside `GenerateMockStructuralDeformationJob`, `ApplyStructuralShearJob`, `ApplyRadialBlastJob`, `BuildTornTrianglesJob`, and `BakeDamageColorsJob`. Quality clamps to finite 0..1, radius/split distances clamp to finite positive bounds, torsion/damage/intensity clamp to bounded designer ranges, epicenters and positions fail closed to local zero, and the tear visual split skips `smoothstep` when threshold is effectively 1.0.
+Rejected Alternatives: Trusting Forge UI sliders and CSV profile authorship was rejected because CI mock and imported data can bypass the UI. Adding managed validation before scheduling was rejected as insufficient because Burst jobs are the final mutation wall and must be self-vaccinating. Throwing on bad data was rejected because the baker should produce bounded warning/report output, not abort a full batch on one corrupt scalar.
+Scalability potential: Runtime behavior unchanged across Low/Middle/High/Ultra. Low quality still collapses deformation through existing `math.lerp`/`math.smoothstep` curves; high/ultra still get richer offline visual damage, but corrupt quality values cannot become binary switches or NaN factories.
+Hardware Impact: Runtime 0 us. Editor adds scalar finite checks inside cold bake kernels; the cost is below relevance compared with avoiding NaN-poisoned mesh buffers, repeat bakes, and black-box dumps on weak i3/MX350 authoring machines.
+
+## 2026-05-20 Ultra-Think Polish Pass 23 Decisions
+
+Problem: `OfflineWreckageBakeCounters64` is a deterministic output row from `BuildTornTrianglesJob`, but Forge preview, Forge batch bake, and the mock benchmark still allocated it with `NativeArrayOptions.ClearMemory`.
+Solution: Allocate the single counter row with `NativeArrayOptions.UninitializedMemory` in all three call sites. `BuildTornTrianglesJob` constructs a default local counter row and writes `Counters[0]` before `GenerateConvexHullsJob`, report generation, or preview code reads it.
+Rejected Alternatives: Keeping allocator zero-fill was rejected because Task 14 requires eliminating unnecessary zero-init when downstream jobs deterministically overwrite consumed slots. Manually clearing the row before scheduling was rejected because it would just move the same redundant store out of the allocator.
+Scalability potential: Runtime behavior unchanged across Low/Middle/High/Ultra; the immutable mesh-swap runtime still owns no deformation buffers. Editor quality tiers can increase vertex count without retaining a pointless allocator clear on each bake state.
+Hardware Impact: Runtime 0 us. Editor avoids a 64-byte memset per preview/bake/mock counter allocation; the microsecond gain is tiny, but it removes a direct contradiction of the zero-init bypass rule.

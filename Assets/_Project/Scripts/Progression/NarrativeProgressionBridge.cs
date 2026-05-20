@@ -168,13 +168,13 @@ namespace Hecton8.Progression
             if (_exitLifePodIssued)
                 return;
 
-            if ((BaseAirlockEventType)payload.EventType != BaseAirlockEventType.EnvironmentChanged)
+            if (BaseAirlockEventPayload.GetEventType(payload.StatusFlags) != BaseAirlockEventType.EnvironmentChanged)
                 return;
 
             if (lifePodAirlockHashId != 0u && payload.AirlockHashId != lifePodAirlockHashId)
                 return;
 
-            if (requireWetLifePodExit && payload.Dry)
+            if (requireWetLifePodExit && BaseAirlockEventPayload.IsDry(payload.StatusFlags))
                 return;
 
             TryIssueExitLifePodDiscoveryFromAup();

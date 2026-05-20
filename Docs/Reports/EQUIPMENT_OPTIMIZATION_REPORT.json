@@ -1,0 +1,82 @@
+{
+  "reports": [
+    {
+      "agent": "SHINOBU_231",
+      "scanner": "Polymorphic_Modifier_Scanner",
+      "summary": "Virtual Method Invocations Eradicated",
+      "scannedFiles": 176,
+      "forbiddenPatternHits": 0,
+  "branchlessAuthority": "UpgradeMaskDTO[16], UpgradeLutEntryDTO[128], UpgradeVisualStateDTO[64], EvaluateUpgradeMasksJob, BuildUpgradeLUTJob, CompileToolRuntimeStatsJob, PublishUpgradeVisualStateJob",
+      "editorOnlyIgnored": "SuitUpgradeManager OnValidate catalog List<SuitUpgradeData> is inside UNITY_EDITOR and is not a runtime stat modifier chain.",
+      "verdict": "PASS",
+      "findings": []
+    },
+    {
+      "agent": "SHINOBU_230",
+      "scanner": "Charger_OOP_Scanner",
+      "summary": "Managed Charging Scripts Eradicated",
+      "scannedFiles": 5,
+      "forbiddenPatternHits": 0,
+      "candidateFiles": [
+        "Assets/_Project/Scripts/Construction/BatteryChargerModule.cs",
+        "Assets/_Project/Scripts/Gameplay/BatteryCharger.cs",
+        "Assets/_Project/Scripts/Power/BatteryChargerLogisticsContracts.cs",
+        "Assets/_Project/Scripts/Power/BatteryChargerLogisticsGizmo.cs",
+        "Assets/_Project/Scripts/Power/BatteryChargerLogisticsRuntime.cs"
+      ],
+      "forbiddenPatterns": {
+        "void Update(": 0,
+        "StartCoroutine(": 0,
+        "IEnumerator ": 0,
+        "List<Battery": 0,
+        "List<PowerCell": 0,
+        "Battery[]": 0,
+        "PowerCell[]": 0,
+        "RegisterSlowTickable(": 0,
+        "ISlowTickable": 0
+      },
+      "advisory": "BatterySlot facade remains cold UI/interaction compatibility only; charging truth is InventorySlotDTO.ConditionFlags plus PowerNodeDTO.Potential.",
+      "verdict": "PASS",
+      "findings": []
+    },
+    {
+      "agent": "SHINOBU_229",
+      "scanner": "Auxiliary_OOP_Scanner",
+      "summary": "Auxiliary hot tool scripts and scanner pulse path route through NativeArray and SignalBus; cross-domain tether pool remains",
+      "status": "Still Present",
+      "scannedFiles": [
+        "Assets/_Project/Scripts/Equipment/Auxiliary",
+        "Assets/_Project/Scripts/Gameplay/DeployableFlare.cs",
+        "Assets/_Project/Scripts/Gameplay/GravTrap.cs",
+        "Assets/_Project/Scripts/GravityTetherTool.cs",
+        "Assets/_Project/Scripts/ScannerTool.cs",
+        "Assets/_Project/Scripts/TetherManager.cs"
+      ],
+      "hotAuxiliaryForbiddenPatternHits": 0,
+      "scannerPulseDrawerHits": 0,
+      "scannerPulseRoute": "ScannerTool primary scan calls AuxiliaryEquipmentRouterRuntime.TryDeploySensorPing(scanPosition, pulseDuration, effectiveScanRadius)",
+      "crossDomainForbiddenPatternHits": 1,
+      "forbiddenPatterns": [
+        "Update(",
+        "LateUpdate(",
+        "FixedUpdate(",
+        "new GameObject",
+        "AddComponent<Light",
+        "SpringJoint",
+        "SphereCollider",
+        "Light ",
+        "ParticleSystem",
+        "OverlapSphere"
+      ],
+      "verdict": "PARTIAL_BLOCKED_BY_TETHER_MANAGER_OWNER",
+      "findings": [
+        {
+          "file": "Assets/_Project/Scripts/TetherManager.cs",
+          "pattern": "new GameObject",
+          "line": 710,
+          "ownership": "Tether & Cable Physics domain, cold prewarm pool"
+        }
+      ]
+    }
+  ]
+}

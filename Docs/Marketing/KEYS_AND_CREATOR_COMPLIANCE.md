@@ -18,7 +18,7 @@ No Steam policy, FTC/legal, creator-contact, key-distribution, runtime build, Un
 
 ## Hard Rules
 
-- No keys before a stable demo or review build exists.
+- No keys from build existence alone; a stable demo/review build is only a prerequisite, and key/access send still requires official inbox custody, exact recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED`, access-log fields, disclosure, and the relevant press/creator/curator send gate.
 - No raw keys to unverified contacts.
 - No key/access send before `official_inbox_custody_gate = ALLOW_OFFICIAL_INBOX_USE_VERIFIED` and key/access log fields exist.
 - No key/access send before `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED` for the exact recipient or batch.

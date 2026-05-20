@@ -139,7 +139,8 @@ namespace Hecton8.Gameplay
             ApplyPendingAupAnchor();
             Quaternion targetRotation = SanitizeQuaternion(state.TargetRotation, _lastAppliedWorldRotation);
             Vector3 targetLocalPosition = SanitizeVector3(state.TargetLocalPosition, _lastAppliedLocalPosition);
-            if (!state.ApplyTransformDirectly)
+            bool applyTransformDirectly = HectonCameraState.RequiresDirectTransform(state.Flags);
+            if (!applyTransformDirectly)
                 targetLocalPosition += ResolveLateFrameKccLocalOffset(in state);
             float safeDeltaTime = math.isfinite(state.DeltaTime) ? math.max(0f, state.DeltaTime) : 0f;
             float targetFieldOfView = SanitizeFieldOfView(
@@ -160,7 +161,7 @@ namespace Hecton8.Gameplay
                 _originShiftTrackingLockFrame = -1;
             }
 
-            if (state.ApplyTransformDirectly)
+            if (applyTransformDirectly)
             {
                 cameraTransform.rotation = targetRotation;
                 cameraTransform.localPosition = targetLocalPosition;

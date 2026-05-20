@@ -92,36 +92,60 @@ namespace Hecton8.Logistics.Grid.Contracts
     /// <summary>
     /// Cold-path descriptor copied with the native WFC byte grid.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 96)]
+    [StructLayout(LayoutKind.Explicit, Size = 96)]
     public struct WfcOutpostGridDescriptor
     {
+        [FieldOffset(0)]
         public MacroDatabaseAup OriginAup;
+        [FieldOffset(48)]
         public int3 Dimensions;
+        [FieldOffset(60)]
         public float CellSizeMeters;
+        [FieldOffset(64)]
         public float FloorHeightMeters;
+        [FieldOffset(68)]
+        private uint _pad0;
+        [FieldOffset(72)]
         public ulong SectorHash;
+        [FieldOffset(80)]
         public uint WorldSeed;
+        [FieldOffset(84)]
         public uint GenerationSequence;
+        [FieldOffset(88)]
         public uint GridHash;
+        [FieldOffset(92)]
         public ushort CellCount;
+        [FieldOffset(94)]
         public ushort Flags;
     }
 
     /// <summary>
     /// SOA node payload produced by Burst translation and consumed by the logistics graph builder.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 40)]
+    [StructLayout(LayoutKind.Explicit, Size = 40)]
     public struct WfcOutpostPowerNode
     {
+        [FieldOffset(0)]
         public uint NodeId;
+        [FieldOffset(4)]
         public int3 Cell;
+        [FieldOffset(16)]
         public float3 LocalOffsetMeters;
+        [FieldOffset(28)]
         public ushort CellIndex;
+        [FieldOffset(30)]
         public ushort RoomId;
+        [FieldOffset(32)]
         public ushort DoorId;
+        [FieldOffset(34)]
         public byte Kind;
+        [FieldOffset(35)]
         public byte PriorityTier;
+        [FieldOffset(36)]
         public byte Flags;
+        [FieldOffset(37)]
         public byte Reserved;
+        [FieldOffset(38)]
+        private ushort _pad0;
     }
 }

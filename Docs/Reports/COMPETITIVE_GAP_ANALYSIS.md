@@ -6,7 +6,7 @@ Status: RESEARCH REPORT / WEB_REFERENCE + COMMUNITY_SIGNAL + STATIC_DOC / RUNTIM
 Runtime changes: none
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-18 R4 Interior Actuality Boundary
+## 2026-05-20 R47 Root/Architecture Actuality Boundary
 
 This document is active only where it agrees with:
 

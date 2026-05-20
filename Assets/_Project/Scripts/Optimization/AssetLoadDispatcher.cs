@@ -681,7 +681,7 @@ namespace Hecton8.Optimization
             VRAMPressureMonitor pressureMonitor = _vramPressure;
             float ramPressure = pressureMonitor != null ? pressureMonitor.RamPressureFactor : 0f;
             float totalPressure = pressureMonitor != null ? pressureMonitor.PressureFactor : ramPressure;
-            float pressure = math.saturate(math.isfinite(totalPressure) ? totalPressure : 0f);
+            float pressure = math.saturate(math.select(0f, totalPressure, math.isfinite(totalPressure)));
             float quality = ResolveGlobalQualityWeight();
 
             switch (band)
@@ -711,16 +711,16 @@ namespace Hecton8.Optimization
 
         private static long ResolveGraphicsBudgetBytes(int graphicsMemoryMb)
         {
-            int budgetMb = graphicsMemoryMb > 0 ? graphicsMemoryMb : UnknownGraphicsBudgetMb;
+            int detectedMb = math.max(graphicsMemoryMb, 0);
+            int budgetMb = math.select(UnknownGraphicsBudgetMb, detectedMb, detectedMb > 0);
             return (long)budgetMb * BytesPerMegabyte;
         }
 
         private static float ResolveVramPressureFactor(long observedVramBytes, long graphicsBudgetBytes)
         {
-            if (graphicsBudgetBytes <= 0L)
-                return 1f;
-
-            return math.saturate(observedVramBytes / (float)graphicsBudgetBytes);
+            float denominator = math.max((float)graphicsBudgetBytes, 1f);
+            float pressure = math.saturate(observedVramBytes / denominator);
+            return math.select(1f, pressure, graphicsBudgetBytes > 0L);
         }
 
         private static float ResolveUiMipGateResponse(float vramPressure)
@@ -745,10 +745,7 @@ namespace Hecton8.Optimization
 
         private static float ResolvePressureResponse(float startFraction, float pressureFactor)
         {
-            float start = math.saturate(startFraction);
-            if (start >= 1f)
-                start = 0.9999f;
-
+            float start = math.min(math.saturate(startFraction), 0.9999f);
             return math.smoothstep(start, 1f, math.saturate(pressureFactor));
         }
 
@@ -762,7 +759,7 @@ namespace Hecton8.Optimization
         private static float ResolveGlobalQualityWeight()
         {
             float quality = HomeostasisBrain.GlobalQualityWeight;
-            return math.saturate(math.isfinite(quality) ? quality : 1f);
+            return math.saturate(math.select(1f, quality, math.isfinite(quality)));
         }
     }
 }

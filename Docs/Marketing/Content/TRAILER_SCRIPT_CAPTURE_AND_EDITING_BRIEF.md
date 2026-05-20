@@ -13,7 +13,7 @@ The first trailer must make a cold player understand:
 - the player does things, not just watches scenery;
 - there is a base/salvage loop;
 - the Seed Ship creates mystery;
-- Steam CTA is clear only after `Analytics/MEASUREMENT_AND_UTM_PLAN.md` Official CTA Link Activation Gate V0 passes; otherwise the end card uses no-link feedback copy.
+- Steam CTA is clear only after `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED` and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` pass; otherwise the end card uses no-link feedback copy.
 
 ## Trailer Lengths
 

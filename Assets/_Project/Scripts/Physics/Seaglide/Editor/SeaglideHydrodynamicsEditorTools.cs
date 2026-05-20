@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
@@ -22,7 +23,14 @@ namespace Hecton8.Physics.Editor
                 UnsafeUtility.SizeOf<SeaglideStateDTO>() != SeaglideHydrodynamicsConstants.StateBytes ||
                 UnsafeUtility.SizeOf<SeaglidePropulsionRequestDTO>() != SeaglideHydrodynamicsConstants.RequestBytes ||
                 UnsafeUtility.AlignOf<SeaglideStateDTO>() != 8 ||
-                UnsafeUtility.AlignOf<SeaglidePropulsionRequestDTO>() != 8)
+                UnsafeUtility.AlignOf<SeaglidePropulsionRequestDTO>() != 8 ||
+                OffsetOf(typeof(SeaglideStateDTO), nameof(SeaglideStateDTO.CurrentAUP)) != 0 ||
+                OffsetOf(typeof(SeaglideStateDTO), nameof(SeaglideStateDTO.Velocity)) != 24 ||
+                OffsetOf(typeof(SeaglideStateDTO), nameof(SeaglideStateDTO.BatteryLevel)) != 36 ||
+                OffsetOf(typeof(SeaglideStateDTO), nameof(SeaglideStateDTO.ActiveFlags)) != 40 ||
+                OffsetOf(typeof(SeaglidePropulsionRequestDTO), nameof(SeaglidePropulsionRequestDTO.CurrentAUP)) != 0 ||
+                OffsetOf(typeof(SeaglidePropulsionRequestDTO), nameof(SeaglidePropulsionRequestDTO.PreviousAUP)) != 24 ||
+                OffsetOf(typeof(SeaglidePropulsionRequestDTO), nameof(SeaglidePropulsionRequestDTO.InputVector)) != 48)
             {
                 throw new FatalArchitectureException(
                     "SHINOBU_227 Seaglide DTO layout trap failed. State=" +
@@ -33,6 +41,11 @@ namespace Hecton8.Physics.Editor
                     UnsafeUtility.SizeOf<SeaglidePropulsionRequestDTO>());
             }
         }
+
+        private static int OffsetOf(Type type, string fieldName)
+        {
+            return Marshal.OffsetOf(type, fieldName).ToInt32();
+        }
     }
 
     public sealed class SeaglideHydrodynamicsXRayWindow : EditorWindow
@@ -42,6 +55,7 @@ namespace Hecton8.Physics.Editor
         private Slider _drag;
         private Slider _current;
         private IMGUIContainer _graph;
+        private Vector3[] _graphPoints;
         private double _nextRefresh;
 
         [MenuItem("Hecton8/Physics/Hydrodynamic Propulsion X-Ray")]
@@ -60,6 +74,7 @@ namespace Hecton8.Physics.Editor
             _drag = new Slider("Fluid drag", 0f, 2.5f);
             _current = new Slider("Current resistance", 0f, 2f);
             _graph = new IMGUIContainer(DrawGraph) { style = { height = 140 } };
+            _graphPoints = new Vector3[SeaglideHydrodynamicsConstants.TelemetryCapacity]; // COLD ALLOC: Vector3[300] - editor x-ray graph scratch - owner: SHINOBU_227
             Button mock = new Button(GenerateMock) { text = "Generate 1000 Mock Requests" };
             _thrust.RegisterValueChangedCallback(_ => ApplySliderValues());
             _drag.RegisterValueChangedCallback(_ => ApplySliderValues());
@@ -166,19 +181,21 @@ namespace Hecton8.Physics.Editor
             for (int i = 0; i < telemetry.Length; i++)
                 maxForce = math.max(maxForce, telemetry[i].MaxForceMagnitude);
 
-            Vector3[] points = new Vector3[telemetry.Length]; // EDITOR UI ALLOC: SceneView graph scratch, never runtime hot path.
+            if (_graphPoints == null || _graphPoints.Length < telemetry.Length)
+                return;
+
             int start = cursor.IsCreated && cursor.Length > 0 ? cursor[0] : 0;
             for (int i = 0; i < telemetry.Length; i++)
             {
                 int index = (start + i) % telemetry.Length;
                 float x = rect.xMin + rect.width * (i / (float)(telemetry.Length - 1));
                 float y = rect.yMax - rect.height * math.saturate(telemetry[index].MaxForceMagnitude / maxForce);
-                points[i] = new Vector3(x, y, 0f);
+                _graphPoints[i] = new Vector3(x, y, 0f);
             }
 
             Handles.BeginGUI();
             Handles.color = Color.cyan;
-            Handles.DrawAAPolyLine(2f, points);
+            Handles.DrawAAPolyLine(2f, telemetry.Length, _graphPoints);
             Handles.EndGUI();
         }
     }

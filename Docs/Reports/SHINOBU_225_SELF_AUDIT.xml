@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SELF_AUDIT agent="SHINOBU_225" task="LASER_CUTTER_DOD_REWRITE" utc="2026-05-20T11:41:47Z">
+  <Scope domain="ECHELON 4 Player, Kinematics &amp; Tools / Equipment Runtime Tools" taskCount="20" status="STATIC_PASS_COMPILE_BLOCKED_BY_EXTERNAL_DEPENDENCIES" />
+  <TaskReconciliation>
+    <Task id="01" status="PASS">Focused cutter scan found no direct live `Physics.Raycast`; live cutter keeps deferred interaction route and SHINOBU sidecar owns batch proof.</Task>
+    <Task id="02" status="PASS">Removed cutter-adjacent ParticleSystem paths; sparks/debris are `DebrisSpawnSignal` / `VfxSparkRequestSignal` data only.</Task>
+    <Task id="03" status="PASS">Unmanaged cutter DTOs use raw fields only; no `{ get; set; }` DTO state.</Task>
+    <Task id="04" status="PASS">`LaserCutRequestDTO` restored to exact XML ABI with padding at 52/56/60; metadata moved out.</Task>
+    <Task id="05" status="PASS">`GenerateMockCutterTriggersJob.Schedule(...)+DispatcherJobFence.TryComplete` writes deterministic request+meta rows for isolated editor/CI profiling.</Task>
+    <Task id="06" status="PASS">`BuildCutterRaycastsJob` feeds preallocated commands; `RaycastCommand.ScheduleBatch` is registered with `H8Memory`.</Task>
+    <Task id="07" status="PASS">`EvaluateCutterRaycastHitsJob` converts hits into SDF/deformation/drain/decal/VFX DTOs with finite guards.</Task>
+    <Task id="08" status="PASS">Hull denting is shader/deformation DTO data; no CPU mesh mutation.</Task>
+    <Task id="09" status="PASS">Battery drain is staged as unmanaged DTO then `PowerDrainSignal`; no direct inventory mutation.</Task>
+    <Task id="10" status="PASS">Glow scar is `LaserCutGlowDecalRequestDTO`; no scar mesh generation.</Task>
+    <Task id="11" status="PASS">Spark count uses `math.smoothstep(GlobalQualityWeight)` over tuning `LowSparkCount=0` to `UltraSparkCount=500`; post-evaluation signals forward job-computed `SparkCount` directly.</Task>
+    <Task id="12" status="PASS">Cooldown is tick-frame metadata in Vault lanes; duplicate same-frame writes are suppressed.</Task>
+    <Task id="13" status="PASS">AUP math subtracts double origins before local float downcast.</Task>
+    <Task id="14" status="PASS">DTO rows are blittable explicit structs and jobs use `FloatMode.Deterministic`.</Task>
+    <Task id="15" status="PASS">300-entry telemetry ring exists with `BatteryWatts@120` and `BurstWorkEstimateMicros@124`; non-finite flags dump `Docs/AgentLogs/Dump_SHINOBU_225.bin`.</Task>
+    <Task id="16" status="PASS">UI Toolkit tuner reads tuning/telemetry with frame, heat, battery watts, Burst us estimate, and HitAUP XYZ.</Task>
+    <Task id="17" status="PASS">CSV parser slices `ReadOnlySpan&lt;byte&gt;` and writes unmanaged spec rows.</Task>
+    <Task id="18" status="PASS">Editor gizmo draws red beam, cyan origin, green hit sphere, yellow normal from Vault rows.</Task>
+    <Task id="19" status="PASS">Static report sidecar and shared construction appendix updated.</Task>
+    <Task id="20" status="PASS">Static scans and no-alias/dependency audit written; compile deferred only by CPU guard.</Task>
+  </TaskReconciliation>
+  <StructLayoutVerification>
+    <DTO name="LaserCutRequestDTO" size="64">
+      <Field name="RayOriginAUP" offset="0" size="24" />
+      <Field name="RayDirection" offset="24" size="12" />
+      <Field name="CuttingPower" offset="36" size="4" />
+      <Field name="MaximumDistance" offset="40" size="4" />
+      <Field name="ToolHashID" offset="44" size="4" />
+      <Field name="ParentEntityID" offset="48" size="4" />
+      <Field name="_pad0" offset="52" size="4" />
+      <Field name="_pad1" offset="56" size="4" />
+      <Field name="_pad2" offset="60" size="4" />
+      <Proof>24+12+4+4+4+4+12=64; offsets 0,24,36,40,44,48,52,56,60; one 64-byte cache line.</Proof>
+    </DTO>
+    <DTO name="LaserCutRequestMetaDTO" size="64">
+      <Field name="Frame" offset="0" size="4" />
+      <Field name="Flags" offset="4" size="4" />
+      <Field name="RequestSequence" offset="8" size="4" />
+      <Field name="CooldownUntilFrame" offset="12" size="4" />
+      <Field name="LastAppliedFrame" offset="16" size="4" />
+      <Field name="Reserved0" offset="20" size="4" />
+      <Field name="StateHash" offset="24" size="8" />
+      <Field name="Reserved1..4" offset="32" size="32" />
+      <Proof>Metadata is one 64-byte row, separated from the mandated request padding and regular for parallel lane writes.</Proof>
+    </DTO>
+    <DTO name="LaserCutTelemetryEntry" size="128" ringEntries="300">
+      <Field name="BatteryWatts" offset="120" size="4" />
+      <Field name="BurstWorkEstimateMicros" offset="124" size="4" />
+      <Proof>Stores origin, hit AUP, direction, distance, power, quality, frame, sequence, hashes, flags, heat, state hash, battery watts, and deterministic Burst work estimate.</Proof>
+    </DTO>
+  </StructLayoutVerification>
+  <ScalabilityCurve>
+    <Low weight="0.0-0.3">Spark quantity smoothsteps toward zero; dent/decal radius uses tuning minimum; jobs still execute deterministic truth but shader presentation collapses to cheap glow/deformation parameters.</Low>
+    <Middle weight="0.4-0.7">Spark count, decal lifetime, dent radius, and battery watts consume tuning DTO values and rise smoothly; no feature pop or branch tier switch.</Middle>
+    <HighUltra weight="0.8-1.0">Saved CPU is spent on up to 500 GPU spark/decal requests and larger shader dent radius, not extra CPU simulation.</HighUltra>
+  </ScalabilityCurve>
+  <VaultStatus privateNativeArrays="0">
+    <Buffer id="71320" name="Requests" />
+    <Buffer id="71336" name="RequestMeta" />
+    <Buffer id="71321" name="RequestCount" />
+    <Buffer id="71322" name="RaycastCommands" />
+    <Buffer id="71323" name="RaycastHits" />
+    <Buffer id="71324" name="HitResults" />
+    <Buffer id="71325" name="Deformation" />
+    <Buffer id="71326" name="BatteryDrain" />
+    <Buffer id="71327" name="GlowDecal" />
+    <Buffer id="71328" name="ImpactVfx" />
+    <Buffer id="71329" name="Cooldown" />
+    <Buffer id="71330" name="TelemetryRing300" />
+    <Buffer id="71331" name="TelemetryCursor" />
+    <Buffer id="71332" name="Tuning" />
+    <Buffer id="71333" name="Spec" />
+    <Buffer id="71334" name="CsvScratch" />
+    <Buffer id="71335" name="Counters" />
+  </VaultStatus>
+  <PointerAliasingAndDependencyGraph noAliasHits="17">
+    <Job name="ManageCutterCooldownJob" consumes="Requests,RequestMetas,Cooldowns" outputs="RequestMetas,Cooldowns" />
+    <Job name="BuildCutterRaycastsJob" consumes="Requests,RequestMetas" outputs="RaycastCommands" />
+    <Job name="RaycastCommand.ScheduleBatch" consumes="RaycastCommands" outputs="RaycastHits" />
+    <Job name="EvaluateCutterRaycastHitsJob" consumes="Requests,RequestMetas,RaycastHits" outputs="HitResults,Deformation,BatteryDrain,GlowDecal,ImpactVfx,TelemetryRing" />
+    <Handles>cooldownHandle -> buildHandle -> scheduledRaycastHandle -> scheduledEvaluationHandle; raycast and evaluation handles are registered through `H8Memory.RegisterActiveJob(SystemID.GameplayTools, handle)` and finalized only when `DispatcherJobFence.TryFinalizeCompleted` succeeds.</Handles>
+  </PointerAliasingAndDependencyGraph>
+  <CompileGuard>
+    <Assembly>No asmdef edited; no sibling runtime assembly reference added. `SealedDoor` no longer imports `Hecton8.Tools` for door VFX.</Assembly>
+    <Build status="FAILED_EXTERNAL_DEPENDENCIES" attemptedUtc="2026-05-20T11:52:19Z" command="dotnet build Hecton8.Core.csproj --no-restore -v:minimal" errorCount="77" ownedErrorPaths="0" />
+  </CompileGuard>
+  <DearLie>
+    <Before complexity="O(hits * meshVertices) + prefab churn">Legacy risk: CPU mesh deformation, scar geometry, ParticleSystem state or prefab spark bursts.</Before>
+    <After complexity="O(requests) CPU DTO writes + GPU shader/indirect presentation">CPU emits compact AUP/normal/heat/radius/scalar rows; shader/decal/GPU spark lanes fake melting, denting, scorch, and sparks.</After>
+  </DearLie>
+  <StaticScan syncRaycast="0" instantiate="0" particleSystem="0" meshMutation="0" report="Docs/Reports/CONSTRUCTION_OPTIMIZATION_REPORT_SHINOBU_225.json" />
+  <StaticScanDetail requestDto="46" requestMeta="30" raycastBatch="1" noAlias="17" burstWorkEstimate="3" />
+</SELF_AUDIT>

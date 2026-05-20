@@ -222,3 +222,43 @@ Status: STATIC VERIFIED - COMPILE WALL IN CORE MEMORY ASMDEF SURFACE
 
 - [x] Removed preview-prefab object ownership from the SHINOBU ModuleTemplate path. | Justification: current `SpawnGhost()` releases any legacy ghost object, sets `_builderGhostPreviewActive`, and stores preview pose/scale as data instead of spawning `activeBuildable.ghostPrefab` or acquiring a runtime proxy. Rejected keeping authored ghost prefab visuals for socket modules because Task 02 requires data-driven preview authority during active snapping. | Estimate: avoids one preview prefab pool spawn/despawn plus ghost hierarchy setup per armed ModuleTemplate buildable.
 - [x] Verified the data-only preview path statically. | Justification: scan shows no `activeBuildable.ghostPrefab` use remains in `PlayerBuilder`; SHINOBU socket alignment reads `BaseModuleTemplate.SocketDefinitions`, builder preview pose fields, Vault `GhostPreviewDTO`, and CSR lanes. The remaining `pool.Spawn` hit is final module placement, not preview. | Estimate: static only.
+
+### Loop 29 - Builder Ghost Validation Fence
+
+- [x] Removed active-frame forced completion from builder ghost SDF validation. | Justification: `TryRunBuilderGhostBurstValidation()` now schedules `BuildBuilderGhostStateJob`, chains `ValidateBuilderGhostPlacementJob`, registers the construction handle, and returns without `TryComplete`; results are consumed only after `DispatcherJobFence.TryFinalizeCompleted`. Rejected mid-frame blocking because validation is presentation/placement proof, not worth stalling the builder tick. | Estimate: avoids one possible main-thread fence wait per active preview validation frame.
+- [x] Hardened pending-result ownership. | Justification: builder validation query hash now includes module hash, preview pose, rotation, proxy bounds center/size, and snap/DearLie validation flags; stale completed results are dropped if the current query hash differs. Rejected pose-only hashing because snap-state changes can alter presentation flags without moving the preview. | Estimate: 14 FNV fold operations per builder validation query.
+- [x] Closed lifecycle teardown leaks for the second fence. | Justification: `SetActiveBuildable()`, `OnDestroy()`, and `ResetBuilderState()` now complete both SHINOBU socket snap and builder ghost validation handles on actual teardown boundaries. Rejected leaving the validation handle pending across active buildable changes because the next blueprint would inherit a blocked validation lane. | Estimate: teardown-only; no per-frame cost.
+
+### Loop 30 - Cached Vault Gate
+
+- [x] Removed hot fallback `GlobalRegistry.DataVault` lookup from builder ghost validation. | Justification: `TryRunBuilderGhostBurstValidation()` now requires the cold-cached `_shinobuSocketVault` through `TryResolveShinobuSocketVault()`, matching the socket snap bridge. Rejected active-route service locator fallback because registry reads belong in `ResolveRuntimeReferences()`, not in preview validation. | Estimate: one service-locator property read avoided per validation attempt when the cache is missing.
+- [x] Verified SHINOBU DataVault registry boundary statically. | Justification: `GlobalRegistry.DataVault` remains only in `ResolveRuntimeReferences()` cold binding for this route; active snap and builder validation now both use cached vault gates before resolving Vault views. | Estimate: static only.
+
+### Loop 31 - Preview Alpha Truth
+
+- [x] Removed stale previous-frame validity from blueprint preview alpha. | Justification: `HectonBlueprintPreviewBatch.WriteStateRow()` now derives alpha from the current `BuilderGhostValidationFlags` row via `IsBuilderGhostValid()` instead of `_lastPreviewAllowed`, which is updated after the current signal write. Rejected carrying previous signal state into the current shader payload because it can make invalid SDF/bounds previews visually lag. | Estimate: one bitmask test per written preview row.
+- [x] Routed preview telemetry/material validity through sanitized state flags. | Justification: after `WriteStateRow()` finite checks, `ConsumeConstructionPreviewSignals()` now reads the written `BuilderGhostStateDTO` for telemetry SDF sign and `_lastPreviewAllowed`. Rejected using pre-sanitized signal flags because non-finite correction can happen inside the writer. | Estimate: one 128-byte state row read already in cache per preview row.
+
+### Loop 32 - Preview Scale Finite Gate
+
+- [x] Hardened preview scale validity to require every axis positive. | Justification: `HectonBlueprintPreviewBatch.WriteStateRow()` now uses `math.all(scale > 0f)` instead of `math.any(scale > 0f)`, so a zero or negative axis marks the row `NonFinite` before shader upload. Rejected silent clamp-to-0.001 for partially invalid scale because it can make a malformed preview look valid. | Estimate: same SIMD comparison width, stricter predicate only.
+
+### Loop 33 - Validated Visual DTO Truth
+
+- [x] Mirrored final builder validation flags into `BuilderGhostVisualDTO`. | Justification: `ValidateBuilderGhostPlacementJob` now updates the visual row's `Flags` and alpha after SDF/bounds validation, so GPU-facing Vault data cannot keep the pre-validation flags written by `BuildBuilderGhostStateJob`. Rejected a second visual sync job because the existing validate job already owns the final state row and can update the sibling visual lane without another scheduler edge. | Estimate: one 64-byte visual read/write and one bitmask predicate per validated builder preview row.
+- [x] Verified validated visual DTO patch statically. | Justification: scans show the validate job owns `Visuals`, writes `WriteValidatedVisual()`, and `PlayerBuilder` passes `views.BuilderGhostVisuals`; XML/JSON parse and `git diff --check` pass with only existing LF/CRLF normalization warnings. Rejected a build because the documented Core.Memory asmdef wall still blocks SHINOBU compile proof. | Estimate: static only.
+
+### Loop 34 - Holography Dump Ownership
+
+- [x] Reassigned holography black-box dump path from a foreign-agent target to `Dump_SHINOBU_217_Holography.bin`. | Justification: SHINOBU_217 telemetry must not write crash proof under another agent ID. Rejected sharing `Dump_SHINOBU_217.bin` with socket telemetry because `HolographyTelemetryEntry` has a different binary layout. | Estimate: exceptional-path file target only; 0 runtime hot-path cost.
+- [x] Verified holography dump ownership statically. | Justification: source scan shows `HolographyDumpPath` points to `Dump_SHINOBU_217_Holography.bin`; XML/JSON parse clean. Historical docs mention the former wrong path only as rationale/problem evidence. | Estimate: static only.
+
+### Loop 35 - Cold ModuleSocket Buffer Capacity
+
+- [x] Pre-sized reusable `ModuleSocket` authoring buffers to `GhostSocketCapacity`. | Justification: cold occupancy transfer still uses Unity's list-based `GetComponentsInChildren` overload during migration, but capacity now matches the SHINOBU ghost socket lane instead of growing from 8 on dense modules. Rejected array-returning `GetComponentsInChildren` because it allocates every call. | Estimate: avoids one possible managed list resize allocation during cold target-cache rebuild or placement marking.
+- [x] Verified cold buffer capacity statically. | Justification: scan shows both `ModuleSocket` buffers initialized with `ShinobuSocketConstructionRuntime.GhostSocketCapacity`; XML/JSON parse clean. | Estimate: static only.
+
+### Loop 36 - Builder SDF Math LOD
+
+- [x] Added continuous SDF corner sampling for builder holography validation. | Justification: `ResolveBuilderGhostSdfSampleCount()` scales the validation proof from 2 to 8 opposite-paired bounds corners through `GlobalQualityWeight`, and CPU hydration plus Burst validation share the same `ResolveBuilderGhostCornerIndex()` order. Rejected fixed eight-corner validation on low quality and rejected a binary low/high branch. | Estimate: low-quality path avoids 6 of 8 SDF sample calls before scheduled validation.
+- [x] Verified builder SDF Math LOD statically. | Justification: scans show the shared sample-count/order helpers in runtime, `SdfSampleCount` in `ValidateBuilderGhostPlacementJob`, and telemetry using `_builderGhostValidationSdfCornerChecks`; XML/JSON parse clean, old foreign dump literal absent, forbidden SHINOBU job pattern scan has no hits, and `git diff --check` reports only repository LF/CRLF warnings. Rejected a build because the documented Core.Memory asmdef wall still blocks SHINOBU compile proof. | Estimate: static only.

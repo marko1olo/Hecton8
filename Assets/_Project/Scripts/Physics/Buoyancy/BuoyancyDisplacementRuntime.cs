@@ -12,7 +12,7 @@ using Stopwatch = System.Diagnostics.Stopwatch;
 namespace Hecton8.Physics
 {
     [DisallowMultipleComponent]
-    public unsafe sealed class BuoyancyDisplacementRuntime : MonoBehaviour, IFixedTickable, IPostFixedTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public unsafe sealed class BuoyancyDisplacementRuntime : MonoBehaviour, IFixedTickable, IPostFixedTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IOriginShiftListener
     {
         private const int LockStates = 1 << 0;
         private const int LockFlowSamples = 1 << 1;
@@ -25,7 +25,7 @@ namespace Hecton8.Physics
 
         [Header("Vault Capacity")]
         [SerializeField, Range(1, BuoyancyDisplacementConstants.StateCapacity)]
-        [Tooltip("Maximum buoyant object records processed by the SHINOBU_158 solver.")]
+        [Tooltip("Maximum buoyant object records processed by the SHINOBU_201 SIMD/buoyancy solver.")]
         private int _stateCapacity = BuoyancyDisplacementConstants.StateCapacity;
 
         [SerializeField, Range(0, BuoyancyDisplacementConstants.FlowSampleCapacity)]
@@ -73,11 +73,13 @@ namespace Hecton8.Physics
         private uint _simulationFrame;
         private int _activeStateCount;
         private int _lockedBuffers;
+        private double3 _cachedSectorAup;
         private bool _jobScheduled;
         private bool _registeredFixed;
         private bool _registeredPostFixed;
         private bool _registeredLateFrame;
         private bool _registeredHotSwap;
+        private bool _registeredOriginShiftListener;
         private bool _coldBuffersInitialized;
         private bool _coldBootCompleted;
         private bool _dumpedFault;
@@ -185,6 +187,7 @@ namespace Hecton8.Physics
             RefreshColdDependencies();
             EnsureColdBooted();
             TryRegister();
+            TryRegisterOriginShiftListener();
         }
 
         private void OnDisable()
@@ -193,6 +196,7 @@ namespace Hecton8.Physics
                 return;
 
             TryUnregister();
+            TryUnregisterOriginShiftListener();
             CompletePendingSolverForTeardown();
             _forcePacketsReadyToDrain = false;
         }
@@ -204,6 +208,7 @@ namespace Hecton8.Physics
                 _activeRuntimeInstance = null;
 #endif
             TryUnregister();
+            TryUnregisterOriginShiftListener();
             CompletePendingSolverForTeardown();
             ReleaseVaultHandles(_dataVault);
         }
@@ -246,7 +251,7 @@ namespace Hecton8.Physics
 
             BuoyancyTuningDTO tuningDto = tuning[0];
             float quality = ResolveGlobalQualityWeight(ref tuningDto);
-            tuningDto.SectorAUP = ResolveSectorAUP();
+            tuningDto.SectorAUP = ResolveCachedSectorAUP();
             tuningDto.ResolvedQualityWeight = quality;
             tuningDto.SimulationTickDelta = safeFixedDeltaTime;
             tuningDto.FrameIndex = _simulationFrame;
@@ -291,10 +296,14 @@ namespace Hecton8.Physics
             EvaluateBuoyancyJob evaluateJob = new EvaluateBuoyancyJob
             {
                 States = states,
+                StateCount = states.Length,
                 FlowSamples = flowSamples,
+                FlowSampleCount = flowSamples.Length,
                 Tuning = tuningDto,
                 DebugForces = debugForces,
+                DebugForceCount = debugForces.Length,
                 ForcePackets = forcePackets,
+                ForcePacketCount = forcePackets.Length,
                 ForcePacketWriteEnabled = 1,
                 ActiveStateCount = _activeStateCount,
                 EvaluationStride = stride,
@@ -372,6 +381,13 @@ namespace Hecton8.Physics
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.FloatingOriginRuntime)
+            {
+                RefreshCachedSectorAUP();
+                RefreshOriginShiftListenerRegistration();
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
@@ -383,6 +399,11 @@ namespace Hecton8.Physics
             _dataVault = currentVault;
             if (!HandlesReady() && currentVault != null && !currentVault.IsAllocationLocked)
                 EnsureColdBooted();
+        }
+
+        public void OnOriginShift(in OriginShiftEventData shiftData)
+        {
+            _cachedSectorAup = math.select(double3.zero, shiftData.NewTotalOffsetDouble, math.isfinite(shiftData.NewTotalOffsetDouble));
         }
 
         public bool GenerateMockBuoyantObjects()
@@ -407,13 +428,17 @@ namespace Hecton8.Physics
             {
                 States = states,
                 DebugForces = debugForces,
+                StateCount = states.Length,
+                DebugForceCount = debugForces.Length,
                 ActiveMockCount = mockCount,
                 SurfaceAUP = tuningDto.OceanSurfaceAUP,
                 SimulationFrame = _simulationFrame
             };
             JobHandle handle = job.Schedule(states.Length, 64);
             // COLD/EDITOR BLOCKING SYNC: emergency mock seeding is a boot/tuner path, not a frame-loop solver fence.
-            DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+            if (!DispatcherJobFence.TryComplete(ref handle, forceComplete: true))
+                return false;
+
             tuningDto.ActiveStateCount = math.max(tuningDto.ActiveStateCount, mockCount);
             tuningDto.MockStateCount = mockCount;
             tuning[0] = tuningDto;
@@ -459,7 +484,10 @@ namespace Hecton8.Physics
 
             SimdHydrodynamicTuningDTO tuningValue = ResolveBenchmarkSimdTuning(benchmarkTuning, _simulationFrame);
             float scalarMicros = 0f;
-            float scalarProbeWeight = math.saturate(tuningValue.ScalarFallbackWeight01);
+            float scalarProbeWeight = math.saturate(math.select(
+                0f,
+                tuningValue.ScalarFallbackWeight01,
+                math.isfinite(tuningValue.ScalarFallbackWeight01)));
 
             GenerateMockSimdBenchmarkJob generateJob = new GenerateMockSimdBenchmarkJob
             {
@@ -474,7 +502,9 @@ namespace Hecton8.Physics
             int scalarProbeCount = math.clamp((int)math.round(count * scalarProbeWeight), 0, count);
             if (scalarProbeCount > 0)
             {
-                DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+                if (!DispatcherJobFence.TryComplete(ref handle, forceComplete: true))
+                    return false;
+
                 long scalarStart = Stopwatch.GetTimestamp();
                 ScalarHydrodynamicsReferenceJob scalarJob = new ScalarHydrodynamicsReferenceJob
                 {
@@ -486,8 +516,12 @@ namespace Hecton8.Physics
                     Count = scalarProbeCount
                 };
                 JobHandle scalarHandle = scalarJob.Schedule();
-                DispatcherJobFence.TryComplete(ref scalarHandle, forceComplete: true);
-                scalarMicros = ResolveElapsedMicros(scalarStart) * (count * math.rcp(math.max(1, scalarProbeCount)));
+                if (!DispatcherJobFence.TryComplete(ref scalarHandle, forceComplete: true))
+                    return false;
+
+                float scalarScale = count * math.rcp(math.max(1, scalarProbeCount));
+                float rawScalarMicros = ResolveElapsedMicros(scalarStart) * scalarScale;
+                scalarMicros = rawScalarMicros;
 
                 generateJob.FrameIndex = _simulationFrame;
                 handle = generateJob.Schedule(count, 128);
@@ -504,9 +538,12 @@ namespace Hecton8.Physics
                 Count = count
             };
             handle = hydroJob.Schedule(laneCount, 64, handle);
-            DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+            if (!DispatcherJobFence.TryComplete(ref handle, forceComplete: true))
+                return false;
 
             float vectorMicros = ResolveElapsedMicros(start);
+            float effectiveMaxSpeed = math.max(0f, math.select(0f, tuningValue.MaxSpeed, math.isfinite(tuningValue.MaxSpeed)));
+            float effectiveMaxSpeedSq = effectiveMaxSpeed * effectiveMaxSpeed;
             RecordSimdTelemetryJob telemetryJob = new RecordSimdTelemetryJob
             {
                 TelemetryRing = telemetry,
@@ -518,12 +555,19 @@ namespace Hecton8.Physics
                 ScalarMicros = scalarMicros,
                 GlobalQualityWeight = tuningValue.GlobalQualityWeight,
                 StateHash = (uint)count ^ _simulationFrame ^ SimdVectorizationConstants.HydrodynamicsKernelHash,
-                MaxSpeedSq = 144f
+                MaxApproximationError = tuningValue.MaxApproximationError,
+                MaxSpeedSq = math.select(0f, effectiveMaxSpeedSq, math.isfinite(effectiveMaxSpeedSq))
             };
             JobHandle telemetryHandle = telemetryJob.Schedule();
-            DispatcherJobFence.TryComplete(ref telemetryHandle, forceComplete: true);
-            if (ResolveSimdThroughputDrop(vectorMicros, scalarMicros) > 0.5f || !math.isfinite(vectorMicros))
+            if (!DispatcherJobFence.TryComplete(ref telemetryHandle, forceComplete: true))
+                return false;
+
+            if (ResolveSimdThroughputDrop(vectorMicros, scalarMicros) > 0.5f ||
+                !math.isfinite(vectorMicros) ||
+                !math.isfinite(scalarMicros))
+            {
                 TryDumpSimdTelemetry(telemetry);
+            }
             return true;
         }
 #endif
@@ -891,7 +935,9 @@ namespace Hecton8.Physics
             };
             JobHandle handle = job.Schedule();
             // COLD BOOT BLOCKING SYNC: clears Vault-owned buffers once before steady-state scheduling.
-            DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+            if (!DispatcherJobFence.TryComplete(ref handle, forceComplete: true))
+                return;
+
             _coldBuffersInitialized = true;
         }
 
@@ -988,12 +1034,13 @@ namespace Hecton8.Physics
             if (vault == null || !HasHandle(in _countersHandle))
                 return;
 
+            float safeMicros = math.max(0f, math.select(0f, micros, math.isfinite(micros)));
             NativeArray<BuoyancyCounterDTO> counters = ResolveVaultBuffer(vault, in _countersHandle);
             if (!counters.IsCreated || counters.Length <= 0)
                 return;
 
             BuoyancyCounterDTO counter = counters[0];
-            counter.ComputeMicros = micros;
+            counter.ComputeMicros = safeMicros;
             counters[0] = counter;
 
             NativeArray<BuoyancyTelemetryEntry> telemetry = ResolveVaultBuffer(vault, in _telemetryRingHandle);
@@ -1001,9 +1048,10 @@ namespace Hecton8.Physics
             if (!telemetry.IsCreated || telemetry.Length <= 0 || !cursor.IsCreated || cursor.Length <= 0)
                 return;
 
-            int slot = math.max(0, cursor[0] - 1) % telemetry.Length;
+            int currentCursor = math.clamp(cursor[0], 0, telemetry.Length - 1);
+            int slot = (currentCursor + telemetry.Length - 1) % telemetry.Length;
             BuoyancyTelemetryEntry entry = telemetry[slot];
-            entry.ComputeMicros = micros;
+            entry.ComputeMicros = safeMicros;
             telemetry[slot] = entry;
         }
 
@@ -1076,7 +1124,16 @@ namespace Hecton8.Physics
 
         private void TryRegister()
         {
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying)
+                return;
+
+            if (!_registeredHotSwap)
+            {
+                GlobalRegistry.RegisterHotSwapListener(this);
+                _registeredHotSwap = true;
+            }
+
+            if (GlobalRegistry.Dispatcher == null)
                 return;
 
             if (!_registeredFixed)
@@ -1085,11 +1142,28 @@ namespace Hecton8.Physics
                 _registeredPostFixed = GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Environment);
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
-            if (!_registeredHotSwap)
-            {
-                GlobalRegistry.RegisterHotSwapListener(this);
-                _registeredHotSwap = true;
-            }
+        }
+
+        private void TryRegisterOriginShiftListener()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            RefreshCachedSectorAUP();
+            RefreshOriginShiftListenerRegistration();
+        }
+
+        private void RefreshOriginShiftListenerRegistration()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            _registeredOriginShiftListener = HectonFloatingOrigin.IsListenerRegistered(this);
+            if (_registeredOriginShiftListener)
+                return;
+
+            HectonFloatingOrigin.RegisterListener(this);
+            _registeredOriginShiftListener = HectonFloatingOrigin.IsListenerRegistered(this);
         }
 
         private void TryUnregister()
@@ -1117,6 +1191,16 @@ namespace Hecton8.Physics
                 GlobalRegistry.UnregisterHotSwapListener(this);
                 _registeredHotSwap = false;
             }
+        }
+
+        private void TryUnregisterOriginShiftListener()
+        {
+            _registeredOriginShiftListener = HectonFloatingOrigin.IsListenerRegistered(this);
+            if (!_registeredOriginShiftListener)
+                return;
+
+            HectonFloatingOrigin.UnregisterListener(this);
+            _registeredOriginShiftListener = HectonFloatingOrigin.IsListenerRegistered(this);
         }
 
         private void ReleaseVaultHandles(IDataVault vault)
@@ -1209,9 +1293,9 @@ namespace Hecton8.Physics
 
         private static float ResolveGlobalQualityWeight(ref BuoyancyTuningDTO tuning)
         {
-            float homeostasis = HomeostasisBrain.GlobalQualityWeight;
+            float homeostasis = ResolveGlobalQualityWeightFromHomeostasis();
             float tuningQuality = math.select(1f, tuning.GlobalQualityWeight, math.isfinite(tuning.GlobalQualityWeight));
-            return math.saturate(math.min(math.saturate(homeostasis), math.saturate(tuningQuality)));
+            return math.saturate(math.min(homeostasis, math.saturate(tuningQuality)));
         }
 
         private static float ResolveGlobalQualityWeightFromHomeostasis()
@@ -1262,9 +1346,13 @@ namespace Hecton8.Physics
                 SimdMathToleranceDTO row = tolerances[i];
                 bool appliesToSine = row.FormulaHash == SimdVectorizationConstants.SinPolynomialFormulaHash ||
                                      row.FormulaHash == SimdVectorizationConstants.HydrodynamicTurbulenceFormulaHash;
-                bool applyRow = ((row.Flags & SimdVectorizationConstants.FlagActive) != 0u) & appliesToSine;
+                bool rowErrorFinite = math.isfinite(row.MaxError);
+                float rowMaxError = math.max(0f, math.select(0f, row.MaxError, rowErrorFinite));
+                bool applyRow = ((row.Flags & SimdVectorizationConstants.FlagActive) != 0u) &
+                                appliesToSine &
+                                rowErrorFinite;
                 degree = math.select(degree, math.clamp(row.PolynomialDegree, 3, 7), applyRow);
-                maxError = math.select(maxError, math.max(0f, row.MaxError), applyRow);
+                maxError = math.select(maxError, rowMaxError, applyRow);
             }
 
             value.SinPolynomialDegree = degree;
@@ -1276,7 +1364,17 @@ namespace Hecton8.Physics
             tuning[0] = value;
         }
 
-        private static double3 ResolveSectorAUP()
+        private double3 ResolveCachedSectorAUP()
+        {
+            return math.select(double3.zero, _cachedSectorAup, math.isfinite(_cachedSectorAup));
+        }
+
+        private void RefreshCachedSectorAUP()
+        {
+            _cachedSectorAup = ResolveSectorAUPFromOrigin();
+        }
+
+        private static double3 ResolveSectorAUPFromOrigin()
         {
             double3 sectorAup = HectonFloatingOrigin.CurrentTotalOffsetDouble;
             return math.select(double3.zero, sectorAup, math.isfinite(sectorAup));
@@ -1288,8 +1386,17 @@ namespace Hecton8.Physics
                 return 0f;
 
             long elapsed = Stopwatch.GetTimestamp() - scheduleTimestamp;
-            double seconds = elapsed / (double)Stopwatch.Frequency;
-            return math.max(0f, (float)(seconds * 1000000.0));
+            if (elapsed <= 0L)
+                return 0f;
+
+            long frequency = Stopwatch.Frequency;
+            if (frequency <= 0L)
+                return 0f;
+
+            double seconds = elapsed / (double)frequency;
+            double micros = Math.Min(seconds * 1000000.0, float.MaxValue);
+            float value = (float)micros;
+            return math.max(0f, math.select(0f, value, math.isfinite(value)));
         }
 
         private static string ResolveProjectPath(string relativePath)
@@ -1376,9 +1483,10 @@ namespace Hecton8.Physics
 
         private static float ResolveSimdThroughputDrop(float vectorMicros, float scalarMicros)
         {
-            bool valid = math.isfinite(vectorMicros) & math.isfinite(scalarMicros) & scalarMicros > 0.0001f;
-            float drop = math.saturate(1f - (math.max(0f, scalarMicros) * math.rcp(math.max(vectorMicros, 0.0001f))));
-            return math.select(0f, drop, valid);
+            float safeVectorMicros = math.max(0.0001f, math.select(0.0001f, vectorMicros, math.isfinite(vectorMicros)));
+            float safeScalarMicros = math.max(0f, math.select(0f, scalarMicros, math.isfinite(scalarMicros)));
+            float drop = math.saturate(1f - (safeScalarMicros * math.rcp(safeVectorMicros)));
+            return math.select(0f, drop, (safeScalarMicros > 0.0001f) & math.isfinite(drop));
         }
 
         private static unsafe void TryDumpSimdTelemetry(NativeArray<SimdTelemetryEntry> telemetry)
@@ -1441,13 +1549,14 @@ namespace Hecton8.Physics
                 return;
 
             int count = math.min(math.max(0, _activeStateCount), debugForces.Length);
+            double3 committedOffset = ResolveCachedSectorAUP();
             for (int i = 0; i < count; i++)
             {
                 BuoyancyDebugForceDTO debug = debugForces[i];
                 if ((debug.Flags & BuoyancyDisplacementConstants.FlagActive) == 0u || debug.EntityHashID == 0u)
                     continue;
 
-                Vector3 origin = HectonFloatingOrigin.ToRuntimePosition(debug.CurrentAUP);
+                Vector3 origin = HectonFloatingOrigin.ToRuntimePosition(debug.CurrentAUP, committedOffset);
                 DrawVector(origin, debug.BuoyantForce, Color.blue, 0.0025f);
                 DrawVector(origin, debug.GravityForce, Color.red, 0.0025f);
                 DrawVector(origin, debug.DragForce, Color.green, 0.01f);

@@ -1,7 +1,7 @@
 # SHINOBU_208 Rationale - OFFLINE_GEOLOGY_MESH_BAKER
 
 Date: 2026-05-20
-Status: EDITOR_ASYNC_CANCEL_GUARD_PATCHED / BUILD BLOCKED BY CPU GATE / RUNTIME ERADICATION VERDICT FALSE
+Status: SCANNER_DISCOVERY_SLICED / UNITY PROJECT REGEN REQUIRED / RUNTIME ERADICATION VERDICT FALSE
 
 ## Decision 001 - Domain Boundary
 Problem: Runtime mesh generation scan found broad mesh builders, including live cave voxel MC and vegetation/wreck/outpost helpers. Editing all of them would cross unrelated domains.
@@ -170,3 +170,171 @@ Solution: Added `CancelAsyncBake`, registered it with `AssemblyReloadEvents.befo
 Rejected Alternatives: Relying only on the modal `EditorUtility` cancel rejected because it does not cover assembly reload. Letting domain reload reset static fields without calling `StopAssetEditing` rejected because it risks editor asset database state leakage.
 Scalability potential: Low through Ultra output math is unchanged. Large batch authoring becomes safer because abort/reload paths close the editor asset transaction deterministically.
 Hardware Impact: Runtime cost remains 0 us. Editor safety improves; exact abort behavior requires Unity editor execution.
+
+## Decision 025 - Packed Tetra Edge LUT
+Problem: `SdfToMeshExtractionJob` still routed tetra cases through a chained `if/else` tree (`EmitOne`/`EmitPair`). It produced geometry, but the XML asks for LUT-driven edge intersections and the old shape was harder to audit for count/extract parity.
+Solution: Added `GeologyTetraExtractionLut`, a Burst-safe static constant table encoded as packed 4-bit edge indices. `SdfCellVertexCountJob` and `SdfToMeshExtractionJob` now derive the same 0..15 tetra case index, read the same vertex count, and emit triangles through `EdgeSequence`/`EdgeAt` without managed arrays or runtime object state.
+Rejected Alternatives: A managed `byte[]`/`int[]` lookup table was rejected because Burst static managed arrays are fragile and can create hidden initialization concerns. Keeping the branch tree rejected because it leaves the extraction proof dependent on control-flow reading instead of explicit case data.
+Scalability potential: Low through Ultra output budgets remain controlled by `GlobalQualityWeight` in noise, AO, and LOD. The extraction kernel is deterministic for every tier; higher tiers buy more triangles through profile budgets instead of runtime generation.
+Hardware Impact: Runtime cost remains 0 us. Editor extraction gets simpler branch topology and shared count/extract parity; exact Burst assembly/vectorization proof remains pending Unity/Burst import when CPU gate opens.
+
+## Decision 026 - GeologyForge Editor Assembly Wall
+Problem: The GeologyForge files lived under the broad `Hecton8.Editor` assembly, which references Core, graphics, Addressables, MapMagic, Crest, EasySave, test assemblies, and other unrelated editor surfaces. A small geology bake edit would unnecessarily pull a large compile/reload dependency surface.
+Solution: Added `Assets/_Project/Scripts/Editor/GeologyForge/Hecton8.World.OfflineGeology.Editor.asmdef` with `includePlatforms: Editor`, `allowUnsafeCode: true`, and references limited to `Unity.Burst`, `Unity.Collections`, `Unity.Jobs`, and `Unity.Mathematics`. No sibling World/Environment/Runtime assembly reference is introduced.
+Rejected Alternatives: Leaving the files in `Hecton8.Editor` rejected because it violates compile-wall discipline. Referencing `Hecton8.Core` or `Hecton8.World.*` rejected because this lane is an offline authoring producer, not a runtime owner.
+Scalability potential: No runtime quality behavior changes. Low/Middle/High/Ultra assets are still controlled by continuous bake weights and manifest facts; this change protects authoring iteration speed.
+Hardware Impact: Runtime cost remains 0 us. Editor compile blast radius should shrink after Unity reimports the asmdef; exact compile time delta requires Unity import/compiler log, currently blocked by CPU gate.
+
+## Decision 027 - CSV Iso-Level Persistence
+Problem: The UI Toolkit facade exposed `Iso-Level`, and the bake job consumed `profile.IsoLevel`, but `geology_generation_profiles.csv` had no persisted iso column and `GeologyProfileCsv` forced every loaded profile to `0f`. Designer threshold tuning would evaporate on reload unless entered manually in the window.
+Solution: Added an `iso_level` column to `geology_generation_profiles.csv` and taught `GeologyProfileCsv` to scan the header bytes for that token before parsing. When present, `IsoLevel` is read and clamped to the slider-safe `[-0.5, 0.5]` range. When absent, old CSV layouts remain valid and quality is still read from the old position.
+Rejected Alternatives: Slider-only iso tuning rejected because Task 17 requires human-readable recipe persistence. Blindly changing column order without a header guard rejected because existing local CSVs would misparse quality and LOD budgets.
+Scalability potential: Low through Ultra can now tune density threshold per recipe without code changes; low-tier recipes can bias toward cheaper silhouettes, while high/ultra recipes can preserve denser crevice topology for stronger baked AO.
+Hardware Impact: Runtime cost remains 0 us. Editor parse cost adds one first-line byte scan; it prevents repeated manual rebakes caused by lost threshold tuning.
+
+## Decision 028 - Async Menu Path Purge
+Problem: The Geology Forge window used the async runner, but the `Bake CSV Profiles` menu item still invoked the monolithic batch method. That preserved a synchronous operator path that could lock the Editor during a large 500-asset authoring run.
+Solution: Removed the public monolithic `BakeProfiles` batch method and routed the menu through `BakeProfilesAsync`. Duplicate or empty requests now fail closed through the existing async guard instead of starting a second asset-editing scope.
+Rejected Alternatives: Keeping the synchronous method for convenience rejected because Task 10 requires the single-button path to leave the editor unblocked. Adding another coroutine/async-await wrapper rejected because the existing `EditorApplication.update` runner already owns asset-editing lifetime and cancel behavior without managed state machines.
+Scalability potential: Low through Ultra generated asset quality remains controlled by `GlobalQualityWeight`; the authoring control path now scales by yielding between variations instead of creating one blocking call stack.
+Hardware Impact: Runtime cost remains 0 us. Editor responsiveness improves for large CSV batches; exact milliseconds remain pending Unity editor execution.
+
+## Decision 029 - Editor Preview Hook Lifetime
+Problem: `GeologyForgePreview` subscribed a static `SceneView.duringSceneGui` callback in its static constructor and `OnDisable` only cleared point count. A closed Forge window still left an idle SceneView delegate alive.
+Solution: Added explicit preview hook lifetime: `Build` calls `EnsureSubscribed`, `OnDisable` calls `GeologyForgePreview.Shutdown`, and `Shutdown` removes the SceneView callback and clears the point count. Window bake buttons now route through `TryStartBake` so rejected async starts reset stale progress and emit a cold editor warning.
+Rejected Alternatives: Keeping a permanent zero-point callback rejected because it is unnecessary editor global state. Adding a runtime preview owner rejected because this is strictly an Editor facade.
+Scalability potential: Low through Ultra generated assets are unchanged; editor preview cost now exists only after an active preview request and is removed when the facade closes.
+Hardware Impact: Runtime cost remains 0 us. Editor SceneView removes an idle delegate call after window close; exact editor repaint gain is negligible but the lifetime boundary is now explicit.
+
+## Decision 030 - Mesh Bounds NaN Vaccination
+Problem: `CalculateBounds` initialized min/max from `vertices[0].Position` before checking finiteness. A single poisoned first raw vertex could propagate NaN into `Mesh.bounds`, submesh bounds, and `GeologyMeshManifestRecord.BoundsCenter/BoundsExtents`, even when later vertices were valid.
+Solution: Bounds now scan from index 0, ignore non-finite positions, initialize min/max only from the first finite position, and emit the existing 1m fallback only if every row is non-finite.
+Rejected Alternatives: Trusting upstream pack jobs rejected because bounds are the final payload gate before Unity mesh metadata and `.h8geom` records. Throwing on first bad row rejected because the pack job already sanitizes vertex stream positions; bounds should quarantine poison instead of aborting a salvageable editor bake.
+Scalability potential: Low/Middle/High/Ultra output quality is unchanged. The patch protects every quality tier from a metadata-only NaN escape while continuous bake math still controls detail budgets.
+Hardware Impact: Runtime cost remains 0 us. Editor cost is one boolean and one branch per raw vertex during mesh object creation; expected cost is negligible compared with SDF extraction/AO, and it prevents invalid culling bounds from reaching runtime consumers.
+
+## Decision 031 - Async Finish State Hardening
+Problem: `FinishAsyncBake` reset `_asyncProfiles`, metrics, manifest records, counters, and callbacks only after manifest/report writes and progress callback invocation. If artifact IO or a UI callback threw, the asset edit scope was already closed but static state could remain non-null, blocking every later bake request.
+Solution: Wrapped the finish artifact writes and progress callback in `try/finally`, with all static runner state cleared in the `finally` block.
+Rejected Alternatives: Trusting manifest/report writes rejected because disk/import faults are exactly the path where recovery must be deterministic. Swallowing artifact exceptions rejected because operators still need the real failure surfaced in the Console.
+Scalability potential: Low/Middle/High/Ultra output quality is unchanged. Large multi-profile bakes now recover their editor runner state after finish-path faults instead of requiring a domain reload.
+Hardware Impact: Runtime cost remains 0 us. Editor cost is one `try/finally` frame per batch finish; it prevents wedged authoring sessions during high-volume geology library generation.
+
+## Decision 032 - Burst Attribute Finite Guards
+Problem: Several final Burst kernels assumed upstream rows were finite: triplanar UV generation read raw position/normal, AO nearest sampling rounded sample positions, LOD snap floored raw positions, and UV packing packed `math.frac(uv)`. Upstream generation already sanitizes most data, but final payload kernels should not depend on a single upstream proof.
+Solution: Added local finite guards in `GenerateTriplanarUvsJob`, `BakeVertexOcclusionJob.SampleDensityNearest`, `GeologyLodDecimationJob.Snap`, and `GeologyPackVertexJob.PackUnorm16`.
+Rejected Alternatives: Relying only on `SdfToMeshExtractionJob.WriteVertex` and `CalculateBounds` rejected because each Burst kernel is a payload boundary. Throwing on non-finite vectors rejected because the editor bake can safely quarantine poisoned rows into zero UV/position or empty AO samples.
+Scalability potential: Low/Middle/High/Ultra output quality is unchanged for valid inputs. Invalid rows collapse to finite conservative visual data instead of corrupting packed mesh streams at any quality tier.
+Hardware Impact: Runtime cost remains 0 us. Editor cost is a small finite predicate in final attribute/LOD/AO jobs; it buys deterministic payload safety under malformed profile/noise edge cases.
+
+## Decision 033 - Artifact Failure Hardening
+Problem: `CreateUnityMesh` allocated a Unity `Mesh` before validation/upload finished, so an exception between allocation and return could retain a transient native mesh object. `FinishAsyncBake` could also overwrite the previous manifest/report with empty artifacts when a batch was canceled before the first successful variation.
+Solution: `CreateUnityMesh` now uses explicit ownership transfer: the local `Mesh` is destroyed in `finally` unless success sets the local to null before returning. `FinishAsyncBake` now computes `shouldWriteArtifacts` from cancel state plus actual metrics/manifest counts and skips manifest/report writes for zero-output cancels.
+Rejected Alternatives: Trusting Unity mesh upload/validation never to throw was rejected because upload is the payload boundary. Writing empty manifests on zero-output cancel was rejected because it destroys the last good static geology handoff without producing a replacement.
+Scalability potential: Low/Middle/High/Ultra output quality is unchanged. Large high/ultra authoring batches gain deterministic cleanup and preserve prior bake artifacts when the operator aborts before producing a replacement.
+Hardware Impact: Runtime cost remains 0 us. Editor cost is one null check in mesh cleanup and three O(1) artifact guards at batch finish; it avoids native object retention and bad asset churn during failed/canceled authoring passes.
+
+## Decision 034 - CSV Seed Determinism
+Problem: `GeologyProfileCsv.ReadInt` parsed every integer column through `ReadFloat`. Current 10-digit CSV seeds exceed exact 24-bit float integer precision, so deterministic sector/profile seeds could lose low bits before entering `ResolveAupSeed`.
+Solution: Added direct byte-wise `ReadUInt` for profile seeds and rewrote `ReadInt` to parse signed decimal digits with saturation, without routing through float math.
+Rejected Alternatives: Keeping float-backed integer parsing rejected because deterministic seeds are authority inputs, not visual approximations. Hex-only seeds rejected because the existing designer CSV already uses decimal seeds and must stay human-editable.
+Scalability potential: Low/Middle/High/Ultra geometry quality is unchanged. Every tier now consumes the exact same deterministic CSV seed bits, so high/ultra variation density does not amplify seed drift from editor parsing.
+Hardware Impact: Runtime cost remains 0 us. Editor parse cost stays O(bytes) and replaces float conversion/rounding with integer multiply-add; the important gain is deterministic payload identity, not frame time.
+
+## Decision 035 - Atomic Evidence Payload Writes
+Problem: `.h8geom`, black-box dump, bake report, layout audit, and scanner report writes used direct overwrite paths. A mid-write IO exception could erase the last valid artifact and leave only a truncated or empty file.
+Solution: Binary payloads now write to `.tmp` files with `FileMode.CreateNew`, then replace the final path through `File.Replace` with `.bak` preservation when a previous artifact exists. JSON reports now use the same temp/replace policy.
+Rejected Alternatives: Direct `FileMode.Create` and `File.WriteAllText` were rejected because they destroy the previous proof before the replacement proof exists. Keeping only zero-output cancel guards rejected because non-cancel IO faults can still happen after valid records exist.
+Scalability potential: Low/Middle/High/Ultra generated geometry is unchanged. Artifact integrity now scales with large authoring batches: aborts and IO faults preserve the last known-good payload instead of forcing a full rebake to recover evidence.
+Hardware Impact: Runtime cost remains 0 us. Editor finish cost adds one temp write and atomic replace per artifact; this is outside gameplay and prevents expensive human recovery from corrupted evidence files.
+
+## Decision 036 - Tetra Winding And Layout Copy Guard
+Problem: Complement tetra LUT cases reused the same edge order as their inverse cases, risking inverted triangle winding/backface holes. `GetLayout()` also returned the mutable static vertex descriptor array to assembly callers.
+Solution: Complement cases now reverse triangle edge order, and `ValidateComplementWinding()` checks every 1..14 case pair before layout validation. `GetLayout()` returns a fresh four-descriptor copy rather than `_GeologyLayout`.
+Rejected Alternatives: Trusting visual inspection of the LUT rejected because extraction count and winding must be machine-checkable. Returning the static descriptor array rejected because any same-assembly caller could mutate the upload contract.
+Scalability potential: Low/Middle/High/Ultra topology budgets are unchanged. Correct winding prevents high/ultra dense bakes from amplifying backface artifacts, while the copied layout preserves the 32B stream contract for every tier.
+Hardware Impact: Runtime cost remains 0 us. Editor validation adds a tiny 14-case loop and one four-element descriptor copy per mesh upload; both are negligible compared with SDF extraction and AO.
+
+## Decision 037 - CSV Schema Fail-Closed Guard
+Problem: The CSV parser detected `iso_level` but otherwise trusted positional columns. A reordered or missing header could silently map designer values into the wrong unmanaged profile fields.
+Solution: Added byte-level header validation for the exact supported schema, with and without `iso_level`, before row parsing begins. Mismatches throw `InvalidDataException` instead of producing corrupt bake recipes.
+Rejected Alternatives: Full arbitrary header-index remapping was deferred because it is a wider parser rewrite and needs Unity import/compiler proof. Continuing positional parsing without validation rejected because silent field corruption is worse than a cold editor import failure.
+Scalability potential: Low/Middle/High/Ultra output quality is unchanged for valid CSVs. Invalid CSVs now stop before baking, so high/ultra batches cannot amplify a single header edit into hundreds of corrupt meshes.
+Hardware Impact: Runtime cost remains 0 us. Editor parse cost adds a one-line header token pass over about 20 columns; the gain is deterministic authoring safety, not frame time.
+
+## Decision 038 - Bounded Asset Editing Scope
+Problem: `BakeProfilesAsync` opened `AssetDatabase.StartAssetEditing()` before subscribing the update runner, so the editing scope could span multiple editor updates and remain active until finish/cancel.
+Solution: Removed the batch-wide edit scope. The async tick now opens `StartAssetEditing()` only around one variation's saved mesh tranche, closes it immediately after `BakeSingle`, and closes it on the local exception path before black-box dump/report handling continues.
+Rejected Alternatives: Keeping the full-batch edit scope rejected because assembly reload/cancel faults should not inherit a multi-frame asset database lock. A full stage scheduler was deferred because it is a larger rewrite and still needs Unity import proof.
+Scalability potential: Low/Middle/High/Ultra generated quality is unchanged. Large high/ultra batches now reduce editor lock duration from whole-batch to per-variation save windows.
+Hardware Impact: Runtime cost remains 0 us. Editor overhead may increase slightly through more asset-edit transitions, but the lock scope is bounded and safer under operator cancel or domain reload.
+
+## Decision 039 - Runtime Scanner Time-Slice
+Problem: `RuntimeMeshGenerationScanner.ScanAndWriteReport()` scanned every target source file synchronously from the menu/window path. The report is editor-only, but a large World/Environment scan can still lock the Unity editor during an authoring session.
+Solution: Non-batch scans now start an `EditorApplication.update` state machine with a 4 ms per-update budget, a cancelable progress bar, duplicate-start guard, and explicit update-hook cleanup on completion, cancel, or fault. Batch mode keeps the synchronous path so CI/report scripts still emit one deterministic report.
+Rejected Alternatives: Moving the scanner to runtime rejected because it is an editor proof tool, not gameplay logic. Threaded file IO rejected because Unity editor progress/report calls and shared static state would need additional synchronization without measurable value for a static source scanner.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior is unchanged. Authoring scales by distributing source scanning across editor ticks instead of freezing the tool while high-volume geology batches and static audits are being prepared.
+Hardware Impact: Runtime cost remains 0 us. Editor scan work is bounded to roughly 4 ms per update after initial file enumeration; exact wall-clock impact requires Unity editor import/execution proof.
+
+## Decision 040 - Scanner Discovery Slice
+Problem: The non-batch scanner time-sliced file scanning, but `StartAsyncScan()` still called `CollectScanFiles()`, which recursively enumerated every target file before the first editor-update budget began.
+Solution: Non-batch scanning now seeds only root directories and direct files, then `TickAsyncScan()` alternates bounded source-file scans with one-directory expansions through `ExpandNextAsyncDirectory()`. Directory expansion uses `SearchOption.TopDirectoryOnly`, and the progress bar uses a static message literal instead of per-tick string concatenation.
+Rejected Alternatives: Keeping recursive upfront discovery rejected because it preserves the editor-freeze defect behind a time-sliced scan facade. Moving the CI path to the incremental state machine rejected because batch/static scripts need one deterministic call that writes the report before returning.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior is unchanged. Authoring scalability improves for large source trees by distributing both discovery and scanning across editor ticks.
+Hardware Impact: Runtime cost remains 0 us. Editor work is still file-system bound, but the non-batch path no longer performs full recursive discovery before yielding; exact wall-clock/editor-responsiveness proof requires Unity execution.
+
+## Decision 041 - Async Bake Static Progress Text
+Problem: `TickAsyncBake()` formatted the cancelable progress message every editor update through profile-name `ToString()` and interpolation. This is editor-only, but it preserved managed churn inside the active update hook during long multi-profile geology bakes.
+Solution: Replaced the per-update formatted title/message with static `AsyncBakeProgressTitle` and `AsyncBakeProgressMessage` constants while keeping the progress scalar and cancel button path intact.
+Rejected Alternatives: Keeping dynamic profile/variation text rejected because the UI Toolkit progress bar already exposes progress and the Console/report artifacts carry exact profile facts. Adding a pooled string builder rejected because Unity's progress API still consumes a managed string and the useful fix is to avoid rebuilding it per tick.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior is unchanged. Authoring responsiveness improves during large high/ultra bake batches by removing avoidable managed formatting from the update loop.
+Hardware Impact: Runtime cost remains 0 us. Editor gain is small per tick but deterministic: no profile-name string conversion or interpolated message allocation occurs from the cancelable progress path. Unity Profiler allocation proof remains pending.
+
+## Decision 042 - Async Variation Count Saturation
+Problem: `_asyncTotalBakes` was computed from raw profile `Variations`, while the actual async execution sanitized each profile later. A malformed CSV value could overflow the total counter or make progress math diverge from the executed 1..500 variation clamp.
+Solution: Added `SanitizeVariationCount()` and routed both `SanitizeProfile()` and `CountTotalBakes()` through it. `CountTotalBakes()` now saturates on integer overflow instead of wrapping.
+Rejected Alternatives: Trusting CSV/UI validation rejected because imported profile data is an external authoring payload. Keeping `math.max(1, rawVariations)` rejected because it does not apply the upper bound used by execution and can overflow aggregate progress totals.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior is unchanged. Authoring batches now have the same bounded variation count for progress math and execution across every generated quality tier.
+Hardware Impact: Runtime cost remains 0 us. Editor cost is one clamp per profile during async setup; it prevents corrupt progress denominators and runaway bake counts from malformed CSV input.
+
+## Decision 043 - Preview Fake-Async Fence Removal
+Problem: `GeologyForgePreview.Build()` scheduled the lightweight preview SDF job and immediately called `.Complete()` from the button path. It also lacked an explicit `Unity.Jobs` import for the job extension API in the file that owns the preview call.
+Solution: Added the explicit `Unity.Jobs` import and changed the preview-only `GenerateMockFractalNoiseJob` invocation to `Run(count)`. The preview remains a bounded cold editor action over 24^3 samples and no longer pretends to be asynchronous.
+Rejected Alternatives: Keeping `Schedule(...).Complete()` rejected because it is a fake async fence and violates the project's job-route readability standard. A full persistent async preview state machine was rejected here because it would require a long-lived private `NativeArray<float>` in the editor facade, which is worse for H-Phi evidence than a bounded cold `Run`.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior is unchanged. Preview quality still consumes `GlobalQualityWeight` through `GenerateMockFractalNoiseJob`; low weights collapse expensive noise terms while high weights show richer SDF detail before the full bake.
+Hardware Impact: Runtime cost remains 0 us. Editor preview avoids scheduler overhead plus immediate main-thread fence around a 13,824-sample cold preview job; exact editor timing remains pending Unity execution.
+
+## Decision 044 - Shared Variation Ceiling Facade
+Problem: The generator clamped variation counts to 500, but the UI field displayed and forwarded raw values with only a lower bound. Malformed CSV or manual entry could show one count while the async runner executed another.
+Solution: Added `GeologyForgeConstants.MaximumVariations` and routed both the generator clamp and the UI facade through that shared ceiling. The dropdown display and field resolution now clamp to the same 1..500 range used by async progress math and execution.
+Rejected Alternatives: Leaving the UI permissive rejected because human-readable tuning bridges should show the facts the bake will execute. Duplicating the literal `500` in more places rejected because it creates drift between the designer facade and payload generator.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior is unchanged. Authoring batches now expose the same variation cap across every quality tier, avoiding accidental high/ultra batch explosions from bad CSV values.
+Hardware Impact: Runtime cost remains 0 us. Editor cost is one clamp on field display/resolve; it prevents accidental 500+ variation authoring runs from weak development machines.
+
+## Decision 045 - Async Result Preallocation From Sanitized Total
+Problem: `BakeProfilesAsync` still allocated `_asyncMetrics` and `_asyncManifestRecords` with `profiles.Count * 4`, even after execution was clamped to as many as 500 variations per profile. A 500 to 5000 variation authoring batch could therefore grow managed `List<T>` backing arrays mid-bake inside the active editor-update runner.
+Solution: Moved `_asyncTotalBakes = CountTotalBakes(_asyncProfiles)` ahead of result-list allocation, added `GeologyForgeConstants.MaximumAsyncResultPreallocation = 5000`, and introduced `ResolveAsyncResultCapacity()` so normal SHINOBU assignment-scale batches preallocate from the sanitized total while pathological totals are capped before they can request impossible memory.
+Rejected Alternatives: Keeping `profiles.Count * 4` rejected because it silently underestimates the mandated 500/5000-variation forge path. Preallocating `int.MaxValue` after saturated total math rejected because malformed input must fail bounded, not OOM the editor.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior is unchanged. Authoring scales from small preview batches to the 5000-rock library target with stable result storage; larger malformed batches still execute through the existing 1..500 per-profile clamp without front-loading unbounded memory.
+Hardware Impact: Runtime cost remains 0 us. Editor gain is removal of avoidable `List<T>` backing-array growth and copy churn during assignment-scale async bakes; exact allocation proof remains pending Unity Profiler.
+
+## Decision 046 - Reused Bake Requests And Even Preview Sampling
+Problem: `BakeSelected` and `BakeAll` created fresh `List<GeologyBakeProfile>` objects on every button click, and the SceneView preview filled its 2048-point budget with the first near-surface grid hits. That preserved avoidable editor facade allocations and biased the Dear Lie preview toward one scan-order region of the SDF.
+Solution: Added one reusable `_bakeRequestProfiles` list owned by the window facade and reused it for selected/all bake requests. `BakeProfilesAsync` copies the incoming list synchronously, so reuse after dispatch does not alias the active runner. The preview now performs a bounded two-pass scan: count all near-surface candidates, then sample candidates with a deterministic stride into the fixed point buffer.
+Rejected Alternatives: Keeping per-click lists rejected because the button path is the operator-facing high-volume forge route. Full mesh preview rejected because Task 18 explicitly requires a cheap SDF point-cloud fake. Random candidate sampling rejected because deterministic editor previews should not depend on hidden RNG state.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior is unchanged. Low authoring previews still cap at 2048 points and 24^3 SDF samples; middle/high/ultra profiles get a more representative point cloud before full bake without escalating to mesh extraction, AO, or upload.
+Hardware Impact: Runtime cost remains 0 us. Editor bake buttons remove two transient list allocations per request path after initial window construction. Preview adds one extra 13,824-sample pass, still bounded and cheaper than full mesh/AO generation; exact editor timing and allocation proof remain pending Unity Profiler.
+
+## Decision 047 - Caller-Owned CSV Profile Lists
+Problem: `GeologyProfileCsv.LoadProfiles()` returned a new `List<GeologyBakeProfile>`, and the UI reload path immediately copied that list into the window-owned `_profiles` list. The menu bake path also created a short-lived profile list before the async runner copied it again.
+Solution: Added a caller-owned `LoadProfiles(List<GeologyBakeProfile>)` overload that clears and fills an existing list while preserving the default-profile fallback. `GeologyForgeWindow.ReloadProfiles()` now loads directly into `_profiles`, and `BakeCsvProfilesMenu()` reuses a static `_menuProfiles` list before `BakeProfilesAsync` performs its existing synchronous copy into runner-owned state.
+Rejected Alternatives: Keeping the return-only loader rejected because it forced an avoidable list container and backing array on every reload/menu bake. Returning an enumerable or iterator rejected because it introduces managed iterator state. Moving profiles into a persistent NativeArray rejected because this is cold editor authoring data and the async runner already owns the copied execution snapshot.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior is unchanged. Authoring scales better for repeated CSV reloads and high-volume library bake launches because the facade reuses containers while the continuous `GlobalQualityWeight` profile values remain untouched.
+Hardware Impact: Runtime cost remains 0 us. Editor path removes one transient `List<GeologyBakeProfile>` allocation plus profile-copy loop from UI reload and removes one transient list allocation from the menu bake path after the static list is initialized; exact allocation proof remains pending Unity Profiler.
+
+## Decision 048 - CSV Variation Ceiling Constant
+Problem: The generator and UI facade shared `GeologyForgeConstants.MaximumVariations`, but CSV parsing still clamped `variations` with a literal `500`. That created a drift risk between imported profile truth, UI display, async progress totals, and actual execution.
+Solution: Replaced the CSV literal with `GeologyForgeConstants.MaximumVariations`, making CSV ingestion, UI field resolution, async total counting, and generator sanitization consume the same ceiling.
+Rejected Alternatives: Leaving the literal rejected because it silently reintroduces split-authority tuning. Adding a separate CSV-specific ceiling rejected because profile import is not a separate gameplay truth owner.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior is unchanged. Authoring tiers now clamp imported variation counts through the same continuous-quality bake lane and the same high-volume batch ceiling.
+Hardware Impact: Runtime cost remains 0 us. Editor cost is unchanged; this removes a maintenance drift risk rather than a measurable hot-path cost.

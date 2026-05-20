@@ -13,80 +13,90 @@ using Hecton8.World;
 
 namespace Hecton8.Gameplay
 {
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct ContextualPhysicalIkTwoBoneSetup
     {
-        public int ParentHandleIndex;
-        public int UpperHandleIndex;
-        public int LowerHandleIndex;
-        public int EndHandleIndex;
-        public byte TargetChannel;
-        public byte Enabled;
-        public float UpperLength;
-        public float LowerLength;
-        public float BaseBlend;
-        public float ReachSafetyMargin;
-        public float3 PoleLocalOffset;
+        [FieldOffset(0)] public int ParentHandleIndex;
+        [FieldOffset(4)] public int UpperHandleIndex;
+        [FieldOffset(8)] public int LowerHandleIndex;
+        [FieldOffset(12)] public int EndHandleIndex;
+        [FieldOffset(16)] public byte TargetChannel;
+        [FieldOffset(17)] public byte Enabled;
+        [FieldOffset(18)] private ushort _pad0;
+        [FieldOffset(20)] public float UpperLength;
+        [FieldOffset(24)] public float LowerLength;
+        [FieldOffset(28)] public float BaseBlend;
+        [FieldOffset(32)] public float ReachSafetyMargin;
+        [FieldOffset(36)] public float3 PoleLocalOffset;
+        [FieldOffset(48)] private ulong _pad1;
+        [FieldOffset(56)] private ulong _pad2;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct ContextualPhysicalIkAppendageChainRuntime
     {
-        public int ParentHandleIndex;
-        public int FirstBoneHandleIndex;
-        public int BoneCount;
-        public int FirstLengthIndex;
-        public int FirstScratchIndex;
-        public int TargetIndex;
-        public int Iterations;
-        public float Tolerance;
-        public float Blend;
-        public float3 PoleLocalOffset;
+        [FieldOffset(0)] public int ParentHandleIndex;
+        [FieldOffset(4)] public int FirstBoneHandleIndex;
+        [FieldOffset(8)] public int BoneCount;
+        [FieldOffset(12)] public int FirstLengthIndex;
+        [FieldOffset(16)] public int FirstScratchIndex;
+        [FieldOffset(20)] public int TargetIndex;
+        [FieldOffset(24)] public int Iterations;
+        [FieldOffset(28)] public float Tolerance;
+        [FieldOffset(32)] public float Blend;
+        [FieldOffset(36)] public float3 PoleLocalOffset;
+        [FieldOffset(48)] private ulong _pad0;
+        [FieldOffset(56)] private ulong _pad1;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal struct ContextualPhysicalIkSpineChainRuntime
     {
-        public int ParentHandleIndex;
-        public int FirstBoneHandleIndex;
-        public int BoneCount;
-        public int TargetStartIndex;
-        public float Blend;
+        [FieldOffset(0)] public int ParentHandleIndex;
+        [FieldOffset(4)] public int FirstBoneHandleIndex;
+        [FieldOffset(8)] public int BoneCount;
+        [FieldOffset(12)] public int TargetStartIndex;
+        [FieldOffset(16)] public float Blend;
+        [FieldOffset(20)] private uint _pad0;
+        [FieldOffset(24)] private ulong _pad1;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal struct ContextualPhysicalIkSecondaryChainRuntime
     {
-        public int ParentHandleIndex;
-        public int FirstBoneHandleIndex;
-        public int BoneCount;
-        public int FirstStateIndex;
-        public float Stiffness;
-        public float Damping;
-        public float Blend;
+        [FieldOffset(0)] public int ParentHandleIndex;
+        [FieldOffset(4)] public int FirstBoneHandleIndex;
+        [FieldOffset(8)] public int BoneCount;
+        [FieldOffset(12)] public int FirstStateIndex;
+        [FieldOffset(16)] public float Stiffness;
+        [FieldOffset(20)] public float Damping;
+        [FieldOffset(24)] public float Blend;
+        [FieldOffset(28)] private uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     internal struct ContextualPhysicalIkAppendageTarget
     {
-        public float3 Position;
-        public float Weight;
+        [FieldOffset(0)] public float3 Position;
+        [FieldOffset(12)] public float Weight;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal struct ContextualPhysicalIkSecondaryState
     {
-        public float3 Position;
-        public float3 Velocity;
+        [FieldOffset(0)] public float3 Position;
+        [FieldOffset(12)] public float3 Velocity;
+        [FieldOffset(24)] private ulong _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal struct ContextualPhysicalIkCachedPoseState
     {
-        public quaternion Rotation;
-        public float3 Position;
-        public byte HasRotation;
-        public byte HasPosition;
+        [FieldOffset(0)] public quaternion Rotation;
+        [FieldOffset(16)] public float3 Position;
+        [FieldOffset(28)] public byte HasRotation;
+        [FieldOffset(29)] public byte HasPosition;
+        [FieldOffset(30)] private ushort _pad0;
     }
 
     [BurstCompile(FloatPrecision = FloatPrecision.Standard, FloatMode = FloatMode.Fast, OptimizeFor = OptimizeFor.Performance)]

@@ -6,31 +6,49 @@ using Unity.Mathematics;
 
 namespace Hecton8.Construction
 {
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal struct HabitatDirtyRegionResult
     {
+        [FieldOffset(0)]
         public int NodeCount;
+        [FieldOffset(4)]
         public int DirtySeedCount;
+        [FieldOffset(8)]
         public int RupturedSeedCount;
+        [FieldOffset(12)]
         public int IslandCount;
+        [FieldOffset(16)]
         public int VisitedNodeCount;
+        [FieldOffset(20)]
         public int ShaderUpdateCount;
+        [FieldOffset(24)]
         public int QueueOverflow;
+        [FieldOffset(28)]
+        private uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal struct HabitatFloodPropagationSummary
     {
+        [FieldOffset(0)]
         public int ProcessedNodeCount;
+        [FieldOffset(4)]
         public int FlowedEdgeCount;
+        [FieldOffset(8)]
         public int SealedEdgeCount;
+        [FieldOffset(12)]
         public int NonFiniteCount;
+        [FieldOffset(16)]
         public int InvalidConnectionCount;
+        [FieldOffset(20)]
         public float TransferredVolumeM3;
+        [FieldOffset(24)]
         public float MaxDeltaLevel01;
+        [FieldOffset(28)]
+        private uint _pad0;
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct HabitatFloodPropagationJob : IJob
     {
         public int NodeCount;
@@ -42,14 +60,14 @@ namespace Hecton8.Construction
         public float MaxTransferPerEdgeM3;
         public float WaterEpsilon01;
 
-        [ReadOnly] public NativeArray<float> RoomWaterLevels;
-        [ReadOnly] public NativeArray<float> RoomVolumes;
-        [ReadOnly] public NativeArray<byte> RoomFlags;
-        [ReadOnly] public NativeArray<byte> EdgeFlags;
+        [NoAlias, ReadOnly] public NativeArray<float> RoomWaterLevels;
+        [NoAlias, ReadOnly] public NativeArray<float> RoomVolumes;
+        [NoAlias, ReadOnly] public NativeArray<byte> RoomFlags;
+        [NoAlias, ReadOnly] public NativeArray<byte> EdgeFlags;
         [ReadOnly] public NativeParallelMultiHashMap<int, HabitatFloodConnection> Connections;
 
-        public NativeArray<float> RoomDeltaLevels;
-        public NativeArray<HabitatFloodPropagationSummary> Result;
+        [NoAlias] public NativeArray<float> RoomDeltaLevels;
+        [NoAlias] public NativeArray<HabitatFloodPropagationSummary> Result;
 
         public void Execute()
         {
@@ -228,7 +246,7 @@ namespace Hecton8.Construction
     /// Burst BFS over only the neighborhoods touched by dirty rupture seeds.
     /// The caller keeps the previous full CSR snapshot alive; this job only rewrites IslandIds for affected islands.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct HabitatDirtyRegionRebuildJob : IJob
     {
         public int NodeCount;
@@ -237,16 +255,16 @@ namespace Hecton8.Construction
         public int IslandIdBase;
         public int ShaderUpdateCapacity;
 
-        [ReadOnly] public NativeArray<int> EdgeOffsets;
-        [ReadOnly] public NativeArray<int> EdgeDestinations;
-        [ReadOnly] public NativeArray<byte> SeveredEdgeMask;
-        [ReadOnly] public NativeArray<byte> RupturedNodeMask;
-        [ReadOnly] public NativeArray<int> DirtyNodeIndices;
+        [NoAlias, ReadOnly] public NativeArray<int> EdgeOffsets;
+        [NoAlias, ReadOnly] public NativeArray<int> EdgeDestinations;
+        [NoAlias, ReadOnly] public NativeArray<byte> SeveredEdgeMask;
+        [NoAlias, ReadOnly] public NativeArray<byte> RupturedNodeMask;
+        [NoAlias, ReadOnly] public NativeArray<int> DirtyNodeIndices;
 
-        public NativeArray<int> TraversalQueue;
-        public NativeArray<int> VisitStamp;
-        public NativeArray<int> IslandIds;
-        public NativeArray<HabitatDirtyRegionResult> Result;
+        [NoAlias] public NativeArray<int> TraversalQueue;
+        [NoAlias] public NativeArray<int> VisitStamp;
+        [NoAlias] public NativeArray<int> IslandIds;
+        [NoAlias] public NativeArray<HabitatDirtyRegionResult> Result;
 
         public void Execute()
         {
@@ -435,18 +453,18 @@ namespace Hecton8.Construction
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct HabitatWaterlineShaderUpdateJob : IJobParallelFor
     {
         public int NodeCount;
 
-        [ReadOnly] public NativeArray<int> IslandIds;
-        [ReadOnly] public NativeArray<float> FloodLevel01;
-        [ReadOnly] public NativeArray<float> WaterSurfaceY;
-        [ReadOnly] public NativeArray<float> BrownoutFlicker01;
-        [ReadOnly] public NativeArray<float> CondensationDepth01;
+        [NoAlias, ReadOnly] public NativeArray<int> IslandIds;
+        [NoAlias, ReadOnly] public NativeArray<float> FloodLevel01;
+        [NoAlias, ReadOnly] public NativeArray<float> WaterSurfaceY;
+        [NoAlias, ReadOnly] public NativeArray<float> BrownoutFlicker01;
+        [NoAlias, ReadOnly] public NativeArray<float> CondensationDepth01;
 
-        [WriteOnly] public NativeArray<float4> ModuleWaterLevels;
+        [NoAlias, WriteOnly] public NativeArray<float4> ModuleWaterLevels;
 
         public void Execute(int index)
         {

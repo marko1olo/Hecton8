@@ -2481,3 +2481,97 @@ Exact Microseconds saved: rare death path adds one radius compare per candidate 
     Focused source scan found `MedicalBaySearchRadiusMeters` consumed in both runtime and Burst fallback scans. Forbidden scan over touched Physiology source found no LINQ, foreach, managed collection allocation, `Pack=`, DTO property, legacy Vault handle, or `.Resolve(vault)` hit. Active/archive mirrors hash-match. CPU sampled `100%`, so build was not launched.
   </verification>
 </SELF_AUDIT>
+
+## 2026-05-20 - Mock Job Wrapper Proof Correction
+
+What was wrong: subagent read-only audit found the Loop 69 proof trail claimed `GenerateMockRespawnPointsJob.Run(bays.Length)`, but current source still used a manual cold `for` loop calling `mockJob.Execute(i)`.
+
+What was done: replaced the manual cold mock med-bay hydration loop in `ShinobuRespawnReconciliationRuntime` with `mockJob.Run(bays.Length)`. The corrupt med-bay flag accounting, radius gate, zero-hash reject, DTO layout, Vault lanes, and signal payloads are unchanged.
+
+Cinematic Cheats used: no scene reload, physical travel simulation, prefab respawn, ragdoll, raycast, or nav query was added. The route remains signal/Vault state plus bounded med-bay rows and the shader Dear Lie cover.
+
+Exact Microseconds saved: hot path 0 us change. Cold boot still seeds eight mock rows; the gain is proof correctness and keeping the fallback mock generator behind the Unity job wrapper instead of direct `Execute` calls.
+
+<SELF_AUDIT agent_id="SHINOBU_155" focus="MOCK_JOB_WRAPPER_PROOF_CORRECTION" status="PENDING_COMPILE_RUNTIME_PROOF_EXTERNAL_BRIDGE_ERRORS">
+  <task_reconciliation>
+    <task id="01" status="PASS">No scene reload API added.</task>
+    <task id="02" status="PASS">No player destroy/instantiate route added.</task>
+    <task id="03" status="PASS">No hot DTO properties introduced.</task>
+    <task id="04" status="PASS">No DTO layout changed.</task>
+    <task id="05" status="PASS">Emergency mock med-bay generation now uses `GenerateMockRespawnPointsJob.Run(bays.Length)` in source.</task>
+    <task id="06" status="PASS">Fatal damage signal route unchanged.</task>
+    <task id="07" status="PASS">Reset/fade Burst kernels unchanged.</task>
+    <task id="08" status="PASS">Dear Lie shader route unchanged.</task>
+    <task id="09" status="PASS">AUP teleport route unchanged.</task>
+    <task id="10" status="PASS">Async fade route unchanged.</task>
+    <task id="11" status="PASS">No binary quality switch added.</task>
+    <task id="12" status="PASS">Ecosystem aggro route unchanged.</task>
+    <task id="13" status="PASS">AUP validation route unchanged.</task>
+    <task id="14" status="PASS">Rollback DTO route unchanged.</task>
+    <task id="15" status="PASS">No private native allocation added.</task>
+    <task id="16" status="PASS">Telemetry route unchanged.</task>
+    <task id="17" status="PASS">Editor facade unchanged.</task>
+    <task id="18" status="PASS">CSV ingestor unchanged.</task>
+    <task id="19" status="PASS">Editor gizmo unchanged.</task>
+    <task id="20" status="PARTIAL">Static source proof corrected; Unity import, profiler/GCMonitor, and player proof remain pending.</task>
+  </task_reconciliation>
+  <struct_layout_verification>
+    No struct layout changed in this correction. Existing primary rows remain `RespawnStateDTO=32`, `RespawnRequestDTO=64`, `MedicalBayRespawnPointDTO=64`, `RespawnTuningDTO=64`, `RespawnTelemetryEntry=64`, and `RespawnTelemetryCursor64=64`.
+  </struct_layout_verification>
+  <scalability_curve_explanation>
+    No quality math changed. Respawn visual cost still collapses continuously at low `GlobalQualityWeight` through faster fade decay and lower UberNoir detail weight, while high/ultra retain stronger shader blackout/grain/chroma cover.
+  </scalability_curve_explanation>
+  <h_phi_vault_status>
+    No private arrays were introduced. Existing Vault IDs `71604..71613` remain the only SHINOBU-owned respawn storage, and cold mock rows still write into med-bay buffer `71606`.
+  </h_phi_vault_status>
+  <pointer_aliasing_dependency_graph>
+    Dispatcher runtime graph unchanged. The cold `IJobParallelFor.Run` wrapper executes mock row seeding synchronously during default hydration only; simulation jobs still return their `JobHandle` to the dispatcher and keep `[NoAlias]` pointer/native lanes.
+  </pointer_aliasing_dependency_graph>
+  <compile_guard>
+    No asmdef or namespace dependency changed. Physiology still has no direct sibling runtime dependency for World, Physics, Rendering, Inventory, AI, Fauna, Construction, Habitat, Graphics, or Gameplay.
+  </compile_guard>
+  <dear_lie_confirmation>
+    Heavy death transition remains replaced by O(1) signal/Vault state, bounded O(8) med-bay search, and shader-only Dear Lie cover. This correction only aligns cold mock generation with its job proof.
+  </dear_lie_confirmation>
+  <verification>
+    Focused source scan shows `mockJob.Run(bays.Length)` and no `mockJob.Execute` hits in SHINOBU respawn source. Forbidden scan over the three SHINOBU respawn files returned no LINQ, foreach, managed collection allocation, `Pack=`, DTO property, legacy Vault handle, `.Resolve(vault)`, or `mockJob.Execute` hit. Build not launched.
+  </verification>
+</SELF_AUDIT>
+
+## 2026-05-20 - Cold Mock Handle Drift Removal
+
+What was wrong: follow-up source recheck found the cold mock-medbay block had drifted through a scheduled-handle variant and left an orphan `DispatcherJobFence.TryComplete(ref mockHandle, forceComplete: true)` after the intended `Run` call. That was a compile defect and an unnecessary cold-fence path.
+
+What was done: reduced the cold default hydration block to field assignment plus `mockJob.Run(bays.Length)`. There is no `mockJob.Execute`, no `mockJob.Schedule`, and no `mockHandle` in the cold hydration block.
+
+Cinematic Cheats used: unchanged. Death reconciliation remains a signal/Vault state handoff plus bounded med-bay row choice and GPU Dear Lie cover; no real traversal, reload, or object churn was added.
+
+Exact Microseconds saved: hot path 0 us change. Cold setup avoids scheduled-handle lifecycle overhead for eight mock rows and removes a compile failure before Unity/Burst proof can run.
+
+<SELF_AUDIT agent_id="SHINOBU_155" focus="COLD_MOCK_HANDLE_DRIFT_REMOVAL" status="PENDING_COMPILE_RUNTIME_PROOF_EXTERNAL_BRIDGE_ERRORS">
+  <task_reconciliation>
+    <task id="01" status="PASS">No scene reload API added.</task>
+    <task id="02" status="PASS">No player destroy/instantiate route added.</task>
+    <task id="03" status="PASS">No hot DTO properties introduced.</task>
+    <task id="04" status="PASS">No DTO layout changed.</task>
+    <task id="05" status="PASS">Cold mock med-bay seeding uses `mockJob.Run(bays.Length)` and has no orphan mock handle.</task>
+    <task id="06" status="PASS">Fatal damage signal route unchanged.</task>
+    <task id="07" status="PASS">Reset/fade Burst kernels unchanged.</task>
+    <task id="08" status="PASS">Dear Lie shader route unchanged.</task>
+    <task id="09" status="PASS">AUP teleport route unchanged.</task>
+    <task id="10" status="PASS">Async fade route unchanged.</task>
+    <task id="11" status="PASS">No binary quality switch added.</task>
+    <task id="12" status="PASS">Ecosystem aggro route unchanged.</task>
+    <task id="13" status="PASS">AUP validation route unchanged.</task>
+    <task id="14" status="PASS">Rollback DTO route unchanged.</task>
+    <task id="15" status="PASS">No private native allocation added.</task>
+    <task id="16" status="PASS">Telemetry route unchanged.</task>
+    <task id="17" status="PASS">Editor facade unchanged.</task>
+    <task id="18" status="PASS">CSV ingestor unchanged.</task>
+    <task id="19" status="PASS">Editor gizmo unchanged.</task>
+    <task id="20" status="PARTIAL">Static source proof corrected; compile/runtime proof still pending behind the guarded build boundary.</task>
+  </task_reconciliation>
+  <verification>
+    Focused scan over `ShinobuRespawnReconciliationRuntime.cs` finds `mockJob.Run(bays.Length)` and no `mockJob.Execute`, `mockJob.Schedule`, or local `mockHandle` in the cold hydration block. CPU guard sampled `100%` with no listed compiler process, so build was not launched.
+  </verification>
+</SELF_AUDIT>

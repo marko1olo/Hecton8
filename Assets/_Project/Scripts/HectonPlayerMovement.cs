@@ -56,25 +56,43 @@ namespace Hecton8.Gameplay
     [RequireComponent(typeof(Rigidbody))]
     public sealed class HectonPlayerMovement : MonoBehaviour, IUpdatable, IFixedTickable, IOriginShiftListener, ISargassumGlobalDragEventListener, ISonarPingEventListener, IInitializable, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener, IPlayerMovementContracts
     {
-        [StructLayout(LayoutKind.Sequential, Size = 88)]
+        [StructLayout(LayoutKind.Explicit, Size = 96)]
         private struct CinematicFocusTelemetryEntry
         {
+            [FieldOffset(0)]
             public long PlayerGridX;
+            [FieldOffset(8)]
             public long PlayerGridY;
+            [FieldOffset(16)]
             public long PlayerGridZ;
+            [FieldOffset(24)]
             public long TargetGridX;
+            [FieldOffset(32)]
             public long TargetGridY;
+            [FieldOffset(40)]
             public long TargetGridZ;
+            [FieldOffset(48)]
             public float3 TargetDirection;
+            [FieldOffset(60)]
             public float DistanceSq;
+            [FieldOffset(64)]
             public float PullWeight;
+            [FieldOffset(68)]
             public float SubtitleAlpha01;
+            [FieldOffset(72)]
             public uint Frame;
+            [FieldOffset(76)]
             public uint FocusHash;
+            [FieldOffset(80)]
             public byte Flags;
+            [FieldOffset(81)]
             private byte _pad0;
+            [FieldOffset(82)]
             private ushort _pad1;
+            [FieldOffset(84)]
             private uint _pad2;
+            [FieldOffset(88)]
+            private ulong _pad3;
         }
 
         private const float GroundCheckSkin = 0.02f;
@@ -1589,14 +1607,20 @@ namespace Hecton8.Gameplay
         private const float ParasiteLatchMaxLeverArm = 0.85f;
         private const float ParasiteLatchMaxAngularAcceleration = 12f;
 
-        [StructLayout(LayoutKind.Sequential, Size = 40)]
+        [StructLayout(LayoutKind.Explicit, Size = 40)]
         private struct RenderInterpolationState
         {
+            [FieldOffset(0)]
             public Vector3 BodyPosition;
+            [FieldOffset(12)]
             public float CameraYaw;
+            [FieldOffset(16)]
             public float BodyYaw;
+            [FieldOffset(20)]
             public Vector3 LinearVelocity;
+            [FieldOffset(32)]
             public float VerticalVelocity;
+            [FieldOffset(36)]
             private uint _pad0;
         }
 
@@ -1922,11 +1946,17 @@ namespace Hecton8.Gameplay
             public byte IsTrigger;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 8)]
         private struct ColliderCallbackMetadata
         {
+            [FieldOffset(0)]
             public int Layer;
+            [FieldOffset(4)]
             public byte IsTrigger;
+            [FieldOffset(5)]
+            private byte _pad0;
+            [FieldOffset(6)]
+            private ushort _pad1;
         }
 
         /// <summary>
@@ -2757,18 +2787,24 @@ namespace Hecton8.Gameplay
 
             Vector3 runtimePosition = _rb != null ? _rb.position : ResolvePlayerAupRuntimePosition();
             ResourceDistributionDirector director = _resourceDistributionRuntime;
-            double3 shiftOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            if (!TryResolvePlayerRuntimeShiftOffsetY(runtimePosition, out float shiftOffsetY))
+            {
+                _brineSubmersionSeconds = 0f;
+                PublishInactiveBrineShaderGlobals();
+                return;
+            }
+
             if (PlayerMovementBrineRuntimeSystem.TrySampleBrineLayer(
                     director,
                     runtimePosition,
                     IsInDryInterior(),
-                    (float)shiftOffset.y,
+                    shiftOffsetY,
                     out BrineLayerSample sample,
                     out bool submerged))
             {
                 _lastBrineLayerSample = sample;
                 _isInsideBrineLayer = submerged;
-                PublishBrineShaderGlobals(sample, (float)shiftOffset.y);
+                PublishBrineShaderGlobals(sample, shiftOffsetY);
                 if (submerged)
                 {
                     _brineSubmersionSeconds += math.max(0f, fixedDeltaTime);
@@ -2844,8 +2880,11 @@ namespace Hecton8.Gameplay
 
         private void PublishFluidDensityChanged(Vector3 runtimePosition, BrineLayerSample sample, bool entered)
         {
+            if (!TryResolveAupFromPlayerStateRuntimeDelta(runtimePosition, out AbsoluteUniversePosition positionAup))
+                return;
+
             FluidDensityChangedSignal signal = default;
-            signal.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            signal.PositionAup = positionAup;
             signal.DensityMultiplier = entered ? BrineLayerConstants.DensityMultiplier : 1f;
             signal.BrineHeightY = sample.AbsoluteHeightY;
             signal.SubmersionSeconds = entered ? _brineSubmersionSeconds : 0f;
@@ -2943,7 +2982,8 @@ namespace Hecton8.Gameplay
             bool solidSdf = !solidNavGrid && TrySampleActiveVoxelSdfSolid(runtimePosition);
             if (!solidNavGrid && !solidSdf)
             {
-                RecordLastValidAup(AbsoluteUniversePosition.FromRuntimePosition(runtimePosition));
+                if (TryResolveAupFromPlayerStateRuntimeDelta(runtimePosition, out AbsoluteUniversePosition validAup))
+                    RecordLastValidAup(validAup);
                 _playerKinematicsTelemetryDumpedThisFault = false;
                 return;
             }
@@ -4011,9 +4051,17 @@ namespace Hecton8.Gameplay
             _scalabilityTierProfileByte = payload.CurrentTier;
             RefreshCinematicFocusTierGateCold();
             if (_isInsideBrineLayer)
-                PublishBrineShaderGlobals(_lastBrineLayerSample, (float)HectonFloatingOrigin.CurrentTotalOffsetDouble.y);
+            {
+                Vector3 runtimePosition = _rb != null ? _rb.position : ResolvePlayerAupRuntimePosition();
+                if (TryResolvePlayerRuntimeShiftOffsetY(runtimePosition, out float shiftOffsetY))
+                    PublishBrineShaderGlobals(_lastBrineLayerSample, shiftOffsetY);
+                else
+                    PublishInactiveBrineShaderGlobals();
+            }
             else
+            {
                 PublishInactiveBrineShaderGlobals();
+            }
 
             InvalidateMovementProbeCaches();
         }
@@ -5026,7 +5074,10 @@ namespace Hecton8.Gameplay
             CacheTransportPlatformSpatialFrame(platformTransform);
             Quaternion currentPlatformRotation = platformTransform.rotation;
             Vector3 currentPlatformPosition = platformTransform.position;
-            AbsoluteUniversePosition currentPlatformAup = AbsoluteUniversePosition.FromRuntimePosition(currentPlatformPosition);
+            bool hasPlatformAup = TryResolveAupFromPlayerStateRuntimeDelta(
+                currentPlatformPosition,
+                out AbsoluteUniversePosition currentPlatformAup);
+
             if (!_transportPlatformRotationInitialized)
             {
                 _lastTransportPlatformPosition = currentPlatformPosition;
@@ -5037,7 +5088,7 @@ namespace Hecton8.Gameplay
                 _lastTransportPlatformRotation = currentPlatformRotation;
                 _transportPlatformDeltaRotation = Quaternion.identity;
                 _transportPlatformRotationInitialized = true;
-                _transportPlatformAupFrameValid = true;
+                _transportPlatformAupFrameValid = hasPlatformAup;
                 return;
             }
 
@@ -5045,6 +5096,7 @@ namespace Hecton8.Gameplay
             _currentTransportPlatformAup = currentPlatformAup;
             _currentTransportPlatformRotation = currentPlatformRotation;
             _transportPlatformDeltaRotation = currentPlatformRotation * ConjugateUnitQuaternion(_lastTransportPlatformRotation);
+            _transportPlatformAupFrameValid = hasPlatformAup;
 
             if (_transportPlatformDeltaRotation == Quaternion.identity || _activeTransportPlatform == null || !_activeTransportPlatform.InheritPlatformRotation)
                 return;
@@ -5235,7 +5287,9 @@ namespace Hecton8.Gameplay
             if (!_transportPlatformAupFrameValid)
                 return fallbackTarget;
 
-            AbsoluteUniversePosition bodyAup = AbsoluteUniversePosition.FromRuntimePosition(bodyPosition);
+            if (!TryResolveAupFromRuntimeDelta(bodyPosition, _lastTransportPlatformPosition, in _lastTransportPlatformAup, out AbsoluteUniversePosition bodyAup))
+                return fallbackTarget;
+
             double3 bodyOffsetAbsolute = AbsoluteUniversePosition.DeltaMetersClamped(in bodyAup, in _lastTransportPlatformAup);
             float3 bodyOffset = new float3(
                 (float)bodyOffsetAbsolute.x,
@@ -5667,7 +5721,8 @@ namespace Hecton8.Gameplay
             if (_rb == null)
                 return;
 
-            if (math.distancesq(_lastAppliedCenterOfMass, targetCenterOfMass) <= 0.0001f)
+            Vector3 centerOfMassDelta = _lastAppliedCenterOfMass - targetCenterOfMass;
+            if (centerOfMassDelta.sqrMagnitude <= 0.0001f)
                 return;
 
             _rb.centerOfMass = targetCenterOfMass;
@@ -6526,6 +6581,66 @@ namespace Hecton8.Gameplay
         {
             return math.all(math.isfinite(new float3(value.x, value.y, value.z)));
         }
+
+        private static bool IsFiniteAup(in AbsoluteUniversePosition position)
+        {
+            return math.isfinite(position.LocalX) &&
+                   math.isfinite(position.LocalY) &&
+                   math.isfinite(position.LocalZ);
+        }
+
+        private bool TryResolveAupFromPlayerStateRuntimeDelta(
+            Vector3 targetRuntimePosition,
+            out AbsoluteUniversePosition targetAup)
+        {
+            return TryResolveAupFromRuntimeDelta(
+                targetRuntimePosition,
+                ResolvePlayerAupRuntimePosition(),
+                in _playerState.AbsolutePosition,
+                out targetAup);
+        }
+
+        private static bool TryResolveAupFromRuntimeDelta(
+            Vector3 targetRuntimePosition,
+            Vector3 originRuntimePosition,
+            in AbsoluteUniversePosition originAup,
+            out AbsoluteUniversePosition targetAup)
+        {
+            targetAup = default;
+            if (!IsFiniteAup(in originAup) ||
+                !IsFiniteVector(targetRuntimePosition) ||
+                !IsFiniteVector(originRuntimePosition))
+            {
+                return false;
+            }
+
+            double3 deltaMeters = new double3(
+                (double)targetRuntimePosition.x - originRuntimePosition.x,
+                (double)targetRuntimePosition.y - originRuntimePosition.y,
+                (double)targetRuntimePosition.z - originRuntimePosition.z);
+            targetAup = AbsoluteUniversePosition.OffsetMeters(in originAup, deltaMeters);
+            return IsFiniteAup(in targetAup);
+        }
+
+        private bool TryResolvePlayerRuntimeShiftOffsetY(Vector3 runtimePosition, out float shiftOffsetY)
+        {
+            shiftOffsetY = 0f;
+            if (!IsFiniteAup(in _playerState.AbsolutePosition) || !IsFiniteVector(runtimePosition))
+                return false;
+
+            double absoluteY = _playerState.AbsolutePosition.ToAbsoluteDouble3().y;
+            double shiftOffset = absoluteY - runtimePosition.y;
+            if (!math.isfinite(shiftOffset) ||
+                shiftOffset > float.MaxValue ||
+                shiftOffset < -float.MaxValue)
+            {
+                return false;
+            }
+
+            shiftOffsetY = (float)shiftOffset;
+            return true;
+        }
+
         private void SanitizeKccFiniteState()
         {
             if (_rb == null)
@@ -10462,24 +10577,31 @@ namespace Hecton8.Gameplay
         {
             Vector3 splashPosition = ResolvePlayerAupRuntimePosition();
             splashPosition.y = surfaceY;
-            double3 absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(splashPosition);
             float mass = _rb != null ? math.max(1f, _rb.mass) : 80f;
             float kineticEnergy = 0.5f * mass * upwardSpeed * upwardSpeed * math.max(1f, surfaceBreachSplashEnergyScale);
-            SplashEvent splashEvent = new SplashEvent
+            if (TryResolveAupFromPlayerStateRuntimeDelta(splashPosition, out AbsoluteUniversePosition splashAup))
             {
-                RuntimePosition = new float3(splashPosition.x, splashPosition.y, splashPosition.z),
-                AbsoluteUniversePosition = new float3(
-                    (float)absoluteUniversePosition.x,
-                    (float)absoluteUniversePosition.y,
-                    (float)absoluteUniversePosition.z),
-                SurfaceNormal = new float3(0f, 1f, 0f),
-                ImpactSpeedMetersPerSecond = upwardSpeed,
-                KineticEnergyJoules = kineticEnergy,
-                SubmersionFactor = 1f,
-                SampleIndex = -1
-            };
+                double3 absoluteUniversePosition = splashAup.ToAbsoluteDouble3();
+                if (math.all(math.isfinite(absoluteUniversePosition)))
+                {
+                    SplashEvent splashEvent = new SplashEvent
+                    {
+                        RuntimePosition = new float3(splashPosition.x, splashPosition.y, splashPosition.z),
+                        AbsoluteUniversePosition = new float3(
+                            (float)absoluteUniversePosition.x,
+                            (float)absoluteUniversePosition.y,
+                            (float)absoluteUniversePosition.z),
+                        SurfaceNormal = new float3(0f, 1f, 0f),
+                        ImpactSpeedMetersPerSecond = upwardSpeed,
+                        KineticEnergyJoules = kineticEnergy,
+                        SubmersionFactor = 1f,
+                        SampleIndex = -1
+                    };
 
-            FluidFeedbackEvents.PublishSplashQueued(in splashEvent);
+                    FluidFeedbackEvents.PublishSplashQueued(in splashEvent);
+                }
+            }
+
             PublishPlayerWaterSplashSignal(1f, true, surfaceY, upwardSpeed);
             if (_juiceProcessor != null)
                 _juiceProcessor.RegisterSplash(1f, currentSuitData);
@@ -10581,10 +10703,9 @@ namespace Hecton8.Gameplay
             if (safeIntensity <= 0f)
                 return;
 
-            Vector3 runtimePosition = ResolvePlayerAupRuntimePosition();
             VisorDropletSignal signal = new VisorDropletSignal
             {
-                PositionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition),
+                PositionAup = _playerState.AbsolutePosition,
                 Intensity01 = safeIntensity,
                 DurationSeconds = math.max(0.1f, wetLensStormPulseCooldown),
                 SourceHash = PlayerSignalSourceId,
@@ -10604,7 +10725,9 @@ namespace Hecton8.Gameplay
         {
             Vector3 runtimePosition = ResolvePlayerAupRuntimePosition();
             Vector3 safeRuntimePosition = HectonPlayerMotor.SafeVelocity(runtimePosition);
-            AbsoluteUniversePosition transitionAup = AbsoluteUniversePosition.FromRuntimePosition(safeRuntimePosition);
+            if (!TryResolveAupFromPlayerStateRuntimeDelta(safeRuntimePosition, out AbsoluteUniversePosition transitionAup))
+                return;
+
             WaterTransitionSignal signal = new WaterTransitionSignal
             {
                 SourceId = PlayerSignalSourceId,
@@ -11487,9 +11610,12 @@ namespace Hecton8.Gameplay
                 wallNormal,
                 busSpeed);
 
+            if (!TryResolveAupFromPlayerStateRuntimeDelta(hitPoint, out AbsoluteUniversePosition hitPointAup))
+                return;
+
             AcousticPingSignal scrapePing = new AcousticPingSignal
             {
-                PositionAup = AbsoluteUniversePosition.FromRuntimePosition(hitPoint),
+                PositionAup = hitPointAup,
                 RadiusMeters = math.max(0f, suitScrapeAcousticRadiusMeters),
                 Intensity01 = math.saturate(scrapeT * 0.35f),
                 SourceId = PlayerSignalSourceId,
@@ -12449,12 +12575,14 @@ namespace Hecton8.Gameplay
         {
             sinkMultiplier = 0f;
             ResourceDistributionDirector director = _resourceDistributionRuntime;
-            double3 shiftOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            if (!TryResolvePlayerRuntimeShiftOffsetY(worldPosition, out float shiftOffsetY))
+                return false;
+
             if (!PlayerMovementBrineRuntimeSystem.TrySampleBrineLayer(
                     director,
                     worldPosition,
                     false,
-                    (float)shiftOffset.y,
+                    shiftOffsetY,
                     out BrineLayerSample sample,
                     out bool submerged) ||
                 !submerged)

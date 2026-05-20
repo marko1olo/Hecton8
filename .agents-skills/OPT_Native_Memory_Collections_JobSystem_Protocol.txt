@@ -202,6 +202,16 @@ RULE_ARCH_12: New or changed DataVault/global native-memory routes require a
 [FORBID] Treating `GlobalDataVault` as a mutable global heap.
 [FORBID] Approving a Vault handle exposed across domains without owner, phase,
          cadence, failure mode, telemetry, shutdown, and proof fields.
+[FORBID] Calling `GlobalDataVault.TryGetLatestCreated()` from domain runtime code
+         as normal fallback authority. It is limited to bootstrap, editor
+         diagnostics, crash/postmortem, or explicitly documented core fallback.
+[FORBID] Allocating, growing, relocating, or resolving DataVault ownership from
+         hot `Get*`, `TryGet*`, `Resolve*`, or `Read*` accessors.
+
+[RULE] Vault buffers are allocated/grown/resolved in cold setup, owner
+       initialization, or dispatcher-owned swap/completion windows.
+[RULE] Hot paths use cached `IDataVault`, generation-checked handles, fixed
+       snapshots, and fail-closed stale-handle behavior.
 
 See:
 - `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_BOUNDARIES.md`

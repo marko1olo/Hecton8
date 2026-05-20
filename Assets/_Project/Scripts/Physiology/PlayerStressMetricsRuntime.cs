@@ -608,22 +608,39 @@ namespace Hecton8.Physiology
             _debugO2DrainMultiplier = _state.O2DrainMultiplier;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 48)]
         private struct StressSoA
         {
+            [FieldOffset(0)]
             public float PlayerStress01;
+            [FieldOffset(4)]
             public float LightLevel01;
+            [FieldOffset(8)]
             public float PredatorThreat01;
+            [FieldOffset(12)]
             public float AcousticImpulse01;
+            [FieldOffset(16)]
             public float DamageImpulse01;
+            [FieldOffset(20)]
             public float SqueezeImpulse01;
+            [FieldOffset(24)]
             public float Recovery01;
+            [FieldOffset(28)]
             public float O2DrainMultiplier;
+            [FieldOffset(32)]
             public float PeakStress01;
+            [FieldOffset(36)]
             public uint PeakStressEvents;
+            [FieldOffset(40)]
             public byte PanicAttackEmitted;
+            [FieldOffset(41)]
             public byte LastCause;
+            [FieldOffset(42)]
             public byte LastFlags;
+            [FieldOffset(43)]
+            private byte _pad0;
+            [FieldOffset(44)]
+            private uint _pad1;
         }
 
         private readonly struct PlayerPose

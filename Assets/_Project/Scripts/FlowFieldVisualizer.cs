@@ -966,8 +966,10 @@ namespace Hecton8.Physics
                             ShowLocalCurrents = showLocalCurrents
                         };
 
-                        JobHandle handle = samplingJob.Schedule(totalPoints, Mathf.Max(1, totalPoints / 8));
-                        DispatcherJobSwap.TryComplete(ref handle, true);
+                        for (int i = 0; i < totalPoints; i++)
+                        {
+                            samplingJob.Execute(i);
+                        }
                         if (HectonFloatingOrigin.IsShiftInProgress ||
                             calculationShiftSequence != HectonFloatingOrigin.CurrentShiftSequence)
                         {

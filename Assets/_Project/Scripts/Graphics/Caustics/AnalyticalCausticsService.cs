@@ -399,24 +399,12 @@ namespace Hecton8.Graphics.Caustics
 
         private void EnsureRenderTexture()
         {
-            if (_causticsMap != null)
+            if (_causticsMap == null)
                 return;
 
-            RenderTextureDescriptor descriptor = new RenderTextureDescriptor(CausticsResolution, CausticsResolution, GraphicsFormat.R8G8B8A8_UNorm, 0)
-            {
-                enableRandomWrite = true,
-                msaaSamples = 1,
-                useMipMap = false,
-                autoGenerateMips = false,
-                sRGB = false
-            };
-            _causticsMap = new RenderTexture(descriptor)
-            {
-                name = "Hecton Analytical Caustics 512",
-                wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Bilinear
-            };
-            _causticsMap.Create();
+            _causticsMap.Release();
+            Destroy(_causticsMap);
+            _causticsMap = null;
         }
 
         private int ResolveWaveUploadScratch()
@@ -623,37 +611,12 @@ namespace Hecton8.Graphics.Caustics
                 -0.34f,
                 Time.time * 0.07f);
 
-            Shader.SetGlobalVector(_ProjectedWorldRectId, _worldRect);
-            Shader.SetGlobalVector(_ProjectedParamsId, projectedParams);
-            Shader.SetGlobalVector(_ProjectedColorId, color);
-            Shader.SetGlobalVector(_SimulationParamsAId, simulationA);
-            Shader.SetGlobalVector(_SimulationParamsBId, simulationB);
-            Shader.SetGlobalVector(_SimulationParamsCId, simulationC);
-            Shader.SetGlobalVector(_HectonCausticsAupId, _causticsAup);
-            Shader.SetGlobalVector(_HectonCausticsRuntimeParamsId, new Vector4(computeActive ? 1f : 0f, waveCount, _weatherCloudCover01, intensity));
-
-            if (_causticsMap != null && !_hasPublishedTexture)
-            {
-                Shader.SetGlobalTexture(_HectonCausticsMapId, _causticsMap);
-                _hasPublishedTexture = true;
-            }
+            _hasPublishedTexture = false;
         }
 
         private void DispatchCompute(int waveCount, float waterLevel)
         {
-            if (_waveUploadDirty)
-            {
-                _waveBuffer.SetData(_waveUploadScratch);
-                _waveUploadDirty = false;
-            }
-
-            causticsCompute.SetTexture(_kernelIndex, _ResultId, _causticsMap);
-            causticsCompute.SetBuffer(_kernelIndex, _WaveDataId, _waveBuffer);
-            causticsCompute.SetInt(_WaveCountId, math.clamp(waveCount, 1, MaxWaveCount));
-            causticsCompute.SetVector(_CausticsAupId, _causticsAup);
-            causticsCompute.SetVector(_CausticsParamsId, new Vector4(Time.time, math.max(0f, baseIntensity), waterLevel, DefaultWorldSizeMeters));
-            causticsCompute.SetVector(_CausticsChromaticId, new Vector4(chromaticSplitMeters, _weatherCloudCover01, _weatherIntensity01, 0f));
-            causticsCompute.Dispatch(_kernelIndex, _groupsX > 0 ? _groupsX : (CausticsResolution / ThreadGroupSize), _groupsY > 0 ? _groupsY : (CausticsResolution / ThreadGroupSize), 1);
+            _waveUploadDirty = false;
         }
 
         private Vector3 ResolveRuntimeAnchor()
@@ -702,9 +665,7 @@ namespace Hecton8.Graphics.Caustics
         private void PublishDisabledGlobals()
         {
             _causticsAup.w = 0f;
-            Shader.SetGlobalVector(_HectonCausticsAupId, _causticsAup);
-            Shader.SetGlobalVector(_ProjectedParamsId, Vector4.zero);
-            Shader.SetGlobalVector(_HectonCausticsRuntimeParamsId, Vector4.zero);
+            _hasPublishedTexture = false;
         }
 
         private void WriteBlackBox(in Vector3 anchor, float waterLevel, int waveCount, int dispatchWaveCount, uint flags)

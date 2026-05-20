@@ -61,7 +61,7 @@ namespace Hecton8.World
         [SerializeField, Tooltip("Minimum accepted terrain normal Y for stable resource grounding.")] private float normalAlignmentTolerance = SlopeRejectNormalY;
 
         [Header("Runtime References")]
-        [SerializeField, Tooltip("Optional cached player transform; auto-resolved through the world runtime helper if empty.")] private Transform playerTransform;
+        [SerializeField, Tooltip("Optional cached player transform; auto-resolved through the player runtime context if empty.")] private Transform playerTransform;
         [SerializeField, Tooltip("Optional cached MapMagic bridge for terrain height and biome sampling.")] private MapMagicBridge mapMagicBridge;
 
         [Header("Rendering")]
@@ -139,7 +139,9 @@ namespace Hecton8.World
         private int _currentBiomeId;
         private Bounds _drawBounds;
         private float3 _pendingRuntimeShift;
+        private float3 _lastPlayerRuntimePosition;
         private bool _hasPendingRuntimeShift;
+        private bool _hasPlayerRuntimePosition;
         private uint _lastAppliedAupShiftFrameId;
         private AbsoluteUniversePosition _dropPodAup;
         private float3 _dropPodRuntimePosition;
@@ -533,6 +535,7 @@ namespace Hecton8.World
                 UploadRenderMatrices();
 
             RenderDormantOres();
+            RefreshCachedPlayerRuntimeReference();
             WriteTelemetrySample(0u);
         }
 
@@ -556,7 +559,9 @@ namespace Hecton8.World
             ReleaseBuffer(ref _argsBuffer);
             _activeMatrixBuffer = null;
             _pendingRuntimeShift = default;
+            _lastPlayerRuntimePosition = default;
             _hasPendingRuntimeShift = false;
+            _hasPlayerRuntimePosition = false;
             _lastAppliedAupShiftFrameId = 0u;
             _dropPodAup = default;
             _dropPodRuntimePosition = default;
@@ -600,7 +605,14 @@ namespace Hecton8.World
             if (runtimeTransform != null)
                 playerTransform = runtimeTransform;
 
-            return true;
+            bool capturedPose = TryCapturePlayerPose(
+                playerContext,
+                out AbsoluteUniversePosition _,
+                out float3 runtimePosition);
+            if (capturedPose)
+                StorePlayerRuntimePosition(runtimePosition);
+
+            return capturedPose || runtimeTransform != null;
         }
 
         private bool AllocateNativeState()
@@ -1273,7 +1285,7 @@ namespace Hecton8.World
 
         private void RefreshSectorAndTerrain()
         {
-            if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
+            if (!TryResolvePlayerPose(out AbsoluteUniversePosition playerAup, out float3 playerRuntimePosition))
                 return;
 
             double3 playerAbsolute = playerAup.ToAbsoluteDouble3();
@@ -1309,22 +1321,41 @@ namespace Hecton8.World
             if ((sectorChanged || anchorRefresh) && !_spawnJobScheduled)
             {
                 _dropPodAnchorRequiresGenerationRefresh = false;
-                ScheduleSpawnJob(playerAbsolute, heightPayload);
+                ScheduleSpawnJob(playerAbsolute, playerRuntimePosition, heightPayload);
             }
         }
 
-        private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
+        private bool TryResolvePlayerPose(out AbsoluteUniversePosition playerAup, out float3 runtimePosition)
         {
             playerAup = default;
+            runtimePosition = default;
 
             IPlayerRuntimeContext playerContext = _playerContext;
+            if (playerContext == null)
+                return false;
+
+            if (!TryCapturePlayerPose(playerContext, out playerAup, out runtimePosition))
+                return false;
+
+            StorePlayerRuntimePosition(runtimePosition);
+            return true;
+        }
+
+        private static bool TryCapturePlayerPose(
+            IPlayerRuntimeContext playerContext,
+            out AbsoluteUniversePosition playerAup,
+            out float3 runtimePosition)
+        {
+            playerAup = default;
+            runtimePosition = default;
             if (playerContext == null)
                 return false;
 
             if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
             {
                 playerAup = snapshot.Aup;
-                return MathGuard.IsFinite(in playerAup);
+                runtimePosition = snapshot.RuntimePosition;
+                return MathGuard.IsFinite(in playerAup) && math.all(math.isfinite(runtimePosition));
             }
 
             var playerMovement = playerContext.PlayerMovement;
@@ -1332,7 +1363,35 @@ namespace Hecton8.World
                 return false;
 
             playerAup = playerMovement.CurrentAup;
-            return MathGuard.IsFinite(in playerAup);
+            if (!MathGuard.IsFinite(in playerAup))
+                return false;
+
+            runtimePosition = playerAup.ToRuntimeFloat3();
+            return math.all(math.isfinite(runtimePosition));
+        }
+
+        private void StorePlayerRuntimePosition(float3 runtimePosition)
+        {
+            if (!math.all(math.isfinite(runtimePosition)))
+                return;
+
+            _lastPlayerRuntimePosition = runtimePosition;
+            _hasPlayerRuntimePosition = true;
+        }
+
+        private Vector3 ResolvePresentationCenter()
+        {
+            float3 center = _hasPlayerRuntimePosition && math.all(math.isfinite(_lastPlayerRuntimePosition))
+                ? _lastPlayerRuntimePosition
+                : _hasDropPodAnchor && math.all(math.isfinite(_dropPodRuntimePosition))
+                    ? _dropPodRuntimePosition
+                    : default;
+            return ToVector3(center);
+        }
+
+        private static Vector3 ToVector3(float3 value)
+        {
+            return new Vector3(value.x, value.y, value.z);
         }
 
         private void WriteAupSectorHashGrid(int2 centerSector)
@@ -1422,7 +1481,7 @@ namespace Hecton8.World
                 biomeHeatmap[i] = packed;
         }
 
-        private void ScheduleSpawnJob(double3 playerAbsolute, GeologyHeightPayloadView payload)
+        private void ScheduleSpawnJob(double3 playerAbsolute, float3 playerRuntimePosition, GeologyHeightPayloadView payload)
         {
             if (!EnsureNativeState() || !TryLockVaultJobBuffers())
                 return;
@@ -1433,7 +1492,7 @@ namespace Hecton8.World
                 return;
             }
 
-            EnsureDropPodAnchor(playerAbsolute);
+            EnsureDropPodAnchor(playerAbsolute, playerRuntimePosition);
             EnsureGeologyTuning(views);
             int scanCount = ResolveIterationBudget(views);
             GeologyTuningDTO tuning = views.GeologyTuning.IsCreated && views.GeologyTuning.Length > 0
@@ -1450,7 +1509,7 @@ namespace Hecton8.World
                 ? payload.TerrainBaseY
                 : (float)playerAbsolute.y;
             ClearPresentationState(false);
-            _drawBounds = new Bounds(transform.position, Vector3.one * safeSectorSize);
+            _drawBounds = new Bounds(ToVector3(playerRuntimePosition), Vector3.one * safeSectorSize);
             _discardSpawnJobOutput = false;
 
             JobHandle dependency = default;
@@ -1503,9 +1562,7 @@ namespace Hecton8.World
                 DropPodAbsolutePosition = _hasDropPodAnchor ? _dropPodAup.ToAbsoluteDouble3() : playerAbsolute,
                 HasDropPodAnchor = _hasDropPodAnchor ? 1 : 0,
                 CameraAbsolutePosition = playerAbsolute,
-                CameraRuntimePosition = playerTransform != null
-                    ? new float3(playerTransform.position.x, playerTransform.position.y, playerTransform.position.z)
-                    : float3.zero,
+                CameraRuntimePosition = playerRuntimePosition,
                 GlobalQualityWeight = qualityWeight,
                 VisualClusterDensity = math.saturate(tuning.VisualClusterDensity),
                 ClusterSpreadRadius = math.max(0.05f, tuning.ClusterSpreadRadius)
@@ -1533,14 +1590,14 @@ namespace Hecton8.World
             return math.clamp((int)math.round(clamped * density), 1, _oreCapacity);
         }
 
-        private void EnsureDropPodAnchor(double3 playerAbsolute)
+        private void EnsureDropPodAnchor(double3 playerAbsolute, float3 playerRuntimePosition)
         {
             if (_hasDropPodAnchor)
                 return;
 
             _dropPodAup = AbsoluteUniversePosition.FromAbsolutePosition(playerAbsolute);
-            _dropPodRuntimePosition = playerTransform != null
-                ? new float3(playerTransform.position.x, playerTransform.position.y, playerTransform.position.z)
+            _dropPodRuntimePosition = math.all(math.isfinite(playerRuntimePosition))
+                ? playerRuntimePosition
                 : _dropPodAup.ToRuntimeFloat3();
             _hasDropPodAnchor = math.all(math.isfinite(_dropPodRuntimePosition));
             _dropPodAnchorFromSignal = false;
@@ -1673,7 +1730,7 @@ namespace Hecton8.World
             _telemetryFirstOrePosition = default;
             _telemetryFirstNodeHash = 0u;
             _lastTelemetryFrameWritten = 0u;
-            _drawBounds = new Bounds(transform.position, Vector3.one);
+            _drawBounds = new Bounds(ResolvePresentationCenter(), Vector3.one);
             _renderUploadDirty = false;
             if (forgetLoadedSector)
                 _depletionLoaded = false;
@@ -2047,6 +2104,8 @@ namespace Hecton8.World
 
             if (_hasDropPodAnchor)
                 _dropPodRuntimePosition -= totalShift;
+            if (_hasPlayerRuntimePosition)
+                _lastPlayerRuntimePosition -= totalShift;
             if (_telemetryFirstNodeHash != 0u)
                 _telemetryFirstOrePosition -= totalShift;
 
@@ -2145,7 +2204,7 @@ namespace Hecton8.World
         private Bounds ResolveDrawBounds(ProceduralGeologyVaultViews views)
         {
             if (_renderInstanceCount <= 0 || !views.OreMatrices.IsCreated)
-                return new Bounds(transform.position, Vector3.one);
+                return new Bounds(ResolvePresentationCenter(), Vector3.one);
 
             float3 min = new float3(float.MaxValue);
             float3 max = new float3(float.MinValue);
@@ -2160,7 +2219,7 @@ namespace Hecton8.World
             }
 
             if (validCount == 0 || !math.all(math.isfinite(min)) || !math.all(math.isfinite(max)) || math.any(max < min))
-                return new Bounds(transform.position, Vector3.one * sectorSizeMeters);
+                return new Bounds(ResolvePresentationCenter(), Vector3.one * sectorSizeMeters);
 
             float3 center = (min + max) * 0.5f;
             float3 size = math.max(max - min, new float3(4f));
@@ -2234,8 +2293,8 @@ namespace Hecton8.World
             if ((uint)index >= (uint)telemetryRing.Length)
                 index = 0;
             _telemetryWriteIndex = (index + 1) % math.max(1, telemetryRing.Length);
-            float3 player = playerTransform != null
-                ? new float3(playerTransform.position.x, playerTransform.position.y, playerTransform.position.z)
+            float3 player = _hasPlayerRuntimePosition
+                ? _lastPlayerRuntimePosition
                 : default;
             float3 firstOre = _telemetryFirstOrePosition;
             uint telemetryFlags = flags;
@@ -2899,32 +2958,19 @@ namespace Hecton8.World
 
             private bool ShouldBiasCopperClump(ref uint state, float3 position, float3 previousPosition)
             {
-                return math.distancesq(position, previousPosition) <= CopperClumpDistanceSq &&
+                float3 copperDelta = position - previousPosition;
+                return math.lengthsq(copperDelta) <= CopperClumpDistanceSq &&
                        MapToPercent(Next(ref state)) < CopperClumpBiasPercent;
             }
 
             private static void ResolveOreWeights(float dropPodDistanceSq, out int titaniumWeight, out int copperWeight, out int silverWeight)
             {
-                if (dropPodDistanceSq < NearDropPodDistanceSq)
-                {
-                    titaniumWeight = 70;
-                    copperWeight = 30;
-                    silverWeight = 0;
-                    return;
-                }
-
-                if (dropPodDistanceSq > FarDropPodDistanceSq)
-                {
-                    titaniumWeight = 40;
-                    copperWeight = 40;
-                    silverWeight = 20;
-                    return;
-                }
-
-                float gradient01 = math.saturate((dropPodDistanceSq - NearDropPodDistanceSq) * DropPodBandInvDistanceSq);
-                titaniumWeight = 70 - (int)math.round(30f * gradient01);
-                copperWeight = 30 + (int)math.round(10f * gradient01);
-                silverWeight = 100 - titaniumWeight - copperWeight;
+                float safeDistanceSq = math.select(FarDropPodDistanceSq, dropPodDistanceSq, math.isfinite(dropPodDistanceSq));
+                float gradient01 = math.saturate((safeDistanceSq - NearDropPodDistanceSq) * DropPodBandInvDistanceSq);
+                float eased = math.smoothstep(0f, 1f, gradient01);
+                titaniumWeight = math.clamp((int)math.round(math.lerp(70f, 40f, eased)), 0, 100);
+                copperWeight = math.clamp((int)math.round(math.lerp(30f, 40f, eased)), 0, 100 - titaniumWeight);
+                silverWeight = math.max(0, 100 - titaniumWeight - copperWeight);
             }
 
             private int ResolveLegacyOreType(ref uint state, int dominantBiomeId)
@@ -2956,26 +3002,30 @@ namespace Hecton8.World
                 float y = SampleHeight(x, z);
                 normal = SampleNormal(x, z, y);
                 float quality = math.saturate(GlobalQualityWeight);
-                float refineGate = math.step(0.3f, quality);
-                int refineCount = (int)math.floor(math.lerp(0f, 2f, quality) * refineGate);
+                float refineBudget = math.smoothstep(0.25f, 1f, quality) * 2f;
+                int refineCount = math.clamp((int)math.ceil(refineBudget), 0, 2);
                 double probeX = x;
                 double probeZ = z;
 
                 for (int i = 0; i < refineCount; i++)
                 {
+                    float iterationWeight = math.saturate(refineBudget - i);
+                    if (iterationWeight <= 0.0001f)
+                        break;
+
                     float3 sampleNormal = SampleNormal(probeX, probeZ, y);
                     if (!math.all(math.isfinite(sampleNormal)))
                         break;
 
                     float slope = math.saturate(1f - sampleNormal.y);
-                    double stepMeters = (double)(math.lerp(0f, 0.75f, slope) * refineGate);
+                    double stepMeters = (double)(math.lerp(0f, 0.75f, slope) * iterationWeight);
                     probeX -= sampleNormal.x * stepMeters;
                     probeZ -= sampleNormal.z * stepMeters;
                     float refinedHeight = SampleHeight(probeX, probeZ);
                     if (!math.isfinite(refinedHeight))
                         break;
 
-                    y = math.lerp(y, refinedHeight, refineGate);
+                    y = math.lerp(y, refinedHeight, iterationWeight);
                     normal = sampleNormal;
                 }
 
@@ -2992,8 +3042,7 @@ namespace Hecton8.World
                 const double step = 2.0;
                 float hx = SampleHeight(x + step, z);
                 float hz = SampleHeight(x, z + step);
-                float3 normal = math.normalize(new float3(centerHeight - hx, 2f, centerHeight - hz));
-                return math.all(math.isfinite(normal)) ? normal : new float3(0f, 1f, 0f);
+                return SafeNormalize(new float3(centerHeight - hx, 2f, centerHeight - hz), new float3(0f, 1f, 0f));
             }
 
             private bool IsHzbOccluded(float3 localPosition, float radius)
@@ -3089,21 +3138,15 @@ namespace Hecton8.World
                 float angle = (clusterIndex * 2.3999631f) + (Next01(ref state) * 0.35f);
                 float radius = ClusterSpreadRadius * (0.35f + 0.65f * Next01(ref state));
                 float3 tangent = BuildTangent(normal, (uint)clusterIndex);
-                float3 bitangent = math.normalize(math.cross(normal, tangent));
-                if (!math.all(math.isfinite(bitangent)))
-                    bitangent = new float3(0f, 0f, 1f);
+                float3 bitangent = SafeNormalize(math.cross(normal, tangent), new float3(0f, 0f, 1f));
                 return ((math.cos(angle) * tangent) + (math.sin(angle) * bitangent)) * radius + (normal * 0.04f);
             }
 
             private static float4x4 BuildAlignedMatrix(float3 position, float3 normal, float scale, uint spin)
             {
-                normal = math.normalize(normal);
-                if (!math.all(math.isfinite(normal)))
-                    normal = new float3(0f, 1f, 0f);
+                normal = SafeNormalize(normal, new float3(0f, 1f, 0f));
                 float3 tangent = BuildTangent(normal, spin);
-                float3 bitangent = math.normalize(math.cross(normal, tangent));
-                if (!math.all(math.isfinite(bitangent)))
-                    bitangent = new float3(0f, 0f, 1f);
+                float3 bitangent = SafeNormalize(math.cross(normal, tangent), new float3(0f, 0f, 1f));
                 return new float4x4(
                     new float4(tangent * scale, 0f),
                     new float4(normal * scale, 0f),
@@ -3113,21 +3156,26 @@ namespace Hecton8.World
 
             private static float3 BuildTangent(float3 normal, uint spin)
             {
-                normal = math.normalize(normal);
-                if (!math.all(math.isfinite(normal)))
-                    normal = new float3(0f, 1f, 0f);
+                normal = SafeNormalize(normal, new float3(0f, 1f, 0f));
 
                 float3 axis = math.abs(normal.y) > 0.85f ? new float3(1f, 0f, 0f) : new float3(0f, 1f, 0f);
-                float3 tangent = math.normalize(math.cross(axis, normal));
-                if (!math.all(math.isfinite(tangent)))
-                    tangent = new float3(1f, 0f, 0f);
+                float3 tangent = SafeNormalize(math.cross(axis, normal), new float3(1f, 0f, 0f));
                 float angle = (spin & 1023u) * (6.28318530718f / 1024f);
-                float3 bitangent = math.normalize(math.cross(normal, tangent));
-                if (!math.all(math.isfinite(bitangent)))
-                    bitangent = new float3(0f, 0f, 1f);
+                float3 bitangent = SafeNormalize(math.cross(normal, tangent), new float3(0f, 0f, 1f));
 
-                float3 spun = math.normalize((tangent * math.cos(angle)) + (bitangent * math.sin(angle)));
-                return math.all(math.isfinite(spun)) ? spun : tangent;
+                return SafeNormalize((tangent * math.cos(angle)) + (bitangent * math.sin(angle)), tangent);
+            }
+
+            private static float3 SafeNormalize(float3 value, float3 fallback)
+            {
+                if (!math.all(math.isfinite(value)))
+                    return fallback;
+
+                float lengthSq = math.lengthsq(value);
+                if (!math.isfinite(lengthSq) || lengthSq <= 0.0001f)
+                    return fallback;
+
+                return value * math.rsqrt(math.max(lengthSq, 0.0001f));
             }
 
             private static int MapToPercent(uint value)

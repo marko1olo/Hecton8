@@ -30,24 +30,40 @@ namespace Hecton8.World
             public float InfluenceRadius;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct TerrainSeamTelemetryEntry
         {
+            [FieldOffset(0)]
             public uint Frame;
+            [FieldOffset(4)]
             public uint TerrainHash;
+            [FieldOffset(8)]
             public int PatchSampleCount;
+            [FieldOffset(12)]
             public int PlanCount;
+            [FieldOffset(16)]
             public float PatchCenterX;
+            [FieldOffset(20)]
             public float PatchCenterZ;
+            [FieldOffset(24)]
             public float MinHeight01;
+            [FieldOffset(28)]
             public float MaxHeight01;
+            [FieldOffset(32)]
             public float MaxBlend01;
+            [FieldOffset(36)]
             public uint Flags;
+            [FieldOffset(40)]
             public uint StateHash;
+            [FieldOffset(44)]
             public uint Reserved0;
+            [FieldOffset(48)]
             public uint Reserved1;
+            [FieldOffset(52)]
             public uint Reserved2;
+            [FieldOffset(56)]
             public uint Reserved3;
+            [FieldOffset(60)]
             public uint Reserved4;
         }
 
@@ -503,7 +519,7 @@ namespace Hecton8.World
         private bool TryIngestSignalHeightmapToVault(in TerrainChunkGeneratedSignal signal, out int copiedSampleCount)
         {
             copiedSampleCount = 0;
-            if (!signal.IsValid || mapMagicBridge == null || _tileSnapshotScratch == null)
+            if (!TerrainChunkGeneratedSignal.IsValid(in signal) || mapMagicBridge == null || _tileSnapshotScratch == null)
                 return false;
 
             int snapshotCount = mapMagicBridge.CopyTerrainTileSnapshotsTo(_tileSnapshotScratch);

@@ -133,6 +133,10 @@ Use this before Steam telemetry exists. It measures whether the project is allow
 | public_comparison_gate | enum | `PRIVATE_ONLY_NO_COMPETITOR_COPY`, `INTERNAL_ONLY_NO_PUBLIC_PERFORMANCE_COMPARISON`, or stricter. |
 | agency_decision_proof_gate | enum | Metadata value; first-packet advance needs one `AGENCY_PROOF_CANDIDATE`. |
 | agency_decision_notes | text | One sentence naming the readable player choice or why the asset is not agency proof. |
+| capture_handoff_packet_id | text | Stable first-capture packet ID from the shotlist/metadata handoff. |
+| capture_verdict | enum | `KEEP_TESTING`, `REVISE_SCENE`, `HOLD_ASSET`, `KILL_ANGLE`, `AGENCY_MISSING_HOLD`, or `PENDING_CAPTURE`. |
+| viewer_named_decision | text | The actual decision a cold viewer named without prompt; required for agency candidates. |
+| capture_next_actions | text | Up to three concrete follow-up actions from the handoff packet. |
 | cold_read_genre_correct | int | Count of viewers who identify underwater survival. |
 | cold_read_player_verb | int | Count of viewers who name player action/problem. |
 | cold_read_agency_decision | int | Count of valid blind readers who name the next pressure decision without prompt. |
@@ -154,14 +158,19 @@ Minimum to advance Campaign 01:
 
 ### Capture Intake Join
 
-The dashboard does not replace asset metadata. For first captures, copy only the following facts from `Data/MARKETING_ASSET_METADATA_TEMPLATE.csv` after the metadata row is updated:
+The dashboard does not replace asset metadata or the first-capture handoff packet. For first captures, copy only the following facts from `Data/MARKETING_ASSET_METADATA_TEMPLATE.csv` and `Content/SCREENSHOT_AND_CLIP_SHOTLIST.md` after the metadata row and handoff packet are updated:
 
 | Dashboard field | Metadata source | Gate |
 |---|---|---|
 | `asset_id` | `asset_id` | Must already exist or be justified by a new non-duplicate hook. |
+| `file_path` | `path` / first-capture handoff packet | Cannot be blank, guessed, or point to a planned placeholder. |
 | `build_id` | `build_id` | Cannot be `TBD`, `latest`, or guessed. |
 | `status` | `status` | Use `RAW`, `REVISION`, `QA_FAIL`, `APPROVED_INTERNAL`, or `APPROVED_PUBLIC`; do not dashboard stale `PLANNED_CAPTURE` rows as proof. |
 | `qa_score` | `qa_score` | Must come from `QA/MARKETING_ASSET_QA_CHECKLIST.md`. |
+| `rejection_code` | `rejection_code` / first-capture handoff packet | Required for failed attempts; blank failure rows are not reportable proof. |
+| `creator_rows_unlocked` | `creator_rows_unlocked` | Required before asset-backed creator outreach is counted. |
+| `creator_utility_score` | `creator_utility_score` | Required for creator-facing use; 3/4+ for Wave A. |
+| `creator_send_gate` | `creator_send_gate` | Blocked values prevent creator reporting even if QA score is high. |
 | `pain_bucket_answered` | `pain_bucket_answered` | Private priority only; never public copy. |
 | `pain_proof_score` | `pain_proof_score` | 0 until QA assigns it; first-pack priority requires 4/5 after source/date freshness check. |
 | `pain_freshness_source` | `pain_freshness_source` | Must name the monitoring refresh/source row used for nonzero pain proof. |
@@ -169,8 +178,12 @@ The dashboard does not replace asset metadata. For first captures, copy only the
 | `public_comparison_gate` | `public_comparison_gate` | Must stay `PRIVATE_ONLY_NO_COMPETITOR_COPY` or stricter for first-pack use. |
 | `agency_decision_proof_gate` | `agency_decision_proof_gate` | Must be present; first-pack advance needs one `AGENCY_PROOF_CANDIDATE`. |
 | `agency_decision_notes` | `agency_decision_notes` | Must name the readable choice or explain non-proof status; blank notes force `decision=HOLD`. |
+| `capture_handoff_packet_id` | `capture_handoff_packet_id` | Must point to the first-capture packet; planned rows stay `PENDING_CAPTURE_PACKET`. |
+| `capture_verdict` | `capture_verdict` | `AGENCY_MISSING_HOLD`, `REVISE_SCENE`, `HOLD_ASSET`, or `KILL_ANGLE` blocks Campaign 01 and agency-proof reporting. |
+| `viewer_named_decision` | `viewer_named_decision` / AB-009 row | Required before an agency candidate can drive Campaign 01, Steam, creator, press, or weekly agency-proof reporting. |
+| `capture_next_actions` | `capture_next_actions` | Required for every failed or held packet; action list must be capped at three. |
 
-If a dashboard row contains a value not present in metadata or QA, mark `decision=HOLD` and fix the source row first.
+If a dashboard row contains a value not present in metadata, QA, or the first-capture handoff packet, mark `decision=HOLD` and fix the source row first. If the handoff packet records `AGENCY_MISSING_HOLD`, Campaign 01 and agency-proof reporting remain held.
 
 ### Cold-Read Response Table
 

@@ -845,7 +845,9 @@ namespace Hecton8.World
             if (!math.all(math.isfinite(position)))
                 return true;
 
-            AbsoluteUniversePosition aupPosition = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition aupPosition))
+                return true;
+
             return IsModProtectedCoreAup(in aupPosition);
         }
 
@@ -1087,10 +1089,13 @@ namespace Hecton8.World
             if (runtimeKey == 0L || _activeThermalVents == null)
                 return false;
 
+            if (!TryResolveAupFromRuntimeOrigin(positionWS, out AbsoluteUniversePosition ventAup))
+                return false;
+
             PersistentThermalVentRecord record = new PersistentThermalVentRecord
             {
                 RuntimeKey = runtimeKey,
-                PositionAup = AbsoluteUniversePosition.FromRuntimePosition(positionWS),
+                PositionAup = ventAup,
                 RadiusWS = math.max(2f, radiusWS),
                 HeightWS = math.max(4f, heightWS),
                 UpdraftVelocity = math.max(0.5f, updraftVelocity),
@@ -1276,7 +1281,7 @@ namespace Hecton8.World
         public void LateFrameTick()
         {
             DrainPendingEntityStateTempWrites(MaxEntityStateTempWriteCompletionsPerTick);
-            CompleteTombstoneDecaySweepIfReady(MaxTombstoneDecayAppliesPerLateFrame, forceComplete: false);
+            TryFinalizeTombstoneDecaySweepNoWait(MaxTombstoneDecayAppliesPerLateFrame);
             if (_tombstoneDecayApplyPending)
                 ApplyCollectedTombstoneDecay(MaxTombstoneDecayAppliesPerLateFrame);
         }
@@ -1365,7 +1370,9 @@ namespace Hecton8.World
                 return false;
 
             Vector3 scatteredRuntimePosition = ApplyDeterministicDropScatter(runtimePosition, instanceUid);
-            AbsoluteUniversePosition position = AbsoluteUniversePosition.FromRuntimePosition(scatteredRuntimePosition);
+            if (!TryResolveAupFromRuntimeOrigin(scatteredRuntimePosition, out AbsoluteUniversePosition position))
+                return false;
+
             int3 chunkId = AbsoluteUniversePosition.ResolveChunkId(in position, chunkSizeMeters);
             PersistentWorldItemRecord record = new PersistentWorldItemRecord
             {
@@ -1413,7 +1420,9 @@ namespace Hecton8.World
             if (IsDeletedInstanceUid(instanceUid))
                 return true;
 
-            AbsoluteUniversePosition position = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition position))
+                return false;
+
             int3 chunkId = AbsoluteUniversePosition.ResolveChunkId(in position, chunkSizeMeters);
             if (TryFindRecordIndexByInstanceUid(instanceUid, out int existingRecordIndex))
             {
@@ -1469,7 +1478,9 @@ namespace Hecton8.World
             if (packedState == 0)
                 return TryClearFloraStateOverride(instanceUid);
 
-            AbsoluteUniversePosition position = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition position))
+                return false;
+
             int3 chunkId = AbsoluteUniversePosition.ResolveChunkId(in position, chunkSizeMeters);
             if (TryFindRecordIndexByInstanceUid(instanceUid, out int existingRecordIndex))
             {
@@ -1513,7 +1524,9 @@ namespace Hecton8.World
 
         internal bool TryRegisterDestroyedResourceNode(ulong tombstoneId, Vector3 runtimePosition)
         {
-            AbsoluteUniversePosition position = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition position))
+                return false;
+
             return TryRegisterDestroyedResourceNode(tombstoneId, in position);
         }
 
@@ -1554,7 +1567,9 @@ namespace Hecton8.World
 
         internal bool TryRegisterResourceNodeMetamorphosis(ulong tombstoneId, Vector3 runtimePosition)
         {
-            AbsoluteUniversePosition position = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition position))
+                return false;
+
             return TryRegisterResourceNodeMetamorphosis(tombstoneId, in position);
         }
 
@@ -1604,7 +1619,9 @@ namespace Hecton8.World
                 return false;
             }
 
-            AbsoluteUniversePosition position = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition position))
+                return false;
+
             int3 chunkId = AbsoluteUniversePosition.ResolveChunkId(in position, chunkSizeMeters);
             for (int recordIndex = 0; recordIndex < _records.Length; recordIndex++)
             {
@@ -1694,7 +1711,9 @@ namespace Hecton8.World
             if (instanceUid == 0u || !_floraSpawnStateByInstanceUid.IsCreated)
                 return false;
 
-            AbsoluteUniversePosition position = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition position))
+                return false;
+
             EntityDataRecord state = CreateFloraSpawnTimestampState(instanceUid, spawnPlayTimeSeconds, in position);
             _floraSpawnStateByInstanceUid.Remove(instanceUid);
             _floraSpawnStateByInstanceUid.TryAdd(instanceUid, state);
@@ -1780,7 +1799,9 @@ namespace Hecton8.World
 
         internal int3 ResolveRuntimeChunkId(Vector3 runtimePosition)
         {
-            AbsoluteUniversePosition position = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition position))
+                return default;
+
             return AbsoluteUniversePosition.ResolveChunkId(in position, chunkSizeMeters);
         }
 
@@ -1942,7 +1963,9 @@ namespace Hecton8.World
 
         internal static ulong ComputeResourceNodeTombstoneId(Vector3 runtimePosition)
         {
-            AbsoluteUniversePosition position = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition position))
+                return 0UL;
+
             return ComputeResourceNodeTombstoneId(in position);
         }
 
@@ -3686,7 +3709,9 @@ namespace Hecton8.World
                 return 0f;
 
             double radiusSq = (double)radiusMeters * radiusMeters;
-            AbsoluteUniversePosition queryAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
+            if (!TryResolveAupFromRuntimeOrigin(worldPosition, out AbsoluteUniversePosition queryAup))
+                return 0f;
+
             float bestInfluence01 = 0f;
             int writeIndex = 0;
             for (int readIndex = 0; readIndex < _whaleFallPoiInstanceUidCount; readIndex++)
@@ -3798,7 +3823,9 @@ namespace Hecton8.World
 
         internal int ConsumeCachedFaunaHibernationStates(Vector3 playerPosition, float restoreRadiusMeters, List<EntityDataRecord> destination)
         {
-            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
+            if (!TryResolveAupFromRuntimeOrigin(playerPosition, out AbsoluteUniversePosition playerAup))
+                return 0;
+
             return ConsumeCachedFaunaHibernationStates(in playerAup, restoreRadiusMeters, destination);
         }
 
@@ -4081,7 +4108,9 @@ namespace Hecton8.World
 
         internal int MigrateApexFaunaHibernationStatesToward(Vector3 attractorPosition, float searchRadiusMeters, float stepMeters)
         {
-            AbsoluteUniversePosition attractorAup = AbsoluteUniversePosition.FromRuntimePosition(attractorPosition);
+            if (!TryResolveAupFromRuntimeOrigin(attractorPosition, out AbsoluteUniversePosition attractorAup))
+                return 0;
+
             return MigrateApexFaunaHibernationStatesToward(in attractorAup, searchRadiusMeters, stepMeters);
         }
 
@@ -5006,13 +5035,9 @@ namespace Hecton8.World
                    math.isfinite(value.z);
         }
 
-        private static bool TryResolveLiveInstanceAup(Transform sourceTransform, out AbsoluteUniversePosition position)
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition position)
         {
             position = default;
-            if (sourceTransform == null)
-                return false;
-
-            Vector3 runtimePosition = sourceTransform.position;
             if (!math.isfinite(runtimePosition.x) ||
                 !math.isfinite(runtimePosition.y) ||
                 !math.isfinite(runtimePosition.z))
@@ -5025,6 +5050,15 @@ namespace Hecton8.World
                 in originAup,
                 new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
             return MathGuard.IsFinite(in position);
+        }
+
+        private static bool TryResolveLiveInstanceAup(Transform sourceTransform, out AbsoluteUniversePosition position)
+        {
+            position = default;
+            if (sourceTransform == null)
+                return false;
+
+            return TryResolveAupFromRuntimeOrigin(sourceTransform.position, out position);
         }
 
         private void RegisterSpawnImpulse(uint instanceUid, Vector3 initialImpulse)
@@ -6109,28 +6143,36 @@ namespace Hecton8.World
 
         private void CompleteTombstoneDecayBeforeDeltaMutation()
         {
-            CompleteTombstoneDecaySweepIfReady(int.MaxValue, forceComplete: true);
+            CompleteTombstoneDecaySweepForDeltaMutationBarrier(int.MaxValue);
             if (_tombstoneDecayApplyPending)
                 ApplyCollectedTombstoneDecay(int.MaxValue);
         }
 
-        private void CompleteTombstoneDecaySweepIfReady(int maxApplies, bool forceComplete)
+        private void TryFinalizeTombstoneDecaySweepNoWait(int maxApplies)
         {
             if (!_tombstoneDecaySweepScheduled)
                 return;
 
-            if (!forceComplete && !_tombstoneDecaySweepHandle.IsCompleted)
+            if (!_tombstoneDecaySweepHandle.IsCompleted)
                 return;
 
-            if (forceComplete)
-            {
-                DispatcherJobSwap.TryComplete(ref _tombstoneDecaySweepHandle, forceComplete: true);
-            }
-            else
-            {
-                DispatcherJobSwap.TryComplete(ref _tombstoneDecaySweepHandle, forceComplete: false);
-            }
+            if (!DispatcherJobSwap.TryFinalizeCompleted(ref _tombstoneDecaySweepHandle))
+                return;
 
+            CommitCompletedTombstoneDecaySweep(maxApplies);
+        }
+
+        private void CompleteTombstoneDecaySweepForDeltaMutationBarrier(int maxApplies)
+        {
+            if (!_tombstoneDecaySweepScheduled)
+                return;
+
+            DispatcherJobSwap.TryComplete(ref _tombstoneDecaySweepHandle, forceComplete: true);
+            CommitCompletedTombstoneDecaySweep(maxApplies);
+        }
+
+        private void CommitCompletedTombstoneDecaySweep(int maxApplies)
+        {
             _tombstoneDecaySweepScheduled = false;
             _tombstoneDecayApplyPending = true;
             ApplyCollectedTombstoneDecay(math.max(1, maxApplies));

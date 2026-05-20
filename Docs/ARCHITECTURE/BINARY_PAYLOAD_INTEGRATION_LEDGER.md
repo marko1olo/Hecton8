@@ -1,11 +1,11 @@
-﻿# HECTON-8 Binary Payload Integration Ledger
+# HECTON-8 Binary Payload Integration Ledger
 
 Date: 2026-05-18
 Owner lane: H8BIN_GRAVEYARD_AUDITOR
 Status: STATIC SOURCE / FILESYSTEM LEDGER, RUNTIME PENDING
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-17 R4 Interior Actuality Boundary
+## 2026-05-20 R47 Root/Architecture Actuality Boundary
 
 This document is active only where it agrees with:
 
@@ -17,7 +17,7 @@ This document is active only where it agrees with:
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
 
-R46 root/architecture interior-authority/route-field/proof-language correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
+R47 root/architecture authority-spine/runtime-wording/counter-drift correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R46 remains the prior interior-authority/route-field/proof-language correction. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 ## Source Anchors
@@ -51,9 +51,9 @@ Evidence class: STATIC_SOURCE / FILESYSTEM path check. These anchors prove curre
 - Play-mode Data Monolith hot reload now queues same-process bakes directly instead of bouncing through loopback TCP. The socket bridge remains for external packets only, accepts only the canonical `static_data.h8bin` path, caps packet length at 1024 characters, and tears down on play-mode exit, assembly reload, and editor quit.
 - Verification status: static source and import-boundary files exist; Unity import/project regeneration, editor menu discovery, prebuild callback invocation, binary bake, profiler, and player-build proof remain pending.
 
-## 2026-05-20 DOC_GLOBAL R44 Current Boundary Note
+## 2026-05-20 DOC_GLOBAL R47 Current Boundary Note
 
-This ledger remains static binary/documentation orientation, not runtime payload load, memory, or platform proof. Current DOC_GLOBAL boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md`; R45 remains prior at `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`; R44 remains prior at `Docs/Reports/2026-05-20_DOCUMENTATION_R44_ROOT_ARCHITECTURE_INTERNAL_RESIDUE_EXACT_ROUTE_FIELDS_LOCAL.md`; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. Current static gates: `Tools/AtlasCheck.py` remains red on `ATLAS_CHECK_FAIL references=6741 missing=59` (one Dynamic Decals missing vendor asset ref, RealtimeCSG vendor icon/readme image refs, and missing HabitatDamageBakePipeline source ref in the current atlas); `Docs/Modding/Validate_Mod_API_Static.ps1` passes (`Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`) as static-tool orientation only. Runtime proof remains absent.
+This ledger remains static binary/documentation orientation, not runtime payload load, memory, or platform proof. Current DOC_GLOBAL boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md`; R46 remains prior at `Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md`; R45 remains prior at `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`; R44 remains prior at `Docs/Reports/2026-05-20_DOCUMENTATION_R44_ROOT_ARCHITECTURE_INTERNAL_RESIDUE_EXACT_ROUTE_FIELDS_LOCAL.md`; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. Current static gates: `Tools/AtlasCheck.py` remains red on `ATLAS_CHECK_FAIL references=6781 missing=61` (one Dynamic Decals vendor asset ref, RealtimeCSG vendor icon/readme image refs, missing HectonMaskChannelPacker/HectonMaterialChannelPackValidator editor source refs, and missing HabitatDamageBakePipeline source ref in the current atlas); `Docs/Modding/Validate_Mod_API_Static.ps1` passes (`Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`) as static-tool orientation only. Runtime proof remains absent.
 
 ## 2026-05-20 SHINOBU_107 Foveated Simulation Vault Alias Boundary
 
@@ -63,6 +63,18 @@ This ledger remains static binary/documentation orientation, not runtime payload
 - Native memory sentinel ownership remains at the Vault allocation site; the foveated manager records only a logical memory budget for the resolved aliases. Duplicate pointer registration of Vault aliases is explicitly avoided.
 - Verification status: static source only. `Docs/Reports/SHINOBU_107_StaticScan/SHINOBU_140_Vault_Sovereignty.json` has no `FoveatedSimulationManager.cs` finding after the local scan. Unity import, Burst compile, Play Mode, profiler, GCMonitor, and player-build proof remain pending.
 
+## 2026-05-20 SHINOBU_107 Signal/Audio/MathGuard Vault Ring Boundary
+
+- This row documents local owner-only `BufferID` casts introduced to remove private native queue/hash ownership from touched Core, Fluid, and Audio surfaces. It is not global enum approval and does not imply Unity import, Play Mode, profiler, or player-build proof.
+- `70799` is `HectonFluidEngine` `FluidImpactEvent` ring storage, owner `SystemID.Fluid`, capacity `64`, lifetime bound to the fluid engine native-array lifecycle, failure mode fail-closed event drop when the cached ring alias is unavailable.
+- `70883` is `MathGuard` invalid-number code ring storage, owner `SystemID.CoreDiagnostics`, capacity `256`, consumed by `MathGuard.DrainInvalidNumberErrors` into telemetry/replay crash proof.
+- `70884` is `MathGuard.InvalidNumberCounter64`, owner `SystemID.CoreDiagnostics`, capacity `1`, explicit 64-byte counter row: write cursor, read cursor, dropped count, overflow flag, and 48 bytes tail padding for one cache line.
+- `70885` and `70886` are `ProceduralAudioEvents` front/next-frame `AudioEvent` rings, owner `SystemID.Audio`, capacity `64` each, cold-created during listener registration only; runtime audio raises use cached aliases or drop with overflow telemetry.
+- `70889` is `PlayerCriticalProceduralAudioRenderer` `SonarEchoTap` upload ring, owner `SystemID.Audio`, capacity `32`, used for bounded sonar echo presentation upload after the capped coalescing fake.
+- `70890` is `PlayerCriticalProceduralAudioRenderer` `AudioTransitionState` prologue-transition ring, owner `SystemID.Audio`, capacity `8`, used for bounded presentation-state handoff.
+- Hot-path doctrine: after the 2026-05-20 polish pass, the touched paths do not call `GlobalDataVault.TryGetLatestCreated()` as a runtime fallback. Cold setup may allocate through `IDataVault.GetGenerationHandle`; hot paths use cached aliases, generation handles, or `TryGetGenerationHandle` fail-closed recovery under allocation lock.
+- Verification status: static source only. Exact numeric scan must show one code-owner hit for each of `70799`, `70883`, `70884`, `70885`, `70886`, `70889`, and `70890`; Unity import, Burst compile, Play Mode, profiler, GCMonitor, and player-build proof remain pending.
+
 ## 2026-05-20 SHINOBU_208 Offline Geology Mesh Manifest Boundary
 
 - Geology Forge now emits a BRG-oriented static payload at `Assets/_Project/BakedGeometry/Geology/geology_mesh_manifest.h8geom` during editor bakes.
@@ -70,6 +82,21 @@ This ledger remains static binary/documentation orientation, not runtime payload
 - Each record carries sector `double3` AUP, deterministic seed, profile hash, LOD0/1/2 triangle counts, 32B vertex stride, local bounds, three 128-bit Unity mesh GUIDs split into high/low `ulong`, BRG-ready flag, and variation.
 - The manifest is static render data only. It is not rollback state, not a new Vault route, and not a runtime owner. Runtime BRG/indirect consumers must import it through their own owner lane before claiming Play Mode proof.
 - Generated prefab/LODGroup/GameObject output has been removed from SHINOBU_208's bake lane; generated meshes remain immutable `.asset` files with AO in vertex red.
+- Geology Forge source is isolated behind `Hecton8.World.OfflineGeology.Editor.asmdef`, Editor-only, unsafe-enabled, and references only Unity Burst/Collections/Jobs/Mathematics. It does not reference sibling World or Environment runtime assemblies.
+- SDF extraction now uses a packed-nibble tetra edge LUT shared by count and extract jobs; complement-case triangle winding is reversed and validated by `ValidateComplementWinding()`. This is an editor bake implementation detail only; the manifest format and runtime ownership boundary are unchanged.
+- Geology Forge menu and window batch entrypoints use `BakeProfilesAsync`; the old public synchronous batch method was removed so CSV batch baking cannot enter the monolithic call path from owned tooling.
+- Async asset editing is not held across the full multi-frame batch. The editor opens `AssetDatabase.StartAssetEditing()` only around the current variation's saved mesh tranche and closes it before continuing telemetry/report handling.
+- Runtime mesh-generation report scans are editor proof tooling: non-batch scans time-slice both directory discovery and file scanning through `EditorApplication.update` with a 4 ms budget and cancel path, while batch-mode scans remain synchronous for deterministic report generation.
+- Async finish now clears static runner state in a `finally` block after manifest/report write attempts; `.h8geom` writer failures surface while the editor bake lane can accept a later retry.
+- A zero-output canceled async bake does not rewrite the previous `.h8geom` or report; partial manifests are written only after metrics or manifest records exist.
+- `CreateUnityMesh` now destroys transient Unity `Mesh` objects on failed upload/validation before ownership transfer, so failed payload construction does not retain native mesh memory.
+- Manifest, black-box dump, bake report, layout audit, and scanner report writes use `.tmp` replacement and preserve the previous artifact as `.bak` when replacing an existing file.
+- `GeologyVertexLayoutValidator.GetLayout()` returns a copy of the four-descriptor 32B vertex contract instead of exposing the mutable static descriptor array.
+- Manifest bounds now come from the first finite raw vertex and skip non-finite rows; all-poisoned geometry falls back to finite 1m local bounds instead of writing NaN `BoundsCenter` or `BoundsExtents` into `.h8geom`.
+- Final Burst payload kernels sanitize non-finite UV/position/normal/sample vectors before 32B vertex packing and AO/LOD processing, preventing malformed authoring rows from reaching the binary payload as NaN lanes.
+- CSV profile ingestion validates the supported header schema before parsing rows. Missing or reordered columns fail closed with an editor exception instead of silently corrupting seed, quality, LOD, or AUP fields.
+- Async result metrics and manifest-record lists now preallocate from sanitized total bakes up to the 5000-rock assignment target instead of `profiles.Count * 4`; this is editor memory hygiene only and does not change the `.h8geom` payload ABI.
+- The Geology Forge UI reuses one bake-request list for button dispatch and the SceneView point preview uses deterministic two-pass candidate sampling; this is editor facade hygiene only and does not change the `.h8geom` payload ABI.
 - Verification status: static source/docs only. No Unity import, manifest bake, BRG runtime ingestion, profiler, player-build, or asset GUID proof is claimed yet.
 
 ## 2026-05-20 SHINOBU_213 Offline LOD and Collider Manifest Boundary
@@ -78,9 +105,9 @@ This ledger remains static binary/documentation orientation, not runtime payload
 - Payload layout is fixed: `OfflineLodManifestHeader` is 64 bytes and `OfflineLodManifestRecord` is 128 bytes. Both use explicit 4-byte-aligned fields, explicit reserve lanes, and editor validation through `UnsafeUtility.SizeOf`.
 - The writer emits every field with explicit little-endian 4-byte serialization. Float lanes are serialized through `math.asuint`; this checkout uses a local `ReverseBytes(uint)` fallback because the installed `Unity.Mathematics` surface has no `math.reversebytes` API.
 - Each record carries source/output hashes, LOD1/LOD2 mesh hashes, original and generated triangle counts, primitive/convex collider counts, continuous quality/depth/ratio/tolerance fields, decimation window, warning flags, and state hash. It contains no Unity object reference, string, pointer, managed array, rollback state, or gameplay authority.
-- Generated mesh assets use a 32-byte interleaved vertex layout, primitive-first collider authoring, and bounded 8..32 support hull fallback. Invalid hull topology, failed hull asset binding, corrupt index/range/vertex streams, and mock asset reload failures fail closed instead of creating unsafe runtime payload state.
+- Generated mesh assets use a 32-byte interleaved vertex layout, primitive-first collider authoring, and bounded 8..32 support hull fallback. Invalid hull topology, undersized hull fallback scratch buffers, failed hull asset binding, corrupt index/range/vertex streams, optional source stream faults, invalid/default output lanes, invalid mock segment counts, and mock asset reload failures fail closed instead of creating unsafe runtime payload state.
 - The manifest is immutable editor output only. It is not a `GlobalDataVault` buffer, not netcode rollback state, and not a runtime owner. Runtime BRG/LOD consumers must import it through their own owner lane before claiming Play Mode, Burst, profiler, GC, or player-build proof.
-- Verification status: static source/docs only. Pre-endian local Roslyn probe previously passed under `Temp/SHINOBU_213_CompileProbe`, but the explicit-endian, bounded-hull, fail-closed asset-binding, hull-safety, index-stream, mock-reload, binary-ledger, and hot geometry DTO explicit-layout edits still require a post-endian safety-index hot-struct probe when CPU drops below the build gate. Unity import, manifest bake, generated asset inspection, profiler/GCMonitor, and player-build proof remain pending.
+- Verification status: static source/docs only. Pre-endian local Roslyn probe previously passed under `Temp/SHINOBU_213_CompileProbe`, but the explicit-endian, bounded-hull, fail-closed asset-binding, hull-safety, index-stream, mock-reload, binary-ledger, hot geometry DTO explicit-layout, stream/output-bounds, hull fallback scratch-bounds, and job guard edits still require a post-endian safety-index hot-struct stream-bounds hull-fallback job-guard probe when CPU drops below the build gate. Unity import, manifest bake, generated asset inspection, profiler/GCMonitor, and player-build proof remain pending.
 
 ## 2026-05-19 SHINOBU_160 Asynchronous Telemetry Export Vault Lane
 
@@ -416,7 +443,7 @@ scope was binary assets, not only the verifier's `.bin` / `.h8bin` extension set
 
 | Class | Meaning |
 |---|---|
-| `ACTIVE_RUNTIME_WIRED` | Current main runtime source resolves or opens the exact payload path. Unity scene/profiler proof is still pending unless stated separately. |
+| `STATIC_SOURCE_RUNTIME_PATH_PRESENT` | Current main runtime source resolves or opens the exact payload path. Unity scene/profiler proof is still pending unless stated separately. |
 | `ACTIVE_CODEPATH_NOT_SCENE_PROVEN` | A runtime component can load the file, but no prefab/scene/bootstrap reference proves that component is live. |
 | `READER_PRESENT_NOT_WIRED` | A C# reader exists for this exact format/path family, but no production instantiation was found. |
 | `EDITOR_OR_TEST_ONLY` | Current exact load is editor tooling, tests, or inspector-only code. |
@@ -506,9 +533,9 @@ scope was binary assets, not only the verifier's `.bin` / `.h8bin` extension set
 
 | File | Current status | Runtime/code evidence | Action |
 |---|---|---|---|
-| `Data/Audio/Acoustic_LUT.bin` | `ACTIVE_RUNTIME_WIRED`, runtime proof pending | `SpatialAudioManager.cs` defines `AcousticLutRelativePath`, calls `TryLoadAcousticLutFallbackCold`, reads the file in a cold init path, `GameBootstrapper.cs` resolves/registers `SpatialAudioManager`, and `Assets/_Project/Prefabs/Audio/PFB_SpatialAudioManagerRoot.prefab` contains the component. This is static source/prefab evidence, not Unity scene/import/profiler proof. | Keep. This is a valid acoustic cinematic cheat: sampled Sabine/damping lookup instead of live acoustic solving. |
-| `Data/Visuals/Water_Extinction_Matrix.bin` | `ACTIVE_RUNTIME_WIRED` | `LutArrayResolver.EnsureLoadedAndBound` is marked `[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]`, resolves `Data/Visuals/Water_Extinction_Matrix.bin`, and `GlobalShaderDispatcher` consumes the bound texture. | Keep. This is a valid Beer-Lambert visual LUT fake. Runtime proof still needs Unity/profiler evidence. |
-| `Data/Visuals/Biolum_Profiles.bin` | `ACTIVE_RUNTIME_WIRED`, shader/scene/profiler proof pending | `BiolumPulseSyncRuntime` owns a scene-local runtime host fallback, runtime/editor asmdef split, shader buffer publication, and deterministic CPU oscillator path. | Keep. Static boot/shader source wiring exists; verify with Unity shader import, Profiler, and Frame Debugger before claiming measured frame impact. |
+| `Data/Audio/Acoustic_LUT.bin` | `STATIC_SOURCE_RUNTIME_PATH_PRESENT`, runtime proof pending | `SpatialAudioManager.cs` defines `AcousticLutRelativePath`, calls `TryLoadAcousticLutFallbackCold`, reads the file in a cold init path, `GameBootstrapper.cs` resolves/registers `SpatialAudioManager`, and `Assets/_Project/Prefabs/Audio/PFB_SpatialAudioManagerRoot.prefab` contains the component. This is static source/prefab evidence, not Unity scene/import/profiler proof. | Keep. This is a valid acoustic cinematic cheat: sampled Sabine/damping lookup instead of live acoustic solving. |
+| `Data/Visuals/Water_Extinction_Matrix.bin` | `STATIC_SOURCE_RUNTIME_PATH_PRESENT` | `LutArrayResolver.EnsureLoadedAndBound` is marked `[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]`, resolves `Data/Visuals/Water_Extinction_Matrix.bin`, and `GlobalShaderDispatcher` consumes the bound texture. | Keep. This is a valid Beer-Lambert visual LUT fake. Runtime proof still needs Unity/profiler evidence. |
+| `Data/Visuals/Biolum_Profiles.bin` | `STATIC_SOURCE_RUNTIME_PATH_PRESENT`, shader/scene/profiler proof pending | `BiolumPulseSyncRuntime` owns a scene-local runtime host fallback, runtime/editor asmdef split, shader buffer publication, and deterministic CPU oscillator path. | Keep. Static boot/shader source wiring exists; verify with Unity shader import, Profiler, and Frame Debugger before claiming measured frame impact. |
 
 ## Candidate Payloads With Reader But Missing Wiring
 
@@ -531,7 +558,7 @@ scope was binary assets, not only the verifier's `.bin` / `.h8bin` extension set
 | 1 | `Assets/_Project/Data/Localization/Babel_Dictionary.h8bin` | 1534512 | `SCRIPT_TOOL_ONLY` | Full `H8BD` Babel localization dictionary, hashed text pool for localization/content. | Package or copy through a real localization bootstrap if required; otherwise it is Unity import ballast. Exact asset GUID/path is not runtime-wired. |
 | 2 | `Assets/_Project/Data/UI/GlitchTable.bytes` | 64 | `STATIC_LEDGER_MIRROR_ONLY` | HUD glitch glyph substitution table. | Current `GlitchTable.cs` embeds the bytes directly. Keep only if designers need the asset as authoring evidence. |
 | 3 | `Data/AI/Navigation_Tuning.h8bin` | 1280 | `SCRIPT_TOOL_ONLY` | AI path/potential-field tuning cache. | Logical owner is AI navigation bootstrap/DataVault import. No main runtime load found. |
-| 4 | `Data/Audio/Acoustic_LUT.bin` | 524288 | `ACTIVE_RUNTIME_WIRED` | Acoustic RT60/damping LUT. | Keep and verify in Unity with GC/profiler. |
+| 4 | `Data/Audio/Acoustic_LUT.bin` | 524288 | `STATIC_SOURCE_RUNTIME_PATH_PRESENT` | Acoustic RT60/damping LUT. | Keep and verify in Unity with GC/profiler. |
 | 5 | `Data/Balance/Baked/Babel_Dictionary.h8bin` | 1616 | `READER_PRESENT_NOT_WIRED`, `ALIGNED_PRODUCT_FILE`, `CACHE_BTREE_PRESENT` | Small balance string pool. | Cache B-Tree present. Do not wire until source-of-truth decision is made. |
 | 6 | `Data/Balance/Baked/H8StaticData.bin` | 1328 | `READER_PRESENT_NOT_WIRED`, `CACHE_BTREE_PRESENT`, `CACHE_LINE_RECORD_PAYLOADS` | Small static balance DTO lookup blob. | Cache B-Tree present; every payload record starts on a 64-byte boundary. Reconcile with DataMonolith. Do not let both contracts become parallel truth. |
 | 7 | `Data/Economy/Crafting_Costs.h8bin` | 7424 | `EDITOR_OR_TEST_ONLY` | Crafting recipe/ingredient cost table. | Promote only through economy owner and DataVault importer. |
@@ -566,11 +593,11 @@ scope was binary assets, not only the verifier's `.bin` / `.h8bin` extension set
 | 36 | `Data/UX/VR_Comfort_Profiles.h8bin` | 1472 | `SCRIPT_TOOL_ONLY` | VR comfort profile table. | Logical owner is UX/VR comfort runtime. No load found. |
 | 37 | `Data/UX/VR_Comfort_Profiles_Toaster.h8bin` | 1120 | `SCRIPT_TOOL_ONLY` | Low-tier VR comfort profile table. | Needs UX tier selector. |
 | 38 | `Data/UX/VR_Comfort_RTXOverkill.h8bin` | 560 | `SCRIPT_TOOL_ONLY` | High/overkill VR comfort supplement. | Needs UX tier selector and headset/platform guard. |
-| 39 | `Data/Visuals/Biolum_Profiles.bin` | 25936 | `ACTIVE_RUNTIME_WIRED`, shader/scene/profiler proof pending | Bioluminescence profile table. | SHINOBU_74 added the runtime host fallback, purged static-instance/Awake ownership, isolated runtime/editor asmdefs, wired indirect vegetation packed-buffer shader consumption, guarded shader reads by actual published GPU page count, replaced the 16-slot global vector-array bridge with `_GlobalBiolumDearLieGroups` float4x4, packed the Dear Lie sync group into the existing spatial pulse TEXCOORD lane, detached frame counter advancement from blackbox telemetry writes, moved the CPU oscillator Burst job to deterministic float mode, replaced per-instance trigonometric pulse work with a smoothed triangle/hash waveform fake, uses squared-distance math for per-instance pulse wavefront/falloff while damage-signal radius still computes a cold/control-path sqrt from damage magnitude, removed the private CSV `byte[]` staging path, and made `GlobalQualityWeight` drive update cadence from 5Hz to per-frame; verify with Unity shader import, Profiler, and Frame Debugger before claiming measured frame impact. |
+| 39 | `Data/Visuals/Biolum_Profiles.bin` | 25936 | `STATIC_SOURCE_RUNTIME_PATH_PRESENT`, shader/scene/profiler proof pending | Bioluminescence profile table. | SHINOBU_74 added the runtime host fallback, purged static-instance/Awake ownership, isolated runtime/editor asmdefs, wired indirect vegetation packed-buffer shader consumption, guarded shader reads by actual published GPU page count, replaced the 16-slot global vector-array bridge with `_GlobalBiolumDearLieGroups` float4x4, packed the Dear Lie sync group into the existing spatial pulse TEXCOORD lane, detached frame counter advancement from blackbox telemetry writes, moved the CPU oscillator Burst job to deterministic float mode, replaced per-instance trigonometric pulse work with a smoothed triangle/hash waveform fake, uses squared-distance math for per-instance pulse wavefront/falloff while damage-signal radius still computes a cold/control-path sqrt from damage magnitude, removed the private CSV `byte[]` staging path, and made `GlobalQualityWeight` drive update cadence from 5Hz to per-frame; verify with Unity shader import, Profiler, and Frame Debugger before claiming measured frame impact. |
 | 40 | `Data/Visuals/Refraction_LUT_RGBA16F.bin` | 524288 | `SCRIPT_TOOL_ONLY` | Base refraction LUT. | Logical owner is water/refraction shader path. No load found. |
 | 41 | `Data/Visuals/Refraction_LUT_RGBA16F_MINIMAL_128.bin` | 131072 | `SCRIPT_TOOL_ONLY` | Minimal low-tier refraction LUT. | Needs visual scalability selector. |
 | 42 | `Data/Visuals/Refraction_LUT_RGBA16F_ULTRA_512.bin` | 2097152 | `SCRIPT_TOOL_ONLY` | Ultra refraction LUT. | Needs visual scalability selector and VRAM budget gate. |
-| 43 | `Data/Visuals/Water_Extinction_Matrix.bin` | 393216 | `ACTIVE_RUNTIME_WIRED` | Base water extinction LUT. | Keep and profile. |
+| 43 | `Data/Visuals/Water_Extinction_Matrix.bin` | 393216 | `STATIC_SOURCE_RUNTIME_PATH_PRESENT` | Base water extinction LUT. | Keep and profile. |
 | 44 | `Data/Visuals/Water_Extinction_Matrix_Overkill.bin` | 1572864 | `SCRIPT_TOOL_ONLY` | High/overkill water extinction variant. | Current resolver loads only the base file. Needs selector. |
 | 45 | `Data/Visuals/Water_Extinction_Matrix_Toaster.bin` | 24576 | `SCRIPT_TOOL_ONLY` | Toaster water extinction variant. | Current resolver uses analytical fallback on low-memory targets, not this file. |
 | 46 | `Data/Visuals/Water_Fog_Density_LUT.bin` | 3008 | `SCRIPT_TOOL_ONLY` | Water fog density preview/validation LUT. | No main runtime load found. |
@@ -1063,8 +1090,12 @@ NativeArray aliases for profiles, counts, or CSV scratch.
 Core signal frame dispatch no longer virtual-dispatches fallback lanes from `ISignalLane[]`: `FlushPreSimulation()` and
 `ClearPostSimulationSnapshots()` use generated generic direct calls for Core-known lanes. Non-generated sibling-owned
 typed lanes register cached closed-generic flush/clear delegates into `SignalLaneDispatch[]`, preserving compile-wall
-isolation without starving their snapshots. The legacy interface registry remains for cold identity/disposal surfaces,
-and telemetry copies use cached closed-generic delegates instead of per-lane interface calls.
+isolation without starving their snapshots. The legacy interface/adapter registry is removed; cold teardown is stored as
+cached `SignalLaneDisposeDelegate[]`, and telemetry copies plus `ReportSignalLaneTelemetry()` sampling use cached
+closed-generic delegates instead of per-lane interface calls. `SignalLaneTelemetry.Reserved2` now packs
+pushed-last-flush in low32 and corrupted-total in high32, preserving the 32-byte telemetry ABI while restoring exact
+black-box counters. `SignalLaneTelemetry.Flags` bit `16` marks lanes with corrupted payloads, and corrupted-only lanes
+still enter per-lane crash telemetry instead of being skipped when snapshot/drop counts are zero.
 
 Status: `STATIC SOURCE UPDATED - COMPILE BLOCKED BY CPU GUARD`. Route card:
 `Docs/ARCHITECTURE/SHINOBU_200_SIGNAL_THREAD_CONTENTION_ROUTE_CARD.md`. Blackbox dump path:
@@ -1436,7 +1467,7 @@ snapshots, and DOD replay sidecars are now source-owned explicit layouts. Inerti
 divisible by 8 (`0/24/48/72` in `CompassStateDTO`, `0/24/48` in `InertialNavigationSnapshot`); replay `long`/`ulong`
 hash and timestamp lanes remain 8-byte aligned.
 
-Runtime boundary: this is ABI proof only. No new owner, registry route, Vault allocation, managed sidecar, or replay
+Runtime boundary: this is ABI evidence only. No new owner, registry route, Vault allocation, managed sidecar, or replay
 schema widening was introduced. File sizes were preserved where replay/navigation contracts may already be consumed by
 tools or runtime readers. Static verification reports 0 `LayoutKind.Sequential` hits and 0 unaligned 8-byte
 `FieldOffset` lanes in the three touched files; Unity import/Burst/player proof remains blocked behind the existing
@@ -1754,6 +1785,7 @@ SHINOBU_209 owns Editor-only offline wreckage deformation output for man-made st
 
 - Damage-state map payloads are generated as exact 32-byte `MeshDamageStateMappingDTO` records: `PristineMeshHash`, `StressedMeshHash`, `RupturedMeshHash`, `CollapsedMeshHash`, and 16 bytes of explicit zero padding. The writer clears the stack span before emitting little-endian values, writes through unique same-volume `.tmp.<processId>.<ordinal>` paths, publishes existing artifacts with `File.Replace` before Unity asset import, and retries once after re-observing final-path state if another Editor tool changes final existence between the first observation and commit.
 - Generated visual `.mesh` assets use an explicit interleaved 64-byte vertex DTO and immutable Stressed/Ruptured/Collapsed states. Their output paths include a sanitized source name plus source-path hash and are refreshed in place with `EditorUtility.CopySerialized` on rebake, preserving existing `.meta` GUIDs. Runtime systems are expected to synchronize only the integer damage-state index and consume mesh hashes/references through their own owner lanes.
+- Offline deformation Burst jobs sanitize non-finite and absurd quality/radius/torsion/damage/intensity/profile inputs inside the job boundary before `sqrt`, `rsqrt`, `rcp`, trigonometry, or tear `smoothstep` math. This is editor asset-generation hardening only and does not add runtime payload ownership.
 - Collision output is a Dear Lie proxy: an offline 8-point support hull mesh under the 256-point budget, not torn visual topology as runtime collision truth.
 - Thin-axis collision proxy rule: valid measured support bounds are preserved. Any collapsed axis expands to a 0.01 m half-extent and sets `WarningHullBoundsExpanded` in the 64-byte counter row/report/black-box warning flags; only invalid or non-finite support bounds fall back to a unit cube.
 - Black-box dump payload `Docs/AgentLogs/Dump_SHINOBU_209.bin` is fixed binary: zero-cleared 32-byte little-endian header plus retained `OfflineWreckageTelemetryEntry` rows at 64 bytes each. The writer copies raw DTO rows through `UnsafeUtility.CopyStructureToPtr` and publishes through unique same-volume temp files plus `File.Replace` for existing dumps.
@@ -1765,7 +1797,7 @@ SHINOBU_209 owns Editor-only offline wreckage deformation output for man-made st
 - Editor preview lifetime is bounded: the transient preview Mesh uses `HideFlags.HideAndDontSave` and `OfflineWreckagePreviewLifecycle` disposes both preview Mesh and black-box telemetry ring before assembly reload/editor quit.
 - Native allocation tracking: the black-box telemetry ring registers through `Hecton8.Core.Contracts.NativeMemoryTrackingBridge` as owner `OfflineWreckageBlackBox`, label `s_ring`, lifetime `Session`, and unregisters before disposing. This avoids a direct root Core dependency from the offline baker while preserving sentinel visibility when the bridge is installed.
 
-Verification status: static source and docs only. Unity import, Burst compile, actual Forge bake, mesh asset GUID proof, Console, profiler/GCMonitor, and player-build proof remain pending behind the CPU/build guard.
+Verification status: static source and docs only. Pass 22 static scans found finite scalar guards in the owned bake jobs and no unsanitized `GlobalQualityWeight`/radius/damage/intensity patterns in those kernels. Unity import, Burst compile, actual Forge bake, mesh asset GUID proof, Console, profiler/GCMonitor, and player-build proof remain pending behind the CPU/build guard.
 
 ## 2026-05-20 SHINOBU_217 Construction Socket Preview And CSR Vault Lanes
 
@@ -2218,6 +2250,15 @@ is published only when fallback lifepod is the final route, preserving selected-
 hydration now uses `GenerateMockRespawnPointsJob.Run(bays.Length)` rather than direct `Execute(i)` calls. No payload size
 or Vault lane changed.
 
+Loop 70 source/proof correction: the prior Loop 69 proof was found ahead of source by read-only subagent audit. The
+runtime cold default hydration path now actually calls `mockJob.Run(bays.Length)`, and focused source scans show no
+remaining `mockJob.Execute` hits. No payload size, Vault lane, signal payload, asmdef edge, or gameplay-frame job fence
+changed.
+
+Loop 71 cold-handle drift correction: the same hydration block now contains no `mockJob.Schedule`, no local `mockHandle`,
+and no orphan `DispatcherJobFence.TryComplete` after the `Run` call. Mock med-bay rows are seeded synchronously in cold
+default hydration before `_defaultsInitialized` is set; no binary payload changed.
+
 ## 2026-05-20 SHINOBU_222 Drainage Solver Authority Addendum
 
 `PumpNodeDTO` remains an explicit 32-byte row and `PipeEdgeDTO` remains an explicit 64-byte row; no binary payload size,
@@ -2230,6 +2271,60 @@ pre-created UI Toolkit value fields updated through `SetValueWithoutNotify`, lea
 contract untouched. Static scans found no direct `.Execute()`, stale Vault pointer-handle API, synthetic full-power
 fallback, `StringBuilder`, `ToString(`, `CultureInfo`, or `Mathf.Min` in SHINOBU_222 files. Unity import, Burst
 Inspector, Profiler/GCMonitor 0 B, and player-build proof remain pending behind the CPU/build gate.
+
+## 2026-05-20 SHINOBU_202 Kinetic Character Animator Generation Descriptor Addendum
+
+`KineticCharacterAnimatorRuntime` no longer persists legacy pointer-bearing Vault descriptors. Rig, frame-input,
+parent-index, bind-pose, bone-output, bone-matrix, IK-target, frame-stats, telemetry-ring, telemetry-cursor, tuning, and
+CSV-scratch lanes are stored as 16-byte `VaultGenerationHandle<T>` descriptors and resolved into method-local
+`NativeArray<T>` views through `IDataVault.TryResolveHandle` before editor reads, CSV ingestion, emergency mock rig
+generation, Burst solve scheduling, telemetry reads, blackbox dumps, or GPU matrix upload.
+
+The external `PlayerKinematicState` and `VoxelSdfTexture3D` reads no longer use direct `TryGetBuffer` views. They acquire
+transient generation descriptors through `TryGetGenerationHandle` and resolve local views for the current phase only.
+DataVault replacement, disable, and destroy paths complete any outstanding kinetic solver job before releasing exact
+owned descriptors through `IDataVault.ReleaseBuffer`. Static source only: Unity import, Burst Inspector,
+profiler/GCMonitor, and player-build proof remain pending behind the current compile/build gate.
+
+## 2026-05-20 SHINOBU_202 Laser Cutter DOD Scalability Descriptor Addendum
+
+`LaserCutterDodRuntime.ResolveGlobalQualityWeight()` no longer uses `TryGetBufferHandle` for `ShinobuScalabilityState`.
+The quality scalar is read through a transient `VaultGenerationHandle<ScalabilityStateDTO>` and a local
+`IDataVault.TryResolveHandle` view. No cut payload DTO, BufferID ownership, shader parameter, or VFX algorithm changed.
+Static source only: Unity import, profiler/GCMonitor, and player-build proof remain pending behind the current
+compile/build gate.
+
+## 2026-05-20 SHINOBU_202 Tool Kinematics Editor Facade Descriptor Addendum
+
+`ToolKinematicsTunerWindow` no longer caches legacy pointer-bearing Vault descriptors. The editor tuning row, runtime
+state rows, frame-input rows, hit rows, pose rows, beam vertices, and beam-count rows are stored as
+`VaultGenerationHandle<T>` descriptors and resolved into local editor views through `IDataVault.TryResolveHandle` while
+the window or SceneView gizmo is active. The window releases only descriptors it acquired when closed or rebound to a new
+Vault. Runtime `ToolKinematicsRuntime.cs` still contains legacy ref-return APIs and is intentionally left for a separate
+guarded runtime pass. Static source only: Unity import and editor Play Mode proof remain pending behind the current
+compile/build gate.
+
+## 2026-05-20 SHINOBU_202 Tool Kinematics Runtime Generation Descriptor Addendum
+
+`ToolKinematicsRuntime` no longer persists legacy pointer-bearing Vault descriptors. Tool state, frame input, hit result,
+IK output, recoil state, tuning, screen export, telemetry, mock trigger, mock carve, heat signal, spark request, beam
+vertex, beam-count, and pose-output lanes are stored as 16-byte `VaultGenerationHandle<T>` descriptors and resolved into
+method-local `NativeArray<T>` views through `IDataVault.TryResolveHandle` before fixed tick scheduling, slow tick readback,
+CSV tuning, telemetry, and blackbox dump work.
+
+The unused public `ToolKinematicsVaultAccess` byref accessor was removed instead of being adapted, because returning refs
+from transient Vault views would encourage mutation outside a dispatcher phase. Disable, destroy, and Vault rebind paths
+release only exact tool kinematics descriptors through `IDataVault.ReleaseBuffer`. Static source only: Unity import, Burst
+Inspector, profiler/GCMonitor, and player-build proof remain pending behind the current compile/build gate.
+
+## 2026-05-20 SHINOBU_202 Tools And Animation Pointer Audit Closure Addendum
+
+The broad SHINOBU pointer scan over `Assets/_Project/Scripts/Animation` and `Assets/_Project/Scripts/Tools` now reports
+zero forbidden legacy Vault pointer API hits for `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`,
+`TryGetBuffer`, `.Resolve(...)`, `.ptr`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `ResolvePointer`,
+`ResolveBuffer(`, or `GenerationID`. `ToolDurabilitySystem` already used generation descriptors; its local helper was
+renamed to `TryResolveDurabilityView` to remove false-positive audit noise. Static source only: Unity import,
+profiler/GCMonitor, and player-build proof remain pending behind the current compile/build gate.
 
 ## 2026-05-20 SHINOBU_202 Procedural Bone Blender Generation Descriptor Addendum
 
@@ -2253,33 +2348,19 @@ Final route recheck: `GenerateMockDrainageNetwork()` now invokes `DrainageMockNe
 registers `_mockSeedHandle`, and finalizes through `DispatcherJobFence`.
 The full SHINOBU_222 forbidden-pattern scan reported zero `.Execute()` matches. Latest compile gate samples stayed at
 68-100% CPU with zero active `dotnet`/`csc` processes, still above the allowed build threshold.
-## 2026-05-20 SHINOBU_217 ModuleTemplate Ghost Prefab Bypass Addendum
+## 2026-05-20 SHINOBU_217 Data-Only ModuleTemplate Preview Addendum
 
 The construction socket binary payload surface is unchanged. `GhostPreviewDTO` remains the owner-local Vault row at
 `70370`, `SocketStateDTO` remains the 64-byte socket truth row, and the CSR lanes remain `70371`/`70372`.
 
-`PlayerBuilder.SpawnGhost()` now routes every buildable with a `ModuleTemplate` through the reusable runtime ghost proxy
-instead of `ObjectPoolManager.Spawn(activeBuildable.ghostPrefab)`. This keeps active socket-module preview authority on
-template socket definitions, Vault ghost rows, and the Dear Lie shader signal rather than an authored preview-prefab
-hierarchy. Non-template buildables keep the existing prefab branch and are outside the SHINOBU socket-module route.
+`PlayerBuilder.SpawnGhost()` now releases any legacy ghost object, sets `_builderGhostPreviewActive`, and stores preview
+pose/rotation/scale fields instead of `ObjectPoolManager.Spawn(activeBuildable.ghostPrefab)` or
+`ConstructionRuntimeProxyFactory.TryAcquireGhostProxy()`. This keeps active socket-module preview authority on template
+socket definitions, Vault ghost rows, and the Dear Lie shader signal rather than an authored preview-prefab hierarchy.
 
 Static source only: no BufferID, DTO size, signal layout, or asmdef edge changed. Unity import, profiler/GCMonitor, Frame
 Debugger, and player-build proof remain pending behind the existing Core.Memory compile wall.
 
-## 2026-05-20 SHINOBU_153 Player Context Service Cache Addendum
-
-`ProceduralOreSpawner` binary payloads are unchanged in this addendum. `ResourceNodeDTO` remains 128 bytes, telemetry remains
-the fixed 300-frame Vault ring, indirect args remain the existing `GeologyIndirectArgsDTO` row, and no Vault ID or asmdef
-edge changed.
-
-The recurring geology sector path no longer calls `WorldRuntimeReferenceUtility.TryResolvePlayerTransform` or reads
-`GlobalRegistry.Player`. `IPlayerRuntimeContext` is cached during enable and maintained through
-`GlobalRegistryServiceSlot.Player` hot-swap events. AUP sector refresh now consumes that cached contract to resolve the
-player pose/current AUP, while `playerTransform` is refreshed only as a presentation/telemetry runtime view.
-
-Static source only: owned-source scans found no direct buffer APIs, legacy Vault pointer handles, hot native allocation,
-raw `.Complete()`, Unity/System random, Unity time, file byte staging, LINQ, string-format, or direct sibling-domain hits.
-Unity import, Burst Inspector, Profiler/GCMonitor, and player-build proof remain pending behind the no-premature-build gate.
 ## 2026-05-20 SHINOBU_201 Gameplay ParallelFor Safety Proof Addendum
 
 Gameplay buoyancy payloads are unchanged. `BuoyancyStateDTO` remains an explicit 64-byte row
@@ -2299,3 +2380,948 @@ Static source only: safety proof markers cover the three gameplay suppression fi
 are balanced, the scoped forbidden hot-path pattern scan returned no matches, and diff check reports only repository
 LF/CRLF normalization warnings. Unity import, Burst Inspector, profiler/GCMonitor, and player-build proof remain
 pending behind the CPU/build gate.
+
+## 2026-05-20 SHINOBU_153 Player Context Service Cache Addendum
+
+`ProceduralOreSpawner` binary payloads are unchanged in this addendum. `ResourceNodeDTO` remains 128 bytes, telemetry remains
+the fixed 300-frame Vault ring, indirect args remain the existing `GeologyIndirectArgsDTO` row, and no Vault ID or asmdef
+edge changed.
+
+The recurring geology sector path no longer calls `WorldRuntimeReferenceUtility.TryResolvePlayerTransform` or reads
+`GlobalRegistry.Player`. `IPlayerRuntimeContext` is cached during enable and maintained through
+`GlobalRegistryServiceSlot.Player` hot-swap events. AUP sector refresh now consumes that cached contract to resolve the
+player pose/current AUP, while `playerTransform` is refreshed only as a presentation/telemetry runtime view.
+
+Static source only: owned-source scans found no direct buffer APIs, legacy Vault pointer handles, hot native allocation,
+raw `.Complete()`, Unity/System random, Unity time, file byte staging, LINQ, string-format, or direct sibling-domain hits.
+Unity import, Burst Inspector, Profiler/GCMonitor, and player-build proof remain pending behind the no-premature-build gate.
+
+## 2026-05-20 SHINOBU_224 Active Equipment Durability Gate Addendum
+
+Active equipment binary payloads are unchanged. `ActiveEquipmentDTO` remains an explicit 32-byte row, the SHINOBU active
+equipment Vault lanes keep their existing BufferIDs, and no signal payload, shader payload, or asmdef edge changed.
+
+The durability bridge now checks `enableDurabilityDrain` and `_decayScheduled` before resolving its five Vault-backed
+durability lanes. `HasPendingDecay()` consumes the already-resolved pending-decay `NativeArray<float>` view for the current
+phase instead of resolving the descriptor a second time. This preserves the same scheduled `DurabilityDecayJob` graph while
+removing metadata traffic from disabled/already-scheduled frames.
+
+Static source only: focused scans over SHINOBU_224 runtime files found no manual `job.Execute(i)` calls, no persistent
+`NativeArray<T>` aliases, no legacy pointer-bearing Vault APIs, no hot native allocations, no LINQ/`foreach`, and no
+tool-prefab `Update`/coroutine path. CPU sampled 100%, so no rebuild was launched under the explicit build gate.
+
+Follow-up readiness correction: `ModularEquipmentEngine.IsServiceReady` is now side-effect free. It no longer reads
+`GlobalRegistry.ModularEquipment` or calls `TryResolveEquipmentViews(out _)`; heartbeat/readiness probes check only local
+service flags and existing `VaultGenerationHandle<T>` descriptors. `GlobalRegistryServiceSlot.ModularEquipment` rebind
+notifications update `_registeredService`, preserving ownership truth without a live registry lookup from the property.
+
+Follow-up brownout visual-query correction: wireless and tool brownout feedback are presentation-only scalar queries.
+They now resolve the tool slot through the local owner mirror and, for wireless gating, read only the ToolState generation
+descriptor through a no-acquire view. They no longer require a full equipment Vault view resolve for cosmetic flicker
+polling. Payload layouts, BufferIDs, signal lanes, shader payloads, and asmdef edges are unchanged.
+
+Follow-up scalar getter correction: `TryGetToolState()` and `TryGetToolStats()` now read only their required ToolState or
+ToolStats generation descriptor after slot lookup. Public scalar getters layered on stats/state no longer validate the
+unrelated active-equipment, published-state, AUP, grid-load, wear-rate, telemetry, tuning, or hardware-spec lanes. Payload
+layouts, BufferIDs, signal lanes, shader payloads, and asmdef edges remain unchanged.
+
+Follow-up published-read correction: published active-equipment DTO reads now observe only the published-state descriptor,
+telemetry reads observe only the telemetry ring/cursor descriptors, and tuning reads use the existing no-acquire tuning
+descriptor helper. This does not change payload layouts, BufferIDs, signal lanes, shader payloads, or asmdef edges.
+
+## 2026-05-20 SHINOBU_201 Force Packet Single-Store Addendum
+
+Gameplay buoyancy binary payloads are unchanged. `BuoyancyForcePacketDTO` remains an explicit 128-byte row:
+`CurrentAUP@0`, `NetForce@24`, `BuoyantForce@36`, `GravityForce@48`, `DragForce@60`, `FlowForce@72`,
+`SubmergedFraction@84`, `DepthMeters@88`, `FluidDensityKgPerM3@92`, `EntityHashID@96`, `Flags@100`,
+`StateIndex@104`, `FrameIndex@108`, `DebugVelocity@112`, `_pad0@124`. No BufferID, Vault descriptor,
+signal payload, shader payload, asmdef edge, or runtime owner changed.
+
+`EvaluateBuoyancyJob` no longer clears a valid scheduled force-packet slot before writing the final queued packet.
+The default packet write now occurs only for invalid/out-of-active scheduled lanes, preserving stale-packet safety
+while removing one redundant 128-byte native store from every valid evaluated row. The dependency route remains
+runtime Vault resolve -> buoyancy evaluation -> force-packet compaction -> telemetry reduction.
+
+Static source only: scoped scans found balanced braces, no forbidden hot-path allocation/random/Pack/property/parser
+patterns, no non-ASCII in the touched C# source, and only repository LF/CRLF normalization warnings. CPU sampled 100%,
+so no build/rebuild was launched under the explicit build gate. Unity import, Burst Inspector, profiler/GCMonitor, and
+player-build proof remain pending.
+
+## 2026-05-20 SHINOBU_201 Force Packet Compaction Read Elimination Addendum
+
+Gameplay buoyancy binary payloads are unchanged. `BuoyancyForcePacketDTO` remains 128 bytes and `BuoyancyCounterDTO`
+remains 64 bytes; no BufferID, Vault descriptor, signal payload, shader payload, asmdef edge, or runtime owner changed.
+
+`CompactBuoyancyForcePacketsJob` no longer reads `ForcePackets[write]` into a preserved packet for every candidate.
+The compacted packet count remains the sole consumer authority. Invalid candidates can overwrite only the next excluded
+slot because `write` is not advanced; later valid candidates overwrite that slot before it becomes authoritative.
+
+Static source only: `SelectPacket` and the `preserved` destination read were removed, braces/preprocessor/non-ASCII are
+balanced in the touched source, forbidden hot-path scans returned no matches, and source diff check reports only the
+repository LF/CRLF normalization warning. Unity import, Burst Inspector, profiler/GCMonitor, and player-build proof
+remain pending behind the CPU/build gate.
+
+## 2026-05-20 SHINOBU_201 Mock Seed Count Payload Addendum
+
+Gameplay buoyancy binary payloads are unchanged. `BuoyancyStateDTO` remains 64 bytes and `BuoyancyDebugForceDTO`
+remains 128 bytes; no BufferID, Vault descriptor, signal payload, shader payload, asmdef edge, or runtime owner changed.
+
+`GenerateMockBuoyantObjectsJob` now receives `StateCount` and `DebugForceCount` from the runtime scheduler after Vault
+array resolution. The job uses these value counts for row bounds instead of probing state/debug NativeArray creation and
+length metadata per seeded row. Default zero counts keep uninitialized job structs fail-closed.
+
+Static source only: jobs/runtime braces and preprocessor state are balanced, non-ASCII scans are clean, forbidden
+hot-path scans returned no matches, and source diff check reports only repository LF/CRLF normalization warnings. Unity
+import, Burst Inspector, profiler/GCMonitor, and player-build proof remain pending behind the CPU/build gate.
+
+## 2026-05-20 SHINOBU_201 Flow Sample/Dump Route Addendum
+
+Gameplay buoyancy and SIMD DTO layouts are unchanged. `BuoyancyFlowSampleDTO` remains an explicit 64-byte row:
+`SampleAUP@0` 24 bytes, `FlowVelocity@24` 12 bytes, `RadiusMeters@36`, `CellHash@40`, `Flags@44`,
+`_pad0@48`, `_pad1@56`. No BufferID, Vault descriptor, signal payload, shader payload, asmdef edge,
+or runtime owner changed.
+
+`EvaluateBuoyancyJob` now receives `FlowSampleCount` from the scheduler and samples the Vault-owned flow row through
+a clamped value count instead of branching on `FlowSamples.IsCreated && FlowSamples.Length > 0` inside
+`ResolveFlowVelocity`. Default/inactive flow rows still select the analytic triangle-wave Dear Lie path; populated
+rows can blend sampled flow without introducing CPU fluid simulation or a private cache.
+
+The gameplay buoyancy fault dump alias now targets `Docs/AgentLogs/Dump_SHINOBU_201_Buoyancy.bin` through
+`BuoyancyDisplacementConstants.AgentDumpRelativePath`. The SIMD telemetry recorder retains
+`Docs/AgentLogs/Dump_SHINOBU_201.bin` for raw `SimdTelemetryEntry` rows, and the historical gameplay domain alias
+`Docs/AgentLogs/Dump_FLUID_DYNAMICS.bin` remains in place. This supersedes the earlier temporary shared SHINOBU_201
+filename so `BuoyancyTelemetryEntry` and `SimdTelemetryEntry` payloads cannot collide.
+
+Static source only: scoped scans found no stale `Dump_SHINOBU_158` in SHINOBU_201-owned buoyancy source, no forbidden
+hot-path allocation/random/Pack/property/parser patterns, balanced braces, and only repository LF/CRLF normalization
+warnings. CPU sampled 100%, so no build/rebuild was launched under the explicit build gate.
+
+## 2026-05-20 SHINOBU_201 Telemetry Cursor Wrap Addendum
+
+Gameplay telemetry payloads are unchanged. `BuoyancyTelemetryEntry` remains an explicit 64-byte row and the telemetry
+cursor remains the existing `int[1]` Vault lane. No BufferID, Vault descriptor, signal payload, shader payload, asmdef
+edge, or runtime owner changed.
+
+`ReduceBuoyancyTelemetryJob` keeps the cursor bounded in `[0, TelemetryRing.Length - 1]`. The post-job
+`WriteCompletedComputeMicros()` readback now derives the just-written slot with
+`(cursor + TelemetryRing.Length - 1) % TelemetryRing.Length`, so cursor wrap maps back to the final row instead of
+slot zero. This preserves 300-frame black-box evidence after endurance wrap without restoring an unbounded cursor.
+
+Static source only: scoped scans found no remaining `cursor[0] - 1`, balanced runtime braces, no forbidden hot-path
+allocation/random/Pack/property/parser patterns, and only repository LF/CRLF normalization warnings. Build/player proof
+remains pending behind the CPU gate.
+
+## SHINOBU_228 Builder Holography
+
+- Added construction-owned local Vault lanes `70940..70944` for data-only builder holography: `BuilderGhostStateDTO[128]`, `BuilderGhostVisualDTO[128]`, `HolographyTelemetryEntry[300]`, mock `BuilderGhostStateDTO[10000]`, and 8-corner SDF byte samples.
+- `BuilderGhostStateDTO` is explicit 128 bytes with matrix at `0`, AUP `double3` at `64`, prefab hash at `88`, validation flags at `92`, animation phase at `96`, and validation hash at `100`.
+- Runtime boundary: these buffers are presentation-only and rollback-excluded. They are not Merkle leaf descriptors and must not enter `StateRingBuffer`. Authoritative construction remains final placed module AUP/hash/resources/topology.
+- Rendering boundary: `HectonBlueprintPreviewBatch` uploads DTO rows through double-buffered `GraphicsBuffer.LockBufferForWrite` and renders with `DrawProceduralIndirect`; no `DrawMeshInstanced`, `SetData`, or preview GameObject hierarchy is required.
+
+## 2026-05-20 SHINOBU_219 Visual Pressure Aging Payload Continuity Addendum
+
+Visual pressure-aging binary payloads are unchanged. `VisualAgingParamsDTO` remains an explicit 64-byte row:
+`RustAndCorrosion@0`, `SaltAndBiomass@16`, `StressAndMicroFractures@32`, and `DepthAndPressure@48`.
+Owned Vault lanes remain `71240..71246`; no BufferID, signal payload, rollback payload, or shader row stride changed.
+
+The runtime now transfers SHINOBU Vault lock ownership to the scheduled job graph only after job registration succeeds;
+failure paths release locks immediately. Editor tuning and gizmo reads fail closed while a simulation job owns scheduled
+locks. Shader payload activation now lerps default material aging into Vault rows from epsilon-positive payload
+availability instead of a half-threshold step, and RustDetail/POM consumes the same Vault-derived rust and row-quality
+route as the rest of the UberNoir aging surface.
+
+Static source only: scoped shader-aging scans, legacy `Rendering/Construction` archaeology scans, hot runtime forbidden-token
+scans, DTO property/Pack checks, trailing-whitespace scan, and `git diff --check` were rerun after this addendum. `git diff
+--check` returned exit 0 with LF/CRLF warnings only. Unity import, shader compiler, Frame Debugger, profiler/GCMonitor, and
+player-build proof remain pending behind the CPU/build gate; latest CPU sample was 100 percent with no compiler process.
+
+## 2026-05-20 SHINOBU_219 Mock Temperature NaN Vaccine Addendum
+
+Visual pressure-aging binary payloads are unchanged. No BufferID, DTO size, shader row stride, signal payload, rollback
+payload, or asmdef edge changed.
+
+`GenerateMockAgingDataJob` now resolves its mock temperature lane through a finite fallback instead of reading
+`Temperatures[0]` directly. A poisoned mock temperature row collapses to `VisualAgingTuningDTO.MockTemperatureC`, preserving
+deterministic stress/depth mock output while preventing NaN propagation into rust, biomass, telemetry, and the GPU aging row.
+The SHINOBU telemetry cursor also wraps negative modulo results back into the 300-frame ring before both telemetry writes and
+fault dump readback.
+
+Static source only: targeted helper scans, forbidden runtime/gizmo scans, SHINOBU shader-range binary LOD scans,
+legacy `Rendering/Construction` archaeology scans, rollback/save scans, trailing-whitespace scan, and `git diff --check`
+were rerun after this addendum. `git diff --check` returned exit 0 with LF/CRLF warnings only. Runtime proof remains
+pending behind the CPU/build gate; final CPU recheck was 100 percent with no compiler process.
+
+## 2026-05-20 SHINOBU_217 Builder Ghost Validation Fence Addendum
+
+Construction socket and builder holography binary payload layouts are unchanged. No BufferID, DTO size, signal payload,
+shader payload, asmdef edge, or Vault descriptor changed in this addendum.
+
+`PlayerBuilder` now treats builder holography/SDF validation as a dispatcher-owned dependency chain:
+`BuildBuilderGhostStateJob` schedules first, `ValidateBuilderGhostPlacementJob` schedules behind that handle, and the final
+construction handle is registered with `H8Memory`. Active preview validation consumes `BuilderGhostStateDTO` only through
+`DispatcherJobFence.TryFinalizeCompleted`. `DispatcherJobFence.TryComplete` is confined to lifecycle teardown helpers.
+
+Pending validation ownership is guarded by a query hash over module hash, preview pose/rotation, proxy bounds center/size,
+and snap/DearLie flags. Stale completed validation output is dropped instead of being applied to the current preview.
+
+Static source only: focused scans found no active-frame `.Complete()`/`.Run()` call in SHINOBU socket or builder validation
+routes; the remaining `TryComplete(forceComplete:true)` calls are teardown helpers. No build/rebuild was launched under the
+explicit no-premature-build gate; the Core.Memory asmdef compile wall remains the known dependency.
+
+## 2026-05-20 SHINOBU_217 Cached Vault Gate Addendum
+
+Construction socket and builder holography binary payload layouts are unchanged. No BufferID, DTO size, signal payload,
+shader payload, asmdef edge, or Vault descriptor changed in this addendum.
+
+`TryRunBuilderGhostBurstValidation()` now uses the same cached `TryResolveShinobuSocketVault()` gate as the active socket
+snap bridge. `GlobalRegistry.DataVault` remains only in the cold `ResolveRuntimeReferences()` binding/initialization route
+for this SHINOBU player-builder path. Missing cached Vault state fails closed instead of polling the service locator from
+the active preview validation method.
+
+Static source only: focused scans over `PlayerBuilder.cs` show `GlobalRegistry.DataVault` only at cold runtime-reference
+binding lines, while active socket snap and builder ghost validation both resolve Vault views from the cached field. No
+build/rebuild was launched under the explicit no-premature-build gate; the Core.Memory asmdef compile wall remains the
+known dependency.
+
+## 2026-05-20 SHINOBU_217 Preview Alpha Truth Addendum
+
+Construction socket and builder holography binary payload layouts are unchanged. No BufferID, DTO size, signal payload,
+shader payload, asmdef edge, or Vault descriptor changed in this addendum.
+
+`HectonBlueprintPreviewBatch.WriteStateRow()` now derives `BuilderGhostVisualDTO.Alpha` from the current row's
+`BuilderGhostValidationFlags` after finite sanitization. It no longer uses `_lastPreviewAllowed`, which is updated after
+the current signal row is written and could therefore upload previous-frame valid/invalid alpha. After the row is written,
+`ConsumeConstructionPreviewSignals()` reads the written `BuilderGhostStateDTO` for telemetry SDF sign and
+`_lastPreviewAllowed`, preserving writer-side `NonFinite` correction as black-box/material truth.
+
+Static source only: focused scans confirm `BuilderGhostVisualDTO.Alpha` routes through `IsBuilderGhostValid(flags)` and
+telemetry/material validity reads `writtenState.ValidationFlags`. No build/rebuild was launched under the explicit
+no-premature-build gate; the Core.Memory asmdef compile wall remains the known dependency.
+
+## 2026-05-20 SHINOBU_217 Preview Scale Finite Gate Addendum
+
+Construction socket and builder holography binary payload layouts are unchanged. No BufferID, DTO size, signal payload,
+shader payload, asmdef edge, or Vault descriptor changed in this addendum.
+
+`HectonBlueprintPreviewBatch.WriteStateRow()` now requires `math.all(scale > 0f)` before preserving valid flags. Rows with
+zero or negative dimensions fail closed through the existing `NonFinite` path and upload only the tiny invalid fallback
+matrix, rather than silently clamping malformed geometry into a valid preview.
+
+Static source only: focused scans confirm the preview writer no longer uses `math.any(scale > 0f)` for validity. No
+build/rebuild was launched under the explicit no-premature-build gate; the Core.Memory asmdef compile wall remains the
+known dependency.
+
+## 2026-05-20 SHINOBU_153 SafeNormalize NaN Vaccine Addendum
+
+`ProceduralOreSpawner` binary payloads are unchanged in this addendum. No Vault ID, DTO size, signal payload, indirect-args
+row, or asmdef edge changed.
+
+Owned geology Burst paths no longer call `math.normalize`. Mock terrain normal generation, terrain normal sampling, cluster
+bitangent construction, aligned matrix basis construction, and spun tangent creation route through `SafeNormalize`, which
+rejects non-finite inputs and `lengthsq <= 0.0001f` before evaluating guarded `math.rsqrt(math.max(lengthSq, 0.0001f))`.
+
+Static source only: scoped scans found no owned `math.normalize` hits and no forbidden direct buffer APIs, legacy Vault
+pointer handles, hot native allocation, raw `.Complete()`, Unity/System random, Unity time, file byte staging, LINQ,
+string-format, or direct sibling-domain hits. `git diff --check` returned only LF/CRLF normalization warnings. Unity
+import, Burst Inspector, Profiler/GCMonitor, and player-build proof remain pending behind the no-premature-build gate.
+
+## 2026-05-20 SHINOBU_153 Runtime Position Snapshot Addendum
+
+`ProceduralOreSpawner` binary payloads are unchanged in this addendum. No Vault ID, DTO size, signal payload, indirect-args
+row, shader row stride, or asmdef edge changed.
+
+Generation, draw-bound fallback, drop-pod fallback anchoring, and telemetry state hashing no longer read Unity
+`Transform.position` from SHINOBU-owned recurring paths. Runtime position is captured from cached
+`IPlayerRuntimeContext.TryGetPlayerPoseSnapshot()` or finite AUP-to-runtime fallback, then carried into
+`GenerateResourceNodesJob.CameraRuntimePosition`. AUP origin-shift handling shifts this cached presentation coordinate with
+ore matrices and the drop-pod runtime anchor.
+
+Static source only: scoped scans found no `playerTransform.position`, `transform.position`, `WorldRuntimeReferenceUtility`,
+or `TryResolvePlayerAup` hits in `ProceduralOreSpawner.cs`; the only `GlobalRegistry.Player` read remains cold service
+cache initialization. Forbidden direct buffer APIs, legacy Vault pointer handles, hot native allocation, raw `.Complete()`,
+Unity/System random, Unity time, file byte staging, LINQ, string-format, and direct sibling-domain scans returned no hits.
+Unity import, Burst Inspector, Profiler/GCMonitor, and player-build proof remain pending behind the no-premature-build gate.
+
+## 2026-05-20 SHINOBU_153 Continuous Geology Curve Addendum
+
+`ProceduralOreSpawner` binary payloads are unchanged in this addendum. No Vault ID, DTO size, signal payload, indirect-args
+row, shader row stride, or asmdef edge changed.
+
+`GenerateResourceNodesJob.SampleGrounding()` no longer uses a hard `math.step(0.3f, quality)` refinement gate. Terrain
+refinement now uses a smooth quality budget from `math.smoothstep(0.25f, 1f, quality) * 2f`, with per-pass influence from
+`math.saturate(refineBudget - i)`. `ResolveOreWeights()` no longer branches at the drop-pod near/far band thresholds; it
+uses a finite-safe `math.smoothstep` gradient and clamps integer weights back to a total of 100.
+
+Static source only: focused scans found no `math.step(0.3f, quality)`, `refineGate`,
+`dropPodDistanceSq < NearDropPodDistanceSq`, or `dropPodDistanceSq > FarDropPodDistanceSq` in
+`ProceduralOreSpawner.cs`. Forbidden direct buffer APIs, legacy Vault pointer handles, hot native allocation, raw
+`.Complete()`, Unity/System random, Unity time, file byte staging, LINQ, string-format, transform-position, and direct
+sibling-domain scans returned no hits. Unity import, Burst Inspector, Profiler/GCMonitor, and player-build proof remain
+pending behind the no-premature-build gate.
+
+## 2026-05-20 SHINOBU_225 Laser Cutter DOD Request-Meta Addendum
+
+`LaserCutRequestDTO` is now the exact 64-byte XML ABI: `RayOriginAUP@0` 24 bytes, `RayDirection@24` 12 bytes,
+`CuttingPower@36`, `MaximumDistance@40`, `ToolHashID@44`, `ParentEntityID@48`, and explicit padding at 52/56/60.
+Frame, flags, request sequence, cooldown frame, and state hash moved to `LaserCutRequestMetaDTO`, a separate 64-byte
+owner-local Vault row at `RequestMetaBuffer=71336`. Existing SHINOBU_225 owner-local Vault lanes remain `71320..71335`;
+this addendum adds only the meta lane and does not edit the global `BufferID` enum.
+
+Runtime cutter hot paths now resolve already-acquired generation handles with `allowAcquire:false`; `GlobalRegistry.DataVault`
+is confined to cold `EnsureInitialized()` bootstrap/editor routes. `SealedDoor` no longer imports `Hecton8.Tools` for door
+spark/debris VFX and publishes its own `DebrisSpawnSignal` with continuous quality-weight quantity scaling.
+
+Static source only: focused scans over cutter-owned files found 0 direct synchronous `Physics.Raycast`, 0 `Instantiate`, 0
+`ParticleSystem`, and 0 mesh-mutation text. A guarded `dotnet build Hecton8.Core.csproj --no-restore -v:minimal`
+was attempted after CPU sampled 46% with no active compiler process; it failed with 77 unrelated dependency errors outside
+the SHINOBU_225 cutter files (`Hecton8.Equipment`, `Hecton8.Logistics.Grid`, `SoundEmissionSignal`, `H8BinaryWorldPager`,
+`SocketDefinitionDTO`, `IDockingAutopilotService`, and bridge gaps). No Unity import, Burst Inspector, profiler, or player
+proof is claimed.
+
+Continuation polish: Task 11 spark density now uses `math.smoothstep(GlobalQualityWeight)` across the exact 0..500 GPU-only
+spark request range, and the Burst evaluation job consumes the Vault tuning row for dent radius, glow lifetime, battery watts,
+spark scale, and low/ultra spark bounds. `LaserCutTelemetryEntry` keeps its 128-byte size and now records
+`BatteryWatts@120` plus `BurstWorkEstimateMicros@124`. Cold Vault reacquire releases stale or undersized generation handles
+before acquiring a replacement descriptor; hot paths still use `allowAcquire:false`. Post-evaluation VFX publication forwards
+the completed `LaserCutImpactVfxDTO.SparkCount` directly to GPU spark/debris signals and does not recalculate quantity or
+restage the impact VFX row. Direct live spark staging consumes the same no-acquire tuning row for low/ultra spark bounds
+and spark intensity scale.
+
+## 2026-05-20 SHINOBU_204 ARM64 DTO Continuation Addendum
+
+No global `BufferID`, signal bus ABI root, or asmdef edge was changed in this addendum.
+
+Owner-safe fixed rows were converted from Sequential to Explicit layout across gameplay, Atlas/input/interaction, and economy:
+`RadiationSource=64`, `RadiationTelemetryEntry=64`, `BodyModePose=96`, `ContextualPhysicalIkEntityState=512`,
+`InteractionEventPayload=32`, `Atlas6EventPayload=32`, `SignalBeaconTelemetry=48`, `SignalBeaconSolveResult=16`,
+`UniversalInputStateSignal=48`, `FingerRayDefinition=32`, `FingerRayRuntime=32`, `FingerPoseData=32`,
+`KinematicTerminalPointerState=64`, `PhysicalHandIkTarget=64`, and the fixed `TradeMarauderRuntime` DTO family.
+
+Submarine PID/flood output rows now have named explicit padding at their previous implicit tail holes. Touched Burst routes in
+radiation, submarine, physical-hand, and beacon math include synchronous Burst flags; non-overlapping NativeArray lanes received
+NoAlias where the source owns both buffers.
+
+Static source only: `StructLayout(...Pack=...)` remains 0 under `Assets/_Project/Scripts`; touched-file unaligned 8-byte
+FieldOffset scans returned 0 hits; touched-file `git diff --check` returned exit 0 with LF/CRLF warnings only. No build or
+rebuild was launched under the explicit no-premature-build gate.
+
+## 2026-05-20 SHINOBU_201 Visible Index Compaction Read Addendum
+
+SIMD cull binary payload layouts are unchanged. No BufferID, DTO size, signal payload, shader payload, asmdef edge, or Vault
+descriptor changed in this addendum.
+
+`CompactVisibleIndicesJob` now treats `VisibleCount` as the only authoritative output range. The job writes the current
+mask value directly to `VisibleIndices[write]` while capacity remains, advances `write` only for valid masks, and stops once
+capacity is full. Invalid rows can occupy only the next excluded slot and are ignored unless a later valid mask overwrites
+that slot before count publication.
+
+Static source only: focused scans found no remaining `preserved`, `lastSlot`, `VisibleIndices[slot]`, or
+`VisibleIndices[write] = math.select` in `BuoyancySimdVectorization.cs`. CPU sampled 99.62% with no active compiler
+process, so no build/rebuild, Unity import, Burst Inspector, profiler, or player-build proof is claimed.
+
+## 2026-05-20 SHINOBU_201 Visible Index WriteOnly Contract Addendum
+
+SIMD cull binary payload layouts are unchanged. No BufferID, DTO size, signal payload, shader payload, asmdef edge, or Vault
+descriptor changed in this addendum.
+
+`CompactVisibleIndicesJob.VisibleIndices` is now `[WriteOnly, NoAlias]` because destination element reads were removed by
+the preceding compaction addendum. The job still uses `.IsCreated` and `.Length` as container metadata, then writes only
+`VisibleIndices[write]` while `VisibleCount` defines the authoritative compacted range.
+
+Static source only: focused scans show the visible-index lane has no element read in `BuoyancySimdVectorization.cs`. CPU
+sampled 100% with no active compiler process, so no build/rebuild, Unity import, Burst Inspector, profiler, or player-build
+proof is claimed.
+
+## 2026-05-20 SHINOBU_201 Cold Fence Fail-Closed Addendum
+
+Buoyancy and SIMD binary payload layouts are unchanged. No BufferID, DTO size, signal payload, shader payload, asmdef edge,
+or Vault descriptor changed in this addendum.
+
+Cold/editor forced fences now fail closed: emergency mock seeding and SIMD benchmark methods return `false` if
+`DispatcherJobFence.TryComplete(... forceComplete:true)` fails, and cold buffer initialization returns without marking
+`_coldBuffersInitialized`. Steady-state solver finalization still uses the non-blocking completed-handle path; the forced
+solver completion remains teardown-only and already return-checked.
+
+Static source only: focused scans over `BuoyancyDisplacementRuntime.cs` show every owned forced completion is checked before
+publishing tuning, telemetry, or cold-ready state. CPU sampled 98.45% with no active compiler process, so no build/rebuild,
+Unity import, Burst Inspector, profiler, or player-build proof is claimed.
+
+## 2026-05-20 SHINOBU_201 Evaluator Count Payload Addendum
+
+Gameplay buoyancy binary payload layouts are unchanged. No BufferID, DTO size, signal payload, shader payload, asmdef edge,
+or Vault descriptor changed in this addendum.
+
+`EvaluateBuoyancyJob` now receives `StateCount`, `FlowSampleCount`, `DebugForceCount`, and `ForcePacketCount` as scheduler
+value payloads after runtime resolves the Vault arrays. The evaluator uses those counts for the front gate, active-row clamp,
+strided row fence, debug write bounds, and force-packet write bounds instead of re-reading state/debug/packet NativeArray
+length metadata inside each scheduled row.
+
+Static source only: focused scans over `BuoyancyDisplacementJobs.cs` and `BuoyancyDisplacementRuntime.cs` found balanced
+braces/preprocessor state, zero non-ASCII, and no forbidden hot-path pattern matches. `git diff --check` reported only
+repository LF/CRLF normalization warnings. No build/rebuild, Unity import, Burst Inspector, profiler, or player-build proof
+is claimed.
+
+## 2026-05-20 SHINOBU_201 Visible Index WriteOnly Bottom Confirmation
+
+SIMD cull binary payload layouts remain unchanged. This repeats the current visible-index contract at ledger bottom after
+the evaluator addendum for chronological review only; it does not add a BufferID, DTO size, signal payload, shader payload,
+asmdef edge, or Vault descriptor.
+
+`CompactVisibleIndicesJob.VisibleIndices` is `[WriteOnly, NoAlias]`; source element access writes only
+`VisibleIndices[write] = value`. Container metadata checks on `.IsCreated` and `.Length` remain outside the data read path,
+and `VisibleCount` remains the authoritative compacted range.
+
+Static source only: no build/rebuild, Unity import, Burst Inspector, profiler, or player-build proof is claimed.
+
+## 2026-05-20 SHINOBU_208 CSV Variation Ceiling Constant Addendum
+
+Offline geology binary payload layouts remain unchanged. No `.h8geom` header, `.h8geom` record, vertex stream layout, BufferID, signal payload, shader payload, Vault descriptor, runtime owner, or asmdef edge changed in this addendum.
+
+CSV `variations` parsing now clamps through `GeologyForgeConstants.MaximumVariations`, matching the UI facade, async total math, and generator execution clamp. This is authoring truth consolidation only; it does not alter generated payload schema or runtime routes.
+
+Static source only: no build/rebuild, Unity import, Burst Inspector, profiler, or player-build proof is claimed.
+
+## 2026-05-20 SHINOBU_204 Alignment Continuation Ledger Tail
+
+Latest SHINOBU_204 source-only sweep leaves `StructLayout(...Pack=...)` at 0 and broad non-Pack Sequential debt at 399 under `Assets/_Project/Scripts`. Additional explicit rows include `MockTerrainQuerySignal=64`, `HighPressureEventPayload=32`, `FatalPressureImplosionEventPayload=32`, `PendingAtmosphereMutation=32`, `WfcOutpostGridDescriptor=96`, `EncounterDirectorState=80`, `GIRelayTelemetryEntry=64`, `NarrativeTriggerTelemetryEntry=80`, and `StressSoA=48`.
+
+Residual Sequential rows in touched files are owner-excluded wrappers: Unity `NativeArray` job/data wrappers, `FixedList128Bytes` result wrapper, or a managed collision event carrying `Rigidbody`. Static source only: no build/rebuild, Unity import, Burst Inspector, profiler, or player-build proof is claimed.
+
+## 2026-05-20 SHINOBU_208 Caller-Owned CSV Profile Lists Addendum
+
+Offline geology binary payload layouts remain unchanged. No `.h8geom` header, `.h8geom` record, vertex stream layout, BufferID, signal payload, shader payload, Vault descriptor, runtime owner, or asmdef edge changed in this addendum.
+
+`GeologyProfileCsv` now exposes a caller-owned list overload. The UI Toolkit window loads CSV rows directly into `_profiles`, and the menu bake command reuses `_menuProfiles` before `BakeProfilesAsync` snapshots profiles into runner state. This is editor facade allocation hygiene only; it does not alter manifest identity, generated mesh bytes, AUP seeding, or runtime authority routes.
+
+Static source only: no build/rebuild, Unity import, Burst Inspector, profiler, or player-build proof is claimed.
+
+## 2026-05-20 SHINOBU_224 Telemetry Cursor Wrap Addendum
+
+Active equipment binary payload layouts remain unchanged. No BufferID, DTO size, signal payload, shader payload, asmdef edge, or Vault descriptor changed in this addendum.
+
+The equipment telemetry read path now wraps cursor/history pairs through `ResolveTelemetryHistoryIndex()` before reading `EquipmentTelemetryEntry`. The helper preserves the existing 300-entry circular buffer contract, fails closed when the ring length is invalid, clamps requested history to capacity, and handles both negative underflow and positive stale/corrupt cursor values. This is a read-path safety correction only; `EquipmentTelemetryEntry` remains 64 bytes and the Vault-owned ring/cursor lanes are unchanged.
+
+Static source only: focused telemetry getter scan confirms no `TryResolveEquipmentViews()` call and no negative-only `while` wrap remain inside `TryGetLatestEquipmentTelemetry()` or `TryGetEquipmentTelemetryEntry()`. No build/rebuild is claimed.
+
+## 2026-05-20 SHINOBU_201 Vehicle Damage Atomic Reduction Addendum
+
+Vehicle damage binary payload layouts remain unchanged. No BufferID, DTO size, signal payload, shader payload, asmdef edge,
+Vault descriptor, runtime owner, or public interface changed in this addendum.
+
+`VehicleComponentDamageJobs.cs` no longer mutates `VehicleGridCellDTO.Integrity01` through `Interlocked.CompareExchange`.
+`MapImpactToGridJob` maps signals only, and `ApplyVehicleDamageReductionJob` applies direct and explosive damage in
+deterministic cell-major order over the existing vehicle grid and signal buffers. The route reuses the existing vehicle
+damage Vault lanes, including `VehicleDamageConstants.GridWriteBuffer` and `VehicleDamageConstants.SignalBuffer`; no new
+SHINOBU_201 BufferID or ownership route was added.
+
+The vehicle mock generator also replaces raw `math.sin` with a finite-gated polynomial fake driven by continuous
+`GlobalQualityWeight`. Static gates passed for source shape and broad Physics/AI atomic scans. A scoped
+`dotnet build Hecton8.Core.csproj --no-restore` was launched only after CPU sampled at 48% with zero compiler processes;
+it failed on the known 77-error external dependency wall before `VehicleComponentDamageJobs.cs` or
+`VehicleComponentDamageRuntime.cs` appeared in compiler output.
+
+## 2026-05-20 SHINOBU_201 Vehicle Damage Branchless Reduction Addendum
+
+Vehicle damage binary payload layouts remain unchanged. No BufferID, DTO size, signal payload, shader payload, asmdef edge,
+Vault descriptor, runtime owner, or public interface changed in this addendum.
+
+`ApplyVehicleDamageReductionJob` now removes its mapped-row `continue` and explosive-row branch. It clamps the signal grid
+index for safe coordinate decode and uses mapped/explosive/radius masks so invalid or unmapped rows contribute zero damage.
+Runtime quality resolution is finite-gated through a shared helper, and the fallback vehicle hash is cached during `OnEnable`
+instead of selecting `gameObject.GetInstanceID()` during fixed tick.
+
+Static gates passed for vehicle atomic/transcendental scans and source shape. A scoped
+`dotnet build Hecton8.Core.csproj --no-restore` was launched only after CPU sampled at 37.25% with zero compiler processes;
+it failed on deleted external source `Assets/_Project/Scripts/PlacementGhost.cs` still included by `Hecton8.Core.csproj`.
+No touched vehicle file appeared in compiler output.
+
+## 2026-05-20 SHINOBU_201 Exosuit Kinematics Math Closure Addendum
+
+Exosuit binary payload layouts remain unchanged. No BufferID, DTO size, signal payload, shader payload, asmdef edge,
+Vault descriptor, runtime owner, or public interface changed in this addendum.
+
+`ExosuitKinematicsJobs.cs` now replaces authoritative yaw `math.sin/cos` with a fixed deterministic polynomial sin/cos
+route normalized by guarded `rsqrt`. Raw speed/distance square roots and `math.length` calls in the same integrator route
+now use squared-distance compares or `LengthFromSq`.
+
+No `GlobalQualityWeight`-dependent gameplay heading divergence was introduced. Static source gates passed for the touched
+job. Build was not relaunched after this addendum because the immediately preceding scoped build is already blocked before
+touched files by deleted external source `Assets/_Project/Scripts/PlacementGhost.cs` still included by
+`Hecton8.Core.csproj`.
+
+## 2026-05-20 SHINOBU_201 Vehicle Mock NormalizeSafe Addendum
+
+Vehicle damage binary payload layouts remain unchanged. No BufferID, DTO size, signal payload, shader payload, asmdef edge,
+Vault descriptor, runtime owner, or public interface changed in this addendum.
+
+`GenerateMockVehicleDamageJob` now replaces `math.normalizesafe` with a local finite-gated `NormalizeOrFallback` helper
+using guarded `rsqrt`. Static source gates passed for the combined vehicle/exosuit math scan. Build was not relaunched
+because the active blocker remains deleted external source `Assets/_Project/Scripts/PlacementGhost.cs` still included by
+`Hecton8.Core.csproj`.
+
+## 2026-05-20 SHINOBU_201 Physics Culling Atomic Append Addendum
+
+Physics culling binary payload layouts remain unchanged. No BufferID, DTO size, signal payload, shader payload, asmdef edge,
+Vault descriptor, service registration, or public interface changed in this addendum.
+
+`ShinobuPhysicsCullingChangedIndices` and `ShinobuPhysicsCullingChangedCount` remain the authoritative Vault lanes for
+physics culling changed-index publication. SHINOBU_201 removed atomic appends from `MockSeismicShockwaveWakeJob` and
+`PhysicsDistanceCullingJobShinobu37`: producers now mark `ChangedIndices[index] = index`, and a deterministic compactor
+job writes `PhysicsCullingCounter64.Value` once after the producer dependency. This preserves one owner, one Vault route,
+and one proof counter without adding a queue or shadow list.
+
+Static gates passed: culling/main braces `177/177` and `396/396`, preprocessor `1/1` and `4/4`, Physics/AI Burst directive
+scan reports no missing synchronous attributes, pointer scan reports no public pointer field missing `NoAlias`, and broad
+Physics/AI atomic scan reports only `VehicleComponentDamageJobs.cs:306`, which is vehicle damage owner territory. A scoped
+`dotnet build Hecton8.Core.csproj --no-restore` was launched only after CPU sampled at 6% with zero compiler processes; it
+failed on the known 77-error external dependency wall before either touched culling file appeared in compiler output.
+
+## 2026-05-20 SHINOBU_201 Cross-Physics Burst Contract Sweep Addendum
+
+Docking autopilot binary payload layouts remain unchanged. No BufferID, DTO size, signal payload, shader payload, asmdef
+edge, Vault descriptor, service registration route, or public interface changed in this addendum.
+
+`CubicBezierJob` in `DockingAutopilotService.cs` now has synchronous deterministic Burst flags and explicit raw-pointer alias
+metadata: `Splines` and `Progress01` are `[NoAlias, ReadOnly]`, while `Samples` is `[NoAlias, WriteOnly]`. This closes the
+last static Physics/AI scan hit for a bare `[BurstCompile]` attribute without adding a new global route or modifying
+`ActiveSplineData` / `DockingSplineSample` ABI.
+
+Static gates passed: the broad Physics/AI Burst directive scan reports no remaining `[BurstCompile]` without
+`CompileSynchronously`, docking service braces/preprocessor counts are balanced (`63/63`, `0/0`), and focused forbidden
+scan found no allocation/random/`Pack=`/raw `.Complete(` issue in the touched file. A scoped
+`dotnet build Hecton8.Core.csproj --no-restore` launched only after CPU sampled at 30% with zero compiler processes; it
+failed on the known 77-error external dependency wall before `DockingAutopilotService.cs` was reported.
+
+## 2026-05-20 SHINOBU_201 Tether GPU Memcpy Pointer Alias Addendum
+
+Tether AUP binary payload layouts remain unchanged. No BufferID, DTO size, signal payload, shader payload, asmdef edge,
+Vault descriptor, GPU upload ownership, or public interface changed in this addendum.
+
+`TetherSplineGpuMemcpyJob.Destination` now carries `[NoAlias, WriteOnly]` in addition to
+`NativeDisableUnsafePtrRestriction`. The source spline vertex array was already `[ReadOnly, NoAlias]`, so the copy job now
+proves non-overlap and direction for both endpoints before calling `UnsafeUtility.MemCpy`.
+
+Static gates passed: refined public raw-pointer scan over Physics/AI reports no missing `NoAlias` hits, tether file
+braces/preprocessor counts are balanced (`93/93`, `0/0`), and focused diff check reports only repository LF/CRLF warning.
+A scoped `dotnet build Hecton8.Core.csproj --no-restore` launched only after CPU sampled at 20% with zero compiler
+processes; it failed on the known 77-error external dependency wall before `TetherAupVerletJobs.cs` was reported.
+
+## 2026-05-20 SHINOBU_201 Homeostasis Quality Ingress Addendum
+
+Buoyancy/SIMD binary payload layouts remain unchanged. No BufferID, DTO size, signal payload, shader payload, asmdef edge,
+or Vault descriptor changed in this addendum.
+
+`BuoyancyDisplacementRuntime.ResolveGlobalQualityWeight(ref tuning)` now routes Homeostasis quality through
+`ResolveGlobalQualityWeightFromHomeostasis()` before combining it with tuning quality. This keeps the continuous
+`GlobalQualityWeight` control fact finite before it drives evaluator stride, resolved tuning quality, SIMD benchmark
+quality, and telemetry.
+
+Static gates passed: prompt extraction still reports 20 SHINOBU_201 tasks, runtime braces `121/121`, runtime preprocessor
+`#if 6/#endif 6`, forbidden hot-path scan found no bad direct-saturate route, and diff check reports only repository
+LF/CRLF normalization warnings. Scoped build `dotnet build Hecton8.Core.csproj --no-restore` was launched after CPU
+sampled at 10% with zero compiler processes; it failed on the known 77-error external dependency wall before any
+SHINOBU-owned buoyancy/SIMD file appeared in the emitted error list.
+
+## 2026-05-20 SHINOBU_201 Debug Force Finite Storage Addendum
+
+Buoyancy binary payload layouts remain unchanged. `BuoyancyDebugForceDTO` stays 128 bytes; no BufferID, signal payload,
+shader payload, asmdef edge, or Vault descriptor changed.
+
+`EvaluateBuoyancyDisplacementJob` now finite-gates debug buoyancy, gravity, drag, flow, net force, and sleep score before
+writing `BuoyancyDebugForceDTO`. The existing fault flag route remains intact, so forensic consumers receive finite fields
+plus the non-finite proof bit instead of raw NaN/Infinity payload bytes.
+
+Static gates passed: prompt extraction still reports 20 SHINOBU_201 tasks, jobs/runtime/SIMD braces are balanced
+(`41/41`, `121/121`, `92/92`), forbidden hot-path scan returned no matches, and diff check reports only repository
+LF/CRLF normalization warnings. Scoped build `dotnet build Hecton8.Core.csproj --no-restore` was launched after CPU
+sampled at 9% with zero compiler processes; it failed on the known 77-error external dependency wall before any
+SHINOBU-owned buoyancy/SIMD file appeared in the emitted error list.
+
+## 2026-05-20 SHINOBU_201 SIMD Telemetry Tuning Proof Addendum
+
+SIMD binary payload layouts remain unchanged. `SimdTelemetryEntry` stays 64 bytes with `MaxError` at offset 40 and
+`MaxSpeedSq` at offset 44. No BufferID, signal payload, shader payload, asmdef edge, or Vault descriptor changed.
+
+The benchmark telemetry route now writes the active `SimdHydrodynamicTuningDTO.MaxApproximationError` into
+`SimdTelemetryEntry.MaxError` and derives `SimdTelemetryEntry.MaxSpeedSq` from sanitized
+`SimdHydrodynamicTuningDTO.MaxSpeed` instead of writing `0f` and hard-coded `144f`. Raw non-finite approximation error
+sets the existing telemetry fault bit, while stored values remain finite-gated.
+
+Static gates passed: prompt extraction still reports 20 SHINOBU_201 tasks, runtime braces `121/121`, SIMD braces `92/92`,
+runtime preprocessor `#if 6/#endif 6`, forbidden hot-path scan returned no matches, and diff check reports only
+repository LF/CRLF normalization warnings. Scoped build `dotnet build Hecton8.Core.csproj --no-restore` was launched
+after CPU sampled at 4% with zero compiler processes; it failed on the known 77-error external dependency wall before
+any SHINOBU-owned buoyancy/SIMD file appeared in the emitted error list.
+
+## 2026-05-20 SHINOBU_201 SIMD Throughput Drop Helper Finite Closure Addendum
+
+Buoyancy and SIMD binary payload layouts remain unchanged. No BufferID, DTO size, signal payload, shader payload, asmdef
+edge, or Vault descriptor changed in this addendum.
+
+`ResolveSimdThroughputDrop` now finite-gates its own scalar inputs instead of relying only on caller-side sanitation.
+Vector microseconds fail closed to `0.0001f` before denominator use, scalar microseconds fail closed to a non-negative
+zero-default, and the helper returns zero unless the scalar baseline is positive and the computed drop is finite. This
+keeps `SimdTelemetryEntry.ThroughputDrop01` finite for the X-Ray/benchmark route without adding managed exceptions,
+logging, allocation, or a second cleanup pass.
+
+Static gates passed: runtime braces `120/120`, preprocessor `#if 6/#endif 6`, forbidden hot-path scan returned no
+matches, and source diff check reports only repository LF/CRLF normalization warnings. A scoped
+`dotnet build Hecton8.Core.csproj --no-restore` was launched only after CPU sampled 6.81% with zero compiler processes;
+it failed on the existing 77-error external dependency wall before any SHINOBU-owned buoyancy/SIMD file appeared in
+compiler output.
+
+## 2026-05-20 SHINOBU_201 SIMD Telemetry Quality Flag Proof Addendum
+
+Buoyancy and SIMD binary payload layouts remain unchanged. No BufferID, DTO size, signal payload, shader payload, asmdef
+edge, or Vault descriptor changed in this addendum.
+
+`RecordSimdTelemetryJob` now includes raw `GlobalQualityWeight` in its `FlagNonFinite` predicate. The stored
+`SimdTelemetryEntry.GlobalQualityWeight` remains finite-gated and saturated, but invalid quality ingress is no longer
+erased as a clean `1.0` row. This preserves the continuous quality-weight proof without changing the 64-byte telemetry
+ABI.
+
+Static gates passed: SIMD source braces `92/92`, preprocessor `#if 0/#endif 0`, forbidden hot-path scan returned no
+matches, and source diff check reports only repository LF/CRLF normalization warnings. A scoped
+`dotnet build Hecton8.Core.csproj --no-restore` was launched only after CPU sampled 4.88% with zero compiler processes;
+it failed on the existing 77-error external dependency wall before any SHINOBU-owned buoyancy/SIMD file appeared in
+compiler output.
+
+## 2026-05-20 SHINOBU_201 SIMD Telemetry Raw-Timing Flag Preservation Addendum
+
+Buoyancy and SIMD binary payload layouts remain unchanged. No BufferID, DTO size, signal payload, shader payload, asmdef
+edge, or Vault descriptor changed in this addendum.
+
+The SIMD X-Ray benchmark route now passes raw scaled scalar timing and raw vector timing into
+`RecordSimdTelemetryJob` so the 64-byte `SimdTelemetryEntry` can preserve `FlagNonFinite` proof from ingress. The
+recorder still finite-gates stored `VectorMicros`, `ScalarMicros`, throughput, drop, quality, and max-speed fields before
+writing the ring row. The managed dump branch now also checks raw scalar/vector finite proof in addition to
+`ResolveSimdThroughputDrop`, whose denominator/drop math remains finite-gated by Loop 77.
+
+Static gates passed: runtime braces `121/121`, preprocessor `#if 6/#endif 6`, forbidden hot-path scan returned no
+matches, and source diff check reports only repository LF/CRLF normalization warnings. A scoped
+`dotnet build Hecton8.Core.csproj --no-restore` was launched only after CPU sampled 4.88% with zero compiler processes;
+it failed on the existing 77-error external dependency wall before any SHINOBU-owned buoyancy/SIMD file appeared in
+compiler output.
+
+## 2026-05-20 SHINOBU_201 Timer Completion Finite Clamp Addendum
+
+Buoyancy and SIMD binary payload layouts remain unchanged. No BufferID, DTO size, signal payload, shader payload, asmdef edge,
+or Vault descriptor changed in this addendum.
+
+`BuoyancyDisplacementRuntime.WriteCompletedComputeMicros` now finite-gates and non-negative clamps managed stopwatch-derived
+compute microseconds before writing `BuoyancyCounterDTO` or `BuoyancyTelemetryEntry`. `ResolveElapsedMicros` fails closed to
+zero for missing timestamps, non-positive elapsed ticks, invalid stopwatch frequency, and non-finite float conversion after
+clamping the double microsecond value to `float.MaxValue`.
+
+Static gates passed: runtime braces `120/120`, runtime preprocessor `#if 6/#endif 6`, jobs braces `41/41`, forbidden hot-path
+scan returned no matches, and source diff check reports only repository LF/CRLF normalization warnings. The scoped build was
+launched only after CPU sampled at 7.51% with zero compiler processes; it failed on the known 77-error external dependency
+wall before any SHINOBU-owned buoyancy/SIMD file appeared in compiler output.
+
+## 2026-05-20 SHINOBU_201 SIMD Tolerance Row Finite Fence Addendum
+
+Buoyancy and SIMD binary payload layouts remain unchanged. No BufferID, DTO size, signal payload, shader payload, asmdef edge,
+or Vault descriptor changed in this addendum.
+
+`ApplySimdToleranceTuning` now requires finite `SimdMathToleranceDTO.MaxError` before an active tolerance row can update
+`SimdHydrodynamicTuningDTO.MaxApproximationError`. The CSV parser also writes parsed `MaxError` through an explicit finite
+select before non-negative clamping, so both the human-readable bridge and the Vault application bridge reject non-finite
+tolerance scalars.
+
+Static gates passed: runtime braces `120/120`, runtime preprocessor `#if 6/#endif 6`, SIMD source braces `92/92`, forbidden
+hot-path scan returned no matches, and source diff check reports only repository LF/CRLF normalization warnings. The scoped
+build was launched only after CPU sampled at 12.35% with zero compiler processes; it failed on the known 77-error external
+dependency wall before any SHINOBU-owned buoyancy/SIMD file appeared in compiler output.
+
+## 2026-05-20 SHINOBU_201 Visible Index Range Proof Addendum
+
+Buoyancy and SIMD binary payload layouts remain unchanged. No BufferID, DTO size, signal payload, shader payload, asmdef edge,
+or Vault descriptor changed in this addendum.
+
+`CompactVisibleIndicesJob` now treats a visible-mask value as valid only when `(uint)value < (uint)count`. Invalid rows write
+`-1` into the next excluded output slot instead of copying stale positive values. This preserves the existing no-atomics
+mask/compact path while preventing stale positive indices from reaching indirect draw consumers outside the current scan
+range.
+
+Static gates passed: SIMD source braces `92/92`, forbidden hot-path scan returned no matches, and source diff check reports
+only repository LF/CRLF normalization warnings. The scoped build was launched only after CPU sampled at 12.15% with zero
+compiler processes; it failed on the known 77-error external dependency wall before any SHINOBU-owned buoyancy/SIMD file
+appeared in compiler output.
+
+## 2026-05-20 SHINOBU_201 SIMD Benchmark Timing Ingress Clamp Addendum
+
+Buoyancy and SIMD binary payload layouts remain unchanged. No BufferID, DTO size, signal payload, shader payload, asmdef edge,
+or Vault descriptor changed in this addendum.
+
+`GenerateMockSimdBenchmark` now finite-gates `ScalarFallbackWeight01` before probe-count math, finite-gates scaled scalar
+microseconds after multiplying by the full-count/probe-count scale, and finite-gates vector microseconds immediately after
+stopwatch resolution. This keeps the editor X-Ray route and SIMD telemetry recorder from consuming non-finite benchmark
+timing scalars.
+
+Static gates passed: runtime braces `120/120`, runtime preprocessor `#if 6/#endif 6`, forbidden hot-path scan returned no
+matches, and source diff check reports only repository LF/CRLF normalization warnings. The scoped build was launched only
+after CPU sampled at 16.64% with zero compiler processes; it failed on the known 77-error external dependency wall before
+any SHINOBU-owned buoyancy/SIMD file appeared in compiler output.
+
+## 2026-05-20 SHINOBU_228 VR Pipe Blueprint Indirect Payload Addendum
+
+Construction holography adds three local presentation Vault lanes for the XR pipe blueprint preview:
+
+- `70946` `BuilderGhostStateDTO[64]` pipe segment matrices and validation flags.
+- `70947` `BuilderGhostVisualDTO[64]` pipe segment visual scalars.
+- `70948` `BuilderGhostIndirectArgsDTO[1]` pipe segment procedural draw arguments.
+
+No DTO layout changed. `BuilderGhostStateDTO` remains 128 bytes, `BuilderGhostVisualDTO` remains 64 bytes, and
+`BuilderGhostIndirectArgsDTO` remains 16 bytes. `BuildPipeBlueprintPreviewJob` writes these lanes from four AUP control
+points and scales segment density with `GlobalQualityWeight`; `VRPipeBlueprintPreview` uploads with
+`GraphicsBuffer.LockBufferForWrite` and submits `Graphics.DrawProceduralIndirect`. Static source only: no Unity import,
+Frame Debugger, profiler, or player-build proof is claimed.
+
+## 2026-05-20 SHINOBU_201 Force Packet Excluded-Slot Scrub
+
+`BuoyancyForcePacketDTO` layout remains 128 bytes and no BufferID, Vault descriptor, signal payload, shader payload, or asmdef edge changed. `CompactBuoyancyForcePacketsJob` now scrubs invalid packets to a zero/default row before writing them into the excluded compaction slot. Valid packets still receive `FlagForceQueued`; invalid rows clear `CurrentAUP`, force lanes, debug velocity, scalar metrics, entity hash, flags, state index, frame index, and padding. The published force-packet count remains `BuoyancyCounterDTO.ForcePackets`.
+
+Static source gates passed. A scoped `dotnet build Hecton8.Core.csproj --no-restore` was launched only after CPU and compiler-process gates cleared, then failed on the existing 77-error external dependency wall before any SHINOBU-owned buoyancy/SIMD file was reported.
+
+The follow-up queued-proof gate leaves the same 128-byte payload layout intact. `CompactBuoyancyForcePacketsJob.IsValidPacket`
+now requires `FlagForceQueued`, nonzero `EntityHashID`, finite `NetForce`, and finite `CurrentAUP` before a packet can survive
+compaction. Rows that fail the proof are still scrubbed to the zero/default excluded slot; `BuoyancyCounterDTO.ForcePackets`
+remains the published count.
+
+`BuoyancyTelemetryEntry` remains a 64-byte payload. `ReduceBuoyancyTelemetryJob` now finite-gates `debug.DepthMeters` and
+`ComputeMicros` before clamping, preventing scalar NaN ingress into `BuoyancyCounterDTO` and the 300-frame telemetry ring.
+No BufferID, Vault descriptor, signal payload, shader payload, asmdef edge, or DTO layout changed.
+
+## 2026-05-20 SHINOBU_228 Builder Holography Payload Addendum
+
+Construction builder holography uses static-source Vault lanes only; no asmdef edge or sibling-domain reference was added in this addendum. Module preview lanes are `70940` `BuilderGhostStateDTO[128]`, `70941` `BuilderGhostVisualDTO[128]`, `70942` `HolographyTelemetryEntry[300]`, `70943` `BuilderGhostStateDTO[10000]` mock rows, `70944` `byte[1024]` 8-corner SDF samples, and `70945` `BuilderGhostIndirectArgsDTO[1]`. VR pipe presentation lanes are `70946` `BuilderGhostStateDTO[64]`, `70947` `BuilderGhostVisualDTO[64]`, and `70948` `BuilderGhostIndirectArgsDTO[1]`. Primary payload sizes are `BuilderGhostStateDTO=128`, `BuilderGhostVisualDTO=64`, `HolographyTelemetryEntry=64`, and `BuilderGhostIndirectArgsDTO=16`.
+
+`BuilderGhostStateDTO` writes a `float4x4` at bytes `0..63`, `double3` AUP at `64..87`, hash/flags/phase/state hash at `88..103`, and six uint padding fields at `104..127`. Placement validation always hydrates and evaluates all eight SDF corner samples; `GlobalQualityWeight` is visual cost only for this route. `BuilderGhostIndirectArgsDTO` is written by `BuildBuilderGhostIndirectArgsJob` before upload. Holography dump ownership is SHINOBU_228: primary blackbox `Docs/AgentLogs/Dump_SHINOBU_228.bin`; holography sidecar `Docs/AgentLogs/Dump_SHINOBU_228_Holography.bin`.
+
+Static source only: focused SHINOBU_228 scans found no builder preview ghost object state, no `OverlapBoxNonAlloc`, no `DrawMeshInstanced`, and no `.SetData(` in the target holography route. One guarded dotnet build was attempted when the CPU/process guard was clear and failed in `Hecton8.Core.csproj` on existing dependency/project-file drift before a clean Unity import or player proof could be claimed.
+
+## 2026-05-20 SHINOBU_228 Deferred Visual Sync Addendum
+
+Builder holography binary payload layouts remain unchanged. No BufferID, DTO size, signal payload, shader payload, asmdef
+edge, or Vault descriptor changed in this addendum.
+
+`HectonBlueprintPreviewBatch` no longer direct-completes state, visual, or indirect-args jobs from the late-frame upload
+path. `BuildBuilderGhostStateJob` rows and `BuildBuilderGhostIndirectArgsJob` chain into one pending `JobHandle`; GPU
+upload runs only after `DispatcherJobFence.TryFinalizeCompleted` succeeds. The current render frame keeps the previous
+uploaded buffer, preserving the double-buffered visual-sync contract. Forced completion is restricted to teardown.
+
+Static source only: focused scan over `HectonBlueprintPreviewBatch.cs` found no direct `.Complete(`, no `JobHandle.Complete`,
+no `UploadArgs(` helper, and no `_buffersDirty` upload bypass after the deferred-fence patch. No build/rebuild was launched
+because the latest guard sampled CPU at 85.96% with no compiler process, above the 50% threshold.
+
+## 2026-05-20 SHINOBU_204 Alignment Continuation Addendum
+
+SHINOBU_204 continued the source-owned runtime DTO layout sweep. Additional fixed event, telemetry, mock, and native row payloads in world/VFX/UI/thermo/visor/outpost/flora/atmosphere/player/narrative/logistics/construction/encounter/campaign slices now use explicit FieldOffset layouts with named padding. `StructLayout(...Pack=...)` remains 0 under `Assets/_Project/Scripts`; broad non-Pack Sequential debt is now 399 and is still owner-classified before conversion.
+
+Notable ABI rows: `MockTerrainQuerySignal=64`, `HighPressureEventPayload=32`, `FatalPressureImplosionEventPayload=32`, `PendingAtmosphereMutation=32`, `WfcOutpostGridDescriptor=96`, `EncounterDirectorState=80`, `GIRelayTelemetryEntry=64`, `NarrativeTriggerTelemetryEntry=80`, and `StressSoA=48`.
+
+Residual Sequential rows in the touched continuation slice are not binary DTO misses: `GlobalWorldSamplerData`/sampler jobs and `AtmosphereStepJob` embed `NativeArray`, `MetaCampaignEvaluationResult` embeds `FixedList128Bytes`, and `QueuedCollisionEvent` embeds `Rigidbody`. These remain excluded from blind explicit layout because Unity or managed-reference ownership controls their true ABI.
+
+Static source only: no build/rebuild, Unity import, Burst Inspector, profiler, or player-build proof is claimed.
+
+## 2026-05-20 SHINOBU_219 Duplicate Phase Guard Addendum
+
+Visual pressure-aging binary payload layouts are unchanged. No BufferID, DTO size, signal payload, shader payload, asmdef
+edge, or Vault descriptor changed in this addendum.
+
+`ScheduleSimulation` now fail-closes if `_simulationScheduled` is already true, so a duplicate dispatcher phase cannot
+unlock Vault buffers protecting an in-flight `ProcessAgingParametersJob` or mock aging job. `VisualSyncTick` also
+returns while a simulation job is still scheduled, preserving PostSimulation as the only boundary that swaps dependency
+ownership and releases SHINOBU Vault locks before GPU upload.
+
+The static inquisition JSON bridge now emits `\u00XX` escapes for any remaining control character below U+0020 while
+preserving previous aggregate report text. This is editor-only and does not change player payloads.
+
+Static source only: targeted scans over SHINOBU runtime/gizmo files, UberNoir aging ranges, and `Rendering/Construction`
+legacy aging tokens were clean after the patch. CPU sampled 50.241% with no active compiler process, so no build/rebuild,
+Unity import, shader compiler, Frame Debugger, profiler, GCMonitor, or player-build proof is claimed.
+
+## 2026-05-20 SHINOBU_201 Force Queue State Flag Addendum
+
+Buoyancy binary payload layouts remain unchanged. No BufferID, DTO size, signal payload, shader payload, asmdef edge, or
+Vault descriptor changed in this addendum.
+
+`EvaluateBuoyancyJob` now folds force-packet slot availability into `queueCandidate` before writing `BuoyancyStateDTO.Flags`.
+The state row, debug-force row, and `BuoyancyForcePacketDTO.Flags` now agree on `FlagForceQueued` for the same evaluated row.
+This is a bookkeeping repair only; the force-packet ABI, compaction ABI, and physics apply route remain unchanged.
+
+Static source only: no build/rebuild, Unity import, Burst Inspector, profiler, or player-build proof is claimed.
+
+## 2026-05-20 SHINOBU_201 Cached Sector AUP Route Addendum
+
+Buoyancy binary payload layouts remain unchanged. No BufferID, DTO size, signal payload, shader payload, asmdef edge, or
+Vault descriptor changed in this addendum.
+
+`BuoyancyDisplacementRuntime.FixedTick` no longer resolves sector AUP through
+`HectonFloatingOrigin.CurrentTotalOffsetDouble` on the steady-state scheduling path. The runtime now implements
+`IOriginShiftListener`, samples the initial double-precision sector AUP during cold listener registration, and updates
+the cached value from `OriginShiftEventData.NewTotalOffsetDouble` when a shift commits. `BuoyancyTuningDTO.SectorAUP`
+therefore receives the same AUP owner fact without a per-fixed-tick `GlobalRegistry.FloatingOrigin` read hidden behind
+the floating-origin static getter.
+
+Runtime braces/preprocessor state are balanced, forbidden hot-path scans returned no matches, stale SHINOBU_158 runtime
+ownership text was removed, and source diff check reports only repository LF/CRLF normalization warnings. A scoped
+`dotnet build Hecton8.Core.csproj --no-restore` launched when CPU was 33.69% and compiler process count was zero, but it
+failed on 77 external dependency errors before any SHINOBU-owned buoyancy file was reported. Unity import, Burst
+Inspector, profiler, GCMonitor, and player-build proof remain blocked by that dependency wall.
+
+## 2026-05-20 SHINOBU_201 Floating-Origin Hot-Swap AUP Refresh Addendum
+
+Buoyancy binary payload layouts remain unchanged. No BufferID, DTO size, signal payload, shader payload, asmdef edge, or
+Vault descriptor changed in this addendum.
+
+`BuoyancyDisplacementRuntime.OnGlobalRegistryServiceReplaced` now handles
+`GlobalRegistryServiceSlot.FloatingOriginRuntime` by refreshing the cached double-precision sector AUP and reattempting
+origin-shift listener registration before returning. The steady-state `FixedTick` path still writes
+`BuoyancyTuningDTO.SectorAUP` from the local cached `double3`; the floating-origin static getter remains isolated to the
+cold/lifecycle refresh helper.
+
+Static gates passed: runtime braces `119/119`, preprocessor `#if 6/#endif 6`, forbidden hot-path scan returned no matches,
+and source diff check reports only repository LF/CRLF normalization warnings. No second build/rebuild was launched because
+Loop 63 already established the scoped build is blocked by 77 external dependency errors before owned buoyancy files are
+reported.
+
+## 2026-05-20 SHINOBU_201 Origin Listener Flag Revalidation Addendum
+
+Buoyancy binary payload layouts remain unchanged. No BufferID, DTO size, signal payload, shader payload, asmdef edge, or
+Vault descriptor changed in this addendum.
+
+Origin-shift listener truth now comes from the authoritative `HectonFloatingOrigin` listener bucket. The buoyancy runtime
+revalidates `_registeredOriginShiftListener` through `HectonFloatingOrigin.IsListenerRegistered(this)` before deciding that
+registration is already present; if the bucket does not contain the runtime, it registers and samples the result again.
+This tightens the Loop 64 hot-swap refresh without changing the steady-state `FixedTick` AUP route or any binary payload.
+
+Static gates passed: runtime braces `120/120`, preprocessor `#if 6/#endif 6`, forbidden hot-path scan returned no matches,
+and source diff check reports only repository LF/CRLF normalization warnings. No build/rebuild was launched because CPU was
+4% but seven `dotnet` processes were active, and Loop 63 already established the external dependency wall.
+
+## 2026-05-20 SHINOBU_201 Origin Listener Teardown Revalidation Addendum
+
+Buoyancy binary payload layouts remain unchanged. No BufferID, DTO size, signal payload, shader payload, asmdef edge, or
+Vault descriptor changed in this addendum.
+
+Teardown now mirrors the same authoritative origin-listener route as registration. `TryUnregisterOriginShiftListener`
+checks `HectonFloatingOrigin.IsListenerRegistered(this)` before deciding whether removal is needed, calls
+`UnregisterListener(this)` only when bucket membership is proven, and samples the bucket again afterward. This prevents
+stale origin-shift callbacks without changing the steady-state `FixedTick` AUP route or any binary payload.
+
+Static gates passed: runtime braces `120/120`, preprocessor `#if 6/#endif 6`, forbidden hot-path scan returned no matches,
+and source diff check reports only repository LF/CRLF normalization warnings. No build/rebuild was launched because CPU was
+9% but seven `dotnet` processes were active, and Loop 63 already established the external dependency wall.
+
+## 2026-05-20 SHINOBU_201 Hot-Swap Listener Registration Decoupling Addendum
+
+Buoyancy binary payload layouts remain unchanged. No BufferID, DTO size, signal payload, shader payload, asmdef edge, or
+Vault descriptor changed in this addendum.
+
+`BuoyancyDisplacementRuntime.TryRegister()` now registers as a `GlobalRegistry` hot-swap listener before checking
+`GlobalRegistry.Dispatcher`. Fixed, post-fixed, and late-frame tick registrations remain dispatcher-gated. This preserves
+dispatcher ownership while ensuring DataVault and floating-origin service replacement events can reach an early-enabled
+runtime during bootstrap and service churn.
+
+Static gates passed: runtime braces `120/120`, preprocessor `#if 6/#endif 6`, forbidden allocation/property/random scan
+returned no matches, the global-registry scan remains lifecycle-only plus the cold AUP refresh helper, and source diff
+check reports only repository LF/CRLF normalization warnings. No build/rebuild was launched because CPU was 8% but seven
+`dotnet` processes were active, and Loop 63 already established the external dependency wall.
+
+## 2026-05-20 SHINOBU_201 Explicit Gizmo AUP Offset Route Addendum
+
+Buoyancy binary payload layouts remain unchanged. No BufferID, DTO size, signal payload, shader payload, asmdef edge, or
+Vault descriptor changed in this addendum.
+
+`BuoyancyDisplacementRuntime.OnDrawGizmos` no longer uses the overload
+`HectonFloatingOrigin.ToRuntimePosition(debug.CurrentAUP)`, which internally reads the registry-backed current-offset
+getter. The editor diagnostic path now resolves `ResolveCachedSectorAUP()` once before drawing debug-force rows and calls
+the explicit offset overload `ToRuntimePosition(debug.CurrentAUP, committedOffset)`. Player runtime scheduling was already
+using the cached `double3` route; this addendum only removes the hidden editor overload route from Task 19 diagnostics.
+
+Static gates passed: runtime braces `120/120`, preprocessor `#if 6/#endif 6`, forbidden allocation/property/random scan
+returned no matches, prompt extraction still reports 20 SHINOBU_201 tasks, and source diff check reports only repository
+LF/CRLF normalization warnings. No build/rebuild was launched because the latest gate probe sampled CPU at 5.76% with
+seven `dotnet` processes active, and Loop 63 already established the external dependency wall.
+
+## 2026-05-20 SHINOBU_201 Dump Layout Collision Split Addendum
+
+Buoyancy and SIMD binary payload layouts remain unchanged. No BufferID, DTO size, signal payload, shader payload, asmdef
+edge, or Vault descriptor changed in this addendum.
+
+Fault dump ownership is now schema-separated. The XML-mandated SIMD telemetry artifact remains
+`Docs/AgentLogs/Dump_SHINOBU_201.bin` and contains raw `SimdTelemetryEntry` rows. Gameplay buoyancy fault dumps still write
+the historical `Docs/AgentLogs/Dump_FLUID_DYNAMICS.bin` alias, but the SHINOBU gameplay alias now writes
+`Docs/AgentLogs/Dump_SHINOBU_201_Buoyancy.bin` so a `BuoyancyTelemetryEntry` ring cannot overwrite or masquerade as the
+SIMD telemetry ring.
+
+Static source gates and build gate are pending after this constant-only C# change.
+
+## 2026-05-20 SHINOBU_201 Unsafe Count Ingress Clamp Addendum
+
+Buoyancy binary payload layouts remain unchanged. No BufferID, DTO size, signal payload, shader payload, asmdef edge,
+Vault descriptor, or runtime owner changed in this addendum.
+
+`GenerateMockBuoyantObjectsJob` and `EvaluateBuoyancyJob` now treat resolved NativeArray lengths as the final authority
+for unsafe pointer/read/write bounds. Mock seeding clamps `StateCount` to `States.Length` and debug rows to
+`DebugForces.Length`; the evaluator clamps state, flow sample, debug, and force packet counts to their resolved buffer
+lengths before `GetUnsafePtr`, flow sample modulo, debug-force writes, or force-packet writes. This preserves the
+existing Vault-owned SoA/AoS contract while closing a stale scheduler-count range hazard.
+
+Static gates passed: prompt extraction still reports 20 SHINOBU_201 tasks, jobs/runtime/SIMD braces are balanced
+(`42/42`, `121/121`, `92/92`), forbidden allocation/random/property/parser scans returned no matches, and diff check
+reports only repository LF/CRLF normalization warnings. A scoped `dotnet build Hecton8.Core.csproj --no-restore` was
+launched only after CPU sampled at 11% with zero compiler processes; it failed on the known 77-error external dependency
+wall before any SHINOBU-owned buoyancy/SIMD file appeared in compiler output.
+
+## 2026-05-20 SHINOBU_217 Validated Visual DTO Truth Addendum
+
+Construction socket binary payload layouts remain unchanged. No BufferID, DTO size, signal payload, shader payload, asmdef
+edge, or Vault descriptor changed in this addendum.
+
+`ValidateBuilderGhostPlacementJob` now receives the existing `BuilderGhostVisualDTO` Vault lane and mirrors the final
+SDF/bounds validation flags plus resolved alpha into the visual row after updating `BuilderGhostStateDTO`. This closes the
+pre-validation visual-row gap without adding a second sync job or changing the build -> validate dependency chain.
+
+Static source only: no build/rebuild, Unity import, Burst Inspector, profiler, or player-build proof is claimed.
+
+## 2026-05-20 SHINOBU_217 Holography Dump Ownership Addendum
+
+Construction socket binary payload layouts remain unchanged. No BufferID, DTO size, signal payload, shader payload, asmdef
+edge, or Vault descriptor changed in this addendum.
+
+`HolographyDumpPath` now writes to `Docs/AgentLogs/Dump_SHINOBU_217_Holography.bin`. The existing socket telemetry dump
+remains `Docs/AgentLogs/Dump_SHINOBU_217.bin`; the two files stay separate because `ConstructionSocketTelemetryEntry` and
+`HolographyTelemetryEntry` are both 64 bytes but have different field layouts.
+
+Static source only: no build/rebuild, Unity import, Burst Inspector, profiler, or player-build proof is claimed.
+
+## 2026-05-20 SHINOBU_217 Cold ModuleSocket Buffer Capacity Addendum
+
+Construction socket binary payload layouts remain unchanged. No BufferID, DTO size, signal payload, shader payload, asmdef
+edge, or Vault descriptor changed in this addendum.
+
+The cold `ModuleSocket` authoring bridge in `PlayerBuilder` still uses Unity's list-based `GetComponentsInChildren`
+overload while occupied-socket truth is migrated from authoring components into `SocketStateDTO`. The reusable buffers now
+start at `ShinobuSocketConstructionRuntime.GhostSocketCapacity` instead of 8 to avoid backing-array growth on dense modules.
+
+Static source only: no build/rebuild, Unity import, Burst Inspector, profiler, or player-build proof is claimed.
+
+## 2026-05-20 SHINOBU_217 Builder SDF Math-LOD Addendum
+
+Construction socket binary payload layouts remain unchanged. No BufferID, DTO size, signal payload, shader payload, asmdef
+edge, or Vault descriptor changed in this addendum.
+
+This addendum is superseded for placement truth by the later SHINOBU_228 source-residue polish. Builder holography validation
+now always hydrates and evaluates all eight SDF bounds corners; `GlobalQualityWeight` controls visual shader cost and pipe
+presentation density only. CPU hydration and `ValidateBuilderGhostPlacementJob` still share the deterministic corner order,
+but no corner is skipped for thermal quality.
+
+Static source only: no build/rebuild, Unity import, Burst Inspector, profiler, or player-build proof is claimed.
+
+## 2026-05-20 SHINOBU_204 Alignment Continuation Ledger Tail
+
+Latest SHINOBU_204 source-only sweep leaves `StructLayout(...Pack=...)` at 0 and broad non-Pack Sequential debt at 399 under `Assets/_Project/Scripts`. Additional explicit rows include `MockTerrainQuerySignal=64`, `HighPressureEventPayload=32`, `FatalPressureImplosionEventPayload=32`, `PendingAtmosphereMutation=32`, `WfcOutpostGridDescriptor=96`, `EncounterDirectorState=80`, `GIRelayTelemetryEntry=64`, `NarrativeTriggerTelemetryEntry=80`, and `StressSoA=48`.
+
+Residual Sequential rows in touched files are owner-excluded wrappers: Unity `NativeArray` job/data wrappers, `FixedList128Bytes` result wrapper, or a managed collision event carrying `Rigidbody`. Static source only: no build/rebuild, Unity import, Burst Inspector, profiler, or player-build proof is claimed.

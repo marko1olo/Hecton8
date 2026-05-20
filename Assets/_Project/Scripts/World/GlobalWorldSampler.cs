@@ -59,27 +59,27 @@ namespace Hecton8.World
         NormalEstimated = 1 << 7
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct GlobalWorldSamplerTelemetryEntry
     {
         // 64-byte black-box row. No custom packing: ARM64 reads stay naturally aligned.
         // 00 float3 LocalPosition, 12 float Distance, 16 uint Frame, 20 uint Hash.
         // 24 int SampleCount, 28 int Warning, 32 float3 Normal, 44 byte/byte/ushort,
         // 48..63 explicit int padding/reserve.
-        public float3 LocalPosition;
-        public float Distance;
-        public uint Frame;
-        public uint QueryHash;
-        public int SampleCount;
-        public int WarningCode;
-        public float3 Normal;
-        public byte MaterialID;
-        public byte Flags;
-        public ushort SectorIndex;
-        public int Reserved0;
-        public int Reserved1;
-        public int Reserved2;
-        public int Reserved3;
+        [FieldOffset(0)] public float3 LocalPosition;
+        [FieldOffset(12)] public float Distance;
+        [FieldOffset(16)] public uint Frame;
+        [FieldOffset(20)] public uint QueryHash;
+        [FieldOffset(24)] public int SampleCount;
+        [FieldOffset(28)] public int WarningCode;
+        [FieldOffset(32)] public float3 Normal;
+        [FieldOffset(44)] public byte MaterialID;
+        [FieldOffset(45)] public byte Flags;
+        [FieldOffset(46)] public ushort SectorIndex;
+        [FieldOffset(48)] public int Reserved0;
+        [FieldOffset(52)] public int Reserved1;
+        [FieldOffset(56)] public int Reserved2;
+        [FieldOffset(60)] public int Reserved3;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -89,94 +89,94 @@ namespace Hecton8.World
         [FieldOffset(0)] public int Value;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 24)]
+    [StructLayout(LayoutKind.Explicit, Size = 24)]
     public struct TerrainSampleDTO
     {
         // 24 bytes: one 16-byte hot lane plus biome hash. No properties: CS1612-safe.
-        public float3 Normal;
-        public float Distance;
-        public uint BiomeHash;
-        public uint _pad0;
+        [FieldOffset(0)] public float3 Normal;
+        [FieldOffset(12)] public float Distance;
+        [FieldOffset(16)] public uint BiomeHash;
+        [FieldOffset(20)] public uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 8)]
+    [StructLayout(LayoutKind.Explicit, Size = 8)]
     public struct MapMagicCellDTO
     {
         // 8 bytes. Height is sampled first; type/wetness stay byte-addressable for Burst lanes.
-        public float Height;
-        public short TerrainType;
-        public byte Wetness;
-        private byte _alignmentPad;
+        [FieldOffset(0)] public float Height;
+        [FieldOffset(4)] public short TerrainType;
+        [FieldOffset(6)] public byte Wetness;
+        [FieldOffset(7)] private byte _alignmentPad;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct TerrainPayloadHeaderDTO
     {
         // Cold OSHINO binary header mirror. Runtime buffers still hydrate into aligned NativeArrays.
-        public ulong Magic;
-        public ulong PayloadBytes;
-        public uint Version;
-        public uint HeaderBytes;
-        public uint Width;
-        public uint Height;
-        public uint Depth;
-        public uint Flags;
-        public float HeightScale;
-        public float SdfRange;
-        public uint Crc32;
-        public uint EndianTag;
-        public uint _pad0;
-        public uint _pad1;
+        [FieldOffset(0)] public ulong Magic;
+        [FieldOffset(8)] public ulong PayloadBytes;
+        [FieldOffset(16)] public uint Version;
+        [FieldOffset(20)] public uint HeaderBytes;
+        [FieldOffset(24)] public uint Width;
+        [FieldOffset(28)] public uint Height;
+        [FieldOffset(32)] public uint Depth;
+        [FieldOffset(36)] public uint Flags;
+        [FieldOffset(40)] public float HeightScale;
+        [FieldOffset(44)] public float SdfRange;
+        [FieldOffset(48)] public uint Crc32;
+        [FieldOffset(52)] public uint EndianTag;
+        [FieldOffset(56)] public uint _pad0;
+        [FieldOffset(60)] public uint _pad1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct TerrainSampleResult
     {
         // 64-byte DTO. The hot normal+distance header is exactly one 16-byte lane.
         // 00 float3 Normal, 12 float Distance, 16 float3 LocalPosition, 28 float Height.
         // 32..47 distance scalars, 48 uint Hash, 52 ushort Sector, 54..55 bytes,
         // 56 int Revision, 60 uint BiomeHash.
-        public float3 Normal;
-        public float Distance;
-        public float3 LocalPosition;
-        public float Height;
-        public float Distance2D;
-        public float Distance3D;
-        public float SeaDistance;
-        public float GradientEpsilon;
-        public uint StateHash;
-        public ushort SectorIndex;
-        public byte MaterialID;
-        public byte Flags;
-        public int SampleRevision;
-        public uint BiomeHash;
+        [FieldOffset(0)] public float3 Normal;
+        [FieldOffset(12)] public float Distance;
+        [FieldOffset(16)] public float3 LocalPosition;
+        [FieldOffset(28)] public float Height;
+        [FieldOffset(32)] public float Distance2D;
+        [FieldOffset(36)] public float Distance3D;
+        [FieldOffset(40)] public float SeaDistance;
+        [FieldOffset(44)] public float GradientEpsilon;
+        [FieldOffset(48)] public uint StateHash;
+        [FieldOffset(52)] public ushort SectorIndex;
+        [FieldOffset(54)] public byte MaterialID;
+        [FieldOffset(55)] public byte Flags;
+        [FieldOffset(56)] public int SampleRevision;
+        [FieldOffset(60)] public uint BiomeHash;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct GlobalWorldSamplerQuery
     {
         // 00 double3 AUP, 24 uint Frame, 28 byte Flags, 29 byte pad, 30 ushort pad.
-        public double3 Aup;
-        public uint Frame;
-        public byte Flags;
-        public byte Padding0;
-        public ushort Padding1;
+        [FieldOffset(0)] public double3 Aup;
+        [FieldOffset(24)] public uint Frame;
+        [FieldOffset(28)] public byte Flags;
+        [FieldOffset(29)] public byte Padding0;
+        [FieldOffset(30)] public ushort Padding1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct GlobalWorldSamplerQualityState
     {
         // 32 bytes. Dispatcher-owned state for deterministic quality hysteresis.
         // 00 current, 04 target, 08 tick delta, 12 shed rate, 16 recover rate,
         // 20 frame, 24..31 padding.
-        public float CurrentWeight;
-        public float TargetWeight;
-        public float SimulationTickDelta;
-        public float ShedPerSecond;
-        public float RecoverPerSecond;
-        public uint Frame;
-        public uint _pad0;
-        public uint _pad1;
+        [FieldOffset(0)] public float CurrentWeight;
+        [FieldOffset(4)] public float TargetWeight;
+        [FieldOffset(8)] public float SimulationTickDelta;
+        [FieldOffset(12)] public float ShedPerSecond;
+        [FieldOffset(16)] public float RecoverPerSecond;
+        [FieldOffset(20)] public uint Frame;
+        [FieldOffset(24)] public uint _pad0;
+        [FieldOffset(28)] public uint _pad1;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -2215,15 +2215,26 @@ namespace Hecton8.World
         }
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 40)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public partial struct MockTerrainQuerySignal
     {
-        // 40 bytes: double3 AUP, float quality, uint seed, uint frame, uint pad.
+        // 64 bytes: one cache line; double3 AUP first, scalar lanes after 24 bytes.
+        [FieldOffset(0)]
         public double3 Aup;
+        [FieldOffset(24)]
         public float QualityWeight;
+        [FieldOffset(28)]
         public uint Seed;
+        [FieldOffset(32)]
         public uint Frame;
+        [FieldOffset(36)]
         public uint _pad0;
+        [FieldOffset(40)]
+        private ulong _pad1;
+        [FieldOffset(48)]
+        private ulong _pad2;
+        [FieldOffset(56)]
+        private ulong _pad3;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -2270,7 +2281,7 @@ namespace Hecton8.World
             float rz = random.NextFloat(-1f, 1f);
             float q = random.NextFloat(0f, 1f);
 
-            MockTerrainQuerySignal signal;
+            MockTerrainQuerySignal signal = default;
             signal.Aup = OriginAup + GlobalWorldSampler.Double3(rx * ExtentsMeters.x, ry * ExtentsMeters.y, rz * ExtentsMeters.z);
             signal.QualityWeight = q;
             signal.Seed = random.state;

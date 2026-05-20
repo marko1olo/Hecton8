@@ -21,6 +21,7 @@ No Steam page, Next Fest, demo approval, creator outreach, ad performance, runti
 Batch sizes below are ceilings, not instructions. Any phase that uses gameplay, pressure, route-risk, threat, salvage, base failure, or first-public agency proof requires:
 
 - one factual agency candidate asset, not only planned metadata;
+- non-pending metadata `viewer_named_decision` plus valid `capture_verdict` for that agency candidate;
 - `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision` from AB-009/KPI;
 - `creator_send_gate` open when the batch is creator-facing;
 - `send_route_class` and `reply_consent_provenance` before replies count as KPI signal;
@@ -31,9 +32,9 @@ Batch sizes below are ceilings, not instructions. Any phase that uses gameplay, 
 | Phase | Trigger | Main Asset | Outreach Scope |
 |---|---|---|---|
 | P0 Prep | Now | docs, lead base, pitch bank | No external outreach except private critique. |
-| P1 Screenshot Proof | 6-10 real screenshots plus AB-009/KPI decision-read proof for any agency claim | Steam draft + screenshot pack | 10-20 high-fit critique asks only after `send_route_class` / `reply_consent_provenance` fields are ready for creator sends. |
-| P2 Clip Proof | 3-5 20s clips plus AB-009/KPI decision-read proof if the clip sells pressure/route risk | vertical/16:9 clips | 20-40 creators/community critique only with route-specific class and `reply_consent_provenance` logging. |
-| P3 Steam Page Live | public Coming Soon page plus official CTA/UTM activation and AB-009/KPI proof for first-page agency claims | CTA packet + page assets | 50-100 leads, mostly feedback/wishlist funnel, only through verified route classes. |
+| P1 Screenshot Proof | 6-10 real screenshots plus non-pending metadata handoff fields and AB-009/KPI decision-read proof for any agency claim | Steam draft + screenshot pack | 10-20 high-fit critique asks only after `send_route_class` / `reply_consent_provenance` fields are ready for creator sends. |
+| P2 Clip Proof | 3-5 20s clips plus non-pending metadata handoff fields and AB-009/KPI decision-read proof if the clip sells pressure/route risk | vertical/16:9 clips | 20-40 creators/community critique only with route-specific class and `reply_consent_provenance` logging. |
+| P3 Steam Page Live | public Coming Soon page plus official CTA/UTM activation, non-pending metadata handoff fields, and AB-009/KPI proof for first-page agency claims | CTA packet + page assets | 50-100 leads, mostly feedback/wishlist funnel, only through verified route classes. |
 | P4 Demo Locked | stable public demo plus access logs, known-issues copy, and `access_route_class` / `reply_consent_provenance` custody | demo + press kit | 100-200 leads; keys/private access only after recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED`, official inbox custody, tracking, and disclosure. |
 | P5 Next Fest | after current Steamworks eligibility recheck, registered/demo-approved state, page/demo proof assets, and route/consent reporting | demo + trailer + livestream assets | 200+ segmented contacts only from verified database. |
 | P6 EA Launch | current-state EA build | launch trailer + key policy | press/creators, no future promises. |

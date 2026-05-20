@@ -1,4 +1,4 @@
-﻿# Macro Ecosystem Mathematician
+# Macro Ecosystem Mathematician
 
 Owner: SHINOBU_116.
 
@@ -14,7 +14,7 @@ Evidence class: STATIC_SOURCE / FILESYSTEM. These anchors prove only that the ci
 - `Assets/_Project/Data/biome_ecosystem_specs.csv`
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-17 R4 Interior Actuality Boundary
+## 2026-05-20 R47 Root/Architecture Actuality Boundary
 
 This document is active only where it agrees with:
 
@@ -26,7 +26,7 @@ This document is active only where it agrees with:
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
 
-R46 root/architecture interior-authority/route-field/proof-language correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
+R47 root/architecture authority-spine/runtime-wording/counter-drift correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R46 remains the prior interior-authority/route-field/proof-language correction. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 The macro ecosystem is a headless FrostTick simulation. It owns no scene spawners, does not call `UnityEngine.Physics`, and writes prey/predator biomass as unmanaged sector records in `GlobalDataVault`.
@@ -111,5 +111,3 @@ Invalid LV math is written per sector to `ShinobuMacroEcosystemFaultFlags`; tele
 ## Verification
 
 Prior static scan text reported no `UnityEngine.Physics`, `Physics.`, managed collection creation, coroutine, `Update()`, private persistent `NativeParallelHashMap`, `NativeDisableParallelForRestriction`, runtime `Pack=1`, or `Time.frameCount` in the edited macro files. Treat those findings and the `FROSTTICK_REGISTRY_CLEAN`, `PRE_POST_TUNING_FENCE_WITH_CAPACITY_DRIFT_PRESENT`, `DIRECT_READERS_PRE_POST_TUNING_FENCE_PRESENT`, `BURST_EXACT=7`, and `JOBS=7` labels as STATIC_SOURCE orientation only until an artifact tuple is attached: command/tool, timestamp, environment, scanned root, output path, and unresolved list. Quality curve source samples using C# positive-float truncation were q=0.10 -> 1 step/0.2500 flow, q=0.29 -> 1 step/0.2763 flow, q=0.50 -> 2 steps/0.4873 flow, q=0.75 -> 4 steps/0.8260 flow, q=1.00 -> 5 steps/1.0000 flow. Build proof is pending because no current guarded compile/Unity import artifact is linked.
-
-

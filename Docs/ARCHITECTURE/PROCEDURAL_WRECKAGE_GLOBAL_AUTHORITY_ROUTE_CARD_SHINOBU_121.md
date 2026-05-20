@@ -1,11 +1,11 @@
-﻿# Procedural Wreckage Global Authority Route Card - SHINOBU_121
+# Procedural Wreckage Global Authority Route Card - SHINOBU_121
 
 Date: 2026-05-19
 Status: YELLOW / PENDING VERIFICATION
 Evidence class: STATIC_SOURCE / UNITY IMPORT PENDING
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-20 R46 Root/Architecture Actuality Boundary
+## 2026-05-20 R47 Root/Architecture Actuality Boundary
 This document is active only where it agrees with:
 
 - `Docs/README.md`
@@ -16,7 +16,7 @@ This document is active only where it agrees with:
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
 
-R46 root/architecture interior-authority/route-field/proof-language correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
+R47 root/architecture authority-spine/runtime-wording/counter-drift correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R46 remains the prior interior-authority/route-field/proof-language correction. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 ## Source Anchors
 
@@ -85,7 +85,7 @@ Capacity:
 - SelfAudit 1
 - HzbTiles 4096
 
-Overflow/failure: jobs clamp writes to capacity, set fault flags, preserve fallback mock rules, and dump telemetry on fault through `Dump_WRECKAGE_ASSEMBLER.bin` and `Dump_SHINOBU_121.bin`.
+Overflow/failure: jobs clamp writes to capacity, set fault flags, preserve fallback mock rules, and request `Dump_WRECKAGE_ASSEMBLER.bin` and `Dump_SHINOBU_121.bin` as planned/generated-on-fault telemetry artifacts. No existing dump artifact is implied unless a timestamped runtime trigger and output are linked.
 
 Telemetry fields: root AUP, frame, sector hash, collapsed modules, backtrack iterations, estimated compute ms, quality, state hash, fault flags, rendered modules, debris count.
 
@@ -120,5 +120,3 @@ Reviewer: SHINOBU_121 self-review only
 Review disposition: YELLOW
 Reason: route-card fields are populated for `STATIC_SOURCE` orientation; compile/Unity/profiler proof is absent under the CPU build gate.
 Required fixes before GREEN: run Unity import/compile and profiler evidence when CPU guard allows; attach artifacts.
-
-

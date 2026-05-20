@@ -358,21 +358,28 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
             int rem = index - (z * layer);
             int y = rem / xCount;
             int x = rem - (y * xCount);
-            float3 center = (new float3(xCount - 1, yCount - 1, zCount - 1) * 0.5f) * math.max(CellSize, 0.0001f);
-            float3 p = (new float3(x, y, z) * math.max(CellSize, 0.0001f)) - center;
-            float q = math.saturate(GlobalQualityWeight);
+            float cellSize = math.max(math.isfinite(CellSize) ? math.abs(CellSize) : 0.0001f, 0.0001f);
+            float3 center = (new float3(xCount - 1, yCount - 1, zCount - 1) * 0.5f) * cellSize;
+            float3 p = (new float3(x, y, z) * cellSize) - center;
+            float q = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 0f);
+            float torsion = math.clamp(math.isfinite(ShearTorsion) ? ShearTorsion : 0f, -8f, 8f);
             float3 axis = math.normalizesafe(new float3(0.13f + q, 1f, 0.31f), new float3(0f, 1f, 0f));
-            float twist = ShearTorsion * (0.35f + q) * math.dot(p, axis) * 0.025f;
+            float projection = math.dot(p, axis);
+            projection = math.isfinite(projection) ? projection : 0f;
+            float twist = torsion * (0.35f + q) * projection * 0.025f;
+            twist = math.clamp(math.isfinite(twist) ? twist : 0f, -6.2831855f, 6.2831855f);
             p = RotateAroundAxis(p, axis, twist);
 
-            float3 blastDelta = p - BlastEpicenter;
-            float radius = math.max(BlastRadius, 0.001f);
+            float3 epicenter = math.all(math.isfinite(BlastEpicenter)) ? BlastEpicenter : float3.zero;
+            float3 blastDelta = p - epicenter;
+            blastDelta = math.all(math.isfinite(blastDelta)) ? blastDelta : float3.zero;
+            float radius = math.clamp(math.isfinite(BlastRadius) ? math.abs(BlastRadius) : 0.001f, 0.001f, 100000f);
             float distSq = math.max(math.dot(blastDelta, blastDelta), 0.000001f);
             float dist = math.sqrt(distSq);
             float falloff = math.saturate(1f - (dist / radius));
             p += blastDelta * math.rsqrt(distSq) * falloff * falloff * radius * math.lerp(0.08f, 0.32f, q);
-            p.x += p.y * ShearTorsion * 0.08f;
-            p.z -= p.x * ShearTorsion * 0.03f;
+            p.x += p.y * torsion * 0.08f;
+            p.z -= p.x * torsion * 0.03f;
 
             OfflineWreckageBakeVertexDTO* ptr = (OfflineWreckageBakeVertexDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(Vertices);
             ref OfflineWreckageBakeVertexDTO vertex = ref UnsafeUtility.AsRef<OfflineWreckageBakeVertexDTO>(ptr + index);
@@ -410,16 +417,23 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
         {
             OfflineWreckageBakeVertexDTO* ptr = (OfflineWreckageBakeVertexDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(Vertices);
             ref OfflineWreckageBakeVertexDTO vertex = ref UnsafeUtility.AsRef<OfflineWreckageBakeVertexDTO>(ptr + index);
-            float3 p = vertex.Position;
-            float q = math.saturate(GlobalQualityWeight);
-            float3 axis = math.normalizesafe(ShearAxis, new float3(0f, 1f, 0f));
+            float3 original = math.all(math.isfinite(vertex.Position)) ? vertex.Position : float3.zero;
+            float3 p = original;
+            float q = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 0f);
+            float torsion = math.isfinite(ShearTorsion) ? math.clamp(ShearTorsion, -8f, 8f) : 0f;
+            float collapse = math.isfinite(CollapseCompression) ? math.saturate(CollapseCompression) : 0f;
+            float3 axisInput = math.all(math.isfinite(ShearAxis)) ? ShearAxis : new float3(0f, 1f, 0f);
+            float3 axis = math.normalizesafe(axisInput, new float3(0f, 1f, 0f));
             float projection = math.dot(p, axis);
-            float angle = projection * ShearTorsion * math.lerp(0.015f, 0.055f, q);
+            projection = math.isfinite(projection) ? projection : 0f;
+            float angle = projection * torsion * math.lerp(0.015f, 0.055f, q);
+            angle = math.clamp(math.isfinite(angle) ? angle : 0f, -6.2831855f, 6.2831855f);
             p = RotateAroundAxis(p, axis, angle);
             float3 lateral = math.cross(axis, p);
-            p += lateral * (ShearTorsion * math.lerp(0.02f, 0.11f, q));
-            p.y *= math.lerp(1f, math.saturate(1f - CollapseCompression), math.saturate(CollapseCompression));
-            vertex.Position = math.all(math.isfinite(p)) ? p : vertex.Position;
+            lateral = math.all(math.isfinite(lateral)) ? lateral : float3.zero;
+            p += lateral * (torsion * math.lerp(0.02f, 0.11f, q));
+            p.y *= math.lerp(1f, 1f - collapse, collapse);
+            vertex.Position = math.all(math.isfinite(p)) ? p : original;
             vertex.Uv3AupLocal = vertex.Position;
         }
 
@@ -455,21 +469,25 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
         {
             OfflineWreckageBakeVertexDTO* ptr = (OfflineWreckageBakeVertexDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(Vertices);
             ref OfflineWreckageBakeVertexDTO vertex = ref UnsafeUtility.AsRef<OfflineWreckageBakeVertexDTO>(ptr + index);
-            float3 delta = vertex.Position - EpicenterLocal;
-            float radius = math.max(Radius, 0.001f);
+            float3 original = math.all(math.isfinite(vertex.Position)) ? vertex.Position : float3.zero;
+            float3 epicenter = math.all(math.isfinite(EpicenterLocal)) ? EpicenterLocal : float3.zero;
+            float3 delta = original - epicenter;
+            delta = math.all(math.isfinite(delta)) ? delta : float3.zero;
+            float radius = math.clamp(math.isfinite(Radius) ? math.abs(Radius) : 0.001f, 0.001f, 100000f);
+            float damage = math.clamp(math.isfinite(DamageScale) ? DamageScale : 0f, -16f, 16f);
             float distSq = math.max(math.dot(delta, delta), 0.000001f);
             float dist = math.sqrt(distSq);
             float falloff = math.saturate(1f - (dist / radius));
-            float q = math.saturate(GlobalQualityWeight);
+            float q = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 0f);
             float3 dir = delta * math.rsqrt(distSq);
-            float impulse = falloff * falloff * DamageScale * radius * math.lerp(0.06f, 0.26f, q);
-            float3 bent = vertex.Position + (dir * impulse);
+            float impulse = falloff * falloff * damage * radius * math.lerp(0.06f, 0.26f, q);
+            float3 bent = original + (dir * impulse);
             float ring = math.saturate(1f - math.abs((dist / radius) - 0.52f) * 2.4f);
-            bent += math.cross(dir, new float3(0.17f, 1f, 0.31f)) * ring * DamageScale * math.lerp(0.03f, 0.18f, q) * radius;
-            vertex.Position = math.all(math.isfinite(bent)) ? bent : vertex.Position;
+            bent += math.cross(dir, new float3(0.17f, 1f, 0.31f)) * ring * damage * math.lerp(0.03f, 0.18f, q) * radius;
+            vertex.Position = math.all(math.isfinite(bent)) ? bent : original;
             vertex.Uv3AupLocal = vertex.Position;
 
-            float tearStart = math.saturate(TearThreshold);
+            float tearStart = math.saturate(math.isfinite(TearThreshold) ? TearThreshold : 1f);
             float tear = math.saturate((falloff - tearStart) * math.rcp(math.max(1f - tearStart, 0.001f)));
             TearWeights[index] = math.isfinite(tear) ? tear : 0f;
         }
@@ -520,9 +538,9 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
             int writeVertex = sourceVertexCount;
             int tornVertices = 0;
             int degenerateTriangles = 0;
-            float split = math.max(SplitDistance, 0.001f);
-            float threshold = math.saturate(TearThreshold);
-            float q = math.saturate(GlobalQualityWeight);
+            float split = math.clamp(math.isfinite(SplitDistance) ? math.abs(SplitDistance) : 0.001f, 0.001f, 100000f);
+            float threshold = math.saturate(math.isfinite(TearThreshold) ? TearThreshold : 1f);
+            float q = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 0f);
             float tearDetail01 = math.smoothstep(0.18f, 0.82f, q);
             float holeThresholdScale = math.lerp(2.2f, 1.55f, q);
             int triCount = SourceIndices.Length / 3;
@@ -540,6 +558,7 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
                 }
 
                 float tear = (tears[i0] + tears[i1] + tears[i2]) * 0.33333334f;
+                tear = math.saturate(math.isfinite(tear) ? tear : 0f);
                 if (tear > threshold * holeThresholdScale)
                 {
                     WriteDegenerate(dstIndices, baseIndex);
@@ -547,17 +566,21 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
                     continue;
                 }
 
-                float tearVisual01 = math.smoothstep(threshold, 1f, tear) * tearDetail01;
+                float tearVisual01 = threshold < 0.9999f ? math.smoothstep(threshold, 1f, tear) * tearDetail01 : 0f;
                 if (tearVisual01 > 0.0001f && writeVertex + 2 < OutputVertices.Length)
                 {
                     OfflineWreckageBakeVertexDTO v0 = src[i0];
                     OfflineWreckageBakeVertexDTO v1 = src[i1];
                     OfflineWreckageBakeVertexDTO v2 = src[i2];
+                    v0.Position = math.all(math.isfinite(v0.Position)) ? v0.Position : float3.zero;
+                    v1.Position = math.all(math.isfinite(v1.Position)) ? v1.Position : float3.zero;
+                    v2.Position = math.all(math.isfinite(v2.Position)) ? v2.Position : float3.zero;
                     float3 normal = math.normalizesafe(math.cross(v1.Position - v0.Position, v2.Position - v0.Position), new float3(0f, 1f, 0f));
                     float offset = split * tear * tearVisual01;
-                    v0.Position += normal * offset;
-                    v1.Position += normal * offset;
-                    v2.Position += normal * offset;
+                    float3 splitOffset = math.all(math.isfinite(normal)) && math.isfinite(offset) ? normal * offset : float3.zero;
+                    v0.Position += splitOffset;
+                    v1.Position += splitOffset;
+                    v2.Position += splitOffset;
                     v0.Uv3AupLocal = v0.Position;
                     v1.Uv3AupLocal = v1.Position;
                     v2.Uv3AupLocal = v2.Position;
@@ -708,12 +731,22 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
 
             OfflineWreckageBakeVertexDTO* ptr = (OfflineWreckageBakeVertexDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(Vertices);
             ref OfflineWreckageBakeVertexDTO vertex = ref UnsafeUtility.AsRef<OfflineWreckageBakeVertexDTO>(ptr + index);
-            float radius = math.max(BlastRadius, 0.001f);
-            float dist = math.sqrt(math.max(math.lengthsq(vertex.Position - EpicenterLocal), 0.000001f));
+            float3 position = math.all(math.isfinite(vertex.Position)) ? vertex.Position : float3.zero;
+            float3 normal = math.all(math.isfinite(vertex.Normal)) ? vertex.Normal : new float3(0f, 1f, 0f);
+            float3 epicenter = math.all(math.isfinite(EpicenterLocal)) ? EpicenterLocal : float3.zero;
+            float radius = math.clamp(math.isfinite(BlastRadius) ? math.abs(BlastRadius) : 0.001f, 0.001f, 100000f);
+            float intensity = math.clamp(math.isfinite(ScorchIntensity) ? ScorchIntensity : 0f, 0f, 16f);
+            float q = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 0f);
+            float distSq = math.lengthsq(position - epicenter);
+            distSq = math.max(math.isfinite(distSq) ? distSq : 0.000001f, 0.000001f);
+            float dist = math.sqrt(distSq);
             float scorch01 = math.saturate(1f - (dist / radius));
-            scorch01 = math.saturate(scorch01 * math.saturate(ScorchIntensity) * math.lerp(0.8f, 1.45f, math.saturate(GlobalQualityWeight)));
+            scorch01 = math.saturate(scorch01 * intensity * math.lerp(0.8f, 1.45f, q));
             byte scorch = (byte)math.clamp((int)math.round(scorch01 * 255f), 0, 255);
-            byte rust = (byte)math.clamp((int)math.round(math.saturate(scorch01 * 0.65f + math.abs(vertex.Normal.y) * 0.2f) * 255f), 0, 255);
+            byte rust = (byte)math.clamp((int)math.round(math.saturate(scorch01 * 0.65f + math.abs(normal.y) * 0.2f) * 255f), 0, 255);
+            vertex.Position = position;
+            vertex.Normal = normal;
+            vertex.Uv3AupLocal = position;
             vertex.PackedColor = OfflineWreckageBakeMath.PackColor(rust, (byte)128, scorch, (byte)255);
         }
     }

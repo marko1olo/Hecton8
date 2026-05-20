@@ -51,63 +51,167 @@ namespace Hecton8.Quest
         AbyssalPhase = 1u << 1
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct QuestSignalPayload
     {
-        public uint EntityHash;
-        public ushort EventType;
-        public ushort SubType;
-        public float3 Position;
-        public uint ItemId;
+        [FieldOffset(0)]
         public double Timestamp;
+
+        [FieldOffset(8)]
+        public float3 Position;
+
+        [FieldOffset(20)]
+        public uint EntityHash;
+
+        [FieldOffset(24)]
+        public uint ItemId;
+
+        [FieldOffset(28)]
         public uint Flags;
+
+        [FieldOffset(32)]
         public float NumericValue;
+
+        [FieldOffset(36)]
+        public ushort EventType;
+
+        [FieldOffset(38)]
+        public ushort SubType;
+
+        [FieldOffset(40)]
+        private ulong _pad0;
+
+        [FieldOffset(48)]
+        private ulong _pad1;
+
+        [FieldOffset(56)]
+        private ulong _pad2;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     internal struct QuestBitAddress
     {
+        [FieldOffset(0)]
         public int WordIndex;
+
+        [FieldOffset(4)]
         public uint BitMask;
+
+        [FieldOffset(8)]
         public uint FlagId;
+
+        [FieldOffset(12)]
+        private uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     internal struct QuestPrerequisiteDescriptor
     {
+        [FieldOffset(0)]
         public int StateWordIndex;
+
+        [FieldOffset(4)]
         public uint RequiredMask;
+
+        [FieldOffset(8)]
+        private ulong _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     internal struct QuestNodeDescriptor
     {
+        [FieldOffset(0)]
         public uint QuestHash;
+
+        [FieldOffset(4)]
         public uint PayloadHash;
+
+        [FieldOffset(8)]
         public uint PrereqMask;
+
+        [FieldOffset(12)]
         public uint CompletionFlagID;
+
+        [FieldOffset(16)]
         public uint FailureFlagID;
+
+        [FieldOffset(20)]
         public uint RevertFlagID;
+
+        [FieldOffset(24)]
         public uint PhaseGate;
+
+        [FieldOffset(28)]
         public uint ActiveFlagID;
+
+        [FieldOffset(32)]
         public uint CriticalItemHash;
+
+        [FieldOffset(36)]
         public int PrereqStartIndex;
-        public ushort PrereqWordIndex;
-        public ushort ReservedWordIndex;
+
+        [FieldOffset(40)]
         public float RequiredValue;
+
+        [FieldOffset(44)]
         public uint ActiveMask;
+
+        [FieldOffset(48)]
         public uint CompletedMask;
+
+        [FieldOffset(52)]
         public uint SetMask;
+
+        [FieldOffset(56)]
         public uint ClearMask;
-        public byte PrereqCount;
-        public byte SignalKind;
-        public byte TransitionType;
-        public byte Reserved;
+
+        [FieldOffset(60)]
         public int QuestIndex;
+
+        [FieldOffset(64)]
         public int ActiveWordIndex;
+
+        [FieldOffset(68)]
         public int CompletedWordIndex;
+
+        [FieldOffset(72)]
         public int SetWordIndex;
+
+        [FieldOffset(76)]
         public int ClearWordIndex;
+
+        [FieldOffset(80)]
+        public ushort PrereqWordIndex;
+
+        [FieldOffset(82)]
+        public ushort ReservedWordIndex;
+
+        [FieldOffset(84)]
+        public byte PrereqCount;
+
+        [FieldOffset(85)]
+        public byte SignalKind;
+
+        [FieldOffset(86)]
+        public byte TransitionType;
+
+        [FieldOffset(87)]
+        public byte Reserved;
+
+        [FieldOffset(88)]
+        private ulong _pad0;
+
+        [FieldOffset(96)]
+        private ulong _pad1;
+
+        [FieldOffset(104)]
+        private ulong _pad2;
+
+        [FieldOffset(112)]
+        private ulong _pad3;
+
+        [FieldOffset(120)]
+        private ulong _pad4;
     }
 
     internal readonly struct QuestRuntimeResult
@@ -124,29 +228,56 @@ namespace Hecton8.Quest
         public QuestTransitionType TransitionType { get; }
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal struct QuestRevertDescriptor
     {
+        [FieldOffset(0)]
         public uint CriticalItemHash;
+
+        [FieldOffset(4)]
         public uint EntityDestroyFlagId;
+
+        [FieldOffset(8)]
         public uint DeadlockFlagId;
+
+        [FieldOffset(12)]
         public uint ActiveFlagId;
+
+        [FieldOffset(16)]
         public uint CompletedFlagId;
+
+        [FieldOffset(20)]
         public uint RespawnEventHash;
+
+        [FieldOffset(24)]
         public int QuestIndex;
+
+        [FieldOffset(28)]
+        private uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public unsafe struct QuestSaveHeader
     {
         public const uint HeaderMagic = 0x48514753u;
         public const uint CurrentSchemaVersion = 1u;
 
+        [FieldOffset(0)]
         public uint Magic;
+
+        [FieldOffset(4)]
         public uint Version;
+
+        [FieldOffset(8)]
         public uint FlagCount;
+
+        [FieldOffset(12)]
         public uint Checksum;
+
+        [FieldOffset(16)]
         public double Timestamp;
+
+        [FieldOffset(24)]
         public fixed uint Reserved[10];
 
         public void WriteSchemaVersion()

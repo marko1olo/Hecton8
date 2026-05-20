@@ -17,7 +17,6 @@ namespace Hecton8.EditorTools
     {
         private const string DataFolder = "Assets/_Project/Data/Construction";
         private const string MaterialFolder = "Assets/_Project/Art/Materials/Construction";
-        private const string GhostPrefabFolder = "Assets/_Project/Prefabs/Construction/Ghosts";
         private const string FinalPrefabFolder = "Assets/_Project/Prefabs/Construction/Final";
         private const string TitaniumPrefabPath = "Assets/_Project/Prefabs/Item_Titanium.prefab";
         private const string DustParticlesPrefabPath = "Assets/_Project/Prefabs/VFX/PFB_MarineSnowLeakParticles.prefab";
@@ -48,17 +47,8 @@ namespace Hecton8.EditorTools
             EnsureFolder("Assets/_Project/Data/Construction");
             EnsureFolder("Assets/_Project/Prefabs");
             EnsureFolder("Assets/_Project/Prefabs/Construction");
-            EnsureFolder("Assets/_Project/Prefabs/Construction/Ghosts");
             EnsureFolder("Assets/_Project/Prefabs/Construction/Final");
 
-            Material validGhost = CreateOrUpdateMaterial(
-                $"{MaterialFolder}/Mat_BuildGhost_Valid.mat",
-                new Color(0.16f, 0.95f, 0.74f, 0.32f),
-                true);
-            Material invalidGhost = CreateOrUpdateMaterial(
-                $"{MaterialFolder}/Mat_BuildGhost_Invalid.mat",
-                new Color(1.00f, 0.22f, 0.18f, 0.32f),
-                true);
             Material foundationMat = CreateOrUpdateMaterial(
                 $"{MaterialFolder}/Mat_Module_Foundation.mat",
                 new Color(0.18f, 0.34f, 0.42f, 1.00f),
@@ -81,42 +71,6 @@ namespace Hecton8.EditorTools
                 false);
             Material passiveCreatureMat = AssetDatabase.LoadAssetAtPath<Material>(SupportCreaturePassiveMaterialPath) ?? pylonMat;
             Material predatorCreatureMat = AssetDatabase.LoadAssetAtPath<Material>(SupportCreaturePredatorMaterialPath) ?? corridorMat;
-
-            GameObject foundationGhost = CreateGhostPrefab(
-                $"{GhostPrefabFolder}/PFB_Ghost_Foundation.prefab",
-                PrimitiveType.Cube,
-                new Vector3(4f, 0.3f, 4f),
-                new Vector3(2f, 0.2f, 2f),
-                validGhost,
-                invalidGhost);
-            GameObject corridorGhost = CreateGhostPrefab(
-                $"{GhostPrefabFolder}/PFB_Ghost_Corridor.prefab",
-                PrimitiveType.Cube,
-                new Vector3(2f, 2f, 6f),
-                new Vector3(1f, 1f, 3f),
-                validGhost,
-                invalidGhost);
-            GameObject pylonGhost = CreateGhostPrefab(
-                $"{GhostPrefabFolder}/PFB_Ghost_Pylon.prefab",
-                PrimitiveType.Cylinder,
-                new Vector3(0.8f, 2.2f, 0.8f),
-                new Vector3(0.45f, 2.2f, 0.45f),
-                validGhost,
-                invalidGhost);
-            GameObject pumpGhost = CreateGhostPrefab(
-                $"{GhostPrefabFolder}/PFB_Ghost_ServicePump.prefab",
-                PrimitiveType.Cube,
-                new Vector3(1.8f, 1.6f, 1.8f),
-                new Vector3(0.9f, 0.8f, 0.9f),
-                validGhost,
-                invalidGhost);
-            GameObject turbineGhost = CreateGhostPrefab(
-                $"{GhostPrefabFolder}/PFB_Ghost_CurrentTurbine.prefab",
-                PrimitiveType.Cylinder,
-                new Vector3(1.8f, 2.8f, 1.8f),
-                new Vector3(0.9f, 1.4f, 0.9f),
-                validGhost,
-                invalidGhost);
 
             GameObject foundationFinal = CreateFinalPrefab(
                 $"{FinalPrefabFolder}/PFB_Module_Foundation.prefab",
@@ -304,7 +258,6 @@ namespace Hecton8.EditorTools
                 $"{DataFolder}/Build_Foundation_Platform.asset",
                 "Foundation Platform",
                 "Primary structural plate for early habitat expansion.",
-                foundationGhost,
                 foundationFinal,
                 BuildableFamily.Structure,
                 0f,
@@ -313,7 +266,6 @@ namespace Hecton8.EditorTools
                 $"{DataFolder}/Build_Corridor_Straight.asset",
                 "Straight Corridor",
                 "Pressurized connector for linking starter modules.",
-                corridorGhost,
                 corridorFinal,
                 BuildableFamily.Habitat,
                 -6f,
@@ -322,7 +274,6 @@ namespace Hecton8.EditorTools
                 $"{DataFolder}/Build_Utility_Pylon.asset",
                 "Utility Pylon",
                 "External support and routing node for later power/data chains.",
-                pylonGhost,
                 pylonFinal,
                 BuildableFamily.Utility,
                 0f,
@@ -331,7 +282,6 @@ namespace Hecton8.EditorTools
                 $"{DataFolder}/Build_Service_Pump.asset",
                 "Service Pump",
                 "Flood-control utility module for keeping starter corridors and work bays serviceable.",
-                pumpGhost,
                 pumpFinal,
                 BuildableFamily.Utility,
                 -8f,
@@ -340,7 +290,6 @@ namespace Hecton8.EditorTools
                 $"{DataFolder}/Build_Current_Turbine.asset",
                 "Current Turbine",
                 "Low-profile current generator for early power support on exposed routes.",
-                turbineGhost,
                 turbineFinal,
                 BuildableFamily.Utility,
                 18f,
@@ -1292,38 +1241,6 @@ namespace Hecton8.EditorTools
             }
         }
 
-        private static GameObject CreateGhostPrefab(
-            string prefabPath,
-            PrimitiveType primitiveType,
-            Vector3 scale,
-            Vector3 extents,
-            Material validMaterial,
-            Material invalidMaterial)
-        {
-            GameObject root = GameObject.CreatePrimitive(primitiveType);
-            root.name = System.IO.Path.GetFileNameWithoutExtension(prefabPath);
-            root.transform.localScale = scale;
-
-            if (root.TryGetComponent(out Collider collider))
-                collider.isTrigger = true;
-
-            if (root.TryGetComponent(out Renderer renderer))
-                renderer.sharedMaterial = validMaterial;
-
-            PlacementGhost ghost = root.AddComponent<PlacementGhost>();
-            SerializedObject so = new SerializedObject(ghost);
-            so.FindProperty("validMaterial").objectReferenceValue = validMaterial;
-            so.FindProperty("invalidMaterial").objectReferenceValue = invalidMaterial;
-            so.FindProperty("checkHalfExtents").vector3Value = extents;
-            so.FindProperty("checkCenterOffset").vector3Value = Vector3.zero;
-            so.FindProperty("checkShrink").floatValue = 0.02f;
-            so.ApplyModifiedPropertiesWithoutUndo();
-
-            GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
-            Object.DestroyImmediate(root);
-            return prefab;
-        }
-
         private static GameObject CreateFinalPrefab(
             string prefabPath,
             PrimitiveType primitiveType,
@@ -2191,7 +2108,6 @@ namespace Hecton8.EditorTools
             string path,
             string moduleName,
             string description,
-            GameObject ghostPrefab,
             GameObject finalPrefab,
             BuildableFamily family,
             float powerRating,
@@ -2207,7 +2123,7 @@ namespace Hecton8.EditorTools
             asset.moduleName = moduleName;
             asset.description = description;
             asset.family = family;
-            asset.ghostPrefab = ghostPrefab;
+            asset.ghostPrefab = null;
             asset.finalPrefab = finalPrefab;
             asset.powerRating = powerRating;
             asset.powerPriority = powerPriority;

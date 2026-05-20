@@ -1,4 +1,4 @@
-﻿# SHINOBU_160 Asynchronous Telemetry Exporter
+# SHINOBU_160 Asynchronous Telemetry Exporter
 
 Owner: SHINOBU_160
 Domain: Echelon 9 Meta/Polish/Integration
@@ -6,8 +6,8 @@ Runtime file: `Assets/_Project/Scripts/Core/Diagnostics/AsynchronousTelemetryExp
 First 20 Minutes moment: Proof/route-testability for Copper Wire route deaths, resource pickups, route samples, hazard/perf spikes, and return-path heatmap review.
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-20 R46 Root/Architecture Actuality Boundary
-This route card is active only as static documentation/source orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current verification artifacts, and the R46 root/architecture interior-authority/route-field/proof-language correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md`) (R45 prior R43/R44 residue/proof-artifact/source-counter correction). R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R37/R36/R35/R34/R33 remain prior correction layers. Current static gates: `Tools/AtlasCheck.py` fails `ATLAS_CHECK_FAIL references=6741 missing=59` (one Dynamic Decals missing vendor asset ref, RealtimeCSG vendor icon/readme image refs, and missing HabitatDamageBakePipeline source ref in the current atlas); Mod API static validation passes as static-tool orientation only.
+## 2026-05-20 R47 Root/Architecture Actuality Boundary
+This route card is active only as static documentation/source orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current verification artifacts, and the R47 root/architecture authority-spine/runtime-wording/counter-drift correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md`) (R46 prior interior-authority/route-field/proof-language correction; R45 prior R43/R44 residue/proof-artifact/source-counter correction). R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R37/R36/R35/R34/R33 remain prior correction layers. Current static gates: `Tools/AtlasCheck.py` fails `ATLAS_CHECK_FAIL references=6781 missing=61` (one Dynamic Decals vendor asset ref, RealtimeCSG vendor icon/readme image refs, missing HectonMaskChannelPacker/HectonMaterialChannelPackValidator editor source refs, and missing HabitatDamageBakePipeline source ref in the current atlas); Mod API static validation passes as static-tool orientation only.
 
 Unity batchmode import/compile was attempted on 2026-05-20 and the log is archived at `Docs/Archive/Batch010/AgentLogs/Unity_SHINOBU_160_compile.log`. A second attempt after hotpath/dump repair is archived at `Docs/Archive/Batch010/AgentLogs/Unity_SHINOBU_160_compile_after_hotpath.log`. Active SHINOBU_160 status/rationale/log files have been restored under `Docs/Tasks` and `Docs/AgentLogs`, but the active `Docs/Tasks/CURRENT_BATCH.md` has shifted to `SHINOBU_200+` and no longer contains the SHINOBU_160 prompt. Targeted searches found no `AsynchronousTelemetryExporter*.cs(` compiler errors, but project compilation is blocked by unrelated domains. No clean Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, analytics endpoint, network send, disk fallback, or visual proof is implied until the dependency wall is cleared.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
@@ -87,5 +87,3 @@ Compression is explicitly RLE envelope compression, not claimed LZ4. `CompressAn
 - Unity batchmode compile log: `Docs/Archive/Batch010/AgentLogs/Unity_SHINOBU_160_compile.log`.
 - Unity batchmode hotpath/dump patch log: `Docs/Archive/Batch010/AgentLogs/Unity_SHINOBU_160_compile_after_hotpath.log`.
 - Compile status: blocked by dependency errors in `Physics/HabitatFluidIncursionJobs.cs`, `World/ProceduralCoral/*`, `World/ProceduralWreckage/*`, `Narrative/Prologue/AwaitableDropSequenceDirector.cs`, and `Hecton8.MockDomain.Runtime` Burst ILPostProcessor. No SHINOBU-specific compiler errors were found by targeted log search.
-
-

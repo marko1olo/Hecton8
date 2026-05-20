@@ -27,18 +27,20 @@ namespace Hecton8.Interaction
         Disabled = 5,
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal struct FingerRayDefinition
     {
-        public float3 LocalKnuckleOffset;
-        public float3 LocalFingerDirection;
+        [FieldOffset(0)] public float3 LocalKnuckleOffset;
+        [FieldOffset(12)] public float3 LocalFingerDirection;
+        [FieldOffset(24)] private ulong _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal struct FingerRayRuntime
     {
-        public float3 Origin;
-        public float3 Direction;
+        [FieldOffset(0)] public float3 Origin;
+        [FieldOffset(12)] public float3 Direction;
+        [FieldOffset(24)] private ulong _pad0;
     }
 
     /// <summary>
@@ -2096,7 +2098,7 @@ namespace Hecton8.Interaction
 #endif
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildFingerSpherecastCommandsJob : IJobParallelFor
         {
             public float3 HandPosition;
@@ -2106,10 +2108,10 @@ namespace Hecton8.Interaction
             public float CastLength;
             public QueryParameters QueryParameters;
 
-            [ReadOnly] public NativeArray<FingerRayDefinition> RayDefinitions;
+            [ReadOnly, NoAlias] public NativeArray<FingerRayDefinition> RayDefinitions;
 
-            [WriteOnly] public NativeArray<SpherecastCommand> Commands;
-            [WriteOnly] public NativeArray<FingerRayRuntime> RayRuntime;
+            [WriteOnly, NoAlias] public NativeArray<SpherecastCommand> Commands;
+            [WriteOnly, NoAlias] public NativeArray<FingerRayRuntime> RayRuntime;
 
             public void Execute(int index)
             {
@@ -2137,15 +2139,15 @@ namespace Hecton8.Interaction
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ProcessFingerHitsJob : IJobParallelFor
         {
             public float CastLength;
 
-            [ReadOnly] public NativeArray<RaycastHit> Hits;
-            [ReadOnly] public NativeArray<FingerRayRuntime> RayRuntime;
+            [ReadOnly, NoAlias] public NativeArray<RaycastHit> Hits;
+            [ReadOnly, NoAlias] public NativeArray<FingerRayRuntime> RayRuntime;
 
-            [WriteOnly] public NativeArray<FingerPoseData> Output;
+            [WriteOnly, NoAlias] public NativeArray<FingerPoseData> Output;
 
             public void Execute(int index)
             {
@@ -2190,12 +2192,13 @@ namespace Hecton8.Interaction
             }
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct FingerPoseData
         {
-            public float3 TipPosition;
-            public float3 TipNormal;
-            public float BendAngle;
+            [FieldOffset(0)] public float3 TipPosition;
+            [FieldOffset(12)] public float3 TipNormal;
+            [FieldOffset(24)] public float BendAngle;
+            [FieldOffset(28)] private uint _pad0;
         }
     }
 }

@@ -485,6 +485,21 @@ Batch 004/005 evidence: GlobalDataVault and cross-domain signal edits repeatedly
 
 ---
 
+### RULE-09F - Read Accessor Purity
+
+[RULE] Any API named `Get*`, `TryGet*`, `Resolve*`, `Read*`, or equivalent accessor is a read contract.
+[RULE] Runtime context owners publish state once from their own dispatcher phase, then consumers read immutable snapshots or cached owner interfaces.
+[RULE] Hot-path dependencies resolved through the registry must be cached during bootstrap, `OnRegister`, `OnDependencyInject`, or owner initialization.
+
+[FORBID] Publishing signals from a read-looking accessor.
+[FORBID] Syncing scene hierarchy, transforms, player context, UI state, or registry rebound state from a read-looking accessor.
+[FORBID] Allocating, growing DataVault/native buffers, completing jobs, mutating global state, or running scene searches from a read-looking accessor.
+[FORBID] Using `GlobalDataVault.TryGetLatestCreated()` as routine domain runtime fallback from registry helper code.
+
+Engineering rule: if a call can change global state, schedule work, or publish traffic, its name and phase must expose that fact and the route must have a route card.
+
+---
+
 ## RULE-10 - Forbidden Patterns - Runtime Tick Violations
 
 The following patterns are unconditionally forbidden in any method called per-frame.

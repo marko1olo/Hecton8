@@ -332,3 +332,32 @@ runtime ownership.
 
 No dotnet build, Unity import, player build, profiler, GC, memory, or device run
 was launched.
+
+## 2026-05-20 R29 ARM64 / x86 / GPU Portability Audit
+
+- [x] Ran static hardware portability review. DOD:
+  reviewed current platform settings, package surface, hardware policy,
+  GlobalQualityWeight/governor code, Quest/XR state code, URP quality assets,
+  GPU buffer/culling surfaces, native plugin surface, and current static audit
+  counters. Alternative rejected: claiming device readiness from Android package
+  presence alone. Estimate: 0 runtime us claimed.
+- [x] Delegated independent CPU and GPU reviews to sub-agents. DOD:
+  both reviews converged on the same core verdict: correct architectural
+  direction, missing runtime proof. Alternative rejected: single-agent opinion
+  without independent file-focused cross-check. Estimate: 0 runtime us claimed.
+- [x] Wrote hardware portability report. DOD:
+  `Docs/Reports/2026-05-20_HARDWARE_PORTABILITY_ARM64_X86_GPU_AUDIT.md`
+  records the ARM64, x86, Quest, Steam Deck, Mac, PICO, console, weak-GPU, and
+  high-end GPU status with blockers and priority fixes. Alternative rejected:
+  chat-only verdict. Estimate: 0 runtime us claimed.
+
+R29 verdict: the project has a real portability scaffold, but no target device
+runtime proof. Windows x86_64 is the least risky first target. Quest 2/3,
+Steam Deck, Mac/Metal, PICO, and consoles remain pending until build/run/profiler
+artifacts exist. The current biggest platform risks are missing XR provider
+serialization, unwired Quest URP quality, weak shader warmup proof, large compute
+dispatches without mobile proof, native plugin parity gaps, and runtime
+DataVault regression.
+
+No dotnet build, Unity import, player build, profiler, GC, memory, headset,
+Deck, macOS, Linux, PICO, or console run was launched.

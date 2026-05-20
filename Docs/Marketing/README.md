@@ -139,7 +139,7 @@ Use `MARKETING_CONTROL_TOWER.md` as the operating entry point. This folder is la
 | `Data/MARKETING_BACKLOG_INDEX.md` | Agent-executable marketing backlog with P0/P1/P2 tasks and spend gates. |
 | `Data/MARKETING_RISK_REGISTER.md` | Risk register for multiplayer-scope confusion, clone perception, weak assets, creator utility bypass, key scams, review damage, and launch issues. |
 | `Data/CREATOR_VERIFICATION_TEMPLATE.csv` | CSV header/template for turning raw public creator leads into verified CRM rows with structured send-log, `send_route_class`, and `reply_consent_provenance` fields. |
-| `Data/MARKETING_ASSET_METADATA_TEMPLATE.csv` | CSV template for public asset build/source/status/hook/QA metadata plus creator utility/send-gate fields. |
+| `Data/MARKETING_ASSET_METADATA_TEMPLATE.csv` | CSV template for public asset build/source/status/hook/QA metadata plus creator utility/send-gate, pain-proof, agency-proof, and first-capture handoff fields. |
 | `Data/RAW_PUBLIC_CREATOR_LEADS_README.md` | Data dictionary and verification rules for raw/unique/priority creator CSVs. |
 | `Data/RAW_LEAD_SCRAPE_SUMMARY_2026-05-18.md` | Summary of the 7155-row public-index extraction and 4970-profile queue. |
 | `Roadmap/PUBLIC_ROADMAP_LANGUAGE_AND_PROMISE_POLICY.md` | Public roadmap promise levels, Promise Lint Gate, forbidden language, safe template, and EA roadmap rules. |
@@ -166,18 +166,18 @@ One-sentence working pitch:
 
 ## First Asset Gate
 
-Do not run broad outreach until at least one of these exists:
+Do not run broad outreach from artifact existence alone. These are minimum proof artifacts, not send/post/link permission:
 
 - 6-10 real in-game screenshots with a consistent identity;
 - a 15-20 second gameplay clip that communicates pressure, machinery, and danger without explanation;
-- a Steam Coming Soon page that converts cold viewers to wishlists;
+- a Steam Coming Soon page draft/page signal with `steam_page_publish_permission_gate` and `public_cta_permission_gate` explicitly held or allowed with source;
 - a capture showing no fake performance claims are being made.
 
 First public testing also requires one agency/decision proof asset: `PLAN-SHOT-006`, `PLAN-CLIP-001`, or `PLAN-CLIP-003`. Identity, player verb, and base/machinery shots are not enough if the packet cannot show a readable choice under pressure. The cold-read/dashboard row must preserve the answer in `what_decision_next`, `agency_decision_read`, `agency_decision_read_comments`, or `cold_read_agency_decision`; otherwise it is mood signal, not agency proof.
 
 If a screenshot needs a paragraph to explain why it is good, it is not a marketing asset.
 
-Creator-facing outreach requires more than this first asset gate: the matching asset row must carry creator utility 3/4+, `creator_send_gate` must allow the route, the CRM row must name the contact route, and `asset_ids_sent` plus `creator_utility_score` must be logged before send. Paid creator spend also requires `paid_creator_permission_gate = ALLOW_PAID_CREATOR_TEST_VERIFIED` on the selected CRM row.
+Creator-facing outreach requires more than this first asset gate: the matching asset row must carry creator utility 3/4+, `creator_send_gate` must allow the route, the first-capture handoff fields must not be pending when agency/pressure/route-risk proof is claimed, the CRM row must name the contact route, `send_route_class` and `reply_consent_provenance` must be known, and `asset_ids_sent` plus `creator_utility_score` must be logged before send. Paid creator spend also requires `paid_creator_permission_gate = ALLOW_PAID_CREATOR_TEST_VERIFIED` on the selected CRM row.
 
 Public-facing use also requires the asset metadata row to pass `multiplayer_scope_check`, `performance_claim_check`, and `feature_truth_check`; a strong-looking screenshot cannot bypass claim safety.
 

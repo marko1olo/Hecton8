@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.World;
@@ -790,6 +789,38 @@ namespace Hecton8.Physics
                 _physicsStateChangedCount[0] = default;
         }
 
+        private JobHandle SchedulePhysicsChangedIndexClear(int scanCount, JobHandle inputDependency)
+        {
+            ClearPhysicsStateChangedQueue();
+            if (!_physicsStateChangedIndices.IsCreated || scanCount <= 0)
+                return inputDependency;
+
+            int count = math.min(scanCount, _physicsStateChangedIndices.Length);
+            if (count <= 0)
+                return inputDependency;
+
+            ClearPhysicsChangedIndicesJob job = new ClearPhysicsChangedIndicesJob
+            {
+                ChangedIndices = _physicsStateChangedIndices,
+                Count = count
+            };
+            return job.Schedule(count, 64, inputDependency);
+        }
+
+        private JobHandle SchedulePhysicsChangedIndexCompaction(int scanCount, JobHandle inputDependency)
+        {
+            if (!_physicsStateChangedIndices.IsCreated || !_physicsStateChangedCount.IsCreated || scanCount <= 0)
+                return inputDependency;
+
+            CompactPhysicsChangedIndicesJob job = new CompactPhysicsChangedIndicesJob
+            {
+                ChangedIndices = _physicsStateChangedIndices,
+                ChangedCount = _physicsStateChangedCount,
+                Count = math.min(scanCount, _physicsStateChangedIndices.Length)
+            };
+            return job.Schedule(inputDependency);
+        }
+
         private void AddPhysicsStateChangedIndex(int bodyIndex)
         {
             if (!_physicsStateChangedIndices.IsCreated || !_physicsStateChangedCount.IsCreated)
@@ -1299,7 +1330,7 @@ namespace Hecton8.Physics
             if (signal.Fire == 0)
                 return false;
 
-            ClearPhysicsStateChangedQueue();
+            JobHandle clearHandle = SchedulePhysicsChangedIndexClear(jobCount, default);
             MockSeismicShockwaveWakeJob job = new MockSeismicShockwaveWakeJob
             {
                 Dtos = _physicsCullingDtos,
@@ -1307,13 +1338,13 @@ namespace Hecton8.Physics
                 CommandResults = _rigidbodyCullingCommandResults,
                 StateAges = _physicsCullingStateAges,
                 Signal = signal,
-                ChangedIndices = _physicsStateChangedIndices,
-                ChangedCount = _physicsStateChangedCount
+                ChangedIndices = _physicsStateChangedIndices
             };
 
             _physicsCullingJobCount = jobCount;
             _physicsCullingJobDiscardRequested = false;
-            _physicsCullingJobHandle = job.Schedule(jobCount, 64);
+            JobHandle wakeHandle = job.Schedule(jobCount, 64, clearHandle);
+            _physicsCullingJobHandle = SchedulePhysicsChangedIndexCompaction(jobCount, wakeHandle);
             _physicsCullingJobScheduled = true;
             signal.Fire = 0;
             _physicsMockSeismicSignals[0] = signal;
@@ -1614,14 +1645,55 @@ namespace Hecton8.Physics
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        private struct ClearPhysicsChangedIndicesJob : IJobParallelFor
+        {
+            [WriteOnly, NoAlias] public NativeArray<int> ChangedIndices;
+            public int Count;
+
+            public void Execute(int index)
+            {
+                if ((uint)index < (uint)Count && (uint)index < (uint)ChangedIndices.Length)
+                    ChangedIndices[index] = -1;
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        private struct CompactPhysicsChangedIndicesJob : IJob
+        {
+            [NativeDisableParallelForRestriction, NoAlias] public NativeArray<int> ChangedIndices;
+            [WriteOnly, NoAlias] public NativeArray<PhysicsCullingCounter64> ChangedCount;
+            public int Count;
+
+            public void Execute()
+            {
+                int count = math.min(Count, ChangedIndices.Length);
+                int write = 0;
+                for (int i = 0; i < count; i++)
+                {
+                    int value = ChangedIndices[i];
+                    bool valid = value == i;
+                    if (valid)
+                    {
+                        ChangedIndices[write] = value;
+                        write++;
+                    }
+                }
+
+                PhysicsCullingCounter64 counter = default;
+                counter.Value = write;
+                counter.Flags = 0u;
+                ChangedCount[0] = counter;
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct MockSeismicShockwaveWakeJob : IJobParallelFor
         {
             [NativeDisableParallelForRestriction, NoAlias] public NativeArray<PhysicsCullingDTO> Dtos;
             [NativeDisableParallelForRestriction, NoAlias] public NativeArray<byte> AwakeResults;
             [NativeDisableParallelForRestriction, NoAlias] public NativeArray<byte> CommandResults;
             [NativeDisableParallelForRestriction, NoAlias] public NativeArray<float> StateAges;
-            [NativeDisableParallelForRestriction, NoAlias] public NativeArray<int> ChangedIndices;
-            [NativeDisableParallelForRestriction, NoAlias] public NativeArray<PhysicsCullingCounter64> ChangedCount;
+            [WriteOnly, NativeDisableParallelForRestriction, NoAlias] public NativeArray<int> ChangedIndices;
             public MockSeismicShockwaveSignal Signal;
 
             public unsafe void Execute(int index)
@@ -1647,26 +1719,14 @@ namespace Hecton8.Physics
                     AwakeResults[index] = 1;
                     CommandResults[index] = CullingCommandAwake;
                     StateAges[index] = 0f;
-                    EnqueueChangedIndex(index);
+                    MarkChangedIndex(index);
                 }
             }
 
-            private unsafe void EnqueueChangedIndex(int index)
+            private void MarkChangedIndex(int index)
             {
-                if (ChangedIndices.Length <= 0 || ChangedCount.Length <= 0)
-                    return;
-
-                PhysicsCullingCounter64* counterPtr = (PhysicsCullingCounter64*)ChangedCount.GetUnsafePtr();
-                ref int value = ref UnsafeUtility.AsRef<int>(&counterPtr->Value);
-                int writeIndex = Interlocked.Increment(ref value) - 1;
-                if ((uint)writeIndex < (uint)ChangedIndices.Length)
-                {
-                    ChangedIndices[writeIndex] = index;
-                    return;
-                }
-
-                counterPtr->Flags |= 1u;
-                Interlocked.Exchange(ref value, ChangedIndices.Length);
+                if ((uint)index < (uint)ChangedIndices.Length)
+                    ChangedIndices[index] = index;
             }
         }
 
@@ -1680,8 +1740,7 @@ namespace Hecton8.Physics
             [NativeDisableParallelForRestriction, NoAlias] public NativeArray<byte> CommandResults;
             [NativeDisableParallelForRestriction, NoAlias] public NativeArray<float> DistanceSqResults;
             [NativeDisableParallelForRestriction, NoAlias] public NativeArray<float> StateAges;
-            [NativeDisableParallelForRestriction, NoAlias] public NativeArray<int> ChangedIndices;
-            [NativeDisableParallelForRestriction, NoAlias] public NativeArray<PhysicsCullingCounter64> ChangedCount;
+            [WriteOnly, NativeDisableParallelForRestriction, NoAlias] public NativeArray<int> ChangedIndices;
             public double3 CameraAbsoluteAup;
             public float3 CameraForward;
             public float KinematicSleepDistanceMeters;
@@ -1737,7 +1796,7 @@ namespace Hecton8.Physics
                     AwakeResults[index] = 1;
                     CommandResults[index] = CullingCommandAwake | CullingCommandInvalidInput;
                     DistanceSqResults[index] = 0f;
-                    EnqueueChangedIndex(index);
+                    MarkChangedIndex(index);
                     return;
                 }
 
@@ -1748,7 +1807,7 @@ namespace Hecton8.Physics
                     AwakeResults[index] = 1;
                     CommandResults[index] = CullingCommandAwake | CullingCommandInvalidInput;
                     DistanceSqResults[index] = 0f;
-                    EnqueueChangedIndex(index);
+                    MarkChangedIndex(index);
                     return;
                 }
 
@@ -1798,7 +1857,7 @@ namespace Hecton8.Physics
                 if (newSleep != previousSleep || command != previousCommand)
                 {
                     StateAges[index] = 0f;
-                    EnqueueChangedIndex(index);
+                    MarkChangedIndex(index);
                 }
                 else
                 {
@@ -1831,22 +1890,10 @@ namespace Hecton8.Physics
                 return command;
             }
 
-            private unsafe void EnqueueChangedIndex(int index)
+            private void MarkChangedIndex(int index)
             {
-                if (ChangedIndices.Length <= 0 || ChangedCount.Length <= 0)
-                    return;
-
-                PhysicsCullingCounter64* counterPtr = (PhysicsCullingCounter64*)ChangedCount.GetUnsafePtr();
-                ref int value = ref UnsafeUtility.AsRef<int>(&counterPtr->Value);
-                int writeIndex = Interlocked.Increment(ref value) - 1;
-                if ((uint)writeIndex < (uint)ChangedIndices.Length)
-                {
-                    ChangedIndices[writeIndex] = index;
-                    return;
-                }
-
-                counterPtr->Flags |= 1u;
-                Interlocked.Exchange(ref value, ChangedIndices.Length);
+                if ((uint)index < (uint)ChangedIndices.Length)
+                    ChangedIndices[index] = index;
             }
         }
     }

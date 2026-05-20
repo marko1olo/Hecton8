@@ -83,7 +83,7 @@ namespace Hecton8.Building
 
         // ─────────────────────── Prefabs ─────────────────────────
         [Header("Prefabs")]
-        [Tooltip("Poluprozrachnyy prefab-prizrak (dolzhen imet PlacementGhost)")]
+        [Tooltip("Legacy preview prefab reference retained for old assets. Runtime builder holography ignores this field.")]
         public GameObject ghostPrefab;
 
         [Tooltip("Finalnyy prefab, ustanavlivaemyy v mir")]

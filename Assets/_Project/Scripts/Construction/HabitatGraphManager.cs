@@ -430,7 +430,7 @@ namespace Hecton8.Construction
 
         public void Dispose()
         {
-            TryFinalizeFloodPropagationJob(forceComplete: true);
+            CompleteFloodPropagationJobForTeardown();
             PublishAnalyticalStressShader(float3.zero, 0f, 0f, HectonQualityTier.Unknown, true);
             PublishBaseEmergencyState(0, true);
             _habitatVibration01 = 0f;
@@ -1864,7 +1864,7 @@ namespace Hecton8.Construction
 
         private bool RunFloodPropagationJob(int moduleCount, int startNodeIndex, int processNodeCount, float deltaTime)
         {
-            bool finalizedChanged = TryFinalizeFloodPropagationJob(forceComplete: false);
+            bool finalizedChanged = TryFinalizeFloodPropagationJobNoWait();
             if (_floodPropagationPending)
                 return finalizedChanged;
 
@@ -1908,17 +1908,33 @@ namespace Hecton8.Construction
             return finalizedChanged;
         }
 
-        private bool TryFinalizeFloodPropagationJob(bool forceComplete)
+        private bool TryFinalizeFloodPropagationJobNoWait()
         {
             if (!_floodPropagationPending)
                 return false;
 
-            bool finalized = forceComplete
-                ? DispatcherJobFence.TryComplete(ref _floodPropagationHandle, forceComplete: true)
-                : DispatcherJobFence.TryFinalizeCompleted(ref _floodPropagationHandle);
-            if (!finalized)
+            if (!_floodPropagationHandle.IsCompleted)
                 return false;
 
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _floodPropagationHandle))
+                return false;
+
+            return FinishFloodPropagationJob();
+        }
+
+        private bool CompleteFloodPropagationJobForTeardown()
+        {
+            if (!_floodPropagationPending)
+                return false;
+
+            if (!DispatcherJobFence.TryComplete(ref _floodPropagationHandle, forceComplete: true))
+                return false;
+
+            return FinishFloodPropagationJob();
+        }
+
+        private bool FinishFloodPropagationJob()
+        {
             _floodPropagationPending = false;
 
             HabitatFloodPropagationSummary summary = _floodPropagationSummary[0];

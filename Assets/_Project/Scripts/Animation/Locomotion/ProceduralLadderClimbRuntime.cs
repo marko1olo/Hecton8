@@ -214,7 +214,7 @@ namespace Hecton8.Animation.Locomotion
         private void OnDisable()
         {
             StopClimb(false, false);
-            CompleteOutstandingJob();
+            CompleteOutstandingJobForBarrier();
             UnregisterTickables();
             ReleaseVaultHandles();
             ClearVaultHandles();
@@ -224,7 +224,7 @@ namespace Hecton8.Animation.Locomotion
         private void OnDestroy()
         {
             StopClimb(false, false);
-            CompleteOutstandingJob();
+            CompleteOutstandingJobForBarrier();
             UnregisterTickables();
             ReleaseVaultHandles();
             ClearVaultHandles();
@@ -324,7 +324,7 @@ namespace Hecton8.Animation.Locomotion
                 return false;
             }
 
-            CompleteOutstandingJob();
+            CompleteOutstandingJobForBarrier();
             _playerRoot = player;
             _ladderTransform = ladderTransform;
             _entryPoint = entryPoint;
@@ -379,7 +379,7 @@ namespace Hecton8.Animation.Locomotion
             IDataVault current = GlobalRegistry.DataVault;
             if (current == null)
             {
-                CompleteOutstandingJob();
+                CompleteOutstandingJobForBarrier();
                 ReleaseVaultHandles();
                 ClearVaultHandles();
                 return false;
@@ -387,7 +387,7 @@ namespace Hecton8.Animation.Locomotion
 
             if (!ReferenceEquals(_dataVault, current))
             {
-                CompleteOutstandingJob();
+                CompleteOutstandingJobForBarrier();
                 ReleaseVaultHandles();
                 ClearVaultHandles();
                 _dataVault = current;
@@ -1085,7 +1085,7 @@ namespace Hecton8.Animation.Locomotion
             UnregisterTickables();
         }
 
-        private void CompleteOutstandingJob()
+        private void CompleteOutstandingJobForBarrier()
         {
             if (!_solveScheduled)
                 return;

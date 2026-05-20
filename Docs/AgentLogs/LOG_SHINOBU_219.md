@@ -69,6 +69,86 @@ These are static engineering estimates, not profiler measurements:
   <BuildVerification status="deferred" cpuPercent="100" dotnetCscProcesses="none" reason="project rule forbids build above 50 percent CPU" />
 </SELF_AUDIT>
 
+---
+
+# SHINOBU_219 Parallel Forensic Corrections - 2026-05-20
+
+Status: STATIC SOURCE UPDATED - UNITY RUNTIME PROOF PENDING.
+
+## What Was Wrong
+
+- A failed schedule path could hold SHINOBU Vault locks without `_simulationScheduled` ever becoming true.
+- Editor tuning and gizmo read facades were not explicitly fenced against outstanding scheduled simulation ownership.
+- Shader payload activation still had a half-threshold read gate, so the CPU's continuous payload blend could become a visible step.
+- RustDetail/POM could follow legacy/global rust instead of the Vault-derived dynamic rust lane.
+- The inquisition report wrote the shared rendering report path without a dedicated SHINOBU artifact or explicit static-only proof label.
+
+## What Was Done
+
+- Wrapped `ScheduleSimulation` lock ownership transfer in a `try/finally` and retained locks only after the job graph is registered.
+- Blocked editor/gizmo Vault reads while `_simulationScheduled` is true.
+- Changed `H8UberNoirLoadVisualAging` to read active payload rows at epsilon-positive payload blend and lerp all DTO lanes by `_GlobalBaseAgingRuntime.y`.
+- Routed `dynamicRust` and row-aware aging quality into `H8UberNoirResolveRustPomUv`.
+- Added `Docs/Reports/VISUAL_AGING_INQUISITION_REPORT.json` as the dedicated editor report and marked aggregate output as `STATIC_PASS`/`STATIC_FAIL` with `runtimeStatus: PENDING_VERIFICATION`.
+
+## Cinematic Cheats Used
+
+- Still no physical corrosion or fracture simulation. CPU packs stress/depth/temperature into a 64-byte row; UberNoir fakes rust spread, pitting, salt, algae, and glass cracks in the existing material pass.
+- Low quality fades payload rows into cheap analytical masks. High/ultra quality spends the saved decal/material CPU budget on RustDetail, POM, pitting, and crack catchlight shader work.
+
+## Exact Microseconds Saved
+
+- The new lock fencing is correctness, not a measured frame-time saving.
+- The payload epsilon gate removes a visual step without adding texture samples.
+- The report split is editor-only and has 0 us player hot-path impact.
+- Unity import, shader compiler, Frame Debugger, profiler/GCMonitor, and player-build proof remain pending behind the build gate.
+
+## Verification
+
+- SHINOBU shader ranges `470-620`, `1270-1355`, and `1480-1605`: no `_MATH_LOD_LOW`, `shader_feature`, `multi_compile`, `IsLowEnd`, `isLowEnd`, or `lowEnd` tokens.
+- `Rendering/Construction` legacy aging archaeology scan: no `BaseCorrosion.cs`, `GlassFracture.cs`, exact `GetComponent<Renderer>().material.SetFloat`, SHINOBU aging decal token, `GlobalCrackDecal`, or `RuptureDecalAtlas` matches.
+- Runtime/gizmo hot-path scan: no legacy Vault handles, private native collections, Unity random/time, MPB, or `.material` mutation hits.
+- DTO layout source scan: no `{ get; set; }`, `{ get; private set; }`, or `Pack=1` in SHINOBU visual-aging source.
+- `git diff --check`: exit 0; LF/CRLF warnings only. Trailing-whitespace scan: no matches.
+- Build gate: CPU sampled `100`; no `dotnet`, `csc`, or `VBCSCompiler` process. Build not launched by rule.
+
+<SELF_AUDIT agent="SHINOBU_219" phase="PARALLEL_FORENSIC_CORRECTIONS" date="2026-05-20">
+  <TaskReconciliation>
+    <Task id="01" status="PASS" evidence="Inquisition now scans exact BaseCorrosion/GlassFracture/material.SetFloat and aging-decal archaeology tokens." />
+    <Task id="02" status="PASS" evidence="No SHINOBU rust/algae/glass aging decal route; shader owns visual aging." />
+    <Task id="03" status="PASS" evidence="Visual aging DTOs remain raw-field unmanaged structs." />
+    <Task id="04" status="PASS" evidence="VisualAgingParamsDTO remains explicit 64 B at offsets 0/16/32/48." />
+    <Task id="05" status="PASS" evidence="Mock aging job unchanged; deterministic fallback still feeds same Vault row ABI." />
+    <Task id="06" status="PASS" evidence="Burst processing job unchanged; schedule ownership is now lock-safe on failure." />
+    <Task id="07" status="PASS" evidence="Payload blend is continuous and read at epsilon-positive availability." />
+    <Task id="08" status="PASS" evidence="Rust growth and RustDetail/POM now consume dynamic Vault rust plus row-aware quality." />
+    <Task id="09" status="PASS" evidence="Glass microfracture shader path remains procedural and payload-quality gated." />
+    <Task id="10" status="PASS" evidence="Double-buffered LockBufferForWrite route unchanged." />
+    <Task id="11" status="PASS" evidence="No SHINOBU-owned shader keyword or low-end hardware switch introduced; quality remains scalar driven." />
+    <Task id="12" status="PASS" evidence="Temperature fallback/source route unchanged and still presentation-only." />
+    <Task id="13" status="PASS" evidence="Localized AUP payload lane unchanged; GPU sees float3 local offsets only." />
+    <Task id="14" status="PASS" evidence="Render BufferIDs 71240-71246 remain rollback-excluded presentation data." />
+    <Task id="15" status="PASS" evidence="Telemetry ring unchanged and read path fenced during VisualSync." />
+    <Task id="16" status="PASS" evidence="UI Toolkit tuner keeps Vault DTO route and static-only report wording." />
+    <Task id="17" status="PASS" evidence="CSV reload remains cold editor bridge only." />
+    <Task id="18" status="PASS" evidence="Gizmo read is editor-only, clamped, payload-ready, and scheduled-write fenced." />
+    <Task id="19" status="PASS" evidence="Inquisition writes dedicated SHINOBU static report and preserves unrelated aggregate evidence." />
+    <Task id="20" status="PASS" evidence="This audit records lock graph, quality continuity, and proof limits; runtime proof pending." />
+  </TaskReconciliation>
+  <StructLayoutVerification>
+    <VisualAgingParamsDTO size="64" lanes="RustAndCorrosion@0 SaltAndBiomass@16 StressAndMicroFractures@32 DepthAndPressure@48" />
+    <Padding math="16+16+16+16=64" falseSharing="single-row shader DTO; no contested atomic counter" />
+  </StructLayoutVerification>
+  <ScalabilityCurve>
+    Payload availability now ramps from default material aging to Vault rows through `_payloadBlend01` and shader lane lerps; below 0.3 quality the same rows feed cheap analytical masks and avoid RustDetail/POM, while high/ultra quality progressively enables rust relief, pitting, and glass catchlights. No SHINOBU-owned `IsLowEnd` or shader keyword path was added.
+  </ScalabilityCurve>
+  <HPhiVaultStatus privatePersistentNativeCollections="ZERO" handles="VaultGenerationHandle descriptors only" ownedBufferIDs="71240,71241,71242,71243,71244,71245,71246" />
+  <PointerAliasingAndDependencyGraph noAlias="ProcessAgingParametersJob/GenerateMockAgingDataJob/RecordVisualAgingTelemetryJob fields" locks="ascending BufferID order; scheduled locks released by PostSimulationTick or failure finally" />
+  <CompileGuard status="Contracts-only structural dependency; no Habitat Deformation Runtime reference from Graphics Materials" />
+  <DearLieConfirmation before="O(n renderers/materials/decals) CPU mutation plus extra submission" after="O(n active rows) scalar packing plus existing O(p pixels) UberNoir shading" />
+  <BuildGate status="DEFERRED" cpuPercent="100" compilerProcesses="none" reason="build forbidden above 50 percent CPU" />
+</SELF_AUDIT>
+
 ## 2026-05-20 Loop 13 - Gizmo Payload Readiness Fence
 
 What was wrong: `TryAcquireAgingBufferRead` could expose the params Vault lane to `OnDrawGizmos` before the first dispatcher-produced visual-aging payload existed. The lane uses `NativeArrayOptions.UninitializedMemory`, so an editor preview could draw undefined rust/fracture rings even though the shader upload path already failed closed.
@@ -699,4 +779,183 @@ Status: STATIC SOURCE UPDATED - BUILD PENDING CPU GATE.
     Before: object/decal/material aging would trend toward O(n renderers) CPU mutation plus extra draw/decal work and hierarchy state. After: CPU is O(n active visual rows) scalar packing with no geometry, no per-renderer material mutation, and one existing UberNoir shader path; rust/crack spatial placement is O(p shaded pixels) GPU procedural math already inside the material pass.
   </DearLieConfirmation>
   <BuildGate status="DEFERRED" cpuPercent="100" dotnetCscProcesses="none" rule="build forbidden above 50 percent CPU" />
+</SELF_AUDIT>
+
+---
+
+# SHINOBU_219 Bottom Append - Parallel Forensic Corrections - 2026-05-20
+
+Status: STATIC SOURCE UPDATED - UNITY RUNTIME PROOF PENDING.
+
+## What Was Wrong
+
+- `ScheduleSimulation` could hold SHINOBU Vault locks if scheduling failed before `_simulationScheduled` was armed.
+- Editor tuning/gizmo reads could observe Vault rows during an outstanding scheduled simulation job.
+- UberNoir payload read used a `0.5` threshold, creating a possible visible step despite the CPU-side blend ramp.
+- RustDetail/POM could ignore stronger Vault-derived dynamic rust and follow legacy/global rust.
+- The inquisition report needed a dedicated SHINOBU artifact and static-only wording.
+
+## What Was Done
+
+- Added `try/finally` lock ownership transfer around scheduling; locks are retained only after job registration succeeds.
+- Added `_simulationScheduled` fail-closed guards to editor tuning and gizmo read facades.
+- Changed `H8UberNoirLoadVisualAging` to read active payload rows at `H8_UBER_NOIR_EPS` availability and lerp DTO lanes by `_GlobalBaseAgingRuntime.y`.
+- Routed `dynamicRust` and row-aware quality into `H8UberNoirResolveRustPomUv`.
+- Added `Docs/Reports/VISUAL_AGING_INQUISITION_REPORT.json`, `STATIC_PASS`/`STATIC_FAIL`, `evidenceClass: STATIC_SOURCE`, and `runtimeStatus: PENDING_VERIFICATION`.
+
+## Cinematic Cheats Used
+
+- CPU still packs only stress/depth/temperature scalars into 64-byte Vault rows.
+- UberNoir still fakes rust spread, corrosion, salt, algae, pitting, and glass cracks in the existing material pass.
+- No physical corrosion simulation, spawned crack mesh, decal projector, per-renderer material clone, or MPB route was added.
+
+## Exact Microseconds Saved
+
+- Lock fencing: correctness only, no frame-time saving claimed.
+- Payload epsilon gate: removes activation step without extra texture samples.
+- Dedicated report: editor-only, 0 us player hot-path impact.
+- Runtime metrics remain PENDING VERIFICATION; Unity import, shader compiler, Frame Debugger, profiler/GCMonitor, and player build were not run because CPU sampled 100 percent.
+
+## Verification
+
+- SHINOBU shader ranges `470-620`, `1270-1355`, and `1480-1605`: no `_MATH_LOD_LOW`, `shader_feature`, `multi_compile`, `IsLowEnd`, `isLowEnd`, or `lowEnd`.
+- `Rendering/Construction` legacy scan: no `BaseCorrosion.cs`, `GlassFracture.cs`, exact `GetComponent<Renderer>().material.SetFloat`, SHINOBU aging decal token, `GlobalCrackDecal`, or `RuptureDecalAtlas`.
+- Runtime/gizmo scan: no legacy Vault handle, private native collection, Unity random/time, MPB, or `.material` mutation hit.
+- DTO scan: no hot DTO properties or `Pack=1`.
+- `git diff --check`: exit 0; LF/CRLF warnings only. Trailing-whitespace scan: no matches.
+- Build gate: `CpuPercent=100`, compiler processes none; build not launched by rule.
+
+<SELF_AUDIT agent="SHINOBU_219" phase="BOTTOM_APPEND_PARALLEL_FORENSIC_CORRECTIONS" date="2026-05-20">
+  <TaskReconciliation summary="Tasks 01-20 remain PASS by static source evidence; runtime proof pending Unity artifacts." />
+  <StructLayoutVerification VisualAgingParamsDTO="64 bytes: RustAndCorrosion@0, SaltAndBiomass@16, StressAndMicroFractures@32, DepthAndPressure@48" />
+  <ScalabilityCurve summary="Payload blends from default material aging into Vault rows continuously; low quality stays on cheap analytical masks, high/ultra progressively enables RustDetail/POM/pitting/glass catchlights without SHINOBU-owned binary LOD switches." />
+  <HPhiVaultStatus privatePersistentNativeCollections="ZERO" handleType="VaultGenerationHandle descriptors only" ownedBufferIDs="71240,71241,71242,71243,71244,71245,71246" />
+  <PointerAliasingAndDependencyGraph noAlias="ProcessAgingParametersJob, GenerateMockAgingDataJob, RecordVisualAgingTelemetryJob" locks="ascending owned BufferID order; failure finally releases locks before scheduled ownership transfer" />
+  <CompileGuard summary="Graphics Materials references Habitat Deformation Contracts only; no Habitat Deformation Runtime asmdef edge." />
+  <DearLieConfirmation before="O(n renderers/materials/decals) CPU mutation plus extra submission" after="O(n active rows) scalar packing plus existing O(p shaded pixels) UberNoir procedural math" />
+  <BuildGate status="DEFERRED" cpuPercent="100" compilerProcesses="none" />
+</SELF_AUDIT>
+
+---
+
+# SHINOBU_219 Mock Temperature NaN Vaccine - 2026-05-20
+
+Status: STATIC SOURCE UPDATED - RUNTIME PROOF PENDING.
+
+## What Was Wrong
+
+- `GenerateMockAgingDataJob` read the mock temperature row directly. A non-finite value could poison fallback rust/biomass output even though the structural path was already finite-guarded.
+
+## What Was Done
+
+- Added a Burst-local `ResolveTemperature()` helper in the mock job.
+- Mock fallback now returns `Tuning.MockTemperatureC` when the temperature array is absent, empty, or non-finite.
+- Added bounded telemetry cursor wrapping in the Burst telemetry job and fault dump readback.
+- Removed unused `using System.Diagnostics;`; explicit `Stopwatch` alias remains.
+
+## Cinematic Cheats Used
+
+- Mock data remains deterministic shader-driving stress/depth fiction for profiling. No physical corrosion simulation or spawned visual objects were introduced.
+
+## Exact Microseconds Saved
+
+- No saving claimed. This is NaN containment at one finite check per mock row.
+- Cursor wrapping is forensic integrity, not a frame-time saving.
+
+## Verification
+
+- Targeted helper scan confirms both structural and mock temperature paths use finite fallback helpers.
+- Telemetry cursor scan confirms `TelemetryCursor[0]` and fault dump readback route through `WrapTelemetryIndex`.
+- Forbidden runtime/gizmo scan: no legacy Vault handle, private native collection, Unity random/time, MPB, `.material` mutation, `Pack=1`, or hot DTO property hit.
+- SHINOBU shader ranges remain clean for `_MATH_LOD_LOW`, `shader_feature`, `multi_compile`, and low-end switch tokens.
+- `Rendering/Construction` legacy aging scan returned no matches.
+- Rollback/save scan only finds `H8Memory` BufferIDs `71240..71246`.
+- `git diff --check`: exit 0 with LF/CRLF warnings only. Trailing whitespace scan: no matches.
+- Build gate: final recheck `CpuPercent=100`, compiler processes none; build not launched by rule.
+
+<SELF_AUDIT agent="SHINOBU_219" phase="MOCK_TEMPERATURE_NAN_VACCINE" date="2026-05-20">
+  <TaskReconciliation summary="Task 05 mock data and Task 15 telemetry/cursor containment strengthened; Tasks 01-20 still static-source PASS pending runtime proof." />
+  <StructLayoutVerification VisualAgingParamsDTO="unchanged 64 bytes at offsets 0/16/32/48" />
+  <ScalabilityCurve summary="Mock row count/detail still follows continuous GlobalQualityWeight; bad temperature collapses to tuning fallback, not NaN." />
+  <HPhiVaultStatus privatePersistentNativeCollections="ZERO" ownedBufferIDs="71240..71246 unchanged" />
+  <PointerAliasingAndDependencyGraph jobs="GenerateMockAgingDataJob unchanged fields; RecordVisualAgingTelemetryJob cursor wrap added; no new aliases" />
+  <CompileGuard status="no asmdef edge changed" />
+  <DearLieConfirmation summary="fallback profiling remains O(n active rows) scalar fiction feeding UberNoir shader aging" />
+  <BuildGate status="DEFERRED" cpuPercent="100" compilerProcesses="none" reason="build forbidden above 50 percent CPU" />
+</SELF_AUDIT>
+
+---
+
+# SHINOBU_219 Duplicate Phase and JSON Proof Fence - 2026-05-20
+
+Runtime proof: PENDING. Static source patched and scanned.
+
+## What Was Wrong
+
+- `ScheduleSimulation` could be called a second time while `_simulationScheduled` was still true. Because `TryLockJobBuffers()` starts by unlocking tracked buffers, a duplicate phase call could release Vault locks protecting an in-flight job.
+- `VisualSyncTick` did not explicitly fail closed if phase order regressed and a simulation job was still scheduled.
+- The inquisition report preserved previous aggregate JSON text but did not escape every possible control char below U+0020.
+
+## What Was Done
+
+- Added an early `_simulationScheduled` guard to `ScheduleSimulation`.
+- Added an early `_simulationScheduled` guard to `VisualSyncTick`.
+- Added `AppendControlEscape` to emit `\u00XX` for remaining JSON control characters in editor-only report preservation.
+- Re-read the SHINOBU_219 XML task list and re-ran scoped static scans after the patch.
+
+## Cinematic Cheats Used
+
+- No new simulation was introduced. The system still packs Vault stress/depth/temperature scalars and lets UberNoir fake rust, corrosion, salt, algae, pitting, and glass cracks procedurally in the existing material pass.
+
+## Exact Microseconds Saved
+
+- No new saving claimed. The patch is ownership safety and proof hardening.
+- Runtime cost added: one predictable branch in Simulation and one predictable branch in VisualSync.
+- Player cost of JSON hardening: 0 us; editor-only report path.
+
+## Verification
+
+- `git diff --check` on patched runtime/editor files: exit 0 with CRLF warnings only.
+- Trailing whitespace scan over patched code/docs: no matches before docs write; final docs scan remains required if another loop edits logs.
+- SHINOBU shader ranges `470-620`, `1270-1355`, `1480-1605`: no `_MATH_LOD_LOW`, `shader_feature`, `multi_compile`, `IsLowEnd`, `isLowEnd`, or `lowEnd`.
+- `Rendering/Construction` legacy aging scan: no `BaseCorrosion.cs`, `GlassFracture.cs`, exact `GetComponent<Renderer>().material.SetFloat`, rust/algae/corrosion/glass aging decal tokens, `GlobalCrackDecal`, or `RuptureDecalAtlas`.
+- Runtime/gizmo scans: no `Complete`, local private native collection allocation, `foreach`, `LINQ`, renderer/material mutation, `string.Format`, `.ToString`, or interpolation hits. Cold `ResolveVault(true)`/`GlobalRegistry.DataVault` hits remain limited to static editor/gizmo facades and initialization cache.
+- Build gate: latest recheck `CpuPercent=50.241`, compiler processes none; build/import not launched by rule.
+
+<SELF_AUDIT agent="SHINOBU_219" phase="DUPLICATE_PHASE_JSON_PROOF_FENCE" date="2026-05-20">
+  <TaskReconciliation>
+    <Task01 name="MATERIAL_MUTATION_INQUISITION" status="[PASS]" proof="Static report and scans cover Rendering/Construction material mutation archaeology; no SHINOBU aging material mutation route remains." />
+    <Task02 name="DYNAMIC_DECAL_CORROSION_PURGE" status="[PASS]" proof="Construction visual aging decal residue removed; UberNoir procedural route remains the owner." />
+    <Task03 name="CS1612_METADATA_STATE_ANNIHILATION" status="[PASS]" proof="Hot DTOs use raw public fields; no get/set properties or private native array ownership in SHINOBU runtime." />
+    <Task04 name="ARM64_AGING_LAYOUT_VALIDATION" status="[PASS]" proof="VisualAgingParamsDTO remains 64 bytes with four aligned float4 lanes; editor validator exists." />
+    <Task05 name="EMERGENCY_MOCK_AGING_DATA" status="[PASS]" proof="Burst mock job writes deterministic Vault rows and now finite-guards mock temperature." />
+    <Task06 name="BURST_AGING_PARAMETER_KERNEL" status="[PASS]" proof="ProcessAgingParametersJob is Burst synchronous, NoAlias, and writes Vault params from structural scalars." />
+    <Task07 name="THE_DEAR_LIE_SHADER_INTEGRATION" status="[PASS]" proof="_GlobalBaseAgingParams StructuredBuffer feeds UberNoir procedural aging; no per-renderer mutation." />
+    <Task08 name="SPATIAL_GROWTH_PROPAGATION" status="[PASS]" proof="Shader rust/salt growth uses procedural noise and continuous quality gates." />
+    <Task09 name="GLASS_MICRO_FRACTURE_SIMULATION" status="[PASS]" proof="Shader micro-fracture masks derive from stress/glass lanes without CPU geometry." />
+    <Task10 name="ASYNCHRONOUS_GPU_BUFFER_UPLOAD" status="[PASS]" proof="VisualSync uses double-buffered GraphicsBuffer LockBufferForWrite plus UnsafeUtility.MemCpy; duplicate scheduled VisualSync now fails closed." />
+    <Task11 name="CONTINUOUS_SCALABILITY_NOISE_OCTAVES" status="[PASS]" proof="SHINOBU aging ranges use continuous quality functions, not binary low-end branches." />
+    <Task12 name="TEMPERATURE_CORROSION_BOOST" status="[PASS]" proof="Processing and mock paths finite-resolve temperature before corrosion coefficients." />
+    <Task13 name="AUP_PRECISION_IGNORE_AND_LOCALIZE" status="[PASS]" proof="Payload uses localized scalar rows; shader path avoids absolute double world coordinates." />
+    <Task14 name="ROLLBACK_NETCODE_STATE_FENCE" status="[PASS]" proof="Visual aging BufferIDs are registered as visual payload lanes, not rollback/Merkle truth." />
+    <Task15 name="TELEMETRY_AGING_RECORDER" status="[PASS]" proof="300-frame Vault telemetry ring and dump path exist; cursor wrapping hardened." />
+    <Task16 name="AGING_TUNER_EDITOR_WINDOW" status="[PASS]" proof="UI Toolkit tuner mutates Vault-backed tuning DTO in editor-only path." />
+    <Task17 name="CSV_AGING_PROFILES_INGESTOR" status="[PASS]" proof="CSV parser is cold/editor-triggered and writes Vault tuning via byte slices." />
+    <Task18 name="LIVE_AGING_PREVIEW_GIZMO" status="[PASS]" proof="Editor gizmo reads completed Vault payload only and fails closed while job scheduled." />
+    <Task19 name="ARCHITECTURAL_METRIC_VALIDATOR" status="[PASS]" proof="Visual_Aging_Inquisition writes dedicated and aggregate static JSON reports; JSON control escape hardened." />
+    <Task20 name="SELF_AUDIT_AND_ARCHITECTURE_VERIFICATION" status="[PASS]" proof="This bottom log records static proof; runtime/profiler proof remains pending CPU gate." />
+  </TaskReconciliation>
+  <StructLayoutVerification primary="VisualAgingParamsDTO">
+    <Field name="RustAndCorrosion" offset="0" size="16" />
+    <Field name="SaltAndBiomass" offset="16" size="16" />
+    <Field name="StressAndMicroFractures" offset="32" size="16" />
+    <Field name="DepthAndPressure" offset="48" size="16" />
+    <Total size="64" math="16+16+16+16=64; all fields 16-byte aligned; no Pack=1" />
+  </StructLayoutVerification>
+  <ScalabilityCurve summary="Below quality 0.3 the shader stays on cheap analytical masks, payload/default blending, no RustDetail/POM-rich path, and no binary low-end switch. Middle quality ramps procedural texture/noise contribution through smooth ranges. High/ultra quality spends saved CPU/decal cost on shader-side rust relief, pitting, algae/salt modulation, and glass crack catchlights." />
+  <HPhiVaultStatus privatePersistentNativeCollections="ZERO" ownedBufferIDs="71240 VisualPressureAgingParams; 71241 VisualPressureAgingRuntime; 71242 VisualPressureAgingTelemetryRing; 71243 VisualPressureAgingTelemetryCursor; 71244 VisualPressureAgingTuning; 71245 VisualPressureAgingCsvScratch; 71246 VisualPressureAgingMockTemperature" lifecycle="descriptors acquired from GlobalDataVault; locks held only across owned phase windows; duplicate schedule/VisualSync now fail closed" />
+  <PointerAliasingAndDependencyGraph consumes="PreSimulation dispatcher handle; Simulation dependsOn from dispatcher" outputs="Process/mock aging handle; telemetry handle combined and retired in PostSimulation before VisualSync upload" noAlias="ProcessAgingParametersJob, GenerateMockAgingDataJob, RecordVisualAgingTelemetryJob" />
+  <CompileGuard summary="Hecton8.Graphics.Materials references contracts/service surfaces only for adjacent deformation data; no sibling Habitat Deformation Runtime asmdef edge added." />
+  <DearLieConfirmation before="O(n renderers/material instances/decal projectors) CPU mutation plus extra submissions" after="O(n active Vault rows) scalar packing plus existing O(p shaded pixels) UberNoir procedural math" />
+  <BuildGate status="DEFERRED" cpuPercent="50.241" compilerProcesses="none" reason="build forbidden above 50 percent CPU" />
 </SELF_AUDIT>

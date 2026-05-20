@@ -42,7 +42,7 @@ Extracted from `Docs/Tasks/CURRENT_BATCH.md` XML block `SHINOBU_210`.
 - [x] Task 16 PROCEDURAL_CRUSH_FORGE_WINDOW | Added UI Toolkit `HabitatCrushForgeWindow` with folder input, sliders, bake button, preview, scanner button. DOD: designer facade. | Alternatives Rejected: command-only bake path. | Estimate: editor-only.
 - [x] Task 17 CSV_CRUSH_PROFILES_INGESTOR | Added byte/span CSV profile parser for `Docs/Data/habitat_crush_profiles.csv`; no `Split`/LINQ parser. DOD: deterministic designer bridge. | Alternatives Rejected: hardcoded-only profiles. | Estimate: runtime 0 us.
 - [x] Task 18 LIVE_BUCKLING_PREVIEW_GIZMO | Added SceneView wire overlay from Burst-generated temporary preview mesh. DOD: preview before final asset bake. | Alternatives Rejected: committing assets for every slider tweak. | Estimate: editor-only.
-- [x] Task 19 ARCHITECTURAL_METRIC_VALIDATOR | Added `Runtime_Habitat_Destruction_Scanner` and generated `Docs/Reports/PHYSICS_OPTIMIZATION_REPORT.json` with 0 findings while preserving prior SHINOBU_209 report. DOD: static source scan. | Alternatives Rejected: manual statement without report. | Estimate: runtime 0 us.
+- [x] Task 19 ARCHITECTURAL_METRIC_VALIDATOR | Added `Runtime_Habitat_Destruction_Scanner` and generated static scanner support with bounded previous-report sidecar preservation. DOD: static source scan. | Alternatives Rejected: manual statement without report and recursive full-report embedding. | Estimate: runtime 0 us.
 - [x] Task 20 SELF_AUDIT_AND_ARCHITECTURE_VERIFICATION | Appended final report and XML self-audit to `Docs/AgentLogs/LOG_SHINOBU_210.md`; compile remained blocked by CPU guard. DOD: disk-backed report, not chat-only claim. | Alternatives Rejected: fake compile/profiler success. | Estimate: 0 us runtime; measured savings unavailable.
 
 ## Verification
@@ -73,6 +73,15 @@ Extracted from `Docs/Tasks/CURRENT_BATCH.md` XML block `SHINOBU_210`.
 - Ultra Loop 20 static gates: `PackBakedVertexJob` clamps non-finite position, tangent, UV, stress, and tear values before writing the 32-byte GPU vertex stream; source-only forbidden/sibling-reference scans have no hits. `git diff --check` has no whitespace errors, only LF/CRLF working-copy warnings.
 - Ultra Loop 21 static gates: potentially overlapping read-only mesh stream byte views no longer carry `[NoAlias]`, while non-overlapping output/range/index buffers still do; source-only forbidden scan has no hits. `git diff --check` has no whitespace errors, only LF/CRLF working-copy warnings.
 - Ultra Loop 22 static gates: missing normal/tangent/UV source streams now reuse the valid position byte stream with zero stride and `Has* = 0`, avoiding default `NativeArray<byte>` containers in scheduled extraction jobs. Forbidden source-pattern scan has no hits; `dotnet`/`csc` process guard has no running compiler process.
+- Ultra Loop 23 static gates: `math.reversebytes` dependency removed from the blackbox dump writer and replaced with source-local bitwise `ReverseBytes32`; forbidden source-pattern scan has no hits and no owned code now references `math.reversebytes`.
+- Ultra Loop 24 static gates: scanner report preservation no longer embeds the full previous JSON through `File.ReadAllText`; it streams the previous report to `Docs/Reports/PHYSICS_OPTIMIZATION_REPORT_PREVIOUS_SHINOBU_210.json` and records byte count/FNV-1a hash only.
+- Ultra Loop 25 static gates: SHINOBU_210 architecture route card now documents scanner sidecar preservation and source-local endian swap so the disk authority file matches current source.
+- Ultra Loop 26 static gates: Editor queue `Status`/`Active` accessors converted from properties to raw static fields; owned code scan no longer finds `get; private set;` properties.
+- Ultra Loop 27 static gates: expression-bodied `Progress` property also converted to a raw field updated at queue state boundaries; owned code scan no longer finds property syntax in SHINOBU_210 source.
+- Ultra Loop 28 static gates: Editor queue status text no longer emits "Bake complete"; it now reports "Bake pass wrote report" to avoid claiming final verification.
+- Ultra Loop 29 static gates: mesh and manifest asset writes no longer use `AssetDatabase.GenerateUniqueAssetPath`; rebakes refresh deterministic paths through `EditorUtility.CopySerialized`.
+- Ultra Loop 30 static gates: deterministic rebake refresh now explicitly marks copied mesh/manifest destination assets dirty after `EditorUtility.CopySerialized`.
+- Ultra Loop 31 static gates: scoped owned-file diff reviewed; forbidden source-pattern scan had no hits; sibling-reference scan had no hits; exact Burst Fast/Standard attributes remain 12/12 for bake jobs; `ResolveStateIndex` exposes Stressed/Ruptured/Collapsed thresholds; direct `SetVertexBufferData`/`SetIndexBufferData`, deterministic `CopySerialized`, and `SetDirty` paths are present. Current canonical `PHYSICS_OPTIMIZATION_REPORT.json` is owned by parallel SHINOBU_227 and preserves SHINOBU_210 as previous evidence; SHINOBU_210 did not overwrite it during this loop.
 
 ## Ultra Polish Loop 02
 
@@ -97,7 +106,7 @@ Extracted from `Docs/Tasks/CURRENT_BATCH.md` XML block `SHINOBU_210`.
 
 ## Ultra Polish Loop 06
 
-- [x] Blackbox endianness hardening | Replaced `BinaryWriter` dump serialization with explicit little-endian primitive writers using `math.asuint` for floats and `math.reversebytes` on non-little-endian hosts. DOD: `.bin` header is self-describing: agent hash, version, capacity, count, cursor, 64-byte entry size. | Alternatives Rejected: implicit runtime endianness from `BinaryWriter`. | Estimate: runtime 0 us.
+- [x] Blackbox endianness hardening | Replaced `BinaryWriter` dump serialization with explicit little-endian primitive writers using `math.asuint` for floats and source-local byte swap on non-little-endian hosts. DOD: `.bin` header is self-describing: agent hash, version, capacity, count, cursor, 64-byte entry size. | Alternatives Rejected: implicit runtime endianness from `BinaryWriter` and optional package-specific reversebytes APIs. | Estimate: runtime 0 us.
 
 ## Ultra Polish Loop 07
 
@@ -164,3 +173,39 @@ Extracted from `Docs/Tasks/CURRENT_BATCH.md` XML block `SHINOBU_210`.
 ## Ultra Polish Loop 22
 
 - [x] Extraction container safety | Replaced `default` missing-attribute byte views with the valid position stream plus zero stride/disabled flags. DOD: scheduled Burst job fields carry valid containers even when source meshes lack normal/tangent/UV channels. | Alternatives Rejected: allocating dummy TempJob byte buffers for absent streams. | Estimate: runtime 0 us; editor scheduling safety improved without extra memory traffic.
+
+## Ultra Polish Loop 23
+
+- [x] Endian API drift hardening | Replaced `math.reversebytes` calls in the blackbox dump writer with source-local bitwise byte-swap code. DOD: deterministic little-endian dump output no longer depends on optional Unity.Mathematics API surface. | Alternatives Rejected: `BinaryWriter` and package-version-specific reversebytes calls. | Estimate: runtime 0 us; editor forensic writer compile risk reduced.
+
+## Ultra Polish Loop 24
+
+- [x] Bounded scanner report preservation | Replaced full previous-report embedding with streamed sidecar copy plus byte count/FNV-1a metadata. DOD: shared canonical scanner report stays bounded across repeated agents. | Alternatives Rejected: `File.ReadAllText` JSON embedding and blind overwrite. | Estimate: runtime 0 us; editor evidence file avoids recursive growth.
+
+## Ultra Polish Loop 25
+
+- [x] Route card evidence synchronization | Updated the SHINOBU_210 architecture note to document bounded scanner preservation and source-local endian byte swapping. DOD: docs match code after loops 23-24. | Alternatives Rejected: leaving stale route-card proof language. | Estimate: runtime 0 us.
+
+## Ultra Polish Loop 26
+
+- [x] Property creep purge | Converted Editor queue `Status` and `Active` from static properties to raw static fields. DOD: no owned `get; private set;` properties remain. | Alternatives Rejected: keeping harmless Editor properties while mandate asks for property eradication in this lane. | Estimate: runtime 0 us; editor UI behavior unchanged.
+
+## Ultra Polish Loop 27
+
+- [x] Expression-bodied property purge | Converted Editor queue `Progress` from an expression-bodied property to a raw field updated on Start/Tick/Stop. DOD: owned code has no property syntax hits. | Alternatives Rejected: leaving property syntax because it was Editor-only. | Estimate: runtime 0 us; editor progress bar behavior unchanged.
+
+## Ultra Polish Loop 28
+
+- [x] Verification wording hardening | Replaced Editor queue "Bake complete" status string with "Bake pass wrote report". DOD: tooling does not imply final verification while Unity import/profiler proof is pending. | Alternatives Rejected: leaving finish-language in UI. | Estimate: runtime 0 us.
+
+## Ultra Polish Loop 29
+
+- [x] Deterministic asset path refresh | Replaced unique asset path minting with deterministic mesh/manifest paths and in-place `EditorUtility.CopySerialized` refresh. DOD: repeated bakes do not create orphaned numbered assets. | Alternatives Rejected: `GenerateUniqueAssetPath` churn. | Estimate: runtime 0 us; editor project hygiene improved.
+
+## Ultra Polish Loop 30
+
+- [x] Asset dirty marking | Added explicit `EditorUtility.SetDirty` after in-place mesh/manifest `CopySerialized` refresh. DOD: rebaked deterministic assets are saved by the queued `AssetDatabase.SaveAssets` call. | Alternatives Rejected: relying on implicit dirty state. | Estimate: runtime 0 us.
+
+## Ultra Polish Loop 31
+
+- [x] Scoped final static verification | Re-read disk state, re-extracted the SHINOBU_210 XML block, reviewed the owned code diff, verified forbidden pattern scans and sibling-reference scans are clean, verified 12 exact Burst attributes for 12 jobs, verified the four-state runtime resolver thresholds, and verified direct native mesh upload plus deterministic asset refresh markers. DOD: source evidence checked after context compaction. | Alternatives Rejected: trusting status/rationale without source grep and diff review. | Estimate: runtime 0 us; build remains blocked by external compile wall.

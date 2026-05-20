@@ -13,6 +13,8 @@ namespace Hecton8.Editor.GeologyForge
         public const int MaximumResolution = 72;
         public const int DefaultAoRays = 24;
         public const int MaximumAoRays = 96;
+        public const int MaximumVariations = 500;
+        public const int MaximumAsyncResultPreallocation = 5000;
         public const int BlackBoxFrameCount = 300;
         public const int Lod0TriangleBudget = 15000;
         public const int Lod1TriangleBudget = 7500;

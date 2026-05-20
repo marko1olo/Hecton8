@@ -40,8 +40,8 @@ namespace Hecton8.World.ProceduralCoral.Editor
             {
                 CoralDebugSegmentDTO segment = buffers.DebugSegments[i];
                 Gizmos.color = ResolveColor(segment.StateFlags, segment.GenerationDepth);
-                Vector3 start = new Vector3((float)segment.StartAUP.x, (float)segment.StartAUP.y, (float)segment.StartAUP.z);
-                Vector3 end = new Vector3((float)segment.EndAUP.x, (float)segment.EndAUP.y, (float)segment.EndAUP.z);
+                Vector3 start = HectonFloatingOrigin.ToRuntimePosition(segment.StartAUP, HectonFloatingOrigin.CurrentTotalOffsetDouble);
+                Vector3 end = HectonFloatingOrigin.ToRuntimePosition(segment.EndAUP, HectonFloatingOrigin.CurrentTotalOffsetDouble);
                 Gizmos.DrawLine(start, end);
                 if ((segment.StateFlags & CoralBranchFlags.Tip) != 0)
                     Gizmos.DrawWireSphere(end, 0.18f);

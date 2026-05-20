@@ -109,6 +109,161 @@ Exact microseconds saved:
   <COMPILE_VERIFICATION status="PENDING_VERIFICATION">Build was not launched in R24. R22 already proves `Hecton8.Core.csproj` aborts before SHINOBU verification on missing external `Assets/_Project/Scripts/Construction/LogisticsPipeEvents.cs`.</COMPILE_VERIFICATION>
 </SELF_AUDIT>
 
+## R39 Pressure Math NaN Guard Closure
+
+What was wrong:
+- Pressure-factor code used branch/ternary denominator guards instead of explicit `math.max` denominator vaccination.
+- `VRAMPressureMonitor.SampleAndRespond()` guarded VRAM/RAM divisions with ternaries.
+- `VRAMPressureMonitor.SetExternalMipPressureResponse()` guarded `_runtimeTotalVramBudgetBytes` with a ternary.
+- `AssetLoadDispatcher.ResolveVramPressureFactor()` returned through an `if` guard.
+- Red-zone scalar routes still used ternary expressions in mip/LOD/eviction helpers.
+
+What was done:
+- Dynamic pressure divisions now use `math.max((float)denominator, 1f)` before division.
+- Fallback semantics are preserved with `math.select`.
+- Finite fallback helpers now use `math.select`.
+- Red-zone scalar choices in mip response, mip delta, LOD scalar, and emergency eviction budget now use `math.select`.
+- `ResolvePressureResponse()` clamps `startFraction` through `math.min(math.saturate(startFraction), 0.9999f)` with no branch.
+
+Cinematic cheats used:
+- No physical simulation was added. This pass protects the existing presentation fakery: mip, LOD, and release pressure response remain scalar visual-budget cheats.
+- Complexity remains O(1). R39 changes scalar math shape only.
+
+Exact microseconds saved:
+- Measured savings: 0 microseconds claimed. Unity Profiler/GCMonitor proof remains unavailable behind the external compile wall.
+- Static impact: denominator NaN risk is reduced and pressure helper branch shape is cleaner for future Burst extraction.
+
+<SELF_AUDIT agent_id="SHINOBU_101" revision="R39_PRESSURE_MATH_NAN_GUARD_CLOSURE" timestamp="2026-05-20T00:00:00+04:00" status="PENDING_VERIFICATION_EXTERNAL_COMPILE_WALL">
+  <TASK_RECONCILIATION>
+    <TASK id="01" status="PASS">MANAGED_DICTIONARY_ERADICATION: no managed collection route was added.</TASK>
+    <TASK id="02" status="PASS">DEFERRED_RELEASE_QUEUE_PURGE: no release route changed.</TASK>
+    <TASK id="03" status="PASS">CS1612_ENCAPSULATION_PURGE: no hot unmanaged DTO property path was introduced.</TASK>
+    <TASK id="04" status="PASS">ARM64_PADDING_RECONSTRUCTION: no DTO layout changed in R39.</TASK>
+    <TASK id="05" status="PASS">EMERGENCY_MOCK_CACHE_PROFILES: unchanged.</TASK>
+    <TASK id="06" status="PASS">VAULT_OPEN_ADDRESS_HASH_TABLE: unchanged.</TASK>
+    <TASK id="07" status="PASS">BURST_TTL_EVALUATION_KERNEL: unchanged.</TASK>
+    <TASK id="08" status="PASS">SAFE_FRAME_RELEASE_GATE: raw release route remains single-owner governor.</TASK>
+    <TASK id="09" status="PASS">THE_DEAR_LIE_IMPOSTOR_MESH: mip/LOD pressure response remains visual fakery, not heavy simulation.</TASK>
+    <TASK id="10" status="PASS">VRAM_PANIC_EVICTION_ROUTING: emergency budget scalar now uses `math.select`.</TASK>
+    <TASK id="11" status="PASS">CONTINUOUS_SCALABILITY_CACHE_SIZING: pressure factors remain continuous and branch-cleaner.</TASK>
+    <TASK id="12" status="PASS">ATOMIC_REFERENCE_COUNTING: unchanged.</TASK>
+    <TASK id="13" status="PASS">AUP_PRECISION_EVICTION_SCORING: unchanged.</TASK>
+    <TASK id="14" status="PASS">ASSET_BUNDLE_FRAGMENTATION_DEFRAG: unchanged.</TASK>
+    <TASK id="15" status="PASS">NARRATIVE_PINNING_LOCK: unchanged.</TASK>
+    <TASK id="16" status="PASS">ZERO_INIT_OVERHEAD_BYPASS: no new buffer was allocated.</TASK>
+    <TASK id="17" status="PASS">TELEMETRY_HEAP_RECORDER: unchanged.</TASK>
+    <TASK id="18" status="PASS">MEMORY_TUNER_EDITOR_WINDOW: unchanged.</TASK>
+    <TASK id="19" status="PASS">CSV_OVERRIDE_INGESTOR: unchanged.</TASK>
+    <TASK id="20" status="PASS">LIVE_LEAK_DETECTOR_GIZMO: unchanged.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <NOTE>R39 changes scalar pressure math only. No DTO, SignalBus payload, telemetry entry, atomic counter, or Vault record layout changed.</NOTE>
+    <STRUCT name="AssetTrackerDTO" size="64" alignment="8/16/64"><MATH>Existing proof remains: field sum = 64 bytes; one 64B cache line; no `Pack=1`.</MATH></STRUCT>
+    <STRUCT name="AssetHandleMapEntryDTO" size="64" alignment="8/16/64"><MATH>Existing proof remains: 36 bytes live fields + 28 bytes explicit padding = 64 bytes; one 64B cache line; no `Pack=1`.</MATH></STRUCT>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE_EXPLANATION>
+    Below `GlobalQualityWeight &lt; 0.3`, pressure curves still collapse optional mip/LOD/load work continuously. R39 does not change thresholds; it hardens the pressure factors that feed them. Denominators are clamped with `math.max`, red-zone selects use `math.select`, and final Unity integer settings remain the only quantization boundary.
+  </SCALABILITY_CURVE_EXPLANATION>
+  <H_PHI_VAULT_STATUS>
+    <PRIVATE_NATIVE_ALLOCATIONS status="PASS">R39 declares zero private native containers.</PRIVATE_NATIVE_ALLOCATIONS>
+    <VAULT_HANDLES>R39 requests no new VaultBufferHandle IDs. Existing SHINOBU handles remain unchanged.</VAULT_HANDLES>
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_DEPENDENCY_GRAPH>
+    <CONSUMES>R39 consumes no `JobHandle`.</CONSUMES>
+    <OUTPUTS>R39 outputs no `JobHandle`.</OUTPUTS>
+    <NO_ALIAS status="PASS">No new Burst job was introduced.</NO_ALIAS>
+  </POINTER_ALIASING_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No `.asmdef` was edited. R39 touched only `AssetLoadDispatcher.cs`, `VRAMPressureMonitor.cs`, and SHINOBU docs; no direct sibling runtime assembly reference was introduced.</COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>
+    The Dear Lie remains pressure-driven presentation scaling: mip and LOD degradation plus controlled release work instead of expensive asset churn or extra simulation. Before: branchy pressure denominator guards. After: O(1) branch-clean scalar pressure math with explicit denominator vaccination.
+  </DEAR_LIE_CONFIRMATION>
+  <STATIC_VERIFICATION>
+    <SCAN command="rg -n &quot;vramBudgetBytes &gt; 0L \\?|maxSystemRamBytes &gt; 0L \\?|_runtimeTotalVramBudgetBytes &gt; 0L\\s*\\?|math\\.isfinite\\(pressureResponse\\) \\?|math\\.isfinite\\(quality\\) \\?|redZonePressure \\?|if \\(start &gt;=|graphicsBudgetBytes &lt;= 0L|graphicsMemoryMb &gt; 0 \\?&quot; Assets/_Project/Scripts/Optimization/AssetLoadDispatcher.cs Assets/_Project/Scripts/Optimization/VRAMPressureMonitor.cs Assets/_Project/Scripts/Optimization/VRAMEnforcer.cs">Only `_graphicsBudgetBytes &lt;= 0L` cold cache refresh remains.</SCAN>
+    <SCAN command="rg -n &quot;math\\.max\\(\\(float\\)vramBudgetBytes|math\\.max\\(\\(float\\)maxSystemRamBytes|math\\.max\\(\\(float\\)_runtimeTotalVramBudgetBytes|math\\.select\\(0f, pressureResponse|math\\.select\\(1f, quality|ResolvePressureResponse|math\\.min\\(math\\.saturate\\(startFraction\\), 0\\.9999f\\)&quot; Assets/_Project/Scripts/Optimization/AssetLoadDispatcher.cs Assets/_Project/Scripts/Optimization/VRAMPressureMonitor.cs Assets/_Project/Scripts/Optimization/VRAMEnforcer.cs">Expected denominator clamps, finite selectors, and pressure-response branchless clamps only.</SCAN>
+    <SCAN command="rg -n &quot;/ \\(float\\)|/ BytesPerMegabyte|/ denominator|/ vramDenominator|/ ramDenominator&quot; Assets/_Project/Scripts/Optimization/AssetLoadDispatcher.cs Assets/_Project/Scripts/Optimization/VRAMPressureMonitor.cs Assets/_Project/Scripts/Optimization/VRAMEnforcer.cs">Dynamic pressure divisions use guarded denominators; unguarded divisions are fixed megabyte conversions.</SCAN>
+    <SCAN command="git diff --check -- Assets/_Project/Scripts/Optimization/AssetLoadDispatcher.cs Assets/_Project/Scripts/Optimization/VRAMPressureMonitor.cs Assets/_Project/Scripts/Optimization/VRAMEnforcer.cs">LF-to-CRLF warnings only.</SCAN>
+  </STATIC_VERIFICATION>
+  <COMPILE_VERIFICATION status="PENDING_VERIFICATION">Build was not launched in R39. Known external missing `Assets/_Project/Scripts/Construction/LogisticsPipeEvents.cs` blocks `Hecton8.Core.csproj` before SHINOBU code verification, and the user forbade needless build/rebuild runs.</COMPILE_VERIFICATION>
+</SELF_AUDIT>
+
+## R38 Bootstrap Default And Dispatcher Hardware Cache
+
+What was wrong:
+- `_hardwareBudgetWeight` had a CLR default of `0f` before SubsystemRegistration/runtime init.
+- Non-playing editor/offline calls to `VRAMEnforcer.ApplyBoidPopulationBudget()` could therefore collapse authored fauna counts to the 0.4 minimum scale without a measured hardware budget.
+- `AssetLoadDispatcher.EvaluateUiMipBiasGate()` still read `SystemInfo.graphicsMemorySize` inside the UI mip gate cadence.
+
+What was done:
+- `_hardwareBudgetWeight` now defaults to `1f`.
+- `ApplyBoidPopulationBudget()` returns the clamped authored count outside Play Mode when runtime budget initialization has not happened.
+- `AssetLoadDispatcher` now stores `_graphicsBudgetBytes`, refreshes it during `OnEnable()` and `Start()`, and uses the cached byte budget in `EvaluateUiMipBiasGate()`.
+- The only normal route to `SystemInfo.graphicsMemorySize` in the dispatcher is now `RefreshGraphicsBudgetBytes()`.
+- New budget/quality fallback helpers use `math.select` instead of ternary fallback expressions.
+
+Cinematic cheats used:
+- No new physical simulation was introduced. The same Dear Lie remains: continuous boid population and mip presentation response, not asset churn or high-cost object simulation.
+- Complexity remains O(1). The change removes a cadence hardware query and fixes a cold authoring scalar default.
+
+Exact microseconds saved:
+- Measured savings: 0 microseconds claimed. Unity Profiler/GCMonitor proof remains unavailable behind the external compile wall.
+- Static impact: removes one hardware-memory query from normal UI mip gate cadence and prevents accidental pre-init editor fauna reduction.
+
+<SELF_AUDIT agent_id="SHINOBU_101" revision="R38_BOOTSTRAP_DEFAULT_AND_DISPATCHER_HARDWARE_CACHE" timestamp="2026-05-20T00:00:00+04:00" status="PENDING_VERIFICATION_EXTERNAL_COMPILE_WALL">
+  <TASK_RECONCILIATION>
+    <TASK id="01" status="PASS">MANAGED_DICTIONARY_ERADICATION: no managed collection route was added.</TASK>
+    <TASK id="02" status="PASS">DEFERRED_RELEASE_QUEUE_PURGE: no release route changed.</TASK>
+    <TASK id="03" status="PASS">CS1612_ENCAPSULATION_PURGE: no hot unmanaged DTO property path was introduced.</TASK>
+    <TASK id="04" status="PASS">ARM64_PADDING_RECONSTRUCTION: no DTO layout changed in R38.</TASK>
+    <TASK id="05" status="PASS">EMERGENCY_MOCK_CACHE_PROFILES: unchanged.</TASK>
+    <TASK id="06" status="PASS">VAULT_OPEN_ADDRESS_HASH_TABLE: unchanged.</TASK>
+    <TASK id="07" status="PASS">BURST_TTL_EVALUATION_KERNEL: unchanged.</TASK>
+    <TASK id="08" status="PASS">SAFE_FRAME_RELEASE_GATE: raw release route remains single-owner governor.</TASK>
+    <TASK id="09" status="PASS">THE_DEAR_LIE_IMPOSTOR_MESH: UI mip/boid fake remains presentation pressure response, not load churn.</TASK>
+    <TASK id="10" status="PASS">VRAM_PANIC_EVICTION_ROUTING: unchanged.</TASK>
+    <TASK id="11" status="PASS">CONTINUOUS_SCALABILITY_CACHE_SIZING: R38 preserves continuous hardware/quality curves and removes a pre-init scalar fault.</TASK>
+    <TASK id="12" status="PASS">ATOMIC_REFERENCE_COUNTING: unchanged.</TASK>
+    <TASK id="13" status="PASS">AUP_PRECISION_EVICTION_SCORING: unchanged.</TASK>
+    <TASK id="14" status="PASS">ASSET_BUNDLE_FRAGMENTATION_DEFRAG: unchanged.</TASK>
+    <TASK id="15" status="PASS">NARRATIVE_PINNING_LOCK: unchanged.</TASK>
+    <TASK id="16" status="PASS">ZERO_INIT_OVERHEAD_BYPASS: no new buffer was allocated.</TASK>
+    <TASK id="17" status="PASS">TELEMETRY_HEAP_RECORDER: unchanged.</TASK>
+    <TASK id="18" status="PASS">MEMORY_TUNER_EDITOR_WINDOW: unchanged.</TASK>
+    <TASK id="19" status="PASS">CSV_OVERRIDE_INGESTOR: unchanged.</TASK>
+    <TASK id="20" status="PASS">LIVE_LEAK_DETECTOR_GIZMO: unchanged.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <NOTE>R38 changes scalar static fields and dispatcher cached budget bytes only. No DTO, SignalBus payload, telemetry entry, atomic counter, or Vault record layout changed.</NOTE>
+    <STRUCT name="AssetTrackerDTO" size="64" alignment="8/16/64"><MATH>Existing proof remains: field sum = 64 bytes; one 64B cache line; no `Pack=1`.</MATH></STRUCT>
+    <STRUCT name="AssetHandleMapEntryDTO" size="64" alignment="8/16/64"><MATH>Existing proof remains: 36 bytes live fields + 28 bytes explicit padding = 64 bytes; one 64B cache line; no `Pack=1`.</MATH></STRUCT>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE_EXPLANATION>
+    Runtime behavior remains continuous. Below `GlobalQualityWeight &lt; 0.3`, boid population and UI mip response still slide toward cheaper presentation through `math.lerp`, `math.smoothstep`, and cached pressure fractions. Editor/offline pre-init calls now preserve authored count until actual runtime budget authority exists, avoiding a false low-tier collapse. No binary `IsLowEndHardware` or low/high hardware branch was introduced.
+  </SCALABILITY_CURVE_EXPLANATION>
+  <H_PHI_VAULT_STATUS>
+    <PRIVATE_NATIVE_ALLOCATIONS status="PASS">R38 declares zero private native containers.</PRIVATE_NATIVE_ALLOCATIONS>
+    <VAULT_HANDLES>R38 requests no new VaultBufferHandle IDs. Existing SHINOBU handles remain unchanged.</VAULT_HANDLES>
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_DEPENDENCY_GRAPH>
+    <CONSUMES>R38 consumes no `JobHandle`.</CONSUMES>
+    <OUTPUTS>R38 outputs no `JobHandle`.</OUTPUTS>
+    <NO_ALIAS status="PASS">No new Burst job was introduced.</NO_ALIAS>
+  </POINTER_ALIASING_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No `.asmdef` was edited. R38 touched only `AssetLoadDispatcher.cs`, `VRAMEnforcer.cs`, and SHINOBU docs; no direct sibling runtime assembly reference was introduced.</COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>
+    The Dear Lie is unchanged: UI mip and boid presentation scale continuously to protect frame time instead of forcing synchronous Addressables churn or simulated richness. Before: cadence hardware query plus possible false pre-init population shrink. After: O(1) cached budget lookup and correct authored-count fallback until runtime hardware state exists.
+  </DEAR_LIE_CONFIRMATION>
+  <STATIC_VERIFICATION>
+    <SCAN command="rg -n &quot;private static float _hardwareBudgetWeight|!_initialized &amp;&amp; !Application\\.isPlaying|ResolveHardwareBudgetWeight|ApplyBoidPopulationBudget&quot; Assets/_Project/Scripts/Optimization/VRAMEnforcer.cs">Expected initialized weight, non-playing guard, and continuous budget helpers only.</SCAN>
+    <SCAN command="rg -n &quot;_graphicsBudgetBytes|RefreshGraphicsBudgetBytes|SystemInfo\\.graphicsMemorySize|ResolveGraphicsBudgetBytes&quot; Assets/_Project/Scripts/Optimization/AssetLoadDispatcher.cs">`SystemInfo.graphicsMemorySize` appears only inside `RefreshGraphicsBudgetBytes()`.</SCAN>
+    <SCAN command="rg -n &quot;ResolveGraphicsBudgetBytes|math\\.select\\(UnknownGraphicsBudgetMb|ResolveGlobalQualityWeight|math\\.select\\(1f, quality|ResolveQualityCurve&quot; Assets/_Project/Scripts/Optimization/AssetLoadDispatcher.cs Assets/_Project/Scripts/Optimization/VRAMEnforcer.cs">Expected branchless budget/quality fallback helpers only.</SCAN>
+    <SCAN command="rg -n &quot;graphicsMemoryMb &gt; 0 \\?|math\\.isfinite\\(quality\\) \\? quality|LowVramGraphicsMemoryMbThreshold|LowVramDeviceThresholdMb|UiMipDowngradeThresholdBytes|UiMipRestoreThresholdBytes|DetectedGraphicsMemoryMb &gt; 0 &amp;&amp;|\\? SharedMemory|if \\(!_lowVramBudgetActive\\)&quot; Assets/_Project/Scripts/Optimization/AssetLoadDispatcher.cs Assets/_Project/Scripts/Optimization/VRAMEnforcer.cs">No results.</SCAN>
+    <SCAN command="rg -n &quot;IsLowEndHardware|LowVramGraphicsMemoryMbThreshold|LowVramDeviceThresholdMb|UiMipDowngradeThresholdBytes|UiMipRestoreThresholdBytes|DetectedGraphicsMemoryMb &gt; 0 &amp;&amp;|\\? SharedMemory|if \\(!_lowVramBudgetActive\\)|NativeParallelHashMap|Allocator\\.Persistent|List&lt;|Dictionary&lt;|HashSet&lt;|Queue&lt;&quot; Assets/_Project/Scripts/Optimization/AssetLoadDispatcher.cs Assets/_Project/Scripts/Optimization/VRAMPressureMonitor.cs Assets/_Project/Scripts/Optimization/VRAMEnforcer.cs">No results.</SCAN>
+    <SCAN command="rg -n &quot;Addressables\\.Release\\(|Addressables\\.ReleaseInstance\\(&quot; Assets/_Project/Scripts">`Addressables.Release(` remains only at `Assets/_Project/Scripts/Optimization/AssetLifecycleGovernor.cs:4332`; `ReleaseInstance` remains only bootstrap UI teardown.</SCAN>
+    <SCAN command="git diff --check -- Assets/_Project/Scripts/Optimization/AssetLoadDispatcher.cs Assets/_Project/Scripts/Optimization/VRAMEnforcer.cs">LF-to-CRLF warnings only.</SCAN>
+  </STATIC_VERIFICATION>
+  <COMPILE_VERIFICATION status="PENDING_VERIFICATION">Build was not launched in R38. Known external missing `Assets/_Project/Scripts/Construction/LogisticsPipeEvents.cs` blocks `Hecton8.Core.csproj` before SHINOBU code verification, and the user forbade needless build/rebuild runs.</COMPILE_VERIFICATION>
+</SELF_AUDIT>
+
 ## R34 VRAMPressureMonitor Quality-Weighted Pressure Response
 
 What was wrong:

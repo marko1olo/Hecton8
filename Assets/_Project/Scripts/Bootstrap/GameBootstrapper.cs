@@ -2625,7 +2625,9 @@ namespace Hecton8.Bootstrap
                 }
 
                 case BootstrapDependencyNode.EquipmentInteractionHandler:
-                    return EnsureEquipmentInteractionServiceRegistered() != null && IsBootstrapDependencyNodeReady(node);
+                    EquipmentInteractionHandler interactionHandler = EnsureEquipmentInteractionServiceRegistered();
+                    EnsureAuxiliaryEquipmentRouterRegistered();
+                    return interactionHandler != null && IsBootstrapDependencyNodeReady(node);
 
                 case BootstrapDependencyNode.HectonFloatingOrigin:
                     return EnsureFloatingOriginRegistered() != null && GlobalRegistry.FloatingOrigin != null;
@@ -2839,7 +2841,9 @@ namespace Hecton8.Bootstrap
             if (GlobalRegistry.Caustics != null)
                 return true;
 
-            Type serviceType = Type.GetType("Hecton8.Graphics.Caustics.AnalyticalCausticsService, Hecton8.Graphics.Caustics", false);
+            Type serviceType = Type.GetType("Hecton8.Rendering.AbyssalDeferredCausticsRuntime, Hecton8.Core", false) ??
+                               Type.GetType("Hecton8.Rendering.AbyssalDeferredCausticsRuntime, Assembly-CSharp", false) ??
+                               Type.GetType("Hecton8.Graphics.Caustics.AnalyticalCausticsService, Hecton8.Graphics.Caustics", false);
             if (serviceType == null)
                 return false;
 
@@ -2992,6 +2996,21 @@ namespace Hecton8.Bootstrap
 
             interactionHandler.InitializeService();
             return interactionHandler;
+        }
+
+        private static Hecton8.Equipment.Auxiliary.AuxiliaryEquipmentRouterRuntime EnsureAuxiliaryEquipmentRouterRegistered()
+        {
+            if (Hecton8.Equipment.Auxiliary.AuxiliaryEquipmentRouterRuntime.TryGetActiveRuntime(
+                    out Hecton8.Equipment.Auxiliary.AuxiliaryEquipmentRouterRuntime registered))
+            {
+                return registered;
+            }
+
+            GameObject runtimeRoot = new GameObject("[AuxiliaryEquipmentRouterRuntime]"); // COLD ALLOC: GameObject[1] - bootstrap-owned auxiliary equipment router root - owner: GameBootstrapper
+            Hecton8.Equipment.Auxiliary.AuxiliaryEquipmentRouterRuntime runtime =
+                runtimeRoot.AddComponent<Hecton8.Equipment.Auxiliary.AuxiliaryEquipmentRouterRuntime>();
+            PersistRuntimeService(runtime);
+            return runtime;
         }
 
         private static CrashTelemetryBuffer EnsureCrashTelemetryBufferRegistered()

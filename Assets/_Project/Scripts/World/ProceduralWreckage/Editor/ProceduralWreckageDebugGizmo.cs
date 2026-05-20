@@ -41,7 +41,7 @@ namespace Hecton8.World.ProceduralWreckage.Editor
                     continue;
 
                 Gizmos.color = ResolveColor(cell.State);
-                Vector3 center = new Vector3((float)cell.CenterAUP.x, (float)cell.CenterAUP.y, (float)cell.CenterAUP.z);
+                Vector3 center = HectonFloatingOrigin.ToRuntimePosition(cell.CenterAUP, HectonFloatingOrigin.CurrentTotalOffsetDouble);
                 Vector3 size = new Vector3(cell.Extents.x * 2f, cell.Extents.y * 2f, cell.Extents.z * 2f);
                 Gizmos.DrawWireCube(center, size);
             }

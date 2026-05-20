@@ -227,7 +227,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct CanAcceptCandidateJob : IJob
         {
             [ReadOnly] public NativeParallelMultiHashMap<int, float3> PositionBuckets;
@@ -291,7 +291,8 @@ namespace Hecton8.World
                         bool bucketWithinRange = false;
                         do
                         {
-                            if (math.distancesq(CandidatePosition, existingPosition) < MaxRelevantDistanceSq)
+                            float3 bucketDelta = CandidatePosition - existingPosition;
+                            if (math.lengthsq(bucketDelta) < MaxRelevantDistanceSq)
                             {
                                 bucketWithinRange = true;
                                 break;
@@ -317,7 +318,8 @@ namespace Hecton8.World
                             if (minDistance <= 0f)
                                 continue;
 
-                            if (math.distancesq(CandidatePosition, existing.Position) < minDistance * minDistance)
+                            float3 spacingDelta = CandidatePosition - existing.Position;
+                            if (math.lengthsq(spacingDelta) < minDistance * minDistance)
                             {
                                 Result[0] = 0;
                                 return;
@@ -329,7 +331,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct EvaluateScatterCellCandidateBatchJob : IJob
         {
             [ReadOnly] public NativeParallelMultiHashMap<int, float3> ExistingPositionBuckets;
@@ -593,7 +595,8 @@ namespace Hecton8.World
                 bool bucketWithinRange = false;
                 do
                 {
-                    if (math.distancesq(candidate.Position, existingPosition) < maxRelevantDistanceSq)
+                    float3 bucketDelta = candidate.Position - existingPosition;
+                    if (math.lengthsq(bucketDelta) < maxRelevantDistanceSq)
                     {
                         bucketWithinRange = true;
                         break;
@@ -611,7 +614,8 @@ namespace Hecton8.World
                 {
                     ScatterPlacementSpatialMetadata existing = spatialMetadata[metadataIndex];
                     float minDistance = ResolveRequiredDistanceNative(in candidate, in existing);
-                    if (minDistance > 0f && math.distancesq(candidate.Position, existing.Position) < minDistance * minDistance)
+                    float3 spacingDelta = candidate.Position - existing.Position;
+                    if (minDistance > 0f && math.lengthsq(spacingDelta) < minDistance * minDistance)
                         return true;
                 }
                 while (metadataBuckets.TryGetNextValue(out metadataIndex, ref metadataIterator));
@@ -850,7 +854,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct EvaluateScatterRescueCandidateBatchJob : IJob
         {
             [ReadOnly] public NativeParallelMultiHashMap<int, float3> ExistingPositionBuckets;
@@ -1059,7 +1063,8 @@ namespace Hecton8.World
                 bool bucketWithinRange = false;
                 do
                 {
-                    if (math.distancesq(candidate.Position, existingPosition) < maxRelevantDistanceSq)
+                    float3 bucketDelta = candidate.Position - existingPosition;
+                    if (math.lengthsq(bucketDelta) < maxRelevantDistanceSq)
                     {
                         bucketWithinRange = true;
                         break;
@@ -1077,7 +1082,8 @@ namespace Hecton8.World
                 {
                     ScatterPlacementSpatialMetadata existing = spatialMetadata[metadataIndex];
                     float minDistance = ResolveRequiredDistanceNative(in candidate, in existing);
-                    if (minDistance > 0f && math.distancesq(candidate.Position, existing.Position) < minDistance * minDistance)
+                    float3 spacingDelta = candidate.Position - existing.Position;
+                    if (minDistance > 0f && math.lengthsq(spacingDelta) < minDistance * minDistance)
                         return true;
                 }
                 while (metadataBuckets.TryGetNextValue(out metadataIndex, ref metadataIterator));

@@ -76,20 +76,22 @@ namespace Hecton8.Economy
         }
 #pragma warning restore 0649
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct ResourceClusterRecord
         {
-            public int ItemHashId;
-            public int ObservationCount;
-            public AbsoluteUniversePosition PositionAup;
+            [FieldOffset(0)] public int ItemHashId;
+            [FieldOffset(4)] public int ObservationCount;
+            [FieldOffset(8)] public AbsoluteUniversePosition PositionAup;
+            [FieldOffset(56)] private ulong _pad0;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
         private struct SectorExtractionRecord
         {
-            public int ItemHashId;
-            public int SectorKey;
-            public int ExtractedUnits;
+            [FieldOffset(0)] public int ItemHashId;
+            [FieldOffset(4)] public int SectorKey;
+            [FieldOffset(8)] public int ExtractedUnits;
+            [FieldOffset(12)] private uint _pad0;
         }
 
         [Header("── Scarcity Curve ──────────────────")]

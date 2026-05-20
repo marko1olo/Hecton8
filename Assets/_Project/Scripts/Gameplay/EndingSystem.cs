@@ -68,12 +68,14 @@ namespace Hecton8.Gameplay
     /// <summary>
     /// Unmanaged ending event payload.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct EndingEventPayload
     {
-        public byte EventType;
-        public byte Choice;
-        public ushort Reserved;
+        [FieldOffset(0)] public byte EventType;
+        [FieldOffset(1)] public byte Choice;
+        [FieldOffset(2)] public ushort Reserved;
+        [FieldOffset(4)] private uint _pad0;
+        [FieldOffset(8)] private ulong _pad1;
     }
 
     /// <summary>

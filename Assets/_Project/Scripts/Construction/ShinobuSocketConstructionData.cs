@@ -259,6 +259,8 @@ namespace Hecton8.Construction
         public NativeArray<BuilderGhostStateDTO> BuilderGhostStates;
         public NativeArray<BuilderGhostVisualDTO> BuilderGhostVisuals;
         public NativeArray<HolographyTelemetryEntry> HolographyTelemetry;
+        public NativeArray<byte> BuilderGhostSdfSamples;
+        public NativeArray<BuilderGhostIndirectArgsDTO> BuilderGhostIndirectArgs;
     }
 
     public static unsafe class ShinobuSocketConstructionRuntime
@@ -274,6 +276,8 @@ namespace Hecton8.Construction
         public const int SocketCsrTargetIndexCapacity = MockSocketCount;
         public const int BuilderGhostStateCapacity = 128;
         public const int BuilderGhostVisualCapacity = 128;
+        public const int BuilderGhostSdfCornerCount = 8;
+        public const int BuilderGhostSdfSampleCapacity = BuilderGhostStateCapacity * BuilderGhostSdfCornerCount;
         public const int BuilderGhostMockValidationCount = 10000;
         public const int BuilderGhostProceduralVertexCount = 36;
         public const BufferID GhostPreviewBufferId = (BufferID)70370;
@@ -283,8 +287,10 @@ namespace Hecton8.Construction
         public const BufferID BuilderGhostVisualBufferId = (BufferID)70941;
         public const BufferID BuilderGhostTelemetryBufferId = (BufferID)70942;
         public const BufferID BuilderGhostMockStateBufferId = (BufferID)70943;
-        public const string DefaultDumpPath = @"C:\hades\Hecton8\Docs\AgentLogs\Dump_SHINOBU_217.bin";
-        public const string HolographyDumpPath = @"C:\hades\Hecton8\Docs\AgentLogs\Dump_SHINOBU_228.bin";
+        public const BufferID BuilderGhostSdfSamplesBufferId = (BufferID)70944;
+        public const BufferID BuilderGhostIndirectArgsBufferId = (BufferID)70945;
+        public const string DefaultDumpPath = @"C:\hades\Hecton8\Docs\AgentLogs\Dump_SHINOBU_228.bin";
+        public const string HolographyDumpPath = @"C:\hades\Hecton8\Docs\AgentLogs\Dump_SHINOBU_228_Holography.bin";
 
         public const int SocketStateSizeBytes = 64;
         public const int GhostPreviewSizeBytes = 96;
@@ -323,6 +329,9 @@ namespace Hecton8.Construction
         private static VaultGenerationHandle<BuilderGhostVisualDTO> s_BuilderGhostVisualHandle;
         private static VaultGenerationHandle<HolographyTelemetryEntry> s_HolographyTelemetryHandle;
         private static VaultGenerationHandle<BuilderGhostStateDTO> s_BuilderGhostMockStateHandle;
+        private static VaultGenerationHandle<byte> s_BuilderGhostSdfSamplesHandle;
+        private static VaultGenerationHandle<BuilderGhostIndirectArgsDTO> s_BuilderGhostIndirectArgsHandle;
+        private static bool s_HolographyTelemetryDumped;
 
         public static bool ValidateStructLayout()
         {
@@ -427,6 +436,8 @@ namespace Hecton8.Construction
             s_BuilderGhostVisualHandle = ResolveHandle(vault, BuilderGhostVisualBufferId, BuilderGhostVisualCapacity, ref s_BuilderGhostVisualHandle);
             s_HolographyTelemetryHandle = ResolveHandle(vault, BuilderGhostTelemetryBufferId, TelemetryCapacity, ref s_HolographyTelemetryHandle);
             s_BuilderGhostMockStateHandle = ResolveHandle(vault, BuilderGhostMockStateBufferId, BuilderGhostMockValidationCount, ref s_BuilderGhostMockStateHandle);
+            s_BuilderGhostSdfSamplesHandle = ResolveHandle(vault, BuilderGhostSdfSamplesBufferId, BuilderGhostSdfSampleCapacity, ref s_BuilderGhostSdfSamplesHandle);
+            s_BuilderGhostIndirectArgsHandle = ResolveHandle(vault, BuilderGhostIndirectArgsBufferId, 1, ref s_BuilderGhostIndirectArgsHandle);
 
             if (vault.TryResolveHandle(in s_TuningHandle, out NativeArray<ConstructionSocketTuningDTO> tuningBuffer) &&
                 tuningBuffer.IsCreated &&
@@ -460,7 +471,9 @@ namespace Hecton8.Construction
                    vault.TryResolveHandle(in s_ConnectionsHandle, out views.Connections) &&
                    vault.TryResolveHandle(in s_BuilderGhostStateHandle, out views.BuilderGhostStates) &&
                    vault.TryResolveHandle(in s_BuilderGhostVisualHandle, out views.BuilderGhostVisuals) &&
-                   vault.TryResolveHandle(in s_HolographyTelemetryHandle, out views.HolographyTelemetry);
+                   vault.TryResolveHandle(in s_HolographyTelemetryHandle, out views.HolographyTelemetry) &&
+                   vault.TryResolveHandle(in s_BuilderGhostSdfSamplesHandle, out views.BuilderGhostSdfSamples) &&
+                   vault.TryResolveHandle(in s_BuilderGhostIndirectArgsHandle, out views.BuilderGhostIndirectArgs);
         }
 
         public static bool GenerateMockBaseConstructionGrid(IDataVault vault)
@@ -718,8 +731,11 @@ namespace Hecton8.Construction
                          !math.isfinite(entry.SolverMicroseconds) ||
                          entry.SolverMicroseconds > 500f ||
                          (validationFlags & BuilderGhostValidationFlags.NonFinite) != 0u;
-            if (fault)
+            if (fault && !s_HolographyTelemetryDumped)
+            {
+                s_HolographyTelemetryDumped = true;
                 DumpHolographyTelemetry(telemetryRing);
+            }
         }
 
         public static void DumpHolographyTelemetry(NativeArray<HolographyTelemetryEntry> telemetryRing, string absolutePath = HolographyDumpPath)
@@ -860,6 +876,29 @@ namespace Hecton8.Construction
             int safeMin = math.max(1, minBudget);
             int safeMax = math.max(safeMin, maxBudget);
             return math.clamp((int)math.round(math.lerp(safeMin, safeMax, SmoothQuality(quality))), safeMin, safeMax);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int ResolveBuilderGhostSdfSampleCount(float quality)
+        {
+            _ = quality;
+            return BuilderGhostSdfCornerCount;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int ResolveBuilderGhostCornerIndex(int sequence)
+        {
+            switch (math.clamp(sequence, 0, BuilderGhostSdfCornerCount - 1))
+            {
+                case 0: return 0;
+                case 1: return 7;
+                case 2: return 1;
+                case 3: return 6;
+                case 4: return 2;
+                case 5: return 5;
+                case 6: return 3;
+                default: return 4;
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -15,35 +15,36 @@ namespace Hecton8.AtlasSignal
     /// <summary>
     /// Snapshot published by active Atlas signal beacons for PDA and HUD consumers.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct SignalBeaconTelemetry
     {
         /// <summary>Camera-relative runtime position of the triangulated beacon centroid.</summary>
-        public Vector3 RuntimePosition;
+        [FieldOffset(0)] public Vector3 RuntimePosition;
 
         /// <summary>Stable hash of the linked encrypted audio log.</summary>
-        public uint LinkedAudioLogHash;
+        [FieldOffset(12)] public uint LinkedAudioLogHash;
 
         /// <summary>Stable hash of the authored encrypted fragment recovered by this beacon.</summary>
-        public uint FragmentHash;
+        [FieldOffset(16)] public uint FragmentHash;
 
         /// <summary>Recovered 4-bit mask for the linked encrypted audio log.</summary>
-        public uint RecoveredBits;
+        [FieldOffset(20)] public uint RecoveredBits;
 
         /// <summary>Normalized signal strength from AUP distance-squared triangulation.</summary>
-        public float Strength01;
+        [FieldOffset(24)] public float Strength01;
 
         /// <summary>Average squared distance from the player AUP to the three authored AUP points.</summary>
-        public float AverageDistanceSqMeters;
+        [FieldOffset(28)] public float AverageDistanceSqMeters;
 
         /// <summary>Normalized noise scalar after cave interference.</summary>
-        public float ErrorNoise01;
+        [FieldOffset(32)] public float ErrorNoise01;
 
         /// <summary>Normalized fake static scalar for HUD/shader presentation.</summary>
-        public float Static01;
+        [FieldOffset(36)] public float Static01;
 
         /// <summary>Authored fragment bit index, zero through three.</summary>
-        public int FragmentIndex;
+        [FieldOffset(40)] public int FragmentIndex;
+        [FieldOffset(44)] private uint _pad0;
     }
 
     [DisallowMultipleComponent]
@@ -598,16 +599,16 @@ namespace Hecton8.AtlasSignal
         }
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct SignalBeaconSolveResult
     {
-        public float Strength01;
-        public float AverageDistanceSqMeters;
-        public float ErrorNoise01;
-        public float Static01;
+        [FieldOffset(0)] public float Strength01;
+        [FieldOffset(4)] public float AverageDistanceSqMeters;
+        [FieldOffset(8)] public float ErrorNoise01;
+        [FieldOffset(12)] public float Static01;
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal static class SignalBeaconMath
     {
         private const double OneThird = 1d / 3d;
@@ -689,7 +690,7 @@ namespace Hecton8.AtlasSignal
             };
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float EvaluateSineWaveMatch(
             float targetFrequencyHz,
@@ -708,7 +709,7 @@ namespace Hecton8.AtlasSignal
                 phaseTolerance01);
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private static float EvaluateSineWaveMatchBurst(
             float targetFrequencyHz,
             float targetPhase01,
@@ -769,14 +770,14 @@ namespace Hecton8.AtlasSignal
             return triangle * (1.5f - (0.5f * math.abs(triangle)));
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint MergeRecoveredBits(uint recoveredBits, uint fragmentBitMask)
         {
             return _mergeRecoveredBits.Invoke(recoveredBits, fragmentBitMask);
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private static uint MergeRecoveredBitsBurst(uint recoveredBits, uint fragmentBitMask)
         {
             return MergeRecoveredBitsKernel(recoveredBits, fragmentBitMask);

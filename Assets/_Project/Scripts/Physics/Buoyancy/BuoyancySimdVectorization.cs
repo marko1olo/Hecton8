@@ -1075,7 +1075,7 @@ namespace Hecton8.Physics
     public struct CompactVisibleIndicesJob : IJob
     {
         [ReadOnly, NoAlias] public NativeArray<int> VisibleIndexMask;
-        [NoAlias] public NativeArray<int> VisibleIndices;
+        [WriteOnly, NoAlias] public NativeArray<int> VisibleIndices;
         [WriteOnly, NoAlias] public NativeArray<int> VisibleCount;
         public int Count;
 
@@ -1093,14 +1093,16 @@ namespace Hecton8.Physics
             int write = 0;
             if (capacity > 0)
             {
-                int lastSlot = capacity - 1;
                 for (int i = 0; i < count; i++)
                 {
+                    if ((uint)write >= (uint)capacity)
+                        break;
+
                     int value = VisibleIndexMask[i];
-                    bool valid = (value >= 0) & (write < capacity);
-                    int slot = math.min(write, lastSlot);
-                    int preserved = VisibleIndices[slot];
-                    VisibleIndices[slot] = math.select(preserved, value, valid);
+                    bool valid = (uint)value < (uint)count;
+                    // Invalid rows can overwrite the next excluded output slot. The final VisibleCount
+                    // excludes that slot unless a later valid row overwrites it before count is published.
+                    VisibleIndices[write] = math.select(-1, value, valid);
                     write += math.select(0, 1, valid);
                 }
             }
@@ -1173,6 +1175,7 @@ namespace Hecton8.Physics
         public float ScalarMicros;
         public float GlobalQualityWeight;
         public uint StateHash;
+        public float MaxApproximationError;
         public float MaxSpeedSq;
 
         public void Execute()
@@ -1190,6 +1193,8 @@ namespace Hecton8.Physics
             float throughput = math.max(0, EntityCount) * math.rcp(vectorMs);
             bool nonFiniteTelemetry = !math.isfinite(VectorMicros) |
                                       !math.isfinite(ScalarMicros) |
+                                      !math.isfinite(GlobalQualityWeight) |
+                                      !math.isfinite(MaxApproximationError) |
                                       !math.isfinite(MaxSpeedSq) |
                                       !math.isfinite(throughput) |
                                       !math.isfinite(drop);
@@ -1204,7 +1209,7 @@ namespace Hecton8.Physics
             entry.GlobalQualityWeight = math.saturate(math.select(1f, GlobalQualityWeight, math.isfinite(GlobalQualityWeight)));
             entry.Flags = math.select(0u, SimdVectorizationConstants.FlagNonFinite, nonFiniteTelemetry);
             entry.LastStateHash = math.select(1u, StateHash, StateHash != 0u);
-            entry.MaxError = 0f;
+            entry.MaxError = math.max(0f, math.select(0f, MaxApproximationError, math.isfinite(MaxApproximationError)));
             entry.MaxSpeedSq = math.max(0f, math.select(0f, MaxSpeedSq, math.isfinite(MaxSpeedSq)));
             TelemetryRing[slot] = entry;
             int nextCursor = slot + 1;
@@ -1263,6 +1268,12 @@ namespace Hecton8.Physics
         public static float CosPolynomial(float radians)
         {
             return SinPolynomial(radians + 1.57079632679f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float CosPolynomial(float radians, float qualityWeight, int polynomialDegree)
+        {
+            return SinPolynomial(radians + 1.57079632679f, qualityWeight, polynomialDegree);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1336,7 +1347,7 @@ namespace Hecton8.Physics
 
             row.FormulaHash = Fnv1A32(name);
             row.PolynomialDegree = math.clamp(degree, 1, 9);
-            row.MaxError = math.max(0f, error);
+            row.MaxError = math.max(0f, math.select(0f, error, math.isfinite(error)));
             row.Flags = SimdVectorizationConstants.FlagActive;
             return row.FormulaHash != 0u;
         }

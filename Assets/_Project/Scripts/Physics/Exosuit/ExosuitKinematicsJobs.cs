@@ -78,7 +78,7 @@ namespace Hecton8.Physics.Exosuit
             bool jumpRequested = (input.ActionMask & ExosuitInputActions.Jump) != 0u;
             verticalAxis = math.max(verticalAxis, math.select(0.0f, 1.0f, jumpRequested));
 
-            float inputMagnitude = math.saturate(math.length(moveAxis) + math.abs(verticalAxis));
+            float inputMagnitude = math.saturate(LengthFromSq(math.lengthsq(moveAxis)) + math.abs(verticalAxis));
             if (jumpRequested)
                 inputMagnitude = math.saturate(inputMagnitude + 1.0f);
 
@@ -104,7 +104,8 @@ namespace Hecton8.Physics.Exosuit
                 emitSilt = true;
             }
 
-            float3 yawForward = new float3(math.sin(desiredYaw), 0.0f, math.cos(desiredYaw));
+            float2 yawVector = DeterministicSinCos(desiredYaw);
+            float3 yawForward = new float3(yawVector.x, 0.0f, yawVector.y);
             float3 yawRight = new float3(yawForward.z, 0.0f, -yawForward.x);
             float3 desiredDirection = yawRight * moveAxis.x + yawForward * moveAxis.y + new float3(0.0f, verticalAxis, 0.0f);
             desiredDirection = NormalizeWithFallback(desiredDirection, float3.zero);
@@ -113,7 +114,8 @@ namespace Hecton8.Physics.Exosuit
             float actuatorRateScale = math.lerp(0.62f, 1.35f, Smooth01(0.0f, 1.0f, quality));
             float actuatorMaxDelta = tuning.MaxSpeedMetersPerSecond * actuatorRateScale * dt * math.rcp(math.max(0.05f, tuning.HydraulicLatencySeconds));
             float3 desiredVelocity = MoveTowardsVector(previousDesiredVelocity, rawDesiredVelocity, actuatorMaxDelta);
-            float desiredSpeed = math.sqrt(math.max(0.0f, math.lengthsq(desiredVelocity)));
+            float desiredSpeedSq = math.max(0.0f, math.lengthsq(desiredVelocity));
+            float desiredSpeed = desiredSpeedSq * math.rsqrt(math.max(desiredSpeedSq, 0.0001f));
             float actuatorPressure = math.saturate(desiredSpeed * math.rcp(math.max(0.1f, tuning.MaxSpeedMetersPerSecond)));
             float3 actuatorDirection = NormalizeWithFallback(desiredVelocity, desiredDirection);
 
@@ -324,7 +326,7 @@ namespace Hecton8.Physics.Exosuit
                 outputFlags |= ExosuitSolverOutput.FlagFault;
 
             if (floorContact)
-                outputFlags |= AccumulateFootstep(state.AUP, math.length(velocity) * dt, tuning.FootstepStrideMeters);
+                outputFlags |= AccumulateFootstep(state.AUP, LengthFromSq(math.lengthsq(velocity)) * dt, tuning.FootstepStrideMeters);
 
             uint stateHash = ComputeStateHash(snappedLocalPosition, snappedVelocity, state.HydraulicPressure, state.StateMask);
             ExosuitSolverOutput solverOutput = default;
@@ -333,7 +335,7 @@ namespace Hecton8.Physics.Exosuit
             solverOutput.PushNormal = pushNormal;
             solverOutput.PushOutMagnitude = pushMagnitude;
             solverOutput.LostVelocityMagnitude = lostVelocityMagnitude;
-            solverOutput.Speed = math.sqrt(math.max(0.0f, math.lengthsq(velocity)));
+            solverOutput.Speed = LengthFromSq(math.lengthsq(velocity));
             solverOutput.Flags = outputFlags;
             solverOutput.Frame = Frame;
             solverOutput.StateHash = stateHash;
@@ -387,7 +389,7 @@ namespace Hecton8.Physics.Exosuit
                 {
                     float massScale = math.max(MinMass, SanitizeNonNegative(currentMass)) * 0.001f;
                     float impact = (lostVelocityMagnitude * massScale) + (pushMagnitude * massScale * 0.35f);
-                    float amplitude = math.saturate(math.sqrt(math.max(0.0f, impact)) * math.lerp(0.11f, 0.17f, Smooth01(0.0f, 1.0f, quality)));
+                    float amplitude = math.saturate(LengthFromSq(impact) * math.lerp(0.11f, 0.17f, Smooth01(0.0f, 1.0f, quality)));
                     haptic.Amplitude = amplitude;
                     haptic.Frequency = math.lerp(18.0f, 42.0f, amplitude);
                     haptic.Duration = math.lerp(0.08f, 0.30f, amplitude);
@@ -527,7 +529,7 @@ namespace Hecton8.Physics.Exosuit
             float correctionSq = math.lengthsq(correction);
             if (correctionSq > 0.000001f)
             {
-                float correctionMagnitude = math.sqrt(math.max(0.0f, correctionSq));
+                float correctionMagnitude = LengthFromSq(correctionSq);
                 if (correctionMagnitude > strongestPush * 0.25f)
                 {
                     normal = correction * math.rsqrt(math.max(correctionSq, 0.0001f));
@@ -574,14 +576,15 @@ namespace Hecton8.Physics.Exosuit
             float cornerSoftness = math.clamp(SanitizeNonNegative(terrain.WallSoftnessMeters), 0.0f, 0.5f);
             float3 center = SanitizeFloat3(terrain.CaveCenterLocal, float3.zero);
             float2 radial = localPosition.xz - center.xz;
-            float radialLength = math.sqrt(math.max(0.0f, math.lengthsq(radial)));
+            float radialSq = math.max(0.0f, math.lengthsq(radial));
+            float radialLength = LengthFromSq(radialSq);
             float wallDistance = radius - radialLength;
             float floorDistance = localPosition.y - floorY;
             float ceilingDistance = ceilingY - localPosition.y;
 
             float distance = wallDistance;
             float3 wallNormal = radialLength > 0.0001f
-                ? new float3(-radial.x, 0.0f, -radial.y) * math.rsqrt(math.max(radialLength * radialLength, 0.0001f))
+                ? new float3(-radial.x, 0.0f, -radial.y) * math.rsqrt(math.max(radialSq, 0.0001f))
                 : new float3(1.0f, 0.0f, 0.0f);
             float3 normal = wallNormal;
 
@@ -643,8 +646,8 @@ namespace Hecton8.Physics.Exosuit
                 return target;
 
             float safeMaxDelta = SanitizeNonNegative(maxDelta);
-            float distance = math.sqrt(math.max(0.0f, distanceSq));
-            if (distance <= safeMaxDelta)
+            float safeMaxDeltaSq = safeMaxDelta * safeMaxDelta;
+            if (distanceSq <= safeMaxDeltaSq)
                 return target;
 
             return current + delta * (safeMaxDelta * math.rsqrt(math.max(distanceSq, 0.0001f)));
@@ -665,9 +668,36 @@ namespace Hecton8.Physics.Exosuit
         private static float3 ApplyAnalyticalDrag(float3 velocity, float drag, float dt, float quality)
         {
             float qualityDamping = math.lerp(1.2f, 0.85f, Smooth01(0.0f, 1.0f, quality));
-            float speed = math.sqrt(math.max(0.0f, math.lengthsq(velocity)));
+            float speedSq = math.max(0.0f, math.lengthsq(velocity));
+            float speed = speedSq * math.rsqrt(math.max(speedSq, 0.0001f));
             float denominator = 1.0f + math.max(0.0f, drag) * qualityDamping * speed * math.max(MinDt, dt);
             return velocity * math.rcp(math.max(0.0001f, denominator));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float2 DeterministicSinCos(float radians)
+        {
+            float sin = SinPolynomialDeterministic(radians);
+            float cos = SinPolynomialDeterministic(radians + 1.57079632679f);
+            float lenSq = math.max(0.0001f, (sin * sin) + (cos * cos));
+            float invLen = math.rsqrt(lenSq);
+            return new float2(sin * invLen, cos * invLen);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SinPolynomialDeterministic(float radians)
+        {
+            const float Pi = 3.14159265359f;
+            const float TwoPi = 6.28318530718f;
+            const float HalfPi = 1.57079632679f;
+
+            float wrapped = radians - (TwoPi * math.floor((radians + Pi) / TwoPi));
+            float absWrapped = math.abs(wrapped);
+            float reflected = math.sign(wrapped) * (Pi - absWrapped);
+            float x = math.select(wrapped, reflected, absWrapped > HalfPi);
+            float x2 = x * x;
+            float x4 = x2 * x2;
+            return x * (1f - (x2 * 0.16666666667f) + (x4 * 0.00833333333f) - (x4 * x2 * 0.00019841269f));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -684,8 +714,15 @@ namespace Hecton8.Physics.Exosuit
             float contactLoad = math.saturate(SanitizeNonNegative(pushMagnitude) * 3.0f + math.max(0.0f, inwardVelocity) * 0.2f);
             float tangentKeep = math.lerp(1.0f, math.lerp(0.78f, 0.92f, Smooth01(0.0f, 1.0f, quality)), contactLoad);
             velocity = safeNormal * math.max(0.0f, normalVelocity) + tangentVelocity * tangentKeep;
-            lostSpeed = math.sqrt(math.max(0.0f, math.lengthsq(before - velocity)));
+            lostSpeed = LengthFromSq(math.lengthsq(before - velocity));
             return velocity;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float LengthFromSq(float lengthSq)
+        {
+            float safeLengthSq = math.max(0.0f, lengthSq);
+            return safeLengthSq * math.rsqrt(math.max(safeLengthSq, 0.0001f));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

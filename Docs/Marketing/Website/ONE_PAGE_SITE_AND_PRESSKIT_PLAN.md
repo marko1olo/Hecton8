@@ -99,7 +99,7 @@ Do not publish the site until:
 - official contact exists;
 - `press_release_permission_gate = ALLOW_PRESS_RELEASE_PUBLISH_VERIFIED` for any public presskit announcement, press release block, media one-pager, or "presskit is live" copy;
 - at least 6 real screenshots exist;
-- at least one screenshot or clip proves a readable player decision under threat, leak, route cost, sonar pressure, or salvage failure, with `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision` recorded for first-page proof;
+- at least one screenshot or clip proves a readable player decision under threat, leak, route cost, sonar pressure, or salvage failure, with non-pending `viewer_named_decision`, valid `capture_verdict`, and `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision` recorded for first-page proof;
 - presskit assets exist;
 - no placeholder claims remain;
 - no unsupported multiplayer-scope hints remain.
@@ -141,7 +141,7 @@ Recommended aliases if the provider/domain supports them:
 |---|---|
 | `press@...` | Presskit, press questions, event/showcase contacts. |
 | `creators@...` | Creator access and key/demo requests. |
-| `support@...` | Demo/EA support only after public build exists. |
+| `support@...` | Demo/EA support only after build proof, owner-controlled support inbox/form custody, `steam_support_permission_gate = ALLOW_STEAM_SUPPORT_ROUTE_VERIFIED` where Steam support is involved, and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` if the route is linked publicly. |
 | `accounts@...` | Platform registration/recovery only; do not publish publicly. |
 
 If aliases are not available, use one official inbox with labels. Do not create separate untracked mailboxes.

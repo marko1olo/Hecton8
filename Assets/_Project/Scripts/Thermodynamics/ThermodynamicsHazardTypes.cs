@@ -9,59 +9,65 @@ namespace Hecton8.Thermodynamics
     /// Packed unmanaged hazard source. Layout: double3 AUP 24B, intensity 4B, radius 4B,
     /// hazard hash 4B, reserved/pad 4B. Total: 40 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 40)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct HazardSourceDTO
     {
-        public double3 AUP;
-        public float Intensity;
-        public float Radius;
-        public uint HazardTypeHash;
-        public uint _pad0;
+        [FieldOffset(0)] public double3 AUP;
+        [FieldOffset(24)] public float Intensity;
+        [FieldOffset(28)] public float Radius;
+        [FieldOffset(32)] public uint HazardTypeHash;
+        [FieldOffset(36)] public uint _pad0;
+        [FieldOffset(40)] private ulong _pad1;
+        [FieldOffset(48)] private ulong _pad2;
+        [FieldOffset(56)] private ulong _pad3;
     }
 
     /// <summary>
     /// Unmanaged constants edited by the thermodynamics tuner and read by Burst jobs.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct ThermodynamicsHazardConstants
     {
-        public float BaseWaterTempCelsius;
-        public float HeatDiffusionRate;
-        public float RadiationDiffusionRate;
-        public float RadiationDecayCoefficient;
-        public float RockShieldingFactor;
-        public float VerticalHeatBias;
-        public float HeatDamageThresholdCelsius;
-        public float RadiationDamageThreshold;
+        [FieldOffset(0)] public float BaseWaterTempCelsius;
+        [FieldOffset(4)] public float HeatDiffusionRate;
+        [FieldOffset(8)] public float RadiationDiffusionRate;
+        [FieldOffset(12)] public float RadiationDecayCoefficient;
+        [FieldOffset(16)] public float RockShieldingFactor;
+        [FieldOffset(20)] public float VerticalHeatBias;
+        [FieldOffset(24)] public float HeatDamageThresholdCelsius;
+        [FieldOffset(28)] public float RadiationDamageThreshold;
     }
 
     /// <summary>
     /// Smooth local hazard sample returned by trilinear grid queries.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct ThermodynamicsHazardSample
     {
-        public float TemperatureCelsius;
-        public float Radiation;
-        public float HeatDamage;
-        public float RadiationDamage;
-        public float3 LocalGridPosition;
-        public uint Flags;
+        [FieldOffset(0)] public float TemperatureCelsius;
+        [FieldOffset(4)] public float Radiation;
+        [FieldOffset(8)] public float HeatDamage;
+        [FieldOffset(12)] public float RadiationDamage;
+        [FieldOffset(16)] public float3 LocalGridPosition;
+        [FieldOffset(28)] public uint Flags;
     }
 
     /// <summary>
     /// Raw pointer surface for macro-grid buffers. Public readback exposes front pointers only;
     /// back pointers are owner-only and may be null.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public unsafe struct ThermodynamicsHazardGridPointers
     {
-        public float* TemperatureFront;
-        public float* TemperatureBack;
-        public float* RadiationFront;
-        public float* RadiationBack;
-        public int CellCount;
-        public int Resolution;
+        [FieldOffset(0)] public float* TemperatureFront;
+        [FieldOffset(8)] public float* TemperatureBack;
+        [FieldOffset(16)] public float* RadiationFront;
+        [FieldOffset(24)] public float* RadiationBack;
+        [FieldOffset(32)] public int CellCount;
+        [FieldOffset(36)] public int Resolution;
+        [FieldOffset(40)] private ulong _pad0;
+        [FieldOffset(48)] private ulong _pad1;
+        [FieldOffset(56)] private ulong _pad2;
     }
 
     /// <summary>
@@ -76,6 +82,11 @@ namespace Hecton8.Thermodynamics
         [FieldOffset(32)] public uint CellIndex;
         [FieldOffset(36)] public uint Frame;
         [FieldOffset(40)] public byte Flags;
+        [FieldOffset(41)] private byte _pad0;
+        [FieldOffset(42)] private ushort _pad1;
+        [FieldOffset(44)] private uint _pad2;
+        [FieldOffset(48)] private ulong _pad3;
+        [FieldOffset(56)] private ulong _pad4;
     }
 
     /// <summary>
@@ -117,23 +128,23 @@ namespace Hecton8.Thermodynamics
     /// <summary>
     /// One black-box frame for the thermodynamics hazard grid. Size: 64 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct ThermodynamicsHazardTelemetryEntry
     {
-        public float MaxGridTemperature;
-        public float MaxRadiationLevel;
-        public float DiffusionComputeTimeMs;
-        public float3 GridOrigin;
-        public uint Frame;
-        public uint GridVersion;
-        public uint SourceCount;
-        public uint Flags;
-        public uint ShiftSequence;
-        public uint NaNCellIndex;
-        public uint ActiveResolution;
-        public uint GridOriginHash;
-        public uint _pad0;
-        public uint _pad1;
+        [FieldOffset(0)] public float MaxGridTemperature;
+        [FieldOffset(4)] public float MaxRadiationLevel;
+        [FieldOffset(8)] public float DiffusionComputeTimeMs;
+        [FieldOffset(12)] public float3 GridOrigin;
+        [FieldOffset(24)] public uint Frame;
+        [FieldOffset(28)] public uint GridVersion;
+        [FieldOffset(32)] public uint SourceCount;
+        [FieldOffset(36)] public uint Flags;
+        [FieldOffset(40)] public uint ShiftSequence;
+        [FieldOffset(44)] public uint NaNCellIndex;
+        [FieldOffset(48)] public uint ActiveResolution;
+        [FieldOffset(52)] public uint GridOriginHash;
+        [FieldOffset(56)] public uint _pad0;
+        [FieldOffset(60)] public uint _pad1;
     }
 
     /// <summary>

@@ -131,24 +131,39 @@ namespace Hecton8.Construction
     /// <summary>
     /// Blittable snapshot payload queued before dispatch to fleet snapshot listeners.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct HectonDroneFleetSnapshotPayload
     {
+        [FieldOffset(0)]
         public int ActiveHubCount;
+        [FieldOffset(4)]
         public int ActiveDroneCount;
+        [FieldOffset(8)]
         public int AssignedTaskCount;
+        [FieldOffset(12)]
         public int DockedStasisSlotCount;
+        [FieldOffset(16)]
         public int DestroyedDroneCount;
+        [FieldOffset(20)]
         public int EmergencyLevel;
+        [FieldOffset(24)]
         public float AverageBatteryPercent;
+        [FieldOffset(28)]
         public int SolderReserve;
+        [FieldOffset(32)]
         public int HostileDroneCount;
+        [FieldOffset(36)]
         public int LogicLeechHijackCount;
+        [FieldOffset(40)]
         public byte EmergencyOverclockActive;
+        [FieldOffset(41)]
         private byte _padding0;
+        [FieldOffset(42)]
         private byte _padding1;
+        [FieldOffset(43)]
         private byte _padding2;
-        private uint _paddingTail;
+        [FieldOffset(44)]
+        private uint _padding3;
     }
 
     /// <summary>
@@ -528,18 +543,23 @@ namespace Hecton8.Construction
         private const float DroneRelayPingLifetimeSeconds = 4f;
         private const int MaxDroneRelayContacts = 16;
 
-        [StructLayout(LayoutKind.Sequential, Size = 80)]
+        [StructLayout(LayoutKind.Explicit, Size = 80)]
         private struct DroneRenderInstance
         {
+            [FieldOffset(0)]
             public float4x4 Matrix;
+            [FieldOffset(64)]
             public float TransactionProgress;
+            [FieldOffset(68)]
             public float3 Padding;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 16)]
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
         private struct DroneCullingStateGpu
         {
+            [FieldOffset(0)]
             public float3 Position;
+            [FieldOffset(12)]
             public uint PackedStateFactionCorridor;
         }
 
@@ -567,22 +587,36 @@ namespace Hecton8.Construction
             public int LoadedSolderUnits;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 80)]
+        [StructLayout(LayoutKind.Explicit, Size = 80)]
         private struct DroneFleetBlackBoxEntry
         {
+            [FieldOffset(0)]
             public int Frame;
+            [FieldOffset(4)]
             public int ActiveCount;
+            [FieldOffset(8)]
             public int StateHash;
+            [FieldOffset(12)]
             public int Flags;
+            [FieldOffset(16)]
             public float DeltaTime;
+            [FieldOffset(20)]
             public int DockingAborts;
+            [FieldOffset(24)]
             public int PathSolves;
+            [FieldOffset(28)]
             public int PathFailures;
+            [FieldOffset(32)]
             public int PathIterations;
+            [FieldOffset(36)]
             public float AveragePathfindingTimeMs;
+            [FieldOffset(40)]
             public int TasksCompleted;
+            [FieldOffset(44)]
             public float3 FirstPosition;
+            [FieldOffset(56)]
             public float3 BoundsCenter;
+            [FieldOffset(68)]
             public float3 BoundsExtents;
         }
 
@@ -3979,8 +4013,9 @@ namespace Hecton8.Construction
                     continue;
                 }
 
-                float exactDistanceSq = math.distancesq(drone.Position, anchor);
-                float dominantAxisSq = DominantAxisMagnitudeSq(drone.Position - anchor);
+                float3 droneAnchorDelta = drone.Position - anchor;
+                float exactDistanceSq = math.lengthsq(droneAnchorDelta);
+                float dominantAxisSq = DominantAxisMagnitudeSq(droneAnchorDelta);
                 float distanceMetricSq = math.lerp(dominantAxisSq, exactDistanceSq, precisionWeight);
                 GlobalTelemetryBus.PublishDominantAxisTelemetry(
                     unchecked((uint)droneId),

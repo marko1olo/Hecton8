@@ -113,4 +113,28 @@ Cinematic Cheats used -> No new geometry or simulation. The impostor stays a bak
 
 Exact Microseconds saved -> No new measured savings. The correction protects depth/fog/DoF ordering while preserving the existing savings: O(1) quad vertices instead of O(V) far mesh vertices and one-view low-quality atlas sampling.
 
-Verification -> Targeted shader scan shows both reversed-Z branches now use `deviceDepth + depthOffset`; no `deviceDepth - depthOffset` remains in the active or legacy impostor shader.
+Verification -> Targeted shader scan shows both reversed-Z branches now use `deviceDepth + depthOffset`; no `deviceDepth - depthOffset` remains in the active or legacy impostor shader. Self-audit XML parses and contains Loop 12. `git diff --check` reports only LF-to-CRLF working-copy warnings. CPU sample was 100% and compiler process count was 0, so Unity compile/import was not launched under the >50% CPU gate.
+
+## 2026-05-20 - Binary Tier Residue Purge
+
+What was wrong -> SHINOBU residency helpers still exposed dormant binary-tier APIs and a low-tier-named payload flag after the active path moved to `GlobalQualityWeight`.
+
+What was done -> Removed `IsLowTier`, `ResolveFlags(... HectonQualityTier)`, and `ResolveTierRepresentativeQuality` from `HectonOctahedralImpostorTypes.cs`. Renamed `FlagLowTierSnap` to `FlagSurvivalSnap` and updated the single HLOD payload writer in `WorldChunkResidencyManager`.
+
+Cinematic Cheats used -> No runtime simulation or extra mesh path was added. The impostor card remains the visual fake; this pass narrows the API so future callers do not reintroduce binary quality decisions into that fake.
+
+Exact Microseconds saved -> No measured runtime savings. This is compile/API surface hardening. Existing savings remain one quad per far object and continuous low-quality sample collapse.
+
+Verification -> Targeted source scans find no `FlagLowTierSnap`, no `IsLowTier(`, no `ResolveFlags(... HectonQualityTier)`, and no `ResolveTierRepresentativeQuality` in SHINOBU residency helpers. Self-audit XML parses and contains Loop 13. `git diff --check` reports only LF-to-CRLF working-copy warnings. CPU sample was 100% and compiler process count was 0, so Unity compile/import was not launched under the >50% CPU gate.
+
+## 2026-05-20 - Branchless Continuous Distance Curve
+
+What was wrong -> `ResolveContinuousEnterDistanceMeters` accepted continuous `GlobalQualityWeight` but still used a hard midpoint branch.
+
+What was done -> Replaced the `q < 0.5f` ternary with branchless lower/upper curve evaluation and `math.smoothstep(0.45f, 0.55f, q)` crossfade.
+
+Cinematic Cheats used -> Same far-field impostor card. This pass makes the card swap distance breathe continuously with thermal quality instead of splitting the math at a midpoint.
+
+Exact Microseconds saved -> One scalar quality-threshold branch removed per helper call. Runtime profiler proof remains pending.
+
+Verification -> Targeted scan shows the helper now uses `survivalToMiddle`, `middleToOverkill`, and `math.smoothstep`; the old `q < 0.5f` ternary is gone. Self-audit XML parses and contains Loop 14. `git diff --check` reports only LF-to-CRLF working-copy warnings. CPU sample was 100% and compiler process count was 0, so Unity compile/import was not launched under the >50% CPU gate.

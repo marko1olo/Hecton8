@@ -5,16 +5,17 @@ namespace Hecton8.World
     /// <summary>
     /// O(1) environmental sample used by fauna spawn and logical-LOD decisions.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal readonly struct EcosystemEnvelope
     {
-        public readonly float TemperatureCelsius;
-        public readonly float DepthMeters;
-        public readonly float LightExposure01;
-        public readonly float BloodScent01;
-        public readonly float ExhaustScent01;
-        public readonly float FearScent01;
-        public readonly float Hostility01;
+        [FieldOffset(0)] public readonly float TemperatureCelsius;
+        [FieldOffset(4)] public readonly float DepthMeters;
+        [FieldOffset(8)] public readonly float LightExposure01;
+        [FieldOffset(12)] public readonly float BloodScent01;
+        [FieldOffset(16)] public readonly float ExhaustScent01;
+        [FieldOffset(20)] public readonly float FearScent01;
+        [FieldOffset(24)] public readonly float Hostility01;
+        [FieldOffset(28)] private readonly uint _pad0;
 
         public EcosystemEnvelope(
             float temperatureCelsius,
@@ -32,6 +33,7 @@ namespace Hecton8.World
             ExhaustScent01 = exhaustScent01;
             FearScent01 = fearScent01;
             Hostility01 = hostility01;
+            _pad0 = 0u;
         }
     }
 }

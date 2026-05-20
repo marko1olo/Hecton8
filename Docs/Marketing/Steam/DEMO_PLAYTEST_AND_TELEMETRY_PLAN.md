@@ -46,7 +46,7 @@ Do not infer public demo access permission from a build launching, Steam page pu
 - Steam page `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED` and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` for every public demo/playtest link;
 - `steam_support_permission_gate = ALLOW_STEAM_SUPPORT_ROUTE_VERIFIED`, named support/bug triage owners, and public feedback route with `route_class` plus `consent_provenance`;
 - `steam_announcement_permission_gate`, `public_post_permission_gate`, `press_release_permission_gate`, `submission_permission_gate`, and `spend_permission_gate` still gate announcement, post, release, event, and paid traffic separately;
-- AB-009/KPI decision-read fields before public copy claims gameplay/pressure/route-risk/threat/salvage/base-failure proof;
+- non-pending asset metadata `viewer_named_decision`, valid non-held `capture_verdict`, and AB-009/KPI decision-read fields before public copy claims gameplay/pressure/route-risk/threat/salvage/base-failure proof;
 - no unsupported multiplayer-scope, performance, date, feature, or competitor-war claim.
 
 | Route | Link class | Allowed use | Kill if |
@@ -58,7 +58,7 @@ Do not infer public demo access permission from a build launching, Steam page pu
 
 Public demo/Playtest access requires `demo_public_access_permission_gate = ALLOW_PUBLIC_DEMO_ACCESS_VERIFIED`. Public CTA links require `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`. Private access links require `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED`, build known-issues copy, revocation/stop rules, and access-log fields: `verified_contact_route`, `access_route_class`, `reply_status_after_send`, `reply_consent_provenance`, plus `agency_decision_field_source` where proof claims are used. One link cannot serve both purposes.
 
-If public demo, Steam Playtest, or private preview copy claims gameplay, pressure, route risk, threat, salvage, base failure, or first-public agency proof, the copy also needs AB-009/KPI support: `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`. Demo telemetry may create later proof, but it does not justify the access pitch before the field exists.
+If public demo, Steam Playtest, or private preview copy claims gameplay, pressure, route risk, threat, salvage, base failure, or first-public agency proof from an asset, the copy also needs non-pending metadata `viewer_named_decision`, valid non-held `capture_verdict`, and AB-009/KPI support: `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`. Demo telemetry may create later proof, but it does not justify the access pitch before the field exists.
 
 ## Demo Purpose
 
@@ -161,7 +161,7 @@ Public demo cannot ship until:
 - feedback form exists;
 - Steam page `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED` and `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` exist for public demo, or controlled Playtest/preview has `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED` plus `verified_contact_route`, `access_route_class`, `reply_status_after_send`, and `reply_consent_provenance`;
 - public demo/feedback routes have `route_class` plus `consent_provenance`; private access routes have the exact access-log field set above;
-- AB-009/KPI field exists before marketing copy claims gameplay/pressure/route-risk agency proof;
+- metadata `viewer_named_decision`/`capture_verdict` and AB-009/KPI field exist before marketing copy claims gameplay/pressure/route-risk agency proof;
 - no unsupported multiplayer-scope implication;
 - no unproved FPS claim.
 
@@ -191,7 +191,7 @@ Do not open Steam Playtest or private preview just because the build launches. T
 | Route | Current playable build | One start-to-return route completes without blocker. |
 | Known issues | Support/QA note | Known issues written in plain language before access. |
 | Feedback tags | Screening plan tag list | Feedback form or tracker accepts the canonical tags. |
-| Agency proof field | AB-009/KPI or wave feedback log | `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision` exists before proof is reported or reused in access copy. |
+| Agency proof field | asset metadata plus AB-009/KPI or wave feedback log | Non-pending `viewer_named_decision`, valid non-held `capture_verdict`, and `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision` exist before proof is reported or reused in access copy. |
 | Route/provenance | access/feedback log | `verified_contact_route`, `access_route_class`, `reply_status_after_send`, and `reply_consent_provenance` are recorded before replies count outside the original test route; `agency_decision_field_source` is recorded if proof claims are used. |
 | Multiplayer-scope boundary | Onboarding copy | Testers are told this is a single-player-first test of the current build. |
 | Hardware context | Screening form | Every low/mid-spec tester provides CPU/GPU/RAM/storage/settings. |
@@ -266,7 +266,7 @@ Useful signals:
 - >40% reach first base/repair loop;
 - players describe pressure/machinery without prompting;
 - players can name one decision they made under pressure;
-- decision proof is stored in `agency_decision_read` or `cold_read_agency_decision` before reuse;
+- decision proof is stored in metadata `viewer_named_decision`/`capture_verdict` and `agency_decision_read` or `cold_read_agency_decision` before reuse;
 - negative feedback is specific, not "what is this?";
 - demo drives wishlist/follow;
 - creator replies ask for longer build.

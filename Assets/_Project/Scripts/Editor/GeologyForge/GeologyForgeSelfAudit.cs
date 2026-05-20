@@ -208,7 +208,7 @@ namespace Hecton8.Editor.GeologyForge
             }
 
             builder.Append("]\n}\n");
-            File.WriteAllText(GeologyForgeConstants.LayoutAuditReportPath, builder.ToString());
+            WriteAtomicText(GeologyForgeConstants.LayoutAuditReportPath, builder.ToString());
         }
 
         private static void AppendFailure(StringBuilder builder, string path, string reason)
@@ -225,6 +225,35 @@ namespace Hecton8.Editor.GeologyForge
         private static string Escape(string value)
         {
             return string.IsNullOrEmpty(value) ? string.Empty : value.Replace("\\", "\\\\").Replace("\"", "\\\"");
+        }
+
+        private static void WriteAtomicText(string path, string contents)
+        {
+            string tempPath = path + ".tmp";
+            string backupPath = path + ".bak";
+            if (File.Exists(tempPath))
+                File.Delete(tempPath);
+
+            try
+            {
+                File.WriteAllText(tempPath, contents);
+                if (File.Exists(path))
+                {
+                    if (File.Exists(backupPath))
+                        File.Delete(backupPath);
+                    File.Replace(tempPath, path, backupPath);
+                }
+                else
+                {
+                    File.Move(tempPath, path);
+                }
+            }
+            catch
+            {
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+                throw;
+            }
         }
     }
 }

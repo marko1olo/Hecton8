@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Environment.Fluids;
 using Hecton8.Gameplay;
 using Hecton8.Scavenging;
@@ -559,7 +560,9 @@ namespace Hecton8.World
             if (registry != null && registry.IsResourceNodeTombstoned(tombstoneId))
                 return false;
 
-            AbsoluteUniversePosition spawnAup = AbsoluteUniversePosition.FromRuntimePosition(spawnPosition);
+            if (!TryResolveAupFromRuntimeOrigin(spawnPosition, out AbsoluteUniversePosition spawnAup))
+                return false;
+
             int2 sector = QuantizeSector(in spawnAup);
             long sectorKey = ComposeSectorKey(sector);
             SectorState sectorState = ResolveOrCreateRuntimeSectorState(sector, sectorKey);
@@ -613,7 +616,9 @@ namespace Hecton8.World
             if (registry != null && registry.IsResourceNodeTombstoned(tombstoneId))
                 return false;
 
-            AbsoluteUniversePosition spawnAup = AbsoluteUniversePosition.FromRuntimePosition(spawnPosition);
+            if (!TryResolveAupFromRuntimeOrigin(spawnPosition, out AbsoluteUniversePosition spawnAup))
+                return false;
+
             int2 sector = QuantizeSector(in spawnAup);
             long sectorKey = ComposeSectorKey(sector);
             SectorState sectorState = ResolveOrCreateRuntimeSectorState(sector, sectorKey);
@@ -731,7 +736,9 @@ namespace Hecton8.World
             if (registry != null && registry.IsResourceNodeTombstoned(tombstoneId))
                 return false;
 
-            AbsoluteUniversePosition spawnAup = AbsoluteUniversePosition.FromRuntimePosition(spawnPosition);
+            if (!TryResolveAupFromRuntimeOrigin(spawnPosition, out AbsoluteUniversePosition spawnAup))
+                return false;
+
             int2 sector = QuantizeSector(in spawnAup);
             long sectorKey = ComposeSectorKey(sector);
             SectorState sectorState = ResolveOrCreateRuntimeSectorState(sector, sectorKey);
@@ -826,7 +833,12 @@ namespace Hecton8.World
             if (registry != null && registry.IsResourceNodeTombstoned(tombstoneId))
                 return false;
 
-            AbsoluteUniversePosition spawnAup = AbsoluteUniversePosition.FromRuntimePosition(spawnPosition);
+            AbsoluteUniversePosition spawnAup = AbsoluteUniversePosition.OffsetMeters(
+                in positionAup,
+                new double3(surfaceNormal.x * spawnOffset, surfaceNormal.y * spawnOffset, surfaceNormal.z * spawnOffset));
+            if (!IsFiniteAup(in spawnAup))
+                return false;
+
             int2 sector = QuantizeSector(in spawnAup);
             long sectorKey = ComposeSectorKey(sector);
             SectorState sectorState = ResolveOrCreateRuntimeSectorState(sector, sectorKey);
@@ -931,7 +943,9 @@ namespace Hecton8.World
             if (registry != null && registry.IsResourceNodeTombstoned(tombstoneId))
                 return false;
 
-            AbsoluteUniversePosition spawnAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition spawnAup))
+                return false;
+
             int2 sector = QuantizeSector(in spawnAup);
             long sectorKey = ComposeSectorKey(sector);
             SectorState sectorState = ResolveOrCreateRuntimeSectorState(sector, sectorKey);
@@ -1870,7 +1884,9 @@ namespace Hecton8.World
             if (_residentSectors == null || _residentSectors.Count == 0 || !IsFiniteRuntimePosition(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition aup))
+                return false;
+
             int2 sector = QuantizeSector(in aup);
             for (int offsetX = -1; offsetX <= 1; offsetX++)
             {
@@ -1898,10 +1914,11 @@ namespace Hecton8.World
             if (_residentSectors == null || _residentSectors.Count == 0 || !IsFiniteRuntimePosition(runtimePosition))
                 return false;
 
-            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition aup))
+                return false;
+
             int2 sector = QuantizeSector(in aup);
-            double3 shiftOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
-            float3 runtime = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            double3 absoluteRuntime = aup.ToAbsoluteDouble3();
 
             for (int offsetX = -1; offsetX <= 1; offsetX++)
             {
@@ -1915,11 +1932,10 @@ namespace Hecton8.World
                     if (!brinePool.IsValid || !IsInsideBrinePool(in brinePool, runtimePosition))
                         continue;
 
-                    float absoluteHeightY = (float)(brinePool.SurfaceHeight + shiftOffset.y);
+                    float absoluteHeightY = (float)(absoluteRuntime.y + ((double)brinePool.SurfaceHeight - runtimePosition.y));
                     if (!math.isfinite(absoluteHeightY))
                         continue;
 
-                    double3 absoluteRuntime = new double3(runtime.x, runtime.y, runtime.z) + shiftOffset;
                     double invCartographySectorSize = math.rcp((double)BrineLayerConstants.CartographySectorSizeMeters);
                     int2 cartographySector = new int2(
                         (int)math.floor(absoluteRuntime.x * invCartographySectorSize),
@@ -1968,7 +1984,9 @@ namespace Hecton8.World
             if (registry.CopyResourceNodeTombstonesInChunk(affectedChunkId, _resourceTombstoneScratch) <= 0)
                 return;
 
-            uint shockSeed = ResolveShockwaveSeed(in payload);
+            if (!TryResolveShockwaveSeed(in payload, out uint shockSeed))
+                return;
+
             float maxDistanceSqr = math.max(1f, payload.ImpulseRadiusMeters * payload.ImpulseRadiusMeters);
             for (int i = 0; i < _resourceTombstoneScratch.Count; i++)
             {
@@ -2204,6 +2222,22 @@ namespace Hecton8.World
                    math.isfinite(position.LocalZ);
         }
 
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!IsFiniteRuntimePosition(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!IsFiniteAup(in originAup))
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return IsFiniteAup(in positionAup);
+        }
+
         private void SanitizeBrinePoolSettings()
         {
             brinePoolRadiusMinMeters = ResolveFiniteAtLeast(brinePoolRadiusMinMeters, DefaultBrinePoolRadiusMinMeters, 4f);
@@ -2243,7 +2277,10 @@ namespace Hecton8.World
                 return;
             }
 
-            double3 absolutePosition = AbsoluteUniversePosition.FromRuntimePosition(request.RuntimePosition).ToAbsoluteDouble3();
+            if (!TryResolveAupFromRuntimeOrigin(request.RuntimePosition, out AbsoluteUniversePosition requestAup))
+                return;
+
+            double3 absolutePosition = requestAup.ToAbsoluteDouble3();
             Vector3 absoluteStart = new Vector3((float)absolutePosition.x, (float)absolutePosition.y, (float)absolutePosition.z);
             float2 veinPlanarDirection = ResolveOctantDirection(QuantizeYawDegreesToOctant(request.YawDegrees));
             Vector3 veinDirection = new Vector3(veinPlanarDirection.x, -0.35f, veinPlanarDirection.y);
@@ -2280,14 +2317,17 @@ namespace Hecton8.World
             pool.Despawn(marker, magmaVentLifetimeSeconds);
         }
 
-        private uint ResolveShockwaveSeed(in SeismicShockwaveEvent payload)
+        private bool TryResolveShockwaveSeed(in SeismicShockwaveEvent payload, out uint seed)
         {
-            AbsoluteUniversePosition epicenter = AbsoluteUniversePosition.FromRuntimePosition(payload.EpicenterWS);
+            seed = 0u;
+            if (!TryResolveAupFromRuntimeOrigin(payload.EpicenterWS, out AbsoluteUniversePosition epicenter))
+                return false;
+
             int2 sector = QuantizeSector(in epicenter);
-            uint seed = SeedSectorCandidate(sector, MagmaVentSeedSalt, payload.AppliedStampCount);
+            seed = SeedSectorCandidate(sector, MagmaVentSeedSalt, payload.AppliedStampCount);
             seed = Mix(seed, (uint)math.asint(payload.ImpulseRadiusMeters));
             seed = Mix(seed, (uint)math.asint(payload.ImpulseMagnitude));
-            return seed;
+            return true;
         }
 
         private static int ResolveBrineHazardZoneId(uint stableSeed)

@@ -86,134 +86,137 @@ namespace Hecton8.World
     /// <summary>
     /// OSHINO binary header. Size: 32 bytes. Runtime structs are explicitly aligned; no packed runtime layout attribute.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct FloraGenomeBinaryHeader
     {
-        public uint Magic;
-        public ushort Version;
-        public ushort HeaderBytes;
-        public int RecordCount;
-        public int RecordStrideBytes;
-        public uint Flags;
-        public uint PayloadCrc;
-        public uint Reserved0;
-        public uint Reserved1;
+        [FieldOffset(0)] public uint Magic;
+        [FieldOffset(4)] public ushort Version;
+        [FieldOffset(6)] public ushort HeaderBytes;
+        [FieldOffset(8)] public int RecordCount;
+        [FieldOffset(12)] public int RecordStrideBytes;
+        [FieldOffset(16)] public uint Flags;
+        [FieldOffset(20)] public uint PayloadCrc;
+        [FieldOffset(24)] public uint Reserved0;
+        [FieldOffset(28)] public uint Reserved1;
     }
 
     /// <summary>
     /// Decoded OSHINO plant genome. Size: 64 bytes, all fields are raw public data for NativeArray mutation.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = FloraGenomeLSystemConstants.FloraGenomeStrideBytes)]
+    [StructLayout(LayoutKind.Explicit, Size = FloraGenomeLSystemConstants.FloraGenomeStrideBytes)]
     public struct FloraGenomeDTO
     {
-        public uint SpeciesHash;
-        public float BaseScale;
-        public float BranchAngleRadians;
-        public float SegmentLengthMeters;
-        public FixedString32Bytes Axiom;
-        public float BiolumThreshold;
-        public uint PackedColorHDR;
-        public uint TraitFlags;
-        public byte MaxIterations;
-        public byte RuleProfile;
-        public byte HazardFlags;
-        public byte _pad0;
+        [FieldOffset(0)] public uint SpeciesHash;
+        [FieldOffset(4)] public float BaseScale;
+        [FieldOffset(8)] public float BranchAngleRadians;
+        [FieldOffset(12)] public float SegmentLengthMeters;
+        [FieldOffset(16)] public FixedString32Bytes Axiom;
+        [FieldOffset(48)] public float BiolumThreshold;
+        [FieldOffset(52)] public uint PackedColorHDR;
+        [FieldOffset(56)] public uint TraitFlags;
+        [FieldOffset(60)] public byte MaxIterations;
+        [FieldOffset(61)] public byte RuleProfile;
+        [FieldOffset(62)] public byte HazardFlags;
+        [FieldOffset(63)] public byte _pad0;
     }
 
     /// <summary>
     /// Signed 64-bit AUP cell coordinate. Size: 24 bytes. Unity.Mathematics does not provide long3 in this project.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 24)]
+    [StructLayout(LayoutKind.Explicit, Size = 24)]
     public struct FloraAupCell
     {
-        public long X;
-        public long Y;
-        public long Z;
+        [FieldOffset(0)] public long X;
+        [FieldOffset(8)] public long Y;
+        [FieldOffset(16)] public long Z;
     }
 
     /// <summary>
     /// Per-plant deterministic seed used by turtle generation.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct FloraPlantSeedDTO
     {
-        public FloraAupCell AupCell;
-        public float3 LocalPosition;
-        public uint PlantHash;
-        public uint SpeciesHash;
-        public uint WorldSeed;
-        public byte HardwareTier;
-        public byte RequestedIterations;
-        public ushort ChunkSlot;
-        public uint Reserved0;
+        [FieldOffset(0)] public FloraAupCell AupCell;
+        [FieldOffset(24)] public float3 LocalPosition;
+        [FieldOffset(36)] public uint PlantHash;
+        [FieldOffset(40)] public uint SpeciesHash;
+        [FieldOffset(44)] public uint WorldSeed;
+        [FieldOffset(48)] public byte HardwareTier;
+        [FieldOffset(49)] public byte RequestedIterations;
+        [FieldOffset(50)] public ushort ChunkSlot;
+        [FieldOffset(52)] public uint Reserved0;
+        [FieldOffset(56)] private ulong _pad0;
     }
 
     /// <summary>
     /// One generated branch or billboard matrix plus shader custom payload. Size: 96 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = FloraGenomeLSystemConstants.BranchMatrixStrideBytes)]
+    [StructLayout(LayoutKind.Explicit, Size = FloraGenomeLSystemConstants.BranchMatrixStrideBytes)]
     public struct BranchMatrixDTO
     {
-        public float4x4 Matrix;
-        public float4 CustomData;
-        public uint SpeciesHash;
-        public uint PlantHash;
-        public ushort SegmentIndex;
-        public byte LodFlags;
-        public byte HazardFlags;
-        public uint Reserved0;
+        [FieldOffset(0)] public float4x4 Matrix;
+        [FieldOffset(64)] public float4 CustomData;
+        [FieldOffset(80)] public uint SpeciesHash;
+        [FieldOffset(84)] public uint PlantHash;
+        [FieldOffset(88)] public ushort SegmentIndex;
+        [FieldOffset(90)] public byte LodFlags;
+        [FieldOffset(91)] public byte HazardFlags;
+        [FieldOffset(92)] public uint Reserved0;
     }
 
     /// <summary>
     /// Hazard sphere generated from a toxic or thorny genome. Size: 32 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = FloraGenomeLSystemConstants.HazardZoneStrideBytes)]
+    [StructLayout(LayoutKind.Explicit, Size = FloraGenomeLSystemConstants.HazardZoneStrideBytes)]
     public struct HazardZoneDTO
     {
-        public float3 Center;
-        public float RadiusMeters;
-        public uint SpeciesHash;
-        public uint PlantHash;
-        public ushort HazardFlags;
-        public ushort Reserved0;
-        public float Biomass;
+        [FieldOffset(0)] public float3 Center;
+        [FieldOffset(12)] public float RadiusMeters;
+        [FieldOffset(16)] public uint SpeciesHash;
+        [FieldOffset(20)] public uint PlantHash;
+        [FieldOffset(24)] public ushort HazardFlags;
+        [FieldOffset(26)] public ushort Reserved0;
+        [FieldOffset(28)] public float Biomass;
     }
 
     /// <summary>
     /// NativeArray-backed turtle stack frame. Size: 64 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct TurtleStackFrameDTO
     {
-        public float3 Position;
-        public float Scale;
-        public quaternion Rotation;
-        public float3 BishopUp;
-        public float Reserved1;
-        public uint RngState;
-        public ushort Depth;
-        public ushort Reserved0;
+        [FieldOffset(0)] public float3 Position;
+        [FieldOffset(12)] public float Scale;
+        [FieldOffset(16)] public quaternion Rotation;
+        [FieldOffset(32)] public float3 BishopUp;
+        [FieldOffset(44)] public float Reserved1;
+        [FieldOffset(48)] public uint RngState;
+        [FieldOffset(52)] public ushort Depth;
+        [FieldOffset(54)] public ushort Reserved0;
+        [FieldOffset(56)] private ulong _pad0;
     }
 
     /// <summary>
     /// Fixed 300-frame telemetry entry for SHINOBU flora generation black box. Size: 64 bytes.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct FloraGenomeBlackBoxEntry
     {
-        public uint FrameIndex;
-        public uint SpeciesHash;
-        public uint PlantHash;
-        public int ExpandedSymbolCount;
-        public int MatrixCount;
-        public int HazardCount;
-        public int EstimatedMicroseconds;
-        public float Biomass;
-        public float3 RootPosition;
-        public uint FaultFlags;
-        public uint IterationCount;
-        public uint Reserved0;
-        public uint Reserved1;
+        [FieldOffset(0)] public uint FrameIndex;
+        [FieldOffset(4)] public uint SpeciesHash;
+        [FieldOffset(8)] public uint PlantHash;
+        [FieldOffset(12)] public int ExpandedSymbolCount;
+        [FieldOffset(16)] public int MatrixCount;
+        [FieldOffset(20)] public int HazardCount;
+        [FieldOffset(24)] public int EstimatedMicroseconds;
+        [FieldOffset(28)] public float Biomass;
+        [FieldOffset(32)] public float3 RootPosition;
+        [FieldOffset(44)] public uint FaultFlags;
+        [FieldOffset(48)] public uint IterationCount;
+        [FieldOffset(52)] public uint Reserved0;
+        [FieldOffset(56)] public uint Reserved1;
+        [FieldOffset(60)] private uint _pad0;
     }
 
     /// <summary>

@@ -59,6 +59,15 @@ BROAD_TRANSFORM_POSITION_READ = re.compile(
 FLOAT_DISTANCE_REVIEW = re.compile(
     r"Vector3\.Distance|math\.distance|math\.distancesq"
 )
+TRANSFORM_DISTANCE_REVIEW = re.compile(
+    r"(?:Vector3\.Distance|math\.distance|math\.distancesq)\s*\([^;\n]*\.position|"
+    r"\([^;\n]*\.position\s*[-+][^;\n]*\)\.sqrMagnitude|"
+    r"\([^;\n]*[-+][^;\n]*\.position[^;\n]*\)\.sqrMagnitude"
+)
+RUNTIME_AUP_BRIDGE_REVIEW = re.compile(
+    r"AbsoluteUniversePosition\.FromRuntimePosition|"
+    r"HectonFloatingOrigin\.ToAbsoluteUniversePositionDouble3"
+)
 
 SKIP_DIR_NAMES = {
     ".git",
@@ -125,13 +134,18 @@ def scan_sources(source_root: Path, sample_limit: int) -> dict[str, Any]:
     strict_transform: list[dict[str, Any]] = []
     broad_transform: list[dict[str, Any]] = []
     distance_reviews: list[dict[str, Any]] = []
+    transform_distance_reviews: list[dict[str, Any]] = []
+    runtime_aup_bridge_reviews: list[dict[str, Any]] = []
 
     strict_by_file: Counter[str] = Counter()
     direct_by_file: Counter[str] = Counter()
     component_by_file: Counter[str] = Counter()
+    runtime_aup_bridge_by_file: Counter[str] = Counter()
     approved_helper_calls = 0
     broad_transform_count = 0
     distance_review_count = 0
+    transform_distance_review_count = 0
+    runtime_aup_bridge_review_count = 0
     direct_cast_count = 0
     runtime_component_count = 0
     editor_component_count = 0
@@ -208,6 +222,35 @@ def scan_sources(source_root: Path, sample_limit: int) -> dict[str, Any]:
                 distance_review_count += 1
                 append_limited(distance_reviews, finding(file_path, index, "FLOAT_DISTANCE_REVIEW", line), sample_limit)
 
+            if (
+                TRANSFORM_DISTANCE_REVIEW.search(line)
+                and "Editor" not in line
+                and "Gizmos" not in line
+                and "Handles" not in line
+                and not editor_path
+            ):
+                transform_distance_review_count += 1
+                append_limited(
+                    transform_distance_reviews,
+                    finding(file_path, index, "TRANSFORM_DISTANCE_REVIEW", line),
+                    sample_limit,
+                )
+
+            if (
+                RUNTIME_AUP_BRIDGE_REVIEW.search(line)
+                and "TryResolveAupFromRuntimeOrigin" not in line
+                and "GlobalSignals.CurrentRuntimeOriginAup" not in line
+                and not editor_path
+            ):
+                runtime_aup_bridge_review_count += 1
+                rel = normalize_path(file_path)
+                runtime_aup_bridge_by_file[rel] += 1
+                append_limited(
+                    runtime_aup_bridge_reviews,
+                    finding(file_path, index, "RUNTIME_AUP_BRIDGE_REVIEW", line),
+                    sample_limit,
+                )
+
     return {
         "filesScanned": len(files),
         "approvedHelperCalls": approved_helper_calls,
@@ -217,11 +260,15 @@ def scan_sources(source_root: Path, sample_limit: int) -> dict[str, Any]:
         "strictTransformAuthorityReadCount": strict_transform_count,
         "broadTransformPositionReviewCount": broad_transform_count,
         "floatDistanceReviewCount": distance_review_count,
+        "transformDistanceReviewCount": transform_distance_review_count,
+        "runtimeAupBridgeReviewCount": runtime_aup_bridge_review_count,
         "blockedCastFindings": blocked_casts,
         "editorComponentFloatAupCastReviews": editor_reviews,
         "strictTransformAuthorityFindings": strict_transform,
         "broadTransformPositionFindings": broad_transform,
         "floatDistanceFindings": distance_reviews,
+        "transformDistanceFindings": transform_distance_reviews,
+        "runtimeAupBridgeFindings": runtime_aup_bridge_reviews,
         "directAupFloat3CastByFile": sorted(
             ({"file": file, "count": count} for file, count in direct_by_file.items()),
             key=lambda row: (-row["count"], row["file"]),
@@ -232,6 +279,10 @@ def scan_sources(source_root: Path, sample_limit: int) -> dict[str, Any]:
         ),
         "strictTransformAuthorityByFile": sorted(
             ({"file": file, "count": count} for file, count in strict_by_file.items()),
+            key=lambda row: (-row["count"], row["file"]),
+        ),
+        "runtimeAupBridgeByFile": sorted(
+            ({"file": file, "count": count} for file, count in runtime_aup_bridge_by_file.items()),
             key=lambda row: (-row["count"], row["file"]),
         ),
     }
@@ -298,6 +349,7 @@ def upsert_math_report(math_report_path: Path, full_report_path: Path, payload: 
         "editor_component_float_reviews": counts["editorComponentFloatAupCastReviewCount"],
         "blocked_transform_authority_reads": counts["strictTransformAuthorityReadCount"],
         "strict_transform_authority_files": len(counts["strictTransformAuthorityByFile"]),
+        "runtime_aup_bridge_reviews": counts["runtimeAupBridgeReviewCount"],
         "layout_validation_failures": payload["layoutValidationFailures"],
         "precision_rule": payload["precisionRule"],
         "transform_rule": payload["transformRule"],
@@ -305,7 +357,7 @@ def upsert_math_report(math_report_path: Path, full_report_path: Path, payload: 
         "blackbox_ring": "AupPrecisionTelemetryEntry[300]",
         "verification": (
             "CLI gate: direct AUP float3 cast and runtime component cast counts are zero; "
-            "strict Transform.position authority debt remains build-blocking owner handoff; "
+            "strict Transform.position authority reads are zero; runtime AUP bridge reviews track hidden bridges; "
             "Unity import/Burst/profiler pending; no dotnet build launched by this gate."
         ),
     }
@@ -339,6 +391,7 @@ def print_summary(payload: dict[str, Any], rows: list[str]) -> None:
     print(f"editorComponentFloatAupCastReviewCount={counts['editorComponentFloatAupCastReviewCount']}")
     print(f"strictTransformAuthorityReadCount={counts['strictTransformAuthorityReadCount']}")
     print(f"strictTransformAuthorityFileCount={len(counts['strictTransformAuthorityByFile'])}")
+    print(f"runtimeAupBridgeReviewCount={counts['runtimeAupBridgeReviewCount']}")
     for row in counts["strictTransformAuthorityByFile"][:12]:
         print(f"strictByFile={row['count']} {row['file']}")
     if rows:

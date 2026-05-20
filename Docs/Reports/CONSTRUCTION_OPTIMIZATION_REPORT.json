@@ -723,5 +723,22 @@
                          "severity":  "legacy_compatibility_surface",
                          "snippet":  "if (currentIntegrity \u003e maxRecoverableIntegrity) currentIntegrity = maxRecoverableIntegrity;"
                      }
-                 ]
+                 ],
+    "shinobu_225_laser_cutter_dod":  {
+                                          "generated_utc":  "2026-05-20T11:41:47Z",
+                                          "scanner":  "Cutter_Raycast_Inquisition",
+                                          "sidecar_report":  "Docs/Reports/CONSTRUCTION_OPTIMIZATION_REPORT_SHINOBU_225.json",
+                                          "sync_raycast_sites":  0,
+                                          "instantiate_sites":  0,
+                                          "particle_system_references":  0,
+                                          "mesh_mutation_sites":  0,
+                                          "request_meta_buffer_id":  71336,
+                                          "laser_cut_request_layout":  "64 bytes, offsets 0/24/36/40/44/48, padding 52/56/60",
+                                          "gpu_spark_count_curve":  "smoothstep quality, 0..500 GPU-only spark requests",
+                                          "spark_signal_source":  "completed impact DTO SparkCount is forwarded directly after evaluation; live helper uses the same tuning row",
+                                          "telemetry_tail_contract":  "BatteryWatts@120,BurstWorkEstimateMicros@124",
+                                          "tuning_runtime_consumed":  "dent radius, glow lifetime, battery watts, spark scale, low/ultra spark bounds",
+                                          "compile_attempt":  "Hecton8.Core.csproj build failed with 77 external dependency errors and 0 owned SHINOBU_225 error paths",
+                                          "verdict":  "PASS: focused cutter files have no direct sync raycast, prefab spawn, ParticleSystem, mesh mutation text, or request-padding metadata."
+                                      }
 }

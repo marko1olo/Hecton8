@@ -349,3 +349,93 @@ Solution: Rechecked CPU and compiler gate. CPU was 98.693 percent and no `dotnet
 Rejected Alternatives: Running a build under CPU 98.693 percent was rejected by project rule.
 Scalability potential: Static source proof only; no runtime/profiler claim is made.
 Hardware Impact: No compiler load added.
+
+## Loop 18 - Parallel Forensic Corrections
+
+Problem: A scheduling failure between SHINOBU Vault lock acquisition and `_simulationScheduled = true` could leave locks held, because `UnlockJobBuffers()` was only reached by the normal `PostSimulationTick` path.
+Solution: Wrap the scheduling block in `try/finally` with a `keepLocksForScheduledJob` flag. Locks are retained only after the job graph is registered and ownership intentionally transfers to `PostSimulationTick`.
+Rejected Alternatives: Trusting the schedule path to never throw or early-return was rejected because a failed Vault/source resolve must not poison editor reads or later dispatcher phases.
+Scalability potential: Low through ultra rendering math is unchanged; this hardens the same Vault-owned scalar route under fault and hot-swap conditions.
+Hardware Impact: No steady-frame microsecond claim. Fault path now releases locks deterministically instead of stalling later readers.
+
+Problem: Editor tuning and gizmo read facades could sample SHINOBU-owned Vault rows while a simulation job still had scheduled ownership.
+Solution: `TryReadEditorTuning` and `TryAcquireAgingBufferRead` fail closed when `_simulationScheduled` is true. The gizmo remains an editor-only read facade and never creates runtime helper objects.
+Rejected Alternatives: Relying on read-only intent was rejected because the Vault lock is the ownership proof. Spawning preview objects was rejected because Task 18 requires a zero-GC, no-hierarchy confirmation route.
+Scalability potential: Editor preview now reflects only completed low/middle/high/ultra payloads; it does not invent intermediate facts.
+Hardware Impact: Editor-only boolean gate. Player hot path remains unchanged.
+
+Problem: The shader payload read used a `payloadEnabled > 0.5` threshold. CPU-side blend was continuous, but the shader would ignore payload rows below the half threshold and then jump into a partially blended row.
+Solution: Read the payload whenever `_GlobalBaseAgingRuntime.y` is epsilon-positive and active count is nonzero, then lerp each DTO lane by the same payload blend. The safety branch still prevents invalid StructuredBuffer reads when there is no active payload.
+Rejected Alternatives: Keeping the 0.5 gate was rejected as a visible activation step. Always reading row zero was rejected because startup/no-payload frames must not touch undefined buffer rows.
+Scalability potential: Low payload activation now fades from default to Vault rows smoothly. Middle, high, and ultra retain the same procedural rust/glass detail scaling through the row-aware quality scalar.
+Hardware Impact: No new texture samples or CPU allocations. The gate changes a scalar branch threshold only; GPU timing remains pending Frame Debugger/profiler proof.
+
+Problem: RustDetail/POM could remain tied to legacy/global rust even when Vault structural stress produced a stronger dynamic rust scalar, weakening Task 07/08's GPU-owned rust placement.
+Solution: Pass `dynamicRust` and the already computed row-aware quality into `H8UberNoirResolveRustPomUv`, so RustDetail/POM evaluates from the same Vault-driven rust and quality route as the rest of the aging surface.
+Rejected Alternatives: Duplicating quality resolution inside the POM helper was rejected because it fragments LOD authority. Ignoring dynamic rust was rejected because it makes structural stress visually underpowered on high-tier paths.
+Scalability potential: Low quality still exits before RustDetail/POM; high and ultra spend saved CPU/decal budget on richer rust relief when Vault stress warrants it.
+Hardware Impact: Argument routing only. Existing high path texture samples are reused; no extra draw call or material state is introduced.
+
+Problem: `Visual_Aging_Inquisition` wrote the shared rendering report path with a plain pass label, which could overwrite unrelated aggregate evidence and imply runtime verification.
+Solution: Add a dedicated SHINOBU report path, preserve unrelated prior aggregate report contents as escaped JSON text, and label the result `STATIC_PASS` or `STATIC_FAIL` with `runtimeStatus: PENDING_VERIFICATION`.
+Rejected Alternatives: Chat-only validator proof was rejected by the reporting protocol. Claiming runtime pass was rejected because Unity import, Frame Debugger, GCMonitor, profiler, and player build proof were not produced.
+Scalability potential: Editor-only proof route. Runtime visual tiers are unaffected.
+Hardware Impact: Editor-only file scan/write. No player cost.
+
+Problem: Loop 18 still needed objective source gates after the epsilon payload patch and documentation write.
+Solution: Ran scoped shader line-range scans, legacy `Rendering/Construction` material/decal archaeology scans, runtime/gizmo hot-path forbidden-token scans, DTO property/Pack checks, `git diff --check`, trailing-whitespace scan, asmdef contract-edge scan, rollback/save reference scan, and the CPU/compiler build gate.
+Rejected Alternatives: Broad whole-repo failure on unrelated global UberNoir LOD sections or validator literal strings was rejected because SHINOBU_219 owns the visual pressure-aging route, not every renderer/editor token in the project.
+Scalability potential: Static proof confirms SHINOBU-owned aging ranges still scale through continuous payload/quality math, not a low-end binary branch.
+Hardware Impact: Static scans only. Build/import was not launched because CPU sampled 100 percent; no runtime or profiler metric is claimed.
+
+## Loop 19 - Mock Temperature NaN Vaccine
+
+Problem: `GenerateMockAgingDataJob` read `Temperatures[0]` directly. The structural path already had a finite fallback, but the mock path could propagate a poisoned mock temperature lane into `temperatureBoost`, rust, biomass, and telemetry.
+Solution: Add a Burst-local `ResolveTemperature()` helper that returns `Tuning.MockTemperatureC` when the mock temperature array is absent, empty, or non-finite.
+Rejected Alternatives: Relying on `WriteDefaults()` to seed `42.0f` was rejected because Vault lanes can be hot-swapped, corrupted, or externally reset between default hydration and mock profiling. Zeroing the whole row was rejected because a single bad temperature value should not discard deterministic stress/depth mock data.
+Scalability potential: Low through ultra mock payloads now fail closed on temperature while preserving the same continuous quality-scaled count/detail route.
+Hardware Impact: One `math.isfinite` branch per mock row. The cost is below the shader/decal savings and prevents NaN propagation into GPU payload rows; profiler proof remains pending.
+
+Problem: The telemetry cursor used `% Telemetry.Length` directly. If the cursor lane is corrupted negative, C# modulo stays negative and the 300-frame black-box ring can be indexed below zero exactly when fault evidence is needed.
+Solution: Add bounded cursor wrapping in both `RecordVisualAgingTelemetryJob` and `DumpTelemetry`, mapping negative modulo results back into `[0, length - 1]`.
+Rejected Alternatives: Trusting the cursor lane because it is SHINOBU-owned was rejected; black-box paths must tolerate corrupted state. Clamping to zero was rejected because it would collapse ring chronology after a negative fault.
+Scalability potential: Telemetry behavior is tier-independent; low through ultra paths preserve the same ring semantics.
+Hardware Impact: One modulo/sign branch per telemetry write and one bounded wrap per dump row. Dump path is fault-only; steady job cost is minimal and protects forensic integrity.
+
+Problem: Loop 19 required source proof after the mock temperature and cursor-wrap patches.
+Solution: Ran targeted helper scans, forbidden runtime/gizmo token scans, SHINOBU shader-range binary LOD scans, legacy `Rendering/Construction` aging archaeology scans, rollback/save reference scans, `git diff --check`, trailing whitespace scan, and CPU/compiler gate.
+Rejected Alternatives: Running Unity import or `dotnet build` at 57.022 percent CPU was rejected by project build-gate rule.
+Scalability potential: Static proof confirms no new binary quality fork was added while hardening low/mock fallback and black-box telemetry.
+Hardware Impact: Static scans only; no runtime metric claimed.
+
+Problem: `VisualPressureAgingRuntime.cs` carried both `using System.Diagnostics;` and the explicit `Stopwatch` alias.
+Solution: Remove the unused namespace import and keep the explicit alias used by timing calls.
+Rejected Alternatives: Ignoring the import was rejected because the compile-wall mandate requires using-surface hygiene even when the compiler tolerates stale imports.
+Scalability potential: No runtime tier effect.
+Hardware Impact: 0 us runtime; compile hygiene only.
+
+Problem: Build gate needed a fresh sample after the using cleanup.
+Solution: Rechecked CPU/compiler state. CPU sampled 100 percent and no `dotnet`, `csc`, or `VBCSCompiler` process was active.
+Rejected Alternatives: Launching Unity import or `dotnet build` under CPU 100 percent was rejected by the explicit project rule.
+Scalability potential: Static source proof only.
+Hardware Impact: No compiler load added.
+
+## Loop 20 - Duplicate Phase and JSON Proof Fence
+
+Problem: `TryLockJobBuffers()` begins by unlocking any tracked locks. If a dispatcher/order regression calls `ScheduleSimulation` while a prior SHINOBU job is still marked scheduled, a duplicate call could release locks protecting in-flight NativeArray views.
+Solution: Add `_simulationScheduled` fail-closed guards at the top of `ScheduleSimulation` and `VisualSyncTick`. Normal dispatcher order is unchanged because SystemDispatcher completes simulation in PostSimulation before VisualSync; the local owner now makes duplicate entry non-destructive.
+Rejected Alternatives: Relying only on dispatcher order was rejected because the phase owner can cheaply make duplicate entry safe. Completing the job locally was rejected because it would violate the no arbitrary `Complete()` hot-path rule.
+Scalability potential: No quality-tier change; the same continuous payload route remains. The guard protects low, middle, high, and ultra payloads from duplicate phase faults without adding a binary branch to shader quality.
+Hardware Impact: One predictable branch per Simulation/VisualSync phase, no allocation, no shader cost.
+
+Problem: The static inquisition preserves previous aggregate report contents in JSON. Existing escaping handled common escapes but not every control char below U+0020.
+Solution: Add `AppendControlEscape` emitting `\u00XX` for remaining control chars.
+Rejected Alternatives: Dropping previous report text was rejected because the report path is shared across agents. Adding a serializer/package dependency was rejected because this editor proof path already uses deterministic manual output and does not need a runtime dependency.
+Scalability potential: Editor-only proof path; no low/middle/high/ultra runtime effect.
+Hardware Impact: Editor-only string write. Player cost 0 us.
+
+Problem: Loop 20 required proof after guard and JSON changes.
+Solution: Ran targeted source gates: `git diff --check` on patched files, trailing whitespace scan, SHINOBU shader line-range binary-quality scan, `Rendering/Construction` legacy aging scan, and split runtime/gizmo forbidden-token scans. Cold `ResolveVault(true)`/`GlobalRegistry.DataVault` hits were inspected and remain limited to static editor/gizmo facades plus initialization cache. Final CPU gate sampled 50.241 percent with no compiler processes.
+Rejected Alternatives: Running Unity import/build under CPU 50.241 percent was rejected by project rule. Broad all-workspace scans on generic `Renderer`/format tokens were rejected as noisy and outside SHINOBU ownership.
+Scalability potential: Static proof only; continuous shader/runtime quality path unchanged.
+Hardware Impact: No compiler load added; runtime patch adds two scalar branch guards.

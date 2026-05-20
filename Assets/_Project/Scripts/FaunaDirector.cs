@@ -1288,7 +1288,9 @@ namespace Hecton8.AI
                 if (resolvedPrefab == null)
                     continue;
 
-                AbsoluteUniversePosition spawnAup = AbsoluteUniversePosition.FromRuntimePosition(spawnPos);
+                if (!TryResolveRuntimePositionAup(spawnPos, out AbsoluteUniversePosition spawnAup))
+                    continue;
+
                 uint uniqueInstanceUid = IsApexPredatorArchetype(selectedEntry.archetype, isLargeThreat)
                     ? BuildApexFaunaInstanceUid(selectedEntry.archetype, in spawnMacroZone)
                     : BuildStandardFaunaInstanceUid(selectedEntry.speciesId, biomeIdx, spawnChunk, in spawnAup);
@@ -1412,7 +1414,7 @@ namespace Hecton8.AI
             if (spawnRegistry != null)
             {
                 WorldChunkCoordinate playerChunk = WorldChunkCoordinate.FromWorldPosition(playerPos, _runtimeChunkSize);
-                if (spawnRegistry.TryGetOrdinaryAnchor(playerPos, playerChunk, _runtimeFaunaAnchorChunkDistance, out WorldFaunaSpawnRegistry.Anchor anchor) &&
+                if (spawnRegistry.TryGetOrdinaryAnchor(playerPos, in playerAup, playerChunk, _runtimeFaunaAnchorChunkDistance, out WorldFaunaSpawnRegistry.Anchor anchor) &&
                     TryBuildSpawnPointAroundAnchor(anchor.position, anchor.radius, playerViewTransform, biomeData, bridge, out spawnPos, ref spawnValidationAttempts, ref spawnValidationSuccesses))
                 {
                     registryAnchor = anchor;
@@ -1459,7 +1461,7 @@ namespace Hecton8.AI
             if (spawnRegistry != null)
             {
                 WorldMacroZoneCoordinate playerMacroZone = WorldMacroZoneCoordinate.FromWorldPosition(playerPos, _runtimeMacroZoneSize);
-                if (spawnRegistry.TryGetLargeThreatZone(playerPos, playerMacroZone, _runtimeLargeThreatMacroZoneDistance, out WorldFaunaSpawnRegistry.Anchor zoneAnchor) &&
+                if (spawnRegistry.TryGetLargeThreatZone(playerPos, in playerAup, playerMacroZone, _runtimeLargeThreatMacroZoneDistance, out WorldFaunaSpawnRegistry.Anchor zoneAnchor) &&
                     CanSpawnLargeThreatNearPlayer(zoneAnchor.macroZoneCoord, playerPos) &&
                     TryBuildSpawnPointAroundAnchor(zoneAnchor.position, zoneAnchor.radius, playerViewTransform, biomeData, bridge, out spawnPos, ref spawnValidationAttempts, ref spawnValidationSuccesses))
                 {
@@ -2377,7 +2379,9 @@ namespace Hecton8.AI
 
         private static uint BuildStandardFaunaInstanceUid(int speciesId, int biomeIndex, WorldChunkCoordinate chunkCoord, Vector3 runtimePosition)
         {
-            AbsoluteUniversePosition runtimeAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            if (!TryResolveRuntimePositionAup(runtimePosition, out AbsoluteUniversePosition runtimeAup))
+                return 0u;
+
             return BuildStandardFaunaInstanceUid(speciesId, biomeIndex, chunkCoord, in runtimeAup);
         }
 
@@ -2789,7 +2793,9 @@ namespace Hecton8.AI
                 return;
 
             float stepMeters = ThermalApexMigrationStepMeters * Mathf.Max(0.25f, Mathf.Clamp01(strength01));
-            AbsoluteUniversePosition attractorAup = AbsoluteUniversePosition.FromRuntimePosition(attractorPosition);
+            if (!TryResolveRuntimePositionAup(attractorPosition, out AbsoluteUniversePosition attractorAup))
+                return;
+
             registry.MigrateApexFaunaHibernationStatesToward(in attractorAup, ThermalApexMigrationRadiusMeters, stepMeters);
         }
 
@@ -3211,16 +3217,33 @@ namespace Hecton8.AI
                 return true;
             }
 
-            if (_playerTransform == null)
-            {
-                playerPosition = default;
-                playerAup = default;
-                return false;
-            }
+            playerPosition = default;
+            playerAup = default;
+            return false;
+        }
 
-            playerPosition = _playerTransform.position;
-            playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
-            return true;
+        private static bool TryResolveRuntimePositionAup(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            float3 runtime = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(runtime)))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!IsFiniteAup(in originAup))
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtime.x, runtime.y, runtime.z));
+            return IsFiniteAup(in positionAup);
+        }
+
+        private static bool IsFiniteAup(in AbsoluteUniversePosition position)
+        {
+            return math.isfinite(position.LocalX) &&
+                   math.isfinite(position.LocalY) &&
+                   math.isfinite(position.LocalZ);
         }
 
         private bool TryResolveCachedPlayerRuntimeContext(out PlayerRuntimeContext runtimeContext)
@@ -3964,7 +3987,9 @@ namespace Hecton8.AI
                 return false;
 
             int biomeIndex = biomeData.biomeIndex;
-            AbsoluteUniversePosition spawnAup = AbsoluteUniversePosition.FromRuntimePosition(spawnPosition);
+            if (!TryResolveRuntimePositionAup(spawnPosition, out AbsoluteUniversePosition spawnAup))
+                return false;
+
             uint uniqueInstanceUid = IsApexPredatorArchetype(selectedEntry.archetype, selectedEntry.isLargeThreat)
                 ? BuildApexFaunaInstanceUid(selectedEntry.archetype, in spawnMacroZone)
                 : BuildStandardFaunaInstanceUid(selectedEntry.speciesId, biomeIndex, spawnChunk, in spawnAup);
@@ -4559,7 +4584,9 @@ namespace Hecton8.AI
                 // â”€â”€ Ð˜Ð½ÐºÑ€ÐµÐ¼ÐµÐ½Ñ‚ stateful-ÑÑ‡Ñ‘Ñ‚Ñ‡Ð¸ÐºÐ¾Ð² â”€â”€
 
                 // â”€â”€ ÐÐ°ÑÑ‚Ñ€Ð¾Ð¹ÐºÐ° AI: ÑÐ¿Ð°Ð²Ð½-Ð¿Ð¾Ð¸Ð½Ñ‚ + Ð¿Ñ€Ð¸Ð½ÑƒÐ´Ð¸Ñ‚ÐµÐ»ÑŒÐ½Ð¾Ðµ Aggressive â”€â”€
-                AbsoluteUniversePosition spawnAup = AbsoluteUniversePosition.FromRuntimePosition(spawnPos);
+                if (!TryResolveRuntimePositionAup(spawnPos, out AbsoluteUniversePosition spawnAup))
+                    continue;
+
                 uint uniqueInstanceUid = BuildStandardFaunaInstanceUid(selectedEntry.speciesId, biomeIdx, spawnChunk, in spawnAup);
 
                 if (instance.TryGetComponent(out FaunaBrain ai))

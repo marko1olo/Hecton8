@@ -15,14 +15,16 @@ namespace Hecton8.Physics
         SupportsFoamScale = 1u << 3
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct HectonOceanSurfaceWeatherState
     {
-        public float WindSpeed;
-        public float FoamStrength;
-        public float FoamCoverage;
-        public float FoamScale;
-        public uint Flags;
+        [FieldOffset(0)] public float WindSpeed;
+        [FieldOffset(4)] public float FoamStrength;
+        [FieldOffset(8)] public float FoamCoverage;
+        [FieldOffset(12)] public float FoamScale;
+        [FieldOffset(16)] public uint Flags;
+        [FieldOffset(20)] private uint _pad0;
+        [FieldOffset(24)] private ulong _pad1;
     }
 
     /// <summary>

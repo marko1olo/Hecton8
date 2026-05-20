@@ -142,3 +142,19 @@ Relevant mandates read:
 - [x] Re-check local render mandate for reversed-Z bias | DOD: `REND_URP_Graphics_HotPath_Optimization_HLOD.txt` Section10 states reversed-Z bias must be added, not subtracted | Rejected: accepting prior shader sign because it was already finite-guarded | Estimate: prevents far-horizon depth sign regression; profiler pending
 - [x] Patch active and legacy impostor shader depth sign | DOD: `Hecton_HLOD_Impostor.shader` and `Hecton_OctahedralImpostor.shader` now add `depthOffset` under `UNITY_REVERSED_Z` | Rejected: runtime mesh fallback, physics depth proxy, or keeping the wrong sign behind a branch | Estimate: avoids incorrect occlusion/fog/DoF ordering on reversed-Z targets
 - [x] Static gate after Loop 12 | DOD: targeted scan finds both reversed-Z branches use `deviceDepth + depthOffset` and no `deviceDepth - depthOffset` remains in the two impostor shaders | Rejected: visual inspection only | Estimate: static proof only
+- [x] Compile gate rechecked after Loop 12 | DOD: CPU sample 100%, compiler process count 0 | Rejected: launching Unity import/build under explicit >50% CPU ban | Estimate: protects parallel agent iteration
+
+## Loop 13 - Binary Tier Residue Purge
+
+- [x] Re-scan SHINOBU residency helpers for binary tier residue | DOD: targeted `rg` found unused `IsLowTier`, a `ResolveFlags(... HectonQualityTier)` overload, and `ResolveTierRepresentativeQuality` inside `HectonOctahedralImpostorTypes.cs` | Rejected: claiming continuous quality while leaving dormant tier adapter APIs | Estimate: static compile-wall cleanup
+- [x] Remove unused binary-tier helper APIs | DOD: `HectonChunkImpostorResidency` now exposes only the `ResolveFlags(double, float, float globalQualityWeight)` path for SHINOBU flag decisions | Rejected: keeping tier-to-float compatibility overloads that no caller used | Estimate: no runtime cost; prevents future binary callsite drift
+- [x] Rename low-tier impostor flag residue | DOD: `FlagLowTierSnap` became `FlagSurvivalSnap`; the only caller in `WorldChunkResidencyManager` was adjusted because it writes the SHINOBU HLOD payload flag | Rejected: wider streaming refactor in a non-SHINOBU manager | Estimate: one-token integration cleanup
+- [x] Static gate after Loop 13 | DOD: targeted scan finds no `FlagLowTierSnap`, no `IsLowTier(`, no `ResolveFlags(... HectonQualityTier)`, and no `ResolveTierRepresentativeQuality` in SHINOBU residency helpers | Rejected: visual inspection only | Estimate: static proof only
+- [x] Compile gate rechecked after Loop 13 | DOD: CPU sample 100%, compiler process count 0 | Rejected: launching Unity import/build under explicit >50% CPU ban | Estimate: protects parallel agent iteration
+
+## Loop 14 - Branchless Continuous Distance Curve
+
+- [x] Re-check SHINOBU quality curve for hard branch residue | DOD: `ResolveContinuousEnterDistanceMeters` still used `q < 0.5f` despite returning a continuous value | Rejected: treating a visually smooth result as enough when the mandate asks for continuum math | Estimate: hot helper branch removed
+- [x] Replace distance curve branch with smooth crossfade | DOD: survival->middle and middle->overkill distances are computed with `math.lerp`, `math.saturate`, and blended by `math.smoothstep(0.45f, 0.55f, q)` | Rejected: binary split at q=0.5 | Estimate: avoids one quality-threshold branch per call, profiler pending
+- [x] Static gate after Loop 14 | DOD: targeted scan shows `ResolveContinuousEnterDistanceMeters` uses `survivalToMiddle`, `middleToOverkill`, `math.smoothstep`, and no `q < 0.5f` ternary | Rejected: visual inspection only | Estimate: static proof only
+- [x] Compile gate rechecked after Loop 14 | DOD: CPU sample 100%, compiler process count 0 | Rejected: launching Unity import/build under explicit >50% CPU ban | Estimate: protects parallel agent iteration

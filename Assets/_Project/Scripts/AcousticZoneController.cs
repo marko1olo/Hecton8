@@ -175,17 +175,17 @@ namespace Hecton8.Audio
             Interior = 2
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct AcousticGraphState
         {
-            public float LowPassCutoffHz;
-            public float LowPassResonanceQ;
-            public float ReverbDecayTime;
-            public float ReflectionsLevelDb;
-            public float ReverbLevelDb;
-            public float RoomHighFrequencyDb;
-            public float DryLevelDb;
-            public float Arm64AlignmentPad0;
+            [FieldOffset(0)] public float LowPassCutoffHz;
+            [FieldOffset(4)] public float LowPassResonanceQ;
+            [FieldOffset(8)] public float ReverbDecayTime;
+            [FieldOffset(12)] public float ReflectionsLevelDb;
+            [FieldOffset(16)] public float ReverbLevelDb;
+            [FieldOffset(20)] public float RoomHighFrequencyDb;
+            [FieldOffset(24)] public float DryLevelDb;
+            [FieldOffset(28)] public float Arm64AlignmentPad0;
         }
 
         // ══════════════════════════════════════════════════════════

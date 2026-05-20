@@ -63,7 +63,7 @@ Do not publish or link a press kit until:
 - `press_release_permission_gate = ALLOW_PRESS_RELEASE_PUBLISH_VERIFIED` for the exact surface;
 - `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` for every public presskit, Steam, demo, support, Discord, or signup link;
 - at least 6 screenshots have asset metadata, QA score, build ID, and claim-check fields passed;
-- at least one public media asset proves a readable player decision under threat, leak, route cost, sonar pressure, or salvage failure, with `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision` recorded where the proof comes from first-page assets;
+- at least one public media asset proves a readable player decision under threat, leak, route cost, sonar pressure, or salvage failure, with non-pending `viewer_named_decision`, `capture_verdict = KEEP_TESTING` or stronger campaign `KEEP`, and `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision` recorded where the proof comes from first-page assets;
 - contact route is owner-controlled through `official_inbox_custody_gate = ALLOW_OFFICIAL_INBOX_USE_VERIFIED`;
 - private access/key policy is included even if no keys exist;
 - every file says single-player-first, passes Promise Lint, and avoids competitor-war language.
@@ -105,11 +105,11 @@ Avoid:
 
 ## Key Request Policy
 
-Until a demo exists, do not distribute keys.
+Do not distribute keys from demo/build existence alone.
 
 When keys exist:
 
-- issue small batches only after the exact recipient or batch has `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED`, official inbox custody, access-log fields, and disclosure;
+- issue small batches only after stable demo/review-build proof, the exact recipient or batch has `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED`, official inbox custody, access-log fields, disclosure, and the relevant press/creator/curator send gate;
 - tag every key batch by purpose;
 - do not give keys to gray-market request spam;
 - require disclosure for paid/sponsored/free-key content where applicable;

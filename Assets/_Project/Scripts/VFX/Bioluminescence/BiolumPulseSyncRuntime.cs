@@ -21,36 +21,36 @@ namespace Hecton8.VFX.Bioluminescence
     /// <summary>
     /// Per-instance coral glow state. Four records fit exactly in one 64-byte cache line.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct GlowStateDTO
     {
-        public uint PackedColor;
-        public float Phase;
-        public float Frequency;
-        public uint SpeciesHash;
+        [FieldOffset(0)] public uint PackedColor;
+        [FieldOffset(4)] public float Phase;
+        [FieldOffset(8)] public float Frequency;
+        [FieldOffset(12)] public uint SpeciesHash;
     }
 
     /// <summary>
     /// Global bioluminescence wave trigger using double precision AUP before local float math.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct SyncPulseDTO
     {
-        public double3 OriginAUP;
-        public float WaveSpeed;
-        public uint ColorOverride;
+        [FieldOffset(0)] public double3 OriginAUP;
+        [FieldOffset(24)] public float WaveSpeed;
+        [FieldOffset(28)] public uint ColorOverride;
     }
 
     /// <summary>
     /// Local weather and survival mock input for the bioluminescence domain.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct MockWeatherSignal
     {
-        public float AmbientLightLevel;
-        public float O2Level01;
-        public float SystemHealthIndex01;
-        public uint CurrentBiomeHash;
+        [FieldOffset(0)] public float AmbientLightLevel;
+        [FieldOffset(4)] public float O2Level01;
+        [FieldOffset(8)] public float SystemHealthIndex01;
+        [FieldOffset(12)] public uint CurrentBiomeHash;
     }
 
     /// <summary>
@@ -95,27 +95,33 @@ namespace Hecton8.VFX.Bioluminescence
     /// <summary>
     /// Local predator proximity mock. This protects the glow domain from fauna compile churn.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 40)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public partial struct MockPredatorProximitySignal
     {
-        public double3 OriginAUP;
-        public float RadiusMeters;
-        public float Strength01;
-        public uint SpeciesMask;
-        public uint FrameStamp;
+        [FieldOffset(0)] public double3 OriginAUP;
+        [FieldOffset(24)] public float RadiusMeters;
+        [FieldOffset(28)] public float Strength01;
+        [FieldOffset(32)] public uint SpeciesMask;
+        [FieldOffset(36)] public uint FrameStamp;
+        [FieldOffset(40)] private ulong _pad0;
+        [FieldOffset(48)] private ulong _pad1;
+        [FieldOffset(56)] private ulong _pad2;
     }
 
     /// <summary>
     /// Local combat damage mock for visual flicker without combat-domain coupling.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 40)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public partial struct MockCombatDamageSignal
     {
-        public double3 OriginAUP;
-        public float RadiusMeters;
-        public float AgeSeconds;
-        public uint PackedDamageColor;
-        public uint FrameStamp;
+        [FieldOffset(0)] public double3 OriginAUP;
+        [FieldOffset(24)] public float RadiusMeters;
+        [FieldOffset(28)] public float AgeSeconds;
+        [FieldOffset(32)] public uint PackedDamageColor;
+        [FieldOffset(36)] public uint FrameStamp;
+        [FieldOffset(40)] private ulong _pad0;
+        [FieldOffset(48)] private ulong _pad1;
+        [FieldOffset(56)] private ulong _pad2;
     }
 
     public static class BiolumPackedColorUtility
@@ -1410,11 +1416,11 @@ namespace Hecton8.VFX.Bioluminescence
             if (UnsafeUtility.SizeOf<BiolumSpeciesTuningDTO>() != 24)
                 return ReportInvalidSyncLayout("BiolumSpeciesTuningDTO must remain 24 bytes.");
 
-            if (UnsafeUtility.SizeOf<MockPredatorProximitySignal>() != 40)
-                return ReportInvalidSyncLayout("MockPredatorProximitySignal must remain 40 bytes.");
+            if (UnsafeUtility.SizeOf<MockPredatorProximitySignal>() != 64)
+                return ReportInvalidSyncLayout("MockPredatorProximitySignal must remain 64 bytes.");
 
-            if (UnsafeUtility.SizeOf<MockCombatDamageSignal>() != 40)
-                return ReportInvalidSyncLayout("MockCombatDamageSignal must remain 40 bytes.");
+            if (UnsafeUtility.SizeOf<MockCombatDamageSignal>() != 64)
+                return ReportInvalidSyncLayout("MockCombatDamageSignal must remain 64 bytes.");
 
             if (UnsafeUtility.SizeOf<BiolumPulseTelemetryEntry>() != 32)
                 return ReportInvalidSyncLayout("BiolumPulseTelemetryEntry must remain 32 bytes.");

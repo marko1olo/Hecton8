@@ -29,16 +29,17 @@ namespace Hecton8.Interaction
     /// Unmanaged event payload carried by the native interaction queue.
     /// Managed Unity references are resolved through the event lane sidecar during dispatch only.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct InteractionEventPayload
     {
-        public uint ItemHashId;
-        public uint TargetHashId;
-        public uint InteractorHashId;
-        public int ReferenceSlot;
-        public int Quantity;
-        public ushort EventType;
-        public ushort Reserved;
+        [FieldOffset(0)] public uint ItemHashId;
+        [FieldOffset(4)] public uint TargetHashId;
+        [FieldOffset(8)] public uint InteractorHashId;
+        [FieldOffset(12)] public int ReferenceSlot;
+        [FieldOffset(16)] public int Quantity;
+        [FieldOffset(20)] public ushort EventType;
+        [FieldOffset(22)] public ushort Reserved;
+        [FieldOffset(24)] private ulong _pad0;
     }
 
     /// <summary>

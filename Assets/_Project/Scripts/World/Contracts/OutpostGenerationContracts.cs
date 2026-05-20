@@ -32,33 +32,36 @@ namespace Hecton8.World
     /// <summary>
     /// Immutable state sample published by the outpost generation service.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 56)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct OutpostGenerationSnapshot
     {
-        public ulong SectorHash;
-        public uint WorldSeed;
-        public uint GenerationSequence;
-        public float3 OriginMeters;
-        public int3 Dimensions;
-        public int ShellMatrixCount;
-        public int InteractableCount;
-        public float OutpostAge01;
-        public OutpostGenerationQualityTier QualityTier;
-        public OutpostGenerationState State;
-        public ushort Flags;
+        [FieldOffset(0)] public ulong SectorHash;
+        [FieldOffset(8)] public uint WorldSeed;
+        [FieldOffset(12)] public uint GenerationSequence;
+        [FieldOffset(16)] public float3 OriginMeters;
+        [FieldOffset(28)] public int3 Dimensions;
+        [FieldOffset(40)] public int ShellMatrixCount;
+        [FieldOffset(44)] public int InteractableCount;
+        [FieldOffset(48)] public float OutpostAge01;
+        [FieldOffset(52)] public OutpostGenerationQualityTier QualityTier;
+        [FieldOffset(53)] public OutpostGenerationState State;
+        [FieldOffset(54)] public ushort Flags;
+        [FieldOffset(56)] private ulong _pad0;
     }
 
     /// <summary>
     /// Deferred pooled proxy spawn emitted by native matrix extraction. Shell pieces never become GameObjects.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 20)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct OutpostInteractableSpawn
     {
-        public float3 PositionMeters;
-        public float RotationYRadians;
-        public ushort CellIndex;
-        public byte Kind;
-        public byte Flags;
+        [FieldOffset(0)] public float3 PositionMeters;
+        [FieldOffset(12)] public float RotationYRadians;
+        [FieldOffset(16)] public ushort CellIndex;
+        [FieldOffset(18)] public byte Kind;
+        [FieldOffset(19)] public byte Flags;
+        [FieldOffset(20)] private uint _pad0;
+        [FieldOffset(24)] private ulong _pad1;
     }
 
     /// <summary>

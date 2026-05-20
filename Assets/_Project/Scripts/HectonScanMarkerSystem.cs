@@ -48,11 +48,17 @@ namespace Hecton8.Gameplay
         // COLD ALLOC: int[6] - shared scanner marker quad indices - owner: HectonScanMarkerSystem
         private static readonly int[] s_markerQuadTriangles = { 0, 2, 1, 0, 3, 2 };
 
-        [StructLayout(LayoutKind.Sequential, Size = 64)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct ActiveMarker
         {
+            [FieldOffset(0)]
             public AbsoluteUniversePosition aup;
+            [FieldOffset(48)]
             public float timer;
+            [FieldOffset(52)]
+            private uint _pad0;
+            [FieldOffset(56)]
+            private ulong _pad1;
         }
 
         [Header("── HUD Camera ───────────────────────────────")]

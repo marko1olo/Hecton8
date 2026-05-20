@@ -1,7 +1,7 @@
-﻿# OFFLINE_LOD_AND_COLLIDER_BAKER_SHINOBU_213
+# OFFLINE_LOD_AND_COLLIDER_BAKER_SHINOBU_213
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-20 R46 Root/Architecture Actuality Boundary
+## 2026-05-20 R47 Root/Architecture Actuality Boundary
 
 This document is active only where it agrees with:
 
@@ -11,10 +11,10 @@ This document is active only where it agrees with:
 - current source files
 - fresh verification logs and artifacts
 
-Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL evidence. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. R42 remains the prior counter/route-boundary/proof-label correction. R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers; runtime proof remains absent.
+Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL evidence. R46 remains the prior interior-authority/route-field/proof-language correction; R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; runtime proof remains absent.
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact.
-Current DOC_GLOBAL boundary (2026-05-20 R46): `Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md` is the latest local static root/architecture interior-authority, route-field, and proof-language correction. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. Runtime proof remains absent.
+Current DOC_GLOBAL boundary (2026-05-20 R47): `Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md` is the latest local static root/architecture authority-spine, runtime-wording, and counter-drift correction. R46 remains the prior interior-authority/route-field/proof-language correction. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 Owner: SHINOBU_213
@@ -28,7 +28,7 @@ Runtime authority: none
 - Editor references: `Hecton8.World.OfflineGeometry`, `Unity.Burst`, `Unity.Collections`, `Unity.Jobs`, `Unity.Mathematics`
 - Sibling runtime references: none
 
-Historical/local Roslyn probe text: `Temp/SHINOBU_213_CompileProbe/` was recorded as containing local probe outputs for the runtime DTO and editor baker assemblies from the pre-endian pass. Treat that as compiler proof only when an artifact path, command/tool, timestamp, environment, and output are linked. The current explicit-endian fallback, bounded-hull support-index source, fail-closed hull asset-binding guard, read-write hull vertex safety annotation, finite inverse-square-root guards, decimator index-stream fail-closed guards, mock benchmark asset reload guard, binary-ledger update, and hot geometry DTO explicit-layout proof still require a post-endian bounded-hull safety-index hot-struct probe when CPU drops below the build gate; Unity import, editor menu execution, profiler, and generated-asset inspection remain pending evidence.
+Historical/local Roslyn probe text: `Temp/SHINOBU_213_CompileProbe/` was recorded as containing local probe outputs for the runtime DTO and editor baker assemblies from the pre-endian pass. Treat that as compiler evidence only when an artifact path, command/tool, timestamp, environment, and output are linked. The current explicit-endian fallback, bounded-hull support-index source, fail-closed hull asset-binding guard, read-write hull vertex safety annotation, finite inverse-square-root guards, decimator index-stream fail-closed guards, mock benchmark asset reload guard, binary-ledger update, hot geometry DTO explicit-layout proof, decimator raw-stream/output-lane bounds guards, hull fallback scratch-bounds guard, and Burst job denominator/native collection guards still require a post-endian bounded-hull safety-index hot-struct stream-bounds hull-fallback job-guard probe when CPU drops below the build gate; Unity import, editor menu execution, profiler, and generated-asset inspection remain pending evidence.
 
 ## Boundary
 
@@ -53,7 +53,7 @@ Generated prefabs must not contain active runtime decimation, hull generation, o
 Physics lies before it simulates:
 - Sphere fit first where average radial error is within tolerance.
 - Box fit second where surface error is within tolerance.
-- Convex fallback is a bounded 8..32 point conservative support hull with plane-deduped fan-triangulated indices. The UI hull limit is honored up to the fixed cap; primitive sphere/box still wins before any hull is authored. Invalid/underpopulated hull output or failed asset binding fails closed to `BoxCollider` with warning flags; counters are never forced upward into uninitialized geometry.
+- Convex fallback is a bounded 8..32 point conservative support hull with plane-deduped fan-triangulated indices. The UI hull limit is honored up to the fixed cap; primitive sphere/box still wins before any hull is authored. Invalid/underpopulated hull output, undersized fallback scratch buffers, or failed asset binding fails closed to `BoxCollider` with warning flags; counters are never forced upward into uninitialized geometry.
 
 Concave high-poly `MeshCollider` output is forbidden. Static enforcement lives in `Unoptimized_Mesh_Scanner` and reports to `Docs/Reports/PHYSICS_OPTIMIZATION_REPORT.json`.
 
@@ -74,7 +74,7 @@ No `[StructLayout(Pack=1)]` is used. `OfflinePrimitiveFitResult` uses 3 explicit
 
 LOD0 is capped by `Lod0HardBudget`. LOD1 and LOD2 derive hard caps from `Lod0HardBudget * resolvedRatio`, with LOD2 clamped below LOD1, so source meshes above budget cannot leak oversized lower-detail meshes.
 
-LOD1/LOD2 source-triangle selection uses bounded partition-local saliency. Each output triangle maps to a deterministic non-overlapping source partition. `GlobalQualityWeight` and depth resolve the sampled candidate count from 1 to 7; low quality pays the cheapest single candidate while high quality preserves stronger area-normalized candidates under the same hard cap. Imported index bases are clamped before raw pointer vertex reads; invalid index streams, empty range tables, empty source vertices, or null position streams collapse to deterministic zero/up-normal triangles instead of unsafe memory access.
+LOD1/LOD2 source-triangle selection uses bounded partition-local saliency. Each output triangle maps to a deterministic non-overlapping source partition. `GlobalQualityWeight` and depth resolve the sampled candidate count from 1 to 7; low quality pays the cheapest single candidate while high quality preserves stronger area-normalized candidates under the same hard cap. Imported index bases are clamped before raw pointer vertex reads; invalid index streams, empty range tables, empty source vertices, null/invalid position streams, optional normal/UV stream faults, invalid output lanes, invalid mock segment counts, or default/mismatched pack/index buffers collapse to deterministic zero/up-normal triangles, no generated rows, or safe defaults instead of unsafe memory access.
 
 Submesh ranges are generated for the full source `subMeshCount`. The baker must not truncate material ranges to an arbitrary cap. If target triangle count is lower than source submesh count, hard budget wins and some submesh ranges receive zero output triangles; zero-output ranges are not serialized as Unity submeshes.
 
@@ -114,5 +114,3 @@ The ring is allocated with `UninitializedMemory` and then written with determini
 - `Docs/Reports/LOD_OPTIMIZATION_REPORT.json`
 - `Docs/Reports/PHYSICS_OPTIMIZATION_REPORT.json`
 - `Docs/Reports/SHINOBU_213_SELF_AUDIT.xml`
-
-

@@ -748,7 +748,7 @@ namespace Hecton8.World
             UnsubscribeFromBootstrap();
             UnregisterOriginShiftListener();
             UnregisterProceduralStateRegistryCallbacks();
-            CompleteSamplingJobIfNeeded();
+            CompleteSamplingJobForTeardown();
             DisposeMigratorySargassumLane();
             DisposeCellSamplingArrays();
             DisposeScatterBackendFacade();
@@ -773,7 +773,7 @@ namespace Hecton8.World
                 GlobalRegistry.UnregisterWorldGenService(this);
             TryUnregisterRuntimeDirector();
             UnregisterOriginShiftListener();
-            CompleteSamplingJobIfNeeded();
+            CompleteSamplingJobForTeardown();
             DisposeMigratorySargassumLane();
             DisposeScatterBackendFacade();
             ClearFloraGpuiVisibility();
@@ -862,7 +862,7 @@ namespace Hecton8.World
         {
             UnsubscribeFromBootstrap();
             UnregisterProceduralStateRegistryCallbacks();
-            CompleteSamplingJobIfNeeded();
+            CompleteSamplingJobForTeardown();
             DisposeMigratorySargassumLane();
             DisposeScatterBackendFacade();
             ClearFloraGpuiVisibility();
@@ -899,7 +899,7 @@ namespace Hecton8.World
             _instancingService = new ScatterInstancingService();
         }
 
-        private void CompleteSamplingJobIfNeeded()
+        private void CompleteSamplingJobForTeardown()
         {
             if (!_isSamplingJobRunning)
             {
@@ -2807,10 +2807,20 @@ namespace Hecton8.World
                 return false;
 
             largeThreatZone = placement.IsLargeThreatZone;
+            Vector3 anchorAbsolutePosition = placement.Position;
+            bool hasAnchorAup = math.all(math.isfinite(new float3(
+                anchorAbsolutePosition.x,
+                anchorAbsolutePosition.y,
+                anchorAbsolutePosition.z)));
+            AbsoluteUniversePosition anchorAup = hasAnchorAup
+                ? AbsoluteUniversePosition.FromAbsolutePosition(new double3(anchorAbsolutePosition.x, anchorAbsolutePosition.y, anchorAbsolutePosition.z))
+                : default;
             anchor = new WorldFaunaSpawnRegistry.Anchor
             {
                 runtimeKey = placement.Key,
                 position = placement.RuntimePosition,
+                positionAup = anchorAup,
+                hasPositionAup = hasAnchorAup,
                 radius = placement.FaunaAnchorRadius,
                 chunkCoord = placement.ChunkCoord,
                 macroZoneCoord = placement.HasMacroZone

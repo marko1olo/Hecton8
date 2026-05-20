@@ -293,8 +293,10 @@ Minimum useful output from the first session:
 - one identity candidate;
 - one player-verb candidate;
 - one machinery/base candidate;
+- one agency/decision candidate from `PLAN-SHOT-006`, `PLAN-CLIP-001`, or `PLAN-CLIP-003`, or an explicit `AGENCY_MISSING_HOLD` note;
 - every failed attempt has a reject code;
 - metadata row updated only with facts from the capture, not wishes.
+- next capture action list capped at three items: fix scene/readability, retry specific asset ID, or kill/replace angle.
 
 First session verdicts:
 
@@ -310,24 +312,50 @@ First session verdicts:
 ```text
 Asset ID:
 Filename:
+File path:
 Build:
 Hook:
 First 3-second read:
+Viewer-named decision:
 Player verb visible? yes/no
 Pressure/machinery cue visible? yes/no
 Multiplayer-scope implication? yes/no
 Performance implication? yes/no
 Clone-risk cue:
+Creator rows unlocked:
+Creator utility score:
+Creator send gate:
 Pain bucket answered:
 Pain proof score:
 Pain freshness source:
 Pain freshness checked at:
 Public comparison gate:
+Agency decision proof gate:
+Agency decision notes:
+Capture handoff packet ID:
+Capture verdict:
 QA score:
 Decision: APPROVED_INTERNAL / APPROVED_PUBLIC / REVISION / QA_FAIL
 Rejection code:
+Metadata row updated? yes/no
 Next action:
 ```
+
+### First Capture Handoff Packet
+
+Do not create a new handoff document. Append the packet into the existing campaign/QA/log owner surfaces after the session.
+
+Required packet fields:
+
+- build ID, scene/area, quality preset, resolution, capture tool, owner, and date;
+- asset IDs attempted, filenames, file paths, and reject codes for failed attempts;
+- provisional QA score, creator utility score, creator rows unlocked, and `creator_send_gate` state for every kept candidate;
+- pain bucket, pain proof score, freshness source/date, and `public_comparison_gate`;
+- `agency_decision_proof_gate`, `agency_decision_notes`, `capture_handoff_packet_id`, `capture_verdict`, and the exact `viewer_named_decision` or `AGENCY_MISSING_HOLD`;
+- first session verdict: `KEEP_TESTING`, `REVISE_SCENE`, `HOLD_ASSET`, or `KILL_ANGLE`;
+- next action list capped at three items.
+
+Handoff kill rule: if the packet lacks file path, build ID, QA score, creator utility, pain freshness, public comparison gate, agency proof gate, packet ID, verdict, viewer-named decision, next actions, or reject code for any attempted asset, Campaign 01 stays `HOLD` and the metadata row remains `PLANNED_CAPTURE` / `BLOCKED_PLANNED_CAPTURE`.
 
 ### Capture Kill Rules
 

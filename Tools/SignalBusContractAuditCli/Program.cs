@@ -1121,7 +1121,20 @@ internal static class Program
             }
         }
 
-        return Regex.IsMatch(builder.ToString(), @":\s*[^{};]*\bISignal\b");
+        var header = builder.ToString();
+        var braceIndex = header.IndexOf('{', StringComparison.Ordinal);
+        if (braceIndex >= 0)
+        {
+            header = header[..braceIndex];
+        }
+
+        var whereMatch = Regex.Match(header, @"\bwhere\b");
+        if (whereMatch.Success)
+        {
+            header = header[..whereMatch.Index];
+        }
+
+        return Regex.IsMatch(header, @":\s*[^{};]*\bISignal\b");
     }
 
     private static StructMetadata? FindNearestStructMetadata(List<StructMetadata> structs, int index)

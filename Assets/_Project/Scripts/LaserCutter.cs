@@ -577,6 +577,7 @@ namespace Hecton8.Gameplay
             _cachedTransform = transform;
             CacheToolId();
             CacheRaycastRequesterId();
+            LaserCutterDodRuntime.EnsureInitialized();
             CacheWfcCutDecalRenderer();
             SetVisualsActive(false);
             TryAssignCutAudioMixerRoute();
@@ -642,6 +643,7 @@ namespace Hecton8.Gameplay
             LaserCutterEvents.RegisterSource(this, ResolveEventCutterId(), ResolveEventTransform());
             CacheToolId();
             CacheRaycastRequesterId();
+            LaserCutterDodRuntime.EnsureInitialized();
             ResetAllState();
             SetVisualsActive(false);
         }

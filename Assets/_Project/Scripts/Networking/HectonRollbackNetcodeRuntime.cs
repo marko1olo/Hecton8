@@ -15,7 +15,7 @@ namespace Hecton8.Networking
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8850)]
-    public sealed unsafe class HectonRollbackNetcodeRuntime : MonoBehaviour, IDispatcherFixedSystem, ILateFrameTickable
+    public sealed unsafe class HectonRollbackNetcodeRuntime : MonoBehaviour, IDispatcherFixedSystem, IDispatcherFenceDomainProvider, ILateFrameTickable
     {
         private const uint FixedSystemHash = 0x4E465852u;
         private const uint PauseSourceHash = 0x4E455452u;
@@ -328,6 +328,11 @@ namespace Hecton8.Networking
         public uint GetFixedSystemIdHash()
         {
             return FixedSystemHash;
+        }
+
+        public DispatcherFenceDomain GetFenceDomain()
+        {
+            return DispatcherFenceDomain.Netcode;
         }
 
         public JobHandle ScheduleFixedSimulation(in DispatcherTimingDTO timing, JobHandle dependsOn)

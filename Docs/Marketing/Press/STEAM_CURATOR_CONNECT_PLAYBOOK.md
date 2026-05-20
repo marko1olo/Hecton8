@@ -26,7 +26,7 @@ Curator requests are scam-heavy. Curator Connect is safer than loose keys becaus
 - Do not chase follower count alone.
 - Do not send to generic "we review all games" curators.
 - Do not send if the first Steam screenshot set is weak, because Curator Connect exposes those.
-- Do not send if the exposed set lacks one agency/decision proof asset from `PLAN-SHOT-006`, `PLAN-CLIP-001`, or `PLAN-CLIP-003` with AB-009/KPI viewer-named decision fields; `PLAN-SHOT-007` anomaly flavor is not a substitute.
+- Do not send if the exposed set lacks one agency/decision proof asset from `PLAN-SHOT-006`, `PLAN-CLIP-001`, or `PLAN-CLIP-003` with non-pending metadata `viewer_named_decision`, valid `capture_verdict`, and AB-009/KPI viewer-named decision fields; `PLAN-SHOT-007` anomaly flavor is not a substitute.
 - Do not send unless the curator tracker row has `send_permission_gate = ALLOW_CURATOR_SEND_VERIFIED`.
 
 ## Curator Connect Readiness Gate
@@ -37,7 +37,7 @@ Required:
 - uploaded build playable by curators;
 - approved store page;
 - first Steam screenshot set is strong;
-- first Steam screenshot set includes identity, player verb, base/machinery, and one agency/decision proof asset with AB-009/KPI decision-read fields;
+- first Steam screenshot set includes identity, player verb, base/machinery, and one agency/decision proof asset with non-pending metadata handoff fields plus AB-009/KPI decision-read fields;
 - exposed screenshots and clips pass asset metadata claim checks;
 - curator tracker row has `send_permission_gate = ALLOW_CURATOR_SEND_VERIFIED`;
 - `send_route_class` is selected and `reply_consent_provenance` is still blank before a reply exists;
@@ -171,4 +171,4 @@ Thanks for checking HECTON-8. For curator copies we are using Steam Curator Conn
 
 ## Current HECTON-8 Decision
 
-No Curator Connect sends yet. Build the candidate list now, but do not activate until Steam page, build, first Steam screenshot set, one agency/decision proof asset with AB-009/KPI decision-read fields, asset claim checks, `send_permission_gate = ALLOW_CURATOR_SEND_VERIFIED`, owner-controlled contact, recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED`, official inbox custody, disclosure, and exact access-log fields are ready.
+No Curator Connect sends yet. Build the candidate list now, but do not activate from Steam page/build existence alone. Activation requires `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED`, build proof, first Steam screenshot set, one agency/decision proof asset with AB-009/KPI decision-read fields, asset claim checks, `send_permission_gate = ALLOW_CURATOR_SEND_VERIFIED`, owner-controlled contact, recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED`, official inbox custody, disclosure, and exact access-log fields.

@@ -482,7 +482,7 @@ Hardware Impact: Avoids local CPU/IO burn while the compile wall remains externa
 
 Problem: R37 made `VRAMEnforcer` continuous, but `_hardwareBudgetWeight` still had a CLR default of `0f` before SubsystemRegistration or runtime init. Any non-playing editor/offline call to `ApplyBoidPopulationBudget()` could therefore scale requested boids by the minimum 0.4 factor even though no runtime hardware budget had been measured. `AssetLoadDispatcher.EvaluateUiMipBiasGate()` also queried `SystemInfo.graphicsMemorySize` in tick cadence while resolving the UI mip response.
 
-Solution: Initialize `_hardwareBudgetWeight` to `1f` and return the clamped authored boid count when `ApplyBoidPopulationBudget()` is invoked outside Play Mode before runtime budget initialization. Add `_graphicsBudgetBytes` to `AssetLoadDispatcher`, refresh it on `OnEnable()` and `Start()`, and use that cached byte value in the UI mip gate. The gate can refresh only when the cache is invalid, preserving fail-closed fallback behavior without a normal tick hardware query.
+Solution: Initialize `_hardwareBudgetWeight` to `1f` and return the clamped authored boid count when `ApplyBoidPopulationBudget()` is invoked outside Play Mode before runtime budget initialization. Add `_graphicsBudgetBytes` to `AssetLoadDispatcher`, refresh it on `OnEnable()` and `Start()`, and use that cached byte value in the UI mip gate. The gate can refresh only when the cache is invalid, preserving fail-closed fallback behavior without a normal tick hardware query. Budget and quality fallback helpers use `math.select` rather than new ternary expressions.
 
 Rejected Alternatives: Keeping the zero CLR default was rejected because it hides an editor/offline authoring clamp behind an uninitialized scalar. Querying `SystemInfo.graphicsMemorySize` every frame was rejected because hardware classification is cold state, not UI mip gate cadence state. Moving the entire UI gate into `VRAMPressureMonitor` was rejected because dispatcher still owns UI group classification and request context, while the monitor already owns the global mip write.
 
@@ -496,6 +496,10 @@ Hardware Impact: Static estimate only. R38 removes one normal-cadence `SystemInf
   - expected initialized weight, non-playing guard, and continuous budget helpers only.
 - `rg -n "_graphicsBudgetBytes|RefreshGraphicsBudgetBytes|SystemInfo\\.graphicsMemorySize|ResolveGraphicsBudgetBytes" Assets/_Project/Scripts/Optimization/AssetLoadDispatcher.cs`
   - `SystemInfo.graphicsMemorySize` now appears only inside `RefreshGraphicsBudgetBytes()`.
+- `rg -n "ResolveGraphicsBudgetBytes|math\\.select\\(UnknownGraphicsBudgetMb|ResolveGlobalQualityWeight|math\\.select\\(1f, quality|ResolveQualityCurve" Assets/_Project/Scripts/Optimization/AssetLoadDispatcher.cs Assets/_Project/Scripts/Optimization/VRAMEnforcer.cs`
+  - expected branchless budget/quality fallback helpers only.
+- `rg -n "graphicsMemoryMb > 0 \\?|math\\.isfinite\\(quality\\) \\? quality|LowVramGraphicsMemoryMbThreshold|LowVramDeviceThresholdMb|UiMipDowngradeThresholdBytes|UiMipRestoreThresholdBytes|DetectedGraphicsMemoryMb > 0 &&|\\? SharedMemory|if \\(!_lowVramBudgetActive\\)" Assets/_Project/Scripts/Optimization/AssetLoadDispatcher.cs Assets/_Project/Scripts/Optimization/VRAMEnforcer.cs`
+  - no results.
 - `rg -n "IsLowEndHardware|LowVramGraphicsMemoryMbThreshold|LowVramDeviceThresholdMb|UiMipDowngradeThresholdBytes|UiMipRestoreThresholdBytes|DetectedGraphicsMemoryMb > 0 &&|\\? SharedMemory|if \\(!_lowVramBudgetActive\\)|NativeParallelHashMap|Allocator\\.Persistent|List<|Dictionary<|HashSet<|Queue<" Assets/_Project/Scripts/Optimization/AssetLoadDispatcher.cs Assets/_Project/Scripts/Optimization/VRAMPressureMonitor.cs Assets/_Project/Scripts/Optimization/VRAMEnforcer.cs`
   - no results.
 - `rg -n "Addressables\\.Release\\(|Addressables\\.ReleaseInstance\\(" Assets/_Project/Scripts`
@@ -513,5 +517,42 @@ Solution: No build launched in R38. Static verification only.
 Rejected Alternatives: Rerunning a known pre-SHINOBU abort was rejected by user command discipline and AGENTS build discipline.
 
 Scalability potential: No extra runtime tier change beyond cold-cache hygiene.
+
+Hardware Impact: Avoids local CPU/IO burn while the compile wall remains external.
+
+## Pressure Math NaN Guard Closure R39
+
+Problem: The pressure lane still contained branch/ternary division guards in the exact code that translates memory samples into pressure factors. `VRAMPressureMonitor.SampleAndRespond()` used ternaries around VRAM/RAM denominators, `SetExternalMipPressureResponse()` used a ternary around `_runtimeTotalVramBudgetBytes`, and `AssetLoadDispatcher.ResolveVramPressureFactor()` returned through an `if` guard. These were mathematically safe, but they did not match the explicit NaN-vaccination mandate to guard divisions with `math.max(denominator, epsilon)` and keep scalar pressure math branch-clean.
+
+Solution: Replace pressure-factor denominator guards with `math.max((float)denominator, 1f)` and preserve fail-open/fail-closed semantics through `math.select`. Replace finite fallback ternaries with `math.select`, replace red-zone ternaries in mip/LOD/eviction scalar paths with `math.select`, and replace `ResolvePressureResponse()` branch clamps with `math.min(math.saturate(startFraction), 0.9999f)`.
+
+Rejected Alternatives: Leaving the existing ternaries was rejected because it preserves unnecessary branch shape in pressure cadence. Changing fixed megabyte telemetry divisions was rejected because `BytesPerMegabyte` is a nonzero compile-time constant. Removing the `_graphicsBudgetBytes <= 0L` cache-refresh branch was rejected because it is a cold invalid-cache repair path, not a pressure denominator guard or binary hardware switch.
+
+Scalability potential: Low devices still shed mip/LOD/load pressure continuously. Middle devices keep interpolation without threshold thrash. High/ultra retain richer residency until real pressure arrives. R39 does not change thresholds; it hardens the scalar math that feeds them.
+
+Hardware Impact: Static estimate only. R39 removes several branch/ternary shapes from pressure-factor and red-zone scalar helpers and makes denominator safety explicit. Claimed measured savings: 0 microseconds because no Unity Profiler/GCMonitor proof is available behind the compile wall. Expected impact is lower NaN risk and cleaner Burst/math shape for future extraction.
+
+## R39 Verification
+
+- `rg -n "vramBudgetBytes > 0L \\?|maxSystemRamBytes > 0L \\?|_runtimeTotalVramBudgetBytes > 0L\\s*\\?|math\\.isfinite\\(pressureResponse\\) \\?|math\\.isfinite\\(quality\\) \\?|redZonePressure \\?|if \\(start >=|graphicsBudgetBytes <= 0L|graphicsMemoryMb > 0 \\?" Assets/_Project/Scripts/Optimization/AssetLoadDispatcher.cs Assets/_Project/Scripts/Optimization/VRAMPressureMonitor.cs Assets/_Project/Scripts/Optimization/VRAMEnforcer.cs`
+  - only `AssetLoadDispatcher.cs` invalid-cache refresh branch remains: `_graphicsBudgetBytes <= 0L`.
+- `rg -n "math\\.max\\(\\(float\\)vramBudgetBytes|math\\.max\\(\\(float\\)maxSystemRamBytes|math\\.max\\(\\(float\\)_runtimeTotalVramBudgetBytes|math\\.select\\(0f, pressureResponse|math\\.select\\(1f, quality|ResolvePressureResponse|math\\.min\\(math\\.saturate\\(startFraction\\), 0\\.9999f\\)" Assets/_Project/Scripts/Optimization/AssetLoadDispatcher.cs Assets/_Project/Scripts/Optimization/VRAMPressureMonitor.cs Assets/_Project/Scripts/Optimization/VRAMEnforcer.cs`
+  - expected denominator clamps, finite selectors, and pressure-response branchless clamps only.
+- `rg -n "/ \\(float\\)|/ BytesPerMegabyte|/ denominator|/ vramDenominator|/ ramDenominator" Assets/_Project/Scripts/Optimization/AssetLoadDispatcher.cs Assets/_Project/Scripts/Optimization/VRAMPressureMonitor.cs Assets/_Project/Scripts/Optimization/VRAMEnforcer.cs`
+  - remaining dynamic pressure divisions use guarded denominators; remaining unguarded divisions are fixed `BytesPerMegabyte` telemetry conversions.
+- `rg -n "GlobalRegistry\\.(AssetLifecycle|VRAMMonitor|VRAMPressure|PlayerInventory|RenderTexturePool|DataVault)|NativeParallelHashMap|Allocator\\.Persistent|List<|Dictionary<|HashSet<|Queue<|Addressables\\.Release\\(" Assets/_Project/Scripts/Optimization/AssetLoadDispatcher.cs Assets/_Project/Scripts/Optimization/VRAMPressureMonitor.cs Assets/_Project/Scripts/Optimization/VRAMEnforcer.cs`
+  - remaining hits are registration/cold-cache boundaries only.
+- `git diff --check -- Assets/_Project/Scripts/Optimization/AssetLoadDispatcher.cs Assets/_Project/Scripts/Optimization/VRAMPressureMonitor.cs Assets/_Project/Scripts/Optimization/VRAMEnforcer.cs`
+  - LF-to-CRLF warnings only.
+
+## Compile Boundary R39
+
+Problem: Full compile verification remains blocked by the known external missing `Assets/_Project/Scripts/Construction/LogisticsPipeEvents.cs` item in `Hecton8.Core.csproj`.
+
+Solution: No build launched in R39. Static verification only.
+
+Rejected Alternatives: Rerunning a known pre-SHINOBU abort was rejected by user command discipline and AGENTS build discipline.
+
+Scalability potential: No extra runtime tier change beyond scalar pressure-math hygiene.
 
 Hardware Impact: Avoids local CPU/IO burn while the compile wall remains external.

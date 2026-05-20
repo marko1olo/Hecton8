@@ -804,7 +804,6 @@ namespace Hecton8.AI
             _whaleFallDecay01 = 0f;
             _hitFlash01 = 0f;
             Vector3 corpseRuntimePosition = _rb != null ? _rb.position : Vector3.zero;
-            _corpseSinkAup = AbsoluteUniversePosition.FromRuntimePosition(corpseRuntimePosition);
             _corpseFloorY = corpseRuntimePosition.y;
             _corpseFloorLatched = false;
             _corpseSinkJobScheduled = false;
@@ -832,6 +831,8 @@ namespace Hecton8.AI
             ClearAttackTelegraphState();
             ClearCorpseLatchState();
             RestoreBaseRigidbodyPresentationState();
+            if (!TryResolveAupFromRuntimeOrigin(corpseRuntimePosition, out _corpseSinkAup))
+                _corpseSinkAup = GlobalSignals.CurrentRuntimeOriginAup();
             ApplyBiolumPresentationLightScale(1f);
             ApplyFaunaPresentationShaderState(1f, 0f, 0f, 0f);
             ResetCorpseBloatShaderTimer();
@@ -1891,7 +1892,8 @@ namespace Hecton8.AI
             _nextMimicPingTime = _cognitionTimeSeconds + _faunaDataTemplate.MimicPingCooldownSeconds;
 
             AcousticPingSignal signal = default;
-            signal.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(selfPosition);
+            if (!TryResolveSelfLogicAup(out signal.PositionAup))
+                return;
             signal.RadiusMeters = math.max(0f, _faunaDataTemplate.MimicPingRadiusMeters * maskedTransmission01);
             signal.Intensity01 = math.saturate(_faunaDataTemplate.MimicPingIntensity01 * maskedTransmission01);
             signal.SourceId = unchecked((uint)ComputeStableSpeciesId());
@@ -1968,9 +1970,11 @@ namespace Hecton8.AI
             if (speciesId == 0)
                 return;
 
+            if (!TryResolveAupFromRuntimeOrigin(sourcePosition, out AbsoluteUniversePosition sourceAup))
+                return;
+
             ChemicalInfluenceGrid.QueueFearPheromone(sourcePosition, math.saturate(normalizedDamage));
 
-            AbsoluteUniversePosition sourceAup = AbsoluteUniversePosition.FromRuntimePosition(sourcePosition);
             int hitCount = FaunaSpatialHashRegistry.CollectContactsNonAlloc(
                 in sourceAup,
                 _faunaDataTemplate.ParentalDefenseRadiusMeters,
@@ -2085,7 +2089,12 @@ namespace Hecton8.AI
             }
 
             Vector3 selfWorldPosition = selfPosition;
-            AbsoluteUniversePosition selfAup = AbsoluteUniversePosition.FromRuntimePosition(selfWorldPosition);
+            if (!TryResolveSelfLogicAup(out AbsoluteUniversePosition selfAup))
+            {
+                ClearCorpseLatchState();
+                return false;
+            }
+
             if (!ecosystemDirector.TryResolveCorpseScavengeTarget(in selfAup, out Vector3 corpsePosition, out uint corpseNodeId))
             {
                 ClearCorpseLatchState();
@@ -2148,7 +2157,9 @@ namespace Hecton8.AI
             Vector3 selfWorldPosition = selfPosition;
             if (IsThermophilicRuntime())
             {
-                AbsoluteUniversePosition selfAup = AbsoluteUniversePosition.FromRuntimePosition(selfWorldPosition);
+                if (!TryResolveSelfLogicAup(out AbsoluteUniversePosition selfAup))
+                    return false;
+
                 float thermalSearchRadius = math.max(ecosystemDirector.HerbivoreGrazeSearchRadiusMeters, 1000f);
                 if (ecosystemDirector.TryResolveNearestThermalVentAttractor(in selfAup, thermalSearchRadius, out Vector3 thermalTarget, out float heat01))
                 {
@@ -2241,10 +2252,9 @@ namespace Hecton8.AI
             if (registry == null)
                 return false;
 
-            if (!TryResolveSelfLogicPosition(out Vector3 selfPosition))
+            if (!TryResolveSelfLogicAup(out AbsoluteUniversePosition eggAup))
                 return false;
 
-            AbsoluteUniversePosition eggAup = AbsoluteUniversePosition.FromRuntimePosition(selfPosition);
             uint sequence = ++_eggClutchSequence;
             uint eggUid = _uniqueInstanceUid != 0u
                 ? unchecked(_uniqueInstanceUid ^ 0x0E66C7u ^ (sequence * 2246822519u))
@@ -2547,7 +2557,12 @@ namespace Hecton8.AI
             if (!_sensorSuite.TryGetPerceivedPlayerVelocity(out Vector3 playerVelocity))
                 return playerPosition;
 
-            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
+            if (!TryResolvePlayerPredictedAup(out AbsoluteUniversePosition playerAup) &&
+                !TryResolveAupFromRuntimeOrigin(playerPosition, out playerAup))
+            {
+                return playerPosition;
+            }
+
             AbsoluteUniversePosition predictedAup = PredictTargetAup(in playerAup, playerVelocity, PredatorGuidanceLeadSeconds);
             float3 runtimeTarget = predictedAup.ToRuntimeFloat3();
             return new Vector3(runtimeTarget.x, runtimeTarget.y, runtimeTarget.z);
@@ -3068,8 +3083,12 @@ namespace Hecton8.AI
                 return;
 
             Vector3 startPosition = _rb.position;
-            AbsoluteUniversePosition startAup = AbsoluteUniversePosition.FromRuntimePosition(startPosition);
-            AbsoluteUniversePosition targetAup = AbsoluteUniversePosition.FromRuntimePosition(targetPosition);
+            if (!TryResolveSelfLogicAup(out AbsoluteUniversePosition startAup) ||
+                !TryResolveAttackTargetLogicAup(target, targetPosition, out AbsoluteUniversePosition targetAup))
+            {
+                return;
+            }
+
             double3 startAbsolute = startAup.ToAbsoluteDouble3();
             double3 targetAbsolute = targetAup.ToAbsoluteDouble3();
             double3 toTargetAbsolute = targetAbsolute - startAbsolute;
@@ -3270,7 +3289,9 @@ namespace Hecton8.AI
             }
 
             resolvedPosition = startPosition + resolvedDisplacement;
-            _lungeCheatTargetAup = AbsoluteUniversePosition.FromRuntimePosition(resolvedPosition);
+            if (!TryResolveAupFromRuntimeOrigin(resolvedPosition, out _lungeCheatTargetAup))
+                return false;
+
             EmitPredatorLungeCcdImpact(
                 hitPoint,
                 _lungeContactTargetHash,
@@ -3479,7 +3500,9 @@ namespace Hecton8.AI
             if (lowTierStop)
                 flags |= HighSpeedImpactSignal.FlagLowTierStop;
 
-            AbsoluteUniversePosition pointAup = AbsoluteUniversePosition.FromRuntimePosition(point);
+            if (!TryResolveAupFromRuntimeOrigin(point, out AbsoluteUniversePosition pointAup))
+                return;
+
             byte sourceMaterialId = HighSpeedImpactSignal.MaterialOrganic;
             HighSpeedImpactSignal signal = default;
             signal.PointAup = pointAup;
@@ -3820,8 +3843,15 @@ namespace Hecton8.AI
         {
             if (!TryResolveSelfLogicPosition(out Vector3 selfPosition))
                 selfPosition = sourcePosition;
-            AbsoluteUniversePosition selfAup = AbsoluteUniversePosition.FromRuntimePosition(selfPosition);
-            AbsoluteUniversePosition sourceAup = AbsoluteUniversePosition.FromRuntimePosition(sourcePosition);
+            if (!TryResolveSelfLogicAup(out AbsoluteUniversePosition selfAup) &&
+                !TryResolveAupFromRuntimeOrigin(selfPosition, out selfAup))
+            {
+                return;
+            }
+
+            if (!TryResolveAupFromRuntimeOrigin(sourcePosition, out AbsoluteUniversePosition sourceAup))
+                return;
+
             double3 awayAbsolute = AbsoluteUniversePosition.DeltaMetersClamped(in selfAup, in sourceAup);
             float3 away = AupPrecisionMath.DowncastLocalDelta(awayAbsolute, float3.zero);
             float awaySq = math.lengthsq(away);
@@ -4640,11 +4670,10 @@ namespace Hecton8.AI
 
         private void PublishProceduralStrikeSignal(bool strikeActive)
         {
-            if (!TryResolveSelfLogicPosition(out Vector3 selfPosition))
+            FaunaStateChangedSignal signal = default;
+            if (!TryResolveSelfLogicAup(out signal.PositionAup))
                 return;
 
-            FaunaStateChangedSignal signal = default;
-            signal.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(selfPosition);
             signal.SpeciesHash = unchecked((uint)ComputeStableSpeciesId());
             signal.StateFlags = strikeActive ? FaunaStateChangedSignalFlags.StateActive : 0u;
             signal.Frame = unchecked((uint)Time.frameCount);
@@ -4702,7 +4731,9 @@ namespace Hecton8.AI
         private void PublishAlphaLeviathanRoarSignal(Vector3 sourcePosition)
         {
             AcousticPingSignal roarSignal = default;
-            roarSignal.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(sourcePosition);
+            if (!TryResolveAupFromRuntimeOrigin(sourcePosition, out roarSignal.PositionAup))
+                return;
+
             roarSignal.RadiusMeters = AcousticPingLeviathanScatterRadiusMeters * 1.6f;
             roarSignal.Intensity01 = 1f;
             roarSignal.SourceId = _uniqueInstanceUid != 0u
@@ -4753,7 +4784,9 @@ namespace Hecton8.AI
             if (!ShouldUseProceduralLeviathanPresentation())
                 return;
 
-            AbsoluteUniversePosition selfAup = AbsoluteUniversePosition.FromRuntimePosition(ToVector3(selfPosition));
+            if (!TryResolveSelfLogicAup(out AbsoluteUniversePosition selfAup))
+                return;
+
             double3 absolutePosition = selfAup.ToAbsoluteDouble3();
             int2 sector = new int2(
                 (int)math.floor(absolutePosition.x * LeviathanSectorScatterInvEdgeMeters),
@@ -4843,8 +4876,12 @@ namespace Hecton8.AI
             }
 
             ForceDirectorHuntTarget(sourcePosition, math.max(1f, durationSeconds));
-            AbsoluteUniversePosition sourceAup = AbsoluteUniversePosition.FromRuntimePosition(sourcePosition);
-            AbsoluteUniversePosition selfAup = AbsoluteUniversePosition.FromRuntimePosition(selfPosition);
+            if (!TryResolveAupFromRuntimeOrigin(sourcePosition, out AbsoluteUniversePosition sourceAup) ||
+                !TryResolveSelfLogicAup(out AbsoluteUniversePosition selfAup))
+            {
+                return;
+            }
+
             double3 directionAbsolute = AbsoluteUniversePosition.DeltaMetersClamped(in sourceAup, in selfAup);
             Vector3 direction = new Vector3(
                 (float)directionAbsolute.x,
@@ -5028,10 +5065,9 @@ namespace Hecton8.AI
             Vector3 candidate = playerPosition -
                                 safeForward * DirectorAmbushBehindDistanceMeters +
                                 right * (DirectorAmbushLateralDistanceMeters * side);
-            if (!TryResolveSelfLogicPosition(out Vector3 selfPosition))
+            if (!TryResolveSelfLogicAup(out AbsoluteUniversePosition selfAup))
                 return false;
 
-            AbsoluteUniversePosition selfAup = AbsoluteUniversePosition.FromRuntimePosition(selfPosition);
             float3 selfRuntime = selfAup.ToRuntimeFloat3();
             candidate.y = selfRuntime.y;
 
@@ -5041,7 +5077,9 @@ namespace Hecton8.AI
                 return false;
             }
 
-            AbsoluteUniversePosition candidateAup = AbsoluteUniversePosition.FromRuntimePosition(candidate);
+            if (!TryResolveAupFromRuntimeOrigin(candidate, out AbsoluteUniversePosition candidateAup))
+                return false;
+
             ApplyAupPresentationPosition(in candidateAup);
             ForceDirectorHuntTarget(playerPosition, DirectorHuntTargetDurationSeconds);
             _predatorSquadStateBits |= PredatorSquadStateFlankingBit;
@@ -5052,8 +5090,12 @@ namespace Hecton8.AI
 
         private static double ResolveRuntimeAupDistanceSq(Vector3 a, Vector3 b)
         {
-            AbsoluteUniversePosition aupA = AbsoluteUniversePosition.FromRuntimePosition(a);
-            AbsoluteUniversePosition aupB = AbsoluteUniversePosition.FromRuntimePosition(b);
+            if (!TryResolveAupFromRuntimeOrigin(a, out AbsoluteUniversePosition aupA) ||
+                !TryResolveAupFromRuntimeOrigin(b, out AbsoluteUniversePosition aupB))
+            {
+                return double.MaxValue;
+            }
+
             return AbsoluteUniversePosition.DistanceSq(in aupA, in aupB);
         }
 
@@ -5073,8 +5115,7 @@ namespace Hecton8.AI
             if (!TryResolveSelfLogicPosition(out Vector3 selfPosition))
                 return false;
 
-            selfAup = AbsoluteUniversePosition.FromRuntimePosition(selfPosition);
-            return true;
+            return TryResolveAupFromRuntimeOrigin(selfPosition, out selfAup);
         }
 
         private bool TryResolvePlayerPredictedAup(out AbsoluteUniversePosition playerAup)
@@ -5158,6 +5199,32 @@ namespace Hecton8.AI
             }
 
             return false;
+        }
+
+        private bool TryResolveAttackTargetLogicAup(Transform target, Vector3 fallbackPosition, out AbsoluteUniversePosition targetAup)
+        {
+            targetAup = default;
+            if (target == null)
+                return TryResolveAupFromRuntimeOrigin(fallbackPosition, out targetAup);
+
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
+            if (target == playerTransform || target.CompareTag("Player"))
+            {
+                return TryResolvePlayerPredictedAup(out targetAup) ||
+                       TryResolveAupFromRuntimeOrigin(fallbackPosition, out targetAup);
+            }
+
+            if (target.TryGetComponent(out FaunaBrain targetBrain) &&
+                targetBrain.TryResolveLogicAup(out targetAup))
+            {
+                return true;
+            }
+
+            if (target.TryGetComponent(out Rigidbody targetBody))
+                return TryResolveAupFromRuntimeOrigin(targetBody.position, out targetAup);
+
+            return TryResolveAupFromRuntimeOrigin(fallbackPosition, out targetAup);
         }
 
         private Vector3 ResolveSelfLogicForward()
@@ -5257,6 +5324,19 @@ namespace Hecton8.AI
         private static bool IsFiniteVector(Vector3 value)
         {
             return math.isfinite(value.x) && math.isfinite(value.y) && math.isfinite(value.z);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition aup)
+        {
+            aup = default;
+            if (!IsFiniteVector(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            aup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return math.all(math.isfinite(aup.ToAbsoluteDouble3()));
         }
 
         private static bool IsFiniteBounds(Bounds bounds)
@@ -5587,7 +5667,9 @@ namespace Hecton8.AI
                 return;
 
             ImpactSignal signal = default;
-            signal.PointAup = AbsoluteUniversePosition.FromRuntimePosition(impactPoint);
+            if (!TryResolveAupFromRuntimeOrigin(impactPoint, out signal.PointAup))
+                return;
+
             signal.Force = impulseMagnitude;
             signal.Intensity = math.saturate(math.log10(1f + (impulseMagnitude * PredatorImpactSignalImpulseScale)));
             signal.PrimaryBodyId = _uniqueInstanceUid != 0u
@@ -5873,7 +5955,8 @@ namespace Hecton8.AI
             Vector3 corpseRuntimePosition = _rb != null
                 ? _rb.position
                 : ToVector3(_corpseSinkAup.ToRuntimeFloat3());
-            _corpseSinkAup = AbsoluteUniversePosition.FromRuntimePosition(corpseRuntimePosition);
+            if (!TryResolveAupFromRuntimeOrigin(corpseRuntimePosition, out _corpseSinkAup))
+                _corpseSinkAup = GlobalSignals.CurrentRuntimeOriginAup();
             _corpseFloorY = corpseRuntimePosition.y;
             _corpseFloorLatched = false;
 
@@ -5938,7 +6021,8 @@ namespace Hecton8.AI
                 _rb.MoveRotation(_rb.rotation * Quaternion.Euler(_deathSpiralTorque * (RadiansToDegrees * fdt)));
 
             _rb.MovePosition(nextPosition);
-            _corpseSinkAup = AbsoluteUniversePosition.FromRuntimePosition(nextPosition);
+            if (TryResolveAupFromRuntimeOrigin(nextPosition, out AbsoluteUniversePosition nextAup))
+                _corpseSinkAup = nextAup;
         }
 
         private Vector3 ResolveDeathSpiralLateralVelocity(float age)
@@ -6199,10 +6283,9 @@ namespace Hecton8.AI
             if (!ShouldRegisterLargeCorpseResourceNode())
                 return;
 
-            if (!TryResolveSelfLogicPosition(out Vector3 runtimePosition))
+            if (!TryResolveSelfLogicAup(out AbsoluteUniversePosition corpseAup))
                 return;
 
-            AbsoluteUniversePosition corpseAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
             ecosystemDirector.RegisterCorpseResourceNode(
                 in corpseAup,
                 ComputeStableSpeciesId(),
@@ -6474,10 +6557,9 @@ namespace Hecton8.AI
             if (registry == null)
                 return;
 
-            if (!TryResolveSelfLogicPosition(out Vector3 selfPosition))
+            if (!TryResolveSelfLogicAup(out AbsoluteUniversePosition positionAup))
                 return;
 
-            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(selfPosition);
             EntityDataRecord cachedState = PersistentWorldRegistry.CreateFaunaHibernationState(
                 _uniqueInstanceUid,
                 ComputeStableSpeciesId(),

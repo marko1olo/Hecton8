@@ -2,7 +2,7 @@
 
 Date: 2026-05-20
 Agent: SHINOBU_200
-Status: STATIC SOURCE UPDATED - COMPILE BLOCKED BY CPU GUARD
+Status: STATIC SOURCE UPDATED - COMPILE BLOCKED BY EXTERNAL CORE DEPENDENCY WALL
 
 ## Baseline Decision 00 - Domain And Mandate Scope
 
@@ -281,3 +281,99 @@ Rejected Alternatives: Re-adding `ISignalLane[]` hot fallback was rejected becau
 Scalability potential: Low/Middle/High/Ultra tiers keep the generated direct path for the 135 Core lanes. Fallback work is proportional only to registered non-generated lanes and remains a typed operation table, not an object-oriented catch-all bus. Sibling domains can later generate their own direct dispatch without Core learning their concrete payload types.
 
 Hardware Impact: Expected impact is removal of per-frame virtual interface dispatch while avoiding signal starvation. Measured runtime microseconds remain unavailable because CPU guard still blocks compile/profiler proof.
+
+## Decision 23 - Telemetry Sampler Must Not Rehydrate Interface Properties
+
+Problem: `ISignalLane` was reduced to cold disposal only, but `GlobalSignals.ReportSignalLaneTelemetry()` still attempted to call `SignalBusRegistry.GetLaneAt(...)` and read per-lane properties through the interface. Static source showed `GetLaneAt` had no registry definition and the interface no longer exposed those properties, so this was both a compile-risk and a relapse into object-oriented lane sampling.
+
+Solution: Rewire `ReportSignalLaneTelemetry()` to use `SignalBusRegistry.TryCopyTelemetryAt(...)`, which invokes the already-registered closed-generic telemetry delegate for each lane. `SignalBus<T>.CopyTelemetryStatic(...)` now writes `_pushedLastFlush` and `_corruptedSignalTotal` into `SignalLaneTelemetry.Reserved2` as a stable 64-bit packed value: low 32 bits are pushed-last-flush, high 32 bits are corrupted-total. Existing public telemetry field offsets and total size stay unchanged.
+
+Rejected Alternatives: Re-expanding `ISignalLane` with diagnostic properties was rejected because it restores virtual property reads in the signal telemetry path. Increasing `SignalLaneTelemetry` beyond 32 bytes was rejected because it changes a public NativeArray/DataVault telemetry stride. Adding a second registry table just for pushed/corrupted counters was rejected because the current telemetry delegate already carries a reserved 64-bit lane.
+
+Scalability potential: Low/Middle/High/Ultra lanes use the same direct/closed-generic telemetry route. Weak devices avoid per-lane virtual property dispatch during telemetry reporting; high tiers retain exact pushed/corrupted counters for richer diagnostics without widening the telemetry row.
+
+Hardware Impact: Static effect is removal of O(laneCount) interface-property calls and a compile-risk in `ReportSignalLaneTelemetry()`. Runtime microsecond proof remains absent because the CPU build guard still reports `CPU=100`, `dotnet=0`, `csc=0`.
+
+## Decision 24 - Third-Party Dispose Is A Boundary, Not SHINOBU Surgery
+
+Problem: A repository scan for vendor/package `.Dispose()` calls found call sites in Easy Save 3, DOTweenPro, Crest, and Unity ShaderGraph under `Assets/Plugins` and `Packages`. The user asked for manual Dispose removal, but these are third-party/vendor-owned code paths.
+
+Solution: Do not mutate third-party packages from the SHINOBU_200 signal-contention lane. Record the scan result and keep SHINOBU-owned Vault cleanup named `ReleaseHandlesOnly()` where the code only drops DataVault handles. Core `SignalBus<T>.Dispose()` remains the native queue owner lifecycle surface inside Core.
+
+Rejected Alternatives: Editing Easy Save, DOTween, Crest, or ShaderGraph source was rejected because `AGENTS.md` forbids third-party asset mutation without an explicit cleanup task. Removing Core native queue shutdown was rejected because it would leak owner-owned queues and is not a third-party dispose call.
+
+Scalability potential: No quality-tier behavior changes. This preserves package integrity while keeping Core signal memory ownership explicit.
+
+Hardware Impact: No runtime microsecond claim. This is a boundary/provenance decision, not an optimization patch.
+
+## Decision 25 - No Managed Lane Adapter Objects In The Signal Registry
+
+Problem: After the frame and telemetry routes moved to generated direct calls and closed-generic delegates, `SignalBusRegistry` still retained an `ISignalLane` interface and one `SignalLaneAdapter` managed object per closed `SignalBus<T>`. The adapter only forwarded cold disposal, but its existence kept an object-oriented registry shape in the signal corridor.
+
+Solution: Delete `ISignalLane` and `SignalLaneAdapter`. `SignalBusRegistry` now stores `SignalLaneDisposeDelegate[]` for cold teardown, alongside the existing closed-generic flush, clear, and telemetry delegates. `SignalBus<T>` registers a cached static dispose delegate instead of a managed adapter instance.
+
+Rejected Alternatives: Keeping the adapter as "cold only" was rejected because the batch mandate is to eliminate the object-oriented lane spine, not merely keep it out of the tightest loops. Using runtime type handles as registry identity was rejected because it would add more managed metadata handling than the static delegate identity already requires.
+
+Scalability potential: Low/Middle/High/Ultra runtime signal dispatch stays on the same generated direct plus closed-generic fallback route. The patch removes one cold managed adapter object per lane and makes the route shape easier to audit for IL2CPP devirtualization.
+
+Hardware Impact: Hot-path measured savings remain `0 us` until profiler proof. Static effect is removal of the last interface/adapter object from the Core SignalBus registry; current source scans show `ISignalLane=0`, `SignalLaneAdapter=0`, `_lanes=0`, and `GetLaneAt=0`.
+
+## Decision 26 - Corrupted-Only Lane Telemetry Must Not Disappear
+
+Problem: After dropped and corrupted counters were separated, a lane with corrupted payloads but no snapshot rows and no dropped rows could bypass per-lane crash telemetry because the reporting gate only considered snapshot and dropped counts.
+
+Solution: Preserve the 32-byte `SignalLaneTelemetry` ABI by keeping corrupted-total in `Reserved2` high32 and marking corrupted lanes through `Flags` bit `16`. `ReportSignalLaneTelemetry()` treats `corruptedCount > 0` as a critical reporting condition, sends a saturated dropped-plus-corrupted count to `CrashTelemetryBuffer.ReportSignalLaneStats(...)`, and keeps exact dropped/corrupted totals separate for the 300-frame signal telemetry ring.
+
+Rejected Alternatives: Folding corrupted payloads back into `DroppedCount` was rejected because it hides the difference between capacity loss and payload corruption. Expanding `SignalLaneTelemetry` with a new public field was rejected because it changes a DataVault/NativeArray stride used by diagnostics. Reintroducing interface diagnostic properties was rejected because it restores the object dispatch path already removed from SignalBus.
+
+Scalability potential: Low/Middle/High/Ultra tiers keep identical telemetry semantics. Weak devices do not pay a new allocation or widened row; high tiers retain exact forensic counters for black-box inspection.
+
+Hardware Impact: Runtime microsecond proof remains absent. Static effect is forensic correctness without widening the telemetry row or reintroducing interface dispatch.
+
+## Decision 27 - Do Not Repair External Core Compile Wall From Signal Lane
+
+Problem: A focused `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1` was finally allowed by the build guard and failed with 75 errors. The failures are broad missing-domain symbols and assembly-boundary issues outside SHINOBU_200 ownership: `Hecton8.Equipment`, `Hecton8.Logistics.Grid`, `SoundEmissionSignal`, `SocketDefinitionDTO`, docking/world/audio bridge interfaces, `WfcOutpost*`, and related symbols.
+
+Solution: Treat the compile as a dependency wall, not a SHINOBU signal regression. Keep the SHINOBU static gates as the local proof: touched source braces are balanced, owned forbidden-pattern scans are clean, registry interface/adapter residue is zero, and no build error points at `GlobalSignals.cs` or `SignalWardenRuntime.cs`.
+
+Rejected Alternatives: Editing Gameplay, Power, Construction, Audio, World, or Equipment symbols from this lane was rejected because it violates domain ownership and would create cross-agent churn. Re-running the same Core build was rejected because it would reproduce the same dependency wall and waste CPU.
+
+Scalability potential: No Low/Middle/High/Ultra behavior change. This is compile-wall triage only.
+
+Hardware Impact: No runtime microsecond claim. The build probe consumed about 30 seconds wall-clock and produced dependency evidence; no profiler/runtime proof is available.
+
+## Decision 28 - NativeDisableParallelForRestriction Requires Source-Local Proof
+
+Problem: SHINOBU Burst paths used `NativeDisableParallelForRestriction` on worker byte slices, per-thread headers, overflow payloads, and overflow control rows. The code shape was correct, but the native-memory mandate requires a three-paragraph safety justification immediately at the suppressed field, not only in external logs.
+
+Solution: Add source-local `SAFETY_JUSTIFICATION_PARAGRAPH_1/2/3` blocks above every SHINOBU `NativeDisableParallelForRestriction` field. Each proof names why Unity's array-wide aliasing concern is a false positive, which alternatives were rejected, and the invariant: one `[NativeSetThreadIndex]` producer writes one cache-line-aligned row/slice, overflow slots are CAS-reserved and sequence-published, and commit reads only after the producer dependency.
+
+Rejected Alternatives: Removing `NativeDisableParallelForRestriction` was rejected because Unity's safety system cannot model the fixed worker-slice partition and would block the intended job shape. Moving the proof only into Rationale or the route card was rejected because the mandate requires the proof next to the unsafe source declaration.
+
+Scalability potential: Low/Middle/High/Ultra behavior is unchanged. This closes review risk without adding runtime work or widening any DTO.
+
+Hardware Impact: No runtime microsecond change. The value is safety-audit hardening for the ARM64 no-false-sharing route.
+
+## Decision 29 - Legacy Publish Alias Must Not Double-Enqueue
+
+Problem: `GlobalSignals.CreateQueue(ref legacyQueue, ...)` configures a closed `SignalBus<T>` lane and stores a copy of that same native queue handle in the legacy field. Several `Publish(...)` overloads then executed `_legacyQueue.Enqueue(payload)` and `SignalBus<T>.Push(payload)`, meaning one gameplay fact could reserve two nodes in the same MPSC queue and appear twice in the next frame snapshot. Other legacy-only publish overloads bypassed `SignalBus<T>.Push(...)`, so they skipped the shared finite-guard, load-shed, and telemetry path even though `TryDequeue*` already reads from `SignalBus<T>.TryReadFrame(...)`.
+
+Solution: Remove direct legacy alias enqueues from `GlobalSignals.Publish(...)` and route every legacy payload through `SignalBus<T>.Push(...)`. Repoint legacy `NativeQueue<T>.ParallelWriter` wrapper properties to `SignalBus<T>.ParallelWriter` so there is one canonical writer access path; public signatures remain unchanged for cross-agent compatibility. Delete the unused private legacy `PrewarmQueue<T>(ref NativeQueue<T>, int)` helper because it preserved a dead direct-enqueue pattern after the facade stopped using alias queues for publish. The old `NativeQueue<T>` fields remain only as compatibility handles for initialization/disposal method shapes and `TryDequeue*` signatures, not as a second publish route.
+
+Rejected Alternatives: Deleting all legacy queue fields and writer properties was rejected because external callers still depend on those public symbols during this batch. Keeping duplicate enqueues was rejected because it doubles MPSC contention and corrupts event cardinality. Replacing public `NativeQueue<T>.ParallelWriter` return types with a new SHINOBU writer was rejected because that is a public API break and would require coordinated producer rewrites outside this lane.
+
+Scalability potential: Low-tier devices remove one redundant queue reservation and payload copy per affected main-thread publish, which matters most under CPU pressure. Middle tiers get cleaner telemetry and less accidental snapshot inflation. High/Ultra retain the same typed SignalBus surface while downstream systems can spend preserved headroom on richer audio/VFX signal interpretation.
+
+Hardware Impact: Measured proof is absent. Static effect is removal of direct legacy `_...Signals.Enqueue(...)` calls and alias-field `.AsParallelWriter()` calls; the only remaining queue enqueue/writer operation is the canonical `SignalBus<T>` path. Expected benefit on i3/MX350/ARM64-class hardware is lower queue-node churn and fewer redundant MPSC atomic reservations on affected legacy publish lanes.
+
+## Decision 30 - Do Not Chase External Core Compile Wall After Alias Patch
+
+Problem: Loop 29 changed C# behavior, so a focused compile probe was warranted when the CPU guard opened. The probe failed with `76` errors, but the diagnostics again target broad dependency gaps outside SHINOBU_200 ownership: missing `Hecton8.Equipment`, `Hecton8.Logistics.Grid`, `SoundEmissionSignal`, `SocketDefinitionDTO`, docking/world/audio bridge interfaces, `WfcOutpost*`, `VRAMMonitor`, `H8BinaryWorldPager`, and related symbols. No diagnostic names `GlobalSignals.cs` or `SignalWardenRuntime.cs`.
+
+Solution: Record the compile failure as the same external Core dependency wall and stop after one focused attempt. Keep SHINOBU verification at static source gates plus the absence of owned-file diagnostics in the failed compile output.
+
+Rejected Alternatives: Fixing Gameplay, Power, Construction, Audio, World, or Save symbols from the signal-contention lane was rejected as cross-domain churn. Retrying the same build twice more was rejected because the error class is not transient and command discipline forbids compile spam.
+
+Scalability potential: No Low/Middle/High/Ultra behavior change. This decision protects production velocity while keeping the SignalBus patch bounded to Core signal routing.
+
+Hardware Impact: No runtime microsecond claim. The build probe cost `16.44 s` and produced dependency-wall evidence; profiler/runtime proof remains blocked until the broader Core compile wall is cleared.

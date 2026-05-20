@@ -86,7 +86,9 @@ namespace Hecton8.Gameplay
                 if (candidate == null || !IsRouteRole(candidate.Role))
                     continue;
 
-                float sqr = (candidate.transform.position - position).sqrMagnitude;
+                Vector3 markerVisualPosition = candidate.transform.position;
+                Vector3 visualDeltaToMarker = markerVisualPosition - position;
+                float sqr = visualDeltaToMarker.sqrMagnitude;
                 if (sqr < bestSqr)
                 {
                     bestSqr = sqr;

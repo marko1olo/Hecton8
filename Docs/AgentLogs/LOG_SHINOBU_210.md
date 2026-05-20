@@ -8,17 +8,17 @@ What was wrong:
 - The required physics optimization report path already contained SHINOBU_209 output, so a blind overwrite would destroy another agent's evidence.
 
 What was done:
-- Added runtime immutable damage-state contract in `Assets/_Project/Scripts/Habitat/Deformation/Runtime/HabitatDamageBakedTypes.cs`.
+- Added runtime immutable damage-state contract; it was later moved to `Assets/_Project/Scripts/Habitat/Deformation/Contracts/HabitatDamageBakedContracts.cs`.
 - Added `ModuleDamageStateMappingDTO` explicit 32-byte layout for Intact/Stressed/Ruptured/Collapsed mesh state mapping.
 - Added `HabitatDamageHullDTO` explicit 64-byte primitive hull DTO for collapsed-state collision lies.
-- Added `BakedHabitatDamageMeshSwapper`; runtime hot path selects an already-baked mesh reference and performs no vertex deformation.
-- Added Editor-only bake pipeline in `Assets/_Project/Scripts/Habitat/Deformation/Editor/HabitatDamageBakePipeline.cs`.
+- Added `BakedHabitatDamageMeshSwapper`; this runtime bridge was later purged in Loop 02 and replaced by contracts-only DTO/hash selection.
+- Added Editor-only bake pipeline in `Assets/_Project/Scripts/Habitat/Deformation/Editor/HabitatDamageBakePipeline.cs`; it was later moved into the dedicated `Editor/DamageBake` asmdef.
 - Added Burst jobs for mock hydrostatic pressure, buckling, procedural tearing/breach holes, normal repair, stress vertex colors, simplified hull generation, and 32-byte vertex packing.
 - Added UI Toolkit `HabitatCrushForgeWindow` designer facade with profile sliders, preview, bake command, and scanner command.
 - Added CSV crush-profile ingestion from `Docs/Data/habitat_crush_profiles.csv` through byte/span parsing; no `Split`/LINQ parser.
 - Added static runtime scanner `Runtime_Habitat_Destruction_Scanner` and generated `Docs/Reports/PHYSICS_OPTIMIZATION_REPORT.json` with `forbiddenRuntimePatternCount: 0`.
 - Generated `Docs/Reports/HABITAT_BAKE_REPORT.json` as a no-batch evidence stub because Unity Editor asset baking was not executed in this shell session.
-- Preserved prior SHINOBU_209 report payload inside `previousReport` instead of destroying concurrent-agent evidence.
+- Preserved prior SHINOBU_209 report evidence instead of destroying concurrent-agent evidence; later loops replaced inline `previousReport` embedding with bounded sidecar metadata.
 
 Cinematic Cheats used:
 - Visual fake first: pressure damage becomes precomputed static mesh states, not live physical deformation.
@@ -206,7 +206,7 @@ What was wrong:
 
 What was done:
 - Replaced `BinaryWriter` with explicit little-endian `FileStream.WriteByte` primitive writers.
-- Floats are serialized through `math.asuint`; integer words call `math.reversebytes` on non-little-endian hosts before emitting bytes.
+- Floats are serialized through `math.asuint`; integer words now use source-local bitwise byte-swap on non-little-endian hosts before emitting bytes.
 - Added dump version `1`, endian metadata, and 24-byte header reporting in `HABITAT_BAKE_REPORT.json`.
 - Refreshed the no-batch `Docs/AgentLogs/Dump_SHINOBU_210.bin` header to 24 bytes.
 
@@ -479,7 +479,7 @@ What was wrong:
 What was done:
 - Allocated writable `MeshData` before the completion boundary.
 - Scheduled `PackBakedVertexJob` with the existing deformation/normal/color/hull `JobHandle` as dependency.
-- Completed once before CPU-visible `CalculateBounds`, index copy, and `Mesh.ApplyAndDisposeWritableMeshData`.
+- Completed once before CPU-visible bounds/index publication; the old `Mesh.ApplyAndDisposeWritableMeshData` path was later superseded by direct `Mesh.SetVertexBufferData`/`Mesh.SetIndexBufferData` in Loop 17.
 
 Cinematic Cheats used:
 - None added. This preserves the offline static mesh bake path and keeps runtime deformation at zero.
@@ -492,7 +492,7 @@ Exact Microseconds saved:
   <struct_layout_verification>No DTO layout changed.</struct_layout_verification>
   <scalability_curve>Quality behavior unchanged; high/ultra dense bakes benefit more from avoiding the detached pack sync.</scalability_curve>
   <h_phi_vault_status>No gameplay Vault allocation added.</h_phi_vault_status>
-  <pointer_aliasing_dependency_graph>Deformation/normal/color/hull handle now feeds `PackBakedVertexJob`; one `Complete()` remains at the Editor MeshData boundary.</pointer_aliasing_dependency_graph>
+  <pointer_aliasing_dependency_graph>Deformation/normal/color/hull handle now feeds `PackBakedVertexJob`; one `Complete()` remains before the Unity native mesh upload boundary.</pointer_aliasing_dependency_graph>
   <compile_guard>Full build remains blocked by external-domain 72-error compile wall; no rebuild rerun for unchanged external blockers.</compile_guard>
   <dear_lie_confirmation>Runtime remains O(1) state/hash selection, not vertex deformation.</dear_lie_confirmation>
 </SELF_AUDIT>
@@ -685,4 +685,227 @@ Exact Microseconds saved:
   <pointer_aliasing_dependency_graph>Position byte stream may be reused as fallback for disabled optional attributes; no `[NoAlias]` claim is made on these read-only byte views.</pointer_aliasing_dependency_graph>
   <compile_guard>Full build remains blocked by external-domain 72-error compile wall; no rebuild rerun for unchanged external blockers.</compile_guard>
   <dear_lie_confirmation>Runtime remains O(1) pressure-to-state/hash selection. This change only protects the offline bake path.</dear_lie_confirmation>
+</SELF_AUDIT>
+
+## 2026-05-20 - ULTRA POLISH LOOP 23
+
+What was wrong:
+- The blackbox dump writer used `math.reversebytes`.
+- This checkout already contains local evidence that the installed `Unity.Mathematics` package may not expose that API, which would make the forensic writer a compile-risk.
+
+What was done:
+- Replaced `math.reversebytes(uint)` with a source-local `ReverseBytes32(uint)` bit-mask implementation.
+- Routed `ReverseBytes64(ulong)` through the same 32-bit fallback.
+- Kept float serialization through `math.asuint` and explicit byte emission.
+
+Cinematic Cheats used:
+- None added. This is binary dump portability, not runtime presentation.
+
+Exact Microseconds saved:
+- Runtime: 0 us. Editor dump writer avoids a package-version compile trap.
+
+<SELF_AUDIT agent="SHINOBU_210" status="PENDING_VERIFICATION_EXTERNAL_COMPILE_WALL">
+  <task_reconciliation>Tasks 15 and 20 strengthened. The telemetry report/dump path now uses deterministic endian conversion without relying on optional math package APIs.</task_reconciliation>
+  <struct_layout_verification>No DTO layout changed. Dump rows remain 64-byte telemetry entries behind a 24-byte header.</struct_layout_verification>
+  <scalability_curve>No quality-tier behavior changed.</scalability_curve>
+  <h_phi_vault_status>No gameplay Vault allocation added.</h_phi_vault_status>
+  <pointer_aliasing_dependency_graph>No job graph changed.</pointer_aliasing_dependency_graph>
+  <compile_guard>Full build remains blocked by external-domain 72-error compile wall; no rebuild rerun for unchanged external blockers.</compile_guard>
+  <dear_lie_confirmation>Runtime remains O(1) state/hash selection; dump portability is editor-only.</dear_lie_confirmation>
+</SELF_AUDIT>
+
+## 2026-05-20 - ULTRA POLISH LOOP 24
+
+What was wrong:
+- The scanner report writer embedded the full previous `PHYSICS_OPTIMIZATION_REPORT.json` into the next canonical report.
+- Repeated shared-path scans can recursively inflate that JSON and make the evidence file noisy.
+
+What was done:
+- Added `Docs/Reports/PHYSICS_OPTIMIZATION_REPORT_PREVIOUS_SHINOBU_210.json` as the sidecar preservation path.
+- Replaced `File.ReadAllText` with a streamed sidecar copy that computes byte count and FNV-1a hash from a stack buffer.
+- Canonical JSON now writes `previousReportPreserved`, `previousReportSidecar`, `previousReportBytes`, and `previousReportFnv1a`.
+
+Cinematic Cheats used:
+- None added. This is evidence-path containment.
+
+Exact Microseconds saved:
+- Runtime: 0 us. Editor scanner avoids managed full-report string allocation and recursive JSON growth.
+
+<SELF_AUDIT agent="SHINOBU_210" status="PENDING_VERIFICATION_EXTERNAL_COMPILE_WALL">
+  <task_reconciliation>Task 19 strengthened. Scanner proof remains on the required canonical path while previous evidence is preserved out-of-band.</task_reconciliation>
+  <struct_layout_verification>No DTO layout changed.</struct_layout_verification>
+  <scalability_curve>No quality-tier behavior changed.</scalability_curve>
+  <h_phi_vault_status>No gameplay Vault allocation added.</h_phi_vault_status>
+  <pointer_aliasing_dependency_graph>No job graph changed.</pointer_aliasing_dependency_graph>
+  <compile_guard>Full build remains blocked by external-domain 72-error compile wall; no rebuild rerun for unchanged external blockers.</compile_guard>
+  <dear_lie_confirmation>Runtime remains O(1) state/hash selection. This change only bounds scanner evidence output.</dear_lie_confirmation>
+</SELF_AUDIT>
+
+## 2026-05-20 - ULTRA POLISH LOOP 25
+
+What was wrong:
+- `Docs/ARCHITECTURE/OFFLINE_MODULE_DAMAGE_BAKER_SHINOBU_210.md` did not yet mention the source-local endian fallback or bounded scanner sidecar path.
+
+What was done:
+- Added the scanner sidecar rule for `PHYSICS_OPTIMIZATION_REPORT_PREVIOUS_SHINOBU_210.json`.
+- Added the blackbox dump note that integer byte swapping uses source-local bitwise code, while floats still use `math.asuint`.
+
+Cinematic Cheats used:
+- None added. This is route-card alignment.
+
+Exact Microseconds saved:
+- Runtime: 0 us. Prevents stale documentation from causing future compile-path regressions.
+
+<SELF_AUDIT agent="SHINOBU_210" status="PENDING_VERIFICATION_EXTERNAL_COMPILE_WALL">
+  <task_reconciliation>Task 20 strengthened. Architecture evidence now matches current source for scanner preservation and endian fallback.</task_reconciliation>
+  <struct_layout_verification>No DTO layout changed.</struct_layout_verification>
+  <scalability_curve>No quality-tier behavior changed.</scalability_curve>
+  <h_phi_vault_status>No gameplay Vault allocation added.</h_phi_vault_status>
+  <pointer_aliasing_dependency_graph>No job graph changed.</pointer_aliasing_dependency_graph>
+  <compile_guard>Full build remains blocked by external-domain 72-error compile wall; no rebuild rerun for unchanged external blockers.</compile_guard>
+  <dear_lie_confirmation>Runtime remains O(1) state/hash selection. This loop updates long-term disk memory only.</dear_lie_confirmation>
+</SELF_AUDIT>
+
+## 2026-05-20 - ULTRA POLISH LOOP 26
+
+What was wrong:
+- `HabitatDamageBakeQueue.Status` and `Active` were static properties.
+- They were Editor-only, but the no-property evidence gate should not have avoidable hits in owned code.
+
+What was done:
+- Converted both to raw public static fields.
+- UI refresh code continues to read the same names without accessor methods.
+
+Cinematic Cheats used:
+- None added. This is source hygiene.
+
+Exact Microseconds saved:
+- Runtime: 0 us. Editor overhead was not material; this removes architectural ambiguity.
+
+<SELF_AUDIT agent="SHINOBU_210" status="PENDING_VERIFICATION_EXTERNAL_COMPILE_WALL">
+  <task_reconciliation>Task 03 strengthened. Owned code now has no `get; private set;` property hit.</task_reconciliation>
+  <struct_layout_verification>No DTO layout changed.</struct_layout_verification>
+  <scalability_curve>No quality-tier behavior changed.</scalability_curve>
+  <h_phi_vault_status>No gameplay Vault allocation added.</h_phi_vault_status>
+  <pointer_aliasing_dependency_graph>No job graph changed.</pointer_aliasing_dependency_graph>
+  <compile_guard>Full build remains blocked by external-domain 72-error compile wall; no rebuild rerun for unchanged external blockers.</compile_guard>
+  <dear_lie_confirmation>Runtime remains O(1) state/hash selection.</dear_lie_confirmation>
+</SELF_AUDIT>
+
+## 2026-05-20 - ULTRA POLISH LOOP 27
+
+What was wrong:
+- `HabitatDamageBakeQueue.Progress` was still an expression-bodied property.
+- The previous property scan missed it because it did not use a `get; private set;` block.
+
+What was done:
+- Converted `Progress` to a raw public static field.
+- Updated the field explicitly at queue start, per item tick, completion, and stop.
+
+Cinematic Cheats used:
+- None added. This is source hygiene.
+
+Exact Microseconds saved:
+- Runtime: 0 us. Editor progress updates remain constant-time.
+
+<SELF_AUDIT agent="SHINOBU_210" status="PENDING_VERIFICATION_EXTERNAL_COMPILE_WALL">
+  <task_reconciliation>Task 03 strengthened again. Owned source no longer contains property syntax hits.</task_reconciliation>
+  <struct_layout_verification>No DTO layout changed.</struct_layout_verification>
+  <scalability_curve>No quality-tier behavior changed.</scalability_curve>
+  <h_phi_vault_status>No gameplay Vault allocation added.</h_phi_vault_status>
+  <pointer_aliasing_dependency_graph>No job graph changed.</pointer_aliasing_dependency_graph>
+  <compile_guard>Full build remains blocked by external-domain 72-error compile wall; no rebuild rerun for unchanged external blockers.</compile_guard>
+  <dear_lie_confirmation>Runtime remains O(1) state/hash selection.</dear_lie_confirmation>
+</SELF_AUDIT>
+
+## 2026-05-20 - ULTRA POLISH LOOP 28
+
+What was wrong:
+- The Editor bake queue wrote "Bake complete" after writing a report.
+- That text can be read as final verification even though Unity import/profiler proof is still pending.
+
+What was done:
+- Replaced the status text with "Bake pass wrote report".
+
+Cinematic Cheats used:
+- None added.
+
+Exact Microseconds saved:
+- Runtime: 0 us.
+
+<SELF_AUDIT agent="SHINOBU_210" status="PENDING_VERIFICATION_EXTERNAL_COMPILE_WALL">
+  <task_reconciliation>Task 20 strengthened. UI wording now matches evidence state.</task_reconciliation>
+  <struct_layout_verification>No DTO layout changed.</struct_layout_verification>
+  <scalability_curve>No quality-tier behavior changed.</scalability_curve>
+  <h_phi_vault_status>No gameplay Vault allocation added.</h_phi_vault_status>
+  <pointer_aliasing_dependency_graph>No job graph changed.</pointer_aliasing_dependency_graph>
+  <compile_guard>Full build remains blocked by external-domain 72-error compile wall; no rebuild rerun for unchanged external blockers.</compile_guard>
+  <dear_lie_confirmation>Runtime remains O(1) state/hash selection.</dear_lie_confirmation>
+</SELF_AUDIT>
+
+## 2026-05-20 - ULTRA POLISH LOOP 29
+
+What was wrong:
+- Mesh and manifest output used `AssetDatabase.GenerateUniqueAssetPath`.
+- Repeated bakes would create numbered orphan assets and unstable path hashes.
+
+What was done:
+- Switched mesh outputs to deterministic prefab/source/state paths.
+- Switched manifest output to deterministic prefab path.
+- Existing assets are refreshed in place via `EditorUtility.CopySerialized`; new assets are created once.
+
+Cinematic Cheats used:
+- None added. This keeps the offline fake's asset outputs deterministic.
+
+Exact Microseconds saved:
+- Runtime: 0 us. Editor asset database churn is reduced on repeated bakes.
+
+<SELF_AUDIT agent="SHINOBU_210" status="PENDING_VERIFICATION_EXTERNAL_COMPILE_WALL">
+  <task_reconciliation>Task 10 strengthened. Asset serialization now updates stable `.mesh`/manifest asset paths.</task_reconciliation>
+  <struct_layout_verification>No DTO layout changed.</struct_layout_verification>
+  <scalability_curve>No quality-tier behavior changed. Tier-specific rebakes now refresh predictable assets.</scalability_curve>
+  <h_phi_vault_status>No gameplay Vault allocation added.</h_phi_vault_status>
+  <pointer_aliasing_dependency_graph>No job graph changed.</pointer_aliasing_dependency_graph>
+  <compile_guard>Full build remains blocked by external-domain 72-error compile wall; no rebuild rerun for unchanged external blockers.</compile_guard>
+  <dear_lie_confirmation>Runtime remains O(1) state/hash selection; asset path determinism only affects the Editor bake output.</dear_lie_confirmation>
+</SELF_AUDIT>
+
+## 2026-05-20 - ULTRA POLISH LOOP 30
+
+What was wrong:
+- In-place rebake refresh relied on `CopySerialized` implicitly dirtying destination assets.
+
+What was done:
+- Added `EditorUtility.SetDirty` for refreshed manifest and mesh assets.
+- Kept save flushing at the queue boundary through the existing `AssetDatabase.SaveAssets` call.
+
+Cinematic Cheats used:
+- None added.
+
+Exact Microseconds saved:
+- Runtime: 0 us. Editor avoids per-mesh save stalls while preserving explicit persistence.
+
+<SELF_AUDIT agent="SHINOBU_210" status="PENDING_VERIFICATION_EXTERNAL_COMPILE_WALL">
+  <task_reconciliation>Task 10 strengthened. Deterministic asset refresh now explicitly persists destination assets.</task_reconciliation>
+  <struct_layout_verification>No DTO layout changed.</struct_layout_verification>
+  <scalability_curve>No quality-tier behavior changed.</scalability_curve>
+  <h_phi_vault_status>No gameplay Vault allocation added.</h_phi_vault_status>
+  <pointer_aliasing_dependency_graph>No job graph changed.</pointer_aliasing_dependency_graph>
+  <compile_guard>Full build remains blocked by external-domain 72-error compile wall; no rebuild rerun for unchanged external blockers.</compile_guard>
+  <dear_lie_confirmation>Runtime remains O(1) state/hash selection.</dear_lie_confirmation>
+</SELF_AUDIT>
+## SHINOBU_210 Ultra Polish Loop 31 - Post-Compaction Static Verification
+
+What was wrong: Context compaction made in-chat state non-authoritative, and the shared `Docs/Reports/PHYSICS_OPTIMIZATION_REPORT.json` now contains SHINOBU_227 output rather than the prior SHINOBU_210 canonical scan.
+
+What was done: Re-read `Docs/Tasks/Status_SHINOBU_210.md`, `Docs/AgentLogs/Rationale_SHINOBU_210.md`, and the exact `SHINOBU_210` XML block from `Docs/Tasks/CURRENT_BATCH.md`. Rechecked owned source with static gates: no forbidden parser/scanner/layout/property patterns, no direct sibling domain refs, 12 exact Burst Fast/Standard attributes for 12 jobs, reachable Stressed/Ruptured/Collapsed resolver thresholds, direct `SetVertexBufferData`/`SetIndexBufferData`, deterministic `CopySerialized`, and explicit `SetDirty`.
+
+Cinematic Cheats used: Offline mesh states and primitive hull lies remain the runtime replacement for real-time wall buckling, runtime mesh cutting, and Rigidbody fragment storms.
+
+Exact Microseconds saved: Runtime deformation remains 0 us in SHINOBU_210 lane. Static proof only; Unity profiler proof is still blocked by the external compile wall.
+
+<SELF_AUDIT agent_id="SHINOBU_210" loop="31" status="PENDING_EXTERNAL_COMPILE_WALL">
+  <SOURCE_GATES forbidden_patterns="PASS" sibling_refs="PASS" burst_attributes="12/12" state_resolver="PASS" deterministic_asset_refresh="PASS" />
+  <PHYSICS_REPORT_NOTE canonical_owner="SHINOBU_227_current" shinobu_210_preserved_as_previous="true" overwrite_performed="false" />
+  <BUILD_GATE dotnet_rebuild_launched="false" reason="No new build attempt after external compile wall; prior failure contained no SHINOBU_210 file path." />
 </SELF_AUDIT>

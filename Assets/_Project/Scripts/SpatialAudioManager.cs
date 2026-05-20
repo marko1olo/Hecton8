@@ -2084,7 +2084,9 @@ namespace Hecton8.Audio
         public void PlayAtPoint(
             AudioClip clip, Vector3 position, float volume, float pitch, AudioMixerGroup mixerGroup)
         {
-            ResolveSourceAupFrame(position, out AbsoluteUniversePosition sourceAup, out Vector3 sourceAbsolutePosition);
+            if (!TryResolveSourceAupFrame(position, out AbsoluteUniversePosition sourceAup, out Vector3 sourceAbsolutePosition))
+                return;
+
             PlayAtPointResolved(
                 clip,
                 position,
@@ -4278,7 +4280,9 @@ namespace Hecton8.Audio
                 out AbsoluteUniversePosition listenerAup);
             ResolveListenerBasis(listener, out float3 listenerRight, out _, out float3 listenerForward);
             float3 listenerAcousticForward = listenerForward;
-            ResolveSourceAupFrame(position, out AbsoluteUniversePosition sourceAup, out Vector3 sourceAbsolutePosition);
+            if (!TryResolveSourceAupFrame(position, out AbsoluteUniversePosition sourceAup, out Vector3 sourceAbsolutePosition))
+                return;
+
             Vector3 audiblePosition = position;
             Vector3 audibleAbsolutePosition = sourceAbsolutePosition;
             AbsoluteUniversePosition audibleAup = sourceAup;
@@ -4915,7 +4919,9 @@ namespace Hecton8.Audio
                 out AbsoluteUniversePosition listenerAup);
             ResolveListenerBasis(listener, out float3 listenerRight, out _, out float3 listenerForward);
             float3 listenerAcousticForward = listenerForward;
-            ResolveSourceAupFrame(position, out AbsoluteUniversePosition sourceAup, out Vector3 sourceAbsolutePosition);
+            if (!TryResolveSourceAupFrame(position, out AbsoluteUniversePosition sourceAup, out Vector3 sourceAbsolutePosition))
+                return false;
+
             if (hasListener && IsBeyondMaxHearingRange(in sourceAup, in listenerAup))
                 return false;
 
@@ -5100,7 +5106,9 @@ namespace Hecton8.Audio
 
         private bool TryQueueImpactRadarEmitter(Vector3 position, float amplitude, float lifetime01)
         {
-            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(position);
+            if (!TryResolveAupFromRuntimeOrigin(position, out AbsoluteUniversePosition positionAup))
+                return false;
+
             return TryQueueImpactRadarEmitter(position, in positionAup, amplitude, lifetime01);
         }
 
@@ -5152,7 +5160,9 @@ namespace Hecton8.Audio
         private void HandleFatalPressureImplosion(in FatalPressureImplosionEvent implosionEvent)
         {
             Vector3 implosionRuntimePosition = implosionEvent.RuntimePosition;
-            AbsoluteUniversePosition implosionAup = AbsoluteUniversePosition.FromRuntimePosition(implosionRuntimePosition);
+            if (!TryResolveAupFromRuntimeOrigin(implosionRuntimePosition, out AbsoluteUniversePosition implosionAup))
+                return;
+
             bool hasListener = TryResolveListenerFrame(
                 out _,
                 out _,
@@ -5197,7 +5207,9 @@ namespace Hecton8.Audio
         /// </summary>
         public void QueueInventoryRunawayExplosion(Vector3 runtimePosition, float volume01)
         {
-            AbsoluteUniversePosition eventAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition eventAup))
+                return;
+
             bool hasListener = TryResolveListenerFrame(
                 out _,
                 out _,
@@ -5597,22 +5609,29 @@ namespace Hecton8.Audio
                 return true;
             }
 
-            double3 listenerAbsolutePositionDouble = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(listenerRuntimePosition);
-            listenerAbsolutePosition = new Vector3(
-                (float)listenerAbsolutePositionDouble.x,
-                (float)listenerAbsolutePositionDouble.y,
-                (float)listenerAbsolutePositionDouble.z);
-            listenerAup = AbsoluteUniversePosition.FromAbsolutePosition(listenerAbsolutePositionDouble);
+            if (!TryResolveAupFromRuntimeOrigin(listenerRuntimePosition, out listenerAup))
+            {
+                listenerAbsolutePosition = default;
+                return false;
+            }
+
+            listenerAbsolutePosition = ToAbsoluteVector3(in listenerAup);
             return true;
         }
 
-        private static void ResolveSourceAupFrame(
+        private static bool TryResolveSourceAupFrame(
             Vector3 runtimePosition,
             out AbsoluteUniversePosition sourceAup,
             out Vector3 absolutePosition)
         {
-            sourceAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out sourceAup))
+            {
+                absolutePosition = default;
+                return false;
+            }
+
             absolutePosition = ToAbsoluteVector3(in sourceAup);
+            return true;
         }
 
         private static Vector3 ToAbsoluteVector3(in AbsoluteUniversePosition aup)
@@ -5734,6 +5753,27 @@ namespace Hecton8.Audio
             return !float.IsNaN(value.x) && !float.IsInfinity(value.x) &&
                    !float.IsNaN(value.y) && !float.IsInfinity(value.y) &&
                    !float.IsNaN(value.z) && !float.IsInfinity(value.z);
+        }
+
+        private static bool IsFiniteAup(in AbsoluteUniversePosition value)
+        {
+            return math.all(math.isfinite(new double3(value.LocalX, value.LocalY, value.LocalZ)));
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!IsFinite(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!IsFiniteAup(in originAup))
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return IsFiniteAup(in positionAup);
         }
 
         private static void NormalizeAupLocalAxis(ref long grid, ref float local)
@@ -6149,7 +6189,10 @@ namespace Hecton8.Audio
                 if (!IsFinite(worldCenter) || radius <= 0.01f || !math.isfinite(radius))
                     continue;
 
-                _baseInteriorMuffleAups[writeIndex] = AbsoluteUniversePosition.FromRuntimePosition(worldCenter);
+                if (!TryResolveAupFromRuntimeOrigin(worldCenter, out AbsoluteUniversePosition worldCenterAup))
+                    continue;
+
+                _baseInteriorMuffleAups[writeIndex] = worldCenterAup;
                 _baseInteriorMuffleRadiusSq[writeIndex] = (double)radius * radius;
                 writeIndex++;
             }
@@ -6511,7 +6554,9 @@ namespace Hecton8.Audio
             nodeCount = math.min(waypointCount, AcousticPortalMaxNodes);
             for (int i = 0; i < nodeCount; i++)
             {
-                AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(_acousticPortalWaypointScratch[i]);
+                if (!TryResolveAupFromRuntimeOrigin(_acousticPortalWaypointScratch[i], out AbsoluteUniversePosition aup))
+                    return false;
+
                 _acousticPortalNodes[i] = new AcousticPortalNode
                 {
                     Position = ToAcousticAup(in aup),
@@ -6626,7 +6671,9 @@ namespace Hecton8.Audio
                 if (!graph.TryGetAcousticNodePosition(globalIndex, out float3 nodePosition))
                     return false;
 
-                AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(new Vector3(nodePosition.x, nodePosition.y, nodePosition.z));
+                if (!TryResolveAupFromRuntimeOrigin(new Vector3(nodePosition.x, nodePosition.y, nodePosition.z), out AbsoluteUniversePosition aup))
+                    return false;
+
                 float roomVolume = 0f;
                 NativeArray<float> roomVolumes = graph.RoomVolumes;
                 if (roomVolumes.IsCreated && (uint)globalIndex < (uint)roomVolumes.Length)
@@ -8361,8 +8408,9 @@ namespace Hecton8.Audio
             if (TryGetCachedActiveWorldAup(sourceIndex, out AbsoluteUniversePosition sourceAup))
                 return sourceAup;
 
-            sourceAup = AbsoluteUniversePosition.FromRuntimePosition(sourcePosition);
-            CacheActiveWorldAup(sourceIndex, in sourceAup, currentFrame);
+            if (TryResolveAupFromRuntimeOrigin(sourcePosition, out sourceAup))
+                CacheActiveWorldAup(sourceIndex, in sourceAup, currentFrame);
+
             return sourceAup;
         }
 
@@ -9469,14 +9517,14 @@ namespace Hecton8.Audio
     public readonly struct AudioCaptionRequest
     {
         public AudioCaptionRequest(string captionText, Vector3 worldPosition, float durationSeconds, float intensity)
-            : this(
-                captionText,
-                worldPosition,
-                AbsoluteUniversePosition.FromRuntimePosition(worldPosition),
-                true,
-                durationSeconds,
-                intensity)
         {
+            CaptionText = captionText;
+            WorldPosition = worldPosition;
+            bool hasWorldAup = TryResolveAupFromRuntimeOrigin(worldPosition, out AbsoluteUniversePosition worldAup);
+            WorldAup = worldAup;
+            _hasWorldAup = hasWorldAup ? (byte)1 : (byte)0;
+            DurationSeconds = durationSeconds;
+            Intensity = intensity;
         }
 
         public AudioCaptionRequest(string captionText, Vector3 worldPosition, in AbsoluteUniversePosition worldAup, float durationSeconds, float intensity)
@@ -9523,9 +9571,35 @@ namespace Hecton8.Audio
         /// <summary>Returns the stable absolute caption origin, falling back only for legacy/default payloads.</summary>
         public AbsoluteUniversePosition ResolveWorldAup()
         {
-            return HasWorldAup
-                ? WorldAup
-                : AbsoluteUniversePosition.FromRuntimePosition(WorldPosition);
+            if (HasWorldAup)
+                return WorldAup;
+
+            return TryResolveAupFromRuntimeOrigin(WorldPosition, out AbsoluteUniversePosition worldAup)
+                ? worldAup
+                : default;
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!IsFinite(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!math.all(math.isfinite(new double3(originAup.LocalX, originAup.LocalY, originAup.LocalZ))))
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return math.all(math.isfinite(new double3(positionAup.LocalX, positionAup.LocalY, positionAup.LocalZ)));
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return !float.IsNaN(value.x) && !float.IsInfinity(value.x) &&
+                   !float.IsNaN(value.y) && !float.IsInfinity(value.y) &&
+                   !float.IsNaN(value.z) && !float.IsInfinity(value.z);
         }
     }
 

@@ -1,4 +1,4 @@
-﻿# SHINOBU_125 Scavenging Loot Oracle Route Card
+# SHINOBU_125 Scavenging Loot Oracle Route Card
 
 Date: 2026-05-19
 Owner: SHINOBU_125
@@ -10,7 +10,7 @@ Contract source-kind anchor: `Assets/_Project/Scripts/Core/Contracts/Signals/Ite
 Visual signal contract anchor: `Assets/_Project/Scripts/Core/Contracts/Signals/VisualScavengeSignal.cs`.
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-17 R4 Interior Actuality Boundary
+## 2026-05-20 R47 Root/Architecture Actuality Boundary
 
 This document is active only where it agrees with:
 
@@ -22,7 +22,7 @@ This document is active only where it agrees with:
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
 
-R46 root/architecture interior-authority/route-field/proof-language correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
+R47 root/architecture authority-spine/runtime-wording/counter-drift correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R46 remains the prior interior-authority/route-field/proof-language correction. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 Route ID: SCAVENGING_LOOT_ORACLE_DIRECT_INVENTORY
@@ -68,7 +68,7 @@ AUP hash law: local AUP components are sanitized and quantized to millimeters be
 Overflow/failure: prefab payload quantity is multiplied in `ulong`, then clamped through `ScavengingLootOracleRuntime.ClampItemSignalQuantity()` before capacity preflight so `ItemAcquiredSignal`, `VisualScavengeSignal`, and telemetry share the same item quantity. Queue refusal returns false and leaves node intact; inventory-full request emits HUD notification and leaves node intact.
 
 Telemetry fields: root AUP, resource hash, selected item hash, ore hash, frame, total weight, roll, flags, estimated us, table hash, quality.
-Black-box fields: same as telemetry; dump path `Docs/AgentLogs/Dump_LOOT_ORACLE.bin`.
+Black-box fields: same as telemetry; planned/generated-on-fault dump path `Docs/AgentLogs/Dump_LOOT_ORACLE.bin`. No existing artifact is implied unless a timestamped runtime trigger and output are linked.
 Profiler marker: pending.
 GC proof required: Unity Profiler/GC allocation check pending.
 
@@ -91,5 +91,3 @@ H-Phi impact expected: lowers direct ResourceNode -> ObjectPool/PhysX/inventory 
 
 Proof required before GREEN: Unity import/compile, Play Mode depletion, Profiler GC 0 B on depletion, SignalBus snapshot verification, 10k audit counts recorded.
 Current compile note: current CLI project surface includes `ScavengingLootOracle.cs`, `ItemAcquiredSignalSourceKinds.cs`, and `VisualScavengeSignal.cs`; SHINOBU AUP namespace error was fixed, the visual signal no longer imports `Hecton8.World`, oracle frame stamps no longer use Unity `Time.frameCount`, ResourceNode incremental yield sampling no longer reads Unity wall-clock time, gameplay-facing value-type initializer blocks were replaced by `default` locals plus direct field writes, and quality ingress now fails non-finite values closed to 0.0. R37-era generated-project shielding covers the stale generated `Hecton8.Core.csproj` include for absent `Assets/_Project/Scripts/Construction/LogisticsPipeEvents.cs` through `Directory.Build.targets`; `Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs` is present on disk, while `Assets/_Project/_Archive/HectonWaterPhysics.cs` and `Assets/_Project/_Archive/HectonWaterPhysicsEditor.cs` remain absent in `Assembly-CSharp.csproj`. Follow-up Core compile now fails later on external missing contract/source bridge types outside this route card. The visual-signal split, source-kind contract surface, masked CDF path, incremental-yield no-depletion route, impact-debris compute fake, repair-tool side-effect fence, AUP millimeter hash quantization, saturated quantity bridge, item-signal quantity clamp, visual-signal AUP contract detachment, simulation-frame counter purge, yield-sample wall-clock purge, gameplay value-initializer purge, and GlobalQualityWeight finite fail-closed fence are `STATIC_SOURCE` scan orientation only; no current compile, Unity, profiler, or runtime proof is claimed without an artifact tuple.
-
-

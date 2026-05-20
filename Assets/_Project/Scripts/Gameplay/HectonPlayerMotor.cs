@@ -1064,6 +1064,9 @@ namespace Hecton8.Gameplay
             if (!math.all(math.isfinite(origin3)))
                 return false;
 
+            if (!TryResolveAupFromRuntimeOrigin(origin, out AbsoluteUniversePosition originAup))
+                return false;
+
             EnsureKinematicRepairTargetState();
             if (!_nativeState.KinematicRepairTargetCommands.IsCreated ||
                 !_nativeState.KinematicRepairTargetResults.IsCreated ||
@@ -1079,7 +1082,7 @@ namespace Hecton8.Gameplay
             float safeDistance = math.max(KinematicRepairTargetMinDistance, distance);
             float safeSurfaceOffset = math.max(0f, surfaceOffset);
             _kinematicRepairProbeSurfaceOffset = safeSurfaceOffset;
-            _kinematicRepairProbeOriginAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
+            _kinematicRepairProbeOriginAup = originAup;
             _nativeState.KinematicRepairTargetCommands[0] = new RaycastCommand
             {
                 from = origin,
@@ -1148,6 +1151,39 @@ namespace Hecton8.Gameplay
         {
             float3 value3 = new float3(value.x, value.y, value.z);
             return math.all(math.isfinite(value3)) && math.lengthsq(value3) > MinVectorMagnitudeSq;
+        }
+
+        private static bool IsFiniteAup(in AbsoluteUniversePosition value)
+        {
+            return math.isfinite(value.LocalX) &&
+                   math.isfinite(value.LocalY) &&
+                   math.isfinite(value.LocalZ);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            return TryResolveAupFromRuntimeOrigin(runtimePosition, out positionAup, out _);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(
+            Vector3 runtimePosition,
+            out AbsoluteUniversePosition positionAup,
+            out AbsoluteUniversePosition originAup)
+        {
+            positionAup = default;
+            originAup = default;
+            float3 runtime3 = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(runtime3)))
+                return false;
+
+            originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!IsFiniteAup(in originAup))
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return IsFiniteAup(in positionAup);
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -1290,7 +1326,9 @@ namespace Hecton8.Gameplay
             if (fluidDecals == null)
                 return;
 
-            AbsoluteUniversePosition emitAup = AbsoluteUniversePosition.FromRuntimePosition(emitPosition);
+            if (!TryResolveAupFromRuntimeOrigin(emitPosition, out AbsoluteUniversePosition emitAup))
+                return;
+
             float3 runtimeFromAup = emitAup.ToRuntimeFloat3();
             Vector3 aupRuntimePosition = new Vector3(runtimeFromAup.x, runtimeFromAup.y, runtimeFromAup.z);
             float approximateSpeed = ApproximateSpeedMagnitude(new float3(velocity.x, velocity.y, velocity.z));
@@ -1325,7 +1363,9 @@ namespace Hecton8.Gameplay
 
             Vector3 point = SafeVelocity(hit.point, _body != null ? _body.position : Vector3.zero);
             ImpactSignal signal = default;
-            signal.PointAup = AbsoluteUniversePosition.FromRuntimePosition(point);
+            if (!TryResolveAupFromRuntimeOrigin(point, out signal.PointAup))
+                return;
+
             signal.Velocity = blockedSpeed;
             signal.Intensity = math.saturate(blockedSpeed * 0.08f);
             signal.PrimaryBodyId = _body != null ? unchecked((uint)EntityId.ToULong(_body.GetEntityId())) : 0u;
@@ -1346,7 +1386,9 @@ namespace Hecton8.Gameplay
                 return;
 
             Vector3 point = SafeVelocity(hit.point, _body != null ? _body.position : Vector3.zero);
-            AbsoluteUniversePosition pointAup = AbsoluteUniversePosition.FromRuntimePosition(point);
+            if (!TryResolveAupFromRuntimeOrigin(point, out AbsoluteUniversePosition pointAup))
+                return;
+
             ulong bodyId = _body != null ? EntityId.ToULong(_body.GetEntityId()) : 0UL;
             uint sourceHash = _kinematicCcdSourceHash;
             uint targetHash = unchecked((uint)GetHitColliderInstanceId(in hit));
@@ -1625,8 +1667,10 @@ namespace Hecton8.Gameplay
             if (!math.all(math.isfinite(runtime3)))
                 return false;
 
-            AbsoluteUniversePosition sampleAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
-            double3 runtimeFromAup = sampleAup.ToAbsoluteDouble3() - HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition sampleAup, out AbsoluteUniversePosition originAup))
+                return false;
+
+            double3 runtimeFromAup = sampleAup.ToAbsoluteDouble3() - originAup.ToAbsoluteDouble3();
             if (!math.all(math.isfinite(runtimeFromAup)))
                 return false;
 
@@ -1712,7 +1756,9 @@ namespace Hecton8.Gameplay
             }
 
             uint frame = unchecked((uint)Time.frameCount);
-            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(position);
+            if (!TryResolveAupFromRuntimeOrigin(position, out AbsoluteUniversePosition positionAup))
+                return;
+
             byte flags = PlayerStateSignal.FlagSqueezing |
                 PlayerStateSignal.FlagSdfGradientValid |
                 PlayerStateSignal.FlagAupShiftSafe;
@@ -2429,8 +2475,12 @@ namespace Hecton8.Gameplay
             if (!math.all(math.isfinite(snapRuntimePosition3)))
                 return;
 
-            AbsoluteUniversePosition snapAup = AbsoluteUniversePosition.FromRuntimePosition(snapRuntimePosition);
-            AbsoluteUniversePosition hitAup = AbsoluteUniversePosition.FromRuntimePosition(hitPoint);
+            if (!TryResolveAupFromRuntimeOrigin(snapRuntimePosition, out AbsoluteUniversePosition snapAup) ||
+                !TryResolveAupFromRuntimeOrigin(hitPoint, out AbsoluteUniversePosition hitAup))
+            {
+                return;
+            }
+
             Vector3 toolUp = math.abs(math.dot((float3)safeNormal, new float3(0f, 1f, 0f))) > 0.95f ? Vector3.forward : Vector3.up;
             _kinematicRepairTargetProbe = new KinematicRepairTargetProbe(
                 _kinematicRepairProbeOriginAup,

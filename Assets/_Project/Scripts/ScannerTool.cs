@@ -10,6 +10,7 @@ using Hecton8.Bootstrap;
 using Hecton8.Building;
 using Hecton8.Construction;
 using Hecton8.Caves;
+using Hecton8.Equipment.Auxiliary;
 using Hecton8.Interaction;
 using Hecton8.Items;
 using Hecton8.Scavenging;
@@ -22,7 +23,6 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.Rendering;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -33,7 +33,6 @@ namespace Hecton8.Gameplay
     public sealed class ScannerTool : PlayerTool, IBatteryTool, IDispatcherRaycastReceiver, IFastTickable, ISlowTickable, ILateFrameTickable, IScalabilityChangedEventListener, IAtlasSignalEventListener, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         internal const string ScannerMarkerShaderPath = "Assets/_Project/Art/Shaders/Hecton_ScannerMarkerInstanced.shader";
-        internal const string ScannerPulseShaderPath = "Assets/_Project/Art/Shaders/Hecton_ScannerPulseInstanced.shader";
         private const int AtlasDetectionRevealStage = 2;
         private const int AtlasNavigationRevealStage = 3;
         private const int ScientificConeRayCount = 12;
@@ -90,6 +89,17 @@ namespace Hecton8.Gameplay
         private static readonly uint[] s_prefixedScannerStringHashCache = new uint[PrefixedScannerStringCacheSize];
         // COLD ALLOC: byte[128] - scanner prefixed-string cache mode flags - owner: ScannerTool
         private static readonly byte[] s_prefixedScannerStringFlagsCache = new byte[PrefixedScannerStringCacheSize];
+
+        private static uint ResolveScannerFrame()
+        {
+            return TimeSliceScheduler.CurrentFrameId;
+        }
+
+        private static int ResolveScannerFrameInt()
+        {
+            uint frame = ResolveScannerFrame();
+            return frame > int.MaxValue ? int.MaxValue : (int)frame;
+        }
 
         private enum ScanMode
         {
@@ -564,11 +574,8 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(0f, 1f)] private float sedimentDensityThreshold01 = 0.34f;
         [SerializeField, Range(0f, 1f)] private float basaltDensityThreshold01 = 0.66f;
 
-        [Header("Pulse Visual")]
+        [Header("Auxiliary Ping Route")]
         [SerializeField] private float pulseDuration = 1.5f;
-        [SerializeField] private Color pulseColor = new Color(0f, 0.9f, 1f, 0.8f);
-        [SerializeField] private float pulseThickness = 0.15f;
-        [SerializeField] private Mesh scannerPulseQuadMesh;
 
         [Header("Audio")]
         [SerializeField] private AudioClip pingClip;
@@ -582,7 +589,6 @@ namespace Hecton8.Gameplay
         [SerializeField] private float modeFeedbackInterval = 0.4f;
         [SerializeField, Min(1f)] private float bloodWaypointWarningRadius = 100f;
         [SerializeField] private Shader scannerMarkerShader;
-        [SerializeField] private Shader scannerPulseShader;
 
         // COLD ALLOC: SpatialQueryHit[64] — scanner spatial contact cap — owner: ScannerTool
         private static readonly SpatialQueryHit[] s_SpatialHitBuffer = new SpatialQueryHit[64];
@@ -698,16 +704,7 @@ namespace Hecton8.Gameplay
         private MaterialPropertyBlock _mpb; // COLD ALLOC: MaterialPropertyBlock[1] — power indicator emission — owner: ScannerTool
         private static readonly int _EmissionColorID = Shader.PropertyToID("_EmissionColor");
 
-        internal bool PulseActive { get; private set; }
-        internal Unity.Mathematics.float3 PulseOrigin { get; private set; }
-        internal AbsoluteUniversePosition PulseOriginAup { get; private set; }
-        internal float PulseStartTime { get; private set; }
-
-        internal float PulseDuration => pulseDuration;
         internal float ScanRadius => scanRadius;
-        internal Color PulseColor => pulseColor;
-        internal float PulseThickness => pulseThickness;
-        internal Mesh ScannerPulseQuadMesh => scannerPulseQuadMesh;
         internal ScientificScanSnapshot ActiveScientificScanSnapshot => _scientificSnapshot;
 
         // ══════════════════════════════════════════════════════════
@@ -811,8 +808,6 @@ namespace Hecton8.Gameplay
             if (scannerMarkerShader == null)
                 scannerMarkerShader = AssetDatabase.LoadAssetAtPath<Shader>(ScannerMarkerShaderPath);
 
-            if (scannerPulseShader == null)
-                scannerPulseShader = AssetDatabase.LoadAssetAtPath<Shader>(ScannerPulseShaderPath);
             #endif
 
             if (!TryGetComponent(out HectonScanMarkerSystem markerSystem))
@@ -823,18 +818,11 @@ namespace Hecton8.Gameplay
 
             if (!TryGetComponent(out _dataArchaeology))
                 _dataArchaeology = gameObject.AddComponent<DataArchaeologyRuntime>(); // COLD ALLOC: DataArchaeologyRuntime[1] - scanner archaeology owner - owner: ScannerTool
-
-            if (!TryGetComponent(out ScannerPulseDrawer _))
-            {
-                var drawer = gameObject.AddComponent<ScannerPulseDrawer>(); // COLD ALLOC: ScannerPulseDrawer[1] — scanner pulse owner — owner: ScannerTool
-                drawer.Init(this);
-            }
         }
 
         public override void OnEquip()
         {
             base.OnEquip();
-            PulseActive = false;
             ClearCachedRuntimeServicesCold();
             ResolveCachedPlayerContextCold();
             RefreshModeStrings();
@@ -846,7 +834,6 @@ namespace Hecton8.Gameplay
         {
             SyncScannerChargeMirrorFromCentral();
             base.OnUnequip();
-            PulseActive = false;
             ResetScientificFocus();
             PublishInactiveScannerTuningSignal();
             UnregisterScientificLanes();
@@ -885,10 +872,7 @@ namespace Hecton8.Gameplay
             Unity.Mathematics.float3 origin = scanPosition;
             ScanResultSummary result = PerformScan(origin, _scanMode, effectiveScanRadius);
 
-            PulseActive = true;
-            PulseOrigin = origin;
-            PulseOriginAup = AbsoluteUniversePosition.FromRuntimePosition(scanPosition);
-            PulseStartTime = now;
+            AuxiliaryEquipmentRouterRuntime.TryDeploySensorPing(scanPosition, math.max(0.01f, pulseDuration), effectiveScanRadius);
             HectonScannerProjectionState.Publish(
                 scanPosition,
                 scanForward,
@@ -971,13 +955,6 @@ namespace Hecton8.Gameplay
         {
             if (_powerIndicatorRenderer != null && TryGetToolBrownoutFlicker(out _))
                 UpdatePowerIndicator();
-
-            if (!PulseActive)
-                return;
-
-            float elapsed = Time.time - PulseStartTime;
-            if (elapsed > pulseDuration)
-                PulseActive = false;
         }
 
         public void FastTick(float deltaTime)
@@ -987,7 +964,7 @@ namespace Hecton8.Gameplay
 
             bool heldForBlackBox = _heldPrimaryThisFrame;
             float now = Time.time;
-            int frame = Time.frameCount;
+            int frame = ResolveScannerFrameInt();
             UpdateScientificScanning(deltaTime, now);
             WriteScannerBlackBox(deltaTime, heldForBlackBox, now, frame);
         }
@@ -1056,7 +1033,7 @@ namespace Hecton8.Gameplay
             int progressBucket = math.clamp((int)math.round(safeProgress01 * 1000f), 0, 1000);
             uint signalToolHash = RuntimeToolId != 0u ? RuntimeToolId : ScannerToolTuningHash;
             float now = Time.time;
-            int frame = Time.frameCount;
+            int frame = ResolveScannerFrameInt();
             HectonQualityTier signalTier = ResolveScannerQualityTier(now);
             _scannerBlackBoxQualityTier = (ushort)signalTier;
 
@@ -1488,7 +1465,7 @@ namespace Hecton8.Gameplay
             if (_summaryStringCacheBucket == cacheBucket)
                 return _cachedOperationalSummaryString;
 
-            int frame = Time.frameCount;
+            int frame = ResolveScannerFrameInt();
             _scanHudBuffer.Clear();
             WriteOperationalSummaryInternal(ref _scanHudBuffer, now, frame);
             return ResolveCachedOperationalString(
@@ -1646,7 +1623,7 @@ namespace Hecton8.Gameplay
 
         public override void WriteOperationalSummary(ref FixedCharBuffer buffer)
         {
-            WriteOperationalSummaryInternal(ref buffer, Time.time, Time.frameCount);
+            WriteOperationalSummaryInternal(ref buffer, Time.time, ResolveScannerFrameInt());
         }
 
         private void WriteOperationalSummaryInternal(ref FixedCharBuffer buffer, float now, int frame)
@@ -2852,8 +2829,6 @@ namespace Hecton8.Gameplay
                 ? localization.GetOrFallback(localization.CurrentLanguage, key, fallback)
                 : fallback;
         }
-
-        internal Shader ScannerPulseShader => scannerPulseShader;
 
         internal bool TryGetScientificScanSnapshot(out ScientificScanSnapshot snapshot)
         {
@@ -4150,174 +4125,6 @@ namespace Hecton8.Gameplay
         }
 
         // Zero-GC behavior is now provided by Hecton8.Core.ZeroGCStringCache.
-    }
-
-    [DisallowMultipleComponent]
-    public sealed class ScannerPulseDrawer : MonoBehaviour, ITickable, IUpdatable
-    {
-        private const int PulseInstanceCapacity = 2;
-        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
-        private static readonly int RingThicknessId = Shader.PropertyToID("_RingThickness");
-        private static readonly Quaternion PulseRotation = new Quaternion(0.70710678f, 0f, 0f, 0.70710678f);
-
-        private ScannerTool _scanner;
-        private Material _runtimePulseMaterial;
-        private Mesh _runtimePulseMesh;
-        // COLD ALLOC: Matrix4x4[2] — scanner pulse instanced draw mirror — owner: ScannerPulseDrawer
-        private readonly Matrix4x4[] _pulseMatrixMirror = new Matrix4x4[PulseInstanceCapacity];
-        private bool _registered;
-        private bool _pulseMeshResolved;
-        private bool _pulseResourcesReady;
-
-        internal void Init(ScannerTool scanner)
-        {
-            _scanner = scanner;
-            EnsurePulseResources();
-        }
-
-        private void Awake()
-        {
-            if (_scanner == null && TryGetComponent(out ScannerTool scanner))
-                _scanner = scanner;
-
-            EnsurePulseResources();
-        }
-
-        private void OnEnable()
-        {
-            EnsurePulseResources();
-            RegisterTick();
-        }
-
-        private void OnDisable()
-        {
-            UnregisterTick();
-        }
-
-        private void OnDestroy()
-        {
-            UnregisterTick();
-
-            if (_runtimePulseMaterial != null)
-            {
-                Destroy(_runtimePulseMaterial);
-                _runtimePulseMaterial = null;
-            }
-
-            _runtimePulseMesh = null;
-        }
-
-        public void Tick(float deltaTime)
-        {
-            if (_scanner == null || !_scanner.PulseActive || !_scanner.IsEquipped)
-                return;
-
-            if (!_pulseResourcesReady)
-                return;
-
-            float elapsed = Time.time - _scanner.PulseStartTime;
-            float t = math.saturate(elapsed * math.rcp(math.max(_scanner.PulseDuration, 0.0001f)));
-            float currentRadius = math.lerp(0f, _scanner.ScanRadius, t);
-            Color baseColor = _scanner.PulseColor;
-            float alpha = baseColor.a * (1f - t * t);
-            if (alpha < 0.01f)
-                return;
-
-            Color ringColor = new Color(baseColor.r, baseColor.g, baseColor.b, alpha);
-            float baseThickness = _scanner.PulseThickness;
-            float thickness = math.lerp(baseThickness, baseThickness * 0.3f, t);
-            Vector3 pulseRuntimeOrigin = (Vector3)_scanner.PulseOriginAup.ToRuntimeFloat3();
-
-            _runtimePulseMaterial.SetColor(BaseColorId, ringColor);
-            _runtimePulseMaterial.SetFloat(RingThicknessId, thickness * math.rcp(math.max(currentRadius, 0.001f)));
-
-            int visibleCount = 0;
-            Matrix4x4 primaryMatrix = Matrix4x4.TRS(pulseRuntimeOrigin, PulseRotation, new Vector3(currentRadius * 2f, currentRadius * 2f, 1f));
-            _pulseMatrixMirror[visibleCount] = primaryMatrix;
-            visibleCount++;
-
-            if (t < 0.8f)
-            {
-                float innerRadius = currentRadius * 0.85f;
-                Matrix4x4 innerMatrix = Matrix4x4.TRS(pulseRuntimeOrigin, PulseRotation, new Vector3(innerRadius * 2f, innerRadius * 2f, 1f));
-                _pulseMatrixMirror[visibleCount] = innerMatrix;
-                visibleCount++;
-            }
-
-            UnityEngine.Graphics.DrawMeshInstanced(
-                _runtimePulseMesh,
-                0,
-                _runtimePulseMaterial,
-                _pulseMatrixMirror,
-                visibleCount,
-                null,
-                ShadowCastingMode.Off,
-                false,
-                0,
-                null,
-                LightProbeUsage.Off,
-                null);
-        }
-
-        private void EnsurePulseResources()
-        {
-            if (!_pulseMeshResolved)
-            {
-                _runtimePulseMesh = ResolvePulseMesh();
-                _pulseMeshResolved = true;
-            }
-
-            if (_runtimePulseMaterial != null)
-            {
-                _pulseResourcesReady = _runtimePulseMesh != null;
-                return;
-            }
-
-            Shader pulseShader = _scanner != null ? _scanner.ScannerPulseShader : null;
-#if UNITY_EDITOR
-            if (pulseShader == null)
-                pulseShader = AssetDatabase.LoadAssetAtPath<Shader>(ScannerTool.ScannerPulseShaderPath);
-#endif
-            if (pulseShader == null)
-            {
-                _pulseResourcesReady = false;
-                return;
-            }
-
-            _runtimePulseMaterial = new Material(pulseShader)
-            {
-                enableInstancing = true,
-                hideFlags = HideFlags.DontSave
-            };
-            _pulseResourcesReady = _runtimePulseMesh != null;
-        }
-
-        private void RegisterTick()
-        {
-            if (_registered || !Application.isPlaying)
-                return;
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
-        }
-
-        private void UnregisterTick()
-        {
-            if (!_registered)
-                return;
-
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-            _registered = false;
-        }
-
-        private Mesh ResolvePulseMesh()
-        {
-            if (_scanner != null && _scanner.ScannerPulseQuadMesh != null)
-                return _scanner.ScannerPulseQuadMesh;
-
-            return Resources.GetBuiltinResource<Mesh>("Quad.fbx");
-        }
     }
 }
 

@@ -421,3 +421,87 @@ Rejected Alternatives: Expanding `ScanResultDTO=48` or `ScannerSpatialEntityDTO=
 Scalability potential: Low tier keeps scanner route rows compact and deterministic. Middle tier preserves current candidate/query widths. High and Ultra tiers can spend additional budget on more candidate cells or VFX bias through existing settings rows without changing ABI.
 
 Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-8 us per 10k scanner DTO rows. Primary gain is aligned AUP/depletion lanes and removal of all source-owned Sequential layout from the scanner route file. Evidence class: STATIC_SOURCE; scanner Sequential and unaligned 8-byte scans returned 0 hits; `git diff --check` passed with CRLF warnings only.
+
+## Decision 036 - Gameplay DTO Tail Sweep
+
+Problem: Gameplay still had owner-safe fixed rows using compiler-owned Sequential layout after Pack debt was zeroed: radiation source/telemetry rows, swim body pose scalar rows, contextual IK entity snapshots, and submarine PID/flood output tail holes.
+
+Solution: Converted fixed rows to explicit offsets and named padding: `RadiationSource=64`, `RadiationTelemetryEntry=64`, `BodyModePose=96`, and `ContextualPhysicalIkEntityState=512`. Added explicit tail pads to `PidJobOutput`, `SubmarinePidTelemetryEntry`, and `DynamicFloodMassOutput`. Submarine/radiation jobs received synchronous Burst flags and NoAlias on non-overlapping NativeArrays.
+
+Rejected Alternatives: Converting Unity-owned job wrappers was rejected because those structs embed `NativeArray`, `RaycastHit`, `CapsulecastCommand`, or animation-job handles whose ABI is owned by Unity. Preserving the 472-byte contextual IK entity stride was rejected because it crosses cache-line boundaries and leaves anonymous tail padding.
+
+Scalability potential: Low tier gets stable row strides for Quest-class IK/radiation/vehicle jobs. Middle tier keeps the same gameplay facts with better Burst alias proof. High and Ultra tiers can spend saved stalls on richer hand/foot placement, radiation telemetry, or vehicle feedback without changing truth rows.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-18 us per 10k fixed row reads or writes. Evidence class: STATIC_SOURCE; touched-file Sequential debt is limited to Unity wrapper or managed records.
+
+## Decision 037 - Interaction Input Atlas Payload Sweep
+
+Problem: NativeQueue/event payloads and persistent finger buffers still used Sequential layout: interaction events, Atlas-6 events, beacon telemetry/solve results, universal input signals, terminal pointer/hand target payloads, and physical hand finger rows.
+
+Solution: Converted those fixed rows to explicit layout: `InteractionEventPayload=32`, `Atlas6EventPayload=32`, `SignalBeaconTelemetry=48`, `SignalBeaconSolveResult=16`, `UniversalInputStateSignal=48`, `FingerRayDefinition=32`, `FingerRayRuntime=32`, `FingerPoseData=32`, `KinematicTerminalPointerState=64`, and `PhysicalHandIkTarget=64`. Finger jobs and beacon Burst math now include `CompileSynchronously = true`; finger NativeArray fields received NoAlias.
+
+Rejected Alternatives: Managed registry rows carrying interfaces, MonoBehaviours, or strings were rejected because explicit layout would not make them blittable or Burst-safe. Removing `readonly` from public terminal payloads was rejected because constructor `this = default` can zero padding while preserving API immutability.
+
+Scalability potential: Low tier gets 32-byte queue/finger rows and stable 48/64-byte contract rows. Middle tier preserves input/terminal cadence. High and Ultra tiers can increase haptic/terminal/finger visual fidelity using the same explicit payloads.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-12 us per 10k event/finger rows. Evidence class: STATIC_SOURCE; AtlasSignal and fixed Interaction touched-file Sequential scans return 0 hits.
+
+## Decision 038 - Economy Marauder DTO Explicit Closure
+
+Problem: `TradeMarauderRuntime` declared many DTO sizes but still relied on Sequential offsets for AUP, route, sector, telemetry, tuning, heap, proxy, and acoustic signature rows. `ResourceScarcityDirector` had AUP cluster rows with int fields before the AUP lane.
+
+Solution: Converted the source-owned economy rows to explicit layout while preserving existing size contracts. `double3` and `long` lanes remain at offsets divisible by 8; `ResourceClusterRecord` is padded to 64 bytes with `PositionAup@8`; `SectorExtractionRecord` is 16 bytes.
+
+Rejected Alternatives: Reordering economy DTO fields to place every AUP at offset 0 was rejected because these are existing contract/buffer rows. Expanding every 48-byte-style row to 64 bytes was rejected unless the existing declared size already allowed it or the row carried an AUP cluster needing a cache-line proof.
+
+Scalability potential: Low tier gets deterministic economy/path rows with no binary quality branch. Middle tier preserves current route-solver density. High and Ultra tiers can scale more marauder visual/acoustic proxies through continuous quality-weight budgets without ABI drift.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-15 us per 10k economy/path/telemetry rows. Evidence class: STATIC_SOURCE; economy touched-file Sequential and unaligned 8-byte FieldOffset scans return 0 hits.
+
+## Decision 039 - Build Gate Discipline For Continuation Slice
+
+Problem: The mandate requires evidence, but the existing dependency wall and user instruction prohibit premature rebuilds.
+
+Solution: Used static source scans only: Pack-parameter scan, touched-file Sequential scans, unaligned 8-byte FieldOffset scans, missing `CompileSynchronously` scans on touched Burst routes, and `git diff --check`.
+
+Rejected Alternatives: Launching `dotnet build` was rejected because this slice is mechanical layout hardening and the known dependency wall remains unrelated to these edits. Owner-blind full-project rewrite was rejected because 509 remaining Sequential records include Unity wrappers, managed records, shader/file ABI rows, other domain-owned contracts, and one concurrent external Sequential reintroduction outside this slice.
+
+Scalability potential: Low through Ultra tiers benefit from narrower ABI debt without spending compile-wall time or forcing unrelated agents to merge around speculative rewrites.
+
+Hardware Impact: Runtime cost of verification is 0.00 ms. Static source proof shows `StructLayout(...Pack=...)` remains 0 under `Assets/_Project/Scripts`; broad Sequential count dropped from 541 to 509 during this continuation slice after one concurrent external Sequential reintroduction outside the touched files.
+
+## Decision 040 - World/VFX/UI Fixed DTO Explicit Closure
+
+Problem: Additional fixed runtime rows still relied on Sequential layout after the prior Pack purge: VFX silt/biolum/debris payloads, world sampler rows, terrain generated signal, thermodynamics hazard rows, visor/outpost/UI rows, flora genomics rows, biome SDF rows, and ecosystem/ocean contracts.
+
+Solution: Converted source-owned fixed rows to explicit FieldOffset layouts while preserving existing buffer sizes where ABI-sensitive and widening mock/event rows only when they were queue/cache-line hostile. `MockTerrainQuerySignal` is now 64 bytes, with `double3 Aup@0` and scalar lanes after offset 24. Unity/native-container wrappers in `GlobalWorldSampler` remain Sequential because their layout is owned by Unity collections and safety-handle configuration.
+
+Rejected Alternatives: A blanket conversion of `GlobalWorldSamplerData` and all sampler job structs was rejected because they embed `NativeArray` handles. Leaving 40-byte mock terrain query rows was rejected because queued stress-test rows cross cache-line boundaries and carry AUP data.
+
+Scalability potential: Low tier gets predictable AUP/scalar reads and cheaper mock stress lanes. Middle tier keeps existing sampler ABI. High and Ultra tiers can increase terrain sampling and visual feedback density without mutating row layout.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-20 us per 10k fixed DTO reads, plus crash-risk reduction for AUP lanes. Evidence class: STATIC_SOURCE; Pack scan remains 0.
+
+## Decision 041 - Atmosphere/Telemetry/Event Lane Explicit Closure
+
+Problem: Several event and black-box rows in atmosphere, foveated rendering, GI relay, terrain seam blending, narrative, prologue, player stress, scan marker, logistics fluid, WFC outpost, sargassum, and economy ledger systems still had compiler-owned Sequential offsets.
+
+Solution: Converted those fixed rows to explicit layouts with named padding. AUP-like rows keep `AbsoluteUniversePosition`, `MacroDatabaseAup`, `AbsoluteUniversePositionBlit`, `double`, `long`, and `ulong` lanes on 8-byte offsets. Rows with no stable unmanaged ownership, such as player collision events carrying `Rigidbody`, remain Sequential and are documented as excluded from DTO hardening.
+
+Rejected Alternatives: Reordering all fields to make every vector 16-byte aligned was rejected where it would silently migrate existing NativeArray or Vault ABI. Converting managed event structs with Unity object references was rejected because explicit layout would not make them blittable or Burst-safe.
+
+Scalability potential: Low tier pays less cache-split risk on hot event/telemetry paths. Middle tier preserves existing ring-buffer capacities. High and Ultra tiers can spend the saved bandwidth on richer telemetry/VFX signals without adding object-oriented dispatch.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 1-18 us per 10k event/telemetry row reads. Evidence class: STATIC_SOURCE; touched-file unaligned 8-byte FieldOffset scan returned 0 hits.
+
+## Decision 042 - Construction/Encounter Burst Alias Fences
+
+Problem: Habitat, encounter, narrative, atmosphere, sargassum, and meta-campaign jobs had multiple owner-separated NativeArrays but did not always tell Burst that the buffers cannot alias. Some touched jobs also lacked `CompileSynchronously = true`.
+
+Solution: Added synchronous Burst compile flags and `[NoAlias]` to non-overlapping NativeArray fields in the touched jobs. NativeParallelHashMap and Unity-native wrapper containers were not marked when ownership/aliasing was not provable from local code.
+
+Rejected Alternatives: Marking every container field blindly was rejected because Unity-owned containers and hash maps can include internal metadata and safety handles. Running a rebuild to prove this slice was rejected by mandate and because the known dependency wall is unrelated.
+
+Scalability potential: Low tier benefits from cheaper Burst kernels under thermal pressure. Middle tier gains vectorization headroom. High and Ultra tiers can keep higher encounter/construction/narrative budgets on the same data rows without binary quality branches.
+
+Hardware Impact: Estimated gain for low-end sylicon as i3/MX350 is 2-30 us per scheduled job batch depending on buffer length and Burst vectorization. Evidence class: STATIC_SOURCE; no build/rebuild launched.

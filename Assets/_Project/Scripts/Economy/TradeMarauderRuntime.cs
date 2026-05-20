@@ -88,144 +88,147 @@ namespace Hecton8.Economy
         public const uint LootRich = 1u << 3;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct MarauderStateDTO
     {
-        public double3 AUP;
-        public float3 Velocity;
-        public uint FactionHash;
-        public uint CurrentTask;
-        public float HullIntegrity;
-        public uint _pad0;
-        public ulong _pad1;
+        [FieldOffset(0)] public double3 AUP;
+        [FieldOffset(24)] public float3 Velocity;
+        [FieldOffset(36)] public uint FactionHash;
+        [FieldOffset(40)] public uint CurrentTask;
+        [FieldOffset(44)] public float HullIntegrity;
+        [FieldOffset(48)] public uint _pad0;
+        [FieldOffset(52)] private uint _pad2;
+        [FieldOffset(56)] public ulong _pad1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct MarauderInventorySlotDTO
     {
-        public uint ItemHash;
-        public int Quantity;
-        public uint Flags;
-        public uint Reserved0;
+        [FieldOffset(0)] public uint ItemHash;
+        [FieldOffset(4)] public int Quantity;
+        [FieldOffset(8)] public uint Flags;
+        [FieldOffset(12)] public uint Reserved0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct MarauderEconomyWeightDTO
     {
-        public uint ItemHash;
-        public float BasePrice;
-        public float Supply;
-        public float Demand;
-        public float Scarcity;
-        public uint Flags;
-        public uint Reserved0;
-        public uint Reserved1;
+        [FieldOffset(0)] public uint ItemHash;
+        [FieldOffset(4)] public float BasePrice;
+        [FieldOffset(8)] public float Supply;
+        [FieldOffset(12)] public float Demand;
+        [FieldOffset(16)] public float Scarcity;
+        [FieldOffset(20)] public uint Flags;
+        [FieldOffset(24)] public uint Reserved0;
+        [FieldOffset(28)] public uint Reserved1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct MarauderSectorEconomyDTO
     {
-        public double3 SectorCentroidAup;
-        public float Supply;
-        public float Demand;
-        public float Scarcity;
-        public float Threat;
-        public float AggressionBias;
-        public float LootValue;
-        public uint Flags;
-        public uint SectorHash;
-        public uint DominantItemHash;
-        public uint Reserved0;
+        [FieldOffset(0)] public double3 SectorCentroidAup;
+        [FieldOffset(24)] public float Supply;
+        [FieldOffset(28)] public float Demand;
+        [FieldOffset(32)] public float Scarcity;
+        [FieldOffset(36)] public float Threat;
+        [FieldOffset(40)] public float AggressionBias;
+        [FieldOffset(44)] public float LootValue;
+        [FieldOffset(48)] public uint Flags;
+        [FieldOffset(52)] public uint SectorHash;
+        [FieldOffset(56)] public uint DominantItemHash;
+        [FieldOffset(60)] public uint Reserved0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct MarauderRoutePlanDTO
     {
-        public double3 SourceAup;
-        public double3 TargetAup;
-        public float Priority;
-        public float Aggression;
-        public uint ItemHash;
-        public uint Flags;
+        [FieldOffset(0)] public double3 SourceAup;
+        [FieldOffset(24)] public double3 TargetAup;
+        [FieldOffset(48)] public float Priority;
+        [FieldOffset(52)] public float Aggression;
+        [FieldOffset(56)] public uint ItemHash;
+        [FieldOffset(60)] public uint Flags;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct MarauderRouteNodeDTO
     {
-        public double3 NodeAup;
-        public uint SectorIndex;
-        public uint Flags;
+        [FieldOffset(0)] public double3 NodeAup;
+        [FieldOffset(24)] public uint SectorIndex;
+        [FieldOffset(28)] public uint Flags;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct MarauderSectorHashEntryDTO
     {
-        public long SectorX;
-        public long SectorZ;
-        public uint SectorHash;
-        public int SectorIndex;
-        public uint Flags;
-        public uint Reserved0;
+        [FieldOffset(0)] public long SectorX;
+        [FieldOffset(8)] public long SectorZ;
+        [FieldOffset(16)] public uint SectorHash;
+        [FieldOffset(20)] public int SectorIndex;
+        [FieldOffset(24)] public uint Flags;
+        [FieldOffset(28)] public uint Reserved0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct MarauderLootNodeDTO
     {
-        public double3 AUP;
-        public uint ItemHash;
-        public int Quantity;
-        public float Value;
-        public uint Flags;
-        public uint NodeHash;
-        public uint Reserved0;
-        public ulong Reserved1;
+        [FieldOffset(0)] public double3 AUP;
+        [FieldOffset(24)] public uint ItemHash;
+        [FieldOffset(28)] public int Quantity;
+        [FieldOffset(32)] public float Value;
+        [FieldOffset(36)] public uint Flags;
+        [FieldOffset(40)] public uint NodeHash;
+        [FieldOffset(44)] public uint Reserved0;
+        [FieldOffset(48)] public ulong Reserved1;
+        [FieldOffset(56)] private ulong _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct MarauderTradeTuningDTO
     {
-        public float GlobalQualityWeight;
-        public float BasePriceVolatility;
-        public float MarauderSpawnRate;
-        public float TheftProbability;
-        public float AggressionScale;
-        public float LeviathanAggressionThreshold;
-        public float RouteReplanSeconds;
-        public float CachedGlobalScarcityIndex;
-        public uint CopperHash;
-        public uint TitaniumHash;
-        public int ActiveMarauders;
-        public int ItemEvaluationLimit;
-        public int MaxRouteSolves;
-        public int MaxAStarIterations;
-        public uint Frame;
-        public uint Flags;
+        [FieldOffset(0)] public float GlobalQualityWeight;
+        [FieldOffset(4)] public float BasePriceVolatility;
+        [FieldOffset(8)] public float MarauderSpawnRate;
+        [FieldOffset(12)] public float TheftProbability;
+        [FieldOffset(16)] public float AggressionScale;
+        [FieldOffset(20)] public float LeviathanAggressionThreshold;
+        [FieldOffset(24)] public float RouteReplanSeconds;
+        [FieldOffset(28)] public float CachedGlobalScarcityIndex;
+        [FieldOffset(32)] public uint CopperHash;
+        [FieldOffset(36)] public uint TitaniumHash;
+        [FieldOffset(40)] public int ActiveMarauders;
+        [FieldOffset(44)] public int ItemEvaluationLimit;
+        [FieldOffset(48)] public int MaxRouteSolves;
+        [FieldOffset(52)] public int MaxAStarIterations;
+        [FieldOffset(56)] public uint Frame;
+        [FieldOffset(60)] public uint Flags;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct MarauderTelemetryEntry
     {
-        public uint Frame;
-        public int ActiveMarauders;
-        public int PathSolvedCount;
-        public int PathFailedCount;
-        public int PathIterations;
-        public int EconomyItemsEvaluated;
-        public float GlobalScarcityIndex;
-        public float PathfindingComputeTimeMs;
-        public float GlobalQualityWeight;
-        public uint StateHash;
-        public uint Flags;
-        public uint SearchEpoch;
-        public uint Reserved0;
-        public ulong Reserved1;
+        [FieldOffset(0)] public uint Frame;
+        [FieldOffset(4)] public int ActiveMarauders;
+        [FieldOffset(8)] public int PathSolvedCount;
+        [FieldOffset(12)] public int PathFailedCount;
+        [FieldOffset(16)] public int PathIterations;
+        [FieldOffset(20)] public int EconomyItemsEvaluated;
+        [FieldOffset(24)] public float GlobalScarcityIndex;
+        [FieldOffset(28)] public float PathfindingComputeTimeMs;
+        [FieldOffset(32)] public float GlobalQualityWeight;
+        [FieldOffset(36)] public uint StateHash;
+        [FieldOffset(40)] public uint Flags;
+        [FieldOffset(44)] public uint SearchEpoch;
+        [FieldOffset(48)] public uint Reserved0;
+        [FieldOffset(52)] private uint _pad0;
+        [FieldOffset(56)] public ulong Reserved1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 8)]
+    [StructLayout(LayoutKind.Explicit, Size = 8)]
     public struct MarauderNativeMinHeapNode
     {
-        public float Cost;
-        public int NodeIndex;
+        [FieldOffset(0)] public float Cost;
+        [FieldOffset(4)] public int NodeIndex;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -242,27 +245,27 @@ namespace Hecton8.Economy
         [FieldOffset(56)] private ulong _pad7;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct MarauderVisualProxyDTO
     {
-        public float4 Row0;
-        public float4 Row1;
-        public float4 Row2;
-        public float4 Row3;
+        [FieldOffset(0)] public float4 Row0;
+        [FieldOffset(16)] public float4 Row1;
+        [FieldOffset(32)] public float4 Row2;
+        [FieldOffset(48)] public float4 Row3;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct MarauderAcousticSignatureDTO
     {
-        public double3 AUP;
-        public float RadiusMeters;
-        public float Intensity01;
-        public uint SourceId;
-        public uint Frame;
-        public uint Channel;
-        public uint Flags;
-        public ulong Reserved0;
-        public ulong Reserved1;
+        [FieldOffset(0)] public double3 AUP;
+        [FieldOffset(24)] public float RadiusMeters;
+        [FieldOffset(28)] public float Intensity01;
+        [FieldOffset(32)] public uint SourceId;
+        [FieldOffset(36)] public uint Frame;
+        [FieldOffset(40)] public uint Channel;
+        [FieldOffset(44)] public uint Flags;
+        [FieldOffset(48)] public ulong Reserved0;
+        [FieldOffset(56)] public ulong Reserved1;
     }
 
     public static class MarauderCounterUtility

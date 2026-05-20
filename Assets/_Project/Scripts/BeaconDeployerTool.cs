@@ -1,6 +1,7 @@
 using System;
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Environment;
 using Hecton8.World;
 using Unity.Mathematics;
@@ -484,7 +485,9 @@ namespace Hecton8.Gameplay
                 return false;
 
             int count = Hecton8.Core.GlobalRegistry.BeaconNetwork.CopySnapshots(_beaconBuffer);
-            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
+            if (!TryResolveAupFromRuntimeOrigin(origin, out AbsoluteUniversePosition originAup))
+                return false;
+
             double bestDistanceSq = double.MaxValue;
             bool found = false;
 
@@ -512,6 +515,23 @@ namespace Hecton8.Gameplay
 
             distance = ApproximateDistance(bestDistanceSq);
             return true;
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition aup)
+        {
+            aup = default;
+            if (!float.IsFinite(runtimePosition.x) ||
+                !float.IsFinite(runtimePosition.y) ||
+                !float.IsFinite(runtimePosition.z))
+            {
+                return false;
+            }
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            aup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return math.all(math.isfinite(aup.ToAbsoluteDouble3()));
         }
 
         private bool TryReadNearestAssessment(out string label, out float distance, out BeaconAssessment assessment)

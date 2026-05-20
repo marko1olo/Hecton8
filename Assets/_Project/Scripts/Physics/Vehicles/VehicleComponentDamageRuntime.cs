@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
@@ -77,6 +78,7 @@ namespace Hecton8.Physics.Vehicles
         private bool _csvLoaded;
         private int _cellCount;
         private uint _frameCounter;
+        private uint _resolvedVehicleHash;
         private long _csvStampUtcTicks;
         private double3 _cachedRootAup;
         private quaternion _cachedRootRotation;
@@ -95,6 +97,7 @@ namespace Hecton8.Physics.Vehicles
             _projectRoot = ResolveProjectRoot();
             _csvPath = Path.Combine(_projectRoot, "vehicle_component_layouts.csv");
             _dumpPath = Path.Combine(_projectRoot, DumpRelativePath);
+            _resolvedVehicleHash = ResolveVehicleHash();
             EnsureSignalLanes();
             ResolveDataVault();
             EnsureVaultBuffers(forceReinitialize: false);
@@ -168,8 +171,8 @@ namespace Hecton8.Physics.Vehicles
 
             quaternion inverseRotation = math.inverse(rootRotation);
             uint frame = ++_frameCounter;
-            float quality = math.saturate(math.isfinite(HomeostasisBrain.GlobalQualityWeight) ? HomeostasisBrain.GlobalQualityWeight : 1f);
-            uint vehicleHash = acceptedTargetHash != 0u ? acceptedTargetHash : unchecked((uint)gameObject.GetInstanceID());
+            float quality = ResolveQualityWeight();
+            uint vehicleHash = _resolvedVehicleHash;
             float depthMeters = ResolveDepthMeters(rootAup);
 
             JobHandle dependency = default;
@@ -217,20 +220,22 @@ namespace Hecton8.Physics.Vehicles
 
                 dependency = mapJob.Schedule(totalSignalCount, VehicleDamageConstants.JobBatchSize, dependency);
 
-                PropagateDamageJob propagateJob = new PropagateDamageJob
+                ApplyVehicleDamageReductionJob reductionJob = new ApplyVehicleDamageReductionJob
                 {
                     Cells = gridWrite,
                     Signals = signals,
                     SignalCount = totalSignalCount,
+                    CellCount = _cellCount,
                     GridWidth = tuning.GridWidth,
                     GridHeight = tuning.GridHeight,
                     GridDepth = tuning.GridDepth,
                     GridSizeLocal = tuning.GridSizeLocal,
                     GlobalQualityWeight = quality,
+                    DirectDamageScale = tuning.DirectDamageScale,
                     ExplosionFalloff = tuning.ExplosionFalloff
                 };
 
-                dependency = propagateJob.Schedule(totalSignalCount, 1, dependency);
+                dependency = reductionJob.Schedule(_cellCount, VehicleDamageConstants.JobBatchSize, dependency);
             }
 
             EvaluateVehicleSystemsJob evaluateJob = new EvaluateVehicleSystemsJob
@@ -454,13 +459,13 @@ namespace Hecton8.Physics.Vehicles
             current.ExplosiveRadiusMeters = PositiveOrFallback(current.ExplosiveRadiusMeters, serialized.ExplosiveRadiusMeters, 0.05f);
             current.ExplosionFalloff = PositiveOrFallback(current.ExplosionFalloff, serialized.ExplosionFalloff, 0.01f);
             current.IngressKgPerSecond = PositiveOrFallback(current.IngressKgPerSecond, serialized.IngressKgPerSecond, 0f);
-            current.FireChance01 = math.saturate(math.isfinite(current.FireChance01) ? current.FireChance01 : serialized.FireChance01);
+            current.FireChance01 = math.saturate(math.select(serialized.FireChance01, current.FireChance01, math.isfinite(current.FireChance01)));
             current.SensorPenaltyWeight = PositiveOrFallback(current.SensorPenaltyWeight, serialized.SensorPenaltyWeight, 0f);
             current.DragPenaltyWeight = PositiveOrFallback(current.DragPenaltyWeight, serialized.DragPenaltyWeight, 0f);
             current.FloodMassLimitKg = PositiveOrFallback(current.FloodMassLimitKg, serialized.FloodMassLimitKg, 0f);
-            current.EngineMinimumScalar = math.saturate(math.isfinite(current.EngineMinimumScalar) ? current.EngineMinimumScalar : serialized.EngineMinimumScalar);
-            current.BallastMinimumScalar = math.saturate(math.isfinite(current.BallastMinimumScalar) ? current.BallastMinimumScalar : serialized.BallastMinimumScalar);
-            current.SensorMinimumScalar = math.saturate(math.isfinite(current.SensorMinimumScalar) ? current.SensorMinimumScalar : serialized.SensorMinimumScalar);
+            current.EngineMinimumScalar = math.saturate(math.select(serialized.EngineMinimumScalar, current.EngineMinimumScalar, math.isfinite(current.EngineMinimumScalar)));
+            current.BallastMinimumScalar = math.saturate(math.select(serialized.BallastMinimumScalar, current.BallastMinimumScalar, math.isfinite(current.BallastMinimumScalar)));
+            current.SensorMinimumScalar = math.saturate(math.select(serialized.SensorMinimumScalar, current.SensorMinimumScalar, math.isfinite(current.SensorMinimumScalar)));
             current.Flags &= ~VehicleDamageConstants.TuningFlagRuntimeSerialized;
             tuningArray[0] = current;
             return current;
@@ -535,9 +540,22 @@ namespace Hecton8.Physics.Vehicles
             if (!enableEmergencyMockDamage)
                 return 0;
 
-            float quality = math.saturate(math.isfinite(HomeostasisBrain.GlobalQualityWeight) ? HomeostasisBrain.GlobalQualityWeight : 1f);
+            float quality = ResolveQualityWeight();
             int maxCount = math.clamp(mockSignalCount, 1, VehicleDamageConstants.MaxMockDamageSignals);
             return math.clamp((int)math.round(math.lerp(1f, maxCount, quality)), 1, math.min(maxCount, VehicleDamageConstants.MaxDamageSignals));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float ResolveQualityWeight()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.select(1f, quality, math.isfinite(quality)));
+        }
+
+        private uint ResolveVehicleHash()
+        {
+            uint fallback = unchecked((uint)GetInstanceID());
+            return math.select(fallback, acceptedTargetHash, acceptedTargetHash != 0u);
         }
 
         private bool TryResolveWritablePointers(

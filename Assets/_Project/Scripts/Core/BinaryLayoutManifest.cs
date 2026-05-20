@@ -578,6 +578,15 @@ namespace Hecton8.Core
             AssertOffset<HectonBlueprintPreviewBatch.BlueprintPreviewInstance>(
                 nameof(HectonBlueprintPreviewBatch.BlueprintPreviewInstance.RequirementMask),
                 40);
+            AssertSize<BuilderGhostStateDTO>(128);
+            AssertOffset<BuilderGhostStateDTO>(nameof(BuilderGhostStateDTO.LocalToWorld), 0);
+            AssertOffset<BuilderGhostStateDTO>(nameof(BuilderGhostStateDTO.AUP_TargetPosition), 64);
+            AssertOffset<BuilderGhostStateDTO>(nameof(BuilderGhostStateDTO.PrefabHashID), 88);
+            AssertOffset<BuilderGhostStateDTO>(nameof(BuilderGhostStateDTO.ValidationFlags), 92);
+            AssertOffset<BuilderGhostStateDTO>(nameof(BuilderGhostStateDTO.AnimationPhase), 96);
+            AssertOffset<BuilderGhostStateDTO>(nameof(BuilderGhostStateDTO.ValidationStateHash), 100);
+            AssertSize<BuilderGhostVisualDTO>(64);
+            AssertSize<HolographyTelemetryEntry>(64);
         }
 
         private static void AssertSize<T>(int expected) where T : unmanaged

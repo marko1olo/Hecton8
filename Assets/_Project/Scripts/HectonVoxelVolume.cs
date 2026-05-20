@@ -2774,7 +2774,8 @@ namespace Hecton8.Caves
             for (int i = 0; i < _resourceCraterClusterCount; i++)
             {
                 VoxelCraterStamp stamp = _resourceCraterClusterStamps[i];
-                if ((stamp.position - absolutePosition).sqrMagnitude > clusterRadiusSq)
+                Vector3 clusterDelta = stamp.position - absolutePosition;
+                if (clusterDelta.sqrMagnitude > clusterRadiusSq)
                     continue;
 
                 clusterCount++;
@@ -3004,7 +3005,8 @@ namespace Hecton8.Caves
             {
                 VoxelCraterStamp existing = _craterStamps[i];
                 float mergeDistance = existing.radius + clampedRadius * 0.35f;
-                if ((existing.position - absolutePosition).sqrMagnitude > mergeDistance * mergeDistance)
+                Vector3 mergeDelta = existing.position - absolutePosition;
+                if (mergeDelta.sqrMagnitude > mergeDistance * mergeDistance)
                     continue;
 
                 existing.position = (existing.position + absolutePosition) * 0.5f;

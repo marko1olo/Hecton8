@@ -37,9 +37,9 @@ Hardware Impact: Runtime cost remains a mesh swap. Static mesh memory increases 
 
 ## Decision 005 - Static Scanner Report Preserves Prior Agent Evidence
 
-Problem: `Docs/Reports/PHYSICS_OPTIMIZATION_REPORT.json` already contained SHINOBU_209 output, but SHINOBU_210 is required to write the same path.
-Solution: The SHINOBU_210 scanner preserves the previous report payload inside `previousReport` while writing the new Habitat/Environment verdict.
-Rejected Alternatives: Blind overwrite was rejected because 20+ agents are operating concurrently. Creating a different report path was rejected because the prompt names the required file.
+Problem: `Docs/Reports/PHYSICS_OPTIMIZATION_REPORT.json` already contained another agent's output, but SHINOBU_210 is required to write the same path.
+Solution: The SHINOBU_210 scanner copies the previous canonical report to `Docs/Reports/PHYSICS_OPTIMIZATION_REPORT_PREVIOUS_SHINOBU_210.json` and records only byte count plus FNV-1a hash in the new canonical report.
+Rejected Alternatives: Blind overwrite was rejected because 20+ agents are operating concurrently. Embedding the full previous report was rejected because it recursively bloats the canonical report. Creating a different canonical report path was rejected because the prompt names the required file.
 Scalability potential: Report preservation is tooling hygiene and has no runtime tier impact.
 Hardware Impact: None. Static evidence only.
 
@@ -110,8 +110,8 @@ Hardware Impact: Runtime impact is 0 us. Editor memory is fixed at 300 * 64 byte
 ## Decision 014 - Explicit Little-Endian Blackbox Dump
 
 Problem: The blackbox dump initially used `BinaryWriter`, which hides byte ordering behind framework behavior and does not satisfy the binary serialization mandate explicitly enough.
-Solution: Serialize the dump header and telemetry entries through explicit little-endian primitive writers. Floats are converted with `math.asuint`; integer words use `math.reversebytes` defensively on non-little-endian hosts before byte emission. The header now stores agent hash, dump version, ring capacity, recorded count, cursor, and entry size.
-Rejected Alternatives: Keeping `BinaryWriter` was rejected because it obscures endianness. Writing JSON-only telemetry was rejected because it bloats forensic data and loses exact binary DTO layout proof.
+Solution: Serialize the dump header and telemetry entries through explicit little-endian primitive writers. Floats are converted with `math.asuint`; integer words use a source-local bitwise byte-swap fallback defensively on non-little-endian hosts before byte emission. The header now stores agent hash, dump version, ring capacity, recorded count, cursor, and entry size.
+Rejected Alternatives: Keeping `BinaryWriter` was rejected because it obscures endianness. Writing JSON-only telemetry was rejected because it bloats forensic data and loses exact binary DTO layout proof. Depending on `math.reversebytes` was rejected after local ledger evidence showed the installed `Unity.Mathematics` surface may not expose that API.
 Scalability potential: Runtime unchanged. The binary format remains compact for low-end CI machines and exact enough for ultra-tier bake forensics.
 Hardware Impact: Runtime impact is 0 us. Dump header is 24 bytes; each telemetry row remains exactly 64 bytes.
 
@@ -198,7 +198,7 @@ Hardware Impact: Runtime cost is three scalar `math.step` evaluations and intege
 ## Decision 025 - Pack Job Chained To MeshData Boundary
 
 Problem: `BakeDamageState` completed the deformation job graph, then scheduled `PackBakedVertexJob` as a second independent job and completed again. That created an avoidable synchronization point in the offline bake path.
-Solution: Allocate writable `MeshData`, schedule `PackBakedVertexJob` with the current deformation/normal/color/hull `JobHandle` as dependency, and complete once before CPU-visible bounds/index copy and `Mesh.ApplyAndDisposeWritableMeshData`.
+Solution: Chain `PackBakedVertexJob` with the current deformation/normal/color/hull `JobHandle` and complete once before CPU-visible bounds/index publication. This was first implemented against writable MeshData, then superseded by direct `Mesh.SetVertexBufferData`/`Mesh.SetIndexBufferData` in Decision 027.
 Rejected Alternatives: Keeping two completes was rejected because the pack stage is a pure dependency continuation and does not need a detached synchronization barrier. Moving all MeshData work into a runtime importer was rejected because this agent is Editor-only.
 Scalability potential: Low quality bakes complete fewer vertices but still benefit from one less sync. High/Ultra bakes with denser topology benefit more because the pack phase overlaps the existing dependency chain until the MeshData API boundary.
 Hardware Impact: Runtime impact is 0 us. Editor bake removes one `Complete()` per baked state; measured wall-clock proof remains blocked by external compile/Unity import state.
@@ -258,3 +258,75 @@ Solution: Resolve the position byte stream once and reuse it as the fallback con
 Rejected Alternatives: Allocating dummy TempJob byte buffers was rejected because it adds avoidable memory ownership for data that is never read. Leaving `default` containers was rejected because schedule-time validation risk is independent of branch intent inside `Execute`.
 Scalability potential: Low through Ultra extraction remains one MeshData byte-stream path; optional attributes fall back to deterministic defaults without extra allocations.
 Hardware Impact: Runtime impact is 0 us. Editor scheduling becomes safer for sparse art-source meshes with no additional memory traffic.
+
+## Decision 033 - Source-Local Endian Swap
+
+Problem: The blackbox dump writer used `math.reversebytes`, but local ledger evidence in this checkout shows the installed `Unity.Mathematics` surface may not expose that API. That would create a compile break in an Editor-only forensic path.
+Solution: Replace `math.reversebytes` calls with a source-local `ReverseBytes32(uint)` bit-mask implementation and route `ReverseBytes64(ulong)` through it. Float serialization still uses `math.asuint`; byte emission remains explicit little-endian.
+Rejected Alternatives: Retaining `math.reversebytes` was rejected because package API drift is not acceptable for a required dump writer. Using `BinaryWriter` was rejected again because it hides endianness.
+Scalability potential: No quality-tier behavior change. Low through Ultra all keep the same compact dump format and runtime mesh-swap path.
+Hardware Impact: Runtime impact is 0 us. Editor dump serialization avoids a likely compile dependency trap while keeping deterministic bytes.
+
+## Decision 034 - Bounded Scanner Report Preservation
+
+Problem: The scanner previously embedded the full prior `PHYSICS_OPTIMIZATION_REPORT.json` into the next report. Repeated scanner runs by multiple agents can recursively inflate the canonical report and make evidence harder to diff.
+Solution: Preserve the prior canonical report as a sidecar file and record only `previousReportBytes` plus `previousReportFnv1a` in the canonical JSON. The sidecar copy streams bytes through a stack buffer and computes the hash during the same pass.
+Rejected Alternatives: Keeping `File.ReadAllText` plus escaped full JSON was rejected because it creates recursive report bloat and managed heap pressure. Dropping preservation was rejected because the canonical path is shared by multiple task lanes.
+Scalability potential: No gameplay quality-tier behavior changes. The report path remains bounded for low-end CI machines and keeps enough hash evidence for high/ultra forensic audit.
+Hardware Impact: Runtime impact is 0 us. Editor scanner avoids a managed full-report string and keeps the canonical report small.
+
+## Decision 035 - Route Card Matches Source
+
+Problem: The SHINOBU_210 architecture route card did not yet document the source-local endian fallback or bounded scanner sidecar preservation introduced after earlier loops.
+Solution: Update `Docs/ARCHITECTURE/OFFLINE_MODULE_DAMAGE_BAKER_SHINOBU_210.md` so the authority note matches the current code: no recursive scanner report embedding and no dependency on `math.reversebytes`.
+Rejected Alternatives: Leaving stale route-card language was rejected because AGENTS treats disk documentation as long-term memory after context compression.
+Scalability potential: No gameplay quality-tier behavior changes. The route card now correctly describes low-end CI evidence containment and ultra forensic dump portability.
+Hardware Impact: Runtime impact is 0 us. Documentation-only correction prevents future agents from reintroducing the old paths.
+
+## Decision 036 - Editor Queue Property Purge
+
+Problem: Static scan still found `get; private set;` properties on the Editor bake queue status fields. They were not Burst DTO fields, but leaving them weakens the no-property evidence gate.
+Solution: Convert `HabitatDamageBakeQueue.Status` and `HabitatDamageBakeQueue.Active` to raw public static fields. The UI already reads them directly and no invariant depended on property setters.
+Rejected Alternatives: Keeping the properties was rejected because this lane benefits more from simple evidence than accessor ceremony.
+Scalability potential: No quality-tier behavior changes. Low through Ultra bake commands keep the same queue status behavior.
+Hardware Impact: Runtime impact is 0 us. Editor property-call overhead was irrelevant; the value is architectural clarity.
+
+## Decision 037 - Progress Property Removed
+
+Problem: After removing accessor-block properties, the queue still had an expression-bodied `Progress` property. It was Editor-only, but it kept a property syntax hit in the owned source.
+Solution: Replace `Progress` with a raw public static field and update it explicitly on queue start, each tick, completion, and stop.
+Rejected Alternatives: Leaving the expression-bodied property was rejected because the source gate should not need semantic excuses for avoidable properties.
+Scalability potential: No quality-tier behavior changes. The Forge progress UI remains cold Editor presentation.
+Hardware Impact: Runtime impact is 0 us. Editor progress updates remain O(1).
+
+## Decision 038 - No Premature Finish Wording
+
+Problem: The Editor queue status string used "Bake complete" after writing a report, while Unity import, mesh inspector, profiler, and player-build proof are still pending.
+Solution: Change the status text to "Bake pass wrote report" so the tool reports the actual event without implying verified finality.
+Rejected Alternatives: Leaving "complete" in UI was rejected because the current evidence state is static-source plus generated report only.
+Scalability potential: No quality-tier behavior change.
+Hardware Impact: Runtime impact is 0 us. Text-only Editor UX correction.
+
+## Decision 039 - Deterministic Asset Refresh
+
+Problem: `AssetDatabase.GenerateUniqueAssetPath` minted numbered mesh and manifest assets on every rebake. That creates orphaned assets, unstable hashes, and GUID churn for a tool meant to be repeatedly used by designers.
+Solution: Use deterministic output paths based on prefab/source/state names. If an asset already exists, refresh it in place with `EditorUtility.CopySerialized`; otherwise create it once.
+Rejected Alternatives: Keeping unique path generation was rejected because it hides stale assets and breaks repeatable bake outputs. Deleting existing assets before create was rejected because it would churn `.meta` GUIDs.
+Scalability potential: No runtime quality-tier behavior changes. Low through Ultra bake variants now update predictable assets, making device-tier bake recipes repeatable.
+Hardware Impact: Runtime impact is 0 us. Editor project churn and asset database growth are reduced across repeated bakes.
+
+## Decision 040 - Explicit Dirty Marking After CopySerialized
+
+Problem: In-place deterministic rebake refresh depends on Unity saving the copied destination assets after `EditorUtility.CopySerialized`. Relying on implicit dirty state is weak evidence.
+Solution: Call `EditorUtility.SetDirty` on refreshed mesh and manifest assets immediately after `CopySerialized`, then let the queue's existing `AssetDatabase.SaveAssets` flush them.
+Rejected Alternatives: Trusting implicit dirty behavior was rejected because it can vary across Unity serialization paths. Forcing immediate `SaveAssets` per mesh was rejected because it would stall the editor repeatedly during a batch.
+Scalability potential: No quality-tier behavior change. Larger high/ultra batches still save once at the queue boundary.
+Hardware Impact: Runtime impact is 0 us. Editor avoids per-asset save stalls while making persistence explicit.
+
+## Decision 041 - Post-Compaction Source Verification
+
+Problem: Context compaction can leave stale claims in memory, and the current working tree includes parallel-agent edits to the shared physics optimization report.
+Solution: Re-read `Status_SHINOBU_210.md`, `Rationale_SHINOBU_210.md`, and the exact XML prompt from `CURRENT_BATCH.md`; then verify the owned source directly. The checked gates were: no forbidden scanner/parser/layout/property patterns in SHINOBU_210 owned source, no sibling domain references from DamageBake/contracts, 12 exact Burst attributes for 12 jobs, four reachable runtime mesh states, and deterministic asset refresh using `CopySerialized` plus `SetDirty`. The shared `PHYSICS_OPTIMIZATION_REPORT.json` currently contains SHINOBU_227 output that preserves SHINOBU_210 as previous evidence, so SHINOBU_210 does not blindly overwrite it.
+Rejected Alternatives: Trusting the summarized history was rejected because source is the only authority. Overwriting the shared physics report was rejected because another active agent owns the latest canonical report and the SHINOBU_210 scanner now has a bounded sidecar preservation route.
+Scalability potential: No gameplay quality-tier behavior changes. Verification keeps the offline bake lane stable for low through ultra asset recipes.
+Hardware Impact: Runtime impact is 0 us. No build was launched in this loop; prior build failure remains an external compile wall.

@@ -53,9 +53,12 @@ namespace Hecton8.World
         private readonly List<WorldGenerativeGeologyBinding> _bindingScanBuffer = new List<WorldGenerativeGeologyBinding>(256);
         private readonly List<long> _dictionaryTrimBuffer = new List<long>(256);
         private readonly HashSet<long> _selectedRuntimeKeys = new HashSet<long>(PlanRuntimeKeyCapacity);
+        private IPlayerRuntimeContext _playerRuntimeContext;
         private bool _registeredToTickManager;
         private bool _hasPlanRefreshSample;
+        private bool _hasPlanRefreshAup;
         private Vector3 _lastPlanRefreshPosition;
+        private AbsoluteUniversePosition _lastPlanRefreshAup;
         private float _lastPlanRefreshTime = float.NegativeInfinity;
         private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
 
@@ -134,8 +137,13 @@ namespace Hecton8.World
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
-            if (!isActiveAndEnabled || !_hasPlanRefreshSample || shiftData.ShiftOffset.sqrMagnitude <= 0.0001f)
+            if (!isActiveAndEnabled ||
+                !_hasPlanRefreshSample ||
+                _hasPlanRefreshAup ||
+                shiftData.ShiftOffset.sqrMagnitude <= 0.0001f)
+            {
                 return;
+            }
 
             _lastPlanRefreshPosition += -shiftData.ShiftOffset;
         }
@@ -222,7 +230,7 @@ namespace Hecton8.World
             _debugBridgeReady = mapMagicBridge != null && mapMagicBridge.IsAvailable;
             _debugVoxelEngineReady = voxelEngine != null;
 
-            if (playerTransform == null)
+            if (!TryResolvePlayerRuntimePose(out Vector3 playerRuntimePosition, out AbsoluteUniversePosition playerAup, out bool hasPlayerAup))
                 return;
 
             float searchRadius = ResolveSearchRadius();
@@ -233,16 +241,16 @@ namespace Hecton8.World
             {
                 WorldGenerativeGeologyBinding.CopyKnownBindingsTo(_bindingScanBuffer, true);
                 for (int i = 0; i < _bindingScanBuffer.Count; i++)
-                    ConsumeBinding(_bindingScanBuffer[i], searchRadius, now);
+                    ConsumeBinding(_bindingScanBuffer[i], searchRadius, now, playerRuntimePosition, hasPlayerAup, in playerAup);
             }
             else
             {
                 WorldGenerativeGeologyBinding.CopyActiveBindingsTo(_bindingScanBuffer);
                 for (int i = 0; i < _bindingScanBuffer.Count; i++)
-                    ConsumeBinding(_bindingScanBuffer[i], searchRadius, now);
+                    ConsumeBinding(_bindingScanBuffer[i], searchRadius, now, playerRuntimePosition, hasPlayerAup, in playerAup);
             }
 
-            RestoreRecentlyMissingPlans(searchRadius, now);
+            RestoreRecentlyMissingPlans(searchRadius, now, playerRuntimePosition, hasPlayerAup, in playerAup);
 
             _orderedPlans.Sort(CompareByWeightDescending);
             StabilizeTrackedPlans();
@@ -271,13 +279,19 @@ namespace Hecton8.World
             RecordPlanRefreshSample();
         }
 
-        private void ConsumeBinding(WorldGenerativeGeologyBinding binding, float searchRadius, float now)
+        private void ConsumeBinding(
+            WorldGenerativeGeologyBinding binding,
+            float searchRadius,
+            float now,
+            Vector3 playerRuntimePosition,
+            bool hasPlayerAup,
+            in AbsoluteUniversePosition playerAup)
         {
             if (binding == null)
                 return;
 
             _debugBindingsSeen++;
-            if (!TryBuildPlan(binding, searchRadius, out WorldGenerativeGeologySeamPlan plan))
+            if (!TryBuildPlan(binding, searchRadius, playerRuntimePosition, hasPlayerAup, in playerAup, out WorldGenerativeGeologySeamPlan plan))
                 return;
 
             _plansByKey[plan.runtimeKey] = plan;
@@ -288,7 +302,10 @@ namespace Hecton8.World
 
         private bool ShouldSkipPlanRefresh()
         {
-            if (!_hasPlanRefreshSample || playerTransform == null)
+            if (!_hasPlanRefreshSample)
+                return false;
+
+            if (!TryResolvePlayerRuntimePose(out Vector3 playerRuntimePosition, out AbsoluteUniversePosition playerAup, out bool hasPlayerAup))
                 return false;
 
             if (planForcedRefreshInterval > 0f)
@@ -299,22 +316,30 @@ namespace Hecton8.World
             }
 
             float threshold = Mathf.Max(0.5f, planRefreshDistanceThreshold);
-            return (playerTransform.position - _lastPlanRefreshPosition).sqrMagnitude < threshold * threshold;
+            float thresholdSq = threshold * threshold;
+            if (hasPlayerAup && _hasPlanRefreshAup)
+                return AbsoluteUniversePosition.DistanceSq(in playerAup, in _lastPlanRefreshAup) < thresholdSq;
+
+            Vector3 visualDelta = playerRuntimePosition - _lastPlanRefreshPosition;
+            return visualDelta.sqrMagnitude < thresholdSq;
         }
 
         private void RecordPlanRefreshSample()
         {
-            if (playerTransform == null)
+            if (!TryResolvePlayerRuntimePose(out Vector3 playerRuntimePosition, out AbsoluteUniversePosition playerAup, out bool hasPlayerAup))
                 return;
 
             _hasPlanRefreshSample = true;
-            _lastPlanRefreshPosition = playerTransform.position;
+            _hasPlanRefreshAup = hasPlayerAup;
+            _lastPlanRefreshPosition = playerRuntimePosition;
+            _lastPlanRefreshAup = playerAup;
             _lastPlanRefreshTime = Application.isPlaying ? Time.unscaledTime : 0f;
         }
 
         private void InvalidatePlanRefreshSample()
         {
             _hasPlanRefreshSample = false;
+            _hasPlanRefreshAup = false;
             _lastPlanRefreshTime = float.NegativeInfinity;
         }
 
@@ -343,7 +368,12 @@ namespace Hecton8.World
             }
         }
 
-        private void RestoreRecentlyMissingPlans(float searchRadius, float now)
+        private void RestoreRecentlyMissingPlans(
+            float searchRadius,
+            float now,
+            Vector3 playerRuntimePosition,
+            bool hasPlayerAup,
+            in AbsoluteUniversePosition playerAup)
         {
             if (_retainedRuntimeKeys.Count == 0)
                 return;
@@ -367,22 +397,27 @@ namespace Hecton8.World
                     continue;
                 }
 
-                if (!TryBuildPlan(binding, searchRadius, out WorldGenerativeGeologySeamPlan plan))
+                if (!TryBuildPlan(binding, searchRadius, playerRuntimePosition, hasPlayerAup, in playerAup, out WorldGenerativeGeologySeamPlan plan))
                 {
                     if (!_retainedPlansByKey.TryGetValue(runtimeKey, out plan))
                         continue;
 
                     Vector3 runtimeWorldPosition = binding.transform.position;
-                    float residencyRadius = searchRadius + Mathf.Max(4f, plan.seamBlendRadius);
-                    float residencyRadiusSq = residencyRadius * residencyRadius;
-                    Vector3 playerDelta = playerTransform.position - runtimeWorldPosition;
-                    if (playerDelta.sqrMagnitude > residencyRadiusSq)
+                    if (!TryResolveAupFromRuntimeOrigin(runtimeWorldPosition, out AbsoluteUniversePosition absoluteUniverseAup))
                         continue;
 
+                    float residencyRadius = searchRadius + Mathf.Max(4f, plan.seamBlendRadius);
+                    float residencyRadiusSq = residencyRadius * residencyRadius;
+                    if (!TryResolvePlayerDelta(playerRuntimePosition, hasPlayerAup, in playerAup, in absoluteUniverseAup, runtimeWorldPosition, out Vector3 playerDelta, out double playerDistanceSq) ||
+                        playerDistanceSq > residencyRadiusSq)
+                    {
+                        continue;
+                    }
+
                     float playerDistance = ApproximateDistanceNoSqrt(playerDelta);
-                    double3 absoluteUniversePositionDouble = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeWorldPosition);
+                    double3 absoluteUniversePositionDouble = absoluteUniverseAup.ToAbsoluteDouble3();
                     plan.absoluteUniversePosition = ToVector3(absoluteUniversePositionDouble);
-                    plan.absoluteUniverseAup = AbsoluteUniversePosition.FromAbsolutePosition(absoluteUniversePositionDouble);
+                    plan.absoluteUniverseAup = absoluteUniverseAup;
                     plan.hasAbsoluteUniverseAup = true;
                     plan.worldRotation = binding.transform.rotation;
                     plan.worldScale = binding.transform.lossyScale;
@@ -394,15 +429,21 @@ namespace Hecton8.World
                         : runtimeWorldPosition.y;
                     Vector3 runtimeTerrainPosition = new Vector3(runtimeWorldPosition.x, hasTerrainSample ? terrainHeight : runtimeWorldPosition.y, runtimeWorldPosition.z);
                     plan.hasTerrainSample = hasTerrainSample;
-                    double3 absoluteTerrainPositionDouble = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeTerrainPosition);
+                    if (!TryResolveAupFromRuntimeOrigin(runtimeTerrainPosition, out AbsoluteUniversePosition absoluteTerrainContactAup))
+                        continue;
+
+                    double3 absoluteTerrainPositionDouble = absoluteTerrainContactAup.ToAbsoluteDouble3();
                     plan.absoluteTerrainHeight = (float)absoluteTerrainPositionDouble.y;
-                    plan.absoluteTerrainContactAup = AbsoluteUniversePosition.FromAbsolutePosition(absoluteTerrainPositionDouble);
+                    plan.absoluteTerrainContactAup = absoluteTerrainContactAup;
                     plan.hasAbsoluteTerrainContactAup = true;
                     plan.terrainDelta = hasTerrainSample ? runtimeWorldPosition.y - terrainHeight : 0f;
                     Vector3 runtimeVoxelCenter = new Vector3(runtimeWorldPosition.x, voxelCenterY, runtimeWorldPosition.z);
-                    double3 absoluteVoxelCenterDouble = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeVoxelCenter);
+                    if (!TryResolveAupFromRuntimeOrigin(runtimeVoxelCenter, out AbsoluteUniversePosition absoluteVoxelVolumeCenterAup))
+                        continue;
+
+                    double3 absoluteVoxelCenterDouble = absoluteVoxelVolumeCenterAup.ToAbsoluteDouble3();
                     plan.absoluteVoxelVolumeCenter = ToVector3(absoluteVoxelCenterDouble);
-                    plan.absoluteVoxelVolumeCenterAup = AbsoluteUniversePosition.FromAbsolutePosition(absoluteVoxelCenterDouble);
+                    plan.absoluteVoxelVolumeCenterAup = absoluteVoxelVolumeCenterAup;
                     plan.hasAbsoluteVoxelVolumeCenterAup = true;
                 }
 
@@ -473,6 +514,9 @@ namespace Hecton8.World
         private bool TryBuildPlan(
             WorldGenerativeGeologyBinding binding,
             float searchRadius,
+            Vector3 playerRuntimePosition,
+            bool hasPlayerAup,
+            in AbsoluteUniversePosition playerAup,
             out WorldGenerativeGeologySeamPlan plan)
         {
             plan = default;
@@ -482,13 +526,18 @@ namespace Hecton8.World
 
             Transform targetTransform = binding.transform;
             Vector3 runtimeWorldPosition = targetTransform.position;
-            double3 absoluteUniversePositionDouble = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeWorldPosition);
+            if (!TryResolveAupFromRuntimeOrigin(runtimeWorldPosition, out AbsoluteUniversePosition absoluteUniverseAup))
+                return false;
+
+            double3 absoluteUniversePositionDouble = absoluteUniverseAup.ToAbsoluteDouble3();
             Vector3 absoluteUniversePosition = ToVector3(absoluteUniversePositionDouble);
             float residencyRadius = searchRadius + Mathf.Max(4f, binding.SeamBlendRadius);
             float residencyRadiusSq = residencyRadius * residencyRadius;
-            Vector3 playerDelta = playerTransform.position - runtimeWorldPosition;
-            if (playerDelta.sqrMagnitude > residencyRadiusSq)
+            if (!TryResolvePlayerDelta(playerRuntimePosition, hasPlayerAup, in playerAup, in absoluteUniverseAup, runtimeWorldPosition, out Vector3 playerDelta, out double playerDistanceSq) ||
+                playerDistanceSq > residencyRadiusSq)
+            {
                 return false;
+            }
 
             float playerDistance = ApproximateDistanceNoSqrt(playerDelta);
             WorldProceduralProxyInstance metadata = binding.CachedProxyInstance;
@@ -533,11 +582,14 @@ namespace Hecton8.World
                 : runtimeWorldPosition.y;
             Vector3 runtimeVoxelVolumeCenter = new Vector3(runtimeWorldPosition.x, voxelCenterY, runtimeWorldPosition.z);
             Vector3 runtimeTerrainPosition = new Vector3(runtimeWorldPosition.x, hasTerrainSample ? terrainHeight : runtimeWorldPosition.y, runtimeWorldPosition.z);
-            double3 absoluteTerrainPositionDouble = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeTerrainPosition);
-            double3 absoluteVoxelVolumeCenterDouble = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeVoxelVolumeCenter);
-            AbsoluteUniversePosition absoluteUniverseAup = AbsoluteUniversePosition.FromAbsolutePosition(absoluteUniversePositionDouble);
-            AbsoluteUniversePosition absoluteTerrainContactAup = AbsoluteUniversePosition.FromAbsolutePosition(absoluteTerrainPositionDouble);
-            AbsoluteUniversePosition absoluteVoxelVolumeCenterAup = AbsoluteUniversePosition.FromAbsolutePosition(absoluteVoxelVolumeCenterDouble);
+            if (!TryResolveAupFromRuntimeOrigin(runtimeTerrainPosition, out AbsoluteUniversePosition absoluteTerrainContactAup) ||
+                !TryResolveAupFromRuntimeOrigin(runtimeVoxelVolumeCenter, out AbsoluteUniversePosition absoluteVoxelVolumeCenterAup))
+            {
+                return false;
+            }
+
+            double3 absoluteTerrainPositionDouble = absoluteTerrainContactAup.ToAbsoluteDouble3();
+            double3 absoluteVoxelVolumeCenterDouble = absoluteVoxelVolumeCenterAup.ToAbsoluteDouble3();
 
             plan = new WorldGenerativeGeologySeamPlan
             {
@@ -586,6 +638,107 @@ namespace Hecton8.World
             };
 
             return true;
+        }
+
+        private bool TryResolvePlayerRuntimePose(
+            out Vector3 playerRuntimePosition,
+            out AbsoluteUniversePosition playerAup,
+            out bool hasPlayerAup)
+        {
+            playerRuntimePosition = default;
+            playerAup = default;
+            hasPlayerAup = false;
+
+            IPlayerRuntimeContext player = _playerRuntimeContext;
+            if (player == null)
+            {
+                player = GlobalRegistry.Player;
+                _playerRuntimeContext = player;
+            }
+
+            if (player != null &&
+                player.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                math.all(math.isfinite(snapshot.RuntimePosition)))
+            {
+                playerRuntimePosition = new Vector3(snapshot.RuntimePosition.x, snapshot.RuntimePosition.y, snapshot.RuntimePosition.z);
+                playerAup = snapshot.Aup;
+                hasPlayerAup = IsFinite(in playerAup);
+                return true;
+            }
+
+            HectonPlayerMovement playerMovement = player != null ? player.PlayerMovement : null;
+            if (playerMovement != null)
+            {
+                playerAup = playerMovement.CurrentAup;
+                hasPlayerAup = IsFinite(in playerAup);
+                if (hasPlayerAup)
+                {
+                    float3 runtime = playerAup.ToRuntimeFloat3();
+                    if (math.all(math.isfinite(runtime)))
+                    {
+                        playerRuntimePosition = new Vector3(runtime.x, runtime.y, runtime.z);
+                        return true;
+                    }
+                }
+            }
+
+            if (playerTransform == null || !IsFinite(playerTransform.position))
+                return false;
+
+            playerRuntimePosition = playerTransform.position;
+            playerAup = default;
+            hasPlayerAup = false;
+            return true;
+        }
+
+        private static bool TryResolvePlayerDelta(
+            Vector3 playerRuntimePosition,
+            bool hasPlayerAup,
+            in AbsoluteUniversePosition playerAup,
+            in AbsoluteUniversePosition targetAup,
+            Vector3 targetRuntimePosition,
+            out Vector3 playerDelta,
+            out double playerDistanceSq)
+        {
+            if (hasPlayerAup && IsFinite(in playerAup) && IsFinite(in targetAup))
+            {
+                double3 delta = AbsoluteUniversePosition.DeltaMetersClamped(in playerAup, in targetAup);
+                playerDistanceSq = math.lengthsq(delta);
+                playerDelta = ToVector3(delta);
+                return math.isfinite(playerDistanceSq);
+            }
+
+            playerDelta = playerRuntimePosition - targetRuntimePosition;
+            playerDistanceSq = playerDelta.sqrMagnitude;
+            return math.isfinite(playerDistanceSq);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!IsFinite(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!IsFinite(in originAup))
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return IsFinite(in positionAup);
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return math.all(math.isfinite(new float3(value.x, value.y, value.z)));
+        }
+
+        private static bool IsFinite(in AbsoluteUniversePosition value)
+        {
+            return math.isfinite(value.LocalX) &&
+                   math.isfinite(value.LocalY) &&
+                   math.isfinite(value.LocalZ);
         }
 
         private float ResolveSearchRadius()

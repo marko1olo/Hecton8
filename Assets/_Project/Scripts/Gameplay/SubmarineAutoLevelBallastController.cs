@@ -45,6 +45,8 @@ namespace Hecton8.Gameplay
             [FieldOffset(48)] public float3 Derivative;
             [FieldOffset(60)] public float IntegralWindup;
             [FieldOffset(64)] public uint Flags;
+            [FieldOffset(68)] private uint _pad0;
+            [FieldOffset(72)] private ulong _pad1;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 128)]
@@ -66,6 +68,9 @@ namespace Hecton8.Gameplay
             [FieldOffset(108)] public float DynamicFloodWaterMassKg;
             [FieldOffset(112)] public float DynamicFloodAngularDragMultiplier;
             [FieldOffset(116)] public byte CriticalFloodActive;
+            [FieldOffset(117)] private byte _pad0;
+            [FieldOffset(118)] private ushort _pad1;
+            [FieldOffset(120)] private ulong _pad2;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 80)]
@@ -78,9 +83,10 @@ namespace Hecton8.Gameplay
             [FieldOffset(64)] public float TotalWaterMassKg;
             [FieldOffset(68)] public float AngularDragMultiplier;
             [FieldOffset(72)] public uint Flags;
+            [FieldOffset(76)] private uint _pad0;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         [StructLayout(LayoutKind.Sequential)]
         private struct SubmarineAutoLevelPidJob : IJob
         {
@@ -103,8 +109,8 @@ namespace Hecton8.Gameplay
             public byte CriticalFloodActive;
             public byte LowMaelstromTier;
             public int ActiveMaelstromCount;
-            [ReadOnly] public NativeArray<WhirlpoolFlow> ActiveMaelstroms;
-            public NativeArray<PidJobOutput> Output;
+            [ReadOnly, NoAlias] public NativeArray<WhirlpoolFlow> ActiveMaelstroms;
+            [NoAlias] public NativeArray<PidJobOutput> Output;
 
             public void Execute()
             {
@@ -220,14 +226,14 @@ namespace Hecton8.Gameplay
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [StructLayout(LayoutKind.Sequential)]
         private struct SubmarineMassSolverJob : IJob
         {
-            [ReadOnly] public NativeArray<float> RoomWaterLevels;
-            [ReadOnly] public NativeArray<float> RoomVolumes;
-            [ReadOnly] public NativeArray<float3> RoomLocalAUPs;
-            public NativeArray<DynamicFloodMassOutput> Output;
+            [ReadOnly, NoAlias] public NativeArray<float> RoomWaterLevels;
+            [ReadOnly, NoAlias] public NativeArray<float> RoomVolumes;
+            [ReadOnly, NoAlias] public NativeArray<float3> RoomLocalAUPs;
+            [NoAlias] public NativeArray<DynamicFloodMassOutput> Output;
             public int RoomCount;
             public float BaseMassKg;
             public float3 BaseCenterOfMassLocal;

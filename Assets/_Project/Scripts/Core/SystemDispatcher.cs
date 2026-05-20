@@ -2895,7 +2895,9 @@ namespace Hecton8.Core
                 if (system == null)
                     continue;
 
+                JobHandle previous = combined;
                 combined = system.ScheduleFixedSimulation(in timing, combined);
+                CaptureMasterFixedDomainFence(system, ref combined, ref previous);
                 _masterPendingFixedJobCount++;
             }
 
@@ -3028,6 +3030,41 @@ namespace Hecton8.Core
                 return provider.GetFenceDomain();
 
             return DispatcherFenceDomain.Simulation;
+        }
+
+        private static DispatcherFenceDomain ResolveMasterFixedFenceDomain(IDispatcherFixedSystem system)
+        {
+            if (system is IDispatcherFenceDomainProvider provider)
+                return provider.GetFenceDomain();
+
+            return DispatcherFenceDomain.Simulation;
+        }
+
+        private void CaptureMasterFixedDomainFence(
+            IDispatcherFixedSystem system,
+            ref JobHandle handle,
+            ref JobHandle previousHandle)
+        {
+            ulong handleBits = CaptureJobHandleBits(ref handle);
+            if (handleBits == 0ul || handleBits == CaptureJobHandleBits(ref previousHandle))
+                return;
+
+            DispatcherFenceDomain domain = ResolveMasterFixedFenceDomain(system);
+            int domainIndex = math.clamp((int)domain, 0, MasterDispatcherFenceDomainCount - 1);
+            _masterActiveDomainMask |= 1u << domainIndex;
+
+            switch (domain)
+            {
+                case DispatcherFenceDomain.Physics:
+                    _masterLastPhysicsHandleBits = handleBits;
+                    break;
+                case DispatcherFenceDomain.Audio:
+                    _masterLastAudioHandleBits = handleBits;
+                    break;
+                case DispatcherFenceDomain.Netcode:
+                    _masterLastNetcodeHandleBits = handleBits;
+                    break;
+            }
         }
 
         private void AccumulateDomainFence(

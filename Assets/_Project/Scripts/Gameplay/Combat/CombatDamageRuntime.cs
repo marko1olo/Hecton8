@@ -123,7 +123,7 @@ namespace Hecton8.Gameplay
         [FieldOffset(28)] public float StatusDurationSeconds;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 80)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct CombatDamageResult
     {
         [FieldOffset(0)] public int TargetId;
@@ -144,6 +144,12 @@ namespace Hecton8.Gameplay
         [FieldOffset(52)] public float3 LocalPoint;
         [FieldOffset(64)] public float3 SurfaceNormal;
         [FieldOffset(76)] public float Depth;
+        [FieldOffset(80)] private ulong _pad2;
+        [FieldOffset(88)] private ulong _pad3;
+        [FieldOffset(96)] private ulong _pad4;
+        [FieldOffset(104)] private ulong _pad5;
+        [FieldOffset(112)] private ulong _pad6;
+        [FieldOffset(120)] private ulong _pad7;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]

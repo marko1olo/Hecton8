@@ -22,26 +22,30 @@ namespace Hecton8.Gameplay
         private const string RightCalfAttachmentName = "Swim_RightCalfAttachment";
         private const string LeftFinAttachmentName = "Swim_LeftFinAttachment";
         private const string RightFinAttachmentName = "Swim_RightFinAttachment";
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 96)]
         private struct BodyModePose
         {
-            public float BodyWeight;
-            public float TorsoPitch;
-            public float TorsoDrop;
-            public float TorsoForward;
-            public float PelvisPitch;
-            public float PelvisDrop;
-            public float LegSpread;
-            public float KneeTuck;
-            public float KickAmplitude;
-            public float KickLift;
-            public float KickForward;
-            public float KickBackward;
-            public float FinPitch;
-            public float FinSplay;
-            public float KickCadenceScale;
-            public float KickSync;
-            public float Streamline;
+            [FieldOffset(0)] public float BodyWeight;
+            [FieldOffset(4)] public float TorsoPitch;
+            [FieldOffset(8)] public float TorsoDrop;
+            [FieldOffset(12)] public float TorsoForward;
+            [FieldOffset(16)] public float PelvisPitch;
+            [FieldOffset(20)] public float PelvisDrop;
+            [FieldOffset(24)] public float LegSpread;
+            [FieldOffset(28)] public float KneeTuck;
+            [FieldOffset(32)] public float KickAmplitude;
+            [FieldOffset(36)] public float KickLift;
+            [FieldOffset(40)] public float KickForward;
+            [FieldOffset(44)] public float KickBackward;
+            [FieldOffset(48)] public float FinPitch;
+            [FieldOffset(52)] public float FinSplay;
+            [FieldOffset(56)] public float KickCadenceScale;
+            [FieldOffset(60)] public float KickSync;
+            [FieldOffset(64)] public float Streamline;
+            [FieldOffset(68)] private uint _pad0;
+            [FieldOffset(72)] private ulong _pad1;
+            [FieldOffset(80)] private ulong _pad2;
+            [FieldOffset(88)] private ulong _pad3;
         }
 
         [Header("── Full Body References ─────────────────")]

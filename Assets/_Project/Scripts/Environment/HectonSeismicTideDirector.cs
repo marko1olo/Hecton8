@@ -823,7 +823,11 @@ namespace Hecton8.Environment
         public void LateFrameTick()
         {
             CompleteSeismicEvaluationJob(force: false);
-            CompleteCelestialMechanicsJob(force: false);
+            if (TryFinalizeCelestialMechanicsJobNoWait(out CelestialStateDTO state, out CelestialFlowModifierDTO flowModifier))
+            {
+                _cachedTide = BuildTideSolveFromCelestial(in state, in flowModifier);
+                _hasCachedTide = true;
+            }
         }
 
         private void OnEnable()
@@ -838,7 +842,7 @@ namespace Hecton8.Environment
         private void OnDisable()
         {
             CompleteSeismicEvaluationJob(force: true);
-            CompleteCelestialMechanicsJob(force: true);
+            CompleteCelestialMechanicsJobForBarrier();
             TryUnregisterTickLanes();
             if (_registeredService)
             {
@@ -865,7 +869,7 @@ namespace Hecton8.Environment
         private void ShutdownServiceState()
         {
             CompleteSeismicEvaluationJob(force: true);
-            CompleteCelestialMechanicsJob(force: true);
+            CompleteCelestialMechanicsJobForBarrier();
             TryUnregisterTickLanes();
             if (_registeredService)
             {
@@ -1939,7 +1943,7 @@ namespace Hecton8.Environment
             if (writeState == null || readState == null || flow == null || tuning == null || mockTimeline == null || orbitalParameters == null)
                 return false;
 
-            if (TryCompleteCelestialMechanicsJob(force: false, out state, out flowModifier))
+            if (TryFinalizeCelestialMechanicsJobNoWait(out state, out flowModifier))
                 return true;
 
             if (_celestialMechanicsJobScheduled)
@@ -1964,20 +1968,19 @@ namespace Hecton8.Environment
             _celestialMechanicsJobScheduled = true;
             _celestialMechanicsTelemetryRequested = writeTelemetry;
             H8Memory.RegisterActiveJob(SystemID.HabitatAtmosphere, _celestialMechanicsJob);
-            return TryCompleteCelestialMechanicsJob(force: false, out state, out flowModifier);
+            return TryFinalizeCelestialMechanicsJobNoWait(out state, out flowModifier);
         }
 
-        private unsafe void CompleteCelestialMechanicsJob(bool force)
+        private unsafe void CompleteCelestialMechanicsJobForBarrier()
         {
-            if (TryCompleteCelestialMechanicsJob(force, out CelestialStateDTO state, out CelestialFlowModifierDTO flowModifier))
+            if (CompleteCelestialMechanicsJobForBarrier(out CelestialStateDTO state, out CelestialFlowModifierDTO flowModifier))
             {
                 _cachedTide = BuildTideSolveFromCelestial(in state, in flowModifier);
                 _hasCachedTide = true;
             }
         }
 
-        private unsafe bool TryCompleteCelestialMechanicsJob(
-            bool force,
+        private unsafe bool TryFinalizeCelestialMechanicsJobNoWait(
             out CelestialStateDTO state,
             out CelestialFlowModifierDTO flowModifier)
         {
@@ -1986,12 +1989,33 @@ namespace Hecton8.Environment
             if (!_celestialMechanicsJobScheduled)
                 return false;
 
-            bool completed = force
-                ? DispatcherJobFence.TryComplete(ref _celestialMechanicsJob, forceComplete: true)
-                : DispatcherJobFence.TryFinalizeCompleted(ref _celestialMechanicsJob);
-            if (!completed)
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _celestialMechanicsJob))
                 return false;
 
+            return CommitCompletedCelestialMechanicsJob(out state, out flowModifier);
+        }
+
+        private unsafe bool CompleteCelestialMechanicsJobForBarrier(
+            out CelestialStateDTO state,
+            out CelestialFlowModifierDTO flowModifier)
+        {
+            state = default;
+            flowModifier = default;
+            if (!_celestialMechanicsJobScheduled)
+                return false;
+
+            if (!DispatcherJobFence.TryComplete(ref _celestialMechanicsJob, forceComplete: true))
+                return false;
+
+            return CommitCompletedCelestialMechanicsJob(out state, out flowModifier);
+        }
+
+        private unsafe bool CommitCompletedCelestialMechanicsJob(
+            out CelestialStateDTO state,
+            out CelestialFlowModifierDTO flowModifier)
+        {
+            state = default;
+            flowModifier = default;
             _celestialMechanicsJobScheduled = false;
             bool telemetryRequested = _celestialMechanicsTelemetryRequested;
             _celestialMechanicsTelemetryRequested = false;

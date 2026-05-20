@@ -37,14 +37,14 @@ Do not treat a visible email, Discord user, Steam commenter, or creator CRM row 
 | Source | Allowed only if | Blocker |
 |---|---|---|
 | Email waitlist | The person opted into the matching playtest/waitlist mode and `owned_audience_permission_gate = ALLOW_OWNED_AUDIENCE_VERIFIED` for that mode. | Imported CRM/contact rows, scraped emails, vague newsletter consent, or a held owned-audience gate. |
-| Discord/community | The server/channel rules allow tester recruitment and the invite points to an approved signup route. | DM recruitment, mod-disallowed posts, or public invite before Discord custody/open gate. |
-| Steam Playtest signup | Steam page/Playtest route is live, `demo_public_access_permission_gate = ALLOW_PUBLIC_DEMO_ACCESS_VERIFIED` for public signup/tranche, and route class is recorded. | Treating Playtest signup as newsletter, creator, press consent, or public access approval from build existence. |
+| Discord/community | The server/channel rules permit tester recruitment, `discord_open_permission_gate = ALLOW_DISCORD_OPEN_VERIFIED` for any public invite/server route, and the invite points to an owned-audience or support/signup route with its exact destination gate plus `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`. | DM recruitment, mod-disallowed posts, public invite before Discord custody/open gate, or signup link from a held destination gate. |
+| Steam Playtest signup | Steam page/Playtest access has `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED`, `demo_public_access_permission_gate = ALLOW_PUBLIC_DEMO_ACCESS_VERIFIED` for public signup/tranche, destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` for public links, and route class is recorded. | Treating Playtest signup as newsletter, creator, press consent, or public access approval from build existence. |
 | Verified lead/direct invite | The relationship or public route makes a one-off invite appropriate. | Mass direct messages or creator/press rows with no tester opt-in. |
 | Personal network | Bias is disclosed and feedback is tagged as biased. | Counting friends/family as cold read or external validation. |
 
 Every recruited tester row needs source, consent class, route class, segment, and feedback obligation. Do not merge tester contacts into newsletter, creator CRM, press list, or Discord roles unless they explicitly opt into that separate route.
 
-If recruitment copy claims gameplay, pressure, route risk, threat, salvage, base failure, or first-public agency proof, it also needs an AB-009/KPI field source: `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`. Playtesters can generate new product feedback, but recruitment cannot use unmeasured marketing proof as the hook.
+If recruitment copy claims gameplay, pressure, route risk, threat, salvage, base failure, or first-public agency proof from an asset, it also needs a non-pending asset metadata `viewer_named_decision`, a valid non-held `capture_verdict`, and an AB-009/KPI field source: `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`. Playtesters can generate new product feedback, but recruitment cannot use unmeasured marketing proof or pending/held metadata as the hook.
 
 ## Screening Questions
 
@@ -189,7 +189,7 @@ What did you think the game was about after 5 minutes?
 Most interesting moment:
 Most annoying moment:
 What decision did you make under pressure, if any?
-If this answer is used as agency proof, record the owner-local field as `agency_decision_read` or `cold_read_agency_decision`; do not treat the raw quote as public proof by itself.
+If this answer is used as agency proof, record the owner-local field as `agency_decision_read` or `cold_read_agency_decision`; if it is tied to a screenshot/clip claim, also bind it to the asset metadata `viewer_named_decision` and `capture_verdict`. Do not treat the raw quote as public proof by itself.
 Did resource collection feel tense or tedious?
 Did pressure/machinery feel important?
 Would you wishlist/follow?

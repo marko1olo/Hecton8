@@ -1,13 +1,24 @@
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
+using Debug = UnityEngine.Debug;
 
 namespace Hecton8.Editor.GeologyForge
 {
     internal static class RuntimeMeshGenerationScanner
     {
+        private const double AsyncScanBudgetSeconds = 0.004;
+        private const string AsyncScanProgressMessage = "Scanning source files";
+
+        private static readonly Stopwatch _AsyncScanStopwatch = new Stopwatch();
+        private static List<string> _asyncFiles;
+        private static List<string> _asyncDirectoryStack;
+        private static List<Finding> _asyncFindings;
+        private static int _asyncScannedFileCount;
+
         private static readonly string[] _ScanRoots =
         {
             "Assets/_Project/Scripts/World",
@@ -30,36 +41,210 @@ namespace Hecton8.Editor.GeologyForge
         [MenuItem("HECTON-8/Geology Forge/Scan Runtime Mesh Generation", false, 181)]
         public static void ScanAndWriteReport()
         {
+            if (!Application.isBatchMode && StartAsyncScan())
+                return;
+
             List<Finding> findings = Scan();
             WriteReport(findings);
             Debug.Log("[SHINOBU_208] Runtime mesh generation scan wrote " + GeologyForgeConstants.ScannerReportPath + " with " + findings.Count + " findings.");
         }
 
+        [MenuItem("HECTON-8/Geology Forge/Cancel Runtime Mesh Scan", false, 182)]
+        public static void CancelAsyncScan()
+        {
+            if (_asyncFindings == null)
+                return;
+
+            EditorApplication.update -= TickAsyncScan;
+            if (!Application.isBatchMode)
+                EditorUtility.ClearProgressBar();
+            _asyncFiles = null;
+            _asyncDirectoryStack = null;
+            _asyncFindings = null;
+            _asyncScannedFileCount = 0;
+            _AsyncScanStopwatch.Reset();
+        }
+
         public static List<Finding> Scan()
         {
+            List<string> files = CollectScanFiles();
             var findings = new List<Finding>(64);
+            for (int i = 0; i < files.Count; i++)
+                ScanFile(files[i], findings);
+
+            return findings;
+        }
+
+        private static bool StartAsyncScan()
+        {
+            if (_asyncFindings != null)
+            {
+                Debug.LogWarning("[SHINOBU_208] Runtime mesh generation scan request ignored: scan already active.");
+                return true;
+            }
+
+            _asyncFiles = new List<string>(64);
+            _asyncDirectoryStack = new List<string>(_ScanRoots.Length);
+            _asyncFindings = new List<Finding>(64);
+            _asyncScannedFileCount = 0;
+            SeedAsyncScanRoots();
+            EditorApplication.update -= TickAsyncScan;
+            EditorApplication.update += TickAsyncScan;
+            return true;
+        }
+
+        private static void TickAsyncScan()
+        {
+            if (_asyncFiles == null || _asyncDirectoryStack == null || _asyncFindings == null)
+                return;
+
+            try
+            {
+                if (!Application.isBatchMode)
+                {
+                    float progress = EstimateAsyncProgress();
+                    if (EditorUtility.DisplayCancelableProgressBar("Geology Runtime Mesh Scan", AsyncScanProgressMessage, progress))
+                    {
+                        CancelAsyncScan();
+                        Debug.LogWarning("[SHINOBU_208] Runtime mesh generation scan canceled.");
+                        return;
+                    }
+                }
+
+                _AsyncScanStopwatch.Restart();
+                while (true)
+                {
+                    if (_asyncFiles.Count > 0)
+                    {
+                        int lastFile = _asyncFiles.Count - 1;
+                        string path = _asyncFiles[lastFile];
+                        _asyncFiles.RemoveAt(lastFile);
+                        ScanFile(path, _asyncFindings);
+                        _asyncScannedFileCount++;
+                    }
+                    else if (_asyncDirectoryStack.Count > 0)
+                    {
+                        ExpandNextAsyncDirectory();
+                    }
+                    else
+                    {
+                        FinishAsyncScan();
+                        return;
+                    }
+
+                    if (_AsyncScanStopwatch.Elapsed.TotalSeconds >= AsyncScanBudgetSeconds)
+                        break;
+                }
+            }
+            catch (System.Exception ex)
+            {
+                CancelAsyncScan();
+                Debug.LogException(ex);
+            }
+        }
+
+        private static void FinishAsyncScan()
+        {
+            List<Finding> completedFindings = _asyncFindings;
+            EditorApplication.update -= TickAsyncScan;
+            _asyncFiles = null;
+            _asyncDirectoryStack = null;
+            _asyncFindings = null;
+            _asyncScannedFileCount = 0;
+            _AsyncScanStopwatch.Reset();
+            if (!Application.isBatchMode)
+                EditorUtility.ClearProgressBar();
+
+            WriteReport(completedFindings);
+            Debug.Log("[SHINOBU_208] Runtime mesh generation scan wrote " + GeologyForgeConstants.ScannerReportPath + " with " + completedFindings.Count + " findings.");
+        }
+
+        private static void SeedAsyncScanRoots()
+        {
+            for (int rootIndex = 0; rootIndex < _ScanRoots.Length; rootIndex++)
+            {
+                string root = _ScanRoots[rootIndex];
+                if (Directory.Exists(root))
+                    _asyncDirectoryStack.Add(root.Replace('\\', '/'));
+            }
+
+            string voxelPath = "Assets/_Project/Scripts/HectonVoxelEngine.cs";
+            if (File.Exists(voxelPath))
+                _asyncFiles.Add(voxelPath);
+        }
+
+        private static void ExpandNextAsyncDirectory()
+        {
+            int lastDirectory = _asyncDirectoryStack.Count - 1;
+            string directory = _asyncDirectoryStack[lastDirectory];
+            _asyncDirectoryStack.RemoveAt(lastDirectory);
+            if (IsEditorPath(directory))
+                return;
+
+            try
+            {
+                string[] childDirectories = Directory.GetDirectories(directory);
+                for (int i = 0; i < childDirectories.Length; i++)
+                {
+                    string childDirectory = childDirectories[i].Replace('\\', '/');
+                    if (!IsEditorPath(childDirectory))
+                        _asyncDirectoryStack.Add(childDirectory);
+                }
+
+                string[] files = Directory.GetFiles(directory, "*.cs", SearchOption.TopDirectoryOnly);
+                for (int i = 0; i < files.Length; i++)
+                {
+                    string path = files[i].Replace('\\', '/');
+                    if (!IsEditorPath(path))
+                        _asyncFiles.Add(path);
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning("[SHINOBU_208] Runtime mesh generation scan skipped " + directory + ": " + ex.GetType().Name);
+            }
+        }
+
+        private static float EstimateAsyncProgress()
+        {
+            int queuedWork = (_asyncFiles != null ? _asyncFiles.Count : 0) + (_asyncDirectoryStack != null ? _asyncDirectoryStack.Count : 0);
+            int totalKnown = _asyncScannedFileCount + queuedWork;
+            if (totalKnown <= 0)
+                return 0.95f;
+
+            return Mathf.Clamp01((float)_asyncScannedFileCount / totalKnown);
+        }
+
+        private static List<string> CollectScanFiles()
+        {
+            var files = new List<string>(128);
             for (int rootIndex = 0; rootIndex < _ScanRoots.Length; rootIndex++)
             {
                 string root = _ScanRoots[rootIndex];
                 if (!Directory.Exists(root))
                     continue;
 
-                string[] files = Directory.GetFiles(root, "*.cs", SearchOption.AllDirectories);
-                for (int fileIndex = 0; fileIndex < files.Length; fileIndex++)
+                string[] rootFiles = Directory.GetFiles(root, "*.cs", SearchOption.AllDirectories);
+                for (int fileIndex = 0; fileIndex < rootFiles.Length; fileIndex++)
                 {
-                    string path = files[fileIndex].Replace('\\', '/');
-                    if (path.Contains("/Editor/"))
+                    string path = rootFiles[fileIndex].Replace('\\', '/');
+                    if (IsEditorPath(path))
                         continue;
 
-                    ScanFile(path, findings);
+                    files.Add(path);
                 }
             }
 
             string voxelPath = "Assets/_Project/Scripts/HectonVoxelEngine.cs";
             if (File.Exists(voxelPath))
-                ScanFile(voxelPath, findings);
+                files.Add(voxelPath);
 
-            return findings;
+            return files;
+        }
+
+        private static bool IsEditorPath(string path)
+        {
+            return path.Contains("/Editor/") || path.EndsWith("/Editor");
         }
 
         private static void ScanFile(string path, List<Finding> findings)
@@ -183,7 +368,36 @@ namespace Hecton8.Editor.GeologyForge
             }
 
             builder.Append("\n  ],\n  \"note\": \"Editor-only Geology Forge added. Remaining runtime topology sites require owner-specific removal, not blind cross-domain deletion. Schema v2 classifies context/risk so integrators can route SIMULATION_RUNTIME before comment-only archaeology.\"\n}\n");
-            File.WriteAllText(GeologyForgeConstants.ScannerReportPath, builder.ToString());
+            WriteAtomicText(GeologyForgeConstants.ScannerReportPath, builder.ToString());
+        }
+
+        private static void WriteAtomicText(string path, string contents)
+        {
+            string tempPath = path + ".tmp";
+            string backupPath = path + ".bak";
+            if (File.Exists(tempPath))
+                File.Delete(tempPath);
+
+            try
+            {
+                File.WriteAllText(tempPath, contents);
+                if (File.Exists(path))
+                {
+                    if (File.Exists(backupPath))
+                        File.Delete(backupPath);
+                    File.Replace(tempPath, path, backupPath);
+                }
+                else
+                {
+                    File.Move(tempPath, path);
+                }
+            }
+            catch
+            {
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+                throw;
+            }
         }
 
         private static bool IsCommentOnly(string trimmed)

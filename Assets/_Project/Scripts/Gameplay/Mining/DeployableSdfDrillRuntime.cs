@@ -233,7 +233,7 @@ namespace Hecton8.Gameplay.Mining
         private void OnDisable()
         {
             CancelTerrainSnap();
-            CompleteExtractionJob(true);
+            CompleteExtractionJobForBarrier();
             UnregisterRuntimeHooks();
             ReleaseActiveInstance();
         }
@@ -241,7 +241,7 @@ namespace Hecton8.Gameplay.Mining
         private void OnDestroy()
         {
             CancelTerrainSnap();
-            CompleteExtractionJob(true);
+            CompleteExtractionJobForBarrier();
             UnregisterRuntimeHooks();
             ReleaseActiveInstance();
             DisposeNativeState();
@@ -279,7 +279,7 @@ namespace Hecton8.Gameplay.Mining
         public void OnDespawn()
         {
             CancelTerrainSnap();
-            CompleteExtractionJob(true);
+            CompleteExtractionJobForBarrier();
             UnregisterRuntimeHooks();
             ReleaseActiveInstance();
             _stateFlags = DeployableSdfDrillFlags.None;
@@ -304,8 +304,8 @@ namespace Hecton8.Gameplay.Mining
         public void ColdTick()
         {
             double now = SystemDispatcher.CurrentUnscaledTimeSeconds;
-            CompleteTerrainSnap(false);
-            CompleteExtractionJob(false);
+            TryFinalizeTerrainSnapNoWait();
+            TryFinalizeExtractionJobNoWait();
             CaptureAnchorFromTransform();
             UpdateMathLodHysteresis(now);
 
@@ -429,7 +429,7 @@ namespace Hecton8.Gameplay.Mining
         /// </summary>
         public void CaptureMacroRecord(out DeployableSdfDrillMacroRecord record)
         {
-            CompleteExtractionJob(true);
+            CompleteExtractionJobForBarrier();
             CaptureAnchorFromTransform();
             bool hasInventory = TryResolveInventoryState(
                 out NativeSlice<ushort> quantities,
@@ -476,7 +476,7 @@ namespace Hecton8.Gameplay.Mining
         public void RestoreMacroRecord(in DeployableSdfDrillMacroRecord record)
         {
             CancelTerrainSnap();
-            CompleteExtractionJob(true);
+            CompleteExtractionJobForBarrier();
             AllocateNativeState();
             CacheRuntimeDependencies();
             double now = SystemDispatcher.CurrentUnscaledTimeSeconds;
@@ -803,19 +803,15 @@ namespace Hecton8.Gameplay.Mining
             _snapPending = true;
         }
 
-        private void CompleteTerrainSnap(bool forceComplete)
+        private void TryFinalizeTerrainSnapNoWait()
         {
             if (!_snapPending)
                 return;
 
-            if (!forceComplete && !_snapHandle.IsCompleted)
+            if (!_snapHandle.IsCompleted)
                 return;
 
-            if (forceComplete)
-            {
-                DispatcherJobFence.TryComplete(ref _snapHandle, forceComplete: true);
-            }
-            else if (!DispatcherJobFence.TryFinalizeCompleted(ref _snapHandle))
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _snapHandle))
             {
                 return;
             }
@@ -952,23 +948,29 @@ namespace Hecton8.Gameplay.Mining
             _extractionPending = true;
         }
 
-        private void CompleteExtractionJob(bool forceComplete)
+        private void TryFinalizeExtractionJobNoWait()
         {
             if (!_extractionPending)
                 return;
 
-            if (!forceComplete && !_extractionHandle.IsCompleted)
+            if (!_extractionHandle.IsCompleted)
                 return;
 
-            if (forceComplete)
-            {
-                DispatcherJobFence.TryComplete(ref _extractionHandle, forceComplete: true);
-            }
-            else if (!DispatcherJobFence.TryFinalizeCompleted(ref _extractionHandle))
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _extractionHandle))
             {
                 return;
             }
 
+            _extractionPending = false;
+            CommitExtractionResult(SystemDispatcher.CurrentUnscaledTimeSeconds);
+        }
+
+        private void CompleteExtractionJobForBarrier()
+        {
+            if (!_extractionPending)
+                return;
+
+            DispatcherJobFence.TryComplete(ref _extractionHandle, forceComplete: true);
             _extractionPending = false;
             CommitExtractionResult(SystemDispatcher.CurrentUnscaledTimeSeconds);
         }

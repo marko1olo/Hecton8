@@ -1,12 +1,12 @@
-﻿# SHINOBU_200 Signal Thread Contention Route Card
+# SHINOBU_200 Signal Thread Contention Route Card
 
 Date: 2026-05-20
 Owner: SHINOBU_200 / THREAD_CONTENTION_SURGEON
 Domain: Core Signals / SignalBus MPSC contention corridor
-Status: STATIC SOURCE UPDATED - COMPILE BLOCKED BY CPU GUARD
+Status: STATIC SOURCE UPDATED - COMPILE BLOCKED BY EXTERNAL CORE DEPENDENCY WALL
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-20 R46 Root/Architecture Actuality Boundary
+## 2026-05-20 R47 Root/Architecture Actuality Boundary
 
 This document is active only where it agrees with:
 
@@ -16,10 +16,10 @@ This document is active only where it agrees with:
 - current source files
 - fresh verification logs and artifacts
 
-Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL evidence. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. R42 remains the prior counter/route-boundary/proof-label correction. R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers; runtime proof remains absent.
+Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL evidence. R46 remains the prior interior-authority/route-field/proof-language correction; R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; runtime proof remains absent.
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-Current DOC_GLOBAL boundary (2026-05-20 R46): `Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md` is the latest local static root/architecture interior-authority, route-field, and proof-language correction. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. Runtime proof remains absent.
+Current DOC_GLOBAL boundary (2026-05-20 R47): `Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md` is the latest local static root/architecture authority-spine, runtime-wording, and counter-drift correction. R46 remains the prior interior-authority/route-field/proof-language correction. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 
@@ -55,7 +55,9 @@ Overflow is a sequence-tagged MPSC ring: `SignalThreadOverflowHeader64` carries 
 
 `SignalThreadLocalScratchpad` persists only `VaultGenerationHandle<T>` descriptors for buffers `73043..73055`. It resolves transient `NativeArray<T>` views through `IDataVault.TryResolveHandle(...)` inside the caller phase immediately before scheduling jobs, reading telemetry, mutating the tuning row, or returning a cold editor snapshot. Editor/consumer snapshot reads use `NativeArray<SignalWardenMockDamageSignal>.ReadOnly` through `TryGetCommittedSignalsReadOnly(...)`; the writable snapshot surface remains legacy/owner-local only. It does not retain private static `NativeArray<T>` aliases for SHINOBU-owned Vault memory. If a same-vault generation resolve fails, the initialized flag is cleared and the cold path reacquires fresh generation handles. Buffer resolution now fails at the first undersized or unresolved Vault handle instead of hiding every condition inside a chained boolean expression.
 
-`SignalBusRegistry.FlushPreSimulation()` and `ClearPostSimulationSnapshots()` dispatch generated Core lanes through explicit generic direct calls. Sibling-owned/non-generated typed lanes cannot be added to the Core direct list without breaking the compile wall, so registration stores closed-generic flush/clear operations in `SignalLaneDispatch[]` and drains those fallback lanes through that operation table. The legacy `ISignalLane[]` registry remains for cold identity/disposal only; telemetry copies also use cached closed-generic delegates rather than per-lane interface calls.
+`SignalBusRegistry.FlushPreSimulation()` and `ClearPostSimulationSnapshots()` dispatch generated Core lanes through explicit generic direct calls. Sibling-owned/non-generated typed lanes cannot be added to the Core direct list without breaking the compile wall, so registration stores closed-generic flush/clear operations in `SignalLaneDispatch[]` and drains those fallback lanes through that operation table. The legacy `ISignalLane`/adapter registry has been removed; cold disposal is a cached `SignalLaneDisposeDelegate[]`, and telemetry copies plus `ReportSignalLaneTelemetry()` sampling use cached closed-generic delegates rather than per-lane interface calls. Exact pushed/corrupted counters are packed into the existing `SignalLaneTelemetry.Reserved2` 64-bit lane so the public 32-byte telemetry stride does not change. `SignalLaneTelemetry.Flags` bit `16` marks corrupted lanes, and corrupted-only lanes are treated as critical crash telemetry even when snapshot and dropped counts are zero.
+
+Legacy `GlobalSignals.Publish(...)` overloads now route legacy payloads through `SignalBus<T>.Push(...)` only. The old `NativeQueue<T>` fields are compatibility handles copied from the same closed `SignalBus<T>` queue; they no longer receive direct `_...Signals.Enqueue(...)` writes that double-insert one fact into the same MPSC lane. Legacy `NativeQueue<T>.ParallelWriter` wrapper properties also return `SignalBus<T>.ParallelWriter`, so the only remaining `.AsParallelWriter()` call is inside the canonical closed `SignalBus<T>` implementation. The unused legacy `PrewarmQueue<T>(ref NativeQueue<T>, int)` helper was removed so the facade no longer carries a dead direct-enqueue pattern.
 
 Rare external/cold interrupt producers may use `TryPushAsynchronousOverflow(...)`. High-frequency gameplay producers must not use that API; they must enter through thread-local slices.
 
@@ -91,6 +93,4 @@ Adjacent Core signal buffers `73038..73042` were also moved off legacy pointer-b
 | Proof required before GREEN | Fresh compile/import artifact, contention Play Mode route, profiler/GCMonitor proof, player-build proof, and linked output path with command, timestamp, environment, and result |
 | Review disposition | YELLOW / STATIC_SOURCE_ONLY until compile, Unity import, Play Mode, profiler, GCMonitor, and player-build artifacts exist |
 ## Verification
-Static checks passed for brace balance, forbidden hot-path patterns, deterministic Burst attributes, layout guard wiring, direct-list parity (`flush=135`, `clear=135`, `direct_policy=135`, drift `0`), and diff whitespace. Build, Unity import, Burst Inspector, profiler, GCMonitor, and player proof are pending because CPU guard stayed above 50 percent.
-
-
+Static checks passed for brace balance, forbidden hot-path patterns, deterministic Burst attributes, layout guard wiring, legacy publish alias de-duplication, direct-list parity (`flush=135`, `clear=135`, `direct_policy=135`, drift `0`), and diff whitespace. Focused `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1` was attempted after CPU guard opened and failed with `76` external dependency-wall errors; no diagnostic named `GlobalSignals.cs` or `SignalWardenRuntime.cs`. Unity import, Burst Inspector, profiler, GCMonitor, and player proof remain pending.

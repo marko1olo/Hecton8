@@ -547,22 +547,187 @@ Verification:
 - Static scan confirms both preview-zero paths call `ResetDearLieEnvelope()`.
 - `BlueprintPreviewInstance` remains 64 bytes and `ConstructionPreviewSignal` offsets remain unchanged.
 
-## ModuleTemplate Ghost Prefab Bypass - 2026-05-20
+## Data-Only ModuleTemplate Preview - 2026-05-20
 
 What was wrong:
 - `PlayerBuilder.SpawnGhost()` still used the authored `ghostPrefab` pool branch for socket modules when `ghostPrefab` was assigned.
 - SHINOBU snap truth already comes from `BaseModuleTemplate.SocketDefinitions` and Vault rows, so the preview prefab was unnecessary hierarchy churn for this route.
 
 What was done:
-- `SpawnGhost()` now routes every buildable with a `ModuleTemplate` through `ConstructionRuntimeProxyFactory.TryAcquireGhostProxy()`.
-- The `ObjectPoolManager.Spawn(activeBuildable.ghostPrefab)` branch remains only for non-template buildables outside the SHINOBU socket-module route.
+- `SpawnGhost()` now releases any legacy ghost object, marks `_builderGhostPreviewActive`, and stores preview pose/rotation/scale fields.
+- `_currentGhostObj` stays null for active preview; socket modules no longer spawn or acquire a preview GameObject.
 
 Cinematic Cheats used:
-- The module preview stays as a reusable proxy plus Vault/shader Dear Lie data. No preview-prefab animation, door prefab, or socket trigger drives the snap.
+- The module preview is data plus Vault/shader Dear Lie output. No preview-prefab animation, door prefab, runtime proxy shell, or socket trigger drives the snap.
 
 Exact Microseconds saved:
 - No measured profiler number. Static cost removed: one preview prefab pool spawn/despawn and associated ghost hierarchy setup per armed `ModuleTemplate` buildable.
 
 Verification:
-- Static scan shows `pool.Spawn(activeBuildable.ghostPrefab)` is now behind the non-`ModuleTemplate` branch.
-- SHINOBU socket alignment still hydrates ghost sockets from `BaseModuleTemplate.SocketDefinitions`, not preview-prefab `ModuleSocket` components.
+- Static scan shows no `activeBuildable.ghostPrefab` use remains in `PlayerBuilder`; the only remaining `pool.Spawn` hit is final placed-module spawn.
+- SHINOBU socket alignment hydrates ghost sockets from `BaseModuleTemplate.SocketDefinitions`, builder preview pose fields, Vault `GhostPreviewDTO`, and CSR lanes.
+
+## Builder Ghost Validation Fence - 2026-05-20
+
+What was wrong:
+- Builder holography/SDF validation had an active-route `forceComplete` risk after scheduling `BuildBuilderGhostStateJob` and `ValidateBuilderGhostPlacementJob`.
+- Pending validation ownership did not include snap/Dear Lie flags, so a stale result could match the same pose while carrying old presentation flags.
+
+What was done:
+- `TryRunBuilderGhostBurstValidation()` now schedules build/validate jobs, chains the dependency, registers the final construction handle, and returns without an active-frame completion.
+- `TryFinalizeBuilderGhostValidation()` consumes output only through `DispatcherJobFence.TryFinalizeCompleted`.
+- The validation query hash now includes module hash, preview pose, rotation, proxy bounds center/size, and validation flags.
+- `SetActiveBuildable()`, `OnDestroy()`, and `ResetBuilderState()` complete the builder validation handle only on teardown boundaries.
+
+Cinematic Cheats used:
+- No physical simulation was added. The data-only builder preview still drives holography from Vault rows and Dear Lie shader scalars.
+
+Exact Microseconds saved:
+- No profiler number claimed. Static cost removed: one possible synchronous fence wait per active preview validation frame.
+
+Verification:
+- Static scan shows `DispatcherJobFence.TryComplete` appears only in teardown helpers.
+- Static scan shows builder validation output is finalized only through `TryFinalizeCompleted` and stale query hashes are dropped.
+
+## Cached Vault Gate - 2026-05-20
+
+What was wrong:
+- `TryRunBuilderGhostBurstValidation()` still used `GlobalRegistry.DataVault` as an active-route fallback if `_shinobuSocketVault` was null.
+
+What was done:
+- Replaced the fallback with `TryResolveShinobuSocketVault(out IDataVault vault)`.
+- `GlobalRegistry.DataVault` remains only in cold `ResolveRuntimeReferences()` binding for this SHINOBU route.
+
+Cinematic Cheats used:
+- No visual change. The builder hologram remains data-only and shader-driven.
+
+Exact Microseconds saved:
+- No profiler number claimed. Removed one possible service-locator property read per builder validation attempt when the cache is missing.
+
+Verification:
+- Static scan shows active snap and builder validation both use the cached vault gate before resolving Vault views.
+
+## Preview Alpha Truth - 2026-05-20
+
+What was wrong:
+- `HectonBlueprintPreviewBatch.WriteStateRow()` selected `BuilderGhostVisualDTO.Alpha` from `_lastPreviewAllowed`.
+- `_lastPreviewAllowed` is assigned after the current preview signal row is written, so alpha could reflect the previous frame's validity.
+
+What was done:
+- Added `IsBuilderGhostValid(uint flags)`.
+- `BuilderGhostVisualDTO.Alpha` now uses the current row's validation flags after finite sanitization.
+- `ConsumeConstructionPreviewSignals()` reads the written `BuilderGhostStateDTO` for telemetry SDF sign and `_lastPreviewAllowed`, so writer-side `NonFinite` correction is not lost.
+
+Cinematic Cheats used:
+- The Dear Lie remains shader-side; this patch keeps its visual payload consistent with current validation truth.
+
+Exact Microseconds saved:
+- No savings claimed. Added one bitmask predicate and one written state row read per preview row.
+
+Verification:
+- Static scan confirms alpha no longer reads `_lastPreviewAllowed` in `WriteStateRow()`.
+- Static scan confirms telemetry/material validity now reads `writtenState.ValidationFlags`.
+
+## Preview Scale Finite Gate - 2026-05-20
+
+What was wrong:
+- `HectonBlueprintPreviewBatch.WriteStateRow()` accepted a preview scale as valid when any axis was positive.
+- A malformed row with a zero or negative axis could be clamped for upload while preserving valid flags.
+
+What was done:
+- Replaced `math.any(scale > 0f)` with `math.all(scale > 0f)`.
+
+Cinematic Cheats used:
+- No visual trick changed. The hologram now fails closed when its fixed-format dimensions are malformed.
+
+Exact Microseconds saved:
+- No savings claimed. Same comparison width; stricter predicate only.
+
+Verification:
+- Static scan confirms the writer now requires all scale axes positive before preserving valid flags.
+
+## Validated Visual DTO Truth - 2026-05-20
+
+What was wrong:
+- `BuildBuilderGhostStateJob` wrote the visual DTO before SDF/bounds validation.
+- `ValidateBuilderGhostPlacementJob` updated only `BuilderGhostStateDTO`, so the GPU-facing `BuilderGhostVisualDTO` could retain pre-validation flags.
+
+What was done:
+- `ValidateBuilderGhostPlacementJob` now receives `BuilderGhostVisualDTO` and writes final `Flags` plus alpha from the final validity predicate.
+- `PlayerBuilder` passes `views.BuilderGhostVisuals` into the validate job in the existing build -> validate dependency chain.
+
+Cinematic Cheats used:
+- No new object or physics path. The shader fake still reads Vault visual rows; the row now reflects final validation truth.
+
+Exact Microseconds saved:
+- No savings claimed. Added one 64-byte visual row read/write per builder validation result and avoided a separate sync job.
+
+Verification:
+- Static scan shows `ValidateBuilderGhostPlacementJob` owns `Visuals`, writes `WriteValidatedVisual()`, and `PlayerBuilder` passes `views.BuilderGhostVisuals`.
+- XML and JSON reports parse.
+- `git diff --check` passes with LF/CRLF normalization warnings only.
+- No build/rebuild was launched; Core.Memory asmdef remains the documented compile wall.
+
+## Holography Dump Ownership - 2026-05-20
+
+What was wrong:
+- `HolographyDumpPath` pointed to a foreign-agent holography dump target.
+- A SHINOBU_217 holography crash proof could be written under another agent ID.
+
+What was done:
+- Repointed holography dumps to `Docs/AgentLogs/Dump_SHINOBU_217_Holography.bin`.
+- Kept socket telemetry dumps on `Docs/AgentLogs/Dump_SHINOBU_217.bin` because the two rings have different binary layouts.
+
+Cinematic Cheats used:
+- None. This is forensic routing only.
+
+Exact Microseconds saved:
+- 0 hot-path microseconds. Only the exceptional dump target path changed.
+
+Verification:
+- Static source scan shows `HolographyDumpPath` points to `Dump_SHINOBU_217_Holography.bin`.
+- XML and JSON reports parse.
+- Historical docs mention the former wrong path only as rationale/problem evidence.
+
+## Cold ModuleSocket Buffer Capacity - 2026-05-20
+
+What was wrong:
+- Reused `ModuleSocket` authoring buffers started at capacity 8.
+- Dense modules could force `List<T>` backing-array growth during cold target-cache rebuild or post-place occupancy marking.
+
+What was done:
+- `_ghostSocketBuffer` and `_shinobuTargetSocketBuffer` now use `ShinobuSocketConstructionRuntime.GhostSocketCapacity`.
+
+Cinematic Cheats used:
+- None. This preserves the cold authoring bridge while the active snap truth remains Vault/CSR/Burst.
+
+Exact Microseconds saved:
+- No profiler number claimed. Avoided cost is one possible managed list resize allocation on dense modules.
+
+Verification:
+- Static scan shows both `ModuleSocket` buffers initialized with `ShinobuSocketConstructionRuntime.GhostSocketCapacity`.
+- XML and JSON reports parse.
+
+## Builder SDF Math LOD - 2026-05-20
+
+What was wrong:
+- Builder holography SDF hydration sampled all eight bounds corners at every quality weight.
+- The validation path had `GlobalQualityWeight`, but only used it for visual state, not for CPU SDF sampling cost.
+
+What was done:
+- Added `ResolveBuilderGhostSdfSampleCount()` to scale sampled corners from 2 to 8 using the existing smooth quality curve.
+- Added `ResolveBuilderGhostCornerIndex()` so CPU hydration and `ValidateBuilderGhostPlacementJob` use the same opposite-paired deterministic sample order.
+- Reset unsampled SDF bytes to clear before hydration and recorded `_builderGhostValidationSdfCornerChecks` into holography telemetry.
+
+Cinematic Cheats used:
+- Low quality uses a cheap two-corner presentation proof while the broader terrain validator remains the placement authority. Ultra quality restores all eight bounds corners.
+
+Exact Microseconds saved:
+- No profiler number claimed. Low-quality path avoids 6 of 8 SDF sample calls before scheduled builder validation.
+
+Verification:
+- Static scan shows shared sample-count/order helpers, `SdfSampleCount` on `ValidateBuilderGhostPlacementJob`, and telemetry using the actual sampled count.
+- XML and JSON reports parse.
+- `git diff --check` passes with LF/CRLF normalization warnings only.
+- SHINOBU job forbidden-pattern scan has no hits.
+- No build/rebuild was launched; Core.Memory asmdef remains the documented compile wall.

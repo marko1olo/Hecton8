@@ -520,6 +520,17 @@ namespace Hecton8.Gameplay
             return (target.Flags & VfxFlagHasTarget) != 0u;
         }
 
+        private static uint ResolveSimulationFrame()
+        {
+            return TimeSliceScheduler.CurrentFrameId;
+        }
+
+        private static int ResolveSimulationFrameInt()
+        {
+            uint frame = ResolveSimulationFrame();
+            return frame > int.MaxValue ? int.MaxValue : (int)frame;
+        }
+
         public static bool TryReadVaultSettings(out ScannerSettingsDTO settings)
         {
             settings = ScannerDataMiningTuning.Settings;
@@ -571,7 +582,7 @@ namespace Hecton8.Gameplay
 
             CachePlayerRuntimeContextCold();
             if (seedMockData)
-                SeedMockGridFromTransform();
+                SeedMockGridFromPose();
 
             _cachedQualityTier = GlobalRegistry.ScalabilityTier;
             _cachedGlobalQualityWeight = ResolveGlobalQualityWeight();
@@ -600,6 +611,58 @@ namespace Hecton8.Gameplay
             ReleaseHandlesOnly();
         }
 
+#if UNITY_EDITOR
+        private void OnDrawGizmos()
+        {
+            if (_queryScheduled || _completionScheduled)
+                return;
+
+            if (!TryResolveVaultViews(out ScannerVaultViews views) ||
+                !views.Entities.IsCreated ||
+                !views.LoreIndex.IsCreated ||
+                !views.EncyclopediaState.IsCreated ||
+                views.EncyclopediaState.Length == 0)
+            {
+                return;
+            }
+
+            int count = math.min(math.max(0, _entityCount), views.Entities.Length);
+            if (count == 0)
+                return;
+
+            ActiveScanStateDTO active = views.ActiveState.IsCreated && views.ActiveState.Length > 0
+                ? views.ActiveState[0]
+                : default;
+            ScannerEncyclopediaStateDTO unlockState = views.EncyclopediaState[0];
+            Color previousColor = Gizmos.color;
+            for (int i = 0; i < count; i++)
+            {
+                ScannerSpatialEntityDTO entity = views.Entities[i];
+                if (entity.EntityHash == 0u || !math.all(math.isfinite(entity.AUP)))
+                    continue;
+
+                uint loreEntryIndex;
+                bool hasLoreIndex = TryFindLoreIndex(views.LoreIndex, entity.EntityHash, out loreEntryIndex);
+                bool unlocked = hasLoreIndex && IsLoreBitUnlocked(in unlockState, loreEntryIndex);
+                bool activeLocked = !unlocked && active.TargetHash == entity.EntityHash && active.Progress01 > 0f;
+                Gizmos.color = unlocked
+                    ? new Color(0.05f, 0.95f, 0.25f, 0.82f)
+                    : activeLocked
+                        ? new Color(1f, 0.85f, 0.1f, 0.82f)
+                        : new Color(0.08f, 0.45f, 1f, 0.65f);
+
+                float3 local = AupPrecisionMath.LocalDeltaFloat3(
+                    entity.AUP,
+                    HectonFloatingOrigin.CurrentTotalOffsetDouble,
+                    float3.zero);
+                Vector3 runtimePosition = new Vector3(local.x, local.y, local.z);
+                Gizmos.DrawWireSphere(runtimePosition, math.max(0.1f, entity.SphereRadius));
+            }
+
+            Gizmos.color = previousColor;
+        }
+#endif
+
         public void FastTick(float deltaTime)
         {
             if (!TryResolveVaultViews(out ScannerVaultViews views) || !views.HasCoreBuffers)
@@ -612,7 +675,7 @@ namespace Hecton8.Gameplay
             settings.MaxDistanceMeters = math.max(0.1f, maxDistanceMeters > 0f ? maxDistanceMeters : settings.MaxDistanceMeters);
             settings.BeamRadiusMeters = math.max(0.05f, beamRadiusMeters > 0f ? beamRadiusMeters : settings.BeamRadiusMeters);
 
-            int frame = math.max(0, Time.frameCount);
+            int frame = ResolveSimulationFrameInt();
             int cadence = ResolveQueryCadenceFrames(_cachedGlobalQualityWeight, _cachedSystemPressure01, in settings);
             if (frame - _lastQueryFrame < cadence)
                 return;
@@ -726,9 +789,7 @@ namespace Hecton8.Gameplay
 
         private MockScannerInputSignal BuildInputSignal(float deltaTime, int frame, in ScannerSettingsDTO settings)
         {
-            Vector3 forward = transform.forward;
-            float3 direction = math.normalizesafe(new float3(forward.x, forward.y, forward.z), new float3(0f, 0f, 1f));
-            bool hasOrigin = TryResolveToolOriginAup(out double3 origin);
+            bool hasPose = TryResolveScannerPose(out double3 origin, out float3 direction);
             return new MockScannerInputSignal
             {
                 RayOriginAUP = origin,
@@ -739,7 +800,7 @@ namespace Hecton8.Gameplay
                 ToolHash = ScannerToolHash,
                 Frame = unchecked((uint)frame),
                 ToolLevel = toolLevel,
-                Flags = scanActive && hasOrigin ? 1u : 0u
+                Flags = scanActive && hasPose ? 1u : 0u
             };
         }
 
@@ -749,14 +810,10 @@ namespace Hecton8.Gameplay
             _cachedPlayerMovement = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerMovement : null;
         }
 
-        private bool TryResolveToolOriginAup(out double3 originAup)
+        private bool TryResolveScannerPose(out double3 originAup, out float3 forward)
         {
             originAup = default;
-
-            Vector3 toolPosition = transform.position;
-            float3 toolRuntime = new float3(toolPosition.x, toolPosition.y, toolPosition.z);
-            if (!math.all(math.isfinite(toolRuntime)))
-                return false;
+            forward = new float3(0f, 0f, 1f);
 
             IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             if (playerContext != null)
@@ -766,11 +823,11 @@ namespace Hecton8.Gameplay
                     MathGuard.IsFinite(in snapshot.Aup) &&
                     math.all(math.isfinite(snapshot.RuntimePosition)))
                 {
-                    return TryOffsetToolOriginFromObserver(
-                        toolRuntime,
-                        snapshot.RuntimePosition,
-                        in snapshot.Aup,
-                        out originAup);
+                    if (!TryNormalizeScannerForward(snapshot.Forward, out forward))
+                        return false;
+
+                    originAup = snapshot.Aup.ToAbsoluteDouble3();
+                    return math.all(math.isfinite(originAup)) && math.all(math.isfinite(forward));
                 }
 
                 HectonPlayerMovement playerMovement = playerContext.PlayerMovement;
@@ -778,6 +835,12 @@ namespace Hecton8.Gameplay
                     _cachedPlayerMovement = playerMovement;
             }
 
+            return false;
+        }
+
+        private bool TryResolveCachedPlayerAup(out double3 originAup)
+        {
+            originAup = default;
             HectonPlayerMovement cachedPlayerMovement = _cachedPlayerMovement;
             if (cachedPlayerMovement == null)
                 return false;
@@ -786,37 +849,29 @@ namespace Hecton8.Gameplay
             if (!MathGuard.IsFinite(in playerAup))
                 return false;
 
-            float3 playerRuntime = playerAup.ToRuntimeFloat3();
-            if (!math.all(math.isfinite(playerRuntime)))
-                return false;
-
-            return TryOffsetToolOriginFromObserver(
-                toolRuntime,
-                playerRuntime,
-                in playerAup,
-                out originAup);
+            originAup = playerAup.ToAbsoluteDouble3();
+            return math.all(math.isfinite(originAup));
         }
 
-        private static bool TryOffsetToolOriginFromObserver(
-            float3 toolRuntime,
-            float3 observerRuntime,
-            in AbsoluteUniversePosition observerAup,
-            out double3 originAup)
+        private static float3 ResolveScannerRight(float3 forward)
         {
-            originAup = default;
-            double3 localDelta = new double3(
-                (double)toolRuntime.x - observerRuntime.x,
-                (double)toolRuntime.y - observerRuntime.y,
-                (double)toolRuntime.z - observerRuntime.z);
-            if (!math.all(math.isfinite(localDelta)))
+            float3 safeForward = math.normalizesafe(forward, new float3(0f, 0f, 1f));
+            float3 up = math.abs(safeForward.y) > 0.95f ? new float3(0f, 0f, 1f) : new float3(0f, 1f, 0f);
+            return math.normalizesafe(math.cross(up, safeForward), new float3(1f, 0f, 0f));
+        }
+
+        private static bool TryNormalizeScannerForward(float3 candidate, out float3 forward)
+        {
+            forward = default;
+            if (!math.all(math.isfinite(candidate)))
                 return false;
 
-            AbsoluteUniversePosition toolAup = AbsoluteUniversePosition.OffsetMeters(in observerAup, localDelta);
-            if (!MathGuard.IsFinite(in toolAup))
+            float lengthSq = math.lengthsq(candidate);
+            if (!math.isfinite(lengthSq) || lengthSq <= 0.0001f)
                 return false;
 
-            originAup = toolAup.ToAbsoluteDouble3();
-            return math.all(math.isfinite(originAup));
+            forward = candidate * math.rsqrt(math.max(lengthSq, 0.0001f));
+            return math.all(math.isfinite(forward));
         }
 
         private void ProcessCompletedQuery(float deltaTime)
@@ -909,7 +964,7 @@ namespace Hecton8.Gameplay
                 Progress01 = math.saturate(result.ScanProgress),
                 PitchScale = 0.9f + math.saturate(result.ScanProgress) * 0.25f,
                 Intensity01 = math.saturate(settings.AcousticIntensity01),
-                Frame = unchecked((uint)math.max(0, Time.frameCount)),
+                Frame = ResolveSimulationFrame(),
                 State = ToolAcousticStateScanner,
                 Flags = 0
             });
@@ -925,7 +980,7 @@ namespace Hecton8.Gameplay
                 return;
 
             AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromAbsolutePosition(result.AUP);
-            uint frame = unchecked((uint)math.max(0, Time.frameCount));
+            uint frame = ResolveSimulationFrame();
             SignalBus<EncyclopediaUnlockSignal>.Push(new EncyclopediaUnlockSignal
             {
                 EntityHash = result.EntityHash,
@@ -1009,7 +1064,7 @@ namespace Hecton8.Gameplay
             if (!TryLockCompletionBuffers(vault))
                 return false;
 
-            uint frame = unchecked((uint)math.max(0, Time.frameCount));
+            uint frame = ResolveSimulationFrame();
             views.ScanProgress[0] = new ScanProgressDTO
             {
                 TargetHashID = result.EntityHash,
@@ -1065,7 +1120,7 @@ namespace Hecton8.Gameplay
 
             vfxTarget[0] = vfx;
             s_lastVfxTarget = vfx;
-            s_lastVfxFrame = unchecked((uint)math.max(0, Time.frameCount));
+            s_lastVfxFrame = ResolveSimulationFrame();
             ScannerShaderGlobals.Publish(in vfx, _cachedGlobalQualityWeight, _cachedSystemPressure01);
         }
 
@@ -1084,7 +1139,7 @@ namespace Hecton8.Gameplay
             vfx.BeamScore = stats.BestScore;
             vfxTarget[0] = vfx;
             s_lastVfxTarget = vfx;
-            s_lastVfxFrame = unchecked((uint)math.max(0, Time.frameCount));
+            s_lastVfxFrame = ResolveSimulationFrame();
             ScannerShaderGlobals.Publish(in vfx, _cachedGlobalQualityWeight, _cachedSystemPressure01);
         }
 
@@ -1103,7 +1158,7 @@ namespace Hecton8.Gameplay
             {
                 TargetAUP = state.TargetAUP,
                 _pad0 = 0UL,
-                Frame = unchecked((uint)math.max(0, Time.frameCount)),
+                Frame = ResolveSimulationFrame(),
                 TargetHash = state.TargetHash,
                 Flags = state.Flags | stats.Flags,
                 CandidateCount = (uint)math.max(0, stats.CandidateCount),
@@ -1121,7 +1176,7 @@ namespace Hecton8.Gameplay
                 SystemHash = ScannerToolHash,
                 AnomalyHash = ScannerDumpReasonHash,
                 Scalar = scalar,
-                Frame = unchecked((uint)math.max(0, Time.frameCount)),
+                Frame = ResolveSimulationFrame(),
                 Severity = 2,
                 Flags = 0
             });
@@ -1130,7 +1185,7 @@ namespace Hecton8.Gameplay
             {
                 SystemHash = ScannerToolHash,
                 ReasonHash = ScannerAnomalyHash,
-                Frame = unchecked((uint)math.max(0, Time.frameCount)),
+                Frame = ResolveSimulationFrame(),
                 ExitCode = 0,
                 NativeAllocationCount = 0,
                 NativeTrackedBytesMb = 0f,
@@ -1449,17 +1504,21 @@ namespace Hecton8.Gameplay
             return ScannerDataMiningTuning.Settings;
         }
 
-        private void SeedMockGridFromTransform()
+        private void SeedMockGridFromPose()
         {
             if (!TryResolveVaultViews(out ScannerVaultViews views) || !views.HasCoreBuffers)
                 return;
 
             int count = math.clamp(mockEntityCount, 1, views.Entities.Length);
-            if (!TryResolveToolOriginAup(out double3 origin))
-                return;
+            if (!TryResolveScannerPose(out double3 origin, out float3 forward))
+            {
+                if (!TryResolveCachedPlayerAup(out origin))
+                    origin = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+                forward = new float3(0f, 0f, 1f);
+            }
 
-            float3 forward = math.normalizesafe(new float3(transform.forward.x, transform.forward.y, transform.forward.z), new float3(0f, 0f, 1f));
-            float3 right = math.normalizesafe(new float3(transform.right.x, transform.right.y, transform.right.z), new float3(1f, 0f, 0f));
+            forward = math.normalizesafe(forward, new float3(0f, 0f, 1f));
+            float3 right = ResolveScannerRight(forward);
             ScannerSettingsDTO settings = ResolveCurrentSettings(views.Settings);
             new GenerateMockScannableTargetsJob
             {
@@ -1729,6 +1788,31 @@ namespace Hecton8.Gameplay
             }
 
             return false;
+        }
+
+        public static bool IsLoreBitUnlocked(in ScannerEncyclopediaStateDTO state, uint loreEntryIndex)
+        {
+            int bitIndex = (int)(loreEntryIndex & 1023u);
+            ulong bitMask = 1UL << (bitIndex & 63);
+            switch (bitIndex >> 6)
+            {
+                case 0: return (state.Mask0 & bitMask) != 0UL;
+                case 1: return (state.Mask1 & bitMask) != 0UL;
+                case 2: return (state.Mask2 & bitMask) != 0UL;
+                case 3: return (state.Mask3 & bitMask) != 0UL;
+                case 4: return (state.Mask4 & bitMask) != 0UL;
+                case 5: return (state.Mask5 & bitMask) != 0UL;
+                case 6: return (state.Mask6 & bitMask) != 0UL;
+                case 7: return (state.Mask7 & bitMask) != 0UL;
+                case 8: return (state.Mask8 & bitMask) != 0UL;
+                case 9: return (state.Mask9 & bitMask) != 0UL;
+                case 10: return (state.Mask10 & bitMask) != 0UL;
+                case 11: return (state.Mask11 & bitMask) != 0UL;
+                case 12: return (state.Mask12 & bitMask) != 0UL;
+                case 13: return (state.Mask13 & bitMask) != 0UL;
+                case 14: return (state.Mask14 & bitMask) != 0UL;
+                default: return (state.Mask15 & bitMask) != 0UL;
+            }
         }
 
         public static bool TryApplyLoreIndexCsvLine(

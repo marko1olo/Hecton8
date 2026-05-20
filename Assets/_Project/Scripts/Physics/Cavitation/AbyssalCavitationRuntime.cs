@@ -498,20 +498,33 @@ namespace Hecton8.Physics
             return _scheduledHandle;
         }
 
-        public static bool CompleteScheduledIfReady(bool force)
+        public static bool TryFinalizeScheduledNoWait()
         {
             if (!_jobScheduled)
                 return true;
 
-            if (!force && !_scheduledHandle.IsCompleted)
+            if (!_scheduledHandle.IsCompleted)
                 return false;
 
-            bool completed = force
-                ? DispatcherJobFence.TryComplete(ref _scheduledHandle, forceComplete: true)
-                : DispatcherJobFence.TryFinalizeCompleted(ref _scheduledHandle);
-            if (!completed)
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _scheduledHandle))
                 return false;
 
+            return FinishScheduledCompletion();
+        }
+
+        public static bool CompleteScheduledForTeardown()
+        {
+            if (!_jobScheduled)
+                return true;
+
+            if (!DispatcherJobFence.TryComplete(ref _scheduledHandle, forceComplete: true))
+                return false;
+
+            return FinishScheduledCompletion();
+        }
+
+        private static bool FinishScheduledCompletion()
+        {
             _jobScheduled = false;
             long elapsed = System.Diagnostics.Stopwatch.GetTimestamp() - _scheduleTimestamp;
             _lastSolveMicroseconds = (float)math.max(0.0, elapsed * 1000000.0 / System.Diagnostics.Stopwatch.Frequency);
@@ -547,7 +560,7 @@ namespace Hecton8.Physics
             if (!EnsureInitialized())
                 return 0;
 
-            if (!CompleteScheduledIfReady(false))
+            if (!TryFinalizeScheduledNoWait())
                 return 0;
 
             NativeArray<ShockwaveForcePacketDTO> packets = _forceHandle.Resolve(_vault);
@@ -574,7 +587,7 @@ namespace Hecton8.Physics
             if (bodySlots == null || bodySlots.Length == 0 || !EnsureInitialized())
                 return 0;
 
-            if (!CompleteScheduledIfReady(false))
+            if (!TryFinalizeScheduledNoWait())
                 return 0;
 
             NativeArray<ShockwaveForcePacketDTO> packets = _forceHandle.Resolve(_vault);
@@ -661,7 +674,7 @@ namespace Hecton8.Physics
             if (!EnsureInitialized())
                 return 0;
 
-            if (!CompleteScheduledIfReady(false))
+            if (!TryFinalizeScheduledNoWait())
                 return math.max(0, _lastUploadedVisualCount);
             EnsureGraphicsBuffers();
 
@@ -977,7 +990,7 @@ namespace Hecton8.Physics
 
         private void OnDisable()
         {
-            AbyssalCavitationRuntime.CompleteScheduledIfReady(true);
+            AbyssalCavitationRuntime.CompleteScheduledForTeardown();
             if (_registeredFixed)
                 GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
             if (_registeredLate)
@@ -996,7 +1009,7 @@ namespace Hecton8.Physics
 
         public void LateFrameTick()
         {
-            AbyssalCavitationRuntime.CompleteScheduledIfReady(false);
+            AbyssalCavitationRuntime.TryFinalizeScheduledNoWait();
             if (uploadShaderVisuals)
                 AbyssalCavitationRuntime.SyncShaderVisuals();
         }

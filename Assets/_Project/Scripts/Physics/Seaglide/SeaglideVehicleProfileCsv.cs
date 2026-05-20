@@ -99,7 +99,7 @@ namespace Hecton8.Physics
 
         private static ReadOnlySpan<byte> ReadToken(ref ReadOnlySpan<byte> line)
         {
-            int comma = line.IndexOf(Comma);
+            int comma = IndexOf(line, Comma);
             if (comma < 0)
             {
                 ReadOnlySpan<byte> token = line;
@@ -110,6 +110,17 @@ namespace Hecton8.Physics
             ReadOnlySpan<byte> result = line.Slice(0, comma);
             line = line.Slice(comma + 1);
             return result;
+        }
+
+        private static int IndexOf(ReadOnlySpan<byte> value, byte target)
+        {
+            for (int i = 0; i < value.Length; i++)
+            {
+                if (value[i] == target)
+                    return i;
+            }
+
+            return -1;
         }
 
         private static bool TryReadLine(ReadOnlySpan<byte> bytes, ref int cursor, out ReadOnlySpan<byte> line)

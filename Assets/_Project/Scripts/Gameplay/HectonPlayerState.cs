@@ -164,12 +164,14 @@ namespace Hecton8.Gameplay
         private const int VaultTelemetryRingFlag = 1 << 4;
         private int _vaultNativeStateMask;
 
-        public bool IsCreated =>
-            Positions.IsCreated &&
-            Velocities.IsCreated &&
-            IntendedMovements.IsCreated &&
-            DragSolvedVelocities.IsCreated &&
-            TelemetryRing.IsCreated;
+        public bool IsCreated()
+        {
+            return Positions.IsCreated &&
+                   Velocities.IsCreated &&
+                   IntendedMovements.IsCreated &&
+                   DragSolvedVelocities.IsCreated &&
+                   TelemetryRing.IsCreated;
+        }
 
         public void EnsureCreated(IDataVault dataVault)
         {
@@ -216,7 +218,7 @@ namespace Hecton8.Gameplay
 
         public void WriteKinematicSnapshot(float3 position, float3 velocity, float3 intendedMovement)
         {
-            if (!IsCreated)
+            if (!IsCreated())
                 return;
 
             Positions[0] = position;

@@ -260,6 +260,7 @@ namespace Hecton8.Tests.Editor
 
                 ScannerEncyclopediaStateDTO mask = state[0];
                 Assert.AreNotEqual(0UL, mask.Mask2 & (1UL << 2));
+                Assert.IsTrue(ScannerDataMiningRouter.IsLoreBitUnlocked(in mask, 130u));
                 Assert.AreEqual(targetHash, progress[0].CompletedHash);
                 Assert.AreEqual(targetHash, telemetry[1].TargetHash);
             }

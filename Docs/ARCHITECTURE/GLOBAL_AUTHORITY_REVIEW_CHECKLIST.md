@@ -1,10 +1,10 @@
-﻿# Global Authority Review Checklist
+# Global Authority Review Checklist
 
 Date: 2026-05-19
 Status: PENDING VERIFICATION
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-20 R46 Root/Architecture Actuality Boundary
+## 2026-05-20 R47 Root/Architecture Actuality Boundary
 This document is active only where it agrees with:
 
 - `Docs/README.md`
@@ -13,14 +13,14 @@ This document is active only where it agrees with:
 - current source files
 - fresh verification logs and artifacts
 
-Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL evidence. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. R42 remains the prior counter/route-boundary/proof-label correction. R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers; runtime proof remains absent.
+Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL evidence. R46 remains the prior interior-authority/route-field/proof-language correction; R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; runtime proof remains absent.
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler,
 Frame Debugger, player build, save/load route, or visual-route proof is implied
 unless this document links a fresh evidence artifact. Historical counters and
 older version claims inside this file are subordinate to the current authority
 spine above.
-R46 root/architecture interior-authority/route-field/proof-language correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
+R47 root/architecture authority-spine/runtime-wording/counter-drift correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R46 remains the prior interior-authority/route-field/proof-language correction. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 Evidence class: `STATIC_DOC`. This is a review/merge checklist, not runtime
@@ -107,6 +107,15 @@ Reject the change immediately when any item is true:
 - `SignalBus<T>` is used for one private caller
 - `GlobalDataVault` stores local scratch or speculative future buffers
 - `GlobalDataVault` lacks BufferID/SystemID/generation/stale-handle behavior
+- `GlobalDataVault.TryGetLatestCreated()` is used by domain runtime code as a
+  normal fallback instead of injected `IDataVault` or a documented core fallback
+- a `Get*`, `TryGet*`, `Resolve*`, or `Read*` API publishes signals, syncs scene
+  state, allocates/grows buffers, completes jobs, mutates global state, or
+  searches the scene
+- Burst/Jobs are scheduled as tiny/noisy work, same-frame readback loops, or
+  hidden completion paths without profiler proof
+- Data Monolith readiness is claimed without the active StreamingAssets
+  `static_data.h8bin` payload and import/bake/boot validation
 - global route exists only to raise H-Phi
 - old debt is hidden while new global surface is added
 
@@ -235,5 +244,3 @@ Date:
 
 If a reviewer cannot explain the route in one sentence without using the words
 "global", "generic", "future", or "convenient", the route is not narrow enough.
-
-

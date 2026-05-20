@@ -79,6 +79,22 @@ MonoBehaviour:
     depthSigma: 18
     blurDepthThreshold: 0.18
     compositeStrength: 0.24
+--- !u!114 &232232232000002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4cbb8fb5b0c14e57aa7d232232ca0005, type: 3}
+  m_Name: HectonDeferredCausticsFeature
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Rendering.HectonDeferredCausticsFeature
+  m_Active: 1
+  settings:
+    shader: {fileID: 4800000, guid: 4cbb8fb5b0c14e57aa7d232232ca0007, type: 3}
+    injectionPoint: 450
 --- !u!114 &-4082171063289172997
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -222,6 +238,7 @@ MonoBehaviour:
   - {fileID: 1886482717959882929}
   - {fileID: -4082171063289172997}
   - {fileID: -4438276556181502662}
+  - {fileID: 232232232000002}
   - {fileID: 5318849925799663161}
   - {fileID: -8819836769844018346}
   - {fileID: 8465884984933540169}
@@ -231,7 +248,7 @@ MonoBehaviour:
   - {fileID: 5943226787261363979}
   - {fileID: -5081531551300358816}
   - {fileID: 149000149001}
-  m_RendererFeatureMap: abf8db7c8ef6cf00a15e49751debe464b188e97609222e1afb2b45d40b3759c73a85dbb5fc1268c239d6e6b8d359d04956c384f42fa5998549e146248add7c757e0e6818d6f8b0e342f85f998309d70566059dfa2c97d1cf0bb74c4246957a52606dcd29fac57ab909d819b122000000
+  m_RendererFeatureMap: abf8db7c8ef6cf00a15e49751debe464b188e97609222e1afb2b45d40b3759c73a85dbb5fc1268c2029ab1c736d3000039d6e6b8d359d04956c384f42fa5998549e146248add7c757e0e6818d6f8b0e342f85f998309d70566059dfa2c97d1cf0bb74c4246957a52606dcd29fac57ab909d819b122000000
   m_UseNativeRenderPass: 1
   xrSystemData: {fileID: 0}
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}

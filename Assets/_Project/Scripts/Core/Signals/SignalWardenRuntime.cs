@@ -906,15 +906,19 @@ namespace Hecton8.Core.Contracts.Signals
         private const byte LineFeed = (byte)'\n';
         private const byte CarriageReturn = (byte)'\r';
 
-        // COLD ALLOC: byte[4096] - priority CSV parser scratch - owner: SignalPriorityCsvHotSwap
-        private static readonly byte[] _scratch = new byte[ScratchBytes];
-
         /// <summary>Loads signal_priorities.csv into the runtime priority table without per-row managed objects.</summary>
         public static bool TryLoad(string path)
         {
-            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+            if (string.IsNullOrEmpty(path))
                 return false;
 
+            if (!Application.isEditor && !Debug.isDebugBuild)
+                return false;
+
+            if (!File.Exists(path))
+                return false;
+
+            Span<byte> scratch = stackalloc byte[ScratchBytes];
             int bytesRead;
             try
             {
@@ -928,7 +932,7 @@ namespace Hecton8.Core.Contracts.Signals
                     bytesRead = 0;
                     while (bytesRead < expectedBytes)
                     {
-                        int read = stream.Read(_scratch, bytesRead, expectedBytes - bytesRead);
+                        int read = stream.Read(scratch.Slice(bytesRead, expectedBytes - bytesRead));
                         if (read <= 0)
                             return false;
 
@@ -945,12 +949,13 @@ namespace Hecton8.Core.Contracts.Signals
                 return false;
             }
 
-            return Parse(_scratch, bytesRead);
+            return Parse(scratch.Slice(0, bytesRead));
         }
 
-        private static bool Parse(byte[] bytes, int length)
+        private static bool Parse(ReadOnlySpan<byte> bytes)
         {
-            if (bytes == null || length <= 0)
+            int length = bytes.Length;
+            if (length <= 0)
                 return false;
 
             bool changed = false;
@@ -982,7 +987,7 @@ namespace Hecton8.Core.Contracts.Signals
             return changed;
         }
 
-        private static bool TryParseInt(byte[] bytes, int start, int length, out int value)
+        private static bool TryParseInt(ReadOnlySpan<byte> bytes, int start, int length, out int value)
         {
             value = 0;
             if (!TryParseUInt(bytes, start, length, out uint parsed))
@@ -992,7 +997,7 @@ namespace Hecton8.Core.Contracts.Signals
             return true;
         }
 
-        private static bool TryParseUInt(byte[] bytes, int start, int length, out uint value)
+        private static bool TryParseUInt(ReadOnlySpan<byte> bytes, int start, int length, out uint value)
         {
             value = 0u;
             if (length <= 0)
@@ -1435,7 +1440,29 @@ namespace Hecton8.Core.Contracts.Signals
     /// <summary>Write context passed into Burst producers. Native arrays are DataVault-owned aliases.</summary>
     public struct SignalThreadLocalWriteContext
     {
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Bytes is indexed only through threadIndex * ThreadStrideBytes + cursor. Unity cannot infer that each
+        // [NativeSetThreadIndex] producer owns a disjoint byte interval, so the parallel-for restriction is a false
+        // positive for this fixed-stride worker partition.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // A single NativeQueue<T>.ParallelWriter was rejected because it serializes producers through CAS. Per-worker
+        // NativeArray<T> fields were rejected because the Vault route needs one contiguous byte surface for generation
+        // handle resolution, ping-pong swap, and crash dumping.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The invariant is MaxThreadCount <= 64, ThreadStrideBytes fixed for the frame, and one thread index writes one
+        // slice only. SignalThreadLocalCommitJob reads the previous buffer after the producer dependency, never while
+        // this writer mutates Bytes.
         [NativeDisableParallelForRestriction] public NativeArray<byte> Bytes;
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Headers is indexed by the sanitized worker thread index. Unity cannot prove that each producer writes only
+        // its own 64-byte SignalThreadLocalHeader64 row, so the safety system treats the shared NativeArray as aliased.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // Interlocked cursor reservation was rejected because it concentrates traffic onto one cache line. Per-thread
+        // managed header objects were rejected because Burst jobs cannot carry managed references and would violate
+        // zero-GC hot-path rules.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // Each header row is 64 bytes and maps one-to-one with the worker index. Producer jobs write only their own row;
+        // commit and telemetry read Headers only after the scheduled producer handle is complete.
         [NativeDisableParallelForRestriction] public NativeArray<SignalThreadLocalHeader64> Headers;
         public int ThreadStrideBytes;
         public int ActivePayloadBytesPerThread;
@@ -1575,9 +1602,46 @@ namespace Hecton8.Core.Contracts.Signals
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct GenerateSignalThreadContentionMockJob : IJobParallelFor
     {
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Bytes is partitioned by [NativeSetThreadIndex]. The safety system sees a shared byte array, but the write
+        // address is constrained to threadIndex * ThreadStrideBytes plus that thread's private cursor.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // NativeQueue<T>.ParallelWriter was rejected because this mock job exists to prove the non-CAS route. A
+        // NativeArray<NativeList<T>> design was rejected because nested native containers cannot be scheduled safely
+        // and would fragment Vault ownership.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The scheduler provides one physical worker thread index per producer lane, ThreadStrideBytes is constant
+        // during the job, and commit reads this buffer only through the returned JobHandle dependency.
         [NativeDisableParallelForRestriction, NoAlias] public NativeArray<byte> Bytes;
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Headers has one 64-byte row per thread. Unity's safety layer cannot derive the thread-index-to-row invariant
+        // from [NativeSetThreadIndex], so unrestricted parallel writes are required for the worker-local cursor row.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // A shared atomic cursor was rejected for false-sharing reasons. A managed per-thread dictionary was rejected
+        // because Burst jobs cannot use managed collections and it would allocate.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // Each Execute call clamps ThreadIndex into [0, MaxThreadCount) and writes exactly Headers[threadIndex]. No
+        // other job reads or writes Headers until the producer handle feeds SignalThreadLocalCommitJob.
         [NativeDisableParallelForRestriction, NoAlias] public NativeArray<SignalThreadLocalHeader64> Headers;
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // OverflowSignals is touched only when a private slice is full. The shared ring slot is first reserved through
+        // the 64-byte overflow header, so Unity's array-wide alias assumption is stricter than the actual slot claim.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // A Unity NativeQueue fallback was rejected because it would restore opaque queue ownership outside the Vault.
+        // Dropping all saturated rows was rejected because Task 11 requires a low-frequency interrupt fallback path.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // A producer writes only the slot returned by TryReserveOverflowSlot and publishes OverflowSequence after the
+        // 64-byte row copy. Commit drains only sequence-published slots after the producer dependency or a later frame.
         [NativeDisableParallelForRestriction, NoAlias] public NativeArray<SignalWardenMockDamageSignal> OverflowSignals;
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // OverflowHeader is a single 64-byte atomic control row. The safety system cannot model the CAS-protected
+        // write/read cursor fields, so the container restriction would be a false positive for this bounded MPSC lane.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // One header per worker was rejected because overflow must preserve global ticket order. A managed lock was
+        // rejected because it is forbidden in hot paths and would stall producers under pressure.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // Only Interlocked operations mutate WriteCursor, ReadCursor, DroppedCount, and publication sequence state.
+        // Normal producer writes remain thread-local; this header is touched only on saturated slow-path overflow.
         [NativeDisableParallelForRestriction, NoAlias] public NativeArray<SignalThreadOverflowHeader64> OverflowHeader;
         public int ThreadStrideBytes;
         public int ActivePayloadBytesPerThread;

@@ -10,6 +10,7 @@ using System.Runtime.InteropServices;
 using Hecton8.AtlasSignal;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Narrative;
 using Hecton8.SaveSystem;
@@ -35,33 +36,50 @@ namespace Hecton8.Gameplay
             public ushort Reserved1;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 80)]
         private struct NarrativeTriggerTelemetryEntry
         {
+            [FieldOffset(0)]
             public uint Frame;
+            [FieldOffset(4)]
             public uint PoiHash;
+            [FieldOffset(8)]
             public ulong StateMask;
+            [FieldOffset(16)]
             public long PlayerGridX;
+            [FieldOffset(24)]
             public long PlayerGridY;
+            [FieldOffset(32)]
             public long PlayerGridZ;
+            [FieldOffset(40)]
             public float3 PlayerRuntime;
+            [FieldOffset(52)]
             public float3 PoiRuntime;
+            [FieldOffset(64)]
             public byte Flags;
+            [FieldOffset(65)]
+            private byte _pad0;
+            [FieldOffset(66)]
+            private ushort _pad1;
+            [FieldOffset(68)]
+            private uint _pad2;
+            [FieldOffset(72)]
+            private ulong _pad3;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct NarrativePoiSpatialCheckJob : IJob
         {
-            [ReadOnly] public NativeArray<float3> PoiAups;
-            [ReadOnly] public NativeArray<float> PoiRadiiSq;
-            [ReadOnly] public NativeArray<uint> PoiHashes;
-            [ReadOnly] public NativeArray<long> PoiGridX;
-            [ReadOnly] public NativeArray<long> PoiGridZ;
-            public NativeArray<byte> PoiState;
-            public NativeArray<int> TriggeredIndices;
-            public NativeArray<uint> TriggeredHashes;
-            public NativeArray<int> TriggeredCount;
-            public NativeArray<int> FaultCount;
+            [NoAlias, ReadOnly] public NativeArray<float3> PoiAups;
+            [NoAlias, ReadOnly] public NativeArray<float> PoiRadiiSq;
+            [NoAlias, ReadOnly] public NativeArray<uint> PoiHashes;
+            [NoAlias, ReadOnly] public NativeArray<long> PoiGridX;
+            [NoAlias, ReadOnly] public NativeArray<long> PoiGridZ;
+            [NoAlias] public NativeArray<byte> PoiState;
+            [NoAlias] public NativeArray<int> TriggeredIndices;
+            [NoAlias] public NativeArray<uint> TriggeredHashes;
+            [NoAlias] public NativeArray<int> TriggeredCount;
+            [NoAlias] public NativeArray<int> FaultCount;
             public float3 PlayerRuntime;
             public long PlayerGridX;
             public long PlayerGridZ;
@@ -99,7 +117,8 @@ namespace Hecton8.Gameplay
                             continue;
                     }
 
-                    float distanceSq = math.distancesq(PlayerRuntime, poiRuntime);
+                    float3 poiDelta = PlayerRuntime - poiRuntime;
+                    float distanceSq = math.lengthsq(poiDelta);
                     if (!math.isfinite(distanceSq))
                     {
                         FaultCount[0] = FaultCount[0] + 1;
@@ -1115,7 +1134,7 @@ namespace Hecton8.Gameplay
         {
             double3 origin = a.ToAbsoluteDouble3();
             double3 target = b.ToAbsoluteDouble3();
-            return math.distancesq(origin, target);
+            return AupPrecisionMath.DistanceSqSafeDouble(target, origin);
         }
 
         private void HandleDiscovery(uint discoveryHash)

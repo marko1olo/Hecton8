@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Hecton8.Bootstrap;
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.SaveSystem;
 using Hecton8.World;
 using Unity.Mathematics;
@@ -24,7 +25,7 @@ namespace Hecton8.Gameplay
             public readonly float LightRange;
 
             public BeaconSnapshot(string id, string label, Vector3 position, Color color, float lightRange)
-                : this(id, label, position, AbsoluteUniversePosition.FromRuntimePosition(position), color, lightRange)
+                : this(id, label, position, ResolveAupFromRuntimeOrigin(position), color, lightRange)
             {
             }
 
@@ -62,6 +63,30 @@ namespace Hecton8.Gameplay
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+        }
+
+        private static AbsoluteUniversePosition ResolveAupFromRuntimeOrigin(Vector3 runtimePosition)
+        {
+            return TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition aup)
+                ? aup
+                : GlobalSignals.CurrentRuntimeOriginAup();
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition aup)
+        {
+            aup = default;
+            if (!float.IsFinite(runtimePosition.x) ||
+                !float.IsFinite(runtimePosition.y) ||
+                !float.IsFinite(runtimePosition.z))
+            {
+                return false;
+            }
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            aup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return math.all(math.isfinite(aup.ToAbsoluteDouble3()));
         }
 
         public int SavePriority => 37;
@@ -173,7 +198,13 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
+            if (!TryResolveAupFromRuntimeOrigin(origin, out AbsoluteUniversePosition originAup))
+            {
+                beacon = null;
+                distance = 0f;
+                return false;
+            }
+
             return runtime.TryRetractNearestInternal(in originAup, out beacon, out distance);
         }
 
@@ -200,7 +231,13 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
+            if (!TryResolveAupFromRuntimeOrigin(origin, out AbsoluteUniversePosition originAup))
+            {
+                snapshot = default;
+                distance = 0f;
+                return false;
+            }
+
             return runtime.TryGetNearestInternal(in originAup, out snapshot, out distance);
         }
 

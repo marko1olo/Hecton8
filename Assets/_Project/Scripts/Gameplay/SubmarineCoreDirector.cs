@@ -555,71 +555,70 @@ namespace Hecton8.Gameplay
             for (int i = 0; i < UpgradeSlotCount; i++)
             {
                 int itemHashId = installedUpgradeItemHashIds[i];
-                if (itemHashId == _PressureCompensatorHashId)
-                    mask |= (uint)VehicleUpgradeBits.PressureCompensator;
-                else if (itemHashId == _EngineOverdriveHashId)
-                    mask |= (uint)VehicleUpgradeBits.EngineOverdrive;
-                else if (itemHashId == _HullArmorLatticeHashId)
-                    mask |= (uint)VehicleUpgradeBits.HullArmorLattice;
-                else if (itemHashId == _ShockMountArrayHashId)
-                    mask |= (uint)VehicleUpgradeBits.ShockMountArray;
-                else if (itemHashId == _BallastOptimizerHashId)
-                    mask |= (uint)VehicleUpgradeBits.BallastOptimizer;
-                else if (itemHashId == _ReactorBypassCouplerHashId)
-                    mask |= (uint)VehicleUpgradeBits.ReactorBypassCoupler;
-                else if (itemHashId == _AbyssalStabilizerHashId)
-                    mask |= (uint)VehicleUpgradeBits.AbyssalStabilizer;
+                mask |= SelectVehicleBit(itemHashId, _PressureCompensatorHashId, VehicleUpgradeBits.PressureCompensator) |
+                        SelectVehicleBit(itemHashId, _EngineOverdriveHashId, VehicleUpgradeBits.EngineOverdrive) |
+                        SelectVehicleBit(itemHashId, _HullArmorLatticeHashId, VehicleUpgradeBits.HullArmorLattice) |
+                        SelectVehicleBit(itemHashId, _ShockMountArrayHashId, VehicleUpgradeBits.ShockMountArray) |
+                        SelectVehicleBit(itemHashId, _BallastOptimizerHashId, VehicleUpgradeBits.BallastOptimizer) |
+                        SelectVehicleBit(itemHashId, _ReactorBypassCouplerHashId, VehicleUpgradeBits.ReactorBypassCoupler) |
+                        SelectVehicleBit(itemHashId, _AbyssalStabilizerHashId, VehicleUpgradeBits.AbyssalStabilizer);
             }
 
             return mask;
         }
 
+        private static uint SelectVehicleBit(int itemHashId, int expectedHashId, VehicleUpgradeBits bit)
+        {
+            uint selected = (uint)math.select(0, 1, itemHashId == expectedHashId);
+            return (uint)bit & (0u - selected);
+        }
+
+        private static float SelectUpgradeMultiplier(float multiplier, float enabled01)
+        {
+            return 1f + ((math.max(0.0001f, multiplier) - 1f) * enabled01);
+        }
+
+        private static float UpgradeBit01(ulong mask, VehicleUpgradeBits bit)
+        {
+            return math.select(0f, 1f, (mask & (ulong)bit) != 0UL);
+        }
+
         private float ResolveMaxThrust()
         {
-            uint mask = ComposeInstalledUpgradeMask();
+            ulong mask = ComposeInstalledUpgradeMask();
             float thrust = submarineProfile != null ? submarineProfile.MaxThrust : DefaultMaxThrustNewtons;
-            if ((mask & (uint)VehicleUpgradeBits.EngineOverdrive) != 0u)
-                thrust *= EngineOverdriveThrustMultiplier;
-            if ((mask & (uint)VehicleUpgradeBits.BallastOptimizer) != 0u)
-                thrust *= BallastOptimizerThrustMultiplier;
-            if ((mask & (uint)VehicleUpgradeBits.ReactorBypassCoupler) != 0u)
-                thrust *= ReactorBypassThrustMultiplier;
+            thrust *= SelectUpgradeMultiplier(EngineOverdriveThrustMultiplier, UpgradeBit01(mask, VehicleUpgradeBits.EngineOverdrive));
+            thrust *= SelectUpgradeMultiplier(BallastOptimizerThrustMultiplier, UpgradeBit01(mask, VehicleUpgradeBits.BallastOptimizer));
+            thrust *= SelectUpgradeMultiplier(ReactorBypassThrustMultiplier, UpgradeBit01(mask, VehicleUpgradeBits.ReactorBypassCoupler));
             thrust *= _thermalSpeedMultiplier;
             return math.max(0f, thrust);
         }
 
         private float ResolveTurnSpeed()
         {
-            uint mask = ComposeInstalledUpgradeMask();
+            ulong mask = ComposeInstalledUpgradeMask();
             float turnSpeed = submarineProfile != null ? submarineProfile.TurnSpeed : DefaultTurnSpeedDegreesPerSecond;
-            if ((mask & (uint)VehicleUpgradeBits.EngineOverdrive) != 0u)
-                turnSpeed *= EngineOverdriveTurnMultiplier;
-            if ((mask & (uint)VehicleUpgradeBits.BallastOptimizer) != 0u)
-                turnSpeed *= BallastOptimizerTurnMultiplier;
-            if ((mask & (uint)VehicleUpgradeBits.AbyssalStabilizer) != 0u)
-                turnSpeed *= AbyssalStabilizerTurnMultiplier;
+            turnSpeed *= SelectUpgradeMultiplier(EngineOverdriveTurnMultiplier, UpgradeBit01(mask, VehicleUpgradeBits.EngineOverdrive));
+            turnSpeed *= SelectUpgradeMultiplier(BallastOptimizerTurnMultiplier, UpgradeBit01(mask, VehicleUpgradeBits.BallastOptimizer));
+            turnSpeed *= SelectUpgradeMultiplier(AbyssalStabilizerTurnMultiplier, UpgradeBit01(mask, VehicleUpgradeBits.AbyssalStabilizer));
             return math.max(0f, turnSpeed);
         }
 
         private float ResolveMaxDepth()
         {
-            uint mask = ComposeInstalledUpgradeMask();
+            ulong mask = ComposeInstalledUpgradeMask();
             float maxDepth = submarineProfile != null ? submarineProfile.MaxDepth : DefaultMaxDepthMeters;
-            if ((mask & (uint)VehicleUpgradeBits.PressureCompensator) != 0u)
-                maxDepth += PressureCompensatorDepthBonusMeters;
-            if ((mask & (uint)VehicleUpgradeBits.AbyssalStabilizer) != 0u)
-                maxDepth += AbyssalStabilizerDepthBonusMeters;
+            maxDepth += PressureCompensatorDepthBonusMeters * UpgradeBit01(mask, VehicleUpgradeBits.PressureCompensator);
+            maxDepth += AbyssalStabilizerDepthBonusMeters * UpgradeBit01(mask, VehicleUpgradeBits.AbyssalStabilizer);
             return math.max(0f, maxDepth);
         }
 
         private float ResolveBaseIntegrity()
         {
-            uint mask = ComposeInstalledUpgradeMask();
+            ulong mask = ComposeInstalledUpgradeMask();
             float integrity = submarineProfile != null ? submarineProfile.BaseIntegrity : DefaultBaseIntegrity;
-            if ((mask & (uint)VehicleUpgradeBits.HullArmorLattice) != 0u)
-                integrity += HullArmorIntegrityBonus;
-            if ((mask & (uint)VehicleUpgradeBits.ShockMountArray) != 0u)
-                integrity += ShockMountIntegrityBonus;
+            integrity += HullArmorIntegrityBonus * UpgradeBit01(mask, VehicleUpgradeBits.HullArmorLattice);
+            integrity += ShockMountIntegrityBonus * UpgradeBit01(mask, VehicleUpgradeBits.ShockMountArray);
             return math.max(1f, integrity);
         }
     }

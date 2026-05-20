@@ -1,9 +1,7 @@
 using System;
-using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
-using Unity.Jobs;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
@@ -184,10 +182,8 @@ namespace Hecton8.Visor
                             Destination = (DecalInstanceDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped),
                             Count = uploadCount
                         };
-                        JobHandle handle = uploadJob.Schedule();
-                        H8Memory.RegisterActiveJob(SystemID.Vfx, handle);
-                        // [BLOCKING_SYNC_POINT] Unity requires mapped GraphicsBuffer writes to finish before UnlockBufferAfterWrite.
-                        DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+                        // Unity requires mapped GraphicsBuffer writes before UnlockBufferAfterWrite; direct Execute avoids Schedule()+Complete overhead.
+                        uploadJob.Execute();
                     }
                 }
                 finally

@@ -251,15 +251,16 @@ namespace Hecton8.Tools
         public void Tick(float deltaTime)
         {
             TryRegisterSaveService();
+            if (!enableDurabilityDrain || _decayScheduled)
+                return;
+
             if (!TryResolveNativeState(
                     out NativeArray<ItemState> itemStates,
                     out NativeArray<float> pendingDecayDt,
                     out NativeArray<float> wearMultipliers,
                     out NativeArray<byte> slotActive,
                     out NativeArray<byte> breakdownFlags) ||
-                !enableDurabilityDrain ||
-                _decayScheduled ||
-                !HasPendingDecay())
+                !HasPendingDecay(pendingDecayDt))
             {
                 return;
             }
@@ -887,7 +888,7 @@ namespace Hecton8.Tools
             _maxDurabilityBySlot[slotIndex] = resolvedMaxDurability;
             _itemHashBySlot[slotIndex] = itemHashId;
             if (!TryResolveItemStates(out NativeArray<ItemState> itemStates) ||
-                !TryResolveBuffer(ref _wearMultipliersHandle, BufferID.ToolDurabilityWearMultipliers, out NativeArray<float> wearMultipliers) ||
+                !TryResolveDurabilityView(ref _wearMultipliersHandle, BufferID.ToolDurabilityWearMultipliers, out NativeArray<float> wearMultipliers) ||
                 !TryResolveSlotActive(out NativeArray<byte> slotActive))
             {
                 return;
@@ -963,35 +964,35 @@ namespace Hecton8.Tools
             out NativeArray<byte> slotActive,
             out NativeArray<byte> breakdownFlags)
         {
-            bool itemStatesResolved = TryResolveBuffer(ref _itemStatesHandle, BufferID.ToolDurabilityItemStates, out itemStates);
-            bool pendingResolved = TryResolveBuffer(ref _pendingDecayDtHandle, BufferID.ToolDurabilityPendingDecay, out pendingDecayDt);
-            bool wearResolved = TryResolveBuffer(ref _wearMultipliersHandle, BufferID.ToolDurabilityWearMultipliers, out wearMultipliers);
-            bool slotResolved = TryResolveBuffer(ref _slotActiveHandle, BufferID.ToolDurabilitySlotActive, out slotActive);
-            bool breakdownResolved = TryResolveBuffer(ref _breakdownFlagsHandle, BufferID.ToolDurabilityBreakdownFlags, out breakdownFlags);
+            bool itemStatesResolved = TryResolveDurabilityView(ref _itemStatesHandle, BufferID.ToolDurabilityItemStates, out itemStates);
+            bool pendingResolved = TryResolveDurabilityView(ref _pendingDecayDtHandle, BufferID.ToolDurabilityPendingDecay, out pendingDecayDt);
+            bool wearResolved = TryResolveDurabilityView(ref _wearMultipliersHandle, BufferID.ToolDurabilityWearMultipliers, out wearMultipliers);
+            bool slotResolved = TryResolveDurabilityView(ref _slotActiveHandle, BufferID.ToolDurabilitySlotActive, out slotActive);
+            bool breakdownResolved = TryResolveDurabilityView(ref _breakdownFlagsHandle, BufferID.ToolDurabilityBreakdownFlags, out breakdownFlags);
             return itemStatesResolved && pendingResolved && wearResolved && slotResolved && breakdownResolved;
         }
 
         private bool TryResolveItemStates(out NativeArray<ItemState> itemStates)
         {
-            return TryResolveBuffer(ref _itemStatesHandle, BufferID.ToolDurabilityItemStates, out itemStates);
+            return TryResolveDurabilityView(ref _itemStatesHandle, BufferID.ToolDurabilityItemStates, out itemStates);
         }
 
         private bool TryResolvePendingDecay(out NativeArray<float> pendingDecayDt)
         {
-            return TryResolveBuffer(ref _pendingDecayDtHandle, BufferID.ToolDurabilityPendingDecay, out pendingDecayDt);
+            return TryResolveDurabilityView(ref _pendingDecayDtHandle, BufferID.ToolDurabilityPendingDecay, out pendingDecayDt);
         }
 
         private bool TryResolveSlotActive(out NativeArray<byte> slotActive)
         {
-            return TryResolveBuffer(ref _slotActiveHandle, BufferID.ToolDurabilitySlotActive, out slotActive);
+            return TryResolveDurabilityView(ref _slotActiveHandle, BufferID.ToolDurabilitySlotActive, out slotActive);
         }
 
         private bool TryResolveBreakdownFlags(out NativeArray<byte> breakdownFlags)
         {
-            return TryResolveBuffer(ref _breakdownFlagsHandle, BufferID.ToolDurabilityBreakdownFlags, out breakdownFlags);
+            return TryResolveDurabilityView(ref _breakdownFlagsHandle, BufferID.ToolDurabilityBreakdownFlags, out breakdownFlags);
         }
 
-        private bool TryResolveBuffer<T>(
+        private bool TryResolveDurabilityView<T>(
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
             out NativeArray<T> buffer)
@@ -1033,13 +1034,17 @@ namespace Hecton8.Tools
             return handle.BufferID != 0u && handle.Generation != 0u;
         }
 
-        private bool HasPendingDecay()
+        private bool HasPendingDecay(NativeArray<float> pendingDecayDt)
         {
-            if (!TryResolvePendingDecay(out NativeArray<float> pendingDecayDt))
+            if (!pendingDecayDt.IsCreated || pendingDecayDt.Length <= 0)
                 return false;
 
+            int count = math.min(MaxTrackedTools, pendingDecayDt.Length);
             for (int i = 0; i < MaxTrackedTools; i++)
             {
+                if (i >= count)
+                    break;
+
                 if (_slotUsed[i] && pendingDecayDt[i] > 0f)
                     return true;
             }

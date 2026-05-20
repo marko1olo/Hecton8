@@ -41,59 +41,59 @@ namespace Hecton8.Tools
     /// <summary>
     /// Mutable per-tool runtime state stored in contiguous native memory.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct ToolState
     {
-        public float CurrentBattery;
-        public float InternalHeat;
-        public float Durability;
-        public uint UpgradeBitmask;
-        public uint StatusMask;
-        public byte ToolTypeId;
-        public byte ModuleSlotCount;
-        public ushort Reserved0;
-        public ulong Reserved1;
+        [FieldOffset(0)] public float CurrentBattery;
+        [FieldOffset(4)] public float InternalHeat;
+        [FieldOffset(8)] public float Durability;
+        [FieldOffset(12)] public uint UpgradeBitmask;
+        [FieldOffset(16)] public uint StatusMask;
+        [FieldOffset(20)] public byte ToolTypeId;
+        [FieldOffset(21)] public byte ModuleSlotCount;
+        [FieldOffset(22)] public ushort Reserved0;
+        [FieldOffset(24)] public ulong Reserved1;
     }
 
     /// <summary>
     /// Cold-path authored profile copied from tool components into the modular runtime.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct ToolRuntimeProfile
     {
-        public uint ToolId;
-        public float MaxRange;
-        public float PowerScalar;
-        public float EfficiencyScalar;
-        public float SpeedScalar;
-        public float HeatGenerationRate;
-        public float CooldownRate;
-        public float BatteryCapacity;
-        public float BatteryDrainPerSecond;
-        public float DurabilityDrainMultiplier;
-        public float RecoilImpulse;
-        public byte ModuleSlotCount;
-        public byte Reserved0;
-        public byte Reserved1;
-        public byte Reserved2;
+        [FieldOffset(0)] public uint ToolId;
+        [FieldOffset(4)] public float MaxRange;
+        [FieldOffset(8)] public float PowerScalar;
+        [FieldOffset(12)] public float EfficiencyScalar;
+        [FieldOffset(16)] public float SpeedScalar;
+        [FieldOffset(20)] public float HeatGenerationRate;
+        [FieldOffset(24)] public float CooldownRate;
+        [FieldOffset(28)] public float BatteryCapacity;
+        [FieldOffset(32)] public float BatteryDrainPerSecond;
+        [FieldOffset(36)] public float DurabilityDrainMultiplier;
+        [FieldOffset(40)] public float RecoilImpulse;
+        [FieldOffset(44)] public byte ModuleSlotCount;
+        [FieldOffset(45)] public byte Reserved0;
+        [FieldOffset(46)] public byte Reserved1;
+        [FieldOffset(47)] public byte Reserved2;
     }
 
     /// <summary>
     /// Hot-path compiled stats stored beside <see cref="ToolState"/> in native memory.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 40)]
+    [StructLayout(LayoutKind.Explicit, Size = 40)]
     public struct ToolRuntimeStats
     {
-        public float MaxRange;
-        public float PowerScalar;
-        public float EfficiencyScalar;
-        public float SpeedScalar;
-        public float HeatGenerationRate;
-        public float CooldownRate;
-        public float BatteryCapacity;
-        public float BatteryDrainPerSecond;
-        public float DurabilityDrainMultiplier;
-        public float RecoilImpulse;
+        [FieldOffset(0)] public float MaxRange;
+        [FieldOffset(4)] public float PowerScalar;
+        [FieldOffset(8)] public float EfficiencyScalar;
+        [FieldOffset(12)] public float SpeedScalar;
+        [FieldOffset(16)] public float HeatGenerationRate;
+        [FieldOffset(20)] public float CooldownRate;
+        [FieldOffset(24)] public float BatteryCapacity;
+        [FieldOffset(28)] public float BatteryDrainPerSecond;
+        [FieldOffset(32)] public float DurabilityDrainMultiplier;
+        [FieldOffset(36)] public float RecoilImpulse;
     }
 
     /// <summary>

@@ -23,13 +23,13 @@ Platform rules are external facts and can change. Do not rely on old notes.
 Before committing:
 
   `SHOW-001` in `Press/SHOWCASE_SUBMISSION_TRACKER.csv` has `submission_permission_gate = ALLOW_SHOWCASE_SUBMIT_VERIFIED`;
-  public Steam page exists through `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED` and Official CTA Link Activation Gate V0 passes for any public link;
-  demo exists and `demo_public_access_permission_gate = ALLOW_PUBLIC_DEMO_ACCESS_VERIFIED`;
+  Steam page publication has `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED` and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` for any public link;
+  public demo/Playtest access has `demo_public_access_permission_gate = ALLOW_PUBLIC_DEMO_ACCESS_VERIFIED`;
   screenshots/capsule are proven;
   first demo route has a measurable player decision that feedback can code as `AGENCY_DECISION_READ`;
   creator batch has produced signal;
   first 20 minutes are stable;
-  demo has clear CTA packet or no-link fallback;
+  demo has a destination-specific public CTA packet or no-link fallback;
   localized copy for target regions is ready;
   no unsupported multiplayer-scope confusion on store page.
 
@@ -47,7 +47,7 @@ Submission separation: Next Fest registration/commitment uses the showcase track
 |  4 weeks | Localize short pitch and Steam announcement skeletons. |
 |  3 weeks | Capture fresh clips from demo build. |
 |  2 weeks | Send preview/demo reminders to send verified creators after official route, asset fit, creator utility, `creator_send_gate`, and CRM send-log gates pass. |
-|  1 week | Publish "demo coming" announcement only if platform rules allow it, `demo_public_access_permission_gate = ALLOW_PUBLIC_DEMO_ACCESS_VERIFIED`, `steam_announcement_permission_gate = ALLOW_STEAM_ANNOUNCEMENT_VERIFIED`, and CTA/access route gates pass. |
+|  1 week | Publish "demo coming" announcement only if platform rules permit the post and the exact surface has `demo_public_access_permission_gate = ALLOW_PUBLIC_DEMO_ACCESS_VERIFIED`, `steam_announcement_permission_gate = ALLOW_STEAM_ANNOUNCEMENT_VERIFIED`, and destination-specific CTA/access route gates. |
 | Event start | Push demo, Steam announcement, creator batch, community posts only after their exact permission gates pass. |
 | Event mid | Publish systems update and fix critical blockers. |
 | Event end | Recap, gated Steam CTA after `steam_page_publish_permission_gate` and `public_cta_permission_gate` pass, feedback digest. |

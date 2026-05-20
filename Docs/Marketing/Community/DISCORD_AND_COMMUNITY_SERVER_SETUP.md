@@ -21,7 +21,7 @@ Do not open a public server until at least two proof conditions exist:
 - Steam Coming Soon page with official URL;
 - 6+ real screenshots with QA and asset metadata claim checks;
 - 2 short gameplay clips with QA and asset metadata claim checks;
-- one first-page agency-proof asset or clip has AB-009/KPI decision-read fields (`what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`) if the server launch uses gameplay, pressure, threat, route-risk, salvage failure, or first-public proof;
+- one first-page agency-proof asset or clip has non-pending asset metadata `viewer_named_decision`, valid non-held `capture_verdict`, and AB-009/KPI decision-read fields (`what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`) if the server launch uses gameplay, pressure, threat, route-risk, salvage failure, or first-public proof;
 - demo test window;
 - regular dev update cadence;
 
@@ -116,7 +116,7 @@ Scope reminder: HECTON-8 is single-player-first, proof-first, and competitor-neu
 
 Join if you want to help us make pressure, machinery, and black-water survival read clearly.
 
-Do not use this announcement if the open gate relies on pressure/gameplay/route-risk footage without AB-009/KPI decision-read fields.
+Do not use this announcement if the open gate relies on pressure/gameplay/route-risk footage without non-pending metadata `viewer_named_decision`, valid non-held `capture_verdict`, and AB-009/KPI decision-read fields.
 
 ## Weekly Community Routine
 

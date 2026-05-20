@@ -3,7 +3,22 @@
 Date: 2026-05-20
 Agent: SHINOBU_02
 Domain: Core & Memory Infrastructure / Global EventBus MPSC SignalBus
-Status: CURRENT48 SIGNAL CORRUPTION BLACKBOX BACKOFF AND SIGNALCRITICAL AUDIT CLASSIFIER APPLIED; SIGNALCRITICAL STATIC AUDIT 0 ERRORS / 1 REVIEW WARNING / 16 INFOS; BUILD BLOCKED BY HARDWARE GUARD CPU=100. CORE COMPILE GREEN STILL UNPROVEN. PREVIOUS POST-PATCH BUILD REMAINS CURRENT40: 311 ERRORS / 19 WARNINGS UNTIL A GUARDED BUILD CAN RUN.
+Status: CURRENT49 PRIORITY CSV RELEASE GUARD, STACK SCRATCH, AND SIGNAL FILTER AUDIT FALSE-POSITIVE FIX APPLIED; SIGNALCRITICAL STATIC AUDIT 0 ERRORS / 0 WARNINGS / 17 INFOS / SIGNALS WITHOUT LAYOUT 0; BUILD BLOCKED BY HARDWARE GUARD CPU=100. CORE COMPILE GREEN STILL UNPROVEN. PREVIOUS POST-PATCH BUILD REMAINS CURRENT40: 311 ERRORS / 19 WARNINGS UNTIL A GUARDED BUILD CAN RUN.
+
+## Current49 Checklist
+
+- [x] Re-read active SHINOBU_02 status/rationale before work.
+- [x] Used read-only subagents Newton and Leibniz to classify the remaining SignalPriority CSV sync-I/O warning and the `signalsWithoutLayout=1` summary counter.
+- [x] Confirmed `SignalPriorityCsvHotSwap.TryLoad` has no production callsite under `Assets/_Project`; boot currently uses `SignalPriorityTable.InitializeFromDisk()` and `SignalTuningCsvHotSwap.TryLoadDefault()`, not the priority hot-swap loader.
+- [x] Added a release-player guard to `SignalPriorityCsvHotSwap.TryLoad`: `!Application.isEditor && !Debug.isDebugBuild` returns false before `File.Exists` or `FileStream`.
+- [x] Removed the managed static `byte[4096]` scratch from `SignalPriorityCsvHotSwap`; parsing now uses 4096-byte stack scratch and `ReadOnlySpan<byte>` helper methods. Public method signature remains unchanged for editor/development tooling.
+- [x] Hardened `Tools/SignalBusContractAudit.ps1` so `SignalPriorityCsvHotSwap.TryLoad` is INFO only when the method contains the explicit release-player guard; otherwise it remains a WARN.
+- [x] Hardened `Test-StructImplementsISignal` in both PowerShell and C# audit tools to ignore generic `where T : unmanaged, ISignal` constraints. This removes the false payload classification for `EntityAliveMaskSignalFilter<T> : ISignalSnapshotFilter<T>`.
+- [x] SignalCritical Current49 audit rerun: files 9 C# / 68 compute, errors 0, warnings 0, infos 17, confirmedErrors 0, signalDefinitions 179, signalsWithoutLayout 0, runtime signal Pack=1 0, managed event surface 0, hot-path heuristic hits 0.
+- [x] Static checks: Current49 audit artifacts have no trailing whitespace; `git diff --check` over touched source/tool/audit files returned exit 0 with line-ending warnings only.
+- [x] Build guard executed: `PRE_BUILD_GUARD_CURRENT49 CPU=100 PROCS=0`; dotnet build skipped by project hardware rule.
+- [ ] Core compile green: not proven in Current49 because CPU guard blocked build.
+- [ ] Unity import / Play Mode / Profiler / GCMonitor / IL2CPP / ARM64 proof: not run.
 
 ## Current48 Checklist
 
@@ -138,7 +153,7 @@ Status: CURRENT48 SIGNAL CORRUPTION BLACKBOX BACKOFF AND SIGNALCRITICAL AUDIT CL
 - [PASS] Task 17 Zero-alloc string logging: no hot-path string logging added.
 - [PASS] Task 18 Signal dashboard editor: not changed in Current41.
 - [PASS] Task 19 Live signal injection facade: not changed in Current41.
-- [PASS] Task 20 CSV priority hot swap: Current47 classified priority/tuning CSV sync-I/O as cold/editor/development live tuning and did not narrow development-build behavior without owner signoff.
+- [PASS] Task 20 CSV priority hot swap: Current49 keeps the public priority CSV hot-swap signature for Editor/Development Play Mode, blocks release-player synchronous file reads before `File.Exists`, removes the managed static scratch array, and classifies the guarded path as INFO in SignalCritical audit.
 
 ## Verification
 

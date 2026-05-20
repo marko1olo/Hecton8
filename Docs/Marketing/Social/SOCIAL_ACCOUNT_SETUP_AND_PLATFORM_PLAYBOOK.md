@@ -291,7 +291,7 @@ Official HECTON-8 account reserved.
 Public gameplay assets are not live yet. HECTON-8 is single player deep sea survival about pressure, salvage, machinery, and black water.
 ```
 
-Do not add a Steam link until Official CTA Link Activation Gate V0 passes and UTM rules are ready. If this forced reservation post is used, log it as `route_class = no_link_feedback` and do not count replies as anything beyond `consent_provenance = public_comment`.
+Do not add a Steam link until `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED`, destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`, and UTM rules are ready. If this forced reservation post is used, log it as `route_class = no_link_feedback` and do not count replies as anything beyond `consent_provenance = public_comment`.
 
 ## Profile Bio Template
 
@@ -342,11 +342,11 @@ Run only after `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED`, `PLAN
 |---|---|---|---|---|---|---|
 | 1 | X / Bluesky | `PLAN-SHOT-001` | `First in game look at HECTON-8. Single player deep sea survival about pressure, salvage, machinery, and black water. Blunt read wanted: does this feel like a distinct survival game, or just generic underwater sci fi?` | Feedback question only. | `route_class = no_link_feedback`; `consent_provenance = public_comment` only. | Replies mostly say "what do you do?" or "AI/concept art". |
 | 2 | YouTube Community / Short if available | `PLAN-CLIP-001` or `PLAN-CLIP-003` | `A pressure problem should read before the caption. If this clip needs explanation, it failed.` | Feedback question only. | `route_class = no_link_feedback`; `consent_provenance = public_comment` only. | First 3 seconds do not show action/consequence. |
-| 3 | Steam News / X / Bluesky | `PLAN-CAPSULE-001` winner + Steam URL | `HECTON-8 now has an official Steam page: single player deep sea survival focused on pressure, salvage, machinery, and black water route risk.` | Official Steam link only. | `route_class = public_cta`; requires `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED`, CTA activation packet, and `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED` before post. | Steam URL not live through the publish gate, capsule not cold read, public post gate missing, or copy implies unsupported multiplayer scope or performance. |
+| 3 | Steam News / X / Bluesky | `PLAN-CAPSULE-001` winner + Steam URL | `HECTON-8 now has an official Steam page: single player deep sea survival focused on pressure, salvage, machinery, and black water route risk.` | Official Steam link only. | `route_class = public_cta`; requires `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED`, destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`, and `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED` before post. | Steam URL not live through the publish gate, capsule not cold read, public post gate missing, or copy implies unsupported multiplayer scope or performance. |
 
 ### Pinned Post V0
 
-Use only after the official Steam URL exists through `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED`, the exact links pass Official CTA Link Activation Gate V0, and the pinned post has `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED`.
+Use only after the official Steam URL exists through `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED`, the exact links pass destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`, and the pinned post has `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED`.
 
 ```text
 HECTON-8 is a single player deep sea survival game about pressure, salvage, machinery, and the cost of staying alive below the light.
@@ -363,7 +363,7 @@ Do not paste the same text everywhere. Keep the same facts, but change the ask:
 
   X/Bluesky: one blunt question.
   YouTube: clip retention and comments.
-  Reddit: critique only, with dev disclosure and no external CTA unless platform rules and CTA activation allow.
+  Reddit: critique only, with dev disclosure and no external CTA unless same-day platform rules, the exact destination gate, and `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` all pass.
   Steam: official update, no insecurity language.
 
 ## Pinned Post Template
@@ -431,8 +431,8 @@ Before posting:
 5. 15s salvage route clip.
 6. Base pressure/failure clip.
 7. Devlog: why pressure must be readable.
-8. Steam page live announcement only after `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED`, Official CTA Link Activation Gate V0, and `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED`.
-9. Demo/playtest signup announcement after approved URL, signup custody, and CTA activation packet pass.
+8. Steam page live announcement only after `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED`, destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`, and `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED`.
+9. Demo/playtest signup announcement after approved URL, signup custody, the exact demo/signup destination gate, and `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` pass.
 10. Known issues/feedback request after demo.
 
 ## Reply Rules

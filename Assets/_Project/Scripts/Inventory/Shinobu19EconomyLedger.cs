@@ -36,80 +36,127 @@ namespace Hecton8.Inventory
         Ultra = 3
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct CraftingRecipeDTO
     {
+        [FieldOffset(0)]
         public uint ResultHash;
+        [FieldOffset(4)]
         public uint ComponentA;
+        [FieldOffset(8)]
         public int QuantityA;
+        [FieldOffset(12)]
         public uint ComponentB;
+        [FieldOffset(16)]
         public int QuantityB;
+        [FieldOffset(20)]
         public uint Reserved0;
+        [FieldOffset(24)]
         public uint Reserved1;
+        [FieldOffset(28)]
         public uint Reserved2;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct CraftingRecipeMaskDTO
     {
+        [FieldOffset(0)]
         public ulong RequirementMask;
+        [FieldOffset(8)]
         public uint ResultHash;
+        [FieldOffset(12)]
         public uint RecipeIndex;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct CraftingIngredientDTO
     {
+        [FieldOffset(0)]
         public uint ItemHash;
+        [FieldOffset(4)]
         public ushort Quantity;
+        [FieldOffset(6)]
         public ushort Reserved0;
+        [FieldOffset(8)]
         public uint UnitMassGrams;
+        [FieldOffset(12)]
         public uint TotalMassGrams;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct ItemPhysicalConstantsDTO
     {
+        [FieldOffset(0)]
         public uint ItemHash;
+        [FieldOffset(4)]
         public float MassKg;
+        [FieldOffset(8)]
         public float VolumeLiters;
+        [FieldOffset(12)]
         public int MaxStack;
+        [FieldOffset(16)]
         public float BaseDurability01;
+        [FieldOffset(20)]
         public uint Flags;
+        [FieldOffset(24)]
         public uint Reserved0;
+        [FieldOffset(28)]
         public uint Reserved1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct EconomyTelemetryEntry
     {
+        [FieldOffset(0)]
         public long TimestampTicks;
+        [FieldOffset(8)]
         public ulong InventoryMask;
+        [FieldOffset(16)]
         public float InventoryTransactionTimeMs;
+        [FieldOffset(20)]
         public float MassKg;
+        [FieldOffset(24)]
         public float VolumeLiters;
+        [FieldOffset(28)]
         public float ReservedFloat;
+        [FieldOffset(32)]
         public uint FrameIndex;
+        [FieldOffset(36)]
         public uint LastItemHash;
+        [FieldOffset(40)]
         public uint LastRecipeHash;
+        [FieldOffset(44)]
         public uint Flags;
+        [FieldOffset(48)]
         public int TotalItemsCrafted;
+        [FieldOffset(52)]
         public int TotalItemsTransferred;
+        [FieldOffset(56)]
         public int TransactionResult;
+        [FieldOffset(60)]
         public int SlotIndex;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 40)]
+    [StructLayout(LayoutKind.Explicit, Size = 40)]
     public struct ShinobuCarryTotalsDTO
     {
+        [FieldOffset(0)]
         public long TimestampTicks;
+        [FieldOffset(8)]
         public float TotalMassKg;
+        [FieldOffset(12)]
         public float TotalVolumeLiters;
+        [FieldOffset(16)]
         public float MaxCarryMassKg;
+        [FieldOffset(20)]
         public float MaxCarryVolumeLiters;
+        [FieldOffset(24)]
         public float Load01;
+        [FieldOffset(28)]
         public float MovementMultiplier;
+        [FieldOffset(32)]
         public uint FrameIndex;
+        [FieldOffset(36)]
         public uint Reserved0;
     }
 
@@ -222,21 +269,31 @@ namespace Hecton8.Inventory
         [FieldOffset(28)] public uint Reserved0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct DebrisSpatialEntry
     {
+        [FieldOffset(0)]
         public float3 LocalPosition;
+        [FieldOffset(12)]
         public uint LootHash;
+        [FieldOffset(16)]
         public int Quantity;
+        [FieldOffset(20)]
         public int DebrisIndex;
+        [FieldOffset(24)]
         public uint Flags;
+        [FieldOffset(28)]
+        private uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct EconomyCsvMonitorState
     {
+        [FieldOffset(0)]
         public long LastWriteTicks;
+        [FieldOffset(8)]
         public int AppliedLineCount;
+        [FieldOffset(12)]
         public int RejectedLineCount;
     }
 

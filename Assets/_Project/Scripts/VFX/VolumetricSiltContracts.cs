@@ -5,73 +5,73 @@ using Unity.Mathematics;
 
 namespace Hecton8.VFX
 {
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct ParticleDataDTO
     {
-        public float3 Position;
-        public float Lifetime;
-        public float3 Velocity;
-        public float Size;
+        [FieldOffset(0)] public float3 Position;
+        [FieldOffset(12)] public float Lifetime;
+        [FieldOffset(16)] public float3 Velocity;
+        [FieldOffset(28)] public float Size;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct ParticleRenderMetaDTO
     {
-        public float3 PreviousPosition;
-        public uint Flags;
-        public float2 Uv;
-        public float2 Pad;
+        [FieldOffset(0)] public float3 PreviousPosition;
+        [FieldOffset(12)] public uint Flags;
+        [FieldOffset(16)] public float2 Uv;
+        [FieldOffset(24)] public float2 Pad;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct DynamicWakeDTO
     {
-        public float3 Position;
-        public float Radius;
-        public float3 Force;
-        public float Falloff;
+        [FieldOffset(0)] public float3 Position;
+        [FieldOffset(12)] public float Radius;
+        [FieldOffset(16)] public float3 Force;
+        [FieldOffset(28)] public float Falloff;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public partial struct MockWakeSignal
     {
-        public float3 Position;
-        public float Radius;
-        public float3 Force;
-        public float Lifetime;
+        [FieldOffset(0)] public float3 Position;
+        [FieldOffset(12)] public float Radius;
+        [FieldOffset(16)] public float3 Force;
+        [FieldOffset(28)] public float Lifetime;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public partial struct MockAcousticSignal
     {
-        public float3 Position;
-        public float Radius;
-        public float Magnitude;
-        public float StartTime;
-        public float Duration;
-        public float WaveSpeed;
+        [FieldOffset(0)] public float3 Position;
+        [FieldOffset(12)] public float Radius;
+        [FieldOffset(16)] public float Magnitude;
+        [FieldOffset(20)] public float StartTime;
+        [FieldOffset(24)] public float Duration;
+        [FieldOffset(28)] public float WaveSpeed;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct MockFlowField
     {
-        public float3 GlobalFlow;
-        public float CurlStrength;
-        public float3 NoiseAnchor;
-        public float DensityScale;
+        [FieldOffset(0)] public float3 GlobalFlow;
+        [FieldOffset(12)] public float CurlStrength;
+        [FieldOffset(16)] public float3 NoiseAnchor;
+        [FieldOffset(28)] public float DensityScale;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct VfxConfigurationDTO
     {
-        public int ParticleCount;
-        public float CurlNoiseStrength;
-        public float WakeInfluence;
-        public float GravitySinkingSpeed;
-        public float AmbientSize;
-        public float DensityScale;
-        public uint CsvProfileHash;
-        public uint Version;
+        [FieldOffset(0)] public int ParticleCount;
+        [FieldOffset(4)] public float CurlNoiseStrength;
+        [FieldOffset(8)] public float WakeInfluence;
+        [FieldOffset(12)] public float GravitySinkingSpeed;
+        [FieldOffset(16)] public float AmbientSize;
+        [FieldOffset(20)] public float DensityScale;
+        [FieldOffset(24)] public uint CsvProfileHash;
+        [FieldOffset(28)] public uint Version;
     }
 
     public static class VolumetricSiltConfigurationAccess

@@ -23,21 +23,32 @@ namespace Hecton8.Physics
         // lifetime and copy bandwidth before the actual benchmark.
         //
         // SAFETY_JUSTIFICATION_PARAGRAPH_3:
-        // Schedule count is bounded by States.Length; Execute(i) writes only row i and no other row. The
-        // runtime schedules downstream evaluation only after this seed handle completes, so no concurrent
-        // job reads or writes States while this writer owns the buffer.
+        // Schedule count is bounded by StateCount, a scheduler value derived from States.Length after Vault
+        // resolution. Execute(i) writes only row i and no other row. The runtime schedules downstream
+        // evaluation only after this seed handle completes, so no concurrent job reads or writes States
+        // while this writer owns the buffer.
         [WriteOnly, NativeDisableParallelForRestriction, NoAlias] public NativeArray<BuoyancyStateDTO> States;
         [WriteOnly, NoAlias] public NativeArray<BuoyancyDebugForceDTO> DebugForces;
+        public int StateCount;
+        public int DebugForceCount;
         public int ActiveMockCount;
         public double3 SurfaceAUP;
         public uint SimulationFrame;
 
         public unsafe void Execute(int index)
         {
-            if (!States.IsCreated || (uint)index >= (uint)States.Length)
+            if (!States.IsCreated)
                 return;
 
-            bool active = index < math.max(0, ActiveMockCount);
+            int stateCount = math.min(math.max(0, StateCount), States.Length);
+            int debugForceCount = 0;
+            if (DebugForces.IsCreated)
+                debugForceCount = math.min(math.max(0, DebugForceCount), DebugForces.Length);
+            if ((uint)index >= (uint)stateCount)
+                return;
+
+            int activeMockCount = math.clamp(ActiveMockCount, 0, stateCount);
+            bool active = index < activeMockCount;
             uint rawHash = (uint)(index + 1) * 0x9E3779B9u;
             uint hash = math.select(1u, rawHash, rawHash != 0u);
             float lane = (index & 31) - 15.5f;
@@ -59,7 +70,7 @@ namespace Hecton8.Physics
             BuoyancyStateDTO* statesPtr = (BuoyancyStateDTO*)States.GetUnsafePtr();
             ref BuoyancyStateDTO stateRef = ref UnsafeUtility.AsRef<BuoyancyStateDTO>(statesPtr + index);
             stateRef = state;
-            if (DebugForces.IsCreated && (uint)index < (uint)DebugForces.Length)
+            if ((uint)index < (uint)debugForceCount)
             {
                 BuoyancyDebugForceDTO debug = default;
                 debug.CurrentAUP = state.CurrentAUP;
@@ -186,7 +197,9 @@ namespace Hecton8.Physics
         // work indices cannot produce the same state row. The job writes only rows in [0, activeCount), and
         // the dispatcher chains the reduction after this evaluator handle, so no concurrent row owner exists.
         [NativeDisableParallelForRestriction, NoAlias] public NativeArray<BuoyancyStateDTO> States;
+        public int StateCount;
         [ReadOnly, NoAlias] public NativeArray<BuoyancyFlowSampleDTO> FlowSamples;
+        public int FlowSampleCount;
         public BuoyancyTuningDTO Tuning;
         // SAFETY_JUSTIFICATION_PARAGRAPH_1:
         // DebugForces uses the same strided row mapping as States, not DebugForces[workIndex]. Unity cannot
@@ -203,7 +216,9 @@ namespace Hecton8.Physics
         // is the same injective state row used above. Telemetry reduction is scheduled after this evaluator
         // handle, so no job reads DebugForces until all partitioned writes are complete.
         [WriteOnly, NativeDisableParallelForRestriction, NoAlias] public NativeArray<BuoyancyDebugForceDTO> DebugForces;
+        public int DebugForceCount;
         [WriteOnly, NoAlias] public NativeArray<BuoyancyForcePacketDTO> ForcePackets;
+        public int ForcePacketCount;
         public int ForcePacketWriteEnabled;
         public int ActiveStateCount;
         public int EvaluationStride;
@@ -214,19 +229,39 @@ namespace Hecton8.Physics
 
         public unsafe void Execute(int workIndex)
         {
-            if (!States.IsCreated || (uint)workIndex >= (uint)States.Length)
+            if (!States.IsCreated ||
+                !FlowSamples.IsCreated ||
+                !DebugForces.IsCreated ||
+                !ForcePackets.IsCreated)
+            {
                 return;
+            }
+
+            int stateCount = math.min(math.max(0, StateCount), States.Length);
+            int flowSampleCount = math.min(math.max(0, FlowSampleCount), FlowSamples.Length);
+            int debugForceCount = math.min(math.max(0, DebugForceCount), DebugForces.Length);
+            int forcePacketCount = math.min(math.max(0, ForcePacketCount), ForcePackets.Length);
+            if (stateCount <= 0 ||
+                flowSampleCount <= 0 ||
+                debugForceCount <= 0 ||
+                forcePacketCount <= 0 ||
+                (uint)workIndex >= (uint)stateCount)
+            {
+                return;
+            }
 
             BuoyancyTuningDTO tuning = Tuning;
             int authoredActiveCount = math.select(tuning.ActiveStateCount, ActiveStateCount, ActiveStateCount > 0);
-            int activeCount = math.clamp(authoredActiveCount, 0, States.Length);
+            int activeCount = math.clamp(authoredActiveCount, 0, stateCount);
             int stride = math.max(1, EvaluationStride);
             int offset = math.clamp(EvaluationOffset, 0, stride - 1);
             int stridedIndex = (workIndex * stride) + offset;
             int index = math.select(stridedIndex, workIndex, stride == 1);
-            WriteForceCandidate(workIndex, default);
-            if ((uint)index >= (uint)activeCount || (uint)index >= (uint)States.Length)
+            if ((uint)index >= (uint)activeCount || (uint)index >= (uint)stateCount)
+            {
+                WriteForceCandidate(workIndex, default, forcePacketCount);
                 return;
+            }
 
             BuoyancyStateDTO* statesPtr = (BuoyancyStateDTO*)States.GetUnsafePtr();
             ref BuoyancyStateDTO stateRef = ref UnsafeUtility.AsRef<BuoyancyStateDTO>(statesPtr + index);
@@ -332,7 +367,13 @@ namespace Hecton8.Physics
             float3 gravityForce = new float3(0f, -math.max(BuoyancyDisplacementConstants.Epsilon, state.MassKg) * gravity, 0f) * simulateWeight;
             double3 relativeToSector = state.CurrentAUP - sectorAup;
             float3 localAup = SanitizeFinite(new float3((float)relativeToSector.x, (float)relativeToSector.y, (float)relativeToSector.z), float3.zero);
-            float3 flowVelocity = ResolveFlowVelocity(state.CurrentAUP, localAup, index, SimulationFrame, qualityCurve) * simulateWeight;
+            float3 flowVelocity = ResolveFlowVelocity(
+                state.CurrentAUP,
+                localAup,
+                index,
+                SimulationFrame,
+                flowSampleCount,
+                qualityCurve) * simulateWeight;
             float3 relativeVelocity = SanitizeFinite((state.Velocity * simulateWeight) - flowVelocity, float3.zero);
             float3 linearDrag = -relativeVelocity * linearDragCoefficient;
             float relativeSpeedSq = math.lengthsq(relativeVelocity);
@@ -364,22 +405,26 @@ namespace Hecton8.Physics
                               math.all(math.isfinite(flowForce)) &
                               math.all(math.isfinite(netForce));
             bool forceOutputValid = simulateBody & mathFinite & !sleepNow;
+            bool queueCandidate = (ForcePacketWriteEnabled != 0) &
+                                  forceOutputValid &
+                                  (forceMagnitudeSq > 0.00000001f) &
+                                  ((uint)workIndex < (uint)forcePacketCount);
             uint flags = state.Flags | math.select(0u, BuoyancyDisplacementConstants.FlagEvaluated, simulateBody);
             flags |= math.select(0u, BuoyancyDisplacementConstants.FlagNonFinite, !inputFinite | (simulateBody & !mathFinite));
+            flags |= math.select(0u, BuoyancyDisplacementConstants.FlagForceQueued, queueCandidate);
 
             state.Flags = flags;
             stateRef = state;
             debug.Flags = flags;
-            debug.BuoyantForce = buoyancyForce;
-            debug.GravityForce = gravityForce;
-            debug.DragForce = dragForce;
-            debug.FlowForce = flowForce;
-            debug.NetForce = math.select(float3.zero, netForce, forceOutputValid);
+            debug.BuoyantForce = SanitizeFinite(buoyancyForce, float3.zero);
+            debug.GravityForce = SanitizeFinite(gravityForce, float3.zero);
+            debug.DragForce = SanitizeFinite(dragForce, float3.zero);
+            debug.FlowForce = SanitizeFinite(flowForce, float3.zero);
+            debug.NetForce = math.select(float3.zero, SanitizeFinite(netForce, float3.zero), forceOutputValid);
             debug.SubmergedFraction = submerged01 * simulateWeight;
             debug.DepthMeters = depthMeters * simulateWeight;
-            debug.SleepScore = (speedSq + forceMagnitudeSq) * simulateWeight;
+            debug.SleepScore = math.max(0f, SanitizeFinite(speedSq + forceMagnitudeSq, 0f)) * simulateWeight;
 
-            bool queueCandidate = (ForcePacketWriteEnabled != 0) & forceOutputValid & (forceMagnitudeSq > 0.00000001f);
             BuoyancyForcePacketDTO packet = default;
             packet.CurrentAUP = math.select(double3.zero, state.CurrentAUP, queueCandidate);
             packet.NetForce = math.select(float3.zero, netForce, queueCandidate);
@@ -395,46 +440,47 @@ namespace Hecton8.Physics
             packet.StateIndex = math.select(0, index, queueCandidate);
             packet.FrameIndex = math.select(0u, SimulationFrame, queueCandidate);
             packet.DebugVelocity = math.select(float3.zero, state.Velocity, queueCandidate);
-            bool wroteCandidate = WriteForceCandidate(workIndex, packet);
+            bool wroteCandidate = WriteForceCandidate(workIndex, packet, forcePacketCount);
             debug.Flags |= math.select(0u, BuoyancyDisplacementConstants.FlagForceQueued, queueCandidate & wroteCandidate);
 
-            WriteDebug(index, debug);
+            WriteDebug(index, debug, debugForceCount);
         }
 
-        private void WriteDebug(int index, BuoyancyDebugForceDTO debug)
+        private void WriteDebug(int index, BuoyancyDebugForceDTO debug, int debugForceCount)
         {
-            if (DebugForces.IsCreated && (uint)index < (uint)DebugForces.Length)
+            if ((uint)index < (uint)debugForceCount)
                 DebugForces[index] = debug;
         }
 
-        private bool WriteForceCandidate(int workIndex, BuoyancyForcePacketDTO packet)
+        private bool WriteForceCandidate(int workIndex, BuoyancyForcePacketDTO packet, int forcePacketCount)
         {
-            if (!ForcePackets.IsCreated || (uint)workIndex >= (uint)ForcePackets.Length)
+            if ((uint)workIndex >= (uint)forcePacketCount)
                 return false;
 
             ForcePackets[workIndex] = packet;
             return true;
         }
 
-        private float3 ResolveFlowVelocity(double3 objectAup, float3 localAup, int index, uint frame, float qualityCurve)
+        private float3 ResolveFlowVelocity(
+            double3 objectAup,
+            float3 localAup,
+            int index,
+            uint frame,
+            int flowSampleCount,
+            float qualityCurve)
         {
-            float3 sampledFlow = float3.zero;
-            float sampleMask = 0f;
-            if (FlowSamples.IsCreated && FlowSamples.Length > 0)
-            {
-                int slot = (int)(((uint)index * 2654435761u) % (uint)FlowSamples.Length);
-                BuoyancyFlowSampleDTO sample = FlowSamples[slot];
-                double3 sampleAup = math.select(objectAup, sample.SampleAUP, math.isfinite(sample.SampleAUP));
-                double3 delta = objectAup - sampleAup;
-                float3 localDelta = SanitizeFinite(new float3((float)delta.x, (float)delta.y, (float)delta.z), float3.zero);
-                float radius = math.min(10000f, math.max(0.01f, SanitizeFinite(sample.RadiusMeters, 0.01f)));
-                float radiusSq = radius * radius;
-                bool activeSample = (sample.Flags & BuoyancyDisplacementConstants.FlagActive) != 0u;
-                bool insideSample = math.lengthsq(localDelta) <= radiusSq;
-                bool finiteSample = IsFinite(sample.SampleAUP) & math.all(math.isfinite(sample.FlowVelocity));
-                sampleMask = math.select(0f, 1f, activeSample & insideSample & finiteSample);
-                sampledFlow = SanitizeFinite(sample.FlowVelocity, float3.zero);
-            }
+            int slot = (int)(((uint)index * 2654435761u) % (uint)math.max(1, flowSampleCount));
+            BuoyancyFlowSampleDTO sample = FlowSamples[slot];
+            double3 sampleAup = math.select(objectAup, sample.SampleAUP, math.isfinite(sample.SampleAUP));
+            double3 delta = objectAup - sampleAup;
+            float3 localDelta = SanitizeFinite(new float3((float)delta.x, (float)delta.y, (float)delta.z), float3.zero);
+            float radius = math.min(10000f, math.max(0.01f, SanitizeFinite(sample.RadiusMeters, 0.01f)));
+            float radiusSq = radius * radius;
+            bool activeSample = (sample.Flags & BuoyancyDisplacementConstants.FlagActive) != 0u;
+            bool insideSample = math.lengthsq(localDelta) <= radiusSq;
+            bool finiteSample = IsFinite(sample.SampleAUP) & math.all(math.isfinite(sample.FlowVelocity));
+            float sampleMask = math.select(0f, 1f, activeSample & insideSample & finiteSample);
+            float3 sampledFlow = SanitizeFinite(sample.FlowVelocity, float3.zero);
 
             float phase = TriangleSigned((localAup.x * 0.013f + localAup.z * 0.017f) + frame * 0.00390625f);
             float cross = TriangleSigned((localAup.x * 0.007f - localAup.z * 0.011f) + frame * 0.001953125f);
@@ -524,9 +570,10 @@ namespace Hecton8.Physics
             {
                 BuoyancyForcePacketDTO packet = ForcePackets[i];
                 bool valid = IsValidPacket(packet);
-                BuoyancyForcePacketDTO preserved = ForcePackets[write];
-                BuoyancyForcePacketDTO sanitized = SanitizePacket(packet);
-                ForcePackets[write] = SelectPacket(preserved, sanitized, valid);
+                BuoyancyForcePacketDTO sanitized = SanitizePacket(packet, valid);
+                // Invalid packets may overwrite the next output slot because write is not advanced;
+                // final ForcePackets count excludes that slot.
+                ForcePackets[write] = sanitized;
                 write += math.select(0, 1, valid);
             }
 
@@ -543,51 +590,34 @@ namespace Hecton8.Physics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool IsValidPacket(in BuoyancyForcePacketDTO packet)
         {
-            return packet.EntityHashID != 0u &
+            return (packet.Flags & BuoyancyDisplacementConstants.FlagForceQueued) != 0u &
+                   packet.EntityHashID != 0u &
                    math.all(math.isfinite(packet.NetForce)) &
                    math.all(math.isfinite(packet.CurrentAUP));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static BuoyancyForcePacketDTO SanitizePacket(BuoyancyForcePacketDTO packet)
+        private static BuoyancyForcePacketDTO SanitizePacket(BuoyancyForcePacketDTO packet, bool valid)
         {
-            packet.NetForce = math.select(float3.zero, packet.NetForce, math.isfinite(packet.NetForce));
-            packet.BuoyantForce = math.select(float3.zero, packet.BuoyantForce, math.isfinite(packet.BuoyantForce));
-            packet.GravityForce = math.select(float3.zero, packet.GravityForce, math.isfinite(packet.GravityForce));
-            packet.DragForce = math.select(float3.zero, packet.DragForce, math.isfinite(packet.DragForce));
-            packet.FlowForce = math.select(float3.zero, packet.FlowForce, math.isfinite(packet.FlowForce));
-            packet.DebugVelocity = math.select(float3.zero, packet.DebugVelocity, math.isfinite(packet.DebugVelocity));
-            packet.SubmergedFraction = math.saturate(math.select(0f, packet.SubmergedFraction, math.isfinite(packet.SubmergedFraction)));
-            packet.DepthMeters = math.max(0f, math.select(0f, packet.DepthMeters, math.isfinite(packet.DepthMeters)));
-            packet.FluidDensityKgPerM3 = math.max(0f, math.select(0f, packet.FluidDensityKgPerM3, math.isfinite(packet.FluidDensityKgPerM3)));
-            packet.Flags |= BuoyancyDisplacementConstants.FlagForceQueued;
+            bool3 validLanes = new bool3(valid);
+            packet.CurrentAUP = math.select(double3.zero, packet.CurrentAUP, math.isfinite(packet.CurrentAUP) & validLanes);
+            packet.NetForce = math.select(float3.zero, packet.NetForce, math.isfinite(packet.NetForce) & validLanes);
+            packet.BuoyantForce = math.select(float3.zero, packet.BuoyantForce, math.isfinite(packet.BuoyantForce) & validLanes);
+            packet.GravityForce = math.select(float3.zero, packet.GravityForce, math.isfinite(packet.GravityForce) & validLanes);
+            packet.DragForce = math.select(float3.zero, packet.DragForce, math.isfinite(packet.DragForce) & validLanes);
+            packet.FlowForce = math.select(float3.zero, packet.FlowForce, math.isfinite(packet.FlowForce) & validLanes);
+            packet.DebugVelocity = math.select(float3.zero, packet.DebugVelocity, math.isfinite(packet.DebugVelocity) & validLanes);
+            packet.SubmergedFraction = math.saturate(math.select(0f, packet.SubmergedFraction, math.isfinite(packet.SubmergedFraction) & valid));
+            packet.DepthMeters = math.max(0f, math.select(0f, packet.DepthMeters, math.isfinite(packet.DepthMeters) & valid));
+            packet.FluidDensityKgPerM3 = math.max(0f, math.select(0f, packet.FluidDensityKgPerM3, math.isfinite(packet.FluidDensityKgPerM3) & valid));
+            packet.EntityHashID = math.select(0u, packet.EntityHashID, valid);
+            packet.Flags = math.select(0u, packet.Flags | BuoyancyDisplacementConstants.FlagForceQueued, valid);
+            packet.StateIndex = math.select(0, packet.StateIndex, valid);
+            packet.FrameIndex = math.select(0u, packet.FrameIndex, valid);
             packet._pad0 = 0u;
             return packet;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static BuoyancyForcePacketDTO SelectPacket(
-            BuoyancyForcePacketDTO preserved,
-            BuoyancyForcePacketDTO sanitized,
-            bool useSanitized)
-        {
-            preserved.CurrentAUP = math.select(preserved.CurrentAUP, sanitized.CurrentAUP, useSanitized);
-            preserved.NetForce = math.select(preserved.NetForce, sanitized.NetForce, useSanitized);
-            preserved.BuoyantForce = math.select(preserved.BuoyantForce, sanitized.BuoyantForce, useSanitized);
-            preserved.GravityForce = math.select(preserved.GravityForce, sanitized.GravityForce, useSanitized);
-            preserved.DragForce = math.select(preserved.DragForce, sanitized.DragForce, useSanitized);
-            preserved.FlowForce = math.select(preserved.FlowForce, sanitized.FlowForce, useSanitized);
-            preserved.SubmergedFraction = math.select(preserved.SubmergedFraction, sanitized.SubmergedFraction, useSanitized);
-            preserved.DepthMeters = math.select(preserved.DepthMeters, sanitized.DepthMeters, useSanitized);
-            preserved.FluidDensityKgPerM3 = math.select(preserved.FluidDensityKgPerM3, sanitized.FluidDensityKgPerM3, useSanitized);
-            preserved.EntityHashID = math.select(preserved.EntityHashID, sanitized.EntityHashID, useSanitized);
-            preserved.Flags = math.select(preserved.Flags, sanitized.Flags, useSanitized);
-            preserved.StateIndex = math.select(preserved.StateIndex, sanitized.StateIndex, useSanitized);
-            preserved.FrameIndex = math.select(preserved.FrameIndex, sanitized.FrameIndex, useSanitized);
-            preserved.DebugVelocity = math.select(preserved.DebugVelocity, sanitized.DebugVelocity, useSanitized);
-            preserved._pad0 = math.select(preserved._pad0, sanitized._pad0, useSanitized);
-            return preserved;
-        }
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
@@ -635,13 +665,14 @@ namespace Hecton8.Physics
                 counter.Flags |= math.select(0u, BuoyancyDisplacementConstants.FlagNonFinite, nonFiniteMask != 0);
                 counter.TotalBuoyantForce += LengthSafe(debug.BuoyantForce) * activeFrameWeight;
                 counter.TotalDragForce += LengthSafe(debug.DragForce) * activeFrameWeight;
-                counter.MaxDepthMeters = math.max(counter.MaxDepthMeters, math.max(0f, debug.DepthMeters) * activeFrameWeight);
+                float depthMeters = math.max(0f, math.select(0f, debug.DepthMeters, math.isfinite(debug.DepthMeters)));
+                counter.MaxDepthMeters = math.max(counter.MaxDepthMeters, depthMeters * activeFrameWeight);
                 counter.LastEntityHashID = math.select(counter.LastEntityHashID, debug.EntityHashID, frameMask != 0);
                 lastNetForce = math.select(lastNetForce, SanitizeFinite(debug.NetForce), frameMask != 0);
                 hasLastNetForce = math.select(hasLastNetForce, 1, frameMask != 0);
             }
 
-            counter.ComputeMicros = math.max(0f, ComputeMicros);
+            counter.ComputeMicros = math.max(0f, math.select(0f, ComputeMicros, math.isfinite(ComputeMicros)));
             if (Counters.IsCreated && Counters.Length > 0)
                 Counters[0] = counter;
 

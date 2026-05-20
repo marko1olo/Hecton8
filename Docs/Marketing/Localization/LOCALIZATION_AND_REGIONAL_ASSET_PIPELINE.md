@@ -71,7 +71,7 @@ Machine gate: `localization_public_permission_gate = HOLD_LOCALIZED_PUBLIC_USE`.
 | Scope | Text says single-player-first and does not imply unsupported multiplayer scope, release date, platform, or performance proof. | Rewrite in English first, then localize again. |
 | Proof | Every claim maps to a real asset, Steam page, demo, or presskit link. | Remove the claim or hold the send. |
 | Native read | Native/fluent reviewer marks it natural enough for that audience. | Keep as internal draft only. |
-| Regional CTA | CTA works for that region and has passed the Official CTA Link Activation Gate V0: Steam link, presskit, demo, or feedback ask is accessible and honest. | Use feedback-only ask or hold. |
+| Regional CTA | CTA works for that region and has passed the exact destination permission gate plus destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`: Steam link, presskit, demo, or feedback ask is accessible and honest. | Use feedback-only ask or hold. |
 | Access proof | Key, demo, playtest, or private-preview copy has AB-009/KPI field source, `access_route_class`, and `reply_consent_provenance` custody if it claims pressure/route-risk proof. | Remove the proof claim or hold. |
 | Creator fit | The recipient format matches the asset: long-form, horror, base systems, short clip, or press. | Move lead to hold; do not force broad hype. |
 
@@ -86,7 +86,7 @@ Encoding clean: yes/no
 Sounds native enough: yes/no
 Any added promise: yes/no
 CTA usable in region: yes/no
-CTA activation packet or no-link route: yes/no
+Destination permission gate plus public CTA gate, or no-link route: yes/no
 Access `access_route_class` / `reply_consent_provenance` ready if private: yes/no
 AB-009/KPI agency field source if proof claim: yes/no
 Decision: approve / revise / hold

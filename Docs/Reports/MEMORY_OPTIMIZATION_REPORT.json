@@ -1,5 +1,7 @@
 {
   "agent": "SHINOBU_207",
+  "reportOwner": "shared",
+  "sections": ["SHINOBU_207", "SHINOBU_228"],
   "binarySearch": {
     "avgTableProbes": 13.00099,
     "nsPerLookup": 26167.873,
@@ -46,5 +48,81 @@
       "wrappedOffsetPlus64": true
     }
   },
-  "treeBytes": 171328
+  "treeBytes": 171328,
+  "SHINOBU_228": {
+    "agent": "SHINOBU_228",
+    "domain": "BUILDER_TOOL_HOLOGRAPHY_SYNC",
+    "layout": {
+      "BuilderGhostStateDTOBytes": 128,
+      "LocalToWorldOffset": 0,
+      "AUP_TargetPositionOffset": 64,
+      "PrefabHashIDOffset": 88,
+      "ValidationFlagsOffset": 92,
+      "AnimationPhaseOffset": 96,
+      "ValidationStateHashOffset": 100
+    },
+    "hotPathResidue": {
+      "PlayerBuilderPreviewTryAcquireGhostProxy": false,
+      "PlacementGhostOverlapBoxNonAlloc": false,
+      "PlacementGhostScriptRemoved": true,
+      "ProjectFilePlacementGhostCompileInclude": false,
+      "GhostPrefabAssetsRemoved": true,
+      "NoBuildableGhostPrefabReferences": true,
+      "RuntimeGlobalDataVaultLatestFallback": false,
+      "BuilderGhostSdfTruthScaledByQuality": false,
+      "UnchangedSignalGpuUploadSkipped": true,
+      "HectonBlueprintPreviewBatchDrawMeshInstanced": false,
+      "HectonBlueprintPreviewBatchSetData": false,
+      "VRPipeBlueprintPreviewDrawMeshInstanced": false,
+      "VRPipeBlueprintPreviewMatrixArray": false,
+      "HabitatConstructionManagerObjectAlignmentRoute": false,
+      "DrawProceduralIndirect": true,
+      "LockBufferForWrite": true
+    },
+    "vaultBuffers": {
+      "BuilderGhostStateBufferId": 70940,
+      "BuilderGhostVisualBufferId": 70941,
+      "BuilderGhostTelemetryBufferId": 70942,
+      "BuilderGhostMockStateBufferId": 70943,
+      "BuilderGhostSdfSamplesBufferId": 70944,
+      "BuilderGhostIndirectArgsBufferId": 70945,
+      "VRPipeStateBufferId": 70946,
+      "VRPipeVisualBufferId": 70947,
+      "VRPipeIndirectArgsBufferId": 70948
+    },
+    "staticEstimates": {
+      "evidenceClass": "STATIC_SOURCE_ESTIMATE",
+      "previewPrefabSpikeRemovedEstimate": "120-180",
+      "physxOverlapRemovedEstimate": "60-180",
+      "gpuUploadStallAvoidedEstimate": "10-60"
+    },
+    "evidence": [
+      {
+        "claim": "Ghost preview object route removed from first-party source/assets.",
+        "evidenceClass": "STATIC_SOURCE",
+        "artifact": "rg PFB_Ghost_|PlacementGhost|ghostPrefab non-zero over Assets/_Project returned no runtime/source asset residue.",
+        "date": "2026-05-20",
+        "residualRisk": "Unity import and scene reference validation pending."
+      },
+      {
+        "claim": "Placement validation no longer quality-throttles SDF corner truth.",
+        "evidenceClass": "STATIC_SOURCE",
+        "artifact": "ResolveBuilderGhostSdfSampleCount returns BuilderGhostSdfCornerCount and hydration writes all eight corners.",
+        "date": "2026-05-20",
+        "residualRisk": "Play Mode placement repro pending."
+      },
+      {
+        "claim": "Runtime presenters do not use GlobalDataVault.TryGetLatestCreated fallback authority.",
+        "evidenceClass": "STATIC_SOURCE",
+        "artifact": "HectonBlueprintPreviewBatch and VRPipeBlueprintPreview TryResolveVault return GlobalRegistry.DataVault only.",
+        "date": "2026-05-20",
+        "residualRisk": "Unity boot wiring proof pending."
+      }
+    ],
+    "netcode": {
+      "claim": "BuilderGhostStateDTO is PresentationOnly|RollbackExcluded and not registered as a Merkle leaf descriptor.",
+      "evidenceClass": "STATIC_SOURCE",
+      "residualRisk": "Runtime rollback proof pending."
+    }
+  }
 }

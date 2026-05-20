@@ -37,6 +37,10 @@ Minimum examples:
 - Zero GC in hot paths remains non-negotiable.
 - Native runtime buffers are DataVault-owned. Local persistent NativeArray ownership is banned outside the vault owner.
 - Global authority is bounded: `GlobalRegistry` is cold service discovery, `SignalBus<T>` is first-party runtime broadcast, `HectonEventBus` is mod/API/cold isolation, `GlobalSignals` direct queues are legacy/bridge only, and `GlobalDataVault` is not a mutable global heap. New subsystem setup starts owner-local and follows `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_SETUP_PLAYBOOK.md`; new global routes require the route-card/lifecycle model in `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_OPERATING_MODEL.md`, the copy/paste template in `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_ROUTE_CARD_TEMPLATE.md`, and a `GREEN` review disposition from `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_REVIEW_CHECKLIST.md`.
+- Read-looking APIs (`Get*`, `TryGet*`, `Resolve*`, `Read*`) are pure. They must not publish, sync scene state, allocate/grow buffers, complete jobs, mutate global state, or search the scene.
+- `GlobalDataVault.TryGetLatestCreated()` is bootstrap/editor/diagnostic/crash-only unless a core fallback route card says otherwise. Domain runtime code uses injected `IDataVault` plus cached generation handles.
+- Burst/Jobs require amortized, data-local batches and dispatcher-owned completion windows. Tiny same-frame schedule/readback loops are rejected without profiler proof.
+- Data Monolith readiness requires the active `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` payload and import/bake/boot proof.
 - Runtime DTOs, SignalBus payloads, telemetry entries, save staging records, and GPU upload records must be ARM64-safe: no runtime `Pack=1`, no runtime `bool`, 8-byte fields first, explicit padding, and total size multiple of 8.
 - Systems execute through named phases: PRE_SIMULATION, SIMULATION, POST_SIMULATION, VISUAL_SYNC.
 - New gameplay broadcasts use typed SignalBus lanes and ReadOnlySpan-style snapshots. A monolithic EventBus is not a gameplay transport.

@@ -149,7 +149,7 @@ namespace Hecton8.World
         public const float DefaultRealGeometryReturnDistanceMeters = 475f;
         public const byte FlagUseImpostor = 1 << 0;
         public const byte FlagRealGeometry = 1 << 1;
-        public const byte FlagLowTierSnap = 1 << 2;
+        public const byte FlagSurvivalSnap = 1 << 2;
         public const byte FlagDitherBlend = 1 << 3;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -173,23 +173,10 @@ namespace Hecton8.World
             float middle = math.max(survival, safeBaseDistance);
             float overkill = math.max(middle, safeBaseDistance * 1.65f);
             float shaped = q * q * (3f - 2f * q);
-            return q < 0.5f
-                ? math.lerp(survival, middle, shaped * 2f)
-                : math.lerp(middle, overkill, (shaped - 0.5f) * 2f);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool IsLowTier(HectonQualityTier tier)
-        {
-            return tier == HectonQualityTier.Unknown ||
-                   tier == HectonQualityTier.Low ||
-                   tier == HectonQualityTier.Mx350;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static byte ResolveFlags(double distanceSq, float enterDistanceMeters, HectonQualityTier tier)
-        {
-            return ResolveFlags(distanceSq, enterDistanceMeters, ResolveTierRepresentativeQuality(tier));
+            float survivalToMiddle = math.lerp(survival, middle, math.saturate(shaped * 2f));
+            float middleToOverkill = math.lerp(middle, overkill, math.saturate((shaped - 0.5f) * 2f));
+            float overkillGate = math.smoothstep(0.45f, 0.55f, q);
+            return math.lerp(survivalToMiddle, middleToOverkill, overkillGate);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -200,18 +187,6 @@ namespace Hecton8.World
             byte flags = impostor ? FlagUseImpostor : FlagRealGeometry;
             flags |= FlagDitherBlend;
             return flags;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float ResolveTierRepresentativeQuality(HectonQualityTier tier)
-        {
-            if (tier == HectonQualityTier.Low || tier == HectonQualityTier.Mx350)
-                return 0.12f;
-            if (tier == HectonQualityTier.High)
-                return 0.72f;
-            if (tier == HectonQualityTier.Ultra)
-                return 1f;
-            return 0.5f;
         }
     }
 }

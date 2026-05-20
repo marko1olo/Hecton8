@@ -4,6 +4,7 @@ namespace Hecton8.Tools
     using System.IO;
     using System.Runtime.CompilerServices;
     using System.Runtime.InteropServices;
+    using Hecton8.Core.Contracts;
     using Hecton8.Core.Memory;
     using Unity.Burst;
     using Unity.Burst.CompilerServices;
@@ -52,7 +53,7 @@ namespace Hecton8.Tools
         public VaultGenerationHandle<int> TelemetryCursor;
         public VaultGenerationHandle<InventoryUpgradeSlotDTO> InventorySlots;
         public VaultGenerationHandle<UpgradeItemMapDTO> ItemMap;
-        public VaultGenerationHandle<uint> VisualFlags;
+        public VaultGenerationHandle<UpgradeVisualStateDTO> VisualStates;
     }
 
     /// <summary>
@@ -69,7 +70,7 @@ namespace Hecton8.Tools
         public NativeArray<int> TelemetryCursor;
         public NativeArray<InventoryUpgradeSlotDTO> InventorySlots;
         public NativeArray<UpgradeItemMapDTO> ItemMap;
-        public NativeArray<uint> VisualFlags;
+        public NativeArray<UpgradeVisualStateDTO> VisualStates;
     }
 
     /// <summary>
@@ -137,7 +138,7 @@ namespace Hecton8.Tools
                     safeItemMapCapacity,
                     SystemID.GameplayTools,
                     NativeArrayOptions.UninitializedMemory),
-                VisualFlags = vault.GetGenerationHandle<uint>(
+                VisualStates = vault.GetGenerationHandle<UpgradeVisualStateDTO>(
                     UpgradeMatrixConstants.UpgradeVisualFlagsBuffer,
                     safeEquipmentCapacity,
                     SystemID.GameplayTools,
@@ -157,7 +158,7 @@ namespace Hecton8.Tools
                    vault.TryResolveHandle(in handles.TelemetryCursor, out views.TelemetryCursor) &&
                    vault.TryResolveHandle(in handles.InventorySlots, out views.InventorySlots) &&
                    vault.TryResolveHandle(in handles.ItemMap, out views.ItemMap) &&
-                   vault.TryResolveHandle(in handles.VisualFlags, out views.VisualFlags);
+                   vault.TryResolveHandle(in handles.VisualStates, out views.VisualStates);
         }
     }
 
@@ -274,6 +275,26 @@ namespace Hecton8.Tools
     }
 
     /// <summary>
+    /// VISUAL_SYNC state consumed by shader/material bridge. Size: 64 bytes to isolate parallel writes.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct UpgradeVisualStateDTO
+    {
+        [FieldOffset(0)] public ulong ActiveUpgradesMask;
+        [FieldOffset(8)] public ulong StateHash;
+        [FieldOffset(16)] public uint EntityHashID;
+        [FieldOffset(20)] public uint EquipmentHashID;
+        [FieldOffset(24)] public uint VisualFlags;
+        [FieldOffset(28)] public float GlobalQualityWeight;
+        [FieldOffset(32)] public float VisualIntensity;
+        [FieldOffset(36)] public float ShaderExtrusionScale;
+        [FieldOffset(40)] public float GlowScalar;
+        [FieldOffset(44)] public uint FaultFlags;
+        [FieldOffset(48)] private ulong _pad0;
+        [FieldOffset(56)] private ulong _pad1;
+    }
+
+    /// <summary>
     /// Vehicle stat publication target used when Agent 113 has no concrete DTO in this branch. Size: 64 bytes.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -326,6 +347,8 @@ namespace Hecton8.Tools
         public const uint FaultStatSize = 1u << 3;
         public const uint FaultLutSize = 1u << 4;
         public const uint FaultTelemetrySize = 1u << 5;
+        public const uint FaultVisualStateSize = 1u << 6;
+        public const uint FaultVisualStateOffset = 1u << 7;
 
         public static bool Validate(out uint faultFlags)
         {
@@ -342,6 +365,11 @@ namespace Hecton8.Tools
                 faultFlags |= FaultLutSize;
             if (UnsafeUtility.SizeOf<UpgradeTelemetryEntry>() != 64)
                 faultFlags |= FaultTelemetrySize;
+            if (UnsafeUtility.SizeOf<UpgradeVisualStateDTO>() != 64)
+                faultFlags |= FaultVisualStateSize;
+            if (OffsetOf<UpgradeVisualStateDTO>(nameof(UpgradeVisualStateDTO.StateHash)) != 8 ||
+                OffsetOf<UpgradeVisualStateDTO>(nameof(UpgradeVisualStateDTO.VisualFlags)) != 24)
+                faultFlags |= FaultVisualStateOffset;
             return faultFlags == 0u;
         }
 
@@ -416,6 +444,20 @@ namespace Hecton8.Tools
             return (int)((((value + (value >> 4)) & 0x0F0F0F0F0F0F0F0FUL) * 0x0101010101010101UL) >> 56);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveVisualQuality(float globalQualityWeight)
+        {
+            float finite = math.select(0f, globalQualityWeight, math.isfinite(globalQualityWeight));
+            return math.saturate(finite);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float SmoothVisualQuality(float globalQualityWeight)
+        {
+            float q = ResolveVisualQuality(globalQualityWeight);
+            return q * q * (3f - (2f * q));
+        }
+
         public static unsafe bool DumpTelemetry(ReadOnlySpan<UpgradeTelemetryEntry> telemetry, string projectRoot)
         {
             if (telemetry.Length <= 0 || string.IsNullOrEmpty(projectRoot))
@@ -478,21 +520,42 @@ namespace Hecton8.Tools
 
         private static void ApplyRule(ref UpgradeLutEntryDTO entry, byte lane, float multiplier, float additive)
         {
-            switch (lane)
-            {
-                case 0: entry.Mult0 *= multiplier; entry.Add0 += additive; break;
-                case 1: entry.Mult1 *= multiplier; entry.Add1 += additive; break;
-                case 2: entry.Mult2 *= multiplier; entry.Add2 += additive; break;
-                case 3: entry.Mult3 *= multiplier; entry.Add3 += additive; break;
-                case 4: entry.Mult4 *= multiplier; entry.Add4 += additive; break;
-                case 5: entry.Mult5 *= multiplier; entry.Add5 += additive; break;
-                case 6: entry.Mult6 *= multiplier; entry.Add6 += additive; break;
-                case 7: entry.Mult7 *= multiplier; entry.Add7 += additive; break;
-                case 8: entry.Mult8 *= multiplier; entry.Add8 += additive; break;
-                case 9: entry.Mult9 *= multiplier; entry.Add9 += additive; break;
-                case 10: entry.Mult10 *= multiplier; entry.Add10 += additive; break;
-                case 11: entry.Mult11 *= multiplier; entry.Add11 += additive; break;
-            }
+            float d0 = math.select(0f, 1f, lane == 0);
+            float d1 = math.select(0f, 1f, lane == 1);
+            float d2 = math.select(0f, 1f, lane == 2);
+            float d3 = math.select(0f, 1f, lane == 3);
+            float d4 = math.select(0f, 1f, lane == 4);
+            float d5 = math.select(0f, 1f, lane == 5);
+            float d6 = math.select(0f, 1f, lane == 6);
+            float d7 = math.select(0f, 1f, lane == 7);
+            float d8 = math.select(0f, 1f, lane == 8);
+            float d9 = math.select(0f, 1f, lane == 9);
+            float d10 = math.select(0f, 1f, lane == 10);
+            float d11 = math.select(0f, 1f, lane == 11);
+            entry.Mult0 *= 1f + ((multiplier - 1f) * d0);
+            entry.Mult1 *= 1f + ((multiplier - 1f) * d1);
+            entry.Mult2 *= 1f + ((multiplier - 1f) * d2);
+            entry.Mult3 *= 1f + ((multiplier - 1f) * d3);
+            entry.Mult4 *= 1f + ((multiplier - 1f) * d4);
+            entry.Mult5 *= 1f + ((multiplier - 1f) * d5);
+            entry.Mult6 *= 1f + ((multiplier - 1f) * d6);
+            entry.Mult7 *= 1f + ((multiplier - 1f) * d7);
+            entry.Mult8 *= 1f + ((multiplier - 1f) * d8);
+            entry.Mult9 *= 1f + ((multiplier - 1f) * d9);
+            entry.Mult10 *= 1f + ((multiplier - 1f) * d10);
+            entry.Mult11 *= 1f + ((multiplier - 1f) * d11);
+            entry.Add0 += additive * d0;
+            entry.Add1 += additive * d1;
+            entry.Add2 += additive * d2;
+            entry.Add3 += additive * d3;
+            entry.Add4 += additive * d4;
+            entry.Add5 += additive * d5;
+            entry.Add6 += additive * d6;
+            entry.Add7 += additive * d7;
+            entry.Add8 += additive * d8;
+            entry.Add9 += additive * d9;
+            entry.Add10 += additive * d10;
+            entry.Add11 += additive * d11;
         }
     }
 
@@ -515,6 +578,7 @@ namespace Hecton8.Tools
         public double3 ThermalGridOriginAup;
         public float AmbientFallbackCelsius;
         public float ThermalReactorGain;
+        public float GlobalQualityWeight;
         public ulong ThermalReactorBit;
 
         public void Execute(int index)
@@ -530,8 +594,12 @@ namespace Hecton8.Tools
             int depth = math.max(1, ThermalDepth);
             int gridLength = math.max(1, ThermalGridLength);
             float cellSize = math.max(0.0001f, ThermalCellSizeMeters);
-            double3 deltaAup = UnsafeUtility.AsRef<double3>(EntityAups + index) - ThermalGridOriginAup;
-            float3 local = new float3((float)deltaAup.x, (float)deltaAup.y, (float)deltaAup.z);
+            double3 deltaAup = AupPrecisionMath.LocalDeltaDouble(
+                UnsafeUtility.AsRef<double3>(EntityAups + index),
+                ThermalGridOriginAup);
+            float3 localRaw = AupPrecisionMath.DowncastLocalDelta(deltaAup, float3.zero);
+            bool localFinite = math.all(math.isfinite(deltaAup)) & math.all(math.isfinite(localRaw));
+            float3 local = math.select(float3.zero, localRaw, localFinite);
             float3 gridPosition = local * math.rcp(cellSize);
             int3 cell = (int3)math.floor(gridPosition);
             cell = math.clamp(cell, int3.zero, new int3(width - 1, height - 1, depth - 1));
@@ -539,6 +607,7 @@ namespace Hecton8.Tools
             float ambient = UnsafeUtility.AsRef<float>(ThermalGridCelsius + gridIndex);
             float hasReactor = UpgradeMatrixCompiler.Bit01(mask.ActiveUpgradesMask, ThermalReactorBit);
             compiled.Stat10 += (ambient - AmbientFallbackCelsius) * ThermalReactorGain * hasReactor;
+            compiled.Stat11 = UpgradeMatrixCompiler.ResolveVisualQuality(GlobalQualityWeight);
             compiled.VisualFlags |= (uint)((mask.ActiveUpgradesMask & UpgradeMatrixConstants.VisualFlagMask) >> 48);
             compiled.StateHash = UpgradeMatrixCompiler.HashMask(mask.ActiveUpgradesMask, mask.EntityHashID, mask.EquipmentHashID);
             UnsafeUtility.AsRef<UpgradeStatVectorDTO>(CompiledStats + index) = compiled;
@@ -617,7 +686,9 @@ namespace Hecton8.Tools
                 {
                     UpgradeItemMapDTO mapping = ItemMap[mapIndex];
                     ulong itemMatch = (ulong)math.select(0, 1, slot.ItemHashID == mapping.ItemHashID);
-                    ulong equipmentMatch = (ulong)math.select(0, 1, mask.EquipmentHashID == mapping.EquipmentHashID || mapping.EquipmentHashID == 0u);
+                    uint equipmentExact = (uint)math.select(0, 1, mask.EquipmentHashID == mapping.EquipmentHashID);
+                    uint equipmentWildcard = (uint)math.select(0, 1, mapping.EquipmentHashID == 0u);
+                    ulong equipmentMatch = (ulong)(equipmentExact | equipmentWildcard);
                     packed |= mapping.UpgradeBit & (0UL - (occupied & itemMatch & equipmentMatch));
                 }
             }
@@ -668,6 +739,65 @@ namespace Hecton8.Tools
             vehicle.VisualFlags = stats.VisualFlags;
             vehicle.FaultFlags = stats.FaultFlags;
             vehicle.UpgradeMaskHash = stats.StateHash;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct CompileToolRuntimeStatsJob : IJobParallelFor
+    {
+        [ReadOnly, NoAlias] public NativeArray<ToolRuntimeProfile> Profiles;
+        [ReadOnly, NoAlias] public NativeArray<UpgradeStatVectorDTO> CompiledStats;
+        [NoAlias] public NativeArray<ToolRuntimeStats> ToolStats;
+
+        public void Execute(int index)
+        {
+            ToolRuntimeProfile profile = Profiles[index];
+            UpgradeStatVectorDTO stats = CompiledStats[index];
+            ToolStats[index] = new ToolRuntimeStats
+            {
+                MaxRange = math.max(0.1f, profile.MaxRange) * math.max(0.0001f, stats.Stat0),
+                PowerScalar = math.max(0.1f, profile.PowerScalar) * math.max(0.0001f, stats.Stat1),
+                EfficiencyScalar = math.max(0.1f, profile.EfficiencyScalar) * math.max(0.0001f, stats.Stat2),
+                SpeedScalar = math.max(0.1f, profile.SpeedScalar) * math.max(0.0001f, stats.Stat3),
+                HeatGenerationRate = math.max(0f, profile.HeatGenerationRate) * math.max(0.0001f, stats.Stat4),
+                CooldownRate = math.max(0f, profile.CooldownRate) * math.max(0.0001f, stats.Stat5),
+                BatteryCapacity = math.max(0.1f, profile.BatteryCapacity) * math.max(0.0001f, stats.Stat6),
+                BatteryDrainPerSecond = math.max(0f, profile.BatteryDrainPerSecond) * math.max(0.0001f, stats.Stat7),
+                DurabilityDrainMultiplier = math.max(0.1f, profile.DurabilityDrainMultiplier) * math.max(0.0001f, stats.Stat8),
+                RecoilImpulse = math.max(0f, profile.RecoilImpulse) * math.max(0.0001f, stats.Stat9)
+            };
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct PublishUpgradeVisualStateJob : IJobParallelFor
+    {
+        [ReadOnly, NoAlias] public NativeArray<UpgradeMaskDTO> Masks;
+        [ReadOnly, NoAlias] public NativeArray<UpgradeStatVectorDTO> CompiledStats;
+        [NoAlias] public NativeArray<UpgradeVisualStateDTO> VisualStates;
+        public float GlobalQualityWeight;
+
+        public void Execute(int index)
+        {
+            UpgradeMaskDTO mask = Masks[index];
+            UpgradeStatVectorDTO stats = CompiledStats[index];
+            uint visualFlags = stats.VisualFlags | (uint)((mask.ActiveUpgradesMask & UpgradeMatrixConstants.VisualFlagMask) >> 48);
+            float q = UpgradeMatrixCompiler.ResolveVisualQuality(GlobalQualityWeight);
+            float smooth = UpgradeMatrixCompiler.SmoothVisualQuality(q);
+            float flagDensity = math.saturate(UpgradeMatrixCompiler.PopCount64((ulong)visualFlags) * 0.03125f);
+            VisualStates[index] = new UpgradeVisualStateDTO
+            {
+                ActiveUpgradesMask = mask.ActiveUpgradesMask,
+                StateHash = stats.StateHash,
+                EntityHashID = mask.EntityHashID,
+                EquipmentHashID = mask.EquipmentHashID,
+                VisualFlags = visualFlags,
+                GlobalQualityWeight = q,
+                VisualIntensity = smooth,
+                ShaderExtrusionScale = smooth * flagDensity,
+                GlowScalar = smooth * (0.25f + (0.75f * flagDensity)),
+                FaultFlags = stats.FaultFlags
+            };
         }
     }
 

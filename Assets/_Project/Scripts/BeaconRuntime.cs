@@ -1,5 +1,6 @@
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
@@ -103,7 +104,22 @@ namespace Hecton8.Gameplay
 
         private void RefreshCachedAup()
         {
-            _cachedAup = AbsoluteUniversePosition.FromRuntimePosition(ResolveRuntimePosition());
+            _cachedAup = ResolveAupFromRuntimeOrigin(ResolveRuntimePosition());
+        }
+
+        private static AbsoluteUniversePosition ResolveAupFromRuntimeOrigin(Vector3 runtimePosition)
+        {
+            if (!float.IsFinite(runtimePosition.x) ||
+                !float.IsFinite(runtimePosition.y) ||
+                !float.IsFinite(runtimePosition.z))
+            {
+                return GlobalSignals.CurrentRuntimeOriginAup();
+            }
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            return AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
         }
 
         public void Tick(float deltaTime)

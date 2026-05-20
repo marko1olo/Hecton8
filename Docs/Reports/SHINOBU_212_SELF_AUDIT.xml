@@ -135,5 +135,21 @@
     <SHADER_DEPTH status="PATCHED">Hecton_HLOD_Impostor.shader and Hecton_OctahedralImpostor.shader now add depthOffset when UNITY_REVERSED_Z is defined.</SHADER_DEPTH>
     <DEAR_LIE status="PRESERVED">Captured depth alpha still drives SV_Depth on the card; no runtime depth proxy mesh or real-geometry recapture was introduced.</DEAR_LIE>
     <STATIC_GATE status="PASS">Targeted scan finds deviceDepth + depthOffset in both reversed-Z branches and no deviceDepth - depthOffset in the active or legacy impostor shader.</STATIC_GATE>
+    <COMPILE_GATE status="DEFERRED_BY_CPU">CPU sample was 100 percent and compiler process count was 0; Unity compile/import was not launched under the project CPU gate.</COMPILE_GATE>
   </LOOP_12_REVERSED_Z_DEPTH_BIAS>
+
+  <LOOP_13_BINARY_TIER_RESIDUE_PURGE evidence="STATIC_SOURCE">
+    <API_SURFACE status="PATCHED">HectonChunkImpostorResidency removed unused IsLowTier, ResolveFlags with HectonQualityTier, and ResolveTierRepresentativeQuality helpers.</API_SURFACE>
+    <CONTINUOUS_ENTRY status="RETAINED">The retained ResolveFlags overload consumes double distanceSq, float baseEnterDistanceMeters, and float globalQualityWeight.</CONTINUOUS_ENTRY>
+    <FLAG_NAME status="PATCHED">FlagLowTierSnap was renamed to FlagSurvivalSnap; the only HLOD payload writer was updated.</FLAG_NAME>
+    <STATIC_GATE status="PASS">Targeted scan finds no FlagLowTierSnap, no IsLowTier, no ResolveFlags tier overload, and no ResolveTierRepresentativeQuality in SHINOBU residency helpers.</STATIC_GATE>
+    <COMPILE_GATE status="DEFERRED_BY_CPU">CPU sample was 100 percent and compiler process count was 0; Unity compile/import was not launched under the project CPU gate.</COMPILE_GATE>
+  </LOOP_13_BINARY_TIER_RESIDUE_PURGE>
+
+  <LOOP_14_BRANCHLESS_CONTINUOUS_DISTANCE_CURVE evidence="STATIC_SOURCE">
+    <CURVE status="PATCHED">ResolveContinuousEnterDistanceMeters now computes survivalToMiddle and middleToOverkill and blends them with math.smoothstep from q 0.45 to 0.55.</CURVE>
+    <BINARY_BRANCH status="REMOVED">The old q less-than 0.5 ternary was removed from the quality-weight curve.</BINARY_BRANCH>
+    <STATIC_GATE status="PASS">Targeted scan shows the branchless smoothstep curve and no q midpoint ternary in the helper.</STATIC_GATE>
+    <COMPILE_GATE status="DEFERRED_BY_CPU">CPU sample was 100 percent and compiler process count was 0; Unity compile/import was not launched under the project CPU gate.</COMPILE_GATE>
+  </LOOP_14_BRANCHLESS_CONTINUOUS_DISTANCE_CURVE>
 </SELF_AUDIT>

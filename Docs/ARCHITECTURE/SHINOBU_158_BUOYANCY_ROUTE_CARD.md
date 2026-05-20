@@ -1,4 +1,4 @@
-﻿# SHINOBU_158 Buoyancy Route Card
+# SHINOBU_158 Buoyancy Route Card
 
 Date: 2026-05-19
 Status: PENDING VERIFICATION
@@ -19,8 +19,8 @@ Evidence class: STATIC_SOURCE / FILESYSTEM. These anchors prove only that the ci
 - `Assets/_Project/Scripts/Editor/Physics/HydrodynamicBuoyancyTunerWindow.cs`
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-20 R46 Root/Architecture Actuality Boundary
-This route card is active only as static documentation/source orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current verification artifacts, and the R46 root/architecture interior-authority/route-field/proof-language correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md`) (R45 prior R43/R44 residue/proof-artifact/source-counter correction); R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R37 remains the prior artifact-path/proof-wording/source-counter correction; R36 remains the prior authority-spine/domain-map correction; R35 remains the prior R4/counter-residue correction, and R34 remains the prior source-counter and physical-line refresh, R33 remains the prior R32-residue/source-anchor correction, R32 remains the prior R4/proof-wording correction, R31 remains the prior current-boundary propagation correction, R30 remains the prior internal-currentness correction, R29 remains the prior stale-gate/global-authority correction, and R28 remains the prior interior-boundary correction. Current static gates: AtlasCheck fails `ATLAS_CHECK_FAIL references=6741 missing=59` (one Dynamic Decals missing vendor asset ref, RealtimeCSG vendor icon/readme image refs, and missing HabitatDamageBakePipeline source ref in the current atlas); Mod API static validation passes (`Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`) as static-tool orientation only.
+## 2026-05-20 R47 Root/Architecture Actuality Boundary
+This route card is active only as static documentation/source orientation. Current authority is `AGENTS.md`, `.agents-skills`, `Docs/Actual Domains of Project.txt`, current source files, current verification artifacts, and the R47 root/architecture authority-spine/runtime-wording/counter-drift correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md`) (R46 prior interior-authority/route-field/proof-language correction; R45 prior R43/R44 residue/proof-artifact/source-counter correction); R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R37 remains the prior artifact-path/proof-wording/source-counter correction; R36 remains the prior authority-spine/domain-map correction; R35 remains the prior R4/counter-residue correction, and R34 remains the prior source-counter and physical-line refresh, R33 remains the prior R32-residue/source-anchor correction, R32 remains the prior R4/proof-wording correction, R31 remains the prior current-boundary propagation correction, R30 remains the prior internal-currentness correction, R29 remains the prior stale-gate/global-authority correction, and R28 remains the prior interior-boundary correction. Current static gates: AtlasCheck fails `ATLAS_CHECK_FAIL references=6781 missing=61` (one Dynamic Decals vendor asset ref, RealtimeCSG vendor icon/readme image refs, missing HectonMaskChannelPacker/HectonMaterialChannelPackValidator editor source refs, and missing HabitatDamageBakePipeline source ref in the current atlas); Mod API static validation passes (`Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`) as static-tool orientation only.
 
 No Unity import, Unity Console, Play Mode, Burst Inspector, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, 1000-object soak, save/load route, scene wiring, or visual proof is implied unless this route card links a fresh evidence artifact. `YELLOW` remains the only valid disposition until runtime evidence is attached.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
@@ -66,7 +66,7 @@ Capacity: states 4096, force packets 8192, flow samples 4096, material volumes 2
 Overflow/failure: force-packet window drain is capped; overflow sets `FlagForcePacketOverflow`; unresolved packets are counted; non-finite forces are dropped and set `FlagNonFinite`. Seafloor contact plus low velocity sleeps without force-equilibrium proof; surface sleep still requires force balance.
 
 Telemetry fields: evaluated objects, sleeping objects, packets, non-finite count, total buoyancy, drag, compute micros, quality, depth, last hash, and sanitized current-frame last net force. Evaluated/force totals are current-frame only; force packet count comes from the false-sharing-padded counter, not stale debug flags.
-Black-box fields: 300-entry `BuoyancyTelemetryEntry` ring dumped to both `Docs/AgentLogs/Dump_FLUID_DYNAMICS.bin` and `Docs/AgentLogs/Dump_SHINOBU_158.bin` on NaN/non-finite detection.
+Black-box fields: 300-entry `BuoyancyTelemetryEntry` ring requests planned/generated-on-fault dumps to both `Docs/AgentLogs/Dump_FLUID_DYNAMICS.bin` and `Docs/AgentLogs/Dump_SHINOBU_158.bin` on NaN/non-finite detection. No existing artifact is implied unless a timestamped runtime trigger and output are linked.
 Profiler marker: pending; static implementation records compute micros through `Stopwatch` only.
 GC proof required: Profiler/GCMonitor 300-frame runtime capture.
 
@@ -101,5 +101,3 @@ H-Phi impact expected: bounded DataVault increase, no new managed hot bus, no ne
 Proof required before GREEN: Unity import, Burst compile, Play Mode 1000-object soak, GC/profiler capture, force packet acceptance/unresolved counters, and shutdown leak check.
 Reviewer: pending integrator
 Status: PROPOSED / YELLOW
-
-

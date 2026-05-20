@@ -4,7 +4,7 @@ Date: 2026-05-19
 Status: STATIC DOC/SOURCE UPDATE COMPLETE / RUNTIME PROOF ABSENT
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## R4 Interior Actuality Boundary
+## 2026-05-20 R47 Root/Architecture Actuality Boundary
 
 This report is active only where it agrees with:
 

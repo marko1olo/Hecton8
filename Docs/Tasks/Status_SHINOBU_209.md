@@ -135,3 +135,10 @@ Status: STATIC IMPLEMENTATION / PROJECT COMPILE BLOCKED OUTSIDE DOMAIN
 
 ## Ultra-Think Polish Pass 21
 - [x] Normal angle NaN guard hardened | DOD: `RecalculateDeformedNormalsJob.Angle` now rejects non-finite or near-zero edge lengths before `math.rsqrt` and returns 0 on non-finite dot products | Rejected: relying only on upstream vertex sanitization | Estimate: runtime 0 us, editor normal accumulation safety hardened
+
+## Ultra-Think Polish Pass 22
+- [x] Deformation scalar NaN guards hardened | DOD: mock deformation, structural shear, radial blast, torn triangle duplication, and damage-color baking now sanitize finite quality/radius/torsion/damage/intensity inputs before sqrt/rsqrt/rcp/smoothstep math | Rejected: trusting Forge UI/CSV/imported mesh inputs to stay finite | Estimate: runtime 0 us, editor corrupt-profile hardening
+- [x] Tear smoothstep divide-by-zero path fenced | DOD: `BuildTornTrianglesJob` skips visual tear duplication when threshold is effectively 1.0 instead of calling `math.smoothstep(threshold, 1f, tear)` with equal edges | Rejected: relying on `math.rcp(max(...))` in the tear-weight job while leaving the later visual split path unfenced | Estimate: runtime 0 us, editor NaN prevention
+
+## Ultra-Think Polish Pass 23
+- [x] Counter row allocator zero-fill removed | DOD: Forge preview, Forge bake, and mock benchmark now allocate the single `OfflineWreckageBakeCounters64` TempJob row with `UninitializedMemory`; `BuildTornTrianglesJob` fully overwrites `Counters[0]` before hull/report reads | Rejected: `NativeArrayOptions.ClearMemory` for a deterministic 64-byte job output row | Estimate: runtime 0 us, editor 64B memset avoided per preview/bake/mock run

@@ -63,7 +63,8 @@ namespace Hecton8.Physiology
             GUI.color = color;
             Matrix4x4 matrix = GUI.matrix;
             float angle = math.degrees(math.atan2(y1 - y0, x1 - x0));
-            float length = math.distance(new float2(x0, y0), new float2(x1, y1));
+            float2 graphDelta = new float2(x1 - x0, y1 - y0);
+            float length = math.sqrt(math.max(math.lengthsq(graphDelta), 0f));
             GUIUtility.RotateAroundPivot(angle, new Vector2(x0, y0));
             GUI.DrawTexture(new Rect(x0, y0, length, 2f), Texture2D.whiteTexture);
             GUI.matrix = matrix;

@@ -37,7 +37,7 @@ The staged CRM-100 queue has 0 raw rows. Until the first real screenshot/clip pa
 
 Current default lane order:
 
-1. `ASSET_GATE` if any capture exists or can be prepared; this includes `creator_rows_unlocked`, `creator_utility_score`, `creator_send_gate`, `agency_decision_proof_gate`, and `agency_decision_notes` when the asset could touch creators or first-public surfaces.
+1. `ASSET_GATE` if any capture exists or can be prepared; this includes the first-capture handoff packet, file paths, build ID, reject codes, `creator_rows_unlocked`, `creator_utility_score`, `creator_send_gate`, pain freshness fields, `public_comparison_gate`, `agency_decision_proof_gate`, `agency_decision_notes`, `capture_handoff_packet_id`, `capture_verdict`, `viewer_named_decision`, and `capture_next_actions` when the asset could touch creators or first-public surfaces.
 2. `COPY_TEST` only if tied to one planned asset ID.
 3. `SOURCE_RECHECK` only for platform/source facts that block a concrete gate.
 4. `RISK_CLOSE` only if the risk register has no prevention/response.
@@ -56,7 +56,7 @@ Pick exactly one lane for the day:
 | Lane | When to pick | Required output |
 |---|---|---|
 | CRM_CLEANUP | Creator/press rows are stale or raw, or Wave A has proof to log. | Updated CSV rows with status, route, risk, next action, and send-log fields if any send is being prepared. |
-| ASSET_GATE | Screenshots/clips exist or are about to exist. | QA scores, reject codes, asset metadata updates, creator utility/send gate fields, and agency proof fields when relevant. |
+| ASSET_GATE | Screenshots/clips exist or are about to exist. | First-capture handoff packet, QA scores, file paths, build ID, reject codes, asset metadata updates, creator utility/send gate fields, pain freshness, public comparison gate, agency proof fields, handoff packet ID, verdict, viewer-named decision, and next actions when relevant. |
 | COPY_TEST | Asset/copy mismatch blocks public use. | 3-5 variants tied to one asset ID and one metric. |
 | SOURCE_RECHECK | Platform rules, routes, or deadlines can change. | Source ledger addendum and affected doc correction. |
 | RISK_CLOSE | A risk has no prevention/response owner. | Risk register update plus one backlog action. |
@@ -133,7 +133,7 @@ Does any press release, public presskit, media one-pager, site presskit block, e
 If yes, hold; release surfaces require surface-specific `ALLOW_PRESS_RELEASE_PUBLISH_VERIFIED`.
 Does any localized/regional copy or outreach work infer permission from encoding repair, owner-native familiarity, draft translation, raw regional leads, or regional interest instead of `localization_public_permission_gate`?
 If yes, hold; localized public use requires language/surface-specific `ALLOW_LOCALIZED_PUBLIC_USE_VERIFIED`.
-Does first-pack asset work lack `agency_decision_proof_gate` or `agency_decision_notes`?
+Does first-pack asset work lack the first-capture handoff packet, file path, build ID, `agency_decision_proof_gate`, `agency_decision_notes`, `capture_handoff_packet_id`, `capture_verdict`, `viewer_named_decision`, or `capture_next_actions`?
 If yes, hold Campaign 01 and fix the asset metadata source row.
 ```
 
@@ -261,7 +261,7 @@ For each asset:
 4. If the asset uses threat, anomaly, darkness, or mood, state whether the player decision reads without caption.
 5. If the asset could touch creators, score creator utility 0-4 and name the CRM rows it unlocks.
 6. Decide publish/revise/kill.
-7. Store result in asset QA table and asset metadata, including `creator_send_gate`, `agency_decision_proof_gate`, and `agency_decision_notes`.
+7. Store result in asset QA table and asset metadata, including `creator_send_gate`, `agency_decision_proof_gate`, `agency_decision_notes`, `capture_handoff_packet_id`, `capture_verdict`, `viewer_named_decision`, and `capture_next_actions`.
 
 Agents do not "like" assets. Agents classify whether a cold viewer understands and cares.
 
@@ -352,7 +352,7 @@ $rows = Import-Csv -LiteralPath 'C:\hades\Hecton8\Docs\Marketing\Data\MARKETING_
 'headers=' + (($rows[0].PSObject.Properties.Name) -join ',')
 ```
 
-Expected before first capture: `ASSET rows=13`, header includes `multiplayer_scope_check`, `performance_claim_check`, `feature_truth_check`, `creator_utility_score`, `creator_send_gate`, `agency_decision_proof_gate`, and `agency_decision_notes`.
+Expected before first capture: `ASSET rows=13`, header includes `multiplayer_scope_check`, `performance_claim_check`, `feature_truth_check`, `creator_utility_score`, `creator_send_gate`, `agency_decision_proof_gate`, `agency_decision_notes`, `capture_handoff_packet_id`, `capture_verdict`, `viewer_named_decision`, and `capture_next_actions`.
 
 ```powershell
 $patterns = @(
@@ -418,7 +418,7 @@ If screenshots exist:
 - 10 asset scores;
 - 5 copy variants;
 - 10 lead verifications;
-- creator utility, `creator_send_gate`, `agency_decision_proof_gate`, and `agency_decision_notes` fields for any asset considered for outreach or first-public testing;
+- creator utility, `creator_send_gate`, `agency_decision_proof_gate`, `agency_decision_notes`, `capture_handoff_packet_id`, `capture_verdict`, `viewer_named_decision`, and `capture_next_actions` fields for any asset considered for outreach or first-public testing;
 - 1 A/B test brief;
 - AB-009 dashboard fields if any agency-proof candidate was cold-read;
 - 1 public-post candidate.

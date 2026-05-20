@@ -189,6 +189,9 @@ namespace Hecton8.Construction
         public const int ConstructionPreviewSignalSizeBytes = 128;
         public const int FloraExclusionSignalSizeBytes = 128;
         public const int BlueprintPreviewInstanceSizeBytes = 64;
+        public const int BuilderGhostStateSizeBytes = 128;
+        public const int BuilderGhostVisualSizeBytes = 64;
+        public const int HolographyTelemetrySizeBytes = 64;
 
         private const float DefaultGridSizeMeters = 10f;
         private const float DefaultClearanceMarginMeters = 0.05f;
@@ -218,6 +221,9 @@ namespace Hecton8.Construction
                    UnsafeUtility.SizeOf<ConstructionPreviewSignal>() == ConstructionPreviewSignalSizeBytes &&
                    UnsafeUtility.SizeOf<FloraExclusionSignal>() == FloraExclusionSignalSizeBytes &&
                    UnsafeUtility.SizeOf<HectonBlueprintPreviewBatch.BlueprintPreviewInstance>() == BlueprintPreviewInstanceSizeBytes &&
+                   UnsafeUtility.SizeOf<BuilderGhostStateDTO>() == BuilderGhostStateSizeBytes &&
+                   UnsafeUtility.SizeOf<BuilderGhostVisualDTO>() == BuilderGhostVisualSizeBytes &&
+                   UnsafeUtility.SizeOf<HolographyTelemetryEntry>() == HolographyTelemetrySizeBytes &&
                    ResolveOffset<ConstructionPreviewSignal>(nameof(ConstructionPreviewSignal.DearLieDampen)) == 96 &&
                    ResolveOffset<ConstructionPreviewSignal>(nameof(ConstructionPreviewSignal.GlobalQualityWeight)) == 100 &&
                    ResolveOffset<ConstructionPreviewSignal>(nameof(ConstructionPreviewSignal.DearLieWiggleSpeed)) == 104;

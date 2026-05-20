@@ -27,6 +27,7 @@ namespace Hecton8.Habitat.Deformation.Editor
         public const string OutputFolder = "Assets/_Project/BakedGeometry/HabitatDamage";
         public const string BakeReportPath = "Docs/Reports/HABITAT_BAKE_REPORT.json";
         public const string ScannerReportPath = "Docs/Reports/PHYSICS_OPTIMIZATION_REPORT.json";
+        public const string PreviousScannerReportPath = "Docs/Reports/PHYSICS_OPTIMIZATION_REPORT_PREVIOUS_SHINOBU_210.json";
         public const string BlackboxDumpPath = "Docs/AgentLogs/Dump_SHINOBU_210.bin";
         public const string ProfileCsvPath = "Docs/Data/habitat_crush_profiles.csv";
         public const int ComplexityCriticalTriangleBudget = 20000;
@@ -1656,9 +1657,9 @@ namespace Hecton8.Habitat.Deformation.Editor
         private static HabitatDamageBakeReport _report;
         private static string _projectRoot;
 
-        public static string Status { get; private set; } = "Idle";
-        public static bool Active { get; private set; }
-        public static float Progress => _guids.Length == 0 ? 0f : _cursor / (float)_guids.Length;
+        public static string Status = "Idle";
+        public static bool Active;
+        public static float Progress;
 
         public static void Start(string[] guids, in HabitatDamageBakeSettings settings)
         {
@@ -1669,6 +1670,7 @@ namespace Hecton8.Habitat.Deformation.Editor
             _report = new HabitatDamageBakeReport();
             _projectRoot = ProjectRoot();
             Active = _guids.Length > 0;
+            Progress = 0f;
             Status = Active ? "Queued " + _guids.Length + " prefab(s)" : "No prefabs found";
             if (Active)
             {
@@ -1693,6 +1695,7 @@ namespace Hecton8.Habitat.Deformation.Editor
                 _report = null;
             }
             Active = false;
+            Progress = 0f;
         }
 
         private static void Tick()
@@ -1703,7 +1706,8 @@ namespace Hecton8.Habitat.Deformation.Editor
             if (_cursor >= _guids.Length)
             {
                 _report.Write(_projectRoot);
-                Status = "Bake complete. Report: " + HabitatDamageBakeConstants.BakeReportPath;
+                Status = "Bake pass wrote report: " + HabitatDamageBakeConstants.BakeReportPath;
+                Progress = 1f;
                 Stop();
                 AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh();
@@ -1712,6 +1716,7 @@ namespace Hecton8.Habitat.Deformation.Editor
 
             string guid = _guids[_cursor++];
             string path = AssetDatabase.GUIDToAssetPath(guid);
+            Progress = _guids.Length == 0 ? 0f : _cursor / (float)_guids.Length;
             Status = "Baking " + path;
             EditorUtility.DisplayProgressBar("Habitat Crush Forge", Status, Progress);
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
@@ -1772,8 +1777,18 @@ namespace Hecton8.Habitat.Deformation.Editor
             manifest.CollapsedMeshes = collapsed.ToArray();
             manifest.StateMappings = mappings.ToArray();
             manifest.CollisionHulls = hulls.ToArray();
-            string manifestPath = AssetDatabase.GenerateUniqueAssetPath(HabitatDamageBakeConstants.OutputFolder + "/" + Sanitize(prefab.name) + "_DamageManifest.asset");
-            AssetDatabase.CreateAsset(manifest, manifestPath);
+            string manifestPath = HabitatDamageBakeConstants.OutputFolder + "/" + Sanitize(prefab.name) + "_DamageManifest.asset";
+            HabitatDamageBakeManifest existingManifest = AssetDatabase.LoadAssetAtPath<HabitatDamageBakeManifest>(manifestPath);
+            if (existingManifest != null)
+            {
+                EditorUtility.CopySerialized(manifest, existingManifest);
+                EditorUtility.SetDirty(existingManifest);
+                Object.DestroyImmediate(manifest);
+            }
+            else
+            {
+                AssetDatabase.CreateAsset(manifest, manifestPath);
+            }
         }
 
         private static Mesh SaveStateMesh(string prefabName, Mesh source, HabitatDamageMeshState state, out HabitatDamageStateBakeResult result)
@@ -1782,8 +1797,17 @@ namespace Hecton8.Habitat.Deformation.Editor
             if (mesh == null)
                 return null;
 
-            string path = AssetDatabase.GenerateUniqueAssetPath(
-                HabitatDamageBakeConstants.OutputFolder + "/" + Sanitize(prefabName) + "_" + Sanitize(source.name) + "_" + state + ".asset");
+            string path = HabitatDamageBakeConstants.OutputFolder + "/" + Sanitize(prefabName) + "_" + Sanitize(source.name) + "_" + state + ".asset";
+            Mesh existingMesh = AssetDatabase.LoadAssetAtPath<Mesh>(path);
+            if (existingMesh != null)
+            {
+                EditorUtility.CopySerialized(mesh, existingMesh);
+                EditorUtility.SetDirty(existingMesh);
+                Object.DestroyImmediate(mesh);
+                result.MeshHash = HabitatDamageBakePipeline.HashLowerAscii(path);
+                return existingMesh;
+            }
+
             AssetDatabase.CreateAsset(mesh, path);
             result.MeshHash = HabitatDamageBakePipeline.HashLowerAscii(path);
             return mesh;
@@ -2118,7 +2142,11 @@ namespace Hecton8.Habitat.Deformation.Editor
 
             string reportPath = Path.Combine(projectRoot, HabitatDamageBakeConstants.ScannerReportPath);
             Directory.CreateDirectory(Path.GetDirectoryName(reportPath));
-            string previousReport = File.Exists(reportPath) ? File.ReadAllText(reportPath) : string.Empty;
+            bool previousReportPreserved = TryPreservePreviousScannerReport(
+                projectRoot,
+                reportPath,
+                out long previousReportBytes,
+                out uint previousReportHash);
             StringBuilder sb = new StringBuilder(1024);
             sb.Append("{\n");
             sb.Append("  \"agent\": \"SHINOBU_210\",\n");
@@ -2127,8 +2155,10 @@ namespace Hecton8.Habitat.Deformation.Editor
             sb.Append("  \"scannerMode\": \"COMMENT_STRING_AWARE_NATIVE_BYTE_TOKEN_SCAN\",\n");
             sb.Append("  \"forbiddenRuntimePatternCount\": ").Append(findings.Count).Append(",\n");
             sb.Append("  \"netcodeFence\": \"Baked mesh assets are immutable environmental data; scanner flags StateRingBuffer references in Habitat/Environment runtime.\",\n");
-            sb.Append("  \"previousReportPreserved\": ").Append(string.IsNullOrEmpty(previousReport) ? "false" : "true").Append(",\n");
-            sb.Append("  \"previousReport\": \"").Append(EscapeJson(previousReport)).Append("\",\n");
+            sb.Append("  \"previousReportPreserved\": ").Append(previousReportPreserved ? "true" : "false").Append(",\n");
+            sb.Append("  \"previousReportSidecar\": \"").Append(HabitatDamageBakeConstants.PreviousScannerReportPath).Append("\",\n");
+            sb.Append("  \"previousReportBytes\": ").Append(previousReportBytes).Append(",\n");
+            sb.Append("  \"previousReportFnv1a\": ").Append(previousReportHash).Append(",\n");
             sb.Append("  \"findings\": [");
             for (int i = 0; i < findings.Count; i++)
             {
@@ -2144,6 +2174,37 @@ namespace Hecton8.Habitat.Deformation.Editor
                 Debug.Log("[SHINOBU_210] Runtime Habitat Deformations Eradicated. Report: " + HabitatDamageBakeConstants.ScannerReportPath);
             else
                 Debug.LogWarning("[SHINOBU_210] Runtime habitat destruction scanner found " + findings.Count + " forbidden pattern(s).");
+        }
+
+        private static bool TryPreservePreviousScannerReport(string projectRoot, string reportPath, out long byteCount, out uint hash)
+        {
+            byteCount = 0L;
+            hash = 0u;
+            if (!File.Exists(reportPath))
+                return false;
+
+            string sidecarPath = Path.Combine(projectRoot, HabitatDamageBakeConstants.PreviousScannerReportPath);
+            Directory.CreateDirectory(Path.GetDirectoryName(sidecarPath));
+            uint runningHash = 2166136261u;
+            Span<byte> buffer = stackalloc byte[4096];
+            using (FileStream input = new FileStream(reportPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, buffer.Length, FileOptions.SequentialScan))
+            using (FileStream output = new FileStream(sidecarPath, FileMode.Create, FileAccess.Write, FileShare.Read, buffer.Length, FileOptions.SequentialScan))
+            {
+                while (true)
+                {
+                    int read = input.Read(buffer);
+                    if (read <= 0)
+                        break;
+                    ReadOnlySpan<byte> slice = buffer.Slice(0, read);
+                    for (int i = 0; i < slice.Length; i++)
+                        runningHash = (runningHash ^ slice[i]) * 16777619u;
+                    output.Write(slice);
+                    byteCount += read;
+                }
+            }
+
+            hash = byteCount == 0L ? 0u : runningHash;
+            return true;
         }
 
         private static unsafe void ScanCodeFile(string projectRoot, string file, List<string> findings)

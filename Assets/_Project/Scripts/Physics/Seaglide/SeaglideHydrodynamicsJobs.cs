@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Hecton8.Core.Contracts;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -161,7 +162,8 @@ namespace Hecton8.Physics
             float quality = Smooth01(math.min(Sanitize01(GlobalQualityWeight), Sanitize01(tuning.GlobalQualityWeight)));
             double3 sector = math.select(double3.zero, tuning.SectorAUP, math.isfinite(tuning.SectorAUP));
             double3 currentAup = math.select(double3.zero, request.CurrentAUP, math.isfinite(request.CurrentAUP));
-            float3 localAup = SanitizeFinite(new float3((float)(currentAup.x - sector.x), (float)(currentAup.y - sector.y), (float)(currentAup.z - sector.z)), float3.zero);
+            double3 localAupDelta = AupPrecisionMath.LocalDeltaDouble(currentAup, sector);
+            float3 localAup = SanitizeFinite(AupPrecisionMath.DowncastLocalDelta(localAupDelta, float3.zero), float3.zero);
             float3 inputDirection = SafeNormalize(request.InputVector, SafeNormalize(request.ForwardVector, new float3(0f, 0f, 1f)));
             float throttle = math.saturate(SanitizeFinite(request.Throttle01, 0f));
             float battery = math.saturate(SanitizeFinite(request.BatteryLevel, state.BatteryLevel));
@@ -186,7 +188,8 @@ namespace Hecton8.Physics
             float dragBlend = Smooth01(math.saturate((quality - 0.18f) * 1.2195122f));
             float3 dragForce = math.lerp(linearDrag, quadraticDrag, dragBlend);
             float3 flowForce = flowVelocity * math.max(0f, tuning.FlowForceCoefficient) * (mass + addedMass) * math.lerp(0.35f, 1f, quality);
-            float3 netForce = thrustForce + dragForce + flowForce;
+            float forceCadenceScale = ResolveForceCadenceScale(SimulationTickDelta, request.DeltaTime);
+            float3 netForce = (thrustForce + dragForce + flowForce) * forceCadenceScale;
             float forceMagnitudeSq = math.lengthsq(netForce);
             bool mathFinite = active & finiteInput &
                               math.all(math.isfinite(thrustForce)) &
@@ -287,10 +290,8 @@ namespace Hecton8.Physics
             {
                 SeaglideFlowSampleDTO anchor = flowSamples[0];
                 float cell = math.max(1f, anchor.CellSizeMeters);
-                float3 local = new float3(
-                    (float)(currentAup.x - anchor.SampleAUP.x),
-                    (float)(currentAup.y - anchor.SampleAUP.y),
-                    (float)(currentAup.z - anchor.SampleAUP.z)) * math.rcp(cell);
+                double3 localDelta = AupPrecisionMath.LocalDeltaDouble(currentAup, anchor.SampleAUP);
+                float3 local = AupPrecisionMath.DowncastLocalDelta(localDelta, float3.zero) * math.rcp(cell);
                 float3 t = math.saturate(local);
                 float3 c00 = math.lerp(flowSamples[0].FlowVelocity, flowSamples[1].FlowVelocity, t.x);
                 float3 c10 = math.lerp(flowSamples[2].FlowVelocity, flowSamples[3].FlowVelocity, t.x);
@@ -374,6 +375,14 @@ namespace Hecton8.Physics
             float sq = math.lengthsq(value);
             return math.select(fallback, value * math.rsqrt(math.max(sq, 0.000001f)), math.isfinite(sq) & sq > 0.000001f);
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveForceCadenceScale(float solverDeltaTime, float requestDeltaTime)
+        {
+            float fixedDt = math.clamp(math.select(0.02f, requestDeltaTime, math.isfinite(requestDeltaTime) & requestDeltaTime > 0f), 0.0001f, 0.2f);
+            float solverDt = math.clamp(math.select(fixedDt, solverDeltaTime, math.isfinite(solverDeltaTime) & solverDeltaTime > 0f), fixedDt, 0.2f);
+            return math.clamp(solverDt * math.rcp(math.max(fixedDt, 0.0001f)), 1f, 4f);
+        }
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
@@ -443,6 +452,8 @@ namespace Hecton8.Physics
             signal.Cavitation01 = cavitation01;
             signal.SourceHash = request.RequestHash != 0u ? request.RequestHash : SeaglideHydrodynamicsConstants.SourceHash;
             signal.Flags = SeaglideHydrodynamicsConstants.FlagVisualOnly | SeaglideHydrodynamicsConstants.FlagRollbackExcluded;
+            signal.TargetEntityHash = packet.TargetEntityHash;
+            signal.FrameIndex = packet.FrameIndex;
             AudioSignals[index] = signal;
         }
     }
@@ -466,6 +477,7 @@ namespace Hecton8.Physics
             SeaglideCounterDTO counter = default;
             int activeCount = math.max(0, ActiveRequestCount);
             int count = ForcePackets.IsCreated ? math.min(activeCount, ForcePackets.Length) : 0;
+            SeaglideForcePacketDTO lastValidPacket = default;
             for (int i = 0; i < count; i++)
             {
                 SeaglideForcePacketDTO packet = ForcePackets[i];
@@ -481,6 +493,7 @@ namespace Hecton8.Physics
                 counter.TotalFlowForce += Magnitude(packet.FlowForce);
                 counter.MaxForceMagnitude = math.max(counter.MaxForceMagnitude, packet.ForceMagnitude);
                 counter.LastTargetEntityHash = packet.TargetEntityHash;
+                lastValidPacket = packet;
             }
 
             counter.MetabolismTicks = math.select(0, count, MetabolismEnabled != 0);
@@ -509,7 +522,8 @@ namespace Hecton8.Physics
             entry.GlobalQualityWeight = counter.GlobalQualityWeight;
             entry.Flags = counter.Flags;
             entry.LastTargetEntityHash = counter.LastTargetEntityHash;
-            entry.LastNetForce = count > 0 ? ForcePackets[math.max(0, math.min(count - 1, ForcePackets.Length - 1))].NetForce : float3.zero;
+            entry.LastFlowForce = lastValidPacket.FlowForce;
+            entry.LastBatteryLevel = lastValidPacket.BatteryLevel;
             TelemetryRing[writeIndex] = entry;
             TelemetryCursor[0] = (writeIndex + 1) % TelemetryRing.Length;
         }

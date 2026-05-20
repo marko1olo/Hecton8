@@ -782,7 +782,8 @@ namespace Hecton8.World
                 if (node.Active == 0)
                     continue;
 
-                float distanceSq = math.distancesq(origin, node.RuntimePosition);
+                float3 nodeDelta = origin - node.RuntimePosition;
+                float distanceSq = math.lengthsq(nodeDelta);
                 if (distanceSq >= bestDistanceSq)
                     continue;
 
@@ -839,7 +840,8 @@ namespace Hecton8.World
                 if (node.Active == 0 || node.InstanceUid == 0u)
                     continue;
 
-                if (math.distancesq(rootPosition, node.RuntimePosition) > radiusSq)
+                float3 rootDelta = rootPosition - node.RuntimePosition;
+                if (math.lengthsq(rootDelta) > radiusSq)
                     continue;
 
                 UpsertSymbioticFungalBuff(new SymbioticFungalBuffState

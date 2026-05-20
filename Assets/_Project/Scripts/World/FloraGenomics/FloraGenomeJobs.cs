@@ -25,17 +25,17 @@ namespace Hecton8.World
         GenerationOver2Ms = 1u << 9
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct FloraGenomeJobStats
     {
-        public int GenomeCount;
-        public int ExpandedSymbolCount;
-        public int MatrixCount;
-        public int HazardCount;
-        public int IterationCount;
-        public int EstimatedMicroseconds;
-        public uint FaultFlags;
-        public float Biomass;
+        [FieldOffset(0)] public int GenomeCount;
+        [FieldOffset(4)] public int ExpandedSymbolCount;
+        [FieldOffset(8)] public int MatrixCount;
+        [FieldOffset(12)] public int HazardCount;
+        [FieldOffset(16)] public int IterationCount;
+        [FieldOffset(20)] public int EstimatedMicroseconds;
+        [FieldOffset(24)] public uint FaultFlags;
+        [FieldOffset(28)] public float Biomass;
     }
 
     public static class FloraGenomeLSystemUtility

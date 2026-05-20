@@ -3,7 +3,6 @@ using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Power;
 using Hecton8.Tools;
-using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Construction
@@ -15,9 +14,8 @@ namespace Hecton8.Construction
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PowerNode))]
     [AddComponentMenu("Hecton8/Construction/Battery Charger Module")]
-    public sealed class BatteryChargerModule : MonoBehaviour, ISlowTickable, IPowerComponent, IInteractable, IPoolable
+    public sealed class BatteryChargerModule : MonoBehaviour, IPowerComponent, IInteractable, IPoolable
     {
-        private const float SlowTickDeltaSeconds = 0.5f;
         private const string EmptyPrompt = "Dock Tool";
         private const string ChargingPrompt = "Charging Tool";
         private const string ReadyPrompt = "Retrieve Tool";
@@ -50,14 +48,7 @@ namespace Hecton8.Construction
         {
             get
             {
-                if (_slottedTool == null)
-                    return 0f;
-
-                float draw = standbyPowerDrawWatts;
-                if (_isCharging)
-                    draw += activePowerDrawWatts;
-
-                return -draw;
+                return 0f;
             }
         }
 
@@ -114,31 +105,6 @@ namespace Hecton8.Construction
                 SetChargingState(false);
 
             RefreshDiagnostics();
-        }
-
-        public void SlowTick()
-        {
-            if (_slottedTool == null || !_hasPower || GlobalRegistry.ModularEquipment == null)
-            {
-                SetChargingState(false);
-                RefreshDiagnostics();
-                return;
-            }
-
-            IModularEquipmentService equipment = GlobalRegistry.ModularEquipment;
-            uint toolId = _slottedTool.RuntimeToolId;
-            float currentBattery = equipment.GetBatteryNormalized(toolId, _slottedTool.ResolveModularBatteryNormalized());
-            if (currentBattery >= 0.999f)
-            {
-                SetChargingState(false);
-                _debugBattery01 = 1f;
-                return;
-            }
-
-            SetChargingState(true);
-            float nextBattery = math.saturate(currentBattery + chargeRateNormalizedPerSecond * SlowTickDeltaSeconds);
-            equipment.SetBattery(toolId, nextBattery);
-            _debugBattery01 = nextBattery;
         }
 
         public void OnHoverStart() { }
@@ -240,11 +206,10 @@ namespace Hecton8.Construction
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registered || !Application.isPlaying)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registered = GlobalRegistry.SlowTickables.Contains(this);
+            _registered = true;
         }
 
         private void TryUnregister()
@@ -252,7 +217,6 @@ namespace Hecton8.Construction
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registered = false;
         }
 

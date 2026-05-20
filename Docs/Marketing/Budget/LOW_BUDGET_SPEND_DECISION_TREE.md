@@ -83,7 +83,7 @@ Spend if:
 
 - footage has player verbs;
 - at least one pressure/machinery consequence is visible;
-- pressure, route-risk, threat, or salvage-failure footage has AB-009/KPI decision-read evidence if the trailer will sell agency proof;
+- pressure, route-risk, threat, or salvage-failure footage has metadata handoff plus AB-009/KPI decision-read evidence if the trailer will sell agency proof;
 - there is a Seed Ship/anomaly tease;
 - audio can be improved from real game direction.
 
@@ -102,7 +102,7 @@ Spend if:
 - audience fit is high;
 - demo is stable;
 - CRM row has `paid_creator_permission_gate = ALLOW_PAID_CREATOR_TEST_VERIFIED`;
-- the creator brief and asset packet pass `creator_send_gate`, `send_route_class`, disclosure, official route, and AB-009/KPI decision-read gates for any gameplay/pressure/route-risk claim;
+- the creator brief and asset packet pass `creator_send_gate`, `send_route_class`, disclosure, official route, non-pending metadata handoff, and AB-009/KPI decision-read gates for any gameplay/pressure/route-risk claim;
 - deliverables are clear;
 - disclosure is included;
 - the creator is not demanding false talking points.
@@ -122,7 +122,7 @@ Spend only if:
 - Steam page has baseline conversion;
 - capsule is strong;
 - the selected PMT row has `spend_permission_gate = ALLOW_PAID_MICROTEST_VERIFIED`;
-- Campaign 01/PMT candidate retains AB-009/KPI decision-read evidence if the ad sells pressure gameplay or route risk;
+- Campaign 01/PMT candidate retains metadata handoff plus AB-009/KPI decision-read evidence if the ad sells pressure gameplay or route risk;
 - the ad links to a page, not a vague social post;
 - test budget is capped;
 - stop rule is written before launch.
@@ -142,7 +142,7 @@ Status: all cash spend frozen until asset gates pass.
 |---:|---:|---|---|---|
 | 0 | 0 USD | No public assets yet. | Agent prep, copy, CRM, QA, cold-read setup. | Stop making docs if no row, asset gate, or decision changes. |
 | 1 | 0-50 USD | `PLAN-SHOT-001/003` captured and AB-001/AB-002 ready. | Human cold-reader pool or tiny feedback tool cost. | Under 70% genre clarity or capsule unreadable. |
-| 2 | 50-150 USD | Campaign 01 returns `KEEP`, Official CTA Link Activation Gate V0 passes for the Steam destination, UTM works, selected PMT row has `spend_permission_gate = ALLOW_PAID_MICROTEST_VERIFIED`, and PMT pressure/route-risk claims have AB-009/KPI decision-read fields. | One PMT row only: PMT-001 or PMT-002. | No useful Steam behavior, missing agency read, or dominant confusion within 48h. |
+| 2 | 50-150 USD | Campaign 01 returns `KEEP`, Official CTA Link Activation Gate V0 passes for the Steam destination, UTM works, selected PMT row has `spend_permission_gate = ALLOW_PAID_MICROTEST_VERIFIED`, and PMT pressure/route-risk claims have metadata handoff plus AB-009/KPI decision-read fields. | One PMT row only: PMT-001 or PMT-002. | No useful Steam behavior, missing agency read, pending metadata, or dominant confusion within 48h. |
 | 3 | 300-800 USD | Capsule AB-002 winner is clear and Steam page warm traffic is not failing. | Capsule/key-art polish. | No variant beats plain readable logo/silhouette. |
 | 4 | 300-1000 USD | `PLAN-CLIP-*` has a strong first 3 seconds and demo/route footage exists. | Trailer edit/audio polish. | Clip needs fake cinematics or cannot show player verb. |
 | 5 | 250-1500 USD | Organic creator replies prove fit, demo/preview build is stable, and selected CRM row has `paid_creator_permission_gate = ALLOW_PAID_CREATOR_TEST_VERIFIED`. | 1-3 paid creator tests, disclosed. | Creator requires false framing, disclosure/route proof is missing, or demo cannot survive coverage. |
@@ -175,7 +175,7 @@ Before any spend:
 - [ ] What is the stop rule?
 - [ ] Is the selected PMT row explicitly `spend_permission_gate = ALLOW_PAID_MICROTEST_VERIFIED`?
 - [ ] If this is paid creator spend, is the selected CRM row explicitly `paid_creator_permission_gate = ALLOW_PAID_CREATOR_TEST_VERIFIED`?
-- [ ] If spend uses gameplay/pressure/route-risk proof, where is `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision` recorded?
+- [ ] If spend uses gameplay/pressure/route-risk proof, where are metadata `viewer_named_decision`/`capture_verdict` and `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision` recorded?
 - [ ] Does it require a feature claim we cannot prove?
 - [ ] Does it imply unsupported multiplayer scope?
 - [ ] Does it make us look derivative?

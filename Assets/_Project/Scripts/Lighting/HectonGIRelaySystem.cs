@@ -989,19 +989,35 @@ namespace Hecton8.Lighting
             SHLayoutMismatch = 1u << 6
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct GIRelayTelemetryEntry
         {
+            [FieldOffset(0)]
             public int FrameIndex;
+            [FieldOffset(4)]
             public uint Sequence;
+            [FieldOffset(8)]
             public uint Flags;
+            [FieldOffset(12)]
             public uint StateHash;
+            [FieldOffset(16)]
             public int ShadowCascadeLevel;
+            [FieldOffset(20)]
             public float DepthMeters;
+            [FieldOffset(24)]
             public float TimeOfDay01;
+            [FieldOffset(28)]
             public float EclipseScalar;
+            [FieldOffset(32)]
             public float FogLod;
+            [FieldOffset(36)]
             public float LightningScalar;
+            [FieldOffset(40)]
+            private ulong _pad0;
+            [FieldOffset(48)]
+            private ulong _pad1;
+            [FieldOffset(56)]
+            private ulong _pad2;
         }
     }
 }

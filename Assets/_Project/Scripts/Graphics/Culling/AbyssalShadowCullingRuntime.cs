@@ -157,7 +157,7 @@ namespace Hecton8.Graphics.Culling
         {
             IDataVault vault = ResolveVault();
             uint frame = vault != null ? ResolveDeterministicFrame(vault, 0u, false) : (_scheduledFrame == 0u ? 1u : _scheduledFrame);
-            CompletePendingJob(forceComplete: true, frame);
+            CompletePendingJobForBarrier(frame);
             if (_registeredVisualSyncPhase)
             {
                 GlobalRegistry.UnregisterDispatcherSystem(_visualSyncPhaseSystem);
@@ -194,7 +194,7 @@ namespace Hecton8.Graphics.Culling
                 return;
 
             uint frame = ResolveTelemetryFrame(vault);
-            if (!CompletePendingJob(forceComplete: false, frame))
+            if (!TryFinalizePendingJobNoWait(frame))
                 RecordTelemetry(vault, frame, TelemetryFlagJobBusy, 0u, 0f);
         }
 
@@ -288,13 +288,13 @@ namespace Hecton8.Graphics.Culling
                 return false;
 
             uint frame = ResolveDeterministicFrame(vault, 0u, true);
-            CompletePendingJob(forceComplete: true, frame);
+            CompletePendingJobForBarrier(frame);
             _requestMockRegenerate = true;
             ScheduleCullingPass(vault, frame, default);
             if (!_jobPending)
                 return false;
 
-            return CompletePendingJob(forceComplete: true, frame);
+            return CompletePendingJobForBarrier(frame);
         }
 
         public void ApplyTunerSettings(float baseShadowDistanceMeters, float ditherFadeBand01, float darknessThreshold)
@@ -783,23 +783,35 @@ namespace Hecton8.Graphics.Culling
             return handle;
         }
 
-        private bool CompletePendingJob(bool forceComplete, uint frame)
+        private bool TryFinalizePendingJobNoWait(uint frame)
         {
             if (!_jobPending)
                 return true;
 
-            if (!forceComplete && !_cullingHandle.IsCompleted)
+            if (!_cullingHandle.IsCompleted)
                 return false;
 
-            if (forceComplete)
-            {
-                DispatcherJobFence.TryComplete(ref _cullingHandle, forceComplete: true);
-            }
-            else if (!DispatcherJobFence.TryFinalizeCompleted(ref _cullingHandle))
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _cullingHandle))
             {
                 return false;
             }
 
+            return CommitCompletedJob(frame);
+        }
+
+        private bool CompletePendingJobForBarrier(uint frame)
+        {
+            if (!_jobPending)
+                return true;
+
+            if (!DispatcherJobFence.TryComplete(ref _cullingHandle, forceComplete: true))
+                return false;
+
+            return CommitCompletedJob(frame);
+        }
+
+        private bool CommitCompletedJob(uint frame)
+        {
             _jobPending = false;
             IDataVault vault = ResolveVault();
             if (vault != null)

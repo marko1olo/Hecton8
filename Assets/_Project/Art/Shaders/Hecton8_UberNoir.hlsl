@@ -35,14 +35,12 @@ SAMPLER(sampler_BaseMap);
 TEXTURE2D(_MaskMap);
 SAMPLER(sampler_MaskMap);
 
-#if !defined(_MATH_LOD_LOW)
 TEXTURE2D(_BumpMap);
 SAMPLER(sampler_BumpMap);
 TEXTURE2D(_RustDetailMap);
 SAMPLER(sampler_RustDetailMap);
 TEXTURE2D(_BlueNoiseTex);
 SAMPLER(sampler_BlueNoiseTex);
-#endif
 
 TEXTURE2D_ARRAY(_H8UberNoirAlbedoArray);
 SAMPLER(sampler_H8UberNoirAlbedoArray);
@@ -378,8 +376,7 @@ float H8UberNoirGlobalQualityWeight()
 {
     float materialWeight = isfinite(_H8UberNoirCausticSpeed.w) ? saturate(_H8UberNoirCausticSpeed.w) : 0.0;
     float globalWeight = isfinite(_H8GlobalQualityWeight) ? saturate(_H8GlobalQualityWeight) : 0.0;
-    float materialActive = (_H8UberNoirMaterialFlags != 0u) ? 1.0 : 0.0;
-    return saturate(lerp(globalWeight, materialWeight, materialActive));
+    return saturate(max(globalWeight, materialWeight));
 }
 
 float3 H8UberNoirApplyBulkheadClosureOS(float3 positionOS, inout float3 normalOS, uint resolvedInstanceID)
@@ -500,15 +497,20 @@ H8VisualAgingParamsDTO H8UberNoirLoadVisualAging(uint materialIndex)
     float payloadEnabled = isfinite(_GlobalBaseAgingRuntime.y) ? saturate(_GlobalBaseAgingRuntime.y) : 0.0;
     uint activeCount = (uint)activeCountFloat;
     [branch]
-    if (payloadEnabled > 0.5 && activeCount > 0u)
+    if (payloadEnabled > H8_UBER_NOIR_EPS && activeCount > 0u)
     {
         uint index = min(materialIndex, min(activeCount - 1u, (uint)(H8_UBER_NOIR_AGING_CAPACITY - 1)));
-        aging = _GlobalBaseAgingParams[index];
-        aging.RustAndCorrosion = H8UberNoirFiniteSaturate4(aging.RustAndCorrosion, float4(0.0, 0.0, 0.0, 0.0));
-        aging.SaltAndBiomass = H8UberNoirFiniteSaturate4(aging.SaltAndBiomass, float4(0.0, 0.0, 0.0, 0.0));
-        aging.StressAndMicroFractures = H8UberNoirFiniteSaturate4(aging.StressAndMicroFractures, float4(0.0, 0.0, 0.0, H8UberNoirGlobalQualityWeight()));
-        aging.DepthAndPressure.xyz = H8UberNoirFinite3(aging.DepthAndPressure.xyz, float3(0.0, 0.0, 0.0));
-        aging.DepthAndPressure.w = isfinite(aging.DepthAndPressure.w) ? saturate(aging.DepthAndPressure.w) : 0.0;
+        H8VisualAgingParamsDTO payload = _GlobalBaseAgingParams[index];
+        payload.RustAndCorrosion = H8UberNoirFiniteSaturate4(payload.RustAndCorrosion, float4(0.0, 0.0, 0.0, 0.0));
+        payload.SaltAndBiomass = H8UberNoirFiniteSaturate4(payload.SaltAndBiomass, float4(0.0, 0.0, 0.0, 0.0));
+        payload.StressAndMicroFractures = H8UberNoirFiniteSaturate4(payload.StressAndMicroFractures, float4(0.0, 0.0, 0.0, H8UberNoirGlobalQualityWeight()));
+        payload.DepthAndPressure.xyz = H8UberNoirFinite3(payload.DepthAndPressure.xyz, float3(0.0, 0.0, 0.0));
+        payload.DepthAndPressure.w = isfinite(payload.DepthAndPressure.w) ? saturate(payload.DepthAndPressure.w) : 0.0;
+        float payloadBlend = H8UberNoirSmoothRange01(0.0, 1.0, activeCountFloat) * payloadEnabled;
+        aging.RustAndCorrosion = lerp(aging.RustAndCorrosion, payload.RustAndCorrosion, payloadBlend);
+        aging.SaltAndBiomass = lerp(aging.SaltAndBiomass, payload.SaltAndBiomass, payloadBlend);
+        aging.StressAndMicroFractures = lerp(aging.StressAndMicroFractures, payload.StressAndMicroFractures, payloadBlend);
+        aging.DepthAndPressure = lerp(aging.DepthAndPressure, payload.DepthAndPressure, payloadBlend);
     }
     return aging;
 }
@@ -592,12 +594,17 @@ float H8UberNoirMaterialMacroNoise(float3 stablePosition, half instanceSeed, flo
 
 float H8UberNoirAgingGrowthMask(float3 stablePosition, H8VisualAgingParamsDTO aging, half instanceSeed, float quality)
 {
+    float agingActive = saturate(max(max(aging.RustAndCorrosion.x, aging.RustAndCorrosion.y), max(aging.SaltAndBiomass.x, aging.StressAndMicroFractures.y)));
     float3 localAup = aging.DepthAndPressure.xyz;
     float seed = aging.RustAndCorrosion.w + instanceSeed;
     float weldBias = saturate(1.0 - abs(frac((stablePosition.y + localAup.y) * 0.19 + seed) * 2.0 - 1.0));
-    float edgeBias = saturate(1.0 - abs((float)dot(H8UberNoirSafeNormalize(stablePosition + 0.001, float3(0.0, 1.0, 0.0)), float3(0.577, 0.577, 0.577))));
-    float cheap = saturate((weldBias * 0.62 + edgeBias * 0.38) * (0.35 + aging.DepthAndPressure.w));
-    float detailWeight = H8UberNoirSmoothRange01(0.18, 0.72, quality) * saturate(aging.StressAndMicroFractures.w);
+    float edgeWeight = H8UberNoirSmoothRange01(0.08, 0.35, quality) * agingActive;
+    float edgeBias = 0.0;
+    [branch]
+    if (edgeWeight > H8_UBER_NOIR_EPS)
+        edgeBias = saturate(1.0 - abs((float)dot(H8UberNoirSafeNormalize(stablePosition + 0.001, float3(0.0, 1.0, 0.0)), float3(0.577, 0.577, 0.577))));
+    float cheap = saturate((weldBias * (0.62 + 0.18 * (1.0 - edgeWeight)) + edgeBias * 0.38 * edgeWeight) * (0.35 + aging.DepthAndPressure.w));
+    float detailWeight = H8UberNoirSmoothRange01(0.18, 0.72, quality) * saturate(aging.StressAndMicroFractures.w) * agingActive;
     [branch]
     if (detailWeight <= H8_UBER_NOIR_EPS)
         return cheap;
@@ -1279,11 +1286,12 @@ float2 H8UberNoirResolveRustPomUv(
     half3 viewDirWS,
     half3 normalWS,
     half4 tangentWS,
+    half visualRust01,
     float quality,
     out half4 rustPacked,
     out half rustMask)
 {
-    half rust01 = H8UberNoirResolveRust01();
+    half rust01 = max(H8UberNoirResolveRust01(), saturate(visualRust01));
     rustPacked = half4(0.0h, 0.5h, 0.5h, 1.0h);
     rustMask = rust01;
 
@@ -1494,7 +1502,7 @@ H8UberNoirSurface H8UberNoirSampleSurface(H8UberNoirVaryings input)
     float2 maskUv = input.uvAux.zw;
     half4 rustPacked;
     half rustMask;
-    wearUv = H8UberNoirResolveRustPomUv(rawUv, baseUv, input.uvAux.xy, input.viewDirWS, input.normalWS, input.tangentWS, quality, rustPacked, rustMask);
+    wearUv = H8UberNoirResolveRustPomUv(rawUv, baseUv, input.uvAux.xy, input.viewDirWS, input.normalWS, input.tangentWS, dynamicRust, quality, rustPacked, rustMask);
     maskUv += wearUv - baseUv;
     H8UberNoirWearVitality vitality = H8UberNoirResolveWearVitality(
         stablePosition,

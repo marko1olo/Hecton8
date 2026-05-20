@@ -6,7 +6,7 @@
     <Task id="04" name="ARM64_MAPPING_LAYOUT_ASSERTION" status="PASS">LodConfigurationDTO is explicit 16 bytes with validated offsets.</Task>
     <Task id="05" name="EMERGENCY_MOCK_DECIMATION_BENCHMARK" status="PASS">GenerateMockHighPolyMeshJob emits dense fractal sphere geometry.</Task>
     <Task id="06" name="AUTOMATED_LOD_GENERATION_PIPELINE" status="PASS">BuildLodMesh emits LOD0/LOD1/LOD2 meshes from strict triangle budgets.</Task>
-    <Task id="07" name="BURST_CONVEX_HULL_GENERATOR" status="PASS">GenerateConvexHullJob emits a bounded 8..32 point conservative support hull with plane-deduped fan triangulation after primitive rejection; invalid hull output fails closed to BoxCollider.</Task>
+    <Task id="07" name="BURST_CONVEX_HULL_GENERATOR" status="PASS">GenerateConvexHullJob emits a bounded 8..32 point conservative support hull with plane-deduped fan triangulation after primitive rejection; invalid hull output or undersized fallback scratch buffers fail closed to BoxCollider.</Task>
     <Task id="08" name="THE_DEAR_LIE_PRIMITIVE_FITTING" status="PASS">FitGeometricPrimitivesJob selects sphere or box before convex collision.</Task>
     <Task id="09" name="ASYNCHRONOUS_ASSET_SERIALIZATION" status="PASS">Mesh assets serialize through SetVertexBufferData and SetIndexBufferData.</Task>
     <Task id="10" name="AUTOMATED_PREFAB_ASSEMBLY" status="PASS">Generated prefab contains static LODGroup and primitive or convex colliders only.</Task>
@@ -77,19 +77,19 @@
     <EditorPersistentNativeArrays count="1" owner="OfflineGeometryBakeBlackBox" capacity="300" rowBytes="64" allocation="UninitializedMemory plus explicit deterministic sentinel rows" dumpSerialization="explicit little-endian 64-byte rows; no raw host-endian NativeArray dump" />
   </H_PHI_VAULT_STATUS>
   <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
-    <NoAlias>Status applied to non-overlapping NativeArray fields in geometry jobs. HullVertices is intentionally read-write NoAlias, not WriteOnly, because support duplicate elimination and face fan triangulation read previous support points.</NoAlias>
-    <Job name="GenerateMockHighPolyMeshJob" handle="editor scheduled; completed before mesh serialization" />
-    <Job name="OfflineDecimateUInt16Job/OfflineDecimateUInt32Job" handle="editor scheduled per LOD; completed before asset write" sourceReads="UnsafeUtility.AsRef" outputs="corrupt index/range/vertex streams fail closed to deterministic zero triangles" />
-    <Job name="OfflinePackVertexJob" handle="packHandle" />
-    <Job name="OfflineIndexFillJob" handle="indexHandle depends on packHandle" />
+    <NoAlias>Status applied to source, output, index, range, packed vertex, primitive result, and hull NativeArray job fields where buffers do not overlap. HullVertices is intentionally read-write NoAlias, not WriteOnly, because support duplicate elimination and face fan triangulation read previous support points.</NoAlias>
+    <Job name="GenerateMockHighPolyMeshJob" handle="editor scheduled; completed before mesh serialization" outputs="invalid segment counts return before modulo/division" />
+    <Job name="OfflineDecimateUInt16Job/OfflineDecimateUInt32Job" handle="editor scheduled per LOD; completed before asset write" sourceReads="UnsafeUtility.AsRef" outputs="corrupt index/range/vertex streams and invalid/default output lanes fail closed to deterministic zero triangles" />
+    <Job name="OfflinePackVertexJob" handle="packHandle" outputs="default or mismatched lanes are ignored" />
+    <Job name="OfflineIndexFillJob" handle="indexHandle depends on packHandle" outputs="default or mismatched lanes are ignored" />
     <Job name="FitGeometricPrimitivesJob" handle="completed before collider authoring" />
-    <Job name="GenerateConvexHullJob" handle="completed only if primitive fitting rejects" outputs="bounded 8..32 point support hull plus plane-deduped triangle index stream; invalid output collapses to BoxCollider before MeshCollider binding" />
+    <Job name="GenerateConvexHullJob" handle="completed only if primitive fitting rejects" outputs="bounded 8..32 point support hull plus plane-deduped triangle index stream; invalid topology or undersized fallback scratch output collapses to BoxCollider before MeshCollider binding" />
   </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
   <COMPILE_GUARD>
     <RuntimeAssembly name="Hecton8.World.OfflineGeometry" references="none" />
     <EditorAssembly name="Hecton8.World.OfflineGeometry.Editor" references="Hecton8.World.OfflineGeometry,Unity.Burst,Unity.Collections,Unity.Jobs,Unity.Mathematics" />
     <SiblingDomainReferences count="0" />
-    <RoslynProbe status="PRE_ENDIAN_BOUNDED_HULL_ASSET_BIND_SAFETY_INDEX_HOT_STRUCT_RECHECK_PENDING" path="Temp/SHINOBU_213_CompileProbe" note="Last pass predates explicit-endian fallback, bounded-hull support-index edits, fail-closed hull asset-binding guard, hull read-write annotation fix, finite rsqrt normalization guards, decimator index-stream fail-closed guards, mock asset reload guard, binary-ledger edit, and hot geometry DTO explicit-layout proof; post-endian bounded-hull safety-index hot-struct probe gated by CPU; Unity import/profiler proof still pending" />
+    <RoslynProbe status="PRE_ENDIAN_BOUNDED_HULL_ASSET_BIND_SAFETY_INDEX_HOT_STRUCT_STREAM_BOUNDS_HULL_FALLBACK_JOB_GUARDS_RECHECK_PENDING" path="Temp/SHINOBU_213_CompileProbe" note="Last pass predates explicit-endian fallback, bounded-hull support-index edits, fail-closed hull asset-binding guard, hull read-write annotation fix, finite rsqrt normalization guards, decimator index-stream fail-closed guards, mock asset reload guard, binary-ledger edit, hot geometry DTO explicit-layout proof, decimator raw-stream/output-lane bounds guards, hull fallback scratch-bounds guard, and Burst job denominator/native collection guards; post-endian bounded-hull safety-index hot-struct stream-bounds hull-fallback job-guard probe gated by CPU; Unity import/profiler proof still pending" />
   </COMPILE_GUARD>
-  <DEAR_LIE_CONFIRMATION>Before: concave source-mesh collision approaches O(T) triangle contact/cooking complexity. After: sphere/box is O(1), fallback convex collision is bounded to V support points where 8 &lt;= V &lt;= 32; offline face discovery is capped to O(V^3) but emitted faces are plane-deduped and fan-triangulated before MeshCollider import. Underpopulated or unbound hull output collapses to BoxCollider O(1), never forced counters. Visual mesh remains rich; PhysX receives the lie.</DEAR_LIE_CONFIRMATION>
+  <DEAR_LIE_CONFIRMATION>Before: concave source-mesh collision approaches O(T) triangle contact/cooking complexity. After: sphere/box is O(1), fallback convex collision is bounded to V support points where 8 &lt;= V &lt;= 32; offline face discovery is capped to O(V^3) but emitted faces are plane-deduped and fan-triangulated before MeshCollider import. Underpopulated, undersized, or unbound hull output collapses to BoxCollider O(1), never forced counters. Visual mesh remains rich; PhysX receives the lie.</DEAR_LIE_CONFIRMATION>
 </SELF_AUDIT>

@@ -15,14 +15,25 @@ namespace Hecton8.Quest
     /// Layout: 0 uint node, 4 uint state/lore hash, 8 ulong prerequisite,
     /// 16 ulong completion, 24/28 explicit uint padding. Total 32 bytes.
     /// </remarks>
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct QuestNodeDTO
     {
+        [FieldOffset(0)]
         public uint NodeHash;
+
+        [FieldOffset(4)]
         public uint RequiredStateHash;
+
+        [FieldOffset(8)]
         public ulong PrerequisiteMask;
+
+        [FieldOffset(16)]
         public ulong CompletionMask;
+
+        [FieldOffset(24)]
         public uint _pad0;
+
+        [FieldOffset(28)]
         public uint _pad1;
     }
 
@@ -30,53 +41,126 @@ namespace Hecton8.Quest
     /// AUP-space narrative trigger volume. Absolute doubles stay intact until the local delta is formed.
     /// </summary>
     /// <remarks>
-    /// Layout: 0 double3 AUP, 24 float radius, 28 uint node hash, 32/36 padding. Total 40 bytes.
+    /// Layout: 0 double3 AUP, 24 float radius, 28 uint node hash, 32/36 padding, 40/48/56 tail padding. Total 64 bytes.
     /// </remarks>
-    [StructLayout(LayoutKind.Sequential, Size = 40)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct TriggerVolumeDTO
     {
+        [FieldOffset(0)]
         public double3 AUP;
+
+        [FieldOffset(24)]
         public float Radius;
+
+        [FieldOffset(28)]
         public uint RequiredNodeHash;
+
+        [FieldOffset(32)]
         public uint _pad0;
+
+        [FieldOffset(36)]
         public uint _pad1;
+
+        [FieldOffset(40)]
+        private ulong _pad2;
+
+        [FieldOffset(48)]
+        private ulong _pad3;
+
+        [FieldOffset(56)]
+        private ulong _pad4;
     }
 
     /// <summary>
     /// Parallel metadata for <see cref="QuestNodeDTO"/>. Kept outside the 32-byte OSHINO node payload.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 40)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct QuestNodeRuntimeDTO
     {
+        [FieldOffset(0)]
         public ulong TargetTimestamp;
+
+        [FieldOffset(8)]
         public float ReputationDelta;
+
+        [FieldOffset(12)]
         public float ReputationThreshold;
+
+        [FieldOffset(16)]
         public int StateChunk;
+
+        [FieldOffset(20)]
         public int TriggerIndex;
+
+        [FieldOffset(24)]
         public int RequiredItemStart;
+
+        [FieldOffset(28)]
         public int RequiredItemCount;
+
+        [FieldOffset(32)]
         public ushort FactionId;
+
+        [FieldOffset(34)]
         public ushort Flags;
+
+        [FieldOffset(36)]
         public uint _pad0;
+
+        [FieldOffset(40)]
+        private ulong _pad1;
+
+        [FieldOffset(48)]
+        private ulong _pad2;
+
+        [FieldOffset(56)]
+        private ulong _pad3;
     }
 
     /// <summary>
     /// Fixed black-box sample for the last 300 resolver frames.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct QuestDagTelemetryEntry
     {
+        [FieldOffset(0)]
         public double ResolverComputeTimeMs;
+
+        [FieldOffset(8)]
         public ulong BitsFlipped;
+
+        [FieldOffset(16)]
         public uint Frame;
+
+        [FieldOffset(20)]
         public int ActiveNodesEvaluated;
+
+        [FieldOffset(24)]
         public ushort Iterations;
+
+        [FieldOffset(26)]
         public ushort Flags;
+
+        [FieldOffset(28)]
         public uint DeadlockNodeHash;
+
+        [FieldOffset(32)]
         public uint PlayerCellHash;
+
+        [FieldOffset(36)]
         public uint StateHash;
+
+        [FieldOffset(40)]
         public int SpatialCandidateCount;
+
+        [FieldOffset(44)]
         public uint _pad0;
+
+        [FieldOffset(48)]
+        private ulong _pad1;
+
+        [FieldOffset(56)]
+        private ulong _pad2;
     }
 
     /// <summary>
@@ -143,19 +227,47 @@ namespace Hecton8.Quest
     /// <summary>
     /// Cold binary-load result for OSHINO narrative archaeology.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 48)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct QuestDagLoadStats
     {
+        [FieldOffset(0)]
         public ulong AllDoneMask;
+
+        [FieldOffset(8)]
         public uint GraphHash;
+
+        [FieldOffset(12)]
         public uint NodeCount;
+
+        [FieldOffset(16)]
         public uint TriggerCount;
+
+        [FieldOffset(20)]
         public uint EdgeCount;
+
+        [FieldOffset(24)]
         public uint TotalBytes;
+
+        [FieldOffset(28)]
         public uint Flags;
+
+        [FieldOffset(32)]
         public uint SourceHash;
+
+        [FieldOffset(36)]
         public uint _pad0;
+
+        [FieldOffset(40)]
         public uint _pad1;
+
+        [FieldOffset(44)]
+        private uint _pad2;
+
+        [FieldOffset(48)]
+        private ulong _pad3;
+
+        [FieldOffset(56)]
+        private ulong _pad4;
     }
 
     /// <summary>
@@ -266,14 +378,17 @@ namespace Hecton8.Quest
         public const int QuestNodeDTO_Pad0 = 24;
         public const int QuestNodeDTO_Pad1 = 28;
 
-        public const int TriggerVolumeDTOSize = 40;
+        public const int TriggerVolumeDTOSize = 64;
         public const int TriggerVolumeDTO_AUP = 0;
         public const int TriggerVolumeDTO_Radius = 24;
         public const int TriggerVolumeDTO_RequiredNodeHash = 28;
         public const int TriggerVolumeDTO_Pad0 = 32;
         public const int TriggerVolumeDTO_Pad1 = 36;
+        public const int TriggerVolumeDTO_Pad2 = 40;
+        public const int TriggerVolumeDTO_Pad3 = 48;
+        public const int TriggerVolumeDTO_Pad4 = 56;
 
-        public const int QuestNodeRuntimeDTOSize = 40;
+        public const int QuestNodeRuntimeDTOSize = 64;
         public const int QuestNodeRuntimeDTO_TargetTimestamp = 0;
         public const int QuestNodeRuntimeDTO_ReputationDelta = 8;
         public const int QuestNodeRuntimeDTO_ReputationThreshold = 12;
@@ -284,8 +399,11 @@ namespace Hecton8.Quest
         public const int QuestNodeRuntimeDTO_FactionId = 32;
         public const int QuestNodeRuntimeDTO_Flags = 34;
         public const int QuestNodeRuntimeDTO_Pad0 = 36;
+        public const int QuestNodeRuntimeDTO_Pad1 = 40;
+        public const int QuestNodeRuntimeDTO_Pad2 = 48;
+        public const int QuestNodeRuntimeDTO_Pad3 = 56;
 
-        public const int QuestDagTelemetryEntrySize = 48;
+        public const int QuestDagTelemetryEntrySize = 64;
         public const int QuestDagTelemetryEntry_ResolverComputeTimeMs = 0;
         public const int QuestDagTelemetryEntry_BitsFlipped = 8;
         public const int QuestDagTelemetryEntry_Frame = 16;
@@ -297,6 +415,8 @@ namespace Hecton8.Quest
         public const int QuestDagTelemetryEntry_StateHash = 36;
         public const int QuestDagTelemetryEntry_SpatialCandidateCount = 40;
         public const int QuestDagTelemetryEntry_Pad0 = 44;
+        public const int QuestDagTelemetryEntry_Pad1 = 48;
+        public const int QuestDagTelemetryEntry_Pad2 = 56;
     }
 
     [Flags]

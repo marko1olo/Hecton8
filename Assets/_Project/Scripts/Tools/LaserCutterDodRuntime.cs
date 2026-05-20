@@ -16,6 +16,7 @@ namespace Hecton8.Tools
     {
         private static IDataVault _dataVault;
         private static VaultGenerationHandle<LaserCutRequestDTO> _requestsHandle;
+        private static VaultGenerationHandle<LaserCutRequestMetaDTO> _requestMetasHandle;
         private static VaultGenerationHandle<int> _requestCountHandle;
         private static VaultGenerationHandle<RaycastCommand> _raycastCommandsHandle;
         private static VaultGenerationHandle<RaycastHit> _raycastHitsHandle;
@@ -41,6 +42,7 @@ namespace Hecton8.Tools
         private static uint _scheduledEvaluationCursorBase;
         private static uint _requestSequence;
         private static uint _lastDumpFrame;
+        private static float _cachedGlobalQualityWeight = 1f;
 
         public static bool EnsureInitialized(IDataVault explicitVault = null)
         {
@@ -60,7 +62,11 @@ namespace Hecton8.Tools
                 _dataVault = vault;
             }
 
-            return TryResolveCoreBuffers(out _, out _, out _, out _);
+            bool ready = TryResolveCoreBuffers(out _, out _, out _, out _, out _);
+            if (ready)
+                RefreshCachedGlobalQualityWeight();
+
+            return ready;
         }
 
         public static bool QueueLiveRequest(
@@ -72,23 +78,27 @@ namespace Hecton8.Tools
             uint parentEntityID,
             uint frame)
         {
-            if (!EnsureInitialized() ||
+            if (_dataVault == null ||
                 _scheduledRaycastActive ||
                 _scheduledEvaluationActive ||
                 !TryResolveCoreBuffers(
                     out NativeArray<LaserCutRequestDTO> requests,
+                    out NativeArray<LaserCutRequestMetaDTO> requestMetas,
                     out NativeArray<int> requestCount,
                     out NativeArray<int> _,
-                    out NativeArray<LaserCutterCountersDTO> counters) ||
+                    out NativeArray<LaserCutterCountersDTO> counters,
+                    allowAcquire: false) ||
                 !requests.IsCreated ||
+                !requestMetas.IsCreated ||
                 !requestCount.IsCreated ||
                 requestCount.Length <= 0)
             {
                 return false;
             }
 
-            int index = math.clamp(requestCount[0], 0, requests.Length);
-            if (index >= requests.Length)
+            int capacity = math.min(requests.Length, requestMetas.Length);
+            int index = math.clamp(requestCount[0], 0, capacity);
+            if (index >= capacity)
             {
                 IncrementSuppressed(counters, frame);
                 return false;
@@ -103,10 +113,22 @@ namespace Hecton8.Tools
                 CuttingPower = math.saturate(cuttingPower),
                 MaximumDistance = math.max(0.01f, maximumDistance),
                 ToolHashID = toolHashID == 0u ? LaserCutterDodConstants.LaserCutterHash : toolHashID,
-                ParentEntityID = parentEntityID,
+                ParentEntityID = parentEntityID
+            };
+
+            requestMetas[index] = new LaserCutRequestMetaDTO
+            {
                 Frame = frame,
                 Flags = LaserCutterDodConstants.RequestFlagValid,
-                RequestSequence = sequence
+                RequestSequence = sequence,
+                CooldownUntilFrame = 0u,
+                LastAppliedFrame = 0u,
+                Reserved0 = 0u,
+                StateHash = Mix(1469598103934665603UL, sequence),
+                Reserved1 = 0UL,
+                Reserved2 = 0UL,
+                Reserved3 = 0UL,
+                Reserved4 = 0UL
             };
 
             requestCount[0] = index + 1;
@@ -130,23 +152,26 @@ namespace Hecton8.Tools
                 _scheduledEvaluationActive ||
                 !TryResolveCoreBuffers(
                     out NativeArray<LaserCutRequestDTO> requests,
+                    out NativeArray<LaserCutRequestMetaDTO> requestMetas,
                     out NativeArray<int> requestCount,
                     out NativeArray<int> _,
                     out NativeArray<LaserCutterCountersDTO> counters) ||
                 !requests.IsCreated ||
+                !requestMetas.IsCreated ||
                 !requestCount.IsCreated ||
                 requestCount.Length <= 0)
             {
                 return false;
             }
 
-            int safeCount = math.clamp(count, 0, requests.Length);
+            int safeCount = math.clamp(count, 0, math.min(requests.Length, requestMetas.Length));
             if (safeCount <= 0)
                 return false;
 
             GenerateMockCutterTriggersJob job = new GenerateMockCutterTriggersJob
             {
                 Requests = requests,
+                RequestMetas = requestMetas,
                 OriginAUP = originAup,
                 Frame = frame,
                 ToolHashID = LaserCutterDodConstants.LaserCutterHash,
@@ -154,8 +179,10 @@ namespace Hecton8.Tools
                 Seed = seed,
                 MaximumDistanceMeters = ResolveTuning().DefaultMaxDistanceMeters
             };
-            for (int i = 0; i < safeCount; i++)
-                job.Execute(i);
+            JobHandle mockHandle = job.Schedule(safeCount, LaserCutterDodConstants.MinCommandsPerJob);
+            H8Memory.RegisterActiveJob(SystemID.GameplayTools, mockHandle);
+            // COLD SYNC JOB: deterministic mock trigger rows must be visible to the immediate editor/CI caller.
+            DispatcherJobFence.TryComplete(ref mockHandle, forceComplete: true);
 
             requestCount[0] = safeCount;
 
@@ -164,7 +191,7 @@ namespace Hecton8.Tools
                 LaserCutterCountersDTO counter = counters[0];
                 counter.RequestCount = safeCount;
                 counter.LastFrame = frame;
-                counter.LastSequence = safeCount > 0 ? requests[safeCount - 1].RequestSequence : counter.LastSequence;
+                counter.LastSequence = safeCount > 0 ? requestMetas[safeCount - 1].RequestSequence : counter.LastSequence;
                 counters[0] = counter;
             }
 
@@ -174,10 +201,19 @@ namespace Hecton8.Tools
         public static bool TryScheduleRaycastBatch(int layerMask, QueryTriggerInteraction queryTriggerInteraction, uint frame)
         {
             if (_scheduledRaycastActive ||
-                _scheduledEvaluationActive ||
-                !EnsureInitialized() ||
-                !TryResolveSchedulerBuffers(
+                _scheduledEvaluationActive)
+            {
+                return false;
+            }
+
+            if (_dataVault == null && !EnsureInitialized())
+                return false;
+
+            RefreshCachedGlobalQualityWeight();
+
+            if (!TryResolveSchedulerBuffers(
                     out NativeArray<LaserCutRequestDTO> requests,
+                    out NativeArray<LaserCutRequestMetaDTO> requestMetas,
                     out NativeArray<int> requestCount,
                     out NativeArray<RaycastCommand> commands,
                     out NativeArray<RaycastHit> hits,
@@ -188,22 +224,24 @@ namespace Hecton8.Tools
                     out _,
                     out _,
                     out _,
-                    out _))
+                    out _,
+                    allowAcquire: false))
             {
                 return false;
             }
 
-            int scheduledCount = math.clamp(requestCount[0], 0, math.min(requests.Length, commands.Length));
+            int scheduledCount = math.clamp(requestCount[0], 0, math.min(math.min(requests.Length, requestMetas.Length), commands.Length));
             scheduledCount = math.min(scheduledCount, hits.Length);
             scheduledCount = math.min(scheduledCount, cooldowns.Length);
             if (scheduledCount <= 0)
                 return false;
 
-            LaserCutterTuningDTO tuning = ResolveTuning();
+            LaserCutterTuningDTO tuning = ResolveTuningNoAcquire();
             uint cooldownFrames = (uint)math.max(1f, math.isfinite(tuning.CooldownFrames) ? tuning.CooldownFrames : 1f);
             ManageCutterCooldownJob cooldownJob = new ManageCutterCooldownJob
             {
                 Requests = requests,
+                RequestMetas = requestMetas,
                 Cooldowns = cooldowns,
                 Frame = frame,
                 CooldownFrames = cooldownFrames
@@ -212,6 +250,7 @@ namespace Hecton8.Tools
             BuildCutterRaycastsJob buildJob = new BuildCutterRaycastsJob
             {
                 Requests = requests,
+                RequestMetas = requestMetas,
                 Commands = commands,
                 PresentationOriginAUP = HectonFloatingOrigin.CurrentTotalOffsetDouble,
                 LayerMask = layerMask,
@@ -225,6 +264,7 @@ namespace Hecton8.Tools
                 hits.GetSubArray(0, scheduledCount),
                 LaserCutterDodConstants.MinCommandsPerJob,
                 buildHandle);
+            H8Memory.RegisterActiveJob(SystemID.GameplayTools, _scheduledRaycastHandle);
             _scheduledRaycastActive = true;
             _scheduledRaycastCount = scheduledCount;
             return true;
@@ -243,6 +283,7 @@ namespace Hecton8.Tools
 
             if (!TryResolveSchedulerBuffers(
                     out NativeArray<LaserCutRequestDTO> requests,
+                    out NativeArray<LaserCutRequestMetaDTO> requestMetas,
                     out NativeArray<int> requestCount,
                     out _,
                     out NativeArray<RaycastHit> hits,
@@ -253,15 +294,15 @@ namespace Hecton8.Tools
                     out NativeArray<LaserCutGlowDecalRequestDTO> decals,
                     out NativeArray<LaserCutImpactVfxDTO> impactVfx,
                     out NativeArray<LaserCutTelemetryEntry> telemetry,
-                    out NativeArray<int> telemetryCursor))
+                    out NativeArray<int> telemetryCursor,
+                    allowAcquire: false))
             {
-                _scheduledRaycastHandle.Complete();
                 _scheduledRaycastActive = false;
                 _scheduledRaycastCount = 0;
                 return false;
             }
 
-            int count = math.clamp(_scheduledRaycastCount, 0, math.min(requests.Length, hits.Length));
+            int count = math.clamp(_scheduledRaycastCount, 0, math.min(math.min(requests.Length, requestMetas.Length), hits.Length));
             if (count <= 0)
             {
                 requestCount[0] = 0;
@@ -271,9 +312,11 @@ namespace Hecton8.Tools
             }
 
             uint cursorBase = telemetryCursor.IsCreated && telemetryCursor.Length > 0 ? (uint)math.max(0, telemetryCursor[0]) : 0u;
+            LaserCutterTuningDTO tuning = ResolveTuningNoAcquire();
             EvaluateCutterRaycastHitsJob evaluateJob = new EvaluateCutterRaycastHitsJob
             {
                 Requests = requests,
+                RequestMetas = requestMetas,
                 RaycastHits = hits,
                 HitResults = hitResults,
                 DeformationStates = deformations,
@@ -283,8 +326,15 @@ namespace Hecton8.Tools
                 TelemetryRing = telemetry,
                 PresentationOriginAUP = HectonFloatingOrigin.CurrentTotalOffsetDouble,
                 TelemetryCursorBase = cursorBase,
-                GlobalQualityWeight = ResolveGlobalQualityWeight(),
-                Heat01 = heat01
+                GlobalQualityWeight = _cachedGlobalQualityWeight,
+                Heat01 = heat01,
+                DentRadiusMinMeters = tuning.DentRadiusMinMeters,
+                DentRadiusMaxMeters = tuning.DentRadiusMaxMeters,
+                GlowLifetimeSeconds = tuning.GlowLifetimeSeconds,
+                BatteryWattsAtPowerOne = tuning.BatteryWattsAtPowerOne,
+                SparkIntensityScale = tuning.SparkIntensityScale,
+                LowSparkCount = tuning.LowSparkCount,
+                UltraSparkCount = tuning.UltraSparkCount
             };
             _scheduledEvaluationHandle = evaluateJob.Schedule(count, LaserCutterDodConstants.MinCommandsPerJob);
             H8Memory.RegisterActiveJob(SystemID.GameplayTools, _scheduledEvaluationHandle);
@@ -306,6 +356,7 @@ namespace Hecton8.Tools
 
             if (!TryResolveSchedulerBuffers(
                     out NativeArray<LaserCutRequestDTO> requests,
+                    out NativeArray<LaserCutRequestMetaDTO> _,
                     out NativeArray<int> requestCount,
                     out _,
                     out NativeArray<RaycastHit> hits,
@@ -316,7 +367,8 @@ namespace Hecton8.Tools
                     out _,
                     out NativeArray<LaserCutImpactVfxDTO> impactVfx,
                     out NativeArray<LaserCutTelemetryEntry> telemetry,
-                    out NativeArray<int> telemetryCursor))
+                    out NativeArray<int> telemetryCursor,
+                    allowAcquire: false))
             {
                 _scheduledEvaluationActive = false;
                 _scheduledEvaluationCount = 0;
@@ -349,13 +401,23 @@ namespace Hecton8.Tools
 
         public static void StageGpuSparkSignal(double3 hitAup, float3 normal, float heat01, float cuttingPower01, uint toolHashID, uint parentEntityID, uint frame)
         {
-            float quality = ResolveGlobalQualityWeight();
+            LaserCutterTuningDTO tuning = ResolveTuningNoAcquire();
+            float quality = Smooth01(_cachedGlobalQualityWeight);
             float intensity = math.saturate((0.35f + heat01 * 0.65f) * (0.55f + cuttingPower01 * 0.45f));
+            float lowSparkCount = math.max(0f, math.isfinite(tuning.LowSparkCount) ? tuning.LowSparkCount : LaserCutterDodConstants.LowSparkCount);
+            float ultraSparkCount = math.max(lowSparkCount, math.isfinite(tuning.UltraSparkCount) ? tuning.UltraSparkCount : LaserCutterDodConstants.UltraSparkCount);
+            float sparkScale = math.max(0f, math.isfinite(tuning.SparkIntensityScale) ? tuning.SparkIntensityScale : 1f);
             ushort quantity = (ushort)math.clamp(
-                (int)math.round(math.lerp(LaserCutterDodConstants.LowSparkCount, LaserCutterDodConstants.UltraSparkCount, quality) * intensity),
+                (int)math.round(math.lerp(lowSparkCount, ultraSparkCount, quality) * intensity * sparkScale),
                 0,
                 ushort.MaxValue);
 
+            PublishGpuSparkSignals(hitAup, normal, intensity, quantity, heat01, toolHashID, parentEntityID, frame, true);
+        }
+
+        private static void PublishGpuSparkSignals(double3 hitAup, float3 normal, float intensity01, ushort quantity, float heat01, uint toolHashID, uint parentEntityID, uint frame, bool stageImpactVfx)
+        {
+            float intensity = math.saturate(intensity01);
             DebrisSpawnSignal debris = new DebrisSpawnSignal
             {
                 PositionAup = AbsoluteUniversePosition.FromAbsolutePosition(hitAup),
@@ -379,7 +441,8 @@ namespace Hecton8.Tools
             };
             SignalBus<VfxSparkRequestSignal>.TryPush(in spark);
 
-            TryStageImpactVfx(hitAup, normal, intensity, heat01, quantity, toolHashID, frame);
+            if (stageImpactVfx)
+                TryStageImpactVfx(hitAup, normal, intensity, heat01, quantity, toolHashID, frame);
         }
 
         public static bool TryGetLatestTelemetry(out LaserCutTelemetryEntry entry)
@@ -465,30 +528,62 @@ namespace Hecton8.Tools
             sanitized.GlobalQualityWeight = math.saturate(sanitized.GlobalQualityWeight);
             sanitized.VersionHash = sanitized.VersionHash == 0UL ? 0x53484C4354554E45UL : sanitized.VersionHash;
             tuningBuffer[0] = sanitized;
+            _cachedGlobalQualityWeight = sanitized.GlobalQualityWeight;
             return true;
         }
 
         public static bool TryGetRequestForGizmo(int index, out LaserCutRequestDTO request)
         {
             request = default;
+            return TryGetRequestForGizmo(index, out request, out _);
+        }
+
+        public static bool TryGetRequestForGizmo(int index, out LaserCutRequestDTO request, out LaserCutRequestMetaDTO meta)
+        {
+            request = default;
+            meta = default;
             if (!EnsureInitialized() ||
                 !TryResolveCoreBuffers(
                     out NativeArray<LaserCutRequestDTO> requests,
+                    out NativeArray<LaserCutRequestMetaDTO> requestMetas,
                     out NativeArray<int> requestCount,
                     out _,
                     out _) ||
                 !requests.IsCreated ||
+                !requestMetas.IsCreated ||
                 !requestCount.IsCreated ||
                 requestCount.Length <= 0 ||
                 index < 0 ||
                 index >= requestCount[0] ||
-                index >= requests.Length)
+                index >= requests.Length ||
+                index >= requestMetas.Length)
             {
                 return false;
             }
 
             request = requests[index];
-            return (request.Flags & LaserCutterDodConstants.RequestFlagValid) != 0u;
+            meta = requestMetas[index];
+            return (meta.Flags & LaserCutterDodConstants.RequestFlagValid) != 0u;
+        }
+
+        public static bool TryGetHitForGizmo(int index, out LaserCutHitDTO hit)
+        {
+            hit = default;
+            if (!EnsureInitialized() ||
+                !TryResolveOrAcquire(
+                    LaserCutterDodConstants.HitResultsBuffer,
+                    LaserCutterDodConstants.MaxHitResults,
+                    ref _hitResultsHandle,
+                    out NativeArray<LaserCutHitDTO> hitResults) ||
+                !hitResults.IsCreated ||
+                index < 0 ||
+                index >= hitResults.Length)
+            {
+                return false;
+            }
+
+            hit = hitResults[index];
+            return (hit.Flags & LaserCutterDodConstants.ResultFlagHit) != 0u;
         }
 
         internal static bool TryResolveSpecBuffer(out NativeArray<LaserCutterSpecDTO> specs)
@@ -515,22 +610,27 @@ namespace Hecton8.Tools
 
         private static bool TryResolveCoreBuffers(
             out NativeArray<LaserCutRequestDTO> requests,
+            out NativeArray<LaserCutRequestMetaDTO> requestMetas,
             out NativeArray<int> requestCount,
             out NativeArray<int> telemetryCursor,
-            out NativeArray<LaserCutterCountersDTO> counters)
+            out NativeArray<LaserCutterCountersDTO> counters,
+            bool allowAcquire = true)
         {
             requests = default;
+            requestMetas = default;
             requestCount = default;
             telemetryCursor = default;
             counters = default;
-            return TryResolveOrAcquire(LaserCutterDodConstants.RequestsBuffer, LaserCutterDodConstants.MaxRequests, ref _requestsHandle, out requests) &&
-                   TryResolveOrAcquire(LaserCutterDodConstants.RequestCountBuffer, 1, ref _requestCountHandle, out requestCount) &&
-                   TryResolveOrAcquire(LaserCutterDodConstants.TelemetryCursorBuffer, 1, ref _telemetryCursorHandle, out telemetryCursor) &&
-                   TryResolveOrAcquire(LaserCutterDodConstants.CountersBuffer, 1, ref _countersHandle, out counters);
+            return TryResolveOrAcquire(LaserCutterDodConstants.RequestsBuffer, LaserCutterDodConstants.MaxRequests, ref _requestsHandle, out requests, allowAcquire) &&
+                   TryResolveOrAcquire(LaserCutterDodConstants.RequestMetaBuffer, LaserCutterDodConstants.MaxRequests, ref _requestMetasHandle, out requestMetas, allowAcquire) &&
+                   TryResolveOrAcquire(LaserCutterDodConstants.RequestCountBuffer, 1, ref _requestCountHandle, out requestCount, allowAcquire) &&
+                   TryResolveOrAcquire(LaserCutterDodConstants.TelemetryCursorBuffer, 1, ref _telemetryCursorHandle, out telemetryCursor, allowAcquire) &&
+                   TryResolveOrAcquire(LaserCutterDodConstants.CountersBuffer, 1, ref _countersHandle, out counters, allowAcquire);
         }
 
         private static bool TryResolveSchedulerBuffers(
             out NativeArray<LaserCutRequestDTO> requests,
+            out NativeArray<LaserCutRequestMetaDTO> requestMetas,
             out NativeArray<int> requestCount,
             out NativeArray<RaycastCommand> commands,
             out NativeArray<RaycastHit> hits,
@@ -541,7 +641,8 @@ namespace Hecton8.Tools
             out NativeArray<LaserCutGlowDecalRequestDTO> decals,
             out NativeArray<LaserCutImpactVfxDTO> impactVfx,
             out NativeArray<LaserCutTelemetryEntry> telemetry,
-            out NativeArray<int> telemetryCursor)
+            out NativeArray<int> telemetryCursor,
+            bool allowAcquire = true)
         {
             commands = default;
             hits = default;
@@ -552,23 +653,23 @@ namespace Hecton8.Tools
             decals = default;
             impactVfx = default;
             telemetry = default;
-            return TryResolveCoreBuffers(out requests, out requestCount, out telemetryCursor, out _) &&
-                   TryResolveOrAcquire(LaserCutterDodConstants.RaycastCommandsBuffer, LaserCutterDodConstants.MaxRequests, ref _raycastCommandsHandle, out commands) &&
-                   TryResolveOrAcquire(LaserCutterDodConstants.RaycastHitsBuffer, LaserCutterDodConstants.MaxRequests, ref _raycastHitsHandle, out hits) &&
-                   TryResolveOrAcquire(LaserCutterDodConstants.CooldownBuffer, LaserCutterDodConstants.MaxRequests, ref _cooldownHandle, out cooldowns) &&
-                   TryResolveOrAcquire(LaserCutterDodConstants.HitResultsBuffer, LaserCutterDodConstants.MaxHitResults, ref _hitResultsHandle, out hitResults) &&
-                   TryResolveOrAcquire(LaserCutterDodConstants.DeformationBuffer, LaserCutterDodConstants.MaxHitResults, ref _deformationHandle, out deformations) &&
-                   TryResolveOrAcquire(LaserCutterDodConstants.BatteryDrainBuffer, LaserCutterDodConstants.MaxHitResults, ref _batteryDrainHandle, out batteryDrains) &&
-                   TryResolveOrAcquire(LaserCutterDodConstants.GlowDecalBuffer, LaserCutterDodConstants.MaxHitResults, ref _glowDecalHandle, out decals) &&
-                   TryResolveOrAcquire(LaserCutterDodConstants.ImpactVfxBuffer, LaserCutterDodConstants.MaxHitResults, ref _impactVfxHandle, out impactVfx) &&
-                   TryResolveOrAcquire(LaserCutterDodConstants.TelemetryRingBuffer, LaserCutterDodConstants.BlackBoxFrameCount, ref _telemetryRingHandle, out telemetry);
+            return TryResolveCoreBuffers(out requests, out requestMetas, out requestCount, out telemetryCursor, out _, allowAcquire) &&
+                   TryResolveOrAcquire(LaserCutterDodConstants.RaycastCommandsBuffer, LaserCutterDodConstants.MaxRequests, ref _raycastCommandsHandle, out commands, allowAcquire) &&
+                   TryResolveOrAcquire(LaserCutterDodConstants.RaycastHitsBuffer, LaserCutterDodConstants.MaxRequests, ref _raycastHitsHandle, out hits, allowAcquire) &&
+                   TryResolveOrAcquire(LaserCutterDodConstants.CooldownBuffer, LaserCutterDodConstants.MaxRequests, ref _cooldownHandle, out cooldowns, allowAcquire) &&
+                   TryResolveOrAcquire(LaserCutterDodConstants.HitResultsBuffer, LaserCutterDodConstants.MaxHitResults, ref _hitResultsHandle, out hitResults, allowAcquire) &&
+                   TryResolveOrAcquire(LaserCutterDodConstants.DeformationBuffer, LaserCutterDodConstants.MaxHitResults, ref _deformationHandle, out deformations, allowAcquire) &&
+                   TryResolveOrAcquire(LaserCutterDodConstants.BatteryDrainBuffer, LaserCutterDodConstants.MaxHitResults, ref _batteryDrainHandle, out batteryDrains, allowAcquire) &&
+                   TryResolveOrAcquire(LaserCutterDodConstants.GlowDecalBuffer, LaserCutterDodConstants.MaxHitResults, ref _glowDecalHandle, out decals, allowAcquire) &&
+                   TryResolveOrAcquire(LaserCutterDodConstants.ImpactVfxBuffer, LaserCutterDodConstants.MaxHitResults, ref _impactVfxHandle, out impactVfx, allowAcquire) &&
+                   TryResolveOrAcquire(LaserCutterDodConstants.TelemetryRingBuffer, LaserCutterDodConstants.BlackBoxFrameCount, ref _telemetryRingHandle, out telemetry, allowAcquire);
         }
 
-        private static bool TryResolveOrAcquire<T>(BufferID bufferId, int requiredLength, ref VaultGenerationHandle<T> handle, out NativeArray<T> buffer)
+        private static bool TryResolveOrAcquire<T>(BufferID bufferId, int requiredLength, ref VaultGenerationHandle<T> handle, out NativeArray<T> buffer, bool allowAcquire = true)
             where T : struct
         {
             buffer = default;
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
@@ -578,6 +679,15 @@ namespace Hecton8.Tools
                 buffer.Length >= requiredLength)
             {
                 return true;
+            }
+
+            if (!allowAcquire)
+                return false;
+
+            if (IsHandleCreated(in handle))
+            {
+                vault.ReleaseBuffer(in handle);
+                handle = default;
             }
 
             VaultGenerationHandle<T> acquired = vault.GetGenerationHandle<T>(
@@ -602,6 +712,25 @@ namespace Hecton8.Tools
             return TryGetTuning(out LaserCutterTuningDTO tuning) ? tuning : CreateDefaultTuning();
         }
 
+        private static LaserCutterTuningDTO ResolveTuningNoAcquire()
+        {
+            if (_dataVault != null &&
+                TryResolveOrAcquire(
+                    LaserCutterDodConstants.TuningBuffer,
+                    1,
+                    ref _tuningHandle,
+                    out NativeArray<LaserCutterTuningDTO> tuningBuffer,
+                    allowAcquire: false) &&
+                tuningBuffer.IsCreated &&
+                tuningBuffer.Length > 0 &&
+                tuningBuffer[0].VersionHash != 0UL)
+            {
+                return tuningBuffer[0];
+            }
+
+            return CreateDefaultTuning();
+        }
+
         private static LaserCutterTuningDTO CreateDefaultTuning()
         {
             return new LaserCutterTuningDTO
@@ -616,7 +745,7 @@ namespace Hecton8.Tools
                 SparkIntensityScale = 1f,
                 LowSparkCount = LaserCutterDodConstants.LowSparkCount,
                 UltraSparkCount = LaserCutterDodConstants.UltraSparkCount,
-                GlobalQualityWeight = ResolveGlobalQualityWeight(),
+                GlobalQualityWeight = _cachedGlobalQualityWeight,
                 Flags = 0u,
                 VersionHash = 0x53484C4354554E45UL,
                 Reserved0 = 0UL
@@ -625,13 +754,14 @@ namespace Hecton8.Tools
 
         private static void TryStageImpactVfx(double3 hitAup, float3 normal, float intensity01, float heat01, ushort quantity, uint toolHashID, uint frame)
         {
-            if (!EnsureInitialized() ||
+            if (_dataVault == null ||
                 !TryResolveOrAcquire(
                     LaserCutterDodConstants.ImpactVfxBuffer,
                     LaserCutterDodConstants.MaxHitResults,
                     ref _impactVfxHandle,
-                    out NativeArray<LaserCutImpactVfxDTO> impactVfx) ||
-                !TryResolveCoreBuffers(out _, out NativeArray<int> requestCount, out _, out _) ||
+                    out NativeArray<LaserCutImpactVfxDTO> impactVfx,
+                    allowAcquire: false) ||
+                !TryResolveCoreBuffers(out _, out _, out NativeArray<int> requestCount, out _, out _, allowAcquire: false) ||
                 !impactVfx.IsCreated ||
                 !requestCount.IsCreated ||
                 requestCount.Length <= 0)
@@ -692,14 +822,17 @@ namespace Hecton8.Tools
                 if (request.Intensity01 <= 0f || request.SparkCount == 0u)
                     continue;
 
-                StageGpuSparkSignal(
+                ushort quantity = request.SparkCount > ushort.MaxValue ? ushort.MaxValue : (ushort)request.SparkCount;
+                PublishGpuSparkSignals(
                     request.CenterAUP,
                     request.Normal,
-                    request.Heat01,
                     request.Intensity01,
+                    quantity,
+                    request.Heat01,
                     request.ToolHashID,
                     0u,
-                    request.Frame);
+                    request.Frame,
+                    false);
             }
         }
 
@@ -766,6 +899,8 @@ namespace Hecton8.Tools
                         writer.Write(entry.LayoutMagic);
                         writer.Write(entry.Heat01);
                         writer.Write(entry.StateHash);
+                        writer.Write(entry.BatteryWatts);
+                        writer.Write(entry.BurstWorkEstimateMicros);
                     }
                 }
             }
@@ -775,20 +910,21 @@ namespace Hecton8.Tools
             }
         }
 
-        private static float ResolveGlobalQualityWeight()
+        private static void RefreshCachedGlobalQualityWeight()
         {
-            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            IDataVault vault = _dataVault;
             if (vault != null &&
-                vault.TryGetBufferHandle(BufferID.ShinobuScalabilityState, out VaultBufferHandle<ScalabilityStateDTO> handle) &&
+                vault.TryGetGenerationHandle(BufferID.ShinobuScalabilityState, out VaultGenerationHandle<ScalabilityStateDTO> handle) &&
                 vault.TryResolveHandle(in handle, out NativeArray<ScalabilityStateDTO> states) &&
                 states.IsCreated &&
                 states.Length > 0 &&
                 math.isfinite(states[0].GlobalQualityWeight))
             {
-                return math.saturate(states[0].GlobalQualityWeight);
+                _cachedGlobalQualityWeight = math.saturate(states[0].GlobalQualityWeight);
+                return;
             }
 
-            return math.saturate(HomeostasisBrain.GlobalQualityWeight);
+            _cachedGlobalQualityWeight = math.saturate(HomeostasisBrain.GlobalQualityWeight);
         }
 
         private static void IncrementSuppressed(NativeArray<LaserCutterCountersDTO> counters, uint frame)
@@ -810,6 +946,7 @@ namespace Hecton8.Tools
         private static void ClearHandles()
         {
             _requestsHandle = default;
+            _requestMetasHandle = default;
             _requestCountHandle = default;
             _raycastCommandsHandle = default;
             _raycastHitsHandle = default;
@@ -832,6 +969,7 @@ namespace Hecton8.Tools
             _scheduledEvaluationActive = false;
             _scheduledEvaluationCount = 0;
             _scheduledEvaluationCursorBase = 0u;
+            _cachedGlobalQualityWeight = 1f;
         }
 
         private static void ReleaseVaultHandles(IDataVault vault)
@@ -848,6 +986,7 @@ namespace Hecton8.Tools
             _scheduledEvaluationCursorBase = 0u;
 
             ReleaseVaultHandle(vault, ref _requestsHandle);
+            ReleaseVaultHandle(vault, ref _requestMetasHandle);
             ReleaseVaultHandle(vault, ref _requestCountHandle);
             ReleaseVaultHandle(vault, ref _raycastCommandsHandle);
             ReleaseVaultHandle(vault, ref _raycastHitsHandle);
@@ -881,6 +1020,12 @@ namespace Hecton8.Tools
                 return fallback;
 
             return value * math.rsqrt(lengthSq);
+        }
+
+        private static float Smooth01(float value)
+        {
+            float t = math.saturate(math.isfinite(value) ? value : 0f);
+            return math.smoothstep(0f, 1f, t);
         }
 
         private static ulong Mix(ulong hash, uint value)

@@ -1395,3 +1395,31 @@ Scalability potential: Low/Quest retains the same compact 128-byte typed audio e
 Hardware Impact: Runtime microseconds claimed: `0`; no profiler capture and no build. Static impact: compile-wall findings dropped from `76` to `67`; `GlobalSignals.cs` has no `Hecton8.Audio` token. Touched-file `scan_burst=0` and `scan_struct_layout=0`. Touched-file `scan_vault=5` remains in audio owner allocation sites and is not claimed clean.
 
 First 20 Minutes Route Impact: First-session sonar pings and structural stress groans still publish through `SignalBus<AudioEvent>`. Audio listener compatibility remains inside `ProceduralAudioEvents`; the critical renderer reads the new contract payloads directly and falls back to runtime `WorldPosition` when a structural stress event lacks a source AUP flag.
+
+## Loop 138 / Audio Owner Vault Queue Evacuation
+
+Problem: Loop 137 left five touched-file Vault_Sovereignty findings: two `ProceduralAudioEvents` `NativeQueue<AudioEvent>` allocations and `PlayerCriticalProceduralAudioRenderer` sonar/prologue private `NativeQueue`/`NativeParallelHashMap` ownership.
+
+Solution: `ProceduralAudioEvents` now uses DataVault-backed fixed `AudioEvent` rings for front/next-frame dispatch (`BufferID` `70885` and `70886`). `PlayerCriticalProceduralAudioRenderer` now uses DataVault-backed `SonarEchoTap` and `AudioTransitionState` rings (`70889` and `70890`). Sonar echo coalescing now uses a bounded linear Burst pass across 32 candidates and 8 groups instead of persistent native hash containers.
+
+Rejected Alternatives: Managed arrays were rejected because they would hide memory ownership and weaken H-Phi proof. Private `NativeQueue`/`NativeParallelHashMap` fallbacks were rejected because the capacities are fixed and the touched audio owner already resolves DataVault aliases. Editing the central Core BufferID enum was rejected in this loop to avoid touching a core header; local numeric IDs were duplicate-checked against `H8Memory.cs`.
+
+Scalability potential: Low/MX350 removes persistent native container ownership and hash-map maintenance from tiny bounded audio batches. Middle keeps the same sonar/prologue behavior. High/Ultra keep the same procedural audio richness while saved CPU/cache pressure can be spent on DSP and shader response; no binary quality switch was added.
+
+Hardware Impact: Runtime microseconds claimed: `0`; no profiler capture. Static impact: touched-file `Vault_Sovereignty` dropped from `5` to `0`. The sonar coalescer worst case is `32 * 8 = 256` integer-hash comparisons instead of maintaining two persistent native hash containers for the same capped presentation batch.
+
+First 20 Minutes Route Impact: First-session sonar echo grouping, structural stress/ping listener dispatch, and prologue ocean handoff audio still route through the same public APIs. The bridge memory is now vault-owned, fixed-size, and bounded.
+
+## Loop 139 / MathGuard Vault Ring and BufferID Correction
+
+Problem: `MathGuard` still owned a private persistent `NativeQueue<int>` for invalid-number diagnostics. After replacing the writer type, the touched buoyancy file exposed a private `NativeQueue<FluidImpactEvent>` allocation. Loop 138 also logged a bad BufferID proof: `70810/70811/70820/70821` collide with Atmosphere and Graphics local IDs.
+
+Solution: Replaced `MathGuard` invalid-number queue with two vault buffers: `70883` for error codes and `70884` for a 64-byte counter. `MathGuard.InvalidNumberWriter` is an unmanaged pointer writer over those vault aliases. Replaced `HectonFluidEngine` deferred fluid-impact queue with a fixed DataVault ring at `70799`. Corrected the audio ring IDs to `70885`, `70886`, `70889`, and `70890`; exact numeric scan now shows one code-owner hit for each new ID.
+
+Rejected Alternatives: Keeping `NativeQueue<int>.ParallelWriter` was rejected because it preserves private queue ownership. Leaving `HectonFluidEngine` with a touched-file queue finding was rejected because the scanner evidence would be false. Touching the central BufferID enum for all local provisional IDs was rejected in this loop because it widens a Core header; the safer local correction is unique IDs with explicit proof. Running build/rebuild was rejected because CPU sampled at `100` and the known missing World source is still absent.
+
+Scalability potential: Low tier avoids persistent diagnostic and fluid-impact queue ownership in hot/touched surfaces. Middle keeps the same bounded 64-entry impact and 256-entry invalid-number diagnostic behavior. High/Ultra can spend the saved container and hash-maintenance cost on DSP/shader response; no binary quality switch was introduced.
+
+Hardware Impact: Runtime microseconds claimed: `0`; no profiler capture and no build. Static proof: touched-file `Vault_Sovereignty=0`, `Runtime_Struct_Layout=0`, `Burst_Job_Directives=0`; `InvalidNumberCounter64` is exactly one 64-byte cache line (`4+4+4+4+48 pad`). `rg` reports no old `NativeQueue` or private hash-container tokens in MathGuard, HectonFluidEngine, ProceduralAudioEvents, or PlayerCriticalProceduralAudioRenderer. Compile-wall remains `67` with a known touched finding in `MathGuard.cs` for existing World AUP helpers.
+
+First 20 Minutes Route Impact: NaN/invalid-vector recovery still publishes through `GlobalTelemetryBus` and requests replay dumps. Fluid impact audio/VFX notifications still route through existing public dequeue and signal publication, now backed by a vault ring instead of a private queue. First-session sonar/prologue audio rings keep the same public behavior with corrected non-colliding vault IDs.

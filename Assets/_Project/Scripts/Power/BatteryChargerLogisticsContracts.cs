@@ -8,6 +8,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
+using Unity.Jobs.LowLevel.Unsafe;
 using Unity.Mathematics;
 
 namespace Hecton8.Power
@@ -20,6 +21,7 @@ namespace Hecton8.Power
         public const int ChargerVisualStateDtoSizeBytes = 32;
         public const int ChargerProfileDtoSizeBytes = 32;
         public const int ChargerAtomicCountersSizeBytes = 64;
+        public const int CounterLaneCount = 128;
         public const int TelemetryCapacity = 300;
         public const int DefaultLinkCapacity = 5000;
         public const int DefaultNodeCapacity = 5000;
@@ -217,7 +219,7 @@ namespace Hecton8.Power
                 NativeArrayOptions.ClearMemory);
             handles.AtomicCounters = vault.GetGenerationHandle<ChargerAtomicCountersDTO>(
                 BatteryChargerLogisticsBufferIds.AtomicCounters,
-                1,
+                BatteryChargerLogisticsConstants.CounterLaneCount,
                 SystemID.Power,
                 NativeArrayOptions.ClearMemory);
             handles.Profiles = vault.GetGenerationHandle<ChargerProfileDTO>(
@@ -238,7 +240,7 @@ namespace Hecton8.Power
                    HasBuffer(vault, in handles.Tuning, 1) &&
                    HasBuffer(vault, in handles.TelemetryRing, BatteryChargerLogisticsConstants.TelemetryCapacity) &&
                    HasBuffer(vault, in handles.TelemetryCursor, 1) &&
-                   HasBuffer(vault, in handles.AtomicCounters, 1) &&
+                   HasBuffer(vault, in handles.AtomicCounters, BatteryChargerLogisticsConstants.CounterLaneCount) &&
                    HasBuffer(vault, in handles.Profiles, BatteryChargerLogisticsConstants.DefaultProfileCapacity) &&
                    HasBuffer(vault, in handles.CsvScratch, BatteryChargerLogisticsConstants.CsvScratchBytes);
         }
@@ -328,8 +330,11 @@ namespace Hecton8.Power
 
         public void Execute()
         {
-            if (Counters.IsCreated && Counters.Length > 0)
-                Counters[0] = default;
+            if (!Counters.IsCreated)
+                return;
+
+            for (int i = 0; i < Counters.Length; i++)
+                Counters[i] = default;
         }
     }
 
@@ -429,9 +434,11 @@ namespace Hecton8.Power
         [NoAlias, NativeDisableUnsafePtrRestriction] public InventorySlotDTO* InventorySlots;
         [NoAlias, NativeDisableUnsafePtrRestriction] public PowerNodeDTO* PowerNodes;
         [NoAlias, NativeDisableUnsafePtrRestriction] public ChargerAtomicCountersDTO* Counters;
+        [NativeSetThreadIndex] public int ThreadIndex;
         public int LinkCount;
         public int InventorySlotCount;
         public int PowerNodeCount;
+        public int CounterLaneCount;
         public float DeltaSeconds;
         public float GlobalMaxChargeRate;
         public float EfficiencyCurveExponent;
@@ -566,7 +573,8 @@ namespace Hecton8.Power
             uint* conditionPtr = &slotPtr->ConditionFlags;
             if (!CompareExchangeUInt(conditionPtr, oldChargeBits, nextChargeBits))
             {
-                AddPotential(potentialPtr, transfer * math.rcp(nodeCapacity));
+                if (!AddPotential(potentialPtr, transfer * math.rcp(nodeCapacity)))
+                    AddFaultFlags(BatteryChargerLogisticsConstants.TelemetryFlagAtomicConflict, (uint)index);
                 AtomicFailure(index, ref link);
                 ReleaseSlotLock(lockPtr);
                 return;
@@ -624,41 +632,47 @@ namespace Hecton8.Power
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void IncrementActive(float transfer, float charge)
         {
-            int* counters = (int*)Counters;
-            Interlocked.Increment(ref UnsafeUtility.AsRef<int>(counters + 0));
-            Interlocked.Add(ref UnsafeUtility.AsRef<int>(counters + 4), ClampMilli(transfer));
-            Interlocked.Add(ref UnsafeUtility.AsRef<int>(counters + 5), ClampMilli(charge));
+            ChargerAtomicCountersDTO* lane = CounterLane();
+            lane->ActiveLinks++;
+            lane->TotalEnergyMilli += ClampMilli(transfer);
+            lane->ChargeMilliSum += ClampMilli(charge);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void IncrementFull()
         {
-            int* counters = (int*)Counters;
-            Interlocked.Increment(ref UnsafeUtility.AsRef<int>(counters + 1));
+            CounterLane()->FullLinks++;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void IncrementUnpowered()
         {
-            int* counters = (int*)Counters;
-            Interlocked.Increment(ref UnsafeUtility.AsRef<int>(counters + 2));
+            CounterLane()->UnpoweredLinks++;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void IncrementAtomicFailures(uint index)
         {
-            int* counters = (int*)Counters;
-            Interlocked.Increment(ref UnsafeUtility.AsRef<int>(counters + 3));
+            CounterLane()->AtomicFailures++;
             AddFaultFlags(BatteryChargerLogisticsConstants.TelemetryFlagAtomicConflict, index);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void AddFaultFlags(uint flags, uint index)
         {
-            uint* flagsPtr = &Counters->FaultFlags;
-            uint* faultLinkPtr = &Counters->LastFaultLink;
-            OrUInt(flagsPtr, flags);
-            ExchangeUInt(faultLinkPtr, index);
+            ChargerAtomicCountersDTO* lane = CounterLane();
+            lane->FaultFlags |= flags;
+            lane->LastFaultLink = index;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private ChargerAtomicCountersDTO* CounterLane()
+        {
+            int laneCount = math.max(1, CounterLaneCount);
+            int lane = ThreadIndex % laneCount;
+            if (lane < 0)
+                lane = 0;
+            return Counters + lane;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -696,26 +710,17 @@ namespace Hecton8.Power
             return unchecked((uint)observed) == expected;
         }
 
-        private static void AddPotential(float* ptr, float delta)
+        private static bool AddPotential(float* ptr, float delta)
         {
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < 1024; i++)
             {
                 float current = SanitizePositive(*ptr);
                 float next = math.max(0f, current + delta);
                 if (CompareExchangeFloat(ptr, current, next))
-                    return;
+                    return true;
             }
-        }
 
-        private static void OrUInt(uint* ptr, uint mask)
-        {
-            for (int i = 0; i < 4; i++)
-            {
-                uint current = *ptr;
-                uint next = current | mask;
-                if (CompareExchangeUInt(ptr, current, next))
-                    return;
-            }
+            return false;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

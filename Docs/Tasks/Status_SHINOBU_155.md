@@ -115,6 +115,10 @@ Task 20 addendum Loop 68: med-bay target resolution now actually consumes `Respa
 
 Task 20 addendum Loop 69: corrupted med-bay rows now contribute to the same rejected-candidate mask when their bay AUP, death delta, local distance, terrain clearance delta, or hash is invalid. If every candidate is corrupt or out of range, fallback lifepod flags include `InvalidTargetAup`; if a later valid bay is selected, those rejected-row faults stay out of final route flags. The cold fallback mock med-bay hydration path now invokes `GenerateMockRespawnPointsJob.Run(bays.Length)` instead of hand-calling `Execute(i)`, preserving the job wrapper/proof route without adding a gameplay-frame `Complete()`. Build not launched.
 
+Task 20 addendum Loop 70: subagent read-only audit found the Loop 69 mock-job proof was still ahead of source: `ShinobuRespawnReconciliationRuntime` line 714 still hand-called `mockJob.Execute(i)`. The cold default hydration path now actually calls `mockJob.Run(bays.Length)`, and focused `rg` scans over SHINOBU respawn source return no `mockJob.Execute` hits. This changes cold setup only; no gameplay-frame `JobHandle.Complete()`, allocation, Vault ID, DTO layout, or signal payload changed. Build not launched.
+
+Task 20 addendum Loop 71: immediate source recheck found the cold mock block had drifted through a scheduled-handle variant and left an orphan `DispatcherJobFence.TryComplete(ref mockHandle, forceComplete: true)` after `Run`. The block now contains only field assignment plus `mockJob.Run(bays.Length)` before `_defaultsInitialized = true`; focused scans show no `mockJob.Execute`, no `mockJob.Schedule`, and no `mockHandle` in the cold hydration block. CPU guard sampled `100%` with no listed compiler process, so build was not launched.
+
 ## Loop Log
 
 ### Loop 0 - Prompt Extraction And Mandates

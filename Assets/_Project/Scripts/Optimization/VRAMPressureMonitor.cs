@@ -221,8 +221,10 @@ namespace Hecton8.Optimization
             long usedVramBytes = monitor != null ? monitor.TotalVRAMBytes : 0L;
             LastUsedVramBytes = usedVramBytes;
 
-            VramPressureFactor = vramBudgetBytes > 0L ? usedVramBytes / (float)vramBudgetBytes : 0f;
-            RamPressureFactor = maxSystemRamBytes > 0L ? currentReservedBytes / (float)maxSystemRamBytes : 0f;
+            float vramDenominator = math.max((float)vramBudgetBytes, 1f);
+            float ramDenominator = math.max((float)maxSystemRamBytes, 1f);
+            VramPressureFactor = math.select(0f, math.saturate(usedVramBytes / vramDenominator), vramBudgetBytes > 0L);
+            RamPressureFactor = math.select(0f, math.saturate(currentReservedBytes / ramDenominator), maxSystemRamBytes > 0L);
             PressureFactor = math.max(VramPressureFactor, RamPressureFactor);
             HasSample = true;
 
@@ -298,9 +300,10 @@ namespace Hecton8.Optimization
             bool redZonePressure = LastUsedVramBytes >= ResolveRedZoneVramPressureThresholdBytes();
             float softPressureResponse = ResolveSoftPressureResponse();
             float forcedMipResponse = ResolveForcedMipResponse();
-            float mipPressureResponse = redZonePressure
-                ? 1f
-                : math.saturate(math.max(math.max(softPressureResponse, forcedMipResponse), _externalMipPressureResponse));
+            float mipPressureResponse = math.select(
+                math.saturate(math.max(math.max(softPressureResponse, forcedMipResponse), _externalMipPressureResponse)),
+                1f,
+                redZonePressure);
             long restoreMipThresholdBytes = ResolveFullResolutionRestoreThresholdBytes();
             bool allowFractionRestore = !HectonXRRuntimeState.IsXRActive;
 
@@ -323,13 +326,13 @@ namespace Hecton8.Optimization
 
         internal void SetExternalMipPressureResponse(float pressureResponse, long observedVramBytes)
         {
-            _externalMipPressureResponse = math.saturate(math.isfinite(pressureResponse) ? pressureResponse : 0f);
+            _externalMipPressureResponse = math.saturate(math.select(0f, pressureResponse, math.isfinite(pressureResponse)));
             if (observedVramBytes >= 0L)
             {
                 LastUsedVramBytes = observedVramBytes;
-                VramPressureFactor = _runtimeTotalVramBudgetBytes > 0L
-                    ? math.saturate(observedVramBytes / (float)_runtimeTotalVramBudgetBytes)
-                    : VramPressureFactor;
+                float vramDenominator = math.max((float)_runtimeTotalVramBudgetBytes, 1f);
+                float externalVramPressure = math.saturate(observedVramBytes / vramDenominator);
+                VramPressureFactor = math.select(VramPressureFactor, externalVramPressure, _runtimeTotalVramBudgetBytes > 0L);
                 PressureFactor = math.saturate(math.max(VramPressureFactor, RamPressureFactor));
             }
 
@@ -365,7 +368,7 @@ namespace Hecton8.Optimization
 
             if (shouldCollapseLods)
             {
-                float lodScalar = math.lerp(1f, LODAggressionMultiplier, redZonePressure ? 1f : math.saturate(lodPressureResponse));
+                float lodScalar = math.lerp(1f, LODAggressionMultiplier, math.select(math.saturate(lodPressureResponse), 1f, redZonePressure));
                 float targetLodBias = Mathf.Max(0.05f, _baselineLodBias * lodScalar);
                 if (!_lodAggressionActive || !Mathf.Approximately(QualitySettings.lodBias, targetLodBias))
                     QualitySettings.lodBias = targetLodBias;
@@ -425,7 +428,7 @@ namespace Hecton8.Optimization
         private static int ResolveMipLimitDelta(float mipPressureResponse, bool redZonePressure)
         {
             int pressureDelta = math.clamp((int)math.round(math.lerp(0f, 2f, math.saturate(mipPressureResponse))), 0, 2);
-            return redZonePressure ? math.max(pressureDelta, 2) : pressureDelta;
+            return math.select(pressureDelta, math.max(pressureDelta, 2), redZonePressure);
         }
 
         private float ResolveEmergencyPressureResponse()
@@ -468,11 +471,8 @@ namespace Hecton8.Optimization
 
         private static float ResolvePressureResponse(float startFraction, float pressureFactor)
         {
-            float start = math.saturate(startFraction);
+            float start = math.min(math.saturate(startFraction), 0.9999f);
             float end = 1f;
-            if (start >= end)
-                start = end - 0.0001f;
-
             return math.smoothstep(start, end, math.saturate(pressureFactor));
         }
 
@@ -486,7 +486,7 @@ namespace Hecton8.Optimization
         private static float ResolveGlobalQualityWeight()
         {
             float quality = HomeostasisBrain.GlobalQualityWeight;
-            return math.saturate(math.isfinite(quality) ? quality : 1f);
+            return math.saturate(math.select(1f, quality, math.isfinite(quality)));
         }
 
         private static int ResolveBudgetedPressureCount(int maxCount, float response)
@@ -518,9 +518,10 @@ namespace Hecton8.Optimization
                 if (redZoneVramPressure)
                     SystemDispatcher.RequestVisualStaticGlitch();
 
-                int emergencyEvictionBudget = redZoneVramPressure
-                    ? maxEmergencyEvictionsPerPass
-                    : ResolveBudgetedPressureCount(maxEmergencyEvictionsPerPass, emergencyPressureResponse);
+                int emergencyEvictionBudget = math.select(
+                    ResolveBudgetedPressureCount(maxEmergencyEvictionsPerPass, emergencyPressureResponse),
+                    maxEmergencyEvictionsPerPass,
+                    redZoneVramPressure);
 
                 if (governor != null)
                 {

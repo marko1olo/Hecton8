@@ -115,7 +115,7 @@ Use one short answer, then stop. If the person asks a concrete follow-up, answer
 | "Is there base building?" | `Base systems are part of the intended survival lane, but we will show only what the current build proves.` | Future base promises, co-op base talk. | Use `PLAN-SHOT-005` only if the failure/state is honest in build. |
 | "Looks slow/clunky." | `The target is heavy and mechanical, not weightless. Slow is a problem if it becomes tedious, so we are testing that distinction.` | "Realism", "you just do not get it." | Route feedback to movement/vehicle feel notes; use clips to prove responsiveness. |
 | "When Steam/demo?" | `Only when the page/demo can represent the game honestly. We are not putting dates on public material until the build supports them.` | Date hints, Next Fest hints, Early Access promises. | Keep date pressure out of public copy until Steam/demo gates pass. |
-| "Can I wishlist?" | `Not yet, unless the official Steam page is live and the CTA packet is approved. We only link official pages through approved routes.` | Unofficial signup pressure, fake Steam URL. | Confirm official handles, Steam URL custody, and Official CTA Link Activation Gate V0 before a CTA is used. |
+| "Can I wishlist?" | `Not yet, unless the official Steam page has passed its publication gate and that exact URL has a public CTA allow row. We only link official pages through approved routes.` | Unofficial signup pressure, fake Steam URL. | Confirm official handles, Steam URL custody, `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED`, and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` before a CTA is used. |
 
 ### Reply Cadence
 

@@ -665,3 +665,21 @@ Rejected Alternatives: Publishing invalid flags for every rejected row even when
 Scalability potential: Low/Middle/High/Ultra behavior remains continuous. Weak devices still get bounded O(8) search and shader-scaled Dear Lie cover; high/ultra can use wider med-bay radius and richer shader detail without changing authoritative state or adding CPU physics.
 Hardware Impact: Rare death path adds several scalar flag writes on corrupt rows and one hash check in validation. Cold default hydration now uses the job wrapper for eight rows; gameplay frame cost is 0 us. Low-end i3/MX350 benefit is better fault isolation without steady-state work.
 First 20 Minutes Route Impact: A corrupted mock or imported med-bay table during the first death test now leaves black-box evidence on fallback, while a valid later row keeps the user-facing respawn clean.
+
+## Decision 75 - Mock Job Wrapper Proof Correction
+
+Problem: A read-only subagent found a source/proof mismatch after Loop 69: the proof trail stated the cold mock med-bay generator used `GenerateMockRespawnPointsJob.Run(bays.Length)`, but the runtime still used a manual `for` loop calling `mockJob.Execute(i)`.
+Solution: Replace the manual cold hydration loop with `mockJob.Run(bays.Length)`. The generator remains cold setup work, not gameplay-frame scheduling, and no hot `Complete()` or additional state was introduced.
+Rejected Alternatives: Leaving the direct `Execute(i)` loop because capacity is eight; scheduling a handle and completing it during boot; changing the mock generator DTO contract. The route only needed the existing job wrapper to make the Burst-declared fallback generator proof true.
+Scalability potential: Low/Middle/High/Ultra behavior unchanged. The mock generator seeds the same bounded eight med-bay rows; visual cost still scales through continuous `GlobalQualityWeight` in the Dear Lie path.
+Hardware Impact: Hot path cost 0 us. Cold setup uses the Unity job wrapper for eight rows and removes proof drift; i3/MX350 gameplay frame cost is unchanged.
+First 20 Minutes Route Impact: The first death/rebirth fallback mock data path now matches the documented job-wrapper route instead of bypassing it with direct calls.
+
+## Decision 76 - Cold Mock Handle Drift Removal
+
+Problem: Follow-up source recheck found the cold mock hydration block had briefly moved through a scheduled-handle variant and left an orphan `DispatcherJobFence.TryComplete(ref mockHandle, forceComplete: true)` after the intended `Run` call. That would be a compile error and would also imply an unnecessary cold fence.
+Solution: Keep the block as direct cold wrapper execution only: assign `GenerateMockRespawnPointsJob` fields, call `mockJob.Run(bays.Length)`, then mark defaults initialized. No `Schedule`, no `mockHandle`, and no H8Memory active-job registration remain in this cold default hydration path.
+Rejected Alternatives: Scheduling and completing a cold job handle; registering a boot-only handle with H8Memory; keeping an unused `mockHandle` declaration. The row count is eight and the requirement is proof-aligned deterministic mock data before default hydration exits.
+Scalability potential: Low/Middle/High/Ultra behavior unchanged. The mock row set remains the same bounded fallback seed; shader presentation still scales continuously by `GlobalQualityWeight`.
+Hardware Impact: Hot path cost 0 us. Cold setup avoids a pointless scheduled-handle lifecycle and removes a compile defect. Low-end i3/MX350 gameplay cost is unchanged.
+First 20 Minutes Route Impact: The first fallback respawn cannot observe partially seeded mock rows or fail compilation from an orphan mock handle.

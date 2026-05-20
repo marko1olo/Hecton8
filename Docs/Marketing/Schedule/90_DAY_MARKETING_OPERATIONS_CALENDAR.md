@@ -167,7 +167,7 @@ Decision:
 Tasks:
 
 - send 20 high-fit creator warm emails/DMs only if assets exist, `creator_send_gate` is open, AB-009/KPI decision-read fields exist for gameplay/pressure/route-risk claims, and `send_route_class` plus `reply_consent_provenance` are ready;
-- send no keys unless a build exists;
+- send no keys from build existence alone; require official inbox custody, recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED`, exact access-log fields, disclosure, and the relevant creator/press/curator send gate;
 - log every message;
 - run first press soft pitch only if presskit exists and press `send_route_class` / `reply_consent_provenance` fields are ready;
 - monitor reply quality.

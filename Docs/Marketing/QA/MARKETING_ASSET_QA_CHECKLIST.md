@@ -133,12 +133,12 @@ Use after the first capture session from `Content/SCREENSHOT_AND_CLIP_SHOTLIST.m
 
 | Verdict | Minimum evidence | Marketing action |
 |---|---|---|
-| `KEEP_TESTING` | 3 stills score 9/12+; one still has a clear player verb; one still proves pressure/machinery; no unsupported multiplayer-scope, performance, or competitor-war implication; metadata fields are factual. | Move into Campaign 01 cold-read testing. |
-| `REVISE_SCENE` | Reject codes are concentrated in fixable issues: `TOO_DARK`, `UI_UNREADABLE`, `BAD_COMPOSITION`, or missing affordance. | Do not post. Send fix notes to capture/build owner. |
+| `KEEP_TESTING` | 3 stills score 9/12+; one still has a clear player verb; one still proves pressure/machinery; one candidate from `PLAN-SHOT-006`, `PLAN-CLIP-001`, or `PLAN-CLIP-003` has an agency/decision proof gate; no unsupported multiplayer-scope, performance, or competitor-war implication; metadata fields are factual. | Move into Campaign 01 cold-read testing. |
+| `REVISE_SCENE` | Reject codes are concentrated in fixable issues: `TOO_DARK`, `UI_UNREADABLE`, `BAD_COMPOSITION`, missing affordance, or `AGENCY_MISSING_HOLD`. | Do not post. Send fix notes to capture/build owner. |
 | `HOLD_ASSET` | Planned feature cannot be shown honestly in current build. | Keep metadata `PLANNED_CAPTURE`; do not replace with concept art. |
 | `KILL_ANGLE` | Repeated `GENERIC_VISUAL`, `DERIVATIVE_COMPETITOR_READ`, `CONCEPT_NOT_GAMEPLAY`, or `NO_PLAYER_VERB` after three attempts. | Remove the angle from first pack and choose a smaller proof. |
 
-Session cannot advance if any required metadata field would be guessed: build/source, QA score, creator utility score, pain proof score, pain freshness source/date, public comparison gate, agency decision proof gate, agency decision notes, or reject code.
+Session cannot advance if any required metadata or handoff field would be guessed: file path, build/source, QA score, creator rows unlocked, creator utility score, creator send gate, pain proof score, pain freshness source/date, public comparison gate, agency decision proof gate, agency decision notes, `capture_handoff_packet_id`, `capture_verdict`, `viewer_named_decision`, `capture_next_actions`, or reject code.
 
 ## Clip QA
 
@@ -207,7 +207,7 @@ Forbidden:
 - cinematic-only montage;
 - feature list not backed by footage;
 - multiplayer-scope implication;
-- wishlist or "coming soon" CTA without official Steam page and CTA activation proof.
+- wishlist or "coming soon" CTA without `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED` and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`.
 
 ## Post QA
 
@@ -216,7 +216,7 @@ Every public post needs:
 - `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED` for the exact post;
 - one hook;
 - one asset;
-- one approved CTA or one discussion question; no external link if `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` has not passed;
+- one gated CTA or one discussion question; no external link if the exact destination gate and `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` have not passed;
 - platform-native format;
 - no repeated copy across communities;
 - no fake "found this game" framing;
@@ -228,7 +228,7 @@ Before posting:
 
 - read subreddit rules the same day;
 - check if self-promo is allowed;
-- remove tracking links unless rules allow them;
+- remove tracking links unless same-day platform/community rules permit them and the exact destination has `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`;
 - disclose developer status;
 - make the post useful without requiring a click;
 - do not post the same asset to multiple subs in one wave;
@@ -264,7 +264,7 @@ Press kit must include:
 - logo/key art;
 - trailer link or placeholder date;
 - contact email;
-- Steam link only after Official CTA Link Activation Gate V0;
+- Steam link only after `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED` and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`;
 - disclosure of Early Access/pre-alpha state if relevant;
 - no fake awards, quotes, or metrics.
 
@@ -307,6 +307,10 @@ Pain freshness checked at:
 Public comparison gate:
 Agency decision proof gate:
 Agency decision notes:
+Capture handoff packet ID:
+Capture verdict:
+Viewer-named decision:
+Capture next actions:
 Multiplayer-scope implication checked:
 Performance claim checked:
 Competitor copy checked:

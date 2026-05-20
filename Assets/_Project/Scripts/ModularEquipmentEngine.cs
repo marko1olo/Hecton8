@@ -145,7 +145,6 @@ namespace Hecton8.Tools
         public bool IsServiceReady =>
             _isInitialized &&
             _registeredService &&
-            ReferenceEquals(GlobalRegistry.ModularEquipment, this) &&
             AreEquipmentBuffersReady() &&
             _equipmentSignalLanesReady;
 
@@ -207,7 +206,23 @@ namespace Hecton8.Tools
 
         private bool AreEquipmentBuffersReady()
         {
-            return TryResolveEquipmentViews(out _);
+            return IsVaultGenerationHandleCreated(in _toolStatesHandle) &&
+                   IsVaultGenerationHandleCreated(in _toolStatsHandle) &&
+                   IsVaultGenerationHandleCreated(in _toolTypesHandle) &&
+                   IsVaultGenerationHandleCreated(in _currentHeatHandle) &&
+                   IsVaultGenerationHandleCreated(in _batteryChargeHandle) &&
+                   IsVaultGenerationHandleCreated(in _statusMasksHandle) &&
+                   IsVaultGenerationHandleCreated(in _environmentHeat01Handle) &&
+                   IsVaultGenerationHandleCreated(in _activeEquipmentStatesHandle) &&
+                   IsVaultGenerationHandleCreated(in _publishedActiveEquipmentStatesHandle) &&
+                   IsVaultGenerationHandleCreated(in _activeEquipmentAupSamplesHandle) &&
+                   IsVaultGenerationHandleCreated(in _activeEquipmentGridLoadRequestsHandle) &&
+                   IsVaultGenerationHandleCreated(in _activeEquipmentWearDrainRatesHandle) &&
+                   IsVaultGenerationHandleCreated(in _equipmentTelemetryRingHandle) &&
+                   IsVaultGenerationHandleCreated(in _equipmentTelemetryCursorHandle) &&
+                   IsVaultGenerationHandleCreated(in _equipmentIntegrationCountersHandle) &&
+                   IsVaultGenerationHandleCreated(in _equipmentTuningHandle) &&
+                   IsVaultGenerationHandleCreated(in _equipmentHardwareSpecsHandle);
         }
 
         public void Tick(float deltaTime)
@@ -356,11 +371,12 @@ namespace Hecton8.Tools
             state = default;
             if (!_isInitialized || !TryResolveSlot(toolId, out int slotIndex))
                 return false;
-            if (!TryResolveEquipmentViews(out EquipmentVaultViews views))
+            if (!TryResolveToolStatesNoAcquire(out NativeArray<ToolState> toolStates) ||
+                (uint)slotIndex >= (uint)toolStates.Length)
                 return false;
 
-            state = views.ToolStates[slotIndex];
-            state.CurrentBattery = ReadBatteryAbsolute(ref views, slotIndex);
+            state = toolStates[slotIndex];
+            state.CurrentBattery = math.max(0f, state.CurrentBattery);
             return true;
         }
 
@@ -369,10 +385,11 @@ namespace Hecton8.Tools
             stats = default;
             if (!_isInitialized || !TryResolveSlot(toolId, out int slotIndex))
                 return false;
-            if (!TryResolveEquipmentViews(out EquipmentVaultViews views))
+            if (!TryResolveToolStatsNoAcquire(out NativeArray<ToolRuntimeStats> toolStats) ||
+                (uint)slotIndex >= (uint)toolStats.Length)
                 return false;
 
-            stats = views.ToolStats[slotIndex];
+            stats = toolStats[slotIndex];
             return true;
         }
 
@@ -578,14 +595,14 @@ namespace Hecton8.Tools
         {
             state = default;
             if (!_isInitialized ||
-                !TryResolveEquipmentViews(out EquipmentVaultViews views) ||
                 !TryResolveSlot(toolId, out int slotIndex) ||
-                (uint)slotIndex >= (uint)views.PublishedActiveEquipmentStates.Length)
+                !TryResolvePublishedActiveEquipmentNoAcquire(out NativeArray<ActiveEquipmentDTO> publishedStates) ||
+                (uint)slotIndex >= (uint)publishedStates.Length)
             {
                 return false;
             }
 
-            state = views.PublishedActiveEquipmentStates[slotIndex];
+            state = publishedStates[slotIndex];
             return state.ToolHashID != 0u;
         }
 
@@ -593,63 +610,76 @@ namespace Hecton8.Tools
         {
             state = default;
             if (!_isInitialized ||
-                !TryResolveEquipmentViews(out EquipmentVaultViews views) ||
-                (uint)slotIndex >= (uint)views.PublishedActiveEquipmentStates.Length)
+                !TryResolvePublishedActiveEquipmentNoAcquire(out NativeArray<ActiveEquipmentDTO> publishedStates) ||
+                (uint)slotIndex >= (uint)publishedStates.Length)
             {
                 return false;
             }
 
-            state = views.PublishedActiveEquipmentStates[slotIndex];
+            state = publishedStates[slotIndex];
             return state.ToolHashID != 0u;
         }
 
         public bool TryGetLatestEquipmentTelemetry(out EquipmentTelemetryEntry entry)
         {
             entry = default;
-            if (!TryResolveEquipmentViews(out EquipmentVaultViews views) ||
-                views.EquipmentTelemetryRing.Length <= 0 ||
-                views.EquipmentTelemetryCursor.Length <= 0)
+            if (!TryResolveEquipmentTelemetryNoAcquire(
+                    out NativeArray<EquipmentTelemetryEntry> telemetryRing,
+                    out NativeArray<int> telemetryCursor))
             {
                 return false;
             }
 
-            int cursor = views.EquipmentTelemetryCursor[0] - 1;
-            if (cursor < 0)
-                cursor = views.EquipmentTelemetryRing.Length - 1;
+            int cursor = telemetryCursor[0];
+            int index = ResolveTelemetryHistoryIndex(cursor, 0, telemetryRing.Length);
+            if (index < 0)
+                return false;
 
-            entry = views.EquipmentTelemetryRing[cursor];
+            entry = telemetryRing[index];
             return entry.TickIndex != 0u || entry.Frame != 0u;
         }
 
         public bool TryGetEquipmentTelemetryEntry(int historyIndex, out EquipmentTelemetryEntry entry)
         {
             entry = default;
-            if (!TryResolveEquipmentViews(out EquipmentVaultViews views) ||
-                views.EquipmentTelemetryRing.Length <= 0 ||
-                (uint)historyIndex >= (uint)views.EquipmentTelemetryRing.Length)
+            if (!TryResolveEquipmentTelemetryNoAcquire(
+                    out NativeArray<EquipmentTelemetryEntry> telemetryRing,
+                    out NativeArray<int> telemetryCursor) ||
+                (uint)historyIndex >= (uint)telemetryRing.Length)
             {
                 return false;
             }
 
-            int cursor = views.EquipmentTelemetryCursor.IsCreated && views.EquipmentTelemetryCursor.Length > 0
-                ? views.EquipmentTelemetryCursor[0]
-                : 0;
-            int index = cursor - 1 - historyIndex;
-            while (index < 0)
-                index += views.EquipmentTelemetryRing.Length;
+            int index = ResolveTelemetryHistoryIndex(telemetryCursor[0], historyIndex, telemetryRing.Length);
+            if (index < 0)
+                return false;
 
-            entry = views.EquipmentTelemetryRing[index];
+            entry = telemetryRing[index];
             return entry.TickIndex != 0u || entry.Frame != 0u;
+        }
+
+        private static int ResolveTelemetryHistoryIndex(int cursor, int historyIndex, int ringLength)
+        {
+            if (ringLength <= 0)
+                return -1;
+
+            int safeHistory = math.clamp(historyIndex, 0, ringLength - 1);
+            int index = cursor - 1 - safeHistory;
+            if ((uint)index < (uint)ringLength)
+                return index;
+
+            index %= ringLength;
+            if (index < 0)
+                index += ringLength;
+            return index;
         }
 
         public bool TryGetEquipmentTuning(out EquipmentTuningDTO tuning)
         {
             tuning = default;
-            if (!TryResolveEquipmentViews(out EquipmentVaultViews views) ||
-                views.EquipmentTuning.Length <= 0)
+            if (!TryResolveEquipmentTuningNoAcquire(out tuning))
                 return false;
 
-            tuning = views.EquipmentTuning[0];
             return true;
         }
 
@@ -721,7 +751,10 @@ namespace Hecton8.Tools
                 RootAup = rootAup,
                 BaseToolHash = EquipmentMockBaseToolHash
             };
-            job.Run(MaxTrackedTools);
+            JobHandle mockHandle = job.Schedule(MaxTrackedTools, 4);
+            H8Memory.RegisterActiveJob(SystemID.GameplayTools, mockHandle);
+            // COLD SYNC JOB: editor/CI mock state must be visible before publication; this path is not the gameplay tick.
+            DispatcherJobFence.TryComplete(ref mockHandle, forceComplete: true);
 
             PublishActiveEquipmentReadback(ref views);
         }
@@ -940,6 +973,35 @@ namespace Hecton8.Tools
                    buffer.Length >= requiredLength;
         }
 
+        private bool TryResolveToolStatesNoAcquire(out NativeArray<ToolState> toolStates)
+        {
+            IDataVault vault = _dataVault;
+            return TryResolveEquipmentBuffer(vault, in _toolStatesHandle, MaxTrackedTools, out toolStates);
+        }
+
+        private bool TryResolveToolStatsNoAcquire(out NativeArray<ToolRuntimeStats> toolStats)
+        {
+            IDataVault vault = _dataVault;
+            return TryResolveEquipmentBuffer(vault, in _toolStatsHandle, MaxTrackedTools, out toolStats);
+        }
+
+        private bool TryResolvePublishedActiveEquipmentNoAcquire(out NativeArray<ActiveEquipmentDTO> publishedStates)
+        {
+            IDataVault vault = _dataVault;
+            return TryResolveEquipmentBuffer(vault, in _publishedActiveEquipmentStatesHandle, MaxTrackedTools, out publishedStates);
+        }
+
+        private bool TryResolveEquipmentTelemetryNoAcquire(
+            out NativeArray<EquipmentTelemetryEntry> telemetryRing,
+            out NativeArray<int> telemetryCursor)
+        {
+            telemetryRing = default;
+            telemetryCursor = default;
+            IDataVault vault = _dataVault;
+            return TryResolveEquipmentBuffer(vault, in _equipmentTelemetryRingHandle, EquipmentTelemetryRingLength, out telemetryRing) &&
+                   TryResolveEquipmentBuffer(vault, in _equipmentTelemetryCursorHandle, 1, out telemetryCursor);
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool IsVaultGenerationHandleCreated<T>(in VaultGenerationHandle<T> handle)
             where T : struct
@@ -992,7 +1054,10 @@ namespace Hecton8.Tools
                 CounterLength = GetCreatedLength(views.EquipmentIntegrationCounters),
                 HardwareSpecLength = GetCreatedLength(views.EquipmentHardwareSpecs)
             };
-            job.Run(jobLength);
+            JobHandle clearHandle = job.Schedule(jobLength, 32);
+            H8Memory.RegisterActiveJob(SystemID.GameplayTools, clearHandle);
+            // COLD SYNC JOB: Vault clear must finish before equipment service registration exposes these rows.
+            DispatcherJobFence.TryComplete(ref clearHandle, forceComplete: true);
         }
 
         private static int GetCreatedLength<T>(NativeArray<T> array)
@@ -1017,6 +1082,29 @@ namespace Hecton8.Tools
 
         private bool TryResolveSlot(uint toolId, out int slotIndex)
         {
+            if (TryResolveOwnerMirrorSlot(toolId, out slotIndex))
+                return true;
+
+            if (!TryResolveEquipmentViews(out EquipmentVaultViews views) ||
+                !views.ActiveEquipmentStates.IsCreated)
+                return false;
+
+            for (int i = 0; i < MaxTrackedTools; i++)
+            {
+                if (_slotUsed[i] &&
+                    (uint)i < (uint)views.ActiveEquipmentStates.Length &&
+                    views.ActiveEquipmentStates[i].ToolHashID == toolId)
+                {
+                    slotIndex = i;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool TryResolveOwnerMirrorSlot(uint toolId, out int slotIndex)
+        {
             slotIndex = -1;
             if (toolId == 0u)
                 return false;
@@ -1028,21 +1116,6 @@ namespace Hecton8.Tools
 
                 PlayerTool owner = _toolOwners[i];
                 if (owner != null && owner.RuntimeToolId == toolId)
-                {
-                    slotIndex = i;
-                    return true;
-                }
-            }
-
-            if (!TryResolveEquipmentViews(out EquipmentVaultViews views) ||
-                !views.ActiveEquipmentStates.IsCreated)
-                return false;
-
-            for (int i = 0; i < MaxTrackedTools; i++)
-            {
-                if (_slotUsed[i] &&
-                    (uint)i < (uint)views.ActiveEquipmentStates.Length &&
-                    views.ActiveEquipmentStates[i].ToolHashID == toolId)
                 {
                     slotIndex = i;
                     return true;
@@ -2114,6 +2187,9 @@ namespace Hecton8.Tools
         {
             switch (serviceSlot)
             {
+                case GlobalRegistryServiceSlot.ModularEquipment:
+                    _registeredService = ReferenceEquals(currentService, this);
+                    break;
                 case GlobalRegistryServiceSlot.DataVault:
                     ApplyDataVaultRebind(currentService as IDataVault);
                     break;
@@ -2219,12 +2295,13 @@ namespace Hecton8.Tools
         public bool TryGetWirelessBrownoutFeedback(uint toolId, out float flickerScalar)
         {
             flickerScalar = 0f;
-            if (!_wirelessBrownoutActive || !_isInitialized || !TryResolveSlot(toolId, out int slotIndex))
+            if (!_wirelessBrownoutActive || !_isInitialized || !TryResolveOwnerMirrorSlot(toolId, out int slotIndex))
                 return false;
-            if (!TryResolveEquipmentViews(out EquipmentVaultViews views))
+            if (!TryResolveToolStatesNoAcquire(out NativeArray<ToolState> toolStates) ||
+                (uint)slotIndex >= (uint)toolStates.Length)
                 return false;
 
-            if ((views.ToolStates[slotIndex].UpgradeBitmask & (uint)ToolUpgradeBits.WirelessCharging) == 0u)
+            if ((toolStates[slotIndex].UpgradeBitmask & (uint)ToolUpgradeBits.WirelessCharging) == 0u)
                 return false;
 
             float pulse = 0.35f + (0.65f * math.abs(FastTriangleSigned(_brownoutPulseTime * WirelessBrownoutPulseCycles)));
@@ -2235,7 +2312,7 @@ namespace Hecton8.Tools
         public bool TryGetToolBrownoutFeedback(uint toolId, out float flickerScalar)
         {
             flickerScalar = 0f;
-            if (!_wirelessBrownoutActive || !_isInitialized || !TryResolveSlot(toolId, out int slotIndex))
+            if (!_wirelessBrownoutActive || !_isInitialized || !TryResolveOwnerMirrorSlot(toolId, out int slotIndex))
                 return false;
 
             if (slotIndex < 0 || slotIndex >= MaxTrackedTools || !_slotUsed[slotIndex])

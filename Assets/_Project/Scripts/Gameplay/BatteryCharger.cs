@@ -3,10 +3,10 @@
 // Wall-mounted device to recharge tool batteries.
 //
 // ARCHITECTURE:
-//   • ISlowTickable for coarse charging logic (no frame polling)
+//   • Passive ChargerLinkDTO registration for the Burst logistics kernel
 //   • IPowerComponent integration for power grid awareness
 //   • Slot system with per-slot charge tracking
-//   • Zero GC in hot paths: MaterialPropertyBlock, cached arrays
+//   • Zero GC in hot paths: DTO registration, cached arrays
 //
 // INTEGRATION:
 //   • IPowerComponent.HasPower — checked before charging
@@ -54,7 +54,7 @@ namespace Hecton8.Gameplay
 
     /// <summary>
     /// Wall-mounted battery charger for tool batteries.
-    /// Implements ISlowTickable for coarse charging logic.
+    /// Registers passive DTO links for the charger logistics kernel.
     /// Integrates with IPowerComponent for power grid awareness.
     /// Implements IInteractable for player interaction.
     /// </summary>
@@ -62,8 +62,6 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton/Gameplay/Battery Charger")]
     public sealed class BatteryCharger : MonoBehaviour, IPowerComponent, IInteractable, ILocalizationLanguageChangedListener
     {
-        private const float SlowTickDeltaSeconds = 0.5f;
-
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -341,7 +339,7 @@ namespace Hecton8.Gameplay
                 return false;
 
             float previousCharge = slots != null && slotIndex >= 0 && slotIndex < slots.Length && slots[slotIndex] != null
-                ? slots[slotIndex].currentCharge
+                ? GetChargeProgress(slotIndex)
                 : 0f;
             ItemData battery = RemoveBattery(slotIndex);
             if (battery == null)
@@ -401,7 +399,7 @@ namespace Hecton8.Gameplay
 
             for (int i = 0; i < slots.Length; i++)
             {
-                if (slots[i].batteryItem != null && slots[i].IsFullyCharged)
+                if (slots[i].batteryItem != null && GetChargeProgress(i) >= 0.999f)
                     return i;
             }
 
@@ -415,17 +413,10 @@ namespace Hecton8.Gameplay
         private bool _hasPower = true;
         private bool _registered;
         private bool _isCharging;
-        private int _emissionPropertyId;
         private PowerNode _powerNode;
 
         // Cached for zero GC
         private Transform _cachedTransform;
-        private MaterialPropertyBlock _mpb;
-        private static readonly int _EmissionColorID = Shader.PropertyToID("_EmissionColor");
-
-        // Track which slots were fully charged (to avoid repeated events)
-        private bool[] _slotChargedFlags;
-        private int[] _registeredLinkIndices;
 
         // ══════════════════════════════════════════════════════════
         //  IPowerComponent IMPLEMENTATION
@@ -463,18 +454,11 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             _cachedTransform = transform;
-            _emissionPropertyId = Shader.PropertyToID(string.IsNullOrEmpty(emissionProperty) ? "_EmissionColor" : emissionProperty);
-            _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — per-renderer props — owner: BatteryCharger
             _powerNode = powerNodeReference as PowerNode;
             if (_powerNode == null && !TryGetComponent(out _powerNode))
                 _powerNode = null;
 
-            // Initialize slot charge flags
-            int slotCount = slots?.Length ?? 0;
-            _slotChargedFlags = new bool[slotCount]; // COLD ALLOC: bool[slotCount] — track charged state — owner: BatteryCharger
-            _registeredLinkIndices = new int[slotCount]; // COLD ALLOC: int[slotCount] - SHINOBU_230 DTO link handles
-            for (int i = 0; i < _registeredLinkIndices.Length; i++)
-                _registeredLinkIndices[i] = -1;
+            PreserveColdInspectorCompatibility();
         }
 
         private void OnEnable()
@@ -519,67 +503,15 @@ namespace Hecton8.Gameplay
         }
 
         // ══════════════════════════════════════════════════════════
-        //  ISlowTickable — CHARGING LOGIC
+        //  LEGACY ENTRYPOINT - CHARGING DISABLED HERE
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// ISlowTickable implementation. Handles charging logic on the coarse grid cadence.
-        /// Zero GC: no allocations, uses cached arrays.
+        /// Legacy entrypoint retained for serialized call-sites. Charging is handled by BatteryChargerLogisticsRuntime.
         /// </summary>
         public void SlowTick()
         {
-            if (!_hasPower)
-            {
-                SetChargingState(false);
-                return;
-            }
-
-            if (slots == null)
-            {
-                SetChargingState(false);
-                return;
-            }
-
-            int slotCount = slots.Length;
-            bool anyCharging = false;
-
-            for (int i = 0; i < slotCount; i++)
-            {
-                ref BatterySlot slot = ref slots[i];
-                if (slot == null)
-                    continue;
-
-                // Skip empty or fully charged slots
-                if (slot.batteryItem == null || slot.IsFullyCharged)
-                    continue;
-
-                anyCharging = true;
-
-                // Charge the battery
-                float chargeDelta = chargeRate * SlowTickDeltaSeconds;
-                slot.currentCharge = math.saturate(slot.currentCharge + (chargeDelta / math.max(slot.maxCharge, 0.001f)));
-
-                // Fire progress event
-                OnChargeProgress?.Invoke(i, slot.currentCharge);
-
-                // Update indicator
-                UpdateSlotIndicator(i);
-
-                // Check if just became fully charged
-                if (slot.IsFullyCharged && _slotChargedFlags != null && i < _slotChargedFlags.Length && !_slotChargedFlags[i])
-                {
-                    _slotChargedFlags[i] = true;
-                    OnChargeComplete?.Invoke(i);
-
-                    // Play charge complete sound
-                    if (chargeCompleteSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
-                    {
-                        audio.PlayAtPoint(chargeCompleteSound, _cachedTransform.position);
-                    }
-                }
-            }
-
-            SetChargingState(anyCharging);
+            SetChargingState(false);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -603,8 +535,7 @@ namespace Hecton8.Gameplay
 
             slots[slotIndex].batteryItem = battery;
             slots[slotIndex].currentCharge = currentCharge;
-            if (_slotChargedFlags != null && slotIndex < _slotChargedFlags.Length)
-                _slotChargedFlags[slotIndex] = currentCharge >= 1f;
+            WriteInventorySlotState(slotIndex, battery, currentCharge);
 
             // Play insert sound
             if (insertSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
@@ -632,8 +563,7 @@ namespace Hecton8.Gameplay
             ItemData battery = slots[slotIndex].batteryItem;
             slots[slotIndex].batteryItem = null;
             slots[slotIndex].currentCharge = 0f;
-            if (_slotChargedFlags != null && slotIndex < _slotChargedFlags.Length)
-                _slotChargedFlags[slotIndex] = false;
+            WriteInventorySlotState(slotIndex, null, 0f);
 
             if (battery != null)
             {
@@ -655,6 +585,13 @@ namespace Hecton8.Gameplay
             if (slots == null || slotIndex < 0 || slotIndex >= slots.Length)
                 return 0f;
 
+            uint inventorySlot = ResolveSlotInventoryIndex(slotIndex);
+            if (BatteryChargerLogisticsRuntime.TryReadCharge01(inventorySlot, out float vaultCharge))
+            {
+                slots[slotIndex].currentCharge = vaultCharge;
+                return vaultCharge;
+            }
+
             return slots[slotIndex].currentCharge;
         }
 
@@ -675,53 +612,97 @@ namespace Hecton8.Gameplay
         //  VISUALS
         // ══════════════════════════════════════════════════════════
 
+        private bool RegisterLogisticsLinks()
+        {
+            if (!registerLogisticsLinks || slots == null)
+                return false;
+
+            bool anyRegistered = false;
+            double3 chargerAup = ResolveChargerAup();
+            for (int i = 0; i < slots.Length; i++)
+            {
+                BatterySlot slot = slots[i];
+                float maxCharge = slot != null ? math.max(0.001f, slot.maxCharge) : 100f;
+                float normalizedRate = math.max(0f, chargeRate) / maxCharge;
+                if (BatteryChargerLogisticsRuntime.TryRegisterChargerLink(
+                        ResolveSlotInventoryIndex(i),
+                        ResolvePowerNodeIndex(i),
+                        normalizedRate,
+                        logisticsEfficiencyScalar,
+                        chargerAup,
+                        out _))
+                {
+                    anyRegistered = true;
+                }
+
+                if (slot != null)
+                    WriteInventorySlotState(i, slot.batteryItem, slot.currentCharge);
+            }
+
+            return anyRegistered;
+        }
+
+        private void UnregisterLogisticsLinks()
+        {
+            int slotCount = slots?.Length ?? 0;
+            if (slotCount > 0)
+                BatteryChargerLogisticsRuntime.TryUnregisterChargerLinks(inventorySlotStartIndex, slotCount, powerGraphNodeIndex);
+        }
+
+        private void WriteInventorySlotState(int slotIndex, ItemData battery, float charge01)
+        {
+            uint itemHash = ComputeItemHash(battery);
+            BatteryChargerLogisticsRuntime.TryWriteInventorySlotState(ResolveSlotInventoryIndex(slotIndex), itemHash, charge01);
+        }
+
+        private uint ResolveSlotInventoryIndex(int slotIndex)
+        {
+            return inventorySlotStartIndex + (uint)math.max(0, slotIndex);
+        }
+
+        private uint ResolvePowerNodeIndex(int slotIndex)
+        {
+            return powerGraphNodeIndex;
+        }
+
+        private double3 ResolveChargerAup()
+        {
+            Vector3 position = _cachedTransform != null ? _cachedTransform.position : transform.position;
+            return HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(position);
+        }
+
+        private static uint ComputeItemHash(ItemData item)
+        {
+            if (item == null)
+                return 0u;
+
+            string key = !string.IsNullOrEmpty(item.PersistentId) ? item.PersistentId : item.itemName;
+            return string.IsNullOrEmpty(key) ? 1u : unchecked((uint)Hecton.Localization.LocHash.Compute(key));
+        }
+
         private void UpdateAllIndicators()
         {
-            if (slotIndicators == null)
-                return;
-
-            int indicatorCount = slotIndicators.Length;
-            for (int i = 0; i < indicatorCount; i++)
-            {
-                UpdateSlotIndicator(i);
-            }
         }
 
         /// <summary>
-        /// Updates the indicator light for a slot.
-        /// Zero GC: uses cached MaterialPropertyBlock.
+        /// Legacy renderer indicators are disabled. LED state is GPU-driven from ChargerVisualStateDTO.
         /// </summary>
         private void UpdateSlotIndicator(int slotIndex)
         {
-            if (slotIndicators == null || slotIndex < 0 || slotIndex >= slotIndicators.Length)
-                return;
+        }
 
-            Renderer indicator = slotIndicators[slotIndex];
-            if (indicator == null)
-                return;
-
-            Color indicatorColor;
-
-            if (!_hasPower)
-            {
-                indicatorColor = noPowerColor;
-            }
-            else if (slots == null || slotIndex >= slots.Length || slots[slotIndex].batteryItem == null)
-            {
-                indicatorColor = Color.black; // No battery
-            }
-            else if (slots[slotIndex].IsFullyCharged)
-            {
-                indicatorColor = chargedColor;
-            }
-            else
-            {
-                indicatorColor = chargingColor;
-            }
-
-            indicator.GetPropertyBlock(_mpb);
-            _mpb.SetColor(_emissionPropertyId != 0 ? _emissionPropertyId : _EmissionColorID, indicatorColor);
-            indicator.SetPropertyBlock(_mpb);
+        private void PreserveColdInspectorCompatibility()
+        {
+            // Serialized fields stay on the prefab for editor migration; runtime LEDs are GPU-buffer driven.
+            _ = powerConsumption;
+            _ = slotIndicators;
+            _ = emissionProperty;
+            _ = chargingColor;
+            _ = chargedColor;
+            _ = noPowerColor;
+            _ = chargeCompleteSound;
+            _ = OnChargeProgress;
+            _ = OnChargeComplete;
         }
 
         private void RefreshChargingDemand()

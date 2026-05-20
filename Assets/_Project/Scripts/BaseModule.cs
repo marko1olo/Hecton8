@@ -2332,10 +2332,16 @@ namespace Hecton8.Gameplay
                 return;
 
             Vector3 modulePosition = transform.position;
+            if (!TryResolveAupFromRuntimeOrigin(modulePosition, out AbsoluteUniversePosition targetAup) ||
+                !TryResolveAupFromRuntimeOrigin(modulePosition + Vector3.up, out AbsoluteUniversePosition rayOriginAup))
+            {
+                return;
+            }
+
             DeconstructRequestSignal request = new DeconstructRequestSignal
             {
-                TargetAup = AbsoluteUniversePosition.FromRuntimePosition(modulePosition),
-                RayOriginAup = AbsoluteUniversePosition.FromRuntimePosition(modulePosition + Vector3.up),
+                TargetAup = targetAup,
+                RayOriginAup = rayOriginAup,
                 TargetEntityId = unchecked((uint)EntityId.ToULong(gameObject.GetEntityId())),
                 RequesterEntityId = 0u,
                 MaxDistance = 0f,
@@ -2559,8 +2565,12 @@ namespace Hecton8.Gameplay
             Vector3 moduleProbePosition = ResolveAtmosphereRoomProbeWorldPosition();
             if (radius > AupRadiusLogicThresholdMeters && radius < 250000f)
             {
-                AbsoluteUniversePosition moduleAup = AbsoluteUniversePosition.FromRuntimePosition(moduleProbePosition);
-                AbsoluteUniversePosition pulseAup = AbsoluteUniversePosition.FromRuntimePosition(pulseEvent.RuntimePosition);
+                if (!TryResolveAupFromRuntimeOrigin(moduleProbePosition, out AbsoluteUniversePosition moduleAup) ||
+                    !TryResolveAupFromRuntimeOrigin(pulseEvent.RuntimePosition, out AbsoluteUniversePosition pulseAup))
+                {
+                    return;
+                }
+
                 if (AbsoluteUniversePosition.DistanceSq(in moduleAup, in pulseAup) > (double)radiusSq)
                     return;
             }
@@ -3910,9 +3920,13 @@ namespace Hecton8.Gameplay
         private float ResolveExternalDepthMetersAup(float seaLevelRuntimeY)
         {
             Vector3 moduleRuntimePosition = ResolveAtmosphereRoomProbeWorldPosition();
-            AbsoluteUniversePosition moduleAup = AbsoluteUniversePosition.FromRuntimePosition(moduleRuntimePosition);
+            if (!TryResolveAupFromRuntimeOrigin(moduleRuntimePosition, out AbsoluteUniversePosition moduleAup))
+                return 0f;
+
             moduleRuntimePosition.y = seaLevelRuntimeY;
-            AbsoluteUniversePosition seaLevelAup = AbsoluteUniversePosition.FromRuntimePosition(moduleRuntimePosition);
+            if (!TryResolveAupFromRuntimeOrigin(moduleRuntimePosition, out AbsoluteUniversePosition seaLevelAup))
+                return 0f;
+
             double depthMeters = AbsoluteUniversePosition.DeltaMetersClamped(in seaLevelAup, in moduleAup).y;
             if (!math.isfinite(depthMeters) || depthMeters <= 0d)
                 return 0f;
@@ -4016,6 +4030,19 @@ namespace Hecton8.Gameplay
         private static bool IsFiniteVector(Vector3 value)
         {
             return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition aup)
+        {
+            aup = default;
+            if (!IsFiniteVector(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            aup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return math.all(math.isfinite(aup.ToAbsoluteDouble3()));
         }
 
         private static float Clamp01Finite(float value, float fallback)
@@ -4211,7 +4238,9 @@ namespace Hecton8.Gameplay
             if (!IsFiniteVector(center))
                 return;
 
-            AbsoluteUniversePosition centerAup = AbsoluteUniversePosition.FromRuntimePosition(center);
+            if (!TryResolveAupFromRuntimeOrigin(center, out AbsoluteUniversePosition centerAup))
+                return;
+
             uint frame = (uint)math.max(0, Time.frameCount);
             if (playerInside)
             {
@@ -4433,8 +4462,14 @@ namespace Hecton8.Gameplay
             Vector3 handCenter = runtimeHitPoint + up * RepairHandVerticalBiasMeters;
             Vector3 leftRuntime = handCenter - right * RepairHandHalfSpanMeters;
             Vector3 rightRuntime = handCenter + right * RepairHandHalfSpanMeters;
-            leftHandAup = AbsoluteUniversePosition.FromRuntimePosition(leftRuntime);
-            rightHandAup = AbsoluteUniversePosition.FromRuntimePosition(rightRuntime);
+            if (!TryResolveAupFromRuntimeOrigin(leftRuntime, out leftHandAup) ||
+                !TryResolveAupFromRuntimeOrigin(rightRuntime, out rightHandAup))
+            {
+                leftHandAup = default;
+                rightHandAup = default;
+                return false;
+            }
+
             toolRotation = Quaternion.LookRotation(forward, up);
             return IsFiniteQuaternion(toolRotation);
         }
@@ -4467,9 +4502,12 @@ namespace Hecton8.Gameplay
             Vector3 surfaceNormal = IsFiniteVector(probe.HitNormal) && probe.HitNormal.sqrMagnitude > 0.000001f
                 ? probe.HitNormal
                 : toolRotation * Vector3.forward;
+            if (!TryResolveAupFromRuntimeOrigin(runtimeAnchor, out AbsoluteUniversePosition anchorAup))
+                return false;
+
             snapPoint = new Hecton8.Interaction.KinematicRepairSnapPoint
             {
-                AnchorAup = AbsoluteUniversePosition.FromRuntimePosition(runtimeAnchor),
+                AnchorAup = anchorAup,
                 LeftHandAup = leftHandAup,
                 RightHandAup = rightHandAup,
                 RuntimePosition = runtimeAnchor,

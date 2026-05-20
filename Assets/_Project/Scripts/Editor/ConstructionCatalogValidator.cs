@@ -101,12 +101,6 @@ namespace Hecton8.EditorTools
             RegisterAlias(identityAliases, persistentId, data, path, ref errorCount);
             RegisterAlias(identityAliases, data.name, data, path, ref errorCount);
 
-            if (data.ghostPrefab == null)
-            {
-                Debug.LogError($"[ConstructionValidation] Missing ghostPrefab: {path}", data);
-                errorCount++;
-            }
-
             if (data.finalPrefab == null)
             {
                 Debug.LogError($"[ConstructionValidation] Missing finalPrefab: {path}", data);

@@ -147,6 +147,24 @@ Ultra: add visual overkill consumers only in `VISUAL_SYNC`; never increase gamep
 
 ---
 
+## 7B. Publish Purity And Context Ownership
+
+[RULE] Signal publication happens from named owner phases. Consumers read
+snapshots; they do not trigger owner sync work by calling getters.
+[RULE] Runtime context owners publish once per frame/phase and expose immutable
+snapshots or cached owner interfaces for consumers.
+[RULE] A route that needs request/response uses an owner interface or command
+queue, not a broadcast lane.
+
+[FORBID] Hiding `SignalBus<T>.Push`, `GlobalSignals.Publish`, or
+`HectonEventBus.Publish` inside `Get*`, `TryGet*`, `Resolve*`, or `Read*`
+methods.
+[FORBID] Creating a signal lane to serve one private caller.
+[FORBID] Publishing from a consumer-side context getter to refresh state for
+that same consumer.
+
+---
+
 ## 8. Legacy GlobalSignals Migration
 
 [RULE] `GlobalSignals` direct `NativeQueue<T>` surfaces are legacy or bridge infrastructure unless a current owner contract says otherwise.

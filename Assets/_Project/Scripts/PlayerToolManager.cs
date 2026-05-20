@@ -73,9 +73,6 @@ namespace Hecton8.Gameplay
         [SerializeField] private bool warmupAssignedToolPoolsOnEnable = true;
         [Tooltip("ÐœÐ¸Ð½Ð¸Ð¼Ð°Ð»ÑŒÐ½Ñ‹Ð¹ Ñ€ÐµÐ·ÐµÑ€Ð² ÑÐºÐ·ÐµÐ¼Ð¿Ð»ÑÑ€Ð¾Ð² Ð² pool Ð´Ð»Ñ ÐºÐ°Ð¶Ð´Ð¾Ð³Ð¾ assigned held-tool prefab.")]
         [SerializeField] private int toolPoolWarmupCount = 1;
-        [Tooltip("ÐœÐ¸Ð½Ð¸Ð¼Ð°Ð»ÑŒÐ½Ñ‹Ð¹ Ñ€ÐµÐ·ÐµÑ€Ð² ghost prefab'Ð¾Ð² Ð´Ð»Ñ ÑÑ‚Ñ€Ð¾Ð¸Ñ‚ÐµÐ»ÑŒÐ½Ð¾Ð³Ð¾ ÐºÐ°Ñ‚Ð°Ð»Ð¾Ð³Ð°.")]
-        [SerializeField] private int constructionGhostWarmupCount = 1;
-
         [Header("── Swap Animation ────────────────────────────")]
         [Tooltip("Skorost animatsii smeny instrumenta (lerp factor per second). " +
                  "Bolshe = bystree.")]
@@ -130,7 +127,6 @@ namespace Hecton8.Gameplay
         private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
         private readonly string[] _slotNameCache = new string[4];
         private bool _assignedPoolsWarmed;
-        private bool _constructionGhostPoolsWarmed;
         private bool _handlingEquippedToolBreak;
         private bool _registeredToTick;
         private BaseModule _currentInteriorModule;
@@ -152,7 +148,6 @@ namespace Hecton8.Gameplay
         private float _batterySiphonDurationSeconds;
         private IInputService _inputService;
         private ObjectPoolManager _objectPool;
-        private ConstructionManager _constructionManager;
         private PersistentWorldRegistry _persistentWorldRegistry;
         private ToolDurabilitySystem _toolDurability;
         private bool _hotSwapListenerRegistered;
@@ -938,7 +933,6 @@ namespace Hecton8.Gameplay
         private void WarmRuntimePoolsIfNeeded()
         {
             WarmAssignedToolPoolsIfNeeded();
-            WarmConstructionGhostPoolsIfNeeded();
         }
 
         private void WarmAssignedToolPoolsIfNeeded()
@@ -959,29 +953,6 @@ namespace Hecton8.Gameplay
                 EnsurePoolWarmup(toolPrefabs[i], toolPoolWarmupCount);
 
             _assignedPoolsWarmed = true;
-        }
-
-        private void WarmConstructionGhostPoolsIfNeeded()
-        {
-            if (_constructionGhostPoolsWarmed || constructionGhostWarmupCount <= 0)
-                return;
-
-            ObjectPoolManager pool = _objectPool;
-            ConstructionManager constructionManager = _constructionManager;
-            ModuleCatalog catalog = constructionManager != null ? constructionManager.Catalog : null;
-            if (pool == null || catalog == null || catalog.Count <= 0)
-                return;
-
-            for (int i = 0; i < catalog.Count; i++)
-            {
-                BuildableData buildable = catalog.GetAt(i);
-                if (buildable == null || buildable.ghostPrefab == null)
-                    continue;
-
-                EnsurePoolWarmup(buildable.ghostPrefab, constructionGhostWarmupCount);
-            }
-
-            _constructionGhostPoolsWarmed = true;
         }
 
         private void EnsurePoolWarmup(GameObject prefab, int minimumReserve)
@@ -1036,14 +1007,10 @@ namespace Hecton8.Gameplay
                 case GlobalRegistryServiceSlot.ObjectPool:
                     _objectPool = currentService as ObjectPoolManager;
                     _assignedPoolsWarmed = false;
-                    _constructionGhostPoolsWarmed = false;
                     WarmRuntimePoolsIfNeeded();
                     break;
 
                 case GlobalRegistryServiceSlot.Logistics:
-                    _constructionManager = currentService as ConstructionManager;
-                    _constructionGhostPoolsWarmed = false;
-                    WarmConstructionGhostPoolsIfNeeded();
                     break;
 
                 case GlobalRegistryServiceSlot.PersistentWorldRegistry:
@@ -1066,18 +1033,7 @@ namespace Hecton8.Gameplay
                 ObjectPoolManager previousPool = _objectPool;
                 _objectPool = GlobalRegistry.ObjectPool;
                 if (!ReferenceEquals(previousPool, _objectPool))
-                {
                     _assignedPoolsWarmed = false;
-                    _constructionGhostPoolsWarmed = false;
-                }
-            }
-
-            if (forceRefresh || _constructionManager == null)
-            {
-                ConstructionManager previousConstruction = _constructionManager;
-                _constructionManager = GlobalRegistry.ConstructionRuntime;
-                if (!ReferenceEquals(previousConstruction, _constructionManager))
-                    _constructionGhostPoolsWarmed = false;
             }
 
             if (forceRefresh || _persistentWorldRegistry == null)
@@ -1504,7 +1460,6 @@ namespace Hecton8.Gameplay
         {
             LogToolDebug("SpawnNewTool begin");
             EnsurePoolWarmup(prefab, toolPoolWarmupCount);
-            WarmConstructionGhostPoolsIfNeeded();
             ObjectPoolManager pool = _objectPool;
             if (pool == null)
             {

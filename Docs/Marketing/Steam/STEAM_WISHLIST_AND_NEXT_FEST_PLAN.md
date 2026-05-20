@@ -61,7 +61,7 @@ Do not launch the page as a vague underwater project. Launch only when it has:
   short description that survives cold reader test;
   tags aligned with the actual game;
   one short trailer or at minimum a strong microtrailer plan;
-  one agency/decision proof asset from `PLAN-SHOT-006`, `PLAN-CLIP-001`, or `PLAN-CLIP-003` with AB-009/KPI viewer-named decision fields;
+  one agency/decision proof asset from `PLAN-SHOT-006`, `PLAN-CLIP-001`, or `PLAN-CLIP-003` with non-pending metadata `viewer_named_decision`, valid non-held `capture_verdict`, and AB-009/KPI viewer-named decision fields;
   single-player-first scope boundary;
   no fake performance claim.
 
@@ -160,7 +160,7 @@ Every screenshot must answer at least one question:
   What is the player doing?
   What decision is the player making under pressure?
 
-`PLAN-SHOT-007` can strengthen mystery, but it cannot replace the agency/decision proof asset and AB-009/KPI decision-read fields required for the first public page.
+`PLAN-SHOT-007` can strengthen mystery, but it cannot replace the agency/decision proof asset, metadata handoff, and AB-009/KPI decision-read fields required for the first public page.
 
 ## Trailer Requirements
 
@@ -187,14 +187,14 @@ Forbidden:
 Do not enter until:
 
   `SHOW-001` in `Press/SHOWCASE_SUBMISSION_TRACKER.csv` has `submission_permission_gate = ALLOW_SHOWCASE_SUBMIT_VERIFIED`;
-  public Steam page is strong;
-  demo is playable and reviewed;
+  Steam page publication has `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED`, asset pack proof, and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` for public links;
+  public demo/Playtest access has `demo_public_access_permission_gate = ALLOW_PUBLIC_DEMO_ACCESS_VERIFIED` and the reviewed build has a logged known-issues/rollback owner;
   opening minute sells pressure/machinery;
-  demo and page assets show one readable player decision under threat, leak, route cost, sonar pressure, or salvage failure, with `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision` recorded for page assets where applicable;
+  demo and page assets show one readable player decision under threat, leak, route cost, sonar pressure, or salvage failure, with non-pending metadata `viewer_named_decision`, valid non-held `capture_verdict`, and `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision` recorded for page assets where applicable;
   no blocker bugs in demo path;
   creator outreach batch passes creator utility, `creator_send_gate`, CRM send-log, and official route gates;
   daily reporting sheet is ready;
-  one livestream ready build exists.
+  livestream build proof is logged with owner, build ID, known-issues state, rollback owner, and exact event/post permission gates.
 
 Risk: Steam Next Fest can only be used once for a game. Burning it with a weak demo is not marketing; it is waste.
 

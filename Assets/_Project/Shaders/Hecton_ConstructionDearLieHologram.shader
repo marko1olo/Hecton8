@@ -2,10 +2,6 @@ Shader "Hecton8/Construction/DearLieHologram"
 {
     Properties
     {
-        _BaseColor ("Base Color", Color) = (0.08, 1.0, 0.72, 0.72)
-        _H8SnapDampen ("Snap Dampen", Float) = 0.0
-        _H8SnapWiggleSpeed ("Snap Wiggle Speed", Float) = 18.0
-        _H8GlobalQualityWeight ("Global Quality Weight", Float) = 1.0
     }
 
     SubShader
@@ -28,14 +24,6 @@ Shader "Hecton8/Construction/DearLieHologram"
             #define H8_GHOST_FLAG_VALID 2u
             #define H8_GHOST_FLAG_SDF_BLOCKED 8u
             #define H8_GHOST_FLAG_BOUNDS_BLOCKED 16u
-
-            CBUFFER_START(UnityPerMaterial)
-                half4 _BaseColor;
-                float _H8SnapDampen;
-                float _H8SnapWiggleSpeed;
-                float _H8GlobalQualityWeight;
-                int _H8BuilderGhostCount;
-            CBUFFER_END
 
             struct BuilderGhostStateRaw
             {
@@ -100,12 +88,11 @@ Shader "Hecton8/Construction/DearLieHologram"
             Varyings vert(uint vertexId : SV_VertexID, uint instanceId : SV_InstanceID)
             {
                 Varyings output;
-                uint safeInstance = min(instanceId, max((uint)_H8BuilderGhostCount, 1u) - 1u);
-                BuilderGhostStateRaw state = _H8BuilderGhostStates[safeInstance];
-                BuilderGhostVisualRaw visual = _H8BuilderGhostVisuals[safeInstance];
+                BuilderGhostStateRaw state = _H8BuilderGhostStates[instanceId];
+                BuilderGhostVisualRaw visual = _H8BuilderGhostVisuals[instanceId];
                 uint flags = state.aup1.w;
                 float phase = asfloat(state.meta0.x);
-                float q = saturate(visual.params0.x * _H8GlobalQualityWeight);
+                float q = saturate(visual.params0.x);
                 float smoothQ = q * q * (3.0 - (2.0 * q));
                 float localPhase = phase + (_Time.y * visual.params0.z * lerp(0.15, 0.65, smoothQ));
                 float pulse = 0.82 + (0.18 * sin(localPhase));
@@ -114,7 +101,7 @@ Shader "Hecton8/Construction/DearLieHologram"
 
                 float3 local = H8CubeVertices[vertexId % 36u];
                 float3 normalOS = ResolveCubeNormal(vertexId);
-                float dampen = max(0.0, _H8SnapDampen + visual.params0.y);
+                float dampen = max(0.0, visual.params0.y);
                 local -= normalOS * dampen * lerp(0.05, 0.18, smoothQ);
                 local += normalOS * sin(localPhase + dot(local, float3(13.0, 17.0, 19.0))) * dampen * 0.08;
                 local.x += chroma * sin(localPhase + local.y * 7.0);

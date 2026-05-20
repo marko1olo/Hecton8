@@ -411,3 +411,30 @@ hygiene prevents stale, misaligned, or unbounded baked data from becoming a
 runtime streaming problem.
 
 Hardware Impact: 0 runtime us. Static report-schema expansion only.
+
+## Decision 036 - Separate Hardware Scaffold From Hardware Proof
+
+Problem: The project now contains enough ARM64, x86, GPU, XR, and quality-scaling
+infrastructure that it is easy to overstate readiness. Android ARM64 IL2CPP,
+OpenXR packages, Vulkan settings, GlobalQualityWeight, VRAM governors, foveation
+state, and GPU-driven buffers are necessary, but they are not evidence that
+Quest, Steam Deck, Mac, weak PC, or high-end RTX paths actually run inside budget.
+
+Solution: Record a hardware portability audit that scores scaffold separately
+from runtime proof. Treat package/settings/source evidence as direction only,
+and require player logs, profiler frame timing, shader compilation evidence,
+memory traces, and device captures before any platform is called adapted.
+
+Rejected Alternatives: Treating Android ARM64 plus XR packages as Quest
+readiness was rejected because `m_BuildTargetVRSettings` is empty and no
+headset proof exists. Treating Windows x86 as proven was rejected because there
+is no current player/profiler proof. Treating GPU-driven code as GPU readiness
+was rejected because shader warmup, compute dispatch size, readback cadence, and
+device captures are missing.
+
+Scalability potential: Low/Quest/Deck targets benefit because the next work is
+forced toward measured proof and runtime debt burn-down instead of broad claims.
+Middle/high/ultra targets benefit because visual-overkill work stays gated by
+evidence that the survival path is stable first.
+
+Hardware Impact: 0 runtime us claimed. Static audit/reporting only.

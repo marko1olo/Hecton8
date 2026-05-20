@@ -40,7 +40,7 @@ namespace Hecton8.Physics
         public const float DefaultSurfaceDampening = 0.78f;
         public const float DefaultFlowForceCoefficient = 0.35f;
         public const string DumpRelativePath = "Docs/AgentLogs/Dump_FLUID_DYNAMICS.bin";
-        public const string AgentDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_158.bin";
+        public const string AgentDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_201_Buoyancy.bin";
         public const string CsvRelativePath = "Data/Physics/item_volume_specs.csv";
         public const string SimdToleranceCsvRelativePath = "Data/Physics/simd_math_tolerances.csv";
 

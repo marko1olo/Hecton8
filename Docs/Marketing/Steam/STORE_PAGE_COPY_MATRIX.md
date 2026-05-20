@@ -87,7 +87,7 @@ Steam assembly can start only after the first capture session, Campaign 01, and 
 | Cold-read multiplayer-scope confusion | Rewrite copy and asset order before any Steam upload. |
 | Cold-read AI/concept suspicion | Remove the asset from Steam use until real gameplay proof is clear. |
 | Cold-read prompt contamination | Treat the row as qualitative fix notes only; rerun with valid blind readers before Steam assembly. |
-| Missing `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision` for the agency candidate | Hold Steam assembly; mood, threat, monster, darkness, or scenery reads are not page proof. |
+| Missing `viewer_named_decision`, `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision` for the agency candidate, or `capture_verdict` is not `KEEP_TESTING` / campaign `KEEP` | Hold Steam assembly; mood, threat, monster, darkness, scenery, or held capture reads are not page proof. |
 
 Candidate B or C can override Candidate A only when the matching proof asset survives first-session triage, AB-009/KPI decision-read scoring, and cold-read scoring. Good prose is not proof.
 
@@ -217,7 +217,7 @@ Something at depth is corrupting instruments, wildlife, plant behavior, radar, a
 
 Stage 1: show the first screenshot without title, caption, short description, tags, project explanation, or target nouns. Record `context_exposure` and count only `valid_blind_read=true`.
 
-Stage 1B: show the AB-009 agency candidate (`PLAN-SHOT-006`, `PLAN-CLIP-001`, or `PLAN-CLIP-003`) without caption. Record `what_decision_next`, `agency_decision_read`, and `cold_read_agency_decision`; mood, monster, darkness, or scenery answers do not count as agency proof.
+Stage 1B: show the AB-009 agency candidate (`PLAN-SHOT-006`, `PLAN-CLIP-001`, or `PLAN-CLIP-003`) without caption. Record `viewer_named_decision`, `what_decision_next`, `agency_decision_read`, and `cold_read_agency_decision`; mood, monster, darkness, or scenery answers do not count as agency proof.
 
 Stage 2: after Stage 1 and Stage 1B pass, show the short description and first screenshot to 20 people. This tests page fit, not raw asset clarity.
 

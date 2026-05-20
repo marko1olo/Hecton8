@@ -1203,8 +1203,12 @@ namespace Hecton8.World
 
         internal FaunaLogicalLodTier ResolveLogicalLodTier(Vector3 observerPosition, Vector3 faunaPosition)
         {
-            AbsoluteUniversePosition observerAup = AbsoluteUniversePosition.FromRuntimePosition(observerPosition);
-            AbsoluteUniversePosition faunaAup = AbsoluteUniversePosition.FromRuntimePosition(faunaPosition);
+            if (!TryResolveAupFromRuntimeOrigin(observerPosition, out AbsoluteUniversePosition observerAup) ||
+                !TryResolveAupFromRuntimeOrigin(faunaPosition, out AbsoluteUniversePosition faunaAup))
+            {
+                return FaunaLogicalLodTier.Hibernating;
+            }
+
             return ResolveLogicalLodTier(in observerAup, in faunaAup);
         }
 
@@ -1722,7 +1726,10 @@ namespace Hecton8.World
 
         internal bool TryResolveNearestOrganicMass(Vector3 worldPosition, out Vector3 organicPosition)
         {
-            AbsoluteUniversePosition queryAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
+            organicPosition = default;
+            if (!TryResolveAupFromRuntimeOrigin(worldPosition, out AbsoluteUniversePosition queryAup))
+                return false;
+
             return TryResolveNearestOrganicMass(in queryAup, out organicPosition);
         }
 
@@ -1804,8 +1811,8 @@ namespace Hecton8.World
             _cachedPersistentWorldRegistry?.TryRegisterFaunaTombstone(uniqueInstanceUid);
             if (_cachedPersistentWorldRegistry != null)
             {
-                AbsoluteUniversePosition whaleFallAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
-                _cachedPersistentWorldRegistry.TryCacheWhaleFallPoiState(uniqueInstanceUid, unchecked((int)(uniqueInstanceUid & 0x00FFFFFFu)), in whaleFallAup, Time.time);
+                if (TryResolveAupFromRuntimeOrigin(worldPosition, out AbsoluteUniversePosition whaleFallAup))
+                    _cachedPersistentWorldRegistry.TryCacheWhaleFallPoiState(uniqueInstanceUid, unchecked((int)(uniqueInstanceUid & 0x00FFFFFFu)), in whaleFallAup, Time.time);
             }
 
             MigrationDirector.RegisterPredatorKillPoi(uniqueInstanceUid, worldPosition, Time.time);
@@ -2096,7 +2103,9 @@ namespace Hecton8.World
                 return;
 
             AcousticPingSignal signal = default;
-            signal.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(_activeWhaleFallAcousticPosition);
+            if (!TryResolveAupFromRuntimeOrigin(_activeWhaleFallAcousticPosition, out signal.PositionAup))
+                return;
+
             signal.RadiusMeters = math.max(CorpseSpawnInfluenceRadiusMeters, scavengerCorpseSearchRadiusMeters);
             signal.Intensity01 = WhaleFallAcousticImpulseVolume01;
             signal.SourceId = _activeWhaleFallAcousticUid;
@@ -2143,7 +2152,9 @@ namespace Hecton8.World
             if (HasPendingSimulationJob())
                 return false;
 
-            int2 sectorCoord = QuantizeSector(worldPosition);
+            if (!TryQuantizeSector(worldPosition, out int2 sectorCoord))
+                return false;
+
             int slotIndex = ResolveOrCreateSectorSlot(sectorCoord, seedWithBaseline: true);
             if (slotIndex < 0)
                 return false;
@@ -2181,7 +2192,10 @@ namespace Hecton8.World
             if (!IsInitialized || HasPendingSimulationJob())
                 return false;
 
-            int slotIndex = ResolveOrCreateBiomassCellSlot(QuantizeBiomassMacroCell(worldPosition), seedWithBaseline: true);
+            if (!TryQuantizeBiomassMacroCell(worldPosition, out int2 macroCellCoord))
+                return false;
+
+            int slotIndex = ResolveOrCreateBiomassCellSlot(macroCellCoord, seedWithBaseline: true);
             if (slotIndex < 0)
                 return false;
 
@@ -2396,6 +2410,27 @@ namespace Hecton8.World
             return math.all(math.isfinite(new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z)));
         }
 
+        private static bool IsFiniteAup(in AbsoluteUniversePosition position)
+        {
+            return math.all(math.isfinite(new double3(position.LocalX, position.LocalY, position.LocalZ)));
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!IsFiniteRuntimePosition(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!IsFiniteAup(in originAup))
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return IsFiniteAup(in positionAup);
+        }
+
         private static Vector3 ResolveMacroSwarmRuntimePosition(in MacroSwarm swarm)
         {
             AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(
@@ -2500,7 +2535,9 @@ namespace Hecton8.World
 
         private void PublishFaunaMutatedSignal(in FaunaGenomeMutationRequest request)
         {
-            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(request.RuntimePosition);
+            if (!TryResolveAupFromRuntimeOrigin(request.RuntimePosition, out AbsoluteUniversePosition positionAup))
+                return;
+
             GlobalSignals.Publish(new FaunaStateChangedSignal
             {
                 PositionAup = positionAup,
@@ -2527,7 +2564,9 @@ namespace Hecton8.World
                 runtimePosition = new Vector3(position.x, position.y, position.z);
             }
 
-            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition positionAup))
+                return;
+
             GlobalSignals.Publish(new FaunaStateChangedSignal
             {
                 PositionAup = positionAup,
@@ -2816,7 +2855,9 @@ namespace Hecton8.World
             if (!IsInitialized || HasPendingSimulationJob())
                 return false;
 
-            int2 sectorCoord = QuantizeSector(worldPosition);
+            if (!TryQuantizeSector(worldPosition, out int2 sectorCoord))
+                return false;
+
             if (!TryFindIndexEntry(_sectorIndexEntries, PackSectorKey(sectorCoord), out int slotIndex) || slotIndex < 0 || slotIndex >= _activeSectorCount)
                 return false;
 
@@ -2878,7 +2919,10 @@ namespace Hecton8.World
             if (HasPendingSimulationJob())
                 return;
 
-            int slotIndex = ResolveOrCreateSectorSlot(QuantizeSector(worldPosition), seedWithBaseline: true);
+            if (!TryQuantizeSector(worldPosition, out int2 sectorCoord))
+                return;
+
+            int slotIndex = ResolveOrCreateSectorSlot(sectorCoord, seedWithBaseline: true);
             if (slotIndex < 0)
                 return;
 
@@ -2915,7 +2959,10 @@ namespace Hecton8.World
             if (!IsInitialized || HasPendingSimulationJob())
                 return;
 
-            int slotIndex = ResolveOrCreateSectorSlot(QuantizeSector(worldPosition), seedWithBaseline: true);
+            if (!TryQuantizeSector(worldPosition, out int2 sectorCoord))
+                return;
+
+            int slotIndex = ResolveOrCreateSectorSlot(sectorCoord, seedWithBaseline: true);
             if (slotIndex < 0)
                 return;
 
@@ -4783,9 +4830,13 @@ namespace Hecton8.World
                 if (brain == null || brain.IsDead || !brain.IsApexPredatorRuntime)
                     continue;
 
-                AbsoluteUniversePosition hitAup = hit.HasAbsolutePosition
-                    ? hit.AbsolutePosition
-                    : AbsoluteUniversePosition.FromRuntimePosition(hit.Position);
+                AbsoluteUniversePosition hitAup = hit.AbsolutePosition;
+                if (!hit.HasAbsolutePosition &&
+                    !TryResolveAupFromRuntimeOrigin(hit.Position, out hitAup))
+                {
+                    continue;
+                }
+
                 _apexTerritoryBrains[sampleCount] = brain;
                 _apexTerritorySamples[sampleCount] = new ApexTerritorySample
                 {
@@ -5003,8 +5054,8 @@ namespace Hecton8.World
                 PlayerLookState lookState = runtimeContext.LookState;
                 if ((lookState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
                 {
-                    playerAup = AbsoluteUniversePosition.FromRuntimePosition(ToVector3(lookState.EyePosition));
-                    return true;
+                    if (TryResolveAupFromRuntimeOrigin(ToVector3(lookState.EyePosition), out playerAup))
+                        return true;
                 }
             }
 
@@ -5163,7 +5214,9 @@ namespace Hecton8.World
 
         private void QueueOrApplyBiomassImpact(Vector3 worldPosition, byte kind, float amount)
         {
-            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
+            if (!TryResolveAupFromRuntimeOrigin(worldPosition, out AbsoluteUniversePosition aup))
+                return;
+
             QueueOrApplyBiomassImpact(in aup, kind, amount);
         }
 
@@ -5518,10 +5571,14 @@ namespace Hecton8.World
             return AbsoluteUniversePosition.FromAbsolutePosition(absolutePosition);
         }
 
-        private static int2 QuantizeBiomassMacroCell(Vector3 worldPosition)
+        private static bool TryQuantizeBiomassMacroCell(Vector3 worldPosition, out int2 macroCellCoord)
         {
-            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
-            return QuantizeBiomassMacroCell(in aup);
+            macroCellCoord = default;
+            if (!TryResolveAupFromRuntimeOrigin(worldPosition, out AbsoluteUniversePosition aup))
+                return false;
+
+            macroCellCoord = QuantizeBiomassMacroCell(in aup);
+            return true;
         }
 
         private static int2 QuantizeBiomassMacroCell(in AbsoluteUniversePosition position)
@@ -6037,10 +6094,14 @@ namespace Hecton8.World
             return state.ApexInSector != 0;
         }
 
-        private static int2 QuantizeSector(Vector3 worldPosition)
+        private static bool TryQuantizeSector(Vector3 worldPosition, out int2 sectorCoord)
         {
-            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
-            return QuantizeSector(in aup);
+            sectorCoord = default;
+            if (!TryResolveAupFromRuntimeOrigin(worldPosition, out AbsoluteUniversePosition aup))
+                return false;
+
+            sectorCoord = QuantizeSector(in aup);
+            return true;
         }
 
         private static int2 QuantizeSector(in AbsoluteUniversePosition position)
@@ -6053,7 +6114,9 @@ namespace Hecton8.World
 
         private static double ResolveRuntimeAupDistanceSq(in AbsoluteUniversePosition originAup, Vector3 runtimePosition)
         {
-            AbsoluteUniversePosition runtimeAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition runtimeAup))
+                return double.MaxValue;
+
             return AbsoluteUniversePosition.DistanceSq(in originAup, in runtimeAup);
         }
 

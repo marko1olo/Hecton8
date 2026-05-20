@@ -368,8 +368,7 @@ namespace Hecton8.AI.Ambient
                 SystemStress01 = math.saturate(systemStress01)
             };
 
-            JobHandle hydrationHandle = hydrationJob.Schedule();
-            DispatcherJobFence.TryComplete(ref hydrationHandle, forceComplete: true);
+            hydrationJob.Execute();
             _frameIndex++;
             spawnedBoidCount = counters[0];
             if (spawnedBoidCount <= 0)
@@ -425,8 +424,7 @@ namespace Hecton8.AI.Ambient
                 Capacity = _capacity
             };
 
-            JobHandle dehydrationHandle = dehydrationJob.Schedule();
-            DispatcherJobFence.TryComplete(ref dehydrationHandle, forceComplete: true);
+            dehydrationJob.Execute();
             releasedBoidCount = counters[0];
             if (releasedBoidCount <= 0)
                 return false;

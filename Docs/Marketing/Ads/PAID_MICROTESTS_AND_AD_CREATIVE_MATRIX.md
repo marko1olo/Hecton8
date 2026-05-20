@@ -16,7 +16,7 @@ No paid ads until:
 - UTM tracking works;
 - capsule passes cold-read;
 - first screenshot/clip passes QA;
-- any ad that uses gameplay, pressure, route-risk, threat, salvage failure, or first-public proof has one factual agency candidate with AB-009/KPI decision-read fields: `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`;
+- any ad that uses gameplay, pressure, route-risk, threat, salvage failure, or first-public proof has one factual agency candidate with non-pending asset metadata `viewer_named_decision`, valid non-held `capture_verdict`, and AB-009/KPI decision-read fields: `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`;
 - conversion baseline exists from organic traffic;
 - one hypothesis is written;
 - stop rule is written.
@@ -29,7 +29,7 @@ Use `spend_permission_gate` as the only machine-readable field for paid ad spend
 
 - current rows must stay `BLOCKED_*`;
 - a PMT row can launch only when `spend_permission_gate = ALLOW_PAID_MICROTEST_VERIFIED`;
-- `ALLOW_PAID_MICROTEST_VERIFIED` requires Official CTA Link Activation Gate V0 for the Steam destination, Steam URL custody, UTM proof, Campaign 01 `KEEP` or an equivalent organic page baseline, asset QA, AB-009/KPI decision-read fields where the ad sells gameplay/pressure/route-risk proof, a capped budget, a written hypothesis, a written stop rule, and an owner able to inspect Steam/UTM results within 48 hours.
+- `ALLOW_PAID_MICROTEST_VERIFIED` requires Official CTA Link Activation Gate V0 for the Steam destination, Steam URL custody, UTM proof, Campaign 01 `KEEP` or an equivalent organic page baseline, asset QA, non-pending `viewer_named_decision`, valid non-held `capture_verdict`, AB-009/KPI decision-read fields where the ad sells gameplay/pressure/route-risk proof, a capped budget, a written hypothesis, a written stop rule, and an owner able to inspect Steam/UTM results within 48 hours.
 
 Do not infer paid permission from budget tier, PMT ID, platform candidate, or a completed creative row.
 
@@ -70,8 +70,8 @@ The first paid spend is not a campaign. It is AB-008 from `Experiments/A_B_TESTI
 
 | Paid test | Spend permission gate | Required winner before spend | Platform candidate | Max spend | Asset/UTM content | Audience | Pass signal | Stop rule |
 |---|---|---|---|---:|---|---|---|---|
-| PMT-001 Pressure identity smoke | `BLOCKED_NO_STEAM_BASELINE` | AB-001 screenshot winner + AB-002 capsule winner + AB-009 agency candidate if copy implies route risk | Reddit ads or X small test | 50 USD | `PLAN-SHOT-001` or `PLAN-SHOT-003` + `PLAN-CAPSULE-001`; add `PLAN-SHOT-006`, `PLAN-CLIP-001`, or `PLAN-CLIP-003` only after AB-009/KPI decision-read fields exist | Survival/exploration/underwater-adjacent | At least 50 clicks and no dominant confusion comments. | Stop if "what do you do?", "AI art", or unsupported multiplayer-scope expectation dominates. |
-| PMT-002 Clip hook smoke | `BLOCKED_NO_STEAM_BASELINE` | AB-006 trailer opening winner + AB-009/KPI decision-read evidence if clip is sold as pressure gameplay | YouTube Shorts/Google or TikTok small test | 75 USD | `PLAN-CLIP-001` or `PLAN-CLIP-003` if agency proof is claimed; `PLAN-CLIP-002` only for identity/mood hook, not agency proof | Short-form PC survival/horror-adjacent | First 3 seconds holds attention and sends measurable Steam visits. | Stop if platform gives views but no Steam behavior or viewers cannot name the pressure decision. |
+| PMT-001 Pressure identity smoke | `BLOCKED_NO_STEAM_BASELINE` | AB-001 screenshot winner + AB-002 capsule winner + AB-009 agency candidate with non-pending metadata handoff if copy implies route risk | Reddit ads or X small test | 50 USD | `PLAN-SHOT-001` or `PLAN-SHOT-003` + `PLAN-CAPSULE-001`; add `PLAN-SHOT-006`, `PLAN-CLIP-001`, or `PLAN-CLIP-003` only after metadata handoff and AB-009/KPI decision-read fields exist | Survival/exploration/underwater-adjacent | At least 50 clicks and no dominant confusion comments. | Stop if "what do you do?", "AI art", pending metadata, or unsupported multiplayer-scope expectation dominates. |
+| PMT-002 Clip hook smoke | `BLOCKED_NO_STEAM_BASELINE` | AB-006 trailer opening winner + metadata handoff plus AB-009/KPI decision-read evidence if clip is sold as pressure gameplay | YouTube Shorts/Google or TikTok small test | 75 USD | `PLAN-CLIP-001` or `PLAN-CLIP-003` if agency proof is claimed; `PLAN-CLIP-002` only for identity/mood hook, not agency proof | Short-form PC survival/horror-adjacent | First 3 seconds holds attention and sends measurable Steam visits. | Stop if platform gives views but no Steam behavior or viewers cannot name the pressure decision. |
 | PMT-003 Steam copy/capsule smoke | `BLOCKED_NO_STEAM_BASELINE` | AB-004 copy winner + AB-002 capsule winner | Reddit/X/Meta tiny test | 100 USD | `PLAN-CAPSULE-001` + short description winner | PC survival players | Steam cold traffic reaches 2-5% wishlist conversion directionally. | Stop within 48h if cold traffic is under 1% or comments show premise confusion. |
 | PMT-004 Creator-retarget support | `BLOCKED_NO_CREATOR_SIGNAL_BASELINE` | AB-005 creator signal positive | Platform matching creator audience | 150 USD | Best creator/clip asset | Only after organic creator reply/coverage exists | Paid traffic reinforces a proven hook. | Stop if creator traffic does not produce Steam actions. |
 
@@ -147,7 +147,7 @@ Stop if:
 
 - CTR is bad and comments indicate confusion;
 - Steam visits do not wishlist after enough sample;
-- ad or landing row claims gameplay/pressure/route-risk proof without `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`;
+- ad or landing row claims gameplay/pressure/route-risk proof without non-pending metadata `viewer_named_decision`, valid non-held `capture_verdict`, and `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`;
 - people ask if it is multiplayer/co-op due to ad copy;
 - ad comments compare asset to AI/concept art;
 - cost per useful action exceeds realistic low-budget tolerance;

@@ -1,6 +1,6 @@
 # Rationale_SHINOBU_220
 
-Status: POLISH LOOP ACTIVE / INTENT BUS HARDENED / AUP CONVERSION HARDENED / GPU_DOUBLE_BUFFER_HARDENED / SHADER_GLOBAL_FAIL_CLOSED / ZERO_ACTIVE_VISUAL_BYPASS / ZERO_ACTIVE_KCC_JOB_BYPASS / KCC_DISPATCHER_FRAME_FENCE / VERIFY_WORDING_CORRECTED / VAULT_HOTSWAP_RELEASE_HARDENED / PRE_SIM_FENCE_HARDENED / TEARDOWN_DRAIN_HARDENED / EVERY_FRAME_TELEMETRY_HARDENED / TELEMETRY_LENGTH_GUARDS_HARDENED / BULKHEAD_SHADOW_STATE_PURGED / BLACKBOX_DUMP_DECOUPLED_FROM_SHADER / UNITY IMPORT HUNG
+Status: POLISH LOOP ACTIVE / INTENT BUS HARDENED / AUP_CONVERSION_HARDENED / GPU_DOUBLE_BUFFER_HARDENED / SHADER_GLOBAL_FAIL_CLOSED / ZERO_ACTIVE_VISUAL_BYPASS / ZERO_ACTIVE_KCC_JOB_BYPASS / KCC_DISPATCHER_FRAME_FENCE / VERIFY_WORDING_CORRECTED / VAULT_HOTSWAP_RELEASE_HARDENED / PRE_SIM_FENCE_HARDENED / TEARDOWN_DRAIN_HARDENED / EVERY_FRAME_TELEMETRY_HARDENED / TELEMETRY_LENGTH_GUARDS_HARDENED / BULKHEAD_SHADOW_STATE_PURGED / BLACKBOX_DUMP_DECOUPLED_FROM_SHADER / BLACKBOX_DUPLICATE_DUMP_FENCED / HOT_LOOP_VAULT_POLL_PURGED / AIRLOCK_REGISTRY_PUBLISH_PURGED / INTENT_BUS_NO_ALLOC_RESOLVE / INTENT_BUS_REBIND_INERT_WINDOW / DISPATCHED_MOCK_GENERATION / CSV_SCRATCH_FILE_INGEST / UNITY IMPORT HUNG
 
 ## Initial Decision 2026-05-20
 Problem: Emergency habitat bulkhead closure is currently represented by CPU-side `BaseAirlock` transform motion, while the batch requires mathematical CSR/KCC blocking and GPU-only visual closure.
@@ -212,3 +212,52 @@ Solution: Added `DumpBlackBoxIfRequested(IDataVault)` and call it at the start o
 Rejected Alternatives: Keeping dump behind the shader upload path was rejected because crash evidence must not depend on visual feature enablement. Completing the telemetry job immediately in Simulation was rejected because it would stall the frame. Leaving both old and new dump checks was rejected because it could double-write the same flagged row.
 Scalability potential: Low tier can disable or fail-close shader upload and still preserve fatal telemetry. Middle/high/ultra keep the same Dear Lie visual path; forensic output is now orthogonal to visual quality.
 Hardware Impact: Adds one telemetry/cursor descriptor resolve and latest-row flag check per VisualSync. Fault-path file I/O remains gated by `DumpRequested`; no collider, object, or physics route is introduced.
+
+## Decision 2026-05-20 - Duplicate Black-Box Dump Fence
+Problem: After decoupling dump emission from shader upload, a persistent latest telemetry row with `DumpRequested` could rewrite the same dump file every VisualSync until the cursor advanced. That keeps evidence correct but creates avoidable fault-path file I/O during an already unstable frame sequence.
+Solution: Added `_lastDumpedTelemetryCursor`, reset with Vault runtime state, and skip dump emission when the latest cursor value was already written. The fence is diagnostic-only and does not mutate the telemetry ring or gameplay authority.
+Rejected Alternatives: Letting the same flagged row dump repeatedly was rejected as avoidable I/O churn. Storing a "dumped" bit inside telemetry was rejected because forensic rows should remain raw solver evidence.
+Scalability potential: Low tier and upload-disabled routes avoid repeated file writes during a fault. Middle/high/ultra behavior is unchanged; visual quality remains separate from forensic output.
+Hardware Impact: Adds one uint comparison before fault-path I/O. In repeated-fault frames it saves full `.h8dump` rewrite cost.
+
+## Decision 2026-05-20 - Hot-Loop DataVault Registry Poll Purge
+Problem: `BulkheadContainmentRuntime.ResolveVault()` still fell back to `GlobalRegistry.DataVault` when `_vault` was null. That made phase ticks capable of registry polling after Vault loss or boot-order gaps, violating the "cache during boot/rebind, no registry in hot execution" rule.
+Solution: Removed the fallback lookup from `ResolveVault()`. Runtime phases now use only the cached `_vault` reference, and DataVault replacement is handled by the existing hot-swap callbacks plus deferred handle release. `OnEnable` remains the cold bootstrap cache point, and the static airlock ingress facade remains a cold publish helper outside Burst/job math.
+Rejected Alternatives: Polling every PreSimulation/Simulation/VisualSync phase until Vault appears was rejected because it hides service-order problems in hot code. Moving Gameplay directly onto `BulkheadContainmentRuntime` was rejected because it would reintroduce a Gameplay->Construction dependency.
+Scalability potential: Low/Middle/High/Ultra behavior is unchanged while Vault is present. When Vault is absent or rebinding, the containment route fails inert, disables shader globals, and waits for hot-swap rebind instead of escalating work.
+Hardware Impact: No normal-frame speed claim. The change removes a failure-path registry read from phase ticks and closes an authority-boundary violation without adding allocations, colliders, or object state.
+
+## Decision 2026-05-20 - Airlock Registry Publish Purge
+Problem: `BaseAirlock.PublishBulkheadContainmentState` still read `GlobalRegistry.DataVault` during cold publish and bounded retry. It was not Burst math, but the retry call lives in `Tick`, so the route still had a service-locator read in a gameplay update path.
+Solution: Added a cached-Vault overload to `BulkheadContainmentIntentBus`. `BulkheadContainmentRuntime` binds that cache during `OnEnable` and every DataVault hot-swap/rebind. `BaseAirlock` now publishes through the bus cache and no longer references DataVault directly.
+Rejected Alternatives: Adding a `Core.Memory.IDataVault` field to `BaseAirlock` was rejected because Gameplay should not own Vault service references. Reintroducing a managed Construction publisher was rejected because it revives OOP service wiring. Editing generated SignalBus tables was rejected as a broader Core compile-wall risk.
+Scalability potential: Low tier retry remains bounded and now fails fast when no cached Vault exists. Middle/high/ultra use the same unmanaged intent route; continuous `GlobalQualityWeight` still controls authority cadence and shader deformation.
+Hardware Impact: Removes a service-locator read from the airlock retry path. No allocation, collider, Animator, or Transform-door route was introduced.
+
+## Decision 2026-05-20 - Intent Bus No-Allocation Resolve
+Problem: `BulkheadContainmentIntentBus.TryWriteAirlockBulkheadIntent` still used `GetGenerationHandle` for the intent ring and control row. Even though the bus is a cold ingress helper, that allowed Gameplay publish/retry to create or grow Construction-owned Vault lanes before the owner runtime bootstrapped them.
+Solution: Switched the publish path to explicit `TryGetGenerationHandle<T>` calls followed by transient `TryResolveHandle`. If the Construction owner has not created the descriptors yet, the bus returns false and the existing bounded airlock retry remains active.
+Rejected Alternatives: Keeping `GetGenerationHandle` in the bus was rejected because allocation authority belongs to `BulkheadContainmentRuntime.EnsureVaultState`. Forcing all SHINOBU Vault lanes to allocate in `OnEnable` was rejected because dispatcher bootstrap/rebind already owns the lazy creation path and fail-inert retry is cheaper during boot-order gaps.
+Scalability potential: Low tier avoids accidental Vault growth from many airlocks during scene activation. Middle/high/ultra behavior is unchanged after owner bootstrap; the same unmanaged ring carries intents and continuous `GlobalQualityWeight` controls solver cadence.
+Hardware Impact: Removes allocation/grow/ref-count risk from the publish path. In the pre-owner window, the cost collapses to two descriptor lookup failures and one false return instead of lane creation.
+
+## Decision 2026-05-20 - Intent Bus Rebind Inert Window
+Problem: A DataVault hot-swap could bind the airlock intent bus to the replacement Vault before old SHINOBU jobs had drained and before old generation handles were released. That left a window where Gameplay could publish fresh intent packets into the new Vault while the owner runtime still held old raw-pointer handles.
+Solution: `RequestDataVaultRebind()` now binds the intent bus to null during pending rebind, disables shader globals, releases graphics buffers, resets runtime state without clearing scheduled flags, and waits for tracked handles. `TryFlushPendingDataVaultRebind()` releases the old handles, commits `_vault = pendingVault`, then rebinds the bus cache.
+Rejected Alternatives: Binding the bus to the replacement Vault immediately was rejected because publish authority would move before pointer ownership was settled. Dropping same-service callbacks into a null bus was rejected because it would create a false retry storm during benign registry refresh.
+Scalability potential: Low/Middle/High/Ultra behavior is unchanged after rebind. During the rebind window, publish fails inert and the shader route is disabled rather than doing speculative work.
+Hardware Impact: Hot-frame cost is one branch only during rebind. It prevents stale-pointer ownership ambiguity without adding a main-thread completion wait.
+
+## Decision 2026-05-20 - Dispatched Mock Generation
+Problem: `GenerateMockBulkheadsJob` had the required Burst attributes but the runtime invoked it through a managed `for` loop calling `job.Execute(i)` during Vault setup. That bypasses Burst scheduling and weakens the fallback mock generator required for isolated CI/profile runs.
+Solution: Removed the setup-time `GenerateMockData` loop. `ScheduleSimulation()` now schedules `GenerateMockBulkheadsJob` through `Schedule(count, 32, dependency)` when mock mode is enabled, no mock was generated, and no real bulkhead row exists. The returned handle flows into telemetry/closure dependency chaining, so the dispatcher owns completion.
+Rejected Alternatives: Calling `Complete()` immediately after a mock schedule was rejected because it would add a gameplay-frame barrier. Seeding mock rows after real airlock intents was rejected because it could overwrite live edge hashes, AUP planes, and CSR metadata. Keeping direct `Execute(i)` was rejected because it is not a Burst profiled path.
+Scalability potential: Low tier pays no mock job once real airlocks publish. Middle/high/ultra test scenes still get deterministic synthetic rows, and continuous `GlobalQualityWeight` controls closure cadence after the mock rows exist.
+Hardware Impact: Removes the managed setup loop from the mock route and moves the work into the dispatcher job graph. Normal production scenes with real airlock ingress pay 0 us for mock generation.
+
+## Decision 2026-05-20 - CSV Scratch File Ingest
+Problem: The CSV parser was allocation-free once handed a `ReadOnlySpan<byte>`, but the UI Toolkit facade still called `File.ReadAllBytes`, allocating a managed `byte[]` and leaving the Vault-owned `Shinobu220BulkheadCsvScratch` lane unused.
+Solution: Added `TryLoadProfilesFromCsvFile(string path)` on `BulkheadContainmentRuntime`. It resolves the profiles lane and CSV scratch byte lane, reads the file directly into the native scratch buffer using `FileStream.Read(Span<byte>)`, and parses a `ReadOnlySpan<byte>` over the native pointer. The editor window now calls that file-ingest bridge instead of `File.ReadAllBytes`.
+Rejected Alternatives: Keeping editor `byte[]` staging was rejected because the task explicitly requires a zero-GC span parser and the route already owns a Vault scratch lane. Parsing oversized files partially was rejected; the ingest returns false if the file exceeds scratch capacity. Managed dictionaries and `string.Split` remain rejected because hashes and floats are parsed directly from bytes.
+Scalability potential: Low tier and editor-on-device workflows avoid temporary managed CSV blobs. Middle/high/ultra designer workflows can hot-load profiles without recompiling C# while preserving the same continuous quality/cadence math.
+Hardware Impact: Cold/editor file import removes one managed allocation sized to the CSV file. Gameplay hot-frame impact is 0 us.

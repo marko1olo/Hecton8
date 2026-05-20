@@ -49,15 +49,17 @@ namespace Hecton8.Gameplay
     /// <summary>
     /// Canonical event packet for integrity/power/clarity damage signals.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct HabitatDamageSignal
     {
-        public float magnitude;
-        public float depth;
-        public float3 localPoint;
-        public uint damageType;
-        public ushort sourceID;
-        public byte integrityDelta;
+        [FieldOffset(0)] public float magnitude;
+        [FieldOffset(4)] public float depth;
+        [FieldOffset(8)] public float3 localPoint;
+        [FieldOffset(20)] public uint damageType;
+        [FieldOffset(24)] public ushort sourceID;
+        [FieldOffset(26)] public byte integrityDelta;
+        [FieldOffset(27)] private byte _pad0;
+        [FieldOffset(28)] private uint _pad1;
     }
 
     /// <summary>

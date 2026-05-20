@@ -50,21 +50,22 @@ namespace Hecton8.Tools.ToolKinematics
         private readonly byte[] _csvConsumeBuffer = new byte[CsvBufferBytes]; // COLD ALLOC: byte[4096] - main-thread parse buffer - owner: ToolKinematicsRuntime
         private readonly object _csvGate = new object(); // COLD ALLOC: object[1] - background-to-main CSV handoff lock - owner: ToolKinematicsRuntime
 
-        private VaultBufferHandle<ToolStateDTO> _statesHandle;
-        private VaultBufferHandle<ToolKinematicsFrameInputDTO> _frameInputsHandle;
-        private VaultBufferHandle<ToolHitResultDTO> _hitResultsHandle;
-        private VaultBufferHandle<ToolIkOutputDTO> _ikOutputsHandle;
-        private VaultBufferHandle<ToolRecoilStateDTO> _recoilStatesHandle;
-        private VaultBufferHandle<ToolKinematicsTuningDTO> _tuningHandle;
-        private VaultBufferHandle<ToolScreenExportDTO> _screenExportsHandle;
-        private VaultBufferHandle<ToolKinematicsTelemetryEntry> _telemetryHandle;
-        private VaultBufferHandle<MockTriggerPullSignal> _mockTriggerSignalsHandle;
-        private VaultBufferHandle<MockCarveRequestSignal> _carveRequestsHandle;
-        private VaultBufferHandle<ToolHeatSignal> _heatSignalsHandle;
-        private VaultBufferHandle<VfxSparkRequestSignal> _sparkRequestsHandle;
-        private VaultBufferHandle<ToolBeamVertexDTO> _beamVerticesHandle;
-        private VaultBufferHandle<int> _beamVertexCountsHandle;
-        private VaultBufferHandle<ToolPoseOutputDTO> _poseOutputsHandle;
+        private IDataVault _dataVault;
+        private VaultGenerationHandle<ToolStateDTO> _statesHandle;
+        private VaultGenerationHandle<ToolKinematicsFrameInputDTO> _frameInputsHandle;
+        private VaultGenerationHandle<ToolHitResultDTO> _hitResultsHandle;
+        private VaultGenerationHandle<ToolIkOutputDTO> _ikOutputsHandle;
+        private VaultGenerationHandle<ToolRecoilStateDTO> _recoilStatesHandle;
+        private VaultGenerationHandle<ToolKinematicsTuningDTO> _tuningHandle;
+        private VaultGenerationHandle<ToolScreenExportDTO> _screenExportsHandle;
+        private VaultGenerationHandle<ToolKinematicsTelemetryEntry> _telemetryHandle;
+        private VaultGenerationHandle<MockTriggerPullSignal> _mockTriggerSignalsHandle;
+        private VaultGenerationHandle<MockCarveRequestSignal> _carveRequestsHandle;
+        private VaultGenerationHandle<ToolHeatSignal> _heatSignalsHandle;
+        private VaultGenerationHandle<VfxSparkRequestSignal> _sparkRequestsHandle;
+        private VaultGenerationHandle<ToolBeamVertexDTO> _beamVerticesHandle;
+        private VaultGenerationHandle<int> _beamVertexCountsHandle;
+        private VaultGenerationHandle<ToolPoseOutputDTO> _poseOutputsHandle;
 
         private JobHandle _pendingHandle;
         private Thread _csvThread;
@@ -141,6 +142,16 @@ namespace Hecton8.Tools.ToolKinematics
             TryUnregisterFixed();
             TryUnregisterPostFixed();
             TryUnregisterSlow();
+            ReleaseVaultHandles();
+            ClearHandles();
+        }
+
+        private void OnDestroy()
+        {
+            CompletePendingFrameForTeardown();
+            StopCsvWatcher();
+            ReleaseVaultHandles();
+            ClearHandles();
         }
 
         public void FixedTick(float fixedDeltaTime)
@@ -598,27 +609,28 @@ namespace Hecton8.Tools.ToolKinematics
             if (vault == null)
                 return false;
 
+            BindVault(vault);
             int count = math.clamp(toolCapacity, 1, MaxToolCapacity);
             _activeToolCapacity = count;
             int telemetryLength = count * ToolKinematicsMath.BlackBoxCapacity;
             int beamVertexLength = count * BeamVerticesPerTool;
 
             bool ok =
-                TryResolveBuffer(vault, ref _statesHandle, BufferID.ToolKinematicsStates, count, NativeArrayOptions.ClearMemory, out buffers.States) &&
-                TryResolveBuffer(vault, ref _frameInputsHandle, BufferID.ToolKinematicsFrameInputs, count, NativeArrayOptions.ClearMemory, out buffers.FrameInputs) &&
-                TryResolveBuffer(vault, ref _hitResultsHandle, BufferID.ToolKinematicsHitResults, count, NativeArrayOptions.ClearMemory, out buffers.HitResults) &&
-                TryResolveBuffer(vault, ref _ikOutputsHandle, BufferID.ToolKinematicsIkOutputs, count, NativeArrayOptions.ClearMemory, out buffers.IkOutputs) &&
-                TryResolveBuffer(vault, ref _recoilStatesHandle, BufferID.ToolKinematicsRecoilStates, count, NativeArrayOptions.ClearMemory, out buffers.RecoilStates) &&
-                TryResolveBuffer(vault, ref _tuningHandle, BufferID.ToolKinematicsTuning, 1, NativeArrayOptions.ClearMemory, out buffers.Tuning) &&
-                TryResolveBuffer(vault, ref _screenExportsHandle, BufferID.ToolKinematicsScreenExports, count, NativeArrayOptions.ClearMemory, out buffers.ScreenExports) &&
-                TryResolveBuffer(vault, ref _telemetryHandle, BufferID.ToolKinematicsTelemetryRing, telemetryLength, NativeArrayOptions.ClearMemory, out buffers.TelemetryRing) &&
-                TryResolveBuffer(vault, ref _mockTriggerSignalsHandle, BufferID.ToolKinematicsMockTriggerSignals, count, NativeArrayOptions.ClearMemory, out buffers.MockTriggerSignals) &&
-                TryResolveBuffer(vault, ref _carveRequestsHandle, BufferID.ToolKinematicsMockCarveRequests, count, NativeArrayOptions.ClearMemory, out buffers.CarveRequests) &&
-                TryResolveBuffer(vault, ref _heatSignalsHandle, BufferID.ToolKinematicsHeatSignals, count, NativeArrayOptions.ClearMemory, out buffers.HeatSignals) &&
-                TryResolveBuffer(vault, ref _sparkRequestsHandle, BufferID.ToolKinematicsSparkRequests, count, NativeArrayOptions.ClearMemory, out buffers.SparkRequests) &&
-                TryResolveBuffer(vault, ref _beamVerticesHandle, BufferID.ToolKinematicsBeamVertices, beamVertexLength, NativeArrayOptions.ClearMemory, out buffers.BeamVertices) &&
-                TryResolveBuffer(vault, ref _beamVertexCountsHandle, BufferID.ToolKinematicsBeamVertexCounts, count, NativeArrayOptions.ClearMemory, out buffers.BeamVertexCounts) &&
-                TryResolveBuffer(vault, ref _poseOutputsHandle, BufferID.ToolKinematicsPoseOutputs, count, NativeArrayOptions.ClearMemory, out buffers.PoseOutputs);
+                TryResolveVaultView(vault, ref _statesHandle, BufferID.ToolKinematicsStates, count, NativeArrayOptions.ClearMemory, out buffers.States) &&
+                TryResolveVaultView(vault, ref _frameInputsHandle, BufferID.ToolKinematicsFrameInputs, count, NativeArrayOptions.ClearMemory, out buffers.FrameInputs) &&
+                TryResolveVaultView(vault, ref _hitResultsHandle, BufferID.ToolKinematicsHitResults, count, NativeArrayOptions.ClearMemory, out buffers.HitResults) &&
+                TryResolveVaultView(vault, ref _ikOutputsHandle, BufferID.ToolKinematicsIkOutputs, count, NativeArrayOptions.ClearMemory, out buffers.IkOutputs) &&
+                TryResolveVaultView(vault, ref _recoilStatesHandle, BufferID.ToolKinematicsRecoilStates, count, NativeArrayOptions.ClearMemory, out buffers.RecoilStates) &&
+                TryResolveVaultView(vault, ref _tuningHandle, BufferID.ToolKinematicsTuning, 1, NativeArrayOptions.ClearMemory, out buffers.Tuning) &&
+                TryResolveVaultView(vault, ref _screenExportsHandle, BufferID.ToolKinematicsScreenExports, count, NativeArrayOptions.ClearMemory, out buffers.ScreenExports) &&
+                TryResolveVaultView(vault, ref _telemetryHandle, BufferID.ToolKinematicsTelemetryRing, telemetryLength, NativeArrayOptions.ClearMemory, out buffers.TelemetryRing) &&
+                TryResolveVaultView(vault, ref _mockTriggerSignalsHandle, BufferID.ToolKinematicsMockTriggerSignals, count, NativeArrayOptions.ClearMemory, out buffers.MockTriggerSignals) &&
+                TryResolveVaultView(vault, ref _carveRequestsHandle, BufferID.ToolKinematicsMockCarveRequests, count, NativeArrayOptions.ClearMemory, out buffers.CarveRequests) &&
+                TryResolveVaultView(vault, ref _heatSignalsHandle, BufferID.ToolKinematicsHeatSignals, count, NativeArrayOptions.ClearMemory, out buffers.HeatSignals) &&
+                TryResolveVaultView(vault, ref _sparkRequestsHandle, BufferID.ToolKinematicsSparkRequests, count, NativeArrayOptions.ClearMemory, out buffers.SparkRequests) &&
+                TryResolveVaultView(vault, ref _beamVerticesHandle, BufferID.ToolKinematicsBeamVertices, beamVertexLength, NativeArrayOptions.ClearMemory, out buffers.BeamVertices) &&
+                TryResolveVaultView(vault, ref _beamVertexCountsHandle, BufferID.ToolKinematicsBeamVertexCounts, count, NativeArrayOptions.ClearMemory, out buffers.BeamVertexCounts) &&
+                TryResolveVaultView(vault, ref _poseOutputsHandle, BufferID.ToolKinematicsPoseOutputs, count, NativeArrayOptions.ClearMemory, out buffers.PoseOutputs);
 
             return ok;
         }
@@ -626,24 +638,42 @@ namespace Hecton8.Tools.ToolKinematics
         private bool TryResolveTuning(out NativeArray<ToolKinematicsTuningDTO> tuning)
         {
             IDataVault vault = GlobalRegistry.DataVault;
-            return TryResolveBuffer(vault, ref _tuningHandle, BufferID.ToolKinematicsTuning, 1, NativeArrayOptions.ClearMemory, out tuning);
+            BindVault(vault);
+            return TryResolveVaultView(vault, ref _tuningHandle, BufferID.ToolKinematicsTuning, 1, NativeArrayOptions.ClearMemory, out tuning);
         }
 
         private bool TryResolveStates(out NativeArray<ToolStateDTO> states)
         {
             IDataVault vault = GlobalRegistry.DataVault;
-            return TryResolveBuffer(vault, ref _statesHandle, BufferID.ToolKinematicsStates, _activeToolCapacity, NativeArrayOptions.ClearMemory, out states);
+            BindVault(vault);
+            return TryResolveVaultView(vault, ref _statesHandle, BufferID.ToolKinematicsStates, _activeToolCapacity, NativeArrayOptions.ClearMemory, out states);
         }
 
         private bool TryResolveHits(out NativeArray<ToolHitResultDTO> hits)
         {
             IDataVault vault = GlobalRegistry.DataVault;
-            return TryResolveBuffer(vault, ref _hitResultsHandle, BufferID.ToolKinematicsHitResults, _activeToolCapacity, NativeArrayOptions.ClearMemory, out hits);
+            BindVault(vault);
+            return TryResolveVaultView(vault, ref _hitResultsHandle, BufferID.ToolKinematicsHitResults, _activeToolCapacity, NativeArrayOptions.ClearMemory, out hits);
         }
 
-        private static bool TryResolveBuffer<T>(
+        private void BindVault(IDataVault vault)
+        {
+            if (ReferenceEquals(_dataVault, vault))
+                return;
+
+            ReleaseVaultHandles();
+            ClearHandles();
+            _dataVault = vault;
+        }
+
+        private static bool IsHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
+        }
+
+        private static bool TryResolveVaultView<T>(
             IDataVault vault,
-            ref VaultBufferHandle<T> handle,
+            ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredLength,
             NativeArrayOptions options,
@@ -654,15 +684,25 @@ namespace Hecton8.Tools.ToolKinematics
             if (vault == null || requiredLength <= 0)
                 return false;
 
-            if (!handle.IsCreated ||
-                !vault.ResolveBuffer(ref handle) ||
-                handle.Length < requiredLength)
+            if (IsHandleCreated(in handle) &&
+                vault.TryResolveHandle(in handle, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= requiredLength)
             {
-                handle = vault.GetBufferHandle<T>(bufferId, requiredLength, SystemID.GameplayTools, options);
+                return true;
             }
 
-            buffer = handle.Resolve(vault);
-            return buffer.IsCreated && buffer.Length >= requiredLength;
+            VaultGenerationHandle<T> acquired = vault.GetGenerationHandle<T>(bufferId, requiredLength, SystemID.GameplayTools, options);
+            if (!IsHandleCreated(in acquired) ||
+                !vault.TryResolveHandle(in acquired, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                return false;
+            }
+
+            handle = acquired;
+            return true;
         }
 
         private void WriteTuning(NativeArray<ToolKinematicsTuningDTO> tuning)
@@ -1172,6 +1212,58 @@ namespace Hecton8.Tools.ToolKinematics
             return string.IsNullOrEmpty(root) ? Directory.GetCurrentDirectory() : root;
         }
 
+        private void ReleaseVaultHandles()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return;
+
+            ReleaseVaultHandle(vault, ref _statesHandle);
+            ReleaseVaultHandle(vault, ref _frameInputsHandle);
+            ReleaseVaultHandle(vault, ref _hitResultsHandle);
+            ReleaseVaultHandle(vault, ref _ikOutputsHandle);
+            ReleaseVaultHandle(vault, ref _recoilStatesHandle);
+            ReleaseVaultHandle(vault, ref _tuningHandle);
+            ReleaseVaultHandle(vault, ref _screenExportsHandle);
+            ReleaseVaultHandle(vault, ref _telemetryHandle);
+            ReleaseVaultHandle(vault, ref _mockTriggerSignalsHandle);
+            ReleaseVaultHandle(vault, ref _carveRequestsHandle);
+            ReleaseVaultHandle(vault, ref _heatSignalsHandle);
+            ReleaseVaultHandle(vault, ref _sparkRequestsHandle);
+            ReleaseVaultHandle(vault, ref _beamVerticesHandle);
+            ReleaseVaultHandle(vault, ref _beamVertexCountsHandle);
+            ReleaseVaultHandle(vault, ref _poseOutputsHandle);
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (!IsHandleCreated(in handle))
+                return;
+
+            vault.ReleaseBuffer(in handle);
+            handle = default;
+        }
+
+        private void ClearHandles()
+        {
+            _statesHandle = default;
+            _frameInputsHandle = default;
+            _hitResultsHandle = default;
+            _ikOutputsHandle = default;
+            _recoilStatesHandle = default;
+            _tuningHandle = default;
+            _screenExportsHandle = default;
+            _telemetryHandle = default;
+            _mockTriggerSignalsHandle = default;
+            _carveRequestsHandle = default;
+            _heatSignalsHandle = default;
+            _sparkRequestsHandle = default;
+            _beamVerticesHandle = default;
+            _beamVertexCountsHandle = default;
+            _poseOutputsHandle = default;
+            _dataVault = null;
+        }
+
         private struct ToolKinematicsBufferSet
         {
             public NativeArray<ToolStateDTO> States;
@@ -1189,19 +1281,6 @@ namespace Hecton8.Tools.ToolKinematics
             public NativeArray<ToolBeamVertexDTO> BeamVertices;
             public NativeArray<int> BeamVertexCounts;
             public NativeArray<ToolPoseOutputDTO> PoseOutputs;
-        }
-    }
-
-    public static class ToolKinematicsVaultAccess
-    {
-        public static ref ToolStateDTO GetStateRef(IDataVault vault, ref VaultBufferHandle<ToolStateDTO> handle, int index)
-        {
-            return ref handle.GetElementAsRef(vault, index);
-        }
-
-        public static ref ToolKinematicsTuningDTO GetTuningRef(IDataVault vault, ref VaultBufferHandle<ToolKinematicsTuningDTO> handle)
-        {
-            return ref handle.GetElementAsRef(vault, 0);
         }
     }
 }

@@ -59,12 +59,12 @@ namespace Hecton8.UI
         [FieldOffset(16)] public FixedString32Bytes TextLine;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = TerminalOsConstants.ScreenCommandStrideBytes)]
+    [StructLayout(LayoutKind.Explicit, Size = TerminalOsConstants.ScreenCommandStrideBytes)]
     public struct ScreenCommandDTO
     {
-        public uint FontAtlasUV_Packed;
-        public float2 Position;
-        public float Scale;
+        [FieldOffset(0)] public uint FontAtlasUV_Packed;
+        [FieldOffset(4)] public float2 Position;
+        [FieldOffset(12)] public float Scale;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = TerminalOsConstants.ButtonAabbStrideBytes)]
@@ -129,27 +129,27 @@ namespace Hecton8.UI
         [FieldOffset(76)] public uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 8)]
+    [StructLayout(LayoutKind.Explicit, Size = 8)]
     public partial struct MockPowerStateSignal
     {
-        public uint Frame;
-        public float MockPowerLevel;
+        [FieldOffset(0)] public uint Frame;
+        [FieldOffset(4)] public float MockPowerLevel;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 8)]
+    [StructLayout(LayoutKind.Explicit, Size = 8)]
     public partial struct MockDamageScalarSignal
     {
-        public uint Frame;
-        public float Damage01;
+        [FieldOffset(0)] public uint Frame;
+        [FieldOffset(4)] public float Damage01;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public partial struct MockPowerStatusSignal
     {
-        public uint Frame;
-        public uint PoweredMask0;
-        public uint PoweredMask1;
-        public uint Reserved0;
+        [FieldOffset(0)] public uint Frame;
+        [FieldOffset(4)] public uint PoweredMask0;
+        [FieldOffset(8)] public uint PoweredMask1;
+        [FieldOffset(12)] public uint Reserved0;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 16)]
@@ -174,11 +174,11 @@ namespace Hecton8.UI
         public float2 LocalUv;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 80)]
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
     public struct TerminalPanelInstanceDTO
     {
-        public float4x4 LocalToWorld;
-        public float4 SliceFlags;
+        [FieldOffset(0)] public float4x4 LocalToWorld;
+        [FieldOffset(64)] public float4 SliceFlags;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]

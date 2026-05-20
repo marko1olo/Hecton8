@@ -1,4 +1,4 @@
-﻿# HECTON-8 - FULL MASTER IMMERSIVE RELEASE PLAN v2
+# HECTON-8 - FULL MASTER IMMERSIVE RELEASE PLAN v2
 
 Status: `PENDING VERIFICATION`
 Approved For Use: `2026-04-05`
@@ -6,7 +6,7 @@ Primary Target: `NVIDIA MX350 2 GB VRAM / 12 GB RAM / i5-1135G7`
 Direction: `NASA-Punk + Deep Sea Noir`
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-20 R46 Root/Architecture Actuality Boundary
+## 2026-05-20 R47 Root/Architecture Actuality Boundary
 This roadmap is active only where it agrees with:
 
 - `Docs/README.md`
@@ -15,12 +15,12 @@ This roadmap is active only where it agrees with:
 - current source files
 - fresh verification logs and artifacts
 
-R45 root/architecture R43/R44 residue/proof-artifact/source-counter correction is the latest local static DOC_GLOBAL boundary for architecture/root documentation: `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
+R47 root/architecture authority-spine/runtime-wording/counter-drift correction is the latest local static DOC_GLOBAL boundary for architecture/root documentation: `Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md`. R46 remains the prior interior-authority/route-field/proof-language correction. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 ## 2026-05-20 Current-State Boundary
 
-- Read `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`, then `Docs/Reports/2026-05-20_DOCUMENTATION_R44_ROOT_ARCHITECTURE_INTERNAL_RESIDUE_EXACT_ROUTE_FIELDS_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R43_ROOT_ARCHITECTURE_ROUTE_CARD_AND_COUNTER_RESIDUE_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R42_ROOT_ARCHITECTURE_COUNTER_AND_ROUTE_BOUNDARY_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R41_ROOT_ARCHITECTURE_GLOBAL_AUTHORITY_INTERNAL_RESIDUE_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R40_ROOT_ARCHITECTURE_R38_RESIDUE_AND_COUNTER_REFRESH_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R39_ROOT_ARCHITECTURE_AUTHORITY_COUNTER_AND_PROOF_WORDING_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R38_ROOT_ARCHITECTURE_SOURCE_COUNTER_DRIFT_AND_BOUNDARY_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R37_ROOT_ARCHITECTURE_ARTIFACT_PATHS_AND_COUNTERS_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R36_ROOT_ARCHITECTURE_AUTHORITY_SPINE_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R35_ROOT_ARCHITECTURE_R4_AND_COUNTER_RESIDUE_LOCAL.md`, and `Docs/Reports/2026-05-19_DOCUMENTATION_R34_ROOT_ARCHITECTURE_SOURCE_COUNTER_REFRESH_LOCAL.md` before using this roadmap for current root/architecture/source-counter/proof-wording truth. This roadmap is subordinate to current source and fresh verification artifacts.
+- Read `Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md`, then `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`, then `Docs/Reports/2026-05-20_DOCUMENTATION_R44_ROOT_ARCHITECTURE_INTERNAL_RESIDUE_EXACT_ROUTE_FIELDS_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R43_ROOT_ARCHITECTURE_ROUTE_CARD_AND_COUNTER_RESIDUE_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R42_ROOT_ARCHITECTURE_COUNTER_AND_ROUTE_BOUNDARY_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R41_ROOT_ARCHITECTURE_GLOBAL_AUTHORITY_INTERNAL_RESIDUE_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R40_ROOT_ARCHITECTURE_R38_RESIDUE_AND_COUNTER_REFRESH_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R39_ROOT_ARCHITECTURE_AUTHORITY_COUNTER_AND_PROOF_WORDING_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R38_ROOT_ARCHITECTURE_SOURCE_COUNTER_DRIFT_AND_BOUNDARY_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R37_ROOT_ARCHITECTURE_ARTIFACT_PATHS_AND_COUNTERS_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R36_ROOT_ARCHITECTURE_AUTHORITY_SPINE_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R35_ROOT_ARCHITECTURE_R4_AND_COUNTER_RESIDUE_LOCAL.md`, and `Docs/Reports/2026-05-19_DOCUMENTATION_R34_ROOT_ARCHITECTURE_SOURCE_COUNTER_REFRESH_LOCAL.md` before using this roadmap for current root/architecture/source-counter/proof-wording truth. This roadmap is subordinate to current source and fresh verification artifacts.
 - Read `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` before using this roadmap as current project truth. May 11 reports remain historical where the May 13 DOC_AUDIT override conflicts.
 - This file is a product roadmap and historical working ledger, not a runtime proof document.
 - Dated rows that say compile/pass/returned `0` without a fresh artifact path, command, timestamp, environment, and output are capture-time report text only; they are not current Unity import, Play Mode, profiler, GCMonitor, player build, save/load, platform, analytics, or visual proof.
@@ -389,8 +389,8 @@ P0 rules:
     3. Add SceneGuard to 01_MAIN_MENU scene (as root GameObject)
     4. Add SceneGuard to 02_HECTON_WORLD scene (as root GameObject)
     5. Verify Build Settings: 00_BOOTSTRAP scene is index 0, 01_MAIN_MENU is 1, 02_HECTON_WORLD is 2
-    6. Test: Run 00_BOOTSTRAP â†’ verify all managers are initialized in log
-    7. Test: Force load 01_MAIN_MENU directly â†’ verify SceneGuard reloads 00_BOOTSTRAP instead
+    6. Test: Run 00_BOOTSTRAP Ã¢â€ â€™ verify all managers are initialized in log
+    7. Test: Force load 01_MAIN_MENU directly Ã¢â€ â€™ verify SceneGuard reloads 00_BOOTSTRAP instead
 - [~] Bring `01_MAIN_MENU` to the role of production shell
   - **CODE COMPLETE:**
     - MainMenuController.cs with full UI flow (new game / load / settings / quit)
@@ -417,10 +417,10 @@ P0 rules:
   - **VALIDATION:**
     1. Open 01_MAIN_MENU scene in editor
     2. Run Window > HECTON-8 > Validate Main Menu
-    3. Fix any âœ— missing references shown in report
-    4. Test: New Game button â†’ should show confirmation dialog
-    5. Test: Load Game button â†’ should show save slots
-    6. Test: Try loading scene directly (run 01_MAIN_MENU without 00_BOOTSTRAP) â†’ SceneGuard should reload bootstrap
+    3. Fix any Ã¢Å“â€” missing references shown in report
+    4. Test: New Game button Ã¢â€ â€™ should show confirmation dialog
+    5. Test: Load Game button Ã¢â€ â€™ should show save slots
+    6. Test: Try loading scene directly (run 01_MAIN_MENU without 00_BOOTSTRAP) Ã¢â€ â€™ SceneGuard should reload bootstrap
 - [c] Raise `GameStartContext` and remove dependence on a single `TargetSaveSlot`
   - code addendum: `GameStartContextHolder` now owns the cold scene-handoff persistence itself instead of scattering `TargetSaveSlot` writes/reads across menu and bootstrap. `MainMenuController.StartGame()` writes through `GameStartContextHolder.SetCurrent(...)`, `SceneBootstrap.LoadOrNewGameAsync()` restores through `TryGetCurrentOrRestore(...)`, and the persisted handoff is cleared immediately after bootstrap consumes it so stale slot state does not keep poisoning future world loads. Legacy `MainMenuController.TargetSaveSlot` remains only as a compatibility mirror, not as the runtime source of truth.
   - code addendum: gameplay -> menu shell now clears session handoff ownership too. `PauseMenuController.ExitToMainMenu()` calls `GameStartContextHolder.Reset()` before loading `01_MAIN_MENU`, so stale `LoadGame/Resume` context does not leak back into the shell after leaving an active world session.
@@ -859,7 +859,7 @@ P0 rules:
     `WorldCaveDirector` had drifted onto a dead `MapMagicBridge.SampleHeight` call; restored live contract through `TryGetHeight` fail-safe, reconnected `caveSpawnProbability` as the intended biome-evaluation gate, and removed duplicate `using` noise from `HectonVoxelEngine`
   - scene wiring truth from `02_HECTON_WORLD`: live scene already contains `MapMagicBridge`, `WorldCaveDirector`, `WorldGenerativeGeologyIntegrationDirector`, `WorldGenerativeGeologySeamExecutionDirector`, `WorldGenerativeGeologyVoxelBridgeDirector`, and a separate active `[VOXEL_ENGINE]` with `HectonVoxelEngine`
   - runtime hardening addendum: `WorldGenerativeGeologyTerrainSeamApplier` no longer creates fresh terrain plan buckets and fresh `float[,]` height patches every `SlowTick`; per-terrain plan buckets and patch buffers are now reused, terrain lookup now follows `MapMagicBridge` tile-backed terrain truth before falling back to `Terrain.activeTerrains`, baseline height snapshots are refreshed fail-safe when streamed `TerrainData` owners or heightmap resolutions change, untouched restore paths now drop stale state instead of writing into a swapped terrain-data owner, and terrain diagnostics no longer pull `terrain.name` strings in the live reconcile path
-  - runtime hardening addendum: `WorldCaveDirector` now owns cave spawn lifecycle instead of firing duplicate `async void` launches for the same runtime key; pending cave builds are tracked, cancelled on teardown, stale cave registry entries are purged, and the live cave path no longer relies on â€œactive only after await returnsâ€ semantics
+  - runtime hardening addendum: `WorldCaveDirector` now owns cave spawn lifecycle instead of firing duplicate `async void` launches for the same runtime key; pending cave builds are tracked, cancelled on teardown, stale cave registry entries are purged, and the live cave path no longer relies on Ã¢â‚¬Å“active only after await returnsÃ¢â‚¬Â semantics
   - runtime hardening addendum: `WorldGenerativeGeologyVoxelBridgeDirector` no longer uses dictionary/hashset `foreach` inside live reconcile/cancel/clear paths; active volume, pending runtime, and pending request scans now use explicit enumerators so the bridge no longer violates the project hot-path iteration rule in `SlowTick`
   - runtime hardening addendum: `WorldGenerativeGeologyVoxelBridgeDirector` now caches active `WorldGenerativeGeologyVoxelRuntime` owners by `runtimeKey`, so reconcile/detail-band hysteresis no longer does per-request `TryGetComponent`, and debug top-volume tracking no longer depends on the `"None"` sentinel string in the live owner
   - runtime hardening addendum: `WorldGenerativeGeologyVoxelBridgeDirector` no longer builds runtime-diagnostics trace strings directly inside `ReconcileVoxelRequests()`, `Tick()` launch flush, or request completion/cancel/fault bodies; trace formatting is now isolated behind development/editor-only helper methods so release hot paths do not carry string interpolation debt just because diagnostics support exists
@@ -1442,7 +1442,7 @@ P0 rules:
 - Silence matters as much as saturation
 - This document is the integrated master version and should be used as the live production roadmap
 
-## Flora Wave 5 Addendum â€” 2026-04-08 Coral Geometry Ownership
+## Flora Wave 5 Addendum Ã¢â‚¬â€ 2026-04-08 Coral Geometry Ownership
 
 - Capture-time architecture step:
   - coral starter geometry now has its own editor-only owner `WorldProceduralCoralMeshBuilder`
@@ -1960,7 +1960,7 @@ P0 rules:
     - hidden/local `AGENTS.md` files were synchronized so smooth LOD transitions, organic continuity, seeded runtime variety, and cheap current-coupled motion are enforced everywhere, not only in root docs
   - why it matters:
     - flora form work is no longer blind; contact-sheet previews are good enough to keep iterating on silhouette and continuity without pretending final beauty proof is done
-    - `kelp_tall` remains safely under its family cap while moving away from the old â€œfew blades on a poleâ€ read
+    - `kelp_tall` remains safely under its family cap while moving away from the old Ã¢â‚¬Å“few blades on a poleÃ¢â‚¬Â read
   - capture-time reported facts:
     - automation request `flora-verify-20260408-tallpass-5` completed with `success=true`
     - latest flora report:
@@ -2268,7 +2268,7 @@ P0 rules:
 - 2026-04-09 - Vertical runtime ownership now reaches a real consumer instead of stopping at depth state publication:
   - `HectonUnderwaterVisuals` now listens to `BiomeMatrixDirector.OnMatrixBiomeChanged`
   - matrix biomes can supply an explicit `runtimeVisualProfile` override for underwater visuals
-  - if no matrix visual override is authored, `HectonUnderwaterVisuals` stays on the existing `MapMagicBridge` â†’ `HectonOceanPalette` path
+  - if no matrix visual override is authored, `HectonUnderwaterVisuals` stays on the existing `MapMagicBridge` Ã¢â€ â€™ `HectonOceanPalette` path
   - this keeps shallow-water behavior on the old cheap path while giving deep matrix-owned zones a first-class visual handoff
   - measured proof absent; latest Unity console readback is still pending because the MCP Unity session did not return after domain reload
 - 2026-04-09 - Vertical runtime ownership now also reaches surface atmosphere without disturbing underwater contracts:
@@ -2351,6 +2351,3 @@ P0 rules:
     - visor material falls back to black texture
   - on focus return it rebuilds the same projection path and restores the existing shared/runtime RT contract
   - this is editor-only; play mode visor/runtime behavior is intentionally unchanged
-
-
-

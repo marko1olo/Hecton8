@@ -509,9 +509,8 @@ namespace Hecton8.Dev
 
         private static float DistanceSq(Vector3 a, Vector3 b)
         {
-            return math.distancesq(
-                new float3(a.x, a.y, a.z),
-                new float3(b.x, b.y, b.z));
+            Vector3 delta = a - b;
+            return delta.sqrMagnitude;
         }
 
         private float ResolveTargetDistanceMetersSq()

@@ -256,6 +256,7 @@ namespace Hecton8.Graphics.Materials.Editor
     internal static class VisualPressureAgingInquisition
     {
         private const string ReportRelativePath = "Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json";
+        private const string DedicatedReportRelativePath = "Docs/Reports/VISUAL_AGING_INQUISITION_REPORT.json";
 
         [MenuItem("Hecton8/Rendering/Run Visual Aging Inquisition")]
         public static void RunAndReveal()
@@ -268,9 +269,17 @@ namespace Hecton8.Graphics.Materials.Editor
         {
             string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
             string reportPath = Path.Combine(root, ReportRelativePath);
+            string dedicatedReportPath = Path.Combine(root, DedicatedReportRelativePath);
             string reportDir = Path.GetDirectoryName(reportPath);
             if (!string.IsNullOrEmpty(reportDir))
                 Directory.CreateDirectory(reportDir);
+            string dedicatedReportDir = Path.GetDirectoryName(dedicatedReportPath);
+            if (!string.IsNullOrEmpty(dedicatedReportDir))
+                Directory.CreateDirectory(dedicatedReportDir);
+
+            string previousReport = File.Exists(reportPath) ? File.ReadAllText(reportPath) : string.Empty;
+            bool preservePreviousReport = !string.IsNullOrEmpty(previousReport) &&
+                previousReport.IndexOf("\"agent\": \"SHINOBU_219\"", StringComparison.Ordinal) < 0;
 
             string baseDegradation = ReadTextIfExists(root, "Assets/_Project/Scripts/Construction/BaseDegradationSystem.cs");
             string runtime = ReadTextIfExists(root, "Assets/_Project/Scripts/Graphics/Materials/VisualPressureAgingRuntime.cs");
@@ -312,6 +321,8 @@ namespace Hecton8.Graphics.Materials.Editor
             builder.AppendLine("  \"scope\": \"VISUAL_PRESSURE_AGING_SHADER\",");
             builder.AppendLine("  \"scanScope\": \"Project scripts counted; pass/fail gated on BaseDegradation/UberNoir aging scope\",");
             builder.AppendLine("  \"summary\": \"Instance Material Mutations Purged\",");
+            builder.AppendLine("  \"evidenceClass\": \"STATIC_SOURCE\",");
+            builder.AppendLine("  \"runtimeStatus\": \"PENDING_VERIFICATION\",");
             builder.AppendLine("  \"instanceMaterialMutationsActive\": " + activeMaterialMutations + ",");
             builder.AppendLine("  \"authoringAgingDecalCallsActive\": " + activeAuthoringDecals + ",");
             builder.AppendLine("  \"projectMaterialMutationReferences\": " + projectMaterialMutationReferences + ",");
@@ -324,9 +335,18 @@ namespace Hecton8.Graphics.Materials.Editor
             builder.AppendLine("  \"visualAgingParamsDTOBytes\": 64,");
             builder.AppendLine("  \"layoutValid\": " + (layoutValid ? "true" : "false") + ",");
             builder.AppendLine("  \"rollbackStateIncluded\": false,");
-            builder.AppendLine("  \"status\": \"" + (pass ? "PASS" : "FAIL") + "\"");
+            builder.AppendLine("  \"status\": \"" + (pass ? "STATIC_PASS" : "STATIC_FAIL") + "\",");
+            builder.AppendLine("  \"preservedPreviousReport\": " + (preservePreviousReport ? "true" : "false") + (preservePreviousReport ? "," : string.Empty));
+            if (preservePreviousReport)
+            {
+                builder.Append("  \"previousReportRaw\": ");
+                AppendJsonString(builder, previousReport);
+                builder.AppendLine();
+            }
             builder.AppendLine("}");
-            File.WriteAllText(reportPath, builder.ToString());
+            string report = builder.ToString();
+            File.WriteAllText(reportPath, report);
+            File.WriteAllText(dedicatedReportPath, report);
             return reportPath;
         }
 
@@ -383,6 +403,58 @@ namespace Hecton8.Graphics.Materials.Editor
             }
 
             return count;
+        }
+
+        private static void AppendJsonString(StringBuilder builder, string value)
+        {
+            builder.Append('"');
+            if (!string.IsNullOrEmpty(value))
+            {
+                for (int i = 0; i < value.Length; i++)
+                {
+                    char c = value[i];
+                    switch (c)
+                    {
+                        case '"':
+                            builder.Append("\\\"");
+                            break;
+                        case '\\':
+                            builder.Append("\\\\");
+                            break;
+                        case '\b':
+                            builder.Append("\\b");
+                            break;
+                        case '\f':
+                            builder.Append("\\f");
+                            break;
+                        case '\n':
+                            builder.Append("\\n");
+                            break;
+                        case '\r':
+                            builder.Append("\\r");
+                            break;
+                        case '\t':
+                            builder.Append("\\t");
+                            break;
+                        default:
+                            if (c < ' ')
+                                AppendControlEscape(builder, c);
+                            else
+                                builder.Append(c);
+                            break;
+                    }
+                }
+            }
+
+            builder.Append('"');
+        }
+
+        private static void AppendControlEscape(StringBuilder builder, char value)
+        {
+            const string hex = "0123456789ABCDEF";
+            builder.Append("\\u00");
+            builder.Append(hex[(value >> 4) & 0xF]);
+            builder.Append(hex[value & 0xF]);
         }
     }
 }

@@ -268,6 +268,8 @@ namespace Hecton8.Audio
         private const int SonarSdfHighProbeCount = 32;
         private const int SonarEchoCompositeCandidateCapacity = 32;
         private const int SonarEchoCompositeGroupCapacity = 8;
+        private const BufferID PlayerCriticalSonarEchoTapUploadRingBufferId = (BufferID)70889;
+        private const BufferID PlayerCriticalPrologueTransitionRingBufferId = (BufferID)70890;
         private const double SonarEchoCompositeCellSizeMeters = 10d;
         private const double SonarEchoCompositeCellSizeMetersInv = 0.1d;
         private const float EcholocationReflectivityConstant = 0.000045f;
@@ -680,14 +682,10 @@ namespace Hecton8.Audio
         private NativeArray<SonarEchoCompositeGroup> _sonarEchoCompositeGroups;
         // VAULT ALIAS: NativeArray<int>[1] - sonar echo coalesced group count returned by Burst hash job - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<int> _sonarEchoCompositeGroupCountNative;
-        // COLD ALLOC: NativeParallelMultiHashMap<int,int>[32] - sonar echo AUP cell occupancy before DSP tap publish - owner: PlayerCriticalProceduralAudioRenderer
-        private NativeParallelMultiHashMap<int, int> _sonarEchoCompositeSpatialHash;
-        // COLD ALLOC: NativeParallelHashMap<int,int>[8] - sonar echo hash-to-output group lookup for coalescing - owner: PlayerCriticalProceduralAudioRenderer
-        private NativeParallelHashMap<int, int> _sonarEchoCompositeGroupByHash;
         // VAULT ALIAS: NativeArray<AcousticEcholocationRayHit>[32] - Burst SDF ping ray hit cache - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<AcousticEcholocationRayHit> _sonarEcholocationHits;
-        // COLD ALLOC: NativeQueue<SonarEchoTap>[32] - late-frame echo tap upload bridge into DSP pending buffers - owner: PlayerCriticalProceduralAudioRenderer
-        private NativeQueue<SonarEchoTap> _sonarEchoTapUploadQueue;
+        // VAULT ALIAS: NativeArray<SonarEchoTap>[32] - late-frame echo tap upload ring into DSP pending buffers - vault owner: SystemID.AudioPlayerCritical
+        private NativeArray<SonarEchoTap> _sonarEchoTapUploadRing;
         // VAULT ALIAS: NativeArray<float>[1024] - Karplus-Strong delay line for metallic impact synthesis - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<float> _impactClangDelay;
         // VAULT ALIAS: NativeArray<float>[4096] - thruster comb filter delay ring - vault owner: SystemID.AudioPlayerCritical
@@ -734,8 +732,8 @@ namespace Hecton8.Audio
         private NativeArray<GranularAudioTelemetryEntry> _granularTelemetryRing;
         // VAULT ALIAS: NativeArray<PrologueAudioTransitionTelemetryEntry>[300] - prologue transition DSP black-box ring - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<PrologueAudioTransitionTelemetryEntry> _prologueTransitionTelemetryRing;
-        // COLD ALLOC: NativeQueue<AudioTransitionState>[32] - prologue visual-sync to DSP command lane - owner: PlayerCriticalProceduralAudioRenderer
-        private NativeQueue<AudioTransitionState> _prologueTransitionQueue;
+        // VAULT ALIAS: NativeArray<AudioTransitionState>[32] - prologue visual-sync to DSP command ring - vault owner: SystemID.AudioPlayerCritical
+        private NativeArray<AudioTransitionState> _prologueTransitionRing;
         // VAULT ALIAS: NativeArray<float>[262144] - double-buffered VWS PCM clip lane A - vault owner: SystemID.AudioPlayerCritical
         private NativeArray<float> _vwsClipSamplesA;
         // VAULT ALIAS: NativeArray<float>[262144] - double-buffered VWS PCM clip lane B - vault owner: SystemID.AudioPlayerCritical
@@ -760,6 +758,11 @@ namespace Hecton8.Audio
         private int _prologueTransitionTelemetryCursor;
         private int _prologueTransitionTelemetryDumpRequested;
         private int _prologueTransitionTelemetryDumped;
+        private int _sonarEchoTapUploadReadIndex;
+        private int _sonarEchoTapUploadWriteIndex;
+        private int _sonarEchoTapUploadCount;
+        private int _prologueTransitionReadIndex;
+        private int _prologueTransitionWriteIndex;
         private int _prologueTransitionQueueCount;
         private AudioFrameSpscRingBuffer _sampleRingBuffer;
         private Thread _audioProducerThread;
@@ -1254,16 +1257,15 @@ namespace Hecton8.Audio
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct SonarEchoSpatialHashCoalesceJob : IJob
         {
-            [ReadOnly] public NativeArray<SonarEchoCompositeGroup> Candidates;
-            public NativeParallelMultiHashMap<int, int> SpatialHash;
-            public NativeParallelHashMap<int, int> GroupByHash;
-            public NativeArray<SonarEchoCompositeGroup> Groups;
-            public NativeArray<int> GroupCount;
+            [ReadOnly, NoAlias] public NativeArray<SonarEchoCompositeGroup> Candidates;
+            [NoAlias] public NativeArray<SonarEchoCompositeGroup> Groups;
+            [NoAlias] public NativeArray<int> GroupCount;
             public int CandidateCount;
 
             public void Execute()
             {
                 int safeCandidateCount = math.clamp(CandidateCount, 0, Candidates.Length);
+                int safeGroupCapacity = Groups.Length;
                 GroupCount[0] = 0;
 
                 for (int candidateIndex = 0; candidateIndex < safeCandidateCount; candidateIndex++)
@@ -1273,25 +1275,31 @@ namespace Hecton8.Audio
                         continue;
 
                     int hash = ResolveSonarEchoCompositeHash(in candidate.Position, candidate.AudioMaterialId);
-                    SpatialHash.Add(hash, candidateIndex);
-
-                    if (GroupByHash.TryGetValue(hash, out int groupIndex))
+                    int groupCount = GroupCount[0];
+                    bool merged = false;
+                    for (int groupIndex = 0; groupIndex < groupCount && groupIndex < safeGroupCapacity; groupIndex++)
                     {
                         SonarEchoCompositeGroup group = Groups[groupIndex];
+                        if (ResolveSonarEchoCompositeHash(in group.Position, group.AudioMaterialId) != hash)
+                            continue;
+
                         group.ReturnStrength += candidate.ReturnStrength;
                         group.Resonance += candidate.Resonance;
                         group.DistanceMeters += candidate.DistanceMeters;
                         group.HitCount += candidate.HitCount;
                         Groups[groupIndex] = group;
-                        continue;
+                        merged = true;
+                        break;
                     }
 
-                    int writeIndex = GroupCount[0];
-                    if (writeIndex >= Groups.Length)
+                    if (merged)
+                        continue;
+
+                    int writeIndex = groupCount;
+                    if (writeIndex >= safeGroupCapacity)
                         continue;
 
                     Groups[writeIndex] = candidate;
-                    GroupByHash.TryAdd(hash, writeIndex);
                     GroupCount[0] = writeIndex + 1;
                 }
             }
@@ -1595,14 +1603,16 @@ namespace Hecton8.Audio
         /// </summary>
         public bool QueuePrologueAudioTransition(in AudioTransitionState state)
         {
-            if (!_prologueTransitionQueue.IsCreated ||
+            if (!_prologueTransitionRing.IsCreated ||
                 _prologueTransitionQueueCount >= PrologueTransitionQueueCapacity)
             {
                 return false;
             }
 
             AudioTransitionState sanitized = SanitizePrologueAudioTransition(in state, out bool invalid);
-            _prologueTransitionQueue.Enqueue(sanitized);
+            if (!TryWriteRing(_prologueTransitionRing, ref _prologueTransitionWriteIndex, _prologueTransitionQueueCount, PrologueTransitionQueueCapacity, in sanitized))
+                return false;
+
             _prologueTransitionQueueCount++;
             PublishAudioParameterSnapshot();
             return !invalid;
@@ -4016,46 +4026,60 @@ namespace Hecton8.Audio
 
         private void ClearSonarEchoTapUploadQueue()
         {
-            if (!_sonarEchoTapUploadQueue.IsCreated)
+            if (!_sonarEchoTapUploadRing.IsCreated)
                 return;
 
-            int guard = SonarEchoTapCapacity;
-            while (guard-- > 0 && _sonarEchoTapUploadQueue.TryDequeue(out _))
-            {
-            }
+            ClearRing(_sonarEchoTapUploadRing, SonarEchoTapCapacity);
+            _sonarEchoTapUploadReadIndex = 0;
+            _sonarEchoTapUploadWriteIndex = 0;
+            _sonarEchoTapUploadCount = 0;
         }
 
         private void PrewarmSonarEchoTapUploadQueue()
         {
-            if (!_sonarEchoTapUploadQueue.IsCreated)
+            if (!_sonarEchoTapUploadRing.IsCreated)
                 return;
 
-            for (int i = 0; i < SonarEchoTapCapacity; i++)
-                _sonarEchoTapUploadQueue.Enqueue(default);
             ClearSonarEchoTapUploadQueue();
         }
 
         private bool TryEnqueueSonarEchoTap(SonarEchoTap tap, ref int queuedTapCount)
         {
-            if (!_sonarEchoTapUploadQueue.IsCreated || queuedTapCount >= SonarEchoTapCapacity)
+            if (!_sonarEchoTapUploadRing.IsCreated ||
+                queuedTapCount >= SonarEchoTapCapacity ||
+                _sonarEchoTapUploadCount >= SonarEchoTapCapacity)
+            {
+                return false;
+            }
+
+            if (!TryWriteRing(_sonarEchoTapUploadRing, ref _sonarEchoTapUploadWriteIndex, _sonarEchoTapUploadCount, SonarEchoTapCapacity, in tap))
                 return false;
 
-            _sonarEchoTapUploadQueue.Enqueue(tap);
+            _sonarEchoTapUploadCount++;
             queuedTapCount++;
             return true;
         }
 
         private int DrainSonarEchoTapUploadQueue(NativeArray<SonarEchoTap> destination)
         {
-            if (!destination.IsCreated || !_sonarEchoTapUploadQueue.IsCreated)
+            if (!destination.IsCreated || !_sonarEchoTapUploadRing.IsCreated)
                 return 0;
 
             int tapCount = 0;
             while (tapCount < destination.Length &&
                    tapCount < SonarEchoTapCapacity &&
-                   _sonarEchoTapUploadQueue.TryDequeue(out SonarEchoTap tap))
+                   _sonarEchoTapUploadCount > 0 &&
+                   TryReadRing(_sonarEchoTapUploadRing, ref _sonarEchoTapUploadReadIndex, _sonarEchoTapUploadCount, SonarEchoTapCapacity, out SonarEchoTap tap))
             {
+                _sonarEchoTapUploadCount = math.max(0, _sonarEchoTapUploadCount - 1);
                 destination[tapCount++] = tap;
+            }
+
+            if (_sonarEchoTapUploadCount <= 0)
+            {
+                _sonarEchoTapUploadCount = 0;
+                _sonarEchoTapUploadReadIndex = 0;
+                _sonarEchoTapUploadWriteIndex = 0;
             }
 
             return tapCount;
@@ -4162,22 +4186,16 @@ namespace Hecton8.Audio
         {
             if (!candidates.IsCreated ||
                 !_sonarEchoCompositeGroups.IsCreated ||
-                !_sonarEchoCompositeGroupCountNative.IsCreated ||
-                !_sonarEchoCompositeSpatialHash.IsCreated ||
-                !_sonarEchoCompositeGroupByHash.IsCreated)
+                !_sonarEchoCompositeGroupCountNative.IsCreated)
             {
                 return false;
             }
 
-            _sonarEchoCompositeSpatialHash.Clear();
-            _sonarEchoCompositeGroupByHash.Clear();
             _sonarEchoCompositeGroupCountNative[0] = 0;
 
             SonarEchoSpatialHashCoalesceJob coalesceJob = new SonarEchoSpatialHashCoalesceJob
             {
                 Candidates = candidates,
-                SpatialHash = _sonarEchoCompositeSpatialHash,
-                GroupByHash = _sonarEchoCompositeGroupByHash,
                 Groups = _sonarEchoCompositeGroups,
                 GroupCount = _sonarEchoCompositeGroupCountNative,
                 CandidateCount = math.clamp(candidateCount, 0, SonarEchoCompositeCandidateCapacity)
@@ -5712,6 +5730,7 @@ namespace Hecton8.Audio
             _sonarEchoCompositeGroups = ResolveVaultBuffer<SonarEchoCompositeGroup>(vault, BufferID.PlayerCriticalSonarEchoCompositeGroups, SonarEchoCompositeGroupCapacity, NativeArrayOptions.ClearMemory);
             _sonarEchoCompositeGroupCountNative = ResolveVaultBuffer<int>(vault, BufferID.PlayerCriticalSonarEchoCompositeGroupCount, 1, NativeArrayOptions.ClearMemory);
             _sonarEcholocationHits = ResolveVaultBuffer<AcousticEcholocationRayHit>(vault, BufferID.PlayerCriticalSonarEcholocationHits, SonarEchoTapCapacity, NativeArrayOptions.ClearMemory);
+            _sonarEchoTapUploadRing = ResolveVaultBuffer<SonarEchoTap>(vault, PlayerCriticalSonarEchoTapUploadRingBufferId, SonarEchoTapCapacity, NativeArrayOptions.ClearMemory);
             _impactClangDelay = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalImpactClangDelay, ImpactClangDelayCapacity, NativeArrayOptions.ClearMemory);
             _thrusterCombDelay = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalThrusterCombDelay, ThrusterCombDelayCapacity, NativeArrayOptions.ClearMemory);
             _sabineReverbDelay = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalSabineReverbDelay, SabineReverbDelayCapacity, NativeArrayOptions.ClearMemory);
@@ -5735,6 +5754,7 @@ namespace Hecton8.Audio
             _granularVoiceGain = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalGranularVoiceGain, GranularVoiceCapacity, NativeArrayOptions.ClearMemory);
             _granularTelemetryRing = ResolveVaultBuffer<GranularAudioTelemetryEntry>(vault, BufferID.PlayerCriticalGranularTelemetryRing, GranularTelemetryCapacity, NativeArrayOptions.ClearMemory);
             _prologueTransitionTelemetryRing = ResolveVaultBuffer<PrologueAudioTransitionTelemetryEntry>(vault, BufferID.PlayerCriticalPrologueTransitionTelemetryRing, PrologueTransitionTelemetryCapacity, NativeArrayOptions.ClearMemory);
+            _prologueTransitionRing = ResolveVaultBuffer<AudioTransitionState>(vault, PlayerCriticalPrologueTransitionRingBufferId, PrologueTransitionQueueCapacity, NativeArrayOptions.ClearMemory);
             _vwsClipSamplesA = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalVwsClipSamplesA, VwsClipSampleCapacity, NativeArrayOptions.ClearMemory);
             _vwsClipSamplesB = ResolveVaultBuffer<float>(vault, BufferID.PlayerCriticalVwsClipSamplesB, VwsClipSampleCapacity, NativeArrayOptions.ClearMemory);
 
@@ -5773,6 +5793,7 @@ namespace Hecton8.Audio
             _sonarEchoCompositeGroups = default;
             _sonarEchoCompositeGroupCountNative = default;
             _sonarEcholocationHits = default;
+            _sonarEchoTapUploadRing = default;
             _impactClangDelay = default;
             _thrusterCombDelay = default;
             if (clearSabine)
@@ -5797,6 +5818,7 @@ namespace Hecton8.Audio
             _granularVoiceGain = default;
             _granularTelemetryRing = default;
             _prologueTransitionTelemetryRing = default;
+            _prologueTransitionRing = default;
             _vwsClipSamplesA = default;
             _vwsClipSamplesB = default;
         }
@@ -5840,6 +5862,7 @@ namespace Hecton8.Audio
                    _sonarEchoCompositeGroups.IsCreated &&
                    _sonarEchoCompositeGroupCountNative.IsCreated &&
                    _sonarEcholocationHits.IsCreated &&
+                   _sonarEchoTapUploadRing.IsCreated &&
                    _impactClangDelay.IsCreated &&
                    _thrusterCombDelay.IsCreated &&
                    _sabineReverbDelay.IsCreated &&
@@ -5863,6 +5886,7 @@ namespace Hecton8.Audio
                    _granularVoiceGain.IsCreated &&
                    _granularTelemetryRing.IsCreated &&
                    _prologueTransitionTelemetryRing.IsCreated &&
+                   _prologueTransitionRing.IsCreated &&
                    _vwsClipSamplesA.IsCreated &&
                    _vwsClipSamplesB.IsCreated;
         }
@@ -5892,6 +5916,7 @@ namespace Hecton8.Audio
             ClearNativeBuffer(_sonarEchoCompositeGroups);
             ClearNativeBuffer(_sonarEchoCompositeGroupCountNative);
             ClearNativeBuffer(_sonarEcholocationHits);
+            ClearNativeBuffer(_sonarEchoTapUploadRing);
             ClearNativeBuffer(_impactClangDelay);
             ClearNativeBuffer(_thrusterCombDelay);
             ClearNativeBuffer(_sabineReverbDelay);
@@ -5914,6 +5939,7 @@ namespace Hecton8.Audio
             ClearNativeBuffer(_granularVoiceGain);
             ClearNativeBuffer(_granularTelemetryRing);
             ClearNativeBuffer(_prologueTransitionTelemetryRing);
+            ClearNativeBuffer(_prologueTransitionRing);
             ClearNativeBuffer(_vwsClipSamplesA);
             ClearNativeBuffer(_vwsClipSamplesB);
         }
@@ -5925,6 +5951,63 @@ namespace Hecton8.Audio
 
             for (int i = 0; i < buffer.Length; i++)
                 buffer[i] = default;
+        }
+
+        private static void ClearRing<T>(NativeArray<T> ring, int capacity) where T : struct
+        {
+            if (!ring.IsCreated)
+                return;
+
+            int safeCapacity = math.min(math.max(0, capacity), ring.Length);
+            for (int i = 0; i < safeCapacity; i++)
+                ring[i] = default;
+        }
+
+        private static bool TryWriteRing<T>(NativeArray<T> ring, ref int writeIndex, int count, int capacity, in T value) where T : struct
+        {
+            if (!ring.IsCreated || capacity <= 0 || count >= capacity)
+                return false;
+
+            int safeCapacity = math.min(capacity, ring.Length);
+            if (safeCapacity <= 0)
+                return false;
+
+            int index = writeIndex;
+            if ((uint)index >= (uint)safeCapacity)
+                index = 0;
+
+            ring[index] = value;
+            writeIndex = index + 1;
+            if (writeIndex >= safeCapacity)
+                writeIndex = 0;
+            return true;
+        }
+
+        private static bool TryReadRing<T>(NativeArray<T> ring, ref int readIndex, int count, int capacity, out T value) where T : struct
+        {
+            if (!ring.IsCreated || capacity <= 0 || count <= 0)
+            {
+                value = default;
+                return false;
+            }
+
+            int safeCapacity = math.min(capacity, ring.Length);
+            if (safeCapacity <= 0)
+            {
+                value = default;
+                return false;
+            }
+
+            int index = readIndex;
+            if ((uint)index >= (uint)safeCapacity)
+                index = 0;
+
+            value = ring[index];
+            ring[index] = default;
+            readIndex = index + 1;
+            if (readIndex >= safeCapacity)
+                readIndex = 0;
+            return true;
         }
 
         private void EnsureBuffers(int frameCapacity)
@@ -5942,11 +6025,7 @@ namespace Hecton8.Audio
                 return;
             }
 
-            _sonarEchoCompositeSpatialHash = new NativeParallelMultiHashMap<int, int>(SonarEchoCompositeCandidateCapacity, Allocator.Persistent); // COLD ALLOC: NativeParallelMultiHashMap<int,int>[32] - sonar echo AUP cell occupancy before DSP tap publish - owner: PlayerCriticalProceduralAudioRenderer
-            _sonarEchoCompositeGroupByHash = new NativeParallelHashMap<int, int>(SonarEchoCompositeGroupCapacity, Allocator.Persistent); // COLD ALLOC: NativeParallelHashMap<int,int>[8] - sonar echo hash-to-output group lookup - owner: PlayerCriticalProceduralAudioRenderer
-            _sonarEchoTapUploadQueue = new NativeQueue<SonarEchoTap>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SonarEchoTap>[32] - echolocation tap upload lane - owner: PlayerCriticalProceduralAudioRenderer
             PrewarmSonarEchoTapUploadQueue();
-            _prologueTransitionQueue = new NativeQueue<AudioTransitionState>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AudioTransitionState>[32 soft-cap] - prologue visual-sync to DSP command lane - owner: PlayerCriticalProceduralAudioRenderer
             PrewarmPrologueTransitionQueue();
             WarmPrologueSplashdownBurstProbeCold();
             _vwsClipManagedScratch ??= new float[VwsClipSampleCapacity]; // COLD ALLOC: float[262144] - VWS AudioClip PCM staging - owner: PlayerCriticalProceduralAudioRenderer
@@ -5965,6 +6044,9 @@ namespace Hecton8.Audio
             _workerActiveSonarTapCount = 0;
             _sonarEchoCompositeCandidateCountA = 0;
             _sonarEchoCompositeCandidateCountB = 0;
+            _sonarEchoTapUploadReadIndex = 0;
+            _sonarEchoTapUploadWriteIndex = 0;
+            _sonarEchoTapUploadCount = 0;
             Interlocked.Exchange(ref _impactEventQueueDropCount, 0);
             _sonarEchoCompositeWriteBufferIndex = 0;
             _sonarEchoCompositeScheduledBufferIndex = -1;
@@ -5991,6 +6073,8 @@ namespace Hecton8.Audio
             Interlocked.Exchange(ref _granularTelemetryDumpRequested, 0);
             Interlocked.Exchange(ref _granularTelemetryDumped, 0);
             _prologueTransitionTelemetryCursor = 0;
+            _prologueTransitionReadIndex = 0;
+            _prologueTransitionWriteIndex = 0;
             _prologueTransitionQueueCount = 0;
             Interlocked.Exchange(ref _prologueTransitionTelemetryDumpRequested, 0);
             Interlocked.Exchange(ref _prologueTransitionTelemetryDumped, 0);
@@ -6017,23 +6101,11 @@ namespace Hecton8.Audio
         private void RegisterNativeBuffers(bool registerSabineReverbDelay)
         {
             _ = registerSabineReverbDelay;
-            NativeMemorySentinel.RegisterNativeParallelMultiHashMap(_sonarEchoCompositeSpatialHash, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoCompositeSpatialHash), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeParallelHashMap(_sonarEchoCompositeGroupByHash, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoCompositeGroupByHash), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeQueue(_sonarEchoTapUploadQueue, SonarEchoTapCapacity, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoTapUploadQueue), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeQueue(_prologueTransitionQueue, PrologueTransitionQueueCapacity, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_prologueTransitionQueue), NativeAllocationLifetime.Session);
         }
 
         private void UnregisterNativeBuffers(bool unregisterSabineReverbDelay)
         {
             _ = unregisterSabineReverbDelay;
-            if (_sonarEchoCompositeSpatialHash.IsCreated)
-                NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoCompositeSpatialHash));
-            if (_sonarEchoCompositeGroupByHash.IsCreated)
-                NativeMemorySentinel.UnregisterNativeParallelHashMap(nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoCompositeGroupByHash));
-            if (_sonarEchoTapUploadQueue.IsCreated)
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoTapUploadQueue));
-            if (_prologueTransitionQueue.IsCreated)
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(PlayerCriticalProceduralAudioRenderer), nameof(_prologueTransitionQueue));
         }
 
         private void DisposeBuffers(bool disposeSabineReverbDelay)
@@ -6044,14 +6116,6 @@ namespace Hecton8.Audio
             _sampleRingBuffer?.Dispose();
             _sampleRingBuffer = null;
             UnregisterNativeBuffers(disposeSabineReverbDelay);
-            if (_sonarEchoCompositeSpatialHash.IsCreated)
-                _sonarEchoCompositeSpatialHash.Dispose();
-            if (_sonarEchoCompositeGroupByHash.IsCreated)
-                _sonarEchoCompositeGroupByHash.Dispose();
-            if (_sonarEchoTapUploadQueue.IsCreated)
-                _sonarEchoTapUploadQueue.Dispose();
-            if (_prologueTransitionQueue.IsCreated)
-                _prologueTransitionQueue.Dispose();
             if (disposeSabineReverbDelay && _dataVault != null)
                 _dataVault.ReleaseOwnerBuffers(VaultOwner, out _);
 
@@ -6077,9 +6141,8 @@ namespace Hecton8.Audio
             _sonarEchoCompositeCandidatesB = default;
             _sonarEchoCompositeGroups = default;
             _sonarEchoCompositeGroupCountNative = default;
-            _sonarEchoCompositeSpatialHash = default;
-            _sonarEchoCompositeGroupByHash = default;
             _sonarEcholocationHits = default;
+            _sonarEchoTapUploadRing = default;
             _impactClangDelay = default;
             _thrusterCombDelay = default;
             if (disposeSabineReverbDelay)
@@ -6104,7 +6167,7 @@ namespace Hecton8.Audio
             _granularVoiceGain = default;
             _granularTelemetryRing = default;
             _prologueTransitionTelemetryRing = default;
-            _prologueTransitionQueue = default;
+            _prologueTransitionRing = default;
             _vwsClipSamplesA = default;
             _vwsClipSamplesB = default;
             _vwsPlaybackState = default;
@@ -6117,6 +6180,11 @@ namespace Hecton8.Audio
             Interlocked.Exchange(ref _granularTelemetryDumpRequested, 0);
             Interlocked.Exchange(ref _granularTelemetryDumped, 0);
             _prologueTransitionTelemetryCursor = 0;
+            _sonarEchoTapUploadReadIndex = 0;
+            _sonarEchoTapUploadWriteIndex = 0;
+            _sonarEchoTapUploadCount = 0;
+            _prologueTransitionReadIndex = 0;
+            _prologueTransitionWriteIndex = 0;
             _prologueTransitionQueueCount = 0;
             Interlocked.Exchange(ref _prologueTransitionTelemetryDumpRequested, 0);
             Interlocked.Exchange(ref _prologueTransitionTelemetryDumped, 0);
@@ -10724,30 +10792,36 @@ namespace Hecton8.Audio
 
         private void DrainPrologueTransitionQueue()
         {
-            if (!_prologueTransitionQueue.IsCreated)
+            if (!_prologueTransitionRing.IsCreated)
                 return;
 
             int guard = math.min(math.max(0, _prologueTransitionQueueCount), PrologueTransitionQueueCapacity);
-            while (guard-- > 0 && _prologueTransitionQueue.TryDequeue(out AudioTransitionState state))
+            while (guard-- > 0 &&
+                   _prologueTransitionQueueCount > 0 &&
+                   TryReadRing(_prologueTransitionRing, ref _prologueTransitionReadIndex, _prologueTransitionQueueCount, PrologueTransitionQueueCapacity, out AudioTransitionState state))
             {
                 _prologueTransitionQueueCount = math.max(0, _prologueTransitionQueueCount - 1);
                 ApplyPrologueTransitionState(in state);
                 RecordPrologueTransitionTelemetry(in state);
             }
+
+            if (_prologueTransitionQueueCount <= 0)
+            {
+                _prologueTransitionQueueCount = 0;
+                _prologueTransitionReadIndex = 0;
+                _prologueTransitionWriteIndex = 0;
+            }
         }
 
         private void PrewarmPrologueTransitionQueue()
         {
-            if (!_prologueTransitionQueue.IsCreated)
+            if (!_prologueTransitionRing.IsCreated)
                 return;
 
-            for (int i = 0; i < PrologueTransitionQueueCapacity; i++)
-                _prologueTransitionQueue.Enqueue(default);
-
-            int guard = PrologueTransitionQueueCapacity;
-            while (guard-- > 0 && _prologueTransitionQueue.TryDequeue(out _))
-            {
-            }
+            ClearRing(_prologueTransitionRing, PrologueTransitionQueueCapacity);
+            _prologueTransitionReadIndex = 0;
+            _prologueTransitionWriteIndex = 0;
+            _prologueTransitionQueueCount = 0;
         }
 
         private void WarmPrologueSplashdownBurstProbeCold()

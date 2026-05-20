@@ -1,4 +1,4 @@
-﻿# Seaglide Hydrodynamics SHINOBU_227
+# Seaglide Hydrodynamics SHINOBU_227
 
 Authority:
 - `MantaScooter` is a request producer only. It no longer stores or reads `Rigidbody`.
@@ -13,4 +13,15 @@ Hot-path data:
 Scalability:
 - `HomeostasisBrain.GlobalQualityWeight` continuously blends cheap dominant-axis drag/current fakes toward full quadratic drag and trilinear current sampling.
 - Battery metabolism cadence interpolates between slow and fixed cadence without binary tier switches.
+- Thrust solve cadence interpolates from a 20 Hz survival cadence to fixed-tick cadence; emitted forces are scaled by accumulated solver delta before `PhysicsApplySystem` receives them.
 
+Black box:
+- `SeaglideTelemetryEntry` is 64 bytes and stores frame index, request count, packet count, non-finite count, thrust/drag/flow totals, max force, compute micros, quality, flags, last target hash, last flow force, and last battery level.
+- Budget faults set `FlagBudgetExceeded` and trigger the same dump path as non-finite math.
+
+Force route:
+- The literal `NativeQueue` route was rejected for this branch because `PhysicsApplySystem` already owns a Vault-backed bounded packet bridge for external force ingress. Packet count is authoritative; stale rows are ignored instead of cleared.
+
+Presentation signal route:
+- `CalculateSeaglideAudioParametersJob` computes AUP-safe speed/pitch/volume into a rollback-excluded DTO.
+- After job completion, `SeaglideHydrodynamicsRuntime` publishes `ToolAcousticSignal` and `BubbleSpawnSignal` through existing `SignalBus` lanes. Publish budget is continuous: one packet at survival quality, up to four at high quality.

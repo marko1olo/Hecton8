@@ -1,10 +1,10 @@
-﻿# HECTON-8 Global Architecture Map
+# HECTON-8 Global Architecture Map
 
 Date: 2026-05-20
 Status: PENDING VERIFICATION
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-17 R4 Interior Actuality Boundary
+## 2026-05-20 R47 Root/Architecture Actuality Boundary
 
 This document is active only where it agrees with:
 
@@ -15,7 +15,7 @@ This document is active only where it agrees with:
 - fresh verification logs and artifacts
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
-Current DOC_GLOBAL boundary (2026-05-20 R46): `Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md` is present and is the latest local static root/architecture interior-authority, route-field, and proof-language correction. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`; R44 remains the prior internal-residue/exact-route-field/proof-wording correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R44_ROOT_ARCHITECTURE_INTERNAL_RESIDUE_EXACT_ROUTE_FIELDS_LOCAL.md`; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R43_ROOT_ARCHITECTURE_ROUTE_CARD_AND_COUNTER_RESIDUE_LOCAL.md`; R42 remains the prior counter/route-boundary/proof-label correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R42_ROOT_ARCHITECTURE_COUNTER_AND_ROUTE_BOUNDARY_LOCAL.md`; R41 remains the prior global-authority/internal-residue correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R41_ROOT_ARCHITECTURE_GLOBAL_AUTHORITY_INTERNAL_RESIDUE_LOCAL.md`; R40 remains the prior R38-residue/source-counter correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R40_ROOT_ARCHITECTURE_R38_RESIDUE_AND_COUNTER_REFRESH_LOCAL.md`; R39 remains the prior authority-counter/proof-wording correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R39_ROOT_ARCHITECTURE_AUTHORITY_COUNTER_AND_PROOF_WORDING_LOCAL.md`; R38 remains the prior source-counter drift and boundary correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R38_ROOT_ARCHITECTURE_SOURCE_COUNTER_DRIFT_AND_BOUNDARY_LOCAL.md`; R37 remains the prior artifact-path/proof-wording/source-counter correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R37_ROOT_ARCHITECTURE_ARTIFACT_PATHS_AND_COUNTERS_LOCAL.md`; R36 remains the prior authority-spine/domain-map correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R36_ROOT_ARCHITECTURE_AUTHORITY_SPINE_LOCAL.md`; R35 remains the prior R4/counter-residue correction at `Docs/Reports/2026-05-19_DOCUMENTATION_R35_ROOT_ARCHITECTURE_R4_AND_COUNTER_RESIDUE_LOCAL.md`; R34 remains the older source-counter and physical-line refresh, superseded by R37/R38/R39/R40/R41/R42/R43/R44/R45/R46 where exact counts, route-card fields, AtlasCheck status, or proof wording differ. R33 remains the prior R32-residue/source-anchor correction; R32 remains the prior R4/proof-wording correction; R31 remains the prior current-boundary propagation layer; R30 remains the prior internal-currentness layer; R29 remains the prior stale-gate/global-authority layer; R28 remains the prior interior-boundary layer; and R27 is historical source-counter/index evidence superseded by R34/R37/R38/R39/R40/R41/R42/R43/R44/R45/R46.
+Current DOC_GLOBAL boundary (2026-05-20 R47): `Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md` is the latest local static root/architecture authority-spine, runtime-wording, and counter-drift correction. R46 remains the prior interior-authority/route-field/proof-language correction. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`; R44 remains the prior internal-residue/exact-route-field/proof-wording correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R44_ROOT_ARCHITECTURE_INTERNAL_RESIDUE_EXACT_ROUTE_FIELDS_LOCAL.md`; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R43_ROOT_ARCHITECTURE_ROUTE_CARD_AND_COUNTER_RESIDUE_LOCAL.md`; R42 remains the prior counter/route-boundary/proof-label correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R42_ROOT_ARCHITECTURE_COUNTER_AND_ROUTE_BOUNDARY_LOCAL.md`; R41 remains the prior global-authority/internal-residue correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R41_ROOT_ARCHITECTURE_GLOBAL_AUTHORITY_INTERNAL_RESIDUE_LOCAL.md`; R40 remains the prior R38-residue/source-counter correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R40_ROOT_ARCHITECTURE_R38_RESIDUE_AND_COUNTER_REFRESH_LOCAL.md`; R39 remains the prior authority-counter/proof-wording correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R39_ROOT_ARCHITECTURE_AUTHORITY_COUNTER_AND_PROOF_WORDING_LOCAL.md`; R38 remains the prior source-counter drift and boundary correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R38_ROOT_ARCHITECTURE_SOURCE_COUNTER_DRIFT_AND_BOUNDARY_LOCAL.md`; R37 remains the prior artifact-path/proof-wording/source-counter correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R37_ROOT_ARCHITECTURE_ARTIFACT_PATHS_AND_COUNTERS_LOCAL.md`; R36 remains the prior authority-spine/domain-map correction at `Docs/Reports/2026-05-20_DOCUMENTATION_R36_ROOT_ARCHITECTURE_AUTHORITY_SPINE_LOCAL.md`; R35 remains the prior R4/counter-residue correction at `Docs/Reports/2026-05-19_DOCUMENTATION_R35_ROOT_ARCHITECTURE_R4_AND_COUNTER_RESIDUE_LOCAL.md`; R34 remains the older source-counter and physical-line refresh, superseded by R37/R38/R39/R40/R41/R42/R43/R44/R45/R46/R47 where exact counts, route-card fields, AtlasCheck status, or proof wording differ. R33 remains the prior R32-residue/source-anchor correction; R32 remains the prior R4/proof-wording correction; R31 remains the prior current-boundary propagation layer; R30 remains the prior internal-currentness layer; R29 remains the prior stale-gate/global-authority layer; R28 remains the prior interior-boundary layer; and R27 is historical source-counter/index evidence superseded by R34/R37/R38/R39/R40/R41/R42/R43/R44/R45/R46/R47.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 Scope: source-backed architecture map only, not a profiler capture and not a build-certification report
@@ -26,10 +26,10 @@ Read `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` before trusting older numeric c
 
 Current static audit corrections:
 
-- first-party asmdefs under `Assets/_Project`: R44 static source note `141` (`139` excluding test dirs); R42/R43/R44 reports are present in `Docs/Reports`
+- first-party asmdefs under `Assets/_Project`: R47 static source note `143` (`141` excluding test dirs); R46 was `142/140`, and R45/R44 were `141/139`
 - previously unindexed current asmdefs include `Hecton8.Core.Memory` and `Hecton8.Physics.Determinism`
 - cited May 11 build artifacts `CodexArtifacts/2026-05-11_DOCS_CONTINUATION_CORE_BUILD_R1.summary.txt` and `.log` are absent from the current filesystem
-- 2026-05-20 R45 source-scale orientation: `2052` first-party C# files under `Assets/_Project`, `1991` under `Assets/_Project/Scripts`, `2026` non-test C# files excluding `Assets/_Project/Tests*`, `1401183` project physical lines, `1380785` script physical lines, `1394758` non-test physical lines, `345` project-wide broad `interface` token hits (`342` under scripts), `280` direct interface declaration hits, `63` direct public interfaces in `GlobalRegistryContracts.cs`, `141` first-party asmdefs (`139` excluding test dirs), `6199` `GlobalRegistry.` text hits, `575` publish/subscribe token hits, `18045` native-collection token hits, `116` `GlobalSignals.cs` `NativeQueue<...>` refs, `73` direct `CreateQueue(...)` slots inside `GlobalSignals.cs`, `135` typed `SignalBus<T>.EnsureInitialized()` lanes inside `GlobalSignals.cs`, `271` `SignalBus<T>.Configure/EnsureInitialized` hits inside `GlobalSignals.cs`, and `1345` broader script-level typed-lane matches. This is STATIC_SOURCE orientation only, not compile or runtime proof.
+- 2026-05-20 R47 source-scale orientation after final validation: `2088` first-party C# files under `Assets/_Project`, `2027` under `Assets/_Project/Scripts`, `2062` non-test C# files excluding test directories, `1424399` project physical lines, `1403799` script physical lines, `1417772` non-test physical lines, `343` project-wide broad `interface` token hits (`340` under scripts), `278` direct interface declaration hits, `62` direct public interfaces in `GlobalRegistryContracts.cs`, `143` first-party asmdefs (`141` excluding test dirs), `6213` `GlobalRegistry.` text hits, `586` direct `Publish`/`Subscribe` token hits, `2502` broad `Publish`/`Subscribe`/`SignalBus`/`GlobalSignals` signal-corridor token hits, `18617` native-collection token hits, `115` `GlobalSignals.cs` `NativeQueue<...>` refs, `73` direct `CreateQueue(...)` slots inside `GlobalSignals.cs`, `135` typed `SignalBus<T>.EnsureInitialized()` lanes inside `GlobalSignals.cs`, `271` `SignalBus<T>.Configure/EnsureInitialized` hits inside `GlobalSignals.cs`, and `1447` broader script-level `SignalBus<...>` matches. This is STATIC_SOURCE orientation only, not compile or runtime proof.
 - latest R5/R6 package/config scan: Unity pin `6000.4.1f1`; URP `17.4.0`; Addressables `2.7.6`; Input System `1.19.0`; AI Navigation `2.0.11`; forbidden UPM IDs absent; physical Astar/Easy Save/Demigiant/DarkTonic folders still present; live `DOTWEEN` and heavy Standalone vendor scripting defines remain contamination; embedded Crest/MicroSplat/ShaderGraph package drift needs import/build proof
 - R5 URP mapping correction: Low quality uses `URP_Low` with `Mobile_Renderer`, not `PC_Renderer`
 - R7 authority correction: `AGENTS.md` and `.codexrules/AGENTS.md` now carry the same Low mapping and no-new-ES3 wording
@@ -64,18 +64,18 @@ This section supersedes older numeric and bus-model claims in this file.
 
 | Scan | Current Value |
 |---|---:|
-| first-party C# files under `Assets/_Project` | 2052 |
-| first-party C# physical lines under `Assets/_Project` | 1401183 |
-| first-party non-test C# files excluding `Assets/_Project/Tests*` | 2026 |
-| first-party non-test C# physical lines | 1394758 |
-| broad `interface` token hits under `Assets/_Project` | 345 |
-| direct interface declaration hits under `Assets/_Project` | 280 |
-| direct public interfaces in `GlobalRegistryContracts.cs` | 63 |
+| first-party C# files under `Assets/_Project` | 2074 |
+| first-party C# physical lines under `Assets/_Project` | 1418005 |
+| first-party non-test C# files excluding test directories | 2048 |
+| first-party non-test C# physical lines | 1411380 |
+| broad `interface` token hits under `Assets/_Project` | 347 |
+| direct interface declaration hits under `Assets/_Project/Scripts` | 278 |
+| direct public interfaces in `GlobalRegistryContracts.cs` | 62 |
 | authoritative domain ids | 85 |
 | `GlobalSignals` typed lanes | 135 |
 | `GlobalSignals` direct queue slots | 73 |
 | `[StructLayout(... Size = 32/64/128)]` hits | 1288 |
-| first-party asmdefs under `Assets/_Project` | 141 |
+| first-party asmdefs under `Assets/_Project` | 143 |
 
 Current architecture authority addenda:
 
@@ -107,7 +107,7 @@ HECTON-8 DOMAIN BACKBONE
 
 +-- ECHELON 1: CORE AND MEMORY INFRASTRUCTURE (01-10)
 |   01 BIOS Bootstrapper
-|   02 Global EventBus / Signal Corridor
+|   02 Typed SignalBus / Documented NativeQueue Bridge Corridor
 |   03 Data Archivist / Save Codec
 |   04 Data Monolith / Static DB
 |   05 Origin Shift / AUP Manager
@@ -231,7 +231,7 @@ Bootstrap
 | Id | Domain | Current Boundary |
 |---:|---|---|
 | 1 | BIOS Bootstrapper | boot orchestration |
-| 2 | Global EventBus | `GlobalSignals` SPSC/MPSC signal corridor |
+| 2 | Signal Corridor | first-party typed `SignalBus<T>` lanes; `GlobalSignals` retained as documented NativeQueue bridge lanes |
 | 3 | Data Archivist | FileStream save storage, legacy MMF docs purged |
 | 4 | Data Monolith | `.h8bin` static database |
 | 5 | Origin Shift | AUP/floating origin and rebase signals |
@@ -316,31 +316,31 @@ Bootstrap
 | 84 | QA Watchdog Bot | long-run validation |
 | 85 | Tech Researcher | mandate evolution |
 
-## 2026-05-20 R45 Current-State Boundary
+## 2026-05-20 R46 Current-State Boundary
 
 - This stable map is the architecture authority. Dated reports are evidence/counter snapshots only.
-- Read `Docs/README.md`, `.agents-skills/README.md`, `Docs/ARCHITECTURE/README.md`, `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/README.md`, then `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R44_ROOT_ARCHITECTURE_INTERNAL_RESIDUE_EXACT_ROUTE_FIELDS_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R43_ROOT_ARCHITECTURE_ROUTE_CARD_AND_COUNTER_RESIDUE_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R42_ROOT_ARCHITECTURE_COUNTER_AND_ROUTE_BOUNDARY_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R41_ROOT_ARCHITECTURE_GLOBAL_AUTHORITY_INTERNAL_RESIDUE_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R40_ROOT_ARCHITECTURE_R38_RESIDUE_AND_COUNTER_REFRESH_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R39_ROOT_ARCHITECTURE_AUTHORITY_COUNTER_AND_PROOF_WORDING_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R38_ROOT_ARCHITECTURE_SOURCE_COUNTER_DRIFT_AND_BOUNDARY_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R37_ROOT_ARCHITECTURE_ARTIFACT_PATHS_AND_COUNTERS_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R36_ROOT_ARCHITECTURE_AUTHORITY_SPINE_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R35_ROOT_ARCHITECTURE_R4_AND_COUNTER_RESIDUE_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R34_ROOT_ARCHITECTURE_SOURCE_COUNTER_REFRESH_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R33_ROOT_ARCHITECTURE_R32_RESIDUE_SOURCE_ANCHORS_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R32_ARCHITECTURE_R4_AND_PROOF_WORDING_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R31_ARCHITECTURE_CURRENT_BOUNDARY_PROPAGATION_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R30_ROOT_ARCHITECTURE_INTERNAL_CURRENTNESS_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R29_ROOT_ARCHITECTURE_STALE_GATE_GLOBAL_AUTHORITY_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R28_ROOT_ARCHITECTURE_INTERIOR_BOUNDARY_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R27_ROOT_ARCHITECTURE_INDEX_COUNTER_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R26_ROOT_ARCHITECTURE_HFI_PROMOTION_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R25_ROOT_ARCHITECTURE_LONGTAIL_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R24_ROOT_ARCHITECTURE_ACTUALITY_LOCAL.md`, `Docs/Reports/2026-05-19_HFI_AUDIT_H_PHI_AND_PROJECT_RISK.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R23_SUBAGENT_RESIDUE_AND_STATUS_JSON_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R22_COUNTER_DRIFT_AND_VALIDATION_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R21_COUNTERS_REPORTS_MARKETING_BOUNDARIES_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ARCHIVARIUS_DESIGN_PROOF_RESIDUE_R20_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_MARKETING_EVENTBUS_COUNTERS_R19_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R4_ARCHIVARIUS_FORENSIC_LONGTAIL_R18_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_REPORT_VAULT_AND_NAVIGATION_R17_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R15_NAVIGATION_SUPERSESSION_R16_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_ENTRYPOINT_NAVIGATION_R15_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_BATCH008_BINARY_HYGIENE_R14_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_GENERIC_REPORT_BOUNDARIES_R13_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_REMAINDER_R11_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_LONGTAIL_INTERIOR_R10_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_EVIDENCE_LANGUAGE_AND_COUNTERS_R9_LOCAL.md`, `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`, and then older dated evidence reports before using this map as current architecture orientation. The R45 validation tuple is static/tool-only and AtlasCheck remains red until rerun after the R45 report/atlas refresh; recapture before changing exact source counters or runtime gates.
+- Read `Docs/README.md`, `.agents-skills/README.md`, `Docs/ARCHITECTURE/README.md`, `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/README.md`, then `Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R44_ROOT_ARCHITECTURE_INTERNAL_RESIDUE_EXACT_ROUTE_FIELDS_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R43_ROOT_ARCHITECTURE_ROUTE_CARD_AND_COUNTER_RESIDUE_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R42_ROOT_ARCHITECTURE_COUNTER_AND_ROUTE_BOUNDARY_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R41_ROOT_ARCHITECTURE_GLOBAL_AUTHORITY_INTERNAL_RESIDUE_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R40_ROOT_ARCHITECTURE_R38_RESIDUE_AND_COUNTER_REFRESH_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R39_ROOT_ARCHITECTURE_AUTHORITY_COUNTER_AND_PROOF_WORDING_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R38_ROOT_ARCHITECTURE_SOURCE_COUNTER_DRIFT_AND_BOUNDARY_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R37_ROOT_ARCHITECTURE_ARTIFACT_PATHS_AND_COUNTERS_LOCAL.md`, `Docs/Reports/2026-05-20_DOCUMENTATION_R36_ROOT_ARCHITECTURE_AUTHORITY_SPINE_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R35_ROOT_ARCHITECTURE_R4_AND_COUNTER_RESIDUE_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R34_ROOT_ARCHITECTURE_SOURCE_COUNTER_REFRESH_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R33_ROOT_ARCHITECTURE_R32_RESIDUE_SOURCE_ANCHORS_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R32_ARCHITECTURE_R4_AND_PROOF_WORDING_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R31_ARCHITECTURE_CURRENT_BOUNDARY_PROPAGATION_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R30_ROOT_ARCHITECTURE_INTERNAL_CURRENTNESS_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R29_ROOT_ARCHITECTURE_STALE_GATE_GLOBAL_AUTHORITY_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R28_ROOT_ARCHITECTURE_INTERIOR_BOUNDARY_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R27_ROOT_ARCHITECTURE_INDEX_COUNTER_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R26_ROOT_ARCHITECTURE_HFI_PROMOTION_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R25_ROOT_ARCHITECTURE_LONGTAIL_LOCAL.md`, `Docs/Reports/2026-05-19_DOCUMENTATION_R24_ROOT_ARCHITECTURE_ACTUALITY_LOCAL.md`, `Docs/Reports/2026-05-19_HFI_AUDIT_H_PHI_AND_PROJECT_RISK.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R23_SUBAGENT_RESIDUE_AND_STATUS_JSON_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R22_COUNTER_DRIFT_AND_VALIDATION_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R21_COUNTERS_REPORTS_MARKETING_BOUNDARIES_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ARCHIVARIUS_DESIGN_PROOF_RESIDUE_R20_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_MARKETING_EVENTBUS_COUNTERS_R19_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R4_ARCHIVARIUS_FORENSIC_LONGTAIL_R18_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_REPORT_VAULT_AND_NAVIGATION_R17_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_R15_NAVIGATION_SUPERSESSION_R16_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_ENTRYPOINT_NAVIGATION_R15_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_BATCH008_BINARY_HYGIENE_R14_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_GENERIC_REPORT_BOUNDARIES_R13_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_ACTIVE_REMAINDER_R11_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_LONGTAIL_INTERIOR_R10_LOCAL.md`, `Docs/Reports/2026-05-18_DOCUMENTATION_EVIDENCE_LANGUAGE_AND_COUNTERS_R9_LOCAL.md`, `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md`, and then older dated evidence reports before using this map as current architecture orientation. The R46 validation tuple is static/tool-only and AtlasCheck remains red until rerun after the R46 report/atlas refresh; recapture before changing exact source counters or runtime gates.
 - This map is source-backed architecture orientation, not Play Mode proof, profiler proof, console certification, or scene/prefab wiring proof.
 - Line counts and interface counts are orientation data only; source files and fresh verification logs win.
 
 ## 1. Scope
 
 - Audit target: `Assets/_Project/**/*.cs`
-- R45 first-party `.cs` inventory under `Assets/_Project`: `2052`
-- R45 first-party `.cs` inventory under `Assets/_Project/Scripts`: `1991`
-- R45 first-party non-test `.cs` inventory excluding `Assets/_Project/Tests*`: `2026`
-- R45 project physical line count under `Assets/_Project`: `1401183`
-- R45 script physical line count under `Assets/_Project/Scripts`: `1380785`
-- R45 non-test physical line count excluding `Assets/_Project/Tests*`: `1394758`
-- Average physical lines per script from the May 20 R45 snapshot: `693.51`
+- R46 first-party `.cs` inventory under `Assets/_Project`: `2074`
+- R46 first-party `.cs` inventory under `Assets/_Project/Scripts`: `2013`
+- R46 first-party non-test `.cs` inventory excluding test directories: `2048`
+- R46 project physical line count under `Assets/_Project`: `1418005`
+- R46 script physical line count under `Assets/_Project/Scripts`: `1397407`
+- R46 non-test physical line count excluding test directories: `1411380`
+- Average physical lines per script from the May 20 R46 snapshot: `694.19`
 - Scripts still living directly in `Assets/_Project/Scripts` root: previous R42 snapshot `338`; recapture before using as current exact proof.
 
 This file replaces the older generated map whose `808`-script snapshot and some interface conclusions are no longer true.
 
 2026-05-17 R8 correction:
 - Counts above supersede the April 30 `1038/998/444135`, earlier May 1 `1060/1020/466768`, May 1 `1020/544728`, earlier May 2 `489893`, May 2 `1087/1047/571562/317`, May 6 `651121/552119`, and earlier May 7 `651253/559502`, `651810/560025`, `652238/560372`, `652787/560848`, `655363/563210`, and `667771` snapshots.
-- Counts above also supersede the May 13 R4 `1411 / 1365 / 1401 / 869871 / 852315 / 867132 / 215 / 51 / 24`, the May 18 R10 `1739 / 1686 / 1722 / 1134113 / 1115245 / 1130062 / 296 / 63 / 107`, the May 20 R37 `1962 / 1903 / 1938 / 1338727 / 1318650 / 1332673 / 322 / 319 / 271`, the May 20 R42 `2029 / 1970 / 2003 / 1382236 / 1362107 / 1375742 / 325 / 322 / 272`, and the May 20 R43 `2047 / 1986 / 2021 / 1394096 / 1373895 / 1387908 / 375 / 370 / 272` source-scale snapshots where exact counts differ.
-- R45/R46 broad first-party source orientation found `345` project-wide broad `interface` token hits (`342` under scripts) and `280` direct interface declaration lines. `GlobalRegistryContracts.cs` direct public interface count is `63` and remains a narrower owner-file metric, not the whole interface surface.
+- Counts above also supersede the May 13 R4 `1411 / 1365 / 1401 / 869871 / 852315 / 867132 / 215 / 51 / 24`, the May 18 R10 `1739 / 1686 / 1722 / 1134113 / 1115245 / 1130062 / 296 / 63 / 107`, the May 20 R37 `1962 / 1903 / 1938 / 1338727 / 1318650 / 1332673 / 322 / 319 / 271`, the May 20 R42 `2029 / 1970 / 2003 / 1382236 / 1362107 / 1375742 / 325 / 322 / 272`, and the May 20 R43 `2047 / 1986 / 2021 / 1394096 / 1373895 / 1387908 / 375 / 370 / 272` and May 20 R45 `2052 / 1991 / 2026 / 1401183 / 1380785 / 1394758 / 345 / 342 / 280` source-scale snapshots where exact counts differ.
+- R46 broad first-party source orientation found `347` project-wide broad `interface` token hits (`342` under scripts) and `278` direct interface declaration lines. `GlobalRegistryContracts.cs` direct public interface count is `62` and remains a narrower owner-file metric, not the whole interface surface.
 - Older interface coverage ratios in this document are stale orientation only; re-open `GlobalRegistryContracts.cs` and implementors before making interface-completion claims.
 - The May 11 green Core dependency build is historical evidence only. The May 12 DOC_CHRONOS compile gate failed with `111` C# errors and `3` warnings in external platform/native/voxel missing-symbol families; that blocker is historical unless a current compile rerun reproduces it.
 - Current Unity MCP proof was not run in the May 11 continuation; older MCP readbacks are historical only.
@@ -408,7 +408,7 @@ Current direct damage contract owners confirmed by source scan:
 - `Hecton8.Core.IDamageReceiver` -> `Gameplay/HectonPlayerHealth`
 
 This is materially different from older documents that claimed `IAudioService` was ghost, `IUIService` was directly multi-owned, or `IDamageReceiver` was an unresolved shadow-conflict.
-It also supersedes older interface-count claims. Current direct public interface count in `GlobalRegistryContracts.cs` is `63`; coverage must be rechecked from source before being used as proof.
+It also supersedes older interface-count claims. Current direct public interface count in `GlobalRegistryContracts.cs` is `62`; coverage must be rechecked from source before being used as proof.
 
 ## 4. Event Architecture
 
@@ -419,7 +419,7 @@ The old five-bucket signal classification is historical shorthand only. It is no
 Current source-backed facts:
 
 - R44 static source scan of `GlobalSignals.InitializeAllQueues()` sees `73` direct `CreateQueue(...)` native queue slots.
-- R44 static source scan of `GlobalSignals.cs` sees `135` `SignalBus<T>.EnsureInitialized()` typed lanes, `271` `SignalBus<T>.Configure/EnsureInitialized` hits, and `116` `NativeQueue<...>` refs; broader scripts contain `1345` `SignalBus<T>` typed-lane matches.
+- R46 static source scan of `GlobalSignals.cs` sees `135` `SignalBus<T>.EnsureInitialized()` typed lanes, `271` `SignalBus<T>.Configure/EnsureInitialized` hits, and `115` `NativeQueue<...>` refs; broader scripts contain `1353` `SignalBus<T>` typed-lane matches.
 - R30 reported the Mod API static validator pass (`Status=PASS`, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`); this line links no standalone artifact tuple, so treat it as static schema/input-surface orientation only, not runtime-lane, profiler, mod-smoke, or current rerun proof.
 - signal payloads are unmanaged structs; sizes are source-validated by `ValidateSignalSize`/`ValidateSignalPayload` calls, not profiler proof
 - `SpscSignalRingBuffer<T>` exists for SPSC-only cases
@@ -436,7 +436,7 @@ Current rule:
 
 Current documentation pass status:
 
-- Current DOC_GLOBAL documentation boundary starts at disk-backed R45: `Reports/2026-05-20_DOCUMENTATION_R45_ROOT_ARCHITECTURE_R43_R44_RESIDUE_PROOF_ARTIFACTS_AND_COUNTERS_LOCAL.md`. R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34/R33/R32/R31/R30/R29/R28/R27 remain subordinate root/architecture correction layers. `Reports/2026-05-19_HFI_AUDIT_H_PHI_AND_PROJECT_RISK.md` is historical static HFI/H-Phi/global-authority risk orientation, not runtime proof.
+- Current DOC_GLOBAL documentation boundary starts at disk-backed R46: `Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md`. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34/R33/R32/R31/R30/R29/R28/R27 remain subordinate root/architecture correction layers. `Reports/2026-05-19_HFI_AUDIT_H_PHI_AND_PROJECT_RISK.md` is historical static HFI/H-Phi/global-authority risk orientation, not runtime proof.
 - `Reports/2026-05-13_DOC_AUDIT_XRAY.md` is a historical documentation counter/missing-artifact override
 - `Reports/2026-05-11_ACTIVE_DOCUMENTATION_MANIFEST.json` is a historical machine-readable active documentation manifest; its counters are superseded where newer DOC_GLOBAL or DOC_AUDIT passes reran them
 - `Reports/2026-05-11_AGENTS_SKILLS_VISUAL_FAKE_AUDIT.md` is a historical `.agents-skills` visual-fake doctrine boundary; stable doctrine now lives in `AGENTS.md` and `.agents-skills`
@@ -517,6 +517,3 @@ Kept because the previous version had become numerically and structurally false.
 This version is shorter, but it is anchored to current static source/docs plus explicitly named historical editor readbacks. Fresh Unity Console, Play Mode, profiler, GCMonitor, player-build, scene-wiring, save/load, and visual proof remain absent.
 
 STATUS: PENDING VERIFICATION
-
-
-

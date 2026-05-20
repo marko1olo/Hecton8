@@ -4,42 +4,46 @@ using Unity.Mathematics;
 
 namespace Hecton8.Visor
 {
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct VisorStateDTO
     {
-        public float CondensationLevel;
-        public float WaterDropletIntensity;
-        public float CrackSeverity;
-        public float DirtAccumulation;
+        [FieldOffset(0)] public float CondensationLevel;
+        [FieldOffset(4)] public float WaterDropletIntensity;
+        [FieldOffset(8)] public float CrackSeverity;
+        [FieldOffset(12)] public float DirtAccumulation;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 96)]
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct VisorLensTuningDTO
     {
-        public float FogRate;
-        public float FogBreathGain;
-        public float FogColdGain;
-        public float ClearingRate;
-        public float DropletDrainSeconds;
-        public float DropletGravityStrength;
-        public float SurfaceWashDrainRate;
-        public float CrackPressureThreshold;
-        public float CrackGrowthRate;
-        public float MaxCrackSeverity;
-        public float DirtSiltGain;
-        public float WipeStrength;
-        public float ReflectionDarknessGain;
-        public float AnomalyNoiseGain;
-        public float LowRefractionQualityCutoff;
-        public float BiolumReflectionGain;
-        public float HeartCondensationGain;
-        public float CoreTempCondensationGain;
-        public float QualityStaticBlendStart;
-        public float QualityDynamicBlendEnd;
-        public uint Flags;
-        public uint Version;
-        public float _pad0;
-        public float _pad1;
+        [FieldOffset(0)] public float FogRate;
+        [FieldOffset(4)] public float FogBreathGain;
+        [FieldOffset(8)] public float FogColdGain;
+        [FieldOffset(12)] public float ClearingRate;
+        [FieldOffset(16)] public float DropletDrainSeconds;
+        [FieldOffset(20)] public float DropletGravityStrength;
+        [FieldOffset(24)] public float SurfaceWashDrainRate;
+        [FieldOffset(28)] public float CrackPressureThreshold;
+        [FieldOffset(32)] public float CrackGrowthRate;
+        [FieldOffset(36)] public float MaxCrackSeverity;
+        [FieldOffset(40)] public float DirtSiltGain;
+        [FieldOffset(44)] public float WipeStrength;
+        [FieldOffset(48)] public float ReflectionDarknessGain;
+        [FieldOffset(52)] public float AnomalyNoiseGain;
+        [FieldOffset(56)] public float LowRefractionQualityCutoff;
+        [FieldOffset(60)] public float BiolumReflectionGain;
+        [FieldOffset(64)] public float HeartCondensationGain;
+        [FieldOffset(68)] public float CoreTempCondensationGain;
+        [FieldOffset(72)] public float QualityStaticBlendStart;
+        [FieldOffset(76)] public float QualityDynamicBlendEnd;
+        [FieldOffset(80)] public uint Flags;
+        [FieldOffset(84)] public uint Version;
+        [FieldOffset(88)] public float _pad0;
+        [FieldOffset(92)] public float _pad1;
+        [FieldOffset(96)] private ulong _pad2;
+        [FieldOffset(104)] private ulong _pad3;
+        [FieldOffset(112)] private ulong _pad4;
+        [FieldOffset(120)] private ulong _pad5;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -72,13 +76,13 @@ namespace Hecton8.Visor
         [FieldOffset(44)] public float _pad1;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct DiegeticVisorLensGpuGlobalsDTO
     {
-        public float4 State;
-        public float4 Params0;
-        public float4 Params1;
-        public float4 Params2;
+        [FieldOffset(0)] public float4 State;
+        [FieldOffset(16)] public float4 Params0;
+        [FieldOffset(32)] public float4 Params1;
+        [FieldOffset(48)] public float4 Params2;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]

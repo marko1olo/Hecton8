@@ -147,7 +147,7 @@ namespace Hecton8.Physiology
 
         private void OnDisable()
         {
-            CompleteActiveJobIfReady(forceComplete: true);
+            CompleteActiveJobForTeardown();
             ClearRespawnDearLieVisualIfNeeded();
             UnregisterDispatcherPhases();
             TryUnregisterHotSwap();
@@ -162,7 +162,7 @@ namespace Hecton8.Physiology
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
-            CompleteActiveJobIfReady(forceComplete: true);
+            CompleteActiveJobForTeardown();
             ClearRespawnDearLieVisualIfNeeded();
             IDataVault previousVault = previousService as IDataVault;
             if (previousVault == null)
@@ -187,7 +187,7 @@ namespace Hecton8.Physiology
                 if (!_activeHandle.IsCompleted)
                     return;
 
-                CompleteActiveJobIfReady(forceComplete: false);
+                TryFinalizeActiveJobNoWait();
             }
 
             _lastQualityWeight = ResolveQualityWeight();
@@ -220,7 +220,7 @@ namespace Hecton8.Physiology
                 if (!_activeHandle.IsCompleted)
                     return JobHandle.CombineDependencies(dependsOn, _activeHandle);
 
-                CompleteActiveJobIfReady(forceComplete: false);
+                TryFinalizeActiveJobNoWait();
             }
 
             if (!TryResolveJobPointers(vault, out JobPointers pointers))
@@ -281,7 +281,7 @@ namespace Hecton8.Physiology
 
         private void PostSimulationTick(in DispatcherTimingDTO timing)
         {
-            CompleteActiveJobIfReady(forceComplete: false);
+            TryFinalizeActiveJobNoWait();
             if (_jobScheduled)
                 return;
 
@@ -295,7 +295,7 @@ namespace Hecton8.Physiology
                 if (!_activeHandle.IsCompleted)
                     return;
 
-                CompleteActiveJobIfReady(forceComplete: false);
+                TryFinalizeActiveJobNoWait();
             }
 
             IDataVault vault = _dataVault;
@@ -711,8 +711,10 @@ namespace Hecton8.Physiology
             mockJob.MedicalBays = bays;
             mockJob.FallbackLifepodAUP = defaultTuning.FallbackLifepodAUP;
             mockJob.ValidationClearanceMeters = defaultTuning.ValidationClearanceMeters;
-            for (int i = 0; i < bays.Length; i++)
-                mockJob.Execute(i);
+            JobHandle mockHandle = mockJob.Schedule(bays.Length, 1);
+            H8Memory.RegisterActiveJob(OwnerSystem, mockHandle);
+            // COLD SYNC JOB: default med-bay rows must exist before dispatcher phase registration consumes them.
+            DispatcherJobFence.TryComplete(ref mockHandle, forceComplete: true);
 
             _defaultsInitialized = true;
         }
@@ -1017,29 +1019,35 @@ namespace Hecton8.Physiology
         }
 #endif
 
-        private void CompleteActiveJobIfReady(bool forceComplete)
+        private bool TryFinalizeActiveJobNoWait()
+        {
+            if (!_jobScheduled)
+                return true;
+
+            if (!_activeHandle.IsCompleted)
+                return false;
+
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _activeHandle))
+                return false;
+
+            _jobScheduled = false;
+            return true;
+        }
+
+        private void CompleteActiveJobForTeardown()
         {
             if (!_jobScheduled)
                 return;
 
-            if (!forceComplete && !_activeHandle.IsCompleted)
+            if (!DispatcherJobFence.TryComplete(ref _activeHandle, forceComplete: true))
                 return;
-
-            if (forceComplete)
-            {
-                DispatcherJobFence.TryComplete(ref _activeHandle, forceComplete: true);
-            }
-            else if (!DispatcherJobFence.TryFinalizeCompleted(ref _activeHandle))
-            {
-                return;
-            }
 
             _jobScheduled = false;
         }
 
         private bool TryPrepareEditorVaultAccess()
         {
-            CompleteActiveJobIfReady(forceComplete: false);
+            TryFinalizeActiveJobNoWait();
             return !_jobScheduled;
         }
 

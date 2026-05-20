@@ -422,3 +422,99 @@ Rejected Alternatives: Keeping authored ghost prefabs for nicer previews was rej
 Scalability potential: Low uses only pose/scale fields, Vault preview rows, and minimal shader feedback. Middle/High/Ultra can still spend quality budget on Dear Lie shader response and batched preview rendering without instantiating a preview prefab for socket modules.
 
 Hardware Impact: Avoids one preview prefab pool spawn/despawn cycle plus ghost hierarchy setup per armed `ModuleTemplate` buildable and removes ghost-prefab hierarchy traversal from the socket-module preview route. No Burst candidate cost changes.
+
+## Decision 35 - Builder Ghost Validation Uses Dispatcher Fence
+
+Problem: The builder holography/SDF validation bridge scheduled Burst jobs but previously forced completion inside the active validation call. That kept a hidden main-thread stall next to the socket snap route and made pending validation results weakly owned by pose only.
+
+Solution: `TryRunBuilderGhostBurstValidation()` now schedules `BuildBuilderGhostStateJob`, chains `ValidateBuilderGhostPlacementJob`, registers the final handle with `H8Memory`, and returns immediately. The next builder validation tick calls `DispatcherJobFence.TryFinalizeCompleted` and consumes the `BuilderGhostStateDTO` only if the query hash still matches. That hash includes module hash, preview pose, rotation, proxy bounds center/size, and snap/DearLie flags. `SetActiveBuildable()`, `OnDestroy()`, and `ResetBuilderState()` complete the validation handle only on lifecycle teardown boundaries.
+
+Rejected Alternatives: Keeping `TryComplete(forceComplete:true)` in the active validation route was rejected because it can block the builder tick on SDF/bounds proof work. Dropping stale results by pose only was rejected because `_isSnapped` can change the presentation flags without changing pose. Creating a second private NativeArray for validation output was rejected because the owner-local Vault `BuilderGhostStateDTO` lane already exists.
+
+Scalability potential: Low quality can skip one-frame-late validation without blocking placement preview; Middle/High/Ultra keep the same scheduled path and can spend saved main-thread time on richer Dear Lie holography. No binary quality switch was introduced.
+
+Hardware Impact: On i3/MX350-class hardware, the worst visible cost removed is a synchronous fence wait during active preview validation. Added cost is a small FNV fold sequence and one query-hash comparison per validation tick.
+
+## Decision 36 - Builder Validation Uses Cached Vault Only
+
+Problem: The builder ghost validation bridge still contained a live `GlobalRegistry.DataVault` fallback inside `TryRunBuilderGhostBurstValidation()`. That is not inside a Burst loop, but it is still an active preview route and weakens the Global Authority boundary already enforced by the socket snap bridge.
+
+Solution: Route builder validation through `TryResolveShinobuSocketVault(out IDataVault vault)`. The only SHINOBU DataVault binding for `PlayerBuilder` remains in the cold `ResolveRuntimeReferences()` path, where the Vault is also initialized for construction validation.
+
+Rejected Alternatives: Keeping the active fallback was rejected because a missing cached vault should fail closed instead of silently polling the registry in the frame path. Re-resolving the registry every preview tick was rejected because it hides boot-order defects and adds service-locator traffic to a path that already has an owner-local cache.
+
+Scalability potential: Low/Middle/High/Ultra all use the same cached-vault gate. Quality weight continues to affect candidate budgets and shader response, not service lookup behavior.
+
+Hardware Impact: Removes one possible service-locator property read per builder validation attempt when `_shinobuSocketVault` is missing. The larger impact is architectural: no active preview fallback can mask a cold boot/cache failure.
+
+## Decision 37 - Preview Alpha Uses Current Validation Flags
+
+Problem: `HectonBlueprintPreviewBatch.WriteStateRow()` selected `BuilderGhostVisualDTO.Alpha` from `_lastPreviewAllowed`, but that field is updated after the current `ConstructionPreviewSignal` row is written. The current frame could therefore upload the previous signal's valid/invalid alpha even when SDF or bounds truth changed.
+
+Solution: Add `IsBuilderGhostValid(uint flags)` and derive alpha directly from the current `BuilderGhostValidationFlags` row after finite sanitization. Valid requires `Valid` and no `SdfBlocked`, `BoundsBlocked`, or `NonFinite`. After `WriteStateRow()`, `ConsumeConstructionPreviewSignals()` now reads the written `BuilderGhostStateDTO` for telemetry SDF sign and `_lastPreviewAllowed`, so non-finite corrections made inside the writer become the material/black-box truth.
+
+Rejected Alternatives: Updating `_lastPreviewAllowed` before `WriteStateRow()` was rejected because `SetPreview()` and other writers also need current-row truth without relying on external mutable state. Leaving a one-frame visual mismatch was rejected because the Dear Lie fake must never contradict the current validation payload.
+
+Scalability potential: Low/Middle/High/Ultra all use the same bitmask predicate. Quality still changes material response and candidate budgets, not validity truth.
+
+Hardware Impact: Adds one small bitmask predicate plus one written state row read per preview row. It prevents one-frame invalid/valid alpha drift and stale telemetry sign without touching Burst candidate work.
+
+## Decision 38 - Preview Scale Must Be Positive On Every Axis
+
+Problem: `HectonBlueprintPreviewBatch.WriteStateRow()` treated scale as valid when any axis was positive. A row with one positive axis and one zero or negative axis could be clamped to `0.001` for upload while still retaining valid flags.
+
+Solution: Change the finite/validity gate to `math.all(scale > 0f)`. Invalid axes now force the writer to clear `Valid`, set `NonFinite`, and upload the tiny safe fallback matrix only as an invalid visual.
+
+Rejected Alternatives: Keeping silent clamp behavior was rejected because it hides malformed preview geometry. Adding branchy per-axis repair was rejected because a malformed payload should fail closed and become visible as invalid, not be normalized into truth.
+
+Scalability potential: Low/Middle/High/Ultra all use the same validity predicate. Quality still controls visual intensity, not whether malformed geometry is accepted.
+
+Hardware Impact: Same SIMD comparison width as the prior check; stricter predicate only. No extra memory traffic.
+
+## Decision 39 - Validated Builder Visual Mirrors Final Flags
+
+Problem: `BuildBuilderGhostStateJob` wrote `BuilderGhostVisualDTO.Flags` before `ValidateBuilderGhostPlacementJob` performed SDF and bounds checks. The state row could become `SdfBlocked`, `BoundsBlocked`, or `NonFinite` while the GPU-facing visual row still carried the pre-validation flag set.
+
+Solution: Add the `BuilderGhostVisualDTO` Vault lane to `ValidateBuilderGhostPlacementJob` and update the matching visual row's `Flags` and `Alpha` after final validation. Alpha is resolved from the final flag predicate and clamped against the existing valid/invalid color alpha values.
+
+Rejected Alternatives: A separate visual-sync job was rejected because it would add another dispatcher edge and duplicate the validation predicate. Leaving the pre-validation visual row was rejected because it lets the shader-facing proof artifact diverge from the black-box state row.
+
+Scalability potential: Low/Middle/High/Ultra all use the same final flag predicate. Quality still scales Dear Lie amplitude and candidate budgets, not validation truth.
+
+Hardware Impact: Adds one 64-byte visual row read/write and one bitmask predicate per builder validation output row. It avoids a stale-valid shader payload without adding PhysX, prefab work, or a main-thread fence.
+
+## Decision 40 - Holography Dump Uses SHINOBU_217 Ownership
+
+Problem: `HolographyDumpPath` pointed to a foreign-agent dump target, so a SHINOBU_217 holography fault could produce a postmortem artifact under the wrong agent ID.
+
+Solution: Route holography black-box dumps to `Docs/AgentLogs/Dump_SHINOBU_217_Holography.bin`. The main construction socket telemetry still uses `Dump_SHINOBU_217.bin`.
+
+Rejected Alternatives: Reusing `Dump_SHINOBU_217.bin` for both telemetry rings was rejected because `ConstructionSocketTelemetryEntry` and `HolographyTelemetryEntry` have different fixed binary layouts. Keeping the foreign-agent path was rejected because it breaks ownership and forensic traceability.
+
+Scalability potential: Low/Middle/High/Ultra are unaffected; this is exceptional-path crash evidence only.
+
+Hardware Impact: No hot-path cost. The only runtime effect is the target path used if the existing non-finite dump branch fires.
+
+## Decision 41 - Reused ModuleSocket Lists Do Not Grow From 8
+
+Problem: During the migration period, SHINOBU still reads cold `ModuleSocket` authoring components to transfer occupied-socket truth into `SocketStateDTO`. The reusable list buffers were created with capacity 8, so dense modules could trigger `List<T>` growth during target-cache rebuild or post-place occupancy marking.
+
+Solution: Pre-size `_ghostSocketBuffer` and `_shinobuTargetSocketBuffer` to `ShinobuSocketConstructionRuntime.GhostSocketCapacity` so their managed backing arrays match the fixed SHINOBU ghost socket lane.
+
+Rejected Alternatives: Using the array-returning `GetComponentsInChildren<T>()` overload was rejected because it allocates every call. Removing the authoring component scan entirely was rejected until the habitat graph rebuild feeds occupied truth directly from Vault.
+
+Scalability potential: Low/Middle/High/Ultra all keep the same cold authoring bridge. Quality weight still controls candidate work and Dear Lie presentation, not component-buffer capacity.
+
+Hardware Impact: Avoids one possible managed list resize allocation on dense modules in the cold cache-refresh path. No Burst candidate cost changes.
+
+## Decision 42 - Builder SDF Validation Uses Continuous Math LOD
+
+Problem: Builder holography SDF hydration always sampled all eight bounds corners even when `GlobalQualityWeight` was low. That contradicted the continuous scalability rule and made low-end preview validation pay full corner-sampling cost before the scheduled Burst validation job.
+
+Solution: Add `ResolveBuilderGhostSdfSampleCount()` and `ResolveBuilderGhostCornerIndex()` to the SHINOBU runtime. CPU hydration and `ValidateBuilderGhostPlacementJob` now share a deterministic opposite-corner sample order. The count scales smoothly from 2 to 8 corners through `GlobalQualityWeight`, and unsampled bytes are explicitly reset to clear before hydration so stale data cannot leak into Burst validation. Holography telemetry now records the actual sampled corner count.
+
+Rejected Alternatives: A binary low/high switch was rejected because HECTON-8 requires continuous quality curves. Sampling only the first N raw corner indices was rejected because low quality would inspect one side of the bounds volume instead of opposite spatial extremes. Leaving the fixed eight-corner path was rejected because it wasted CPU work on weak devices while the terrain validator already provides separate placement authority.
+
+Scalability potential: Low quality samples two opposing corners as a cheap presentation proof. Middle quality adds paired corners smoothly. High and Ultra sample all eight corners while the Dear Lie visual fake remains shader-driven and instant.
+
+Hardware Impact: On i3/MX350-class hardware, low-quality builder holography SDF hydration drops from eight SDF calls to two. No layout, Vault ID, or shader payload changed.

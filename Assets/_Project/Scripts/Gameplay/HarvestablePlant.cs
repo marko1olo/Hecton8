@@ -256,7 +256,9 @@ namespace Hecton8.Gameplay
                 if (!segments[i].isAvailable) continue;
                 if (segments[i].meshRenderer == null) continue;
 
-                float distanceSq = (hitPoint - segments[i].meshRenderer.transform.position).sqrMagnitude;
+                Vector3 segmentVisualPosition = segments[i].meshRenderer.transform.position;
+                Vector3 segmentVisualDelta = hitPoint - segmentVisualPosition;
+                float distanceSq = segmentVisualDelta.sqrMagnitude;
                 if (distanceSq < nearestDistanceSq)
                 {
                     nearestDistanceSq = distanceSq;

@@ -2907,7 +2907,8 @@ namespace Hecton8.World
                 return false;
             }
 
-            _statisticalPopulationCenterAup = AbsoluteUniversePosition.FromRuntimePosition(_fieldCenter);
+            if (!TryResolveAupFromRuntimeOrigin(_fieldCenter, out _statisticalPopulationCenterAup))
+                return false;
             _statisticalPopulationBaseCount = ResolveStatisticalMigrationBaseCount();
             int statisticalMigrationPopulationCount = ResolveStatisticalMigrationPopulationCount();
             _statisticalPopulationPoint = new PopulationDensityPoint
@@ -3089,7 +3090,12 @@ namespace Hecton8.World
                 return 0;
             }
 
-            AbsoluteUniversePosition centerAup = AbsoluteUniversePosition.FromRuntimePosition(center);
+            if (!TryResolveAupFromRuntimeOrigin(center, out AbsoluteUniversePosition centerAup))
+            {
+                ClearRegisteredMigrationPopulation();
+                return 0;
+            }
+
             int3 aupCell = MigrationDirector.ResolveMigrationPopulationAupCell(center);
             ClearRegisteredMigrationPopulationIfChanged(species, aupCell);
             int migrationPopulationCount = MigrationDirector.RegisterStatisticalSwarmPopulationAndResolveCount(
@@ -3380,14 +3386,18 @@ namespace Hecton8.World
             if (!TryResolvePlayerRuntimePosition(out Vector3 origin))
                 return;
 
-            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
+            if (!TryResolveAupFromRuntimeOrigin(origin, out AbsoluteUniversePosition originAup))
+                return;
+
             HectonFluidEngine fluidRuntime = _fluidEngine;
             int formationCount = 0;
             for (int i = 0; i < snapshotCount && formationCount < formationBeaconLimit; i++)
             {
                 BeaconNetworkSystem.BeaconSnapshot snapshot = _formationBeaconSnapshots[i];
                 Vector3 beaconPosition = snapshot.Position;
-                AbsoluteUniversePosition beaconAup = AbsoluteUniversePosition.FromRuntimePosition(beaconPosition);
+                if (!TryResolveAupFromRuntimeOrigin(beaconPosition, out AbsoluteUniversePosition beaconAup))
+                    continue;
+
                 if (AbsoluteUniversePosition.DistanceSq(in beaconAup, in originAup) > (double)formationBeaconSearchRadius * formationBeaconSearchRadius)
                     continue;
 
@@ -3473,7 +3483,9 @@ namespace Hecton8.World
                 return;
 
             int obstacleCount = 0;
-            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
+            if (!TryResolveAupFromRuntimeOrigin(origin, out AbsoluteUniversePosition originAup))
+                return;
+
             int staticObstacleCount = math.min(_staticObstacleCacheCount, staticObstacleCache.Length);
             for (int i = 0; i < staticObstacleCount && obstacleCount < formationObstacleLimit; i++)
             {
@@ -3481,7 +3493,9 @@ namespace Hecton8.World
                 float radius = math.max(0.1f, obstacle.Radius);
                 float maxDistance = formationObstacleSearchRadius + radius;
                 Vector3 obstaclePosition = new Vector3(obstacle.Center.x, obstacle.Center.y, obstacle.Center.z);
-                AbsoluteUniversePosition obstacleAup = AbsoluteUniversePosition.FromRuntimePosition(obstaclePosition);
+                if (!TryResolveAupFromRuntimeOrigin(obstaclePosition, out AbsoluteUniversePosition obstacleAup))
+                    continue;
+
                 if (AbsoluteUniversePosition.DistanceSq(in obstacleAup, in originAup) > (double)maxDistance * maxDistance)
                     continue;
 
@@ -4438,7 +4452,12 @@ namespace Hecton8.World
                 return false;
             }
 
-            AbsoluteUniversePosition threatAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition threatAup))
+            {
+                boidSensoryThreats[slot] = float4.zero;
+                return false;
+            }
+
             float3 shiftedRuntime = threatAup.ToRuntimeFloat3();
             if (!math.all(math.isfinite(shiftedRuntime)))
             {
@@ -5038,9 +5057,9 @@ namespace Hecton8.World
             if (inferredDirectionWS.sqrMagnitude <= 0.0001f &&
                 TryResolvePlayerRuntimeMotion(out Vector3 playerPosition, out Vector3 playerVelocity))
             {
-                AbsoluteUniversePosition signalAup = AbsoluteUniversePosition.FromRuntimePosition(signal.PositionWS);
-                AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
-                if (AbsoluteUniversePosition.DistanceSq(in signalAup, in playerAup) <= (double)panicRadius * panicRadius &&
+                if (TryResolveAupFromRuntimeOrigin(signal.PositionWS, out AbsoluteUniversePosition signalAup) &&
+                    TryResolveAupFromRuntimeOrigin(playerPosition, out AbsoluteUniversePosition playerAup) &&
+                    AbsoluteUniversePosition.DistanceSq(in signalAup, in playerAup) <= (double)panicRadius * panicRadius &&
                     playerVelocity.sqrMagnitude > 0.0001f)
                 {
                     inferredDirectionWS = FastNormalizeVector3(playerVelocity, Vector3.forward);
@@ -5367,16 +5386,19 @@ namespace Hecton8.World
             uint sourceId = killSignal.PredatorId != 0u
                 ? killSignal.PredatorId
                 : (uint)math.hash(new int2(boidId, (int)Time.frameCount));
-            DebrisSpawnSignal debrisSignal = new DebrisSpawnSignal
+            if (TryResolveAupFromRuntimeOrigin(killPositionWS, out AbsoluteUniversePosition killAup))
             {
-                PositionAup = AbsoluteUniversePosition.FromRuntimePosition(killPositionWS),
-                SpeciesHash = (uint)math.hash(new int2(boidId, (int)(sourceId & 0x7FFFFFFFu))),
-                SourceEntityId = sourceId,
-                Intensity01 = 1f,
-                DebrisKind = PredatorKillBloodDebrisKind,
-                Flags = PredatorKillDebrisFlags
-            };
-            SignalBus<DebrisSpawnSignal>.Push(in debrisSignal);
+                DebrisSpawnSignal debrisSignal = new DebrisSpawnSignal
+                {
+                    PositionAup = killAup,
+                    SpeciesHash = (uint)math.hash(new int2(boidId, (int)(sourceId & 0x7FFFFFFFu))),
+                    SourceEntityId = sourceId,
+                    Intensity01 = 1f,
+                    DebrisKind = PredatorKillBloodDebrisKind,
+                    Flags = PredatorKillDebrisFlags
+                };
+                SignalBus<DebrisSpawnSignal>.Push(in debrisSignal);
+            }
 
             AbyssalFluidDecalManager fluidDecals = _abyssalFluidDecals;
             if (fluidDecals != null)
@@ -5397,9 +5419,12 @@ namespace Hecton8.World
             if (_feedingFrenzyKillCount <= FeedingFrenzyKillThreshold)
                 return;
 
+            if (!TryResolveAupFromRuntimeOrigin(centroidWS, out AbsoluteUniversePosition centroidAup))
+                return;
+
             AcousticPingSignal acousticPingSignal = new AcousticPingSignal
             {
-                PositionAup = AbsoluteUniversePosition.FromRuntimePosition(centroidWS),
+                PositionAup = centroidAup,
                 RadiusMeters = FeedingFrenzyAcousticRadiusMeters,
                 Intensity01 = math.saturate(_feedingFrenzyKillCount * PredatorKillSignalDrainLimitInv),
                 SourceId = math.hash(new float3(centroidWS.x, centroidWS.y, centroidWS.z)),
@@ -5555,6 +5580,28 @@ namespace Hecton8.World
         private static bool IsFiniteVector3(Vector3 value)
         {
             return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!IsFiniteVector3(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!math.isfinite(originAup.LocalX) ||
+                !math.isfinite(originAup.LocalY) ||
+                !math.isfinite(originAup.LocalZ))
+            {
+                return false;
+            }
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return math.isfinite(positionAup.LocalX) &&
+                math.isfinite(positionAup.LocalY) &&
+                math.isfinite(positionAup.LocalZ);
         }
 
         private void TryDumpFoodChainTelemetry(uint anomalyHash)
@@ -6110,12 +6157,15 @@ namespace Hecton8.World
                 return;
             }
 
+            if (!TryResolveAupFromRuntimeOrigin(originWS, out AbsoluteUniversePosition originAup))
+                return;
+
             _lastSwarmDispersedSignalTime = absoluteSimulationTime;
             _swarmDispersedSequence++;
             uint resolvedSourceId = sourceId != 0u ? sourceId : _swarmDispersedSequence;
             SwarmDispersedSignal signal = new SwarmDispersedSignal
             {
-                PositionAup = AbsoluteUniversePosition.FromRuntimePosition(originWS),
+                PositionAup = originAup,
                 RadiusMeters = math.max(1f, radiusWS),
                 Intensity01 = SaturateFinite01(intensity01),
                 SourceId = resolvedSourceId,
@@ -6361,13 +6411,17 @@ namespace Hecton8.World
             if (!anchors.IsCreated || anchorCount <= 0)
                 return false;
 
-            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
+            if (!TryResolveAupFromRuntimeOrigin(origin, out AbsoluteUniversePosition originAup))
+                return false;
+
             double nearestDistanceSq = double.PositiveInfinity;
             int cappedCount = math.min(anchorCount, anchors.Length);
             for (int i = 0; i < cappedCount; i++)
             {
                 Vector3 candidate = anchors[i];
-                AbsoluteUniversePosition candidateAup = AbsoluteUniversePosition.FromRuntimePosition(candidate);
+                if (!TryResolveAupFromRuntimeOrigin(candidate, out AbsoluteUniversePosition candidateAup))
+                    continue;
+
                 double distanceSq = AbsoluteUniversePosition.DistanceSq(in candidateAup, in originAup);
                 if (distanceSq >= nearestDistanceSq)
                     continue;
@@ -6456,8 +6510,12 @@ namespace Hecton8.World
             if (!TryResolveApproxViewPose(out Vector3 cameraPosition, out _))
                 return 0f;
 
-            AbsoluteUniversePosition boundsAup = AbsoluteUniversePosition.FromRuntimePosition(_renderBounds.center);
-            AbsoluteUniversePosition cameraAup = AbsoluteUniversePosition.FromRuntimePosition(cameraPosition);
+            if (!TryResolveAupFromRuntimeOrigin(_renderBounds.center, out AbsoluteUniversePosition boundsAup) ||
+                !TryResolveAupFromRuntimeOrigin(cameraPosition, out AbsoluteUniversePosition cameraAup))
+            {
+                return 0f;
+            }
+
             double distanceSq = AbsoluteUniversePosition.DistanceSq(in boundsAup, in cameraAup);
             return distanceSq >= float.MaxValue ? float.MaxValue : (float)math.max(0d, distanceSq);
         }

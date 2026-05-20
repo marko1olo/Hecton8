@@ -1,10 +1,10 @@
-﻿# Global Authority Setup Playbook
+# Global Authority Setup Playbook
 
 Date: 2026-05-19
 Status: PENDING VERIFICATION
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-20 R46 Root/Architecture Actuality Boundary
+## 2026-05-20 R47 Root/Architecture Actuality Boundary
 This document is active only where it agrees with:
 
 - `Docs/README.md`
@@ -13,14 +13,14 @@ This document is active only where it agrees with:
 - current source files
 - fresh verification logs and artifacts
 
-Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL evidence. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction. R42 remains the prior counter/route-boundary/proof-label correction. R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers; runtime proof remains absent.
+Current root/architecture boundary is `Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md` as STATIC_DOC/STATIC_SOURCE/FILESYSTEM/PY_TOOL evidence. R46 remains the prior interior-authority/route-field/proof-language correction; R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; runtime proof remains absent.
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler,
 Frame Debugger, player build, save/load route, or visual-route proof is implied
 unless this document links a fresh evidence artifact. Historical counters and
 older version claims inside this file are subordinate to the current authority
 spine above.
-R46 root/architecture interior-authority/route-field/proof-language correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
+R47 root/architecture authority-spine/runtime-wording/counter-drift correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R46 remains the prior interior-authority/route-field/proof-language correction. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 Evidence class: `STATIC_DOC`. This is an implementation playbook, not runtime
@@ -48,6 +48,26 @@ owner-local first
 global only when ownership boundary is real
 proof before readiness
 ```
+
+## Hard Future Rules
+
+- A read-looking API must be pure. `Get*`, `TryGet*`, `Resolve*`, and `Read*`
+  methods must not publish, sync scene state, allocate or grow buffers, complete
+  jobs, mutate global state, or search the scene.
+- Publish once from the owner phase, then let consumers read snapshots or cached
+  interfaces. Do not let every consumer pull-and-sync the same runtime context.
+- Treat `GlobalRegistry` as cold identity only. Resolve dependencies during
+  bootstrap, `OnRegister`, `OnDependencyInject`, or owner initialization.
+- Use `SignalBus<T>` for first-party hot fan-out. Keep `GlobalSignals` as a
+  documented bridge and `HectonEventBus` as mod/API/cold managed isolation.
+- Use `GlobalDataVault` only for cross-domain native state. Domain runtime code
+  must not use `TryGetLatestCreated()` as a normal fallback authority.
+- Schedule Burst/Jobs only when work size amortizes scheduling and memory motion.
+  Completion belongs in dispatcher-owned swap/completion windows.
+- Do not claim Data Monolith readiness until the active StreamingAssets
+  `static_data.h8bin` exists and passes import/bake/boot validation.
+- Scale with continuous `GlobalQualityWeight`; never use quality to change
+  gameplay truth owner, save identity, DTO layout, or authority route.
 
 ## Architecture Planes
 
@@ -329,5 +349,3 @@ shows the player is paying for registry lookup, managed event dispatch,
 unbounded signal storms, DataVault misuse, or telemetry spam, the setup failed.
 
 Status remains `PENDING VERIFICATION` until runtime artifacts prove otherwise.
-
-

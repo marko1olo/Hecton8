@@ -13,7 +13,7 @@ Rule: do not spam and do not ask for wishlists in critique posts
 
 Reporting rule: community critique posts default to `route_class = no_link_feedback`. Public replies can be coded as `consent_provenance = public_comment` only. Do not turn subreddit, Steam forum, Discord, or social replies into newsletter, creator CRM, press, or playtest contacts unless the user explicitly opts into that separate route.
 
-Asset gate: visual or clip critique posts need real gameplay capture with metadata/QA state. If the post uses a threat, anomaly, or atmosphere asset, it must also ask whether the player decision reads. `PLAN-SHOT-007` anomaly flavor cannot substitute for the agency/decision proof asset in first-public testing. If the critique post claims gameplay, pressure, route-risk, threat, salvage failure, or first-public agency proof, the owning AB-009/KPI row must have `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision` before the post can advance Campaign 01 or creator/Steam routes.
+Asset gate: visual or clip critique posts need real gameplay capture with metadata/QA state. If the post uses a threat, anomaly, or atmosphere asset, it must also ask whether the player decision reads. `PLAN-SHOT-007` anomaly flavor cannot substitute for the agency/decision proof asset in first-public testing. If the critique post claims gameplay, pressure, route-risk, threat, salvage failure, or first-public agency proof, the asset metadata row must have non-pending `viewer_named_decision` and valid `capture_verdict`, and the owning AB-009/KPI row must have `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision` before the post can advance Campaign 01 or creator/Steam routes.
 
 ## Reddit Critique Posts
 
@@ -191,7 +191,7 @@ Public positioning stays competitor-neutral. Performance language waits for meas
 - 1-4s: player looks at failing machine
 - 5-12s: repair/salvage action
 - 13-18s: player chooses repair, retreat, seal, or continue under threat/flooding consequence
-- 19-20s: title + feedback prompt; Steam CTA only after `Analytics/MEASUREMENT_AND_UTM_PLAN.md` Official CTA Link Activation Gate V0 passes.
+- 19-20s: title + feedback prompt; Steam CTA only after `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED` and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` pass.
 
 ### Format B - Sonar First
 
@@ -199,7 +199,7 @@ Public positioning stays competitor-neutral. Performance language waits for meas
 - 1-5s: silence / instrument noise
 - 6-12s: floodlight catches partial silhouette
 - 13-18s: player retreats, reroutes, or accepts the system warning cost
-- 19-20s: title + feedback prompt; Steam CTA only after `Analytics/MEASUREMENT_AND_UTM_PLAN.md` Official CTA Link Activation Gate V0 passes.
+- 19-20s: title + feedback prompt; Steam CTA only after `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED` and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` pass.
 
 ### Format C - Machinery Fantasy
 
@@ -224,7 +224,7 @@ Forbidden:
 - wishlist begging;
 - DM spam;
 - arguing with competitor fans;
-- dropping Steam links without the Official CTA Link Activation Gate V0 and platform context;
+- dropping Steam links without `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED`, destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`, and platform context;
 - feature promises;
 - fake "we are building what the competitor failed to do" rhetoric.
 - summarizing replies as KPI signal without route-specific class plus `consent_provenance` or `reply_consent_provenance`.

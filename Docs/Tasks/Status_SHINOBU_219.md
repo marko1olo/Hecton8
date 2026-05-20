@@ -246,3 +246,47 @@ Rule quote: "one fact -> one owner -> one route -> one proof" and "NO BINARY SWI
 - [x] Inquisition archaeology widened. | DOD: `VisualPressureAgingInquisition` now reports `BaseCorrosion.cs`, `GlassFracture.cs`, exact `GetComponent<Renderer>().material.SetFloat`, and rust/algae/corrosion/glass aging decal tokens in `Rendering/` and `Construction/`. | Rejected: validator that only counted BaseDegradation/runtime scoped material mutations. | Estimate: editor-only scan cost
 - [x] Static guard rerun after loop 17. | DOD: scoped scans found no live legacy aging material/decal tokens in `Rendering`/`Construction`, no SHINOBU aging binary LOD tokens, and no rollback/Merkle references beyond `H8Memory` BufferIDs; trailing whitespace scan returned no matches; `git diff --check` returned exit 0 with CRLF warnings only. | Rejected: treating validator literal search strings as runtime usage. | Estimate: static scan ~1700 us
 - [!] Compile verification deferred. | Reason: latest gate returned `CpuPercent=98.693` with no compiler processes; build remains forbidden above 50% CPU. | Integrator note: rerun Unity import/build after CPU drops below 50% and no compiler process is active.
+
+## Iteration Loop 18 - Parallel Forensic Corrections
+
+[ANALYSIS]
+Target: integrate the three read-only forensic passes and remove the last SHINOBU-owned payload/validator/readiness weak spots.
+Affected systems: `VisualPressureAgingRuntime`, `Hecton8_UberNoir.hlsl`, `VisualPressureAgingTunerWindow`, `VisualPressureAgingGizmoVisualizer`, SHINOBU_219 docs/logs.
+Zero GC proof: runtime changes add no managed hot-path containers, no per-renderer material mutation, no MPB route, and no private native collection ownership.
+State check: BufferIDs `71240..71246`, `VisualAgingParamsDTO` 64-byte ABI, Burst job types, and rollback exclusion are unchanged.
+
+- [x] Scheduled-job lock leak path closed. | DOD: `ScheduleSimulation` now wraps post-lock scheduling in `try/finally` and releases SHINOBU Vault locks if scheduling exits before `_simulationScheduled` is armed. | Rejected: assuming no exception/early exit between lock acquisition and job registration. | Estimate: fault-path safety only; no steady-frame saving claimed
+- [x] Editor/gizmo reads fenced against scheduled writes. | DOD: `TryReadEditorTuning` and `TryAcquireAgingBufferRead` return false while a simulation job still owns scheduled Vault locks. | Rejected: cold editor overlays reading tuning/aging lanes during an outstanding job. | Estimate: editor-only branch
+- [x] Payload activation made continuous. | DOD: `_GlobalBaseAgingRuntime.y` ramps on CPU, `H8UberNoirLoadVisualAging` reads payload rows at epsilon-positive blend instead of a `0.5` step, and shader lerps each DTO lane by the runtime blend. | Rejected: half-threshold payload pop. | Estimate: no new texture samples; one epsilon gate
+- [x] Rust POM/detail tied to dynamic rust and row quality. | DOD: `H8UberNoirResolveRustPomUv` consumes `dynamicRust` plus the row-aware aging quality scalar, so RustDetail/POM activates from Vault rust rather than only legacy global rust. | Rejected: split quality authority inside one visual-aging path. | Estimate: no extra samples versus existing high path
+- [x] Inquisition report made static-proof explicit and non-destructive. | DOD: editor report writes dedicated `Docs/Reports/VISUAL_AGING_INQUISITION_REPORT.json`, writes aggregate report with `STATIC_PASS`/`STATIC_FAIL`, and preserves unrelated prior aggregate contents as escaped `previousReportRaw`. | Rejected: overwriting another agent's aggregate report while claiming runtime proof. | Estimate: editor-only scan/write
+- [x] Static guard rerun after loop 18 patch. | DOD: SHINOBU shader line ranges 470-620/1270-1355/1480-1605 returned no `_MATH_LOD_LOW`, `shader_feature`, `multi_compile`, or low-end switch tokens; `Rendering/Construction` legacy aging decal/material scan returned no matches; hot runtime/gizmo scan returned no material/Vault legacy/native collection hits; DTO property/Pack=1 scan returned no matches; `git diff --check` exit 0 with LF/CRLF warnings only; trailing whitespace scan returned no matches. | Rejected: treating validator literal strings as runtime usage. | Estimate: static scan ~2600 us
+- [!] Compile verification deferred. | Reason: latest gate returned `CpuPercent=100` with no `dotnet`, `csc`, or `VBCSCompiler`; build remains forbidden above 50% CPU. | Integrator note: rerun Unity import/build, shader import, Frame Debugger, and GCMonitor after CPU drops below 50% and no compiler process is active.
+
+## Iteration Loop 19 - Mock Temperature NaN Vaccine
+
+[ANALYSIS]
+Target: close the fallback/mock aging path's temperature finite check gap.
+Affected systems: `GenerateMockAgingDataJob`, SHINOBU_219 docs/logs.
+Zero GC proof: one Burst-local helper and scalar branch only; no managed allocation, no native allocation, no renderer mutation.
+State check: DTO layout, BufferIDs, GPU upload ABI, shader ABI, and structural processing path are unchanged.
+
+- [x] Mock temperature fallback finite-check added. | DOD: `GenerateMockAgingDataJob` now resolves `Temperatures[0]` through `ResolveTemperature()` and falls back to `Tuning.MockTemperatureC` if the Vault mock lane is absent or non-finite. | Rejected: trusting the mock temperature lane because fallback profiling must be just as NaN-vaccinated as the structural route. | Estimate: one finite check per mock row
+- [x] Telemetry cursor negative-wrap fixed. | DOD: `RecordVisualAgingTelemetryJob` and fault dump readback now wrap negative cursor values back into `[0, Telemetry.Length - 1]` before indexing the 300-frame ring. | Rejected: trusting a Vault cursor lane during black-box fault handling. | Estimate: one modulo and sign branch per telemetry write/dump row
+- [x] Runtime using hygiene trimmed. | DOD: removed unused `using System.Diagnostics;`; explicit `Stopwatch` alias remains. | Rejected: leaving stale namespace imports in a compile-wall-sensitive runtime file. | Estimate: compile hygiene only
+- [x] Static guard rerun after loop 19. | DOD: targeted temperature/cursor helper scan confirms structural and mock finite fallback helpers plus bounded telemetry cursor wrap; forbidden runtime/gizmo scan clean; SHINOBU shader ranges clean for binary LOD tokens; legacy `Rendering/Construction` aging scan clean; rollback/save scan only finds `H8Memory` BufferIDs; `git diff --check` exit 0 with LF/CRLF warnings only; trailing whitespace scan clean. | Rejected: build launch under CPU gate. | Estimate: static scan ~2600 us
+- [!] Compile verification deferred. | Reason: latest gate returned `CpuPercent=100` with no compiler processes; build remains forbidden above 50% CPU. | Integrator note: rerun Unity import/build, shader compiler, Frame Debugger, and GCMonitor after CPU drops below 50%.
+
+## Iteration Loop 20 - Duplicate Phase and JSON Proof Fence
+
+[ANALYSIS]
+Target: close a duplicate dispatcher phase guard and make static report preservation JSON-safe.
+Affected systems: `VisualPressureAgingRuntime`, `VisualPressureAgingTunerWindow`, SHINOBU_219 docs/logs.
+Zero GC proof: runtime patch adds two scalar guards only; editor JSON escape is cold static report path.
+State check: DTO ABI, BufferIDs, Burst jobs, GPU buffer ABI, and shader ABI unchanged.
+
+- [x] Duplicate schedule guard added. | DOD: `ScheduleSimulation` returns `dependsOn` while `_simulationScheduled` is already true, so an unexpected duplicate phase cannot call `UnlockJobBuffers()` and release Vault locks for an in-flight job. | Rejected: trusting dispatcher ordering as the only guard. | Estimate: one branch in Simulation phase.
+- [x] VisualSync stale-schedule fail-closed. | DOD: `VisualSyncTick` returns while `_simulationScheduled` is true, preserving PostSimulation as the only unlock boundary before GPU upload. | Rejected: reading/uploading before post-sim swap if dispatcher order regresses. | Estimate: one branch in VisualSync.
+- [x] Static report JSON escape hardened. | DOD: `AppendJsonString` now emits `\u00XX` for remaining control chars below space, so preserved aggregate report text cannot corrupt JSON. | Rejected: assuming old report text only contains `\n`, `\r`, `\t`, `\b`, and `\f`. | Estimate: editor-only.
+- [x] Static guard rerun after loop 20. | DOD: `git diff --check` exit 0 with CRLF warnings only; trailing whitespace clean; SHINOBU shader ranges clean; `Rendering/Construction` legacy aging scan clean; runtime/gizmo scans found no `Complete`, private native collection allocation, `foreach`, `LINQ`, renderer/material mutation, `string.Format`, `.ToString`, or interpolation hits. Cold `ResolveVault(true)`/`GlobalRegistry.DataVault` hits are limited to static editor/gizmo facades and initialization cache, not hot loops. | Rejected: broad whole-repo scan noise from generic `Renderer`/format tokens. | Estimate: static scan ~3100 us.
+- [!] Compile verification deferred. | Reason: latest gate returned `CpuPercent=50.241` with no compiler processes; build remains forbidden above 50% CPU. | Integrator note: rerun Unity import/build, shader compiler, Frame Debugger, and GCMonitor after CPU drops below 50%.

@@ -165,9 +165,9 @@ namespace Hecton8.Physics
             float q = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
             float phase = frameIndex * math.lerp(0.017f, 0.047f, q);
             float3 currentAcceleration = new float3(
-                math.sin(phase) * 0.06f,
+                SimdTranscendentalApproximator.SinPolynomial(phase, q, 7) * 0.06f,
                 -0.015f,
-                math.cos(phase * 0.73f) * 0.04f) * math.lerp(0.3f, 1f, q);
+                SimdTranscendentalApproximator.CosPolynomial(phase * 0.73f, q, 7) * 0.04f) * math.lerp(0.3f, 1f, q);
             return Schedule(
                 nodes,
                 constraints,
@@ -238,8 +238,8 @@ namespace Hecton8.Physics
                 for (int node = 0; node < nodesPerTether; node++)
                 {
                     float t = node * math.rcp(math.max(1, nodesPerTether - 1));
-                    float wave = math.sin((cable + 1) * 1.713f + t * 6.2831855f) * math.lerp(0.05f, 0.35f, q);
-                    float sag = -math.sin(t * 3.1415927f) * math.lerp(0.1f, 0.7f, q);
+                    float wave = SimdTranscendentalApproximator.SinPolynomial((cable + 1) * 1.713f + t * 6.2831855f, q, 7) * math.lerp(0.05f, 0.35f, q);
+                    float sag = -SimdTranscendentalApproximator.SinPolynomial(t * 3.1415927f, q, 7) * math.lerp(0.1f, 0.7f, q);
                     double3 aup = math.lerp(anchor, payload, (double)t) + new double3(0.0, sag, wave);
                     Nodes[nodeOffset + node] = new TetherNodeDTO
                     {
@@ -314,17 +314,17 @@ namespace Hecton8.Physics
                 float phase = frame + cable * 1.719f + randomPhase * 0.03125f;
                 double3 baseAnchor = new double3(cable * 3.0, -22.0, cable * 1.5);
                 double3 anchor = baseAnchor + new double3(
-                    math.sin(phase) * 0.35f,
-                    math.sin(phase * 0.7f) * 0.08f,
-                    math.cos(phase * 0.83f) * 0.22f);
+                    SimdTranscendentalApproximator.SinPolynomial(phase, q, 7) * 0.35f,
+                    SimdTranscendentalApproximator.SinPolynomial(phase * 0.7f, q, 7) * 0.08f,
+                    SimdTranscendentalApproximator.CosPolynomial(phase * 0.83f, q, 7) * 0.22f);
                 double3 payload = baseAnchor + new double3(
-                    10.0 + cable * 0.75 + math.sin(phase * 0.47f) * 0.8f,
-                    -1.25 + math.cos(phase * 0.53f) * 0.18f,
-                    5.5 + math.sin(phase * 0.41f) * 0.55f);
+                    10.0 + cable * 0.75 + SimdTranscendentalApproximator.SinPolynomial(phase * 0.47f, q, 7) * 0.8f,
+                    -1.25 + SimdTranscendentalApproximator.CosPolynomial(phase * 0.53f, q, 7) * 0.18f,
+                    5.5 + SimdTranscendentalApproximator.SinPolynomial(phase * 0.41f, q, 7) * 0.55f);
                 float3 current = new float3(
-                    math.sin(phase * 0.37f) * 0.08f,
+                    SimdTranscendentalApproximator.SinPolynomial(phase * 0.37f, q, 7) * 0.08f,
                     -0.015f * (1f + cable),
-                    math.cos(phase * 0.43f) * 0.06f) * math.lerp(0.3f, 1f, q);
+                    SimdTranscendentalApproximator.CosPolynomial(phase * 0.43f, q, 7) * 0.06f) * math.lerp(0.3f, 1f, q);
 
                 Endpoints[cable] = new TetherEndpointAupDTO
                 {
@@ -761,7 +761,7 @@ namespace Hecton8.Physics
     internal unsafe struct TetherSplineGpuMemcpyJob : IJob
     {
         [ReadOnly, NoAlias] public NativeArray<TetherSplineVertexDTO> Source;
-        [NativeDisableUnsafePtrRestriction] public void* Destination;
+        [NoAlias, NativeDisableUnsafePtrRestriction, WriteOnly] public void* Destination;
         public int Count;
         public long DestinationBytes;
 
@@ -865,8 +865,7 @@ namespace Hecton8.Physics
                 Count = safeCount,
                 DestinationBytes = (long)UnsafeUtility.SizeOf<TetherSplineVertexDTO>() * mapped.Length
             };
-            JobHandle handle = job.Schedule();
-            DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+            job.Execute();
             destination.UnlockBufferAfterWrite<TetherSplineVertexDTO>(safeCount);
         }
     }
@@ -1147,8 +1146,7 @@ namespace Hecton8.Physics
                 SectorHash = 0x5348494Eu,
                 GlobalQualityWeight = globalQualityWeight
             };
-            JobHandle handle = job.Schedule();
-            DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+            job.Execute();
         }
     }
 }

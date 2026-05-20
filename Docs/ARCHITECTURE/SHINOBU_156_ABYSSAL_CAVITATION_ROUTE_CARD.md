@@ -1,9 +1,9 @@
-﻿# SHINOBU_156 Abyssal Cavitation Route Card
+# SHINOBU_156 Abyssal Cavitation Route Card
 
 Status: STATIC_SOURCE ORIENTATION / UNITY IMPORT + PROFILER PROOF PENDING.
 
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->
-## 2026-05-17 R4 Interior Actuality Boundary
+## 2026-05-20 R47 Root/Architecture Actuality Boundary
 
 This document is active only where it agrees with:
 
@@ -15,7 +15,7 @@ This document is active only where it agrees with:
 
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
 
-R46 root/architecture interior-authority/route-field/proof-language correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
+R47 root/architecture authority-spine/runtime-wording/counter-drift correction (`Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md`) is the latest local static DOC_GLOBAL boundary for architecture/root documentation. R46 remains the prior interior-authority/route-field/proof-language correction. R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; R44 remains the prior internal-residue/exact-route-field/proof-wording correction; R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; R42 remains the prior counter/route-boundary/proof-label correction; R41 remains the prior global-authority/internal-residue correction; R40 remains the prior R38-residue/source-counter correction; R39 remains the prior authority-counter/proof-wording correction; R38/R37/R36/R35/R34 remain prior static correction layers. Runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
 
 Owner: SHINOBU_156 / Abyssal cavitation and shockwave physics.
@@ -62,7 +62,7 @@ Authority:
 - Burst pressure evaluation writes `ShockwaveForcePacketDTO` rows to buffer `71563`.
 - The primary managed bridge `AbyssalCavitationRuntime.FlushForcesToPhysics(double3, ...)` drains `ShockwaveForcePacketDTO` rows through `PhysicsApplySystem.DrainCavitationForcePackets`, resolving `TargetEntityHash` to the tracked body and queuing deferred point-force packets. The legacy `Rigidbody[]` overload remains bounded compatibility only; no Burst job mutates Rigidbody state.
 - Cavitation visuals are not particles. Buffer `71564` is uploaded to `_H8CavitationShockwaves` and consumed by `Hecton8_UberNoir.hlsl` water refraction. Visual sync records zero-wave frames as real empty-buffer state and skips duplicate same-frame GraphicsBuffer uploads when frame index, upload count, quality weight, and visual intensity are unchanged.
-- Fault telemetry dumps the 300-frame ring to `Docs/AgentLogs/Dump_SHINOBU_156.bin`.
+- Fault telemetry requests the 300-frame ring dump at `Docs/AgentLogs/Dump_SHINOBU_156.bin` as a planned/generated-on-fault artifact. No existing artifact is implied unless a timestamped runtime trigger and output are linked.
 
 Vault IDs:
 
@@ -104,5 +104,3 @@ The solver samples SDF at the midpoint between wave epicenter and entity AUP. Ne
 Forbidden route:
 
 `Physics.OverlapSphere`, `Physics.OverlapSphereNonAlloc`, `Rigidbody.AddExplosionForce`, explosion prefab instantiation, and particle-system fireballs are not part of this route.
-
-

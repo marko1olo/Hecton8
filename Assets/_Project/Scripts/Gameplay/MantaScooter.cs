@@ -811,7 +811,10 @@ namespace Hecton8.Gameplay
             if (!TryResolveSeaglideMovementState(out PlayerMovementRuntimeState movementState))
                 return false;
 
-            float safeDelta = math.clamp(math.isfinite(deltaTime) && deltaTime > 0f ? deltaTime : Time.deltaTime, 0.0001f, 0.2f);
+            if (!math.isfinite(deltaTime) || deltaTime <= 0f)
+                return false;
+
+            float safeDelta = math.clamp(deltaTime, 0.0001f, 0.2f);
             double3 currentAup = movementState.PredictedAup.ToAbsoluteDouble3();
             if (!math.all(math.isfinite(currentAup)))
                 return false;

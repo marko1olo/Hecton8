@@ -295,8 +295,10 @@ Exact Microseconds saved:
 - Developer compile-wall impact requires Unity import/build timing proof. Static assembly surface is narrowed.
 
 Verification:
-- Pending asmdef/reference scan after this patch.
-- Build remains gated until CPU is below 50 percent and no compiler process exists.
+- Asmdef JSON parses.
+- `references` contains no `Hecton8.*` entries.
+- Static forbidden-pattern scan passed after move.
+- Build remains gated: dotnet/csc absent, CPU sampled at 100 percent.
 
 ## 2026-05-20 - Property Purge Pass
 

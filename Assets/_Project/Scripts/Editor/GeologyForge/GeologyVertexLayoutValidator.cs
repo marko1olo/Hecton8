@@ -18,11 +18,19 @@ namespace Hecton8.Editor.GeologyForge
 
         public static VertexAttributeDescriptor[] GetLayout()
         {
-            return _GeologyLayout;
+            return new[]
+            {
+                _GeologyLayout[0],
+                _GeologyLayout[1],
+                _GeologyLayout[2],
+                _GeologyLayout[3]
+            };
         }
 
         public static void ValidateStruct()
         {
+            GeologyTetraExtractionLut.ValidateComplementWinding();
+
             int size = UnsafeUtility.SizeOf<GeologyVertex32>();
             if (size != GeologyForgeConstants.VertexStrideBytes)
                 throw new InvalidOperationException($"GeologyVertex32 stride mismatch. Expected 32, got {size}.");

@@ -2506,19 +2506,19 @@ namespace Hecton8.UI
         {
             if (_formatScheduled)
             {
-                ForceCompleteJob(ref _formatHandle);
+                ForceCompleteJobForTeardown(ref _formatHandle);
                 _formatScheduled = false;
             }
 
             if (_clickResolveScheduled)
             {
-                ForceCompleteJob(ref _clickResolveHandle);
+                ForceCompleteJobForTeardown(ref _clickResolveHandle);
                 _clickResolveScheduled = false;
             }
 
             if (_terminalInteractionScheduled)
             {
-                ForceCompleteJob(ref _terminalInteractionHandle);
+                ForceCompleteJobForTeardown(ref _terminalInteractionHandle);
                 _terminalInteractionScheduled = false;
             }
         }
@@ -2531,7 +2531,7 @@ namespace Hecton8.UI
             return DispatcherJobFence.TryFinalizeCompleted(ref handle);
         }
 
-        private static void ForceCompleteJob(ref JobHandle handle)
+        private static void ForceCompleteJobForTeardown(ref JobHandle handle)
         {
             DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
         }

@@ -83,7 +83,7 @@ If the team needs hundreds/thousands of players, evaluate Steam Playtest instead
 5. Build route verified by QA.
 6. Official project inbox custody verified.
 7. Asset metadata claim checks pass for any asset/link in the message.
-8. Any gameplay, pressure, route-risk, threat, salvage failure, or first-public proof claim has AB-009/KPI decision-read fields (`what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`) unless the access is purely technical QA.
+8. Any gameplay, pressure, route-risk, threat, salvage failure, or first-public proof claim has non-pending asset metadata `viewer_named_decision`, valid non-held `capture_verdict`, and AB-009/KPI decision-read fields (`what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`) unless the access is purely technical QA.
 9. Press tracker has `send_permission_gate = ALLOW_PRESS_SEND_VERIFIED` or curator tracker has `send_permission_gate = ALLOW_CURATOR_SEND_VERIFIED` when the recipient is from either tracker.
 10. Public/private route class chosen and recorded.
 11. Creator or press send-log row is ready.
@@ -192,13 +192,13 @@ Access rows are not valid if `verified_contact_route`, `access_route_class`, or 
 
 Status: protocol-only / no keys / no access authorized.
 
-Use this as the first access batch design after a stable preview/demo build exists. Do not request or send keys from this table.
+Use this as the first access batch design after stable preview/demo build proof is logged. Do not request or send keys from this table.
 
 | Batch | Max size | Access type | Recipients | Required gates | Stop condition |
 |---|---:|---|---|---|---|
-| ACC-001 | 10 | Private preview or Steam Playtest invite | Wave A send-verified creators from CRM | Playtest decision gate passes, recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED`, first human-send packet gates pass, AB-009/KPI decision-read fields exist for any gameplay/pressure/route-risk pitch, contact routes verified, build known issues ready. | Any recipient route cannot be verified or build has first-route blocker. |
-| ACC-002 | 10 | Release State Override or approved preview access | Press tracker candidates after presskit gate | Press kit publish gate passes, asset claim checks pass, AB-009/KPI decision-read fields exist for first-page gameplay/pressure proof, official inbox custody exists, route rechecked same day, and press tracker `send_permission_gate = ALLOW_PRESS_SEND_VERIFIED`. | Any outlet asks for extra raw keys or route mismatch appears. |
-| ACC-003 | 8 | Steam Curator Connect | Curator tracker first-copy candidates | Public Steam page/build exists, first screenshots pass asset claim checks, AB-009/KPI decision-read fields exist for the agency proof asset, Curator Connect used, not raw keys, and curator tracker `send_permission_gate = ALLOW_CURATOR_SEND_VERIFIED`. | Curator asks for external keys or page is stale/formulaic. |
+| ACC-001 | 10 | Private preview or Steam Playtest invite | Wave A send-verified creators from CRM | Playtest decision gate passes, recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED`, first human-send packet gates pass, metadata handoff plus AB-009/KPI decision-read fields exist for any gameplay/pressure/route-risk pitch, contact routes verified, and build known-issues/rollback owner is logged. | Any recipient route cannot be verified or build has first-route blocker. |
+| ACC-002 | 10 | Release State Override or approved preview access | Press tracker candidates after presskit gate | Press kit publish gate passes, asset claim checks pass, metadata handoff plus AB-009/KPI decision-read fields exist for first-page gameplay/pressure proof, official inbox custody exists, route rechecked same day, and press tracker `send_permission_gate = ALLOW_PRESS_SEND_VERIFIED`. | Any outlet asks for extra raw keys or route mismatch appears. |
+| ACC-003 | 8 | Steam Curator Connect | Curator tracker first-copy candidates | `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED`, build proof, first screenshots pass asset claim checks, metadata handoff plus AB-009/KPI decision-read fields exist for the agency proof asset, Curator Connect used, not raw keys, and curator tracker `send_permission_gate = ALLOW_CURATOR_SEND_VERIFIED`. | Curator asks for external keys or page is stale/formulaic. |
 | ACC-004 | 10 | Technical QA/playtest | Low/mid-spec testers selected by score | Hardware specs collected, feedback tags ready, and recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED` if access is private rather than public Playtest. | Performance blocks all content feedback. |
 
 ### Access Message Must Include
@@ -227,7 +227,7 @@ Stop sending access if:
 - recipient asks for false talking points;
 - disclosure language is rejected;
 - feedback is dominated by multiplayer-scope expectation caused by our copy;
-- access copy claims gameplay/pressure/route-risk proof while AB-009/KPI decision-read fields are missing;
+- access copy claims gameplay/pressure/route-risk proof while metadata handoff or AB-009/KPI decision-read fields are missing;
 - Steam/Curator/YouTube/FTC rules have not been rechecked that week.
 
 ## Scam Red Flags

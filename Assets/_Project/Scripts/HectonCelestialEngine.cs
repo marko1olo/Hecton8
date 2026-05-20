@@ -104,10 +104,19 @@ namespace Hecton8.Celestial
     /// </summary>
     public static class CelestialEvents
     {
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
         private struct CelestialEventPayload
         {
+            [FieldOffset(0)]
             public byte EventType;
+            [FieldOffset(1)]
+            private byte _pad0;
+            [FieldOffset(2)]
+            private ushort _pad1;
+            [FieldOffset(4)]
+            private uint _pad2;
+            [FieldOffset(8)]
+            private ulong _pad3;
         }
 
         private const byte EclipseStartedEventType = 1;

@@ -1158,7 +1158,8 @@ namespace Hecton8.Gameplay
 
                     activeDentCount++;
                     float3 dentPoint = new float3(dent.x, dent.y, dent.z);
-                    if (math.distancesq(dentPoint, localPoint) > HullDentRepairRadiusSq)
+                    float3 dentDelta = dentPoint - localPoint;
+                    if (math.lengthsq(dentDelta) > HullDentRepairRadiusSq)
                         continue;
 
                     touchedDentCount++;

@@ -329,6 +329,100 @@ Validation:
 
 Runtime proof remains absent: no Unity import, clean Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load, platform run, network send, or visual-route proof.
 
+## 2026-05-20 R47 Root/Architecture Authority Spine, Runtime Wording, and Counter Drift
+
+What was wrong:
+
+- Active root/architecture entrypoints still carried R45/R46 currentness residue after R47 had started.
+- `Docs/PROJECT_ATLAS.md` still had R46 as current, the R46 `142/140` asmdef count, a stale AtlasCheck tuple, and stale global-event-bus wording.
+- `Docs/ARCHITECTURE/HECTON8_P0_FOUNDATION_PROOF_MATRIX.md` had an R47 boundary header but an interior R46 boundary note.
+- `Docs/Reports/README.md` repeated a stale runtime-wired evidence label while describing the demotion.
+- Several route-card and binary-payload notes still allowed planned dump paths or source path discovery to read like runtime proof.
+- R47 counters drifted during concurrent source churn.
+
+What was done:
+
+- Added `Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md`.
+- Promoted R47 through root Docs entrypoints, Reports index, architecture README/actuality ledger, `Docs/PROJECT_ATLAS.md`, generated atlas metadata, and active architecture boundary notes.
+- Replaced stale R42/R46 current-boundary paragraphs in active root/architecture files until the R47 boundary scan reached `R47BoundaryScope=134`, `Missing=0`.
+- Replaced stale global-event-bus shorthand with typed `SignalBus<T>` lane language plus documented `GlobalSignals` NativeQueue bridge wording.
+- Demoted binary payload runtime-wired wording to `STATIC_SOURCE_RUNTIME_PATH_PRESENT` where the evidence is source path resolution only.
+- Clarified route dump paths as planned/generated-on-fault targets unless linked to timestamped runtime artifacts.
+- Updated current source-scale counters to `2088/2027/2062` C# files, `1424399/1403799/1417772` physical lines, `343/340` interface-token hits, `278` direct interface declarations, `62` registry interfaces, `143/141` asmdefs, `6213` registry hits, `586` direct Publish/Subscribe hits, `2502` broad signal-corridor hits, `18617` native hits, `115` `NativeQueue` refs, `73` create slots, `135` typed Ensure lanes, `271` configure/ensure hits, and `1447` script `SignalBus<...>` matches.
+- Regenerated `Docs/DEPENDENCY_GRAPH.md` and `Docs/DEPENDENCY_GRAPH.json` from `Tools/BuildArchitectureAtlas.py`; updated atlas tests and generator metadata to the current red AtlasCheck tuple.
+
+Cinematic cheats used:
+
+- None. Documentation-only pass. No runtime simulation, rendering, Unity, or C# gameplay code was changed.
+
+Exact microseconds saved:
+
+- Runtime frame time: `0 us`. Documentation-only.
+- Review time saved: R47 boundary scan reduced currentness review to `134` active root/architecture/index files / `0` missing.
+- Failure-avoidance value: active docs no longer promote R46 as current, no longer present source/path evidence as runtime proof, and no longer hide signal route ownership behind ambiguous event-bus wording.
+
+Validation:
+
+- `python Tools\BuildArchitectureAtlas.py`: PASS.
+- `python Tools\test_architecture_atlas.py`: PASS, `10` tests.
+- `python -m py_compile Tools\BuildArchitectureAtlas.py Tools\AtlasCheck.py Tools\test_architecture_atlas.py`: PASS.
+- `Docs\Modding\Validate_Mod_API_Static.ps1`: PASS, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`.
+- Active non-archive/non-deprecated Docs JSON parse: `JsonFiles=174`, `Bad=0`.
+- R47 root/architecture boundary scan: `R47BoundaryScope=134`, `Missing=0`.
+- Route-card field scan including `Instrument`: `RouteCardFiles=14`, `Missing=0`.
+- Strict proof/stale-current scan: `StrictProofOrStaleHits=0`.
+- Scoped `git diff --check`: PASS, exit `0`, line-ending warnings only.
+- `python Tools\AtlasCheck.py`: FAIL, `ATLAS_CHECK_FAIL references=6781 missing=61`; missing refs remain one Dynamic Decals vendor asset ref, RealtimeCSG vendor icon/readme image refs, `Assets/_Project/Scripts/Editor/HectonMaskChannelPacker.cs`, `Assets/_Project/Scripts/Editor/HectonMaterialChannelPackValidator.cs`, and `Assets/_Project/Scripts/Habitat/Deformation/Editor/HabitatDamageBakePipeline.cs`.
+
+Runtime proof remains absent: no Unity import, clean Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load, platform run, shader import, network send, or visual-route proof.
+
+## 2026-05-20 R46 Root/Architecture Interior Authority, Route Fields, and Proof Language
+
+What was wrong:
+
+- Active root/architecture docs still had internal R43/R45 residue: glossary/FAQ currentness, root read order, global-authority counter spine, route-card field coverage, and proof wording.
+- Route-card tables could pass the previous scan without an explicit `Instrument` field.
+- Planned black-box dump paths read like existing runtime proof artifacts.
+- Static source/tool text still used stronger proof language than the evidence supported.
+- R45 source counters drifted under concurrent source changes.
+- AtlasCheck red tuple changed again after R46 report/atlas regeneration.
+
+What was done:
+
+- Added `Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md`.
+- Promoted R46 through active root Docs entrypoints, root ledgers, Reports index, architecture README/actuality ledger, active architecture boundary notes, and generated atlas metadata.
+- Reclassified singleton/DDOL wording in `MASTER_RELEASE_WORK_PLAN.md` and `AGENTS.md` so new work requires explicit bootstrap registration, owner-local interfaces, and cold GlobalRegistry discovery cached outside hot paths.
+- Added `Instrument` rows to active route-card tables and included `Instrument` in the route-card validation scan.
+- Clarified SHINOBU_138 and SHINOBU_200 telemetry/black-box fields and fault-dump targets.
+- Demoted dump paths to planned/generated-on-fault targets unless linked to timestamped runtime trigger/output artifacts.
+- Updated current source-scale counters to `2074/2013/2048` C# files, `1418005/1397407/1411380` physical lines, `347/342` broad interface hits, `278` interface declarations, `62` registry interfaces, `142/140` asmdefs, `6179` registry hits, `890` publish/subscribe hits, `23375` native hits, `115` `NativeQueue` refs, `73` create slots, `135` typed lanes, `271` configure/ensure hits, and `1353` script `SignalBus<...>` matches.
+- Regenerated `Docs/DEPENDENCY_GRAPH.md` and `Docs/DEPENDENCY_GRAPH.json` from `Tools/BuildArchitectureAtlas.py`; updated atlas tests.
+
+Cinematic cheats used:
+
+- None. Documentation-only pass. No runtime simulation, rendering, Unity, or C# gameplay code was changed.
+
+Exact microseconds saved:
+
+- Runtime frame time: `0 us`. Documentation-only.
+- Review time saved: R46 boundary scan reduced currentness review to `128` active root/architecture/index files / `0` missing.
+- Failure-avoidance value: route cards no longer imply a route mechanism without `Instrument`, and static scans/dump paths no longer read as runtime proof.
+
+Validation:
+
+- `python Tools\BuildArchitectureAtlas.py`: PASS.
+- `python Tools\test_architecture_atlas.py`: PASS, `10` tests.
+- `python -m py_compile Tools\BuildArchitectureAtlas.py Tools\AtlasCheck.py Tools\test_architecture_atlas.py`: PASS.
+- `Docs\Modding\Validate_Mod_API_Static.ps1`: PASS, `SchemaRevision=16`, `SourceSignals=162`, `ModCommandSizeBytes=64`.
+- Active non-archive/non-deprecated Docs JSON parse: `JsonFiles=173`, `Bad=0`.
+- R46 root/architecture boundary scan: `R46BoundaryScope=128`, `Missing=0`.
+- Route-card field scan including `Instrument`: `RouteCardFiles=15`, `Missing=0`.
+- Strict proof/stale-current scan: `StrictProofOrStaleHits=0`.
+- Scoped `git diff --check`: PASS, exit `0`, line-ending warnings only.
+- `python Tools\AtlasCheck.py`: FAIL, `ATLAS_CHECK_FAIL references=6766 missing=61`; missing refs remain one Dynamic Decals vendor asset ref, RealtimeCSG vendor icon/readme image refs, `Assets/_Project/Scripts/Editor/HectonMaskChannelPacker.cs`, `Assets/_Project/Scripts/Editor/HectonMaterialChannelPackValidator.cs`, and `Assets/_Project/Scripts/Habitat/Deformation/Editor/HabitatDamageBakePipeline.cs`.
+
+Runtime proof remains absent: no Unity import, clean Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load, platform run, network send, or visual-route proof.
+
 ## 2026-05-20 R45 Root/Architecture R43/R44 Residue, Proof Artifacts, and Counters
 
 What was wrong:

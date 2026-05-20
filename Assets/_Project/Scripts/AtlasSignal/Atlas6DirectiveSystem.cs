@@ -65,15 +65,17 @@ namespace Hecton8.AtlasSignal
         ScarcityDirectiveIssued = 3
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct Atlas6EventPayload
     {
-        public int TransactionCount;
-        public uint ConflictHash;
-        public uint DirectiveQuestHash;
-        public uint ResourceHash;
-        public ushort EventType;
-        public ushort StatusValue;
+        [FieldOffset(0)] public int TransactionCount;
+        [FieldOffset(4)] public uint ConflictHash;
+        [FieldOffset(8)] public uint DirectiveQuestHash;
+        [FieldOffset(12)] public uint ResourceHash;
+        [FieldOffset(16)] public ushort EventType;
+        [FieldOffset(18)] public ushort StatusValue;
+        [FieldOffset(20)] private uint _pad0;
+        [FieldOffset(24)] private ulong _pad1;
     }
 
     public interface IAtlas6EventListener

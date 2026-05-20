@@ -318,6 +318,11 @@ namespace Hecton8.UI
         private static readonly uint TokenDiscoveryDistanceHash = ComputeStaticAsciiHash("DISCOVERY_DISTANCE".AsSpan());
         private static readonly uint TokenDistanceHash = ComputeStaticAsciiHash("DISTANCE".AsSpan());
 
+        private static uint ResolvePdaFrame()
+        {
+            return TimeSliceScheduler.CurrentFrameId;
+        }
+
         [Header("Bindings")]
         [SerializeField] private PlayerPDA playerPDA;
         [SerializeField] private int encyclopediaTabIndex = 3;
@@ -856,7 +861,7 @@ namespace Hecton8.UI
                     continue;
 
                 PdaAup48 signalAup = CaptureSignalAup(in signal);
-                UnlockEntry(signal.EntryHash, in signalAup, signal.SourceId, (uint)Time.frameCount, true);
+                UnlockEntry(signal.EntryHash, in signalAup, signal.SourceId, ResolvePdaFrame(), true);
                 _pendingSelectHash = signal.EntryHash;
             }
 
@@ -1377,7 +1382,7 @@ namespace Hecton8.UI
                 DeltaTime = deltaTime,
                 DecodedLength = _decodedLength,
                 VisibleLength = _visibleLength,
-                Frame = (uint)Time.frameCount
+                Frame = ResolvePdaFrame()
             };
             // UI presentation scalar: visible-char state is read below in the same frame, so execute directly instead of forcing the synchronous job runner.
             job.Execute();
@@ -1498,7 +1503,7 @@ namespace Hecton8.UI
             state.Magic = StateMagic;
             state.GlobalQualityWeight = math.saturate(quality);
             state.LastEntryHash = _activeEntryHash;
-            state.LastFrame = (uint)Time.frameCount;
+            state.LastFrame = ResolvePdaFrame();
             state.CursorByte = (uint)math.max(0, _sourceByteCursor);
             state.DecodedChars = (uint)math.max(0, _decodedLength);
             state.VisibleChars = (uint)math.max(0, _visibleLength);
@@ -1532,7 +1537,7 @@ namespace Hecton8.UI
                 index = 0;
 
             ref PdaEncyclopediaTelemetryEntry entry = ref _telemetryHandle.GetElementAsRef(_vault, index);
-            entry.Frame = (uint)Time.frameCount;
+            entry.Frame = ResolvePdaFrame();
             entry.EntryHash = _activeEntryHash;
             entry.UnlockedCount = _runtimeStateHandle.GetElementAsRef(_vault, 0).UnlockedCount;
             entry.CharsRenderedThisFrame = charsRenderedThisFrame;
@@ -1833,7 +1838,7 @@ namespace Hecton8.UI
 
                 PdaAup48 aup = default;
                 uint sourceId = TryGetH8lrUtf8(hash, out _) ? H8lrSourceId : 0x5348494Eu;
-                UnlockEntry(hash, in aup, sourceId, (uint)Time.frameCount, false);
+                UnlockEntry(hash, in aup, sourceId, ResolvePdaFrame(), false);
             }
 
             ref PdaEncyclopediaRuntimeStateDTO state = ref _runtimeStateHandle.GetElementAsRef(_vault, 0);
@@ -2215,7 +2220,7 @@ namespace Hecton8.UI
             {
                 Span<byte> header = stackalloc byte[32];
                 WriteUIntLittleEndian(header.Slice(0, 4), StateMagic);
-                WriteUIntLittleEndian(header.Slice(4, 4), (uint)Time.frameCount);
+                WriteUIntLittleEndian(header.Slice(4, 4), ResolvePdaFrame());
                 WriteUIntLittleEndian(header.Slice(8, 4), _lastFaultHash);
                 WriteUIntLittleEndian(header.Slice(12, 4), (uint)TelemetryFrameCount);
                 WriteUIntLittleEndian(header.Slice(16, 4), (uint)UnsafeUtility.SizeOf<PdaEncyclopediaTelemetryEntry>());

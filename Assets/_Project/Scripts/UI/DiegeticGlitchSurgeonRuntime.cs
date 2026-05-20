@@ -37,150 +37,151 @@ namespace Hecton8.UI
     /// <summary>
     /// 4-byte ASCII substitution mapping entry for ARM64-friendly table validation.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 4)]
+    [StructLayout(LayoutKind.Explicit, Size = 4)]
     public struct ScrambledCharacterDTO
     {
-        public byte OriginalChar;
-        public byte GlitchChar;
-        public ushort _pad0;
+        [FieldOffset(0)] public byte OriginalChar;
+        [FieldOffset(1)] public byte GlitchChar;
+        [FieldOffset(2)] public ushort _pad0;
     }
 
     /// <summary>
     /// Pointer-backed test span used when Babel, Terminal OS, or anomaly owners are unavailable.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 24)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public unsafe struct MockTextSpan
     {
-        public ushort* Buffer;
-        public int Length;
-        public int ReadabilityPrefixChars;
-        public int ReadabilityDigitBudget;
-        public uint Flags;
+        [FieldOffset(0)] public ushort* Buffer;
+        [FieldOffset(8)] public int Length;
+        [FieldOffset(12)] public int ReadabilityPrefixChars;
+        [FieldOffset(16)] public int ReadabilityDigitBudget;
+        [FieldOffset(20)] public uint Flags;
+        [FieldOffset(24)] private ulong _pad0;
     }
 
     /// <summary>
     /// Blind anomaly corruption signal mirror.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public partial struct MockCorruptionLevelSignal
     {
-        public float Corruption01;
-        public float SimulationSeconds;
-        public uint Frame;
-        public uint _pad0;
+        [FieldOffset(0)] public float Corruption01;
+        [FieldOffset(4)] public float SimulationSeconds;
+        [FieldOffset(8)] public uint Frame;
+        [FieldOffset(12)] public uint _pad0;
     }
 
     /// <summary>
     /// Blind depth signal mirror for deep-ocean interference.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public partial struct MockDepthSignal
     {
-        public float DepthMeters;
-        public float BaselineIntensity;
-        public uint Frame;
-        public uint _pad0;
+        [FieldOffset(0)] public float DepthMeters;
+        [FieldOffset(4)] public float BaselineIntensity;
+        [FieldOffset(8)] public uint Frame;
+        [FieldOffset(12)] public uint _pad0;
     }
 
     /// <summary>
     /// Blind module breach signal mirror for room-local terminal corruption.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public partial struct MockModuleBreachSignal
     {
-        public uint BreachedMask0;
-        public uint BreachedMask1;
-        public uint ActiveRoomIndex;
-        public uint Frame;
+        [FieldOffset(0)] public uint BreachedMask0;
+        [FieldOffset(4)] public uint BreachedMask1;
+        [FieldOffset(8)] public uint ActiveRoomIndex;
+        [FieldOffset(12)] public uint Frame;
     }
 
     /// <summary>
     /// Human-tuned glitch controls stored in GlobalDataVault.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct GlitchTuningDTO
     {
-        public float MasterIntensity;
-        public float TextScrambleRate;
-        public float MatrixShatterStrength;
-        public float GhostBlipCount;
-        public float DepthStartMeters;
-        public float DepthFullMeters;
-        public float GlobalQualityWeight;
-        public uint FrameSeed;
+        [FieldOffset(0)] public float MasterIntensity;
+        [FieldOffset(4)] public float TextScrambleRate;
+        [FieldOffset(8)] public float MatrixShatterStrength;
+        [FieldOffset(12)] public float GhostBlipCount;
+        [FieldOffset(16)] public float DepthStartMeters;
+        [FieldOffset(20)] public float DepthFullMeters;
+        [FieldOffset(24)] public float GlobalQualityWeight;
+        [FieldOffset(28)] public uint FrameSeed;
     }
 
     /// <summary>
     /// Bridge hologram quad DTO matching the 112-byte wrist HUD GPU payload shape without a sibling-domain dependency.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 112)]
+    [StructLayout(LayoutKind.Explicit, Size = 112)]
     public struct GlitchQuadTransformDTO
     {
-        public float4x4 Matrix;
-        public float4 Color;
-        public float4 UVRect;
-        public uint CharacterCode;
-        public float GlitchIntensity;
-        public uint _pad0;
-        public uint _pad1;
+        [FieldOffset(0)] public float4x4 Matrix;
+        [FieldOffset(64)] public float4 Color;
+        [FieldOffset(80)] public float4 UVRect;
+        [FieldOffset(96)] public uint CharacterCode;
+        [FieldOffset(100)] public float GlitchIntensity;
+        [FieldOffset(104)] public uint _pad0;
+        [FieldOffset(108)] public uint _pad1;
     }
 
     /// <summary>
     /// Bridge radar blip DTO for unmanaged ghost injection without touching private renderer structs.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct RadarBlipDTO
     {
-        public float4 LocalPositionIntensity;
-        public float4 ColorSizeAgeFlags;
+        [FieldOffset(0)] public float4 LocalPositionIntensity;
+        [FieldOffset(16)] public float4 ColorSizeAgeFlags;
     }
 
     /// <summary>
     /// Local synth parameter mirror matching the 16-byte audio synthesis parameter ABI.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct GlitchSynthParametersDTO
     {
-        public float BaseFrequency;
-        public float ModulationIndex;
-        public float GrainSize;
-        public float PressureScalar;
+        [FieldOffset(0)] public float BaseFrequency;
+        [FieldOffset(4)] public float ModulationIndex;
+        [FieldOffset(8)] public float GrainSize;
+        [FieldOffset(12)] public float PressureScalar;
     }
 
     /// <summary>
     /// 64-byte black-box record for the last 300 glitch frames.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct DiegeticGlitchTelemetryEntry
     {
-        public uint FrameIndex;
-        public uint StateHash;
-        public uint Flags;
-        public uint ScrambledCharacters;
-        public float CurrentGlitchIntensity;
-        public float GlobalQualityWeight;
-        public float ComputeTimeMs;
-        public float DepthMeters;
-        public uint GhostBlipCount;
-        public uint TextSpanLength;
-        public uint TableHash;
-        public uint ModuleMask;
-        public float MasterIntensity;
-        public float MatrixStrength;
-        public float AudioPitchScalar;
-        public float Reserved0;
+        [FieldOffset(0)] public uint FrameIndex;
+        [FieldOffset(4)] public uint StateHash;
+        [FieldOffset(8)] public uint Flags;
+        [FieldOffset(12)] public uint ScrambledCharacters;
+        [FieldOffset(16)] public float CurrentGlitchIntensity;
+        [FieldOffset(20)] public float GlobalQualityWeight;
+        [FieldOffset(24)] public float ComputeTimeMs;
+        [FieldOffset(28)] public float DepthMeters;
+        [FieldOffset(32)] public uint GhostBlipCount;
+        [FieldOffset(36)] public uint TextSpanLength;
+        [FieldOffset(40)] public uint TableHash;
+        [FieldOffset(44)] public uint ModuleMask;
+        [FieldOffset(48)] public float MasterIntensity;
+        [FieldOffset(52)] public float MatrixStrength;
+        [FieldOffset(56)] public float AudioPitchScalar;
+        [FieldOffset(60)] public float Reserved0;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal struct GlitchBlackBoxDumpHeader
     {
-        public uint Magic;
-        public uint Version;
-        public uint EntryCount;
-        public uint Cursor;
-        public uint FaultFlags;
-        public uint TableHash;
-        public ulong TimestampTicks;
+        [FieldOffset(0)] public uint Magic;
+        [FieldOffset(4)] public uint Version;
+        [FieldOffset(8)] public uint EntryCount;
+        [FieldOffset(12)] public uint Cursor;
+        [FieldOffset(16)] public uint FaultFlags;
+        [FieldOffset(20)] public uint TableHash;
+        [FieldOffset(24)] public ulong TimestampTicks;
     }
 
     public struct ExternalAsciiScrambleLease
@@ -1088,7 +1089,7 @@ namespace Hecton8.UI
         {
             bool valid = UnsafeUtility.SizeOf<GlitchStateDTO>() == 16 &&
                          UnsafeUtility.SizeOf<ScrambledCharacterDTO>() == 4 &&
-                         UnsafeUtility.SizeOf<MockTextSpan>() == 24 &&
+                         UnsafeUtility.SizeOf<MockTextSpan>() == 32 &&
                          UnsafeUtility.SizeOf<GlitchTuningDTO>() == 32 &&
                          UnsafeUtility.SizeOf<GlitchQuadTransformDTO>() == 112 &&
                          UnsafeUtility.SizeOf<RadarBlipDTO>() == 32 &&

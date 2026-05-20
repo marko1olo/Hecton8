@@ -3,7 +3,7 @@
 Date: 2026-05-20
 Agent: SHINOBU_213
 Domain: OFFLINE_LOD_AND_COLLIDER_BAKER
-Status: PENDING VERIFICATION / PRE-ENDIAN ROSLYN PROBE PASS / POST-ENDIAN BOUNDED-HULL-ASSET-BIND-SAFETY-INDEX-HOT-STRUCT PROBE GATED BY CPU=93.3 / UNITY IMPORT AND PROFILER PENDING
+Status: PENDING VERIFICATION / PRE-ENDIAN ROSLYN PROBE PASS / POST-ENDIAN BOUNDED-HULL-ASSET-BIND-SAFETY-INDEX-HOT-STRUCT-STREAM-BOUNDS-HULL-FALLBACK-JOB-GUARDS PROBE GATED BY CPU=73.0 / UNITY IMPORT AND PROFILER PENDING
 
 ## Decision 001: Editor-only ownership boundary
 
@@ -372,3 +372,27 @@ Solution: Convert `OfflineGeometryRawVertex`, `OfflineGeometryVertex32`, `Offlin
 Rejected Alternatives: Relying on default sequential layout was rejected because the audit mandate requires byte-for-byte ARM64 proof and future field edits could silently alter stride or padding. `[StructLayout(Pack=1)]` remains rejected because it risks unaligned loads on ARM64.
 Scalability potential: Low/Middle/High/Ultra bakes now use the same fixed source vertex, output vertex, submesh range, and primitive-fit rows. The quality curve still changes budgets and saliency work, not ABI layout.
 Hardware Impact: Runtime cost is 0us because this is editor-only output generation. Editor Burst kernels get stable 32-byte vertex rows, 16-byte range rows, and a 40-byte primitive fit row aligned to an 8-byte multiple.
+
+## Decision 047: Decimator raw-stream and output-lane guards
+
+Problem: The decimator already clamped corrupt index bases, but optional normal/UV pointers and output vertex lanes still relied on caller-correct flags and scheduling.
+Solution: Add null/stride/offset guards to every raw source stream accessor and output length guards to zero-triangle and vertex writes in both UInt16 and UInt32 Burst decimation jobs.
+Rejected Alternatives: Trusting Unity MeshData flags or the scheduled output length was rejected because imported assets and future caller edits are the fault boundary. Throwing from the job was rejected because malformed geometry should collapse to inert generated triangles and continue the folder bake.
+Scalability potential: Low/Middle/High/Ultra keep the same continuous budgets and saliency windows; bad input collapses deterministically instead of changing method or adding a runtime repair route.
+Hardware Impact: Runtime cost is 0us. Editor hot path adds a few integer branches around unsafe reads/writes and prevents undefined memory access on weak developer machines.
+
+## Decision 048: Hull box fallback scratch bounds
+
+Problem: `GenerateConvexHullJob.WriteBoxHull` wrote 8 support vertices and 36 indices directly, relying on the current fixed scratch allocation.
+Solution: Guard hull vertex and index capacities before writing the conservative box fallback; invalid scratch state zeroes the hull counters and lets collider authoring fall back to `BoxCollider`.
+Rejected Alternatives: Trusting the current 32/2048 scratch allocation was rejected because future caller edits could break Burst memory safety. Throwing was rejected because a malformed editor scratch state should produce no hull, not abort the whole folder bake.
+Scalability potential: Low/Middle/High/Ultra keep the same primitive-first and bounded-hull policy. This hardens failure behavior without introducing a quality-tier branch.
+Hardware Impact: Runtime cost is 0us. Editor fallback path adds two capacity checks and prevents out-of-bounds writes on weak developer hardware.
+
+## Decision 049: Burst job denominator and collection guards
+
+Problem: `GenerateMockHighPolyMeshJob.Execute` used modulo/division by `LongitudeSegments` before validating the segment count, and small write-only jobs still relied on caller-correct NativeArray creation and matching schedule lengths.
+Solution: Reject invalid mock segment counts before modulo/division, guard mock writes, decimator output writes, pack writes, and index writes against default or mismatched NativeArray lanes.
+Rejected Alternatives: Trusting menu constants and schedule lengths was rejected because the offline tool is a fault boundary for CI and future editor callers. Throwing was rejected because invalid editor setup should produce no generated rows, not a Burst exception path.
+Scalability potential: Low/Middle/High/Ultra quality settings still control budgets continuously. These guards do not introduce tier branches; they only close malformed scheduling and denominator faults.
+Hardware Impact: Runtime cost is 0us. Editor normal case adds fixed integer guards and removes divide-by-zero/out-of-bounds failure surfaces on weak developer hardware.

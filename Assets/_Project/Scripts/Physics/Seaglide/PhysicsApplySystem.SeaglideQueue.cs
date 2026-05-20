@@ -29,8 +29,6 @@ namespace Hecton8.Physics
             counter.ForcePackets = 0;
             counter.Flags &= ~SeaglideHydrodynamicsConstants.FlagPacketOverflow;
             counters[0] = counter;
-            for (int i = 0; i < packets.Length; i++)
-                packets[i] = default;
             return true;
         }
 

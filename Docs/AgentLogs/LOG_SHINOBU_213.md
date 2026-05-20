@@ -523,3 +523,92 @@ Verification:
 - Scoped `git diff --check`: clean, with line-ending warnings only.
 - Compile-wall asmdef inspection: runtime assembly has zero references; editor assembly references only owned runtime DTO plus Unity Burst/Collections/Jobs/Mathematics.
 - Compile probe not launched: latest gate sample was CPU=93.3 with `dotnet/csc` count=0.
+
+---
+
+## 2026-05-20 Decimator Stream/Output Bounds Pass
+
+Status: PENDING VERIFICATION / POST-ENDIAN BOUNDED-HULL-ASSET-BIND-SAFETY-INDEX-HOT-STRUCT-STREAM-BOUNDS PROBE GATED BY CPU=100.0
+
+What was wrong:
+- UInt16/UInt32 decimation jobs had corrupt index-stream guards, but optional normal/UV stream reads still trusted pointer/stride flags.
+- Output triangle writes assumed the scheduled output buffer matched the job length exactly.
+
+What was done:
+- Added null, stride, and offset guards for position, normal, and UV raw stream accessors before `UnsafeUtility.AsRef<T>`.
+- Added output lane bounds checks to zero-triangle and vertex writes in both decimator jobs.
+- Added local safety comments for `NativeDisableParallelForRestriction` fields documenting disjoint output ownership per Execute lane.
+
+Cinematic Cheats used:
+- Malformed geometry collapses to deterministic zero/up-normal triangles rather than attempting repair, exception flow, or runtime fallback scripts.
+
+Exact Microseconds saved:
+- Runtime: 0us direct cost; generated assets stay static.
+- Editor normal case: branch overhead only. Failure case avoids undefined unsafe memory access and failed folder bakes; exact recovery time is asset-dependent.
+
+Verification:
+- Generated-domain forbidden-pattern scan: clean for properties, `foreach`, LINQ terminals, mesh `.vertices`/`.triangles`, `File.ReadAllBytes`, `NativeArrayOptions.ClearMemory`, `math.reversebytes`, `convex=false`, and stale `[WriteOnly] HullVertices`.
+- Current proof stale-wording scan: clean for old hot-struct probe status and old 8-point proof text in current proof files.
+- Owned whitespace/conflict-marker scan: clean.
+- Scoped `git diff --check`: clean with CRLF warnings only.
+- Compile-wall asmdef inspection: runtime assembly has zero references; editor assembly references only owned runtime DTO plus Unity Burst/Collections/Jobs/Mathematics.
+- Compile probe not launched: latest gate sample was CPU=100.0 with `dotnet/csc` count=0.
+
+---
+
+## 2026-05-20 Hull Fallback Scratch Bounds Pass
+
+Status: PENDING VERIFICATION / POST-ENDIAN BOUNDED-HULL-ASSET-BIND-SAFETY-INDEX-HOT-STRUCT-STREAM-BOUNDS-HULL-FALLBACK-BOUNDS PROBE GATED BY CPU=100.0
+
+What was wrong:
+- `GenerateConvexHullJob.WriteBoxHull` wrote the conservative 8-vertex/36-index fallback hull directly, assuming current scratch allocation never changes.
+
+What was done:
+- Added a fixed capacity guard before fallback hull writes: `HullVertices.Length >= 8` and `HullIndices.Length >= 36`.
+- If scratch capacity is invalid, the job writes zero hull counters and exits, forcing the editor collider path to fall back to `BoxCollider` instead of unsafe hull memory.
+- Updated self-audit, binary ledger, architecture note, status, and rationale to name the hull fallback scratch-bounds proof gap.
+
+Cinematic Cheats used:
+- Bad hull scratch state collapses to the primitive collision lie instead of trying to recover or serialize partial convex topology.
+
+Exact Microseconds saved:
+- Runtime: 0us direct cost; this remains editor-only static asset generation.
+- Editor normal case: two capacity branches only on the fallback path. Failure case avoids out-of-bounds writes and failed/undefined collider asset generation.
+
+Verification:
+- Generated-domain forbidden-pattern scan: clean for properties, `foreach`, LINQ terminals, mesh `.vertices`/`.triangles`, `File.ReadAllBytes`, `NativeArrayOptions.ClearMemory`, `math.reversebytes`, `convex=false`, and stale `[WriteOnly] HullVertices`.
+- Current proof stale-wording scan: clean for old stream-bounds probe status and old hull-collapse wording in current proof files.
+- Owned whitespace/conflict-marker scan: clean.
+- Scoped `git diff --check`: clean with CRLF warnings only.
+- Hull fallback guard/proof scan: `HullVertices.Length < 8`, `HullIndices.Length < 36`, new `HULL_FALLBACK_BOUNDS` proof status, and undersized scratch wording are present in owned source/docs.
+- Compile probe not launched: latest gate sample was CPU=100.0 with `dotnet/csc` count=0.
+
+---
+
+## 2026-05-20 Burst Job Denominator/Collection Guard Pass
+
+Status: PENDING VERIFICATION / POST-ENDIAN BOUNDED-HULL-ASSET-BIND-SAFETY-INDEX-HOT-STRUCT-STREAM-BOUNDS-HULL-FALLBACK-JOB-GUARDS PROBE GATED BY CPU=73.0
+
+What was wrong:
+- `GenerateMockHighPolyMeshJob.Execute` used modulo/division by `LongitudeSegments` before rejecting zero or negative segment counts.
+- Pack, index, and decimator write helpers assumed caller-correct NativeArray creation and schedule lengths.
+
+What was done:
+- Added mock segment validation before modulo/division.
+- Added `IsCreated` and lane bounds guards to mock, decimator, pack, and index writes.
+- Updated self-audit, binary ledger, architecture note, status, and rationale to include the job-guard proof gap.
+
+Cinematic Cheats used:
+- Invalid editor scheduling now emits no rows or deterministic inert triangles rather than attempting repair or runtime compensation.
+
+Exact Microseconds saved:
+- Runtime: 0us direct cost; this remains editor-only asset baking.
+- Editor normal case: fixed integer guard overhead. Failure case prevents divide-by-zero and out-of-bounds writes; exact recovery time is asset-dependent.
+
+Verification:
+- Generated-domain forbidden-pattern scan: clean for properties, `foreach`, LINQ terminals, mesh `.vertices`/`.triangles`, `File.ReadAllBytes`, `NativeArrayOptions.ClearMemory`, `math.reversebytes`, `convex=false`, and stale `[WriteOnly] HullVertices`.
+- Owned whitespace/conflict-marker scan: clean.
+- Scoped `git diff --check`: clean with CRLF warnings only.
+- Compile-wall asmdef inspection: runtime assembly has zero references; editor assembly references only owned runtime DTO plus Unity Burst/Collections/Jobs/Mathematics.
+- Job guard/proof scan: mock segment validation, safe modulo/division, default NativeArray write guards, `JOB_GUARDS` self-audit proof, and job-guard documentation are present.
+- Compile probe not launched: latest gate samples were CPU=80/94/73 with `dotnet/csc` count=0.

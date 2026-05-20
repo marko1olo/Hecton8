@@ -521,7 +521,7 @@ namespace Hecton8.Physics
             if (_owner.ShouldSuppressTow || !_owner.IsTowPayloadValid(_payloadBody, _payloadCollider))
                 return TetherLifecycleState.Released;
 
-            FinalizePendingVerletSolve(forceComplete: false, publishResults: true);
+            FinalizePendingVerletSolveNoWait(publishResults: true);
             _qualityTier = TetherManager.SanitizeQualityTier(qualityTier);
             _currentSimulationFrameIndex = fixedFrameIndex >= 0 ? fixedFrameIndex : 0;
 
@@ -731,7 +731,7 @@ namespace Hecton8.Physics
         /// </summary>
         public void Deactivate()
         {
-            FinalizePendingVerletSolve(forceComplete: true, publishResults: false);
+            FinalizePendingVerletSolveForBarrier(publishResults: false);
             GlobalPhysicsStateManager.UnregisterTetherConnection(this);
             ReleasePrimaryConstraint();
             DisposeDataVaultCableState();
@@ -816,7 +816,7 @@ namespace Hecton8.Physics
         /// </summary>
         public void DisposeRuntimeResources()
         {
-            FinalizePendingVerletSolve(forceComplete: true, publishResults: false);
+            FinalizePendingVerletSolveForBarrier(publishResults: false);
             ReleaseVisualBuffers();
 
             DisposeDataVaultCableState();
@@ -1775,7 +1775,7 @@ namespace Hecton8.Physics
             Vector3 payloadCurrentAcceleration,
             float fixedDeltaTime)
         {
-            if (!FinalizePendingVerletSolve(forceComplete: false, publishResults: true))
+            if (!FinalizePendingVerletSolveNoWait(publishResults: true))
                 return ResolvePrimaryConstraintForceMagnitude();
 
             EnsureDataVaultCableState(_verletNodeCount > 1 ? _verletNodeCount : ResolveVerletPointCount(_qualityTier));
@@ -1885,18 +1885,32 @@ namespace Hecton8.Physics
             return ResolvePrimaryConstraintForceMagnitude();
         }
 
-        private bool FinalizePendingVerletSolve(bool forceComplete, bool publishResults)
+        private bool FinalizePendingVerletSolveNoWait(bool publishResults)
         {
             if (!_pendingVerletSolveActive)
                 return true;
 
             JobHandle handle = _pendingVerletSolveHandle;
-            bool finalized = forceComplete
-                ? DispatcherJobFence.TryComplete(ref handle, forceComplete: true)
-                : DispatcherJobFence.TryFinalizeCompleted(ref handle);
-            if (!finalized)
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref handle))
                 return false;
 
+            return CommitPendingVerletSolve(publishResults);
+        }
+
+        private bool FinalizePendingVerletSolveForBarrier(bool publishResults)
+        {
+            if (!_pendingVerletSolveActive)
+                return true;
+
+            JobHandle handle = _pendingVerletSolveHandle;
+            if (!DispatcherJobFence.TryComplete(ref handle, forceComplete: true))
+                return false;
+
+            return CommitPendingVerletSolve(publishResults);
+        }
+
+        private bool CommitPendingVerletSolve(bool publishResults)
+        {
             _pendingVerletSolveHandle = default;
             _pendingVerletSolveActive = false;
             if (!publishResults)
@@ -3253,7 +3267,7 @@ namespace Hecton8.Physics
                 return false;
             }
 
-            if (!FinalizePendingVerletSolve(forceComplete: true, publishResults: false))
+            if (!FinalizePendingVerletSolveForBarrier(publishResults: false))
                 return false;
 
             _verletSolverOrigin = SanitizeFinite(_verletSolverOrigin - shiftOffset);
@@ -3276,7 +3290,7 @@ namespace Hecton8.Physics
                 return false;
             }
 
-            if (!FinalizePendingVerletSolve(forceComplete: true, publishResults: false))
+            if (!FinalizePendingVerletSolveForBarrier(publishResults: false))
                 return false;
 
             NativeArray<float3> visualPoints = _visualSegmentPositions.IsCreated

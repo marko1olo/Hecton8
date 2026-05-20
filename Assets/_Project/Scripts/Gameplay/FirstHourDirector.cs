@@ -564,13 +564,15 @@ namespace Hecton8.Gameplay
     /// <summary>
     /// Unmanaged first-hour milestone event payload.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct FirstHourEventPayload
     {
-        public byte Milestone;
-        public byte Reserved0;
-        public byte Reserved1;
-        public byte Reserved2;
+        [FieldOffset(0)] public byte Milestone;
+        [FieldOffset(1)] public byte Reserved0;
+        [FieldOffset(2)] public byte Reserved1;
+        [FieldOffset(3)] public byte Reserved2;
+        [FieldOffset(4)] private uint _pad0;
+        [FieldOffset(8)] private ulong _pad1;
     }
 
     /// <summary>

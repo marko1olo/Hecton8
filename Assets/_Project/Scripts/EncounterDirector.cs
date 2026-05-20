@@ -43,37 +43,61 @@ namespace Hecton8.Systems.AI
         DespairModeActive = 1 << 4
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
     internal struct EncounterDirectorState
     {
+        [FieldOffset(0)]
         public float StressLevel;
+        [FieldOffset(4)]
         public float IntensityLevel;
+        [FieldOffset(8)]
         public float PacingPhaseTimer;
+        [FieldOffset(12)]
         public float TokenBudget;
+        [FieldOffset(16)]
         public float TokenRegenRate;
+        [FieldOffset(20)]
         public int ActivePhase;
+        [FieldOffset(24)]
         public int ActiveEnemyCount;
+        [FieldOffset(28)]
         public int BudgetFlags;
+        [FieldOffset(32)]
         public float RecoveryTimer;
+        [FieldOffset(36)]
         public float4 PlayerPosition;
+        [FieldOffset(52)]
         public float4 PlayerVelocity;
+        [FieldOffset(68)]
         public uint SpawnSequence;
+        [FieldOffset(72)]
         public uint Padding0;
+        [FieldOffset(76)]
         public uint Padding1;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     internal struct EncounterEnemyToken
     {
+        [FieldOffset(0)]
         public int EntityId;
+        [FieldOffset(4)]
         public float TokenCost;
+        [FieldOffset(8)]
         public float DistSqToPlayer;
+        [FieldOffset(12)]
         public int VisibilityFlags;
+        [FieldOffset(16)]
         public float DepthPosition;
+        [FieldOffset(20)]
         public int ThreatClass;
+        [FieldOffset(24)]
         public float DespawnPriority;
+        [FieldOffset(28)]
         public float3 Position;
+        [FieldOffset(40)]
         public uint Padding0;
+        [FieldOffset(44)]
         public uint Padding1;
     }
 
@@ -86,32 +110,51 @@ namespace Hecton8.Systems.AI
         Apex = 1 << 2
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
     internal struct HeadlessEntity
     {
+        [FieldOffset(0)]
         public int EntityId;
+        [FieldOffset(4)]
         public int ThreatClass;
+        [FieldOffset(8)]
         public float TokenCost;
+        [FieldOffset(12)]
         public float3 Position;
+        [FieldOffset(24)]
         public AbsoluteUniversePositionBlit PositionAup;
+        [FieldOffset(72)]
         public uint SpawnSeed;
+        [FieldOffset(76)]
         public byte BiomeByte;
+        [FieldOffset(77)]
         public byte Flags;
+        [FieldOffset(78)]
         public ushort AgeColdTicks;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     internal struct EncounterDirectorBlackBoxEntry
     {
+        [FieldOffset(0)]
         public uint FrameIndex;
+        [FieldOffset(4)]
         public uint DirectorStateHash;
+        [FieldOffset(8)]
         public uint ActiveThreatCount;
+        [FieldOffset(12)]
         public uint Flags;
+        [FieldOffset(16)]
         public float Stress01;
+        [FieldOffset(20)]
         public float Intensity01;
+        [FieldOffset(24)]
         public float SpawnCredits;
+        [FieldOffset(28)]
         public float PlayerSpeed;
+        [FieldOffset(32)]
         public float3 PlayerPosition;
+        [FieldOffset(44)]
         public uint Padding0;
     }
 
@@ -151,13 +194,19 @@ namespace Hecton8.Systems.AI
         public int NewPhase;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal struct EncounterSpawnRequest
     {
+        [FieldOffset(0)]
         public int ThreatClass;
+        [FieldOffset(4)]
         public float3 Position;
+        [FieldOffset(16)]
         public uint VariantSeed;
+        [FieldOffset(20)]
         public uint SquadStateBits;
+        [FieldOffset(24)]
+        private ulong _pad0;
     }
 
     internal struct EncounterDebugEvent
@@ -1924,7 +1973,7 @@ namespace Hecton8.Systems.AI
         }
     }
 
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct EncounterDirectorJob : IJobParallelFor
     {
         private const float StressTau = 8f;
@@ -1967,10 +2016,10 @@ namespace Hecton8.Systems.AI
         private const uint HunterSquadHuntingFlankStateBits = (1u << 0) | (1u << 2);
 
         public EncounterDirectorState CurrentState;
-        public NativeArray<EncounterDirectorState> WriteState;
-        [ReadOnly] public NativeArray<EncounterEnemyToken> ActiveEnemies;
-        [ReadOnly] public NativeArray<float4> FrustumPlanes;
-        [ReadOnly] public NativeArray<float3> CandidateDirections;
+        [NoAlias] public NativeArray<EncounterDirectorState> WriteState;
+        [NoAlias, ReadOnly] public NativeArray<EncounterEnemyToken> ActiveEnemies;
+        [NoAlias, ReadOnly] public NativeArray<float4> FrustumPlanes;
+        [NoAlias, ReadOnly] public NativeArray<float3> CandidateDirections;
         public int CandidateCount;
         public float4 PlayerPosition;
         public float4 PlayerVelocity;
@@ -1993,7 +2042,7 @@ namespace Hecton8.Systems.AI
         // SAFETY_JUSTIFICATION_PARAGRAPH_3: The invariant is: main thread clears this buffer before scheduling,
         // the scheduled job owns indices [0, MaxSpawnRequestsPerTick), and main thread reads only after the job
         // completed through DispatcherJobSwap. Future multi-lane scheduling must partition this buffer first.
-        [NativeDisableParallelForRestriction]
+        [NoAlias, NativeDisableParallelForRestriction]
         public NativeArray<EncounterSpawnRequest> SpawnRequests;
         // SAFETY_JUSTIFICATION_PARAGRAPH_1: Same single-lane director invariant as SpawnRequests. The safety system
         // cannot prove that Execute(0) is the sole writer when despawn request indices are compacted independently
@@ -2004,8 +2053,9 @@ namespace Hecton8.Systems.AI
         // SAFETY_JUSTIFICATION_PARAGRAPH_3: The invariant is: main thread clears this fixed int window before
         // scheduling, the job writes each entity id at most once in [0, MaxDespawnRequestsPerTick), and completed
         // output is consumed once on the main thread before the next schedule.
-        [NativeDisableParallelForRestriction]
+        [NoAlias, NativeDisableParallelForRestriction]
         public NativeArray<int> DespawnRequests;
+        [NoAlias]
         public NativeArray<EncounterJobOutput> Output;
 
         public void Execute(int index)

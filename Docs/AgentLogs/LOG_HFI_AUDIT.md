@@ -475,3 +475,38 @@ R28 verdict: the project is not globally failing because it introduced global
 authority tools; it is failing when new owner code adds persistent native
 surface outside the approved Vault/H8Memory owner shape. The next technical
 burn-down must prioritize runtime surface before editor/baker surface.
+
+## 2026-05-20 R29 ARM64 / x86 / GPU Portability Audit
+
+What was wrong: platform readiness was at risk of being inflated from scaffold
+evidence. Android ARM64 IL2CPP, OpenXR packages, Vulkan settings,
+GlobalQualityWeight, foveation state, VRAM pressure, and GPU-driven buffers are
+real foundations, but they do not prove Quest, Steam Deck, Mac, PICO, console,
+weak-PC, or high-end-GPU runtime behavior.
+
+What was done: performed a static hardware portability audit and recorded the
+result in `Docs/Reports/2026-05-20_HARDWARE_PORTABILITY_ARM64_X86_GPU_AUDIT.md`.
+Two sub-agent reviews were used as independent cross-checks for CPU and GPU
+readiness. No source code was changed.
+
+Cinematic Cheats used: none; audit/reporting pass only.
+
+Exact Microseconds saved: 0 runtime us claimed.
+
+Current R29 hardware verdict:
+
+- Windows x86_64 is the least risky first runtime target, but still lacks fresh
+  player/profiler proof.
+- ARM64/Quest scaffold exists, but Quest readiness is not proven: XR provider
+  serialized proof is absent, Android sustained-performance mode is off,
+  Quest-specific URP asset appears unwired, and no headset build/run/profiler
+  artifact exists.
+- Steam Deck/Linux Vulkan and Mac/Metal have detection/scaffold only; no build
+  or shader/runtime capture proof exists.
+- PICO readiness is essentially absent because PICO package candidates are
+  zero.
+- GPU architecture is directionally correct, but shader warmup, compute dispatch
+  limits, readback cadence, URP low-tier shape, and device captures remain open.
+
+No dotnet build, Unity import, player build, profiler, GC, memory, headset,
+Deck, macOS, Linux, PICO, or console run was launched.

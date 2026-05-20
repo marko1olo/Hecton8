@@ -218,8 +218,24 @@ Status: PENDING VERIFICATION
 - [x] `_hardwareBudgetWeight` now defaults to `1f`, and `ApplyBoidPopulationBudget()` returns the clamped authored count when the runtime budget has not initialized outside Play Mode.
 - [x] Found a tick-path hardware query in `AssetLoadDispatcher.EvaluateUiMipBiasGate()`: `SystemInfo.graphicsMemorySize` was read during every UI mip gate evaluation.
 - [x] Added `_graphicsBudgetBytes` plus `RefreshGraphicsBudgetBytes()` on `OnEnable()` and `Start()`; UI mip gate now uses the cached byte budget and only refreshes if the cache is invalid.
+- [x] Replaced the new budget/quality fallback ternaries with `math.select` so the scalar helper path remains branchless at the expression level.
 - [x] Static scan: `_hardwareBudgetWeight`, non-playing init guard, `RefreshGraphicsBudgetBytes`, and `_graphicsBudgetBytes` resolve to expected code paths.
+- [x] Static scan: `ResolveGraphicsBudgetBytes`, `ResolveGlobalQualityWeight`, `ResolveQualityCurve`, and `math.select` resolve to expected code paths.
 - [x] Static scan: forbidden binary hardware and private native/managed collection markers across `AssetLoadDispatcher.cs`, `VRAMPressureMonitor.cs`, and `VRAMEnforcer.cs` report no results.
 - [x] Static scan: `Addressables.Release(` remains only at `Assets/_Project/Scripts/Optimization/AssetLifecycleGovernor.cs:4332`; `Addressables.ReleaseInstance(` remains only at `Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2275`.
 - [x] Static scan: `git diff --check -- Assets/_Project/Scripts/Optimization/AssetLoadDispatcher.cs Assets/_Project/Scripts/Optimization/VRAMEnforcer.cs` reports LF-to-CRLF warnings only.
 - [ ] Compile verification R38 | PENDING VERIFICATION: not launched. Known external missing `Assets/_Project/Scripts/Construction/LogisticsPipeEvents.cs` still blocks `Hecton8.Core.csproj` before SHINOBU verification, and the user explicitly forbade needless build/rebuild runs.
+
+## R39 Pressure Math NaN Guard Closure
+
+- [x] Re-read active SHINOBU status/rationale, checked active batch authority, and refreshed the binary payload ledger before code edits.
+- [x] Found branch/ternary denominator guards in `VRAMPressureMonitor.SampleAndRespond()`, `VRAMPressureMonitor.SetExternalMipPressureResponse()`, and `AssetLoadDispatcher.ResolveVramPressureFactor()`.
+- [x] Replaced pressure-factor division guards with explicit `math.max(denominator, 1f)` plus `math.select` fallback semantics.
+- [x] Replaced new finite fallback ternaries with `math.select` in dispatcher/monitor pressure helpers.
+- [x] Replaced red-zone scalar ternaries in mip delta, mip response, LOD scalar, and emergency eviction budget with `math.select`.
+- [x] Replaced `ResolvePressureResponse()` branch clamps with `math.min(math.saturate(startFraction), 0.9999f)`.
+- [x] Static scan: removed branchy denominator/finite/red-zone patterns from `AssetLoadDispatcher.cs`, `VRAMPressureMonitor.cs`, and `VRAMEnforcer.cs`; only `_graphicsBudgetBytes <= 0L` cold cache refresh remains.
+- [x] Static scan: remaining divisions in SHINOBU pressure files are denominator-guarded pressure ratios or fixed `BytesPerMegabyte` telemetry conversions.
+- [x] Static scan: direct `GlobalRegistry` hits in the three optimization files remain registration/cold-cache boundaries only.
+- [x] Static scan: `git diff --check -- Assets/_Project/Scripts/Optimization/AssetLoadDispatcher.cs Assets/_Project/Scripts/Optimization/VRAMPressureMonitor.cs Assets/_Project/Scripts/Optimization/VRAMEnforcer.cs` reports LF-to-CRLF warnings only.
+- [ ] Compile verification R39 | PENDING VERIFICATION: not launched. Known external missing `Assets/_Project/Scripts/Construction/LogisticsPipeEvents.cs` still blocks `Hecton8.Core.csproj` before SHINOBU verification, and the user explicitly forbade needless build/rebuild runs.

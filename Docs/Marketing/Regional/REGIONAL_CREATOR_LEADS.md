@@ -29,7 +29,7 @@ Every row is a raw seed, not a send candidate. Do not contact, import as ready C
 - localized one-pager with native/fluent review and no mojibake;
 - asset match to current screenshot/clip/demo proof;
 - AB-009/KPI field source (`what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`) for any gameplay, pressure, route-risk, threat, salvage, base-failure, or first-public agency claim;
-- Official CTA Link Activation Gate V0 for public Steam/wishlist/demo/signup/presskit links, or no-link/private access route;
+- exact destination permission gate plus destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` for public Steam/wishlist/demo/signup/presskit links, or no-link/private access route;
 - route-specific class field, access log if private, and `reply_consent_provenance` custody.
 
 ## Leads

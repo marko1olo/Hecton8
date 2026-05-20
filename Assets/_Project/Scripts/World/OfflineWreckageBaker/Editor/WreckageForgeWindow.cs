@@ -260,7 +260,7 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
                 stateVertices = new NativeArray<OfflineWreckageBakeVertexDTO>(vertexCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 stateIndices = new NativeArray<int>(baseIndices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 tearWeights = new NativeArray<float>(baseVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                counters = new NativeArray<OfflineWreckageBakeCounters64>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                counters = new NativeArray<OfflineWreckageBakeCounters64>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 float3 localBlast = ResolveLocalBlast();
                 BakeStateToBuffers(baseVertices, baseIndices, profile, OfflineWreckageDamageState.Ruptured, localBlast, workingVertices, stateVertices, stateIndices, tearWeights, counters, out JobHandle previewHandle, out _);
                 previewHandle.Complete();
@@ -309,7 +309,7 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
             {
                 int vertexCapacity = baseVertices.Length + baseIndices.Length;
                 tearWeights = new NativeArray<float>(baseVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                counters = new NativeArray<OfflineWreckageBakeCounters64>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                counters = new NativeArray<OfflineWreckageBakeCounters64>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 hullPoints = new NativeArray<float3>(OfflineWreckageBakeConstants.MaxCollisionHullVertices, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 workingVertices = new NativeArray<OfflineWreckageBakeVertexDTO>(baseVertices.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 stateVertices = new NativeArray<OfflineWreckageBakeVertexDTO>(vertexCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);

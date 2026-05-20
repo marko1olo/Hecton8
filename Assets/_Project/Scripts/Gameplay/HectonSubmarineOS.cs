@@ -336,13 +336,13 @@ namespace Hecton8.Gameplay
         public static void RaiseSnapshotUpdated(in HectonSubmarineOsSnapshot snapshot)
         {
             uint statusBits = (uint)snapshot.SubsystemStatus;
-            if (snapshot.LowPowerModeActive)
+            if (HectonSubmarineOsSnapshot.HasLowPowerMode(snapshot.StatusFlags))
                 statusBits |= LowPowerModeStatusBit;
-            if (snapshot.LifeSupportCriticalActive)
+            if (HectonSubmarineOsSnapshot.HasLifeSupportCritical(snapshot.StatusFlags))
                 statusBits |= LifeSupportCriticalStatusBit;
-            if (snapshot.StationKeepingActive)
+            if (HectonSubmarineOsSnapshot.HasStationKeeping(snapshot.StatusFlags))
                 statusBits |= StationKeepingStatusBit;
-            if (snapshot.SubOsPowered)
+            if (HectonSubmarineOsSnapshot.HasSubOsPowered(snapshot.StatusFlags))
                 statusBits |= SubOsPoweredStatusBit;
 
             Enqueue(new SubmarineOsEventPayload
@@ -1934,10 +1934,7 @@ namespace Hecton8.Gameplay
                    a.SonarContactCount == b.SonarContactCount &&
                    a.NearestSonarContactMeters == b.NearestSonarContactMeters &&
                    a.VocalWarningFlags == b.VocalWarningFlags &&
-                   a.LowPowerModeActive == b.LowPowerModeActive &&
-                   a.LifeSupportCriticalActive == b.LifeSupportCriticalActive &&
-                   a.StationKeepingActive == b.StationKeepingActive &&
-                   a.SubOsPowered == b.SubOsPowered;
+                   a.StatusFlags == b.StatusFlags;
         }
     }
 }

@@ -750,7 +750,9 @@ namespace Hecton8.Construction
             if (IsCurrentBindingValid(runtime))
                 return;
 
-            if (TryResolveNearestValidNode(transform.position, bindingRefreshRadius, runtime, out ResourceNode node))
+            AbsoluteUniversePosition moduleAup = default;
+            Vector3 moduleVisualPosition = transform.position;
+            if (TryResolveNearestValidNode(moduleVisualPosition, false, in moduleAup, bindingRefreshRadius, runtime, out ResourceNode node))
             {
                 SetBoundNode(node);
                 return;
@@ -882,6 +884,18 @@ namespace Hecton8.Construction
 
         private bool TryResolveNearestValidNode(Vector3 position, float probeRadius, AutonomousExtractorSystem runtime, out ResourceNode node)
         {
+            bool hasQueryAup = TryResolveAupFromRuntimeOrigin(position, out AbsoluteUniversePosition queryAup);
+            return TryResolveNearestValidNode(position, hasQueryAup, in queryAup, probeRadius, runtime, out node);
+        }
+
+        private bool TryResolveNearestValidNode(
+            Vector3 position,
+            bool hasQueryAup,
+            in AbsoluteUniversePosition queryAup,
+            float probeRadius,
+            AutonomousExtractorSystem runtime,
+            out ResourceNode node)
+        {
             node = null;
             float safeRadius = Mathf.Max(0.5f, probeRadius);
             int overlapCount = UnityEngine.Physics.OverlapSphereNonAlloc(
@@ -915,7 +929,7 @@ namespace Hecton8.Construction
                     continue;
                 }
 
-                float distanceSqr = (candidate.transform.position - position).sqrMagnitude;
+                float distanceSqr = ResolveCandidateDistanceSq(candidate, position, hasQueryAup, in queryAup);
                 if (distanceSqr >= bestDistanceSqr)
                     continue;
 
@@ -924,6 +938,61 @@ namespace Hecton8.Construction
             }
 
             return node != null;
+        }
+
+        private static float ResolveCandidateDistanceSq(
+            ResourceNode candidate,
+            Vector3 queryRuntimePosition,
+            bool hasQueryAup,
+            in AbsoluteUniversePosition queryAup)
+        {
+            if (candidate != null &&
+                hasQueryAup &&
+                IsFinite(in queryAup) &&
+                candidate.TryGetPersistentAup(out AbsoluteUniversePosition candidateAup))
+            {
+                return SaturateDistanceSq(AbsoluteUniversePosition.DistanceSq(in candidateAup, in queryAup));
+            }
+
+            Vector3 candidateRuntimePosition = candidate != null ? candidate.transform.position : queryRuntimePosition;
+            Vector3 visualDelta = candidateRuntimePosition - queryRuntimePosition;
+            if (!math.all(math.isfinite(new float3(visualDelta.x, visualDelta.y, visualDelta.z))))
+                return float.MaxValue;
+
+            return visualDelta.sqrMagnitude;
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            float3 runtime = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(runtime)))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!IsFinite(in originAup))
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(in originAup, new double3(runtime.x, runtime.y, runtime.z));
+            return IsFinite(in positionAup);
+        }
+
+        private static bool IsFinite(in AbsoluteUniversePosition position)
+        {
+            return math.isfinite(position.LocalX) &&
+                   math.isfinite(position.LocalY) &&
+                   math.isfinite(position.LocalZ);
+        }
+
+        private static float SaturateDistanceSq(double distanceSq)
+        {
+            if (!math.isfinite(distanceSq))
+                return float.MaxValue;
+
+            if (distanceSq <= 0d)
+                return 0f;
+
+            return distanceSq >= float.MaxValue ? float.MaxValue : (float)distanceSq;
         }
 
         private bool TryResolveResourceNode(Collider collider, out ResourceNode node)

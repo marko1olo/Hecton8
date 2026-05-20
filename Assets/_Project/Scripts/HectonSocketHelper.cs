@@ -156,7 +156,9 @@ namespace Hecton8.Building
             Vector3 forward = transform.forward;
             Vector3 tipPos = pos + forward * arrowLength;
 
-            float sqrDistanceToCamera = (cam.transform.position - pos).sqrMagnitude;
+            Vector3 cameraVisualPosition = cam.transform.position;
+            Vector3 visualDeltaToCamera = cameraVisualPosition - pos;
+            float sqrDistanceToCamera = visualDeltaToCamera.sqrMagnitude;
             Color socketColor = GetSocketColor(socketType, selected);
 
             Handles.zTest = CompareFunction.LessEqual;

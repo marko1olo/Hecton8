@@ -16,13 +16,13 @@ namespace Hecton8.VFX.Debris
         Ready = 2
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct DebrisParticleDTO
     {
-        public float3 Position;
-        public float Radius;
-        public float3 Velocity;
-        public uint MaterialHash;
+        [FieldOffset(0)] public float3 Position;
+        [FieldOffset(12)] public float Radius;
+        [FieldOffset(16)] public float3 Velocity;
+        [FieldOffset(28)] public uint MaterialHash;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -41,26 +41,29 @@ namespace Hecton8.VFX.Debris
         [FieldOffset(56)] public ulong _pad3;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct CarveDebrisTuningDTO
     {
-        public float3 Gravity;
-        public float Bounce;
-        public int MaxActiveDebris;
-        public int MassUnitsPerParticle;
-        public uint Flags;
-        public uint Version;
+        [FieldOffset(0)] public float3 Gravity;
+        [FieldOffset(12)] public float Bounce;
+        [FieldOffset(16)] public int MaxActiveDebris;
+        [FieldOffset(20)] public int MassUnitsPerParticle;
+        [FieldOffset(24)] public uint Flags;
+        [FieldOffset(28)] public uint Version;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 40)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct ChunkCarveDispatchDTO
     {
-        public int3 ChunkCoord;
-        public int3 MinCell;
-        public int3 Span;
-        public byte Active;
-        private byte _reserved0;
-        private ushort _reserved1;
+        [FieldOffset(0)] public int3 ChunkCoord;
+        [FieldOffset(12)] public int3 MinCell;
+        [FieldOffset(24)] public int3 Span;
+        [FieldOffset(36)] public byte Active;
+        [FieldOffset(37)] private byte _reserved0;
+        [FieldOffset(38)] private ushort _reserved1;
+        [FieldOffset(40)] private ulong _pad0;
+        [FieldOffset(48)] private ulong _pad1;
+        [FieldOffset(56)] private ulong _pad2;
     }
 
     public partial struct MockWorldSampler

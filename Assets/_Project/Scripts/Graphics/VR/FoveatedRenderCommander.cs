@@ -139,28 +139,48 @@ namespace Hecton8.Graphics.VR
             UiExempted = 3
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = TelemetryRecordSizeBytes)]
+        [StructLayout(LayoutKind.Explicit, Size = TelemetryRecordSizeBytes)]
         private struct FoveatedRenderTelemetryEntry
         {
+            [FieldOffset(0)]
             public uint Frame;
+            [FieldOffset(4)]
             public uint Sequence;
+            [FieldOffset(8)]
             public float TargetLevel01;
+            [FieldOffset(12)]
             public float AppliedLevel01;
+            [FieldOffset(16)]
             public float SystemStress01;
+            [FieldOffset(20)]
             public float GpuUtil01;
+            [FieldOffset(24)]
             public float GpuTimeMs;
+            [FieldOffset(28)]
             public int EyeWidth;
+            [FieldOffset(32)]
             public int EyeHeight;
+            [FieldOffset(36)]
             public uint Flags;
+            [FieldOffset(40)]
             public uint Caps;
+            [FieldOffset(44)]
             public byte TargetLevelCode;
+            [FieldOffset(45)]
             public byte AppliedLevelCode;
+            [FieldOffset(46)]
             public byte Mode;
+            [FieldOffset(47)]
             public byte PressureLevel;
+            [FieldOffset(48)]
             public byte FoveatedPressureTier;
+            [FieldOffset(49)]
             public byte ThermalSeverity;
+            [FieldOffset(50)]
             public ushort DisplayCount;
+            [FieldOffset(52)]
             public uint VaultGeneration;
+            [FieldOffset(56)]
             private ulong _pad0;
         }
 

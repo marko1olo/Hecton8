@@ -23,7 +23,7 @@ HECTON-8 will convert when the page communicates:
 1. single-player deep-sea survival;
 2. pressure and machinery as identity;
 3. base/salvage loop;
-4. one readable player decision under pressure with AB-009/KPI decision-read evidence;
+4. one readable player decision under pressure with non-pending metadata `viewer_named_decision`, valid non-held `capture_verdict`, and AB-009/KPI decision-read evidence;
 5. Seed Ship anomaly/mystery;
 6. real in-game visuals;
 7. no false multiplayer-scope or performance promise.
@@ -35,7 +35,7 @@ Recommended first draft:
 1. Capsule: dark industrial pressure identity, readable logo.
 2. Trailer: first 10 seconds show player action.
 3. Short description: direct genre and hook.
-4. First four screenshots: route, machinery, base risk, and agency/decision proof with AB-009/KPI decision-read fields.
+4. First four screenshots: route, machinery, base risk, and agency/decision proof with metadata handoff plus AB-009/KPI decision-read fields.
 5. Feature bullets: verbs, not adjectives.
 6. Long description: current/future boundaries.
 7. Tags: survival/exploration/base/sci-fi/singleplayer.
@@ -47,7 +47,7 @@ Steam first screenshot candidates:
 1. Player facing pressure/machinery problem.
 2. Salvage route in black water.
 3. Base/module with visible consequence.
-4. Agency/decision proof: threat, leak, route cost, sonar pressure, or salvage failure, backed by `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`.
+4. Agency/decision proof: threat, leak, route cost, sonar pressure, or salvage failure, backed by metadata `viewer_named_decision`/`capture_verdict` plus `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`.
 5. Seed Ship/anomaly signal.
 6. Heavy vehicle/tool if real.
 7. Biome/scale shot.

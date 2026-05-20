@@ -94,8 +94,9 @@ namespace Hecton8.Gameplay
             }
 
             Vector3 interactorPosition = interactor.position;
-            bool goingUp = (interactorPosition - entryPoint.position).sqrMagnitude <
-                           (interactorPosition - exitPoint.position).sqrMagnitude;
+            Vector3 entryVisualDelta = interactorPosition - entryPoint.position;
+            Vector3 exitVisualDelta = interactorPosition - exitPoint.position;
+            bool goingUp = entryVisualDelta.sqrMagnitude < exitVisualDelta.sqrMagnitude;
 
             RequestProceduralClimb(interactor, goingUp);
         }

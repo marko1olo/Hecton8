@@ -184,13 +184,76 @@ namespace Hecton8.Power
             }
 
             links[linkIndex] = default;
+            if (runtime.Resolve(in runtime._handles.LinkAup, out NativeArray<double3> linkAups) &&
+                (uint)linkIndex < (uint)linkAups.Length)
+            {
+                linkAups[linkIndex] = default;
+            }
+
+            if (runtime.Resolve(in runtime._handles.ExpectedPowerNodeHashes, out NativeArray<uint> expectedHashes) &&
+                (uint)linkIndex < (uint)expectedHashes.Length)
+            {
+                expectedHashes[linkIndex] = 0u;
+            }
+
             if (runtime.Resolve(in runtime._handles.VisualStates, out NativeArray<ChargerVisualStateDTO> visuals) &&
                 (uint)linkIndex < (uint)visuals.Length)
             {
                 visuals[linkIndex] = default;
             }
 
+            runtime.RecomputeActiveTail(links);
             runtime._visualDirty = true;
+        }
+
+        public static int TryUnregisterChargerLinks(uint inventorySlotStartIndex, int slotCount, uint powerGraphNodeIndex)
+        {
+            BatteryChargerLogisticsRuntime runtime = s_active;
+            if (runtime == null || slotCount <= 0 || runtime._simulationScheduled)
+                return 0;
+
+            if (!runtime.Resolve(in runtime._handles.Links, out NativeArray<ChargerLinkDTO> links) || !links.IsCreated)
+                return 0;
+
+            runtime.Resolve(in runtime._handles.LinkAup, out NativeArray<double3> linkAups);
+            runtime.Resolve(in runtime._handles.ExpectedPowerNodeHashes, out NativeArray<uint> expectedHashes);
+            runtime.Resolve(in runtime._handles.VisualStates, out NativeArray<ChargerVisualStateDTO> visuals);
+
+            uint inventorySlotEnd = inventorySlotStartIndex + (uint)slotCount;
+            if (inventorySlotEnd < inventorySlotStartIndex)
+                inventorySlotEnd = uint.MaxValue;
+
+            int scanCount = math.clamp(runtime._activeCount, 0, links.Length);
+            int removed = 0;
+            for (int i = 0; i < scanCount; i++)
+            {
+                ChargerLinkDTO link = links[i];
+                if ((link.Flags & BatteryChargerLogisticsConstants.LinkFlagActive) == 0u ||
+                    (link.Flags & BatteryChargerLogisticsConstants.LinkFlagMock) != 0u ||
+                    link.PowerGraphNodeIndex != powerGraphNodeIndex ||
+                    link.InventorySlotIndex < inventorySlotStartIndex ||
+                    link.InventorySlotIndex >= inventorySlotEnd)
+                {
+                    continue;
+                }
+
+                links[i] = default;
+                if (linkAups.IsCreated && (uint)i < (uint)linkAups.Length)
+                    linkAups[i] = default;
+                if (expectedHashes.IsCreated && (uint)i < (uint)expectedHashes.Length)
+                    expectedHashes[i] = 0u;
+                if (visuals.IsCreated && (uint)i < (uint)visuals.Length)
+                    visuals[i] = default;
+                removed++;
+            }
+
+            if (removed > 0)
+            {
+                runtime.RecomputeActiveTail(links);
+                runtime._visualDirty = true;
+            }
+
+            return removed;
         }
 
         public static bool TryWriteInventorySlotState(uint inventorySlotIndex, uint itemHash, float charge01)
@@ -525,6 +588,7 @@ namespace Hecton8.Power
                 LinkCount = linkCount,
                 InventorySlotCount = inventorySlots.Length,
                 PowerNodeCount = math.min(powerNodes.Length, math.max(1, _powerNodeCount)),
+                CounterLaneCount = math.max(1, math.min(counters.Length, BatteryChargerLogisticsConstants.CounterLaneCount)),
                 DeltaSeconds = integrationDt,
                 GlobalMaxChargeRate = tune.GlobalMaxChargeRate,
                 EfficiencyCurveExponent = tune.EfficiencyCurveExponent,
@@ -561,7 +625,7 @@ namespace Hecton8.Power
                 telemetry.Length > 0 &&
                 cursor.Length > 0)
             {
-                ChargerAtomicCountersDTO aggregate = counters[0];
+                ChargerAtomicCountersDTO aggregate = AggregateCounters(counters);
                 WriteTelemetryFrame(telemetry, cursor, aggregate);
                 TryEmitHumSignal(aggregate);
                 if ((_lastScheduleMicroseconds > BatteryChargerLogisticsConstants.FaultDumpThresholdMicroseconds ||
@@ -684,8 +748,10 @@ namespace Hecton8.Power
                 LinkCount = count,
                 BaseAup = HectonFloatingOrigin.CurrentTotalOffsetDouble
             };
-            for (int i = 0; i < count; i++)
-                job.Execute(i);
+            JobHandle mockHandle = job.Schedule(count, 64);
+            H8Memory.RegisterActiveJob(SystemID.Power, mockHandle);
+            // COLD SYNC JOB: emergency charger defaults must be hydrated before runtime links are exposed.
+            DispatcherJobFence.TryComplete(ref mockHandle, forceComplete: true);
 
             _activeCount = count;
             _powerNodeCount = math.min(powerNodes.Length, BatteryChargerLogisticsConstants.DefaultNodeCapacity);
@@ -738,6 +804,61 @@ namespace Hecton8.Power
                    powerNodes.IsCreated &&
                    tuning.IsCreated &&
                    counters.IsCreated;
+        }
+
+        private void RecomputeActiveTail(NativeArray<ChargerLinkDTO> links)
+        {
+            int scanCount = math.clamp(_activeCount, 0, links.IsCreated ? links.Length : 0);
+            for (int i = scanCount - 1; i >= 0; i--)
+            {
+                if ((links[i].Flags & BatteryChargerLogisticsConstants.LinkFlagActive) != 0u)
+                {
+                    _activeCount = i + 1;
+                    return;
+                }
+            }
+
+            _activeCount = 0;
+        }
+
+        private static ChargerAtomicCountersDTO AggregateCounters(NativeArray<ChargerAtomicCountersDTO> counters)
+        {
+            ChargerAtomicCountersDTO aggregate = default;
+            long active = 0;
+            long full = 0;
+            long unpowered = 0;
+            long atomic = 0;
+            long energy = 0;
+            long charge = 0;
+            int count = counters.IsCreated ? counters.Length : 0;
+            for (int i = 0; i < count; i++)
+            {
+                ChargerAtomicCountersDTO lane = counters[i];
+                active += math.max(0, lane.ActiveLinks);
+                full += math.max(0, lane.FullLinks);
+                unpowered += math.max(0, lane.UnpoweredLinks);
+                atomic += math.max(0, lane.AtomicFailures);
+                energy += math.max(0, lane.TotalEnergyMilli);
+                charge += math.max(0, lane.ChargeMilliSum);
+                aggregate.FaultFlags |= lane.FaultFlags;
+                if (lane.FaultFlags != 0u)
+                    aggregate.LastFaultLink = lane.LastFaultLink;
+            }
+
+            aggregate.ActiveLinks = ClampPositiveInt(active);
+            aggregate.FullLinks = ClampPositiveInt(full);
+            aggregate.UnpoweredLinks = ClampPositiveInt(unpowered);
+            aggregate.AtomicFailures = ClampPositiveInt(atomic);
+            aggregate.TotalEnergyMilli = ClampPositiveInt(energy);
+            aggregate.ChargeMilliSum = ClampPositiveInt(charge);
+            return aggregate;
+        }
+
+        private static int ClampPositiveInt(long value)
+        {
+            if (value <= 0)
+                return 0;
+            return value >= int.MaxValue ? int.MaxValue : (int)value;
         }
 
         private bool Resolve<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct

@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Hecton8.Core;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -164,7 +165,8 @@ namespace Hecton8.Editor
         private static void DrawChunkCell(in ChunkResidencyDTO chunk, Color color)
         {
             float half = 96f;
-            Vector3 center = new Vector3((float)chunk.AUP_Center.x, 0f, (float)chunk.AUP_Center.z);
+            Vector3 center = HectonFloatingOrigin.ToRuntimePosition(chunk.AUP_Center, HectonFloatingOrigin.CurrentTotalOffsetDouble);
+            center.y = 0f;
             Vector3 a = center + new Vector3(-half, 0f, -half);
             Vector3 b = center + new Vector3(half, 0f, -half);
             Vector3 c = center + new Vector3(half, 0f, half);

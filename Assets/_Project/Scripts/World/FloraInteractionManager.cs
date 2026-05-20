@@ -236,7 +236,8 @@ namespace Hecton8.World
                     if (radius < 0f)
                         continue;
 
-                    float distanceSq = math.distancesq(position, cascadeEvent.Center);
+                    float3 cascadeDelta = position - cascadeEvent.Center;
+                    float distanceSq = math.lengthsq(cascadeDelta);
                     float radiusSq = radius * radius;
                     if (distanceSq > radiusSq)
                         continue;
@@ -1720,7 +1721,7 @@ namespace Hecton8.World
             GlobalRegistry.UnregisterWakeDisplacementService(this);
             TryUnregisterCullingHotSwapListener();
             CompleteWakeDecayJob(forceComplete: true, dispatcherSwapWindow: false);
-            CompleteFloraSwayFieldJob(forceComplete: true, uploadAfterComplete: true);
+            CompleteFloraSwayFieldJobForTeardown(uploadAfterComplete: true);
             _instanceCullingService = null;
             _submarineRuntimeContext = null;
             _submarineHullRigidbody = null;
@@ -1742,7 +1743,7 @@ namespace Hecton8.World
             GlobalRegistry.UnregisterWakeDisplacementService(this);
             TryUnregisterCullingHotSwapListener();
             CompleteWakeDecayJob(forceComplete: true, dispatcherSwapWindow: false);
-            CompleteFloraSwayFieldJob(forceComplete: true, uploadAfterComplete: true);
+            CompleteFloraSwayFieldJobForTeardown(uploadAfterComplete: true);
             _instanceCullingService = null;
             _submarineRuntimeContext = null;
             _submarineHullRigidbody = null;
@@ -1899,7 +1900,7 @@ namespace Hecton8.World
         public void LateFrameTick()
         {
             CompleteWakeDecayJob(forceComplete: false, dispatcherSwapWindow: true);
-            CompleteFloraSwayFieldJob(forceComplete: false, uploadAfterComplete: true);
+            TryFinalizeFloraSwayFieldJobNoWait(uploadAfterComplete: true);
             CompleteCascadePhaseSeedJob(underwater: false, forceComplete: false, uploadAfterComplete: true);
             CompleteCascadePhaseSeedJob(underwater: true, forceComplete: false, uploadAfterComplete: true);
             TryFinalizeHeadlessParasiteSimulation();
@@ -1978,8 +1979,11 @@ namespace Hecton8.World
 
             float safeRadius = Mathf.Max(0.5f, radiusMeters);
             _reactiveFloraQueryHandles.Clear();
+            if (!TryResolveAupFromRuntimeOrigin(positionWS, out AbsoluteUniversePosition queryAup))
+                return false;
+
             int queryCount = _underwaterReactiveFloraHash.CollectSphere(
-                AbsoluteUniversePosition.FromRuntimePosition(positionWS),
+                queryAup,
                 safeRadius,
                 ReactiveFloraKindMask,
                 _reactiveFloraQueryHandles);
@@ -2573,7 +2577,16 @@ namespace Hecton8.World
                 return;
             }
 
-            AbsoluteUniversePosition submarineAup = AbsoluteUniversePosition.FromRuntimePosition(worldCenterOfMass);
+            if (!TryResolveAupFromRuntimeOrigin(worldCenterOfMass, out AbsoluteUniversePosition submarineAup))
+            {
+                Shader.SetGlobalVector(_SubmarineWashSphereId, Vector4.zero);
+                Shader.SetGlobalVector(_SubmarineWashVelocityId, Vector4.zero);
+                Shader.SetGlobalVector(_SubmarinePropwashId, Vector4.zero);
+                Shader.SetGlobalVector(_SubmarineWashAupGridId, Vector4.zero);
+                Shader.SetGlobalVector(_SubmarineWashAupLocalId, Vector4.zero);
+                return;
+            }
+
             float3 safeVelocityDirection = velocityVector * math.rsqrt(math.max(speedSq, 0.000001f));
             float submarineRadius = ClampFinite(
                 _wakeTrailSubmarineRadius,
@@ -2702,7 +2715,8 @@ namespace Hecton8.World
                 if (!IsFiniteVector3(playerPosition))
                     return;
 
-                playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
+                if (!TryResolveAupFromRuntimeOrigin(playerPosition, out playerAup))
+                    return;
             }
 
             PublishWakeGeneratedSignal(playerAup, playerVelocity, WakeSourcePlayer);
@@ -2740,10 +2754,8 @@ namespace Hecton8.World
             if (!IsFiniteVector3(propellerPosition))
                 return;
 
-            PublishWakeGeneratedSignal(
-                AbsoluteUniversePosition.FromRuntimePosition(propellerPosition),
-                velocity,
-                WakeSourceVehicle);
+            if (TryResolveAupFromRuntimeOrigin(propellerPosition, out AbsoluteUniversePosition propellerAup))
+                PublishWakeGeneratedSignal(propellerAup, velocity, WakeSourceVehicle);
         }
 
         private void PublishWakeGeneratedSignal(AbsoluteUniversePosition positionAup, Vector3 velocity, byte sourceKind)
@@ -2814,8 +2826,9 @@ namespace Hecton8.World
             int slotLimit = ResolveWakeSlotLimit();
             int slot = FindProceduralWakeSlot(wakeSources, slotLimit, position, sourceKind, radius);
             WakeSource point = wakeSources[slot];
+            float3 wakeDelta = point.PositionWS - position;
             if (point.Active == 0 ||
-                math.distancesq(point.PositionWS, position) > math.max(radius * radius * 4f, 16f))
+                math.lengthsq(wakeDelta) > math.max(radius * radius * 4f, 16f))
             {
                 point.PositionWS = position;
                 point.AgeSeconds = 0f;
@@ -2856,7 +2869,8 @@ namespace Hecton8.World
                     continue;
                 }
 
-                if (point.SourceKind == sourceKind && math.distancesq(point.TargetWS, position) <= mergeRadiusSq)
+                float3 targetDelta = point.TargetWS - position;
+                if (point.SourceKind == sourceKind && math.lengthsq(targetDelta) <= mergeRadiusSq)
                     return i;
 
                 if (point.Intensity < weakestIntensity)
@@ -3056,7 +3070,7 @@ namespace Hecton8.World
             if (_floraSwayFieldBuildScheduled && !_floraSwayFieldBuildHandle.IsCompleted)
                 return;
 
-            CompleteFloraSwayFieldJob(forceComplete: false, uploadAfterComplete: true);
+            TryFinalizeFloraSwayFieldJobNoWait(uploadAfterComplete: true);
 
             float safeDeltaTime = float.IsFinite(deltaTime) ? math.clamp(deltaTime, 0f, 0.1f) : 0f;
             _floraSwayFieldUpdateTimer = math.max(0f, _floraSwayFieldUpdateTimer - safeDeltaTime);
@@ -3213,7 +3227,12 @@ namespace Hecton8.World
             }
             else if (IsFiniteVector3(_floraSwayFieldCenterWS))
             {
-                rawAup = AbsoluteUniversePosition.FromRuntimePosition(_floraSwayFieldCenterWS);
+                if (!TryResolveAupFromRuntimeOrigin(_floraSwayFieldCenterWS, out rawAup))
+                {
+                    fieldCenterAup = default;
+                    fieldCenter = float3.zero;
+                    return false;
+                }
             }
             else
             {
@@ -3415,23 +3434,33 @@ namespace Hecton8.World
             _floraSwayFieldUpdateTimer = updateInterval;
         }
 
-        private bool CompleteFloraSwayFieldJob(bool forceComplete, bool uploadAfterComplete)
+        private bool TryFinalizeFloraSwayFieldJobNoWait(bool uploadAfterComplete)
         {
             if (!_floraSwayFieldBuildScheduled)
                 return true;
 
-            if (!forceComplete && !_floraSwayFieldBuildHandle.IsCompleted)
+            if (!_floraSwayFieldBuildHandle.IsCompleted)
                 return false;
 
-            if (forceComplete)
-            {
-                DispatcherJobFence.TryComplete(ref _floraSwayFieldBuildHandle, forceComplete: true);
-            }
-            else if (!DispatcherJobFence.TryFinalizeCompleted(ref _floraSwayFieldBuildHandle))
-            {
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _floraSwayFieldBuildHandle))
                 return false;
-            }
 
+            return FinishFloraSwayFieldJob(uploadAfterComplete);
+        }
+
+        private bool CompleteFloraSwayFieldJobForTeardown(bool uploadAfterComplete)
+        {
+            if (!_floraSwayFieldBuildScheduled)
+                return true;
+
+            if (!DispatcherJobFence.TryComplete(ref _floraSwayFieldBuildHandle, forceComplete: true))
+                return false;
+
+            return FinishFloraSwayFieldJob(uploadAfterComplete);
+        }
+
+        private bool FinishFloraSwayFieldJob(bool uploadAfterComplete)
+        {
             _floraSwayFieldBuildScheduled = false;
             double elapsedSeconds = math.max(0d, Time.realtimeSinceStartupAsDouble - _floraSwayFieldScheduleTimestampSeconds);
             _floraSwayFieldLastCpuMicroseconds = (uint)math.clamp(elapsedSeconds * 1000000d, 0d, uint.MaxValue);
@@ -3928,7 +3957,7 @@ namespace Hecton8.World
             {
                 if (_floraSwayFieldBuildHandle.IsCompleted)
                 {
-                    CompleteFloraSwayFieldJob(forceComplete: false, uploadAfterComplete: false);
+                    TryFinalizeFloraSwayFieldJobNoWait(uploadAfterComplete: false);
                 }
                 else
                 {
@@ -5545,7 +5574,9 @@ namespace Hecton8.World
                     continue;
                 }
 
-                float distanceSq = (candidate.transform.position - origin).sqrMagnitude;
+                Vector3 candidateVisualPosition = candidate.transform.position;
+                Vector3 visualDelta = candidateVisualPosition - origin;
+                float distanceSq = visualDelta.sqrMagnitude;
                 if (distanceSq >= bestDistanceSq)
                     continue;
 
@@ -6035,8 +6066,11 @@ namespace Hecton8.World
                 if (!math.all(math.isfinite(halfExtents)))
                     continue;
 
+                if (!TryResolveAupFromRuntimeOrigin(positionWS, out AbsoluteUniversePosition positionAup))
+                    continue;
+
                 int handle = spatialHash.Register(
-                    AbsoluteUniversePosition.FromRuntimePosition(positionWS),
+                    positionAup,
                     halfExtents,
                     ReactiveFloraKindMask,
                     0u,
@@ -6086,8 +6120,11 @@ namespace Hecton8.World
             if (!hasPayload || !matrices.IsCreated || !metadata.IsCreated || count <= 0)
                 return;
 
+            if (!TryResolveAupFromRuntimeOrigin(playerPositionWS, out AbsoluteUniversePosition playerPositionAup))
+                return;
+
             int queryCount = spatialHash.CollectSphere(
-                AbsoluteUniversePosition.FromRuntimePosition(playerPositionWS),
+                playerPositionAup,
                 _cascadeContactRadius,
                 ReactiveFloraKindMask,
                 _reactiveFloraQueryHandles);
@@ -6154,8 +6191,11 @@ namespace Hecton8.World
             if (!IsFiniteVector3(sourcePositionWS))
                 return;
 
+            if (!TryResolveAupFromRuntimeOrigin(sourcePositionWS, out AbsoluteUniversePosition sourcePositionAup))
+                return;
+
             spatialHash.CollectSphere(
-                AbsoluteUniversePosition.FromRuntimePosition(sourcePositionWS),
+                sourcePositionAup,
                 _cascadePropagationRadius,
                 ReactiveFloraKindMask,
                 _reactiveFloraQueryHandles);
@@ -6807,7 +6847,8 @@ namespace Hecton8.World
                 if (!IsFiniteVector3(hit.Position))
                     return;
 
-                predatorAup = AbsoluteUniversePosition.FromRuntimePosition(hit.Position);
+                if (!TryResolveAupFromRuntimeOrigin(hit.Position, out predatorAup))
+                    return;
             }
 
             PublishWakeGeneratedSignal(predatorAup, velocity, WakeSourceApexPredator);
@@ -8008,6 +8049,22 @@ namespace Hecton8.World
             return float.IsFinite(value.LocalX) &&
                    float.IsFinite(value.LocalY) &&
                    float.IsFinite(value.LocalZ);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!IsFiniteVector3(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!IsFiniteAup(in originAup))
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return IsFiniteAup(in positionAup);
         }
 
         private static bool IsFiniteVector4(Vector4 value)

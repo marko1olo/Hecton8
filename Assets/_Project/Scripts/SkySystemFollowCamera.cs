@@ -179,10 +179,12 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable
         if (!ShouldFollowVerticalPosition())
             targetPosition.y = ResolveLockedY();
 
+        Vector3 targetVisualDelta = targetPosition - _editorLastAppliedPosition;
+        Vector3 selfVisualDelta = transform.position - targetPosition;
         if (_editorPositionCached &&
             ReferenceEquals(_editorLastTargetCamera, target) &&
-            (targetPosition - _editorLastAppliedPosition).sqrMagnitude <= 0.0001f &&
-            (transform.position - targetPosition).sqrMagnitude <= 0.0001f)
+            targetVisualDelta.sqrMagnitude <= 0.0001f &&
+            selfVisualDelta.sqrMagnitude <= 0.0001f)
         {
             return;
         }

@@ -26,7 +26,7 @@ Machine gate: `steam_announcement_permission_gate = HOLD_NO_STEAM_ANNOUNCEMENT`.
 - `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED` before any private demo/key/preview/Playtest route is referenced;
 - `discord_open_permission_gate = ALLOW_DISCORD_OPEN_VERIFIED` before Discord is linked or named as an active public community route;
 - `owned_audience_permission_gate = ALLOW_OWNED_AUDIENCE_VERIFIED` before newsletter/signup language is included;
-- Promise Lint classification, asset IDs/build ID/source truth, and AB-009/KPI decision-read fields when gameplay/pressure/route-risk agency proof is claimed;
+- Promise Lint classification, asset IDs/build ID/source truth, non-pending metadata `viewer_named_decision`, valid non-held `capture_verdict`, and AB-009/KPI decision-read fields when gameplay/pressure/route-risk agency proof is claimed;
 - route class, UTM/source fields, and no unsupported multiplayer, performance, date, roadmap, competitor-attack, fake urgency, or review-manipulation language.
 
 ## Devlog Rules
@@ -38,7 +38,7 @@ Machine gate: `steam_announcement_permission_gate = HOLD_NO_STEAM_ANNOUNCEMENT`.
 - Do not promise unsupported multiplayer modes.
 - Do not attack competitors.
 - Do not claim performance without proof.
-- Do not publish or reuse a devlog as Steam news, Discord copy, social copy, creator context, or presskit update when it claims gameplay, pressure, route-risk, threat, salvage failure, or first-public agency proof unless the owning AB-009/KPI row records `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`.
+- Do not publish or reuse a devlog as Steam news, Discord copy, social copy, creator context, or presskit update when it claims gameplay, pressure, route-risk, threat, salvage failure, or first-public agency proof unless the asset metadata row has non-pending `viewer_named_decision`, valid `capture_verdict`, and the owning AB-009/KPI row records `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`.
 
 ## Content Pillars
 
@@ -98,8 +98,9 @@ Useful feedback:
 
 - [specific question]
 
-Agency proof field, if this post claims pressure gameplay or route risk:
+Agency proof fields, if this post claims pressure gameplay or route risk:
 
+- [asset metadata `viewer_named_decision`, `capture_verdict`, and `capture_handoff_packet_id` source]
 - [AB-009/KPI `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision` source]
 ```
 

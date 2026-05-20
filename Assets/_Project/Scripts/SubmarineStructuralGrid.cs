@@ -131,7 +131,7 @@ namespace Hecton8.Physics
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
 
         [StructLayout(LayoutKind.Sequential)]
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct HullDamageDiffusionJob : IJob
         {
             [ReadOnly] public NativeArray<byte> InputIntegrity;
@@ -244,7 +244,7 @@ namespace Hecton8.Physics
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct HullCompartmentMappingJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<float3> CompartmentCentroids;
@@ -293,7 +293,7 @@ namespace Hecton8.Physics
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct HullFatigueCompartmentJob : IJob
         {
             [ReadOnly] public NativeArray<byte> CellCompartmentIndices;
@@ -352,7 +352,7 @@ namespace Hecton8.Physics
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BreachRepairJob : IJob
         {
             public NativeArray<float4> Breaches;
@@ -372,7 +372,8 @@ namespace Hecton8.Physics
                     float severity = math.max(0f, breach.w);
                     if (severity > 0f)
                     {
-                        if (math.distancesq(new float3(breach.x, breach.y, breach.z), LocalHitPoint) <= RepairRadiusSq)
+                        float3 breachDelta = new float3(breach.x, breach.y, breach.z) - LocalHitPoint;
+                        if (math.lengthsq(breachDelta) <= RepairRadiusSq)
                             severity = math.max(0f, severity - RepairDelta);
 
                         breach.w = severity;
@@ -979,7 +980,8 @@ namespace Hecton8.Physics
                 if (breach.w <= 0f)
                     continue;
 
-                if (math.distancesq(new float3(breach.x, breach.y, breach.z), localPoint) > repairRadiusSq)
+                float3 breachDelta = new float3(breach.x, breach.y, breach.z) - localPoint;
+                if (math.lengthsq(breachDelta) > repairRadiusSq)
                     continue;
 
                 _pendingRepairLocalPoint = localPoint;
@@ -1040,7 +1042,8 @@ namespace Hecton8.Physics
             for (int i = 0; i < count; i++)
             {
                 float4 breach = breaches[i];
-                if (math.distancesq(new float3(breach.x, breach.y, breach.z), localPoint) > mergeRadiusSq)
+                float3 breachDelta = new float3(breach.x, breach.y, breach.z) - localPoint;
+                if (math.lengthsq(breachDelta) > mergeRadiusSq)
                     continue;
 
                 _activeBreachSeveritySum -= math.max(0f, breach.w);
@@ -1075,7 +1078,8 @@ namespace Hecton8.Physics
             for (int i = 0; i < _deferredBreachAddCount; i++)
             {
                 float4 deferred = _deferredBreachAdds[i];
-                if (math.distancesq(new float3(deferred.x, deferred.y, deferred.z), localPoint) > mergeRadiusSq)
+                float3 deferredDelta = new float3(deferred.x, deferred.y, deferred.z) - localPoint;
+                if (math.lengthsq(deferredDelta) > mergeRadiusSq)
                     continue;
 
                 deferred.w = math.saturate(math.max(deferred.w, severity));

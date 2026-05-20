@@ -3,6 +3,7 @@ using Hecton8.AI;
 using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Scavenging;
@@ -467,7 +468,12 @@ namespace Hecton8.World
 
             bool found = false;
             double bestDistanceSqr = (double)radius * radius;
-            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
+            if (!TryResolveAupFromRuntimeOrigin(origin, out AbsoluteUniversePosition originAup))
+            {
+                ResetQueryTelemetry();
+                return false;
+            }
+
             int handleCount = CollectCandidateHandles(origin, radius, SpatialTargetKind.Bioform);
             for (int i = 0; i < handleCount; i++)
             {
@@ -536,7 +542,13 @@ namespace Hecton8.World
                 return false;
             }
 
-            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
+            if (!TryResolveAupFromRuntimeOrigin(origin, out AbsoluteUniversePosition originAup))
+            {
+                hit = default;
+                ResetQueryTelemetry();
+                return false;
+            }
+
             return TryGetNearestAggressiveBioform(
                 origin,
                 in originAup,
@@ -623,7 +635,13 @@ namespace Hecton8.World
                 return;
             }
 
-            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
+            if (!TryResolveAupFromRuntimeOrigin(origin, out AbsoluteUniversePosition originAup))
+            {
+                ResetQueryTelemetry();
+                snapshot = default;
+                return;
+            }
+
             BuildSonarSnapshot(origin, in originAup, radius, out snapshot);
         }
 
@@ -797,7 +815,9 @@ namespace Hecton8.World
             if (!IsFiniteRuntimePosition(origin) || IsInvalidContactQuery(radius, kindMask, results))
                 return 0;
 
-            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
+            if (!TryResolveAupFromRuntimeOrigin(origin, out AbsoluteUniversePosition originAup))
+                return 0;
+
             return CollectContactsNonAllocChecked(origin, in originAup, radius, kindMask, interactionFilter, results);
         }
 
@@ -896,7 +916,9 @@ namespace Hecton8.World
             if (IsInvalidTransientEvent(worldPosition, radiusMeters, intensity, lifetimeSeconds, eventType, temperature))
                 return;
 
-            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
+            if (!TryResolveAupFromRuntimeOrigin(worldPosition, out AbsoluteUniversePosition positionAup))
+                return;
+
             RegisterTransientEvent(
                 worldPosition,
                 in positionAup,
@@ -1026,7 +1048,9 @@ namespace Hecton8.World
             if (_nativeHash == null)
                 return false;
 
-            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
+            if (!TryResolveAupFromRuntimeOrigin(origin, out AbsoluteUniversePosition originAup))
+                return false;
+
             bool hasGradient = _nativeHash.QueryTemperatureGradient(
                 in originAup,
                 radiusMeters,
@@ -1186,7 +1210,9 @@ namespace Hecton8.World
             if (!IsFiniteRuntimePosition(runtimePosition) || !IsFiniteFloat3(halfExtents))
                 return 0;
 
-            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition positionAup))
+                return 0;
+
             float3 safeHalfExtents = math.max(halfExtents, 0f);
             ulong entityFlags = ResolveEntityFlags(kind);
             int handle = _nativeHash.Register(positionAup, safeHalfExtents, (int)kind, entityFlags, 0);
@@ -1248,7 +1274,12 @@ namespace Hecton8.World
             }
 
             entry.RuntimePosition = runtimePosition;
-            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition positionAup))
+            {
+                Unregister(handle);
+                return;
+            }
+
             entry.AbsolutePosition = positionAup;
             if (entry.EntityFlags == 0UL)
                 entry.EntityFlags = ResolveEntityFlags(entry.Kind);
@@ -1317,7 +1348,9 @@ namespace Hecton8.World
             EnsureInitialized();
             using (_queryProfilerMarker.Auto())
             {
-                AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
+                if (!TryResolveAupFromRuntimeOrigin(origin, out AbsoluteUniversePosition originAup))
+                    return 0;
+
                 return _nativeHash.CollectSphere(originAup, radius, (int)kindMask, interactionFilter, _queryHandles);
             }
         }
@@ -1368,6 +1401,22 @@ namespace Hecton8.World
         private static bool IsFiniteFloat3(float3 value)
         {
             return math.all(math.isfinite(value));
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!IsFiniteRuntimePosition(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!IsFiniteAup(in originAup))
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return IsFiniteAup(in positionAup);
         }
 
         private static void ClearAcousticDensityMapForOriginShift()
@@ -1431,12 +1480,11 @@ namespace Hecton8.World
                 if (!IsFiniteRuntimePosition(runtimePosition))
                     continue;
 
-                double3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition);
-                if (!IsFiniteDouble3(absolutePosition))
+                if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition positionAup))
                     continue;
 
                 _validationRuntimePositions[writeIndex] = runtimePosition;
-                _validationAbsolutePositions[writeIndex] = absolutePosition;
+                _validationAbsolutePositions[writeIndex] = positionAup.ToAbsoluteDouble3();
                 writeIndex++;
             }
 
@@ -1485,15 +1533,14 @@ namespace Hecton8.World
         private static void TryScheduleFarUnload()
         {
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
-            if (playerTransform == null)
+            HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
+            if (playerMovement == null)
                 return;
 
-            Vector3 playerPosition = playerTransform.position;
-            if (!IsFiniteRuntimePosition(playerPosition))
+            AbsoluteUniversePosition playerAup = playerMovement.CurrentAup;
+            if (!IsFiniteAup(in playerAup))
                 return;
 
-            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
             if (_hasLastFarUnloadPlayerAup &&
                 AbsoluteUniversePosition.DistanceSq(in playerAup, in _lastFarUnloadPlayerAup) < FarUnloadPlayerTravelThresholdSq)
             {
@@ -1526,7 +1573,9 @@ namespace Hecton8.World
                     continue;
 
                 entry.RuntimePosition = runtimePosition;
-                AbsoluteUniversePosition entryAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+                if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition entryAup))
+                    continue;
+
                 entry.AbsolutePosition = entryAup;
                 _farUnloadHandles[writeIndex] = pair.Key;
                 _farUnloadAbsolutePositions[writeIndex] = entryAup.ToAbsoluteDouble3();
@@ -1601,7 +1650,8 @@ namespace Hecton8.World
                     if (IsFiniteRuntimePosition(runtimePosition))
                     {
                         entry.RuntimePosition = runtimePosition;
-                        entry.AbsolutePosition = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+                        if (TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition entryAup))
+                            entry.AbsolutePosition = entryAup;
                     }
                 }
 

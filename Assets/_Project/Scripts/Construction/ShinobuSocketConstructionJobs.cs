@@ -549,11 +549,14 @@ namespace Hecton8.Construction
     public struct ValidateBuilderGhostPlacementJob : IJob
     {
         [NoAlias, NativeDisableParallelForRestriction] public NativeArray<BuilderGhostStateDTO> States;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<BuilderGhostVisualDTO> Visuals;
         [ReadOnly, NoAlias] public NativeArray<SocketModuleBoundsDTO> ExistingBounds;
         [ReadOnly, NoAlias] public NativeArray<byte> VoxelSdfSamples;
         public float3 BoundsExtents;
         public int ExistingCount;
+        public int SdfSampleCount;
         public float SolidSdfThreshold;
+        public float GlobalQualityWeight;
         public int StateIndex;
 
         public void Execute()
@@ -575,6 +578,7 @@ namespace Hecton8.Construction
                 state.ValidationFlags = flags;
                 state.ValidationStateHash = MakeValidationHash(state.PrefabHashID, flags, 0u, 0u);
                 States[index] = state;
+                WriteValidatedVisual(index, flags);
                 return;
             }
 
@@ -582,8 +586,17 @@ namespace Hecton8.Construction
             float3 axisX = state.LocalToWorld.c0.xyz * 0.5f;
             float3 axisY = state.LocalToWorld.c1.xyz * 0.5f;
             float3 axisZ = state.LocalToWorld.c2.xyz * 0.5f;
-            for (int corner = 0; corner < 8; corner++)
+            int sampleBase = index * ShinobuSocketConstructionRuntime.BuilderGhostSdfCornerCount;
+            int availableSampleLimit = SdfSampleCount <= 0
+                ? ShinobuSocketConstructionRuntime.BuilderGhostSdfCornerCount
+                : SdfSampleCount;
+            int sampleLimit = math.clamp(
+                availableSampleLimit,
+                1,
+                ShinobuSocketConstructionRuntime.BuilderGhostSdfCornerCount);
+            for (int sampleOrdinal = 0; sampleOrdinal < sampleLimit; sampleOrdinal++)
             {
+                int corner = ShinobuSocketConstructionRuntime.ResolveBuilderGhostCornerIndex(sampleOrdinal);
                 float sx = (corner & 1) == 0 ? -1f : 1f;
                 float sy = (corner & 2) == 0 ? -1f : 1f;
                 float sz = (corner & 4) == 0 ? -1f : 1f;
@@ -595,9 +608,10 @@ namespace Hecton8.Construction
                 }
 
                 cornerChecks++;
-                if (VoxelSdfSamples.IsCreated && corner < VoxelSdfSamples.Length)
+                int sampleIndex = sampleBase + corner;
+                if (VoxelSdfSamples.IsCreated && (uint)sampleIndex < (uint)VoxelSdfSamples.Length)
                 {
-                    float sdf = (sbyte)VoxelSdfSamples[corner] * (1f / 127f);
+                    float sdf = (sbyte)VoxelSdfSamples[sampleIndex] * (1f / 127f);
                     minSdf = math.min(minSdf, sdf);
                     if (sdf <= SolidSdfThreshold)
                         flags |= BuilderGhostValidationFlags.SdfBlocked;
@@ -636,6 +650,33 @@ namespace Hecton8.Construction
             state.ValidationFlags = flags;
             state.ValidationStateHash = MakeValidationHash(state.PrefabHashID, flags, cornerChecks, math.asuint(minSdf == float.MaxValue ? 0f : minSdf));
             States[index] = state;
+            WriteValidatedVisual(index, flags);
+        }
+
+        private void WriteValidatedVisual(int index, uint flags)
+        {
+            if (!Visuals.IsCreated || (uint)index >= (uint)Visuals.Length)
+                return;
+
+            BuilderGhostVisualDTO visual = Visuals[index];
+            visual.Flags = flags;
+            visual.Alpha = ResolveVisualAlpha(in visual, flags);
+            Visuals[index] = visual;
+        }
+
+        private static float ResolveVisualAlpha(in BuilderGhostVisualDTO visual, uint flags)
+        {
+            float alpha = IsBuilderGhostValid(flags) ? visual.ValidColor.w : visual.InvalidColor.w;
+            return math.clamp(math.isfinite(alpha) ? alpha : 0f, 0f, 1f);
+        }
+
+        private static bool IsBuilderGhostValid(uint flags)
+        {
+            const uint blockingFlags = BuilderGhostValidationFlags.SdfBlocked |
+                                       BuilderGhostValidationFlags.BoundsBlocked |
+                                       BuilderGhostValidationFlags.NonFinite;
+            return (flags & BuilderGhostValidationFlags.Valid) != 0u &&
+                   (flags & blockingFlags) == 0u;
         }
 
         private static bool IsFiniteState(in BuilderGhostStateDTO state)
@@ -700,6 +741,191 @@ namespace Hecton8.Construction
             state._pad4 = 0u;
             state._pad5 = 0u;
             States[index] = state;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct BuildPipeBlueprintPreviewJob : IJob
+    {
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<BuilderGhostStateDTO> States;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<BuilderGhostVisualDTO> Visuals;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<BuilderGhostIndirectArgsDTO> Args;
+        public double3 Point0Aup;
+        public double3 Point1Aup;
+        public double3 Point2Aup;
+        public double3 Point3Aup;
+        public double3 RuntimeOriginAup;
+        public float SegmentLengthMeters;
+        public float SegmentRadiusMeters;
+        public float GlobalQualityWeight;
+        public float DearLieDampen;
+        public float DearLieWiggleSpeed;
+        public float4 ValidColor;
+        public float4 InvalidColor;
+        public uint PrefabHashID;
+        public uint Frame;
+        public int MaxSegments;
+
+        public void Execute()
+        {
+            int capacity = ResolveCapacity();
+            int writeIndex = 0;
+            float q = ShinobuSocketConstructionRuntime.SanitizeQuality(GlobalQualityWeight);
+            float smoothQ = ShinobuSocketConstructionRuntime.SmoothQuality(q);
+            float safeLength = math.max(0.01f, SegmentLengthMeters);
+            float visualLengthScale = math.lerp(2.5f, 1f, smoothQ);
+            float scaledLength = math.max(0.01f, safeLength * visualLengthScale);
+            float radius = math.max(0.001f, SegmentRadiusMeters);
+            uint flags = BuilderGhostValidationFlags.Active |
+                         BuilderGhostValidationFlags.Valid |
+                         BuilderGhostValidationFlags.PresentationOnly |
+                         BuilderGhostValidationFlags.DearLieActive |
+                         BuilderGhostValidationFlags.RollbackExcluded;
+
+            writeIndex = AppendSpan(Point0Aup, Point1Aup, writeIndex, capacity, scaledLength, radius, q, flags);
+            writeIndex = AppendSpan(Point1Aup, Point2Aup, writeIndex, capacity, scaledLength, radius, q, flags);
+            writeIndex = AppendSpan(Point2Aup, Point3Aup, writeIndex, capacity, scaledLength, radius, q, flags);
+
+            WriteArgs((uint)math.max(0, writeIndex));
+        }
+
+        private int ResolveCapacity()
+        {
+            if (!States.IsCreated || States.Length <= 0)
+                return 0;
+
+            int visualLength = Visuals.IsCreated ? Visuals.Length : States.Length;
+            int requested = MaxSegments > 0 ? MaxSegments : States.Length;
+            return math.clamp(requested, 0, math.min(States.Length, visualLength));
+        }
+
+        private int AppendSpan(
+            double3 startAup,
+            double3 endAup,
+            int writeIndex,
+            int capacity,
+            float segmentLength,
+            float radius,
+            float quality,
+            uint flags)
+        {
+            if (writeIndex >= capacity)
+                return writeIndex;
+
+            double3 delta = endAup - startAup;
+            if (!math.all(math.isfinite(startAup)) ||
+                !math.all(math.isfinite(endAup)) ||
+                !math.all(math.isfinite(delta)))
+            {
+                return WriteFault(writeIndex, capacity, startAup, flags | BuilderGhostValidationFlags.NonFinite);
+            }
+
+            double lengthSq = math.lengthsq(delta);
+            if (!math.isfinite(lengthSq) || lengthSq <= 0.000001d)
+                return writeIndex;
+
+            double length = math.sqrt(lengthSq);
+            double invLength = 1.0d / math.max(length, 0.0001d);
+            double3 directionD = delta * invLength;
+            float3 direction = new float3((float)directionD.x, (float)directionD.y, (float)directionD.z);
+            if (!math.all(math.isfinite(direction)) || math.lengthsq(direction) <= 0.000001f)
+                return WriteFault(writeIndex, capacity, startAup, flags | BuilderGhostValidationFlags.NonFinite);
+
+            int remaining = capacity - writeIndex;
+            int segmentCount = math.clamp((int)math.ceil((float)length / math.max(0.01f, segmentLength)), 1, remaining);
+            double step = length / math.max(1, segmentCount);
+            float visualStep = (float)math.min(step, (double)float.MaxValue);
+            for (int i = 0; i < segmentCount && writeIndex < capacity; i++)
+            {
+                double offset = (i + 0.5d) * step;
+                double3 midpointAup = startAup + (directionD * offset);
+                double3 runtimeD = midpointAup - RuntimeOriginAup;
+                if (!math.all(math.isfinite(midpointAup)) ||
+                    !math.all(math.isfinite(runtimeD)) ||
+                    math.any(math.abs(runtimeD) > (double)float.MaxValue))
+                {
+                    writeIndex = WriteFault(writeIndex, capacity, midpointAup, flags | BuilderGhostValidationFlags.NonFinite);
+                    continue;
+                }
+
+                float3 runtime = new float3((float)runtimeD.x, (float)runtimeD.y, (float)runtimeD.z);
+                float4x4 matrix = BuildSegmentMatrix(runtime, direction, radius, math.max(0.001f, visualStep));
+                WriteState(writeIndex, midpointAup, matrix, flags, quality);
+                writeIndex++;
+            }
+
+            return writeIndex;
+        }
+
+        private int WriteFault(int writeIndex, int capacity, double3 aup, uint flags)
+        {
+            if (writeIndex >= capacity)
+                return writeIndex;
+
+            float4x4 matrix = float4x4.TRS(float3.zero, quaternion.identity, new float3(0.001f));
+            WriteState(writeIndex, aup, matrix, flags & ~BuilderGhostValidationFlags.Valid, ShinobuSocketConstructionRuntime.SanitizeQuality(GlobalQualityWeight));
+            return writeIndex + 1;
+        }
+
+        private void WriteState(int index, double3 aup, float4x4 matrix, uint flags, float quality)
+        {
+            BuilderGhostStateDTO state;
+            state.LocalToWorld = matrix;
+            state.AUP_TargetPosition = aup;
+            state.PrefabHashID = PrefabHashID;
+            state.ValidationFlags = flags;
+            state.AnimationPhase = math.frac((Frame * 0.017f) + (index * 0.03125f));
+            state.ValidationStateHash = ShinobuSocketConstructionRuntime.MakeResultHash(PrefabHashID, flags, (uint)index, Frame);
+            state._pad0 = 0u;
+            state._pad1 = 0u;
+            state._pad2 = 0u;
+            state._pad3 = 0u;
+            state._pad4 = 0u;
+            state._pad5 = 0u;
+            States[index] = state;
+
+            if (!Visuals.IsCreated || (uint)index >= (uint)Visuals.Length)
+                return;
+
+            BuilderGhostVisualDTO visual;
+            visual.GlobalQualityWeight = quality;
+            visual.DearLieDampen = math.clamp(math.isfinite(DearLieDampen) ? DearLieDampen : 0.2f, 0f, 1f);
+            visual.DearLieWiggleSpeed = math.isfinite(DearLieWiggleSpeed) && DearLieWiggleSpeed > 0f ? DearLieWiggleSpeed : 18f;
+            visual.Alpha = 1f;
+            visual.ValidColor = ValidColor;
+            visual.InvalidColor = InvalidColor;
+            visual.Flags = flags;
+            visual.Frame = Frame;
+            visual._pad0 = 0u;
+            visual._pad1 = 0u;
+            Visuals[index] = visual;
+        }
+
+        private static float4x4 BuildSegmentMatrix(float3 center, float3 direction, float radius, float length)
+        {
+            float3 yAxis = math.normalizesafe(direction, new float3(0f, 1f, 0f));
+            float3 reference = math.abs(yAxis.y) > 0.95f ? new float3(1f, 0f, 0f) : new float3(0f, 1f, 0f);
+            float3 xAxis = math.normalizesafe(math.cross(reference, yAxis), new float3(1f, 0f, 0f));
+            float3 zAxis = math.normalizesafe(math.cross(yAxis, xAxis), new float3(0f, 0f, 1f));
+            float diameter = math.max(0.001f, radius * 2f);
+            return new float4x4(
+                new float4(xAxis * diameter, 0f),
+                new float4(yAxis * math.max(0.001f, length), 0f),
+                new float4(zAxis * diameter, 0f),
+                new float4(center, 1f));
+        }
+
+        private void WriteArgs(uint instanceCount)
+        {
+            if (!Args.IsCreated || Args.Length <= 0)
+                return;
+
+            BuilderGhostIndirectArgsDTO args;
+            args.VertexCountPerInstance = ShinobuSocketConstructionRuntime.BuilderGhostProceduralVertexCount;
+            args.InstanceCount = instanceCount;
+            args.StartVertex = 0u;
+            args.StartInstance = 0u;
+            Args[0] = args;
         }
     }
 

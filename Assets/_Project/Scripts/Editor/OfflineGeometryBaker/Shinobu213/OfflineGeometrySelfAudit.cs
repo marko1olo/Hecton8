@@ -45,7 +45,7 @@ namespace Hecton8.Editor.OfflineGeometry
             AppendTask(builder, "04", "ARM64_MAPPING_LAYOUT_ASSERTION", "PASS", "LodConfigurationDTO is explicit 16 bytes with validated offsets.");
             AppendTask(builder, "05", "EMERGENCY_MOCK_DECIMATION_BENCHMARK", "PASS", "GenerateMockHighPolyMeshJob emits dense fractal sphere geometry.");
             AppendTask(builder, "06", "AUTOMATED_LOD_GENERATION_PIPELINE", "PASS", "BuildLodMesh emits LOD0/LOD1/LOD2 meshes from strict triangle budgets.");
-            AppendTask(builder, "07", "BURST_CONVEX_HULL_GENERATOR", "PASS", "GenerateConvexHullJob emits a bounded 8..32 point conservative support hull with plane-deduped fan triangulation after primitive rejection; invalid hull output fails closed to BoxCollider.");
+            AppendTask(builder, "07", "BURST_CONVEX_HULL_GENERATOR", "PASS", "GenerateConvexHullJob emits a bounded 8..32 point conservative support hull with plane-deduped fan triangulation after primitive rejection; invalid hull output or undersized fallback scratch buffers fail closed to BoxCollider.");
             AppendTask(builder, "08", "THE_DEAR_LIE_PRIMITIVE_FITTING", "PASS", "FitGeometricPrimitivesJob selects sphere or box before convex collision.");
             AppendTask(builder, "09", "ASYNCHRONOUS_ASSET_SERIALIZATION", "PASS", "Mesh assets serialize through SetVertexBufferData and SetIndexBufferData.");
             AppendTask(builder, "10", "AUTOMATED_PREFAB_ASSEMBLY", "PASS", "Generated prefab contains static LODGroup and primitive or convex colliders only.");
@@ -151,12 +151,12 @@ namespace Hecton8.Editor.OfflineGeometry
         {
             builder.Append("  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>\n");
             builder.Append("    <NoAlias>Status applied to source, output, index, range, packed vertex, primitive result, and hull NativeArray job fields where buffers do not overlap. HullVertices is intentionally read-write NoAlias, not WriteOnly, because support duplicate elimination and face fan triangulation read previous support points.</NoAlias>\n");
-            builder.Append("    <Job name=\"GenerateMockHighPolyMeshJob\" consumes=\"none\" outputs=\"NativeArray&lt;OfflineGeometryRawVertex&gt;\" handle=\"scheduled by editor menu; completed before Mesh asset serialization\" />\n");
-            builder.Append("    <Job name=\"OfflineDecimateUInt16Job/OfflineDecimateUInt32Job\" consumes=\"MeshData index/range/vertex streams via UnsafeUtility.AsRef\" outputs=\"NativeArray&lt;OfflineGeometryRawVertex&gt;; corrupt index/range/vertex streams fail closed to deterministic zero triangles\" handle=\"scheduled per LOD; completed inside editor bake transaction\" />\n");
-            builder.Append("    <Job name=\"OfflinePackVertexJob\" consumes=\"raw vertices\" outputs=\"interleaved vertex stream\" handle=\"packHandle\" />\n");
-            builder.Append("    <Job name=\"OfflineIndexFillJob\" consumes=\"packHandle\" outputs=\"linear index stream\" handle=\"indexHandle; completed before Mesh.Set*BufferData\" />\n");
+            builder.Append("    <Job name=\"GenerateMockHighPolyMeshJob\" consumes=\"none\" outputs=\"NativeArray&lt;OfflineGeometryRawVertex&gt;; invalid segment counts return before modulo/division\" handle=\"scheduled by editor menu; completed before Mesh asset serialization\" />\n");
+            builder.Append("    <Job name=\"OfflineDecimateUInt16Job/OfflineDecimateUInt32Job\" consumes=\"MeshData index/range/vertex streams via UnsafeUtility.AsRef\" outputs=\"NativeArray&lt;OfflineGeometryRawVertex&gt;; corrupt index/range/vertex streams and invalid/default output lanes fail closed to deterministic zero triangles\" handle=\"scheduled per LOD; completed inside editor bake transaction\" />\n");
+            builder.Append("    <Job name=\"OfflinePackVertexJob\" consumes=\"raw vertices\" outputs=\"interleaved vertex stream; default or mismatched lanes are ignored\" handle=\"packHandle\" />\n");
+            builder.Append("    <Job name=\"OfflineIndexFillJob\" consumes=\"packHandle\" outputs=\"linear index stream; default or mismatched lanes are ignored\" handle=\"indexHandle; completed before Mesh.Set*BufferData\" />\n");
             builder.Append("    <Job name=\"FitGeometricPrimitivesJob\" consumes=\"LOD0 raw vertices\" outputs=\"primitive fit DTO\" handle=\"completed before collider authoring\" />\n");
-            builder.Append("    <Job name=\"GenerateConvexHullJob\" consumes=\"LOD0 raw vertices\" outputs=\"bounded 8..32 point support hull plus plane-deduped triangle index stream; invalid output collapses to BoxCollider before MeshCollider binding\" handle=\"completed only if primitive fitting rejects\" />\n");
+            builder.Append("    <Job name=\"GenerateConvexHullJob\" consumes=\"LOD0 raw vertices\" outputs=\"bounded 8..32 point support hull plus plane-deduped triangle index stream; invalid topology or undersized fallback scratch output collapses to BoxCollider before MeshCollider binding\" handle=\"completed only if primitive fitting rejects\" />\n");
             builder.Append("  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>\n");
         }
 
@@ -166,14 +166,14 @@ namespace Hecton8.Editor.OfflineGeometry
             builder.Append("    <RuntimeAssembly name=\"Hecton8.World.OfflineGeometry\" references=\"none\" />\n");
             builder.Append("    <EditorAssembly name=\"Hecton8.World.OfflineGeometry.Editor\" references=\"Hecton8.World.OfflineGeometry,Unity.Burst,Unity.Collections,Unity.Jobs,Unity.Mathematics\" />\n");
             builder.Append("    <SiblingDomainReferences count=\"0\" />\n");
-            builder.Append("    <RoslynProbe status=\"PRE_ENDIAN_BOUNDED_HULL_ASSET_BIND_SAFETY_INDEX_HOT_STRUCT_RECHECK_PENDING\" path=\"Temp/SHINOBU_213_CompileProbe\" note=\"Last pass predates explicit-endian fallback, bounded-hull support-index edits, fail-closed hull asset-binding guard, hull read-write annotation fix, finite rsqrt normalization guards, decimator index-stream fail-closed guards, mock asset reload guard, binary-ledger edit, and hot geometry DTO explicit-layout proof; post-endian bounded-hull safety-index hot-struct probe gated by CPU; Unity import/profiler proof still pending\" />\n");
+            builder.Append("    <RoslynProbe status=\"PRE_ENDIAN_BOUNDED_HULL_ASSET_BIND_SAFETY_INDEX_HOT_STRUCT_STREAM_BOUNDS_HULL_FALLBACK_JOB_GUARDS_RECHECK_PENDING\" path=\"Temp/SHINOBU_213_CompileProbe\" note=\"Last pass predates explicit-endian fallback, bounded-hull support-index edits, fail-closed hull asset-binding guard, hull read-write annotation fix, finite rsqrt normalization guards, decimator index-stream fail-closed guards, mock asset reload guard, binary-ledger edit, hot geometry DTO explicit-layout proof, decimator raw-stream/output-lane bounds guards, hull fallback scratch-bounds guard, and Burst job denominator/native collection guards; post-endian bounded-hull safety-index hot-struct stream-bounds hull-fallback job-guard probe gated by CPU; Unity import/profiler proof still pending\" />\n");
             builder.Append("  </COMPILE_GUARD>\n");
         }
 
         private static void AppendDearLie(StringBuilder builder)
         {
             builder.Append("  <DEAR_LIE_CONFIRMATION>\n");
-            builder.Append("    Heavy physics before: source-mesh concave collision can approach O(T) triangle contact/cooking complexity per candidate shape. After: sphere/box is O(1), fallback convex collision is bounded to V support points where 8 &lt;= V &lt;= 32; offline face discovery is capped to O(V^3) but emitted faces are plane-deduped and fan-triangulated before MeshCollider import. Underpopulated or unbound hull output collapses to BoxCollider O(1), never forced counters. Visual mesh remains rich; PhysX receives the lie.\n");
+            builder.Append("    Heavy physics before: source-mesh concave collision can approach O(T) triangle contact/cooking complexity per candidate shape. After: sphere/box is O(1), fallback convex collision is bounded to V support points where 8 &lt;= V &lt;= 32; offline face discovery is capped to O(V^3) but emitted faces are plane-deduped and fan-triangulated before MeshCollider import. Underpopulated, undersized, or unbound hull output collapses to BoxCollider O(1), never forced counters. Visual mesh remains rich; PhysX receives the lie.\n");
             builder.Append("  </DEAR_LIE_CONFIRMATION>\n");
         }
 

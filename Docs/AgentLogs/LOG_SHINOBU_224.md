@@ -175,6 +175,67 @@ Verification:
   </DEAR_LIE>
 </SELF_AUDIT>
 
+### Ultra-Polish Telemetry Cursor Wrap Hardening 2026-05-20
+
+What was wrong:
+- `TryGetLatestEquipmentTelemetry()` and `TryGetEquipmentTelemetryEntry()` were already narrowed to the telemetry ring/cursor Vault lanes, but they trusted `telemetryCursor[0]` for array indexing.
+- The old history reader only wrapped negative indexes with `while (index < 0)`. A stale/corrupt positive cursor greater than the 300-entry ring length could still index outside the black-box buffer.
+
+What was done:
+- Added `ResolveTelemetryHistoryIndex(int cursor, int historyIndex, int ringLength)`.
+- Latest telemetry now uses the same bounded history resolver as explicit history reads.
+- The helper fails closed on invalid ring length, clamps history to the ring capacity, fast-paths valid indexes with an unsigned bounds check, and pays modulo only when cursor metadata is outside the valid range.
+
+Cinematic cheat / performance position:
+- No physical simulation or visual work changed. This is a forensic safety cut: protect the black-box reader without widening DTOs, adding allocations, or touching presentation.
+- Microseconds saved: none claimed as a visual optimization. Microseconds protected: one invalid cursor no longer escalates a debug/HUD read into an exception path; normal path remains one bounds check plus one read.
+
+Verification:
+- Prompt extraction: `TaskCount=20` for `SHINOBU_224`.
+- Focused telemetry getter scan: `TryGetLatestEquipmentTelemetry TryResolveEquipmentViews=False`, `TryGetLatestEquipmentTelemetry whileLoop=False`, `TryGetEquipmentTelemetryEntry TryResolveEquipmentViews=False`, `TryGetEquipmentTelemetryEntry whileLoop=False`.
+- SHINOBU runtime forbidden-pattern scan: no hits for manual `job.Execute`, persistent private native aliases, legacy Vault pointer APIs, hot native allocations, LINQ, `foreach`, gameplay Update/coroutine patterns, or direct `Hecton8.Power/World` imports in the owned runtime files.
+- `git diff --check -- Assets/_Project/Scripts/ModularEquipmentEngine.cs`: passed with repository LF-to-CRLF normalization warning only.
+- Build/rebuild: not launched. CPU sampled 64.21 percent through `Get-Counter`, above the explicit 50 percent gate. `dotnet/csc` process scan returned no process output.
+
+<SELF_AUDIT>
+  <agent id="SHINOBU_224" domain="ACTIVE_EQUIPMENT_PROCESSOR" taskCount="20" loop="23" evidence="STATIC_SOURCE"/>
+  <taskReconciliation>
+    <task id="01" status="PASS">Tool Update/coroutine scan remains empty for owned runtime files.</task>
+    <task id="02" status="PASS">Active tool truth remains Vault-backed, not managed List-owned.</task>
+    <task id="03" status="PASS">Hot DTOs remain raw-field unmanaged payloads.</task>
+    <task id="04" status="PASS">ActiveEquipmentDTO layout remains explicit 32 bytes: offsets 0 uint ToolHashID, 4 float CurrentBattery, 8 float ThermalLoad, 12 uint StateFlags, 16 float PowerDrawRate, 20 float HeatGenerationRate, 24 uint pad0, 28 uint pad1.</task>
+    <task id="05" status="PASS">Mock equipment state remains cold scheduled/synchronized for CI/editor use.</task>
+    <task id="06" status="PASS">Burst equipment integration job unchanged, still deterministic and pointer-fed.</task>
+    <task id="07" status="PASS">Thermal grid lookup still subtracts double3 grid root AUP before float-local sampling.</task>
+    <task id="08" status="PASS">Overheat remains unmanaged SignalBus payload, no VFX instantiation.</task>
+    <task id="09" status="PASS">Depletion remains data clamp plus typed signal.</task>
+    <task id="10" status="PASS">Published read-buffer route remains Vault-backed and narrowed to published lane reads.</task>
+    <task id="11" status="PASS">GlobalQualityWeight cadence unchanged and continuous.</task>
+    <task id="12" status="PASS">Grid load bridge unchanged and still owner-routed.</task>
+    <task id="13" status="PASS">AUP grid mapping unchanged and relative.</task>
+    <task id="14" status="PASS">Rollback DTO layout unchanged; no pointer/reference fields added.</task>
+    <task id="15" status="PASS">Telemetry ring reads now tolerate stale/corrupt cursors without out-of-range indexing.</task>
+    <task id="16" status="PASS">Editor tuner surface unchanged, player hot path unaffected.</task>
+    <task id="17" status="PASS">CSV spec ingest unchanged, no runtime parse path added.</task>
+    <task id="18" status="PASS">Thermal gizmo unchanged and editor-only.</task>
+    <task id="19" status="PASS">Static inquisition posture unchanged.</task>
+    <task id="20" status="PASS">Self-audit appended to disk log, not chat-only.</task>
+  </taskReconciliation>
+  <structLayout name="ActiveEquipmentDTO" sizeBytes="32" alignmentProof="32 % 8 == 0 and 32 % 16 == 0">
+    <field offset="0" size="4" name="ToolHashID"/>
+    <field offset="4" size="4" name="CurrentBattery"/>
+    <field offset="8" size="4" name="ThermalLoad"/>
+    <field offset="12" size="4" name="StateFlags"/>
+    <field offset="16" size="4" name="PowerDrawRate"/>
+    <field offset="20" size="4" name="HeatGenerationRate"/>
+    <field offset="24" size="4" name="_pad0"/>
+    <field offset="28" size="4" name="_pad1"/>
+  </structLayout>
+  <telemetryCursorGuard fastPath="unsigned bounds check" slowPath="integer modulo on corrupt/stale cursor" ringLength="300"/>
+  <vaultStatus persistentPrivateNativeArrays="0" handleModel="VaultGenerationHandle descriptors plus phase-local NativeArray views"/>
+  <buildGate launched="false" reason="CPU sampled 64.21 percent, above the 50 percent gate; dotnet/csc process scan returned no active compiler output"/>
+</SELF_AUDIT>
+
 ---
 
 ## 2026-05-20 Loop 16 - Modular Equipment Vault Descriptor Cut
@@ -875,4 +936,296 @@ Verification:
   <DEAR_LIE>
     Equipment stays scalar and signal-driven; no object-level durability, battery chemistry, or water-fluid simulation was added.
   </DEAR_LIE>
+</SELF_AUDIT>
+
+### Ultra-Polish Cadence And Durability Gate 2026-05-20
+
+What was wrong:
+- The active equipment source already gates full equipment Vault view resolution behind the continuous cadence path, but the adjacent durability bridge still paid five Vault descriptor validations before two cheap scalar guards.
+- `HasPendingDecay()` re-resolved the pending-decay descriptor even though `Tick()` had just resolved the same lane for the current phase.
+- A readback audit also confirmed there are no remaining manual `job.Execute(i)` loops in SHINOBU_224 runtime files; cold mock/clear paths use `IJobParallelFor.Run(...)` and gameplay paths schedule through `JobHandle`.
+
+What was done:
+- `ToolDurabilitySystem.Tick()` now returns on `!enableDurabilityDrain` or `_decayScheduled` before resolving item state, pending decay, wear multipliers, active flags, and breakdown flags.
+- `HasPendingDecay()` now takes the already-resolved pending-decay `NativeArray<float>` and clamps its scan to the resolved buffer length.
+- Verified `ModularEquipmentEngine.Tick()` cadence/no-acquire tuning route: skipped frames resolve only the tuning descriptor needed for tick interval math; full equipment views are resolved only after the accumulated cadence reaches the current `GlobalQualityWeight` interval.
+- Rechecked `ModularEquipmentEngine.GenerateMockEquipmentState()` fail-closed pending-job guard and immediate cold readback. The editor/CI mock path stays deterministic after the method returns.
+
+Cinematic cheats used:
+- No water chemistry, battery chemistry, or per-tool physical simulation was added. Cooling remains scalar thermodynamic-grid sampling; overheat/depletion stay unmanaged signals for shader/VFX consumers.
+- Low-quality frames now skip both the equipment Burst pass and the full equipment view resolve until cadence accrues enough deterministic delta; durability skip frames also avoid descriptor traffic when drain is disabled or a decay job is already pending.
+
+Exact microseconds saved or bounded:
+- Disabled/already-scheduled durability frames: five descriptor validations avoided before the early return; estimate 0.2-1.0 us on i3/MX350-class hardware, depending on Vault metadata cache locality.
+- Decay-scheduling frames: one duplicate pending-decay descriptor validation removed before the 16-slot scan; estimate below 0.2 us but deterministic and repeated.
+- Equipment cadence path remains the earlier 3-8 us low-quality idle-frame saving by avoiding the full active-equipment integration pass and full view resolve on skipped frames.
+
+Verification:
+- SHINOBU_224 XML count: 20 task lines.
+- `Select-String` focused scans found no `job.Execute(` calls in `ModularEquipmentEngine.cs`, `ToolDurabilitySystem.cs`, or `PlayerTool.cs`.
+- Focused hot-path scan found no `new NativeArray/NativeList/NativeQueue/NativeHashMap`, LINQ, `foreach`, `Update/FixedUpdate/LateUpdate`, coroutine, or `IEnumerator` hits in SHINOBU_224 runtime files.
+- Focused Vault scan found no persistent `NativeArray<T>` aliases, legacy `VaultBufferHandle<T>`, `GetBuffer<T>`, pointer resolver, `.ptr`, or `_thermalGridReadback` hits in the active equipment/durability runtime files.
+- `git diff --check` passed touched SHINOBU files with LF-to-CRLF warnings only.
+- CPU gate sampled 100%; no rebuild was launched.
+
+<SELF_AUDIT agent="SHINOBU_224" phase="cadence_durability_gate">
+  <TASK_RECONCILIATION total="20">
+    <task id="01" status="PASS">No tool-prefab `Update`, `FixedUpdate`, `LateUpdate`, coroutine, or `IEnumerator` path was introduced.</task>
+    <task id="02" status="PASS">No managed active-tool list was added; fixed owner mirrors plus Vault lanes remain the route.</task>
+    <task id="03" status="PASS">Hot DTOs remain raw-field structs; no hot-array `{ get; set; }` DTO mutation path was added.</task>
+    <task id="04" status="PASS">`ActiveEquipmentDTO` remains explicit 32B; no `Pack=1` or ABI width change.</task>
+    <task id="05" status="PASS">Emergency mock route remains deterministic and immediate for editor/CI readback after pending job guard.</task>
+    <task id="06" status="PASS">Main equipment math remains scheduled `EquipmentStateIntegrationJob` with Burst and explicit pointer streams.</task>
+    <task id="07" status="PASS">Cooling still samples the thermodynamic grid through AUP-local math, not object-space water heuristics.</task>
+    <task id="08" status="PASS">Overheat consequences remain unmanaged visual-only signals.</task>
+    <task id="09" status="PASS">Battery depletion remains data/signal routed; no object disable path added.</task>
+    <task id="10" status="PASS">Readback publication remains fenced through native memcpy after job finalization.</task>
+    <task id="11" status="PASS">Continuous cadence remains `GlobalQualityWeight` driven; skipped frames avoid full equipment views.</task>
+    <task id="12" status="PASS">Grid-powered draw remains cached Core service aggregation; no sibling Power runtime edge added.</task>
+    <task id="13" status="PASS">Thermal sampling keeps double AUP subtraction before float grid-space math.</task>
+    <task id="14" status="PASS">DTOs remain blittable and snapshot-friendly; durability guard ordering does not add reference state.</task>
+    <task id="15" status="PASS">300-frame equipment telemetry ring and dump route remain unchanged.</task>
+    <task id="16" status="PASS">Editor tuner remains editor-only; no runtime UI control path added.</task>
+    <task id="17" status="PASS">CSV hardware specs remain cold `ReadOnlySpan<byte>` ingest; no gameplay file/string parser added.</task>
+    <task id="18" status="PASS">Thermal gizmo remains editor-only; no debug prefab path added.</task>
+    <task id="19" status="PASS">Static validator route remains editor/source-only; runtime scanner not added.</task>
+    <task id="20" status="PASS">Status, rationale, ledger, and log were updated with the concrete source delta and verification gates.</task>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <ActiveEquipmentDTO sizeBytes="32" alignment="32B explicit">
+      offsets: ToolHashID 0:4, CurrentBattery 4:4, ThermalLoad 8:4, StateFlags 12:4, PowerDrawRate 16:4, HeatGenerationRate 20:4, _pad0.._pad7 24..31:8. Math: 6 fields * 4B = 24B, explicit pad = 8B, total = 32B.
+    </ActiveEquipmentDTO>
+    <EquipmentIntegrationCounters sizeBytes="64" falseSharing="padded">
+      offsets: floats/uints 0..31 = 32B, Reserved1 32:8, Reserved2 40:8, Reserved3 48:8, Reserved4 56:8. Math: 32B counters + 32B reserved = 64B cache-line row.
+    </EquipmentIntegrationCounters>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE>
+    Below quality 0.3, equipment cadence stretches toward the authored maximum interval and uses accumulated deterministic delta, so skipped frames avoid the full 17-lane equipment view resolve and the scheduled integration job. Thermal sampling still collapses toward nearest-cell by smooth quality weighting before trilinear blend becomes meaningful. Durability guard ordering now separately removes Vault metadata work when drain is disabled or a previous decay job is still pending.
+  </SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>
+    No private persistent native arrays were added. Equipment requests SHINOBU active equipment, published equipment, AUP samples, grid-load requests, wear rates, telemetry ring/cursor, integration counters, tuning, and hardware specs by existing Vault generation descriptors; durability requests item state, pending decay, wear multiplier, slot active, and breakdown flags by generation descriptors.
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    Equipment integration consumes active DTOs, tool states, stats, AUP samples, wear rates, thermal grid readback, grid-load requests, counters, and typed signal writers with `[NoAlias]` pointer fields. Output handle: `_equipmentIntegrationHandle` registered to `H8Memory` and finalized through `DispatcherJobFence.TryFinalizeCompleted`. Durability decay consumes five non-overlapping `NativeArray` lanes and outputs `_scheduledDecayHandle`; this loop changed only pre-schedule guard order.
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>
+    No sibling runtime namespace or asmdef dependency was added. Build was not launched because CPU sampled 100%, and earlier guarded builds already hit non-SHINOBU dependency-wall errors.
+  </COMPILE_GUARD>
+  <DEAR_LIE>
+    Equipment remains scalar O(N slots) data math plus shader/VFX signals instead of per-prefab object simulation, battery chemistry, particle spawning, or fluid physics. The avoided path is scattered per-tool polling and duplicate descriptor work; after the Dear Lie, the player sees the same visual route through signals while CPU stays O(N) with low-quality cadence skips.
+  </DEAR_LIE>
+</SELF_AUDIT>
+
+### Ultra-Polish Service Heartbeat Resolver Purge 2026-05-20
+
+What was wrong:
+- `ModularEquipmentEngine.IsServiceReady` was not a pure readiness check. It read `GlobalRegistry.ModularEquipment` and called `AreEquipmentBuffersReady()`, which previously executed `TryResolveEquipmentViews(out _)`.
+- That allowed watchdog/bootstrap heartbeat probes to validate or reacquire all 17 active equipment Vault lanes outside the actual equipment execution phase.
+
+What was done:
+- Removed the live `GlobalRegistry.ModularEquipment` read from `IsServiceReady`.
+- Changed `AreEquipmentBuffersReady()` to check only local `VaultGenerationHandle<T>` descriptor creation for tool states, stats, types, heat, battery, masks, environment heat, active DTOs, published DTOs, AUP samples, grid-load requests, wear rates, telemetry ring/cursor, counters, tuning, and hardware specs.
+- Added `GlobalRegistryServiceSlot.ModularEquipment` handling in `ApplyRegistryServiceRebind()` so `_registeredService` stays synchronized through the registry hot-swap channel.
+
+Cinematic cheats used:
+- No gameplay simulation changed. This is a phase-discipline cut: readiness becomes a flag/descriptor read, while real equipment math still happens in the cadence-gated Burst pass.
+
+Exact microseconds saved or bounded:
+- Removes up to one 17-lane equipment descriptor resolve/acquire attempt per readiness poll. Estimated low-end gain: 1-4 us during watchdog/bootstrap service probe bursts.
+- Prevents hidden Vault acquisition from a property call, which is more important than the single-frame estimate because it preserves phase ownership.
+
+Verification:
+- Focused diff shows only `ModularEquipmentEngine.cs` readiness/hot-swap edits plus the durability guard ordering from the prior loop.
+- Forbidden hot-path scans still return no `job.Execute(`, persistent native aliases, legacy Vault pointer APIs, hot native allocations, LINQ, `foreach`, tool `Update`, coroutine, or `IEnumerator` hits in SHINOBU_224 runtime files.
+- No rebuild was launched; CPU gate remained at 100%.
+
+<SELF_AUDIT agent="SHINOBU_224" phase="service_heartbeat_resolver_purge">
+  <TASK_RECONCILIATION total="20">
+    <task id="01" status="PASS">No prefab update path added.</task>
+    <task id="02" status="PASS">No managed active registry added.</task>
+    <task id="03" status="PASS">No hot DTO properties added.</task>
+    <task id="04" status="PASS">No payload layout changed.</task>
+    <task id="05" status="PASS">Mock route remains cold and deterministic.</task>
+    <task id="06" status="PASS">Burst integration graph unchanged.</task>
+    <task id="07" status="PASS">Thermodynamic grid route unchanged.</task>
+    <task id="08" status="PASS">Overheat VFX remains signal fake.</task>
+    <task id="09" status="PASS">Depletion route unchanged.</task>
+    <task id="10" status="PASS">Readback fence unchanged.</task>
+    <task id="11" status="PASS">Readiness no longer bypasses cadence with full view resolve.</task>
+    <task id="12" status="PASS">No new power/grid dependency.</task>
+    <task id="13" status="PASS">AUP route unchanged.</task>
+    <task id="14" status="PASS">Rollback DTO route unchanged.</task>
+    <task id="15" status="PASS">Telemetry route unchanged.</task>
+    <task id="16" status="PASS">Editor tuner route unchanged.</task>
+    <task id="17" status="PASS">CSV route unchanged.</task>
+    <task id="18" status="PASS">Gizmo route unchanged.</task>
+    <task id="19" status="PASS">Validator/source proof updated.</task>
+    <task id="20" status="PASS">Status, rationale, ledger, and log updated for the readiness phase cut.</task>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>No DTO, counter, telemetry, signal, tuning, or hardware-spec layout changed.</STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE>Low-quality skipped frames and watchdog probes no longer pay full equipment view resolve from readiness. Continuous cadence and thermal quality blend remain the runtime scalability curve.</SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>No Vault ID or ownership changed; readiness now observes existing generation descriptors instead of resolving or acquiring buffers.</H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>No job pointer set changed. Equipment and durability scheduled handles remain as before.</POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No sibling runtime dependency added; registry ownership is tracked through the existing Core hot-swap slot.</COMPILE_GUARD>
+  <DEAR_LIE>Readiness is metadata only; no simulation or presentation model was added.</DEAR_LIE>
+</SELF_AUDIT>
+
+### Ultra-Polish Brownout Visual Query Narrowing 2026-05-20
+
+What was wrong:
+- `TryGetWirelessBrownoutFeedback()` resolved the full 17-lane `EquipmentVaultViews` set to read one wireless-upgrade bit from `ToolState`.
+- `TryGetToolBrownoutFeedback()` routed through `TryResolveSlot()`, which can fall back to a full active-equipment Vault view on a local mirror miss even though brownout flicker is visual-only.
+
+What was done:
+- Added `TryResolveToolStatesNoAcquire()` to read the existing `ShinobuActiveEquipmentToolStates` generation descriptor without acquiring or resolving unrelated equipment lanes.
+- Added `TryResolveOwnerMirrorSlot()` and kept `TryResolveSlot()` behavior unchanged for authoritative callers.
+- Routed wireless/tool brownout feedback through the owner mirror; wireless gating now reads only `ToolState.UpgradeBitmask`.
+
+Cinematic cheats used:
+- Brownout remains a scalar triangle-wave visual fake. No physical electrical simulation, prefab state mutation, particle spawn, or power-grid truth mutation was added.
+
+Exact microseconds saved or bounded:
+- Removes one full 17-lane equipment view resolve from each wireless brownout feedback query.
+- Prevents full-view fallback on cosmetic brownout pulse lookup.
+- Estimated low-end gain: 0.5-3 us under UI/VFX polling, depending on poll frequency and Vault metadata cache state.
+
+Verification:
+- Focused source scan confirms `TryGetWirelessBrownoutFeedback()` and `TryGetToolBrownoutFeedback()` no longer call `TryResolveEquipmentViews()`.
+- The patch changes no DTO layout, BufferID, signal payload, shader payload, public service interface, or asmdef reference.
+
+<SELF_AUDIT agent="SHINOBU_224" phase="brownout_visual_query_narrowing">
+  <TASK_RECONCILIATION total="20">
+    <task id="01" status="PASS">No tool `Update`/coroutine path added.</task>
+    <task id="02" status="PASS">No managed active-tool list added.</task>
+    <task id="03" status="PASS">No unmanaged DTO property added.</task>
+    <task id="04" status="PASS">No `ActiveEquipmentDTO` layout change.</task>
+    <task id="05" status="PASS">Mock state route unchanged.</task>
+    <task id="06" status="PASS">Burst integration job unchanged.</task>
+    <task id="07" status="PASS">Thermal grid math unchanged.</task>
+    <task id="08" status="PASS">Brownout/overheat presentation remains scalar/signal fake.</task>
+    <task id="09" status="PASS">Battery depletion route unchanged.</task>
+    <task id="10" status="PASS">Published readback fence unchanged.</task>
+    <task id="11" status="PASS">Visual brownout query no longer bypasses cadence with full equipment view resolve.</task>
+    <task id="12" status="PASS">No new power-grid dependency or load route added.</task>
+    <task id="13" status="PASS">AUP mapping unchanged.</task>
+    <task id="14" status="PASS">Rollback payload unchanged and still blittable.</task>
+    <task id="15" status="PASS">Telemetry ring route unchanged.</task>
+    <task id="16" status="PASS">Editor tuner route unchanged.</task>
+    <task id="17" status="PASS">CSV ingest route unchanged.</task>
+    <task id="18" status="PASS">Editor gizmo route unchanged.</task>
+    <task id="19" status="PASS">Static proof/docs updated.</task>
+    <task id="20" status="PASS">Status, rationale, ledger, and log updated for this source delta.</task>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>No primary DTO, telemetry, counter, signal, tuning, or hardware-spec layout changed. `ActiveEquipmentDTO` remains explicit 32B: ToolHashID 0:4, CurrentBattery 4:4, ThermalLoad 8:4, StateFlags 12:4, PowerDrawRate 16:4, HeatGenerationRate 20:4, pad 24..31:8.</STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE>Below quality 0.3 the main equipment cadence still stretches by `GlobalQualityWeight`; this patch prevents high-frequency visual flicker polling from resolving all equipment lanes outside that cadence. Low pays owner-mirror scan plus one ToolState descriptor check; Middle/High/Ultra preserve identical flicker scalar and can spend saved CPU on richer downstream shader/audio response.</SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>No new private array allocation and no new Vault ID. The query consumes the existing ToolState generation descriptor only; all equipment lanes remain owned by the existing active equipment Vault route.</H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>No job pointer set changed. No new JobHandle was introduced. Existing integration and durability dependency graphs remain unchanged.</POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No sibling runtime dependency or asmdef edge was added. Public service contracts were not expanded.</COMPILE_GUARD>
+  <DEAR_LIE>Brownout feedback is a triangle-wave scalar presentation fake. Before this cut, the fake could still pay O(VaultLaneCount) metadata work; after the cut it is O(MaxTrackedTools) owner-mirror scan plus one descriptor read, with no physical electrical simulation.</DEAR_LIE>
+</SELF_AUDIT>
+
+### Ultra-Polish Public Scalar Getter Narrowing 2026-05-20
+
+What was wrong:
+- `TryGetToolState()` and `TryGetToolStats()` resolved the full 17-lane `EquipmentVaultViews` bundle even though they return only ToolState or ToolStats.
+- Scalar accessors such as range, power, heat generation, cooldown, battery drain, durability drain, recoil, and efficiency inherit that cost.
+
+What was done:
+- `TryGetToolState()` now uses `TryResolveToolStatesNoAcquire()` and clamps the copied battery scalar locally.
+- `TryGetToolStats()` now uses the new `TryResolveToolStatsNoAcquire()` helper.
+- Authoritative setters and multi-lane mutation paths still use `TryResolveEquipmentViews()` to keep ToolState, ToolStats, DTOs, mirrors, and publication coherent.
+
+Cinematic cheats used:
+- No new simulation path. This is a read-side phase cut so gameplay scalar queries do not pay for unrelated Vault lanes.
+
+Exact microseconds saved or bounded:
+- Removes up to 16 unrelated descriptor validations from each state/stats getter call after owner-slot lookup.
+- Estimated low-end gain: 0.5-4 us under active tool spam/UI polling.
+
+Verification:
+- Focused source proof: `TryGetToolState`, `TryGetToolStats`, `TryGetWirelessBrownoutFeedback`, and `TryGetToolBrownoutFeedback` contain no `TryResolveEquipmentViews()` call.
+- No DTO layout, BufferID, signal payload, shader payload, public interface, or asmdef edge changed.
+
+<SELF_AUDIT agent="SHINOBU_224" phase="public_scalar_getter_narrowing">
+  <TASK_RECONCILIATION total="20">
+    <task id="01" status="PASS">No tool `Update` or coroutine path added.</task>
+    <task id="02" status="PASS">No managed active-tool collection added.</task>
+    <task id="03" status="PASS">No unmanaged DTO property added.</task>
+    <task id="04" status="PASS">No layout change to `ActiveEquipmentDTO`.</task>
+    <task id="05" status="PASS">Mock route unchanged.</task>
+    <task id="06" status="PASS">Burst integration route unchanged.</task>
+    <task id="07" status="PASS">Environmental cooling route unchanged.</task>
+    <task id="08" status="PASS">Presentation remains signal/scalar fake.</task>
+    <task id="09" status="PASS">Battery depletion route unchanged.</task>
+    <task id="10" status="PASS">Readback publication unchanged.</task>
+    <task id="11" status="PASS">Getter reads no longer force broad view validation outside cadence.</task>
+    <task id="12" status="PASS">No power-grid bridge change.</task>
+    <task id="13" status="PASS">AUP route unchanged.</task>
+    <task id="14" status="PASS">Rollback payload unchanged.</task>
+    <task id="15" status="PASS">Telemetry route unchanged.</task>
+    <task id="16" status="PASS">Editor tuner route unchanged.</task>
+    <task id="17" status="PASS">CSV ingest route unchanged.</task>
+    <task id="18" status="PASS">Gizmo route unchanged.</task>
+    <task id="19" status="PASS">Static proof/docs updated.</task>
+    <task id="20" status="PASS">Status, rationale, ledger, and log updated for this read-path cut.</task>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>No struct layout changed. `ActiveEquipmentDTO` remains 32B explicit layout; `EquipmentIntegrationCounters` remains 64B padded counter row.</STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE>Low quality still stretches equipment integration cadence by `GlobalQualityWeight`; this patch prevents high-frequency read-only scalar getters from resolving unrelated lanes on skipped frames. Middle/High/Ultra preserve exact scalar output and can spend saved CPU on richer presentation.</SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>No new private native allocation and no new Vault route. Existing ToolState and ToolStats generation descriptors are observed with no-acquire local views.</H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>No Burst job or `JobHandle` graph changed. The patch affects read-only main-thread service getters only.</POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No sibling runtime namespace, asmdef edge, or public contract mutation was introduced.</COMPILE_GUARD>
+  <DEAR_LIE>Getter traffic remains scalar metadata for visual/control tuning, not physical simulation. The path is now O(MaxTrackedTools + one lane) instead of O(MaxTrackedTools + all equipment lane descriptor checks) in the owner-mirror success case.</DEAR_LIE>
+</SELF_AUDIT>
+
+### Ultra-Polish Published Read And Telemetry Getter Narrowing 2026-05-20
+
+What was wrong:
+- Published DTO, telemetry, and tuning getters resolved the full 17-lane equipment view set.
+- HUD/editor/debug readers could therefore validate unrelated ToolState, ToolStats, AUP, grid-load, wear-rate, hardware-spec, active-state, and tuning lanes.
+
+What was done:
+- Added `TryResolvePublishedActiveEquipmentNoAcquire()` for published DTO reads.
+- Added `TryResolveEquipmentTelemetryNoAcquire()` for telemetry ring/cursor reads.
+- Routed `TryGetEquipmentTuning()` through the existing `TryResolveEquipmentTuningNoAcquire()` helper.
+
+Cinematic cheats used:
+- No simulation change. UI/debug readers now consume already-published data lanes instead of touching simulation-authority lanes.
+
+Exact microseconds saved or bounded:
+- Avoids unrelated descriptor validation in published-state, telemetry, and tuning reads.
+- Estimated low-end gain: 0.5-5 us under HUD/tuner/debug polling.
+
+Verification:
+- Focused source proof: `TryGetPublishedActiveEquipmentState`, `TryGetActiveEquipmentSlot`, `TryGetLatestEquipmentTelemetry`, `TryGetEquipmentTelemetryEntry`, `TryGetEquipmentTuning`, `TryGetToolState`, `TryGetToolStats`, `TryGetWirelessBrownoutFeedback`, and `TryGetToolBrownoutFeedback` contain no `TryResolveEquipmentViews()` call.
+- No DTO layout, BufferID, signal payload, shader payload, public interface, or asmdef edge changed.
+
+<SELF_AUDIT agent="SHINOBU_224" phase="published_read_telemetry_getter_narrowing">
+  <TASK_RECONCILIATION total="20">
+    <task id="01" status="PASS">No tool `Update` or coroutine path added.</task>
+    <task id="02" status="PASS">No managed active-tool collection added.</task>
+    <task id="03" status="PASS">No unmanaged DTO property added.</task>
+    <task id="04" status="PASS">No layout change to `ActiveEquipmentDTO`.</task>
+    <task id="05" status="PASS">Mock route unchanged.</task>
+    <task id="06" status="PASS">Burst integration route unchanged.</task>
+    <task id="07" status="PASS">Thermal cooling route unchanged.</task>
+    <task id="08" status="PASS">Presentation remains scalar/signal fake.</task>
+    <task id="09" status="PASS">Battery depletion route unchanged.</task>
+    <task id="10" status="PASS">Published readback remains fenced; readers now use the published lane only.</task>
+    <task id="11" status="PASS">Getter reads no longer force broad view validation outside cadence.</task>
+    <task id="12" status="PASS">No power-grid bridge change.</task>
+    <task id="13" status="PASS">AUP route unchanged.</task>
+    <task id="14" status="PASS">Rollback payload unchanged.</task>
+    <task id="15" status="PASS">Telemetry ring ownership unchanged; reads now use ring/cursor descriptors only.</task>
+    <task id="16" status="PASS">Editor tuner can read tuning without full equipment view resolution.</task>
+    <task id="17" status="PASS">CSV ingest route unchanged.</task>
+    <task id="18" status="PASS">Gizmo route unchanged.</task>
+    <task id="19" status="PASS">Static proof/docs updated.</task>
+    <task id="20" status="PASS">Status, rationale, ledger, and log updated for this read-path cut.</task>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT_VERIFICATION>No struct layout changed. `ActiveEquipmentDTO` remains 32B explicit layout with 24B fields plus 8B explicit padding.</STRUCT_LAYOUT_VERIFICATION>
+  <SCALABILITY_CURVE>Low quality still reduces integration cadence through `GlobalQualityWeight`; UI/debug reads now consume only published/telemetry/tuning lanes, so skipped simulation frames are not backfilled by broad getter metadata traffic. Higher tiers preserve identical read data.</SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>No new private native allocation and no new Vault route. Existing published-state, telemetry ring/cursor, and tuning descriptors are observed with no-acquire local views.</H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>No Burst job or `JobHandle` graph changed. The patch affects read-only service getters only.</POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No sibling runtime namespace, asmdef edge, or public contract mutation was introduced.</COMPILE_GUARD>
+  <DEAR_LIE>Readers consume published scalar DTOs and telemetry, not live simulation reconstruction. The path is O(one required lane) after slot resolution instead of O(all equipment lane descriptor checks).</DEAR_LIE>
 </SELF_AUDIT>

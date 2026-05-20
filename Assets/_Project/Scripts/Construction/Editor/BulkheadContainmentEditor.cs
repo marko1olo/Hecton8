@@ -89,8 +89,7 @@ namespace Hecton8.Construction.Editor
             if (string.IsNullOrEmpty(path))
                 return;
 
-            byte[] bytes = File.ReadAllBytes(path);
-            BulkheadContainmentRuntime.TryLoadProfilesFromCsvBytes(bytes);
+            BulkheadContainmentRuntime.TryLoadProfilesFromCsvFile(path);
         }
     }
 

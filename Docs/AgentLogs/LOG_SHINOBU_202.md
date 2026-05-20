@@ -1265,3 +1265,155 @@ Compile status:
   <VaultBufferIds>ProceduralBoneBlenderBufferIds.Rigs, FrameInputs, ParentIndices, BindPoses, BoneStates, BoneMatrices, FrameStats, TelemetryRing, TelemetryCursor, Tuning, MockAiSignals.</VaultBufferIds>
   <ResidualRisk>Runtime/Unity import proof remains pending behind the existing compile wall and build gate.</ResidualRisk>
 </SELF_AUDIT>
+
+## 2026-05-20 SHINOBU_202 Kinetic Character Animator Descriptor Pass
+
+What was wrong:
+- `KineticCharacterAnimatorRuntime.cs` persisted twelve `VaultBufferHandle<T>` descriptors.
+- Owned runtime/editor/CSV/GPU paths used `.Resolve(vault)`.
+- Player-state and voxel-SDF reads bypassed generation descriptors through direct `TryGetBuffer`.
+- Teardown and DataVault replacement cleared descriptors without releasing owned Vault lanes.
+
+What was done:
+- Replaced all twelve owned descriptors with `VaultGenerationHandle<T>`.
+- Added generation-checked owned and external resolve helpers.
+- Routed `PlayerKinematicState` and `VoxelSdfTexture3D` through transient `TryGetGenerationHandle` + `TryResolveHandle`.
+- Completed outstanding solver jobs before releasing exact owned descriptors on disable, destroy, and DataVault replacement.
+
+Cinematic cheats used:
+- The runtime remains the existing procedural locomotion matrix fake with SDF wall-brace sampling; no Animator graph or rigid-body limb simulation was introduced.
+
+Exact microseconds saved:
+- Removed all legacy Vault scanner hits from `KineticCharacterAnimatorRuntime.cs`, including `TryGetBuffer`.
+- Hot staging pays bounded O(12) owned generation compares plus local external resolves only when player/SDF data is consumed.
+
+Compile status:
+- Targeted scan is clean for old pointer-bearing Vault routes in `KineticCharacterAnimatorRuntime.cs`.
+- `git diff --check` passed for `KineticCharacterAnimatorRuntime.cs`; no whitespace errors.
+- Full compile was not relaunched because prior generated-project blockers remain and the user explicitly forbade unnecessary rebuilds.
+
+<SELF_AUDIT ultra_pass="kinetic_character_descriptor_migration">
+  <Task id="01" impact="PASS_DELTA">Kinetic character no longer persists pointer-bearing Vault descriptors or direct external Vault views.</Task>
+  <Task id="02" impact="PASS_DELTA">Owned locomotion descriptors release after solver completion on disable, destroy, and DataVault replacement.</Task>
+  <Task id="06" impact="PASS_REUSE">Solver, telemetry, editor, CSV, SDF, player-state, and GPU upload views resolve through generation descriptors.</Task>
+  <Task id="08" impact="PASS_REUSE">Locomotion remains a procedural matrix fake, not a CPU Animator/rigid-body stack.</Task>
+  <VaultBufferIds>KineticCharacterAnimatorBufferIds.Rigs, FrameInputs, ParentIndices, BindPoses, BoneOutputs, BoneMatrices, IkTargets, FrameStats, TelemetryRing, TelemetryCursor, Tuning, CsvScratch; external BufferID.PlayerKinematicState and BufferID.VoxelSdfTexture3D resolve transiently.</VaultBufferIds>
+  <ResidualRisk>Runtime/Unity import proof remains pending behind the existing compile wall and build gate.</ResidualRisk>
+</SELF_AUDIT>
+
+## 2026-05-20 SHINOBU_202 Laser Cutter DOD Scalability Descriptor Patch
+
+What was wrong:
+- `LaserCutterDodRuntime.cs` had one remaining `TryGetBufferHandle` route for `ShinobuScalabilityState`.
+
+What was done:
+- Replaced it with transient `TryGetGenerationHandle<ScalabilityStateDTO>` plus `TryResolveHandle`.
+
+Cinematic cheats used:
+- Existing laser cutter quality weighting remains a shader/VFX budget scalar, not a physical cutter simulation.
+
+Exact microseconds saved:
+- Removed the final legacy Vault scanner hit from `LaserCutterDodRuntime.cs`.
+- Cost is one local generation descriptor resolve on quality reads.
+
+Compile status:
+- Targeted scan is clean for old pointer-bearing Vault routes in `LaserCutterDodRuntime.cs`.
+- `git diff --check` passed for `LaserCutterDodRuntime.cs`; CRLF warning only.
+- Full compile was not relaunched because prior generated-project blockers remain and the user explicitly forbade unnecessary rebuilds.
+
+<SELF_AUDIT ultra_pass="laser_cutter_scalability_descriptor_patch">
+  <Task id="01" impact="PASS_DELTA">Laser cutter DOD has no remaining legacy Vault handle API hit.</Task>
+  <Task id="06" impact="PASS_REUSE">Scalability quality state resolves through generation descriptors.</Task>
+  <Task id="08" impact="PASS_REUSE">Laser cutting remains quality-weighted VFX feedback instead of CPU-heavy material simulation.</Task>
+  <VaultBufferIds>BufferID.ShinobuScalabilityState is external and resolves transiently only.</VaultBufferIds>
+  <ResidualRisk>Runtime/Unity import proof remains pending behind the existing compile wall and build gate.</ResidualRisk>
+</SELF_AUDIT>
+
+## 2026-05-20 SHINOBU_202 Tool Kinematics Editor Facade Descriptor Pass
+
+What was wrong:
+- `ToolKinematicsTunerWindow.cs` cached seven `VaultBufferHandle<T>` descriptors.
+- The editor facade used `ResolveBuffer(ref handle)` and `.Resolve(vault)` against Play Mode Vault lanes.
+
+What was done:
+- Replaced editor descriptors with `VaultGenerationHandle<T>`.
+- Added generation-checked editor view resolution and exact descriptor release on window close or Vault rebind.
+
+Cinematic cheats used:
+- No runtime simulation changed; the facade only observes the existing tool ray/beam visual fake.
+
+Exact microseconds saved:
+- Removed all legacy Vault scanner hits from `ToolKinematicsTunerWindow.cs`.
+- No player-frame cost; editor-only generation checks run only while the window/gizmo is active.
+
+Compile status:
+- Targeted scan is clean for old pointer-bearing Vault routes in `ToolKinematicsTunerWindow.cs`.
+- `git diff --check` passed for `ToolKinematicsTunerWindow.cs`; CRLF warning only.
+- Full compile was not relaunched because prior generated-project blockers remain and the user explicitly forbade unnecessary rebuilds.
+
+<SELF_AUDIT ultra_pass="tool_kinematics_editor_descriptor_migration">
+  <Task id="01" impact="PASS_DELTA">Tool kinematics editor no longer caches pointer-bearing Vault descriptors.</Task>
+  <Task id="02" impact="PASS_DELTA">Editor-acquired descriptors release on window close or Vault rebind.</Task>
+  <Task id="06" impact="PASS_REUSE">Tuning, runtime-state, and gizmo views resolve through generation descriptors.</Task>
+  <Task id="17" impact="PASS_DELTA">Designer facade remains available without preserving legacy Vault handles.</Task>
+  <VaultBufferIds>ToolKinematicsTuning, ToolKinematicsStates, ToolKinematicsFrameInputs, ToolKinematicsHitResults, ToolKinematicsPoseOutputs, ToolKinematicsBeamVertices, ToolKinematicsBeamVertexCounts.</VaultBufferIds>
+  <ResidualRisk>Runtime `ToolKinematicsRuntime.cs` still has legacy ref-return APIs and requires a separate guarded pass.</ResidualRisk>
+</SELF_AUDIT>
+
+## 2026-05-20 SHINOBU_202 Tool Kinematics Runtime Descriptor Pass
+
+What was wrong:
+- `ToolKinematicsRuntime.cs` persisted fifteen `VaultBufferHandle<T>` descriptors.
+- Runtime staging used `ResolveBuffer(ref handle)` and `.Resolve(vault)` before Burst job scheduling.
+- The unused public `ToolKinematicsVaultAccess` class exposed byref mutation through `GetElementAsRef`.
+
+What was done:
+- Replaced all runtime descriptors with `VaultGenerationHandle<T>`.
+- Added generation-checked runtime view resolution and exact descriptor release on disable, destroy, or Vault rebind.
+- Removed the unused ref-return accessor class.
+
+Cinematic cheats used:
+- Tool feedback remains bounded raymarch/IK/beam VFX and signal payloads; no mesh collider or physical beam simulation was introduced.
+
+Exact microseconds saved:
+- Removed all legacy Vault scanner hits from `ToolKinematicsRuntime.cs`.
+- Hot staging pays bounded O(15) generation compares before jobs receive local `NativeArray<T>` views.
+
+Compile status:
+- Targeted scan is clean for old pointer-bearing Vault routes in `ToolKinematicsRuntime.cs`.
+- `git diff --check` passed for `ToolKinematicsRuntime.cs`; CRLF warning only.
+- Full compile was not relaunched because prior generated-project blockers remain and the user explicitly forbade unnecessary rebuilds.
+
+<SELF_AUDIT ultra_pass="tool_kinematics_runtime_descriptor_migration">
+  <Task id="01" impact="PASS_DELTA">Tool kinematics runtime no longer persists pointer-bearing Vault descriptors.</Task>
+  <Task id="02" impact="PASS_DELTA">Owned tool kinematics descriptors release on disable, destroy, and Vault rebind.</Task>
+  <Task id="06" impact="PASS_REUSE">Fixed, post-fixed, slow tick, CSV, telemetry, and blackbox views resolve through generation descriptors.</Task>
+  <Task id="08" impact="PASS_REUSE">Tool effects remain bounded raymarch/beam fakes instead of CPU-heavy physics.</Task>
+  <VaultBufferIds>ToolKinematicsStates, FrameInputs, HitResults, IkOutputs, RecoilStates, Tuning, ScreenExports, TelemetryRing, MockTriggerSignals, MockCarveRequests, HeatSignals, SparkRequests, BeamVertices, BeamVertexCounts, PoseOutputs.</VaultBufferIds>
+  <ResidualRisk>Runtime/Unity import proof remains pending behind the existing compile wall and build gate.</ResidualRisk>
+</SELF_AUDIT>
+
+## 2026-05-20 SHINOBU_202 Tool Durability Audit Naming Patch
+
+What was wrong:
+- `ToolDurabilitySystem.cs` used generation descriptors, but its helper name `TryResolveBuffer` polluted broad legacy ResolveBuffer scans.
+
+What was done:
+- Renamed the helper and callers to `TryResolveDurabilityView`.
+
+Cinematic cheats used:
+- No runtime behavior changed.
+
+Exact microseconds saved:
+- Zero runtime delta. Broad `Animation` + `Tools` scan now has no forbidden Vault pointer API hits.
+
+Compile status:
+- Targeted scan is clean for old pointer-bearing Vault routes in `ToolDurabilitySystem.cs`.
+- `git diff --check` passed for `ToolDurabilitySystem.cs`; CRLF warning only.
+- Full compile was not relaunched because prior generated-project blockers remain and the user explicitly forbade unnecessary rebuilds.
+
+<SELF_AUDIT ultra_pass="tool_durability_audit_name_cleanup">
+  <Task id="01" impact="PASS_AUDIT">False-positive ResolveBuffer naming removed from a generation-descriptor tools system.</Task>
+  <Task id="06" impact="PASS_REUSE">Durability state lanes continue to resolve through generation descriptors.</Task>
+  <ResidualRisk>Runtime/Unity import proof remains pending behind the existing compile wall and build gate.</ResidualRisk>
+</SELF_AUDIT>

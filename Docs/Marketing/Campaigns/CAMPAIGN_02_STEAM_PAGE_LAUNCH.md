@@ -144,7 +144,7 @@ Machine gate:
 | First capture session | `KEEP_TESTING`; no first-page surface depends on `HOLD_ASSET` or `KILL_ANGLE` rows | `Content/SCREENSHOT_AND_CLIP_SHOTLIST.md`, `QA/MARKETING_ASSET_QA_CHECKLIST.md` |
 | Screenshot campaign | `KEEP` decision, not `REVISE` or `KILL` | `Campaigns/CAMPAIGN_01_FIRST_SCREENSHOT_DROP.md` |
 | Asset intake | Metadata rows for first-page assets have factual path/build/date/source and dashboard join rows | `Operations/ASSET_LIBRARY_NAMING_AND_VERSION_CONTROL.md`, `KPI/MARKETING_DASHBOARD_SPEC.md` |
-| Agency/decision proof | `PLAN-SHOT-006`, `PLAN-CLIP-001`, or `PLAN-CLIP-003` passes factual metadata, QA, and AB-009/KPI blind-read checks with `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision` filled | `Content/SCREENSHOT_AND_CLIP_SHOTLIST.md`, `QA/MARKETING_ASSET_QA_CHECKLIST.md`, `Steam/STEAM_PAGE_ASSET_REQUIREMENTS_CHECKLIST.md`, `Experiments/A_B_TESTING_AND_CREATIVE_EXPERIMENTS.md`, `KPI/MARKETING_DASHBOARD_SPEC.md` |
+| Agency/decision proof | `PLAN-SHOT-006`, `PLAN-CLIP-001`, or `PLAN-CLIP-003` passes factual metadata, QA, non-pending `viewer_named_decision`, `capture_verdict = KEEP_TESTING` or stronger campaign `KEEP`, and AB-009/KPI blind-read checks with `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision` filled | `Content/SCREENSHOT_AND_CLIP_SHOTLIST.md`, `QA/MARKETING_ASSET_QA_CHECKLIST.md`, `Steam/STEAM_PAGE_ASSET_REQUIREMENTS_CHECKLIST.md`, `Experiments/A_B_TESTING_AND_CREATIVE_EXPERIMENTS.md`, `KPI/MARKETING_DASHBOARD_SPEC.md` |
 | Steam page assembly | Candidate A/B/C selected by evidence | `Steam/STORE_PAGE_COPY_MATRIX.md` |
 | Steam asset ticket | 6+ public shots pass and rejects are logged | `Steam/STEAM_PAGE_ASSET_REQUIREMENTS_CHECKLIST.md` |
 | Capsule test | AB-002 has a winner | `Experiments/A_B_TESTING_AND_CREATIVE_EXPERIMENTS.md` |
@@ -165,7 +165,7 @@ Machine gate:
 | First screenshot | `PLAN-SHOT-001` or winning AB-001 asset. |
 | Player verb screenshot | `PLAN-SHOT-003`. |
 | Base/machinery screenshot | One of `PLAN-SHOT-002`, `PLAN-SHOT-004`, or `PLAN-SHOT-005`. |
-| Agency/decision proof | `PLAN-SHOT-006`, `PLAN-CLIP-001`, or `PLAN-CLIP-003`; `PLAN-SHOT-007` can add anomaly flavor but cannot replace decision proof. The owning AB-009/KPI row must store the named pressure decision in `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`. |
+| Agency/decision proof | `PLAN-SHOT-006`, `PLAN-CLIP-001`, or `PLAN-CLIP-003`; `PLAN-SHOT-007` can add anomaly flavor but cannot replace decision proof. The asset metadata row must store non-pending `viewer_named_decision` and a valid `capture_verdict`, and the owning AB-009/KPI row must store the named pressure decision in `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`. |
 | Capsule | AB-002 winner from `PLAN-CAPSULE-001`. |
 | Trailer | Optional; if included, first 3 seconds must be AB-006 winner. |
 

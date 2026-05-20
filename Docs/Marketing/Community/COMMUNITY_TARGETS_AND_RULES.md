@@ -16,7 +16,7 @@ Community posting is for critique and signal, not drive-by promotion.
 
 Every subreddit/forum/Discord must have its rules checked immediately before posting. Rules change. Mods do not care that a strategy doc said something was acceptable.
 
-Agency-proof boundary: community posts can ask whether a player decision reads, but they do not advance first-public, Steam, paid, creator, press, or Discord-open gates unless the resulting row preserves the viewer-named decision in `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`.
+Agency-proof boundary: community posts can ask whether a player decision reads, but they do not advance first-public, Steam, paid, creator, press, or Discord-open gates unless the asset metadata row has non-pending `viewer_named_decision`, valid non-held `capture_verdict`, and the resulting row preserves the viewer-named decision in `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`.
 
 ## Post Types That Are Usually Safer
 
@@ -59,7 +59,7 @@ Avoid:
 - pure beauty shots;
 - heavy lore;
 - Steam link first.
-- claiming gameplay/pressure/route-risk proof before AB-009/KPI decision-read fields exist.
+- claiming gameplay/pressure/route-risk proof before metadata `viewer_named_decision`/`capture_verdict` and AB-009/KPI decision-read fields exist.
 
 ### Horror / Atmosphere Players
 

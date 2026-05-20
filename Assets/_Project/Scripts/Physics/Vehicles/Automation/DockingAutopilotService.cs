@@ -67,12 +67,12 @@ namespace Hecton8.Vehicles.Automation
         [FieldOffset(55)] public byte Reserved2;
     }
 
-    [BurstCompile]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal unsafe struct CubicBezierJob : IJobParallelFor
     {
-        [NativeDisableUnsafePtrRestriction] public ActiveSplineData* Splines;
-        [NativeDisableUnsafePtrRestriction] public float* Progress01;
-        [NativeDisableUnsafePtrRestriction] public DockingSplineSample* Samples;
+        [NoAlias, NativeDisableUnsafePtrRestriction, ReadOnly] public ActiveSplineData* Splines;
+        [NoAlias, NativeDisableUnsafePtrRestriction, ReadOnly] public float* Progress01;
+        [NoAlias, NativeDisableUnsafePtrRestriction, WriteOnly] public DockingSplineSample* Samples;
         public int SplineLength;
         public int ProgressLength;
         public int SampleLength;

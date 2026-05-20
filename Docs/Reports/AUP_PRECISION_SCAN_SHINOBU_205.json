@@ -1,10 +1,10 @@
 {
   "schema": "hecton8.aup_precision_gate.shinobu_205.v1",
   "scannerId": "SHINOBU_205_AUP_PRECISION_INSPECTOR",
-  "generatedUtc": "2026-05-20T11:04:36.890516Z",
+  "generatedUtc": "2026-05-20T14:28:55.528719Z",
   "sourceRoot": "Assets/_Project/Scripts",
-  "status": "FAIL_STATIC_GATE",
-  "hardBlockerCount": 3,
+  "status": "PASS_STATIC_GATE",
+  "hardBlockerCount": 0,
   "thresholds": {
     "maxDirectAupFloat3Casts": 0,
     "maxRuntimeComponentFloatAupCasts": 0,
@@ -15,72 +15,23 @@
   "ownedVaultIds": "73200..73208",
   "layoutValidationFailures": "PENDING_UNITY_EDITOR_RUN",
   "counts": {
-    "filesScanned": 2013,
-    "approvedHelperCalls": 60,
+    "filesScanned": 2027,
+    "approvedHelperCalls": 77,
     "directAupFloat3CastCount": 0,
-    "runtimeComponentFloatAupCastCount": 2,
-    "editorComponentFloatAupCastReviewCount": 5,
-    "strictTransformAuthorityReadCount": 1,
-    "broadTransformPositionReviewCount": 959,
-    "floatDistanceReviewCount": 29,
-    "blockedCastFindings": [
-      {
-        "file": "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
-        "line": 164,
-        "kind": "COMPONENT_FLOAT3_AUP_CAST",
-        "snippet": "float3 localAup = SanitizeFinite(new float3((float)(currentAup.x - sector.x), (float)(currentAup.y - sector.y), (float)(currentAup.z - sector.z)), float3.zero);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs",
-        "line": 411,
-        "kind": "COMPONENT_FLOAT3_AUP_CAST",
-        "snippet": "float3 local = new float3((float)deltaAup.x, (float)deltaAup.y, (float)deltaAup.z);"
-      }
-    ],
-    "editorComponentFloatAupCastReviews": [
-      {
-        "file": "Assets/_Project/Scripts/Editor/ResidencyStreamingTunerWindow.cs",
-        "line": 167,
-        "kind": "EDITOR_COMPONENT_FLOAT_AUP_CAST_REVIEW",
-        "snippet": "Vector3 center = new Vector3((float)chunk.AUP_Center.x, 0f, (float)chunk.AUP_Center.z);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Editor/VolcanicUpdraftTunerWindow.cs",
-        "line": 100,
-        "kind": "EDITOR_COMPONENT_FLOAT_AUP_CAST_REVIEW",
-        "snippet": "Vector3 basePos = _runtime.transform.position + new Vector3((float)vent.AUP.x, (float)vent.AUP.y, (float)vent.AUP.z);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/ProceduralCoral/Editor/ProceduralCoralDebugGizmo.cs",
-        "line": 43,
-        "kind": "EDITOR_COMPONENT_FLOAT_AUP_CAST_REVIEW",
-        "snippet": "Vector3 start = new Vector3((float)segment.StartAUP.x, (float)segment.StartAUP.y, (float)segment.StartAUP.z);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/ProceduralCoral/Editor/ProceduralCoralDebugGizmo.cs",
-        "line": 44,
-        "kind": "EDITOR_COMPONENT_FLOAT_AUP_CAST_REVIEW",
-        "snippet": "Vector3 end = new Vector3((float)segment.EndAUP.x, (float)segment.EndAUP.y, (float)segment.EndAUP.z);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/World/ProceduralWreckage/Editor/ProceduralWreckageDebugGizmo.cs",
-        "line": 44,
-        "kind": "EDITOR_COMPONENT_FLOAT_AUP_CAST_REVIEW",
-        "snippet": "Vector3 center = new Vector3((float)cell.CenterAUP.x, (float)cell.CenterAUP.y, (float)cell.CenterAUP.z);"
-      }
-    ],
-    "strictTransformAuthorityFindings": [
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/SealedDoor.cs",
-        "line": 590,
-        "kind": "TRANSFORM_POSITION_AUTHORITY_BLOCK",
-        "snippet": "double3 centerAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(_transform.position);"
-      }
-    ],
+    "runtimeComponentFloatAupCastCount": 0,
+    "editorComponentFloatAupCastReviewCount": 0,
+    "strictTransformAuthorityReadCount": 0,
+    "broadTransformPositionReviewCount": 936,
+    "floatDistanceReviewCount": 0,
+    "transformDistanceReviewCount": 0,
+    "runtimeAupBridgeReviewCount": 367,
+    "blockedCastFindings": [],
+    "editorComponentFloatAupCastReviews": [],
+    "strictTransformAuthorityFindings": [],
     "broadTransformPositionFindings": [
       {
         "file": "Assets/_Project/Scripts/Animation/KineticCharacter/KineticCharacterAnimatorRuntime.cs",
-        "line": 860,
+        "line": 868,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 cameraPosition = _cameraTransform.position;"
       },
@@ -140,13 +91,13 @@
       },
       {
         "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
-        "line": 3233,
+        "line": 3243,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 origin = originTransform != null ? originTransform.position : transform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
-        "line": 3688,
+        "line": 3698,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 toImpact = runtimePosition - _boundPlayerTransform.position;"
       },
@@ -164,49 +115,49 @@
       },
       {
         "file": "Assets/_Project/Scripts/BaseModule.cs",
-        "line": 2965,
+        "line": 2975,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "return probe.position.y < ResolveFloodSurfaceWorldY();"
       },
       {
         "file": "Assets/_Project/Scripts/BaseModule.cs",
-        "line": 4210,
+        "line": 4237,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "center = transform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/BeaconDeployerTool.cs",
-        "line": 157,
+        "line": 158,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "spawnPosition = _cachedTransform.position + _cachedTransform.forward * 4f;"
       },
       {
         "file": "Assets/_Project/Scripts/BeaconDeployerTool.cs",
-        "line": 201,
+        "line": 202,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "if (!BeaconNetworkSystem.TryGetNearest(_cachedTransform.position, out BeaconNetworkSystem.BeaconSnapshot nearestSnapshot, out float nearestDistance))"
       },
       {
         "file": "Assets/_Project/Scripts/BeaconDeployerTool.cs",
-        "line": 218,
+        "line": 219,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "if (BeaconNetworkSystem.TryRetractNearest(_cachedTransform.position, out BeaconRuntime nearest, out float distance))"
       },
       {
         "file": "Assets/_Project/Scripts/BeaconDeployerTool.cs",
-        "line": 220,
+        "line": 221,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 position = nearest.transform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/BeaconDeployerTool.cs",
-        "line": 360,
+        "line": 361,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "return TryResolveQueuedRaycast(_cachedTransform.position, _cachedTransform.forward, deployRange, deploymentMask.value, QueryTriggerInteraction.Ignore, out hit);"
       },
       {
         "file": "Assets/_Project/Scripts/BeaconDeployerTool.cs",
-        "line": 526,
+        "line": 546,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "if (!BeaconNetworkSystem.TryGetNearest(_cachedTransform.position, out BeaconNetworkSystem.BeaconSnapshot nearest, out distance))"
       },
@@ -254,7 +205,7 @@
       },
       {
         "file": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
-        "line": 4276,
+        "line": 4295,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 playerPosition = playerObject.transform.position;"
       },
@@ -428,21 +379,21 @@
       },
       {
         "file": "Assets/_Project/Scripts/Construction/AutonomousExtractorSystem.cs",
-        "line": 753,
+        "line": 754,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "if (TryResolveNearestValidNode(transform.position, bindingRefreshRadius, runtime, out ResourceNode node))"
+        "snippet": "Vector3 moduleVisualPosition = transform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Construction/AutonomousExtractorSystem.cs",
-        "line": 840,
+        "line": 842,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "spawnPosition = origin.position + worldDirection * outputForwardOffset + Vector3.up * outputLiftOffset;"
       },
       {
         "file": "Assets/_Project/Scripts/Construction/AutonomousExtractorSystem.cs",
-        "line": 918,
+        "line": 957,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "float distanceSqr = (candidate.transform.position - position).sqrMagnitude;"
+        "snippet": "Vector3 candidateRuntimePosition = candidate != null ? candidate.transform.position : queryRuntimePosition;"
       },
       {
         "file": "Assets/_Project/Scripts/Construction/BaseDegradationSystem.cs",
@@ -476,63 +427,39 @@
       },
       {
         "file": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
-        "line": 1219,
+        "line": 1253,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 modulePosition = module.transform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
-        "line": 3134,
+        "line": 3168,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 targetPosition = target.transform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
-        "line": 3916,
+        "line": 3950,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "position = platformTransform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
-        "line": 5845,
+        "line": 5880,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "return TryResolveAupDoubleFromRuntimeOrigin(target.transform.position, out targetAup);"
       },
       {
         "file": "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs",
-        "line": 206,
-        "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "Vector3 targetPosition = targetTransform.position;"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs",
-        "line": 208,
-        "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "Vector3 ghostPosition = ghostRoot.position;"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs",
-        "line": 225,
-        "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "Vector3 localSocketPosition = ghostRoot.InverseTransformPoint(candidateTransform.position);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs",
-        "line": 448,
+        "line": 387,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "WriteNodeRecord(candidateIndex++, moduleObject.transform.position, moduleData, false);"
       },
       {
         "file": "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs",
-        "line": 452,
+        "line": 424,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "WriteNodeRecord(candidateIndex, candidateGhost.transform.position, candidateData, true);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs",
-        "line": 558,
-        "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "if (!TryResolveAupFromRuntimeOrigin(rootTransform.position, out double3 rootAup))"
+        "snippet": "IndexSockets(moduleIndex, root.transform.position, root.transform.rotation, data, validationGridSize, catalogVault);"
       },
       {
         "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
@@ -542,13 +469,13 @@
       },
       {
         "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
-        "line": 3030,
+        "line": 3046,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 modulePosition = moduleObject.transform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
-        "line": 3146,
+        "line": 3162,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "position = fallbackModule.transform.position;"
       },
@@ -578,7 +505,7 @@
       },
       {
         "file": "Assets/_Project/Scripts/Construction/LogisticsPipeNode.cs",
-        "line": 587,
+        "line": 588,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 rupturePosition = _cachedTransform != null ? _cachedTransform.position : Vector3.zero;"
       },
@@ -763,6 +690,24 @@
         "snippet": "Vector3 runtimePosition = weldGlowOrigin != null ? weldGlowOrigin.position : _weldGlowRuntimePosition;"
       },
       {
+        "file": "Assets/_Project/Scripts/Construction/VRPipeBlueprintPreview.cs",
+        "line": 352,
+        "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
+        "snippet": "return _cachedTransform != null ? _cachedTransform.position : Vector3.zero;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Construction/VRPipeBlueprintPreview.cs",
+        "line": 358,
+        "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
+        "snippet": "TryResolveAupFromRuntimeOrigin(authoredPoint.position, out AbsoluteUniversePosition authoredAup))"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Construction/VRPipeBlueprintPreview.cs",
+        "line": 369,
+        "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
+        "snippet": "Vector3 fallback = _cachedTransform != null ? _cachedTransform.position : Vector3.zero;"
+      },
+      {
         "file": "Assets/_Project/Scripts/ConstructionManager.cs",
         "line": 708,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
@@ -850,7 +795,7 @@
         "file": "Assets/_Project/Scripts/Core/HectonUrpShadowBudgetGuard.cs",
         "line": 188,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "float distanceSq = (lightTransform.position - viewerPosition).sqrMagnitude;"
+        "snippet": "Vector3 lightVisualPosition = lightTransform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Core/HectonXRRuntimeState.cs",
@@ -896,13 +841,13 @@
       },
       {
         "file": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
-        "line": 3253,
+        "line": 3317,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 origin = transform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
-        "line": 6746,
+        "line": 6783,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 position = cameraTransform.position;"
       },
@@ -944,19 +889,19 @@
       },
       {
         "file": "Assets/_Project/Scripts/EncounterDirector.cs",
-        "line": 698,
+        "line": 747,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "float3 position = trackedTransform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/EncounterDirector.cs",
-        "line": 1427,
+        "line": 1476,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 position = trackedTransform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/EncounterDirector.cs",
-        "line": 1501,
+        "line": 1550,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "float3 position = trackedTransform.position;"
       },
@@ -968,7 +913,7 @@
       },
       {
         "file": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
-        "line": 2812,
+        "line": 2836,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 position = transform.position;"
       },
@@ -1022,55 +967,61 @@
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 2821,
+        "line": 2836,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 origin = _rb != null ? _rb.position : transform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 3070,
+        "line": 3085,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 startPosition = _rb.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 3223,
+        "line": 3242,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 startPosition = _rb.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 3468,
+        "line": 3489,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "point = _rb != null ? _rb.position : transform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 5102,
+        "line": 5143,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "selfPosition = _rb.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 5156,
+        "line": 5197,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "targetPosition = targetBody.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 5456,
+        "line": 5225,
+        "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
+        "snippet": "return TryResolveAupFromRuntimeOrigin(targetBody.position, out targetAup);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
+        "line": 5536,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 impactPoint = hasTargetLogicPosition ? targetLogicPosition : target.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 5936,
+        "line": 6019,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 nextPosition = _rb.position + ((Vector3.down * DeathSpiralCorkscrewDescentSpeed) + lateralVelocity) * fdt;"
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
-        "line": 6730,
+        "line": 6812,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "return _rb.position + ResolveDominantAxisDirection(_rb.linearVelocity);"
       },
@@ -1118,33 +1069,27 @@
       },
       {
         "file": "Assets/_Project/Scripts/FaunaDirector.cs",
-        "line": 1416,
+        "line": 1418,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "TryBuildSpawnPointAroundAnchor(anchor.position, anchor.radius, playerViewTransform, biomeData, bridge, out spawnPos, ref spawnValidationAttempts, ref spawnValidationSuccesses))"
       },
       {
         "file": "Assets/_Project/Scripts/FaunaDirector.cs",
-        "line": 1464,
+        "line": 1466,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "TryBuildSpawnPointAroundAnchor(zoneAnchor.position, zoneAnchor.radius, playerViewTransform, biomeData, bridge, out spawnPos, ref spawnValidationAttempts, ref spawnValidationSuccesses))"
       },
       {
         "file": "Assets/_Project/Scripts/FaunaDirector.cs",
-        "line": 1635,
+        "line": 1637,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 viewPosition = _hasPlayerLookView ? _playerLookViewPosition : viewTransform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/FaunaDirector.cs",
-        "line": 3052,
+        "line": 3058,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "AbsoluteUniversePosition position = AbsoluteUniversePosition.FromAlignedBlit(in savedState.position);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/FaunaDirector.cs",
-        "line": 3221,
-        "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "playerPosition = _playerTransform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/FieldLoadoutAdvisor.cs",
@@ -1156,7 +1101,7 @@
         "file": "Assets/_Project/Scripts/FieldTargetSemantics.cs",
         "line": 89,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "float sqr = (candidate.transform.position - position).sqrMagnitude;"
+        "snippet": "Vector3 markerVisualPosition = candidate.transform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/FieldToolRuntimeSmokeTester.cs",
@@ -1184,25 +1129,25 @@
       },
       {
         "file": "Assets/_Project/Scripts/FlowFieldVisualizer.cs",
-        "line": 1093,
+        "line": 1095,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 center = transform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/FlowFieldVisualizer.cs",
-        "line": 1125,
+        "line": 1127,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 volumePosition = volumeTransform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/FlowFieldVisualizer.cs",
-        "line": 1260,
+        "line": 1262,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "cameraPosition = cameraTransform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/FlowFieldVisualizer.cs",
-        "line": 1265,
+        "line": 1267,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "cameraPosition = transform.position;"
       },
@@ -1244,21 +1189,21 @@
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/BaseAirlock.cs",
-        "line": 1319,
+        "line": 1318,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "owningModule.ForceFloodFromBulkheadOverride(_cachedTransform.position);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/BatteryCharger.cs",
-        "line": 565,
+        "line": 543,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "audio.PlayAtPoint(chargeCompleteSound, _cachedTransform.position);"
+        "snippet": "audio.PlayAtPoint(insertSound, _cachedTransform.position);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/BatteryCharger.cs",
-        "line": 600,
+        "line": 670,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "audio.PlayAtPoint(insertSound, _cachedTransform.position);"
+        "snippet": "Vector3 position = _cachedTransform != null ? _cachedTransform.position : transform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/BioReactor.cs",
@@ -1294,17 +1239,17 @@
         "file": "Assets/_Project/Scripts/Gameplay/ClimbableLadder.cs",
         "line": 97,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "bool goingUp = (interactorPosition - entryPoint.position).sqrMagnitude <"
+        "snippet": "Vector3 entryVisualDelta = interactorPosition - entryPoint.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/ClimbableLadder.cs",
         "line": 98,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "(interactorPosition - exitPoint.position).sqrMagnitude;"
+        "snippet": "Vector3 exitVisualDelta = interactorPosition - exitPoint.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/ClimbableLadder.cs",
-        "line": 181,
+        "line": 182,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "audio.PlayAtPoint(climbSound, player.position, climbVolume);"
       },
@@ -1316,91 +1261,91 @@
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs",
-        "line": 1601,
+        "line": 1611,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 rootPositionUnity = characterRoot.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs",
-        "line": 1882,
+        "line": 1892,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 leftPosition = leftSource != null ? leftSource.position : Vector3.zero;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs",
-        "line": 1883,
+        "line": 1893,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 rightPosition = rightSource != null ? rightSource.position : Vector3.zero;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs",
-        "line": 2144,
+        "line": 2154,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "float3 cameraPosition = ContextualPhysicalIkMath.ToFloat3(cameraTransform.position);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs",
-        "line": 2503,
+        "line": 2513,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 initialPosition = authoring.bones[boneIndex].position;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs",
-        "line": 2630,
+        "line": 2640,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 headPosition = headSource.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs",
-        "line": 2722,
+        "line": 2732,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "targetPosition = targetSource.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs",
-        "line": 2727,
+        "line": 2737,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "targetPosition = fallbackTip.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs",
-        "line": 3294,
+        "line": 3304,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 firstPosition = first.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs",
-        "line": 3295,
+        "line": 3305,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 secondPosition = second.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs",
-        "line": 3358,
+        "line": 3368,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 position = source.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs",
-        "line": 3403,
+        "line": 3413,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 parentPosition = parent.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs",
-        "line": 3404,
+        "line": 3414,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 sourcePosition = source.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs",
-        "line": 2290,
+        "line": 2304,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "viewerPosition = ContextualPhysicalIkMath.ToFloat3(_cameraTransform.position);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs",
-        "line": 2313,
+        "line": 2327,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "viewerPosition = ContextualPhysicalIkMath.ToFloat3(_cameraTransform.position);"
       },
@@ -1442,33 +1387,21 @@
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/DeployableFlare.cs",
-        "line": 298,
+        "line": 35,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "audio.PlayAtPoint(extinguishSound, _transform.position, deployVolume);"
+        "snippet": "AuxiliaryEquipmentRouterRuntime.TryDeployFlare(transform.position, _fuelTimer);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/DeployableFlare.cs",
-        "line": 367,
+        "line": 40,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "audio.PlayAtPoint(deploySound, _transform.position, deployVolume);"
+        "snippet": "AuxiliaryEquipmentRouterRuntime.TryCancelFlare(transform.position);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/DeployableFlare.cs",
-        "line": 493,
+        "line": 47,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "_lastSpatialPosition = _transform.position;"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/DeployableFlare.cs",
-        "line": 516,
-        "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "Vector3 currentPosition = _transform.position;"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/DeployableFlare.cs",
-        "line": 549,
-        "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "Vector3 positionWs = _transform != null ? _transform.position : transform.position;"
+        "snippet": "AuxiliaryEquipmentRouterRuntime.TryCancelFlare(transform.position);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
@@ -1514,31 +1447,19 @@
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/GravTrap.cs",
-        "line": 203,
+        "line": 36,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "audio.PlayAtPoint(deploySound, _transform.position, deployVolume);"
+        "snippet": "Vector3 position = transform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/GravTrap.cs",
-        "line": 243,
+        "line": 42,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "Vector3 trapPos = _transform.position;"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/GravTrap.cs",
-        "line": 271,
-        "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "Vector3 targetPos = target.transform.position;"
-      },
-      {
-        "file": "Assets/_Project/Scripts/Gameplay/GravTrap.cs",
-        "line": 339,
-        "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "Vector3 pos = transform.position;"
+        "snippet": "AuxiliaryEquipmentRouterRuntime.TryCancelGravityTether(transform.position);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HabitatIntegrityManager.cs",
-        "line": 904,
+        "line": 906,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "if (!TryResolveAupFromRuntimeOrigin(hostTransform.position, out AbsoluteUniversePosition moduleAup))"
       },
@@ -1570,17 +1491,17 @@
         "file": "Assets/_Project/Scripts/Gameplay/HarvestablePlant.cs",
         "line": 259,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "float distanceSq = (hitPoint - segments[i].meshRenderer.transform.position).sqrMagnitude;"
+        "snippet": "Vector3 segmentVisualPosition = segments[i].meshRenderer.transform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HarvestablePlant.cs",
-        "line": 347,
+        "line": 349,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 anchor = segment.meshRenderer != null ? segment.meshRenderer.transform.position : hitPoint;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HarvestablePlant.cs",
-        "line": 431,
+        "line": 433,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "HarvestSegment(index, segments[index].meshRenderer.transform.position);"
       },
@@ -1640,49 +1561,49 @@
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HectonPlayerMotor.cs",
-        "line": 1118,
+        "line": 1121,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "resolvedPosition = _body != null ? _body.position : Vector3.zero;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HectonPlayerMotor.cs",
-        "line": 1184,
+        "line": 1220,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "_lastWallSlidePoint = SafeVelocity(hit.point, _body != null ? _body.position : Vector3.zero);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HectonPlayerMotor.cs",
-        "line": 1326,
+        "line": 1364,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 point = SafeVelocity(hit.point, _body != null ? _body.position : Vector3.zero);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HectonPlayerMotor.cs",
-        "line": 1348,
+        "line": 1388,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 point = SafeVelocity(hit.point, _body != null ? _body.position : Vector3.zero);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HectonPlayerMotor.cs",
-        "line": 1795,
+        "line": 1841,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "_scheduledSweepResolvedPosition = _body != null ? _body.position : Vector3.zero;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HectonPlayerMotor.cs",
-        "line": 1923,
+        "line": 1969,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "_scheduledSweepResolvedPosition = _body != null ? _body.position : _scheduledSweepState.StartPosition;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HectonPlayerMotor.cs",
-        "line": 2305,
+        "line": 2351,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "_scheduledSweepResolvedPosition = _body != null ? _body.position : _scheduledSweepState.StartPosition;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/HectonSubmarineOS.cs",
-        "line": 1183,
+        "line": 1210,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 origin = hullRigidbody != null ? hullRigidbody.worldCenterOfMass : transform.position;"
       },
@@ -1742,13 +1663,13 @@
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/MantaScooter.cs",
-        "line": 992,
+        "line": 995,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "GameObject wreckInstance = poolManager.Spawn(wreckPrefab, spawnTransform.position, spawnTransform.rotation);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/MantaScooter.cs",
-        "line": 1815,
+        "line": 1818,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 positionWs = headlightTransform.position;"
       },
@@ -1766,31 +1687,31 @@
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Mining/DeployableSdfDrillRuntime.cs",
-        "line": 866,
+        "line": 862,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 position = _cachedTransform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Mining/DeployableSdfDrillRuntime.cs",
-        "line": 1066,
+        "line": 1068,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 runtimePoint = _cachedTransform != null ? _cachedTransform.position : ToVector3(_anchorRuntimePosition);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Mining/DeployableSdfDrillRuntime.cs",
-        "line": 1103,
+        "line": 1105,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 origin = _cachedTransform.position + Vector3.up * 0.5f;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Mining/DeployableSdfDrillRuntime.cs",
-        "line": 1212,
+        "line": 1214,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 position = _cachedTransform != null ? _cachedTransform.position : ToVector3(_anchorRuntimePosition);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/Mining/DeployableSdfDrillRuntime.cs",
-        "line": 1286,
+        "line": 1288,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "finite = finite && IsFiniteVector3(_cachedTransform.position);"
       },
@@ -1940,31 +1861,31 @@
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs",
-        "line": 2473,
+        "line": 2481,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "float3 position = SnapMillimeter(SanitizeFloat3(ToFloat3(_body.position), ReadLastValidPosition()));"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs",
-        "line": 2687,
+        "line": 2695,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 runtimePosition = _body != null ? _body.position : Vector3.zero;"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs",
-        "line": 2753,
+        "line": 2761,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "float3 sourcePosition = ToFloat3(source.position);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs",
-        "line": 3442,
+        "line": 3458,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": ": SnapMillimeter(SanitizeFloat3(ToFloat3(_body.position), ReadLastValidPosition()));"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs",
-        "line": 3531,
+        "line": 3551,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "float3 bodyPosition = SanitizeFloat3(ToFloat3(_body.position), ReadLastValidPosition());"
       },
@@ -2023,34 +1944,28 @@
         "snippet": "audio.PlayAtPoint(completeSound, _transform.position, scanVolume);"
       },
       {
-        "file": "Assets/_Project/Scripts/Gameplay/ScannerDataMiningRouter.cs",
-        "line": 756,
-        "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "Vector3 toolPosition = transform.position;"
-      },
-      {
         "file": "Assets/_Project/Scripts/Gameplay/SealedDoor.cs",
-        "line": 390,
+        "line": 391,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "ApplyCutting(amount, _transform.position);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/SealedDoor.cs",
-        "line": 457,
+        "line": 458,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "audio.PlayAtPoint(cuttingLoopSound, _transform.position, cuttingVolume);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/SealedDoor.cs",
-        "line": 476,
+        "line": 477,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "audio.PlayAtPoint(openSound, _transform.position, openVolume);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/SealedDoor.cs",
-        "line": 590,
+        "line": 591,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "double3 centerAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(_transform.position);"
+        "snippet": "if (!TryResolveDoorAup(_transform.position, out double3 centerAup))"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/SolarPanel.cs",
@@ -2096,25 +2011,25 @@
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
-        "line": 1191,
+        "line": 1197,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 source = _hull != null ? _hull.worldCenterOfMass : (_cachedTransform != null ? _cachedTransform.position : Vector3.zero);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
-        "line": 1411,
+        "line": 1417,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": ": (_cachedTransform != null ? _cachedTransform.position : Vector3.zero);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
-        "line": 1718,
+        "line": 1724,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "RuntimePosition = SnapMillimeter(ToFloat3(_hull.position)),"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
-        "line": 1910,
+        "line": 1916,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 position = _hull.position;"
       },
@@ -2210,87 +2125,69 @@
       },
       {
         "file": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
-        "line": 1483,
+        "line": 1524,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 position = body.position;"
       },
       {
         "file": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
-        "line": 1642,
+        "line": 1693,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 bodyPosition = body.position;"
       },
       {
         "file": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
-        "line": 1884,
+        "line": 1942,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": ": TryResolveAupFromRuntimeOrigin(body.position, out AbsoluteUniversePosition resolvedExistingAup)"
       },
       {
         "file": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
-        "line": 1903,
+        "line": 1961,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 bodyPosition = body.position;"
       },
       {
         "file": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
-        "line": 2372,
+        "line": 2435,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 bodyPosition = body.position;"
       },
       {
         "file": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
-        "line": 2460,
+        "line": 2526,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 bodyPosition = trackedBody.position;"
       },
       {
         "file": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
-        "line": 2512,
+        "line": 2577,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 bodyPosition = body.position;"
       },
       {
         "file": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
-        "line": 2903,
+        "line": 2975,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "PublishRigidbodySleepSignal(in bodyState, body != null ? body.position : Vector3.zero, distanceSq, 1);"
       },
       {
         "file": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
-        "line": 2932,
+        "line": 3004,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "PublishRigidbodySleepSignal(in bodyState, body != null ? body.position : Vector3.zero, 0d, 0);"
       },
       {
         "file": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
-        "line": 3609,
+        "line": 3692,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 position = body.position;"
       },
       {
         "file": "Assets/_Project/Scripts/GravityTetherTool.cs",
-        "line": 72,
+        "line": 49,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "Vector3 origin = SanitizePosition(_cachedTransform.position, Vector3.zero);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/GravityTetherTool.cs",
-        "line": 91,
-        "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "Vector3 chestPosition = SanitizePosition(chest.position, origin);"
-      },
-      {
-        "file": "Assets/_Project/Scripts/GravityTetherTool.cs",
-        "line": 192,
-        "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "Vector3 position = body != null ? body.worldCenterOfMass : hitCollider.transform.position;"
-      },
-      {
-        "file": "Assets/_Project/Scripts/GravityTetherTool.cs",
-        "line": 197,
-        "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "return hitTransform != null && IsFinite(hitTransform.position) ? hitTransform.position : Vector3.zero;"
+        "snippet": "AuxiliaryEquipmentRouterRuntime.TryDeployGravityTether(owner.position, anchor.position, lifetime);"
       },
       {
         "file": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs",
@@ -2378,25 +2275,25 @@
       },
       {
         "file": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
-        "line": 4641,
+        "line": 4650,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 toObserver = observerPos - sunVisualTransform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
-        "line": 5652,
+        "line": 5661,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 visualDelta = toTransform.position - fromTransform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
-        "line": 5662,
+        "line": 5671,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 visualDelta = toTransform.position - fromTransform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
-        "line": 6268,
+        "line": 6277,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "float3 aegirPos  = (float3)aegirTransform.position;"
       },
@@ -2426,49 +2323,49 @@
       },
       {
         "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
-        "line": 2453,
+        "line": 2454,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "bridge.TryGetHeightSamplePayload(lodObserver.position.x, lodObserver.position.z, out payload))"
       },
       {
         "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
-        "line": 2474,
+        "line": 2475,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 observerPosition = lodObserver != null ? lodObserver.position : Vector3.zero;"
       },
       {
         "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
-        "line": 3999,
+        "line": 4000,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "float dx = com.x - lodObserver.position.x;"
       },
       {
         "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
-        "line": 4000,
+        "line": 4001,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "float dy = com.y - lodObserver.position.y;"
       },
       {
         "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
-        "line": 4001,
+        "line": 4002,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "float dz = com.z - lodObserver.position.z;"
       },
       {
         "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
-        "line": 5169,
+        "line": 5262,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": ": playerTransform != null ? playerTransform.position : Vector3.positiveInfinity;"
       },
       {
         "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
-        "line": 6303,
+        "line": 6396,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 observerPosition = lodObserver.position;"
       },
       {
         "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
-        "line": 6640,
+        "line": 6733,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 origin = lodObserver != null ? lodObserver.position : center;"
       },
@@ -2498,181 +2395,181 @@
       },
       {
         "file": "Assets/_Project/Scripts/HectonNarrativeDirector.cs",
-        "line": 402,
+        "line": 421,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 playerPosition = _playerTransform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
-        "line": 2063,
+        "line": 2093,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "position = HectonPlayerMotor.SafeVelocity(_rb.position);"
       },
       {
         "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
-        "line": 2069,
+        "line": 2099,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "position = HectonPlayerMotor.SafeVelocity(_cachedTransform.position);"
       },
       {
         "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
-        "line": 2695,
+        "line": 2725,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "WritePlayerKinematicsSnapshot(_rb != null ? _rb.position : Vector3.zero, velocity, intendedMovement);"
       },
       {
         "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
-        "line": 2758,
+        "line": 2788,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 runtimePosition = _rb != null ? _rb.position : ResolvePlayerAupRuntimePosition();"
       },
       {
         "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
-        "line": 2932,
+        "line": 2962,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 runtimePosition = _rb.position;"
       },
       {
         "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
-        "line": 3336,
+        "line": 3366,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "return HectonPlayerMotor.SafeVelocity(_rb.position);"
       },
       {
         "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
-        "line": 3339,
+        "line": 3369,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "? HectonPlayerMotor.SafeVelocity(_cachedTransform.position)"
       },
       {
         "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
-        "line": 3347,
+        "line": 3377,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": ": (_cachedTransform != null ? _cachedTransform.position : Vector3.zero);"
       },
       {
         "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
-        "line": 4081,
+        "line": 4111,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "position = _rb != null ? _rb.position : ResolvePlayerAupRuntimePosition();"
       },
       {
         "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
-        "line": 4146,
+        "line": 4176,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "_playerState.SyncKinematic(_rb.position, HectonPlayerMotor.SafeVelocity(_rb.linearVelocity));"
       },
       {
         "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
-        "line": 4394,
+        "line": 4424,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "_playerState.SyncKinematic(_rb.position, HectonPlayerMotor.SafeVelocity(_rb.linearVelocity));"
       },
       {
         "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
-        "line": 5028,
+        "line": 5058,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 currentPlatformPosition = platformTransform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
-        "line": 5204,
+        "line": 5234,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 bodyPosition = _useFixedFrameSpatialCache ? _fixedFrameBodyPosition : _rb.position;"
       },
       {
         "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
-        "line": 5282,
+        "line": 5312,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 exitPosition = _rb.position;"
       },
       {
         "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
-        "line": 6791,
+        "line": 6822,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 center = _rb.position;"
       },
       {
         "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
-        "line": 8444,
+        "line": 8475,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "_playerState.SyncKinematic(_rb.position, HectonPlayerMotor.SafeVelocity(_rb.linearVelocity));"
       },
       {
         "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
-        "line": 8447,
+        "line": 8478,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "WritePlayerKinematicsSnapshot(_rb.position, _rb.linearVelocity, _lastPlayerKinematicsIntendedMovement);"
       },
       {
         "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
-        "line": 8821,
+        "line": 8852,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "WritePlayerKinematicsSnapshot(_rb.position, safeVelocity, _lastPlayerKinematicsIntendedMovement);"
       },
       {
         "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
-        "line": 8863,
+        "line": 8894,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 currentPosition = _rb.position;"
       },
       {
         "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
-        "line": 8927,
+        "line": 8958,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "origin = entryPoint != null ? entryPoint.position : ladderTransform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
-        "line": 9173,
+        "line": 9204,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "_surfaceLockTargetY = _rb.position.y;"
       },
       {
         "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
-        "line": 9187,
+        "line": 9218,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "float shorelineTargetRootY = math.lerp(_rb.position.y, targetRootY, _shoreBuoyancyBlend);"
       },
       {
         "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
-        "line": 9196,
+        "line": 9227,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "_surfaceLockTargetY = _rb.position.y;"
       },
       {
         "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
-        "line": 10336,
+        "line": 10367,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "float cameraY = playerCamera != null ? playerCamera.position.y : GetBodyEyeY();"
       },
       {
         "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
-        "line": 10441,
+        "line": 10472,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 bodyPosition = _rb != null ? _rb.position : ResolvePlayerAupRuntimePosition();"
       },
       {
         "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
-        "line": 11122,
+        "line": 11153,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "float positionError = _rb.position.y - targetSurfaceLockY;"
       },
       {
         "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
-        "line": 11152,
+        "line": 11183,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "center = _rb.position;"
       },
       {
         "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
-        "line": 11604,
+        "line": 11635,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": ": (_rb != null ? _rb.position : Vector3.zero);"
       },
       {
         "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
-        "line": 12029,
+        "line": 12060,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 currentBodyPosition = _useFixedFrameSpatialCache ? _fixedFrameBodyPosition : _rb.position;"
       },
@@ -2684,7 +2581,7 @@
       },
       {
         "file": "Assets/_Project/Scripts/HectonScanMarkerSystem.cs",
-        "line": 243,
+        "line": 249,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 playerPositionVector = _playerTransform.position;"
       },
@@ -2704,7 +2601,7 @@
         "file": "Assets/_Project/Scripts/HectonSocketHelper.cs",
         "line": 159,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "float sqrDistanceToCamera = (cam.transform.position - pos).sqrMagnitude;"
+        "snippet": "Vector3 cameraVisualPosition = cam.transform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/HectonSurvivalSystem.cs",
@@ -2980,29 +2877,29 @@
         "file": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
         "line": 2777,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "if ((stamp.position - absolutePosition).sqrMagnitude > clusterRadiusSq)"
-      },
-      {
-        "file": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
-        "line": 2783,
-        "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "min = Vector3.Min(min, stamp.position - radiusVector);"
+        "snippet": "Vector3 clusterDelta = stamp.position - absolutePosition;"
       },
       {
         "file": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
         "line": 2784,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
+        "snippet": "min = Vector3.Min(min, stamp.position - radiusVector);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+        "line": 2785,
+        "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "max = Vector3.Max(max, stamp.position + radiusVector);"
       },
       {
         "file": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
-        "line": 3007,
+        "line": 3008,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
-        "snippet": "if ((existing.position - absolutePosition).sqrMagnitude > mergeDistance * mergeDistance)"
+        "snippet": "Vector3 mergeDelta = existing.position - absolutePosition;"
       },
       {
         "file": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
-        "line": 3010,
+        "line": 3012,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "existing.position = (existing.position + absolutePosition) * 0.5f;"
       },
@@ -3014,7 +2911,7 @@
       },
       {
         "file": "Assets/_Project/Scripts/Interaction/KinematicTerminalInteractionBridge.cs",
-        "line": 357,
+        "line": 388,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "origin = originTransform.position;"
       },
@@ -3050,55 +2947,55 @@
       },
       {
         "file": "Assets/_Project/Scripts/Interaction/PhysicalHandController.cs",
-        "line": 410,
+        "line": 412,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "position = attachment.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Interaction/PhysicalHandController.cs",
-        "line": 417,
+        "line": 419,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "position = _runtimeGripPoint.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Interaction/PhysicalHandController.cs",
-        "line": 779,
+        "line": 781,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "_runtimeRoot.position = initialAttachment != null ? initialAttachment.position : _cachedTransform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Interaction/PhysicalHandController.cs",
-        "line": 855,
+        "line": 857,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "_suitHandTransform.position = parent != null ? parent.position : _cachedTransform.position;"
       },
       {
         "file": "Assets/_Project/Scripts/Interaction/PhysicalHandController.cs",
-        "line": 1385,
+        "line": 1387,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 handPosition = _runtimeGripPoint != null ? _runtimeGripPoint.position : _virtualHandPosition;"
       },
       {
         "file": "Assets/_Project/Scripts/Interaction/PhysicalHandController.cs",
-        "line": 1507,
+        "line": 1509,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "if (opposingHand == null || !IsFinite(opposingHand.position))"
       },
       {
         "file": "Assets/_Project/Scripts/Interaction/PhysicalHandController.cs",
-        "line": 1517,
+        "line": 1519,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "Vector3 stabilizerDelta = opposingHand.position - bodyBounds.center;"
       },
       {
         "file": "Assets/_Project/Scripts/Interaction/PhysicalHandController.cs",
-        "line": 1519,
+        "line": 1521,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "SetTwoHandStabilizerPose(withinStabilizerRange, opposingHand.position);"
       },
       {
         "file": "Assets/_Project/Scripts/Interaction/PhysicalHandController.cs",
-        "line": 1627,
+        "line": 1629,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "HandPosition = _runtimeGripPoint.position,"
       },
@@ -3149,198 +3046,2882 @@
         "line": 645,
         "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
         "snippet": "return component != null ? component.transform.position : Vector3.zero;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Interaction/SaveStation.cs",
+        "line": 132,
+        "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
+        "snippet": "audioManager.PlayAtPoint(_interactionSound, transform.position);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Interaction/VRCableDragPlug.cs",
+        "line": 464,
+        "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
+        "snippet": "Vector3 position = source.position;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Interaction/VRCableDragPlug.cs",
+        "line": 478,
+        "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
+        "snippet": "Vector3 position = source.position;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Interaction/VRLeakPatchWeldTarget.cs",
+        "line": 304,
+        "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
+        "snippet": "if (leakAnchor != null && IsFiniteVector(leakAnchor.position))"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Interaction/VRLeakPatchWeldTarget.cs",
+        "line": 306,
+        "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
+        "snippet": "leakPosition = leakAnchor.position;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Interaction/VRLeakPatchWeldTarget.cs",
+        "line": 313,
+        "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
+        "snippet": "if (_targetModuleTransform != null && IsFiniteVector(_targetModuleTransform.position))"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Interaction/VRLeakPatchWeldTarget.cs",
+        "line": 315,
+        "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
+        "snippet": "leakPosition = _targetModuleTransform.position;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Interaction/VRLeakPatchWeldTarget.cs",
+        "line": 319,
+        "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
+        "snippet": "if (_cachedTransform != null && IsFiniteVector(_cachedTransform.position))"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Interaction/VRLeakPatchWeldTarget.cs",
+        "line": 321,
+        "kind": "TRANSFORM_POSITION_AUTHORITY_REVIEW",
+        "snippet": "leakPosition = _cachedTransform.position;"
       }
     ],
-    "floatDistanceFindings": [
+    "floatDistanceFindings": [],
+    "transformDistanceFindings": [],
+    "runtimeAupBridgeFindings": [
       {
-        "file": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
-        "line": 3982,
-        "kind": "FLOAT_DISTANCE_REVIEW",
-        "snippet": "float exactDistanceSq = math.distancesq(drone.Position, anchor);"
+        "file": "Assets/_Project/Scripts/AtlasSignal/AtlasSignalSystem.cs",
+        "line": 384,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "_atlasCoreAup = AbsoluteUniversePosition.FromRuntimePosition(atlasCorePosWorld);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/AtlasSignal/SignalBeacon.cs",
+        "line": 297,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "_pointAup0 = AbsoluteUniversePosition.FromRuntimePosition(aupPoint0);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/AtlasSignal/SignalBeacon.cs",
+        "line": 298,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "_pointAup1 = AbsoluteUniversePosition.FromRuntimePosition(aupPoint1);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/AtlasSignal/SignalBeacon.cs",
+        "line": 299,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "_pointAup2 = AbsoluteUniversePosition.FromRuntimePosition(aupPoint2);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+        "line": 1436,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "playerAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+        "line": 1458,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "? AbsoluteUniversePosition.FromRuntimePosition(position)"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
+        "line": 1262,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition strikeAup = AbsoluteUniversePosition.FromRuntimePosition(strikePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
+        "line": 1263,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition listenerAup = AbsoluteUniversePosition.FromRuntimePosition(listenerPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+        "line": 1434,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 aup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtime);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
+        "line": 566,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "_gridOriginAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(Vector3.zero);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+        "line": 1967,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "targetAup = AbsoluteUniversePosition.FromRuntimePosition(runtimeWorldPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+        "line": 1987,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "targetAup = AbsoluteUniversePosition.FromRuntimePosition(runtimeWorldPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+        "line": 4599,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition hitAup = AbsoluteUniversePosition.FromRuntimePosition(position);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs",
+        "line": 156,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "SourceAup = AbsoluteUniversePosition.FromRuntimePosition(safeWorldPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs",
+        "line": 267,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "SourceAup = AbsoluteUniversePosition.FromRuntimePosition(safeWorldPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs",
+        "line": 1000,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": ": AbsoluteUniversePosition.FromRuntimePosition(payload.WorldPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/BiomeMatrixDirector.cs",
+        "line": 944,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition currentAup = AbsoluteUniversePosition.FromRuntimePosition(evaluationPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Construction/BaseDegradationSystem.cs",
+        "line": 248,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 absoluteUniversePositionDouble = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(ruptureWorldPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Construction/DeepDrillModule.cs",
+        "line": 278,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 absoluteOrigin = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(origin);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+        "line": 2727,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 startAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3((Vector3)edge.StartSocketPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+        "line": 2728,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 endAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3((Vector3)edge.EndSocketPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+        "line": 3353,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 rootAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(rootPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+        "line": 3659,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 startAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3((Vector3)edge.StartSocketPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+        "line": 3660,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 endAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3((Vector3)edge.EndSocketPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Construction/HectonBlueprintPreviewBatch.cs",
+        "line": 215,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 centerAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(position);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Construction/HectonBlueprintPreviewBatch.cs",
+        "line": 222,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(Vector3.zero),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Construction/HectonBlueprintPreviewBatch.cs",
+        "line": 417,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 runtimeOriginAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(Vector3.zero);"
       },
       {
         "file": "Assets/_Project/Scripts/Construction/LogisticsPipeNode.cs",
-        "line": 483,
-        "kind": "FLOAT_DISTANCE_REVIEW",
-        "snippet": "_cachedPathDistanceMeters = math.distance(_cachedSourcePosition, _cachedDestinationPosition);"
+        "line": 598,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition ruptureAup = AbsoluteUniversePosition.FromRuntimePosition(rupturePosition);"
       },
       {
-        "file": "Assets/_Project/Scripts/Dev/BotController.cs",
-        "line": 512,
-        "kind": "FLOAT_DISTANCE_REVIEW",
-        "snippet": "return math.distancesq("
+        "file": "Assets/_Project/Scripts/Construction/VehicleDockingModule.cs",
+        "line": 691,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "_dockingStartAup = AbsoluteUniversePosition.FromRuntimePosition(startPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Construction/VehicleDockingModule.cs",
+        "line": 943,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition dockWorldAup = AbsoluteUniversePosition.FromRuntimePosition(dockRuntimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Construction/VehicleDockingModule.cs",
+        "line": 1080,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(position);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Construction/VehicleDockingModule.cs",
+        "line": 1453,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(position);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Construction/VehicleDockingModule.cs",
+        "line": 1487,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition dockAup = AbsoluteUniversePosition.FromRuntimePosition(dockPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Construction/VehicleDockingModule.cs",
+        "line": 1518,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition lastAup = AbsoluteUniversePosition.FromRuntimePosition(actualPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Construction/VRConstructionWeldTarget.cs",
+        "line": 364,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Construction/WaterPumpModule.cs",
+        "line": 165,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition nodeAup = AbsoluteUniversePosition.FromRuntimePosition(ResolvePipeRuntimePosition());"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Construction/WaterPumpModule.cs",
+        "line": 308,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition nodeAup = AbsoluteUniversePosition.FromRuntimePosition(ResolvePipeOutletRuntimePosition());"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+        "line": 5348,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "return AbsoluteUniversePosition.FromRuntimePosition(Vector3.zero);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+        "line": 5364,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "aup = AbsoluteUniversePosition.FromRuntimePosition(point);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+        "line": 10271,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "return global::Hecton8.Core.HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(point);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+        "line": 10280,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "return global::Hecton8.Core.HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePoint);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/HectonXRRuntimeState.cs",
+        "line": 31,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "return TryFromAbsoluteDouble3(HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition), out aup);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/HectonXRRuntimeState.cs",
+        "line": 678,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "headAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/HectonXRRuntimeState.cs",
+        "line": 698,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "headAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/HectonXRRuntimeState.cs",
+        "line": 739,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "headAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/CrashTelemetryBuffer.cs",
+        "line": 2675,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": ": HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/CurrentVolume.cs",
+        "line": 282,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "sampleAup = AbsoluteUniversePosition.FromRuntimePosition(worldPos);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/CurrentVolume.cs",
+        "line": 404,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "_cachedAup = AbsoluteUniversePosition.FromRuntimePosition(_cachedPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Economy/ResourceScarcityDirector.cs",
+        "line": 250,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Economy/ResourceScarcityDirector.cs",
+        "line": 267,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Economy/ResourceScarcityDirector.cs",
+        "line": 284,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Economy/ResourceScarcityDirector.cs",
+        "line": 314,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Economy/ResourceScarcityDirector.cs",
+        "line": 661,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Ecosystem/FaunaGeneticsManager.cs",
+        "line": 198,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "Hecton8.World.AbsoluteUniversePosition.FromRuntimePosition(spawnPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Ecosystem/MigrationDirector.cs",
+        "line": 545,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "poi.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition).ToAlignedBlit();"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Ecosystem/MigrationDirector.cs",
+        "line": 835,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Ecosystem/MigrationDirector.cs",
+        "line": 1279,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Ecosystem/MigrationDirector.cs",
+        "line": 1736,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/EncounterDirector.cs",
+        "line": 1173,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(spawnPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
+        "line": 2843,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "aup = AbsoluteUniversePosition.FromRuntimePosition(position);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fabricator.cs",
+        "line": 1979,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(position);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fabricator.cs",
+        "line": 2363,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "PositionAup = AbsoluteUniversePosition.FromRuntimePosition(spawnPosition),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.Compatibility.cs",
+        "line": 95,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition spawnAup = AbsoluteUniversePosition.FromRuntimePosition(spawnPoint);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.Compatibility.cs",
+        "line": 509,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition predatorAup = AbsoluteUniversePosition.FromRuntimePosition(context.SelfPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.Compatibility.cs",
+        "line": 536,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": ": AbsoluteUniversePosition.FromRuntimePosition(resolvedPlayerPosition).ToAlignedBlit();"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.Compatibility.cs",
+        "line": 549,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": ": AbsoluteUniversePosition.FromRuntimePosition(resolvedPackTargetPosition).ToAlignedBlit()"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
+        "line": 969,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "snapshot.PlayerAup = AbsoluteUniversePosition.FromRuntimePosition(snapshot.PlayerPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
+        "line": 1483,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition listenerAup = AbsoluteUniversePosition.FromRuntimePosition(listenerPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
+        "line": 1484,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition lightAup = AbsoluteUniversePosition.FromRuntimePosition(lightPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
+        "line": 2059,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "_hibernationStarvationHuntTargetAup = AbsoluteUniversePosition.FromRuntimePosition(targetPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
+        "line": 2234,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition flashAup = AbsoluteUniversePosition.FromRuntimePosition(flashPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
+        "line": 2676,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "_voxelRouteWaypointAups[waypointIndex] = AbsoluteUniversePosition.FromRuntimePosition(_voxelRouteWaypoints[waypointIndex]);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
+        "line": 2678,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "_voxelRouteTargetAup = AbsoluteUniversePosition.FromRuntimePosition(targetPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
+        "line": 3774,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition lightAup = AbsoluteUniversePosition.FromRuntimePosition(lightPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
+        "line": 4997,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "_directorHuntTargetAup = AbsoluteUniversePosition.FromRuntimePosition(targetPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
+        "line": 5451,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": ": AbsoluteUniversePosition.FromRuntimePosition(preyPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
+        "line": 5876,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "_forcedMigrationTargetAup = AbsoluteUniversePosition.FromRuntimePosition(migrationTarget);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
+        "line": 6383,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "_hibernationStarvationHuntTargetAup = AbsoluteUniversePosition.FromRuntimePosition(targetPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.Foveated.cs",
+        "line": 127,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition candidateAup = AbsoluteUniversePosition.FromRuntimePosition(candidate);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs",
+        "line": 395,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "PredatorAup = AbsoluteUniversePosition.FromRuntimePosition(ToVector3(ResolveOwnerRuntimePosition())),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs",
+        "line": 1360,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "CenterAup = AbsoluteUniversePosition.FromRuntimePosition(center),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs",
+        "line": 1404,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition ownerAup = AbsoluteUniversePosition.FromRuntimePosition(ToVector3(ResolveOwnerRuntimePosition()));"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs",
+        "line": 1470,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition pointAup = AbsoluteUniversePosition.FromRuntimePosition(ToVector3(pose.JawTipPosition));"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs",
+        "line": 1501,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "signal.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(ToVector3(pose.JawTipPosition));"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs",
+        "line": 2267,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition ownerAup = AbsoluteUniversePosition.FromRuntimePosition(ToVector3(ResolveOwnerRuntimePosition()));"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fauna/FaunaSensorSuite.cs",
+        "line": 210,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "_cachedSelfAup = AbsoluteUniversePosition.FromRuntimePosition(_cachedSelfPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fauna/FaunaSensorSuite.cs",
+        "line": 262,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "_cachedSelfAup = AbsoluteUniversePosition.FromRuntimePosition(_cachedSelfPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fauna/FaunaSensorSuite.cs",
+        "line": 320,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "? AbsoluteUniversePosition.FromRuntimePosition(_cachedPlayerPosition)"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fauna/FaunaSensorSuite.cs",
+        "line": 734,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition toolAup = AbsoluteUniversePosition.FromRuntimePosition(_cachedScavengeToolPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fauna/LeviathanTentacleVerletSolver.cs",
+        "line": 1664,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "return AbsoluteUniversePosition.FromRuntimePosition(new Vector3("
       },
       {
         "file": "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs",
-        "line": 5732,
-        "kind": "FLOAT_DISTANCE_REVIEW",
-        "snippet": "math.distancesq(input.PlayerPosition, input.Position) < PredatorAcousticSightRangeSqr;"
+        "line": 2332,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition absolute = AbsoluteUniversePosition.FromRuntimePosition("
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/BaseAirlock.cs",
+        "line": 446,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "leftHandAup = AbsoluteUniversePosition.FromRuntimePosition(leftRuntime);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/BaseAirlock.cs",
+        "line": 447,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "rightHandAup = AbsoluteUniversePosition.FromRuntimePosition(rightRuntime);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/BatteryCharger.cs",
+        "line": 671,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "return HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(position);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/BeaconRegistry.cs",
+        "line": 85,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(position);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/BioReactor.cs",
+        "line": 731,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "DamageAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(origin),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs",
+        "line": 437,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "trajectory.OriginAUP = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(origin);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs",
+        "line": 522,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "primitive.CenterAUP = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(center);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
+        "line": 1303,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "PositionAup = AbsoluteUniversePosition.FromRuntimePosition(worldPoint),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
+        "line": 1337,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "PositionAup = AbsoluteUniversePosition.FromRuntimePosition(worldPoint),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs",
+        "line": 1896,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition leftAup = hasFiniteLeftPosition ? AbsoluteUniversePosition.FromRuntimePosition(leftPosition) : default;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs",
+        "line": 1897,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition rightAup = hasFiniteRightPosition ? AbsoluteUniversePosition.FromRuntimePosition(rightPosition) : default;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs",
+        "line": 2644,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition headAup = AbsoluteUniversePosition.FromRuntimePosition(headPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/DataArchaeologyRuntime.cs",
+        "line": 1123,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(new Vector3(position.x, position.y, position.z));"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/DebrisManager.cs",
+        "line": 811,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
+        "line": 406,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition hazardAup = AbsoluteUniversePosition.FromRuntimePosition(hazardPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
+        "line": 407,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs",
+        "line": 247,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "PositionAup = AbsoluteUniversePosition.FromRuntimePosition(hitPoint + normalizedHitNormal * 0.04f),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs",
+        "line": 551,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/HarvestablePlant.cs",
+        "line": 350,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition anchorAup = AbsoluteUniversePosition.FromRuntimePosition(anchor);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/HazardZoneManager.cs",
+        "line": 343,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/HazardZoneManager.cs",
+        "line": 360,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/HazardZoneManager.cs",
+        "line": 460,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition pointAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePoint);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/HazardZoneManager.cs",
+        "line": 514,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition pointAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePoint);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/HazardZoneManager.cs",
+        "line": 1092,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": ": AbsoluteUniversePosition.FromRuntimePosition(bounds.center);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/HectonHazardManager.cs",
+        "line": 59,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/HectonHazardManager.cs",
+        "line": 90,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition pointAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePoint);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/HectonPlayerState.cs",
+        "line": 53,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsolutePosition = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/HectonScanRenderRegistry.cs",
+        "line": 408,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "s_lootCenterAups[index] = AbsoluteUniversePosition.FromRuntimePosition(boundsCenter);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/HostileFlora.cs",
+        "line": 433,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 aup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/Loot/LootMagnetSystem.cs",
+        "line": 1103,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "aup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/MantaScooter.cs",
+        "line": 1930,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "PositionAup = Hecton8.World.AbsoluteUniversePosition.FromRuntimePosition(positionWs),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/Mining/DeployableSdfDrillRuntime.cs",
+        "line": 870,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "_anchorAup = AbsoluteUniversePosition.FromRuntimePosition(position);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/Mining/DeployableSdfDrillRuntime.cs",
+        "line": 1075,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 absolutePoint = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePoint);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/Mining/DeployableSdfDrillRuntime.cs",
+        "line": 1197,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "PositionAup = AbsoluteUniversePosition.FromRuntimePosition(hitPoint),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/PlayerNoiseEmitter.cs",
+        "line": 133,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs",
+        "line": 89,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition sourceAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs",
+        "line": 120,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs",
+        "line": 140,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition sampleAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs",
+        "line": 720,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "return AbsoluteUniversePosition.FromRuntimePosition(Vector3.zero);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/SargassumCutResponder.cs",
+        "line": 92,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 absolute = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(positionWS);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+        "line": 1421,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(position);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+        "line": 1447,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "stress.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(_hull.worldCenterOfMass);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+        "line": 1518,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "signal.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(ventPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+        "line": 1701,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition.FromRuntimePosition(worldPosition),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/SubmarineStationKeepingController.cs",
+        "line": 73,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 currentAbsolutePosition = AbsoluteUniversePosition.FromRuntimePosition(_hullRigidbody.worldCenterOfMass).ToAbsoluteDouble3();"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/SubmarineStationKeepingController.cs",
+        "line": 141,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "_targetAbsolutePosition = AbsoluteUniversePosition.FromRuntimePosition(_hullRigidbody.worldCenterOfMass).ToAbsoluteDouble3();"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/SubmarineStationKeepingController.cs",
+        "line": 196,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "_targetAbsolutePosition = AbsoluteUniversePosition.FromRuntimePosition(_hullRigidbody.worldCenterOfMass).ToAbsoluteDouble3();"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/VehicleMotor.cs",
+        "line": 393,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "_floraAnchorAup = AbsoluteUniversePosition.FromRuntimePosition(anchorPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/VehicleMotor.cs",
+        "line": 1280,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition wakeAup = AbsoluteUniversePosition.FromRuntimePosition(emitterPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/VehicleMotor.cs",
+        "line": 1527,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/VehicleMotor.cs",
+        "line": 1732,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition pointAup = AbsoluteUniversePosition.FromRuntimePosition(point);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs",
+        "line": 526,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": ": AbsoluteUniversePosition.FromRuntimePosition(headPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs",
+        "line": 1148,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "EnqueueVisualImpact(HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPoint), magnitude, signal.DamageType);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs",
+        "line": 1858,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "return global::Hecton8.World.AbsoluteUniversePosition.FromRuntimePosition(runtime);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs",
+        "line": 1866,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "return HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtime);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs",
+        "line": 1873,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "return HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtime);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonAtmosphereManager.cs",
+        "line": 1779,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition currentAup = AbsoluteUniversePosition.FromRuntimePosition(samplePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonDirectorAI.cs",
+        "line": 951,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition pingAup = AbsoluteUniversePosition.FromRuntimePosition(pingEvent.RuntimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonDirectorAI.cs",
+        "line": 969,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition brainAup = AbsoluteUniversePosition.FromRuntimePosition(_acousticPingPredatorContacts[i].Position);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonDirectorAI.cs",
+        "line": 1010,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition pulseAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonDirectorAI.cs",
+        "line": 1028,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition brainAup = AbsoluteUniversePosition.FromRuntimePosition(_acousticPingPredatorContacts[i].Position);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonDirectorAI.cs",
+        "line": 1062,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonDirectorAI.cs",
+        "line": 1148,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition predatorAup = AbsoluteUniversePosition.FromRuntimePosition(contact.Position);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonDirectorAI.cs",
+        "line": 1224,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition contactAup = AbsoluteUniversePosition.FromRuntimePosition(_predatorSpatialContacts[i].Position);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+        "line": 4236,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "PointAup = AbsoluteUniversePosition.FromRuntimePosition("
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+        "line": 4249,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+        "line": 4267,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "PositionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+        "line": 5195,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "acoustic.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(new Vector3("
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonItem.cs",
+        "line": 447,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "positionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);"
       },
       {
         "file": "Assets/_Project/Scripts/HectonNarrativeDirector.cs",
-        "line": 102,
-        "kind": "FLOAT_DISTANCE_REVIEW",
-        "snippet": "float distanceSq = math.distancesq(PlayerRuntime, poiRuntime);"
+        "line": 389,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition centerAup = AbsoluteUniversePosition.FromRuntimePosition(center);"
       },
       {
         "file": "Assets/_Project/Scripts/HectonNarrativeDirector.cs",
-        "line": 1118,
-        "kind": "FLOAT_DISTANCE_REVIEW",
-        "snippet": "return math.distancesq(origin, target);"
+        "line": 430,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonNarrativeDirector.cs",
+        "line": 917,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "return AbsoluteUniversePosition.FromRuntimePosition(new Vector3(runtime.x, runtime.y, runtime.z));"
       },
       {
         "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
-        "line": 5670,
-        "kind": "FLOAT_DISTANCE_REVIEW",
-        "snippet": "if (math.distancesq(_lastAppliedCenterOfMass, targetCenterOfMass) <= 0.0001f)"
+        "line": 2878,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "signal.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);"
       },
       {
-        "file": "Assets/_Project/Scripts/Physiology/DcsAscentProfileOverlay.cs",
-        "line": 66,
-        "kind": "FLOAT_DISTANCE_REVIEW",
-        "snippet": "float length = math.distance(new float2(x0, y0), new float2(x1, y1));"
+        "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+        "line": 2976,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "RecordLastValidAup(AbsoluteUniversePosition.FromRuntimePosition(runtimePosition));"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+        "line": 5059,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition currentPlatformAup = AbsoluteUniversePosition.FromRuntimePosition(currentPlatformPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+        "line": 5268,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition bodyAup = AbsoluteUniversePosition.FromRuntimePosition(bodyPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+        "line": 10496,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(splashPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+        "line": 10618,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "PositionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+        "line": 10638,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition transitionAup = AbsoluteUniversePosition.FromRuntimePosition(safeRuntimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+        "line": 11523,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "PositionAup = AbsoluteUniversePosition.FromRuntimePosition(hitPoint),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonScanMarkerSystem.cs",
+        "line": 174,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition markerAup = AbsoluteUniversePosition.FromRuntimePosition(new Vector3(worldPos.x, worldPos.y, worldPos.z));"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonScanMarkerSystem.cs",
+        "line": 481,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": ": AbsoluteUniversePosition.FromRuntimePosition(fallbackRuntimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs",
+        "line": 3800,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "return AbsoluteUniversePosition.FromRuntimePosition(runtimePosition).ToAlignedBlit();"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+        "line": 4274,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition queryAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+        "line": 4508,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 startAup = AbsoluteUniversePosition.FromRuntimePosition(runtimeStart).ToAbsoluteDouble3();"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+        "line": 4509,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 endAup = AbsoluteUniversePosition.FromRuntimePosition(runtimeEnd).ToAbsoluteDouble3();"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+        "line": 4611,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition minAup = AbsoluteUniversePosition.FromRuntimePosition(bounds.min);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+        "line": 4612,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition maxAup = AbsoluteUniversePosition.FromRuntimePosition(bounds.max);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+        "line": 5495,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition worldCenterAup = AbsoluteUniversePosition.FromRuntimePosition(worldCenter);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+        "line": 5496,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition observerAup = AbsoluteUniversePosition.FromRuntimePosition(observerPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+        "line": 5514,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition worldCenterAup = AbsoluteUniversePosition.FromRuntimePosition(worldCenter);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+        "line": 1604,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "Vector3 absolutePosition = ToVector3(HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(pos));"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+        "line": 1634,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 absoluteCenter = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeCenter);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+        "line": 1653,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(pos);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+        "line": 1694,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "Vector3 absolutePosition = ToVector3(HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(pos));"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+        "line": 1714,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 absoluteCenter = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeCenter);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+        "line": 1735,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "Vector3 absolutePosition = ToVector3(HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(pos));"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+        "line": 1814,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 absoluteStart = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(start);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+        "line": 1815,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 absoluteEnd = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(end);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Interaction/EquipmentInteractionHandler.cs",
+        "line": 465,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeHitPoint);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Interaction/LifePodSeatStrapCoordinator.cs",
+        "line": 357,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "_seatLockAup = AbsoluteUniversePosition.FromRuntimePosition(targetPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Interaction/PhysicalHandController.cs",
+        "line": 1863,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition aupA = AbsoluteUniversePosition.FromRuntimePosition(a);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Interaction/PhysicalHandController.cs",
+        "line": 1864,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition aupB = AbsoluteUniversePosition.FromRuntimePosition(b);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Interaction/PhysicalHandController.cs",
+        "line": 1876,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "return AbsoluteUniversePosition.FromRuntimePosition(contactPoint);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Interaction/PhysicalInteractionHandler.cs",
+        "line": 899,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition anchorAup = AbsoluteUniversePosition.FromRuntimePosition(anchorPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Interaction/PhysicalInteractionHandler.cs",
+        "line": 900,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition bodyAup = AbsoluteUniversePosition.FromRuntimePosition(bodyPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Interaction/PhysicalSnapSwitch.cs",
+        "line": 432,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(handPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Interaction/PlayerInteraction.cs",
+        "line": 619,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "signal.TargetAup = AbsoluteUniversePosition.FromRuntimePosition(anchor);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Interaction/VRCableDragPlug.cs",
+        "line": 289,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition endAup = AbsoluteUniversePosition.FromRuntimePosition(end);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Interaction/VRCableDragPlug.cs",
+        "line": 392,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition endAup = AbsoluteUniversePosition.FromRuntimePosition(end);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Interaction/VRCableDragPlug.cs",
+        "line": 462,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "return AbsoluteUniversePosition.FromRuntimePosition(Vector3.zero);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Interaction/VRCableDragPlug.cs",
+        "line": 466,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "? AbsoluteUniversePosition.FromRuntimePosition(position)"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Interaction/VRCableDragPlug.cs",
+        "line": 467,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": ": AbsoluteUniversePosition.FromRuntimePosition(Vector3.zero);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Interaction/VRCableDragPlug.cs",
+        "line": 485,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "aup = AbsoluteUniversePosition.FromRuntimePosition(position);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Items/PickupItem.cs",
+        "line": 571,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "positionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/LaserCutter.cs",
+        "line": 1343,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "TargetAup = AbsoluteUniversePosition.FromRuntimePosition(modulePosition),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/LaserCutter.cs",
+        "line": 1344,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "RayOriginAup = AbsoluteUniversePosition.FromRuntimePosition(rayOrigin),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/LaserCutter.cs",
+        "line": 1493,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition anchorAup = AbsoluteUniversePosition.FromRuntimePosition(anchorPoint);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/LaserCutter.cs",
+        "line": 1948,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "return HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePoint);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Lighting/Shafts/ScreenSpaceLightShaftSource.cs",
+        "line": 119,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 sourceAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(sourcePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/ModdingAPI/ModEventProjectionBridge.cs",
+        "line": 232,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 playerAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3("
+      },
+      {
+        "file": "Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs",
+        "line": 186,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(position);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs",
+        "line": 389,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs",
+        "line": 472,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(record.Position);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/ModularEquipmentEngine.cs",
+        "line": 1398,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "_thermalGridRootAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(originWS);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/NoiseSystem.cs",
+        "line": 120,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(position);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/NoiseSystem.cs",
+        "line": 175,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(position);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/PDA/PDAMarkerRegistry.cs",
+        "line": 155,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(position);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/PDA/PDAMarkerRegistry.cs",
+        "line": 236,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(position);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/PDA/PDAMarkerRegistry.cs",
+        "line": 337,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "record.positionAup = AbsoluteUniversePosition.FromRuntimePosition(position);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/PDA/PDAMarkerRegistry.cs",
+        "line": 413,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/PDA/PDAMarkerRegistry.cs",
+        "line": 508,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": ": AbsoluteUniversePosition.FromRuntimePosition(entry.GetPosition());"
+      },
+      {
+        "file": "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+        "line": 1223,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "playerAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+        "line": 317,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 aup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+        "line": 857,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "return IsFinite(position) ? AbsoluteUniversePosition.FromRuntimePosition(position) : playerAup;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
+        "line": 2157,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition.FromRuntimePosition(runtimePosition),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
+        "line": 3078,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "_lastFiniteBodyAups[rigidbodyIndex] = AbsoluteUniversePosition.FromRuntimePosition(position);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physiology/PlayerStressMetricsRuntime.cs",
+        "line": 559,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "aup = AbsoluteUniversePosition.FromRuntimePosition(new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z));"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physiology/ShinobuMetabolismRuntime.cs",
+        "line": 912,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "thermalRootAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(originWS);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/PlayerBuilder.cs",
+        "line": 3273,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 centerAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(centerRuntime);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/PlayerBuilder.cs",
+        "line": 3274,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 originAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(Vector3.zero);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/PlayerInventory.cs",
+        "line": 2626,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition dropAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/PlayerTool.cs",
+        "line": 224,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 absoluteOrigin = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(origin);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/PlayerTool.cs",
+        "line": 961,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "absoluteAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(new Vector3("
+      },
+      {
+        "file": "Assets/_Project/Scripts/Plugins/Crest/HectonCrestOceanDepthCacheBootstrap.cs",
+        "line": 993,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 absolute = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Plugins/MapMagic/MapMagicRuntimeBridge.cs",
+        "line": 399,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 aupOrigin = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeOrigin);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Power/Generators/RadioisotopeThermalGenerator.cs",
+        "line": 859,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "signal.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(position);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Progression/NarrativeProgressionBridge.cs",
+        "line": 215,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition podAup = AbsoluteUniversePosition.FromRuntimePosition(lifePodExitReferenceWorld);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Prologue/Space/OrbitalRelativityDirector.cs",
+        "line": 161,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "_originAup = AbsoluteUniversePosition.FromRuntimePosition(Vector3.zero);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Quest/MissionMarkerSystem.cs",
+        "line": 496,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "? AbsoluteUniversePosition.FromRuntimePosition(resolvedFallbackPosition)"
       },
       {
         "file": "Assets/_Project/Scripts/RepairTool.cs",
-        "line": 1161,
-        "kind": "FLOAT_DISTANCE_REVIEW",
-        "snippet": "if (math.distancesq(dentPoint, localPoint) > HullDentRepairRadiusSq)"
+        "line": 601,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(_hit.point);"
       },
       {
-        "file": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
-        "line": 375,
-        "kind": "FLOAT_DISTANCE_REVIEW",
-        "snippet": "if (math.distancesq(new float3(breach.x, breach.y, breach.z), LocalHitPoint) <= RepairRadiusSq)"
+        "file": "Assets/_Project/Scripts/RepairTool.cs",
+        "line": 1024,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 absolute = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPoint);"
       },
       {
-        "file": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
-        "line": 982,
-        "kind": "FLOAT_DISTANCE_REVIEW",
-        "snippet": "if (math.distancesq(new float3(breach.x, breach.y, breach.z), localPoint) > repairRadiusSq)"
+        "file": "Assets/_Project/Scripts/RepairTool.cs",
+        "line": 1280,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 absolute = invalid ? double3.zero : HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPoint);"
       },
       {
-        "file": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
-        "line": 1043,
-        "kind": "FLOAT_DISTANCE_REVIEW",
-        "snippet": "if (math.distancesq(new float3(breach.x, breach.y, breach.z), localPoint) > mergeRadiusSq)"
+        "file": "Assets/_Project/Scripts/RepairTool.cs",
+        "line": 1496,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 absolute = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPoint);"
       },
       {
-        "file": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
-        "line": 1078,
-        "kind": "FLOAT_DISTANCE_REVIEW",
-        "snippet": "if (math.distancesq(new float3(deferred.x, deferred.y, deferred.z), localPoint) > mergeRadiusSq)"
+        "file": "Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs",
+        "line": 2717,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition legacyAup = AbsoluteUniversePosition.FromRuntimePosition(value.GetPosition());"
       },
       {
-        "file": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
-        "line": 239,
-        "kind": "FLOAT_DISTANCE_REVIEW",
-        "snippet": "float distanceSq = math.distancesq(position, cascadeEvent.Center);"
+        "file": "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+        "line": 8263,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "return AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);"
       },
       {
-        "file": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
-        "line": 2818,
-        "kind": "FLOAT_DISTANCE_REVIEW",
-        "snippet": "math.distancesq(point.PositionWS, position) > math.max(radius * radius * 4f, 16f))"
+        "file": "Assets/_Project/Scripts/SaveManager.cs",
+        "line": 3158,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition savedAup = AbsoluteUniversePosition.FromRuntimePosition(savedRuntimePosition);"
       },
       {
-        "file": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
-        "line": 2859,
-        "kind": "FLOAT_DISTANCE_REVIEW",
-        "snippet": "if (point.SourceKind == sourceKind && math.distancesq(point.TargetWS, position) <= mergeRadiusSq)"
+        "file": "Assets/_Project/Scripts/ScannerTool.cs",
+        "line": 3219,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition cameraAup = AbsoluteUniversePosition.FromRuntimePosition(origin);"
       },
       {
-        "file": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+        "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
+        "line": 3306,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition moduleAup = AbsoluteUniversePosition.FromRuntimePosition(worldCenter);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
+        "line": 3705,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition hostAup = AbsoluteUniversePosition.FromRuntimePosition(hostCenter);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
+        "line": 3718,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition submarineCenterAup = AbsoluteUniversePosition.FromRuntimePosition(_submarineBody.worldCenterOfMass);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/SubmarineElectrolysisModule.cs",
+        "line": 672,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition nodeAup = AbsoluteUniversePosition.FromRuntimePosition(ResolveCinematicPulsePosition());"
+      },
+      {
+        "file": "Assets/_Project/Scripts/SubmarineFluidDynamics.cs",
+        "line": 4369,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "signal.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/SubmarineFluidDynamics.cs",
+        "line": 4982,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPoint);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/SubmarineFluidDynamics.cs",
+        "line": 5067,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldPoint);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/TetherInstance.cs",
+        "line": 2172,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "PointAup = AbsoluteUniversePosition.FromRuntimePosition(midpoint),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/TetherInstance.cs",
+        "line": 2199,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AnchorAup = AbsoluteUniversePosition.FromRuntimePosition(safeAnchorPosition),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/TetherInstance.cs",
+        "line": 2200,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "PayloadAup = AbsoluteUniversePosition.FromRuntimePosition(safePayloadPosition),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/TetherInstance.cs",
+        "line": 2225,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "PointAup = AbsoluteUniversePosition.FromRuntimePosition(snapPosition),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/TetherInstance.cs",
+        "line": 2260,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 localOriginAup = AbsoluteUniversePosition.FromRuntimePosition(Vector3.zero).ToAbsoluteDouble3();"
+      },
+      {
+        "file": "Assets/_Project/Scripts/TetherInstance.cs",
+        "line": 2261,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 anchorAup = AbsoluteUniversePosition.FromRuntimePosition(anchorPosition).ToAbsoluteDouble3();"
+      },
+      {
+        "file": "Assets/_Project/Scripts/TetherInstance.cs",
+        "line": 2262,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 payloadAup = AbsoluteUniversePosition.FromRuntimePosition(payloadPosition).ToAbsoluteDouble3();"
+      },
+      {
+        "file": "Assets/_Project/Scripts/TetherInstance.cs",
+        "line": 3046,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "SnapAup = AbsoluteUniversePosition.FromRuntimePosition(snapPosition),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/TetherManager.cs",
+        "line": 939,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "cameraAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(cameraPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Thermodynamics/ThermodynamicsHazardGridRuntime.cs",
+        "line": 482,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "_gridOriginAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(Vector3.zero);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/ToolHitUtility.cs",
+        "line": 266,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "signal.PointAup = AbsoluteUniversePosition.FromRuntimePosition(hitPoint);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/AcousticEcholocationTranslator.cs",
+        "line": 525,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": ": AbsoluteUniversePosition.FromRuntimePosition(contact.Position);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/AcousticEcholocationTranslator.cs",
+        "line": 564,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition anchorAup = AbsoluteUniversePosition.FromRuntimePosition(anchors[i]);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/AcousticEcholocationTranslator.cs",
+        "line": 740,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition targetAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/DiegeticPanelController.cs",
+        "line": 1680,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition((Vector3)runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/DiegeticPanelController.cs",
+        "line": 1861,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition a = AbsoluteUniversePosition.FromRuntimePosition(runtimePositionA);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/DiegeticPanelController.cs",
+        "line": 1862,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition b = AbsoluteUniversePosition.FromRuntimePosition(runtimePositionB);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/DiegeticPDAController.cs",
+        "line": 518,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition cameraAup = AbsoluteUniversePosition.FromRuntimePosition(cameraPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/DiegeticPDAController.cs",
+        "line": 519,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition anchorAup = AbsoluteUniversePosition.FromRuntimePosition(anchorPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/PDAAtlasSignalTab.cs",
+        "line": 747,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition coreAup = AbsoluteUniversePosition.FromRuntimePosition(sys.AtlasCorePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/PDASpectrumTab.cs",
+        "line": 633,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition toAup = AbsoluteUniversePosition.FromRuntimePosition(toRuntimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/PhysicalPanelButton.cs",
+        "line": 288,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(handPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+        "line": 2737,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition cameraAup = AbsoluteUniversePosition.FromRuntimePosition(cameraPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+        "line": 2739,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition gridCenterAup = AbsoluteUniversePosition.FromRuntimePosition(gridCenter);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+        "line": 3138,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition cameraAup = AbsoluteUniversePosition.FromRuntimePosition(cameraPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+        "line": 6551,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition((Vector3)runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsRuntime.cs",
+        "line": 1017,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "CenterAup = AbsoluteUniversePosition.FromRuntimePosition(ToVector3(matrix.c3.xyz)),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsRuntime.cs",
+        "line": 1802,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "originAup = AbsoluteUniversePosition.FromRuntimePosition(position);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsRuntime.cs",
+        "line": 1812,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "originAup = AbsoluteUniversePosition.FromRuntimePosition(VectorFinite(fallbackPosition) ? fallbackPosition : Vector3.zero);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/TopographicalSonar/TopographicalSonarSynthesizer.cs",
+        "line": 955,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "_lastPingAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(pingRuntimeVector);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/TopographicalSonar/TopographicalSonarSynthesizer.cs",
+        "line": 956,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "_lastCameraAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(cameraRuntimeVector);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/TopographicalSonar/TopographicalSonarSynthesizer.cs",
+        "line": 1362,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 cameraAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(cameraPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/VFX/CameraJuiceSystem.cs",
+        "line": 2197,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition fromAup = AbsoluteUniversePosition.FromRuntimePosition(fromRuntimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/VFX/CameraJuiceSystem.cs",
+        "line": 2198,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition toAup = AbsoluteUniversePosition.FromRuntimePosition(toRuntimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs",
+        "line": 1342,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "PositionAup = AbsoluteUniversePosition.FromRuntimePosition(position),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/VFX/NativeTrailRenderer.cs",
+        "line": 306,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs",
+        "line": 289,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 aup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Visor/InternalFloodWaterlineRuntime.cs",
+        "line": 193,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": ": AbsoluteUniversePosition.FromRuntimePosition(cameraRuntimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Visor/InternalFloodWaterlineRuntime.cs",
+        "line": 417,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "PositionAup = AbsoluteUniversePosition.FromRuntimePosition(cameraRuntimePosition),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+        "line": 67,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition.FromRuntimePosition(worldPosition),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+        "line": 128,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": ": AbsoluteUniversePosition.FromRuntimePosition(WorldPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+        "line": 146,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition.FromRuntimePosition(worldPosition),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+        "line": 198,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": ": AbsoluteUniversePosition.FromRuntimePosition(WorldPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+        "line": 927,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeHitPoint);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+        "line": 975,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeHitPoint);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/VoxelRuntimeIntegrityUtility.cs",
+        "line": 26,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition worldCenterAup = AbsoluteUniversePosition.FromRuntimePosition(worldCenter);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/VoxelRuntimeIntegrityUtility.cs",
+        "line": 27,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition observerAup = AbsoluteUniversePosition.FromRuntimePosition(observerPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AcousticOcclusionUtility.cs",
+        "line": 601,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 midpointAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(midpointRuntime);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AcousticOcclusionUtility.cs",
+        "line": 717,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition sourceAup = AbsoluteUniversePosition.FromRuntimePosition(sourcePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AcousticOcclusionUtility.cs",
+        "line": 718,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition listenerAup = AbsoluteUniversePosition.FromRuntimePosition(listenerPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs",
+        "line": 415,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition referenceAup = AbsoluteUniversePosition.FromRuntimePosition(referencePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs",
+        "line": 443,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "_cachedCameraAup = AbsoluteUniversePosition.FromRuntimePosition(GetCameraPosition());"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/Biolum/HectonBiolumZone.cs",
+        "line": 285,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "_cachedZoneAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/Biolum/HectonBiolumZone.cs",
+        "line": 528,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "_cachedZoneAup = AbsoluteUniversePosition.FromRuntimePosition(_cachedZoneRuntimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/Biolum/HectonBiolumZone.cs",
+        "line": 546,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": ": AbsoluteUniversePosition.FromRuntimePosition(Vector3.zero);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+        "line": 424,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+        "line": 485,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition queryAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+        "line": 566,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition queryAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+        "line": 1995,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition.FromRuntimePosition(snapPosition),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+        "line": 2522,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "PositionAup = AbsoluteUniversePosition.FromRuntimePosition(new Vector3(spawnPosition.x, spawnPosition.y, spawnPosition.z)),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+        "line": 3017,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition soundAup = AbsoluteUniversePosition.FromRuntimePosition(instancePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+        "line": 3115,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition soundAup = AbsoluteUniversePosition.FromRuntimePosition(instancePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/FaunaSpatialHashRegistry.cs",
+        "line": 267,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/FaunaSpatialHashRegistry.cs",
+        "line": 511,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/FaunaSpatialHashRegistry.cs",
         "line": 785,
-        "kind": "FLOAT_DISTANCE_REVIEW",
-        "snippet": "float distanceSq = math.distancesq(origin, node.RuntimePosition);"
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "positionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);"
       },
       {
-        "file": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
-        "line": 842,
-        "kind": "FLOAT_DISTANCE_REVIEW",
-        "snippet": "if (math.distancesq(rootPosition, node.RuntimePosition) > radiusSq)"
+        "file": "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs",
+        "line": 814,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition("
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/HectonBrinePoolMeshGenerator.cs",
+        "line": 316,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(runtimeOrigin);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/HectonBrineToxicMudGrid.cs",
+        "line": 86,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition centerAup = AbsoluteUniversePosition.FromRuntimePosition(runtimeCenter);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/HectonBrineToxicMudGrid.cs",
+        "line": 231,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/HectonBrineToxicMudGrid.cs",
+        "line": 243,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/HectonIndirectVegetationContracts.cs",
+        "line": 195,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/HectonVoxelStreamingBridge.cs",
+        "line": 221,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/HectonVoxelStreamingBridge.cs",
+        "line": 229,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition absoluteHolePosition = AbsoluteUniversePosition.FromRuntimePosition(hole.Position);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/HectonVoxelStreamingBridge.cs",
+        "line": 283,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/ImpostorSystem.cs",
+        "line": 350,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition objectAup = AbsoluteUniversePosition.FromRuntimePosition(objectPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/ImpostorSystem.cs",
+        "line": 734,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition billboardAup = AbsoluteUniversePosition.FromRuntimePosition(billboardPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/Outposts/MarauderOutpostGenerationService.cs",
+        "line": 1216,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(new Vector3(_generationOrigin.x, _generationOrigin.y, _generationOrigin.z));"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/Outposts/MarauderOutpostGenerationService.cs",
+        "line": 1293,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "OriginAup = AbsoluteUniversePosition.FromRuntimePosition(new Vector3(_generationOrigin.x, _generationOrigin.y, _generationOrigin.z)),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+        "line": 86,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "return FromAbsolutePosition(HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition));"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs",
+        "line": 1373,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs",
+        "line": 1454,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(section.WorldCenter);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs",
+        "line": 1477,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(section.WorldCenter);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs",
+        "line": 2862,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 absoluteCenter = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeCenter);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs",
+        "line": 2881,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 absoluteCenter = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(worldBounds.center);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs",
+        "line": 3262,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition);"
       },
       {
         "file": "Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs",
-        "line": 2902,
-        "kind": "FLOAT_DISTANCE_REVIEW",
-        "snippet": "return math.distancesq(position, previousPosition) <= CopperClumpDistanceSq &&"
+        "line": 1861,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": ": AbsoluteUniversePosition.FromRuntimePosition(new Vector3(position.x, position.y, position.z));"
       },
       {
-        "file": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
-        "line": 305,
-        "kind": "FLOAT_DISTANCE_REVIEW",
-        "snippet": "double scoreSq = math.distancesq(ProjectedAbsolute, ToAbsoluteDouble3(ChunkCenters[index]));"
+        "file": "Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs",
+        "line": 3000,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition anchorAup = AbsoluteUniversePosition.FromRuntimePosition(site.AnchorWS);"
       },
       {
-        "file": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
-        "line": 5270,
-        "kind": "FLOAT_DISTANCE_REVIEW",
-        "snippet": "return math.distancesq(ToAbsoluteDouble3(in lhs), ToAbsoluteDouble3(in rhs));"
+        "file": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+        "line": 860,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition centerAup = AbsoluteUniversePosition.FromRuntimePosition(center);"
       },
       {
-        "file": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
-        "line": 5276,
-        "kind": "FLOAT_DISTANCE_REVIEW",
-        "snippet": "return math.distancesq(ToAbsoluteDouble3(in lhs), ToAbsoluteDouble3(in rhs));"
+        "file": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+        "line": 899,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition entryAup = AbsoluteUniversePosition.FromRuntimePosition(entry.Center);"
       },
       {
-        "file": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
-        "line": 5282,
-        "kind": "FLOAT_DISTANCE_REVIEW",
-        "snippet": "return math.distancesq(ToAbsoluteDouble3(in lhs), ToAbsoluteDouble3(in rhs));"
+        "file": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+        "line": 993,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition a = AbsoluteUniversePosition.FromRuntimePosition(runtimePositionA);"
       },
       {
-        "file": "Assets/_Project/Scripts/WorldProceduralScatterDirectorCandidateAcceptance.cs",
-        "line": 294,
-        "kind": "FLOAT_DISTANCE_REVIEW",
-        "snippet": "if (math.distancesq(CandidatePosition, existingPosition) < MaxRelevantDistanceSq)"
+        "file": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+        "line": 994,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition b = AbsoluteUniversePosition.FromRuntimePosition(runtimePositionB);"
       },
       {
-        "file": "Assets/_Project/Scripts/WorldProceduralScatterDirectorCandidateAcceptance.cs",
-        "line": 320,
-        "kind": "FLOAT_DISTANCE_REVIEW",
-        "snippet": "if (math.distancesq(CandidatePosition, existing.Position) < minDistance * minDistance)"
+        "file": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+        "line": 1002,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": ": AbsoluteUniversePosition.FromRuntimePosition(fallbackRuntimePosition);"
       },
       {
-        "file": "Assets/_Project/Scripts/WorldProceduralScatterDirectorCandidateAcceptance.cs",
-        "line": 596,
-        "kind": "FLOAT_DISTANCE_REVIEW",
-        "snippet": "if (math.distancesq(candidate.Position, existingPosition) < maxRelevantDistanceSq)"
+        "file": "Assets/_Project/Scripts/WorldGenerativeGeologySeamExecutionDirector.cs",
+        "line": 374,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": ": AbsoluteUniversePosition.FromRuntimePosition(plan.RuntimeVoxelVolumeCenter),"
       },
       {
-        "file": "Assets/_Project/Scripts/WorldProceduralScatterDirectorCandidateAcceptance.cs",
-        "line": 614,
-        "kind": "FLOAT_DISTANCE_REVIEW",
-        "snippet": "if (minDistance > 0f && math.distancesq(candidate.Position, existing.Position) < minDistance * minDistance)"
+        "file": "Assets/_Project/Scripts/WorldGenerativeGeologySeamExecutionDirector.cs",
+        "line": 377,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": ": AbsoluteUniversePosition.FromRuntimePosition(plan.TerrainContactPosition),"
       },
       {
-        "file": "Assets/_Project/Scripts/WorldProceduralScatterDirectorCandidateAcceptance.cs",
-        "line": 1062,
-        "kind": "FLOAT_DISTANCE_REVIEW",
-        "snippet": "if (math.distancesq(candidate.Position, existingPosition) < maxRelevantDistanceSq)"
+        "file": "Assets/_Project/Scripts/WorldGenerativeGeologyTerrainSeamApplier.cs",
+        "line": 612,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 terrainAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(terrainPosition);"
       },
       {
-        "file": "Assets/_Project/Scripts/WorldProceduralScatterDirectorCandidateAcceptance.cs",
-        "line": 1080,
-        "kind": "FLOAT_DISTANCE_REVIEW",
-        "snippet": "if (minDistance > 0f && math.distancesq(candidate.Position, existing.Position) < minDistance * minDistance)"
+        "file": "Assets/_Project/Scripts/WorldGenerativeGeologyTerrainSeamApplier.cs",
+        "line": 968,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": ": HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeFallback);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/WorldGenerativeGeologyTerrainSeamApplier.cs",
+        "line": 984,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": ": HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeFallback);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/WorldGenerativeGeologyTerrainSeamApplier.cs",
+        "line": 1000,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": ": HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimeFallback);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/WorldGenerativeGeologyTerrainSeamApplier.cs",
+        "line": 1281,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 terrainAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(terrainPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/WorldGenerativeGeologyTerrainSeamApplier.cs",
+        "line": 1406,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 terrainAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(terrainPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/WorldGenerativeGeologyTerrainSeamApplier.cs",
+        "line": 1869,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 terrainAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(position);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/WorldGenerativeGeologyTerrainSeamApplier.cs",
+        "line": 1900,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 terrainAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(terrainPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/WorldGenerativeGeologyVoxelBridgeDirector.cs",
+        "line": 409,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 epicenterAbsoluteDouble = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(payload.EpicenterWS);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/WorldGenerativeGeologyVoxelBridgeDirector.cs",
+        "line": 541,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "PositionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimeDebrisPosition),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/WorldGenerativeGeologyVoxelBridgeDirector.cs",
+        "line": 1480,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition ventAup = AbsoluteUniversePosition.FromRuntimePosition(ventPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/WorldProceduralScatterDirectorSpatialHelpers.cs",
+        "line": 31,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "double3 absolute = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/WorldZoneAnchor.cs",
+        "line": 170,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/WorldZoneAnchor.cs",
+        "line": 176,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/WorldZoneAnchor.cs",
+        "line": 194,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/WorldZoneAnchor.cs",
+        "line": 208,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/WorldZoneAnchor.cs",
+        "line": 272,
+        "kind": "RUNTIME_AUP_BRIDGE_REVIEW",
+        "snippet": "AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);"
       }
     ],
     "directAupFloat3CastByFile": [],
-    "runtimeComponentFloatAupCastByFile": [
+    "runtimeComponentFloatAupCastByFile": [],
+    "strictTransformAuthorityByFile": [],
+    "runtimeAupBridgeByFile": [
       {
-        "file": "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+        "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
+        "count": 12
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+        "count": 8
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+        "count": 8
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+        "count": 8
+      },
+      {
+        "file": "Assets/_Project/Scripts/TetherInstance.cs",
+        "count": 8
+      },
+      {
+        "file": "Assets/_Project/Scripts/WorldGenerativeGeologyTerrainSeamApplier.cs",
+        "count": 8
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonDirectorAI.cs",
+        "count": 7
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+        "count": 7
+      },
+      {
+        "file": "Assets/_Project/Scripts/Construction/VehicleDockingModule.cs",
+        "count": 6
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs",
+        "count": 6
+      },
+      {
+        "file": "Assets/_Project/Scripts/Interaction/VRCableDragPlug.cs",
+        "count": 6
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs",
+        "count": 6
+      },
+      {
+        "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+        "count": 5
+      },
+      {
+        "file": "Assets/_Project/Scripts/Economy/ResourceScarcityDirector.cs",
+        "count": 5
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/HazardZoneManager.cs",
+        "count": 5
+      },
+      {
+        "file": "Assets/_Project/Scripts/PDA/PDAMarkerRegistry.cs",
+        "count": 5
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+        "count": 5
+      },
+      {
+        "file": "Assets/_Project/Scripts/WorldZoneAnchor.cs",
+        "count": 5
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/GlobalSignals.cs",
+        "count": 4
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/HectonXRRuntimeState.cs",
+        "count": 4
+      },
+      {
+        "file": "Assets/_Project/Scripts/Ecosystem/MigrationDirector.cs",
+        "count": 4
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.Compatibility.cs",
+        "count": 4
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fauna/FaunaSensorSuite.cs",
+        "count": 4
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs",
+        "count": 4
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+        "count": 4
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/VehicleMotor.cs",
+        "count": 4
+      },
+      {
+        "file": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityRuntime.cs",
+        "count": 4
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+        "count": 4
+      },
+      {
+        "file": "Assets/_Project/Scripts/LaserCutter.cs",
+        "count": 4
+      },
+      {
+        "file": "Assets/_Project/Scripts/RepairTool.cs",
+        "count": 4
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+        "count": 4
+      },
+      {
+        "file": "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+        "count": 4
+      },
+      {
+        "file": "Assets/_Project/Scripts/AtlasSignal/SignalBeacon.cs",
+        "count": 3
+      },
+      {
+        "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+        "count": 3
+      },
+      {
+        "file": "Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs",
+        "count": 3
+      },
+      {
+        "file": "Assets/_Project/Scripts/Construction/HectonBlueprintPreviewBatch.cs",
+        "count": 3
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs",
+        "count": 3
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/Mining/DeployableSdfDrillRuntime.cs",
+        "count": 3
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/SubmarineStationKeepingController.cs",
+        "count": 3
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonNarrativeDirector.cs",
+        "count": 3
+      },
+      {
+        "file": "Assets/_Project/Scripts/Interaction/PhysicalHandController.cs",
+        "count": 3
+      },
+      {
+        "file": "Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs",
+        "count": 3
+      },
+      {
+        "file": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
+        "count": 3
+      },
+      {
+        "file": "Assets/_Project/Scripts/SubmarineFluidDynamics.cs",
+        "count": 3
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/AcousticEcholocationTranslator.cs",
+        "count": 3
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/DiegeticPanelController.cs",
+        "count": 3
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsRuntime.cs",
+        "count": 3
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/TopographicalSonar/TopographicalSonarSynthesizer.cs",
+        "count": 3
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/AcousticOcclusionUtility.cs",
+        "count": 3
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/Biolum/HectonBiolumZone.cs",
+        "count": 3
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/FaunaSpatialHashRegistry.cs",
+        "count": 3
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/HectonBrineToxicMudGrid.cs",
+        "count": 3
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/HectonVoxelStreamingBridge.cs",
+        "count": 3
+      },
+      {
+        "file": "Assets/_Project/Scripts/WorldGenerativeGeologyVoxelBridgeDirector.cs",
+        "count": 3
+      },
+      {
+        "file": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+        "count": 2
+      },
+      {
+        "file": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
+        "count": 2
+      },
+      {
+        "file": "Assets/_Project/Scripts/Construction/WaterPumpModule.cs",
+        "count": 2
+      },
+      {
+        "file": "Assets/_Project/Scripts/CurrentVolume.cs",
+        "count": 2
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fabricator.cs",
+        "count": 2
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/BaseAirlock.cs",
+        "count": 2
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs",
+        "count": 2
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
+        "count": 2
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/EnvironmentalHazard.cs",
+        "count": 2
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/HarvestableOutcrop.cs",
+        "count": 2
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/HectonHazardManager.cs",
+        "count": 2
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonScanMarkerSystem.cs",
+        "count": 2
+      },
+      {
+        "file": "Assets/_Project/Scripts/Interaction/PhysicalInteractionHandler.cs",
+        "count": 2
+      },
+      {
+        "file": "Assets/_Project/Scripts/NoiseSystem.cs",
+        "count": 2
+      },
+      {
+        "file": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
+        "count": 2
+      },
+      {
+        "file": "Assets/_Project/Scripts/PlayerBuilder.cs",
+        "count": 2
+      },
+      {
+        "file": "Assets/_Project/Scripts/PlayerTool.cs",
+        "count": 2
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/DiegeticPDAController.cs",
+        "count": 2
+      },
+      {
+        "file": "Assets/_Project/Scripts/VFX/CameraJuiceSystem.cs",
+        "count": 2
+      },
+      {
+        "file": "Assets/_Project/Scripts/Visor/InternalFloodWaterlineRuntime.cs",
+        "count": 2
+      },
+      {
+        "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+        "count": 2
+      },
+      {
+        "file": "Assets/_Project/Scripts/VoxelRuntimeIntegrityUtility.cs",
+        "count": 2
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs",
+        "count": 2
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/ImpostorSystem.cs",
+        "count": 2
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/Outposts/MarauderOutpostGenerationService.cs",
+        "count": 2
+      },
+      {
+        "file": "Assets/_Project/Scripts/WorldGenerativeGeologySeamExecutionDirector.cs",
+        "count": 2
+      },
+      {
+        "file": "Assets/_Project/Scripts/AtlasSignal/AtlasSignalSystem.cs",
         "count": 1
       },
       {
-        "file": "Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs",
+        "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
         "count": 1
-      }
-    ],
-    "strictTransformAuthorityByFile": [
+      },
       {
-        "file": "Assets/_Project/Scripts/Gameplay/SealedDoor.cs",
+        "file": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/BiomeMatrixDirector.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Construction/BaseDegradationSystem.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Construction/DeepDrillModule.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Construction/LogisticsPipeNode.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Construction/VRConstructionWeldTarget.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/CrashTelemetryBuffer.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Ecosystem/FaunaGeneticsManager.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/EncounterDirector.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fauna/FaunaBrain.Foveated.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fauna/LeviathanTentacleVerletSolver.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/BatteryCharger.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/BeaconRegistry.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/BioReactor.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/DataArchaeologyRuntime.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/DebrisManager.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/HarvestablePlant.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/HectonPlayerState.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/HectonScanRenderRegistry.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/HostileFlora.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/Loot/LootMagnetSystem.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/MantaScooter.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/PlayerNoiseEmitter.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/SargassumCutResponder.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonAtmosphereManager.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonItem.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Interaction/EquipmentInteractionHandler.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Interaction/LifePodSeatStrapCoordinator.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Interaction/PhysicalSnapSwitch.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Interaction/PlayerInteraction.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Items/PickupItem.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Lighting/Shafts/ScreenSpaceLightShaftSource.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/ModdingAPI/ModEventProjectionBridge.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/ModularEquipmentEngine.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physiology/PlayerStressMetricsRuntime.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physiology/ShinobuMetabolismRuntime.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/PlayerInventory.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Plugins/Crest/HectonCrestOceanDepthCacheBootstrap.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Plugins/MapMagic/MapMagicRuntimeBridge.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Power/Generators/RadioisotopeThermalGenerator.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Progression/NarrativeProgressionBridge.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Prologue/Space/OrbitalRelativityDirector.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Quest/MissionMarkerSystem.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/SaveManager.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/ScannerTool.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/SubmarineElectrolysisModule.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/TetherManager.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Thermodynamics/ThermodynamicsHazardGridRuntime.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/ToolHitUtility.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/PDAAtlasSignalTab.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/PDASpectrumTab.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/PhysicalPanelButton.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/VFX/NativeTrailRenderer.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/HectonBrinePoolMeshGenerator.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/HectonIndirectVegetationContracts.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs",
+        "count": 1
+      },
+      {
+        "file": "Assets/_Project/Scripts/WorldProceduralScatterDirectorSpatialHelpers.cs",
         "count": 1
       }
     ]

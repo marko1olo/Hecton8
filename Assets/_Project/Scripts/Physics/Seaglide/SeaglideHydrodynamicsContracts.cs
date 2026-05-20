@@ -53,6 +53,7 @@ namespace Hecton8.Physics
         public const uint FlagRollbackExcluded = 1u << 6;
         public const uint FlagCavitationSignal = 1u << 7;
         public const uint FlagPacketOverflow = 1u << 8;
+        public const uint FlagBudgetExceeded = 1u << 9;
         public const uint FlagNonFinite = 1u << 31;
     }
 
@@ -239,8 +240,8 @@ namespace Hecton8.Physics
         [FieldOffset(36)] public float GlobalQualityWeight;
         [FieldOffset(40)] public uint Flags;
         [FieldOffset(44)] public uint LastTargetEntityHash;
-        [FieldOffset(48)] public float3 LastNetForce;
-        [FieldOffset(60)] public uint _pad0;
+        [FieldOffset(48)] public float3 LastFlowForce;
+        [FieldOffset(60)] public float LastBatteryLevel;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = SeaglideHydrodynamicsConstants.BodyBindingBytes)]
@@ -277,7 +278,8 @@ namespace Hecton8.Physics
         [FieldOffset(36)] public float Cavitation01;
         [FieldOffset(40)] public uint SourceHash;
         [FieldOffset(44)] public uint Flags;
-        [FieldOffset(48)] public ulong _pad0;
+        [FieldOffset(48)] public uint TargetEntityHash;
+        [FieldOffset(52)] public uint FrameIndex;
         [FieldOffset(56)] public ulong _pad1;
     }
 
@@ -322,8 +324,12 @@ namespace Hecton8.Physics
                    OffsetOf<SeaglideStateDTO>(nameof(SeaglideStateDTO.ActiveFlags)) == 40 &&
                    OffsetOf<SeaglideForcePacketDTO>(nameof(SeaglideForcePacketDTO.TargetEntityHash)) == 84 &&
                    OffsetOf<SeaglideForcePacketDTO>(nameof(SeaglideForcePacketDTO.NetForce)) == 24 &&
+                   OffsetOfTelemetry(nameof(SeaglideTelemetryEntry.LastFlowForce)) == 48 &&
+                   OffsetOfTelemetry(nameof(SeaglideTelemetryEntry.LastBatteryLevel)) == 60 &&
                    OffsetOf<SeaglideVisualStateDTO>(nameof(SeaglideVisualStateDTO.Flags)) == 52 &&
-                   OffsetOf<SeaglideAudioSignalDTO>(nameof(SeaglideAudioSignalDTO.DopplerSpeedMetersPerSecond)) == 24;
+                   OffsetOf<SeaglideAudioSignalDTO>(nameof(SeaglideAudioSignalDTO.DopplerSpeedMetersPerSecond)) == 24 &&
+                   OffsetOf<SeaglideAudioSignalDTO>(nameof(SeaglideAudioSignalDTO.TargetEntityHash)) == 48 &&
+                   OffsetOf<SeaglideAudioSignalDTO>(nameof(SeaglideAudioSignalDTO.FrameIndex)) == 52;
         }
 
         private static int OffsetOf<T>(string fieldName) where T : struct
@@ -399,8 +405,28 @@ namespace Hecton8.Physics
             if (fieldName == nameof(SeaglideAudioSignalDTO.Cavitation01)) return 36;
             if (fieldName == nameof(SeaglideAudioSignalDTO.SourceHash)) return 40;
             if (fieldName == nameof(SeaglideAudioSignalDTO.Flags)) return 44;
-            if (fieldName == nameof(SeaglideAudioSignalDTO._pad0)) return 48;
+            if (fieldName == nameof(SeaglideAudioSignalDTO.TargetEntityHash)) return 48;
+            if (fieldName == nameof(SeaglideAudioSignalDTO.FrameIndex)) return 52;
             if (fieldName == nameof(SeaglideAudioSignalDTO._pad1)) return 56;
+            return -1;
+        }
+
+        private static int OffsetOfTelemetry(string fieldName)
+        {
+            if (fieldName == nameof(SeaglideTelemetryEntry.FrameIndex)) return 0;
+            if (fieldName == nameof(SeaglideTelemetryEntry.EvaluatedRequests)) return 4;
+            if (fieldName == nameof(SeaglideTelemetryEntry.ForcePackets)) return 8;
+            if (fieldName == nameof(SeaglideTelemetryEntry.NonFiniteCount)) return 12;
+            if (fieldName == nameof(SeaglideTelemetryEntry.TotalThrustForce)) return 16;
+            if (fieldName == nameof(SeaglideTelemetryEntry.TotalDragForce)) return 20;
+            if (fieldName == nameof(SeaglideTelemetryEntry.TotalFlowForce)) return 24;
+            if (fieldName == nameof(SeaglideTelemetryEntry.MaxForceMagnitude)) return 28;
+            if (fieldName == nameof(SeaglideTelemetryEntry.ComputeMicros)) return 32;
+            if (fieldName == nameof(SeaglideTelemetryEntry.GlobalQualityWeight)) return 36;
+            if (fieldName == nameof(SeaglideTelemetryEntry.Flags)) return 40;
+            if (fieldName == nameof(SeaglideTelemetryEntry.LastTargetEntityHash)) return 44;
+            if (fieldName == nameof(SeaglideTelemetryEntry.LastFlowForce)) return 48;
+            if (fieldName == nameof(SeaglideTelemetryEntry.LastBatteryLevel)) return 60;
             return -1;
         }
     }

@@ -36,6 +36,12 @@ namespace Hecton8.Gameplay
         private string _resolvedEntrySummary;
         private uint _entityHash;
 
+        private static int ResolveScannerFrameInt()
+        {
+            uint frame = TimeSliceScheduler.CurrentFrameId;
+            return frame > int.MaxValue ? int.MaxValue : (int)frame;
+        }
+
         public string EntryId
         {
             get
@@ -348,7 +354,7 @@ namespace Hecton8.Gameplay
 
             if (Application.isPlaying)
             {
-                int frame = Time.frameCount;
+                int frame = ResolveScannerFrameInt();
                 if (s_loreEntitySyncFrame == frame)
                     return;
 

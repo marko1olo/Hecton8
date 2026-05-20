@@ -24,7 +24,7 @@ namespace Hecton8.World
 
         public static bool TryPublish(in TerrainChunkGeneratedSignal signal)
         {
-            if (!signal.IsValid)
+            if (!TerrainChunkGeneratedSignal.IsValid(in signal))
             {
                 _rejectedCount++;
                 _lastRejectedTerrainHash = signal.TerrainEntityHash;

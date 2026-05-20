@@ -13,7 +13,7 @@ No paid spend is allowed until an experiment has:
 - one measurable hypothesis;
 - one asset family;
 - one audience segment;
-- one CTA only after the Official CTA Link Activation Gate V0 passes, or a no-link feedback/private access route if it has no public destination;
+- one CTA only after the exact destination permission gate and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` pass, or a no-link feedback/private access route if it has no public destination;
 - one decision threshold;
 - one stop rule.
 
@@ -150,12 +150,12 @@ These briefs are the first executable experiments. They are not creative suggest
 |---|---|---|---|---|---|---|---|
 | AB-001 | Cold-reader | `PLAN-SHOT-001` vs `PLAN-SHOT-003` | Identity hero beats salvage only if the viewer can name genre and player fantasy in 5 seconds. | 15 cold readers, no project context. | "What is this game?" | 70% correct genre read and fewer than 2 "Subnautica clone only" responses. | Kill the weaker first screenshot if it is pretty but actionless. |
 | AB-002 | Cold-reader | `PLAN-CAPSULE-001` rough A/B/C | Small-size capsule readability matters more than cinematic detail. | 15 Steam-adjacent players or agents. | "Which would you click on Steam?" | Winner is +20% preference and title remains readable at tiny size. | Do not commission/polish if no variant beats plain logo + hero silhouette. |
-| AB-003 | Organic micro-post | `PLAN-SHOT-005` vs `PLAN-SHOT-004` | Base risk will outperform heavy machinery only if viewers understand consequence, not just mood. | X/Bluesky/Reddit critique-safe surface after handle custody exists. | Comment question; external CTA waits for CTA activation. | Useful comments naming system/verb per 100 views. | Kill if comments are mostly "looks cool" or "what do you do?" |
+| AB-003 | Organic micro-post | `PLAN-SHOT-005` vs `PLAN-SHOT-004` | Base risk will outperform heavy machinery only if viewers understand consequence, not just mood. | X/Bluesky/Reddit critique-safe surface after handle custody exists. | Comment question; external CTA waits for the exact destination gate plus `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`. | Useful comments naming system/verb per 100 views. | Kill if comments are mostly "looks cool" or "what do you do?" |
 | AB-004 | Copy desk test | Short description A vs B vs C | Direct pressure/salvage copy should beat NASA-punk wording until visuals teach the term. | 10 internal reads + 15 humans after first screenshot exists. | Pick what the game is. | Lowest confusion and lowest unsupported multiplayer-scope assumption wins. | Remove any copy that implies multiplayer, simulation scope, or mood-only game. |
 | AB-005 | Creator micro-pitch | `PLAN-CLIP-003` vs `PLAN-CLIP-004` | Survival/systems creators reply more to a complete salvage failure than a heavy-machine beauty shot. | 20 verified creator contacts from CRM after asset/contact gates pass. | "Do you want a private preview when ready?" | Reply quality, not raw reply count. | Stop batch if 3+ creators ask for missing features or asset proof. |
 | AB-006 | Trailer opening | `PLAN-CLIP-001` pressure leak vs `PLAN-CLIP-002` sonar contact | A system problem in the first 3 seconds should beat a monster/contact reveal if HECTON-8 is selling machinery survival. | 15 cold viewers + 5 creator/editor opinions. | "Would you keep watching?" | Keep-watching count and correct game-description nouns. | Recut if viewers say "generic underwater horror" or cannot name player action. |
 | AB-007 | Steam tag proof | First six passing `PLAN-SHOT-*` | Top tag stack should be decided by what screenshots prove, not by desired positioning. | 10 cold readers seeing capsule + top 5 tags only. | "What genre and mode is this?" | Pass if "single-player underwater/sci-fi survival with bases/exploration" is dominant. | Remove `Base Building`, `Horror`, `Physics`, or `Open World` if screenshots do not prove them. |
-| AB-008 | Paid micro-test gate | Best capsule + best short description + approved Steam URL | Paid traffic is allowed only after organic/cold-read proof, Steam baseline, and CTA activation exist. | Small paid audience, 25-150 USD maximum. | Steam page visit/wishlist after CTA activation. | Minimum 1000 impressions, 50 clicks, and useful Steam UTM signal. | Stop within 48h if tracked visits produce no useful actions or comments show premise confusion. |
+| AB-008 | Paid micro-test gate | Best capsule + best short description + Steam URL only after `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED` and `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` | Paid traffic is allowed only after organic/cold-read proof, Steam baseline, `spend_permission_gate = ALLOW_PAID_MICROTEST_VERIFIED`, Steam page gate, and public CTA gate exist. | Small paid audience, 25-150 USD maximum. | Steam page visit/wishlist after Steam page gate, spend gate, and public CTA gate. | Minimum 1000 impressions, 50 clicks, and useful Steam UTM signal. | Stop within 48h if tracked visits produce no useful actions or comments show premise confusion. |
 | AB-009 | Cold-reader agency proof | `PLAN-SHOT-006` vs `PLAN-CLIP-001` vs `PLAN-CLIP-003` | Agency proof only counts if a cold viewer can name the pressure decision without prompt. | 15 cold readers, no project context. | "What decision would the player make next?" | 60%+ name repair, retreat, reroute, scan, operate, abort, or recover. | Hold first-public and creator gameplay sends if viewers name only mood, threat, or scenery. |
 
 ## 2026-05-19 Cold-Read Score Sheet V0
@@ -236,7 +236,7 @@ For each test:
 
 1. Create a test brief with hypothesis, assets, audience, and CTA state.
 2. Assign one owner.
-3. Use unique UTM only where the CTA activation packet and platform rules allow it.
+3. Use unique UTM only where the exact destination permission gate, `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`, and platform rules all allow it.
 4. Do not change two variables at once.
 5. Run for a fixed window.
 6. Record raw numbers and qualitative comments.

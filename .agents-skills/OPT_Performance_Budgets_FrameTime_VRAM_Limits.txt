@@ -5,10 +5,13 @@
 
 [RULE] `OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt` is now part of this performance budget.
 [RULE] Any system costing more than `0.1ms` in a frame is suspicious until profiler evidence proves it is cold, amortized, or load-shed.
+[RULE] Burst/Jobs are a throughput tool, not a blanket win. They are accepted only for batched, data-local work whose scheduling, memory movement, and completion are amortized.
+[RULE] Job completion belongs in dispatcher-owned swap/completion windows or annotated cold teardown/init paths.
 [RULE] Simulate only gameplay truth. Water, fog, light, particles, slosh, ambience, debris, cable sag, and pressure feedback default to deterministic visual/audio/haptic fakes.
 [FORBID] Bloom on MX350/MINIMAL. The old MINIMAL post budget entry for Bloom is superseded.
 [FORBID] FSR2/DLSS-class temporal upscalers on MX350/MINIMAL. Use render scale, Unity STP where proven, or FSR1-class spatial upscaling only.
 [FORBID] Per-proton, per-droplet, per-bubble, per-blade, or per-cable-segment simulation as a default production path.
+[FORBID] Tiny noisy job fan-out, same-frame schedule/readback loops, or hidden `.Complete()` calls without profiler proof and route-card justification.
 
 ---
 

@@ -166,7 +166,8 @@ function Resolve-SyncFileIoFinding {
         [string]$RelativePath,
         [string]$ClassName,
         [string]$MethodName,
-        [bool]$InsideEditorOrDevelopmentGuard
+        [bool]$InsideEditorOrDevelopmentGuard,
+        [bool]$HasReleasePlayerGuard
     )
 
     $tags = @{
@@ -220,6 +221,19 @@ function Resolve-SyncFileIoFinding {
                 confidence = 82
                 classification = "FAULT_BLACKBOX_SYNC_IO"
                 requiredAction = "Static context classifies this as SignalBus fault blackbox I/O. Keep runtime callers one-shot or 300-frame backoff-gated; do not reuse this path for normal persistence."
+                tags = $tags
+            }
+        }
+
+        if ($ClassName -eq "SignalPriorityCsvHotSwap" -and $MethodName -eq "TryLoad" -and $HasReleasePlayerGuard) {
+            $tags.syncIoContext = "editor_development_csv_hotswap"
+            $tags.hasReleasePlayerGuard = $true
+            return [pscustomobject]@{
+                severity = "INFO"
+                rule = "EDITOR_DEV_CSV_HOTSWAP_SYNC_IO_REVIEW"
+                confidence = 86
+                classification = "EDITOR_DEV_CSV_HOTSWAP_SYNC_IO"
+                requiredAction = "Static context classifies this as release-player-guarded CSV hot-swap I/O. Keep the !Application.isEditor && !Debug.isDebugBuild return-false guard intact before any synchronous file operation."
                 tags = $tags
             }
         }
@@ -301,7 +315,18 @@ function Test-StructImplementsISignal {
         }
     }
 
-    return $builder.ToString() -match ":\s*[^{};]*\bISignal\b"
+    $header = $builder.ToString()
+    $braceIndex = $header.IndexOf("{", [System.StringComparison]::Ordinal)
+    if ($braceIndex -ge 0) {
+        $header = $header.Substring(0, $braceIndex)
+    }
+
+    $whereMatch = [regex]::Match($header, "\bwhere\b")
+    if ($whereMatch.Success) {
+        $header = $header.Substring(0, $whereMatch.Index)
+    }
+
+    return $header -match ":\s*[^{};]*\bISignal\b"
 }
 
 function Find-NearestStructMetadata {
@@ -576,6 +601,7 @@ foreach ($file in $files) {
     $methodBraceDepth = 0
     $methodStarted = $false
     $editorOrDevelopmentGuardDepth = 0
+    $currentMethodHasReleasePlayerGuard = $false
 
     for ($lineIndex = 0; $lineIndex -lt $codeLines.Length; $lineIndex++) {
         $line = $rawLines[$lineIndex]
@@ -608,9 +634,15 @@ foreach ($file in $files) {
             $currentMethod = $methodDeclMatch.Groups[1].Value
             $methodBraceDepth = Count-BraceDelta $code
             $methodStarted = $code.Contains("{")
+            $currentMethodHasReleasePlayerGuard = $false
         } elseif ($currentMethod.Length -gt 0) {
             if ($code.Contains("{")) {
                 $methodStarted = $true
+            }
+            if ($currentClass -eq "SignalPriorityCsvHotSwap" -and
+                $currentMethod -eq "TryLoad" -and
+                $code -match "!\s*Application\.isEditor\s*&&\s*!\s*Debug\.isDebugBuild") {
+                $currentMethodHasReleasePlayerGuard = $true
             }
             if ($methodStarted) {
                 $methodBraceDepth += Count-BraceDelta $code
@@ -618,6 +650,7 @@ foreach ($file in $files) {
                     $currentMethod = ""
                     $methodBraceDepth = 0
                     $methodStarted = $false
+                    $currentMethodHasReleasePlayerGuard = $false
                 }
             }
         }
@@ -956,7 +989,7 @@ foreach ($file in $files) {
                 $code.IndexOf("Directory", [System.StringComparison]::Ordinal) -ge 0) -and
             -not $isEditor -and $relativePath -notmatch "Save|Persistence|Crash|Dump|Telemetry|Tools|Editor" -and
             $code -match "\b(File|Directory)\.(Read|Write|Append|Open|Create|Delete)|new\s+FileStream\s*\(") {
-            $ioFinding = Resolve-SyncFileIoFinding $relativePath $currentClass $currentMethod ($editorOrDevelopmentGuardDepth -gt 0)
+            $ioFinding = Resolve-SyncFileIoFinding $relativePath $currentClass $currentMethod ($editorOrDevelopmentGuardDepth -gt 0) $currentMethodHasReleasePlayerGuard
             Add-Finding $ioFinding.severity $ioFinding.rule $ioFinding.confidence $ioFinding.classification "SANITIZED_LINE_REGEX" $relativePath $lineNumber "" $line $ioFinding.requiredAction $ioFinding.tags
         }
     }

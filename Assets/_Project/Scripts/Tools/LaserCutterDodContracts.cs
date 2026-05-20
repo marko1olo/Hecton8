@@ -14,10 +14,10 @@ namespace Hecton8.Tools
         public const int CsvSpecCapacity = 32;
         public const int CsvScratchByteCapacity = 4096;
         public const int MinCommandsPerJob = 8;
-        public const int LowSparkCount = 8;
+        public const int LowSparkCount = 0;
         public const int MiddleSparkCount = 24;
         public const int HighSparkCount = 64;
-        public const int UltraSparkCount = 128;
+        public const int UltraSparkCount = 500;
         public const uint LaserCutterHash = 0x4C435452u; // LCTR
         public const uint SparkSpeciesHash = 0x4C53504Bu; // LSPK
         public const uint LayoutMagic = 0x53484C43u; // SHLC
@@ -48,6 +48,7 @@ namespace Hecton8.Tools
         public const BufferID SpecBuffer = (BufferID)71333;
         public const BufferID CsvScratchBuffer = (BufferID)71334;
         public const BufferID CountersBuffer = (BufferID)71335;
+        public const BufferID RequestMetaBuffer = (BufferID)71336;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -59,9 +60,25 @@ namespace Hecton8.Tools
         [FieldOffset(40)] public float MaximumDistance;
         [FieldOffset(44)] public uint ToolHashID;
         [FieldOffset(48)] public uint ParentEntityID;
-        [FieldOffset(52)] public uint Frame;
-        [FieldOffset(56)] public uint Flags;
-        [FieldOffset(60)] public uint RequestSequence;
+        [FieldOffset(52)] public uint _pad0;
+        [FieldOffset(56)] public uint _pad1;
+        [FieldOffset(60)] public uint _pad2;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct LaserCutRequestMetaDTO
+    {
+        [FieldOffset(0)] public uint Frame;
+        [FieldOffset(4)] public uint Flags;
+        [FieldOffset(8)] public uint RequestSequence;
+        [FieldOffset(12)] public uint CooldownUntilFrame;
+        [FieldOffset(16)] public uint LastAppliedFrame;
+        [FieldOffset(20)] public uint Reserved0;
+        [FieldOffset(24)] public ulong StateHash;
+        [FieldOffset(32)] public ulong Reserved1;
+        [FieldOffset(40)] public ulong Reserved2;
+        [FieldOffset(48)] public ulong Reserved3;
+        [FieldOffset(56)] public ulong Reserved4;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 96)]
@@ -169,7 +186,8 @@ namespace Hecton8.Tools
         [FieldOffset(104)] public uint LayoutMagic;
         [FieldOffset(108)] public float Heat01;
         [FieldOffset(112)] public ulong StateHash;
-        [FieldOffset(120)] public ulong Reserved0;
+        [FieldOffset(120)] public float BatteryWatts;
+        [FieldOffset(124)] public uint BurstWorkEstimateMicros;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -243,6 +261,11 @@ namespace Hecton8.Tools
         public const uint FaultToolOffset = 1u << 5;
         public const uint FaultParentOffset = 1u << 6;
         public const uint FaultTelemetryCapacity = 1u << 7;
+        public const uint FaultMetaSize = 1u << 8;
+        public const uint FaultMetaFrameOffset = 1u << 9;
+        public const uint FaultMetaFlagsOffset = 1u << 10;
+        public const uint FaultMetaSequenceOffset = 1u << 11;
+        public const uint FaultRequestPadOffset = 1u << 12;
 
         public static bool Validate(out uint faultFlags)
         {
@@ -261,6 +284,18 @@ namespace Hecton8.Tools
                 faultFlags |= FaultToolOffset;
             if (OffsetOf<LaserCutRequestDTO>(nameof(LaserCutRequestDTO.ParentEntityID)) != 48)
                 faultFlags |= FaultParentOffset;
+            if (OffsetOf<LaserCutRequestDTO>(nameof(LaserCutRequestDTO._pad0)) != 52 ||
+                OffsetOf<LaserCutRequestDTO>(nameof(LaserCutRequestDTO._pad1)) != 56 ||
+                OffsetOf<LaserCutRequestDTO>(nameof(LaserCutRequestDTO._pad2)) != 60)
+                faultFlags |= FaultRequestPadOffset;
+            if (UnsafeUtility.SizeOf<LaserCutRequestMetaDTO>() != 64)
+                faultFlags |= FaultMetaSize;
+            if (OffsetOf<LaserCutRequestMetaDTO>(nameof(LaserCutRequestMetaDTO.Frame)) != 0)
+                faultFlags |= FaultMetaFrameOffset;
+            if (OffsetOf<LaserCutRequestMetaDTO>(nameof(LaserCutRequestMetaDTO.Flags)) != 4)
+                faultFlags |= FaultMetaFlagsOffset;
+            if (OffsetOf<LaserCutRequestMetaDTO>(nameof(LaserCutRequestMetaDTO.RequestSequence)) != 8)
+                faultFlags |= FaultMetaSequenceOffset;
             if (LaserCutterDodConstants.BlackBoxFrameCount != 300)
                 faultFlags |= FaultTelemetryCapacity;
 

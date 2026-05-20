@@ -1980,7 +1980,7 @@ namespace Hecton8.World
             BiomeMatrixEvents.Unregister(this);
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 GlobalRegistry.UnregisterProceduralFieldSampler(this);
-            CompletePendingSamplingJob();
+            CompletePendingSamplingJobForBarrier();
             DisposeBurstData();
             ReleaseBiomeInfluenceGraphicsBuffer();
             _isDataDirty = true;
@@ -1993,7 +1993,7 @@ namespace Hecton8.World
         private void OnDestroy()
         {
             BiomeMatrixEvents.Unregister(this);
-            CompletePendingSamplingJob();
+            CompletePendingSamplingJobForBarrier();
             DisposeBurstData();
             ReleaseBiomeInfluenceGraphicsBuffer();
             _isDataDirty = true;
@@ -2049,7 +2049,7 @@ namespace Hecton8.World
         internal void PrepareForEditorReload()
         {
             BiomeMatrixEvents.Unregister(this);
-            CompletePendingSamplingJob();
+            CompletePendingSamplingJobForBarrier();
             DisposeBurstData();
             _isDataDirty = true;
             _samplingFramePrepared = false;
@@ -2564,7 +2564,7 @@ namespace Hecton8.World
 
         public void PrepareBurstData()
         {
-            CompletePendingSamplingJob();
+            CompletePendingSamplingJobForBarrier();
             ResolveReferences();
             WorldRuntimeReferenceUtility.TryResolveWorldCaveDirector(ref _worldCaveDirector);
             EnsureNoiseLookupTable();
@@ -4821,7 +4821,7 @@ namespace Hecton8.World
 
         private void DisposeBurstData()
         {
-            CompletePendingSamplingJob();
+            CompletePendingSamplingJobForBarrier();
 
             if (_burstZoneData.IsCreated)
                 DisposeTrackedNativeArray(ref _burstZoneData);
@@ -4842,7 +4842,7 @@ namespace Hecton8.World
             _burstCaveEntranceHintCount = 0;
         }
 
-        private void CompletePendingSamplingJob()
+        private void CompletePendingSamplingJobForBarrier()
         {
             if (!_hasPendingSamplingJob)
                 return;

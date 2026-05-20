@@ -53,12 +53,16 @@ namespace Hecton8.Physics
             GlobalPhysicsStateManager.TryGetBuoyancyBodyResolver(out GlobalPhysicsStateManager bodyResolver);
             int packetCount = math.clamp(counters[0].ForcePackets, 0, packets.Length);
             int budget = math.min(math.max(0, maxPackets), packetCount);
+            if (system == null || bodyResolver == null)
+            {
+                unresolved = budget;
+                return;
+            }
+
             for (int i = 0; i < budget; i++)
             {
                 BuoyancyForcePacketDTO packet = packets[i];
-                if (system == null ||
-                    bodyResolver == null ||
-                    packet.EntityHashID == 0u ||
+                if (packet.EntityHashID == 0u ||
                     !math.all(math.isfinite(packet.NetForce)) ||
                     !TryResolveBuoyancyBody(packet, bodyBindings, bodyResolver, out Rigidbody body))
                 {

@@ -9,15 +9,15 @@
     <TASK id="07" status="PASS">DETERMINISTIC_FNV_HASH_MATCHING: TryApplyLoreIndexCsvLine hashes ASCII tokens to FNV-1a 32-bit ids and inserts a native lore index.</TASK>
     <TASK id="08" status="PASS">THE_DEAR_LIE_UNMANAGED_UNLOCK: EvaluateScanCompletionJob sets an unmanaged 128-byte encyclopedia bitmask by atomic OR.</TASK>
     <TASK id="09" status="FAIL_ABSENT">No Task 09 exists inside the SHINOBU_226 XML block. No invented work item was created.</TASK>
-    <TASK id="10" status="PASS">PROXIMITY_TARGET_ACQUISITION: ScannerSpatialQueryJob/AcquireScanTargetJob query spatial buckets and AUP ray-sphere candidates.</TASK>
+    <TASK id="10" status="PASS">PROXIMITY_TARGET_ACQUISITION: ScannerSpatialQueryJob/AcquireScanTargetJob query spatial buckets and AUP ray-sphere candidates; scanner rays are sourced from finite non-zero PlayerRuntimePoseSnapshot forward vectors, not Unity Transform.</TASK>
     <TASK id="11" status="PASS">THE_DEAR_LIE_SCANNER_HUD: HUD output is shader scalar globals; no per-target mesh/UI object simulation added.</TASK>
     <TASK id="12" status="PASS">CONTINUOUS_SCALABILITY_SCREEN_DEGRADATION: cadence and shader dither/refresh are continuous functions of GlobalQualityWeight.</TASK>
     <TASK id="13" status="PASS">AUP_PRECISION_DISTANCE_GATING: ray-sphere and SDF checks subtract AUP in double before local float math.</TASK>
-    <TASK id="14" status="PASS">ROLLBACK_NETCODE_STATE_FENCE: ScanProgressDTO and encyclopedia masks are blittable fixed-size DTOs suitable for memcpy snapshots.</TASK>
+    <TASK id="14" status="PASS">ROLLBACK_NETCODE_STATE_FENCE: ScanProgressDTO and encyclopedia masks are blittable fixed-size DTOs suitable for memcpy snapshots; scanner frame IDs now route through TimeSliceScheduler.CurrentFrameId.</TASK>
     <TASK id="15" status="PASS">TELEMETRY_SCANNER_RECORDER: 300-frame scanner telemetry ring remains Vault-backed and dumps to SHINOBU_226 filenames.</TASK>
-    <TASK id="16" status="PASS">SCANNER_TUNER_EDITOR_WINDOW: ScannerLoreDatabaseSyncTunerWindow validates layout and simulates hash unlocks.</TASK>
+    <TASK id="16" status="PASS">SCANNER_TUNER_EDITOR_WINDOW: ScannerLoreDatabaseSyncTunerWindow validates layout, reads Vault mask/telemetry state, simulates hash unlocks, and writes Unlock All/Lock All directly to ScannerEncyclopediaStateDTO.</TASK>
     <TASK id="17" status="PASS">CSV_LORE_INDEX_INGESTOR: byte-span CSV ingestion avoids split/string allocation in the runtime parser.</TASK>
-    <TASK id="18" status="PASS">LIVE_SCAN_DEBUG_GIZMO: tuner reports masks/hash state; runtime shader globals expose live scan scalar state.</TASK>
+    <TASK id="18" status="PASS">LIVE_SCAN_DEBUG_GIZMO: editor-only ScannerDataMiningRouter.OnDrawGizmos reads Vault scannable rows and encyclopedia bits, then draws blue/yellow/green AUP-local wire spheres.</TASK>
     <TASK id="19" status="PASS">ARCHITECTURAL_METRIC_VALIDATOR: ScannerStringInquisitionValidator scans scanner/PDA source for forbidden string/GetComponent patterns.</TASK>
     <TASK id="20" status="PASS">SELF_AUDIT_AND_ARCHITECTURE_VERIFICATION: this XML records reconciliation, layout, Vault, dependency, compile guard, and Dear Lie proof.</TASK>
   </TASK_RECONCILIATION>
@@ -49,10 +49,11 @@
     No direct sibling runtime assembly dependency was added. Scanner route depends on Core/Core.Contracts/Core.Memory existing contracts, Vault descriptors, SignalBus payloads, and shader global scalar surface. Generated csproj currently only exposes H8Memory.cs from this patch set; Unity project regeneration is required to include newly added editor file in IDE csproj.
   </COMPILE_GUARD>
   <THE_DEAR_LIE_CONFIRMATION>
-    Occlusion remains a midpoint SDF fake instead of Unity Physics.Raycast/MeshCollider. HUD scan visualization is scalar shader globals instead of per-target UI/GameObject simulation. Before: managed string/UI/object identity lookup plus possible physics query, O(objects * managed comparison/engine query). After: spatial bucket hash query with bounded candidates and native lore bit lookup, O(visited_cells * max_candidates + occlusion_zones) with no string equality in the hot scan route.
+    Occlusion remains a midpoint SDF fake instead of Unity Physics.Raycast/MeshCollider. HUD scan visualization is scalar shader globals instead of per-target UI/GameObject simulation. Editor scan debugging uses AUP-local Gizmos over Vault rows instead of spawned debug GameObjects or runtime text labels. Before: managed string/UI/object identity lookup plus possible physics query, O(objects * managed comparison/engine query). After: spatial bucket hash query with bounded candidates and native lore bit lookup, O(visited_cells * max_candidates + occlusion_zones) with no string equality in the hot scan route.
   </THE_DEAR_LIE_CONFIRMATION>
   <VERIFICATION>
     <static_scan forbidden_string_identity_findings="0">PowerShell Select-String found no target.name/GetComponent(ItemData/Scannable*) patterns in ScannerTool, ScannableTarget, ScannerDataMiningRouter, PDAEncyclopediaStreamer, or PdaH8lrLoreStore.</static_scan>
-    <compile status="BLOCKED_BY_CPU_GATE">Win32_Processor LoadPercentage averaged 100; dotnet build was not launched under project rule.</compile>
+    <runtime_scan forbidden_runtime_findings="0">ScannerDataMiningRouter.cs has no Time.frameCount, Time.deltaTime, UnityEngine.Random, raw JobHandle.Complete, legacy VaultBufferHandle, NativeList, NativeHashMap, foreach, string.Split, string.Format, Pack=1, transform.forward, transform.position, or transform.right hits. ScannerTool.cs, ScannableTarget.cs, and PDAEncyclopediaStreamer.cs have no Time.frameCount hits.</runtime_scan>
+    <compile status="BLOCKED_BY_DEPENDENCY">CPU gate opened at 34/25/19 with no dotnet/csc process, so `dotnet build Hecton8.Core.csproj --no-restore -v:minimal` was launched. It failed with 76 unrelated compile-wall errors in Equipment, Logistics.Grid, docking/socket, audio/world bridge, WFC grid, and other non-SHINOBU dependencies. No diagnostic referenced SHINOBU_226 touched files. Generated csproj coverage includes H8Memory.cs, ScannerTool.cs, and ScannableTarget.cs, but excludes ScannerDataMiningRouter.cs, ScannerLoreDatabaseSyncTunerWindow.cs, and PDAEncyclopediaStreamer.cs; Unity import proof remains pending. Resident build servers were cleaned up with `dotnet build-server shutdown`, and follow-up process check returned no dotnet/csc output.</compile>
   </VERIFICATION>
 </SELF_AUDIT>

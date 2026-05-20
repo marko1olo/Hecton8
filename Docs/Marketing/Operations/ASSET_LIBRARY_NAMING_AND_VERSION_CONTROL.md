@@ -85,7 +85,7 @@ H8_Trailer_Steam_b0150_2026-06-20_v07.mp4
 Track every public asset:
 
 ```csv
-asset_id,type,path,build_id,date,status,hook,shown_features,source_capture,qa_score,multiplayer_scope_check,performance_claim_check,feature_truth_check,localization_check,owner,rejection_code,notes,creator_rows_unlocked,creator_utility_score,creator_send_gate,pain_bucket_answered,pain_proof_score,pain_freshness_source,pain_freshness_checked_at,public_comparison_gate,agency_decision_proof_gate,agency_decision_notes
+asset_id,type,path,build_id,date,status,hook,shown_features,source_capture,qa_score,multiplayer_scope_check,performance_claim_check,feature_truth_check,localization_check,owner,rejection_code,notes,creator_rows_unlocked,creator_utility_score,creator_send_gate,pain_bucket_answered,pain_proof_score,pain_freshness_source,pain_freshness_checked_at,public_comparison_gate,agency_decision_proof_gate,agency_decision_notes,capture_handoff_packet_id,capture_verdict,viewer_named_decision,capture_next_actions
 ```
 
 ## 2026-05-19 Planned Capture To Metadata Workflow V0
@@ -102,9 +102,10 @@ The current metadata file already contains planned slots. When real captures arr
 | 6 | Score creator utility if creator-facing. | `creator_rows_unlocked`, `creator_utility_score`, `creator_send_gate` | Creator-facing use requires 3/4+ and exact CRM row mapping; public social use does not imply creator send readiness. |
 | 7 | Score private pain proof if SN2/market pain is part of capture priority. | `pain_bucket_answered`, `pain_proof_score`, `pain_freshness_source`, `pain_freshness_checked_at`, `public_comparison_gate` | Minimum 4/5 for first-pack priority after same-day/current-week source proof; always `PRIVATE_ONLY_NO_COMPETITOR_COPY` or stricter. This cannot create public comparison language. |
 | 8 | Score agency/decision proof. | `agency_decision_proof_gate`, `agency_decision_notes` | First packet needs one asset where a cold viewer can name the player choice without caption; mood, anomaly, threat, or machinery alone is not enough. |
-| 9 | Check claims. | `multiplayer_scope_check`, `performance_claim_check`, `feature_truth_check` | Any failed claim check blocks public use. |
-| 10 | Assign final state. | `status`, `rejection_code`, `notes` | Use fixed rejection codes only. |
-| 11 | Move approved export into target folder. | `path`, `status` | Approved public/press assets must not point to Raw. |
+| 9 | Bind first-capture handoff packet. | `capture_handoff_packet_id`, `capture_verdict`, `viewer_named_decision`, `capture_next_actions` | These fields store the packet ID, verdict, named decision, and capped follow-up actions; notes-only handoff is invalid. |
+| 10 | Check claims. | `multiplayer_scope_check`, `performance_claim_check`, `feature_truth_check` | Any failed claim check blocks public use. |
+| 11 | Assign final state. | `status`, `rejection_code`, `notes` | Use fixed rejection codes only. |
+| 12 | Move approved export into target folder. | `path`, `status` | Approved public/press assets must not point to Raw. |
 
 ### First Real Capture Intake Packet V0
 
@@ -128,6 +129,10 @@ Required facts before a planned row can become `RAW`:
 | `public_comparison_gate` | `PRIVATE_ONLY_NO_COMPETITOR_COPY` or stricter. | Metadata creates public competitor-attack copy. |
 | `agency_decision_proof_gate` | `AGENCY_PROOF_CANDIDATE`, `SUPPORTING_AGENCY_SIGNAL`, or explicit non-proof value. | Missing value or mood-only value lets Campaign 01 bypass the player-choice gate. |
 | `agency_decision_notes` | One sentence naming the visible player decision or why this asset cannot prove agency. | Notes are empty or repeat a vibe without a choice. |
+| `capture_handoff_packet_id` | Stable first-capture packet ID or `PENDING_CAPTURE_PACKET` before capture. | Blank value, loose notes, or a packet ID not traceable to the shotlist handoff. |
+| `capture_verdict` | `KEEP_TESTING`, `REVISE_SCENE`, `HOLD_ASSET`, `KILL_ANGLE`, `AGENCY_MISSING_HOLD`, or `PENDING_CAPTURE` before capture. | Verdict lives only in prose, or `KEEP_TESTING` is used while agency proof is missing. |
+| `viewer_named_decision` | Exact decision named by the cold viewer, or `PENDING_VIEWER_DECISION` before capture. | Empty value on any agency candidate, or a mood noun instead of an action choice. |
+| `capture_next_actions` | Up to three concrete next actions, or `PENDING_CAPTURE_NEXT_ACTIONS` before capture. | Action list is open-ended, generic, or not tied to a reject code/verdict. |
 
 Minimum first intake batch:
 
@@ -199,6 +204,13 @@ Use fixed rejection codes:
 - `BAD_COMPOSITION`;
 - `TEXT_TOO_SMALL`;
 - `DERIVATIVE_COMPETITOR_READ`.
+
+Capture handoff hold/reject codes:
+
+- `AGENCY_MISSING_HOLD`;
+- `MISSING_HANDOFF_PACKET`;
+- `VIEWER_DECISION_MISSING`;
+- `HANDOFF_NEXT_ACTIONS_UNCAPPED`.
 
 ## Asset Review Ritual
 

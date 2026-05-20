@@ -1,6 +1,5 @@
 using System;
 using System.Buffers.Binary;
-using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
@@ -145,6 +144,7 @@ namespace Hecton8.Graphics.Materials
         private uint _frame;
         private uint _csvGeneration = 1u;
         private uint _runtimeFlags = FlagMockSource | FlagNoRollbackState;
+        private float _payloadBlend01;
         private bool _registeredPreSimulation;
         private bool _registeredSimulation;
         private bool _registeredPostSimulation;
@@ -243,6 +243,9 @@ namespace Hecton8.Graphics.Materials
             if (active == null)
                 return false;
 
+            if (active._simulationScheduled)
+                return false;
+
             IDataVault vault = active.ResolveVault(true);
             if (vault == null || !active.EnsureVaultState(vault))
                 return false;
@@ -302,6 +305,9 @@ namespace Hecton8.Graphics.Materials
             activeCount = 0;
             VisualPressureAgingRuntime active = s_active;
             if (active == null)
+                return false;
+
+            if (active._simulationScheduled)
                 return false;
 
             IDataVault vault = active.ResolveVault(true);
@@ -441,6 +447,9 @@ namespace Hecton8.Graphics.Materials
             in DispatcherJobContext context,
             JobHandle dependsOn)
         {
+            if (_simulationScheduled)
+                return dependsOn;
+
             IDataVault vault = ResolveVault();
             if (vault == null || !EnsureVaultState(vault))
                 return dependsOn;
@@ -461,78 +470,89 @@ namespace Hecton8.Graphics.Materials
                 return dependsOn;
             }
 
-            NativeArray<IntegrityStateDTO> states = default;
-            NativeArray<double3> nodeAups = default;
-            bool hasStructural = TryResolveStructuralInputs(vault, out states, out nodeAups);
-
-            NativeArray<StructuralTuningDTO> structuralTuning = default;
-            bool hasStructuralTuning = TryResolveStructuralTuning(vault, out structuralTuning);
-
-            NativeArray<float> temperatures = default;
-            _runtimeFlags &= ~FlagThermalSource;
-            if (!TryResolveThermalInput(vault, out temperatures))
-                vault.TryResolveHandle(in _mockTemperatureHandle, out temperatures);
-
-            VisualAgingTuningDTO localTuning = tuning[0];
-            float quality = ResolveGlobalQualityWeight();
-            int count = ResolveActiveCount(hasStructural, states, structuralTuning, localTuning, output.Length, quality);
-            _activeCount = count;
-
-            double3 originAup = HectonFloatingOrigin.CurrentTotalOffsetDouble;
-            JobHandle handle;
-            if (hasStructural)
+            bool keepLocksForScheduledJob = false;
+            try
             {
-                _runtimeFlags = (_runtimeFlags & ~FlagMockSource) | FlagStructuralSource | FlagNoRollbackState;
-                handle = new ProcessAgingParametersJob
+                NativeArray<IntegrityStateDTO> states = default;
+                NativeArray<double3> nodeAups = default;
+                bool hasStructural = TryResolveStructuralInputs(vault, out states, out nodeAups);
+
+                NativeArray<StructuralTuningDTO> structuralTuning = default;
+                if (hasStructural)
+                    TryResolveStructuralTuning(vault, out structuralTuning);
+
+                NativeArray<float> temperatures = default;
+                _runtimeFlags &= ~FlagThermalSource;
+                if (!TryResolveThermalInput(vault, out temperatures))
+                    vault.TryResolveHandle(in _mockTemperatureHandle, out temperatures);
+
+                VisualAgingTuningDTO localTuning = tuning[0];
+                float quality = ResolveGlobalQualityWeight();
+                int count = ResolveActiveCount(hasStructural, states, structuralTuning, localTuning, output.Length, quality);
+                _activeCount = count;
+
+                double3 originAup = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+                JobHandle handle;
+                if (hasStructural)
                 {
-                    States = states,
-                    NodeAups = nodeAups,
-                    StructuralTuning = structuralTuning,
-                    Temperatures = temperatures,
+                    _runtimeFlags = (_runtimeFlags & ~FlagMockSource) | FlagStructuralSource | FlagNoRollbackState;
+                    handle = new ProcessAgingParametersJob
+                    {
+                        States = states,
+                        NodeAups = nodeAups,
+                        StructuralTuning = structuralTuning,
+                        Temperatures = temperatures,
+                        Output = output,
+                        Tuning = localTuning,
+                        OriginAup = originAup,
+                        Frame = context.Frame,
+                        ActiveCount = count,
+                        GlobalQualityWeight = quality
+                    }.Schedule(count, JobBatchSize, dependsOn);
+                }
+                else
+                {
+                    _runtimeFlags = (_runtimeFlags & ~FlagStructuralSource) | FlagMockSource | FlagNoRollbackState;
+                    handle = new GenerateMockAgingDataJob
+                    {
+                        Output = output,
+                        Temperatures = temperatures,
+                        Tuning = localTuning,
+                        OriginAup = originAup,
+                        Frame = context.Frame,
+                        ActiveCount = count,
+                        GlobalQualityWeight = quality
+                    }.Schedule(count, JobBatchSize, dependsOn);
+                }
+
+                handle = new RecordVisualAgingTelemetryJob
+                {
                     Output = output,
-                    Tuning = localTuning,
-                    OriginAup = originAup,
+                    Runtime = runtime,
+                    Telemetry = telemetry,
+                    TelemetryCursor = telemetryCursor,
                     Frame = context.Frame,
                     ActiveCount = count,
-                    GlobalQualityWeight = quality
-                }.Schedule(count, JobBatchSize, dependsOn);
-            }
-            else
-            {
-                _runtimeFlags = (_runtimeFlags & ~FlagStructuralSource) | FlagMockSource | FlagNoRollbackState;
-                handle = new GenerateMockAgingDataJob
-                {
-                    Output = output,
-                    Temperatures = temperatures,
-                    Tuning = localTuning,
-                    OriginAup = originAup,
-                    Frame = context.Frame,
-                    ActiveCount = count,
-                    GlobalQualityWeight = quality
-                }.Schedule(count, JobBatchSize, dependsOn);
-            }
+                    UploadedCount = _uploadedCount,
+                    UploadedBytes = (uint)(_uploadedCount * UnsafeUtility.SizeOf<VisualAgingParamsDTO>()),
+                    GpuUploadMicroseconds = runtime[0].LastUploadMicroseconds,
+                    GlobalQualityWeight = quality,
+                    RuntimeFlags = _runtimeFlags,
+                    LayoutHash = ResolveLayoutHash(),
+                    CsvGeneration = localTuning.CsvGeneration
+                }.Schedule(handle);
 
-            handle = new RecordVisualAgingTelemetryJob
+                _simulationScheduled = true;
+                _agingDirty = true;
+                keepLocksForScheduledJob = true;
+                H8Memory.RegisterActiveJob(OwnerSystemId, handle);
+                return handle;
+            }
+            finally
             {
-                Output = output,
-                Runtime = runtime,
-                Telemetry = telemetry,
-                TelemetryCursor = telemetryCursor,
-                Frame = context.Frame,
-                ActiveCount = count,
-                UploadedCount = _uploadedCount,
-                UploadedBytes = (uint)(_uploadedCount * UnsafeUtility.SizeOf<VisualAgingParamsDTO>()),
-                GpuUploadMicroseconds = runtime[0].LastUploadMicroseconds,
-                GlobalQualityWeight = quality,
-                RuntimeFlags = _runtimeFlags,
-                LayoutHash = ResolveLayoutHash(),
-                CsvGeneration = localTuning.CsvGeneration
-            }.Schedule(handle);
-
-            _simulationScheduled = true;
-            _agingDirty = true;
-            H8Memory.RegisterActiveJob(OwnerSystemId, handle);
-            return handle;
+                if (!keepLocksForScheduledJob)
+                    UnlockJobBuffers();
+            }
         }
 
         private void PostSimulationTick(in DispatcherTimingDTO timing)
@@ -547,6 +567,9 @@ namespace Hecton8.Graphics.Materials
 
         private void VisualSyncTick(in DispatcherTimingDTO timing)
         {
+            if (_simulationScheduled)
+                return;
+
             IDataVault vault = ResolveVault();
             if (vault == null || !EnsureVaultState(vault) || !EnsureGraphicsBuffers())
                 return;
@@ -609,8 +632,10 @@ namespace Hecton8.Graphics.Materials
                     _uploadedCount = 0;
                 }
 
+                float targetPayloadBlend = uploadCount > 0 && readBuffer != null ? 1.0f : 0.0f;
+                _payloadBlend01 = math.saturate(math.lerp(_payloadBlend01, targetPayloadBlend, math.lerp(0.25f, 0.85f, quality)));
                 Shader.SetGlobalBuffer(AgingParamsId, readBuffer);
-                Shader.SetGlobalVector(AgingRuntimeId, new Vector4(uploadCount, uploadCount > 0 && readBuffer != null ? 1.0f : 0.0f, quality, (float)_runtimeFlags));
+                Shader.SetGlobalVector(AgingRuntimeId, new Vector4(uploadCount, _payloadBlend01, quality, (float)_runtimeFlags));
                 float uploadUs = ElapsedMicroseconds(start);
 
                 VisualAgingRuntimeDTO current = runtime[0];
@@ -774,6 +799,7 @@ namespace Hecton8.Graphics.Materials
                 _runtimeFlags = FlagMockSource | FlagNoRollbackState;
                 _activeCount = 0;
                 _uploadedCount = 0;
+                _payloadBlend01 = 0.0f;
                 _hasGeneratedPayload = false;
                 _agingDirty = true;
                 _defaultsInitialized = true;
@@ -1020,6 +1046,7 @@ namespace Hecton8.Graphics.Materials
             _hasGeneratedPayload = false;
             _activeCount = 0;
             _uploadedCount = 0;
+            _payloadBlend01 = 0.0f;
             _agingDirty = true;
         }
 
@@ -1075,6 +1102,7 @@ namespace Hecton8.Graphics.Materials
             ReleaseBuffer(ref _agingBufferB);
             _readBufferIndex = 0;
             _uploadedCount = 0;
+            _payloadBlend01 = 0.0f;
             _agingDirty = true;
         }
 
@@ -1253,14 +1281,24 @@ namespace Hecton8.Graphics.Materials
                 BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(20, 4), ResolveLayoutHash());
                 stream.Write(header);
 
+                int cursorStart = WrapTelemetryIndex(_telemetryCursor, telemetry.Length);
                 for (int offset = 0; offset < telemetry.Length; offset++)
                 {
-                    int index = (_telemetryCursor + offset) % telemetry.Length;
+                    int index = WrapTelemetryIndex(cursorStart + offset, telemetry.Length);
                     VisualAgingTelemetryEntry entry = telemetry[index];
                     ReadOnlySpan<byte> entryBytes = new ReadOnlySpan<byte>(&entry, UnsafeUtility.SizeOf<VisualAgingTelemetryEntry>());
                     stream.Write(entryBytes);
                 }
             }
+        }
+
+        private static int WrapTelemetryIndex(int cursor, int length)
+        {
+            if (length <= 0)
+                return 0;
+
+            int wrapped = cursor % length;
+            return wrapped < 0 ? wrapped + length : wrapped;
         }
 
         private static int ResolveActiveCount(
@@ -1599,7 +1637,7 @@ namespace Hecton8.Graphics.Materials
             float depth01 = math.saturate(0.18f + lane * 0.82f);
             float stress01 = math.saturate(0.25f + t * 0.75f);
             float buckling = math.saturate(stress01 * 0.65f + Triangle(Frame * 0.0031f + t) * 0.18f);
-            float temperatureC = Temperatures.IsCreated && Temperatures.Length > 0 ? Temperatures[0] : Tuning.MockTemperatureC;
+            float temperatureC = ResolveTemperature();
             float temperatureBoost = math.saturate(math.max(0.0f, temperatureC - 4.0f) * Tuning.TemperatureBoostMultiplier);
             float pressure01 = math.saturate(depth01 * 0.75f + stress01 * 0.25f);
             float q = math.saturate(GlobalQualityWeight);
@@ -1636,6 +1674,15 @@ namespace Hecton8.Graphics.Materials
         private static float Triangle(float phase)
         {
             return 1.0f - math.abs(math.frac(phase) * 2.0f - 1.0f);
+        }
+
+        private float ResolveTemperature()
+        {
+            if (!Temperatures.IsCreated || Temperatures.Length == 0)
+                return Tuning.MockTemperatureC;
+
+            float temperature = Temperatures[0];
+            return math.isfinite(temperature) ? temperature : Tuning.MockTemperatureC;
         }
 
         private static uint Mix(uint x)
@@ -1709,7 +1756,7 @@ namespace Hecton8.Graphics.Materials
             }
 
             float inv = sampled > 0 ? math.rcp(sampled) : 0.0f;
-            int cursor = TelemetryCursor[0] % Telemetry.Length;
+            int cursor = WrapTelemetryIndex(TelemetryCursor[0], Telemetry.Length);
             uint sequence = Runtime[0].Sequence + 1u;
             float cpuEstimateUs = ActiveCount * math.lerp(0.010f, 0.026f, math.saturate(GlobalQualityWeight));
             VisualAgingTelemetryEntry entry = new VisualAgingTelemetryEntry
@@ -1753,6 +1800,12 @@ namespace Hecton8.Graphics.Materials
                 MeanTemperatureBoost01 = tempMean * inv,
                 Sequence = sequence
             };
+        }
+
+        private static int WrapTelemetryIndex(int cursor, int length)
+        {
+            int wrapped = cursor % length;
+            return wrapped < 0 ? wrapped + length : wrapped;
         }
     }
 }

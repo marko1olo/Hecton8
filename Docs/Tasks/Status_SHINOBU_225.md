@@ -5,7 +5,7 @@ Agent: SHINOBU_225
 Role: LASER_CUTTER_DOD_REWRITE
 Domain: ECHELON 4 Player, Kinematics & Tools / Equipment Runtime Tools
 Task Count: 20
-Status: IMPLEMENTED / COMPILE BLOCKED BY CPU GUARD
+Status: ULTRA-POLISH LOOP 7 STATIC-PASS / COMPILE BLOCKED BY EXTERNAL DEPENDENCIES
 
 ## Mandates Read
 
@@ -31,8 +31,8 @@ First-20-minutes route blocker: unsafe cutter path can stall gameplay when the p
 - [x] Task 01 REALTIME_RAYCAST_INQUISITION | DOD: static source scan before mutation; live cutter backend already deferred through `EquipmentInteractionHandler`, SHINOBU sidecar keeps RaycastCommand batch route | Alternative rejected: duplicate live raycast scheduler in `LaserCutter` because it would double physics queries | Estimate: 40-120 us duplicate/stall avoided per active cutter frame, PENDING PROFILER
 - [x] Task 02 SPARK_PREFAB_SPAWN_ERADICATION | DOD: focused scan now reports zero `ParticleSystem`/`Instantiate` in `LaserCutter`, `SealedDoor`, `SargassumCutResponder`, and SHINOBU cutter files | Alternative rejected: pooled ParticleSystem bursts because task requires GPU procedural staging/no prefab spawn | Estimate: 80-300 us plus GC/batcher risk saved per impact burst, PENDING PROFILER
 - [x] Task 03 CS1612_METADATA_STATE_ANNIHILATION | DOD: new cutter DTOs use explicit public fields only; `rg "get;|set;"` hit only validator fault names, not DTO properties | Alternative rejected: auto-properties on structs due defensive copy/CS1612 risk | Estimate: 1-5 us under load, PENDING PROFILER
-- [x] Task 04 ARM64_LASER_LAYOUT_VALIDATION | DOD: `LaserCutRequestDTO` is explicit 64 bytes with validator for offsets 0/24/36/40/44/48 | Alternative rejected: sequential layout because task mandates exact cache-line contract | Estimate: 2-8 us under request batch pressure, PENDING PROFILER
-- [x] Task 05 EMERGENCY_MOCK_CUTTER_TRIGGERS | DOD: `GenerateMockCutterTriggersJob` writes deterministic synthetic requests into vault-backed request buffer | Alternative rejected: manual player equip test because it blocks kernel profiling and adds scene dependency | Estimate: no runtime saving; enables deterministic stress proof, PENDING COMPILE
+- [x] Task 04 ARM64_LASER_LAYOUT_VALIDATION | DOD: `LaserCutRequestDTO` is exact explicit 64 bytes with offsets 0/24/36/40/44/48 and explicit padding at 52/56/60; frame/flags/sequence moved to separate `LaserCutRequestMetaDTO` | Alternative rejected: storing metadata in request padding because XML mandates bytes 52-63 as padding only | Estimate: 2-8 us under request batch pressure, PENDING PROFILER
+- [x] Task 05 EMERGENCY_MOCK_CUTTER_TRIGGERS | DOD: `GenerateMockCutterTriggersJob.Schedule(...)+DispatcherJobFence.TryComplete` writes deterministic synthetic request+meta rows into vault-backed buffers for editor/CI visibility | Alternative rejected: manual per-index `Execute(i)` because it bypasses the job path and weakens Burst proof | Estimate: no runtime saving; enables deterministic stress proof, PENDING COMPILE
 
 ### Loop 2: Tasks 06-10
 
@@ -44,19 +44,19 @@ First-20-minutes route blocker: unsafe cutter path can stall gameplay when the p
 
 ### Loop 3: Tasks 11-15
 
-- [x] Task 11 CONTINUOUS_SCALABILITY_SPARK_COUNT | DOD: spark quantities and debris signals use continuous `GlobalQualityWeight` | Alternative rejected: low/high binary tier branch | Estimate: GPU/CPU load shed PENDING PROFILER
+- [x] Task 11 CONTINUOUS_SCALABILITY_SPARK_COUNT | DOD: spark quantities and debris signals use `math.smoothstep(GlobalQualityWeight)` over tuning `LowSparkCount=0` to `UltraSparkCount=500` | Alternative rejected: low/high binary tier branch and fixed 128 cap | Estimate: GPU/CPU load shed PENDING PROFILER
 - [x] Task 12 CRITICAL_CUTTING_COOLDOWN_FENCE | DOD: `ManageCutterCooldownJob` gates duplicate request writes by frame | Alternative rejected: frame-rate-dependent MonoBehaviour timer | Estimate: queue overflow avoided, PENDING PROFILER
 - [x] Task 13 AUP_PRECISION_EPICENTER_MATH | DOD: request origin/hit conversion uses double AUP then `AupPrecisionMath` local downcast | Alternative rejected: world float absolute math | Estimate: correctness at 100 km; no microsecond claim
 - [x] Task 14 ROLLBACK_NETCODE_STATE_FENCE | DOD: DTOs are blittable explicit structs with deterministic flags/state hashes | Alternative rejected: managed mutable state for cutter progress | Estimate: deterministic snapshot path, PENDING COMPILE
-- [x] Task 15 TELEMETRY_CUTTER_RECORDER | DOD: 300-entry `LaserCutTelemetryEntry` ring and `Dump_SHINOBU_225.bin` on non-finite flag | Alternative rejected: Debug.Log telemetry | Estimate: crash forensic coverage, PENDING COMPILE
+- [x] Task 15 TELEMETRY_CUTTER_RECORDER | DOD: 300-entry `LaserCutTelemetryEntry` ring, `BatteryWatts@120`, `BurstWorkEstimateMicros@124`, and `Dump_SHINOBU_225.bin` on non-finite flag | Alternative rejected: Debug.Log telemetry | Estimate: crash forensic coverage, PENDING COMPILE
 
 ### Loop 4: Tasks 16-20
 
-- [x] Task 16 CUTTER_TUNER_EDITOR_WINDOW | DOD: `LaserCutterPhysicsTunerWindow` is UI Toolkit editor-only facade over tuning/telemetry DTOs | Alternative rejected: runtime GUI/OnGUI | Estimate: no runtime cost; editor-only
+- [x] Task 16 CUTTER_TUNER_EDITOR_WINDOW | DOD: `LaserCutterPhysicsTunerWindow` is UI Toolkit editor-only facade over tuning/telemetry DTOs, now showing cutting frame, sparks, power, distance, heat, battery watts, Burst us estimate, and HitAUP XYZ | Alternative rejected: runtime GUI/OnGUI | Estimate: no runtime cost; editor-only
 - [x] Task 17 CSV_CUTTER_SPECS_INGESTOR | DOD: `LaserCutterSpecsCsvParser` uses `ReadOnlySpan<byte>` parser and hashed profiles | Alternative rejected: string Split/managed CSV in gameplay | Estimate: avoids cold garbage spikes; PENDING MEASURE
-- [x] Task 18 LIVE_BEAM_DEBUG_GIZMO | DOD: `LaserCutterDodDebugGizmo` is `UNITY_EDITOR` guarded and reads request buffer | Alternative rejected: runtime debug renderer | Estimate: editor-only
-- [x] Task 19 ARCHITECTURAL_METRIC_VALIDATOR | DOD: `Cutter_Raycast_Inquisition` and PowerShell mirror wrote `Docs/Reports/CONSTRUCTION_OPTIMIZATION_REPORT_SHINOBU_225.json` | Alternative rejected: manual grep-only report | Estimate: static enforcement, no runtime cost
-- [ ] Task 20 SELF_AUDIT_AND_ARCHITECTURE_VERIFICATION | DOD: source scans, layout offsets, no Instantiate/Raycast hot path evidence, final log XML audit | Alternative rejected: chat-only completion claim | Estimate: verification discipline, no runtime cost
+- [x] Task 18 LIVE_BEAM_DEBUG_GIZMO | DOD: `LaserCutterDodDebugGizmo` is `UNITY_EDITOR` guarded and reads request+hit buffers, drawing red beam, cyan origin, green hit sphere, and yellow normal | Alternative rejected: runtime debug renderer | Estimate: editor-only
+- [x] Task 19 ARCHITECTURAL_METRIC_VALIDATOR | DOD: `Cutter_Raycast_Inquisition` and PowerShell mirror wrote `Docs/Reports/CONSTRUCTION_OPTIMIZATION_REPORT_SHINOBU_225.json` and appended `shinobu_225_laser_cutter_dod` to shared construction report | Alternative rejected: manual grep-only report | Estimate: static enforcement, no runtime cost
+- [x] Task 20 SELF_AUDIT_AND_ARCHITECTURE_VERIFICATION | DOD: source scans, strict request/meta layout split, no Instantiate/Raycast/ParticleSystem/mesh-mutation hot-path evidence, final log, and XML audit written | Alternative rejected: chat-only completion claim | Estimate: verification discipline, no runtime cost
 
 ### Loop 5: Strict Iteration
 
@@ -64,12 +64,32 @@ First-20-minutes route blocker: unsafe cutter path can stall gameplay when the p
 - [x] Pass 2 implement bounded runtime DTO/jobs
 - [x] Pass 3 implement editor/static tooling
 - [x] Pass 4 scan for forbidden patterns and compile if gate allows
-- [ ] Pass 5 self-review changed files and append final log
+- [x] Pass 5 self-review changed files and append final log
+
+### Loop 6: Ultra Polish Reconciliation
+
+- [x] Re-read `CURRENT_BATCH.md` SHINOBU_225 block, `Rationale_SHINOBU_225.md`, and `BINARY_PAYLOAD_INTEGRATION_LEDGER.md`.
+- [x] Split illegal request metadata out of `LaserCutRequestDTO` padding into `LaserCutRequestMetaDTO` and owner-local `RequestMetaBuffer=71336`.
+- [x] Removed hot-path `GlobalRegistry.DataVault` fallback from live request staging and GPU spark staging; acquire remains boot/editor only, hot resolve uses `allowAcquire:false`.
+- [x] Removed direct `Hecton8.Tools` dependency from `SealedDoor` spark/debris path; gameplay door now publishes local `DebrisSpawnSignal` only.
+- [x] Upgraded UI Toolkit telemetry and gizmo hit/normal proof.
+
+### Loop 7: Strict Scalability/Tuning Pass
+
+- [x] Reconciled Task 11 with exact XML intent: spark presentation now smoothsteps from 0 at minimum quality to 500 at Ultra.
+- [x] Wired runtime tuning DTO fields into `EvaluateCutterRaycastHitsJob` for dent radius, glow lifetime, battery watts, spark scale, and spark bounds.
+- [x] Added `BurstWorkEstimateMicros` telemetry at byte 124 and exposed it in the UI Toolkit tuner.
+- [x] Hardened cold Vault reacquire path so stale/undersized generation handles are released before a replacement descriptor is acquired.
+- [x] Fixed post-evaluation spark publishing so job-computed `SparkCount` is forwarded directly to GPU signals instead of being recalculated by the live helper.
+- [x] Rewired direct live `StageGpuSparkSignal` to consume tuning `LowSparkCount`, `UltraSparkCount`, and `SparkIntensityScale` through no-acquire Vault resolve.
+- [x] Re-extracted active `CURRENT_BATCH.md` prompt with attribute-aware regex; `SHINOBU_225` block found, 20 task headings, 14955 bytes.
 
 ## Verification Notes
 
 - Unity runtime proof: PENDING VERIFICATION.
 - GCMonitor proof: PENDING VERIFICATION.
 - Profiler microsecond proof: PENDING VERIFICATION.
-- Compile proof: BLOCKED at 2026-05-20 11:09 UTC by CPU guard; `Win32_Processor.LoadPercentage` returned 100 and no dotnet/csc process was active.
-- Static scan proof: `Docs/Reports/CONSTRUCTION_OPTIMIZATION_REPORT_SHINOBU_225.json` reports 0 focused cutter sync raycast, 0 `Instantiate`, 0 `ParticleSystem`, 0 mesh mutation text.
+- Compile proof: attempted `dotnet build Hecton8.Core.csproj --no-restore -v:minimal` at 2026-05-20 11:52 UTC after CPU gate opened at 46% and no compiler process was active. Build failed with 77 pre-existing/external dependency errors (`Hecton8.Equipment`, `Hecton8.Logistics.Grid`, `SoundEmissionSignal`, `H8BinaryWorldPager`, `SocketDefinitionDTO`, `IDockingAutopilotService`, etc.). Compiler output did not name `LaserCutterDod*`, `LaserCutterPhysicsTunerWindow`, `Cutter_Raycast_Inquisition`, `LaserCutter.cs`, `SealedDoor.cs`, or `SargassumCutResponder.cs` as error locations. Post-attempt `dotnet` compiler host processes remained active, so no second build attempt was legal.
+- Static scan proof: focused cutter files report 0 sync raycast, 0 `Instantiate`, 0 `ParticleSystem`, 0 mesh mutation text, 46 `LaserCutRequestDTO` hits, 30 `LaserCutRequestMetaDTO` hits, 1 `RaycastCommand.ScheduleBatch` site, 17 `NoAlias` hits, and 3 `BurstWorkEstimateMicros` hits.
+- Shared construction report proof: `Docs/Reports/CONSTRUCTION_OPTIMIZATION_REPORT.json` contains `shinobu_225_laser_cutter_dod`.
+- Final log proof: `Docs/AgentLogs/LOG_SHINOBU_225.md` appended/created; self-audit XML at `Docs/Reports/SHINOBU_225_SELF_AUDIT.xml`.

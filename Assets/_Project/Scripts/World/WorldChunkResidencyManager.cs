@@ -154,7 +154,7 @@ namespace Hecton8.World
     /// <summary>
     /// Burst job that evaluates chunk residency by comparing the player AUP against chunk-center AUPs.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct RadiusBasedStreamingJob : IJobParallelFor
     {
         [ReadOnly] public NativeArray<long> ChunkIds;
@@ -283,7 +283,7 @@ namespace Hecton8.World
     /// <summary>
     /// Burst-native sort for the bounded load list. It prioritizes chunks nearest to the projected AUP without managed sorting.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low, CompileSynchronously = true)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct ChunkLoadPrioritySortJob : IJob
     {
         public NativeList<long> ChunksToLoad;
@@ -302,7 +302,7 @@ namespace Hecton8.World
                 float score = float.MaxValue;
                 if (ChunkIndexById.TryGetValue(chunkId, out int index))
                 {
-                    double scoreSq = math.distancesq(ProjectedAbsolute, ToAbsoluteDouble3(ChunkCenters[index]));
+                    double scoreSq = AupPrecisionMath.DistanceSqSafeDouble(ProjectedAbsolute, ToAbsoluteDouble3(ChunkCenters[index]));
                     score = (float)math.min(scoreSq, float.MaxValue);
                 }
 
@@ -332,7 +332,7 @@ namespace Hecton8.World
     /// <summary>
     /// Burst-native append/remove operation for chunk impostors. Removal uses swap-back to keep the SOA dense.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, CompileSynchronously = true)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct HlodImpostorSwapJob : IJob
     {
         public NativeArray<float4x4> ActiveImpostors;
@@ -478,7 +478,7 @@ namespace Hecton8.World
     /// <summary>
     /// Removes hydrated impostors after their shader-visible fade window expires.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, CompileSynchronously = true)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct HlodImpostorFadeCullJob : IJob
     {
         public NativeArray<float4x4> ActiveImpostors;
@@ -552,7 +552,7 @@ namespace Hecton8.World
     /// <summary>
     /// Applies a rare AUP origin shift to active impostor matrices and cartography points.
     /// </summary>
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, CompileSynchronously = true)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct HlodImpostorAupShiftJob : IJobParallelFor
     {
         public NativeArray<float4x4> ActiveImpostors;
@@ -2039,7 +2039,7 @@ namespace Hecton8.World
             if (!suspendPredictiveStreamingInHabitat)
                 return;
 
-            BaseAirlockEventType eventType = (BaseAirlockEventType)payload.EventType;
+            BaseAirlockEventType eventType = BaseAirlockEventPayload.GetEventType(payload.StatusFlags);
             if (eventType == BaseAirlockEventType.CycleStarted)
             {
                 _habitatTransitionPauseFrames = HabitatTransitionPauseFrames;
@@ -2049,8 +2049,9 @@ namespace Hecton8.World
 
             if (eventType == BaseAirlockEventType.CycleCompleted || eventType == BaseAirlockEventType.EnvironmentChanged)
             {
-                _habitatPredictivePauseActive = payload.Dry;
-                _habitatTransitionPauseFrames = payload.Dry ? HabitatTransitionPauseFrames : 0;
+                bool isDry = BaseAirlockEventPayload.IsDry(payload.StatusFlags);
+                _habitatPredictivePauseActive = isDry;
+                _habitatTransitionPauseFrames = isDry ? HabitatTransitionPauseFrames : 0;
                 _forceResidencyEvaluation = true;
             }
         }
@@ -4971,7 +4972,7 @@ namespace Hecton8.World
             }
 
             if (_resolvedTier == ChunkStreamingScalabilityTier.Low)
-                flags |= HectonChunkImpostorResidency.FlagLowTierSnap;
+                flags |= HectonChunkImpostorResidency.FlagSurvivalSnap;
             else
                 flags |= HectonChunkImpostorResidency.FlagDitherBlend;
             return true;
@@ -5267,19 +5268,19 @@ namespace Hecton8.World
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static double DistanceSq(in AbsoluteUniversePosition lhs, in AbsoluteUniversePosition rhs)
         {
-            return math.distancesq(ToAbsoluteDouble3(in lhs), ToAbsoluteDouble3(in rhs));
+            return AupPrecisionMath.DistanceSqSafeDouble(ToAbsoluteDouble3(in lhs), ToAbsoluteDouble3(in rhs));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static double DistanceSq(in AbsoluteUniversePositionBlit lhs, in AbsoluteUniversePositionBlit rhs)
         {
-            return math.distancesq(ToAbsoluteDouble3(in lhs), ToAbsoluteDouble3(in rhs));
+            return AupPrecisionMath.DistanceSqSafeDouble(ToAbsoluteDouble3(in lhs), ToAbsoluteDouble3(in rhs));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static double DistanceSq(in AbsoluteUniversePositionBlit lhs, in AbsoluteUniversePosition rhs)
         {
-            return math.distancesq(ToAbsoluteDouble3(in lhs), ToAbsoluteDouble3(in rhs));
+            return AupPrecisionMath.DistanceSqSafeDouble(ToAbsoluteDouble3(in lhs), ToAbsoluteDouble3(in rhs));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

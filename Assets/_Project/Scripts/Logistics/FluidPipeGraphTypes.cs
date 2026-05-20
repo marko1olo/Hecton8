@@ -32,32 +32,53 @@ namespace Hecton8.Logistics
         Ultra = 3
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 40)]
     public struct FluidPipeRuptureRecord
     {
+        [FieldOffset(0)]
         public int NodeIndex;
+        [FieldOffset(4)]
         public int NetworkId;
+        [FieldOffset(8)]
         public int RoomIndex;
+        [FieldOffset(12)]
         public int FrameIndex;
+        [FieldOffset(16)]
         public float PressureKPa;
+        [FieldOffset(20)]
         public float Contents;
+        [FieldOffset(24)]
         public float Flow01;
+        [FieldOffset(28)]
         public uint NodeHash;
+        [FieldOffset(32)]
         public byte ContentKind;
+        [FieldOffset(33)]
         public byte Flags;
+        [FieldOffset(34)]
         public ushort Reserved;
+        [FieldOffset(36)]
+        private uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct FluidPipeTelemetryEntry
     {
+        [FieldOffset(0)]
         public int FrameIndex;
+        [FieldOffset(4)]
         public int NodeCount;
+        [FieldOffset(8)]
         public int RuptureCount;
+        [FieldOffset(12)]
         public int NanCount;
+        [FieldOffset(16)]
         public float TotalWater;
+        [FieldOffset(20)]
         public float TotalOxygen;
+        [FieldOffset(24)]
         public float MaxPressureKPa;
+        [FieldOffset(28)]
         public uint StateHash;
     }
 

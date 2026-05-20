@@ -29,15 +29,22 @@ namespace Hecton8.Construction
     /// <summary>
     /// Unmanaged repair-drone torch acoustic payload carried by the deferred event lane.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct RepairDroneTorchAcousticPayload
     {
+        [FieldOffset(0)]
         public Vector3 Position;
+        [FieldOffset(12)]
         public float Volume;
+        [FieldOffset(16)]
         public float Pitch;
+        [FieldOffset(20)]
         public uint ClipHashId;
+        [FieldOffset(24)]
         public int ReferenceSlot;
+        [FieldOffset(28)]
         public ushort EventType;
+        [FieldOffset(30)]
         public ushort Reserved;
     }
 

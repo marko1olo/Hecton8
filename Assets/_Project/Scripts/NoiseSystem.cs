@@ -374,17 +374,7 @@ namespace Hecton8.AI
                 return math.saturate(math.max(speed01 * distance01, pulse01 * distance01));
             }
 
-            if (playerTransform == null || playerBody == null)
-                return 0f;
-
-            float playerSpeedSqr = playerBody.linearVelocity.sqrMagnitude;
-            if (playerSpeedSqr <= 0.01f)
-                return 0f;
-
-            float playerDistanceSqr = (listenerPosition - playerTransform.position).sqrMagnitude;
-            float playerSpeed01 = InverseLerpClamped(0.5625f, 72.25f, playerSpeedSqr);
-            float playerDistance01 = 1f - InverseLerpClamped(36f, 1764f, playerDistanceSqr);
-            return math.saturate(playerSpeed01 * playerDistance01);
+            return 0f;
         }
     }
 }

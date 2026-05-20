@@ -24,7 +24,7 @@ Regional outreach cannot bypass English proof gates. Before any regional email, 
 - the English asset packet must pass current asset QA;
 - the localized pitch must be native/fluent reviewed and encoding-clean;
 - gameplay, pressure, route-risk, threat, salvage, base-failure, or first-public agency proof must name an AB-009/KPI source field: `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`;
-- public Steam, wishlist, demo, signup, presskit, or trailer links must pass Official CTA Link Activation Gate V0;
+- public Steam, wishlist, demo, signup, presskit, or trailer links must pass the exact destination gate (`steam_page_publish_permission_gate`, `demo_public_access_permission_gate`, `owned_audience_permission_gate`, `press_release_permission_gate`, or matching asset/publication gate) plus destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`;
 - if the public CTA is not activated, use a no-link feedback ask or private access route with `verified_contact_route`, `access_route_class`, `reply_status_after_send`, `reply_consent_provenance`, and `agency_decision_field_source` where proof claims are used;
 - new regional lead verification happens only when the current CRM has a source-backed asset/route gap.
 
@@ -53,7 +53,7 @@ HECTON-8 - odinochnoe podvodnoe vyzhivanie pro davlenie, tekhniku, poisk resurso
 
 Ask:
 
-Esli format podoidet, mozhno obsudit demo ili press-kit, kogda build, dostup, `verified_contact_route`, `access_route_class` i `reply_consent_provenance` budut gotovy. Materialy otpravlyat tolko posle Official CTA Link Activation Gate V0 dlya public-linkov ili recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED` plus exact access-log fields dlya private-route.
+Esli format podoidet, mozhno obsudit demo ili press-kit, kogda build, dostup, `verified_contact_route`, `access_route_class` i `reply_consent_provenance` budut gotovy. Materialy otpravlyat tolko posle exact destination gate plus `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` dlya public-linkov ili recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED`, official inbox custody, disclosure, plus exact access-log fields dlya private-route.
 
 ## German Pitch Draft
 
@@ -104,7 +104,7 @@ For each region:
 3. write native or reviewed pitch;
 4. prepare one localized one-page PDF/Markdown;
 5. do not translate gameplay, pressure, route-risk, threat, salvage, or base-failure claims unless AB-009/KPI field source exists;
-6. route public CTA through Official CTA Link Activation Gate V0 or use a no-link/private-access fallback;
+6. route public CTA through the exact destination permission gate plus destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`, or use a no-link/private-access fallback;
 7. track `send_route_class` for sends, exact private access-log fields if private, and `reply_consent_provenance` separately from English outreach.
 
 ## Regional One-Pager Fields
@@ -114,9 +114,9 @@ For each region:
 - What exists now.
 - Proof boundaries / unsupported scope.
 - Screenshots.
-- Steam link only after Official CTA Link Activation Gate V0.
+- Steam link only after `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED` and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`.
 - Demo status.
-- CTA activation packet or no-link route.
+- Destination permission gate plus `public_cta_permission_gate`, or no-link route.
 - AB-009/KPI agency field source: `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`.
 - `send_route_class` for sends, or exact private access-log fields if private.
 - `reply_consent_provenance`.

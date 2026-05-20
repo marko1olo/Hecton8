@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using System.Threading;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Unity.Burst;
@@ -33,7 +32,7 @@ namespace Hecton8.Physics.Vehicles
 
             bool outer = x == 0 || y == 0 || z == 0 || x == GridWidth - 1 || y == GridHeight - 1 || z == GridDepth - 1;
             uint component = ResolveComponentHash(x, y, z, GridWidth, GridHeight, GridDepth);
-            uint flags = outer ? VehicleDamageConstants.CellFlagOuterHull : 0u;
+            uint flags = math.select(0u, VehicleDamageConstants.CellFlagOuterHull, outer);
             if (component == VehicleDamageConstants.ComponentEngine)
                 flags |= VehicleDamageConstants.CellFlagEngineCritical | VehicleDamageConstants.CellFlagFlammable;
             else if (component == VehicleDamageConstants.ComponentBallast)
@@ -47,7 +46,7 @@ namespace Hecton8.Physics.Vehicles
             cell.Integrity01 = 1f;
             cell.ComponentHash = component;
             cell.StatusFlags = flags;
-            cell.ArmorValue = math.max(0.01f, BaseArmor * (outer ? 1.3f : 1f));
+            cell.ArmorValue = math.max(0.01f, BaseArmor * math.select(1f, 1.3f, outer));
             UnsafeUtility.AsRef<VehicleGridCellDTO>(Cells + index) = cell;
         }
 
@@ -94,20 +93,20 @@ namespace Hecton8.Physics.Vehicles
             if (Signals == null || (uint)index >= (uint)SignalCount)
                 return;
 
-            float quality = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 1f);
+            float quality = math.saturate(math.select(1f, GlobalQualityWeight, math.isfinite(GlobalQualityWeight)));
             uint rootHash = FoldAup(RootAup);
             uint hash = Hash((uint)index ^ (Frame * 747796405u) ^ rootHash ^ 0x9E3779B9u);
             Random random = Random.CreateFromIndex(hash);
             float angle = random.NextFloat(0f, 6.28318530718f);
-            float side = random.NextFloat() < 0.5f ? -1f : 1f;
+            float side = math.select(1f, -1f, random.NextFloat() < 0.5f);
             float3 local = new float3(
                 side * random.NextFloat(2.1f, 2.35f),
                 random.NextFloat(-0.35f, 0.35f),
-                math.sin(angle) * 3.3f);
+                SinPolynomial(angle, quality) * 3.3f);
 
             VehicleDamageSignalDTO signal = default;
             signal.ImpactAup = RootAup + new double3(local);
-            signal.Direction = math.normalizesafe(-local, new float3(0f, 0f, -1f));
+            signal.Direction = NormalizeOrFallback(-local, new float3(0f, 0f, -1f));
             signal.Magnitude = math.max(0f, Magnitude) * math.lerp(0.55f, 1.25f, random.NextFloat());
             signal.DamageType = VehicleDamageConstants.DamageTypeExplosiveMask;
             signal.TargetHash = 0u;
@@ -158,6 +157,33 @@ namespace Hecton8.Physics.Vehicles
             hash *= 16777619u;
             hash ^= (uint)(bits >> 32);
             return hash * 16777619u;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SinPolynomial(float radians, float qualityWeight)
+        {
+            const float Pi = 3.14159265359f;
+            const float TwoPi = 6.28318530718f;
+            const float HalfPi = 1.57079632679f;
+
+            float wrapped = radians - (TwoPi * math.floor((radians + Pi) / TwoPi));
+            float absWrapped = math.abs(wrapped);
+            float reflected = math.sign(wrapped) * (Pi - absWrapped);
+            float x = math.select(wrapped, reflected, absWrapped > HalfPi);
+            float x2 = x * x;
+            float x4 = x2 * x2;
+            float sin3 = x * (1f - (x2 * 0.16666666667f));
+            float sin7 = x * (1f - (x2 * 0.16666666667f) + (x4 * 0.00833333333f) - (x4 * x2 * 0.00019841269f));
+            return math.lerp(sin3, sin7, math.saturate(qualityWeight));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float3 NormalizeOrFallback(float3 value, float3 fallback)
+        {
+            float lengthSq = math.lengthsq(value);
+            bool valid = math.all(math.isfinite(value)) && lengthSq > 0.0001f;
+            float3 normalized = value * math.rsqrt(math.max(lengthSq, 0.0001f));
+            return math.select(fallback, normalized, valid);
         }
     }
 
@@ -237,9 +263,6 @@ namespace Hecton8.Physics.Vehicles
             if ((signal.DamageType & VehicleDamageConstants.DamageTypeExplosiveMask) != 0u)
                 signal.MappedFlags |= VehicleDamageConstants.DamageFlagExplosive;
 
-            float armorPierce = math.saturate(signal.ArmorPierce);
-            float delta = ResolveDirectDamage(signal.Magnitude, signal.IntegrityDelta, DirectDamageScale) * (1f + armorPierce);
-            AtomicApplyIntegrityDamage(Cells, cellIndex, delta);
             UnsafeUtility.AsRef<VehicleDamageSignalDTO>(Signals + index) = signal;
         }
 
@@ -276,102 +299,89 @@ namespace Hecton8.Physics.Vehicles
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ResolveDirectDamage(float magnitude, byte integrityDelta, float scale)
         {
-            float signalMagnitude = math.isfinite(magnitude) ? math.max(0f, magnitude) : 0f;
+            float signalMagnitude = math.select(0f, math.max(0f, magnitude), math.isfinite(magnitude));
             float byteDamage = integrityDelta * (1f / 255f);
             float energyDamage = math.saturate(signalMagnitude * 0.000015f);
             return math.saturate((byteDamage + energyDamage) * math.max(0f, scale));
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void AtomicApplyIntegrityDamage(VehicleGridCellDTO* cells, int index, float damage01)
-        {
-            ref VehicleGridCellDTO cell = ref UnsafeUtility.AsRef<VehicleGridCellDTO>(cells + index);
-            ref float integrityFloat = ref cell.Integrity01;
-            ref int integrityBits = ref UnsafeUtility.As<float, int>(ref integrityFloat);
-
-            int oldBits;
-            int newBits;
-            float next = 1f;
-            do
-            {
-                oldBits = integrityBits;
-                float currentRaw = math.asfloat(oldBits);
-                float current = math.isfinite(currentRaw) ? math.saturate(currentRaw) : 0f;
-                float armor = math.max(0.01f, cell.ArmorValue);
-                next = math.saturate(current - (math.max(0f, damage01) / armor));
-                newBits = math.asint(next);
-                if (newBits == oldBits)
-                    break;
-            }
-            while (Interlocked.CompareExchange(ref integrityBits, newBits, oldBits) != oldBits);
-
-            // Status flags are finalized by EvaluateVehicleSystemsJob after all parallel damage writes.
-        }
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    public unsafe struct PropagateDamageJob : IJobParallelFor
+    public unsafe struct ApplyVehicleDamageReductionJob : IJobParallelFor
     {
         [NoAlias, NativeDisableUnsafePtrRestriction] public VehicleGridCellDTO* Cells;
-        [NoAlias, NativeDisableUnsafePtrRestriction] public VehicleDamageSignalDTO* Signals;
+        [ReadOnly, NoAlias, NativeDisableUnsafePtrRestriction] public VehicleDamageSignalDTO* Signals;
         public int SignalCount;
+        public int CellCount;
         public int GridWidth;
         public int GridHeight;
         public int GridDepth;
         public float3 GridSizeLocal;
         public float GlobalQualityWeight;
+        public float DirectDamageScale;
         public float ExplosionFalloff;
 
-        public void Execute(int index)
+        public void Execute(int cellIndex)
         {
-            if (Cells == null || Signals == null || (uint)index >= (uint)SignalCount)
+            if (Cells == null || Signals == null || (uint)cellIndex >= (uint)CellCount)
                 return;
 
-            VehicleDamageSignalDTO signal = UnsafeUtility.AsRef<VehicleDamageSignalDTO>(Signals + index);
-            if ((signal.MappedFlags & VehicleDamageConstants.DamageFlagMapped) == 0u ||
-                (signal.MappedFlags & VehicleDamageConstants.DamageFlagExplosive) == 0u ||
-                (uint)signal.GridIndex >= (uint)(GridWidth * GridHeight * GridDepth))
-            {
+            int width = math.max(1, GridWidth);
+            int height = math.max(1, GridHeight);
+            int depth = math.max(1, GridDepth);
+            int gridCellCount = math.min(CellCount, width * height * depth);
+            if ((uint)cellIndex >= (uint)gridCellCount)
                 return;
-            }
 
-            float quality = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 1f);
-            float3 cellSize = GridSizeLocal / new float3(math.max(1, GridWidth), math.max(1, GridHeight), math.max(1, GridDepth));
+            float quality = math.saturate(math.select(1f, GlobalQualityWeight, math.isfinite(GlobalQualityWeight)));
+            float3 safeGridSize = math.select(new float3(0.001f), GridSizeLocal, math.all(math.isfinite(GridSizeLocal)));
+            float directScale = math.select(0f, DirectDamageScale, math.isfinite(DirectDamageScale));
+            float explosionFalloff = math.select(0f, ExplosionFalloff, math.isfinite(ExplosionFalloff));
+            float3 cellSize = safeGridSize / new float3(width, height, depth);
             float minCell = math.max(0.01f, math.cmin(math.abs(cellSize)));
             int qualityRadius = math.clamp(1 + (int)math.floor(math.lerp(0f, 5f, quality * quality)), 1, 6);
-            int radiusCells = math.clamp((int)math.ceil(math.max(0.01f, signal.RadiusMeters) / minCell), 1, qualityRadius);
-            Decode(signal.GridIndex, GridWidth, GridHeight, out int cx, out int cy, out int cz);
+            int signalLimit = math.min(math.max(0, SignalCount), VehicleDamageConstants.MaxDamageSignals);
+            Decode(cellIndex, width, height, out int x, out int y, out int z);
 
-            float baseDamage = MapImpactToGridJob.ResolveDirectDamage(signal.Magnitude, signal.IntegrityDelta, 0.55f);
-            float falloff = math.max(0.15f, ExplosionFalloff + signal.Falloff);
-            for (int dz = -radiusCells; dz <= radiusCells; dz++)
+            float accumulatedDamage = 0f;
+            for (int signalIndex = 0; signalIndex < signalLimit; signalIndex++)
             {
-                int z = cz + dz;
-                if ((uint)z >= (uint)GridDepth)
-                    continue;
+                VehicleDamageSignalDTO signal = UnsafeUtility.AsRef<VehicleDamageSignalDTO>(Signals + signalIndex);
+                bool mapped = (signal.MappedFlags & VehicleDamageConstants.DamageFlagMapped) != 0u &&
+                    (uint)signal.GridIndex < (uint)gridCellCount;
+                float mappedMask = math.select(0f, 1f, mapped);
+                int safeGridIndex = math.clamp(signal.GridIndex, 0, math.max(0, gridCellCount - 1));
 
-                for (int dy = -radiusCells; dy <= radiusCells; dy++)
-                {
-                    int y = cy + dy;
-                    if ((uint)y >= (uint)GridHeight)
-                        continue;
+                float directMatch = math.select(0f, 1f, signal.GridIndex == cellIndex);
+                float directDamage = MapImpactToGridJob.ResolveDirectDamage(
+                    signal.Magnitude,
+                    signal.IntegrityDelta,
+                    directScale) * (1f + math.saturate(signal.ArmorPierce)) * directMatch;
 
-                    for (int dx = -radiusCells; dx <= radiusCells; dx++)
-                    {
-                        int x = cx + dx;
-                        if ((uint)x >= (uint)GridWidth)
-                            continue;
+                bool explosive = (signal.MappedFlags & VehicleDamageConstants.DamageFlagExplosive) != 0u;
+                float explosiveMask = math.select(0f, 1f, explosive);
+                float signalRadius = math.select(0.01f, signal.RadiusMeters, math.isfinite(signal.RadiusMeters));
+                int radiusCells = math.clamp((int)math.ceil(math.max(0.01f, signalRadius) / minCell), 1, qualityRadius);
+                Decode(safeGridIndex, width, height, out int cx, out int cy, out int cz);
+                int dx = x - cx;
+                int dy = y - cy;
+                int dz = z - cz;
+                float distSq = (dx * dx) + (dy * dy) + (dz * dz);
+                bool insideRadius = distSq >= 0.0001f && distSq <= radiusCells * radiusCells;
+                float baseDamage = MapImpactToGridJob.ResolveDirectDamage(signal.Magnitude, signal.IntegrityDelta, 0.55f);
+                float signalFalloff = math.select(0f, signal.Falloff, math.isfinite(signal.Falloff));
+                float falloff = math.max(0.15f, explosionFalloff + signalFalloff);
+                float attenuation = 1f / math.max(0.0001f, 1f + (distSq * falloff));
+                float propagatedDamage = baseDamage * attenuation * math.select(0f, 1f, insideRadius) * explosiveMask;
 
-                        float distSq = (dx * dx) + (dy * dy) + (dz * dz);
-                        if (distSq < 0.0001f || distSq > radiusCells * radiusCells)
-                            continue;
-
-                        float attenuation = 1f / (1f + (distSq * falloff));
-                        int target = x + (y * GridWidth) + (z * GridWidth * GridHeight);
-                        MapImpactToGridJob.AtomicApplyIntegrityDamage(Cells, target, baseDamage * attenuation);
-                    }
-                }
+                float damage = (directDamage + propagatedDamage) * mappedMask;
+                accumulatedDamage += math.select(0f, damage, math.isfinite(damage));
             }
+
+            ref VehicleGridCellDTO cell = ref UnsafeUtility.AsRef<VehicleGridCellDTO>(Cells + cellIndex);
+            float current = math.saturate(math.select(0f, cell.Integrity01, math.isfinite(cell.Integrity01)));
+            float armor = math.max(0.01f, math.select(1f, cell.ArmorValue, math.isfinite(cell.ArmorValue)));
+            cell.Integrity01 = math.saturate(current - (math.max(0f, accumulatedDamage) / armor));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -423,14 +433,14 @@ namespace Hecton8.Physics.Vehicles
             int breaches = 0;
             float ingress = 0f;
             float structuralSum = 0f;
-            float quality = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 1f);
+            float quality = math.saturate(math.select(1f, GlobalQualityWeight, math.isfinite(GlobalQualityWeight)));
             float fireChance = math.saturate(Tuning.FireChance01 * math.lerp(0.35f, 1.65f, quality));
-            float rootDepth = math.max(0f, math.isfinite(RootDepthMeters) ? RootDepthMeters : 0f);
+            float rootDepth = math.max(0f, math.select(0f, RootDepthMeters, math.isfinite(RootDepthMeters)));
 
             for (int i = 0; i < CellCount; i++)
             {
                 ref VehicleGridCellDTO cell = ref UnsafeUtility.AsRef<VehicleGridCellDTO>(Cells + i);
-                float integrity = math.saturate(math.isfinite(cell.Integrity01) ? cell.Integrity01 : 0f);
+                float integrity = math.saturate(math.select(0f, cell.Integrity01, math.isfinite(cell.Integrity01)));
                 if (!math.isfinite(cell.Integrity01))
                     cell.Integrity01 = 0f;
 
@@ -497,16 +507,16 @@ namespace Hecton8.Physics.Vehicles
             }
 
             VehicleDamageStateDTO state = UnsafeUtility.AsRef<VehicleDamageStateDTO>(StateWrite);
-            float dt = math.clamp(math.isfinite(FixedDeltaTime) ? FixedDeltaTime : 0.0166667f, 0.001f, 0.05f);
+            float dt = math.clamp(math.select(0.0166667f, FixedDeltaTime, math.isfinite(FixedDeltaTime)), 0.001f, 0.05f);
             float floodLimit = math.max(0f, Tuning.FloodMassLimitKg);
             float previousFlood = math.saturate(state.FloodWaterMassKg / math.max(1f, floodLimit)) * floodLimit;
             state.FloodWaterMassKg = math.min(floodLimit, previousFlood + (ingress * dt));
             state.IngressRateKgPerSecond = ingress;
 
-            float engine01 = engineCount > 0 ? engineSum / engineCount : 1f;
-            float ballast01 = ballastCount > 0 ? ballastSum / ballastCount : 1f;
-            float sensor01 = sensorCount > 0 ? sensorSum / sensorCount : 1f;
-            float hull01 = hullCount > 0 ? hullSum / hullCount : 1f;
+            float engine01 = math.select(1f, engineSum / math.max(1, engineCount), engineCount > 0);
+            float ballast01 = math.select(1f, ballastSum / math.max(1, ballastCount), ballastCount > 0);
+            float sensor01 = math.select(1f, sensorSum / math.max(1, sensorCount), sensorCount > 0);
+            float hull01 = math.select(1f, hullSum / math.max(1, hullCount), hullCount > 0);
             float structural01 = structuralSum / math.max(1, CellCount);
             float flood01 = math.saturate(state.FloodWaterMassKg / math.max(1f, floodLimit));
             float breach01 = math.saturate(breaches / math.max(1f, CellCount * 0.08f));

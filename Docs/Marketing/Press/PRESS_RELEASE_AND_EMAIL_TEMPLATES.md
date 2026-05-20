@@ -39,7 +39,7 @@ These templates are scaffolds. Do not publish or send until:
   build/demo status is true;
   contact email is owner-controlled and logged;
   asset metadata claim checks pass for any referenced screenshot, footage, Steam link, demo, or presskit, and link/access route gates pass;
-  any gameplay, pressure, route-risk, threat, salvage failure, or first-public proof claim has AB-009/KPI decision-read evidence: `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`;
+  any gameplay, pressure, route-risk, threat, salvage failure, or first-public proof claim has non-pending asset metadata `viewer_named_decision`, `capture_verdict = KEEP_TESTING` or stronger campaign `KEEP`, and AB-009/KPI decision-read evidence: `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`;
   embargo/key terms are documented.
 
 ## One Line Boilerplate

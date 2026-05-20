@@ -15,12 +15,12 @@ namespace Hecton8.UI
         Critical = 2
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 8)]
     public struct NotificationEventPayload
     {
-        public uint MessageHash;
-        public ushort Severity;
-        public ushort Reserved;
+        [FieldOffset(0)] public uint MessageHash;
+        [FieldOffset(4)] public ushort Severity;
+        [FieldOffset(6)] public ushort Reserved;
     }
 
     public interface INotificationEventListener

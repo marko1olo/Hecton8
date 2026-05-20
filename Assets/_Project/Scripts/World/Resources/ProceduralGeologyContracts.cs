@@ -280,9 +280,7 @@ namespace Hecton8.World
             float h = SampleHeight(x, z, BaseHeight, Seed);
             float hx = SampleHeight(x + 1.0, z, BaseHeight, Seed);
             float hz = SampleHeight(x, z + 1.0, BaseHeight, Seed);
-            float3 normal = math.normalize(new float3(h - hx, 1f, h - hz));
-            if (!math.all(math.isfinite(normal)))
-                normal = new float3(0f, 1f, 0f);
+            float3 normal = SafeNormalize(new float3(h - hx, 1f, h - hz), new float3(0f, 1f, 0f));
 
             GeologyTerrainSampleDTO sample = default;
             sample.Height = h;
@@ -305,6 +303,18 @@ namespace Hecton8.World
         {
             float t = math.frac(phase);
             return 1f - math.abs((t * 4f) - 2f);
+        }
+
+        private static float3 SafeNormalize(float3 value, float3 fallback)
+        {
+            if (!math.all(math.isfinite(value)))
+                return fallback;
+
+            float lengthSq = math.lengthsq(value);
+            if (!math.isfinite(lengthSq) || lengthSq <= 0.0001f)
+                return fallback;
+
+            return value * math.rsqrt(math.max(lengthSq, 0.0001f));
         }
     }
 

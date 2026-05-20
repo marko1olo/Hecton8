@@ -22,6 +22,12 @@ namespace Hecton8.Tools.Editor
         private IntegerField _sparkCountField;
         private FloatField _powerField;
         private FloatField _distanceField;
+        private FloatField _heatField;
+        private FloatField _batteryWattsField;
+        private IntegerField _burstEstimateField;
+        private DoubleField _hitXField;
+        private DoubleField _hitYField;
+        private DoubleField _hitZField;
         private Label _status;
         private bool _suppressCallbacks;
 
@@ -54,13 +60,13 @@ namespace Hecton8.Tools.Editor
             _status.style.marginBottom = 8f;
             root.Add(_status);
 
-            _minimumPower = BuildSlider("Minimum Power", 0f, 1f, 0.05f);
+            _minimumPower = BuildSlider("Cutting Damage", 0f, 1f, 0.05f);
             _maxDistance = BuildSlider("Max Distance", 0.1f, 16f, 6f);
             _dentMin = BuildSlider("Dent Radius Min", 0f, 0.25f, 0.045f);
             _dentMax = BuildSlider("Dent Radius Max", 0.05f, 1f, 0.32f);
             _glowLifetime = BuildSlider("Glow Lifetime", 0f, 4f, 0.9f);
-            _batteryWatts = BuildSlider("Battery Watts", 0f, 500f, 180f);
-            _cooldownFrames = BuildSlider("Cooldown Frames", 1f, 12f, 2f);
+            _batteryWatts = BuildSlider("Heat Generation", 0f, 500f, 180f);
+            _cooldownFrames = BuildSlider("Cooldown Speed", 1f, 12f, 2f);
             _sparkScale = BuildSlider("Spark Scale", 0f, 3f, 1f);
             _quality = BuildSlider("Global Quality", 0f, 1f, 1f);
 
@@ -86,10 +92,22 @@ namespace Hecton8.Tools.Editor
             _sparkCountField = BuildIntField("Sparks");
             _powerField = BuildFloatField("Power");
             _distanceField = BuildFloatField("Distance");
+            _heatField = BuildFloatField("Heat");
+            _batteryWattsField = BuildFloatField("Battery W");
+            _burstEstimateField = BuildIntField("Burst us");
+            _hitXField = BuildDoubleField("Hit X");
+            _hitYField = BuildDoubleField("Hit Y");
+            _hitZField = BuildDoubleField("Hit Z");
             telemetry.Add(_frameField);
             telemetry.Add(_sparkCountField);
             telemetry.Add(_powerField);
             telemetry.Add(_distanceField);
+            telemetry.Add(_heatField);
+            telemetry.Add(_batteryWattsField);
+            telemetry.Add(_burstEstimateField);
+            telemetry.Add(_hitXField);
+            telemetry.Add(_hitYField);
+            telemetry.Add(_hitZField);
             root.Add(telemetry);
             PullRuntimeState();
         }
@@ -115,6 +133,15 @@ namespace Hecton8.Tools.Editor
             FloatField field = new FloatField(label);
             field.SetEnabled(false);
             field.style.width = 132f;
+            field.style.marginRight = 4f;
+            return field;
+        }
+
+        private static DoubleField BuildDoubleField(string label)
+        {
+            DoubleField field = new DoubleField(label);
+            field.SetEnabled(false);
+            field.style.width = 168f;
             field.style.marginRight = 4f;
             return field;
         }
@@ -154,6 +181,12 @@ namespace Hecton8.Tools.Editor
                 _sparkCountField.SetValueWithoutNotify((int)entry.SparkCount);
                 _powerField.SetValueWithoutNotify(entry.CuttingPower);
                 _distanceField.SetValueWithoutNotify(entry.DistanceMeters);
+                _heatField.SetValueWithoutNotify(entry.Heat01);
+                _batteryWattsField.SetValueWithoutNotify(entry.BatteryWatts);
+                _burstEstimateField.SetValueWithoutNotify((int)entry.BurstWorkEstimateMicros);
+                _hitXField.SetValueWithoutNotify(entry.HitAUP.x);
+                _hitYField.SetValueWithoutNotify(entry.HitAUP.y);
+                _hitZField.SetValueWithoutNotify(entry.HitAUP.z);
             }
 
             _suppressCallbacks = false;

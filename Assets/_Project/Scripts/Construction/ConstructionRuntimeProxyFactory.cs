@@ -6,33 +6,10 @@ using UnityEngine.Rendering;
 
 namespace Hecton8.Construction
 {
-    [DisallowMultipleComponent]
-    internal sealed class ConstructionRuntimeProxyTag : MonoBehaviour
-    {
-        [SerializeField] private bool isGhostProxy;
-
-        internal bool IsGhostProxy => isGhostProxy;
-
-        internal void Configure(bool ghostProxy)
-        {
-            isGhostProxy = ghostProxy;
-        }
-    }
-
     internal static class ConstructionRuntimeProxyFactory
     {
-        private static Material s_validGhostMaterial;
-        private static Material s_invalidGhostMaterial;
         private static Material s_finalProxyMaterial;
         private static Mesh s_wireBoxMesh;
-        private static GameObject s_ghostProxyRoot;
-        private static Transform s_ghostProxyTransform;
-        private static Transform s_ghostProxyVisual;
-        private static ModuleMarker s_ghostProxyMarker;
-        private static BoxCollider s_ghostProxyCollider;
-        private static PlacementGhost s_ghostPlacementGhost;
-        private static MeshFilter s_ghostProxyMeshFilter;
-        private static MeshRenderer s_ghostProxyRenderer;
         // COLD ALLOC: Vector3[8] - shared unit wire box vertices for generated module proxies - owner: ConstructionRuntimeProxyFactory
         private static readonly Vector3[] s_wireBoxVertices =
         {
@@ -54,55 +31,6 @@ namespace Hecton8.Construction
             0, 4, 1, 5, 2, 6, 3, 7
         };
 
-        internal static bool TryCreateGhostProxy(BuildableData data, Vector3 position, Quaternion rotation, LayerMask blockingMask, out GameObject proxyRoot)
-        {
-            return TryAcquireGhostProxy(data, position, rotation, blockingMask, out proxyRoot);
-        }
-
-        internal static bool TryAcquireGhostProxy(BuildableData data, Vector3 position, Quaternion rotation, LayerMask blockingMask, out GameObject proxyRoot)
-        {
-            proxyRoot = null;
-            if (data == null || data.ModuleTemplate == null)
-                return false;
-
-            EnsureSharedMaterials();
-            EnsureReusableGhostProxy();
-            if (s_ghostProxyRoot == null)
-                return false;
-
-            BaseModuleTemplate template = data.ModuleTemplate;
-            s_ghostProxyTransform.SetPositionAndRotation(position, rotation);
-            s_ghostProxyMarker.Initialize(data);
-            s_ghostProxyCollider.center = template.ProxyBoundsCenter;
-            s_ghostProxyCollider.size = template.ProxyBoundsSize;
-            s_ghostProxyVisual.localPosition = template.ProxyBoundsCenter;
-            s_ghostProxyVisual.localRotation = Quaternion.identity;
-            s_ghostProxyVisual.localScale = template.ProxyBoundsSize;
-            s_ghostProxyMeshFilter.sharedMesh = EnsureWireBoxMesh();
-            s_ghostProxyRenderer.sharedMaterial = s_validGhostMaterial;
-
-            s_ghostPlacementGhost.ConfigureRuntimeProxy(
-                s_validGhostMaterial,
-                s_invalidGhostMaterial,
-                template.ProxyBoundsSize * 0.5f,
-                template.ProxyBoundsCenter,
-                blockingMask);
-            s_ghostPlacementGhost.OnSpawn();
-            s_ghostProxyRoot.SetActive(true);
-            proxyRoot = s_ghostProxyRoot;
-            return true;
-        }
-
-        internal static bool ReleaseGhostProxy(GameObject proxyRoot)
-        {
-            if (s_ghostProxyRoot == null || s_ghostPlacementGhost == null || !ReferenceEquals(proxyRoot, s_ghostProxyRoot))
-                return false;
-
-            s_ghostPlacementGhost.OnDespawn();
-            s_ghostProxyRoot.SetActive(false);
-            return true;
-        }
-
         internal static bool TryCreatePlacedProxy(BuildableData data, Vector3 position, Quaternion rotation, out GameObject proxyRoot)
         {
             proxyRoot = null;
@@ -110,7 +38,7 @@ namespace Hecton8.Construction
                 return false;
 
             EnsureSharedMaterials();
-            proxyRoot = CreateProxyRoot(data, position, rotation, false);
+            proxyRoot = CreateProxyRoot(data, position, rotation);
             if (proxyRoot == null)
                 return false;
 
@@ -121,29 +49,14 @@ namespace Hecton8.Construction
             return true;
         }
 
-        internal static bool TryGetGhostProjectionResources(
-            out Mesh projectionMesh,
-            out Material validMaterial,
-            out Material blockedMaterial)
-        {
-            EnsureSharedMaterials();
-            projectionMesh = EnsureWireBoxMesh();
-            validMaterial = s_validGhostMaterial;
-            blockedMaterial = s_invalidGhostMaterial;
-            return projectionMesh != null && validMaterial != null && blockedMaterial != null;
-        }
-
-        private static GameObject CreateProxyRoot(BuildableData data, Vector3 position, Quaternion rotation, bool ghostProxy)
+        private static GameObject CreateProxyRoot(BuildableData data, Vector3 position, Quaternion rotation)
         {
             BaseModuleTemplate template = data.ModuleTemplate;
             if (template == null)
                 return null;
 
-            GameObject root = new GameObject(data.moduleName + (ghostProxy ? "_GhostProxy" : "_Proxy"));
+            GameObject root = new GameObject(data.moduleName + "_Proxy");
             root.transform.SetPositionAndRotation(position, rotation);
-
-            ConstructionRuntimeProxyTag proxyTag = root.AddComponent<ConstructionRuntimeProxyTag>();
-            proxyTag.Configure(ghostProxy);
 
             ModuleMarker marker = root.AddComponent<ModuleMarker>();
             marker.Initialize(data);
@@ -151,7 +64,7 @@ namespace Hecton8.Construction
             BoxCollider structuralCollider = root.AddComponent<BoxCollider>();
             structuralCollider.center = template.ProxyBoundsCenter;
             structuralCollider.size = template.ProxyBoundsSize;
-            structuralCollider.isTrigger = ghostProxy;
+            structuralCollider.isTrigger = false;
 
             GameObject visual = new GameObject("ProxyVisual");
             visual.transform.SetParent(root.transform, false);
@@ -163,42 +76,10 @@ namespace Hecton8.Construction
             meshFilter.sharedMesh = EnsureWireBoxMesh();
 
             MeshRenderer renderer = visual.AddComponent<MeshRenderer>();
-            renderer.sharedMaterial = ghostProxy ? s_validGhostMaterial : s_finalProxyMaterial;
+            renderer.sharedMaterial = s_finalProxyMaterial;
 
-            if (!ghostProxy)
-                CreateSockets(root.transform, template.SocketDefinitions);
+            CreateSockets(root.transform, template.SocketDefinitions);
             return root;
-        }
-
-        private static void EnsureReusableGhostProxy()
-        {
-            if (s_ghostProxyRoot != null)
-                return;
-
-            GameObject root = new GameObject("H8_RuntimeGhostProxy");
-            root.SetActive(false);
-            s_ghostProxyRoot = root;
-            s_ghostProxyTransform = root.transform;
-
-            ConstructionRuntimeProxyTag proxyTag = root.AddComponent<ConstructionRuntimeProxyTag>();
-            proxyTag.Configure(true);
-
-            s_ghostProxyMarker = root.AddComponent<ModuleMarker>();
-            s_ghostProxyCollider = root.AddComponent<BoxCollider>();
-            s_ghostProxyCollider.isTrigger = true;
-
-            GameObject visual = new GameObject("ProxyVisual");
-            s_ghostProxyVisual = visual.transform;
-            s_ghostProxyVisual.SetParent(s_ghostProxyTransform, false);
-            s_ghostProxyVisual.localPosition = Vector3.zero;
-            s_ghostProxyVisual.localRotation = Quaternion.identity;
-            s_ghostProxyVisual.localScale = Vector3.one;
-            s_ghostProxyMeshFilter = visual.AddComponent<MeshFilter>();
-            s_ghostProxyMeshFilter.sharedMesh = EnsureWireBoxMesh();
-            s_ghostProxyRenderer = visual.AddComponent<MeshRenderer>();
-            s_ghostProxyRenderer.sharedMaterial = s_validGhostMaterial;
-
-            s_ghostPlacementGhost = root.AddComponent<PlacementGhost>();
         }
 
         private static BoxCollider CreateInteriorTrigger(Transform root, BaseModuleTemplate template)
@@ -235,12 +116,6 @@ namespace Hecton8.Construction
 
         private static void EnsureSharedMaterials()
         {
-            if (s_validGhostMaterial == null)
-                s_validGhostMaterial = CreateUnlitColorMaterial(Color.white);
-
-            if (s_invalidGhostMaterial == null)
-                s_invalidGhostMaterial = CreateUnlitColorMaterial(new Color(1f, 0.18f, 0.12f, 1f));
-
             if (s_finalProxyMaterial == null)
                 s_finalProxyMaterial = CreateUnlitColorMaterial(Color.white);
         }
@@ -267,9 +142,7 @@ namespace Hecton8.Construction
 
         private static Material CreateUnlitColorMaterial(Color color)
         {
-            Shader shader = Shader.Find("Hecton8/Construction/DearLieHologram");
-            if (shader == null)
-                shader = Shader.Find("Universal Render Pipeline/Unlit");
+            Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
             if (shader == null)
                 shader = Shader.Find("Unlit/Color");
 
@@ -281,13 +154,6 @@ namespace Hecton8.Construction
                 material.SetColor("_BaseColor", color);
             else if (material.HasProperty("_Color"))
                 material.SetColor("_Color", color);
-
-            if (material.HasProperty("_H8GlobalQualityWeight"))
-                material.SetFloat("_H8GlobalQualityWeight", ShinobuSocketConstructionRuntime.ResolveGlobalQualityWeight());
-            if (material.HasProperty("_H8SnapDampen"))
-                material.SetFloat("_H8SnapDampen", 0f);
-            if (material.HasProperty("_H8SnapWiggleSpeed"))
-                material.SetFloat("_H8SnapWiggleSpeed", 18f);
 
             material.enableInstancing = true;
             return material;

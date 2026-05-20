@@ -1,3 +1,5 @@
+using System;
+using System.Runtime.CompilerServices;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -6,6 +8,129 @@ using Unity.Mathematics;
 
 namespace Hecton8.Editor.GeologyForge
 {
+    internal static class GeologyTetraExtractionLut
+    {
+        private const int Edge01 = 0;
+        private const int Edge02 = 1;
+        private const int Edge03 = 2;
+        private const int Edge12 = 3;
+        private const int Edge13 = 4;
+        private const int Edge23 = 5;
+        private const int EdgeNone = 15;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static int CaseIndex(float d0, float d1, float d2, float d3)
+        {
+            int c0 = d0 < 0f ? 1 : 0;
+            int c1 = d1 < 0f ? 2 : 0;
+            int c2 = d2 < 0f ? 4 : 0;
+            int c3 = d3 < 0f ? 8 : 0;
+            return c0 | c1 | c2 | c3;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static int VertexCount(int caseIndex)
+        {
+            switch (caseIndex)
+            {
+                case 0:
+                case 15:
+                    return 0;
+                case 3:
+                case 5:
+                case 6:
+                case 9:
+                case 10:
+                case 12:
+                    return 6;
+                default:
+                    return 3;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static uint EdgeSequence(int caseIndex)
+        {
+            switch (caseIndex)
+            {
+                case 1:
+                    return Pack3(Edge01, Edge02, Edge03);
+                case 14:
+                    return Pack3(Edge01, Edge03, Edge02);
+                case 2:
+                    return Pack3(Edge01, Edge13, Edge12);
+                case 13:
+                    return Pack3(Edge01, Edge12, Edge13);
+                case 4:
+                    return Pack3(Edge02, Edge12, Edge23);
+                case 11:
+                    return Pack3(Edge02, Edge23, Edge12);
+                case 8:
+                    return Pack3(Edge03, Edge23, Edge13);
+                case 7:
+                    return Pack3(Edge03, Edge13, Edge23);
+                case 3:
+                    return Pack6(Edge02, Edge12, Edge03, Edge03, Edge12, Edge13);
+                case 5:
+                    return Pack6(Edge01, Edge12, Edge03, Edge03, Edge12, Edge23);
+                case 6:
+                    return Pack6(Edge01, Edge02, Edge13, Edge13, Edge02, Edge23);
+                case 9:
+                    return Pack6(Edge13, Edge02, Edge01, Edge23, Edge02, Edge13);
+                case 10:
+                    return Pack6(Edge03, Edge12, Edge01, Edge23, Edge12, Edge03);
+                case 12:
+                    return Pack6(Edge03, Edge12, Edge02, Edge13, Edge12, Edge03);
+                default:
+                    return Pack3(EdgeNone, EdgeNone, EdgeNone);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static int EdgeAt(uint packedEdges, int slot)
+        {
+            return (int)((packedEdges >> (slot * 4)) & 15u);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint Pack3(int e0, int e1, int e2)
+        {
+            return Pack6(e0, e1, e2, EdgeNone, EdgeNone, EdgeNone);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint Pack6(int e0, int e1, int e2, int e3, int e4, int e5)
+        {
+            return (uint)(e0 | (e1 << 4) | (e2 << 8) | (e3 << 12) | (e4 << 16) | (e5 << 20));
+        }
+
+        internal static void ValidateComplementWinding()
+        {
+            for (int caseIndex = 1; caseIndex < 15; caseIndex++)
+            {
+                int complement = 15 - caseIndex;
+                if (caseIndex > complement)
+                    continue;
+
+                int count = VertexCount(caseIndex);
+                if (count != VertexCount(complement))
+                    throw new InvalidOperationException("Geology tetra LUT count/complement mismatch.");
+
+                uint sequence = EdgeSequence(caseIndex);
+                uint complementSequence = EdgeSequence(complement);
+                for (int i = 0; i < count; i += 3)
+                {
+                    if (EdgeAt(sequence, i) != EdgeAt(complementSequence, i + 2) ||
+                        EdgeAt(sequence, i + 1) != EdgeAt(complementSequence, i + 1) ||
+                        EdgeAt(sequence, i + 2) != EdgeAt(complementSequence, i))
+                    {
+                        throw new InvalidOperationException("Geology tetra LUT complement winding mismatch.");
+                    }
+                }
+            }
+        }
+    }
+
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct GenerateMockFractalNoiseJob : IJobParallelFor
     {
@@ -147,8 +272,8 @@ namespace Hecton8.Editor.GeologyForge
 
         private static int TetraVertexCount(float d0, float d1, float d2, float d3)
         {
-            int inside = (d0 < 0f ? 1 : 0) + (d1 < 0f ? 1 : 0) + (d2 < 0f ? 1 : 0) + (d3 < 0f ? 1 : 0);
-            return inside == 0 || inside == 4 ? 0 : inside == 2 ? 6 : 3;
+            int caseIndex = GeologyTetraExtractionLut.CaseIndex(d0, d1, d2, d3);
+            return GeologyTetraExtractionLut.VertexCount(caseIndex);
         }
 
         private float Sample(int x, int y, int z)
@@ -206,57 +331,19 @@ namespace Hecton8.Editor.GeologyForge
 
         private void EmitTetra(float3 p0, float d0, float3 p1, float d1, float3 p2, float d2, float3 p3, float d3, ref int write)
         {
-            bool i0 = d0 < 0f;
-            bool i1 = d1 < 0f;
-            bool i2 = d2 < 0f;
-            bool i3 = d3 < 0f;
-            int count = (i0 ? 1 : 0) + (i1 ? 1 : 0) + (i2 ? 1 : 0) + (i3 ? 1 : 0);
-            if (count == 0 || count == 4)
+            int caseIndex = GeologyTetraExtractionLut.CaseIndex(d0, d1, d2, d3);
+            int count = GeologyTetraExtractionLut.VertexCount(caseIndex);
+            if (count == 0)
                 return;
 
-            if (count == 1)
+            uint edgeSequence = GeologyTetraExtractionLut.EdgeSequence(caseIndex);
+            for (int i = 0; i < count; i += 3)
             {
-                if (i0) EmitOne(p0, d0, p1, d1, p2, d2, p3, d3, false, ref write);
-                else if (i1) EmitOne(p1, d1, p0, d0, p3, d3, p2, d2, false, ref write);
-                else if (i2) EmitOne(p2, d2, p0, d0, p1, d1, p3, d3, false, ref write);
-                else EmitOne(p3, d3, p0, d0, p2, d2, p1, d1, false, ref write);
-                return;
+                float3 v0 = InterpolateEdge(p0, d0, p1, d1, p2, d2, p3, d3, GeologyTetraExtractionLut.EdgeAt(edgeSequence, i));
+                float3 v1 = InterpolateEdge(p0, d0, p1, d1, p2, d2, p3, d3, GeologyTetraExtractionLut.EdgeAt(edgeSequence, i + 1));
+                float3 v2 = InterpolateEdge(p0, d0, p1, d1, p2, d2, p3, d3, GeologyTetraExtractionLut.EdgeAt(edgeSequence, i + 2));
+                EmitTriangle(v0, v1, v2, ref write);
             }
-
-            if (count == 3)
-            {
-                if (!i0) EmitOne(p0, d0, p1, d1, p3, d3, p2, d2, true, ref write);
-                else if (!i1) EmitOne(p1, d1, p0, d0, p2, d2, p3, d3, true, ref write);
-                else if (!i2) EmitOne(p2, d2, p0, d0, p3, d3, p1, d1, true, ref write);
-                else EmitOne(p3, d3, p0, d0, p1, d1, p2, d2, true, ref write);
-                return;
-            }
-
-            if (i0 && i1) EmitPair(p0, d0, p1, d1, p2, d2, p3, d3, ref write);
-            else if (i0 && i2) EmitPair(p0, d0, p2, d2, p1, d1, p3, d3, ref write);
-            else if (i0 && i3) EmitPair(p0, d0, p3, d3, p1, d1, p2, d2, ref write);
-            else if (i1 && i2) EmitPair(p1, d1, p2, d2, p0, d0, p3, d3, ref write);
-            else if (i1 && i3) EmitPair(p1, d1, p3, d3, p0, d0, p2, d2, ref write);
-            else EmitPair(p2, d2, p3, d3, p0, d0, p1, d1, ref write);
-        }
-
-        private void EmitOne(float3 inside, float insideD, float3 a, float aD, float3 b, float bD, float3 c, float cD, bool invert, ref int write)
-        {
-            float3 v0 = Interpolate(inside, a, insideD, aD);
-            float3 v1 = Interpolate(inside, b, insideD, bD);
-            float3 v2 = Interpolate(inside, c, insideD, cD);
-            if (invert) EmitTriangle(v0, v2, v1, ref write);
-            else EmitTriangle(v0, v1, v2, ref write);
-        }
-
-        private void EmitPair(float3 a, float aD, float3 b, float bD, float3 c, float cD, float3 d, float dD, ref int write)
-        {
-            float3 v0 = Interpolate(a, c, aD, cD);
-            float3 v1 = Interpolate(b, c, bD, cD);
-            float3 v2 = Interpolate(a, d, aD, dD);
-            float3 v3 = Interpolate(b, d, bD, dD);
-            EmitTriangle(v0, v1, v2, ref write);
-            EmitTriangle(v2, v1, v3, ref write);
         }
 
         private void EmitTriangle(float3 a, float3 b, float3 c, ref int write)
@@ -287,6 +374,27 @@ namespace Hecton8.Editor.GeologyForge
             float denom = da - db;
             float t = math.abs(denom) > 1e-7f ? math.clamp(da * math.rcp(denom), 0.001f, 0.999f) : 0.5f;
             return a + (b - a) * t;
+        }
+
+        private static float3 InterpolateEdge(float3 p0, float d0, float3 p1, float d1, float3 p2, float d2, float3 p3, float d3, int edge)
+        {
+            switch (edge)
+            {
+                case 0:
+                    return Interpolate(p0, p1, d0, d1);
+                case 1:
+                    return Interpolate(p0, p2, d0, d2);
+                case 2:
+                    return Interpolate(p0, p3, d0, d3);
+                case 3:
+                    return Interpolate(p1, p2, d1, d2);
+                case 4:
+                    return Interpolate(p1, p3, d1, d3);
+                case 5:
+                    return Interpolate(p2, p3, d2, d3);
+                default:
+                    return p0;
+            }
         }
 
         private float Sample(int x, int y, int z)
@@ -489,14 +597,16 @@ namespace Hecton8.Editor.GeologyForge
         public void Execute(int index)
         {
             GeologyRawVertex v = Vertices[index];
-            float3 n = math.abs(v.Normal);
+            float3 normal = math.all(math.isfinite(v.Normal)) ? v.Normal : new float3(0f, 1f, 0f);
+            float3 position = math.all(math.isfinite(v.Position)) ? v.Position : float3.zero;
+            float3 n = math.abs(normal);
             float2 uv;
             if (n.y >= n.x && n.y >= n.z)
-                uv = v.Position.xz;
+                uv = position.xz;
             else if (n.x >= n.z)
-                uv = v.Position.zy;
+                uv = position.zy;
             else
-                uv = v.Position.xy;
+                uv = position.xy;
 
             float scale = math.max(0.001f, TextureScale);
             v.Uv = uv * scale;
@@ -547,7 +657,7 @@ namespace Hecton8.Editor.GeologyForge
 
         private float SampleDensityNearest(float3 position)
         {
-            if (Points <= 1 || Density.Length == 0 || VoxelStep <= 1e-6f)
+            if (Points <= 1 || Density.Length == 0 || VoxelStep <= 1e-6f || !math.all(math.isfinite(position)))
                 return 1f;
 
             int3 p = (int3)math.round((position - BoundsMin) * math.rcp(VoxelStep));
@@ -621,8 +731,11 @@ namespace Hecton8.Editor.GeologyForge
 
         private void Snap(ref GeologyRawVertex v)
         {
-            if (CollapseCellSize <= 1e-6f)
+            if (CollapseCellSize <= 1e-6f || !math.all(math.isfinite(v.Position)))
+            {
+                v.Position = math.all(math.isfinite(v.Position)) ? v.Position : float3.zero;
                 return;
+            }
 
             float inv = math.rcp(CollapseCellSize);
             v.Position = math.floor(v.Position * inv + 0.5f) * CollapseCellSize;
@@ -662,6 +775,7 @@ namespace Hecton8.Editor.GeologyForge
 
         private static uint PackUnorm16(float2 uv)
         {
+            uv = math.all(math.isfinite(uv)) ? uv : float2.zero;
             float2 wrapped = math.frac(uv);
             uint u = (uint)math.clamp((int)math.round(math.saturate(wrapped.x) * 65535f), 0, 65535);
             uint v = (uint)math.clamp((int)math.round(math.saturate(wrapped.y) * 65535f), 0, 65535);

@@ -772,7 +772,9 @@ namespace Hecton8.World
                 if (heat <= 0.001f)
                     continue;
 
-                AbsoluteUniversePosition ventAup = AbsoluteUniversePosition.FromRuntimePosition(vent.PositionWS);
+                if (!TryResolveAupFromRuntimeOrigin(vent.PositionWS, out AbsoluteUniversePosition ventAup))
+                    continue;
+
                 double distanceSq = AbsoluteUniversePosition.DistanceSq(in queryAup, in ventAup);
                 if (distanceSq > searchRadiusSq || distanceSq >= bestDistanceSq)
                     continue;
@@ -1565,8 +1567,11 @@ namespace Hecton8.World
             int sourceId,
             byte flags)
         {
+            if (!TryResolveAupFromRuntimeOrigin(positionWS, out AbsoluteUniversePosition positionAup))
+                return;
+
             TemperatureChangedSignal signal = default;
-            signal.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(positionWS);
+            signal.PositionAup = positionAup;
             signal.TemperatureCelsius = temperatureCelsius;
             signal.DeltaCelsius = math.isfinite(deltaCelsius) ? deltaCelsius : 0f;
             signal.SourceId = sourceId <= 0 ? (ushort)0 : (ushort)math.min(sourceId, ushort.MaxValue);
@@ -1596,13 +1601,15 @@ namespace Hecton8.World
             GlobalSignals.Publish(in damage);
 
             AcousticPingSignal acoustic = default;
-            acoustic.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(positionWS);
-            acoustic.RadiusMeters = 140f;
-            acoustic.Intensity01 = math.saturate(math.abs(deltaCelsius) / 140f);
-            acoustic.SourceId = damage.SourceHash;
-            acoustic.Channel = ThermalShockAcousticChannel;
-            acoustic.Flags = 1;
-            GlobalSignals.Publish(in acoustic);
+            if (TryResolveAupFromRuntimeOrigin(positionWS, out acoustic.PositionAup))
+            {
+                acoustic.RadiusMeters = 140f;
+                acoustic.Intensity01 = math.saturate(math.abs(deltaCelsius) / 140f);
+                acoustic.SourceId = damage.SourceHash;
+                acoustic.Channel = ThermalShockAcousticChannel;
+                acoustic.Flags = 1;
+                GlobalSignals.Publish(in acoustic);
+            }
 
             PublishTemperatureChangedSignal(
                 positionWS,
@@ -1670,7 +1677,9 @@ namespace Hecton8.World
                 ProceduralAudioPingKind.MechanicalWhirr);
 
             ImpactSignal signal = default;
-            signal.PointAup = AbsoluteUniversePosition.FromRuntimePosition(positionWS);
+            if (!TryResolveAupFromRuntimeOrigin(positionWS, out signal.PointAup))
+                return;
+
             signal.Force = intensity;
             signal.Intensity = intensity;
             signal.PrimaryBodyId = (uint)_instanceId;
@@ -2147,7 +2156,10 @@ namespace Hecton8.World
 
         private static float ResolveVoxelInsulation01(Vector3 runtimePosition)
         {
-            double3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(runtimePosition);
+            if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition runtimeAup))
+                return 0f;
+
+            double3 absolutePosition = runtimeAup.ToAbsoluteDouble3();
             float density = HectonVoxelVolume.GetSDFDensity(new float3(
                 (float)absolutePosition.x,
                 (float)absolutePosition.y,
@@ -2998,7 +3010,9 @@ namespace Hecton8.World
             }
 
             WorldZoneAnchor.CopyActiveAnchorsTo(_zoneAnchors);
-            AbsoluteUniversePosition playerAup = ResolveAup(playerTransform != null ? playerTransform.position : transform.position);
+            if (!TryResolveAupFromRuntimeOrigin(playerTransform != null ? playerTransform.position : transform.position, out AbsoluteUniversePosition playerAup))
+                return;
+
             for (int i = 0; i < _zoneAnchors.Count && _activeVentCount < maxActiveVentCount; i++)
             {
                 WorldZoneAnchor anchor = _zoneAnchors[i];
@@ -3182,11 +3196,12 @@ namespace Hecton8.World
                 0,
                 heatIntensity * ventHeatToCelsiusScale);
 
-            double3 absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(positionWS);
             HectonVoxelEngine engine = HectonVoxelEngine.ActiveRuntimeInstance;
             VoxelDeltaProcessor deltaProcessor = engine != null ? engine.GetComponent<VoxelDeltaProcessor>() : null;
-            if (deltaProcessor != null)
+            if (deltaProcessor != null &&
+                TryResolveAupFromRuntimeOrigin(positionWS, out AbsoluteUniversePosition meltAup))
             {
+                double3 absoluteUniversePosition = meltAup.ToAbsoluteDouble3();
                 deltaProcessor.AcceptThermalMeltEvent(new ThermalMeltEvent
                 {
                     AbsoluteUniversePosition = new Vector3(
@@ -3202,8 +3217,11 @@ namespace Hecton8.World
 
         private static void PublishThermalSourceSignal(Vector3 positionWS, float radiusWS, float heatIntensity, uint sourceId)
         {
+            if (!TryResolveAupFromRuntimeOrigin(positionWS, out AbsoluteUniversePosition positionAup))
+                return;
+
             ThermalSourceSignal signal = default;
-            signal.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(positionWS);
+            signal.PositionAup = positionAup;
             signal.RadiusMeters = math.max(0f, radiusWS);
             signal.IntensityCelsiusPerSecond = math.max(0f, heatIntensity);
             signal.SourceId = sourceId != 0u ? sourceId : BuildTransientThermalSourceId(positionWS, radiusWS);
@@ -3855,22 +3873,51 @@ namespace Hecton8.World
                 _fluidDecalManager.RegisterCableFluid(sourcePositionWS, 0.42f);
         }
 
+        private static bool IsFiniteAup(in AbsoluteUniversePosition positionAup)
+        {
+            return math.all(math.isfinite(new double3(positionAup.LocalX, positionAup.LocalY, positionAup.LocalZ)));
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!MathGuard.IsFinite(runtimePosition))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!IsFiniteAup(in originAup))
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return IsFiniteAup(in positionAup);
+        }
+
         private static double ComputeAupDistanceSq(Vector3 runtimePositionA, Vector3 runtimePositionB)
         {
-            AbsoluteUniversePosition a = AbsoluteUniversePosition.FromRuntimePosition(runtimePositionA);
-            AbsoluteUniversePosition b = AbsoluteUniversePosition.FromRuntimePosition(runtimePositionB);
+            if (!TryResolveAupFromRuntimeOrigin(runtimePositionA, out AbsoluteUniversePosition a) ||
+                !TryResolveAupFromRuntimeOrigin(runtimePositionB, out AbsoluteUniversePosition b))
+            {
+                return double.MaxValue;
+            }
+
             return AbsoluteUniversePosition.DistanceSq(in a, in b);
         }
 
         private static float ComputeAupPlanarDistance(Vector3 runtimePositionA, Vector3 runtimePositionB)
         {
-            AbsoluteUniversePosition a = ResolveAup(runtimePositionA);
+            if (!TryResolveAupFromRuntimeOrigin(runtimePositionA, out AbsoluteUniversePosition a))
+                return float.MaxValue;
+
             return ComputeAupPlanarDistance(in a, runtimePositionB);
         }
 
         private static float ComputeAupPlanarDistance(in AbsoluteUniversePosition originAup, Vector3 runtimePositionB)
         {
-            AbsoluteUniversePosition targetAup = ResolveAup(runtimePositionB);
+            if (!TryResolveAupFromRuntimeOrigin(runtimePositionB, out AbsoluteUniversePosition targetAup))
+                return float.MaxValue;
+
             double3 originAbsolute = originAup.ToAbsoluteDouble3();
             double3 targetAbsolute = targetAup.ToAbsoluteDouble3();
             double deltaX = targetAbsolute.x - originAbsolute.x;
@@ -3885,7 +3932,9 @@ namespace Hecton8.World
 
         private static AbsoluteUniversePosition ResolveAup(Vector3 runtimePosition)
         {
-            return AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            return TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition positionAup)
+                ? positionAup
+                : default;
         }
 
         private static float LerpClamped(float from, float to, float t)
@@ -3907,7 +3956,9 @@ namespace Hecton8.World
             bool hasPlayer = playerTransform != null;
             bool transportActive = _playerTransportCoordinator != null && _playerTransportCoordinator.IsTransportActive();
             Vector3 playerPosition = hasPlayer ? playerTransform.position : transform.position;
-            AbsoluteUniversePosition playerAup = ResolveAup(playerPosition);
+            if (!TryResolveAupFromRuntimeOrigin(playerPosition, out AbsoluteUniversePosition playerAup))
+                return;
+
             Vector3 playerVelocity = hasPlayer && _playerRigidbody != null ? _playerRigidbody.linearVelocity : Vector3.zero;
 
             float hullRadius = Mathf.Max(0.1f, cableVisualHullRadius);

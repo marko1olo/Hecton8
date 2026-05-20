@@ -13,25 +13,38 @@ using UnityEngine;
 
 namespace Hecton8.Narrative.Campaign
 {
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     internal struct MetaCampaignRule
     {
+        [FieldOffset(0)]
         public uint TriggerHash;
+        [FieldOffset(4)]
         public uint VariableHash;
+        [FieldOffset(8)]
         public int Value;
+        [FieldOffset(12)]
         public byte MatchMode;
+        [FieldOffset(13)]
         public byte SideEffectFlags;
+        [FieldOffset(14)]
         public ushort Reserved;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     internal struct MetaCampaignVariableChange
     {
+        [FieldOffset(0)]
         public uint VariableHash;
+        [FieldOffset(4)]
         public int Value;
+        [FieldOffset(8)]
         public byte SideEffectFlags;
+        [FieldOffset(9)]
         public byte Reserved0;
+        [FieldOffset(10)]
         public ushort Reserved1;
+        [FieldOffset(12)]
+        private uint _pad0;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -40,27 +53,38 @@ namespace Hecton8.Narrative.Campaign
         public FixedList128Bytes<MetaCampaignVariableChange> Changes;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     internal struct MetaCampaignBlackBoxEntry
     {
+        [FieldOffset(0)]
         public uint Frame;
+        [FieldOffset(4)]
         public uint StageHash;
+        [FieldOffset(8)]
         public uint VariableHash;
+        [FieldOffset(12)]
         public int Value;
+        [FieldOffset(16)]
         public float Toxicity01;
+        [FieldOffset(20)]
         public byte ChangeKind;
+        [FieldOffset(21)]
         public byte Flags;
+        [FieldOffset(22)]
         public ushort Sequence;
+        [FieldOffset(24)]
+        private ulong _pad0;
     }
 
-    [BurstCompile]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct MetaCampaignRuleEvaluationJob : IJob
     {
         public ProgressionEventSignal Signal;
-        [ReadOnly]
+        [NoAlias, ReadOnly]
         public NativeArray<MetaCampaignRule> Rules;
         [ReadOnly]
         public NativeParallelHashMap<uint, int> Variables;
+        [NoAlias]
         public NativeArray<MetaCampaignEvaluationResult> Output;
 
         public void Execute()

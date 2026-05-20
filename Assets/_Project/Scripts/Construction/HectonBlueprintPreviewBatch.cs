@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
+using Unity.Jobs;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -49,6 +50,7 @@ namespace Hecton8.Construction
         private VaultBufferHandle<BuilderGhostStateDTO> _stateHandle;
         private VaultBufferHandle<BuilderGhostVisualDTO> _visualHandle;
         private VaultBufferHandle<HolographyTelemetryEntry> _telemetryHandle;
+        private VaultBufferHandle<BuilderGhostIndirectArgsDTO> _argsHandle;
         private IDataVault _vault;
         private GraphicsBuffer _stateBufferA;
         private GraphicsBuffer _stateBufferB;
@@ -57,30 +59,26 @@ namespace Hecton8.Construction
         private GraphicsBuffer _argsBufferA;
         private GraphicsBuffer _argsBufferB;
         private Bounds _drawBounds = new Bounds(Vector3.zero, new Vector3(256f, 256f, 256f));
+        private JobHandle _pendingBuildHandle;
         private bool _registeredRenderable;
         private bool _registeredLateFrame;
-        private bool _buffersDirty;
-        private bool _lastPreviewAllowed = true;
-        private bool _lastDearLieActive;
+        private bool _pendingBuildScheduled;
+        private bool _pendingBuildDiscard;
         private int _activeCount;
         private int _uploadedCount;
+        private int _pendingBuildCount;
         private int _capacityResolved;
         private int _writeBufferIndex;
         private int _lastPreviewSignalFrame = -1;
-        private float _dearLieStartTime;
-        private float _lastDearLieDampen;
-        private float _lastDearLieQuality = 1f;
-        private float _lastDearLieWiggleSpeed = DefaultDearLieWiggleSpeed;
-        private uint _lastDearLieResultHash;
-        private uint _lastDearLieModuleHash;
+        private bool _drawBoundsValid;
+        private GraphicsBuffer _boundStateBuffer;
+        private GraphicsBuffer _boundVisualBuffer;
+        private uint _lastSignalBatchHash;
+        private int _lastSignalBatchCount;
+        private bool _hasLastSignalBatchHash;
 
         private static readonly int BuilderGhostStatesId = Shader.PropertyToID("_H8BuilderGhostStates");
         private static readonly int BuilderGhostVisualsId = Shader.PropertyToID("_H8BuilderGhostVisuals");
-        private static readonly int BuilderGhostCountId = Shader.PropertyToID("_H8BuilderGhostCount");
-        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
-        private static readonly int DearLieDampenId = Shader.PropertyToID("_H8SnapDampen");
-        private static readonly int DearLieWiggleSpeedId = Shader.PropertyToID("_H8SnapWiggleSpeed");
-        private static readonly int DearLieQualityId = Shader.PropertyToID("_H8GlobalQualityWeight");
 
         private void Awake()
         {
@@ -114,11 +112,13 @@ namespace Hecton8.Construction
                 _registeredLateFrame = false;
             }
 
+            CompletePendingBuildForTeardown();
             _uploadedCount = 0;
         }
 
         private void OnDestroy()
         {
+            CompletePendingBuildForTeardown();
             ReleaseGraphicsBuffer(ref _stateBufferA);
             ReleaseGraphicsBuffer(ref _stateBufferB);
             ReleaseGraphicsBuffer(ref _visualBufferA);
@@ -128,11 +128,51 @@ namespace Hecton8.Construction
             _stateHandle = default;
             _visualHandle = default;
             _telemetryHandle = default;
+            _argsHandle = default;
+            _boundStateBuffer = null;
+            _boundVisualBuffer = null;
             _vault = null;
 
             if (previewMaterial != null && previewMaterial.hideFlags == HideFlags.DontSave)
                 Destroy(previewMaterial);
         }
+
+#if UNITY_EDITOR
+        private void OnDrawGizmos()
+        {
+            if (!Application.isPlaying ||
+                !TryResolveBuffers(
+                    out NativeArray<BuilderGhostStateDTO> states,
+                    out _,
+                    out _,
+                    out _) ||
+                _activeCount <= 0)
+            {
+                return;
+            }
+
+            int count = math.min(_activeCount, states.Length);
+            for (int i = 0; i < count; i++)
+            {
+                BuilderGhostStateDTO state = states[i];
+                Matrix4x4 matrix = ToMatrix4x4(in state.LocalToWorld);
+                bool blocked = (state.ValidationFlags & (BuilderGhostValidationFlags.SdfBlocked | BuilderGhostValidationFlags.BoundsBlocked | BuilderGhostValidationFlags.NonFinite)) != 0u;
+                Gizmos.matrix = matrix;
+                Gizmos.color = blocked ? new Color(1f, 0f, 0f, 0.35f) : new Color(0f, 1f, 0.4f, 0.25f);
+                Gizmos.DrawWireCube(Vector3.zero, Vector3.one);
+                Gizmos.color = blocked ? Color.red : Color.green;
+                for (int corner = 0; corner < ShinobuSocketConstructionRuntime.BuilderGhostSdfCornerCount; corner++)
+                {
+                    float sx = (corner & 1) == 0 ? -0.5f : 0.5f;
+                    float sy = (corner & 2) == 0 ? -0.5f : 0.5f;
+                    float sz = (corner & 4) == 0 ? -0.5f : 0.5f;
+                    Gizmos.DrawSphere(new Vector3(sx, sy, sz), 0.035f);
+                }
+            }
+
+            Gizmos.matrix = Matrix4x4.identity;
+        }
+#endif
 
         public void Render(float deltaTime)
         {
@@ -141,8 +181,8 @@ namespace Hecton8.Construction
 
         public void LateFrameTick()
         {
+            TryFinalizePendingBuildAndUpload();
             ConsumeConstructionPreviewSignals();
-            UploadDirtyBuffers();
         }
 
         public bool SetPreview(int index, Vector3 position, Quaternion rotation, Vector3 scale, uint requirementMask, uint ownedMask)
@@ -150,13 +190,18 @@ namespace Hecton8.Construction
             if (!TryEnsureAndResolveBuffers(
                     out NativeArray<BuilderGhostStateDTO> states,
                     out NativeArray<BuilderGhostVisualDTO> visuals,
-                    out NativeArray<HolographyTelemetryEntry> telemetry))
+                    out _,
+                    out NativeArray<BuilderGhostIndirectArgsDTO> args))
             {
                 return false;
             }
 
-            if ((uint)index >= (uint)states.Length || (uint)index >= (uint)visuals.Length)
+            if (_pendingBuildScheduled ||
+                (uint)index >= (uint)states.Length ||
+                (uint)index >= (uint)visuals.Length)
+            {
                 return false;
+            }
 
             uint flags = BuilderGhostValidationFlags.Active |
                          BuilderGhostValidationFlags.PresentationOnly |
@@ -168,24 +213,28 @@ namespace Hecton8.Construction
                 flags |= BuilderGhostValidationFlags.BoundsBlocked;
 
             double3 centerAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(position);
-            WriteStateRow(
+            float quality = ShinobuSocketConstructionRuntime.ResolveGlobalQualityWeight();
+            JobHandle dependency = ScheduleBuilderGhostStateBuild(
                 states,
                 visuals,
                 index,
                 centerAup,
+                HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(Vector3.zero),
                 new quaternion(rotation.x, rotation.y, rotation.z, rotation.w),
                 (float3)scale,
                 0u,
                 flags,
-                0u,
-                0u,
                 0f,
-                ShinobuSocketConstructionRuntime.ResolveGlobalQualityWeight(),
-                DefaultDearLieWiggleSpeed);
+                quality,
+                DefaultDearLieWiggleSpeed,
+                unchecked((uint)Time.frameCount),
+                default);
+            _pendingBuildHandle = ScheduleIndirectArgsBuild(args, index + 1, dependency);
+            _pendingBuildScheduled = true;
+            _pendingBuildDiscard = false;
+            _pendingBuildCount = index + 1;
 
-            WriteTelemetry(telemetry, states[index], 8u, 0f, 0f);
             _activeCount = math.max(_activeCount, index + 1);
-            _buffersDirty = true;
             return true;
         }
 
@@ -194,19 +243,25 @@ namespace Hecton8.Construction
             _activeCount = math.clamp(count, 0, ResolveCapacity());
             if (_uploadedCount > _activeCount)
                 _uploadedCount = _activeCount;
-            _buffersDirty = true;
+            if (_activeCount <= 0)
+                ClearPreviews();
         }
 
         public void ClearPreviews()
         {
             _activeCount = 0;
             _uploadedCount = 0;
-            _buffersDirty = true;
+            _drawBoundsValid = false;
+            _lastSignalBatchHash = 0u;
+            _lastSignalBatchCount = 0;
+            _hasLastSignalBatchHash = false;
+            if (_pendingBuildScheduled)
+                _pendingBuildDiscard = true;
         }
 
         private void DrawPreparedBatch()
         {
-            if (_uploadedCount <= 0 || previewMaterial == null)
+            if (_uploadedCount <= 0 || previewMaterial == null || !_drawBoundsValid || !IsDrawBoundsCameraVisible())
                 return;
 
             GraphicsBuffer stateBuffer = _writeBufferIndex == 0 ? _stateBufferB : _stateBufferA;
@@ -215,10 +270,17 @@ namespace Hecton8.Construction
             if (stateBuffer == null || visualBuffer == null || argsBuffer == null)
                 return;
 
-            previewMaterial.SetBuffer(BuilderGhostStatesId, stateBuffer);
-            previewMaterial.SetBuffer(BuilderGhostVisualsId, visualBuffer);
-            previewMaterial.SetInt(BuilderGhostCountId, _uploadedCount);
-            ApplyDearLieMaterialProperties();
+            if (!ReferenceEquals(_boundStateBuffer, stateBuffer))
+            {
+                previewMaterial.SetBuffer(BuilderGhostStatesId, stateBuffer);
+                _boundStateBuffer = stateBuffer;
+            }
+
+            if (!ReferenceEquals(_boundVisualBuffer, visualBuffer))
+            {
+                previewMaterial.SetBuffer(BuilderGhostVisualsId, visualBuffer);
+                _boundVisualBuffer = visualBuffer;
+            }
 
             Graphics.DrawProceduralIndirect(
                 previewMaterial,
@@ -233,54 +295,71 @@ namespace Hecton8.Construction
                 0);
         }
 
-        private void UploadDirtyBuffers()
+        private bool TryFinalizePendingBuildAndUpload()
         {
-            if (!_buffersDirty)
-                return;
+            if (!_pendingBuildScheduled)
+                return false;
 
-            _buffersDirty = false;
-            if (_activeCount <= 0)
-            {
-                UploadArgs(ResolveWriteArgsBuffer(), 0);
-                _uploadedCount = 0;
-                _writeBufferIndex ^= 1;
-                return;
-            }
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _pendingBuildHandle))
+                return false;
 
+            int uploadCount = _pendingBuildDiscard ? 0 : _pendingBuildCount;
+            _pendingBuildScheduled = false;
+            _pendingBuildDiscard = false;
+            _pendingBuildCount = 0;
             if (!TryEnsureAndResolveBuffers(
                     out NativeArray<BuilderGhostStateDTO> states,
                     out NativeArray<BuilderGhostVisualDTO> visuals,
-                    out _))
+                    out NativeArray<HolographyTelemetryEntry> telemetry,
+                    out NativeArray<BuilderGhostIndirectArgsDTO> args))
             {
                 _uploadedCount = 0;
-                return;
+                _drawBoundsValid = false;
+                return false;
             }
 
             EnsureGraphicsBuffers();
-            int writeCount = math.min(_activeCount, math.min(states.Length, visuals.Length));
+            int writeCount = math.min(uploadCount, math.min(states.Length, visuals.Length));
+            UpdateDrawBoundsFromStates(states, writeCount);
+            if (!_drawBoundsValid)
+            {
+                _uploadedCount = 0;
+                return true;
+            }
+
             GraphicsBuffer stateTarget = ResolveWriteStateBuffer();
             GraphicsBuffer visualTarget = ResolveWriteVisualBuffer();
             GraphicsBuffer argsTarget = ResolveWriteArgsBuffer();
             GraphicsBufferUploadUtility.UploadNativeArray(stateTarget, states, writeCount);
             GraphicsBufferUploadUtility.UploadNativeArray(visualTarget, visuals, writeCount);
-            UploadArgs(argsTarget, writeCount);
+            GraphicsBufferUploadUtility.UploadNativeArray(argsTarget, args, 1);
+            for (int i = 0; i < writeCount; i++)
+            {
+                BuilderGhostStateDTO writtenState = states[i];
+                WriteTelemetry(
+                    telemetry,
+                    writtenState,
+                    (uint)ShinobuSocketConstructionRuntime.ResolveBuilderGhostSdfSampleCount(visuals[i].GlobalQualityWeight),
+                    0f,
+                    ResolveTelemetrySdfDistance(writtenState.ValidationFlags),
+                    visuals[i].GlobalQualityWeight);
+            }
+
             _uploadedCount = writeCount;
             _writeBufferIndex ^= 1;
+            return true;
         }
 
-        private void UploadArgs(GraphicsBuffer argsTarget, int instanceCount)
+        private static JobHandle ScheduleIndirectArgsBuild(NativeArray<BuilderGhostIndirectArgsDTO> args, int instanceCount, JobHandle dependency)
         {
-            if (argsTarget == null)
-                return;
+            if (!args.IsCreated || args.Length <= 0)
+                return dependency;
 
-            NativeArray<BuilderGhostIndirectArgsDTO> mapped = argsTarget.LockBufferForWrite<BuilderGhostIndirectArgsDTO>(0, 1);
-            BuilderGhostIndirectArgsDTO args;
-            args.VertexCountPerInstance = ShinobuSocketConstructionRuntime.BuilderGhostProceduralVertexCount;
-            args.InstanceCount = (uint)math.max(0, instanceCount);
-            args.StartVertex = 0u;
-            args.StartInstance = 0u;
-            mapped[0] = args;
-            argsTarget.UnlockBufferAfterWrite<BuilderGhostIndirectArgsDTO>(1);
+            return new BuildBuilderGhostIndirectArgsJob
+            {
+                Args = args,
+                InstanceCount = (uint)math.max(0, instanceCount)
+            }.Schedule(dependency);
         }
 
         private static void ConfigureSignalLane()
@@ -294,6 +373,9 @@ namespace Hecton8.Construction
 
         private void ConsumeConstructionPreviewSignals()
         {
+            if (_pendingBuildScheduled)
+                return;
+
             ReadOnlySpan<ConstructionPreviewSignal> signals = SignalBus<ConstructionPreviewSignal>.GetFrameSnapshot();
             if (signals.Length <= 0)
             {
@@ -305,13 +387,35 @@ namespace Hecton8.Construction
             if (!TryEnsureAndResolveBuffers(
                     out NativeArray<BuilderGhostStateDTO> states,
                     out NativeArray<BuilderGhostVisualDTO> visuals,
-                    out NativeArray<HolographyTelemetryEntry> telemetry))
+                    out _,
+                    out NativeArray<BuilderGhostIndirectArgsDTO> args))
             {
                 return;
             }
 
             int capacityLimit = math.min(states.Length, visuals.Length);
+            uint batchHash = ComputePreviewSignalBatchHash(signals, capacityLimit, out int activeSignalCount);
+            if (activeSignalCount <= 0)
+            {
+                ClearPreviews();
+                return;
+            }
+
+            if (_hasLastSignalBatchHash &&
+                _lastSignalBatchHash == batchHash &&
+                _lastSignalBatchCount == activeSignalCount &&
+                _uploadedCount == activeSignalCount &&
+                _drawBoundsValid)
+            {
+                _activeCount = activeSignalCount;
+                _lastPreviewSignalFrame = Time.frameCount;
+                return;
+            }
+
             int writeCount = 0;
+            JobHandle buildDependency = default;
+            double3 runtimeOriginAup = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(Vector3.zero);
+            uint frame = unchecked((uint)Time.frameCount);
             for (int i = 0; i < signals.Length && writeCount < capacityLimit; i++)
             {
                 ConstructionPreviewSignal signal = signals[i];
@@ -335,95 +439,151 @@ namespace Hecton8.Construction
                 if (signal.IsValid == 0 && signal.FailureFlags != 0u)
                     flags |= BuilderGhostValidationFlags.SdfBlocked;
 
-                WriteStateRow(
+                buildDependency = ScheduleBuilderGhostStateBuild(
                     states,
                     visuals,
                     writeCount,
                     signal.CenterAup.ToAbsoluteDouble3(),
+                    runtimeOriginAup,
                     rotation,
                     safeScale,
                     signal.ModuleHash,
                     flags,
-                    signal.FailureFlags,
-                    signal.ResultHash,
                     signal.DearLieDampen,
                     signal.GlobalQualityWeight,
-                    signal.DearLieWiggleSpeed);
-                WriteTelemetry(telemetry, states[writeCount], 8u, 0f, ResolveTelemetrySdfDistance(flags));
-                ConsumeDearLieSignal(in signal);
-                _lastPreviewAllowed = signal.IsValid != 0;
+                    signal.DearLieWiggleSpeed,
+                    signal.Frame != 0u ? signal.Frame : frame,
+                    buildDependency);
                 _lastPreviewSignalFrame = Time.frameCount;
                 writeCount++;
             }
 
-            SetActivePreviewCount(writeCount);
+            if (writeCount <= 0)
+                return;
+
+            _pendingBuildHandle = ScheduleIndirectArgsBuild(args, writeCount, buildDependency);
+            _pendingBuildScheduled = true;
+            _pendingBuildDiscard = false;
+            _pendingBuildCount = writeCount;
+            _activeCount = writeCount;
+            _lastSignalBatchHash = batchHash;
+            _lastSignalBatchCount = writeCount;
+            _hasLastSignalBatchHash = true;
         }
 
-        private void WriteStateRow(
+        private static uint ComputePreviewSignalBatchHash(ReadOnlySpan<ConstructionPreviewSignal> signals, int capacityLimit, out int activeCount)
+        {
+            activeCount = 0;
+            uint hash = 2166136261u;
+            int limit = math.max(0, capacityLimit);
+            for (int i = 0; i < signals.Length && activeCount < limit; i++)
+            {
+                ConstructionPreviewSignal signal = signals[i];
+                if ((signal.Flags & ConstructionPreviewSignal.FlagActive) == 0)
+                    continue;
+
+                hash = FoldPreviewSignal(hash, in signal);
+                activeCount++;
+            }
+
+            return ShinobuSocketConstructionRuntime.FoldHash(hash, (uint)activeCount);
+        }
+
+        private static uint FoldPreviewSignal(uint hash, in ConstructionPreviewSignal signal)
+        {
+            hash = FoldAup(hash, in signal.CenterAup);
+            hash = FoldFloat4(hash, signal.Rotation);
+            hash = FoldFloat3(hash, signal.Scale);
+            hash = ShinobuSocketConstructionRuntime.FoldHash(hash, signal.ModuleHash);
+            hash = ShinobuSocketConstructionRuntime.FoldHash(hash, signal.FailureFlags);
+            hash = ShinobuSocketConstructionRuntime.FoldHash(hash, signal.ResultHash);
+            hash = ShinobuSocketConstructionRuntime.FoldHash(hash, signal.IsValid);
+            hash = ShinobuSocketConstructionRuntime.FoldHash(hash, signal.Flags);
+            hash = ShinobuSocketConstructionRuntime.FoldHash(hash, math.asuint(signal.DearLieDampen));
+            hash = ShinobuSocketConstructionRuntime.FoldHash(hash, math.asuint(signal.GlobalQualityWeight));
+            return ShinobuSocketConstructionRuntime.FoldHash(hash, math.asuint(signal.DearLieWiggleSpeed));
+        }
+
+        private static uint FoldAup(uint hash, in AbsoluteUniversePosition aup)
+        {
+            hash = FoldLong(hash, aup.GridX);
+            hash = FoldLong(hash, aup.GridY);
+            hash = FoldLong(hash, aup.GridZ);
+            hash = ShinobuSocketConstructionRuntime.FoldHash(hash, math.asuint(aup.LocalX));
+            hash = ShinobuSocketConstructionRuntime.FoldHash(hash, math.asuint(aup.LocalY));
+            return ShinobuSocketConstructionRuntime.FoldHash(hash, math.asuint(aup.LocalZ));
+        }
+
+        private static uint FoldLong(uint hash, long value)
+        {
+            ulong bits = (ulong)value;
+            hash = ShinobuSocketConstructionRuntime.FoldHash(hash, (uint)bits);
+            return ShinobuSocketConstructionRuntime.FoldHash(hash, (uint)(bits >> 32));
+        }
+
+        private static uint FoldFloat3(uint hash, float3 value)
+        {
+            uint3 bits = math.asuint(value);
+            hash = ShinobuSocketConstructionRuntime.FoldHash(hash, bits.x);
+            hash = ShinobuSocketConstructionRuntime.FoldHash(hash, bits.y);
+            return ShinobuSocketConstructionRuntime.FoldHash(hash, bits.z);
+        }
+
+        private static uint FoldFloat4(uint hash, float4 value)
+        {
+            uint4 bits = math.asuint(value);
+            hash = ShinobuSocketConstructionRuntime.FoldHash(hash, bits.x);
+            hash = ShinobuSocketConstructionRuntime.FoldHash(hash, bits.y);
+            hash = ShinobuSocketConstructionRuntime.FoldHash(hash, bits.z);
+            return ShinobuSocketConstructionRuntime.FoldHash(hash, bits.w);
+        }
+
+        private JobHandle ScheduleBuilderGhostStateBuild(
             NativeArray<BuilderGhostStateDTO> states,
             NativeArray<BuilderGhostVisualDTO> visuals,
             int index,
             double3 centerAup,
+            double3 runtimeOriginAup,
             quaternion rotation,
             float3 scale,
             uint moduleHash,
             uint validationFlags,
-            uint failureFlags,
-            uint resultHash,
             float dearLieDampen,
             float globalQualityWeight,
-            float dearLieWiggleSpeed)
+            float dearLieWiggleSpeed,
+            uint frame,
+            JobHandle dependency)
         {
-            double3 runtimeOrigin = HectonFloatingOrigin.ToAbsoluteUniversePositionDouble3(Vector3.zero);
-            double3 runtimeDouble = centerAup - runtimeOrigin;
-            float3 runtimePosition = new float3((float)runtimeDouble.x, (float)runtimeDouble.y, (float)runtimeDouble.z);
-            bool finite = math.all(math.isfinite(centerAup)) &&
-                          math.all(math.isfinite(runtimeDouble)) &&
-                          math.all(math.isfinite(runtimePosition)) &&
-                          math.all(math.isfinite(rotation.value)) &&
-                          math.all(math.isfinite(scale)) &&
-                          math.any(scale > 0f);
-            uint flags = validationFlags;
-            if (!finite || math.any(math.abs(runtimeDouble) > (double)float.MaxValue))
+            BuildBuilderGhostStateJob buildJob = new BuildBuilderGhostStateJob
             {
-                flags &= ~BuilderGhostValidationFlags.Valid;
-                flags |= BuilderGhostValidationFlags.NonFinite;
-                runtimePosition = float3.zero;
-                rotation = quaternion.identity;
-                scale = new float3(0.001f);
-            }
-
-            float phase = math.frac(Time.unscaledTime * 0.5f);
-            BuilderGhostStateDTO state;
-            state.LocalToWorld = float4x4.TRS(runtimePosition, rotation, math.max(scale, new float3(0.001f)));
-            state.AUP_TargetPosition = centerAup;
-            state.PrefabHashID = moduleHash;
-            state.ValidationFlags = flags;
-            state.AnimationPhase = phase;
-            state.ValidationStateHash = MakeStateHash(moduleHash, flags, failureFlags, resultHash, phase);
-            state._pad0 = failureFlags;
-            state._pad1 = resultHash;
-            state._pad2 = unchecked((uint)Time.frameCount);
-            state._pad3 = 0u;
-            state._pad4 = 0u;
-            state._pad5 = 0u;
-            states[index] = state;
-
-            BuilderGhostVisualDTO visual;
-            visual.GlobalQualityWeight = ShinobuSocketConstructionRuntime.SanitizeQuality(globalQualityWeight);
-            visual.DearLieDampen = math.clamp(math.isfinite(dearLieDampen) ? dearLieDampen : 0f, 0f, 1f);
-            visual.DearLieWiggleSpeed = math.isfinite(dearLieWiggleSpeed) && dearLieWiggleSpeed > 0.0001f ? dearLieWiggleSpeed : DefaultDearLieWiggleSpeed;
-            visual.Alpha = _lastPreviewAllowed ? validColor.a : invalidColor.a;
-            visual.ValidColor = new float4(validColor.r, validColor.g, validColor.b, validColor.a);
-            visual.InvalidColor = new float4(invalidColor.r, invalidColor.g, invalidColor.b, invalidColor.a);
-            visual.Flags = flags;
-            visual.Frame = unchecked((uint)Time.frameCount);
-            visual._pad0 = 0u;
-            visual._pad1 = 0u;
-            visuals[index] = visual;
+                States = states,
+                Visuals = visuals,
+                TargetAup = centerAup,
+                RuntimeOriginAup = runtimeOriginAup,
+                Rotation = rotation,
+                BoundsScale = math.max(scale, new float3(0.001f)),
+                GridSizeMeters = 0d,
+                PrefabHashID = moduleHash,
+                ValidationFlags = validationFlags,
+                AnimationPhase = math.frac(Time.unscaledTime * 0.5f),
+                GlobalQualityWeight = globalQualityWeight,
+                DearLieDampen = dearLieDampen,
+                DearLieWiggleSpeed = dearLieWiggleSpeed,
+                ValidColor = new float4(validColor.r, validColor.g, validColor.b, validColor.a),
+                InvalidColor = new float4(invalidColor.r, invalidColor.g, invalidColor.b, invalidColor.a),
+                Frame = frame,
+                StateIndex = index
+            };
+            return buildJob.Schedule(dependency);
         }
 
-        private void WriteTelemetry(NativeArray<HolographyTelemetryEntry> telemetry, BuilderGhostStateDTO state, uint sdfCornerChecks, float solverMicroseconds, float minSdfDistance)
+        private void WriteTelemetry(
+            NativeArray<HolographyTelemetryEntry> telemetry,
+            BuilderGhostStateDTO state,
+            uint sdfCornerChecks,
+            float solverMicroseconds,
+            float minSdfDistance,
+            float globalQualityWeight)
         {
             ShinobuSocketConstructionRuntime.WriteHolographyTelemetry(
                 telemetry,
@@ -435,7 +595,7 @@ namespace Hecton8.Construction
                 solverMicroseconds,
                 minSdfDistance,
                 state.ValidationStateHash,
-                _lastDearLieQuality);
+                globalQualityWeight);
         }
 
         private void EnsureBuffers()
@@ -448,12 +608,15 @@ namespace Hecton8.Construction
             if (_stateHandle.IsCreated &&
                 _visualHandle.IsCreated &&
                 _telemetryHandle.IsCreated &&
+                _argsHandle.IsCreated &&
                 _stateHandle.Length >= resolvedCapacity &&
                 _visualHandle.Length >= resolvedCapacity &&
                 _telemetryHandle.Length >= ShinobuSocketConstructionRuntime.TelemetryCapacity &&
+                _argsHandle.Length >= 1 &&
                 vault.ResolveBuffer(ref _stateHandle) &&
                 vault.ResolveBuffer(ref _visualHandle) &&
-                vault.ResolveBuffer(ref _telemetryHandle))
+                vault.ResolveBuffer(ref _telemetryHandle) &&
+                vault.ResolveBuffer(ref _argsHandle))
             {
                 return;
             }
@@ -473,25 +636,33 @@ namespace Hecton8.Construction
                 ShinobuSocketConstructionRuntime.TelemetryCapacity,
                 SystemID.Construction,
                 NativeArrayOptions.UninitializedMemory);
+            _argsHandle = vault.GetBufferHandle<BuilderGhostIndirectArgsDTO>(
+                ShinobuSocketConstructionRuntime.BuilderGhostIndirectArgsBufferId,
+                1,
+                SystemID.Construction,
+                NativeArrayOptions.UninitializedMemory);
         }
 
         private bool TryEnsureAndResolveBuffers(
             out NativeArray<BuilderGhostStateDTO> states,
             out NativeArray<BuilderGhostVisualDTO> visuals,
-            out NativeArray<HolographyTelemetryEntry> telemetry)
+            out NativeArray<HolographyTelemetryEntry> telemetry,
+            out NativeArray<BuilderGhostIndirectArgsDTO> args)
         {
             EnsureBuffers();
-            return TryResolveBuffers(out states, out visuals, out telemetry);
+            return TryResolveBuffers(out states, out visuals, out telemetry, out args);
         }
 
         private bool TryResolveBuffers(
             out NativeArray<BuilderGhostStateDTO> states,
             out NativeArray<BuilderGhostVisualDTO> visuals,
-            out NativeArray<HolographyTelemetryEntry> telemetry)
+            out NativeArray<HolographyTelemetryEntry> telemetry,
+            out NativeArray<BuilderGhostIndirectArgsDTO> args)
         {
             states = default;
             visuals = default;
             telemetry = default;
+            args = default;
 
             IDataVault vault = _vault;
             if (vault == null && !TryResolveVault(out vault))
@@ -501,22 +672,14 @@ namespace Hecton8.Construction
             states = _stateHandle.Resolve(vault);
             visuals = _visualHandle.Resolve(vault);
             telemetry = _telemetryHandle.Resolve(vault);
-            return states.IsCreated && visuals.IsCreated && telemetry.IsCreated;
+            args = _argsHandle.Resolve(vault);
+            return states.IsCreated && visuals.IsCreated && telemetry.IsCreated && args.IsCreated;
         }
 
         private static bool TryResolveVault(out IDataVault vault)
         {
             vault = GlobalRegistry.DataVault;
-            if (vault != null)
-                return true;
-
-            if (GlobalDataVault.TryGetLatestCreated(out GlobalDataVault latest))
-            {
-                vault = latest;
-                return true;
-            }
-
-            return false;
+            return vault != null;
         }
 
         private void EnsureGraphicsBuffers()
@@ -546,8 +709,19 @@ namespace Hecton8.Construction
             _visualBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<BuilderGhostVisualDTO>(resolvedCapacity);
             _argsBufferA = CreateIndirectArgsBuffer();
             _argsBufferB = CreateIndirectArgsBuffer();
-            UploadArgs(_argsBufferA, 0);
-            UploadArgs(_argsBufferB, 0);
+            _boundStateBuffer = null;
+            _boundVisualBuffer = null;
+        }
+
+        private void CompletePendingBuildForTeardown()
+        {
+            if (!_pendingBuildScheduled)
+                return;
+
+            DispatcherJobFence.TryComplete(ref _pendingBuildHandle, forceComplete: true);
+            _pendingBuildScheduled = false;
+            _pendingBuildDiscard = false;
+            _pendingBuildCount = 0;
         }
 
         private GraphicsBuffer ResolveWriteStateBuffer()
@@ -587,7 +761,6 @@ namespace Hecton8.Construction
 #if UNITY_EDITOR
             if (previewShader == null)
                 previewShader = AssetDatabase.LoadAssetAtPath<Shader>(HologramShaderPath);
-#endif
 
             if (previewShader == null)
                 return;
@@ -597,65 +770,7 @@ namespace Hecton8.Construction
                 enableInstancing = false,
                 hideFlags = HideFlags.DontSave
             };
-        }
-
-        private void ConsumeDearLieSignal(in ConstructionPreviewSignal signal)
-        {
-            bool active = (signal.Flags & ConstructionPreviewSignal.FlagDearLieActive) != 0 &&
-                          math.isfinite(signal.DearLieDampen) &&
-                          signal.DearLieDampen > 0.0001f;
-            if (!active)
-            {
-                _lastDearLieActive = false;
-                _lastDearLieDampen = 0f;
-                _lastDearLieQuality = SanitizeUnit(signal.GlobalQualityWeight, 1f);
-                _lastDearLieWiggleSpeed = SanitizePositive(signal.DearLieWiggleSpeed, DefaultDearLieWiggleSpeed);
-                return;
-            }
-
-            bool resetEnvelope = !_lastDearLieActive ||
-                                 signal.ResultHash != _lastDearLieResultHash ||
-                                 signal.ModuleHash != _lastDearLieModuleHash;
-            if (resetEnvelope)
-                _dearLieStartTime = Time.time;
-
-            _lastDearLieActive = true;
-            _lastDearLieResultHash = signal.ResultHash;
-            _lastDearLieModuleHash = signal.ModuleHash;
-            _lastDearLieDampen = math.clamp(signal.DearLieDampen, 0f, 1f);
-            _lastDearLieQuality = SanitizeUnit(signal.GlobalQualityWeight, 1f);
-            _lastDearLieWiggleSpeed = SanitizePositive(signal.DearLieWiggleSpeed, DefaultDearLieWiggleSpeed);
-        }
-
-        private void ApplyDearLieMaterialProperties()
-        {
-            if (previewMaterial == null)
-                return;
-
-            float quality = SanitizeUnit(_lastDearLieQuality, 1f);
-            float smoothQuality = quality * quality * (3f - (2f * quality));
-            float decaySeconds = math.lerp(0.08f, 0.22f, smoothQuality);
-            float elapsed = math.max(0f, Time.time - _dearLieStartTime);
-            float decay01 = _lastDearLieActive
-                ? math.saturate(1f - (elapsed / math.max(0.001f, decaySeconds)))
-                : 0f;
-            float dampen = _lastDearLieDampen * decay01 * decay01;
-            float wiggle = SanitizePositive(_lastDearLieWiggleSpeed, DefaultDearLieWiggleSpeed);
-            Color targetColor = _lastPreviewAllowed ? validColor : invalidColor;
-            previewMaterial.SetColor(BaseColorId, targetColor);
-            previewMaterial.SetFloat(DearLieDampenId, dampen);
-            previewMaterial.SetFloat(DearLieWiggleSpeedId, wiggle);
-            previewMaterial.SetFloat(DearLieQualityId, quality);
-        }
-
-        private static uint MakeStateHash(uint moduleHash, uint flags, uint failureFlags, uint resultHash, float phase)
-        {
-            uint hash = ShinobuSocketConstructionRuntime.FoldHash(2166136261u, moduleHash);
-            hash = ShinobuSocketConstructionRuntime.FoldHash(hash, flags);
-            hash = ShinobuSocketConstructionRuntime.FoldHash(hash, failureFlags);
-            hash = ShinobuSocketConstructionRuntime.FoldHash(hash, resultHash);
-            hash = ShinobuSocketConstructionRuntime.FoldHash(hash, math.asuint(phase));
-            return hash;
+#endif
         }
 
         private static float ResolveTelemetrySdfDistance(uint flags)
@@ -663,14 +778,86 @@ namespace Hecton8.Construction
             return (flags & BuilderGhostValidationFlags.SdfBlocked) != 0u ? -1f : 1f;
         }
 
-        private static float SanitizeUnit(float value, float fallback)
+        private void UpdateDrawBoundsFromStates(NativeArray<BuilderGhostStateDTO> states, int count)
         {
-            return math.saturate(math.isfinite(value) ? value : fallback);
+            _drawBoundsValid = false;
+            if (!states.IsCreated || count <= 0)
+                return;
+
+            float3 min = new float3(float.MaxValue);
+            float3 max = new float3(float.MinValue);
+            int safeCount = math.min(count, states.Length);
+            bool found = false;
+            for (int i = 0; i < safeCount; i++)
+            {
+                BuilderGhostStateDTO state = states[i];
+                if ((state.ValidationFlags & BuilderGhostValidationFlags.Active) == 0u)
+                    continue;
+
+                float3 center = state.LocalToWorld.c3.xyz;
+                float3 axisX = state.LocalToWorld.c0.xyz * 0.5f;
+                float3 axisY = state.LocalToWorld.c1.xyz * 0.5f;
+                float3 axisZ = state.LocalToWorld.c2.xyz * 0.5f;
+                if (!math.all(math.isfinite(center)) ||
+                    !math.all(math.isfinite(axisX)) ||
+                    !math.all(math.isfinite(axisY)) ||
+                    !math.all(math.isfinite(axisZ)))
+                {
+                    continue;
+                }
+
+                float3 extents = math.abs(axisX) + math.abs(axisY) + math.abs(axisZ);
+                min = math.min(min, center - extents);
+                max = math.max(max, center + extents);
+                found = true;
+            }
+
+            if (!found)
+                return;
+
+            float3 size = math.max(max - min, new float3(0.001f));
+            float3 boundsCenter = (min + max) * 0.5f;
+            _drawBounds = new Bounds(
+                new Vector3(boundsCenter.x, boundsCenter.y, boundsCenter.z),
+                new Vector3(size.x, size.y, size.z));
+            _drawBoundsValid = true;
         }
 
-        private static float SanitizePositive(float value, float fallback)
+        private bool IsDrawBoundsCameraVisible()
         {
-            return math.isfinite(value) && value > 0.0001f ? value : fallback;
+            if (targetCamera == null)
+                return true;
+
+            Transform cameraTransform = targetCamera.transform;
+            if (cameraTransform == null)
+                return true;
+
+            Vector3 localCenter = cameraTransform.InverseTransformPoint(_drawBounds.center);
+            float radius = _drawBounds.extents.magnitude;
+            return localCenter.z + radius >= targetCamera.nearClipPlane &&
+                   localCenter.z - radius <= targetCamera.farClipPlane;
+        }
+
+        private static Matrix4x4 ToMatrix4x4(in float4x4 matrix)
+        {
+            Matrix4x4 result;
+            result.m00 = matrix.c0.x;
+            result.m10 = matrix.c0.y;
+            result.m20 = matrix.c0.z;
+            result.m30 = matrix.c0.w;
+            result.m01 = matrix.c1.x;
+            result.m11 = matrix.c1.y;
+            result.m21 = matrix.c1.z;
+            result.m31 = matrix.c1.w;
+            result.m02 = matrix.c2.x;
+            result.m12 = matrix.c2.y;
+            result.m22 = matrix.c2.z;
+            result.m32 = matrix.c2.w;
+            result.m03 = matrix.c3.x;
+            result.m13 = matrix.c3.y;
+            result.m23 = matrix.c3.z;
+            result.m33 = matrix.c3.w;
+            return result;
         }
 
         private static void ReleaseGraphicsBuffer(ref GraphicsBuffer buffer)

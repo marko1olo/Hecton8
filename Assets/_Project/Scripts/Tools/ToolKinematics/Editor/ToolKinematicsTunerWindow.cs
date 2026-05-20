@@ -12,13 +12,14 @@ namespace Hecton8.Tools.ToolKinematics.Editor
 {
     public sealed class ToolKinematicsTunerWindow : EditorWindow
     {
-        private VaultBufferHandle<ToolKinematicsTuningDTO> _tuningHandle;
-        private VaultBufferHandle<ToolStateDTO> _statesHandle;
-        private VaultBufferHandle<ToolKinematicsFrameInputDTO> _frameInputsHandle;
-        private VaultBufferHandle<ToolHitResultDTO> _hitResultsHandle;
-        private VaultBufferHandle<ToolPoseOutputDTO> _poseOutputsHandle;
-        private VaultBufferHandle<ToolBeamVertexDTO> _beamVerticesHandle;
-        private VaultBufferHandle<int> _beamVertexCountsHandle;
+        private IDataVault _dataVault;
+        private VaultGenerationHandle<ToolKinematicsTuningDTO> _tuningHandle;
+        private VaultGenerationHandle<ToolStateDTO> _statesHandle;
+        private VaultGenerationHandle<ToolKinematicsFrameInputDTO> _frameInputsHandle;
+        private VaultGenerationHandle<ToolHitResultDTO> _hitResultsHandle;
+        private VaultGenerationHandle<ToolPoseOutputDTO> _poseOutputsHandle;
+        private VaultGenerationHandle<ToolBeamVertexDTO> _beamVerticesHandle;
+        private VaultGenerationHandle<int> _beamVertexCountsHandle;
 
         [MenuItem("Hecton8/Tools/Tool Kinematics Tuner")]
         private static void Open()
@@ -34,6 +35,8 @@ namespace Hecton8.Tools.ToolKinematics.Editor
         private void OnDisable()
         {
             SceneView.duringSceneGui -= DrawRaymarchGizmos;
+            ReleaseVaultHandles();
+            ClearHandles();
         }
 
         private void OnGUI()
@@ -45,7 +48,8 @@ namespace Hecton8.Tools.ToolKinematics.Editor
                 return;
             }
 
-            if (!TryResolveBuffer(vault, ref _tuningHandle, BufferID.ToolKinematicsTuning, 1, out NativeArray<ToolKinematicsTuningDTO> tuning))
+            BindVault(vault);
+            if (!TryResolveEditorVaultView(vault, ref _tuningHandle, BufferID.ToolKinematicsTuning, 1, out NativeArray<ToolKinematicsTuningDTO> tuning))
             {
                 EditorGUILayout.HelpBox("Tool kinematics tuning buffer is unavailable.", MessageType.Error);
                 return;
@@ -80,8 +84,8 @@ namespace Hecton8.Tools.ToolKinematics.Editor
 
         private void DrawReadOnlyRuntimeState(IDataVault vault)
         {
-            if (!TryResolveBuffer(vault, ref _statesHandle, BufferID.ToolKinematicsStates, ToolKinematicsRuntime.MaxToolCapacity, out NativeArray<ToolStateDTO> states) ||
-                !TryResolveBuffer(vault, ref _hitResultsHandle, BufferID.ToolKinematicsHitResults, ToolKinematicsRuntime.MaxToolCapacity, out NativeArray<ToolHitResultDTO> hits))
+            if (!TryResolveEditorVaultView(vault, ref _statesHandle, BufferID.ToolKinematicsStates, ToolKinematicsRuntime.MaxToolCapacity, out NativeArray<ToolStateDTO> states) ||
+                !TryResolveEditorVaultView(vault, ref _hitResultsHandle, BufferID.ToolKinematicsHitResults, ToolKinematicsRuntime.MaxToolCapacity, out NativeArray<ToolHitResultDTO> hits))
             {
                 EditorGUILayout.HelpBox("Runtime state buffers are not seeded yet.", MessageType.Info);
                 return;
@@ -112,12 +116,13 @@ namespace Hecton8.Tools.ToolKinematics.Editor
             if (vault == null)
                 return;
 
-            if (!TryResolveBuffer(vault, ref _statesHandle, BufferID.ToolKinematicsStates, ToolKinematicsRuntime.MaxToolCapacity, out NativeArray<ToolStateDTO> states) ||
-                !TryResolveBuffer(vault, ref _frameInputsHandle, BufferID.ToolKinematicsFrameInputs, ToolKinematicsRuntime.MaxToolCapacity, out NativeArray<ToolKinematicsFrameInputDTO> frameInputs) ||
-                !TryResolveBuffer(vault, ref _hitResultsHandle, BufferID.ToolKinematicsHitResults, ToolKinematicsRuntime.MaxToolCapacity, out NativeArray<ToolHitResultDTO> hits) ||
-                !TryResolveBuffer(vault, ref _poseOutputsHandle, BufferID.ToolKinematicsPoseOutputs, ToolKinematicsRuntime.MaxToolCapacity, out NativeArray<ToolPoseOutputDTO> poseOutputs) ||
-                !TryResolveBuffer(vault, ref _beamVerticesHandle, BufferID.ToolKinematicsBeamVertices, ToolKinematicsRuntime.MaxToolCapacity * ToolKinematicsRuntime.BeamVerticesPerTool, out NativeArray<ToolBeamVertexDTO> beamVertices) ||
-                !TryResolveBuffer(vault, ref _beamVertexCountsHandle, BufferID.ToolKinematicsBeamVertexCounts, ToolKinematicsRuntime.MaxToolCapacity, out NativeArray<int> beamCounts))
+            BindVault(vault);
+            if (!TryResolveEditorVaultView(vault, ref _statesHandle, BufferID.ToolKinematicsStates, ToolKinematicsRuntime.MaxToolCapacity, out NativeArray<ToolStateDTO> states) ||
+                !TryResolveEditorVaultView(vault, ref _frameInputsHandle, BufferID.ToolKinematicsFrameInputs, ToolKinematicsRuntime.MaxToolCapacity, out NativeArray<ToolKinematicsFrameInputDTO> frameInputs) ||
+                !TryResolveEditorVaultView(vault, ref _hitResultsHandle, BufferID.ToolKinematicsHitResults, ToolKinematicsRuntime.MaxToolCapacity, out NativeArray<ToolHitResultDTO> hits) ||
+                !TryResolveEditorVaultView(vault, ref _poseOutputsHandle, BufferID.ToolKinematicsPoseOutputs, ToolKinematicsRuntime.MaxToolCapacity, out NativeArray<ToolPoseOutputDTO> poseOutputs) ||
+                !TryResolveEditorVaultView(vault, ref _beamVerticesHandle, BufferID.ToolKinematicsBeamVertices, ToolKinematicsRuntime.MaxToolCapacity * ToolKinematicsRuntime.BeamVerticesPerTool, out NativeArray<ToolBeamVertexDTO> beamVertices) ||
+                !TryResolveEditorVaultView(vault, ref _beamVertexCountsHandle, BufferID.ToolKinematicsBeamVertexCounts, ToolKinematicsRuntime.MaxToolCapacity, out NativeArray<int> beamCounts))
             {
                 return;
             }
@@ -193,9 +198,24 @@ namespace Hecton8.Tools.ToolKinematics.Editor
             return new Vector3(value.x, value.y, value.z);
         }
 
-        private static bool TryResolveBuffer<T>(
+        private void BindVault(IDataVault vault)
+        {
+            if (ReferenceEquals(_dataVault, vault))
+                return;
+
+            ReleaseVaultHandles();
+            ClearHandles();
+            _dataVault = vault;
+        }
+
+        private static bool IsHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
+        }
+
+        private static bool TryResolveEditorVaultView<T>(
             IDataVault vault,
-            ref VaultBufferHandle<T> handle,
+            ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredLength,
             out NativeArray<T> buffer)
@@ -205,15 +225,61 @@ namespace Hecton8.Tools.ToolKinematics.Editor
             if (vault == null || requiredLength <= 0)
                 return false;
 
-            if (!handle.IsCreated ||
-                !vault.ResolveBuffer(ref handle) ||
-                handle.Length < requiredLength)
+            if (IsHandleCreated(in handle) &&
+                vault.TryResolveHandle(in handle, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= requiredLength)
             {
-                handle = vault.GetBufferHandle<T>(bufferId, requiredLength, SystemID.GameplayTools, NativeArrayOptions.ClearMemory);
+                return true;
             }
 
-            buffer = handle.Resolve(vault);
-            return buffer.IsCreated && buffer.Length >= requiredLength;
+            VaultGenerationHandle<T> acquired = vault.GetGenerationHandle<T>(bufferId, requiredLength, SystemID.GameplayTools, NativeArrayOptions.ClearMemory);
+            if (!IsHandleCreated(in acquired) ||
+                !vault.TryResolveHandle(in acquired, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                return false;
+            }
+
+            handle = acquired;
+            return true;
+        }
+
+        private void ReleaseVaultHandles()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return;
+
+            ReleaseVaultHandle(vault, ref _tuningHandle);
+            ReleaseVaultHandle(vault, ref _statesHandle);
+            ReleaseVaultHandle(vault, ref _frameInputsHandle);
+            ReleaseVaultHandle(vault, ref _hitResultsHandle);
+            ReleaseVaultHandle(vault, ref _poseOutputsHandle);
+            ReleaseVaultHandle(vault, ref _beamVerticesHandle);
+            ReleaseVaultHandle(vault, ref _beamVertexCountsHandle);
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (!IsHandleCreated(in handle))
+                return;
+
+            vault.ReleaseBuffer(in handle);
+            handle = default;
+        }
+
+        private void ClearHandles()
+        {
+            _tuningHandle = default;
+            _statesHandle = default;
+            _frameInputsHandle = default;
+            _hitResultsHandle = default;
+            _poseOutputsHandle = default;
+            _beamVerticesHandle = default;
+            _beamVertexCountsHandle = default;
+            _dataVault = null;
         }
     }
 }

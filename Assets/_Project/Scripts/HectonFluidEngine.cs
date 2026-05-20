@@ -342,6 +342,7 @@ namespace Hecton8.Physics
         private const byte MaelstromAcousticChannel = 12;
         private const int ViscosityGradientLutSize = 16;
         private const int FluidImpactEventQueueCapacity = 64;
+        private const BufferID FluidImpactEventRingBufferId = (BufferID)70799;
         private const int MaxGerstnerWaveCount = 16;
         private const int OceanSurfaceTelemetryCapacity = 300;
         private const int CavitationShockwaveHitCapacity = 64;
@@ -1329,14 +1330,11 @@ namespace Hecton8.Physics
         public bool TryDequeueImpactEvent(out FluidImpactEvent impactEvent)
         {
             impactEvent = default;
-            if (!TryDrainScheduledBuoyancyJob() || !_fluidImpactEvents.IsCreated)
+            if (!TryDrainScheduledBuoyancyJob())
                 return false;
 
-            if (!_fluidImpactEvents.TryDequeue(out impactEvent))
+            if (!TryDequeueFluidImpactEvent(out impactEvent))
                 return false;
-
-            if (_fluidImpactQueuedCount > 0)
-                _fluidImpactQueuedCount--;
 
             return true;
         }
@@ -1430,7 +1428,10 @@ namespace Hecton8.Physics
         private int _lastOceanSurfaceDumpFrame = -1;
         private uint _lastOriginShiftSequence;
         private Vector3 _pendingOriginShiftOffset;
-        private NativeQueue<FluidImpactEvent> _fluidImpactEvents;
+        private VaultGenerationHandle<FluidImpactEvent> _fluidImpactEventRingHandle;
+        private NativeArray<FluidImpactEvent> _fluidImpactEventRing;
+        private int _fluidImpactEventReadIndex;
+        private int _fluidImpactEventWriteIndex;
         private int _fluidImpactQueuedCount;
         // COLD ALLOC: Rigidbody[capacity] — schedule-time rigidbody snapshot for deferred force application — owner: HectonFluidEngine
         private Rigidbody[] _scheduledBodies;
@@ -4159,7 +4160,7 @@ namespace Hecton8.Physics
             using (_scheduledApplyProfilerMarker.Auto())
             {
             bool canDrainImpactEvents =
-                _fluidImpactEvents.IsCreated &&
+                EnsureFluidImpactEventRing(allowAllocate: false) &&
                 _impactEventFlags.IsCreated &&
                 _impactEventScratch.IsCreated;
             for (int i = 0; i < _scheduledForceCount; i++)
@@ -4172,11 +4173,9 @@ namespace Hecton8.Physics
                     _impactEventFlags[i] != 0)
                 {
                     _impactEventFlags[i] = 0;
-                    if (_fluidImpactQueuedCount < FluidImpactEventQueueCapacity)
+                    FluidImpactEvent impactEvent = _impactEventScratch[i];
+                    if (TryEnqueueFluidImpactEvent(in impactEvent))
                     {
-                        FluidImpactEvent impactEvent = _impactEventScratch[i];
-                        _fluidImpactEvents.Enqueue(impactEvent);
-                        _fluidImpactQueuedCount++;
                         PublishFluidImpactSignal(in impactEvent, rb);
                     }
                 }
@@ -4525,8 +4524,11 @@ namespace Hecton8.Physics
             _viscosityGradientLut = new NativeArray<float>(ViscosityGradientLutSize, Allocator.Persistent,
                                  NativeArrayOptions.UninitializedMemory);
             InitializeViscosityGradientLut();
-            _fluidImpactEvents = new NativeQueue<FluidImpactEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<FluidImpactEvent>[64] — deferred water impact acoustic lane — owner: HectonFluidEngine
-            PrewarmQueue(ref _fluidImpactEvents, FluidImpactEventQueueCapacity);
+            if (EnsureFluidImpactEventRing(allowAllocate: true))
+                ClearFluidImpactEventRing(_fluidImpactEventRing);
+            _fluidImpactEventReadIndex = 0;
+            _fluidImpactEventWriteIndex = 0;
+            _fluidImpactQueuedCount = 0;
             RegisterNativeMemorySentinel();
             EnsureSharedGerstnerDataVaultBuffers();
             _scheduledBodies = new Rigidbody[newCapacity];
@@ -4585,8 +4587,7 @@ namespace Hecton8.Physics
             DisposeNativeArray(ref _activeWhirlpools, dependency);
             DisposeNativeArray(ref _activeViscosityRegions, dependency);
             DisposeNativeArray(ref _viscosityGradientLut, dependency);
-            DisposeNativeQueue(ref _fluidImpactEvents, dependency, nameof(_fluidImpactEvents));
-            _fluidImpactQueuedCount = 0;
+            ReleaseFluidImpactEventRing();
             _activeThrusterFlowCount = 0;
             _activeWhirlpoolFlowCount = 0;
             _activeMaelstromCount = 0;
@@ -4649,12 +4650,127 @@ namespace Hecton8.Physics
             NativeMemorySentinel.RegisterNativeArray(_maelstromTelemetry, NativeMemoryOwner, nameof(_maelstromTelemetry), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_activeViscosityRegions, NativeMemoryOwner, nameof(_activeViscosityRegions), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_viscosityGradientLut, NativeMemoryOwner, nameof(_viscosityGradientLut), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeQueue(
-                _fluidImpactEvents,
-                FluidImpactEventQueueCapacity,
-                NativeMemoryOwner,
-                nameof(_fluidImpactEvents),
-                NativeMemoryLifetime);
+        }
+
+        private IDataVault ResolveFluidDataVault()
+        {
+            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            if (vault != null)
+                _dataVault = vault;
+
+            return vault;
+        }
+
+        private bool EnsureFluidImpactEventRing(bool allowAllocate)
+        {
+            if (_fluidImpactEventRing.IsCreated &&
+                _fluidImpactEventRing.Length >= FluidImpactEventQueueCapacity)
+            {
+                return true;
+            }
+
+            IDataVault vault = ResolveFluidDataVault();
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            if (!IsVaultGenerationHandleCreated(in _fluidImpactEventRingHandle))
+            {
+                if (!allowAllocate || vault.IsAllocationLocked)
+                {
+                    if (!vault.TryGetGenerationHandle<FluidImpactEvent>(
+                            FluidImpactEventRingBufferId,
+                            out _fluidImpactEventRingHandle))
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    _fluidImpactEventRingHandle = vault.GetGenerationHandle<FluidImpactEvent>(
+                        FluidImpactEventRingBufferId,
+                        FluidImpactEventQueueCapacity,
+                        SystemID.Fluid,
+                        NativeArrayOptions.ClearMemory);
+                }
+            }
+
+            if (!vault.TryResolveHandle(in _fluidImpactEventRingHandle, out _fluidImpactEventRing) ||
+                !_fluidImpactEventRing.IsCreated ||
+                _fluidImpactEventRing.Length < FluidImpactEventQueueCapacity)
+            {
+                _fluidImpactEventRing = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsVaultGenerationHandleCreated<T>(in VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            return handle.BufferID != 0u;
+        }
+
+        private static void ClearFluidImpactEventRing(NativeArray<FluidImpactEvent> ring)
+        {
+            if (!ring.IsCreated)
+                return;
+
+            int count = math.min(ring.Length, FluidImpactEventQueueCapacity);
+            for (int i = 0; i < count; i++)
+                ring[i] = default;
+        }
+
+        private void ReleaseFluidImpactEventRing()
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null && IsVaultGenerationHandleCreated(in _fluidImpactEventRingHandle))
+                vault.ReleaseBuffer(in _fluidImpactEventRingHandle);
+
+            _fluidImpactEventRing = default;
+            _fluidImpactEventRingHandle = default;
+            _fluidImpactEventReadIndex = 0;
+            _fluidImpactEventWriteIndex = 0;
+            _fluidImpactQueuedCount = 0;
+        }
+
+        private bool TryEnqueueFluidImpactEvent(in FluidImpactEvent impactEvent)
+        {
+            if (!EnsureFluidImpactEventRing(allowAllocate: false) ||
+                _fluidImpactQueuedCount >= FluidImpactEventQueueCapacity)
+            {
+                return false;
+            }
+
+            int index = _fluidImpactEventWriteIndex;
+            if ((uint)index >= (uint)FluidImpactEventQueueCapacity)
+                index = 0;
+
+            _fluidImpactEventRing[index] = impactEvent;
+            _fluidImpactEventWriteIndex = index + 1;
+            if (_fluidImpactEventWriteIndex >= FluidImpactEventQueueCapacity)
+                _fluidImpactEventWriteIndex = 0;
+            _fluidImpactQueuedCount++;
+            return true;
+        }
+
+        private bool TryDequeueFluidImpactEvent(out FluidImpactEvent impactEvent)
+        {
+            impactEvent = default;
+            if (_fluidImpactQueuedCount <= 0 || !EnsureFluidImpactEventRing(allowAllocate: false))
+                return false;
+
+            int index = _fluidImpactEventReadIndex;
+            if ((uint)index >= (uint)FluidImpactEventQueueCapacity)
+                index = 0;
+
+            impactEvent = _fluidImpactEventRing[index];
+            _fluidImpactEventRing[index] = default;
+            _fluidImpactEventReadIndex = index + 1;
+            if (_fluidImpactEventReadIndex >= FluidImpactEventQueueCapacity)
+                _fluidImpactEventReadIndex = 0;
+            _fluidImpactQueuedCount--;
+            return true;
         }
 
         private void EnsureAbyssalFlowNativeState()
@@ -4717,35 +4833,6 @@ namespace Hecton8.Physics
                 array.Dispose(dependency);
 
             array = default;
-        }
-
-        private static void DisposeNativeQueue<T>(ref NativeQueue<T> queue, JobHandle dependency, string label)
-            where T : unmanaged
-        {
-            if (!queue.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeQueue(NativeMemoryOwner, label);
-            if (dependency.IsCompleted)
-                queue.Dispose();
-            else
-                queue.Dispose(dependency);
-
-            queue = default;
-        }
-
-        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
-            where T : unmanaged
-        {
-            if (!queue.IsCreated || capacity <= 0)
-                return;
-
-            for (int i = 0; i < capacity; i++)
-                queue.Enqueue(default);
-
-            while (queue.TryDequeue(out _))
-            {
-            }
         }
 
         private void InitializeViscosityGradientLut()
@@ -6931,7 +7018,7 @@ namespace Hecton8.Physics
         // ── Output (WriteOnly) ──
         [WriteOnly, NoAlias] public NativeArray<float3> resultForces;
         [WriteOnly, NoAlias] public NativeArray<float3> resultTorques;
-        public NativeQueue<int>.ParallelWriter mathGuardWriter;
+        [NoAlias] public MathGuard.InvalidNumberWriter mathGuardWriter;
         public int forceNanErrorCode;
         public int torqueNanErrorCode;
 

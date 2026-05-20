@@ -97,7 +97,7 @@ namespace Hecton8.Physics
 
         private void OnDisable()
         {
-            CompleteScheduledSimulation();
+            CompleteScheduledSimulationForAuthoritativeWrite();
             UnlockJobBuffers();
 
             if (_registeredFixed)
@@ -344,7 +344,7 @@ namespace Hecton8.Physics
             int nodeCount,
             int graphEdgeCount)
         {
-            CompleteScheduledSimulation();
+            CompleteScheduledSimulationForAuthoritativeWrite();
             if (!_buffersReady && !TryResolveAndInitializeBuffers())
                 return false;
 
@@ -374,7 +374,7 @@ namespace Hecton8.Physics
         /// <summary>Applies cold CSV compartment capacities to both solver buffers without managed string splitting.</summary>
         public int ApplyCompartmentVolumeCsv(NativeArray<byte> csvBytes, int byteCount)
         {
-            CompleteScheduledSimulation();
+            CompleteScheduledSimulationForAuthoritativeWrite();
             if (!_buffersReady && !TryResolveAndInitializeBuffers())
                 return 0;
 
@@ -391,7 +391,7 @@ namespace Hecton8.Physics
         /// <summary>Injects a cold/profiling mock breach into both solver buffers and shared integrity state.</summary>
         public bool GenerateMockHullBreach(int breachIndex, float breachAreaM2, float ingressRateM3PerSecond)
         {
-            CompleteScheduledSimulation();
+            CompleteScheduledSimulationForAuthoritativeWrite();
             if (!_buffersReady && !TryResolveAndInitializeBuffers())
                 return false;
 
@@ -739,11 +739,12 @@ namespace Hecton8.Physics
             return _frontIsA ? _backHandle.Resolve(_vault) : _frontHandle.Resolve(_vault);
         }
 
-        private void CompleteScheduledSimulation()
+        private void CompleteScheduledSimulationForAuthoritativeWrite()
         {
             if (!_hasScheduled)
                 return;
 
+            // COLD SYNC JOB: topology/CSV/mock author writes must not race a pending flood worker.
             if (!DispatcherJobFence.TryComplete(ref _simulationHandle, forceComplete: true))
                 return;
 

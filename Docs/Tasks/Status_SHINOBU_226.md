@@ -4,7 +4,7 @@ Agent: SHINOBU_226
 Domain: SCANNER_LORE_DATABASE_SYNC
 Task count parsed from `Docs/Tasks/CURRENT_BATCH.md`: 19
 Missing XML task number: Task 09 is absent in the assignment block.
-Status: IMPLEMENTED_STATIC_VERIFIED_COMPILE_BLOCKED_BY_CPU_GATE
+Status: IMPLEMENTED_STATIC_VERIFIED_COMPILE_BLOCKED_BY_DEPENDENCY_LOOP8
 
 Relevant mandates locked before coding:
 - `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`
@@ -46,9 +46,9 @@ Loop 3 - Tasks 11-15
 - [x] Task 15 TELEMETRY_SCANNER_RECORDER | DOD: 300-frame ring retained and dumps renamed to SHINOBU_226; rejected chat-only crash proof; microsecond estimate: 0 hot-path allocation on dump write.
 
 Loop 4 - Tasks 16-19
-- [x] Task 16 SCANNER_TUNER_EDITOR_WINDOW | DOD: UI Toolkit tuner simulates hash unlock and validates layout; rejected recompilation-only tuning; microsecond estimate: 0 runtime.
+- [x] Task 16 SCANNER_TUNER_EDITOR_WINDOW | DOD: UI Toolkit tuner validates layout, reads Vault mask/telemetry, simulates hash unlock, and writes Unlock All/Lock All directly into `ScannerEncyclopediaStateDTO`; rejected recompilation-only tuning; microsecond estimate: 0 runtime.
 - [x] Task 17 CSV_LORE_INDEX_INGESTOR | DOD: `TryApplyLoreIndexCsvLine(ReadOnlySpan<byte>)` parses token/hash to native index; rejected managed split parser; microsecond estimate: 3-12 us per row.
-- [x] Task 18 LIVE_SCAN_DEBUG_GIZMO | DOD: editor tuner and shader globals expose live hash/progress/mask state; rejected runtime string debug labels; microsecond estimate: 0 hot runtime.
+- [x] Task 18 LIVE_SCAN_DEBUG_GIZMO | DOD: `ScannerDataMiningRouter.OnDrawGizmos` reads Vault scannable rows and bitmask state, drawing blue/yellow/green wire spheres from AUP-localized positions; rejected runtime string debug labels; microsecond estimate: 0 hot runtime.
 - [x] Task 19 ARCHITECTURAL_METRIC_VALIDATOR | DOD: `ScannerStringInquisitionValidator` writes JSON report when run; static PowerShell scan also returned 0 forbidden hot-pattern hits; rejected manual-only validation; microsecond estimate: 0 runtime.
 
 Loop 5 - Task 20 and Verification
@@ -57,3 +57,25 @@ Loop 5 - Task 20 and Verification
 - [x] Compile required and CPU/csc gate checked | DOD: `Get-Process dotnet,csc` returned no visible process; Win32 CPU average returned 100.
 - [ ] Compile attempted | BLOCKED BY CPU GATE: project rule forbids dotnet build under CPU >50; no compile launched.
 - [x] Logs/rationale appended | DOD: rationale updated and `Docs/AgentLogs/LOG_SHINOBU_226.md` created.
+
+Loop 6 - Polish Mandate Reconciliation
+- [x] Re-extracted SHINOBU_226 XML prompt from `CURRENT_BATCH.md` | DOD: `(?s)<AGENT_PROMPT id="SHINOBU_226"...` returned 19 tasks and preserved absent Task 09; rejected stale chat memory; microsecond estimate: 1200 us.
+- [x] Hardened Task 16 editor facade | DOD: tuner now exposes Vault readout plus direct Unlock All/Lock All writes to the 128-byte encyclopedia mask; rejected simulation-only editor proof; microsecond estimate: 0 runtime.
+- [x] Hardened Task 18 gizmo route | DOD: editor-only `OnDrawGizmos` visualizes scannable hash rows using Vault lore bit checks and AUP-local rendering; rejected shader-only/generic tuner substitute; microsecond estimate: 0 hot runtime.
+- [x] Static re-scan after Loop 6 | DOD: scoped scanner/PDA forbidden target-name/GetComponent scan returned 0 hits; runtime scanner file scan returned 0 hits for `VaultBufferHandle`, raw `Complete`, `Time.deltaTime`, `UnityEngine.Random`, hot native owner fields, LINQ/foreach/split/string.Format, and `Pack=1`.
+- [ ] Compile attempted after Loop 6 | BLOCKED BY CPU GATE: CPU samples returned 91 then 100 and no `dotnet`/`csc` process output; build remains forbidden until host load is <=50.
+
+Loop 7 - Determinism Frame Route Hardening
+- [x] Removed scanner-domain direct Unity frame reads | DOD: `ScannerDataMiningRouter` now routes frame IDs through `TimeSliceScheduler.CurrentFrameId`; rejected direct `Time.frameCount` in scanner signals/telemetry/cadence; microsecond estimate: 0 us raw speed, rollback proof improved.
+- [x] Runtime hot-path scan after Loop 7 | DOD: scanner runtime file returned 0 hits for `Time.frameCount`, `Time.deltaTime`, `UnityEngine.Random`, legacy `VaultBufferHandle`, raw `JobHandle.Complete`, `NativeList`, `NativeHashMap`, `foreach`, `.Split`, `string.Format`, and `Pack=1`; microsecond estimate: no runtime regression.
+- [x] Whitespace validation after Loop 7 | DOD: `git diff --check` over touched files reported only LF/CRLF conversion warnings; rejected formatting churn.
+- [ ] Compile attempted after Loop 7 | BLOCKED BY CPU GATE: CPU samples returned 100, 80, 75, 100, 51, then 70 after no `dotnet`/`csc` process output; build remains forbidden until host load is <=50 at command launch.
+
+Loop 8 - Scanner/PDA Pose And Frame Authority Sweep
+- [x] Removed router hot-path Transform pose dependency | DOD: `ScannerDataMiningRouter` builds scanner rays from cached `PlayerRuntimePoseSnapshot`; active acquisition fails closed without a finite non-zero snapshot forward vector; rejected invented default gaze; microsecond estimate: avoids native Transform property bridge on each scanner query.
+- [x] Preserved deterministic mock seeding | DOD: mock grid seeding uses player pose/cached AUP/global AUP fallback and runs `GenerateMockScannableTargetsJob` through `IJob.Run`; rejected scene Transform fallback; microsecond estimate: 0 runtime, cold seed only.
+- [x] Routed legacy scanner/PDA frame stamps | DOD: `ScannerTool`, `ScannableTarget`, and `PDAEncyclopediaStreamer` now use `TimeSliceScheduler.CurrentFrameId` instead of `Time.frameCount`; rejected Unity frame reads in scanner/PDA sync surfaces; microsecond estimate: 0 us raw speed, one frame authority.
+- [x] Extended static inquisition guard | DOD: validator now checks scanner/PDA string/GetComponent plus Unity time/random patterns, and router-only Transform pose patterns; rejected broad editor-gizmo transform false positives.
+- [x] Static scan after Loop 8 | DOD: scoped scan returned 0 hits for target-name/GetComponent, `Time.frameCount`, `Time.deltaTime`, `UnityEngine.Random`, and router `transform.forward/position/right`.
+- [x] Compile attempted after Loop 8 | BLOCKED BY DEPENDENCY: CPU gate opened at 34/25/19 with no `dotnet`/`csc`; `dotnet build Hecton8.Core.csproj --no-restore -v:minimal` failed with 76 unrelated compile-wall errors in Equipment, Logistics.Grid, docking/socket, audio/world bridge, and other non-SHINOBU dependencies. No output diagnostic referenced SHINOBU_226 touched files. Generated csproj excludes `ScannerDataMiningRouter.cs`, `ScannerLoreDatabaseSyncTunerWindow.cs`, and `PDAEncyclopediaStreamer.cs`.
+- [x] Build server cleanup after failed compile | DOD: lingering dotnet build servers were shut down with `dotnet build-server shutdown`; follow-up `Get-Process dotnet,csc` returned no process output.

@@ -34,6 +34,29 @@ TIMEOUT_PER_STEP: 8000ms -> auto-trigger SAFE_HALT(step_id)
 
 ---
 
+## [Section1B] DATA MONOLITH PAYLOAD READINESS
+
+ACTIVE_PAYLOAD:
+  Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin
+
+RULE:
+  Data Monolith readiness is false until the active payload exists, the editor
+  bake/import path validates it, and `H8StaticDataArena` loads it during boot.
+
+REQUIRED_EVIDENCE:
+  - compiler/bake log for `static_data.h8bin`
+  - checksum and section-count validation
+  - Unity Console clean import for the payload
+  - Play Mode or player-build boot smoke when player-facing
+
+FORBID:
+  - claiming readiness from source files alone
+  - claiming readiness from `Data/Balance/Baked/H8StaticData.bin`
+  - claiming readiness from Addressables folder presence
+  - silently falling back to missing static data in a player build
+
+---
+
 ## [Section2] IBootstrapStep CONTRACT
 
 INTERFACE IBootstrapStep:

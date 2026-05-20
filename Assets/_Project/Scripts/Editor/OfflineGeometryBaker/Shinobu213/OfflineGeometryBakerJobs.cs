@@ -10,6 +10,7 @@ namespace Hecton8.Editor.OfflineGeometry
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, CompileSynchronously = true)]
     internal struct GenerateMockHighPolyMeshJob : IJobParallelFor
     {
+        // Each Execute lane owns quadIndex*6..quadIndex*6+5. Write() bounds-checks every lane.
         [WriteOnly, NativeDisableParallelForRestriction, NoAlias] public NativeArray<OfflineGeometryRawVertex> Vertices;
 
         public int LatitudeSegments;
@@ -20,10 +21,15 @@ namespace Hecton8.Editor.OfflineGeometry
 
         public void Execute(int quadIndex)
         {
-            int lon = quadIndex % LongitudeSegments;
-            int lat = quadIndex / LongitudeSegments;
-            float invLat = math.rcp(math.max(1, LatitudeSegments));
-            float invLon = math.rcp(math.max(1, LongitudeSegments));
+            if (!Vertices.IsCreated || LatitudeSegments <= 0 || LongitudeSegments <= 0)
+                return;
+
+            int safeLatSegments = math.max(1, LatitudeSegments);
+            int safeLonSegments = math.max(1, LongitudeSegments);
+            int lon = quadIndex % safeLonSegments;
+            int lat = quadIndex / safeLonSegments;
+            float invLat = math.rcp(safeLatSegments);
+            float invLon = math.rcp(safeLonSegments);
             float v0 = lat * invLat;
             float v1 = (lat + 1) * invLat;
             float u0 = lon * invLon;
@@ -55,7 +61,7 @@ namespace Hecton8.Editor.OfflineGeometry
 
         private void Write(int index, float3 position, float2 uv)
         {
-            if ((uint)index >= (uint)Vertices.Length)
+            if (!Vertices.IsCreated || (uint)index >= (uint)Vertices.Length)
                 return;
 
             float lenSq = math.lengthsq(position);
@@ -76,6 +82,7 @@ namespace Hecton8.Editor.OfflineGeometry
     {
         [ReadOnly, NoAlias] public NativeArray<ushort> Indices;
         [ReadOnly, NoAlias] public NativeArray<OfflineSubMeshRange> Ranges;
+        // Each Execute lane owns outputTriangleIndex*3..+2. Write helpers fail closed on bad scheduling.
         [WriteOnly, NativeDisableParallelForRestriction, NoAlias] public NativeArray<OfflineGeometryRawVertex> OutputVertices;
 
         [NativeDisableUnsafePtrRestriction] public void* PositionPtr;
@@ -156,6 +163,9 @@ namespace Hecton8.Editor.OfflineGeometry
 
         private void WriteZeroTriangle(int dst)
         {
+            if (!OutputVertices.IsCreated || (uint)dst >= (uint)OutputVertices.Length || OutputVertices.Length - dst < 3)
+                return;
+
             OfflineGeometryRawVertex vertex = new OfflineGeometryRawVertex
             {
                 Position = float3.zero,
@@ -192,6 +202,9 @@ namespace Hecton8.Editor.OfflineGeometry
 
         private void WriteVertex(int dst, int sourceIndex, float3 position, float3 faceNormal)
         {
+            if (!OutputVertices.IsCreated || (uint)dst >= (uint)OutputVertices.Length)
+                return;
+
             float3 normal = HasNormals != 0 ? NormalizeOrFallback(ReadNormal(sourceIndex), faceNormal) : faceNormal;
             float2 uv = HasUv0 != 0 ? ReadUv(sourceIndex) : float2.zero;
             OutputVertices[dst] = new OfflineGeometryRawVertex
@@ -204,7 +217,7 @@ namespace Hecton8.Editor.OfflineGeometry
 
         private float3 ReadPosition(int index)
         {
-            if (SourceVertexCount <= 0)
+            if (SourceVertexCount <= 0 || PositionPtr == null || PositionStride <= 0 || PositionOffset < 0)
                 return float3.zero;
 
             int safeIndex = math.clamp(index, 0, SourceVertexCount - 1);
@@ -214,7 +227,7 @@ namespace Hecton8.Editor.OfflineGeometry
 
         private float3 ReadNormal(int index)
         {
-            if (SourceVertexCount <= 0)
+            if (SourceVertexCount <= 0 || NormalPtr == null || NormalStride <= 0 || NormalOffset < 0)
                 return new float3(0f, 1f, 0f);
 
             int safeIndex = math.clamp(index, 0, SourceVertexCount - 1);
@@ -224,7 +237,7 @@ namespace Hecton8.Editor.OfflineGeometry
 
         private float2 ReadUv(int index)
         {
-            if (SourceVertexCount <= 0)
+            if (SourceVertexCount <= 0 || Uv0Ptr == null || Uv0Stride <= 0 || Uv0Offset < 0)
                 return float2.zero;
 
             int safeIndex = math.clamp(index, 0, SourceVertexCount - 1);
@@ -246,6 +259,7 @@ namespace Hecton8.Editor.OfflineGeometry
     {
         [ReadOnly, NoAlias] public NativeArray<uint> Indices;
         [ReadOnly, NoAlias] public NativeArray<OfflineSubMeshRange> Ranges;
+        // Each Execute lane owns outputTriangleIndex*3..+2. Write helpers fail closed on bad scheduling.
         [WriteOnly, NativeDisableParallelForRestriction, NoAlias] public NativeArray<OfflineGeometryRawVertex> OutputVertices;
 
         [NativeDisableUnsafePtrRestriction] public void* PositionPtr;
@@ -326,6 +340,9 @@ namespace Hecton8.Editor.OfflineGeometry
 
         private void WriteZeroTriangle(int dst)
         {
+            if (!OutputVertices.IsCreated || (uint)dst >= (uint)OutputVertices.Length || OutputVertices.Length - dst < 3)
+                return;
+
             OfflineGeometryRawVertex vertex = new OfflineGeometryRawVertex
             {
                 Position = float3.zero,
@@ -362,6 +379,9 @@ namespace Hecton8.Editor.OfflineGeometry
 
         private void WriteVertex(int dst, int sourceIndex, float3 position, float3 faceNormal)
         {
+            if (!OutputVertices.IsCreated || (uint)dst >= (uint)OutputVertices.Length)
+                return;
+
             float3 normal = HasNormals != 0 ? NormalizeOrFallback(ReadNormal(sourceIndex), faceNormal) : faceNormal;
             float2 uv = HasUv0 != 0 ? ReadUv(sourceIndex) : float2.zero;
             OutputVertices[dst] = new OfflineGeometryRawVertex
@@ -374,7 +394,7 @@ namespace Hecton8.Editor.OfflineGeometry
 
         private float3 ReadPosition(int index)
         {
-            if (SourceVertexCount <= 0)
+            if (SourceVertexCount <= 0 || PositionPtr == null || PositionStride <= 0 || PositionOffset < 0)
                 return float3.zero;
 
             int safeIndex = math.clamp(index, 0, SourceVertexCount - 1);
@@ -384,7 +404,7 @@ namespace Hecton8.Editor.OfflineGeometry
 
         private float3 ReadNormal(int index)
         {
-            if (SourceVertexCount <= 0)
+            if (SourceVertexCount <= 0 || NormalPtr == null || NormalStride <= 0 || NormalOffset < 0)
                 return new float3(0f, 1f, 0f);
 
             int safeIndex = math.clamp(index, 0, SourceVertexCount - 1);
@@ -394,7 +414,7 @@ namespace Hecton8.Editor.OfflineGeometry
 
         private float2 ReadUv(int index)
         {
-            if (SourceVertexCount <= 0)
+            if (SourceVertexCount <= 0 || Uv0Ptr == null || Uv0Stride <= 0 || Uv0Offset < 0)
                 return float2.zero;
 
             int safeIndex = math.clamp(index, 0, SourceVertexCount - 1);
@@ -419,6 +439,9 @@ namespace Hecton8.Editor.OfflineGeometry
 
         public void Execute(int index)
         {
+            if (!SourceVertices.IsCreated || !PackedVertices.IsCreated || (uint)index >= (uint)SourceVertices.Length || (uint)index >= (uint)PackedVertices.Length)
+                return;
+
             OfflineGeometryRawVertex src = SourceVertices[index];
             PackedVertices[index] = new OfflineGeometryVertex32
             {
@@ -444,6 +467,9 @@ namespace Hecton8.Editor.OfflineGeometry
 
         public void Execute(int index)
         {
+            if (!Indices.IsCreated || (uint)index >= (uint)Indices.Length)
+                return;
+
             Indices[index] = (uint)index;
         }
     }
@@ -803,6 +829,21 @@ namespace Hecton8.Editor.OfflineGeometry
 
         private void WriteBoxHull(float3 min, float3 max)
         {
+            if (!HullVertices.IsCreated || HullVertices.Length < 8 || !HullIndices.IsCreated || HullIndices.Length < 36)
+            {
+                if (HullVertexCount.IsCreated && HullVertexCount.Length > 0)
+                {
+                    HullVertexCount[0] = 0;
+                }
+
+                if (HullIndexCount.IsCreated && HullIndexCount.Length > 0)
+                {
+                    HullIndexCount[0] = 0;
+                }
+
+                return;
+            }
+
             HullVertices[0] = new float3(min.x, min.y, min.z);
             HullVertices[1] = new float3(max.x, min.y, min.z);
             HullVertices[2] = new float3(max.x, max.y, min.z);

@@ -17,7 +17,7 @@ MonoBehaviour:
   icon: {fileID: 0}
   description: External support and routing node for later power/data chains.
   family: 2
-  ghostPrefab: {fileID: 5443949765716291362, guid: 4c4abfe5d28d3d54ebedb3cabee64ca6, type: 3}
+  ghostPrefab: {fileID: 0}
   finalPrefab: {fileID: 64260289537814543, guid: 1171decc9d7897e48b74478799d80969, type: 3}
   buildCost:
   - item: {fileID: 11400000, guid: a62760814dd69bf468e839b971d92243, type: 2}

@@ -1002,4 +1002,104 @@ What was done: updated `Content/TRAILER_SCRIPT_CAPTURE_AND_EDITING_BRIEF.md`, `C
 
 Cinematic cheats used: static permission firewall only; no public link, no post, no release, no event submission, no email, no spend, no creator send, no key/access route, no account/browser action, no runtime simulation, no build action.
 
-Exact microseconds saved: 0us runtime impact. Final validation pending in this pass.
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; all 9 marketing CSVs parse; residual asset/CTA shorthand grep clean; touched markdown table audit clean across 16 markdown files; touched mojibake audit clean across 17 files; CRM split unchanged (`DO_NOT_CONTACT=3`, `LOW_PRIORITY_VERIFY_LATER=52`, `NEEDS_ASSET=22`, `VERIFY_BEFORE_CONTACT=23`); creator send-log fields remain 0; all 100 paid creator gates remain `BLOCKED_NO_PAID_CREATOR_PROOF`; rationale order clean through Decision 241.
+
+## 2026-05-20 Community Regional Experiment CTA Activation Shorthand Cleanup
+
+What was wrong: community, regional, experiment, analytics, and post-bank docs still used `rules and CTA activation allow`, `external CTA waits for activation`, `no Steam CTA unless activation passes`, and `CTA activation packet or no-link route` shorthand. Those phrases are weaker than the actual route model because platform rules and generic CTA activation are blockers, not public-link permission.
+
+What was done: updated `Experiments/A_B_TESTING_AND_CREATIVE_EXPERIMENTS.md`, `Regional/REGIONAL_OUTREACH_PLAN.md`, `Regional/REGIONAL_CREATOR_LEADS.md`, `Analytics/MEASUREMENT_AND_UTM_PLAN.md`, `Content/TRAILER_SCRIPT_CAPTURE_AND_EDITING_BRIEF.md`, `Content/POST_BANK_AND_HOOK_LIBRARY.md`, `Community/COMMUNITY_POST_TEMPLATES.md`, `Community/PUBLIC_FAQ_AND_OBJECTION_HANDLING.md`, `Community/REDDIT_COMMUNITY_RULES_TRACKER.md`, `Campaigns/CAMPAIGN_05_REGIONAL_PUSH.md`, `Localization/LOCALIZATION_AND_REGIONAL_ASSET_PIPELINE.md`, `Social/SOCIAL_ACCOUNT_SETUP_AND_PLATFORM_PLAYBOOK.md`, and `QA/MARKETING_ASSET_QA_CHECKLIST.md`. Added backlog row 213, source ledger addendum, Status Addendum 215, and Decision 242.
+
+Cinematic cheats used: static permission firewall only; no community post, no regional outreach, no public CTA, no UTM link, no signup, no demo access, no account/browser action, no runtime simulation, no build action.
+
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; all 9 marketing CSVs parse; CTA activation shorthand grep clean; touched markdown table audit clean across 17 markdown files; touched mojibake audit clean across 18 files; CRM split unchanged (`DO_NOT_CONTACT=3`, `LOW_PRIORITY_VERIFY_LATER=52`, `NEEDS_ASSET=22`, `VERIFY_BEFORE_CONTACT=23`); creator send-log fields remain 0; all 100 paid creator gates remain `BLOCKED_NO_PAID_CREATOR_PROOF`; rationale order clean through Decision 242.
+
+## 2026-05-20 Page Demo Build Exists Route Opener Cleanup
+
+What was wrong: Next Fest, website alias, wishlist/event, key/access, mass outreach, playtester, calendar, presskit, curator, review-key, analytics, QA, and backlog done-definition surfaces still had residual wording where Steam page/demo/build/support/signup/tracking existence or readiness could be read as permission.
+
+What was done: updated `Campaigns/CAMPAIGN_04_NEXT_FEST_AND_DEMO_EVENT.md`, `Website/ONE_PAGE_SITE_AND_PRESSKIT_PLAN.md`, `Steam/STEAM_WISHLIST_AND_NEXT_FEST_PLAN.md`, `KEYS_AND_CREATOR_COMPLIANCE.md`, `CreatorOutreach/MASS_LEAD_VERIFICATION_AND_PITCH_WORKFLOW.md`, `Audience/PLAYTESTER_RECRUITMENT_AND_SCREENING_PLAN.md`, `Schedule/90_DAY_MARKETING_OPERATIONS_CALENDAR.md`, `Press/PRESS_KIT_AND_MEDIA_PLAN.md`, `Press/STEAM_CURATOR_CONNECT_PLAYBOOK.md`, `Press/REVIEW_KEYS_EMBARGO_AND_PREVIEW_ACCESS_PROTOCOL.md`, `Analytics/MEASUREMENT_AND_UTM_PLAN.md`, `QA/MARKETING_ASSET_QA_CHECKLIST.md`, `Data/MARKETING_BACKLOG_INDEX.md`, and `Data/SOURCE_LEDGER.md`. These now require exact publish, public demo access, public CTA, private access, support, creator/press/curator send, access-log, disclosure, route class, and provenance gates before public/private routes can open.
+
+Cinematic cheats used: static route-permission firewall only; no public link, demo access, support route, key/access route, tester recruitment, creator/press/curator send, account/browser action, runtime simulation, or build action.
+
+Exact microseconds saved: 0us runtime impact. Validation clean: targeted route-opener grep clean; Marketing file count 100; all 9 marketing CSVs parse; touched markdown table audit clean across 13 marketing markdown files; touched mojibake audit clean across 17 files; CRM split unchanged (`DO_NOT_CONTACT=3`, `LOW_PRIORITY_VERIFY_LATER=52`, `NEEDS_ASSET=22`, `VERIFY_BEFORE_CONTACT=23`); creator send-log fields remain 0; all 100 paid creator gates remain `BLOCKED_NO_PAID_CREATOR_PROOF`; rationale order clean through Decision 243.
+
+## 2026-05-20 Artifact Existence Boundary Propagation
+
+What was wrong: the deep route playbooks were stricter, but entry/risk docs still could be read as if screenshots, clips, Steam page drafts/signals, builds, or measured rows make the system ready to move. That is a handoff risk because future agents open README/backlog/risk docs first.
+
+What was done: updated `README.md`, `Data/MARKETING_RISK_REGISTER.md`, `Data/MARKETING_BACKLOG_INDEX.md`, `Data/SOURCE_LEDGER.md`, and `Press/STEAM_CURATOR_CANDIDATE_TRACKER.csv`. The first-asset gate now says artifacts are prerequisites only. Curator Connect risk and CUR-001 notes no longer say Steam page/build existence is enough. New RISK-072 and current-risk item 43 name backlog/README/done-definition bypass explicitly. Backlog row 215 tracks the propagation.
+
+Cinematic cheats used: static route-permission firewall only; no outreach, public route, private access, spend, account/browser action, runtime simulation, or build action.
+
+Exact microseconds saved: 0us runtime impact. Validation clean: old artifact-existence route-opener grep clean; Marketing file count 100; all 9 marketing CSVs parse; touched markdown table audit clean across 3 marketing markdown files; touched mojibake audit clean across 8 files; CRM split unchanged (`DO_NOT_CONTACT=3`, `LOW_PRIORITY_VERIFY_LATER=52`, `NEEDS_ASSET=22`, `VERIFY_BEFORE_CONTACT=23`); creator send-log fields remain 0; all 100 paid creator gates remain `BLOCKED_NO_PAID_CREATOR_PROOF`; rationale order clean through Decision 244.
+
+## 2026-05-20 First Capture Handoff Packet
+
+What was wrong: capture docs specified shots, but the first session could still produce loose notes instead of machine-usable proof. That would leave future operators guessing file paths, build IDs, creator utility, agency proof, pain freshness, and metadata fields.
+
+What was done: updated `Content/SCREENSHOT_AND_CLIP_SHOTLIST.md`, `QA/MARKETING_ASSET_QA_CHECKLIST.md`, `Campaigns/CAMPAIGN_01_FIRST_SCREENSHOT_DROP.md`, `Data/MARKETING_BACKLOG_INDEX.md`, and `Data/SOURCE_LEDGER.md`. First capture now requires a handoff packet with file paths, build ID, QA score, creator rows/utility/send gate, pain freshness, public comparison gate, agency proof gate, viewer-named decision, reject codes, verdict, and capped next actions. `AGENCY_MISSING_HOLD` keeps Campaign 01 held.
+
+Cinematic cheats used: static capture-proof handoff only; no capture, asset metadata row fill, public test, creator send, account/browser action, runtime simulation, or build action.
+
+Exact microseconds saved: 0us runtime impact. Validation clean: handoff-field propagation grep confirms packet, `AGENCY_MISSING_HOLD`, viewer-named decision, metadata update, and row 216; Marketing file count 100; all 9 marketing CSVs parse; touched markdown table audit clean across 4 marketing markdown files; touched mojibake audit clean across 8 files; CRM split unchanged (`DO_NOT_CONTACT=3`, `LOW_PRIORITY_VERIFY_LATER=52`, `NEEDS_ASSET=22`, `VERIFY_BEFORE_CONTACT=23`); creator send-log fields remain 0; all 100 paid creator gates remain `BLOCKED_NO_PAID_CREATOR_PROOF`; rationale order clean through Decision 245.
+
+## 2026-05-20 First Capture Handoff Measurement Binding
+
+What was wrong: the capture handoff packet existed, but analytics/KPI/control docs could still count asset packets from metadata alone. That could hide missing file paths, viewer-named decisions, creator utility, pain freshness, or reject codes.
+
+What was done: updated `Analytics/MEASUREMENT_AND_UTM_PLAN.md`, `KPI/MARKETING_DASHBOARD_SPEC.md`, `Operations/DAILY_AGENT_TASK_LOOP.md`, `Data/MARKETING_BACKLOG_INDEX.md`, and `Data/SOURCE_LEDGER.md`. Asset packets, KPI capture-intake rows, and ASSET_GATE daily outputs now require the handoff packet before Campaign 01, agency-proof reporting, creator reporting, or public testing can count.
+
+Cinematic cheats used: static measurement firewall only; no capture, dashboard row fill, public test, creator send, account/browser action, runtime simulation, or build action.
+
+Exact microseconds saved: 0us runtime impact. Validation clean: measurement-handoff grep confirms analytics asset packet, KPI capture intake, daily ASSET_GATE, row 217, first-capture handoff packet, `file_path`, `viewer_named_decision`, and `AGENCY_MISSING_HOLD`; Marketing file count 100; all 9 marketing CSVs parse; touched markdown table audit clean across 4 marketing markdown files; touched mojibake audit clean across 8 files; CRM split unchanged (`DO_NOT_CONTACT=3`, `LOW_PRIORITY_VERIFY_LATER=52`, `NEEDS_ASSET=22`, `VERIFY_BEFORE_CONTACT=23`); creator send-log fields remain 0; all 100 paid creator gates remain `BLOCKED_NO_PAID_CREATOR_PROOF`; rationale order clean through Decision 246.
+
+## 2026-05-20 First Capture Handoff First-Read Propagation
+
+What was wrong: the first-capture handoff packet was in the deep docs, but first-read control surfaces could still summarize the work as generic field filling.
+
+What was done: updated `MARKETING_CONTROL_TOWER.md`, `PREP_DIRECTIONS_NOW.md`, `Data/MARKETING_BACKLOG_INDEX.md`, and `Data/SOURCE_LEDGER.md`. The control tower assets row, measurement/reporting row, current priority row, and prep stance now name the handoff packet and required fields before Campaign 01, Steam, creator, press, KPI, or public testing movement.
+
+Cinematic cheats used: static first-read handoff routing only; no capture, metadata row fill, dashboard row fill, public test, creator send, account/browser action, runtime simulation, or build action.
+
+Exact microseconds saved: 0us runtime impact. Validation clean: first-read handoff grep confirms control tower assets/current priority, prep stance, row 218, first-capture handoff packet, file paths/build ID, and `AGENCY_MISSING_HOLD`; Marketing file count 100; all 9 marketing CSVs parse; touched markdown table audit clean across 3 marketing markdown files; touched mojibake audit clean across 7 files; CRM split unchanged (`DO_NOT_CONTACT=3`, `LOW_PRIORITY_VERIFY_LATER=52`, `NEEDS_ASSET=22`, `VERIFY_BEFORE_CONTACT=23`); creator send-log fields remain 0; all 100 paid creator gates remain `BLOCKED_NO_PAID_CREATOR_PROOF`; rationale order clean through Decision 247.
+
+## 2026-05-20 Structured First-Capture Metadata Fields
+
+What was wrong: the handoff packet existed in docs, but asset metadata still lacked columns for packet ID, verdict, viewer-named decision, and next actions. That would force first-capture operators to hide critical proof in notes or dashboards.
+
+What was done: updated `Data/MARKETING_ASSET_METADATA_TEMPLATE.csv`, `Operations/ASSET_LIBRARY_NAMING_AND_VERSION_CONTROL.md`, `KPI/MARKETING_DASHBOARD_SPEC.md`, `Operations/DAILY_AGENT_TASK_LOOP.md`, `MARKETING_CONTROL_TOWER.md`, `README.md`, `Campaigns/CAMPAIGN_01_FIRST_SCREENSHOT_DROP.md`, `QA/MARKETING_ASSET_QA_CHECKLIST.md`, `Content/SCREENSHOT_AND_CLIP_SHOTLIST.md`, `Analytics/MEASUREMENT_AND_UTM_PLAN.md`, `Data/MARKETING_BACKLOG_INDEX.md`, and `Data/SOURCE_LEDGER.md`. Added structured `capture_handoff_packet_id`, `capture_verdict`, `viewer_named_decision`, and `capture_next_actions` fields. All 13 planned rows remain pending and blocked.
+
+Cinematic cheats used: static capture-proof schema only; no capture, asset approval, dashboard row fill, public test, creator send, account/browser action, runtime simulation, or build action.
+
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; all 9 marketing CSVs parse; asset metadata has 13 rows with pending packet/verdict/viewer-decision/next-action defaults, 13 `PLANNED_CAPTURE`, and 13 `BLOCKED_PLANNED_CAPTURE`; touched markdown table audit clean across 11 markdown files; touched mojibake audit clean across 12 files; CRM split unchanged (`DO_NOT_CONTACT=3`, `LOW_PRIORITY_VERIFY_LATER=52`, `NEEDS_ASSET=22`, `VERIFY_BEFORE_CONTACT=23`); creator send-log fields remain 0; all 100 paid creator gates remain `BLOCKED_NO_PAID_CREATOR_PROOF`.
+
+## 2026-05-20 Capture Verdict Dictionary Reconciliation
+
+What was wrong: `HOLD_ASSET` was valid in QA/shotlist but missing from the new `capture_verdict` enum in metadata/KPI docs. That would make the first capture handoff internally inconsistent.
+
+What was done: updated `Operations/ASSET_LIBRARY_NAMING_AND_VERSION_CONTROL.md`, `KPI/MARKETING_DASHBOARD_SPEC.md`, `Analytics/MEASUREMENT_AND_UTM_PLAN.md`, `Campaigns/CAMPAIGN_01_FIRST_SCREENSHOT_DROP.md`, `Data/MARKETING_BACKLOG_INDEX.md`, `Data/SOURCE_LEDGER.md`, status, and rationale. Held verdicts now block packets/reporting, Campaign 01 requires keep-testing/keep, and capture-specific hold codes are fixed.
+
+Cinematic cheats used: static dictionary reconciliation only; no capture, asset approval, dashboard row fill, public test, creator send, account/browser action, runtime simulation, or build action.
+
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; all 9 marketing CSVs parse; verdict/hold-code grep confirms `HOLD_ASSET`, `AGENCY_MISSING_HOLD`, `MISSING_HANDOFF_PACKET`, `VIEWER_DECISION_MISSING`, and `HANDOFF_NEXT_ACTIONS_UNCAPPED`; touched markdown table audit clean across 4 markdown files; touched mojibake audit clean across 4 files.
+
+## 2026-05-20 Structured Capture Proof Agency-Gate Propagation
+
+What was wrong: creator/Steam/press agency gates required AB-009/KPI decision-read rows, but not all of them required the structured asset metadata handoff fields. That left a route where AB evidence could be read as enough while `capture_verdict` or `viewer_named_decision` stayed pending.
+
+What was done: updated `CreatorOutreach/MASS_LEAD_VERIFICATION_AND_PITCH_WORKFLOW.md`, `CreatorOutreach/SEGMENT_PITCH_MATRIX.md`, `Steam/STEAM_PAGE_ASSET_REQUIREMENTS_CHECKLIST.md`, `Steam/STORE_PAGE_COPY_MATRIX.md`, `Press/PRESS_KIT_AND_MEDIA_PLAN.md`, `Press/PRESS_RELEASE_AND_EMAIL_TEMPLATES.md`, `Data/MARKETING_BACKLOG_INDEX.md`, `Data/SOURCE_LEDGER.md`, status, and rationale. Agency/pressure/route-risk claims now require metadata viewer decision, valid capture verdict, and AB-009/KPI decision-read fields.
+
+Cinematic cheats used: static proof-route reconciliation only; no capture, asset approval, Steam page movement, press release, creator send, account/browser action, runtime simulation, or build action.
+
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; all 9 marketing CSVs parse; propagation grep confirms `viewer_named_decision`, `capture_verdict`, and metadata handoff language in touched owner surfaces; touched markdown table audit clean across 6 markdown files; touched mojibake audit clean across 6 files; CRM split unchanged and creator send-log fields remain 0.
+
+## 2026-05-20 Structured Capture Proof Public-Route Propagation
+
+What was wrong: site, devlog, community, demo, curator, outreach-calendar, and Steam launch docs still had AB-only agency-proof wording. These are route-opening surfaces, so AB proof alone could be misread as enough even when asset metadata was pending or held.
+
+What was done: updated `Campaigns/CAMPAIGN_02_STEAM_PAGE_LAUNCH.md`, `Website/ONE_PAGE_SITE_AND_PRESSKIT_PLAN.md`, `Audience/OWNED_AUDIENCE_EMAIL_AND_NEWSLETTER_PLAN.md`, `Content/DEVLOG_AND_STEAM_NEWS_PIPELINE.md`, `Community/COMMUNITY_POST_TEMPLATES.md`, `Campaigns/CAMPAIGN_03_FIRST_DEMO_OUTREACH.md`, `OUTREACH_CALENDAR_AND_BATCH_PLAN.md`, `Press/STEAM_CURATOR_CONNECT_PLAYBOOK.md`, `Data/MARKETING_BACKLOG_INDEX.md`, `Data/SOURCE_LEDGER.md`, status, and rationale. Public-route agency claims now require metadata handoff fields plus AB-009/KPI evidence.
+
+Cinematic cheats used: static proof-route reconciliation only; no capture, asset approval, site publish, devlog/news post, community post, demo outreach, curator send, account/browser action, runtime simulation, or build action.
+
+Exact microseconds saved: 0us runtime impact. Validation clean: Marketing file count 100; all 9 marketing CSVs parse; propagation grep confirms `viewer_named_decision`, `capture_verdict`, and metadata handoff language in 8 touched public-route surfaces; touched markdown table audit clean across 8 markdown files; touched mojibake audit clean across 8 files; CRM split unchanged and creator send-log fields remain 0.

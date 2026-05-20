@@ -171,7 +171,7 @@ This ticket converts the first `PLAN-*` metadata rows into a Steam page capture 
 - Dashboard rows mirror metadata/QA facts instead of inventing page proof.
 - QA score and rejection code are filled for every kept or killed asset.
 - At least 15 valid blind human/player cold-reader notes exist across the first capsule plus the first-page lead screenshot set; context-exposed or prompt-echo notes are fix notes, not pass evidence.
-- One agency/decision proof asset from `PLAN-SHOT-006`, `PLAN-CLIP-001`, or `PLAN-CLIP-003` has factual metadata, QA pass, blind-read notes, and an AB-009/KPI row with `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision` filled. `PLAN-SHOT-007` cannot substitute for this gate.
+- One agency/decision proof asset from `PLAN-SHOT-006`, `PLAN-CLIP-001`, or `PLAN-CLIP-003` has factual metadata, QA pass, non-pending `capture_handoff_packet_id`, `capture_verdict = KEEP_TESTING` or stronger campaign `KEEP`, non-pending `viewer_named_decision`, blind-read notes, and an AB-009/KPI row with `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision` filled. `PLAN-SHOT-007` cannot substitute for this gate.
 - First capture session verdict is `KEEP_TESTING`; any `HOLD_ASSET` row is omitted and any `KILL_ANGLE` row is removed from first-page copy/tags/capsule direction.
 - AB-001/002/004/009 cold-read responses are logged through `Experiments/A_B_TESTING_AND_CREATIVE_EXPERIMENTS.md` and `KPI/MARKETING_DASHBOARD_SPEC.md`.
 - Steam asset specs are rechecked on the official Steamworks pages the same week.

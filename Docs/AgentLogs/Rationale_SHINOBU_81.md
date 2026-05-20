@@ -1155,3 +1155,123 @@ Rejected Alternatives: Leaving generic wording was rejected because these are op
 Scalability potential: Low budget work can keep copy and event/spend planning ready without opening public routes. Middle/High/Ultra campaign execution can later substitute real links only through the same machine gates, avoiding last-minute permission reconstruction.
 
 Hardware Impact: 0us measured runtime impact. STATIC_DOC/STATIC_DATA only. No public link, post, event submission, email, spend, creator send, key/access route, account/browser action, runtime action, or build action occurred.
+
+## Decision 242 - Platform Rules And CTA Activation Are Blockers, Not Permission
+
+Problem: Community, regional, experiment, analytics, and post-bank surfaces still used compressed wording such as rules and CTA activation allow, external CTA waits for activation, no Steam CTA unless activation passes, and CTA activation packet or no-link route. That language can be read as if platform rules plus generic CTA activation are enough to post or link, bypassing the surface-specific machine gates.
+
+Solution: Reworded the affected docs so platform/community rules and CTA activation are only necessary blockers. Public links now require the exact destination gate plus destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`: Steam page, public demo, owned audience/signup, presskit/public release, Discord, support, social post, localized/regional, QA signoff, or matching publication gate as applicable. Private access remains separated through recipient/batch `private_access_permission_gate` and access logs.
+
+Rejected Alternatives: Leaving the shorthand was rejected because community and regional surfaces are high-pressure posting surfaces. Creating another CTA explainer was rejected because the existing owner gates already define the machine fields. Posting or opening any link was rejected because no destination gate is currently allowed.
+
+Scalability potential: Low budget public critique can remain no-link and clean. Middle/High/Ultra regional, community, paid, demo, and Steam waves can later link only after their exact destinations have proof, custody, and route fields.
+
+Hardware Impact: 0us measured runtime impact. STATIC_DOC only. No community post, regional outreach, public CTA, UTM link, signup, demo access, account/browser action, runtime action, or build action occurred.
+
+## Decision 243 - Existence And Readiness Wording Must Not Open Routes
+
+Problem: After the CTA activation pass, residual planning surfaces still used Steam page/demo/build/support/signup/tracking existence or readiness wording in places that control Next Fest, support aliases, keys/private access, tester recruitment, creator/press/curator send, UTM use, and backlog readiness. Existence is a fact, not permission.
+
+Solution: Replaced the residual shorthand with exact machine gates on the owner-facing surfaces. Steam/page/event work now names `steam_page_publish_permission_gate`, `demo_public_access_permission_gate`, `steam_announcement_permission_gate`, `submission_permission_gate`, and destination-specific `public_cta_permission_gate`. Key/access/Curator/preview work names stable build proof as a prerequisite only, plus recipient/batch `private_access_permission_gate`, official inbox custody, access-log fields, disclosure, and relevant creator/press/curator send gates. Tracking/signup/support routes now require same-day platform permission plus the exact destination/support/Discord/owned-audience gate.
+
+Rejected Alternatives: Leaving the wording because hard rules existed nearby was rejected; operators copy from timeline tables, alias rows, batch tables, and done definitions under pressure. Creating a new gate document was rejected because the existing gate fields already own the decision. Opening browser accounts, support routes, Playtest, Steam page, public CTA, or key/access rows was rejected because custody and allow fields are still absent.
+
+Scalability potential: Low budget operations can keep launch/event/key/tester prep without accidentally opening public or private routes. Middle/High/Ultra campaigns can later scale Steam, demo, support, tester, creator, press, curator, and tracking flows through explicit machine gates and source fields instead of reconstructing permission from prose.
+
+Hardware Impact: 0us measured runtime impact. STATIC_DOC/STATIC_DATA only. No public link, demo access, support route, key/access route, tester recruitment, creator/press/curator send, account/browser action, runtime action, or build action occurred.
+
+## Decision 244 - Entry Docs Must Say Artifacts Are Prerequisites, Not Permission
+
+Problem: The deep playbooks had been tightened, but first-read docs still had artifact-oriented language that could be interpreted as "once the screenshot/page/build exists, move." The most dangerous shape was not a single route template; it was a backlog or README done definition that could override more precise owner gates during a rushed handoff.
+
+Solution: Updated the README First Asset Gate to state that proof artifacts are prerequisites only and that creator-facing work still needs creator/send/route/provenance fields. Tightened RISK-029 and the CUR-001 tracker note so Curator Connect cannot restart from Steam page/build existence. Added RISK-072 and current-risk item 43 to make backlog/README/done-definition bypass a named risk. Added backlog row 215 and source ledger trace.
+
+Rejected Alternatives: Leaving entry docs unchanged was rejected because future agents start from README/control/backlog, not from every deep protocol. Creating another entry document was rejected because Marketing already has too many surfaces. Filling any route or CRM fields was rejected because no artifact, custody, or gate allow happened.
+
+Scalability potential: Low budget work now has a clearer stop line: artifacts unlock scoring, not sends. Middle/High/Ultra campaigns can later scale from the same first-read docs without confusing proof readiness with Steam, demo, support, creator, press, curator, event, or paid route permission.
+
+Hardware Impact: 0us measured runtime impact. STATIC_DOC only. No outreach, public route, private access, spend, account/browser action, runtime action, or build action occurred.
+
+## Decision 245 - First Capture Needs A Handoff Packet, Not Loose Notes
+
+Problem: The capture and campaign docs had detailed shot intent, but the first session could still end with broad notes like identity/player verb/base candidate while leaving file path, creator utility, agency proof, pain freshness, or metadata update fields to be guessed later. That would reopen the main blocker under a different name: "we have screenshots" but no machine-usable asset proof.
+
+Solution: Added a compact first-capture handoff packet to the shotlist and made QA/Campaign 01 consume it. The packet requires file paths, build ID, QA score, creator rows, creator utility, creator send gate, pain bucket/proof/freshness, public comparison gate, agency decision proof gate, viewer-named decision, reject codes, verdict, and a next-action list capped at three items. `AGENCY_MISSING_HOLD` now explicitly prevents Campaign 01 from advancing.
+
+Rejected Alternatives: Creating a new handoff doc was rejected because Marketing must not grow more files. Relying on screenshots plus later manual interpretation was rejected because it causes paste/send/reporting fields to be guessed. Updating live asset metadata rows was rejected because no real capture happened.
+
+Scalability potential: Low budget capture can now produce a single actionable packet instead of a pile of subjective images. Middle/High/Ultra launch prep can scale from the same packet into Steam, creator, press, and public-post gates without reconstructing source truth.
+
+Hardware Impact: 0us measured runtime impact. STATIC_DOC only. No capture, asset metadata row fill, public test, creator send, account/browser action, runtime action, or build action occurred.
+
+## Decision 246 - Measurement Must Consume The Handoff Packet
+
+Problem: Adding a handoff packet to capture docs is not enough if analytics, KPI, and daily control loops can still count asset packets from metadata alone. That would allow public testing or agency-proof reporting to advance while file paths, viewer-named decisions, creator utility, pain freshness, or reject codes are missing from the actual handoff.
+
+Solution: Bound the first-capture handoff packet into analytics asset packets, KPI capture intake, and the daily ASSET_GATE loop. Measurement rows now require file path, build ID, handoff packet, reject codes, creator rows/utility/send gate, pain freshness, public comparison gate, agency proof fields, and viewer-named decision before Campaign 01, agency-proof reporting, or creator reporting can count.
+
+Rejected Alternatives: Leaving KPI as a metadata-only copy was rejected because the handoff packet is the source of capture context and failure evidence. Creating a new dashboard schema file was rejected because KPI and analytics owner docs already exist. Filling any dashboard rows was rejected because no capture happened.
+
+Scalability potential: Low budget testing can keep one source-of-truth packet. Middle/High/Ultra reporting can later scale Steam, creator, press, and paid decisions without mixing guessed metadata with measured public signals.
+
+Hardware Impact: 0us measured runtime impact. STATIC_DOC only. No capture, dashboard row fill, public test, creator send, account/browser action, runtime action, or build action occurred.
+
+## Decision 247 - First-Read Docs Must Surface The Capture Handoff Gate
+
+Problem: The handoff packet was present in shotlist, QA, Campaign 01, analytics, KPI, and daily loop docs, but the control tower still summarized asset work as "fill fields." Future agents normally open the control tower or prep directions first, so the handoff packet could be missed.
+
+Solution: Updated the control tower asset row, measurement/reporting row, current priority row, and prep directions stance to name the first-capture handoff packet and its required fields before Campaign 01, Steam, creator, press, KPI, or public testing movement.
+
+Rejected Alternatives: Leaving first-read docs at high level was rejected because the current blocker is operational proof capture, not another concept pass. Creating a new first-capture brief was rejected because the shotlist already owns the packet.
+
+Scalability potential: Low budget agents now enter the capture path from the same handoff gate. Middle/High/Ultra launch prep can use the control tower to route capture truth into Steam, creator, press, KPI, and public-testing gates without re-reading every deep doc.
+
+Hardware Impact: 0us measured runtime impact. STATIC_DOC only. No capture, metadata row fill, dashboard row fill, public test, creator send, account/browser action, runtime action, or build action occurred.
+
+## Decision 248 - Handoff Packet Facts Need Asset-Metadata Columns
+
+Problem: The first-capture handoff packet was required by capture, QA, Campaign 01, analytics, KPI, daily loop, and control tower docs, but `MARKETING_ASSET_METADATA_TEMPLATE.csv` still had no structured fields for packet ID, verdict, viewer-named decision, or next actions. That left the most important first-capture facts vulnerable to notes-only storage.
+
+Solution: Added `capture_handoff_packet_id`, `capture_verdict`, `viewer_named_decision`, and `capture_next_actions` to the asset metadata CSV and set all 13 planned rows to pending defaults. Updated the metadata schema, KPI capture intake, daily loop validation, control tower, README, Campaign 01, QA checklist, shotlist, analytics asset packet, backlog, and source ledger so these fields are treated as required source facts before Campaign 01, Steam, creator, press, KPI, or public testing movement can count.
+
+Rejected Alternatives: Keeping these facts in `notes` was rejected because notes cannot be reliably filtered for hold states. Creating a new handoff file was rejected because Marketing already has enough surfaces and the shotlist/metadata pair is the correct owner route. Promoting any asset row was rejected because no capture happened.
+
+Scalability potential: Low budget capture work can now fail fast from structured packet fields without meetings. Middle/High/Ultra campaign operations can later route the same fields into Steam, creator, press, public-post, and KPI decisions without reinterpreting screenshots or subjective notes.
+
+Hardware Impact: 0us measured runtime impact. STATIC_DATA/STATIC_DOC only. No capture, asset approval, dashboard row fill, public test, creator send, account/browser action, runtime action, or build action occurred.
+
+## Decision 249 - Capture Verdict Dictionaries Must Match QA
+
+Problem: The new `capture_verdict` schema in asset metadata/KPI omitted `HOLD_ASSET`, while the QA checklist and shotlist already defined `HOLD_ASSET` as a valid first-session verdict. That mismatch would force operators to either break the CSV enum or hide the hold in notes.
+
+Solution: Added `HOLD_ASSET` to the documented `capture_verdict` enum in asset library and KPI docs. Updated analytics to block asset packets when verdicts are `AGENCY_MISSING_HOLD`, `REVISE_SCENE`, `HOLD_ASSET`, or `KILL_ANGLE`. Updated Campaign 01 to require `capture_verdict = KEEP_TESTING` or a stronger campaign `KEEP` before Steam-page movement. Added fixed capture hold codes for missing packet, missing viewer decision, and uncapped next actions.
+
+Rejected Alternatives: Treating `HOLD_ASSET` as a rejection code was rejected because it is a session verdict, not a visual failure. Leaving free-text notes was rejected because the entire purpose of the schema pass is machine-filterable handoff state. Filling current rows was rejected because no capture happened.
+
+Scalability potential: Low budget capture sessions can now mark honest build limitations without inventing local vocabulary. Middle/High/Ultra campaign operations can filter held, killed, and keep-testing assets consistently across metadata, KPI, analytics, and Campaign 01.
+
+Hardware Impact: 0us measured runtime impact. STATIC_DOC only. No capture, asset approval, dashboard row fill, public test, creator send, account/browser action, runtime action, or build action occurred.
+
+## Decision 250 - AB Decision Reads Cannot Replace Metadata Handoff Proof
+
+Problem: Creator, Steam, and press agency gates required AB-009/KPI decision-read fields, but some of those surfaces did not yet require the newly structured metadata fields `viewer_named_decision` and `capture_verdict`. That created a split proof route: an AB row could appear sufficient even when the asset metadata handoff still said pending or held.
+
+Solution: Updated creator send packet rules, segment pitch checks, Steam page asset requirements, Steam store copy matrix, presskit gate, and press release template. Gameplay, pressure, route-risk, threat, salvage failure, first-public proof, Steam page, creator-send, and press-publication claims now require both sides: non-pending metadata viewer decision plus valid capture verdict, and AB-009/KPI decision-read evidence.
+
+Rejected Alternatives: Updating every marketing file that mentions agency proof was rejected as unnecessary churn; the touched files are the owner-facing surfaces that can open sends, Steam assembly, or public press surfaces. Relying on AB rows alone was rejected because AB evidence does not prove the asset metadata row is not pending, held, or killed.
+
+Scalability potential: Low budget execution avoids manual reconciliation between asset metadata and test tables. Middle/High/Ultra launch operations can later scale creator, Steam, and press movement from a single proof route instead of parallel subjective judgments.
+
+Hardware Impact: 0us measured runtime impact. STATIC_DOC only. No capture, asset approval, Steam page movement, press release, creator send, account/browser action, runtime action, or build action occurred.
+
+## Decision 251 - Public-Route Agency Gates Need The Same Metadata Handoff
+
+Problem: After creator/Steam/press owner propagation, adjacent route-opening surfaces still used AB-only language for agency proof: Steam page launch dependencies, website/presskit launch, owned-audience devlog mode, devlog/news reuse, community critique escalation, demo outreach, outreach phase gates, and Curator Connect. Those docs can move public or semi-public routes even when the deeper owner docs are stricter.
+
+Solution: Updated the route-opening surfaces to require non-pending metadata `viewer_named_decision`, valid `capture_verdict`, and AB-009/KPI decision-read evidence for agency claims. This keeps site, devlog/news, community, demo, curator, outreach calendar, and Steam page launch gates aligned with the new asset metadata handoff.
+
+Rejected Alternatives: Editing every remaining AB-009 mention was rejected because many hits are historical ledger lines or non-route analysis. Leaving these eight surfaces unchanged was rejected because they are execution documents that can open traffic, sends, or public copy.
+
+Scalability potential: Low budget public prep now has one asset-proof route before traffic. Middle/High/Ultra campaign execution can scale public surfaces without humans reconciling whether AB proof or asset metadata is authoritative.
+
+Hardware Impact: 0us measured runtime impact. STATIC_DOC only. No capture, asset approval, site publish, devlog/news post, community post, demo outreach, curator send, account/browser action, runtime action, or build action occurred.

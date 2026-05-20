@@ -57,6 +57,82 @@ CriticalLayout_FaunaTier1LodProxyEntry: Size=64; PositionAup@0; InstanceUid@48; 
 BuildVerification: NOT_RUN_CPU_GATE
 </SELF_AUDIT>
 
+## 2026-05-20 Alignment Pass - Continuation Runtime DTO Sweep
+
+What was wrong:
+- Additional owner-safe runtime DTOs still used compiler-owned Sequential layout in VFX/world/UI/thermo/visor/outpost/flora/atmosphere/player/narrative/logistics/construction/encounter/campaign slices.
+- Several touched Burst jobs lacked synchronous compile flags or alias proof on owner-separated NativeArrays.
+
+What was done:
+- Converted fixed DTO/event/telemetry rows to explicit layouts with named padding.
+- Widened queue-hostile rows where justified: `MockTerrainQuerySignal=64`, `FatalPressureImplosionEventPayload=32`, `PendingAtmosphereMutation=32`, `CelestialEventPayload=16`, `NarrativeTriggerTelemetryEntry=80`, `GIRelayTelemetryEntry=64`, `StressSoA=48`, `EncounterSpawnRequest=32`, and related construction/telemetry rows.
+- Added `[NoAlias]` and `CompileSynchronously = true` to touched habitat, encounter, narrative, atmosphere, sargassum, and meta-campaign jobs where buffer separation is explicit in local ownership.
+
+Cinematic Cheats used:
+- No CPU-heavy physical simulation was introduced. The pass preserved existing SDF/mock/black-box/visual-proxy routes and only hardened the payload lanes that feed them.
+
+Exact Microseconds saved:
+- Estimated 1-30 us per 10k DTO reads or scheduled job batch depending on row density and Burst aliasing. Static estimate only.
+
+Verification:
+- `rg -n "StructLayout\([^)]*Pack\s*=" Assets/_Project/Scripts -g "*.cs"` returned 0 hits.
+- Broad `StructLayout(LayoutKind.Sequential` count under `Assets/_Project/Scripts` is now 399.
+- Touched-file unaligned 8-byte `FieldOffset` regex returned 0 hits.
+- Targeted `git diff --check` over the continuation files returned exit 0 with LF/CRLF warnings only.
+- No build or rebuild was launched.
+
+<SELF_AUDIT>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <MockTerrainQuerySignal size="64">Aup@0:double3; QualityWeight@24:float; Seed@28:uint; Frame@32:uint; _pad0@36:uint; pads@40/48/56:ulong.</MockTerrainQuerySignal>
+    <HighPressureEventPayload size="32">RuntimePosition@0:Vector3; PressureAKPa@12:float; PressureBKPa@16:float; DoorIndex@20:int; RoomA@24:int; RoomB@28:int.</HighPressureEventPayload>
+    <FatalPressureImplosionEventPayload size="32">RuntimePosition@0:Vector3; TemperatureCelsius@12:float; NodeId@16:uint; RoomIndex@20:int; _pad0@24:ulong.</FatalPressureImplosionEventPayload>
+    <WfcOutpostGridDescriptor size="96">OriginAup@0:MacroDatabaseAup; Dimensions@48:int3; CellSize@60:float; FloorHeight@64:float; pad@68:uint; SectorHash@72:ulong; WorldSeed/Sequence/GridHash@80/84/88:uint; CellCount/Flags@92/94:ushort.</WfcOutpostGridDescriptor>
+    <EncounterDirectorState size="80">scalar lanes @0..32; PlayerPosition@36:float4; PlayerVelocity@52:float4; SpawnSequence@68:uint; padding@72/76:uint.</EncounterDirectorState>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>Added NoAlias to touched NativeArray fields in AtmosphereStepJob, UpdateMigratorySargassumIslandsJob, NarrativePoiSpatialCheckJob, MetaCampaignRuleEvaluationJob, EncounterDirectorJob, and Habitat flood/dirty/waterline jobs. Jobs still return through their existing scheduler handles; no mid-frame Complete was added.</POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No build/rebuild launched after this continuation sweep.</COMPILE_GUARD>
+</SELF_AUDIT>
+
+## 2026-05-20 Alignment Pass - Gameplay Interaction Economy Continuation Sweep
+
+What was wrong:
+- Owner-safe fixed rows still used Sequential layout after Pack debt had been eliminated.
+- Submarine PID/flood output rows had implicit tail holes inside explicit layouts.
+- Several touched mathematical Burst routes lacked `CompileSynchronously = true`, and finger/radiation/submarine NativeArray fields lacked alias fences.
+
+What was done:
+- Converted fixed DTO rows in gameplay, Atlas/input/interaction, and economy to explicit layouts.
+- Added named padding to submarine PID/flood outputs and terminal readonly payload constructors.
+- Added NoAlias/synchronous Burst flags on touched source-owned job/math routes.
+- Left Unity wrapper structs and managed records untouched by design.
+
+Cinematic Cheats used:
+- Scanner/beacon/hand/economy paths remain SDF, proxy, queue, and scalar DTO driven. No GameObject instantiation, heavy physics replacement, or physical wave/economy simulation was added.
+
+Exact Microseconds saved:
+- Gameplay fixed rows: estimated 1-18 us per 10k rows.
+- Interaction/input/Atlas payload rows: estimated 1-12 us per 10k rows.
+- Economy rows: estimated 1-15 us per 10k rows.
+- Static estimates only; no profiler proof claimed.
+
+Verification:
+- `StructLayout(...Pack=...)` under `Assets/_Project/Scripts`: 0 hits.
+- Broad Sequential count moved from 541 before this continuation slice to 509 after the owner-safe conversions and one concurrent external Sequential reintroduction outside the touched files.
+- Touched-file unaligned 8-byte `FieldOffset` scans returned 0 hits.
+- Touched-file `git diff --check` returned exit 0 with LF/CRLF warnings only.
+- No build or rebuild was launched.
+
+<SELF_AUDIT>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <ContextualPhysicalIkEntityState size="512">Int/flag lanes @0..28; RootRotation@32:quaternion; float3 lanes @48..288; scalar tuning lanes @300..448; UpdateBitfield@452; FrameIndex@456; EntitySlot@460; IsXrActive@464; ThrottleTier@468; byte pads@469..471; ulong pads@472/480/488/496/504.</ContextualPhysicalIkEntityState>
+    <MarauderStateDTO size="64">AUP@0:double3; Velocity@24:float3; FactionHash@36; CurrentTask@40; HullIntegrity@44; pads@48/52/56.</MarauderStateDTO>
+    <InteractionEventPayload size="32">ItemHashId@0; TargetHashId@4; InteractorHashId@8; ReferenceSlot@12; Quantity@16; EventType@20; Reserved@22; pad@24.</InteractionEventPayload>
+    <KinematicTerminalPointerState size="64">PanelId@0; CanvasPosition@4; WorldPosition@12; WorldRotation@24; ActionFlags@40; pads@41/42/43/44/48/56.</KinematicTerminalPointerState>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>Added NoAlias on radiation diffusion Previous/Sources/Next, submarine PID/flood NativeArray lanes, and physical-hand RayDefinitions/Commands/RayRuntime/Hits/Output. No new Complete calls or dispatcher dependencies were introduced.</POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No build launched for this continuation sweep; existing dependency wall remains outside this mechanical layout slice.</COMPILE_GUARD>
+</SELF_AUDIT>
+
 ## 2026-05-20 Alignment Pass - Core Intrinsic/Arena DTO Sweep
 
 What was wrong:
@@ -1020,4 +1096,40 @@ Verification:
     <ScannerTelemetryEntry size="64">TargetAUP@0:double3; _pad0@24:ulong; Frame/TargetHash/Flags/CandidateCount/CompletedCount/EstimatedMicroseconds @32..52; Progress01@56:float; HitDistance@60:float.</ScannerTelemetryEntry>
   </STRUCT_LAYOUT_VERIFICATION>
   <COMPILE_GUARD>No build launched after this scanner route sweep.</COMPILE_GUARD>
+</SELF_AUDIT>
+
+## 2026-05-20 Alignment Pass - Continuation Runtime DTO Sweep
+
+What was wrong:
+- Additional owner-safe runtime DTOs still used compiler-owned Sequential layout in VFX/world/UI/thermo/visor/outpost/flora/atmosphere/player/narrative/logistics/construction/encounter/campaign slices.
+- Several touched Burst jobs lacked synchronous compile flags or alias proof on owner-separated NativeArrays.
+
+What was done:
+- Converted fixed DTO/event/telemetry rows to explicit layouts with named padding.
+- Widened queue-hostile rows where justified: `MockTerrainQuerySignal=64`, `FatalPressureImplosionEventPayload=32`, `PendingAtmosphereMutation=32`, `CelestialEventPayload=16`, `NarrativeTriggerTelemetryEntry=80`, `GIRelayTelemetryEntry=64`, `StressSoA=48`, `EncounterSpawnRequest=32`, and related construction/telemetry rows.
+- Added `[NoAlias]` and `CompileSynchronously = true` to touched habitat, encounter, narrative, atmosphere, sargassum, and meta-campaign jobs where buffer separation is explicit in local ownership.
+
+Cinematic Cheats used:
+- No CPU-heavy physical simulation was introduced. The pass preserved existing SDF/mock/black-box/visual-proxy routes and only hardened the payload lanes that feed them.
+
+Exact Microseconds saved:
+- Estimated 1-30 us per 10k DTO reads or scheduled job batch depending on row density and Burst aliasing. Static estimate only.
+
+Verification:
+- `rg -n "StructLayout\([^)]*Pack\s*=" Assets/_Project/Scripts -g "*.cs"` returned 0 hits.
+- Broad `StructLayout(LayoutKind.Sequential` count under `Assets/_Project/Scripts` is now 399.
+- Touched-file unaligned 8-byte `FieldOffset` regex returned 0 hits.
+- Targeted `git diff --check` over the continuation files returned exit 0 with LF/CRLF warnings only.
+- No build or rebuild was launched.
+
+<SELF_AUDIT>
+  <STRUCT_LAYOUT_VERIFICATION>
+    <MockTerrainQuerySignal size="64">Aup@0:double3; QualityWeight@24:float; Seed@28:uint; Frame@32:uint; _pad0@36:uint; pads@40/48/56:ulong.</MockTerrainQuerySignal>
+    <HighPressureEventPayload size="32">RuntimePosition@0:Vector3; PressureAKPa@12:float; PressureBKPa@16:float; DoorIndex@20:int; RoomA@24:int; RoomB@28:int.</HighPressureEventPayload>
+    <FatalPressureImplosionEventPayload size="32">RuntimePosition@0:Vector3; TemperatureCelsius@12:float; NodeId@16:uint; RoomIndex@20:int; _pad0@24:ulong.</FatalPressureImplosionEventPayload>
+    <WfcOutpostGridDescriptor size="96">OriginAup@0:MacroDatabaseAup; Dimensions@48:int3; CellSize@60:float; FloorHeight@64:float; pad@68:uint; SectorHash@72:ulong; WorldSeed/Sequence/GridHash@80/84/88:uint; CellCount/Flags@92/94:ushort.</WfcOutpostGridDescriptor>
+    <EncounterDirectorState size="80">scalar lanes @0..32; PlayerPosition@36:float4; PlayerVelocity@52:float4; SpawnSequence@68:uint; padding@72/76:uint.</EncounterDirectorState>
+  </STRUCT_LAYOUT_VERIFICATION>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>Added NoAlias to touched NativeArray fields in AtmosphereStepJob, UpdateMigratorySargassumIslandsJob, NarrativePoiSpatialCheckJob, MetaCampaignRuleEvaluationJob, EncounterDirectorJob, and Habitat flood/dirty/waterline jobs. Jobs still return through their existing scheduler handles; no mid-frame Complete was added.</POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No build/rebuild launched after this continuation sweep.</COMPILE_GUARD>
 </SELF_AUDIT>

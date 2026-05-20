@@ -210,3 +210,19 @@ Solution: Change both `Hecton_HLOD_Impostor.shader` and `Hecton_OctahedralImpost
 Rejected Alternatives: Keeping the old sign because the value was finite, removing `SV_Depth`, or adding a runtime physics/depth proxy mesh. Those options either preserve incorrect occlusion/fog ordering or reintroduce geometry cost that SHINOBU exists to remove.
 Scalability potential: Low keeps the same one-view sample collapse and now gets stable depth ordering on cheap reversed-Z devices. Middle/High/Ultra keep two-view parallax and richer atlases without depth-bias sign drift against fog, DoF, and occlusion.
 Hardware Impact: No intentional ALU increase. This is a sign correction on an existing scalar path; the saved cost remains the Dear Lie geometry collapse to one quad and low-quality one-view sampling. Exact microseconds remain pending profiler.
+
+## Decision 26 - Binary Tier API Residue Removal
+
+Problem: `HectonChunkImpostorResidency` still exposed unused tier-based helpers (`IsLowTier`, `ResolveFlags(... HectonQualityTier)`, and `ResolveTierRepresentativeQuality`) after SHINOBU had moved the active path to continuous `GlobalQualityWeight`. It also exported a `FlagLowTierSnap` name into the HLOD payload surface.
+Solution: Remove the unused tier helper APIs and keep only the float-weight `ResolveFlags` path. Rename the payload flag to `FlagSurvivalSnap` and update the single streaming caller that writes this SHINOBU-owned flag.
+Rejected Alternatives: Leaving dead compatibility helpers as harmless, or refactoring the whole `WorldChunkResidencyManager` tier resolver. The first invites new binary callsites; the second is outside SHINOBU ownership and risks a compile-wall conflict.
+Scalability potential: SHINOBU flag resolution now forces callers toward the continuous weight path. The remaining streaming tier branch is not expanded; future work can route chunk streaming itself through Homeostasis quality without needing a SHINOBU API change.
+Hardware Impact: No frame-time claim. This is API-surface hardening that prevents future binary behavior in the impostor residency helper.
+
+## Decision 27 - Branchless Continuous Swap-Distance Curve
+
+Problem: `ResolveContinuousEnterDistanceMeters` consumed `GlobalQualityWeight`, but its implementation still selected the lower or upper curve with a hard `q < 0.5f` branch. The output was continuous, but the implementation still carried a binary quality split.
+Solution: Compute both curve halves and blend them through `math.smoothstep(0.45f, 0.55f, q)`. The helper now uses `math.lerp`, `math.saturate`, and `math.smoothstep` without a quality-threshold branch.
+Rejected Alternatives: Keeping the branch because the result did not visibly pop. That leaves a pattern future callers can copy into real binary behavior.
+Scalability potential: Survival devices still swap earlier, middle devices stay near base distance, and high/ultra extend real-geometry residency. The transition is now a smooth mathematical blend through the midpoint instead of a branch.
+Hardware Impact: Removes one scalar branch from the residency helper. Exact microseconds remain pending profiler; the practical value is mechanical enforcement of the continuum contract.

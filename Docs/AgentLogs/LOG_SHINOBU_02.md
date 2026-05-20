@@ -2068,3 +2068,76 @@ Verification:
   <blackbox>300-frame ring is active by source: `SignalTelemetryRingBuffer.Capacity = 300`, `SignalTelemetryFrame` is explicit 64 bytes, dump path is `Docs/AgentLogs/Dump_SIGNAL_CORRIDOR.bin`. Current47 bounds drop-storm dump cadence to the same 300-frame capacity.</blackbox>
   <verification>Static only. No Unity import, Console, Play Mode, profiler, GCMonitor, IL2CPP, ARM64 player, or Core compile-green proof in Current47.</verification>
 </SELF_AUDIT>
+
+## 2026-05-20 - Current49 Priority CSV Release Guard And Signal Filter Audit Repair
+
+What was wrong:
+- `SignalPriorityCsvHotSwap.TryLoad(string path)` was public, preserved, and had synchronous `FileStream` I/O with no source callsite proving cold/editor/fatal use.
+- The SignalCritical audit counted `EntityAliveMaskSignalFilter<T>` as an `ISignal` payload because it matched `ISignal` inside a generic `where` constraint.
+
+What was done:
+- Added a release-player guard before any priority CSV file check/read: `!Application.isEditor && !Debug.isDebugBuild` returns false.
+- Removed the managed static 4096-byte scratch array from `SignalPriorityCsvHotSwap`; parser now uses stack `Span<byte>` and `ReadOnlySpan<byte>` helpers.
+- Hardened the PowerShell audit classifier to classify this path as INFO only when the release-player guard is present.
+- Hardened PowerShell and C# audit `StructImplementsISignal` logic to ignore `{` body and `where` constraints before testing inheritance.
+- Wrote `Docs/AgentLogs/SignalBusContractAudit_Current49_SHINOBU_02.md` and `.json`.
+
+Cinematic Cheats used:
+- No simulation added. The control cheat is a production false path: release players cannot touch the manual CSV hot-swap I/O, while Editor/Development builds still get designer tuning without recompiling C#.
+
+Exact Microseconds saved:
+- 0 measured us. Static-only pass. Expected release-player gain is removal of an unproven synchronous file-read path; expected managed memory gain is removing one cold static 4096-byte array from the priority CSV loader.
+
+Verification:
+- SignalCritical Current49 audit: files 9 C# / 68 compute, errors 0, warnings 0, infos 17, confirmed/probable errors 0, signalDefinitions 179, signalsWithoutLayout 0, runtime signal Pack=1 0, managed event surface 0, hot-path heuristic hits 0.
+- `git diff --check` over touched source/tool/audit files returned exit 0 with line-ending warnings only.
+- Current49 audit artifacts have no trailing whitespace.
+- Build guard: `PRE_BUILD_GUARD_CURRENT49 CPU=100 PROCS=0`; dotnet build skipped. Last actual Core build remains Current40: 311 errors / 19 warnings.
+
+<SELF_AUDIT agent="SHINOBU_02" pass="Current49">
+  <status>BUILD_BLOCKED_BY_HARDWARE_GUARD</status>
+  <twenty_task_check>
+    <task id="01" status="PASS">No legacy binary event path added.</task>
+    <task id="02" status="PASS">No UnityEvent/string event route added; Current49 SignalCritical managed event surface is 0.</task>
+    <task id="03" status="PASS">No runtime signal Pack=1 hit; false `signalsWithoutLayout` summary count fixed to 0.</task>
+    <task id="04" status="PASS">Queue model unchanged; no orphaned queue mutation.</task>
+    <task id="05" status="PASS">Blind splicing/fence path unchanged.</task>
+    <task id="06" status="PASS">MPSC writer and `NativeQueue<T>.ParallelWriter` semantics unchanged.</task>
+    <task id="07" status="PASS">Frame flush parity unchanged.</task>
+    <task id="08" status="PASS">No binary quality switch added.</task>
+    <task id="09" status="PASS">Signal aggregation/coalescing kernel unchanged.</task>
+    <task id="10" status="PASS">Priority CSV parser now uses `ReadOnlySpan<byte>`; no managed per-row tokens.</task>
+    <task id="11" status="PASS">Fatal interrupt bypass unchanged.</task>
+    <task id="12" status="PASS">Ghost/entity alive filter audit false positive fixed; actual filter behavior unchanged.</task>
+    <task id="13" status="PASS">No AUP math changed; no absolute AUP-to-float cast added.</task>
+    <task id="14" status="PASS">No sibling runtime reference added and no generated csproj edited.</task>
+    <task id="15" status="PASS">Public priority hot-swap method remains preserved; release-player body returns false before I/O.</task>
+    <task id="16" status="PASS">Blackbox telemetry unchanged; Current47/48 300-frame dump backoffs remain active.</task>
+    <task id="17" status="PASS">No hot-path string formatting/concatenation added; managed static CSV scratch removed.</task>
+    <task id="18" status="PASS">Signal dashboard unchanged.</task>
+    <task id="19" status="PASS">Live signal injection facade unchanged.</task>
+    <task id="20" status="PASS">CSV priority hot swap remains available for Editor/Development Play Mode and blocked in release-player sync I/O.</task>
+  </twenty_task_check>
+  <struct_layout primary="SignalTelemetryFrame" size="64">
+    <field offset="0" size="4">Frame</field>
+    <field offset="4" size="4">TotalPushedSignals</field>
+    <field offset="8" size="4">PeakSignalsPerFrame</field>
+    <field offset="12" size="4">CoalescedSignals</field>
+    <field offset="16" size="4">DroppedSignals</field>
+    <field offset="20" size="4">CorruptedSignals</field>
+    <field offset="24" size="4">ActiveLaneCount</field>
+    <field offset="28" size="4">Flags</field>
+    <field offset="32" size="4">GlobalQualityMilli</field>
+    <field offset="36" size="4">SystemStressMilli</field>
+    <padding offset="40" size="8">Reserved0</padding>
+    <padding offset="48" size="8">Reserved1</padding>
+    <padding offset="56" size="8">Reserved2</padding>
+    <proof>Explicit layout, 64 bytes exactly, one cache line, no Pack=1. Current49 did not add a new DTO.</proof>
+  </struct_layout>
+  <scalability_curve>Low/release-player devices now bypass manual priority CSV I/O entirely. Middle/development builds keep Play Mode tuning for load-shed priority experiments. High/Ultra profiling sessions can still raise visual-priority lanes without recompiling code, while production runtime relies on boot archaeology/fallback/tuning paths.</scalability_curve>
+  <h_phi_vault_status>Current49 added no private NativeArray/NativeList/NativeHashMap. It removed one managed static `byte[4096]` scratch from `SignalPriorityCsvHotSwap` and replaced it with a scoped stack span. Existing SignalTelemetry ring Vault handles remain `73038` and `73039`.</h_phi_vault_status>
+  <pointer_aliasing_dependency_graph>No Burst jobs, `[NoAlias]` fields, or JobHandles changed. Current49 consumes no dispatcher dependency and outputs none; audit-tool parser changes are cold tooling only.</pointer_aliasing_dependency_graph>
+  <compile_guard>No new direct sibling runtime assembly reference. No generated `.csproj` edited. C# audit CLI source was patched, but build was not run because CPU guard reported 100%.</compile_guard>
+  <dear_lie before="O(file_exists + file_read) possible from public release-player call" after="O(1) false return in release player">The fake is a production no-op gate for manual tuning I/O; real priority truth remains boot/fallback table data.</dear_lie>
+  <verification>Static only. No Unity import, Console, Play Mode, profiler, GCMonitor, IL2CPP, ARM64 player, Core compile, or C# audit CLI build proof in Current49.</verification>
+</SELF_AUDIT>

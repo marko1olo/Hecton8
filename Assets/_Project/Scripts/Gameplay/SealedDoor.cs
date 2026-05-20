@@ -26,7 +26,6 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
-using Hecton8.Tools;
 using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
@@ -64,6 +63,8 @@ namespace Hecton8.Gameplay
         private const byte WfcDoorOpenFlag = (byte)WfcOutpostCellStateFlags.DoorOpen;
         private const byte WfcDoorUnlockedFlag = (byte)WfcOutpostCellStateFlags.DoorUnlocked;
         private const byte WfcDoorPowerOnFlag = (byte)WfcOutpostCellStateFlags.PowerOn;
+        private const uint DoorVfxSpeciesHash = 0x53444F52u; // SDOR
+        private const uint DoorSparkSpeciesHash = 0x53445350u; // SDSP
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — CUTTING
@@ -590,30 +591,20 @@ namespace Hecton8.Gameplay
             if (!TryResolveDoorAup(_transform.position, out double3 centerAup))
                 return;
 
-            uint source = unchecked((uint)EntityId.ToULong(gameObject.GetEntityId()));
-            if (debrisKind == DebrisSpawnSignal.DebrisKindSparks)
-            {
-                LaserCutterDodRuntime.StageGpuSparkSignal(
-                    centerAup,
-                    new float3(0f, 1f, 0f),
-                    ProgressNormalized,
-                    intensity,
-                    LaserCutterDodConstants.LaserCutterHash,
-                    source,
-                    unchecked((uint)Time.frameCount));
-                return;
-            }
-
             float quality = math.saturate(HomeostasisBrain.GlobalQualityWeight);
-            ushort quantity = (ushort)math.clamp((int)math.round(math.lerp(4f, 48f, quality) * intensity), 0, ushort.MaxValue);
+            float maxQuantity = debrisKind == DebrisSpawnSignal.DebrisKindSparks ? 96f : 48f;
+            ushort quantity = (ushort)math.clamp((int)math.round(math.lerp(0f, maxQuantity, quality) * intensity), 0, ushort.MaxValue);
+            uint source = unchecked((uint)EntityId.ToULong(gameObject.GetEntityId()));
             DebrisSpawnSignal debris = new DebrisSpawnSignal
             {
                 PositionAup = AbsoluteUniversePosition.FromAbsolutePosition(centerAup),
-                SpeciesHash = LaserCutterDodConstants.LaserCutterHash,
+                SpeciesHash = debrisKind == DebrisSpawnSignal.DebrisKindSparks ? DoorSparkSpeciesHash : DoorVfxSpeciesHash,
                 SourceEntityId = source,
                 Intensity01 = intensity,
                 DebrisKind = debrisKind,
-                Flags = DebrisSpawnSignal.FlagComputeShard,
+                Flags = debrisKind == DebrisSpawnSignal.DebrisKindSparks
+                    ? DebrisSpawnSignal.FlagToolSparks | DebrisSpawnSignal.FlagComputeShard
+                    : DebrisSpawnSignal.FlagComputeShard,
                 Quantity = quantity
             };
             SignalBus<DebrisSpawnSignal>.TryPush(in debris);

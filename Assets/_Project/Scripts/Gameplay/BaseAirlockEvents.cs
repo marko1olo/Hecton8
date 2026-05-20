@@ -28,24 +28,55 @@ namespace Hecton8.Gameplay
     /// Unmanaged payload emitted by <see cref="BaseAirlockEvents"/>.
     /// Managed references are available only through sidecar resolution during dispatch.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct BaseAirlockEventPayload
     {
-        public uint AirlockHashId;
-        public uint InteractorHashId;
-        public float WeldProgress01;
-        public int ReferenceSlot;
-        public byte EventType;
-        public byte IsDry;
-        public byte LockedDown;
-        public byte OverrideBlocked;
-        public uint Reserved0;
-        public uint Reserved1;
-        public uint Reserved2;
+        public const uint EventTypeMask = 0x000000FFu;
+        public const uint DryFlag = 1u << 8;
+        public const uint LockedDownFlag = 1u << 9;
+        public const uint OverrideBlockedFlag = 1u << 10;
 
-        public bool Dry => IsDry != 0;
-        public bool IsLockedDown => LockedDown != 0;
-        public bool IsOverrideBlocked => OverrideBlocked != 0;
+        [FieldOffset(0)] public uint AirlockHashId;
+        [FieldOffset(4)] public uint InteractorHashId;
+        [FieldOffset(8)] public float WeldProgress01;
+        [FieldOffset(12)] public int ReferenceSlot;
+        [FieldOffset(16)] public uint StatusFlags;
+        [FieldOffset(20)] public uint Reserved0;
+        [FieldOffset(24)] public uint Reserved1;
+        [FieldOffset(28)] public uint Reserved2;
+
+        public static BaseAirlockEventType GetEventType(uint statusFlags)
+        {
+            return (BaseAirlockEventType)(statusFlags & EventTypeMask);
+        }
+
+        public static bool IsDry(uint statusFlags)
+        {
+            return (statusFlags & DryFlag) != 0u;
+        }
+
+        public static bool IsLockedDown(uint statusFlags)
+        {
+            return (statusFlags & LockedDownFlag) != 0u;
+        }
+
+        public static bool IsOverrideBlocked(uint statusFlags)
+        {
+            return (statusFlags & OverrideBlockedFlag) != 0u;
+        }
+
+        public static uint BuildStatusFlags(BaseAirlockEventType eventType, bool isDry, bool lockedDown, bool overrideBlocked)
+        {
+            uint flags = (uint)eventType & EventTypeMask;
+            if (isDry)
+                flags |= DryFlag;
+            if (lockedDown)
+                flags |= LockedDownFlag;
+            if (overrideBlocked)
+                flags |= OverrideBlockedFlag;
+
+            return flags;
+        }
     }
 
     /// <summary>
@@ -326,10 +357,11 @@ namespace Hecton8.Gameplay
                 InteractorHashId = ComputeReferenceHash(interactor),
                 WeldProgress01 = airlock.WeldOverrideProgress01,
                 ReferenceSlot = referenceSlot,
-                EventType = (byte)eventType,
-                IsDry = airlock.IsPlayerInside ? (byte)1 : (byte)0,
-                LockedDown = airlock.IsEmergencyLockedDown ? (byte)1 : (byte)0,
-                OverrideBlocked = airlock.IsManualOverrideBlocked ? (byte)1 : (byte)0,
+                StatusFlags = BaseAirlockEventPayload.BuildStatusFlags(
+                    eventType,
+                    airlock.IsPlayerInside,
+                    airlock.IsEmergencyLockedDown,
+                    airlock.IsManualOverrideBlocked),
                 Reserved0 = 0u,
                 Reserved1 = 0u,
                 Reserved2 = 0u

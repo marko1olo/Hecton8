@@ -1,7 +1,9 @@
 using System;
 using System.IO;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
+using Hecton8.World;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -24,6 +26,8 @@ namespace Hecton8.Physics
         private const int LockVisualStates = 1 << 8;
         private const int LockAudioSignals = 1 << 9;
         private const int LockCavitationSignals = 1 << 10;
+        private const byte ToolAcousticStateSeaglidePropeller = 2;
+        private const float MinimumSignalIntensity = 0.01f;
 
         private static SeaglideHydrodynamicsRuntime s_activeRuntimeInstance;
 
@@ -50,6 +54,7 @@ namespace Hecton8.Physics
         private int _activeRequestCount;
         private int _lockedBuffers;
         private float _metabolismAccumulator;
+        private float _thrustCadenceAccumulator;
         private bool _jobScheduled;
         private bool _registeredFixed;
         private bool _registeredPostFixed;
@@ -81,9 +86,13 @@ namespace Hecton8.Physics
             if (!Application.isPlaying)
                 return null;
 
-            GameObject runtimeRoot = new GameObject("[SeaglideHydrodynamicsRuntime]"); // COLD ALLOC: GameObject[1] - seaglide physics runtime root - owner: SHINOBU_227
-            DontDestroyOnLoad(runtimeRoot);
-            return runtimeRoot.AddComponent<SeaglideHydrodynamicsRuntime>();
+            PhysicsApplySystem physics = PhysicsApplySystem.EnsureRuntimeInstance();
+            if (physics == null)
+                return null;
+
+            if (!physics.TryGetComponent(out SeaglideHydrodynamicsRuntime runtime))
+                runtime = physics.gameObject.AddComponent<SeaglideHydrodynamicsRuntime>(); // COLD ALLOC: SeaglideHydrodynamicsRuntime[1] - attached to physics authority root - owner: SHINOBU_227
+            return runtime;
         }
 
         public bool TryResolveEditorViews(
@@ -206,14 +215,24 @@ namespace Hecton8.Physics
 
             int activeCount = math.clamp(_activeRequestCount, 0, math.min(states.Length, requests.Length));
             if (activeCount <= 0)
+            {
+                _thrustCadenceAccumulator = 0f;
                 return;
+            }
 
             SeaglideTuningDTO tuningDto = tuning[0];
             float quality = ResolveGlobalQualityWeight(ref tuningDto);
+            _thrustCadenceAccumulator = math.min(_thrustCadenceAccumulator + safeDelta, 0.2f);
+            float thrustCadenceSeconds = ResolveThrustCadenceSeconds(safeDelta, quality);
+            if (_thrustCadenceAccumulator + 0.00001f < thrustCadenceSeconds)
+                return;
+
+            float solverDelta = _thrustCadenceAccumulator;
+            _thrustCadenceAccumulator = 0f;
             tuningDto.SectorAUP = ResolveSectorAUP();
             tuningDto.ResolvedQualityWeight = quality;
             tuningDto.GlobalQualityWeight = quality;
-            tuningDto.SimulationTickDelta = safeDelta;
+            tuningDto.SimulationTickDelta = solverDelta;
             tuningDto.ActiveRequestCount = activeCount;
             tuningDto.FrameIndex = _simulationFrame;
             tuning[0] = tuningDto;
@@ -227,7 +246,7 @@ namespace Hecton8.Physics
                 return;
             }
 
-            int metabolismEnabled = ResolveMetabolismTickEnabled(safeDelta, quality, tuningDto);
+            int metabolismEnabled = ResolveMetabolismTickEnabled(solverDelta, quality, tuningDto);
             _scheduleTimestamp = Stopwatch.GetTimestamp();
             CalculateSeaglideThrustJob thrustJob = new CalculateSeaglideThrustJob
             {
@@ -240,7 +259,7 @@ namespace Hecton8.Physics
                 CavitationSignals = cavitationSignals,
                 ActiveRequestCount = activeCount,
                 SimulationFrame = _simulationFrame,
-                SimulationTickDelta = safeDelta,
+                SimulationTickDelta = solverDelta,
                 GlobalQualityWeight = quality
             };
             JobHandle thrustHandle = thrustJob.Schedule(activeCount, 64);
@@ -252,7 +271,7 @@ namespace Hecton8.Physics
                 Tuning = tuning,
                 ActiveRequestCount = activeCount,
                 MetabolismEnabled = metabolismEnabled,
-                SimulationTickDelta = safeDelta
+                SimulationTickDelta = solverDelta
             };
             JobHandle metabolismHandle = metabolismJob.Schedule(activeCount, 64, thrustHandle);
 
@@ -381,7 +400,8 @@ namespace Hecton8.Physics
             if (!Application.isPlaying || _jobScheduled || _forcePacketsReadyToDrain || index < 0)
                 return false;
 
-            RefreshColdDependencies();
+            if (_dataVault == null)
+                RefreshColdDependencies();
             EnsureColdBooted();
             IDataVault vault = _dataVault;
             if (vault == null || !EnsureVaultBuffers())
@@ -441,6 +461,7 @@ namespace Hecton8.Physics
             JobHandle handle = initJob.Schedule();
             // COLD BOOT BLOCKING SYNC: one-time Vault clear and layout trap seed before runtime scheduling starts.
             DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+            EnsureSeaglideSignalLanes();
             SeedDefaultTuningIfNeeded();
             _coldBootCompleted = true;
             return true;
@@ -604,6 +625,7 @@ namespace Hecton8.Physics
             UnlockJobBuffers();
             float micros = ResolveElapsedMicros(_scheduleTimestamp);
             WriteCompletedComputeMicros(micros);
+            PublishCompletedPresentationSignals();
             if (!_dumpedFault && TryLatestCounterHasFault())
             {
                 DumpBlackBoxOnce();
@@ -614,6 +636,102 @@ namespace Hecton8.Physics
             _activeRequestCount = 0;
             _forcePacketsReadyToDrain = true;
             return true;
+        }
+
+        private static void EnsureSeaglideSignalLanes()
+        {
+            SignalBus<ToolAcousticSignal>.EnsureInitialized();
+            SignalBus<BubbleSpawnSignal>.EnsureInitialized();
+        }
+
+        private void PublishCompletedPresentationSignals()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return;
+
+            NativeArray<SeaglideCounterDTO> counters = ResolveVaultBuffer(vault, in _countersHandle);
+            NativeArray<SeaglideAudioSignalDTO> audioSignals = ResolveVaultBuffer(vault, in _audioSignalsHandle);
+            NativeArray<SeaglideCavitationVfxSignalDTO> cavitationSignals = ResolveVaultBuffer(vault, in _cavitationSignalsHandle);
+            if (!counters.IsCreated ||
+                counters.Length <= 0 ||
+                !audioSignals.IsCreated ||
+                !cavitationSignals.IsCreated)
+            {
+                return;
+            }
+
+            SeaglideCounterDTO counter = counters[0];
+            int packetCount = math.clamp(counter.ForcePackets, 0, math.min(audioSignals.Length, cavitationSignals.Length));
+            if (packetCount <= 0)
+                return;
+
+            int publishBudget = ResolvePresentationSignalBudget(counter.GlobalQualityWeight, packetCount);
+            for (int i = 0; i < publishBudget; i++)
+            {
+                PublishAudioSignal(in audioSignals[i]);
+                PublishBubbleSignal(in cavitationSignals[i], counter.GlobalQualityWeight);
+            }
+        }
+
+        private static int ResolvePresentationSignalBudget(float quality, int packetCount)
+        {
+            float smoothQuality = math.saturate(quality);
+            smoothQuality = smoothQuality * smoothQuality * (3f - (2f * smoothQuality));
+            int maxBudget = 1 + (int)math.floor(smoothQuality * 3.999f);
+            return math.clamp(maxBudget, 1, math.max(1, packetCount));
+        }
+
+        private static void PublishAudioSignal(in SeaglideAudioSignalDTO source)
+        {
+            if (source.SourceHash == 0u ||
+                source.TargetEntityHash == 0u ||
+                !math.isfinite(source.PitchScalar) ||
+                !math.isfinite(source.VolumeScalar) ||
+                source.VolumeScalar <= MinimumSignalIntensity)
+            {
+                return;
+            }
+
+            ToolAcousticSignal signal = default;
+            signal.ToolHash = source.SourceHash;
+            signal.TargetHash = source.TargetEntityHash;
+            signal.Progress01 = math.saturate(source.Cavitation01);
+            signal.PitchScale = math.clamp(source.PitchScalar, 0.25f, 4f);
+            signal.Intensity01 = math.saturate(source.VolumeScalar);
+            signal.Frame = source.FrameIndex;
+            signal.State = ToolAcousticStateSeaglidePropeller;
+            signal.Flags = ToolAcousticSignal.FlagLooping;
+            SignalBus<ToolAcousticSignal>.TryPush(in signal);
+        }
+
+        private static void PublishBubbleSignal(in SeaglideCavitationVfxSignalDTO source, float quality)
+        {
+            float intensity = math.saturate(source.Intensity01 * math.lerp(0.25f, 1f, math.saturate(quality)));
+            if (source.SourceHash == 0u ||
+                intensity <= MinimumSignalIntensity ||
+                !math.all(math.isfinite(source.CurrentAUP)) ||
+                !math.all(math.isfinite(source.Direction)) ||
+                !math.isfinite(source.RadiusMeters))
+            {
+                return;
+            }
+
+            BubbleSpawnSignal signal = default;
+            signal.PositionAup = AbsoluteUniversePosition.FromAbsolutePosition(source.CurrentAUP);
+            signal.Direction = SafeSignalDirection(source.Direction);
+            signal.Intensity01 = intensity;
+            signal.RadiusMeters = math.clamp(source.RadiusMeters, 0.05f, 8f);
+            signal.Frame = source.FrameIndex;
+            signal.SourceHash = source.SourceHash;
+            signal.Flags = BubbleSpawnSignal.FlagEngineVent;
+            SignalBus<BubbleSpawnSignal>.TryPush(in signal);
+        }
+
+        private static float3 SafeSignalDirection(float3 direction)
+        {
+            float lengthSq = math.lengthsq(direction);
+            return math.select(new float3(0f, 0f, 1f), direction * math.rsqrt(math.max(lengthSq, 0.000001f)), math.isfinite(lengthSq) && lengthSq > 0.000001f);
         }
 
         private void WriteCompletedComputeMicros(float micros)
@@ -627,6 +745,7 @@ namespace Hecton8.Physics
             {
                 SeaglideCounterDTO counter = counters[0];
                 counter.ComputeMicros = micros;
+                counter.Flags |= math.select(0u, SeaglideHydrodynamicsConstants.FlagBudgetExceeded, micros > 500f);
                 counters[0] = counter;
             }
 
@@ -643,6 +762,7 @@ namespace Hecton8.Physics
 
             SeaglideTelemetryEntry entry = telemetry[lastIndex];
             entry.ComputeMicros = micros;
+            entry.Flags |= math.select(0u, SeaglideHydrodynamicsConstants.FlagBudgetExceeded, micros > 500f);
             telemetry[lastIndex] = entry;
         }
 
@@ -655,7 +775,8 @@ namespace Hecton8.Physics
             NativeArray<SeaglideCounterDTO> counters = ResolveVaultBuffer(vault, in _countersHandle);
             return counters.IsCreated &&
                    counters.Length > 0 &&
-                   ((counters[0].Flags & SeaglideHydrodynamicsConstants.FlagNonFinite) != 0u || counters[0].NonFiniteCount > 0);
+                   ((counters[0].Flags & (SeaglideHydrodynamicsConstants.FlagNonFinite | SeaglideHydrodynamicsConstants.FlagBudgetExceeded)) != 0u ||
+                    counters[0].NonFiniteCount > 0);
         }
 
         private void DumpBlackBoxOnce()
@@ -695,9 +816,10 @@ namespace Hecton8.Physics
                     writer.Write(entry.GlobalQualityWeight);
                     writer.Write(entry.Flags);
                     writer.Write(entry.LastTargetEntityHash);
-                    writer.Write(entry.LastNetForce.x);
-                    writer.Write(entry.LastNetForce.y);
-                    writer.Write(entry.LastNetForce.z);
+                    writer.Write(entry.LastFlowForce.x);
+                    writer.Write(entry.LastFlowForce.y);
+                    writer.Write(entry.LastFlowForce.z);
+                    writer.Write(entry.LastBatteryLevel);
                 }
             }
         }
@@ -738,6 +860,16 @@ namespace Hecton8.Physics
 
             _metabolismAccumulator = 0f;
             return 1;
+        }
+
+        private static float ResolveThrustCadenceSeconds(float fixedDeltaTime, float quality)
+        {
+            float safeFixedDelta = math.clamp(fixedDeltaTime, 0.0001f, 0.05f);
+            float lowCadence = 0.05f;
+            float highCadence = safeFixedDelta;
+            float smoothQuality = math.saturate(quality);
+            smoothQuality = smoothQuality * smoothQuality * (3f - (2f * smoothQuality));
+            return math.lerp(lowCadence, highCadence, smoothQuality);
         }
 
         private static float ResolveGlobalQualityWeight(ref SeaglideTuningDTO tuning)

@@ -27,6 +27,7 @@ Steam support stance: pinned Steam forum threads, support links, review/forum re
 Steam announcement stance: Steam news/events/announcements are blocked until the exact post has `steam_announcement_permission_gate = ALLOW_STEAM_ANNOUNCEMENT_VERIFIED`.
 Press release stance: press releases, public presskit announcements, media one-pagers, site presskit blocks, email release copy, wire copy, embargo announcements, and Steam-news reuse are blocked until the exact surface has `press_release_permission_gate = ALLOW_PRESS_RELEASE_PUBLISH_VERIFIED`.
 Localization stance: localized/regional copy is blocked until the exact language/surface has `localization_public_permission_gate = ALLOW_LOCALIZED_PUBLIC_USE_VERIFIED`.
+First capture stance: the first screenshot/clip session is unusable for Campaign 01, Steam, creator, press, KPI, or public testing unless the first-capture handoff packet records file paths, build ID, QA score, reject codes, creator utility/send gate, pain freshness, public comparison gate, agency proof gate, viewer-named decision, verdict, and capped next actions. `AGENCY_MISSING_HOLD` keeps Campaign 01 held.
 
 ## Executive Cut
 

@@ -59,101 +59,115 @@ namespace Hecton8.Gameplay
         public byte LowerBodyFlags;
         [FieldOffset(168)]
         public float PelvisYawRadians;
+        [FieldOffset(172)]
+        private uint _pad0;
+        [FieldOffset(176)]
+        private ulong _pad1;
+        [FieldOffset(184)]
+        private ulong _pad2;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 512)]
     internal struct ContextualPhysicalIkEntityState
     {
-        public int IsActive;
-        public int EnableFootPlacement;
-        public int EnableHandBracing;
-        public int EnableWallTouch;
-        public int LeftHandEmpty;
-        public int EnableToolRetraction;
-        public int HasCameraPose;
-        public float DeltaTime;
-        public quaternion RootRotation;
-        public float3 RootPosition;
-        public float3 PelvisPosition;
-        public float3 LeftFootProbeOrigin;
-        public float3 RightFootProbeOrigin;
-        public float3 LeftHandProbeOrigin;
-        public float3 RightHandProbeOrigin;
-        public float3 PredictiveLeftHandPosition;
-        public float3 PredictiveRightHandPosition;
-        public float3 PredictiveLeftHandNormal;
-        public float3 PredictiveRightHandNormal;
-        public float3 CameraPosition;
-        public float3 CameraForward;
-        public float3 CameraUp;
-        public float3 CameraRight;
-        public float3 KccVelocity;
-        public float3 LeftToolRecoilOffset;
-        public float3 RightToolRecoilOffset;
-        public float3 LeftColdShiverOffset;
-        public float3 RightColdShiverOffset;
-        public float3 DashboardRightHandPosition;
-        public float3 DashboardRightHandNormal;
-        public float LeftLegReach;
-        public float RightLegReach;
-        public float LeftArmReach;
-        public float RightArmReach;
-        public float PredictiveLeftHandBlend;
-        public float PredictiveRightHandBlend;
-        public float CameraHandLateralOffset;
-        public float CameraHandVerticalOffset;
-        public float ToolCollisionDistance;
-        public float ToolRetractionBackDistance;
-        public float ToolRetractionLiftDistance;
-        public float ToolRetractionBlend;
-        public float ToolRecoilMaxOffset;
-        public float DashboardRightHandBlend;
-        public float ColdShiverBlend;
-        public float FootContactOffset;
-        public float HandContactOffset;
-        public float FootProbeDistanceScale;
-        public float HandProbeDistanceScale;
-        public int GroundLayerMask;
-        public int WallLayerMask;
-        public float TunnelClearanceDistance;
-        public float HandBraceFadeDistance;
-        public float TargetPositionSharpness;
-        public float TargetNormalSharpness;
-        public float BlendFadeSharpness;
-        public float MaxDeltaHeight;
-        public float ComShiftLateralFactor;
-        public float ComShiftForwardFactor;
-        public float ComShiftVerticalFactor;
-        public float ComResponseSharpness;
-        public float ComLeanPitchRadians;
-        public float ComLeanRollRadians;
-        public float MaxComLateral;
-        public float MaxComForward;
-        public float MaxComVertical;
-        public int UpdateThisFrame;
-        public float ViewerDistanceSq;
-        public uint UpdateBitfield;
-        public uint FrameIndex;
-        public int EntitySlot;
-        public int IsXrActive;
-        public byte ThrottleTier;
+        [FieldOffset(0)] public int IsActive;
+        [FieldOffset(4)] public int EnableFootPlacement;
+        [FieldOffset(8)] public int EnableHandBracing;
+        [FieldOffset(12)] public int EnableWallTouch;
+        [FieldOffset(16)] public int LeftHandEmpty;
+        [FieldOffset(20)] public int EnableToolRetraction;
+        [FieldOffset(24)] public int HasCameraPose;
+        [FieldOffset(28)] public float DeltaTime;
+        [FieldOffset(32)] public quaternion RootRotation;
+        [FieldOffset(48)] public float3 RootPosition;
+        [FieldOffset(60)] public float3 PelvisPosition;
+        [FieldOffset(72)] public float3 LeftFootProbeOrigin;
+        [FieldOffset(84)] public float3 RightFootProbeOrigin;
+        [FieldOffset(96)] public float3 LeftHandProbeOrigin;
+        [FieldOffset(108)] public float3 RightHandProbeOrigin;
+        [FieldOffset(120)] public float3 PredictiveLeftHandPosition;
+        [FieldOffset(132)] public float3 PredictiveRightHandPosition;
+        [FieldOffset(144)] public float3 PredictiveLeftHandNormal;
+        [FieldOffset(156)] public float3 PredictiveRightHandNormal;
+        [FieldOffset(168)] public float3 CameraPosition;
+        [FieldOffset(180)] public float3 CameraForward;
+        [FieldOffset(192)] public float3 CameraUp;
+        [FieldOffset(204)] public float3 CameraRight;
+        [FieldOffset(216)] public float3 KccVelocity;
+        [FieldOffset(228)] public float3 LeftToolRecoilOffset;
+        [FieldOffset(240)] public float3 RightToolRecoilOffset;
+        [FieldOffset(252)] public float3 LeftColdShiverOffset;
+        [FieldOffset(264)] public float3 RightColdShiverOffset;
+        [FieldOffset(276)] public float3 DashboardRightHandPosition;
+        [FieldOffset(288)] public float3 DashboardRightHandNormal;
+        [FieldOffset(300)] public float LeftLegReach;
+        [FieldOffset(304)] public float RightLegReach;
+        [FieldOffset(308)] public float LeftArmReach;
+        [FieldOffset(312)] public float RightArmReach;
+        [FieldOffset(316)] public float PredictiveLeftHandBlend;
+        [FieldOffset(320)] public float PredictiveRightHandBlend;
+        [FieldOffset(324)] public float CameraHandLateralOffset;
+        [FieldOffset(328)] public float CameraHandVerticalOffset;
+        [FieldOffset(332)] public float ToolCollisionDistance;
+        [FieldOffset(336)] public float ToolRetractionBackDistance;
+        [FieldOffset(340)] public float ToolRetractionLiftDistance;
+        [FieldOffset(344)] public float ToolRetractionBlend;
+        [FieldOffset(348)] public float ToolRecoilMaxOffset;
+        [FieldOffset(352)] public float DashboardRightHandBlend;
+        [FieldOffset(356)] public float ColdShiverBlend;
+        [FieldOffset(360)] public float FootContactOffset;
+        [FieldOffset(364)] public float HandContactOffset;
+        [FieldOffset(368)] public float FootProbeDistanceScale;
+        [FieldOffset(372)] public float HandProbeDistanceScale;
+        [FieldOffset(376)] public int GroundLayerMask;
+        [FieldOffset(380)] public int WallLayerMask;
+        [FieldOffset(384)] public float TunnelClearanceDistance;
+        [FieldOffset(388)] public float HandBraceFadeDistance;
+        [FieldOffset(392)] public float TargetPositionSharpness;
+        [FieldOffset(396)] public float TargetNormalSharpness;
+        [FieldOffset(400)] public float BlendFadeSharpness;
+        [FieldOffset(404)] public float MaxDeltaHeight;
+        [FieldOffset(408)] public float ComShiftLateralFactor;
+        [FieldOffset(412)] public float ComShiftForwardFactor;
+        [FieldOffset(416)] public float ComShiftVerticalFactor;
+        [FieldOffset(420)] public float ComResponseSharpness;
+        [FieldOffset(424)] public float ComLeanPitchRadians;
+        [FieldOffset(428)] public float ComLeanRollRadians;
+        [FieldOffset(432)] public float MaxComLateral;
+        [FieldOffset(436)] public float MaxComForward;
+        [FieldOffset(440)] public float MaxComVertical;
+        [FieldOffset(444)] public int UpdateThisFrame;
+        [FieldOffset(448)] public float ViewerDistanceSq;
+        [FieldOffset(452)] public uint UpdateBitfield;
+        [FieldOffset(456)] public uint FrameIndex;
+        [FieldOffset(460)] public int EntitySlot;
+        [FieldOffset(464)] public int IsXrActive;
+        [FieldOffset(468)] public byte ThrottleTier;
+        [FieldOffset(469)] private byte _pad0;
+        [FieldOffset(470)] private byte _pad1;
+        [FieldOffset(471)] private byte _pad2;
+        [FieldOffset(472)] private ulong _pad3;
+        [FieldOffset(480)] private ulong _pad4;
+        [FieldOffset(488)] private ulong _pad5;
+        [FieldOffset(496)] private ulong _pad6;
+        [FieldOffset(504)] private ulong _pad7;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 96)]
     internal struct ContextualPhysicalIkTelemetryEntry
     {
-        public uint Frame;
-        public uint Flags;
-        public uint StateHash;
-        public ushort ActiveEntities;
-        public ushort Reserved;
-        public float3 FirstRootPosition;
-        public float3 FirstLeftFootTarget;
-        public float3 FirstRightFootTarget;
-        public float3 FirstLeftHandTarget;
-        public float3 FirstRightHandTarget;
-        public float3 FirstKccVelocity;
-        public float2 FirstHandWeights;
+        [FieldOffset(0)] public uint Frame;
+        [FieldOffset(4)] public uint Flags;
+        [FieldOffset(8)] public uint StateHash;
+        [FieldOffset(12)] public ushort ActiveEntities;
+        [FieldOffset(14)] public ushort Reserved;
+        [FieldOffset(16)] public float3 FirstRootPosition;
+        [FieldOffset(28)] public float3 FirstLeftFootTarget;
+        [FieldOffset(40)] public float3 FirstRightFootTarget;
+        [FieldOffset(52)] public float3 FirstLeftHandTarget;
+        [FieldOffset(64)] public float3 FirstRightHandTarget;
+        [FieldOffset(76)] public float3 FirstKccVelocity;
+        [FieldOffset(88)] public float2 FirstHandWeights;
     }
 
     internal static class ContextualPhysicalIkLowerBodyConstants

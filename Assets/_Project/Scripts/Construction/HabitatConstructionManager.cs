@@ -164,82 +164,6 @@ namespace Hecton8.Construction
             return ((value - halfGrid) / safeGrid) * safeGrid;
         }
 
-        public bool TryResolveSocketAlignment(
-            Transform ghostRoot,
-            List<ModuleSocket> ghostSockets,
-            ModuleSocket targetSocket,
-            float yawOffsetDegrees,
-            out Vector3 alignedPosition,
-            out Quaternion alignedRotation,
-            out ModuleSocket alignedGhostSocket)
-        {
-            int yawStep = (int)math.floor(yawOffsetDegrees * 0.011111111f + 0.5f);
-            return TryResolveSocketAlignment(
-                ghostRoot,
-                ghostSockets,
-                targetSocket,
-                yawStep,
-                out alignedPosition,
-                out alignedRotation,
-                out alignedGhostSocket);
-        }
-
-        public bool TryResolveSocketAlignment(
-            Transform ghostRoot,
-            List<ModuleSocket> ghostSockets,
-            ModuleSocket targetSocket,
-            int yawStep,
-            out Vector3 alignedPosition,
-            out Quaternion alignedRotation,
-            out ModuleSocket alignedGhostSocket)
-        {
-            alignedPosition = default;
-            alignedRotation = default;
-            alignedGhostSocket = null;
-
-            if (ghostRoot == null || targetSocket == null || ghostSockets == null || ghostSockets.Count == 0)
-                return false;
-
-            Transform targetTransform = targetSocket.transform;
-            Quaternion socketYawRotation = ResolveSocketYawRotation(yawStep);
-            Quaternion desiredSocketRotation = targetTransform.rotation * socketYawRotation;
-            Vector3 targetPosition = targetTransform.position;
-            Quaternion inverseGhostRotation = Quaternion.Inverse(ghostRoot.rotation);
-            Vector3 ghostPosition = ghostRoot.position;
-            float bestScore = float.MaxValue;
-
-            for (int i = 0; i < ghostSockets.Count; i++)
-            {
-                ModuleSocket candidate = ghostSockets[i];
-                if (candidate == null)
-                    continue;
-
-                if (!candidate.isActiveAndEnabled)
-                    continue;
-
-                if (!candidate.CanConnectTo(targetSocket))
-                    continue;
-
-                Transform candidateTransform = candidate.transform;
-                Quaternion localSocketRotation = inverseGhostRotation * candidateTransform.rotation;
-                Vector3 localSocketPosition = ghostRoot.InverseTransformPoint(candidateTransform.position);
-                Quaternion candidateRotation = desiredSocketRotation * Quaternion.Inverse(localSocketRotation);
-                Vector3 rotatedLocalOffset = candidateRotation * localSocketPosition;
-                Vector3 candidatePosition = targetPosition - rotatedLocalOffset;
-                float score = Vector3.SqrMagnitude(candidatePosition - ghostPosition);
-
-                if (score >= bestScore)
-                    continue;
-
-                bestScore = score;
-                alignedPosition = candidatePosition;
-                alignedRotation = candidateRotation;
-                alignedGhostSocket = candidate;
-            }
-
-            return alignedGhostSocket != null;
-        }
-
         public bool HasBuildResources(PlayerInventory inventory, BuildableData data)
         {
             if (data == null || data.buildCost == null || data.buildCost.Count == 0)
@@ -314,16 +238,30 @@ namespace Hecton8.Construction
 
         public bool ScheduleIntegrityValidation(
             ConstructionManager constructionManager,
-            GameObject candidateGhost,
             BuildableData candidateData,
+            Vector3 candidatePosition,
+            Quaternion candidateRotation,
             float gridSize,
             float integrityBudget,
             float depthPenalty)
         {
-            if (_validationPending || candidateGhost == null || candidateData == null)
+            if (_validationPending)
                 return false;
 
-            int nodeCount = BuildValidationGraph(constructionManager, candidateGhost, candidateData, gridSize);
+            if (candidateData == null || !IsFinitePose(candidatePosition, candidateRotation))
+            {
+                _lastPlacementAllowed = false;
+                _lastIntegrityScore = -1f;
+                _lastBlockReason = UnsupportedReason;
+                return false;
+            }
+
+            int nodeCount = BuildValidationGraph(
+                constructionManager,
+                candidatePosition,
+                candidateRotation,
+                candidateData,
+                gridSize);
             if (nodeCount <= 0)
             {
                 _lastPlacementAllowed = false;
@@ -426,7 +364,8 @@ namespace Hecton8.Construction
 
         private int BuildValidationGraph(
             ConstructionManager constructionManager,
-            GameObject candidateGhost,
+            Vector3 candidatePosition,
+            Quaternion candidateRotation,
             BuildableData candidateData,
             float gridSize)
         {
@@ -449,7 +388,7 @@ namespace Hecton8.Construction
                 }
             }
 
-            WriteNodeRecord(candidateIndex, candidateGhost.transform.position, candidateData, true);
+            WriteNodeRecord(candidateIndex, candidatePosition, candidateData, true);
 
             int activeNodeCount = candidateIndex + 1;
             _connectionBuffer.Clear();
@@ -472,14 +411,22 @@ namespace Hecton8.Construction
                 }
             }
 
-            IndexSockets(activeNodeCount - 1, candidateGhost, candidateData, validationGridSize, catalogVault);
+            IndexSockets(activeNodeCount - 1, candidatePosition, candidateRotation, candidateData, validationGridSize, catalogVault);
             BuildAdjacency(activeNodeCount);
             return activeNodeCount;
         }
 
         private void IndexSockets(int moduleIndex, GameObject root, BuildableData data, int validationGridSize, IDataVault catalogVault)
         {
-            if (root == null || data == null || data.ModuleTemplate == null)
+            if (root == null)
+                return;
+
+            IndexSockets(moduleIndex, root.transform.position, root.transform.rotation, data, validationGridSize, catalogVault);
+        }
+
+        private void IndexSockets(int moduleIndex, Vector3 rootPosition, Quaternion rootRotation, BuildableData data, int validationGridSize, IDataVault catalogVault)
+        {
+            if (data == null || data.ModuleTemplate == null || !IsFinitePose(rootPosition, rootRotation))
                 return;
 
             BaseModuleTemplate template = data.ModuleTemplate;
@@ -492,7 +439,7 @@ namespace Hecton8.Construction
                     out int socketCount,
                     out _))
             {
-                IndexSocketRange(moduleIndex, root.transform, catalogSockets, socketStart, socketCount, validationGridSize);
+                IndexSocketRange(moduleIndex, rootPosition, rootRotation, catalogSockets, socketStart, socketCount, validationGridSize);
                 return;
             }
 
@@ -508,20 +455,20 @@ namespace Hecton8.Construction
                 if (!BaseModuleCatalogRuntime.TryBuildSocketFromTemplate(template, i, out SocketDefinitionDTO socket))
                     continue;
 
-                IndexSocket(moduleIndex, root.transform, socket, validationGridSize);
+                IndexSocket(moduleIndex, rootPosition, rootRotation, socket, validationGridSize);
             }
         }
 
-        private void IndexSocketRange(int moduleIndex, Transform rootTransform, NativeArray<SocketDefinitionDTO> sockets, int socketStart, int socketCount, int validationGridSize)
+        private void IndexSocketRange(int moduleIndex, Vector3 rootPosition, Quaternion rootRotation, NativeArray<SocketDefinitionDTO> sockets, int socketStart, int socketCount, int validationGridSize)
         {
             int end = math.min(socketStart + socketCount, sockets.Length);
             for (int i = socketStart; i < end; i++)
-                IndexSocket(moduleIndex, rootTransform, sockets[i], validationGridSize);
+                IndexSocket(moduleIndex, rootPosition, rootRotation, sockets[i], validationGridSize);
         }
 
-        private void IndexSocket(int moduleIndex, Transform rootTransform, in SocketDefinitionDTO socket, int validationGridSize)
+        private void IndexSocket(int moduleIndex, Vector3 rootPosition, Quaternion rootRotation, in SocketDefinitionDTO socket, int validationGridSize)
         {
-            if (!TryResolveSocketPose(rootTransform, in socket, out double3 socketAup, out Vector3 socketForward))
+            if (!TryResolveSocketPose(rootPosition, rootRotation, in socket, out double3 socketAup, out Vector3 socketForward))
                 return;
 
             int axis = QuantizeAxis(socketForward);
@@ -542,20 +489,19 @@ namespace Hecton8.Construction
             _socketLookup[ownKey] = new SocketMatchEntry(moduleIndex, socket.AllowedConnectionsMask, socketForward);
         }
 
-        private static bool TryResolveSocketPose(Transform rootTransform, in SocketDefinitionDTO socket, out double3 socketAup, out Vector3 socketForward)
+        private static bool TryResolveSocketPose(Vector3 rootPosition, Quaternion rootRotation, in SocketDefinitionDTO socket, out double3 socketAup, out Vector3 socketForward)
         {
             socketAup = default;
             socketForward = Vector3.forward;
-            if (rootTransform == null)
+            if (!IsFinitePose(rootPosition, rootRotation))
                 return false;
 
-            Quaternion rootRotation = rootTransform.rotation;
             quaternion rotation = new quaternion(rootRotation.x, rootRotation.y, rootRotation.z, rootRotation.w);
             float3 worldNormal = math.rotate(rotation, socket.Normal);
             if (!math.all(math.isfinite(socket.LocalOffset)) || !math.all(math.isfinite(worldNormal)))
                 return false;
 
-            if (!TryResolveAupFromRuntimeOrigin(rootTransform.position, out double3 rootAup))
+            if (!TryResolveAupFromRuntimeOrigin(rootPosition, out double3 rootAup))
                 return false;
 
             socketAup = BaseModuleCatalogRuntime.ResolveSocketAup(rootAup, rotation, in socket);
@@ -564,6 +510,17 @@ namespace Hecton8.Construction
 
             socketForward = new Vector3(worldNormal.x, worldNormal.y, worldNormal.z);
             return true;
+        }
+
+        private static bool IsFinitePose(Vector3 position, Quaternion rotation)
+        {
+            return math.isfinite(position.x) &&
+                   math.isfinite(position.y) &&
+                   math.isfinite(position.z) &&
+                   math.isfinite(rotation.x) &&
+                   math.isfinite(rotation.y) &&
+                   math.isfinite(rotation.z) &&
+                   math.isfinite(rotation.w);
         }
 
         private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out double3 aup)
@@ -635,18 +592,6 @@ namespace Hecton8.Construction
                 return null;
 
             return moduleObject.TryGetComponent(out ModuleMarker marker) ? marker.Data : null;
-        }
-
-        private static Quaternion ResolveSocketYawRotation(int yawStep)
-        {
-            const float halfSqrt = 0.7071067811865476f;
-            switch (yawStep & 3)
-            {
-                case 0: return new Quaternion(0f, 1f, 0f, 0f);
-                case 1: return new Quaternion(0f, -halfSqrt, 0f, halfSqrt);
-                case 2: return Quaternion.identity;
-                default: return new Quaternion(0f, halfSqrt, 0f, halfSqrt);
-            }
         }
 
         private static int QuantizeAxis(Vector3 direction)

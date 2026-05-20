@@ -20,8 +20,11 @@ namespace Hecton8.Editor.GeologyForge
             MeshUpdateFlags.DontRecalculateBounds |
             MeshUpdateFlags.DontValidateIndices |
             MeshUpdateFlags.DontNotifyMeshUsers;
+        private const string AsyncBakeProgressTitle = "Geology Forge";
+        private const string AsyncBakeProgressMessage = "Baking geology profiles";
 
         private static readonly Stopwatch _Stopwatch = new Stopwatch();
+        private static readonly List<GeologyBakeProfile> _menuProfiles = new List<GeologyBakeProfile>(16);
         private static List<GeologyBakeProfile> _asyncProfiles;
         private static List<GeologyBakeMetrics> _asyncMetrics;
         private static List<GeologyMeshManifestRecord> _asyncManifestRecords;
@@ -49,74 +52,9 @@ namespace Hecton8.Editor.GeologyForge
         [MenuItem("HECTON-8/Geology Forge/Bake CSV Profiles", false, 180)]
         public static void BakeCsvProfilesMenu()
         {
-            List<GeologyBakeProfile> profiles = GeologyProfileCsv.LoadProfiles();
-            BakeProfiles(profiles, true);
-        }
-
-        public static void BakeProfiles(List<GeologyBakeProfile> profiles, bool saveAssets, Action<float> progressCallback = null)
-        {
-            if (profiles == null || profiles.Count == 0)
-                return;
-
-            GeologyVertexLayoutValidator.ValidateStruct();
-            EnsureAssetFolder(GeologyForgeConstants.MeshOutputFolder);
-            var metrics = new List<GeologyBakeMetrics>(profiles.Count * 4);
-            var manifestRecords = new List<GeologyMeshManifestRecord>(profiles.Count * 4);
-            int totalBakes = CountTotalBakes(profiles);
-            int completedBakes = 0;
-            NativeArray<GeologyBakeTelemetryEntry> telemetry = default;
-            int telemetryCursor = 0;
-            bool editing = false;
-            try
-            {
-                progressCallback?.Invoke(0f);
-                telemetry = new NativeArray<GeologyBakeTelemetryEntry>(GeologyForgeConstants.BlackBoxFrameCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                AssetDatabase.StartAssetEditing();
-                editing = true;
-                for (int profileIndex = 0; profileIndex < profiles.Count; profileIndex++)
-                {
-                    GeologyBakeProfile profile = SanitizeProfile(profiles[profileIndex]);
-                    int variations = math.max(1, profile.Variations);
-                    for (int variation = 0; variation < variations; variation++)
-                    {
-                        if (!Application.isBatchMode)
-                        {
-                            float progress = (completedBakes + 0.5f) * math.rcp(totalBakes);
-                            string title = "Geology Forge";
-                            string message = $"Baking {profile.Name.ToString()} {variation + 1}/{variations}";
-                            if (EditorUtility.DisplayCancelableProgressBar(title, message, progress))
-                                return;
-                        }
-
-                        GeologyBakeMetrics metric = BakeSingle(profile, variation, saveAssets, telemetry, ref telemetryCursor, manifestRecords);
-                        metrics.Add(metric);
-                        completedBakes++;
-                        progressCallback?.Invoke(completedBakes * math.rcp(totalBakes));
-                        if ((metric.WarningFlags & GeologyForgeConstants.WarningNonFiniteTelemetry) != 0u)
-                            DumpBlackBox(telemetry, telemetryCursor, GeologyForgeConstants.DumpReasonNonFinite);
-                    }
-                }
-            }
-            catch
-            {
-                if (telemetry.IsCreated)
-                    DumpBlackBox(telemetry, telemetryCursor, GeologyForgeConstants.DumpReasonException);
-                throw;
-            }
-            finally
-            {
-                if (!Application.isBatchMode)
-                    EditorUtility.ClearProgressBar();
-                if (editing)
-                    AssetDatabase.StopAssetEditing();
-                if (saveAssets)
-                    WriteMeshManifest(manifestRecords);
-                if (saveAssets)
-                    AssetDatabase.SaveAssets();
-                WriteBakeReport(metrics);
-                if (telemetry.IsCreated)
-                    telemetry.Dispose();
-            }
+            GeologyProfileCsv.LoadProfiles(_menuProfiles);
+            if (!BakeProfilesAsync(_menuProfiles, true))
+                Debug.LogWarning("Geology Forge async bake request ignored: no profiles loaded or a bake is already running.");
         }
 
         public static bool BakeProfilesAsync(List<GeologyBakeProfile> profiles, bool saveAssets, Action<float> progressCallback = null)
@@ -129,19 +67,18 @@ namespace Hecton8.Editor.GeologyForge
             _asyncProfiles = new List<GeologyBakeProfile>(profiles.Count);
             for (int i = 0; i < profiles.Count; i++)
                 _asyncProfiles.Add(profiles[i]);
-            _asyncMetrics = new List<GeologyBakeMetrics>(profiles.Count * 4);
-            _asyncManifestRecords = new List<GeologyMeshManifestRecord>(profiles.Count * 4);
+            _asyncSaveAssets = saveAssets;
+            _asyncTotalBakes = CountTotalBakes(_asyncProfiles);
+            int resultCapacity = ResolveAsyncResultCapacity(_asyncTotalBakes);
+            _asyncMetrics = new List<GeologyBakeMetrics>(resultCapacity);
+            _asyncManifestRecords = saveAssets ? new List<GeologyMeshManifestRecord>(resultCapacity) : null;
             _asyncProgressCallback = progressCallback;
             _asyncProfileIndex = 0;
             _asyncVariationIndex = 0;
             _asyncCompletedBakes = 0;
-            _asyncTotalBakes = CountTotalBakes(_asyncProfiles);
-            _asyncSaveAssets = saveAssets;
             _asyncAssetEditing = false;
             try
             {
-                AssetDatabase.StartAssetEditing();
-                _asyncAssetEditing = true;
                 _asyncProgressCallback?.Invoke(0f);
                 EditorApplication.update -= TickAsyncBake;
                 EditorApplication.update += TickAsyncBake;
@@ -207,7 +144,7 @@ namespace Hecton8.Editor.GeologyForge
                 }
 
                 GeologyBakeProfile profile = SanitizeProfile(_asyncProfiles[_asyncProfileIndex]);
-                int variations = math.max(1, profile.Variations);
+                int variations = profile.Variations;
                 if (_asyncVariationIndex >= variations)
                 {
                     _asyncProfileIndex++;
@@ -218,9 +155,7 @@ namespace Hecton8.Editor.GeologyForge
                 if (!Application.isBatchMode)
                 {
                     float progress = (_asyncCompletedBakes + 0.5f) * math.rcp(_asyncTotalBakes);
-                    string title = "Geology Forge";
-                    string message = $"Baking {profile.Name.ToString()} {_asyncVariationIndex + 1}/{variations}";
-                    if (EditorUtility.DisplayCancelableProgressBar(title, message, progress))
+                    if (EditorUtility.DisplayCancelableProgressBar(AsyncBakeProgressTitle, AsyncBakeProgressMessage, progress))
                     {
                         FinishAsyncBake(true);
                         return;
@@ -229,16 +164,38 @@ namespace Hecton8.Editor.GeologyForge
 
                 NativeArray<GeologyBakeTelemetryEntry> telemetry = default;
                 int telemetryCursor = 0;
+                bool assetEditing = false;
                 try
                 {
                     telemetry = new NativeArray<GeologyBakeTelemetryEntry>(GeologyForgeConstants.BlackBoxFrameCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                    if (_asyncSaveAssets)
+                    {
+                        AssetDatabase.StartAssetEditing();
+                        _asyncAssetEditing = true;
+                        assetEditing = true;
+                    }
+
                     GeologyBakeMetrics metric = BakeSingle(profile, _asyncVariationIndex, _asyncSaveAssets, telemetry, ref telemetryCursor, _asyncManifestRecords);
+                    if (assetEditing)
+                    {
+                        AssetDatabase.StopAssetEditing();
+                        _asyncAssetEditing = false;
+                        assetEditing = false;
+                    }
+
                     _asyncMetrics.Add(metric);
                     if ((metric.WarningFlags & GeologyForgeConstants.WarningNonFiniteTelemetry) != 0u)
                         DumpBlackBox(telemetry, telemetryCursor, GeologyForgeConstants.DumpReasonNonFinite);
                 }
                 catch
                 {
+                    if (assetEditing)
+                    {
+                        AssetDatabase.StopAssetEditing();
+                        _asyncAssetEditing = false;
+                        assetEditing = false;
+                    }
+
                     if (telemetry.IsCreated)
                         DumpBlackBox(telemetry, telemetryCursor, GeologyForgeConstants.DumpReasonException);
                     throw;
@@ -265,27 +222,36 @@ namespace Hecton8.Editor.GeologyForge
         private static void FinishAsyncBake(bool canceled)
         {
             EditorApplication.update -= TickAsyncBake;
-            if (!Application.isBatchMode)
-                EditorUtility.ClearProgressBar();
-            if (_asyncAssetEditing)
-                AssetDatabase.StopAssetEditing();
-            if (_asyncSaveAssets)
-                WriteMeshManifest(_asyncManifestRecords);
-            if (_asyncSaveAssets)
-                AssetDatabase.SaveAssets();
-            if (_asyncMetrics != null)
-                WriteBakeReport(_asyncMetrics);
-            _asyncProgressCallback?.Invoke(canceled ? 0f : 1f);
-            _asyncProfiles = null;
-            _asyncMetrics = null;
-            _asyncManifestRecords = null;
-            _asyncProgressCallback = null;
-            _asyncProfileIndex = 0;
-            _asyncVariationIndex = 0;
-            _asyncCompletedBakes = 0;
-            _asyncTotalBakes = 0;
-            _asyncSaveAssets = false;
-            _asyncAssetEditing = false;
+            try
+            {
+                if (!Application.isBatchMode)
+                    EditorUtility.ClearProgressBar();
+                if (_asyncAssetEditing)
+                    AssetDatabase.StopAssetEditing();
+                bool hasMetrics = _asyncMetrics != null && _asyncMetrics.Count > 0;
+                bool hasManifestRecords = _asyncManifestRecords != null && _asyncManifestRecords.Count > 0;
+                bool shouldWriteArtifacts = !canceled || hasMetrics || hasManifestRecords;
+                if (_asyncSaveAssets && shouldWriteArtifacts)
+                    WriteMeshManifest(_asyncManifestRecords);
+                if (_asyncSaveAssets && shouldWriteArtifacts)
+                    AssetDatabase.SaveAssets();
+                if (_asyncMetrics != null && shouldWriteArtifacts)
+                    WriteBakeReport(_asyncMetrics);
+                _asyncProgressCallback?.Invoke(canceled ? 0f : 1f);
+            }
+            finally
+            {
+                _asyncProfiles = null;
+                _asyncMetrics = null;
+                _asyncManifestRecords = null;
+                _asyncProgressCallback = null;
+                _asyncProfileIndex = 0;
+                _asyncVariationIndex = 0;
+                _asyncCompletedBakes = 0;
+                _asyncTotalBakes = 0;
+                _asyncSaveAssets = false;
+                _asyncAssetEditing = false;
+            }
         }
 
         private static GeologyBakeMetrics BakeSingle(
@@ -533,6 +499,8 @@ namespace Hecton8.Editor.GeologyForge
 
             EnsureLittleEndianHost();
             EnsureFileFolder(GeologyForgeConstants.DumpPath);
+            string tempPath = GeologyForgeConstants.DumpPath + ".tmp";
+            DeleteIfExists(tempPath);
             GeologyBakeDumpHeader header = new GeologyBakeDumpHeader
             {
                 Magic = GeologyForgeConstants.DumpMagic,
@@ -544,11 +512,21 @@ namespace Hecton8.Editor.GeologyForge
                 Reserved1 = 0UL
             };
 
-            using (FileStream stream = new FileStream(GeologyForgeConstants.DumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+            try
             {
-                stream.Write(new ReadOnlySpan<byte>((byte*)&header, UnsafeUtility.SizeOf<GeologyBakeDumpHeader>()));
-                byte* entries = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(telemetry);
-                stream.Write(new ReadOnlySpan<byte>(entries, UnsafeUtility.SizeOf<GeologyBakeTelemetryEntry>() * telemetry.Length));
+                using (FileStream stream = new FileStream(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                {
+                    stream.Write(new ReadOnlySpan<byte>((byte*)&header, UnsafeUtility.SizeOf<GeologyBakeDumpHeader>()));
+                    byte* entries = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(telemetry);
+                    stream.Write(new ReadOnlySpan<byte>(entries, UnsafeUtility.SizeOf<GeologyBakeTelemetryEntry>() * telemetry.Length));
+                }
+
+                ReplacePayloadFile(tempPath, GeologyForgeConstants.DumpPath, true);
+            }
+            catch
+            {
+                DeleteIfExists(tempPath);
+                throw;
             }
         }
 
@@ -574,14 +552,26 @@ namespace Hecton8.Editor.GeologyForge
                 Reserved3 = 0UL
             };
 
-            using (FileStream stream = new FileStream(GeologyForgeConstants.ManifestPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+            string tempPath = GeologyForgeConstants.ManifestPath + ".tmp";
+            DeleteIfExists(tempPath);
+            try
             {
-                stream.Write(new ReadOnlySpan<byte>((byte*)&header, UnsafeUtility.SizeOf<GeologyMeshManifestHeader>()));
-                for (int i = 0; i < count; i++)
+                using (FileStream stream = new FileStream(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
                 {
-                    GeologyMeshManifestRecord record = records[i];
-                    stream.Write(new ReadOnlySpan<byte>((byte*)&record, UnsafeUtility.SizeOf<GeologyMeshManifestRecord>()));
+                    stream.Write(new ReadOnlySpan<byte>((byte*)&header, UnsafeUtility.SizeOf<GeologyMeshManifestHeader>()));
+                    for (int i = 0; i < count; i++)
+                    {
+                        GeologyMeshManifestRecord record = records[i];
+                        stream.Write(new ReadOnlySpan<byte>((byte*)&record, UnsafeUtility.SizeOf<GeologyMeshManifestRecord>()));
+                    }
                 }
+
+                ReplacePayloadFile(tempPath, GeologyForgeConstants.ManifestPath, true);
+            }
+            catch
+            {
+                DeleteIfExists(tempPath);
+                throw;
             }
 
             AssetDatabase.ImportAsset(GeologyForgeConstants.ManifestPath, ImportAssetOptions.ForceSynchronousImport);
@@ -633,6 +623,7 @@ namespace Hecton8.Editor.GeologyForge
         {
             NativeArray<GeologyVertex32> packed = default;
             NativeArray<uint> indices = default;
+            Mesh mesh = null;
             try
             {
                 // COLD ALLOC: NativeArray<GeologyVertex32>[vertexCount] — editor GPU upload stream — owner: GeologyForgeGenerator
@@ -651,7 +642,7 @@ namespace Hecton8.Editor.GeologyForge
                 }.Schedule(vertexCount, 64, packHandle);
                 indexHandle.Complete();
 
-                Mesh mesh = new Mesh
+                mesh = new Mesh
                 {
                     name = $"GEN_Geology_{lodName}",
                     indexFormat = IndexFormat.UInt32
@@ -670,10 +661,14 @@ namespace Hecton8.Editor.GeologyForge
                 mesh.bounds = bounds;
                 GeologyVertexLayoutValidator.ValidateMesh(mesh);
                 mesh.UploadMeshData(true);
-                return mesh;
+                Mesh result = mesh;
+                mesh = null;
+                return result;
             }
             finally
             {
+                if (mesh != null)
+                    UnityEngine.Object.DestroyImmediate(mesh);
                 if (indices.IsCreated) indices.Dispose();
                 if (packed.IsCreated) packed.Dispose();
             }
@@ -803,16 +798,29 @@ namespace Hecton8.Editor.GeologyForge
             if (!vertices.IsCreated || vertices.Length == 0)
                 return new Bounds(Vector3.zero, Vector3.one);
 
-            float3 min = vertices[0].Position;
-            float3 max = vertices[0].Position;
-            for (int i = 1; i < vertices.Length; i++)
+            float3 min = float3.zero;
+            float3 max = float3.zero;
+            bool hasFinitePosition = false;
+            for (int i = 0; i < vertices.Length; i++)
             {
                 float3 p = vertices[i].Position;
                 if (!math.all(math.isfinite(p)))
                     continue;
+
+                if (!hasFinitePosition)
+                {
+                    min = p;
+                    max = p;
+                    hasFinitePosition = true;
+                    continue;
+                }
+
                 min = math.min(min, p);
                 max = math.max(max, p);
             }
+
+            if (!hasFinitePosition)
+                return new Bounds(Vector3.zero, Vector3.one);
 
             float3 center = (min + max) * 0.5f;
             float3 size = math.max(max - min, new float3(0.01f));
@@ -825,7 +833,7 @@ namespace Hecton8.Editor.GeologyForge
                 profile.Name = new FixedString64Bytes("Unnamed_Geology");
 
             profile.Resolution = math.clamp(profile.Resolution <= 0 ? GeologyForgeConstants.DefaultResolution : profile.Resolution, GeologyForgeConstants.MinimumResolution, GeologyForgeConstants.MaximumResolution);
-            profile.Variations = math.clamp(profile.Variations <= 0 ? 1 : profile.Variations, 1, 500);
+            profile.Variations = SanitizeVariationCount(profile.Variations);
             profile.RadiusMeters = math.max(0.25f, profile.RadiusMeters);
             profile.HeightScale = math.max(0.15f, profile.HeightScale);
             profile.Frequency = math.max(0.001f, profile.Frequency);
@@ -851,8 +859,24 @@ namespace Hecton8.Editor.GeologyForge
         {
             int total = 0;
             for (int i = 0; i < profiles.Count; i++)
-                total += math.max(1, profiles[i].Variations);
+            {
+                int variations = SanitizeVariationCount(profiles[i].Variations);
+                if (total > int.MaxValue - variations)
+                    return int.MaxValue;
+                total += variations;
+            }
+
             return math.max(1, total);
+        }
+
+        private static int ResolveAsyncResultCapacity(int totalBakes)
+        {
+            return math.clamp(totalBakes <= 0 ? 1 : totalBakes, 1, GeologyForgeConstants.MaximumAsyncResultPreallocation);
+        }
+
+        private static int SanitizeVariationCount(int variations)
+        {
+            return math.clamp(variations <= 0 ? 1 : variations, 1, GeologyForgeConstants.MaximumVariations);
         }
 
         private static uint ResolveAupSeed(double3 sectorAup, uint seed)
@@ -919,7 +943,44 @@ namespace Hecton8.Editor.GeologyForge
             }
 
             builder.Append("\n  ]\n}\n");
-            File.WriteAllText(GeologyForgeConstants.BakeReportPath, builder.ToString());
+            WriteAtomicText(GeologyForgeConstants.BakeReportPath, builder.ToString(), true);
+        }
+
+        private static void WriteAtomicText(string path, string contents, bool keepBackup)
+        {
+            EnsureFileFolder(path);
+            string tempPath = path + ".tmp";
+            DeleteIfExists(tempPath);
+            try
+            {
+                File.WriteAllText(tempPath, contents);
+                ReplacePayloadFile(tempPath, path, keepBackup);
+            }
+            catch
+            {
+                DeleteIfExists(tempPath);
+                throw;
+            }
+        }
+
+        private static void ReplacePayloadFile(string tempPath, string finalPath, bool keepBackup)
+        {
+            if (File.Exists(finalPath))
+            {
+                string backupPath = keepBackup ? finalPath + ".bak" : null;
+                if (backupPath != null)
+                    DeleteIfExists(backupPath);
+                File.Replace(tempPath, finalPath, backupPath);
+                return;
+            }
+
+            File.Move(tempPath, finalPath);
+        }
+
+        private static void DeleteIfExists(string path)
+        {
+            if (File.Exists(path))
+                File.Delete(path);
         }
 
         private static void AppendFixed(StringBuilder builder, double value)

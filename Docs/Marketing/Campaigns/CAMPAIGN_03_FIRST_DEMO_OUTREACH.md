@@ -18,7 +18,7 @@ Do not launch this campaign until:
 - no critical save/load or crash issue in the demo route;
 - controls are explainable in-game;
 - the first route includes one readable pressure decision that feedback can code as `AGENCY_DECISION_READ`;
-- any demo outreach claim about gameplay, pressure, route risk, threat, salvage, base failure, or first-public agency proof has `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`;
+- any demo outreach claim about gameplay, pressure, route risk, threat, salvage, base failure, or first-public agency proof has non-pending asset metadata `viewer_named_decision`, valid `capture_verdict`, and `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`;
 - performance claims are either omitted or backed by hardware/settings proof;
 - any key/private-preview route has recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED`, official inbox custody, exact access-log fields, and disclosure.
 
@@ -37,7 +37,7 @@ The demo should contain:
 
 ## Creator Batch Plan
 
-Batch A: up to 30 human-verified high-fit send candidates after official contact route, build, asset, key, creator utility, AB-009/KPI agency-decision proof where claimed, `creator_send_gate`, `send_route_class` for creator sends, `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED` plus exact private access-log fields where access is used, `reply_consent_provenance`, and CRM send-log gates pass.
+Batch A: up to 30 human-verified high-fit send candidates after official contact route, build, asset, key, creator utility, non-pending metadata handoff fields plus AB-009/KPI agency-decision proof where claimed, `creator_send_gate`, `send_route_class` for creator sends, `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED` plus exact private access-log fields where access is used, `reply_consent_provenance`, and CRM send-log gates pass.
 
 - 10 direct underwater survival;
 - 8 survival route risk;

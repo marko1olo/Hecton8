@@ -17,7 +17,7 @@ MonoBehaviour:
   icon: {fileID: 0}
   description: Low-profile current generator for early power support on exposed routes.
   family: 2
-  ghostPrefab: {fileID: 9043565189866826513, guid: 6f077545d7f6d3449b45b152018f55fe, type: 3}
+  ghostPrefab: {fileID: 0}
   finalPrefab: {fileID: 7498929676155026764, guid: 850ede05779e5bd46ac311a1e7a0397c, type: 3}
   buildCost:
   - item: {fileID: 11400000, guid: a62760814dd69bf468e839b971d92243, type: 2}

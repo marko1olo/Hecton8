@@ -651,3 +651,55 @@ Mandates read before coding:
 - Targeted scan finds zero `VaultBufferHandle`, `GetBufferHandle`, `TryGetBufferHandle`, `TryGetBuffer`, `ResolvePointer`, `.ptr`, `.Resolve(`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `ResolveBuffer`, `GenerationID`, or `NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray` hits in `KineticCharacterAnimatorRuntime.cs`.
 - `git diff --check` passed for `KineticCharacterAnimatorRuntime.cs`; no whitespace errors.
 - Build not relaunched; previous compile-wall blockers remain unchanged and the user explicitly forbade unnecessary rebuilds.
+
+## Loop 39 - Laser Cutter DOD Scalability Descriptor Patch
+- [x] Removed the remaining legacy scalability-state descriptor route from `LaserCutterDodRuntime.cs`.
+  DOD practice: the quality-weight read now uses transient `TryGetGenerationHandle<ScalabilityStateDTO>` plus `TryResolveHandle` instead of `TryGetBufferHandle`.
+  Rejected: keeping the old route because the method is short-lived; short-lived still bypasses the generation descriptor API being enforced.
+  Estimate: one generation descriptor resolve when quality is read; no managed allocation.
+
+## Compile State Update 32
+- Targeted scan finds zero `VaultBufferHandle`, `GetBufferHandle`, `TryGetBufferHandle`, `TryGetBuffer`, `ResolvePointer`, `.ptr`, `.Resolve(`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `ResolveBuffer`, or `GenerationID` hits in `LaserCutterDodRuntime.cs`.
+- `git diff --check` passed for `LaserCutterDodRuntime.cs`; CRLF warning only.
+- Build not relaunched; previous compile-wall blockers remain unchanged and the user explicitly forbade unnecessary rebuilds.
+
+## Loop 40 - Tool Kinematics Editor Facade Descriptor Migration
+- [x] Removed seven legacy editor-side Vault descriptors from `ToolKinematicsTunerWindow.cs`.
+  DOD practice: tuning/state/frame-input/hit/pose/beam-vertex/beam-count editor lanes now persist `VaultGenerationHandle<T>` and resolve local views through `TryResolveHandle`.
+  Rejected: leaving editor code on `ResolveBuffer(ref handle)` because it normalizes the old pointer-bearing API and can pin stale descriptors during Play Mode tuning.
+  Estimate: editor-only; no runtime frame cost.
+- [x] Added scoped release for editor window disable and DataVault replacement.
+  DOD practice: the window releases only descriptors it acquired and clears its cached Vault reference when closed or rebound.
+  Rejected: ignoring editor refcounts because window tools still run in Play Mode against the live Vault.
+  Estimate: cold editor path only.
+
+## Compile State Update 33
+- Targeted scan finds zero `VaultBufferHandle`, `GetBufferHandle`, `TryGetBufferHandle`, `ResolveBuffer`, `.Resolve(`, `GetElementAsRef`, `.ptr`, or `GenerationID` hits in `ToolKinematicsTunerWindow.cs`.
+- `git diff --check` passed for `ToolKinematicsTunerWindow.cs`; CRLF warning only.
+- Build not relaunched; previous compile-wall blockers remain unchanged and the user explicitly forbade unnecessary rebuilds.
+
+## Loop 41 - Tool Kinematics Runtime Descriptor Migration
+- [x] Removed fifteen legacy gameplay tool kinematics Vault descriptors from `ToolKinematicsRuntime.cs`.
+  DOD practice: state/input/hit/IK/recoil/tuning/export/telemetry/signal/beam/pose lanes now persist `VaultGenerationHandle<T>` and resolve method-local `NativeArray<T>` views before fixed tick jobs, telemetry, CSV tuning, slow tick readback, and blackbox dump.
+  Rejected: retaining `ResolveBuffer(ref handle)` because it refreshes pointer-bearing metadata in the manager immediately before scheduling Burst jobs.
+  Estimate: fifteen O(1) generation checks when staging the tool kinematics frame; no managed allocation.
+- [x] Removed the unused public `ToolKinematicsVaultAccess` ref-return legacy accessor.
+  DOD practice: no public API in this runtime now exposes `VaultBufferHandle<T>` or `GetElementAsRef` as a long-lived mutation route.
+  Rejected: rewriting the accessor to return refs from a transient local view because that still encourages callers to retain byref access outside a dispatcher phase.
+  Estimate: no runtime cost; API debt removed.
+
+## Compile State Update 34
+- Targeted scan finds zero `VaultBufferHandle`, `GetBufferHandle`, `TryGetBufferHandle`, `TryGetBuffer`, `ResolveBuffer`, `.Resolve(`, `GetElementAsRef`, `.ptr`, or `GenerationID` hits in `ToolKinematicsRuntime.cs`.
+- `git diff --check` passed for `ToolKinematicsRuntime.cs`; CRLF warning only.
+- Build not relaunched; previous compile-wall blockers remain unchanged and the user explicitly forbade unnecessary rebuilds.
+
+## Loop 42 - Tool Durability Audit Name Cleanup
+- [x] Removed the last misleading `TryResolveBuffer` helper name from `ToolDurabilitySystem.cs`.
+  DOD practice: the system already used `VaultGenerationHandle<T>` and `TryResolveHandle`; helper naming now reflects a durability-local view resolve instead of the forbidden legacy `ResolveBuffer(ref handle)` API.
+  Rejected: leaving false-positive scanner debt because it hides real remaining pointer violations in broad tools scans.
+  Estimate: zero runtime change.
+
+## Compile State Update 35
+- Broad `Animation` + `Tools` scan finds zero `VaultBufferHandle`, `GetBufferHandle`, `TryGetBufferHandle`, `TryGetBuffer`, `.Resolve(`, `.ptr`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `ResolvePointer`, `ResolveBuffer(`, or `GenerationID` hits.
+- `git diff --check` passed for `ToolDurabilitySystem.cs`; CRLF warning only.
+- Build not relaunched; previous compile-wall blockers remain unchanged and the user explicitly forbade unnecessary rebuilds.

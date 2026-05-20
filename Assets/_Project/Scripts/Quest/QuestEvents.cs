@@ -31,12 +31,20 @@ namespace Hecton8.Quest
         RevertRequested = 3
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct QuestEventPayload
     {
+        [FieldOffset(0)]
         public uint QuestHashID;
+
+        [FieldOffset(4)]
         public ushort EventType;
+
+        [FieldOffset(6)]
         public ushort Reserved;
+
+        [FieldOffset(8)]
+        private ulong _pad0;
     }
 
     public interface IQuestEventListener

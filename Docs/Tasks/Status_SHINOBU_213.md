@@ -4,7 +4,7 @@ Date: 2026-05-20
 Agent: SHINOBU_213
 Domain: OFFLINE_LOD_AND_COLLIDER_BAKER
 Task count: 20
-Status: PENDING VERIFICATION / PRE-ENDIAN ROSLYN PROBE PASS / POST-ENDIAN BOUNDED-HULL-ASSET-BIND-SAFETY-INDEX-HOT-STRUCT PROBE GATED BY CPU=93.3 / UNITY IMPORT AND PROFILER PENDING
+Status: PENDING VERIFICATION / PRE-ENDIAN ROSLYN PROBE PASS / POST-ENDIAN BOUNDED-HULL-ASSET-BIND-SAFETY-INDEX-HOT-STRUCT-STREAM-BOUNDS-HULL-FALLBACK-JOB-GUARDS PROBE GATED BY CPU=73.0 / UNITY IMPORT AND PROFILER PENDING
 
 First 20 Minutes moment: route performance and collision safety for world/resource/structural assets.
 Route impact: removes high-poly render/PhysX blockers before assets enter the Copper Wire route.
@@ -132,4 +132,10 @@ Relevant mandates read:
 - [x] Re-ran post safety static scans: no stale 8-point/probe proof strings, no forbidden generated-domain source patterns, no stale `[WriteOnly] HullVertices`, owned whitespace/conflict scan clean, scoped `git diff --check` clean.
 - [x] Re-checked compile-wall isolation: runtime asmdef still has zero references; SHINOBU_213 editor asmdef references only owned runtime DTO plus Unity Burst/Collections/Jobs/Mathematics; parent interior-clutter asmdef does not capture the `Shinobu213` child assembly.
 - [x] Re-ran post hot-struct static scans after explicit layout proof patch: forbidden source patterns clean, stale proof phrase scan clean, owned whitespace/conflict scan clean, scoped `git diff --check` clean, asmdefs still isolated.
-- [ ] Re-run Roslyn compile probe after `ReverseBytes` fallback, bounded-hull, fail-closed asset-binding, hull safety, decimator index-stream, mock asset-reference, binary-ledger, and hot-struct explicit-layout edits when CPU drops below 50 and no `dotnet/csc` workers exist; latest gate sample was CPU=93.3, `dotnet/csc` count=0.
+- [x] Added decimator raw-stream and output-lane fail-closed guards: null/stride/offset source streams return safe defaults, and malformed output scheduling cannot write outside the generated vertex buffer.
+- [x] Re-ran post stream/output-bounds static scans: forbidden generated-domain source patterns clean, current proof stale-wording scan clean, owned whitespace/conflict scan clean, scoped `git diff --check` clean with CRLF warnings only, asmdefs still isolated.
+- [x] Added hull fallback scratch-bounds guard: `WriteBoxHull` now verifies at least 8 hull vertex lanes and 36 index lanes before writing the conservative box fallback; malformed scratch state zeroes hull counters so collider authoring falls back to `BoxCollider`.
+- [x] Re-ran post hull-fallback static scans: forbidden generated-domain source patterns clean, current proof stale-wording scan clean, owned whitespace/conflict scan clean, scoped `git diff --check` clean with CRLF warnings only, hull fallback guard/proof scan present, CPU gate still closed at 100 with `dotnet/csc` count=0.
+- [x] Added Burst job denominator/native collection guards: mock high-poly generation now rejects zero/negative segment counts before modulo/division, and pack/index/decimator write helpers guard default or mismatched NativeArray lanes before writing.
+- [x] Re-ran post job-guard static scans: forbidden generated-domain source patterns clean, owned whitespace/conflict scan clean, scoped `git diff --check` clean with CRLF warnings only, guard/proof scan present, asmdefs still isolated, CPU gate still closed at 100 with `dotnet/csc` count=0.
+- [ ] Re-run Roslyn compile probe after `ReverseBytes` fallback, bounded-hull, fail-closed asset-binding, hull safety, decimator index-stream, mock asset-reference, binary-ledger, hot-struct explicit-layout, stream/output-bounds, hull fallback scratch-bounds, and job guard edits when CPU drops below 50 and no `dotnet/csc` workers exist; latest gate samples were CPU=80/94/73, `dotnet/csc` count=0.

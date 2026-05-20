@@ -185,7 +185,9 @@ namespace Hecton8.Core
                     continue;
                 }
 
-                float distanceSq = (lightTransform.position - viewerPosition).sqrMagnitude;
+                Vector3 lightVisualPosition = lightTransform.position;
+                Vector3 visualDeltaToViewer = lightVisualPosition - viewerPosition;
+                float distanceSq = visualDeltaToViewer.sqrMagnitude;
                 if (distanceSq > maxDistanceSq)
                     continue;
 

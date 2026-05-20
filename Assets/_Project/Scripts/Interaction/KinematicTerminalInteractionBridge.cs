@@ -18,7 +18,7 @@ namespace Hecton8.Interaction
         Scroll = 1 << 4,
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public readonly struct KinematicTerminalPointerState
     {
         public KinematicTerminalPointerState(
@@ -28,6 +28,7 @@ namespace Hecton8.Interaction
             Quaternion worldRotation,
             TerminalActionFlags actionFlags)
         {
+            this = default;
             PanelId = panelId;
             CanvasPosition = canvasPosition;
             WorldPosition = worldPosition;
@@ -35,14 +36,31 @@ namespace Hecton8.Interaction
             ActionFlags = actionFlags;
         }
 
+        [FieldOffset(0)]
         public readonly int PanelId;
+        [FieldOffset(4)]
         public readonly float2 CanvasPosition;
+        [FieldOffset(12)]
         public readonly Vector3 WorldPosition;
+        [FieldOffset(24)]
         public readonly Quaternion WorldRotation;
+        [FieldOffset(40)]
         public readonly TerminalActionFlags ActionFlags;
+        [FieldOffset(41)]
+        private readonly byte _pad0;
+        [FieldOffset(42)]
+        private readonly byte _pad1;
+        [FieldOffset(43)]
+        private readonly byte _pad2;
+        [FieldOffset(44)]
+        private readonly uint _pad3;
+        [FieldOffset(48)]
+        private readonly ulong _pad4;
+        [FieldOffset(56)]
+        private readonly ulong _pad5;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public readonly struct PhysicalHandIkTarget
     {
         public PhysicalHandIkTarget(
@@ -53,6 +71,7 @@ namespace Hecton8.Interaction
             float holdSeconds,
             float blend)
         {
+            this = default;
             SourceId = sourceId;
             HandSide = handSide;
             WorldPosition = worldPosition;
@@ -61,12 +80,24 @@ namespace Hecton8.Interaction
             Blend = blend;
         }
 
+        [FieldOffset(0)]
         public readonly int SourceId;
+        [FieldOffset(4)]
         public readonly PhysicalHandSide HandSide;
+        [FieldOffset(8)]
         public readonly Vector3 WorldPosition;
+        [FieldOffset(20)]
         public readonly Quaternion WorldRotation;
+        [FieldOffset(36)]
         public readonly float HoldSeconds;
+        [FieldOffset(40)]
         public readonly float Blend;
+        [FieldOffset(44)]
+        private readonly uint _pad0;
+        [FieldOffset(48)]
+        private readonly ulong _pad1;
+        [FieldOffset(56)]
+        private readonly ulong _pad2;
     }
 
     public interface IPhysicalHandIkTargetSink

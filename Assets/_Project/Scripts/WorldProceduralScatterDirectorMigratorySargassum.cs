@@ -105,32 +105,61 @@ namespace Hecton8.World
         private float _migratorySargassumTideHeightMeters;
         private uint _migratorySargassumTideSequence;
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 80)]
         private struct MigratorySargassumSourceState
         {
+            [FieldOffset(0)]
             public long SourceKey;
+            [FieldOffset(8)]
             public int SourceHash;
+            [FieldOffset(12)]
+            private uint _padPreAup;
+            [FieldOffset(16)]
             public AbsoluteUniversePosition Position;
+            [FieldOffset(64)]
             public float RadiusMeters;
+            [FieldOffset(68)]
             public byte Active;
+            [FieldOffset(69)]
+            private byte _pad0;
+            [FieldOffset(70)]
+            private ushort _pad1;
+            [FieldOffset(72)]
+            private ulong _pad2;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 96)]
         private struct MigratorySargassumIslandState
         {
+            [FieldOffset(0)]
             public long SourceKey;
+            [FieldOffset(8)]
             public int SourceHash;
+            [FieldOffset(12)]
+            private uint _padPreAup;
+            [FieldOffset(16)]
             public AbsoluteUniversePosition Position;
+            [FieldOffset(64)]
             public float3 Velocity;
+            [FieldOffset(76)]
             public float RadiusMeters;
+            [FieldOffset(80)]
             public byte Active;
+            [FieldOffset(81)]
+            private byte _pad0;
+            [FieldOffset(82)]
+            private ushort _pad1;
+            [FieldOffset(84)]
+            private uint _pad2;
+            [FieldOffset(88)]
+            private ulong _pad3;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct UpdateMigratorySargassumIslandsJob : IJobParallelFor
         {
-            public NativeArray<MigratorySargassumIslandState> Islands;
-            [ReadOnly] public NativeArray<float3> FlowSamples;
+            [NoAlias] public NativeArray<MigratorySargassumIslandState> Islands;
+            [NoAlias, ReadOnly] public NativeArray<float3> FlowSamples;
             public float DeltaTime;
             public float DriftScale;
             public float MaxSpeed;

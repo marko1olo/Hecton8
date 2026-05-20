@@ -39,7 +39,7 @@ Use `paid_creator_permission_gate` in the live creator CRM as the only machine-r
 
 - current rows must stay `BLOCKED_NO_PAID_CREATOR_PROOF`;
 - a paid creator test can proceed only when the selected CRM row is `paid_creator_permission_gate = ALLOW_PAID_CREATOR_TEST_VERIFIED`;
-- `ALLOW_PAID_CREATOR_TEST_VERIFIED` requires verified official contact route, owner-controlled inbox/access route, disclosure line, demo or Steam baseline, matching asset QA, `creator_utility_score` 3/4+, matching asset `creator_send_gate`, `send_route_class`, AB-009/KPI decision-read proof for gameplay/pressure/route-risk claims, written deliverable, capped payment, cancellation rule, and 48h result inspection owner.
+- `ALLOW_PAID_CREATOR_TEST_VERIFIED` requires verified official contact route, owner-controlled inbox/access route, disclosure line, demo or Steam baseline, matching asset QA, `creator_utility_score` 3/4+, matching asset `creator_send_gate`, `send_route_class`, non-pending metadata `viewer_named_decision`, valid non-held `capture_verdict`, AB-009/KPI decision-read proof for gameplay/pressure/route-risk claims, written deliverable, capped payment, cancellation rule, and 48h result inspection owner.
 
 Do not infer paid permission from audience fit, rate-card reply, sponsorship policy, organic reply, or a high-value creator name.
 
@@ -54,7 +54,7 @@ Do not infer paid permission from audience fit, rate-card reply, sponsorship pol
 - whether gameplay footage must be from current build;
 - `paid_creator_permission_gate = ALLOW_PAID_CREATOR_TEST_VERIFIED`;
 - `send_route_class`, official contact route, access/key route, and `reply_consent_provenance`;
-- AB-009/KPI decision-read evidence if the brief uses gameplay, pressure, route-risk, threat, salvage failure, or first-public agency proof;
+- metadata handoff plus AB-009/KPI decision-read evidence if the brief uses gameplay, pressure, route-risk, threat, salvage failure, or first-public agency proof;
 - whether talking points are optional;
 - no requirement for positive opinion;
 - Steam/demo link only after Official CTA Link Activation Gate V0 for public links or recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED` plus exact access-log fields for private routes;
@@ -72,7 +72,7 @@ Allowed:
 - base as pressure vessel;
 - Seed Ship anomaly;
 - Steam/demo CTA only after Official CTA Link Activation Gate V0 for public links or recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED` plus exact access-log fields for private routes.
-- gameplay/pressure/route-risk points only if backed by `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`.
+- gameplay/pressure/route-risk points only if backed by metadata `viewer_named_decision`/`capture_verdict` plus `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`.
 
 Forbidden:
 
@@ -90,7 +90,7 @@ Stop paid creator tests if:
 - two paid tests produce no Steam movement;
 - creator audience asks "what do you do?" repeatedly;
 - CRM row is not `paid_creator_permission_gate = ALLOW_PAID_CREATOR_TEST_VERIFIED`;
-- paid brief or creator cut claims agency/pressure proof without the matching AB-009/KPI decision-read field;
+- paid brief or creator cut claims agency/pressure proof without matching metadata handoff and AB-009/KPI decision-read field;
 - comments fixate on derivative look;
 - demo completion is weak;
 - paid slots cost more than capsule/page fixes would.
@@ -109,6 +109,6 @@ Link: [Steam/demo]
 Build notes: [version, known issues]
 Route class: [NO_LINK_CREATOR_FEEDBACK / PUBLIC_CTA_CREATOR / PRIVATE_ACCESS_CREATOR]
 Paid creator permission gate: [ALLOW_PAID_CREATOR_TEST_VERIFIED / BLOCKED_*]
-Agency proof source, if claimed: [AB-009/KPI field row]
+Agency proof source, if claimed: [asset metadata row + AB-009/KPI field row]
 Embargo: [none/TBD]
 ```

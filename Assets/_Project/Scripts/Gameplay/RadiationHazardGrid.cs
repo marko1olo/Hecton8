@@ -980,40 +980,42 @@ namespace Hecton8.Gameplay
             return x + y * GridResolution + z * GridResolution * GridResolution;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct RadiationSource
         {
-            public AbsoluteUniversePosition PositionAup;
-            public float Intensity01;
-            public float RadiusMeters;
-            public int SourceId;
-            public byte Active;
-            private byte _pad0;
-            private byte _pad1;
-            private byte _pad2;
+            [FieldOffset(0)] public AbsoluteUniversePosition PositionAup;
+            [FieldOffset(48)] public float Intensity01;
+            [FieldOffset(52)] public float RadiusMeters;
+            [FieldOffset(56)] public int SourceId;
+            [FieldOffset(60)] public byte Active;
+            [FieldOffset(61)] private byte _pad0;
+            [FieldOffset(62)] private byte _pad1;
+            [FieldOffset(63)] private byte _pad2;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct RadiationTelemetryEntry
         {
-            public float3 PlayerRuntimePosition;
-            public float AccumulatedRads;
-            public float GridIntensity01;
-            public float MaxHealthPenalty01;
-            public int SourceCount;
-            public int SourceVersion;
-            public int GridVersion;
-            public int Frame;
-            public uint ShiftSequence;
-            public uint Flags;
+            [FieldOffset(0)] public float3 PlayerRuntimePosition;
+            [FieldOffset(12)] public float AccumulatedRads;
+            [FieldOffset(16)] public float GridIntensity01;
+            [FieldOffset(20)] public float MaxHealthPenalty01;
+            [FieldOffset(24)] public int SourceCount;
+            [FieldOffset(28)] public int SourceVersion;
+            [FieldOffset(32)] public int GridVersion;
+            [FieldOffset(36)] public int Frame;
+            [FieldOffset(40)] public uint ShiftSequence;
+            [FieldOffset(44)] public uint Flags;
+            [FieldOffset(48)] private ulong _pad0;
+            [FieldOffset(56)] private ulong _pad1;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct RadiationJacobiDiffusionJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<float> Previous;
-            [ReadOnly] public NativeArray<float> Sources;
-            [WriteOnly] public NativeArray<float> Next;
+            [ReadOnly, NoAlias] public NativeArray<float> Previous;
+            [ReadOnly, NoAlias] public NativeArray<float> Sources;
+            [WriteOnly, NoAlias] public NativeArray<float> Next;
             public int Width;
             public int Height;
             public int Depth;

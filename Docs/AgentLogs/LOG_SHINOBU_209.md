@@ -830,7 +830,12 @@ Exact Microseconds saved:
 - Editor: no speed claim. Cold normal recomputation adds finite guards per angle.
 
 Verification:
-- Pending targeted static scan after patch. No dotnet build/rebuild launched for this pass.
+- Static source scan finds `Angle`, finite checks for `la`/`lb`, and `math.rsqrt(denom)`.
+- Static source scan finds no remaining `math.rsqrt(la * lb)` pattern in the owned bake jobs.
+- Owned-domain forbidden API scan still only finds scanner literal constants for `sharedMesh.vertices`, `.mesh.vertices`, and `AddComponent<Rigidbody>`.
+- Direct sibling runtime asmdef scan returned no findings.
+- `git diff --check` reports only LF->CRLF normalization warnings for touched owned files/docs.
+- No dotnet build/rebuild launched for this pass.
 
 <SELF_AUDIT phase="ULTRA_THINK_POLISH_PASS_21" agent="SHINOBU_209">
   <Task20Reconciliation status="PASS">Tasks 01-20 remain implemented. This pass hardens Task 09 normal/tangent recalculation.</Task20Reconciliation>
@@ -838,5 +843,75 @@ Verification:
   <ScalabilityCurve status="PASS">Runtime quality behavior unchanged. Normal bake remains offline and quality-driven deformation still collapses continuously through existing `GlobalQualityWeight` curves.</ScalabilityCurve>
   <HPhiVaultStatus status="PASS">No runtime Vault lane, persistent runtime NativeArray, or new editor native allocation was added.</HPhiVaultStatus>
   <CompileGuard status="PASS">No asmdef dependency changed. Edit is confined to owned offline baker Burst jobs and owned docs/logs.</CompileGuard>
+  <DearLieConfirmation status="PASS">Runtime structural deformation remains an O(1) mesh/collider state swap backed by offline visual deformation and 8-point collision hull proxies.</DearLieConfirmation>
+</SELF_AUDIT>
+
+## 2026-05-20 Ultra-Think Polish Pass 22
+
+What was wrong:
+- Mock deformation, structural shear, radial blast, torn triangle duplication, and damage-color baking still accepted some Forge/CSV/imported scalar inputs directly.
+- Non-finite or absurd values could reach `math.sqrt`, `math.rsqrt`, `math.rcp`, trigonometry, or `math.smoothstep` before the final finite fallback.
+
+What was done:
+- Sanitized finite `GlobalQualityWeight`, radius, split distance, torsion, damage scale, scorch intensity, epicenter, and source position inputs inside the Burst kernels themselves.
+- Clamped twist/shear angles before trigonometry.
+- Preserved finite original positions as fallback instead of preserving non-finite source rows.
+- Skipped tear visual duplication when threshold is effectively 1.0, avoiding equal-edge `smoothstep` division.
+
+Cinematic Cheats used:
+- No runtime simulation changed. The Dear Lie remains offline baked visual deformation, baked scorch/rust vertex colors, and an 8-point collision proxy; gameplay still performs an O(1) mesh/collider state swap.
+
+Exact Microseconds saved:
+- Runtime: 0 us.
+- Editor: no speed claim. This adds cold finite guards to prevent corrupt-profile reruns and NaN-poisoned mesh artifacts.
+
+Verification:
+- Static source scan finds finite guards for `GlobalQualityWeight`, `ShearTorsion`, `Radius`, `BlastRadius`, `SplitDistance`, `DamageScale`, `ScorchIntensity`, and the `threshold < 0.9999f` tear visual fence.
+- Static source scan finds no remaining unsanitized `math.saturate(GlobalQualityWeight)`, `math.max(Radius, ...)`, `math.max(BlastRadius, ...)`, direct `DamageScale *`, direct `ShearTorsion *`, or direct `math.saturate(ScorchIntensity)` patterns in owned bake jobs. The only `CollapseCompression` scan hit is the guarded field use.
+- Direct sibling runtime asmdef scan returned no findings.
+- Forbidden owned-domain pattern scan returned no findings for `Pack=`, hot DTO auto-properties, `FloatMode.Deterministic`, `UnityEngine.Random`, LINQ `.ToList()`, or `foreach`.
+- `git diff --check` reports only LF->CRLF normalization warnings for the touched owned job file.
+- No dotnet build/rebuild launched for this pass.
+
+<SELF_AUDIT phase="ULTRA_THINK_POLISH_PASS_22" agent="SHINOBU_209">
+  <Task20Reconciliation status="PASS">Tasks 01-20 remain implemented. This pass hardens Tasks 05, 06, 07, 09, and 11 against corrupt scalar inputs.</Task20Reconciliation>
+  <StructLayoutVerification status="PASS">No DTO layout changed. Primary payloads remain explicit 32-byte mapping rows and 64-byte vertex/counter/telemetry rows.</StructLayoutVerification>
+  <ScalabilityCurve status="PASS">`GlobalQualityWeight` remains continuous and now fails closed to 0 when non-finite. Low values still collapse visual damage through `math.lerp`/`math.smoothstep`; high/ultra keep richer offline deformation without runtime cost.</ScalabilityCurve>
+  <HPhiVaultStatus status="PASS">No runtime Vault lane, persistent runtime NativeArray, or new editor native allocation was added.</HPhiVaultStatus>
+  <PointerAliasingDependencyGraph status="PASS">Existing `[NoAlias]` job lanes and dependency topology remain unchanged; only scalar math guards were inserted inside existing kernels.</PointerAliasingDependencyGraph>
+  <CompileGuard status="PASS">No asmdef dependency changed. Edit is confined to owned offline baker Burst jobs and owned docs/logs.</CompileGuard>
+  <DearLieConfirmation status="PASS">Runtime structural deformation remains an O(1) mesh/collider state swap backed by offline visual deformation and 8-point collision hull proxies.</DearLieConfirmation>
+</SELF_AUDIT>
+
+## 2026-05-20 Ultra-Think Polish Pass 23
+
+What was wrong:
+- The 64-byte bake counter row is fully overwritten by `BuildTornTrianglesJob`, but three call sites still requested allocator zero-fill with `NativeArrayOptions.ClearMemory`.
+
+What was done:
+- Forge preview counter allocation now uses `NativeArrayOptions.UninitializedMemory`.
+- Forge batch bake counter allocation now uses `NativeArrayOptions.UninitializedMemory`.
+- Mock benchmark counter allocation now uses `NativeArrayOptions.UninitializedMemory`.
+
+Cinematic Cheats used:
+- No runtime simulation changed. This is allocator hygiene for the editor-only offline mesh compiler.
+
+Exact Microseconds saved:
+- Runtime: 0 us.
+- Editor: 64 bytes of allocator memset avoided per preview/bake/mock counter row. The value is small but removes a direct zero-init bypass violation.
+
+Verification:
+- Static scan found no remaining `NativeArray<OfflineWreckageBakeCounters64>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory)` in owned baker C#.
+- Static scan found the three counter allocations now use `NativeArrayOptions.UninitializedMemory`.
+- Static scan found `OfflineWreckageBakeCounters64 counters = default` followed by `Counters[0] = counters` inside the torn-triangle job, proving overwrite before downstream reads.
+- `git diff --check` reports only LF->CRLF normalization warnings for the two touched owned editor files.
+- No dotnet build/rebuild launched for this pass.
+
+<SELF_AUDIT phase="ULTRA_THINK_POLISH_PASS_23" agent="SHINOBU_209">
+  <Task20Reconciliation status="PASS">Tasks 01-20 remain implemented. This pass tightens Task 14 zero-init bypass evidence.</Task20Reconciliation>
+  <StructLayoutVerification status="PASS">No DTO layout changed. `OfflineWreckageBakeCounters64` remains explicit 64 bytes with fields at offsets 0,4,8,12,16 and padding through byte 63.</StructLayoutVerification>
+  <ScalabilityCurve status="PASS">Runtime quality behavior unchanged. Editor quality tiers still flow through the same continuous `GlobalQualityWeight` bake path.</ScalabilityCurve>
+  <HPhiVaultStatus status="PASS">No runtime Vault lane, persistent runtime NativeArray, or new editor native allocation was added.</HPhiVaultStatus>
+  <CompileGuard status="PASS">No asmdef dependency changed. Edit is confined to owned offline baker editor call sites and owned docs/logs.</CompileGuard>
   <DearLieConfirmation status="PASS">Runtime structural deformation remains an O(1) mesh/collider state swap backed by offline visual deformation and 8-point collision hull proxies.</DearLieConfirmation>
 </SELF_AUDIT>

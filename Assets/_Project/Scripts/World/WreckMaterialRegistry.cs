@@ -249,7 +249,7 @@ namespace Hecton8.World
 
             public void Reset()
             {
-                CompletePendingVisibilityCull(forceComplete: true);
+                CompletePendingVisibilityCullForBarrier();
                 if (_matrices.IsCreated)
                     _matrices.Clear();
                 if (_ages.IsCreated)
@@ -370,8 +370,15 @@ namespace Hecton8.World
 
                 if (_visibilityCullPending)
                 {
-                    if (!CompletePendingVisibilityCull(forceCompletion))
+                    if (forceCompletion)
+                    {
+                        if (!CompletePendingVisibilityCullForBarrier())
+                            return false;
+                    }
+                    else if (!TryFinalizePendingVisibilityCullNoWait())
+                    {
                         return false;
+                    }
 
                     if (_visibleSubsetFrustumVersion != frustumVersion)
                     {
@@ -393,8 +400,15 @@ namespace Hecton8.World
                         visibleCapacity);
                 }
 
-                if (!CompletePendingVisibilityCull(forceCompletion))
+                if (forceCompletion)
+                {
+                    if (!CompletePendingVisibilityCullForBarrier())
+                        return false;
+                }
+                else if (!TryFinalizePendingVisibilityCullNoWait())
+                {
                     return false;
+                }
 
                 visibleCount = _visibleMatrices.Length;
                 return true;
@@ -443,7 +457,7 @@ namespace Hecton8.World
 
             public void ApplyOriginShift(Vector3 runtimeOffset)
             {
-                CompletePendingVisibilityCull(forceComplete: true);
+                CompletePendingVisibilityCullForBarrier();
                 if (_matrices.IsCreated)
                 {
                     int count = _matrices.Length;
@@ -491,7 +505,7 @@ namespace Hecton8.World
 
             public JobHandle Dispose(JobHandle dependency)
             {
-                CompletePendingVisibilityCull(forceComplete: true);
+                CompletePendingVisibilityCullForBarrier();
                 if (_batchRendererGroup != null)
                 {
                     if (!_batchId.Equals(default))
@@ -588,21 +602,35 @@ namespace Hecton8.World
                 return dependency;
             }
 
-            private bool CompletePendingVisibilityCull(bool forceComplete)
+            private bool TryFinalizePendingVisibilityCullNoWait()
             {
                 if (!_visibilityCullPending)
                     return true;
 
-                bool completed = forceComplete
-                    ? DispatcherJobSwap.TryComplete(ref _visibilityCullHandle, forceComplete: true)
-                    : DispatcherJobSwap.TryFinalizeCompleted(ref _visibilityCullHandle);
-                if (!completed)
+                if (!DispatcherJobSwap.TryFinalizeCompleted(ref _visibilityCullHandle))
                     return false;
 
+                MarkVisibilityCullCompleted();
+                return true;
+            }
+
+            private bool CompletePendingVisibilityCullForBarrier()
+            {
+                if (!_visibilityCullPending)
+                    return true;
+
+                if (!DispatcherJobSwap.TryComplete(ref _visibilityCullHandle, forceComplete: true))
+                    return false;
+
+                MarkVisibilityCullCompleted();
+                return true;
+            }
+
+            private void MarkVisibilityCullCompleted()
+            {
                 _visibilityCullPending = false;
                 _visibleSubsetFrustumVersion = _pendingVisibilityFrustumVersion;
                 _pendingVisibilityFrustumVersion = InvalidFrustumVersion;
-                return true;
             }
 
             private void EnsureResources()

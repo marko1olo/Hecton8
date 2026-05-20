@@ -851,3 +851,24 @@ Evidence:
 - Current48 audit artifacts trailing-whitespace scan: `TRAILING_WS_OK` for `.md` and `.json`.
 - `git diff --check -- Assets/_Project/Scripts/Core/GlobalSignals.cs Tools/SignalBusContractAudit.ps1 Docs/Tasks/Status_SHINOBU_02.md Docs/AgentLogs/Rationale_SHINOBU_02.md Docs/AgentLogs/LOG_SHINOBU_02.md` returned exit 0 with line-ending warnings only.
 - Build skipped by hardware guard: `PRE_BUILD_GUARD_CURRENT48 CPU=100 SAMPLES=100,100,100 PROCS=0`. Last actual Core build evidence remains Current40: 311 errors / 19 warnings.
+
+## 2026-05-20 - Current49 Priority CSV Release Guard And Audit False-Positive Repair
+
+Problem: Current48 left one SignalCritical warning at `SignalPriorityCsvHotSwap.TryLoad(string path)`. The method is public, preserved, and performs synchronous `FileStream` I/O, but no source callsite proves it is used only in cold/editor/fatal contexts. The same audit artifact also reported `signalsWithoutLayout=1` without a layout finding because the audit parser misread `where T : unmanaged, ISignal` on `EntityAliveMaskSignalFilter<T> : ISignalSnapshotFilter<T>` as if the filter struct itself implemented `ISignal`.
+
+Solution: Added an explicit release-player guard in `SignalPriorityCsvHotSwap.TryLoad`: release builds return false before `File.Exists` or `FileStream`, while Editor and Development Play Mode keep the public hot-swap entry point. Removed the managed static `byte[4096]` parser scratch and converted the loader to a 4096-byte stack `Span<byte>` plus `ReadOnlySpan<byte>` parsing helpers. Hardened the PowerShell audit classifier so this method is INFO only when the release guard is present. Hardened `Test-StructImplementsISignal` in both PowerShell and C# audit tools to strip the declaration at `{`/`where` before testing inheritance, so generic constraints no longer create false payload definitions.
+
+Rejected Alternatives: Removing `SignalPriorityCsvHotSwap` was rejected because Task 20 requires a Play Mode tuning bridge. A blanket audit whitelist was rejected because it would hide real runtime I/O. A compile-time `#if` wrapper around the whole loader was rejected because keeping the public method body in release with an immediate false return preserves reflection/API shape while blocking I/O. Moving the priority parser into Vault scratch was rejected because this path is editor/development-only after the guard and the local stack span avoids both heap state and new persistent Vault ownership.
+
+Scalability potential: Low = release-player builds on weak storage cannot accidentally hit this synchronous CSV path. Middle = Development builds retain live priority tuning without recompiling C#. High/Ultra = designers can still drive visual-overkill priority decisions during profiling sessions, while production runtime uses archaeology/fallback and tuning CSV boot paths.
+
+Hardware Impact: 0 measured us. Static-only pass. Expected release-player impact is removing one unproven synchronous file-read path from runtime; expected managed memory impact is removing one cold static 4096-byte array from this loader and using stack scratch only during explicit editor/development calls.
+
+Evidence:
+- Newton verified no `SignalPriorityCsvHotSwap.TryLoad` production callsite under `Assets/_Project`; boot calls `SignalPriorityTable.InitializeFromDisk()` and `SignalTuningCsvHotSwap.TryLoadDefault()`.
+- Leibniz identified the `signalsWithoutLayout=1` false positive as `EntityAliveMaskSignalFilter<T> : ISignalSnapshotFilter<T>` plus generic `where T : unmanaged, ISignal, IEntityAddressedSignal`.
+- `powershell -NoProfile -ExecutionPolicy Bypass -File Tools/SignalBusContractAudit.ps1 -ProjectRoot . -Scope SignalCritical -OutputJson Docs/AgentLogs/SignalBusContractAudit_Current49_SHINOBU_02.json -OutputMarkdown Docs/AgentLogs/SignalBusContractAudit_Current49_SHINOBU_02.md -FailOnError` -> files 9 C# / 68 compute, errors 0, warnings 0, infos 17, confirmedErrors 0.
+- Current49 summary: signalDefinitions 179, signalsWithoutLayout 0, runtime signal Pack=1 0, managed event surface 0, hot-path heuristic hits 0.
+- Current49 audit artifacts trailing-whitespace scan: `TRAILING_WS_OK` for `.md` and `.json`.
+- `git diff --check -- Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs Tools/SignalBusContractAudit.ps1 Tools/SignalBusContractAuditCli/Program.cs Docs/AgentLogs/SignalBusContractAudit_Current49_SHINOBU_02.json Docs/AgentLogs/SignalBusContractAudit_Current49_SHINOBU_02.md` returned exit 0 with line-ending warnings only.
+- Build skipped by hardware guard: `PRE_BUILD_GUARD_CURRENT49 CPU=100 PROCS=0`. Last actual Core build evidence remains Current40: 311 errors / 19 warnings.

@@ -640,3 +640,82 @@ Estimated microseconds saved: no profiler number claimed. The change removes one
     <Compile>Not launched. User explicitly forbade premature rebuild; no generated owner asmdef project exists for a scoped dotnet build.</Compile>
   </VERIFICATION_DELTA>
 </SELF_AUDIT_DELTA>
+
+---
+
+## Loop 26 Polish Pass - 2026-05-20
+
+What was wrong: owned Burst code still called `math.normalize()` and repaired the result only after the fact. A zero-length or non-finite vector in terrain normal sampling, mock SDF normal generation, tangent construction, or visual-cluster bitangent construction could still create a transient NaN before fallback.
+
+What was done: added `SafeNormalize(float3 value, float3 fallback)` to both owned geology jobs. It rejects non-finite inputs, rejects `lengthsq <= 0.0001f`, and only evaluates `math.rsqrt(math.max(lengthSq, 0.0001f))` after those guards. All owned `math.normalize()` calls in `ProceduralOreSpawner.cs` and `ProceduralGeologyContracts.cs` were replaced.
+
+Cinematic cheats used: unchanged. The ore system still avoids physics terrain queries and ore proxies; the patch only hardens the cheap SDF/heightmap visual grounding and matrix basis math.
+
+Estimated microseconds saved: no profiler number claimed. The added scalar guard is cheaper than blackbox dumping, matrix poisoning, or downstream HZB/render rejection caused by NaN basis rows.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_153" evidence="STATIC_SOURCE" runtime_status="PENDING_VERIFICATION">
+  <NAN_VACCINATION_DELTA>
+    <Before>`math.normalize()` was called before post-result finite fallback in terrain normal and matrix basis paths.</Before>
+    <After>`SafeNormalize` checks input finiteness and `lengthsq` before guarded `math.rsqrt`.</After>
+    <Coverage>Mock SDF normals, sampled terrain normals, cluster bitangents, matrix normals, tangents, bitangents, and spun tangents.</Coverage>
+  </NAN_VACCINATION_DELTA>
+  <VERIFICATION_DELTA>
+    <StaticScan>Scoped scan over owned geology runtime/contracts returns no `math.normalize` hits.</StaticScan>
+    <ForbiddenScan>Scoped owned-source scan returned no direct buffer APIs, legacy Vault pointer handles, hot native allocation, raw `.Complete()`, Unity/System random, Unity time, `File.ReadAllBytes`, LINQ, `string.Format`, or direct sibling-domain hits.</ForbiddenScan>
+    <DiffCheck>`git diff --check` returned only LF/CRLF normalization warnings; exact trailing-whitespace scan returned no hits.</DiffCheck>
+    <Compile>Not launched. User explicitly forbade premature rebuild; Unity import remains the required compile proof.</Compile>
+  </VERIFICATION_DELTA>
+</SELF_AUDIT_DELTA>
+
+---
+
+## Loop 27 Polish Pass - 2026-05-20
+
+What was wrong: generation, draw-bound fallback, initial drop-pod anchor fallback, and telemetry state hashing still read Unity `Transform.position` from SHINOBU-owned recurring paths. Loop 25 cached the player service, but runtime-position authority was still leaking through Unity transform float state instead of the player pose snapshot contract.
+
+What was done: added `_lastPlayerRuntimePosition` plus `_hasPlayerRuntimePosition`, updated by `IPlayerRuntimeContext.TryGetPlayerPoseSnapshot()` and a finite AUP-to-runtime fallback when only `PlayerMovement.CurrentAup` is available. `ScheduleSpawnJob()` now receives `playerRuntimePosition`, passes it to the Burst job as `CameraRuntimePosition`, and uses it for initial draw bounds. `EnsureDropPodAnchor()` uses the same runtime pose for the first fallback anchor. Draw-bound fallback and telemetry state hash now consume the cached runtime-position fact, and AUP shift handling moves it with the same origin delta as ore matrices and drop-pod presentation.
+
+Cinematic cheats used: unchanged. The ore system still derives visual richness from deterministic SDF/heightmap grounding, HZB-gated cosmetic clusters, and `Graphics.DrawProceduralIndirect`; no player-proximity collider, scene proxy, or physics query was introduced.
+
+Estimated microseconds saved: no profiler number claimed. The patch removes recurring SHINOBU-owned transform-position property reads and prevents absolute-float authority from leaking into matrix placement or blackbox hashes.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_153" evidence="STATIC_SOURCE" runtime_status="PENDING_VERIFICATION">
+  <PLAYER_RUNTIME_POSITION_DELTA>
+    <Before>`ScheduleSpawnJob()`, `EnsureDropPodAnchor()`, `ResolveDrawBounds()` fallback, `ClearPresentationState()`, and `WriteTelemetrySample()` could read `Transform.position`.</Before>
+    <After>All those paths consume cached runtime-position float3 from `IPlayerRuntimeContext.TryGetPlayerPoseSnapshot()` or finite AUP-to-runtime fallback.</After>
+    <OriginShift>`ApplyRuntimeShift()` shifts `_lastPlayerRuntimePosition` when the floating origin changes.</OriginShift>
+  </PLAYER_RUNTIME_POSITION_DELTA>
+  <VERIFICATION_DELTA>
+    <StaticScan>Scoped scan over `ProceduralOreSpawner.cs` returned no `playerTransform.position`, `transform.position`, `WorldRuntimeReferenceUtility`, or `TryResolvePlayerAup` hits.</StaticScan>
+    <ForbiddenScan>Scoped owned-source scan returned no direct buffer APIs, legacy Vault pointer handles, hot native allocation, raw `.Complete()`, Unity/System random, Unity time, `File.ReadAllBytes`, LINQ, `string.Format`, or direct sibling-domain hits.</ForbiddenScan>
+    <DiffCheck>`git diff --check` returned only LF/CRLF normalization warnings; exact `[ \t]+$` trailing-whitespace scan returned no hits.</DiffCheck>
+    <Compile>Not launched. User explicitly forbade premature rebuild; Unity import remains the required compile proof.</Compile>
+  </VERIFICATION_DELTA>
+</SELF_AUDIT_DELTA>
+
+---
+
+## Loop 28 Polish Pass - 2026-05-20
+
+What was wrong: `GenerateResourceNodesJob.SampleGrounding()` still used `math.step(0.3f, quality)` as a hard quality gate for refinement, and `ResolveOreWeights()` used branch bands at the near/far drop-pod thresholds. The quality gate was a direct threshold discontinuity. The distance bands were deterministic but still created abrupt ore-probability edges.
+
+What was done: changed terrain refinement to a smooth budget curve: `math.smoothstep(0.25f, 1f, quality) * 2f`, with per-pass influence from `math.saturate(refineBudget - i)`. Low quality still collapses to zero extra refinement below the soft floor, while mid/high tiers blend into one or two bounded refinement probes. Drop-pod ore weighting now uses a finite-safe `math.smoothstep(0f, 1f, gradient01)` curve and integer-clamped lerp weights for titanium, copper, and silver.
+
+Cinematic cheats used: unchanged. The system still fakes geological richness through deterministic slots, height/SDF samples, shader-expanded procedural matrices, and quality-scaled visual-only clusters instead of spawning physical ore vein simulations or colliders.
+
+Estimated microseconds saved: no profiler number claimed. Low-tier work remains the collapsed no-extra-refinement path. The value is removing visible and deterministic threshold pops without adding memory, Vault lanes, or draw calls.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_153" evidence="STATIC_SOURCE" runtime_status="PENDING_VERIFICATION">
+  <CONTINUOUS_SCALABILITY_DELTA>
+    <Before>`SampleGrounding()` used `math.step(0.3f, quality)`; `ResolveOreWeights()` branched at `NearDropPodDistanceSq` and `FarDropPodDistanceSq`.</Before>
+    <After>Grounding refinement consumes a smooth quality budget; drop-pod ore weights consume a smoothstep distance gradient.</After>
+    <LowTier>Below the soft refinement floor, extra terrain probes collapse to zero.</LowTier>
+    <HighTier>At high quality, two bounded refinement probes remain available before visual-only cluster expansion.</HighTier>
+  </CONTINUOUS_SCALABILITY_DELTA>
+  <VERIFICATION_DELTA>
+    <StaticScan>Scoped scan confirms no `math.step(0.3f, quality)`, `refineGate`, `dropPodDistanceSq &lt; NearDropPodDistanceSq`, or `dropPodDistanceSq &gt; FarDropPodDistanceSq` remains.</StaticScan>
+    <ForbiddenScan>Scoped owned-source scan returned no direct buffer APIs, legacy Vault pointer handles, hot native allocation, raw `.Complete()`, Unity/System random, Unity time, file byte staging, LINQ, `string.Format`, transform-position, or direct sibling-domain hits.</ForbiddenScan>
+    <DiffCheck>`git diff --check` returned only LF/CRLF normalization warnings; exact `[ \t]+$` trailing-whitespace scan returned no hits.</DiffCheck>
+    <Compile>Not launched. User explicitly forbade premature rebuild; Unity import remains the required compile proof.</Compile>
+  </VERIFICATION_DELTA>
+</SELF_AUDIT_DELTA>

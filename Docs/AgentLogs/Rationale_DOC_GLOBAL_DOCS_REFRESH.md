@@ -314,3 +314,67 @@ Solution: update generator, generated atlas, tests, root/architecture docs, and 
 Rejected Alternatives: calling the atlas verified because generation/tests/py_compile pass, or fabricating missing Dynamic Decals/RealtimeCSG/Habitat paths.
 Scalability potential: missing payload/source references do not become green evidence on any device tier.
 Hardware Impact: 0 us frame-time impact.
+
+## R46 Decisions
+
+Problem: active root/architecture docs still carried interior R43/R45 residue after R45 was promoted.
+Solution: promote R46 as the current local static DOC_GLOBAL boundary and patch the actual interior statements: glossary/FAQ currentness, root read order, global-authority counter spine, route-card instrument fields, dump-artifact wording, phase taxonomy language, generated atlas metadata, and architecture boundary notes.
+Rejected Alternatives: leaving R45 as current because the top boundary line existed, or editing historical dated reports as if they were live evidence.
+Scalability potential: no runtime effect; low/mid/high/ultra planning starts from one current source/doc boundary instead of mixed R43/R45 text.
+Hardware Impact: 0 us frame-time impact on i3/MX350; documentation-only.
+
+Problem: route-card tables could pass the prior exact-label scan while not naming the route instrument.
+Solution: add `Instrument` coverage to active route-card tables and require it in the R46 scan. Also label black-box dump paths as planned/generated-on-fault unless a timestamped runtime trigger and output artifact exist.
+Rejected Alternatives: treating a dump path string as an existing artifact, or allowing owner/phase/capacity fields to imply route approval without the actual authority mechanism.
+Scalability potential: route growth stays owner-local and evidence-gated before low-tier/mobile or high-tier/ultra expansion.
+Hardware Impact: 0 us frame-time impact.
+
+Problem: source counters drifted again under concurrent source churn and the R45 baseline no longer matched current disk.
+Solution: recapture and promote R46 counters: `2074/2013/2048` C# files, `1418005/1397407/1411380` physical lines, `347/342` broad interface hits, `278` interface declarations, `62` registry interfaces, `142/140` asmdefs, `6179` registry hits, `890` publish/subscribe hits by the R46 broad pattern, `23375` native hits, `115` `NativeQueue` refs, `73` create slots, `135` typed lanes, `271` configure/ensure hits, and `1353` script `SignalBus<...>` matches.
+Rejected Alternatives: keeping R45 counters after the fresh scan disagreed, or deleting exact counters instead of marking them volatile static orientation.
+Scalability potential: review estimates use current source mass and signal/native pressure before hardware-tier planning.
+Hardware Impact: 0 us frame-time impact.
+
+Problem: static scans and wording still read like runtime proof in a few active root/architecture docs.
+Solution: demote `proof only` language to STATIC_SOURCE/PY_TOOL/evidence orientation, demote RenderGraph/AudioSource wording, and scan until `StrictProofOrStaleHits=0`.
+Rejected Alternatives: claiming runtime, profiler, Burst Inspector, or platform status from static docs/source scans.
+Scalability potential: all device tiers require artifact-backed proof before platform/performance acceptance.
+Hardware Impact: 0 us frame-time impact.
+
+Problem: AtlasCheck red tuple changed after R46 report/atlas regeneration.
+Solution: update generator, generated atlas, tests, root/architecture docs, and R46 report to `ATLAS_CHECK_FAIL references=6766 missing=61`, including the two additional missing editor source refs.
+Rejected Alternatives: calling the atlas verified because generation/tests/py_compile pass, or fabricating missing Dynamic Decals/RealtimeCSG/editor/Habitat paths.
+Scalability potential: missing payload/source references do not become green evidence on any device tier.
+Hardware Impact: 0 us frame-time impact.
+
+## R47 Decisions
+
+Problem: active root/architecture documents still carried R45/R46 authority-spine residue after R46 was promoted.
+Solution: promote R47 as the current local static DOC_GLOBAL boundary and patch the interior authority statements across root Docs entrypoints, architecture README/actuality ledger, Reports index, `Docs/PROJECT_ATLAS.md`, generated atlas metadata, and active architecture boundary notes.
+Rejected Alternatives: leaving R46 as current because many files already had an R47 mention elsewhere, or editing historical dated reports as if they were live evidence.
+Scalability potential: no runtime effect; low/mid/high/ultra planning starts from one current static authority spine rather than mixed R45/R46/R47 entrypoints.
+Hardware Impact: 0 us frame-time impact on i3/MX350; documentation-only.
+
+Problem: old signal wording hid the difference between typed first-party signal lanes and legacy/cold bridge mechanisms.
+Solution: replace stale global-event-bus shorthand with typed `SignalBus<T>` lane language plus documented `GlobalSignals` NativeQueue bridge language; keep `HectonEventBus` as mod/API/cold/internal-meta orientation only.
+Rejected Alternatives: treating every "EventBus" mention as equivalent or claiming zero-GC signal transport from static source wording without profiler/GCMonitor evidence.
+Scalability potential: route reviews can scale from low-tier to ultra without routing hot gameplay through ambiguous global buses.
+Hardware Impact: 0 us frame-time impact; prevents future hot-path coupling rather than changing runtime code.
+
+Problem: source counters drifted again during R47 under concurrent source churn.
+Solution: recapture and promote the final R47 counter tuple: `ProjectCs=2088`, `ScriptCs=2027`, `NonTestCs=2062`, `ProjectLines=1424399`, `ScriptLines=1403799`, `NonTestLines=1417772`, `Asmdefs=143`, `NonTestAsmdefs=141`, `InterfaceHitsProject=343`, `InterfaceHitsScripts=340`, `InterfaceDecls=278`, `RegistryInterfaces=62`, `GlobalRegistryHits=6213`, `PublishSubscribeDirectHits=586`, `SignalCorridorBroadHits=2502`, `NativeHits=18617`, `NativeQueueRefs=115`, `CreateQueueSlots=73`, `EnsureLanes=135`, `ConfigureEnsure=271`, and `ScriptTypedLanes=1447`.
+Rejected Alternatives: keeping the earlier R47 `2084/2023/2058` snapshot after the fresh scanner disagreed, or leaving "publish/subscribe broad pattern" ambiguous.
+Scalability potential: review estimates use current source mass and signal/native pressure before device-tier planning.
+Hardware Impact: 0 us frame-time impact.
+
+Problem: binary-payload and route-card wording still allowed source path discovery or planned dump paths to read like runtime proof.
+Solution: demote runtime-wired evidence-class wording to `STATIC_SOURCE_RUNTIME_PATH_PRESENT` where source resolves the payload path, and label route dump paths as planned/generated-on-fault unless timestamped runtime artifacts are linked.
+Rejected Alternatives: claiming runtime payload load, black-box dump generation, profiler cleanliness, or shader import from static source and documentation text.
+Scalability potential: all device tiers require real artifact-backed proof before performance/platform acceptance.
+Hardware Impact: 0 us frame-time impact.
+
+Problem: AtlasCheck red tuple changed after R47 report creation and final regeneration.
+Solution: update generator, generated atlas, tests, root/architecture docs, R47 report, status, and log to `ATLAS_CHECK_FAIL references=6781 missing=61`.
+Rejected Alternatives: calling the atlas verified because generation/tests/py_compile pass, or fabricating missing Dynamic Decals/RealtimeCSG/editor/Habitat paths.
+Scalability potential: missing payload/source references do not become green evidence on any device tier.
+Hardware Impact: 0 us frame-time impact.

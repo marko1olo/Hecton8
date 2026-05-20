@@ -753,7 +753,7 @@ def build_markdown(data: dict[str, object] | None = None, generated_at: datetime
     )
     out.append("")
     out.append("<!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_START -->")
-    out.append("## 2026-05-17 R4 Interior Actuality Boundary")
+    out.append("## 2026-05-20 R47 Root/Architecture Actuality Boundary")
     out.append("")
     out.append("This document is active only where it agrees with:")
     out.append("")
@@ -771,9 +771,10 @@ def build_markdown(data: dict[str, object] | None = None, generated_at: datetime
     )
     out.append("")
     out.append(
-        "Current DOC_GLOBAL boundary (2026-05-20 R46): "
-        "`Docs/Reports/2026-05-20_DOCUMENTATION_R46_ROOT_ARCHITECTURE_INTERIOR_AUTHORITY_ROUTE_FIELDS_AND_PROOF_LANGUAGE_LOCAL.md` "
-        "is the latest local static root/architecture interior-authority, route-field, and proof-language correction. "
+        "Current DOC_GLOBAL boundary (2026-05-20 R47): "
+        "`Docs/Reports/2026-05-20_DOCUMENTATION_R47_ROOT_ARCHITECTURE_AUTHORITY_SPINE_RUNTIME_WORDING_AND_COUNTER_DRIFT_LOCAL.md` "
+        "is the latest local static root/architecture authority-spine, runtime-wording, and counter-drift correction. "
+        "R46 remains the prior interior-authority/route-field/proof-language correction; "
         "R45 remains the prior R43/R44 residue/proof-artifact/source-counter correction; "
         "R44 remains the prior internal-residue/exact-route-field/proof-wording correction; "
         "R43 remains the prior route-card/counter-residue/AtlasCheck red-state correction; AtlasCheck remains red and runtime proof is absent."
@@ -849,7 +850,7 @@ def build_markdown(data: dict[str, object] | None = None, generated_at: datetime
     out.append("- `python Tools/AtlasCheck.py`")
     out.append("- `python -m py_compile Tools/BuildArchitectureAtlas.py Tools/AtlasCheck.py`")
     out.append("- C# compile verification is outside this atlas; run Unity import/Console and serial CLI builds as separate evidence.")
-    out.append("- Current DOC_GLOBAL R46 blocker: `python Tools/AtlasCheck.py` still exits `1` with `ATLAS_CHECK_FAIL references=6741 missing=59`; missing refs include one Dynamic Decals vendor asset reference, RealtimeCSG vendor icon/readme image references, and `Assets/_Project/Scripts/Habitat/Deformation/Editor/HabitatDamageBakePipeline.cs` until the references are restored or the atlas check excludes that evidence class deliberately.")
+    out.append("- Current DOC_GLOBAL R47 blocker: `python Tools/AtlasCheck.py` still exits `1` with `ATLAS_CHECK_FAIL references=6781 missing=61`; missing refs include one Dynamic Decals vendor asset reference, RealtimeCSG vendor icon/readme image references, `Assets/_Project/Scripts/Editor/HectonMaskChannelPacker.cs`, `Assets/_Project/Scripts/Editor/HectonMaterialChannelPackValidator.cs`, and `Assets/_Project/Scripts/Habitat/Deformation/Editor/HabitatDamageBakePipeline.cs` until the references are restored or the atlas check excludes that evidence class deliberately.")
     out.append("- This generated atlas is not `VERIFIED` unless `Tools/AtlasCheck.py` exits `0` after generation.")
     out.append("")
 
@@ -955,7 +956,7 @@ def build_json_payload(data: dict[str, object], generated_at: datetime | None = 
             "generator": "Tools/BuildArchitectureAtlas.py",
             "validator": "Tools/AtlasCheck.py",
             "tests": "Tools/test_architecture_atlas.py",
-            "atlas_check_status": "RED: Tools/AtlasCheck.py exits 1 with ATLAS_CHECK_FAIL references=6741 missing=59; missing refs include one Dynamic Decals vendor asset reference, RealtimeCSG vendor icon/readme image references, and Assets/_Project/Scripts/Habitat/Deformation/Editor/HabitatDamageBakePipeline.cs. Generated atlas is STATIC_SOURCE only until AtlasCheck exits 0.",
+            "atlas_check_status": "RED: Tools/AtlasCheck.py exits 1 with ATLAS_CHECK_FAIL references=6781 missing=61; missing refs include one Dynamic Decals vendor asset reference, RealtimeCSG vendor icon/readme image references, Assets/_Project/Scripts/Editor/HectonMaskChannelPacker.cs, Assets/_Project/Scripts/Editor/HectonMaterialChannelPackValidator.cs, and Assets/_Project/Scripts/Habitat/Deformation/Editor/HabitatDamageBakePipeline.cs. Generated atlas is STATIC_SOURCE only until AtlasCheck exits 0.",
         },
         "residual_risk": [
             "Unity import, runtime wiring, actual VRAM residency, profiler frame time, GC, build, and Play Mode remain PENDING VERIFICATION.",

@@ -682,3 +682,244 @@ Verification:
   <interface_hot_path status="REMOVED_FROM_FLUSH_CLEAR_TELEMETRY">No `lane.FlushPreSimulation`, `lane.ClearPostSimulation`, or `lane.CopyTelemetry` calls remain in `SignalBusRegistry` frame/diagnostic paths.</interface_hot_path>
   <compile_guard>Build not launched; CPU guard still requires a safe window below 50 percent and no active compiler.</compile_guard>
 </SELF_AUDIT>
+
+## 2026-05-20 Loop 22 - Signal Telemetry Sampler Interface Residue Removal
+
+What was wrong:
+- `ISignalLane` had been reduced to cold `Dispose()`, but `ReportSignalLaneTelemetry()` still attempted `SignalBusRegistry.GetLaneAt(...)` and `lane.SnapshotCount`, `lane.PushedLastFlush`, `lane.DroppedLastFlush`, `lane.StormDetectedLastFlush`, and related property reads.
+- Static source showed `GetLaneAt` absent and the interface properties absent, so the path was a compile-risk and a frame-adjacent virtual-dispatch regression.
+
+What was done:
+- `ReportSignalLaneTelemetry()` now uses `SignalBusRegistry.TryCopyTelemetryAt(...)` and reads the value-type `SignalLaneTelemetry` row produced by the cached closed-generic telemetry delegate.
+- `SignalBus<T>.CopyTelemetryStatic(...)` now writes exact pushed-last-flush and corrupted-total counters into `SignalLaneTelemetry.Reserved2` without changing the 32-byte public telemetry stride.
+- `DroppedCount` now carries `_droppedLastFlush`; corrupted count is separately decoded from `Reserved2` by the reporting path.
+- Route card, binary ledger, status, and rationale were reconciled.
+
+Cinematic Cheats used:
+- No new simulation. This keeps the existing Dear Lie event coalescence and removes diagnostic object dispatch instead of adding a heavier telemetry object model.
+
+Exact Microseconds saved:
+- Measured: `0 us`; no profiler/runtime proof was run.
+- Static effect: avoids O(laneCount) virtual property reads in signal telemetry reporting and removes one compile-risk.
+
+Verification:
+- `GlobalSignals.cs` braces `836/836`; `SignalWardenRuntime.cs` braces `309/309`.
+- Source scan: `GetLaneAt` matches `0`; stale telemetry `lane.*` property matches `0`; `TryCopyTelemetryAt` matches `2`; packed `Reserved2` telemetry write matches `1`.
+- `git diff --check` reports only LF-to-CRLF warnings on tracked files.
+- Build not launched. Latest build guard: `CPU=100`, `dotnet=0`, `csc=0`.
+
+<SELF_AUDIT id="SHINOBU_200" pass="TELEMETRY_SAMPLER_INTERFACE_RESIDUE_REMOVAL">
+  <task_reconciliation count="20">No original XML task is reopened by this patch; this is an anti-regression polish pass on the shared SignalBus telemetry surface used to prove Tasks 01, 04, 16, and 18.</task_reconciliation>
+  <telemetry_layout struct="SignalLaneTelemetry" size="32" stride_changed="false">Reserved2 low32 = pushed-last-flush; Reserved2 high32 = corrupted-total. Existing offsets for LaneHash, QueuedBeforeFlush, SnapshotCount, DroppedCount, CoalescedCount, and Flags remain unchanged.</telemetry_layout>
+  <interface_residue get_lane_at_matches="0" stale_lane_property_matches="0" />
+  <hot_path route="closed_generic_delegate">Telemetry sampling now copies value rows through cached closed-generic delegates, not `ISignalLane` diagnostic properties.</hot_path>
+  <compile_guard>Build not launched; CPU guard still blocks at CPU=100 with dotnet=0 and csc=0.</compile_guard>
+</SELF_AUDIT>
+
+## 2026-05-20 Loop 23 - Third-Party Dispose Boundary Scan
+
+What was wrong:
+- The user requested a manual `Dispose()` purge review. Vendor/package scan found `.Dispose()` call sites in `Assets/Plugins/Easy Save 3`, `Assets/Plugins/Demigiant/DOTweenPro`, `Packages/com.waveharmonic.crest`, and Unity ShaderGraph package code.
+
+What was done:
+- Did not mutate third-party/vendor source from the SHINOBU_200 Core signal contention lane.
+- Rechecked SHINOBU-owned cleanup naming: `SignalTelemetryRingBuffer.ReleaseHandlesOnly()` and `SignalThreadLocalScratchpad.ReleaseHandlesOnly()` are used from `GlobalSignals.DisposeAllQueues()` for Vault-owned buffers.
+- Recorded the boundary in status and rationale.
+
+Cinematic Cheats used:
+- None. This is ownership hygiene, not simulation.
+
+Exact Microseconds saved:
+- `0 us`. No runtime patch was made in third-party code.
+
+Verification:
+- Vendor `.Dispose()` scan produced Easy Save 3, DOTweenPro, Crest, and ShaderGraph package hits.
+- SHINOBU-owned release scan shows `ReleaseHandlesOnly()` for the Vault handle surfaces.
+- Build not launched; CPU guard remains above the project threshold.
+
+## 2026-05-20 Loop 24 - Managed Lane Adapter Eviction
+
+What was wrong:
+- `SignalBusRegistry` still had an `ISignalLane` interface and a `SignalLaneAdapter` class instance per closed `SignalBus<T>`.
+- That adapter no longer served flush, clear, or telemetry; it only forwarded cold `Dispose()`, so it was dead object-oriented spine in the registry.
+
+What was done:
+- Removed `ISignalLane`.
+- Removed `SignalLaneAdapter`.
+- Replaced `_lanes object[]` with `SignalLaneDisposeDelegate[]`.
+- `SignalBus<T>` now registers cached static dispose delegates beside the existing flush, clear, and telemetry delegates.
+
+Cinematic Cheats used:
+- No simulation added. The signal route remains coalesced/typed; this pass removes managed adapter scaffolding.
+
+Exact Microseconds saved:
+- Measured: `0 us`; no runtime profiler proof was run.
+- Static effect: removes one cold managed adapter object per closed SignalBus lane and removes interface casts from registry disposal.
+
+Verification:
+- `GlobalSignals.cs` braces `833/833`.
+- Source scan returned zero matches for `ISignalLane`, `SignalLaneAdapter`, `_lanes`, `object[256]`, `GetLaneAt`, stale telemetry `lane.*`, and `.CopyTelemetry(`.
+- `git diff --check` reports only LF-to-CRLF warning on `GlobalSignals.cs`.
+- Build not launched. Latest build guard: `CPU=94`, `dotnet=0`, `csc=0`.
+
+<SELF_AUDIT id="SHINOBU_200" pass="MANAGED_LANE_ADAPTER_EVICTION">
+  <interface_residue ISignalLane="0" SignalLaneAdapter="0" object_lanes="0" />
+  <registry_shape dispose="SignalLaneDisposeDelegate[]" flush_clear="SignalLaneDispatch[]" telemetry="SignalLaneTelemetryDelegate[]" />
+  <hot_path>No interface array or adapter object participates in SignalBus flush, clear, telemetry, or registration disposal.</hot_path>
+  <compile_guard>Build not launched; CPU guard blocked at CPU=94 with dotnet=0 and csc=0.</compile_guard>
+</SELF_AUDIT>
+
+## 2026-05-20 Loop 25 - Corrupted-Only Lane Telemetry Preservation
+
+What was wrong:
+- `Reserved2` separation made corrupted payload totals exact, but the per-lane crash telemetry gate could skip a lane that had corrupted payloads only.
+- Folding corrupted payloads into `DroppedCount` would have hidden the difference between capacity pressure and data corruption.
+
+What was done:
+- `SignalBus<T>.CopyTelemetryStatic(...)` marks corrupted lanes with `SignalLaneTelemetry.Flags` bit `16` while keeping corrupted-total packed in `Reserved2` high32.
+- `ReportSignalLaneTelemetry()` now treats `corruptedCount > 0` as critical, reports corrupted-only lanes to `CrashTelemetryBuffer.ReportSignalLaneStats(...)`, and keeps the 300-frame ring's dropped and corrupted aggregate counters separate.
+- Route card and binary payload ledger now document the corrupted-only telemetry rule.
+
+Cinematic Cheats used:
+- No new simulation. The Dear Lie remains same-cell signal coalescence; this pass only preserves black-box evidence for corrupted signal lanes.
+
+Exact Microseconds saved:
+- Measured: `0 us`; this is forensic correctness, not a profiler-backed frame-time optimization.
+- Static effect: no telemetry stride expansion, no interface dispatch, no new allocation route.
+
+Verification:
+- `GlobalSignals.cs` source contains `Flags` bit `16`, `DecodeSignalLaneTelemetryCorrupted(...)`, and the corrupted-only critical reporting gate.
+- Prior static gate after source patch: `GlobalSignals.cs` braces `834/834`; interface/adapter residue scan clean; `git diff --check` reported only LF-to-CRLF warnings.
+- Build not launched. Latest sampled build guard before this log patch: `CPU=90`, `dotnet=0`, `csc=0`.
+
+<SELF_AUDIT id="SHINOBU_200" pass="CORRUPTED_ONLY_LANE_TELEMETRY">
+  <task_reconciliation count="20">No XML task is reopened. This hardens Tasks 04, 16, and the black-box proof surface by preserving corrupted lane evidence without reintroducing object telemetry.</task_reconciliation>
+  <telemetry_layout struct="SignalLaneTelemetry" size="32" stride_changed="false">Reserved2 low32 = pushed-last-flush; Reserved2 high32 = corrupted-total; Flags bit 16 = corrupted lane present.</telemetry_layout>
+  <reporting_gate snapshot_count="checked" dropped_count="checked" corrupted_count="checked">Corrupted-only lanes remain critical and enter crash telemetry.</reporting_gate>
+  <compile_guard>Build not launched; CPU guard remains above 50 percent.</compile_guard>
+</SELF_AUDIT>
+
+## 2026-05-20 Loop 26 - Focused Compile Wall Probe
+
+What was wrong:
+- Until the last guard sample, CPU was above the project build threshold. After documentation reconciliation, CPU dropped below 50 with no active compiler process, so a focused compile probe was justified.
+
+What was done:
+- Ran `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1`.
+- The command failed in 29.87 seconds with 75 errors.
+- The reported failures are broad Core compile-wall dependency errors outside SHINOBU_200 files: missing `Hecton8.Equipment`, `Hecton8.Logistics.Grid`, `SoundEmissionSignal`, `SocketDefinitionDTO`, docking/world/audio bridge interfaces, `WfcOutpost*`, `H8BinaryWorldPager`, `VRAMMonitor`, `AssetLifecycleGovernor`, and similar symbols.
+- No reported error targeted `Assets/_Project/Scripts/Core/GlobalSignals.cs` or `Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs`.
+
+Cinematic Cheats used:
+- None. This is verification triage.
+
+Exact Microseconds saved:
+- Measured: `0 us`.
+- Compile-wall avoidance: stopped after the first broad dependency-wall failure instead of retrying the same build or editing unrelated domains.
+
+Verification:
+- Focused build was attempted only after guard opened: prior sample `CPU=28`, `dotnet=0`, `csc=0`, `VBCSCompiler=0`.
+- Build result: FAILED, `75` errors, `0` warnings, elapsed `00:00:29.87`.
+- Local static gates before the build remained clean: `GlobalSignals.cs` braces `834/834`, registry residue `0`; `SignalWardenRuntime.cs` braces `309/309`, owned forbidden-pattern matches `0`.
+
+<SELF_AUDIT id="SHINOBU_200" pass="FOCUSED_COMPILE_WALL_PROBE">
+  <compile command="dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1" result="FAILED_EXTERNAL_DEPENDENCY_WALL" errors="75" warnings="0" elapsed="00:00:29.87" />
+  <owned_file_errors GlobalSignals="0" SignalWardenRuntime="0" />
+  <dependency_wall examples="Hecton8.Equipment,Hecton8.Logistics.Grid,SoundEmissionSignal,SocketDefinitionDTO,IDockingAutopilotService,ISceneTransitionAudioBridge,WfcOutpostGridDescriptor" />
+  <next_action>Do not repair unrelated domains from SHINOBU_200; integrator must clear the broader Core compile wall before runtime proof.</next_action>
+</SELF_AUDIT>
+
+## 2026-05-20 Loop 27 - NativeDisable Safety Proof Closure
+
+What was wrong:
+- `SignalWardenRuntime.cs` used `NativeDisableParallelForRestriction` on SHINOBU worker-local byte/header surfaces and overflow ring surfaces.
+- The partitioning design was already bounded, but the source lacked the native-memory mandate's immediate three-paragraph proof above each restricted field.
+
+What was done:
+- Added `SAFETY_JUSTIFICATION_PARAGRAPH_1/2/3` blocks above `SignalThreadLocalWriteContext.Bytes`, `SignalThreadLocalWriteContext.Headers`, `GenerateSignalThreadContentionMockJob.Bytes`, `Headers`, `OverflowSignals`, and `OverflowHeader`.
+- Each proof states the false-positive safety reason, rejected alternatives, and the invariant that prevents aliasing or torn reads.
+
+Cinematic Cheats used:
+- None. This is unsafe-source proof hardening.
+
+Exact Microseconds saved:
+- Measured: `0 us`.
+- Static effect: removes a native-memory review blocker without changing generated runtime logic.
+
+Verification:
+- `SignalWardenRuntime.cs` braces `309/309`.
+- Owned forbidden-pattern scan remains `0`.
+- Proof scan found no `NativeDisableParallelForRestriction` field missing all three `SAFETY_JUSTIFICATION` markers.
+- `git diff --check` reports only LF-to-CRLF warnings.
+- Build not rerun for comment-only patch; prior focused compile failed on external Core dependency wall, not SHINOBU files.
+
+<SELF_AUDIT id="SHINOBU_200" pass="NATIVE_DISABLE_SAFETY_PROOF">
+  <fields_proven count="6">SignalThreadLocalWriteContext.Bytes, SignalThreadLocalWriteContext.Headers, GenerateSignalThreadContentionMockJob.Bytes, GenerateSignalThreadContentionMockJob.Headers, GenerateSignalThreadContentionMockJob.OverflowSignals, GenerateSignalThreadContentionMockJob.OverflowHeader</fields_proven>
+  <invariant>Thread-local writes are partitioned by NativeSetThreadIndex and fixed stride; overflow writes are CAS-reserved and sequence-published; commit reads after producer dependency.</invariant>
+  <runtime_effect>Comment/proof-only patch. No DTO size, BufferID, SignalBus ABI, or job dependency graph changed.</runtime_effect>
+</SELF_AUDIT>
+
+## 2026-05-20 Loop 28 - Legacy Publish Alias Queue De-Duplication
+
+What was wrong:
+- Legacy `GlobalSignals` queue fields are aliases of the same closed `SignalBus<T>` queues created by `CreateQueue(...)`.
+- Publish methods that called both `_legacySignals.Enqueue(...)` and `SignalBus<T>.Push(...)` inserted duplicate payloads into the same MPSC lane.
+- Legacy-only publish methods bypassed `SignalBus<T>.Push(...)`, so they skipped finite guards, load-shed accounting, telemetry, and the canonical snapshot path.
+
+What was done:
+- Removed direct `_...Signals.Enqueue(...)` calls from `GlobalSignals.Publish(...)`.
+- Routed legacy payloads through `SignalBus<T>.Push(...)` while preserving public `Publish(...)`, `TryDequeue*`, and `NativeQueue<T>.ParallelWriter` wrapper signatures.
+- Repointed legacy writer properties to `SignalBus<T>.ParallelWriter`; only `SignalBus<T>` itself now calls `.AsParallelWriter()`.
+- Removed unused private `PrewarmQueue<T>(ref NativeQueue<T>, int)` so the legacy facade no longer contains a dead direct-enqueue helper.
+
+Cinematic Cheats used:
+- Same Dear Lie remains in the downstream SignalBus snapshot/coalescence path. This pass avoids duplicate signal facts instead of simulating any additional gameplay truth.
+
+Exact Microseconds saved:
+- Measured: `0 us`; no Unity profiler proof exists.
+- Static effect: one redundant native enqueue is removed for every formerly duplicated publish path. Alias-field writer calls are removed from the facade.
+
+Verification:
+- `rg "_[A-Za-z0-9]+Signals\.Enqueue|_[A-Za-z0-9]+Signal\.Enqueue" Assets/_Project/Scripts/Core/GlobalSignals.cs` returned zero matches.
+- `rg "\.AsParallelWriter\(" Assets/_Project/Scripts/Core/GlobalSignals.cs` now reports only `SignalBus<T>.ParallelWriter`.
+- `GlobalSignals.cs` braces `832/832`.
+- `git diff --check` reports only LF-to-CRLF warnings.
+- Build not launched. Latest build guard: `CPU=92`, `dotnet=0`, `csc=0`; prior focused Core build already failed on external dependency wall with no owned-file diagnostics.
+
+<SELF_AUDIT id="SHINOBU_200" pass="LEGACY_PUBLISH_ALIAS_QUEUE_DEDUP">
+  <task_reconciliation count="20">Hardens Tasks 01, 07, 11, and 16 by reducing duplicate MPSC queue pressure and preserving one canonical SignalBus snapshot route.</task_reconciliation>
+  <legacy_enqueue_residue direct_publish_enqueue="0" alias_field_parallel_writer="0" dead_legacy_prewarm="0" />
+  <canonical_route>All legacy Publish payloads route through SignalBus&lt;T&gt;.Push; TryDequeue* remains backed by SignalBus&lt;T&gt;.TryReadFrame.</canonical_route>
+  <compile_guard>Static gate state before the follow-up compile probe; focused build result is recorded in POST_ALIAS_COMPILE_WALL_PROBE below.</compile_guard>
+</SELF_AUDIT>
+
+## 2026-05-20 Loop 29 - Post-Alias Focused Compile Probe
+
+What was wrong:
+- Loop 28 changed C# behavior in `GlobalSignals.cs`, so static source gates alone were not enough once the CPU guard opened.
+- The project already had a known Core dependency wall, so only one focused build probe was acceptable.
+
+What was done:
+- Ran `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1`.
+- The command failed in `00:00:16.44` with `76` errors.
+- The reported errors are external to SHINOBU_200 files: `Hecton8.Equipment`, `Hecton8.Logistics.Grid`, `SoundEmissionSignal`, `SocketDefinitionDTO`, docking/world/audio bridge interfaces, `WfcOutpost*`, `VRAMMonitor`, `H8BinaryWorldPager`, and related missing symbols.
+- No diagnostic named `Assets/_Project/Scripts/Core/GlobalSignals.cs` or `Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs`.
+
+Cinematic Cheats used:
+- None. This is compile-wall verification.
+
+Exact Microseconds saved:
+- Measured: `0 us`.
+- Command discipline: stopped after one focused failed build instead of retrying the unchanged external dependency wall.
+
+Verification:
+- Pre-build guard was open: `CPU=39`, `dotnet=0`, `csc=0`.
+- Build result: FAILED, `76` errors, `0` warnings, elapsed `00:00:16.44`.
+- Owned source static gates before build: `GlobalSignals.cs` braces `832/832`; `SignalWardenRuntime.cs` braces `309/309`; direct legacy publish enqueue scan `0`; alias-field `.AsParallelWriter()` scan `0`.
+
+<SELF_AUDIT id="SHINOBU_200" pass="POST_ALIAS_COMPILE_WALL_PROBE">
+  <compile command="dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1" result="FAILED_EXTERNAL_DEPENDENCY_WALL" errors="76" warnings="0" elapsed="00:00:16.44" />
+  <owned_file_errors GlobalSignals="0" SignalWardenRuntime="0" />
+  <dependency_wall examples="Hecton8.Equipment,Hecton8.Logistics.Grid,SoundEmissionSignal,SocketDefinitionDTO,IDockingAutopilotService,ISceneTransitionAudioBridge,WfcOutpostGridDescriptor,VRAMMonitor,H8BinaryWorldPager" />
+  <next_action>Do not repair unrelated domains from SHINOBU_200; integrator must clear the broader Core compile wall before runtime proof.</next_action>
+</SELF_AUDIT>

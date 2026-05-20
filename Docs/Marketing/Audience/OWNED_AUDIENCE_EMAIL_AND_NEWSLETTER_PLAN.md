@@ -84,7 +84,7 @@ If any field is missing, keep the copy as a draft and do not publish the form.
 |---|---|---|---|---|
 | `DEMO_ALERT` | Steam page or demo/playtest is close enough to define honestly. | Email, consent, preferred language. | One email when demo/playtest opens. | Stop if demo scope/date is unknown. |
 | `PLAYTEST_WAITLIST` | First route is playable internally and screening score is active. | Email, consent, language, region, hardware opt-in, segment interest. | Possible invite, not guaranteed access. | Stop if build cannot support external testers. |
-| `DEVLOG_DIGEST` | First screenshot pack has passed QA and includes one agency/decision proof asset with AB-009/KPI decision-read fields. | Email, consent, preferred language. | Occasional major updates only. | Stop if updates would be filler or mood-only. |
+| `DEVLOG_DIGEST` | First screenshot pack has passed QA and includes one agency/decision proof asset with non-pending `viewer_named_decision`, valid `capture_verdict`, and AB-009/KPI decision-read fields. | Email, consent, preferred language. | Occasional major updates only. | Stop if updates would be filler or mood-only. |
 | `PRESS_CREATOR_CONTACT` | Presskit exists. | Work email/contact, outlet/channel, consent. | Press/creator updates only. | Stop if presskit/contact policy is not ready. |
 
 ### Signup Copy Blocks

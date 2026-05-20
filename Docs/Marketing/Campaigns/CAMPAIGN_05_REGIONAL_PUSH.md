@@ -38,8 +38,8 @@ Regional outreach is not a shortcut around the English proof gates. A region can
 - `localization_public_permission_gate = ALLOW_LOCALIZED_PUBLIC_USE_VERIFIED` has passed for the exact language/surface.
 - English first screenshot or clip packet has passed current asset QA.
 - Localized short pitch has native/fluent review and no mojibake.
-- Gameplay, pressure, route-risk, threat, salvage, base-failure, or first-public agency proof is backed by AB-009/KPI field source: `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`.
-- Public Steam, wishlist, demo, signup, presskit, or trailer CTA has passed Official CTA Link Activation Gate V0. If not, use no-link feedback ask or private access route.
+- Gameplay, pressure, route-risk, threat, salvage, base-failure, or first-public agency proof is backed by non-pending asset metadata `viewer_named_decision`, valid non-held `capture_verdict`, and AB-009/KPI field source: `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`.
+- Public Steam, wishlist, demo, signup, presskit, or trailer CTA has passed the exact destination permission gate plus destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`. If not, use no-link feedback ask or private access route.
 - Private key/demo/playtest/preview route has access-log fields: `verified_contact_route`, `access_route_class`, `reply_status_after_send`, `reply_consent_provenance`, and `agency_decision_field_source` where proof claims are used.
 - Batch size is a ceiling, not an instruction; do not verify new regional leads unless the current CRM has a source-backed asset/route gap.
 
@@ -55,7 +55,7 @@ HECTON-8 - odinochnoe podvodnoe vyzhivanie pro davlenie, tekhniku, poisk resurso
 
 Kryuchok dlya zritelei: baza kak mashina, glubina kak ugroza, Seed Ship kak anomalya, kotoraya portit pribory, marshruty i oshchushchenie bezopasnosti.
 
-Materialy: [odobrennyi Steam/skrinshoty/klip/demo tolko posle public CTA activation dlya public-linkov ili recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED` s `verified_contact_route`, `access_route_class`, `reply_consent_provenance` dlya private-route]
+Materialy: [Steam/skrinshoty/klip/demo tolko posle exact destination gate plus `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` dlya public-linkov ili recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED` s `verified_contact_route`, `access_route_class`, `reply_consent_provenance` dlya private-route]
 
 Esli format podoidet, mozhno obsudit demo ili press-kit, kogda build, dostup, `verified_contact_route`, `access_route_class` i `reply_consent_provenance` budut gotovy.
 
@@ -101,11 +101,11 @@ Use regional outreach only after the English first screenshot pack passes and th
 
 | Wave | Region | Max sends | Required proof | Primary targets | Stop rule |
 |---|---|---:|---|---|---|
-| R1 | RU/CIS | 5 | RU one-pager, `PLAN-SHOT-001`, `PLAN-SHOT-003`, AB-009/KPI field source for pressure/route-risk claims, Official CTA Link Activation Gate V0 if any public link is mentioned, or exact private access-log fields plus `reply_consent_provenance`. | Mid-size survival/horror creators before huge channels. | Stop if replies focus on translation, payment/access confusion, missing send/access fields, or competitor-attack framing. |
-| R2 | German | 5 | German short pitch, base/machinery proof, AB-009/KPI field source for player-decision claims, CTA activation or no-link fallback. | Long-form survival/sim creators. | Stop if base/machinery proof is too weak, copy sounds machine-translated, or send/access fields plus `reply_consent_provenance` are missing. |
-| R3 | PT-BR | 3 | PT-BR short pitch, one strong clip, AB-009/KPI field source for agency claims, CTA activation or no-link fallback. | Horror/survival creators with current activity. | Stop if no Portuguese reviewer, no clip exists, or send/access fields plus `reply_consent_provenance` are missing. |
-| R4 | Spanish | 3 | ES short pitch, one strong clip, AB-009/KPI field source for agency claims, CTA activation or no-link fallback. | Horror/survival or critique channels. | Stop if broad variety target would need hype framing or proof custody is missing. |
-| R5 | Polish/French | 2 each | Reviewed short pitch, demo or strong screenshot pack, AB-009/KPI field source where proof claims are used, CTA activation or exact private access-log fields. | Indie/horror/systems fit only. | Stop if localization is unreviewed or send/access fields plus `reply_consent_provenance` are missing. |
+| R1 | RU/CIS | 5 | RU one-pager, `PLAN-SHOT-001`, `PLAN-SHOT-003`, metadata handoff plus AB-009/KPI field source for pressure/route-risk claims, exact destination gate plus `public_cta_permission_gate` if any public link is mentioned, or exact private access-log fields plus `reply_consent_provenance`. | Mid-size survival/horror creators before huge channels. | Stop if replies focus on translation, payment/access confusion, pending metadata, missing send/access fields, or competitor-attack framing. |
+| R2 | German | 5 | German short pitch, base/machinery proof, metadata handoff plus AB-009/KPI field source for player-decision claims, exact destination gate plus `public_cta_permission_gate` or no-link fallback. | Long-form survival/sim creators. | Stop if base/machinery proof is too weak, copy sounds machine-translated, or send/access fields plus `reply_consent_provenance` are missing. |
+| R3 | PT-BR | 3 | PT-BR short pitch, one strong clip, metadata handoff plus AB-009/KPI field source for agency claims, exact destination gate plus `public_cta_permission_gate` or no-link fallback. | Horror/survival creators with current activity. | Stop if no Portuguese reviewer, no clip exists, or send/access fields plus `reply_consent_provenance` are missing. |
+| R4 | Spanish | 3 | ES short pitch, one strong clip, metadata handoff plus AB-009/KPI field source for agency claims, exact destination gate plus `public_cta_permission_gate` or no-link fallback. | Horror/survival or critique channels. | Stop if broad variety target would need hype framing or proof custody is missing. |
+| R5 | Polish/French | 2 each | Reviewed short pitch, demo or strong screenshot pack, metadata handoff plus AB-009/KPI field source where proof claims are used, exact destination gate plus `public_cta_permission_gate` or exact private access-log fields. | Indie/horror/systems fit only. | Stop if localization is unreviewed or send/access fields plus `reply_consent_provenance` are missing. |
 
 ### One-Pager Fields
 
@@ -116,7 +116,8 @@ What exists now:
 What does not exist:
 Asset links:
 Steam/demo status:
-CTA activation packet or no-link route:
+Destination permission gate plus public CTA gate, or no-link route:
+Asset metadata handoff fields (`viewer_named_decision`, `capture_verdict`, `capture_handoff_packet_id`):
 AB-009/KPI agency field source:
 send_route_class for sends, or exact private access-log fields if private:
 reply_consent_provenance:
@@ -132,8 +133,8 @@ Kill localized copy if:
 - it uses a machine-translated idiom that sounds unnatural;
 - it adds unsupported multiplayer scope, release date, performance, or platform promises;
 - it explains HECTON-8 only through a competitor comparison;
-- it mentions Steam/demo before Official CTA Link Activation Gate V0 for public links or recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED` plus exact access-log fields for private routes;
-- it uses gameplay, pressure, route-risk, threat, salvage, base-failure, or first-public agency proof without `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`;
+- it mentions Steam/demo before the exact destination gate plus `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` for public links or recipient/batch `private_access_permission_gate = ALLOW_PRIVATE_ACCESS_VERIFIED` plus exact access-log fields for private routes;
+- it uses gameplay, pressure, route-risk, threat, salvage, base-failure, or first-public agency proof without non-pending metadata `viewer_named_decision`, valid non-held `capture_verdict`, and `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`;
 - it lacks `send_route_class` for sends or exact private access-log fields for access asks, plus `reply_consent_provenance` custody;
 - a native/fluent reviewer has not approved it for public use.
 - `localization_public_permission_gate` is not `ALLOW_LOCALIZED_PUBLIC_USE_VERIFIED` for the exact surface.
@@ -152,8 +153,8 @@ Start tiny. These are ceilings after Regional Send Gate V0, not verification quo
 ## Metrics
 
 - reply rate by region;
-- wishlist traffic by country after Official CTA Link Activation Gate V0 only;
-- agency-decision read by region: `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`;
+- wishlist traffic by country after `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED` plus destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` only;
+- agency-decision read by region: metadata `viewer_named_decision`/`capture_verdict` plus `what_decision_next`, `agency_decision_read`, or `cold_read_agency_decision`;
 - send/access field and `reply_consent_provenance` failures by region;
 - comment language;
 - repeated confusion;
@@ -169,5 +170,5 @@ Pause a region if:
 - no localized asset exists;
 - Steam page cannot support the language expectation;
 - regional platform/payment issues make the CTA useless;
-- AB-009/KPI field source is missing for gameplay, pressure, route-risk, threat, salvage, base-failure, or first-public agency proof;
+- metadata handoff or AB-009/KPI field source is missing for gameplay, pressure, route-risk, threat, salvage, base-failure, or first-public agency proof;
 - `send_route_class`, exact private access-log fields, or `reply_consent_provenance` custody is missing.

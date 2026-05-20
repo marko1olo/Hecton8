@@ -21,7 +21,7 @@ No post readiness, audience response, wishlist conversion, runtime feature proof
 - Keep one idea per post.
 - If the comments say "looks like Subnautica", do not argue. Ask what visual cue caused that read.
 - Do not publish a draft from this bank unless the exact post has `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED`.
-- When a draft is posted, log route class before counting it: `no_link_feedback` for critique/no-link posts, `public_cta` only after CTA activation, and `private_access` only through access logs. Comment signal from public posts is `consent_provenance = public_comment`; do not import it into newsletter, creator CRM, press, or playtest buckets.
+- When a draft is posted, log route class before counting it: `no_link_feedback` for critique/no-link posts, `public_cta` only after the exact destination gate and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`, and `private_access` only through access logs. Comment signal from public posts is `consent_provenance = public_comment`; do not import it into newsletter, creator CRM, press, or playtest buckets.
 
 ## Primary Hook Families
 
@@ -183,7 +183,7 @@ Use only after official handles are owner-controlled. These posts are optional a
 
 Do not post more than 1-2 of these per week before real screenshots.
 
-Reporting rule: each row below is `route_class = no_link_feedback` unless it contains an approved public CTA after `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`. Replies can be counted only as `consent_provenance = public_comment`; they are not newsletter, playtest, press, or creator consent.
+Reporting rule: each row below is `route_class = no_link_feedback` unless it contains a public CTA after the exact destination gate and `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`. Replies can be counted only as `consent_provenance = public_comment`; they are not newsletter, playtest, press, or creator consent.
 
 | ID | Platform | Copy | Use when | Kill if |
 |---|---|---|---|---|
@@ -336,7 +336,7 @@ Kill if:
 
 ### Bundle B - Steam Page Live
 
-Required asset/gate: public Steam Coming Soon page through `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED`, capsule, screenshot order, UTM tags, Official CTA Link Activation Gate V0 for every public link, `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED` for each post, no multiplayer-scope language, no fake performance claims.
+Required asset/gate: public Steam Coming Soon page through `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED`, capsule, screenshot order, UTM tags, destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` for every public link, `public_post_permission_gate = ALLOW_PUBLIC_POST_VERIFIED` for each post, no multiplayer-scope language, no fake performance claims.
 
 Steam/news title:
 
@@ -443,10 +443,10 @@ Reporting rule: every published row needs a dashboard/event-log record with `rou
 | POST-003 | Salvage contact screenshot | X/Bluesky | `A good salvage route should look profitable and stupid. If the player cannot tell what they are risking, the shot failed.` | `Would you go farther?` | Player verb is unclear or the salvage target looks like decorative junk. |
 | POST-004 | Base under stress screenshot | Reddit critique | `Survival players: does this base failure look fair, or does it look like random punishment? I need the harsh read before this becomes Steam material.` | `Ask fairness/readability question.` | Users cannot tell what failed or what the player should do next. |
 | POST-005 | Threat silhouette screenshot | X/Bluesky | `The sonar saw it first. HECTON-8 is aiming for readable dread with a threat you can actually parse.` | `Can you read the threat?` | Silhouette reads as terrain, empty fog, or arbitrary monster pose. |
-| POST-006 | Seed Ship/anomaly screenshot | Steam news/devlog | `The Seed Ship should feel like a system interfering with the world before the lore explains it. This shot is only usable if the instrument corruption is readable.` | `External CTA only after the Steam page and CTA activation packet pass.` | It reads as abstract glow/noise or requires lore text. |
+| POST-006 | Seed Ship/anomaly screenshot | Steam news/devlog | `The Seed Ship should feel like a system interfering with the world before the lore explains it. This shot is only usable if the instrument corruption is readable.` | `External CTA only after the Steam page gate and destination-specific public CTA gate pass.` | It reads as abstract glow/noise or requires lore text. |
 | POST-007 | Low-spec internal proof frame | Internal only | `Internal readability check. Same scene must still sell pressure/machinery with cheap effects. Do not publish as a performance claim.` | `QA decision: publish later / keep internal / kill.` | Anyone tries to use it as FPS or optimization marketing without measured context. |
 | POST-008 | 20s pressure leak clip | TikTok/Shorts/Reels | `The warning was fair. The decision was not.` | `Watch the gauge.` | First 3 seconds do not show motion/tension or the clip needs explanation. |
-| POST-009 | 20s sonar clip | TikTok/Shorts/Reels | `This is not a monster reveal. This is a bad instrument reading.` | `Feedback-only first test; external CTA waits for CTA activation.` | Viewers cannot understand what sonar changed. |
+| POST-009 | 20s sonar clip | TikTok/Shorts/Reels | `This is not a monster reveal. This is a bad instrument reading.` | `Feedback-only first test; external CTA waits for the exact destination gate and public CTA gate.` | Viewers cannot understand what sonar changed. |
 | POST-010 | 20s salvage failure clip | X/Bluesky + creator warmup | `A normal salvage run until the route started charging interest.` | `Ask if the escalation feels fair.` | Clip looks scripted, pre-rendered, or unrelated to player action. |
 | POST-011 | Heavy machinery startup clip | X/Bluesky | `The machine should be louder than the player. Machinery is survival, not decoration.` | `Does it feel heavy?` | Machine movement looks weightless, toy-like, or purely cosmetic. |
 | POST-012 | Steam capsule rough A/B/C image | Reddit critique if rules allow | `Which capsule reads fastest at small size: pressure hatch, salvage floodlight, or Seed Ship signal? Feedback-only thumbnail-read critique.` | `Ask A/B/C choice.` | Community rules disallow self-promo or comments read all variants as clone/generic. |
@@ -506,12 +506,12 @@ Do not run this if Campaign 01 lacks its required agency/decision proof asset: `
 
 | Time | Action | Asset | Notes |
 |---|---|---|---|
-| Hour 0 | Post identity hero on X/Bluesky | POST-001 | No Steam CTA unless Official CTA Link Activation Gate V0 passes. |
+| Hour 0 | Post identity hero on X/Bluesky | POST-001 | No Steam CTA unless `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED` and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` pass. |
 | Hour 4 | Internal comment read | POST-001 | Record clone/readability/multiplayer-scope/performance confusion. |
 | Hour 12 | Reddit critique in one allowed community | POST-002 or POST-004 | Developer disclosure required. No tracking link unless allowed. |
 | Hour 24 | Post salvage, machinery, or agency/decision asset | POST-003, POST-005, POST-008, POST-010, or POST-011 | Pick the asset that answers the biggest confusion from Hour 0. If agency/decision proof is not already visible, prioritize POST-005, POST-008, or POST-010 over another mood/beauty asset. |
 | Hour 36 | Update CRM pitch notes for matching creator segment | CRM rows only | No outreach if comments exposed unreadable player verb or creator utility is below 3/4. |
-| Hour 48 | Creator micro-feedback or Steam/news draft | Campaign 01 Wave A or Bundle A | Creator path must pass `CreatorOutreach/MASS_LEAD_VERIFICATION_AND_PITCH_WORKFLOW.md` first human-send packet gates: official inbox custody, utility 3/4+, named CRM row, exact contact route, open `creator_send_gate`, source/date pain freshness fields where pain-backed, required AB-009/KPI decision-read fields for gameplay/pressure/route-risk claims, Promise Lint, and CRM send-log fields; otherwise keep as devlog draft. |
+| Hour 48 | Creator micro-feedback or Steam/news draft | Campaign 01 Wave A or Bundle A | Creator path must pass `CreatorOutreach/MASS_LEAD_VERIFICATION_AND_PITCH_WORKFLOW.md` first human-send packet gates: official inbox custody, utility 3/4+, named CRM row, exact contact route, open `creator_send_gate`, source/date pain freshness fields where pain-backed, non-pending metadata `viewer_named_decision`, valid non-held `capture_verdict`, required AB-009/KPI decision-read fields for gameplay/pressure/route-risk claims, Promise Lint, and CRM send-log fields; otherwise keep as devlog draft. |
 | Hour 72 | Decide proceed/revise/kill | All first-pack posts | Proceed only if viewers understand genre, pressure, machinery, player verb, and one agency/decision proof without a caption. |
 
 ## Thirty-Day Pre-Screenshot Posting Plan

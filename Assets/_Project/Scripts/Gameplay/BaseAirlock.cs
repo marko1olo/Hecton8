@@ -939,7 +939,6 @@ namespace Hecton8.Gameplay
             float3 normal = (float3)frame.forward;
             uint siblingHash = ResolveBulkheadSiblingHash(edgeHash);
             bool published = BulkheadContainmentIntentBus.TryWriteAirlockBulkheadIntent(
-                GlobalRegistry.DataVault,
                 edgeHash,
                 lockedDown,
                 ToBulkheadAbsoluteDouble3(in centerAup),

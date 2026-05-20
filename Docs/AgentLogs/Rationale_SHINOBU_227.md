@@ -1,6 +1,6 @@
 # Rationale_SHINOBU_227
 
-Status: PENDING VERIFICATION
+Status: SIGNAL POLISH STATIC COMPLETE / BUILD BLOCKED BY CPU GATE
 Agent: SHINOBU_227
 Domain: Echelon 4 Player, Kinematics & Tools / Scooter (Seaglide) Kinematics
 
@@ -43,3 +43,35 @@ Solution: Added 300-entry `SeaglideTelemetryEntry` Vault ring, fault dump path `
 Rejected Alternatives: String logs after crash, runtime debug UI, and unchecked sequential layout.
 Scalability potential: Low devices keep telemetry cheap; high devices use the same physical truth and richer editor/presentation diagnostics.
 Hardware Impact: Hot path remains unmanaged. Editor allocations are isolated behind `#if UNITY_EDITOR`.
+
+## Verification Gate
+
+Problem: Final compile is mandatory but project rule forbids `dotnet build` when CPU load is above 50 percent or any `dotnet`/`csc` is active.
+Solution: Checked CPU/process gate repeatedly. CPU still returns 100 percent; no `dotnet`/`csc` process was active on latest check. Static grep and `git diff --check` were used instead. Build remains blocked by protocol, not by an observed compiler error.
+Rejected Alternatives: Launching `dotnet build` under 100 percent CPU load to claim compliance. That violates the explicit batch rule and risks starving the shared 20-agent workspace.
+Scalability potential: No runtime code changed for this decision. Static gate confirms low/middle/high/ultra paths remain continuous `GlobalQualityWeight`, not binary switches.
+Hardware Impact: Certified exact microseconds saved remain 0 until profiler/build evidence exists. Static expectation is removal of one Manta Rigidbody velocity poll and one legacy transport force path per active tool tick; not reported as measured.
+
+## Ultra Polish Pass
+
+Problem: The first static pass still had avoidable hot-path debt: per-solve force packet buffer clearing, fixed-rate hydrodynamic solve cadence under low quality, editor graph repaint allocation, and black-box telemetry that did not record enough final packet state.
+Solution: Force packets now trust `ForcePackets` as the authoritative length and do not clear stale rows. Hydrodynamic solve cadence continuously lerps from the fixed tick toward 20 Hz and scales the emitted force by accumulated solver dt. Telemetry records last flow force, battery, compute micros, and budget faults. The editor graph scratch buffer is allocated once in the editor cold path.
+Rejected Alternatives: A new `NativeQueue` route was rejected because the existing PhysicsApplySystem/Vault packet bridge is the active authority route and adding another global route without a route card would split ownership. A binary low/high physics switch was rejected because the quality law requires continuous degradation. Per-repaint editor arrays were rejected because they hide GC in diagnostics.
+Scalability potential: Low quality sheds solver frequency and uses dominant-axis/triangle-current approximations; middle quality blends drag and cadence; high/ultra returns to fixed-tick solve cadence and spends saved cycles on richer visual/audio signals instead of heavier gameplay truth.
+Hardware Impact: i3/MX350 expected static gain is removal of up to 131072 bytes of packet buffer writes per scheduled solve plus fewer low-quality hydrodynamic solves. Exact microseconds remain unmeasured because compile/profiler are blocked by CPU gate.
+
+## SignalBus Closure Pass
+
+Problem: The previous pass computed audio and cavitation DTOs but left the final DSP/VFX route as Vault data only. That satisfied data separation but not the literal signal-lane requirement for Task 02 and Task 11.
+Solution: `SeaglideAudioSignalDTO` now carries `TargetEntityHash` and `FrameIndex` without changing its 64-byte size. After the Burst jobs complete, `SeaglideHydrodynamicsRuntime` publishes bounded `ToolAcousticSignal` and `BubbleSpawnSignal` packets through the existing typed `SignalBus` lanes. Signal lanes are warmed during cold boot.
+Rejected Alternatives: Instantiating particle prefabs, creating a new bespoke VFX queue, or publishing all 1024 mock rows every frame. Existing global lanes already own audio/VFX transport and include load shedding; duplicating them would split authority.
+Scalability potential: Low quality publishes one presentation signal packet with reduced bubble intensity; higher weights smoothly increase the publish budget up to four packets and restore full intensity. Physics truth stays unchanged.
+Hardware Impact: i3/MX350 avoids prefab churn and DSP Rigidbody polling. Added work is a bounded post-solver signal publish over 1-4 packets, not over the entire 1024-row mock buffer.
+
+## Compile Gate Recheck
+
+Problem: A compile pass is required, but the build gate is meaningful only if the project files include the edited Seaglide sources and the CPU is below the mandated threshold.
+Solution: Checked generated csproj coverage and process load. Current generated csproj files list `MantaScooter.cs` but not the newly added Seaglide source files. CPU then returned to 100 percent before any safe compile launch.
+Rejected Alternatives: Running dotnet against stale csproj files to report a false pass, or running a build under the 100 percent CPU gate.
+Scalability potential: No runtime behavior changed by this gate.
+Hardware Impact: Certified measured savings remain 0 us until Unity regenerates project files and compile/profiler can run under the CPU rule.

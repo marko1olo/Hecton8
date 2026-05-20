@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Unity.Collections;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
@@ -11,6 +12,7 @@ namespace Hecton8.Editor.GeologyForge
     {
         private readonly List<GeologyBakeProfile> _profiles = new List<GeologyBakeProfile>(16);
         private readonly List<string> _profileNames = new List<string>(16);
+        private readonly List<GeologyBakeProfile> _bakeRequestProfiles = new List<GeologyBakeProfile>(16);
         private DropdownField _profileDropdown;
         private SliderInt _resolution;
         private SliderInt _octaves;
@@ -84,7 +86,7 @@ namespace Hecton8.Editor.GeologyForge
 
         private void OnDisable()
         {
-            GeologyForgePreview.Clear();
+            GeologyForgePreview.Shutdown();
         }
 
         private void ReloadProfilesAndRepaint()
@@ -103,19 +105,12 @@ namespace Hecton8.Editor.GeologyForge
         {
             _profiles.Clear();
             _profileNames.Clear();
-            List<GeologyBakeProfile> loaded = GeologyProfileCsv.LoadProfiles();
-            for (int i = 0; i < loaded.Count; i++)
-            {
-                _profiles.Add(loaded[i]);
-                _profileNames.Add(loaded[i].Name.ToString());
-            }
+            GeologyProfileCsv.LoadProfiles(_profiles);
+            if (_profileNames.Capacity < _profiles.Count)
+                _profileNames.Capacity = _profiles.Count;
 
-            if (_profiles.Count == 0)
-            {
-                GeologyBakeProfile fallback = GeologyProfileCsv.DefaultProfile();
-                _profiles.Add(fallback);
-                _profileNames.Add(fallback.Name.ToString());
-            }
+            for (int i = 0; i < _profiles.Count; i++)
+                _profileNames.Add(_profiles[i].Name.ToString());
         }
 
         private void SelectProfile(int index)
@@ -128,7 +123,7 @@ namespace Hecton8.Editor.GeologyForge
             _isoLevel?.SetValueWithoutNotify(profile.IsoLevel);
             _aoRays?.SetValueWithoutNotify(profile.AmbientOcclusionRays);
             _qualityWeight?.SetValueWithoutNotify(profile.GlobalQualityWeight);
-            _variations?.SetValueWithoutNotify(profile.Variations);
+            _variations?.SetValueWithoutNotify(SanitizeVariationCount(profile.Variations));
         }
 
         private GeologyBakeProfile ResolveProfileFromFields()
@@ -140,8 +135,13 @@ namespace Hecton8.Editor.GeologyForge
             profile.IsoLevel = _isoLevel != null ? _isoLevel.value : profile.IsoLevel;
             profile.AmbientOcclusionRays = _aoRays != null ? _aoRays.value : profile.AmbientOcclusionRays;
             profile.GlobalQualityWeight = _qualityWeight != null ? _qualityWeight.value : profile.GlobalQualityWeight;
-            profile.Variations = _variations != null ? math.max(1, _variations.value) : profile.Variations;
+            profile.Variations = _variations != null ? SanitizeVariationCount(_variations.value) : SanitizeVariationCount(profile.Variations);
             return profile;
+        }
+
+        private static int SanitizeVariationCount(int variations)
+        {
+            return math.clamp(variations <= 0 ? 1 : variations, 1, GeologyForgeConstants.MaximumVariations);
         }
 
         private void BuildPreview()
@@ -153,17 +153,30 @@ namespace Hecton8.Editor.GeologyForge
         private void BakeSelected()
         {
             GeologyBakeProfile profile = ResolveProfileFromFields();
-            var bakeList = new List<GeologyBakeProfile>(1);
-            bakeList.Add(profile);
-            GeologyForgeGenerator.BakeProfilesAsync(bakeList, true, SetBakeProgress);
+            _bakeRequestProfiles.Clear();
+            _bakeRequestProfiles.Add(profile);
+            TryStartBake(_bakeRequestProfiles);
         }
 
         private void BakeAll()
         {
-            var bakeList = new List<GeologyBakeProfile>(_profiles.Count);
+            _bakeRequestProfiles.Clear();
+            if (_bakeRequestProfiles.Capacity < _profiles.Count)
+                _bakeRequestProfiles.Capacity = _profiles.Count;
+
             for (int i = 0; i < _profiles.Count; i++)
-                bakeList.Add(_profiles[i]);
-            GeologyForgeGenerator.BakeProfilesAsync(bakeList, true, SetBakeProgress);
+                _bakeRequestProfiles.Add(_profiles[i]);
+
+            TryStartBake(_bakeRequestProfiles);
+        }
+
+        private void TryStartBake(List<GeologyBakeProfile> bakeList)
+        {
+            if (GeologyForgeGenerator.BakeProfilesAsync(bakeList, true, SetBakeProgress))
+                return;
+
+            SetBakeProgress(0f);
+            Debug.LogWarning("Geology Forge async bake request ignored: no profiles loaded or a bake is already running.");
         }
 
         private void SetBakeProgress(float value)
@@ -183,17 +196,17 @@ namespace Hecton8.Editor.GeologyForge
         private const int MaxPreviewPoints = 2048;
         private static readonly Vector3[] _points;
         private static int _pointCount;
+        private static bool _subscribed;
 
         static GeologyForgePreview()
         {
             // COLD ALLOC: Vector3[2048] — bounded SceneView preview point buffer — owner: GeologyForgePreview
             _points = new Vector3[MaxPreviewPoints];
-            SceneView.duringSceneGui -= DrawScenePreview;
-            SceneView.duringSceneGui += DrawScenePreview;
         }
 
         public static void Build(GeologyBakeProfile profile)
         {
+            EnsureSubscribed();
             int points = PreviewResolution;
             int count = points * points * points;
             float extent = math.max(0.5f, profile.RadiusMeters * 2.25f);
@@ -220,15 +233,40 @@ namespace Hecton8.Editor.GeologyForge
                     VoronoiWeight = profile.VoronoiWeight,
                     IsoLevel = profile.IsoLevel,
                     GlobalQualityWeight = profile.GlobalQualityWeight
-                }.Schedule(count, 64).Complete();
+                }.Run(count);
 
                 float center = (points - 1) * 0.5f;
-                int previewCount = 0;
-                for (int i = 0; i < density.Length && previewCount < MaxPreviewPoints; i++)
+                float surfaceThreshold = voxelStep * 0.45f;
+                int surfaceCandidateCount = 0;
+                for (int i = 0; i < density.Length; i++)
                 {
                     float d = density[i];
-                    if (math.abs(d) > voxelStep * 0.45f)
+                    if (math.abs(d) <= surfaceThreshold)
+                        surfaceCandidateCount++;
+                }
+
+                if (surfaceCandidateCount <= 0)
+                {
+                    _pointCount = 0;
+                    return;
+                }
+
+                int targetCount = math.min(surfaceCandidateCount, MaxPreviewPoints);
+                float candidateStride = surfaceCandidateCount * math.rcp((float)targetCount);
+                float nextCandidate = 0f;
+                int candidateIndex = 0;
+                int previewCount = 0;
+                for (int i = 0; i < density.Length && previewCount < targetCount; i++)
+                {
+                    float d = density[i];
+                    if (math.abs(d) > surfaceThreshold)
                         continue;
+
+                    if (candidateIndex + 0.5f < nextCandidate)
+                    {
+                        candidateIndex++;
+                        continue;
+                    }
 
                     int x = i % points;
                     int y = (i / points) % points;
@@ -236,6 +274,8 @@ namespace Hecton8.Editor.GeologyForge
                     float3 p = new float3(x - center, y - center, z - center) * voxelStep;
                     _points[previewCount] = new Vector3(p.x, p.y, p.z);
                     previewCount++;
+                    candidateIndex++;
+                    nextCandidate += candidateStride;
                 }
 
                 _pointCount = previewCount;
@@ -250,6 +290,27 @@ namespace Hecton8.Editor.GeologyForge
         {
             _pointCount = 0;
             SceneView.RepaintAll();
+        }
+
+        public static void Shutdown()
+        {
+            _pointCount = 0;
+            if (_subscribed)
+            {
+                SceneView.duringSceneGui -= DrawScenePreview;
+                _subscribed = false;
+            }
+
+            SceneView.RepaintAll();
+        }
+
+        private static void EnsureSubscribed()
+        {
+            if (_subscribed)
+                return;
+
+            SceneView.duringSceneGui += DrawScenePreview;
+            _subscribed = true;
         }
 
         private static void DrawScenePreview(SceneView sceneView)

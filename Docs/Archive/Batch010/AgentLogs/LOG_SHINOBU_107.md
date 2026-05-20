@@ -3463,3 +3463,25 @@ What was done: Replaced those fields with Core-owned blittable signal payloads, 
 Cinematic Cheats used: The procedural audio lane remains a compact scalar event fake: one 128-byte packet drives DSP pings/groans instead of instantiating scene audio objects per stress source.
 
 Exact Microseconds saved: `0` measured; no profiler capture. Static proof: compile-wall dropped from `76` to `67`; `GlobalSignals.cs` contains no `Hecton8.Audio`; touched-file Burst and struct scanners are zero. Vault scanner still reports five existing audio-owner native allocation sites, so this loop is not logged as Vault-clean. `dotnet build` not launched.
+
+## Loop 138 / Audio Owner Vault Queue Evacuation
+
+What was wrong: Five touched-file vault violations remained in audio owner code after AudioEvent payload extraction: private audio-event queues, sonar tap upload queue, prologue transition queue, and sonar coalescing hash containers.
+
+What was done: Replaced `ProceduralAudioEvents` private `NativeQueue<AudioEvent>` storage with DataVault-backed fixed rings (`70885`, `70886`). Replaced `PlayerCriticalProceduralAudioRenderer` sonar/prologue private native queues with DataVault-backed rings (`70889`, `70890`). Replaced sonar hash-map coalescing with bounded linear coalescing over 32 candidates and 8 output groups.
+
+Cinematic Cheats used: Dear Lie: sonar echo grouping uses capped 10m AUP hash comparison over a tiny fixed batch instead of persistent native hash infrastructure. This keeps the perceived composite echo while avoiding container ownership and hash-map maintenance.
+
+Exact Microseconds saved: `0` measured; no profiler capture. Static proof: touched-file `Vault_Sovereignty=0`, `Burst_Job_Directives=0`, `Runtime_Struct_Layout=0`; Loop 139 duplicate scan corrected the local BufferIDs to `70885`, `70886`, `70889`, and `70890`, one code-owner hit each. Compile not launched because CPU sampled at `100` and the external missing World source still blocks compile.
+
+## Loop 139 / MathGuard Vault Ring and BufferID Correction
+
+What was wrong: `MathGuard` used a private `NativeQueue<int>` for invalid-number diagnostics, and the touched buoyancy file still had a private deferred `NativeQueue<FluidImpactEvent>`. Loop 138 also carried a false BufferID proof: `70810/70811/70820/70821` collide with Atmosphere and Graphics local constants.
+
+What was done: `MathGuard` now resolves vault buffers `70883` and `70884`, exposes an unmanaged `InvalidNumberWriter`, and drains diagnostics from a 256-entry vault ring plus a 64-byte counter. `HectonFluidEngine` uses a fixed vault ring at `70799` for fluid-impact events. Audio owner rings were corrected to `70885`, `70886`, `70889`, and `70890`; exact numeric scan reports one code-owner hit per new ID.
+
+Cinematic Cheats used: The sonar coalescing Dear Lie from Loop 138 remains: capped 32-candidate/8-group linear hash comparison instead of persistent native hash containers. This loop adds no physical simulation; it removes diagnostic/container ownership.
+
+Exact Microseconds saved: `0` measured; no profiler capture. Static proof: touched-file scanners over MathGuard, HectonFluidEngine, ProceduralAudioEvents, and PlayerCriticalProceduralAudioRenderer report `Vault_Sovereignty=0`, `Runtime_Struct_Layout=0`, `Burst_Job_Directives=0`; `git diff --check` passed with CRLF warnings only. Compile not launched because the missing World source remains absent and CPU sampled at `100`.
+
+Residual risk: `MathGuard.cs:5` still imports `Hecton8.World` for existing AUP helper methods. That is a compile-wall debt, not fixed in this loop because removing it requires a broader AUP contract mirror pass across current callers.

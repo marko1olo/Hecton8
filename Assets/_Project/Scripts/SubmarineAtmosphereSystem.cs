@@ -108,14 +108,20 @@ namespace Hecton8.Atmosphere
     /// <summary>
     /// Unmanaged high-pressure warning payload carried by the deferred event lane.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct HighPressureEventPayload
     {
+        [FieldOffset(0)]
         public Vector3 RuntimePosition;
+        [FieldOffset(12)]
         public float PressureAKPa;
+        [FieldOffset(16)]
         public float PressureBKPa;
+        [FieldOffset(20)]
         public int DoorIndex;
+        [FieldOffset(24)]
         public int RoomA;
+        [FieldOffset(28)]
         public int RoomB;
     }
 
@@ -378,13 +384,19 @@ namespace Hecton8.Atmosphere
     /// <summary>
     /// Unmanaged fatal pressure implosion payload carried by the deferred event lane.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 24)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct FatalPressureImplosionEventPayload
     {
+        [FieldOffset(0)]
         public Vector3 RuntimePosition;
+        [FieldOffset(12)]
         public float TemperatureCelsius;
+        [FieldOffset(16)]
         public uint NodeId;
+        [FieldOffset(20)]
         public int RoomIndex;
+        [FieldOffset(24)]
+        private ulong _pad0;
     }
 
     /// <summary>
@@ -798,15 +810,23 @@ namespace Hecton8.Atmosphere
             public int RoomIndex;
         }
 
-        [StructLayout(LayoutKind.Sequential, Size = 24)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct PendingAtmosphereMutation
         {
+            [FieldOffset(0)]
             public float OxygenUnits;
+            [FieldOffset(4)]
             public float TemperatureDeltaCelsius;
+            [FieldOffset(8)]
             public float HydrogenPocketUnits;
+            [FieldOffset(12)]
             public float OxygenPocketUnits;
+            [FieldOffset(16)]
             public float PressureSpikeKPa;
-            private int _pad0;
+            [FieldOffset(20)]
+            private uint _pad0;
+            [FieldOffset(24)]
+            private ulong _pad1;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -876,37 +896,37 @@ namespace Hecton8.Atmosphere
                 DefaultInvCarbonDioxideToxicitySpan);
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [StructLayout(LayoutKind.Sequential)]
         private struct AtmosphereStepJob : IJob
         {
-            [ReadOnly] public NativeArray<float> O2Front;
-            [ReadOnly] public NativeArray<float> CO2Front;
-            [ReadOnly] public NativeArray<float> InertFront;
-            [ReadOnly] public NativeArray<float> FloodVolumes;
-            [ReadOnly] public NativeArray<float> RoomVolumes;
-            [ReadOnly] public NativeArray<float> PressureFront;
-            [ReadOnly] public NativeArray<float> GasVolumeFront;
-            [ReadOnly] public NativeArray<float> O2ConsumptionRates;
-            [ReadOnly] public NativeArray<float> CO2GenerationRates;
-            [ReadOnly] public NativeArray<int> RoomPlayerCounts;
-            [ReadOnly] public NativeArray<float> TemperatureFront;
-            [ReadOnly] public NativeArray<float> RoomHeatWatts;
-            [ReadOnly] public NativeArray<float> SteamFront;
-            [ReadOnly] public NativeArray<int2> DoorPairs;
-            [ReadOnly] public NativeArray<byte> DoorSealed;
+            [NoAlias, ReadOnly] public NativeArray<float> O2Front;
+            [NoAlias, ReadOnly] public NativeArray<float> CO2Front;
+            [NoAlias, ReadOnly] public NativeArray<float> InertFront;
+            [NoAlias, ReadOnly] public NativeArray<float> FloodVolumes;
+            [NoAlias, ReadOnly] public NativeArray<float> RoomVolumes;
+            [NoAlias, ReadOnly] public NativeArray<float> PressureFront;
+            [NoAlias, ReadOnly] public NativeArray<float> GasVolumeFront;
+            [NoAlias, ReadOnly] public NativeArray<float> O2ConsumptionRates;
+            [NoAlias, ReadOnly] public NativeArray<float> CO2GenerationRates;
+            [NoAlias, ReadOnly] public NativeArray<int> RoomPlayerCounts;
+            [NoAlias, ReadOnly] public NativeArray<float> TemperatureFront;
+            [NoAlias, ReadOnly] public NativeArray<float> RoomHeatWatts;
+            [NoAlias, ReadOnly] public NativeArray<float> SteamFront;
+            [NoAlias, ReadOnly] public NativeArray<int2> DoorPairs;
+            [NoAlias, ReadOnly] public NativeArray<byte> DoorSealed;
 
-            public NativeArray<float> O2Back;
-            public NativeArray<float> CO2Back;
-            public NativeArray<float> InertBack;
-            public NativeArray<float> PressureBack;
-            public NativeArray<float> GasVolumeBack;
-            public NativeArray<float> TemperatureBack;
-            public NativeArray<float> SteamBack;
-            [WriteOnly] public NativeArray<float> O2PartialPressureBack;
-            [WriteOnly] public NativeArray<float> CO2PartialPressureBack;
-            [WriteOnly] public NativeArray<float> N2PartialPressureBack;
-            [WriteOnly] public NativeArray<uint> RoomStatusMaskBack;
+            [NoAlias] public NativeArray<float> O2Back;
+            [NoAlias] public NativeArray<float> CO2Back;
+            [NoAlias] public NativeArray<float> InertBack;
+            [NoAlias] public NativeArray<float> PressureBack;
+            [NoAlias] public NativeArray<float> GasVolumeBack;
+            [NoAlias] public NativeArray<float> TemperatureBack;
+            [NoAlias] public NativeArray<float> SteamBack;
+            [NoAlias, WriteOnly] public NativeArray<float> O2PartialPressureBack;
+            [NoAlias, WriteOnly] public NativeArray<float> CO2PartialPressureBack;
+            [NoAlias, WriteOnly] public NativeArray<float> N2PartialPressureBack;
+            [NoAlias, WriteOnly] public NativeArray<uint> RoomStatusMaskBack;
 
             public int RoomCount;
             public int DoorCount;

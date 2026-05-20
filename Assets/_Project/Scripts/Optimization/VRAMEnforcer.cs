@@ -143,7 +143,7 @@ namespace Hecton8.Optimization
         private static float ResolveQualityCurve()
         {
             float quality = HomeostasisBrain.GlobalQualityWeight;
-            return math.smoothstep(0.15f, 0.85f, math.saturate(math.isfinite(quality) ? quality : 1f));
+            return math.smoothstep(0.15f, 0.85f, math.saturate(math.select(1f, quality, math.isfinite(quality))));
         }
 
 #if UNITY_EDITOR

@@ -480,7 +480,8 @@ namespace Hecton8.Construction
 
             _cachedSourcePosition = _cachedSourceTransform != null ? _cachedSourceTransform.position : Vector3.zero;
             _cachedDestinationPosition = _cachedDestinationTransform != null ? _cachedDestinationTransform.position : _cachedSourcePosition;
-            _cachedPathDistanceMeters = math.distance(_cachedSourcePosition, _cachedDestinationPosition);
+            Vector3 pathDelta = _cachedSourcePosition - _cachedDestinationPosition;
+            _cachedPathDistanceMeters = math.sqrt(math.max(pathDelta.sqrMagnitude, 0f));
         }
 
         private void RefreshAmbientRoomIndex()

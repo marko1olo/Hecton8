@@ -1,8 +1,11 @@
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
+using Hecton8.Core.Memory;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -19,60 +22,57 @@ namespace Hecton8.Core
         private const float UnitDirectionLengthSqTolerance = 0.0625f;
         private const float MinTransportSpeedMultiplier = 0.01f;
         private const int NaNErrorHash = unchecked((int)0x4E414E21); // "NAN!"
+        private const BufferID InvalidNumberCodesBufferId = (BufferID)70883;
+        private const BufferID InvalidNumberCounterBufferId = (BufferID)70884;
+        private const SystemID VaultOwner = SystemID.CoreDiagnostics;
 
-        private static NativeQueue<int> _invalidNumberQueue;
-        private static int _initialized;
-        private static int _queuedInvalidNumberCount;
+        private static IDataVault _dataVault;
+        private static VaultGenerationHandle<int> _invalidNumberCodesHandle;
+        private static VaultGenerationHandle<InvalidNumberCounter64> _invalidNumberCounterHandle;
+        private static NativeArray<int> _invalidNumberCodes;
+        private static NativeArray<InvalidNumberCounter64> _invalidNumberCounters;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             Dispose();
-            _initialized = 0;
-            _queuedInvalidNumberCount = 0;
         }
 
-        /// <summary>
-        /// Cold-allocates the invalid-number queue before Burst jobs can request a writer.
-        /// </summary>
+        /// <summary>Resolves the vault-owned invalid-number ring before Burst jobs can request a writer.</summary>
         public static void Initialize()
         {
-            if (_invalidNumberQueue.IsCreated && _initialized != 0)
+            if (!EnsureInvalidNumberBuffers(allowAllocate: true))
                 return;
 
-            _invalidNumberQueue = new NativeQueue<int>(Allocator.Persistent); // COLD ALLOC: NativeQueue<int>[256] - Burst invalid-number error codes - owner: MathGuard
-            NativeMemorySentinel.RegisterNativeQueue(
-                _invalidNumberQueue,
-                InvalidNumberQueuePrewarmCapacity,
-                nameof(MathGuard),
-                nameof(_invalidNumberQueue),
-                NativeAllocationLifetime.Session);
-            PrewarmQueue(ref _invalidNumberQueue, InvalidNumberQueuePrewarmCapacity);
-            _initialized = 1;
+            ref InvalidNumberCounter64 counter = ref ResolveCounterRef();
+            ResetInvalidNumberCounters(ref counter);
         }
 
-        /// <summary>
-        /// Releases the invalid-number queue.
-        /// </summary>
+        /// <summary>Releases the vault-owned invalid-number ring handles.</summary>
         public static void Dispose()
         {
-            if (!_invalidNumberQueue.IsCreated)
-                return;
+            IDataVault vault = _dataVault;
+            if (vault != null)
+            {
+                if (IsVaultHandleCreated(in _invalidNumberCodesHandle))
+                    vault.ReleaseBuffer(in _invalidNumberCodesHandle);
+                if (IsVaultHandleCreated(in _invalidNumberCounterHandle))
+                    vault.ReleaseBuffer(in _invalidNumberCounterHandle);
+            }
 
-            NativeMemorySentinel.UnregisterNativeQueue(nameof(MathGuard), nameof(_invalidNumberQueue));
-            _invalidNumberQueue.Dispose();
-            _invalidNumberQueue = default;
-            _initialized = 0;
-            _queuedInvalidNumberCount = 0;
+            _invalidNumberCodes = default;
+            _invalidNumberCounters = default;
+            _invalidNumberCodesHandle = default;
+            _invalidNumberCounterHandle = default;
+            _dataVault = null;
         }
 
-        /// <summary>
-        /// Returns a Burst-safe writer for invalid-number error codes.
-        /// </summary>
-        public static NativeQueue<int>.ParallelWriter AsParallelWriter()
+        /// <summary>Returns a Burst-safe writer for invalid-number error codes.</summary>
+        public static InvalidNumberWriter AsParallelWriter()
         {
-            Initialize();
-            return _invalidNumberQueue.AsParallelWriter();
+            return EnsureInvalidNumberBuffers(allowAllocate: false)
+                ? new InvalidNumberWriter(_invalidNumberCodes, _invalidNumberCounters)
+                : default;
         }
 
         /// <summary>
@@ -86,15 +86,8 @@ namespace Hecton8.Core
             if (math.all(math.isfinite(value)))
                 return;
 
-            Initialize();
-            int queuedCount = Interlocked.Increment(ref _queuedInvalidNumberCount);
-            if (queuedCount > InvalidNumberQueuePrewarmCapacity)
-            {
-                Interlocked.Decrement(ref _queuedInvalidNumberCount);
-                return;
-            }
-
-            _invalidNumberQueue.Enqueue(errorCode);
+            InvalidNumberWriter writer = AsParallelWriter();
+            writer.TryEnqueue(errorCode);
         }
 
         /// <summary>
@@ -102,23 +95,23 @@ namespace Hecton8.Core
         /// </summary>
         /// <param name="value">Value to validate.</param>
         /// <param name="errorCode">Deterministic caller-owned error code.</param>
-        /// <param name="writer">Queue writer obtained from <see cref="AsParallelWriter"/> outside the job.</param>
-        [BurstCompile]
+        /// <param name="writer">Writer obtained from <see cref="AsParallelWriter"/> outside the job.</param>
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Check(float3 value, int errorCode, NativeQueue<int>.ParallelWriter writer)
+        public static void Check(float3 value, int errorCode, InvalidNumberWriter writer)
         {
             if (!math.all(math.isfinite(value)))
-                writer.Enqueue(errorCode);
+                writer.TryEnqueue(errorCode);
         }
 
-        [BurstCompile]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float3 SanitizeFiniteOrZero(float3 value, int errorCode, NativeQueue<int>.ParallelWriter writer)
+        public static float3 SanitizeFiniteOrZero(float3 value, int errorCode, InvalidNumberWriter writer)
         {
             if (math.all(math.isfinite(value)))
                 return value;
 
-            writer.Enqueue(errorCode);
+            writer.TryEnqueue(errorCode);
             return float3.zero;
         }
 
@@ -128,15 +121,25 @@ namespace Hecton8.Core
         /// <param name="maxDrainCount">Maximum codes to consume this frame.</param>
         public static int DrainInvalidNumberErrors(int maxDrainCount = MaxMainThreadDrainPerLateFrame)
         {
-            if (!_invalidNumberQueue.IsCreated || maxDrainCount <= 0)
+            if (!EnsureInvalidNumberBuffers(allowAllocate: false) || maxDrainCount <= 0)
                 return 0;
 
-            int drainedCount = 0;
-            while (drainedCount < maxDrainCount && _invalidNumberQueue.TryDequeue(out int errorCode))
+            ref InvalidNumberCounter64 counter = ref ResolveCounterRef();
+            int writeCursor = Volatile.Read(ref counter.WriteCursor);
+            int readCursor = counter.ReadCursor;
+            int readable = math.min(writeCursor, InvalidNumberQueuePrewarmCapacity) - readCursor;
+            if (readable <= 0)
             {
-                if (Volatile.Read(ref _queuedInvalidNumberCount) > 0)
-                    Interlocked.Decrement(ref _queuedInvalidNumberCount);
+                if (readCursor >= InvalidNumberQueuePrewarmCapacity || writeCursor <= 0)
+                    ResetInvalidNumberCounters(ref counter);
+                return 0;
+            }
 
+            int drainedCount = 0;
+            int drainTarget = math.min(maxDrainCount, readable);
+            while (drainedCount < drainTarget)
+            {
+                int errorCode = _invalidNumberCodes[readCursor];
                 GlobalTelemetryBus.PublishMathGuardInvalidNumber(errorCode);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 DodReplayRecorder.RequestFullStateDump(
@@ -144,8 +147,13 @@ namespace Hecton8.Core
                     unchecked((uint)errorCode));
 #endif
                 CrashTelemetryBuffer.ReportNanPhysicsRecovery();
+                readCursor++;
                 drainedCount++;
             }
+
+            counter.ReadCursor = readCursor;
+            if (readCursor >= writeCursor || readCursor >= InvalidNumberQueuePrewarmCapacity)
+                ResetInvalidNumberCounters(ref counter);
 
             return drainedCount;
         }
@@ -195,9 +203,9 @@ namespace Hecton8.Core
             return false;
         }
 
-        [BurstCompile]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool TryAcceptFinite(float3 value, out float3 finite, NativeQueue<int>.ParallelWriter writer)
+        public static bool TryAcceptFinite(float3 value, out float3 finite, InvalidNumberWriter writer)
         {
             if (math.all(math.isfinite(value)))
             {
@@ -206,7 +214,7 @@ namespace Hecton8.Core
             }
 
             finite = DominantAxisPayload(value);
-            writer.Enqueue(NaNErrorHash);
+            writer.TryEnqueue(NaNErrorHash);
             return false;
         }
 
@@ -343,17 +351,141 @@ namespace Hecton8.Core
             return sanitized;
         }
 
-        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
-            where T : unmanaged
+        private static bool EnsureInvalidNumberBuffers(bool allowAllocate)
         {
-            if (!queue.IsCreated || capacity <= 0)
-                return;
+            if (_invalidNumberCodes.IsCreated &&
+                _invalidNumberCounters.IsCreated &&
+                _invalidNumberCodes.Length >= InvalidNumberQueuePrewarmCapacity &&
+                _invalidNumberCounters.Length > 0)
+                return true;
 
-            for (int i = 0; i < capacity; i++)
-                queue.Enqueue(default);
+            IDataVault vault = _dataVault ?? GlobalRegistry.DataVault;
+            if (vault == null)
+                return false;
 
-            while (queue.TryDequeue(out _))
+            _dataVault = vault;
+            if (!IsVaultHandleCreated(in _invalidNumberCodesHandle))
             {
+                if (!allowAllocate || vault.IsAllocationLocked)
+                {
+                    if (!vault.TryGetGenerationHandle<int>(
+                            InvalidNumberCodesBufferId,
+                            out _invalidNumberCodesHandle))
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    _invalidNumberCodesHandle = vault.GetGenerationHandle<int>(
+                        InvalidNumberCodesBufferId,
+                        InvalidNumberQueuePrewarmCapacity,
+                        VaultOwner,
+                        NativeArrayOptions.ClearMemory);
+                }
+            }
+
+            if (!IsVaultHandleCreated(in _invalidNumberCounterHandle))
+            {
+                if (!allowAllocate || vault.IsAllocationLocked)
+                {
+                    if (!vault.TryGetGenerationHandle<InvalidNumberCounter64>(
+                            InvalidNumberCounterBufferId,
+                            out _invalidNumberCounterHandle))
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    _invalidNumberCounterHandle = vault.GetGenerationHandle<InvalidNumberCounter64>(
+                        InvalidNumberCounterBufferId,
+                        1,
+                        VaultOwner,
+                        NativeArrayOptions.ClearMemory);
+                }
+            }
+
+            bool resolved =
+                vault.TryResolveHandle(in _invalidNumberCodesHandle, out _invalidNumberCodes) &&
+                vault.TryResolveHandle(in _invalidNumberCounterHandle, out _invalidNumberCounters) &&
+                _invalidNumberCodes.IsCreated &&
+                _invalidNumberCounters.IsCreated &&
+                _invalidNumberCodes.Length >= InvalidNumberQueuePrewarmCapacity &&
+                _invalidNumberCounters.Length > 0;
+
+            if (!resolved)
+            {
+                _invalidNumberCodes = default;
+                _invalidNumberCounters = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            return handle.BufferID != 0u;
+        }
+
+        private static unsafe ref InvalidNumberCounter64 ResolveCounterRef()
+        {
+            void* ptr = NativeArrayUnsafeUtility.GetUnsafePtr(_invalidNumberCounters);
+            return ref UnsafeUtility.AsRef<InvalidNumberCounter64>(ptr);
+        }
+
+        private static void ResetInvalidNumberCounters(ref InvalidNumberCounter64 counter)
+        {
+            counter.WriteCursor = 0;
+            counter.ReadCursor = 0;
+            counter.DroppedCount = 0;
+            counter.OverflowFlag = 0;
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
+        public struct InvalidNumberCounter64
+        {
+            [FieldOffset(0)] public int WriteCursor;
+            [FieldOffset(4)] public int ReadCursor;
+            [FieldOffset(8)] public int DroppedCount;
+            [FieldOffset(12)] public int OverflowFlag;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public unsafe struct InvalidNumberWriter
+        {
+            [NativeDisableUnsafePtrRestriction] private int* _codes;
+            [NativeDisableUnsafePtrRestriction] private InvalidNumberCounter64* _counter;
+            private int _capacity;
+
+            internal InvalidNumberWriter(
+                NativeArray<int> codes,
+                NativeArray<InvalidNumberCounter64> counters)
+            {
+                _codes = codes.IsCreated ? (int*)NativeArrayUnsafeUtility.GetUnsafePtr(codes) : null;
+                _counter = counters.IsCreated ? (InvalidNumberCounter64*)NativeArrayUnsafeUtility.GetUnsafePtr(counters) : null;
+                _capacity = codes.IsCreated ? codes.Length : 0;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public bool TryEnqueue(int errorCode)
+            {
+                if (_codes == null || _counter == null || _capacity <= 0)
+                    return false;
+
+                ref int writeCursor = ref UnsafeUtility.AsRef<int>(&_counter->WriteCursor);
+                int index = Interlocked.Increment(ref writeCursor) - 1;
+                if ((uint)index >= (uint)_capacity)
+                {
+                    Interlocked.Increment(ref _counter->DroppedCount);
+                    Interlocked.Exchange(ref _counter->OverflowFlag, 1);
+                    return false;
+                }
+
+                _codes[index] = errorCode;
+                return true;
             }
         }
     }

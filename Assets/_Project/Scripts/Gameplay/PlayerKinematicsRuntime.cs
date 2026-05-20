@@ -1875,7 +1875,9 @@ namespace Hecton8.Gameplay
                 return true;
             }
 
-            AbsoluteUniversePosition bodyAup = AbsoluteUniversePosition.FromRuntimePosition(safeBodyPosition);
+            if (!TryResolveAupFromRuntimeOrigin(safeBodyPosition, out AbsoluteUniversePosition bodyAup))
+                return false;
+
             AbsoluteUniversePosition sampleAup = TryReadPlayerKinematicStateFromVault(out AbsoluteUniversePosition vaultAup)
                 ? vaultAup
                 : bodyAup;
@@ -2255,9 +2257,11 @@ namespace Hecton8.Gameplay
             float3 safePosition = SanitizeFloat3(
                 ToFloat3(position),
                 ReadPositionSnapshot(float3.zero));
+            if (!TryResolveAupFromRuntimeOrigin(SnapMillimeter(safePosition), out AbsoluteUniversePosition positionAup))
+                return;
 
             MovementAcousticSignal signal = default;
-            signal.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(ToVector3(SnapMillimeter(safePosition)));
+            signal.PositionAup = positionAup;
             signal.Volume = SanitizeUnit(velocitySq * 0.08f);
             signal.VelocitySq = velocitySq;
             signal.SourceId = _sourceId;
@@ -2274,7 +2278,9 @@ namespace Hecton8.Gameplay
 
             float3 snappedPosition = SnapMillimeter(position);
             float3 snappedVelocity = SnapMillimeter(velocity);
-            AbsoluteUniversePosition bodyAup = AbsoluteUniversePosition.FromRuntimePosition(ToVector3(snappedPosition));
+            if (!TryResolveAupFromRuntimeOrigin(snappedPosition, out AbsoluteUniversePosition bodyAup))
+                return;
+
             PhysicsDeterminismSignals.PublishKccVelocity(
                 in bodyAup,
                 snappedVelocity,
@@ -2290,7 +2296,9 @@ namespace Hecton8.Gameplay
             if (stress01 <= 0.0001f && pushSpeed <= 0.0001f)
                 return;
 
-            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(ToVector3(SnapMillimeter(position)));
+            if (!TryResolveAupFromRuntimeOrigin(SnapMillimeter(position), out AbsoluteUniversePosition positionAup))
+                return;
+
             byte stateFlags = (byte)(PlayerStateSignal.FlagActive |
                                      PlayerStateSignal.FlagSqueezing |
                                      PlayerStateSignal.FlagSdfGradientValid |
@@ -3087,8 +3095,11 @@ namespace Hecton8.Gameplay
             if (safeBlockedSpeed <= 0.2f || safeVelocityReduction01 <= 0.05f)
                 return false;
 
+            if (!TryResolveAupFromRuntimeOrigin(point, out AbsoluteUniversePosition pointAup))
+                return false;
+
             AcousticPingSignal signal = default;
-            signal.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(point);
+            signal.PositionAup = pointAup;
             signal.RadiusMeters = SanitizeUnit(0.65f + safeBlockedSpeed * 0.12f) * 2.0f;
             signal.Intensity01 = SanitizeUnit(SanitizeUnit(blend) * (0.35f + safeVelocityReduction01) + safeBlockedSpeed * 0.025f);
             signal.SourceId = _sourceId;
@@ -3342,7 +3353,12 @@ namespace Hecton8.Gameplay
             rotation = CanonicalizeRotation(rotation);
             uint safeFlags = inputInvalid ? flags | (uint)FaultNaN : flags;
 
-            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(ToVector3(snappedPosition));
+            if (!TryResolveAupFromRuntimeOrigin(snappedPosition, out AbsoluteUniversePosition aup))
+            {
+                AddFaultFlag(FaultNaN);
+                return;
+            }
+
             uint hash = BuildSyncFenceHash(in aup, snappedVelocity, rotation);
             _stateWrite[0] = new PlayerKinematicsSyncState
             {
@@ -3447,7 +3463,9 @@ namespace Hecton8.Gameplay
             velocity = SanitizeFloat3(velocity, float3.zero);
             quaternion rotation = HasSyncStateReadStorage() ? _stateRead[0].Rotation : CanonicalizeRotation(ToQuaternion(_body.rotation));
             Vector3 runtimePosition = ToVector3(position);
-            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            if (!TryResolveAupFromRuntimeOrigin(position, out AbsoluteUniversePosition aup))
+                return;
+
             uint hash = BuildSyncFenceHash(in aup, velocity, rotation);
             float maxDriftErrorMeters = ResolveAupMaxDriftErrorMeters(in aup, position);
             _accumulatorState.LastSyncFenceHash = hash;
@@ -3521,7 +3539,9 @@ namespace Hecton8.Gameplay
                 PlayerKinematicsSyncState state = _stateRead[0];
                 float3 position = SanitizeFloat3(state.Position, ReadLastValidPosition());
                 float3 velocity = SanitizeFloat3(state.Velocity, float3.zero);
-                AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(ToVector3(position));
+                if (!TryResolveAupFromRuntimeOrigin(position, out AbsoluteUniversePosition aup))
+                    return 0u;
+
                 return BuildSyncFenceHash(in aup, velocity, CanonicalizeRotation(state.Rotation));
             }
 
@@ -3530,7 +3550,9 @@ namespace Hecton8.Gameplay
 
             float3 bodyPosition = SanitizeFloat3(ToFloat3(_body.position), ReadLastValidPosition());
             float3 bodyVelocity = SanitizeFloat3(ToFloat3(_body.linearVelocity), float3.zero);
-            AbsoluteUniversePosition bodyAup = AbsoluteUniversePosition.FromRuntimePosition(ToVector3(bodyPosition));
+            if (!TryResolveAupFromRuntimeOrigin(bodyPosition, out AbsoluteUniversePosition bodyAup))
+                return 0u;
+
             return BuildSyncFenceHash(in bodyAup, bodyVelocity, CanonicalizeRotation(ToQuaternion(_body.rotation)));
         }
 
@@ -3539,8 +3561,9 @@ namespace Hecton8.Gameplay
             state.Position = SanitizeFloat3(state.Position, float3.zero);
             state.Velocity = SanitizeFloat3(state.Velocity, float3.zero);
             state.Rotation = CanonicalizeRotation(state.Rotation);
-            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(ToVector3(state.Position));
-            state.StateHash = BuildSyncFenceHash(in aup, state.Velocity, state.Rotation);
+            state.StateHash = TryResolveAupFromRuntimeOrigin(state.Position, out AbsoluteUniversePosition aup)
+                ? BuildSyncFenceHash(in aup, state.Velocity, state.Rotation)
+                : 0u;
             return state;
         }
 
@@ -3783,6 +3806,32 @@ namespace Hecton8.Gameplay
         private static Vector3 ToVector3(float3 value)
         {
             return new Vector3(value.x, value.y, value.z);
+        }
+
+        private static bool IsFiniteAup(in AbsoluteUniversePosition value)
+        {
+            return math.all(math.isfinite(new double3(value.LocalX, value.LocalY, value.LocalZ)));
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            return TryResolveAupFromRuntimeOrigin(ToFloat3(runtimePosition), out positionAup);
+        }
+
+        private static bool TryResolveAupFromRuntimeOrigin(float3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            if (!math.all(math.isfinite(runtimePosition)))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!IsFiniteAup(in originAup))
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            return IsFiniteAup(in positionAup);
         }
 
         private static quaternion ToQuaternion(Quaternion value)

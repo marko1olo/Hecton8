@@ -123,7 +123,7 @@ Create these IDs before posting any public URL. If there is no official Steam or
 
 | Packet | Required ID | Required fields | Blocker |
 |---|---|---|---|
-| Asset packet | `asset_id` | build, status, hook, QA score, owner, rejection code if any. | Do not post if asset is still `PLANNED_CAPTURE` or `RAW`. |
+| Asset packet | `asset_id` | build, file path, status, hook, QA score, owner, creator utility/send gate where creator-facing, pain freshness fields, public comparison gate, agency proof gate/notes, `capture_handoff_packet_id`, `capture_verdict`, `viewer_named_decision` where agency is claimed, `capture_next_actions`, and rejection code if any. | Do not post if asset is still `PLANNED_CAPTURE` or `RAW`, the first-capture handoff packet is missing, `capture_verdict` is `AGENCY_MISSING_HOLD`, `REVISE_SCENE`, `HOLD_ASSET`, or `KILL_ANGLE`, or any required metadata/handoff field is guessed. |
 | Campaign packet | `campaign_id` | campaign, platform, asset_id, CTA type, route class, permission gate/source, owner. | Do not run if no keep/revise/kill rule exists or the route-specific permission gate/source is blank. |
 | Link packet | UTM URL | route class, `utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, `utm_term`, and `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` if public. | Do not invent UTM for platforms that disallow or strip it; do not use private access routes as public CTAs; do not report links with `unknown` route class. |
 | Feedback packet | `beat_id` | route-specific class field, permission gate/source, `consent_provenance` or `reply_consent_provenance`, post URL, useful comments, confusion, clone concern, multiplayer-scope confusion, decision, agency decision read. | Do not summarize comments without counts, provenance, and a non-unknown route. |
@@ -136,12 +136,12 @@ Create these IDs before posting any public URL. If there is no official Steam or
 | First identity post | `screenshot_drop_01_identity_post` | Usually `PLAN-SHOT-001`. |
 | First base/machinery critique | `screenshot_drop_01_base_critique` | Usually `PLAN-SHOT-002` or `PLAN-SHOT-005`. |
 | First salvage/action post | `screenshot_drop_01_salvage_post` | Usually `PLAN-SHOT-003` or `PLAN-CLIP-003`. |
-| First capsule critique | `screenshot_drop_01_capsule_critique` | `PLAN-CAPSULE-001`, no Steam CTA unless Official CTA Link Activation Gate V0 passes. |
+| First capsule critique | `screenshot_drop_01_capsule_critique` | `PLAN-CAPSULE-001`, no Steam CTA unless `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED` and destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED` pass. |
 | Steam page live | `steam_page_launch_announcement` | Requires `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED`, destination-specific `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`, official Steam URL custody, and Campaign 01 `KEEP`. |
 
 ### First Link Rules
 
-  Use no tracking link in Reddit critique posts unless community rules allow it.
+  Use no tracking link in Reddit critique posts unless same-day community rules permit tracking and the exact destination has `public_cta_permission_gate = ALLOW_PUBLIC_CTA_VERIFIED`.
   Prefer raw Steam URL in public replies; use UTM only in planned posts/bios where accepted.
   Do not use shorteners until first raw UTM behavior is known.
   Do not put competitor terms in campaign, content, or term fields.
@@ -163,7 +163,7 @@ Machine gate: `public_cta_permission_gate = HOLD_NO_PUBLIC_CTA`. The only future
 | `destination_url` | Official Steam with `steam_page_publish_permission_gate = ALLOW_STEAM_PAGE_PUBLISH_VERIFIED`, official site, approved presskit, or approved owned-audience URL. | Guessed, private, placeholder, unrelated, candidate-only URL, or Steam page not explicitly published through its gate. |
 | `destination_owner` | Owner-controlled project account/inbox/custody path is recorded. | Personal, throwaway, agent-owned, or missing recovery/2FA custody. |
 | `public_state` | Page is public/scheduled for this beat and content matches the CTA. | Page is draft, hidden, wrong app, missing asset, or mismatched promise. |
-| `utm_allowed` | Platform rules allow the chosen tracking format, or raw URL is used. | Community rules ban tracking links or platform strips UTMs and no fallback is recorded. |
+| `utm_allowed` | Platform rules permit the chosen tracking format and the exact destination public CTA gate is open, or raw URL/no-link fallback is used. | Community rules ban tracking links, platform strips UTMs, destination CTA gate is held, or no fallback is recorded. |
 | `canonical_utm` | Uses approved `utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, and `utm_term`. | Uses competitor terms, spaces in IDs, creator names without actual send, or reused IDs. |
 | `fallback_no_link_copy` | A no-link variant exists for critique/community use. | Post depends on a wishlist/sign-up ask when the official destination is not ready. |
 

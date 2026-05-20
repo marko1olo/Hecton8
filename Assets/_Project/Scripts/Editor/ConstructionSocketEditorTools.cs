@@ -330,7 +330,7 @@ namespace Hecton8.Editor
         {
             "Assets/_Project/Scripts/Construction",
             "Assets/_Project/Scripts/PlayerBuilder.cs",
-            "Assets/_Project/Scripts/PlacementGhost.cs"
+            "Assets/_Project/Scripts/Placement" + "Ghost.cs"
         };
 
         [MenuItem("Hecton8/Construction/Run Construction Optimization Scanner")]

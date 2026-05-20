@@ -666,7 +666,8 @@ namespace Hecton8.Celestial
             if (parentBodyTransform == null)
                 return false;
 
-            if ((parentBodyTransform.position - _editorLastParentPosition).sqrMagnitude > DirectionEpsilon)
+            Vector3 parentVisualDelta = parentBodyTransform.position - _editorLastParentPosition;
+            if (parentVisualDelta.sqrMagnitude > DirectionEpsilon)
                 return true;
 
             return parentBodyTransform.rotation != _editorLastParentRotation;

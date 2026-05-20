@@ -300,3 +300,38 @@ Solution: Convert all fauna procedural bone lanes to `VaultGenerationHandle<T>`,
 Rejected Alternatives: Keeping the legacy descriptors for editor-only routes was rejected because those same handles feed runtime solver and telemetry paths. Owner-wide release was rejected because exact buffer IDs are known and broader release would cross another owner boundary if future lanes share `SystemID.AnimationFauna`.
 Scalability potential: Low devices still collapse update cadence through existing continuous `GlobalQualityWeight`; middle/high/ultra keep GPU matrix upload and richer procedural bone response without pointer retention. No binary quality branch was added.
 Hardware Impact: i3/MX350 pays eleven generation compares when staging the fauna solve and a few compares on editor/telemetry reads. The dominant cost remains the Burst solve and GPU buffer copy; stale Vault metadata is removed from the animation path.
+
+## Decision 044 - Kinetic character animator removes descriptor and direct-view debt
+Problem: `KineticCharacterAnimatorRuntime.cs` persisted twelve `VaultBufferHandle<T>` descriptors, resolved them through `.Resolve(vault)`, and also fetched `PlayerKinematicState` / `VoxelSdfTexture3D` through direct `TryGetBuffer` calls. Teardown and DataVault replacement cleared descriptor fields without releasing the Vault lanes.
+Solution: Convert all locomotion animation lanes to `VaultGenerationHandle<T>`, add generation-checked owned and external resolve helpers, route player and SDF reads through method-local `TryGetGenerationHandle` + `TryResolveHandle`, and release exact owned descriptors after solver completion on disable, destroy, and DataVault replacement.
+Rejected Alternatives: Keeping `TryGetBuffer` for external read-only lanes was rejected because read-only does not make stale aliases safe after relocation. Releasing all `SystemID.AnimationLocomotion` buffers was rejected because adjacent locomotion runtimes can share the owner ID.
+Scalability potential: Low devices retain existing continuous quality-weighted locomotion/SDF degradation; middle/high/ultra keep richer IK and GPU matrix output without persistent Vault views. No binary quality branch was added.
+Hardware Impact: i3/MX350 pays twelve generation compares for owned staging and two local external descriptor resolves on player/SDF frames. The dominant cost remains Burst locomotion/matrix work; stale Vault descriptors and direct external Vault views are removed from the manager.
+
+## Decision 045 - Laser cutter scalability read uses generation descriptor
+Problem: `LaserCutterDodRuntime.cs` had one remaining `TryGetBufferHandle` route for `ShinobuScalabilityState`, leaving a legacy descriptor path inside an otherwise generation-descriptor tool runtime.
+Solution: Replace the quality-weight read with `TryGetGenerationHandle<ScalabilityStateDTO>` and `TryResolveHandle`, keeping the resolved `NativeArray<ScalabilityStateDTO>` local to `ResolveGlobalQualityWeight()`.
+Rejected Alternatives: Keeping the old route because it is read-only was rejected; relocation still invalidates pointer-bearing handle metadata regardless of write intent.
+Scalability potential: Low/middle/high/ultra visuals continue to use the same continuous quality scalar; only the descriptor acquisition route changed.
+Hardware Impact: i3/MX350 cost is one generation handle resolve on quality reads. It removes the final legacy handle API hit in this runtime without changing cut math.
+
+## Decision 046 - Tool kinematics editor facade stops using legacy handles
+Problem: `ToolKinematicsTunerWindow.cs` cached seven `VaultBufferHandle<T>` descriptors and used `ResolveBuffer(ref handle)` / `.Resolve(vault)` while Play Mode editor tuning can observe and mutate live Vault lanes.
+Solution: Convert editor descriptors to `VaultGenerationHandle<T>`, resolve local editor views through `IDataVault.TryResolveHandle`, and release exactly the editor-acquired descriptors when the window closes or the Vault reference changes.
+Rejected Alternatives: Treating editor windows as harmless was rejected because they run against Play Mode memory and can hold stale descriptors across defrag/rebind events.
+Scalability potential: Runtime scalability is unchanged; the editor facade now observes the same quality-weighted tool kinematics state without preserving pointer-bearing handles.
+Hardware Impact: No player-frame cost. Editor draws pay generation checks while the tuner window is open; stale Vault metadata is removed from the facade.
+
+## Decision 047 - Tool kinematics runtime drops legacy handles and ref-return API
+Problem: `ToolKinematicsRuntime.cs` persisted fifteen `VaultBufferHandle<T>` descriptors, resolved them through `ResolveBuffer(ref handle)` / `.Resolve(vault)`, and exposed an unused public `ToolKinematicsVaultAccess` class that returned refs via `GetElementAsRef`.
+Solution: Convert all runtime lanes to `VaultGenerationHandle<T>`, resolve method-local `NativeArray<T>` views through `IDataVault.TryResolveHandle`, release exact descriptors on disable/destroy or Vault rebind, and remove the unused ref-return accessor class.
+Rejected Alternatives: Keeping the ref-return accessor with generation handles was rejected because returning refs from transient views invites callers to keep byref access beyond a safe execution phase. Owner-wide release was rejected because exact ToolKinematics buffer IDs are known.
+Scalability potential: Low devices keep existing continuous LOD hold and beam raymarch limits; middle/high/ultra keep richer tool beam/IK/spark output without persistent Vault descriptors. No binary quality branch was added.
+Hardware Impact: i3/MX350 pays fifteen generation compares while staging tool jobs. The dominant cost remains Burst raymarch/beam jobs; stale Vault descriptor metadata and public byref mutation routes are removed.
+
+## Decision 048 - Tool durability removes false-positive legacy naming
+Problem: `ToolDurabilitySystem.cs` already used `VaultGenerationHandle<T>` and `TryResolveHandle`, but its local helper was named `TryResolveBuffer`, which caused broad legacy Vault scans to surface a false-positive ResolveBuffer-like route.
+Solution: Rename the helper and callers to `TryResolveDurabilityView` without changing allocation, BufferID, DTO, or job behavior.
+Rejected Alternatives: Leaving the name was rejected because audit noise slows detection of real stale pointer routes in tools and animation.
+Scalability potential: Runtime scalability is unchanged; durability still uses the existing generation-descriptor state lanes.
+Hardware Impact: No runtime change. The benefit is audit precision: broad scans now separate safe generation views from forbidden legacy resolve calls.

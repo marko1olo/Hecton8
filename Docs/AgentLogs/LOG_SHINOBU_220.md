@@ -893,7 +893,7 @@ Exact Microseconds saved:
   <authority_route result="PASS_STATIC">Bulkhead closure progress remains owned by the DataVault `BulkheadStateDTO` lane.</authority_route>
   <route_card result="PASS_STATIC">The SHINOBU_220 route card states that `BaseAirlock` owns no local closure-progress scalar.</route_card>
   <audio_route result="PASS_STATIC">Pressure whistle gates on lockdown state without DataVault polling or local closure progress.</audio_route>
-  <build_gate result="NOT_RUN" cpu="100" active_processes="none">No rebuild launched because the CPU gate rejects it.</build_gate>
+  <build_gate result="NOT_RUN" cpu="99.877" active_processes="none">No rebuild launched because the CPU gate rejects it.</build_gate>
   <dear_lie result="UNCHANGED">Visual closure remains shader-side procedural deformation.</dear_lie>
 </SELF_AUDIT>
 
@@ -920,4 +920,176 @@ Exact Microseconds saved:
   <blocking result="PASS_STATIC">No telemetry job completion wait was added to force dump timing.</blocking>
   <build_gate result="NOT_RUN" cpu="100" active_processes="none">No rebuild launched because the CPU gate rejects it.</build_gate>
   <dear_lie result="UNCHANGED">Visual closure remains shader-side procedural deformation.</dear_lie>
+</SELF_AUDIT>
+
+## 2026-05-20 - Tail Audit: Duplicate Black-Box Dump Fence
+
+What was wrong:
+- A persistent latest telemetry row with `DumpRequested` could rewrite the same dump file every VisualSync.
+
+What was done:
+- Added `_lastDumpedTelemetryCursor`.
+- Reset the fence with Vault runtime state.
+- `DumpBlackBoxIfRequested` skips file I/O when the latest cursor was already dumped.
+
+Cinematic Cheats used:
+- No gameplay or visual simulation change. This is diagnostic file-output throttling only.
+
+Exact Microseconds saved:
+- No normal-frame speed claim. Repeated fault frames avoid full `.bin` rewrite cost after the first cursor write.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_DUPLICATE_DUMP_FENCE">
+  <dump_fence result="PASS_STATIC">`_lastDumpedTelemetryCursor` prevents repeated dump writes for the same telemetry cursor.</dump_fence>
+  <rollback_state result="UNCHANGED">The fence is not stored in `BulkheadStateDTO`, CSR, KCC, or telemetry payload rows.</rollback_state>
+  <blocking result="PASS_STATIC">No job completion or file polling was added.</blocking>
+  <dear_lie result="UNCHANGED">Visual closure remains shader-side procedural deformation.</dear_lie>
+</SELF_AUDIT>
+
+## 2026-05-20 - Tail Audit: Hot-Loop Vault Poll Purge
+
+What was wrong:
+- `ResolveVault()` still fell back to `GlobalRegistry.DataVault` when the cached `_vault` reference was null.
+- That fallback was reachable from PreSimulation, Simulation, VisualSync, and helper `Resolve<T>()` call sites, so a Vault outage could turn phase ticks into registry polling.
+
+What was done:
+- Removed the fallback registry lookup from `ResolveVault()`.
+- Phase ticks now use only the cached `_vault` reference and the existing hot-swap rebind path.
+- DataVault registry access is limited to the `OnEnable` bootstrap cache; airlock facades use the cached intent bus overload.
+
+Cinematic Cheats used:
+- No new simulation or rendering path. The Dear Lie stays GPU-side deformation fed by Vault DTOs; this patch only tightens service ownership.
+
+Exact Microseconds saved:
+- No normal-frame speed claim. This removes a failure-path registry read from phase ticks and prevents hidden hot-loop dependency polling.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_HOT_LOOP_VAULT_POLL_PURGE">
+  <registry_polling result="PASS_STATIC">`ResolveVault()` no longer reads `GlobalRegistry.DataVault`.</registry_polling>
+  <cold_registry_access result="PASS_STATIC">The only remaining `GlobalRegistry.DataVault` read in `BulkheadContainmentRuntime.cs` is the `OnEnable` bootstrap cache.</cold_registry_access>
+  <phase_failure_mode result="PASS_STATIC">When Vault is absent or rebinding, phase ticks fail inert instead of polling registry state.</phase_failure_mode>
+  <build_gate result="NOT_RUN" cpu="100.000" active_processes="none">No rebuild launched because the CPU gate rejects it and no `dotnet`, `csc`, `bee_backend`, or `Unity` process is active.</build_gate>
+  <dear_lie result="UNCHANGED">Visual closure remains shader-side procedural deformation.</dear_lie>
+</SELF_AUDIT>
+
+## 2026-05-20 - Tail Audit: Airlock Registry Publish Purge
+
+What was wrong:
+- `BaseAirlock.PublishBulkheadContainmentState` still passed `GlobalRegistry.DataVault` directly into the intent bus.
+- The bounded retry path is called from `Tick`, so a service-locator read could still occur in a gameplay update path while waiting for Vault bootstrap.
+
+What was done:
+- Added a cached-Vault overload to `BulkheadContainmentIntentBus`.
+- Bound that cache from `BulkheadContainmentRuntime.OnEnable` and `RequestDataVaultRebind`.
+- Removed direct DataVault registry access from `BaseAirlock`.
+- Updated the unused compatibility facade `BulkheadContainmentRuntime.TryPublishAirlockBulkheadState` to use the cached bus overload.
+
+Cinematic Cheats used:
+- No physical door, collider, or managed publisher was added. Airlock publish remains one unmanaged intent packet; visual closure remains shader deformation.
+
+Exact Microseconds saved:
+- No profiler-backed claim. This removes a service-locator read from the bounded retry/update path and keeps Gameplay out of direct Vault ownership.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_AIRLOCK_REGISTRY_PUBLISH_PURGE">
+  <gameplay_registry_access result="PASS_STATIC">`rg "GlobalRegistry\.DataVault" Assets/_Project/Scripts/Gameplay/BaseAirlock.cs` returns no hits.</gameplay_registry_access>
+  <intent_bus_cache result="PASS_STATIC">`BulkheadContainmentIntentBus` owns a cached `IDataVault` reference bound only by the Construction runtime cold/hot-swap lifecycle.</intent_bus_cache>
+  <compile_guard result="PASS_STATIC">Gameplay still imports Core/Core.Contracts only; no Gameplay->Construction dependency was introduced.</compile_guard>
+  <build_gate result="NOT_RUN" cpu="64.309" active_processes="none">No rebuild launched because the CPU gate rejects it.</build_gate>
+  <dear_lie result="UNCHANGED">Visual closure remains shader-side procedural deformation.</dear_lie>
+</SELF_AUDIT>
+
+## 2026-05-20 - Tail Audit: Intent Bus No-Allocation Resolve
+
+What was wrong:
+- `BulkheadContainmentIntentBus.TryWriteAirlockBulkheadIntent` used `GetGenerationHandle` for the intent ring and control row.
+- That allowed Gameplay publish/retry to create or grow Construction-owned Vault lanes before `BulkheadContainmentRuntime.EnsureVaultState` had bootstrapped them.
+
+What was done:
+- Replaced publish-time `GetGenerationHandle` calls with explicit `TryGetGenerationHandle<T>` calls.
+- Kept transient `TryResolveHandle` views for the actual unmanaged write.
+- If descriptors are absent, publish returns false and `BaseAirlock` keeps its bounded retry.
+
+Cinematic Cheats used:
+- No object door or collider route was added. The only truth remains the unmanaged intent ring and the shader Dear Lie.
+
+Exact Microseconds saved:
+- No profiler-backed claim. This prevents accidental Vault allocation/growth during airlock retry and collapses pre-owner publish cost to descriptor lookup failure.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_INTENT_BUS_NO_ALLOC_RESOLVE">
+  <vault_allocation_authority result="PASS_STATIC">`BulkheadContainmentIntentBus` no longer calls `GetGenerationHandle`; Construction runtime remains the creator of SHINOBU intent lanes.</vault_allocation_authority>
+  <retry_mode result="PASS_STATIC">Absent descriptors return false and preserve bounded airlock retry without creating owner-local memory from Gameplay.</retry_mode>
+  <compile_guard result="PASS_STATIC">No new Gameplay->Construction import or managed publisher interface was introduced.</compile_guard>
+  <build_gate result="NOT_RUN" cpu="100.000" active_processes="none">No rebuild launched because the CPU gate rejects it.</build_gate>
+  <dear_lie result="UNCHANGED">Visual closure remains shader-side procedural deformation.</dear_lie>
+</SELF_AUDIT>
+
+## 2026-05-20 - Tail Audit: Intent Bus Rebind Inert Window
+
+What was wrong:
+- DataVault hot-swap could otherwise expose the replacement Vault to the airlock intent bus before old SHINOBU handles were released.
+- That would let Gameplay publish into the new Vault while old jobs still owned previous raw-pointer memory.
+
+What was done:
+- `RequestDataVaultRebind()` binds the intent bus to null during the pending window.
+- `TryFlushPendingDataVaultRebind()` releases old Vault handles, commits `_vault`, then rebinds the bus cache.
+- Same-service callbacks keep the existing cache and do not create a false retry storm.
+
+Cinematic Cheats used:
+- No physical door route changed. The shader Dear Lie fails closed while ownership is unsettled.
+
+Exact Microseconds saved:
+- No speed claim. This removes a hot-swap ownership race; normal frame cost is unchanged.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_INTENT_BUS_REBIND_INERT_WINDOW">
+  <publish_window result="PASS_STATIC">The intent bus is bound to null during pending DataVault rebind.</publish_window>
+  <release_order result="PASS_STATIC">The bus cache reopens only after `ReleaseVaultHandles()` and `_vault` commit.</release_order>
+  <blocking result="PASS_STATIC">No gameplay-frame `Complete()` was added; deferred release still waits on tracked handle completion.</blocking>
+  <dear_lie result="UNCHANGED">Visual closure remains shader-side procedural deformation and fails closed during rebind.</dear_lie>
+</SELF_AUDIT>
+
+## 2026-05-20 - Tail Audit: Dispatched Mock Generation
+
+What was wrong:
+- The fallback `GenerateMockBulkheadsJob` was Burst-decorated but invoked through a managed `job.Execute(i)` loop during Vault setup.
+- That bypassed the dispatcher job graph and could overwrite real airlock rows if mock generation happened after live intent ingestion.
+
+What was done:
+- Removed the setup-time managed execute loop.
+- `ScheduleSimulation()` now schedules `GenerateMockBulkheadsJob` via `Schedule(count, 32, dependency)`.
+- Mock generation is skipped once `_activeCount > 0`, preserving real airlock intent rows.
+
+Cinematic Cheats used:
+- Mock data is synthetic CSR/KCC plane truth only; no door prefab, collider, Animator, or Transform motion is introduced.
+
+Exact Microseconds saved:
+- Production scenes with live airlock ingress pay 0 us for mock generation. Mock test scenes move setup work into the dispatcher-owned Burst path.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_DISPATCHED_MOCK_GENERATION">
+  <task_05 result="PASS_STATIC">Fallback mock rows are generated by scheduled `GenerateMockBulkheadsJob`, not a managed `Execute(i)` loop.</task_05>
+  <dependency_graph result="PASS_STATIC">The mock handle flows into the Simulation dependency chain and subsequent telemetry/closure jobs.</dependency_graph>
+  <real_data_guard result="PASS_STATIC">Mock generation is skipped when live rows already exist, preventing overwrite of real edge/AUP/CSR facts.</real_data_guard>
+  <build_gate result="NOT_RUN" cpu="31.884" active_processes="none">No rebuild launched because standalone dotnet is a false signal until Unity regenerates project files, and the last Unity/Bee import has unrelated blockers plus a hang history.</build_gate>
+</SELF_AUDIT>
+
+## 2026-05-20 - Tail Audit: CSV Scratch File Ingest
+
+What was wrong:
+- The parser used `ReadOnlySpan<byte>`, but the editor facade still staged CSV content through `File.ReadAllBytes`.
+- The Vault-owned `Shinobu220BulkheadCsvScratch` lane was allocated and released but not used for file ingest.
+
+What was done:
+- Added `BulkheadContainmentRuntime.TryLoadProfilesFromCsvFile(string path)`.
+- The method reads file bytes into the native CSV scratch lane with `FileStream.Read(Span<byte>)`.
+- The UI Toolkit window now calls the file-ingest bridge and no longer creates a managed `byte[]`.
+
+Cinematic Cheats used:
+- No simulation change. This is a cold tuning bridge; bulkhead visuals remain shader-driven.
+
+Exact Microseconds saved:
+- Hot-frame cost remains 0 us. Cold import removes one managed allocation equal to the CSV byte length.
+
+<SELF_AUDIT agent="SHINOBU_220" task_count="20" status="TAIL_AUDIT_CSV_SCRATCH_FILE_INGEST">
+  <csv_scratch result="PASS_STATIC">`TryLoadProfilesFromCsvFile` resolves `Shinobu220BulkheadCsvScratch` and reads directly into native memory.</csv_scratch>
+  <editor_alloc result="PASS_STATIC">`BulkheadContainmentTunerWindow.LoadCsvProfiles` no longer calls `File.ReadAllBytes`.</editor_alloc>
+  <parser result="PASS_STATIC">Profile parsing still uses `ReadOnlySpan<byte>`, byte hashing, and manual float parsing.</parser>
+  <hot_path result="PASS_STATIC">No gameplay-frame CSV polling or managed file loading was added.</hot_path>
+  <build_gate result="NOT_RUN" cpu="19.442" active_processes="none">No rebuild launched because standalone dotnet is a false signal until Unity regenerates project files, and the last Unity/Bee import has unrelated blockers plus a hang history.</build_gate>
 </SELF_AUDIT>

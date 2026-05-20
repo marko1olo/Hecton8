@@ -4908,7 +4908,7 @@ namespace Hecton8.AI
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private unsafe struct SwarmAnalysisJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<int> ActiveSlots;
@@ -5249,7 +5249,7 @@ namespace Hecton8.AI
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private unsafe struct PredatorCognitionJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<int> ActiveSlots;
@@ -5727,9 +5727,10 @@ namespace Hecton8.AI
                 float directAcousticScore = hasPlayerTarget
                     ? ComputeAcousticScore(input.Position, input.PlayerPosition, input.AcousticPingStrength01, input.AcousticTransmission01)
                     : 0f;
+                float3 acousticSightDelta = input.PlayerPosition - input.Position;
                 bool acousticSight = hasPlayerTarget &&
                                       input.AcousticPingStrength01 > PredatorAcousticSightNoiseThreshold01 &&
-                                      math.distancesq(input.PlayerPosition, input.Position) < PredatorAcousticSightRangeSqr;
+                                      math.lengthsq(acousticSightDelta) < PredatorAcousticSightRangeSqr;
                 if (acousticSight)
                     directAcousticScore = math.max(directAcousticScore, input.AcousticPingStrength01);
 

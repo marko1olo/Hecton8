@@ -541,7 +541,7 @@ namespace Hecton8.Modding
 
         public static void Shutdown()
         {
-            TryFinalizeScheduledPreSimulation(forceComplete: true);
+            CompleteScheduledPreSimulationForBarrier();
             _pendingRingHandle = default;
             _devNullRingHandle = default;
             _stagingHandle = default;
@@ -646,7 +646,7 @@ namespace Hecton8.Modding
 
         public static void DrainPreSimulation()
         {
-            TryFinalizeScheduledPreSimulation(forceComplete: false);
+            TryFinalizeScheduledPreSimulationNoWait();
             if (_scheduledValidationActive)
                 return;
 
@@ -663,7 +663,7 @@ namespace Hecton8.Modding
         public static bool TrySchedulePreSimulation(JobHandle dependsOn, out JobHandle validationHandle)
         {
             validationHandle = dependsOn;
-            TryFinalizeScheduledPreSimulation(forceComplete: false);
+            TryFinalizeScheduledPreSimulationNoWait();
             if (_scheduledValidationActive)
                 return false;
 
@@ -678,23 +678,35 @@ namespace Hecton8.Modding
             return true;
         }
 
-        public static bool TryFinalizeScheduledPreSimulation(bool forceComplete)
+        public static bool TryFinalizeScheduledPreSimulationNoWait()
         {
             if (!_scheduledValidationActive)
                 return true;
 
-            if (!forceComplete && !_scheduledValidationHandle.IsCompleted)
+            if (!_scheduledValidationHandle.IsCompleted)
                 return false;
 
-            if (forceComplete)
-            {
-                DispatcherJobFence.TryComplete(ref _scheduledValidationHandle, forceComplete: true);
-            }
-            else if (!DispatcherJobFence.TryFinalizeCompleted(ref _scheduledValidationHandle))
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _scheduledValidationHandle))
             {
                 return false;
             }
 
+            return CommitScheduledValidation();
+        }
+
+        public static bool CompleteScheduledPreSimulationForBarrier()
+        {
+            if (!_scheduledValidationActive)
+                return true;
+
+            if (!DispatcherJobFence.TryComplete(ref _scheduledValidationHandle, forceComplete: true))
+                return false;
+
+            return CommitScheduledValidation();
+        }
+
+        private static bool CommitScheduledValidation()
+        {
             FinalizeValidationTelemetry(in _scheduledValidationState);
             _scheduledValidationState = default;
             _scheduledValidationActive = false;
@@ -706,7 +718,7 @@ namespace Hecton8.Modding
             if (!_initialized)
                 return;
 
-            TryFinalizeScheduledPreSimulation(forceComplete: false);
+            TryFinalizeScheduledPreSimulationNoWait();
             if (_scheduledValidationActive)
                 return;
 
@@ -1071,7 +1083,7 @@ namespace Hecton8.Modding
                 return false;
             }
 
-            TryFinalizeScheduledPreSimulation(forceComplete: false);
+            TryFinalizeScheduledPreSimulationNoWait();
             if (_scheduledValidationActive)
                 return false;
 

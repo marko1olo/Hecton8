@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using Hecton8.Core;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -11,12 +13,14 @@ namespace Hecton8.World
         {
             public long runtimeKey;
             public Vector3 position;
+            public AbsoluteUniversePosition positionAup;
             public float radius;
             public WorldChunkCoordinate chunkCoord;
             public WorldMacroZoneCoordinate macroZoneCoord;
             public WorldStreamingLayer streamingLayer;
             public string familyId;
             public bool isLargeThreatZone;
+            public bool hasPositionAup;
         }
 
         [SerializeField] private int _debugOrdinaryAnchorCount;
@@ -98,10 +102,13 @@ namespace Hecton8.World
             if (runtimeKey == 0L)
                 return;
 
+            bool hasAnchorAup = TryResolveRuntimePositionAup(position, out AbsoluteUniversePosition anchorAup);
             Anchor anchor = new Anchor
             {
                 runtimeKey = runtimeKey,
                 position = position,
+                positionAup = hasAnchorAup ? anchorAup : default,
+                hasPositionAup = hasAnchorAup,
                 radius = Mathf.Max(2f, radius),
                 chunkCoord = WorldChunkCoordinate.FromWorldPosition(position, 1f),
                 macroZoneCoord = WorldMacroZoneCoordinate.FromWorldPosition(position, 1f),
@@ -134,11 +141,44 @@ namespace Hecton8.World
             int maxChunkDistance,
             out Anchor anchor)
         {
-            return TryGetNearestOrdinaryAnchor(observerPosition, observerChunk, maxChunkDistance, out anchor);
+            AbsoluteUniversePosition observerAup = default;
+            return TryGetNearestOrdinaryAnchor(observerPosition, false, in observerAup, observerChunk, maxChunkDistance, out anchor);
+        }
+
+        public bool TryGetOrdinaryAnchor(
+            Vector3 observerPosition,
+            in AbsoluteUniversePosition observerAup,
+            WorldChunkCoordinate observerChunk,
+            int maxChunkDistance,
+            out Anchor anchor)
+        {
+            return TryGetNearestOrdinaryAnchor(observerPosition, IsFinite(in observerAup), in observerAup, observerChunk, maxChunkDistance, out anchor);
         }
 
         public bool TryGetLargeThreatZone(
             Vector3 observerPosition,
+            WorldMacroZoneCoordinate observerMacroZone,
+            int maxMacroZoneDistance,
+            out Anchor anchor)
+        {
+            AbsoluteUniversePosition observerAup = default;
+            return TryGetLargeThreatZone(observerPosition, in observerAup, false, observerMacroZone, maxMacroZoneDistance, out anchor);
+        }
+
+        public bool TryGetLargeThreatZone(
+            Vector3 observerPosition,
+            in AbsoluteUniversePosition observerAup,
+            WorldMacroZoneCoordinate observerMacroZone,
+            int maxMacroZoneDistance,
+            out Anchor anchor)
+        {
+            return TryGetLargeThreatZone(observerPosition, in observerAup, IsFinite(in observerAup), observerMacroZone, maxMacroZoneDistance, out anchor);
+        }
+
+        private bool TryGetLargeThreatZone(
+            Vector3 observerPosition,
+            in AbsoluteUniversePosition observerAup,
+            bool hasObserverAup,
             WorldMacroZoneCoordinate observerMacroZone,
             int maxMacroZoneDistance,
             out Anchor anchor)
@@ -164,7 +204,7 @@ namespace Hecton8.World
                         if (!IsAnchorAvailable(candidate))
                             continue;
 
-                        float distanceSqr = (candidate.position - observerPosition).sqrMagnitude;
+                        float distanceSqr = ResolveAnchorDistanceSq(candidate, observerPosition, hasObserverAup, in observerAup);
                         if (distanceSqr >= bestDistanceSqr)
                             continue;
 
@@ -180,6 +220,8 @@ namespace Hecton8.World
 
         private bool TryGetNearestOrdinaryAnchor(
             Vector3 observerPosition,
+            bool hasObserverAup,
+            in AbsoluteUniversePosition observerAup,
             WorldChunkCoordinate observerChunk,
             int maxChunkDistance,
             out Anchor anchor)
@@ -205,7 +247,7 @@ namespace Hecton8.World
                         if (!IsAnchorAvailable(candidate))
                             continue;
 
-                        float distanceSqr = (candidate.position - observerPosition).sqrMagnitude;
+                        float distanceSqr = ResolveAnchorDistanceSq(candidate, observerPosition, hasObserverAup, in observerAup);
                         if (distanceSqr >= bestDistanceSqr)
                             continue;
 
@@ -220,7 +262,7 @@ namespace Hecton8.World
             while (reefEnumerator.MoveNext())
             {
                 Anchor candidate = reefEnumerator.Current;
-                float distanceSqr = (candidate.position - observerPosition).sqrMagnitude;
+                float distanceSqr = ResolveAnchorDistanceSq(candidate, observerPosition, hasObserverAup, in observerAup);
                 if (distanceSqr >= bestDistanceSqr)
                     continue;
 
@@ -230,6 +272,57 @@ namespace Hecton8.World
             }
 
             return hasBest;
+        }
+
+        private static float ResolveAnchorDistanceSq(
+            in Anchor candidate,
+            Vector3 observerPosition,
+            bool hasObserverAup,
+            in AbsoluteUniversePosition observerAup)
+        {
+            if (hasObserverAup && candidate.hasPositionAup)
+                return SaturateDistanceSq(AbsoluteUniversePosition.DistanceSq(in candidate.positionAup, in observerAup));
+
+            Vector3 visualDelta = candidate.position - observerPosition;
+            if (!math.all(math.isfinite(new float3(visualDelta.x, visualDelta.y, visualDelta.z))))
+                return float.MaxValue;
+
+            return visualDelta.sqrMagnitude;
+        }
+
+        private static bool TryResolveRuntimePositionAup(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
+        {
+            positionAup = default;
+            float3 runtime = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(runtime)))
+                return false;
+
+            AbsoluteUniversePosition originAup = GlobalSignals.CurrentRuntimeOriginAup();
+            if (!IsFinite(in originAup))
+                return false;
+
+            positionAup = AbsoluteUniversePosition.OffsetMeters(
+                in originAup,
+                new double3(runtime.x, runtime.y, runtime.z));
+            return IsFinite(in positionAup);
+        }
+
+        private static float SaturateDistanceSq(double distanceSq)
+        {
+            if (!math.isfinite(distanceSq))
+                return float.MaxValue;
+
+            if (distanceSq <= 0d)
+                return 0f;
+
+            return distanceSq >= float.MaxValue ? float.MaxValue : (float)distanceSq;
+        }
+
+        private static bool IsFinite(in AbsoluteUniversePosition position)
+        {
+            return math.isfinite(position.LocalX) &&
+                   math.isfinite(position.LocalY) &&
+                   math.isfinite(position.LocalZ);
         }
 
         private void AppendRuntimeReefAnchors()

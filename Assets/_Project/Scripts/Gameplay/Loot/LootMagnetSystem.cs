@@ -159,7 +159,7 @@ namespace Hecton8.Gameplay.Loot
 
         private void OnDisable()
         {
-            ForceCompleteAndCommitScheduledJob();
+            ForceCompleteAndCommitScheduledJobForBarrier();
             TryUnregisterTicks();
             TryUnregisterOriginShiftListener();
             ClearDataVaultRuntimeState();
@@ -248,7 +248,7 @@ namespace Hecton8.Gameplay.Loot
         /// <inheritdoc />
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
-            ForceCompleteAndCommitScheduledJob();
+            ForceCompleteAndCommitScheduledJobForBarrier();
             if (!math.all(math.isfinite(shiftData.NewTotalOffsetDouble)))
             {
                 _dependencyTelemetryFlags |= TelemetryPlayerPoseNonFiniteFlag;
@@ -1404,7 +1404,7 @@ namespace Hecton8.Gameplay.Loot
                    _pickupEntityIds.Length >= count;
         }
 
-        private bool ForceCompletePendingJob()
+        private bool ForceCompletePendingJobForBarrier()
         {
             if (!_pullScheduled)
                 return false;
@@ -1414,9 +1414,9 @@ namespace Hecton8.Gameplay.Loot
             return true;
         }
 
-        private bool ForceCompleteAndCommitScheduledJob()
+        private bool ForceCompleteAndCommitScheduledJobForBarrier()
         {
-            if (!ForceCompletePendingJob())
+            if (!ForceCompletePendingJobForBarrier())
             {
                 UnlockScheduledVaultBuffers();
                 return false;

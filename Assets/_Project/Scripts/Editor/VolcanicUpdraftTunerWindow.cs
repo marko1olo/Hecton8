@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using Hecton8.Core;
 using Hecton8.World;
 using Unity.Mathematics;
 using UnityEditor;
@@ -97,7 +98,7 @@ namespace Hecton8.EditorTools
                 if (!_runtime.TryGetVentReadback(i, out VentStateDTO vent, out settings))
                     continue;
 
-                Vector3 basePos = _runtime.transform.position + new Vector3((float)vent.AUP.x, (float)vent.AUP.y, (float)vent.AUP.z);
+                Vector3 basePos = HectonFloatingOrigin.ToRuntimePosition(vent.AUP, HectonFloatingOrigin.CurrentTotalOffsetDouble);
                 float radius = math.max(0.25f, vent.Radius);
                 float height = math.max(1f, settings.MaxHeight);
                 float active = math.saturate(vent.ThrustPower / math.max(0.0001f, settings.MaxThrust));

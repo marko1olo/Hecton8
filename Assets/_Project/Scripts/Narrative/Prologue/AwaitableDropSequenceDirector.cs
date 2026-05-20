@@ -661,16 +661,25 @@ namespace Hecton8.Narrative.Prologue
             return unchecked((hash ^ value) * 16777619u);
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         private struct PrologueSequenceTelemetryEntry
         {
+            [FieldOffset(0)]
             public uint Frame;
+            [FieldOffset(4)]
             public uint StateHash;
+            [FieldOffset(8)]
             public double UniverseSpeedMetersPerSecond;
+            [FieldOffset(16)]
             public double PlanetDistanceMeters;
+            [FieldOffset(24)]
             public ushort Sequence;
+            [FieldOffset(26)]
             public byte Stage;
+            [FieldOffset(27)]
             public byte Flags;
+            [FieldOffset(28)]
+            private uint _pad0;
         }
     }
 }

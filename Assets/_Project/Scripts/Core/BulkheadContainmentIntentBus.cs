@@ -8,6 +8,37 @@ namespace Hecton8.Core.Contracts
     {
         public const int IntentCapacity = 256;
 
+        private static IDataVault s_cachedVault;
+
+        public static void BindDataVault(IDataVault vault)
+        {
+            s_cachedVault = vault;
+        }
+
+        public static bool TryWriteAirlockBulkheadIntent(
+            uint edgeHash,
+            bool locked,
+            double3 centerAup,
+            float3 normal,
+            float widthMeters,
+            float heightMeters,
+            float parentIntegrity01,
+            uint siblingNodeHash,
+            uint frame)
+        {
+            return TryWriteAirlockBulkheadIntent(
+                s_cachedVault,
+                edgeHash,
+                locked,
+                centerAup,
+                normal,
+                widthMeters,
+                heightMeters,
+                parentIntegrity01,
+                siblingNodeHash,
+                frame);
+        }
+
         public static bool TryWriteAirlockBulkheadIntent(
             IDataVault vault,
             uint edgeHash,
@@ -29,20 +60,13 @@ namespace Hecton8.Core.Contracts
                 return false;
             }
 
-            VaultGenerationHandle<BulkheadContainmentIntentDTO> intentsHandle =
-                vault.GetGenerationHandle<BulkheadContainmentIntentDTO>(
+            if (!vault.TryGetGenerationHandle<BulkheadContainmentIntentDTO>(
                     BufferID.Shinobu220BulkheadIntentRing,
-                    IntentCapacity,
-                    SystemID.Construction,
-                    NativeArrayOptions.ClearMemory);
-            VaultGenerationHandle<BulkheadContainmentIntentControlDTO> controlHandle =
-                vault.GetGenerationHandle<BulkheadContainmentIntentControlDTO>(
+                    out VaultGenerationHandle<BulkheadContainmentIntentDTO> intentsHandle) ||
+                !vault.TryGetGenerationHandle<BulkheadContainmentIntentControlDTO>(
                     BufferID.Shinobu220BulkheadIntentControl,
-                    1,
-                    SystemID.Construction,
-                    NativeArrayOptions.ClearMemory);
-
-            if (!vault.TryResolveHandle(in intentsHandle, out NativeArray<BulkheadContainmentIntentDTO> intents) ||
+                    out VaultGenerationHandle<BulkheadContainmentIntentControlDTO> controlHandle) ||
+                !vault.TryResolveHandle(in intentsHandle, out NativeArray<BulkheadContainmentIntentDTO> intents) ||
                 !vault.TryResolveHandle(in controlHandle, out NativeArray<BulkheadContainmentIntentControlDTO> controlRows) ||
                 !intents.IsCreated ||
                 !controlRows.IsCreated ||

@@ -56,12 +56,14 @@ namespace Hecton8.Gameplay
     /// </summary>
     public static class EclipseGameplayEvents
     {
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
         private struct EclipseGameplayEventPayload
         {
-            public byte EventType;
-            public byte BoolValue;
-            public float Value;
+            [FieldOffset(0)] public byte EventType;
+            [FieldOffset(1)] public byte BoolValue;
+            [FieldOffset(2)] private ushort _pad0;
+            [FieldOffset(4)] public float Value;
+            [FieldOffset(8)] private ulong _pad1;
         }
 
         private const byte PhaseChangedEventType = 1;

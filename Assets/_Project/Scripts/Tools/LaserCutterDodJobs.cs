@@ -16,6 +16,7 @@ namespace Hecton8.Tools
     public struct GenerateMockCutterTriggersJob : IJobParallelFor
     {
         [NoAlias] public NativeArray<LaserCutRequestDTO> Requests;
+        [NoAlias] public NativeArray<LaserCutRequestMetaDTO> RequestMetas;
         public double3 OriginAUP;
         public uint Frame;
         public uint ToolHashID;
@@ -39,10 +40,25 @@ namespace Hecton8.Tools
                 CuttingPower = math.saturate(0.35f + phase * 0.65f),
                 MaximumDistance = math.max(0.1f, MaximumDistanceMeters),
                 ToolHashID = ToolHashID == 0u ? LaserCutterDodConstants.LaserCutterHash : ToolHashID,
-                ParentEntityID = ParentEntityID,
+                ParentEntityID = ParentEntityID
+            };
+
+            if (!RequestMetas.IsCreated || index >= RequestMetas.Length)
+                return;
+
+            RequestMetas[index] = new LaserCutRequestMetaDTO
+            {
                 Frame = Frame,
                 Flags = LaserCutterDodConstants.RequestFlagValid | LaserCutterDodConstants.RequestFlagMock,
-                RequestSequence = unchecked(Frame * 131u + (uint)index)
+                RequestSequence = unchecked(Frame * 131u + (uint)index),
+                CooldownUntilFrame = 0u,
+                LastAppliedFrame = 0u,
+                Reserved0 = 0u,
+                StateHash = Mix(1469598103934665603UL, unchecked(Frame * 131u + (uint)index)),
+                Reserved1 = 0UL,
+                Reserved2 = 0UL,
+                Reserved3 = 0UL,
+                Reserved4 = 0UL
             };
         }
 
@@ -51,6 +67,11 @@ namespace Hecton8.Tools
             uint value = unchecked((uint)index * 747796405u + seed + 2891336453u);
             value = ((value >> (int)((value >> 28) + 4u)) ^ value) * 277803737u;
             return (value >> 22) ^ value;
+        }
+
+        private static ulong Mix(ulong hash, uint value)
+        {
+            return (hash ^ value) * 1099511628211UL;
         }
 
         private static float3 SafeNormalize(float3 value, float3 fallback)
@@ -68,6 +89,7 @@ namespace Hecton8.Tools
     public struct ManageCutterCooldownJob : IJobParallelFor
     {
         [NoAlias] public NativeArray<LaserCutRequestDTO> Requests;
+        [NoAlias] public NativeArray<LaserCutRequestMetaDTO> RequestMetas;
         [NoAlias] public NativeArray<LaserCutCooldownDTO> Cooldowns;
         public uint Frame;
         public uint CooldownFrames;
@@ -75,14 +97,16 @@ namespace Hecton8.Tools
         public void Execute(int index)
         {
             LaserCutRequestDTO request = Requests[index];
-            if ((request.Flags & LaserCutterDodConstants.RequestFlagValid) == 0u)
+            LaserCutRequestMetaDTO meta = RequestMetas[index];
+            if ((meta.Flags & LaserCutterDodConstants.RequestFlagValid) == 0u)
                 return;
 
             LaserCutCooldownDTO cooldown = Cooldowns[index];
             if (Frame < cooldown.CooldownUntilFrame)
             {
-                request.Flags |= LaserCutterDodConstants.RequestFlagSuppressedByCooldown;
-                Requests[index] = request;
+                meta.Flags |= LaserCutterDodConstants.RequestFlagSuppressedByCooldown;
+                meta.CooldownUntilFrame = cooldown.CooldownUntilFrame;
+                RequestMetas[index] = meta;
                 return;
             }
 
@@ -91,8 +115,17 @@ namespace Hecton8.Tools
             cooldown.LastAppliedFrame = Frame;
             cooldown.CooldownUntilFrame = unchecked(Frame + math.max(1u, CooldownFrames));
             cooldown.Accumulator01 = math.saturate(cooldown.Accumulator01 + request.CuttingPower);
-            cooldown.Flags = request.Flags;
+            cooldown.Flags = meta.Flags;
             Cooldowns[index] = cooldown;
+            meta.LastAppliedFrame = Frame;
+            meta.CooldownUntilFrame = cooldown.CooldownUntilFrame;
+            meta.StateHash = Mix(meta.StateHash == 0UL ? 1469598103934665603UL : meta.StateHash, cooldown.CooldownUntilFrame);
+            RequestMetas[index] = meta;
+        }
+
+        private static ulong Mix(ulong hash, uint value)
+        {
+            return (hash ^ value) * 1099511628211UL;
         }
     }
 
@@ -101,6 +134,7 @@ namespace Hecton8.Tools
     public struct BuildCutterRaycastsJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<LaserCutRequestDTO> Requests;
+        [ReadOnly, NoAlias] public NativeArray<LaserCutRequestMetaDTO> RequestMetas;
         [NoAlias] public NativeArray<RaycastCommand> Commands;
         public double3 PresentationOriginAUP;
         public int LayerMask;
@@ -109,8 +143,9 @@ namespace Hecton8.Tools
         public void Execute(int index)
         {
             LaserCutRequestDTO request = Requests[index];
-            if ((request.Flags & LaserCutterDodConstants.RequestFlagValid) == 0u ||
-                (request.Flags & LaserCutterDodConstants.RequestFlagSuppressedByCooldown) != 0u ||
+            LaserCutRequestMetaDTO meta = RequestMetas[index];
+            if ((meta.Flags & LaserCutterDodConstants.RequestFlagValid) == 0u ||
+                (meta.Flags & LaserCutterDodConstants.RequestFlagSuppressedByCooldown) != 0u ||
                 request.CuttingPower <= 0f ||
                 request.MaximumDistance <= 0f ||
                 !math.all(math.isfinite(request.RayOriginAUP)) ||
@@ -153,6 +188,7 @@ namespace Hecton8.Tools
     public struct EvaluateCutterRaycastHitsJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<LaserCutRequestDTO> Requests;
+        [ReadOnly, NoAlias] public NativeArray<LaserCutRequestMetaDTO> RequestMetas;
         [ReadOnly, NoAlias] public NativeArray<RaycastHit> RaycastHits;
         [WriteOnly, NoAlias] public NativeArray<LaserCutHitDTO> HitResults;
         [WriteOnly, NoAlias] public NativeArray<LaserCutDeformationStateDTO> DeformationStates;
@@ -164,16 +200,34 @@ namespace Hecton8.Tools
         public uint TelemetryCursorBase;
         public float GlobalQualityWeight;
         public float Heat01;
+        public float DentRadiusMinMeters;
+        public float DentRadiusMaxMeters;
+        public float GlowLifetimeSeconds;
+        public float BatteryWattsAtPowerOne;
+        public float SparkIntensityScale;
+        public float LowSparkCount;
+        public float UltraSparkCount;
 
         public void Execute(int index)
         {
             LaserCutRequestDTO request = Requests[index];
+            LaserCutRequestMetaDTO meta = RequestMetas[index];
             RaycastHit hit = RaycastHits[index];
-            bool requestValid = (request.Flags & LaserCutterDodConstants.RequestFlagValid) != 0u &&
-                                (request.Flags & LaserCutterDodConstants.RequestFlagSuppressedByCooldown) == 0u;
+            bool requestValid = (meta.Flags & LaserCutterDodConstants.RequestFlagValid) != 0u &&
+                                (meta.Flags & LaserCutterDodConstants.RequestFlagSuppressedByCooldown) == 0u;
             bool hasHit = requestValid && HasHit(in hit);
-            float quality = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 1f);
-            float heat = math.saturate(math.isfinite(Heat01) ? Heat01 : request.CuttingPower);
+            float quality = SaturateFinite(GlobalQualityWeight, 1f);
+            float qualityCurve = Smooth01(quality);
+            float power = SaturateFinite(request.CuttingPower, 0f);
+            float heat = SaturateFinite(Heat01, power);
+            float radiusMin = math.max(0f, math.isfinite(DentRadiusMinMeters) ? DentRadiusMinMeters : 0.045f);
+            float radiusMax = math.max(radiusMin, math.isfinite(DentRadiusMaxMeters) ? DentRadiusMaxMeters : 0.32f);
+            float glowLifetime = math.max(0f, math.isfinite(GlowLifetimeSeconds) ? GlowLifetimeSeconds : 0.9f);
+            float wattsAtPowerOne = math.max(0f, math.isfinite(BatteryWattsAtPowerOne) ? BatteryWattsAtPowerOne : 180f);
+            float sparkScale = math.max(0f, math.isfinite(SparkIntensityScale) ? SparkIntensityScale : 1f);
+            float lowSparkCount = math.max(0f, math.isfinite(LowSparkCount) ? LowSparkCount : LaserCutterDodConstants.LowSparkCount);
+            float ultraSparkCount = math.max(lowSparkCount, math.isfinite(UltraSparkCount) ? UltraSparkCount : LaserCutterDodConstants.UltraSparkCount);
+            int sparkCap = math.clamp((int)math.ceil(ultraSparkCount), 0, LaserCutterDodConstants.UltraSparkCount);
             float distance = hasHit ? math.max(0f, hit.distance) : 0f;
             float3 hitPoint = hasHit ? ToFloat3(hit.point) : float3.zero;
             float3 normal = hasHit ? SafeNormalize(ToFloat3(hit.normal), new float3(0f, 1f, 0f)) : new float3(0f, 1f, 0f);
@@ -188,9 +242,12 @@ namespace Hecton8.Tools
                          LaserCutterDodConstants.ResultFlagBatteryDrainQueued |
                          LaserCutterDodConstants.ResultFlagDecalQueued;
 
-            float carve01 = hasHit ? EstimateSdfCarve01(in request, hitAup, distance, quality) : 0f;
-            float sparkCountFloat = math.lerp((float)LaserCutterDodConstants.LowSparkCount, (float)LaserCutterDodConstants.UltraSparkCount, quality);
-            uint sparkCount = hasHit ? (uint)math.clamp((int)math.round(sparkCountFloat * math.saturate(0.25f + request.CuttingPower * 0.75f)), 0, LaserCutterDodConstants.UltraSparkCount) : 0u;
+            float carve01 = hasHit ? EstimateSdfCarve01(in request, hitAup, distance, qualityCurve, power) : 0f;
+            float sparkCountFloat = math.lerp(lowSparkCount, ultraSparkCount, qualityCurve);
+            uint sparkCount = hasHit ? (uint)math.clamp((int)math.round(sparkCountFloat * math.saturate(0.25f + power * 0.75f) * sparkScale), 0, sparkCap) : 0u;
+            float batteryWatts = hasHit ? wattsAtPowerOne * power : 0f;
+            int burstWorkEstimate = 8 + (int)(sparkCount >> 4) + (int)math.round(qualityCurve * 10f);
+            uint burstWorkEstimateMicros = hasHit ? (uint)math.clamp(burstWorkEstimate, 0, 65535) : 2u;
 
             HitResults[index] = new LaserCutHitDTO
             {
@@ -202,9 +259,9 @@ namespace Hecton8.Tools
                 MaterialHash = HashMaterial(in request, hitAup),
                 ToolHashID = request.ToolHashID,
                 ParentEntityID = request.ParentEntityID,
-                CuttingPower = math.saturate(request.CuttingPower),
+                CuttingPower = power,
                 Heat01 = heat,
-                Frame = request.Frame,
+                Frame = meta.Frame,
                 Flags = flags
             };
 
@@ -212,12 +269,12 @@ namespace Hecton8.Tools
             {
                 CenterAUP = hitAup,
                 Normal = normal,
-                RadiusMeters = math.lerp(0.045f, 0.32f, math.saturate(request.CuttingPower * quality)),
+                RadiusMeters = hasHit ? math.lerp(radiusMin, radiusMax, math.saturate(power * qualityCurve)) : 0f,
                 DentDepthMeters = hasHit ? math.lerp(0.002f, 0.028f, carve01) : 0f,
                 Heat01 = heat,
                 Progress01 = carve01,
                 TargetHash = HashMaterial(in request, hitAup),
-                Frame = request.Frame,
+                Frame = meta.Frame,
                 Flags = flags
             };
 
@@ -225,10 +282,10 @@ namespace Hecton8.Tools
             {
                 ToolHashID = request.ToolHashID,
                 ParentEntityID = request.ParentEntityID,
-                Watts = hasHit ? math.lerp(85f, 220f, math.saturate(request.CuttingPower)) : 0f,
+                Watts = batteryWatts,
                 Seconds = hasHit ? 1f / 60f : 0f,
                 Progress01 = carve01,
-                Frame = request.Frame,
+                Frame = meta.Frame,
                 Flags = flags,
                 Reserved0 = 0u
             };
@@ -237,12 +294,12 @@ namespace Hecton8.Tools
             {
                 CenterAUP = hitAup,
                 Normal = normal,
-                RadiusMeters = hasHit ? math.lerp(0.08f, 0.48f, quality) : 0f,
-                Glow01 = hasHit ? math.saturate(heat + request.CuttingPower * 0.5f) : 0f,
-                LifetimeSeconds = hasHit ? math.lerp(0.35f, 1.5f, quality) : 0f,
+                RadiusMeters = hasHit ? math.lerp(math.max(0.01f, radiusMin * 1.75f), math.max(radiusMax, radiusMax * 1.5f), qualityCurve) : 0f,
+                Glow01 = hasHit ? math.saturate(heat + power * 0.5f) : 0f,
+                LifetimeSeconds = hasHit ? glowLifetime * math.lerp(0.45f, 1.85f, qualityCurve) : 0f,
                 ToolHashID = request.ToolHashID,
                 MaterialHash = HashMaterial(in request, hitAup),
-                Frame = request.Frame,
+                Frame = meta.Frame,
                 Flags = flags
             };
 
@@ -250,19 +307,19 @@ namespace Hecton8.Tools
             {
                 CenterAUP = hitAup,
                 Normal = normal,
-                Intensity01 = hasHit ? math.saturate(request.CuttingPower * (0.6f + quality * 0.4f)) : 0f,
+                Intensity01 = hasHit ? math.saturate(power * (0.6f + qualityCurve * 0.4f)) : 0f,
                 SparkCount = sparkCount,
                 Heat01 = heat,
                 ToolHashID = request.ToolHashID,
-                Frame = request.Frame,
+                Frame = meta.Frame,
                 Flags = flags,
                 SpeciesHash = LaserCutterDodConstants.SparkSpeciesHash
             };
 
-            WriteTelemetry(index, in request, hitAup, normal, distance, quality, heat, sparkCount, flags);
+            WriteTelemetry(index, in request, in meta, hitAup, normal, distance, quality, heat, batteryWatts, sparkCount, burstWorkEstimateMicros, flags);
         }
 
-        private void WriteTelemetry(int index, in LaserCutRequestDTO request, double3 hitAup, float3 normal, float distance, float quality, float heat, uint sparkCount, uint flags)
+        private void WriteTelemetry(int index, in LaserCutRequestDTO request, in LaserCutRequestMetaDTO meta, double3 hitAup, float3 normal, float distance, float quality, float heat, float batteryWatts, uint sparkCount, uint burstWorkEstimateMicros, uint flags)
         {
             if (!TelemetryRing.IsCreated || TelemetryRing.Length <= 0)
                 return;
@@ -277,18 +334,19 @@ namespace Hecton8.Tools
                 DistanceMeters = distance,
                 CuttingPower = math.saturate(request.CuttingPower),
                 QualityWeight = quality,
-                Frame = request.Frame,
-                RequestSequence = request.RequestSequence,
+                Frame = meta.Frame,
+                RequestSequence = meta.RequestSequence,
                 ToolHashID = request.ToolHashID,
                 ParentEntityID = request.ParentEntityID,
                 ColliderInstanceID = 0u,
                 Flags = flags,
                 SparkCount = sparkCount,
-                CooldownUntilFrame = 0u,
+                CooldownUntilFrame = meta.CooldownUntilFrame,
                 LayoutMagic = LaserCutterDodConstants.LayoutMagic,
                 Heat01 = heat,
-                StateHash = HashState(in request, hitAup, normal, flags),
-                Reserved0 = 0UL
+                StateHash = HashState(in request, in meta, hitAup, normal, flags),
+                BatteryWatts = batteryWatts,
+                BurstWorkEstimateMicros = burstWorkEstimateMicros
             };
         }
 
@@ -305,15 +363,16 @@ namespace Hecton8.Tools
                    math.isfinite(request.MaximumDistance);
         }
 
-        private static float EstimateSdfCarve01(in LaserCutRequestDTO request, double3 hitAup, float distance, float quality)
+        private static float EstimateSdfCarve01(in LaserCutRequestDTO request, double3 hitAup, float distance, float qualityCurve, float power)
         {
             double3 localDelta = AupPrecisionMath.LocalDeltaDouble(hitAup, request.RayOriginAUP);
             float3 local = AupPrecisionMath.DowncastLocalDelta(localDelta, float3.zero);
-            float axial = math.dot(local, SafeNormalize(request.RayDirection, new float3(0f, 0f, 1f)));
-            float radial = math.length(local - request.RayDirection * axial);
-            float slab01 = math.saturate(1f - radial * math.lerp(12f, 4f, quality));
+            float3 axis = SafeNormalize(request.RayDirection, new float3(0f, 0f, 1f));
+            float axial = math.dot(local, axis);
+            float radial = math.length(local - axis * axial);
+            float slab01 = math.saturate(1f - radial * math.lerp(12f, 4f, qualityCurve));
             float range01 = math.saturate(distance * math.rcp(math.max(0.01f, request.MaximumDistance)));
-            return math.saturate((slab01 * 0.72f + (1f - range01) * 0.28f) * request.CuttingPower);
+            return math.saturate((slab01 * 0.72f + (1f - range01) * 0.28f) * power);
         }
 
         private static uint HashMaterial(in LaserCutRequestDTO request, double3 hitAup)
@@ -325,12 +384,13 @@ namespace Hecton8.Tools
             return hash == 0u ? LaserCutterDodConstants.LaserCutterHash : hash;
         }
 
-        private static ulong HashState(in LaserCutRequestDTO request, double3 hitAup, float3 normal, uint flags)
+        private static ulong HashState(in LaserCutRequestDTO request, in LaserCutRequestMetaDTO meta, double3 hitAup, float3 normal, uint flags)
         {
             ulong hash = 1469598103934665603UL;
             hash = Mix(hash, request.ToolHashID);
             hash = Mix(hash, request.ParentEntityID);
-            hash = Mix(hash, request.RequestSequence);
+            hash = Mix(hash, meta.RequestSequence);
+            hash = Mix(hash, meta.Frame);
             hash = Mix(hash, (uint)math.asint((float)hitAup.x));
             hash = Mix(hash, (uint)math.asint((float)hitAup.y));
             hash = Mix(hash, (uint)math.asint((float)hitAup.z));
@@ -354,6 +414,19 @@ namespace Hecton8.Tools
                 return fallback;
 
             return value * math.rsqrt(lengthSq);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SaturateFinite(float value, float fallback)
+        {
+            return math.saturate(math.isfinite(value) ? value : fallback);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float Smooth01(float value)
+        {
+            float t = math.saturate(math.isfinite(value) ? value : 0f);
+            return math.smoothstep(0f, 1f, t);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -1267,23 +1267,6 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(120)] private ulong _pad1;
     }
 
-    internal interface ISignalLane
-    {
-        uint LaneHash { get; }
-        int QueuedBeforeFlush { get; }
-        int PushedLastFlush { get; }
-        int SnapshotCount { get; }
-        int DroppedLastFlush { get; }
-        int CoalescedLastFlush { get; }
-        int CorruptedSignalTotal { get; }
-        bool StormDetectedLastFlush { get; }
-        bool FlushDuringSimulationPause { get; }
-        void FlushPreSimulation(int systemStressMilli);
-        void ClearPostSimulation();
-        void Dispose();
-        void CopyTelemetry(ref SignalLaneTelemetry telemetry);
-    }
-
     /// <summary>
     /// Registry for every closed <see cref="SignalBus{T}"/> lane touched this session.
     /// </summary>
@@ -1293,8 +1276,8 @@ namespace Hecton8.Core.Contracts.Signals
         private const int LaneCapacity = 256;
         private const int StressScale = 1000;
 
-        // COLD ALLOC: object[256] - cold registration/telemetry/disposal registry, object-backed to avoid interface arrays - owner: SignalBusRegistry
-        private static readonly object[] _lanes = new object[LaneCapacity];
+        // COLD ALLOC: SignalLaneDisposeDelegate[256] - closed generic disposal operations; no managed adapter objects - owner: SignalBusRegistry
+        private static readonly SignalLaneDisposeDelegate[] _laneDisposeDispatch = new SignalLaneDisposeDelegate[LaneCapacity];
         // COLD ALLOC: SignalLaneTelemetryDelegate[256] - closed generic telemetry copies; avoids interface-lane dispatch for diagnostics - owner: SignalBusRegistry
         private static readonly SignalLaneTelemetryDelegate[] _laneTelemetryDispatch = new SignalLaneTelemetryDelegate[LaneCapacity];
         // COLD ALLOC: SignalLaneDispatch[256] - non-generated closed-generic operation table; no interface-array frame dispatch - owner: SignalBusRegistry
@@ -1328,19 +1311,19 @@ namespace Hecton8.Core.Contracts.Signals
         internal static int GlobalQualityMilli => Volatile.Read(ref _globalQualityMilli);
 
         internal static void Register(
-            ISignalLane lane,
+            SignalLaneDisposeDelegate dispose,
             bool directDispatch,
             SignalLaneFlushDelegate flush,
             SignalLaneClearDelegate clear,
             SignalLaneTelemetryDelegate copyTelemetry,
             bool flushDuringSimulationPause)
         {
-            if (lane == null)
+            if (dispose == null)
                 return;
 
             for (int i = 0; i < _laneCount; i++)
             {
-                if (ReferenceEquals(_lanes[i], lane))
+                if (ReferenceEquals(_laneDisposeDispatch[i], dispose))
                     return;
             }
 
@@ -1354,7 +1337,7 @@ namespace Hecton8.Core.Contracts.Signals
             }
 
             int laneIndex = _laneCount;
-            _lanes[laneIndex] = lane;
+            _laneDisposeDispatch[laneIndex] = dispose;
             _laneTelemetryDispatch[laneIndex] = copyTelemetry;
             if (!directDispatch)
             {
@@ -1420,11 +1403,11 @@ namespace Hecton8.Core.Contracts.Signals
             int laneCount = _laneCount;
             for (int i = 0; i < laneCount; i++)
             {
-                ISignalLane lane = _lanes[i] as ISignalLane;
-                if (lane != null)
-                    lane.Dispose();
+                SignalLaneDisposeDelegate dispose = _laneDisposeDispatch[i];
+                if (dispose != null)
+                    dispose();
 
-                _lanes[i] = null;
+                _laneDisposeDispatch[i] = null;
                 _laneTelemetryDispatch[i] = null;
             }
 
@@ -1461,14 +1444,24 @@ namespace Hecton8.Core.Contracts.Signals
             return copyCount;
         }
 
-        internal static ISignalLane GetLaneAt(int index)
+        internal static bool TryCopyTelemetryAt(int index, out SignalLaneTelemetry telemetry)
         {
-            return index >= 0 && index < _laneCount ? _lanes[index] as ISignalLane : null;
+            telemetry = default;
+            if ((uint)index >= (uint)_laneCount)
+                return false;
+
+            SignalLaneTelemetryDelegate copyTelemetry = _laneTelemetryDispatch[index];
+            if (copyTelemetry == null)
+                return false;
+
+            copyTelemetry(ref telemetry);
+            return true;
         }
 
         internal delegate void SignalLaneFlushDelegate(int systemStressMilli);
         internal delegate void SignalLaneClearDelegate();
         internal delegate void SignalLaneTelemetryDelegate(ref SignalLaneTelemetry telemetry);
+        internal delegate void SignalLaneDisposeDelegate();
 
         internal readonly struct SignalLaneDispatch
         {
@@ -1852,14 +1845,14 @@ namespace Hecton8.Core.Contracts.Signals
         private static bool _layoutFaultLogged;
         private static uint _laneHash;
 
-        // COLD ALLOC: SignalLaneAdapter[1] - typed lane registry bridge - owner: SignalBus<T>
-        private static readonly SignalLaneAdapter _laneAdapter = new SignalLaneAdapter();
         // COLD ALLOC: SignalLaneFlushDelegate[1] - closed generic lane operation for non-generated dispatch - owner: SignalBus<T>
         private static readonly SignalBusRegistry.SignalLaneFlushDelegate _flushDispatch = FlushPreSimulation;
         // COLD ALLOC: SignalLaneClearDelegate[1] - closed generic lane operation for non-generated dispatch - owner: SignalBus<T>
         private static readonly SignalBusRegistry.SignalLaneClearDelegate _clearDispatch = ClearPostSimulation;
         // COLD ALLOC: SignalLaneTelemetryDelegate[1] - closed generic telemetry copy operation - owner: SignalBus<T>
         private static readonly SignalBusRegistry.SignalLaneTelemetryDelegate _telemetryDispatch = CopyTelemetryStatic;
+        // COLD ALLOC: SignalLaneDisposeDelegate[1] - closed generic disposal operation; replaces managed lane adapter object - owner: SignalBus<T>
+        private static readonly SignalBusRegistry.SignalLaneDisposeDelegate _disposeDispatch = Dispose;
 
         /// <summary>Stable lane hash used by telemetry and load-shedding reports.</summary>
         public static uint LaneHash
@@ -2461,7 +2454,7 @@ namespace Hecton8.Core.Contracts.Signals
                 _laneHash = ComputeTypeHash();
 
             SignalBusRegistry.Register(
-                _laneAdapter,
+                _disposeDispatch,
                 SignalLanePolicyCache<T>.DirectRegistryDispatch,
                 _flushDispatch,
                 _clearDispatch,
@@ -2472,7 +2465,23 @@ namespace Hecton8.Core.Contracts.Signals
 
         private static void CopyTelemetryStatic(ref SignalLaneTelemetry telemetry)
         {
-            _laneAdapter.CopyTelemetry(ref telemetry);
+            int pushedLastFlush = _pushedLastFlush < 0 ? 0 : _pushedLastFlush;
+            int corruptedTotal = Volatile.Read(ref _corruptedSignalTotal);
+            if (corruptedTotal < 0)
+                corruptedTotal = int.MaxValue;
+
+            telemetry.LaneHash = LaneHash;
+            telemetry.QueuedBeforeFlush = _queuedBeforeFlush;
+            telemetry.SnapshotCount = SnapshotCount;
+            telemetry.DroppedCount = _droppedLastFlush;
+            telemetry.CoalescedCount = _coalescedLastFlush;
+            telemetry.Flags = (byte)(
+                (_stormDetectedLastFlush != 0 ? 1 : 0) |
+                (SignalLanePolicyCache<T>.NonCriticalVfx ? 2 : 0) |
+                (SignalLanePolicyCache<T>.FatalInterrupt ? 4 : 0) |
+                (_coalescedLastFlush > 0 ? 8 : 0) |
+                (corruptedTotal > 0 ? 16 : 0));
+            telemetry.Reserved2 = ((ulong)(uint)corruptedTotal << 32) | (uint)pushedLastFlush;
         }
 
         private static void PrewarmQueue(int capacity)
@@ -2602,47 +2611,6 @@ namespace Hecton8.Core.Contracts.Signals
             return typeof(T).Name + ".FrameSnapshot";
         }
 
-        private sealed class SignalLaneAdapter : ISignalLane
-        {
-            public uint LaneHash => SignalBus<T>.LaneHash;
-            public int QueuedBeforeFlush => _queuedBeforeFlush;
-            public int PushedLastFlush => _pushedLastFlush;
-            public int SnapshotCount => SignalBus<T>.SnapshotCount;
-            public int DroppedLastFlush => _droppedLastFlush;
-            public int CoalescedLastFlush => _coalescedLastFlush;
-            public int CorruptedSignalTotal => Volatile.Read(ref _corruptedSignalTotal);
-            public bool StormDetectedLastFlush => _stormDetectedLastFlush != 0;
-            public bool FlushDuringSimulationPause => SignalLanePolicyCache<T>.FlushDuringSimulationPause;
-
-            public void FlushPreSimulation(int systemStressMilli)
-            {
-                SignalBus<T>.FlushPreSimulation(systemStressMilli);
-            }
-
-            public void ClearPostSimulation()
-            {
-                SignalBus<T>.ClearPostSimulation();
-            }
-
-            public void Dispose()
-            {
-                SignalBus<T>.Dispose();
-            }
-
-            public void CopyTelemetry(ref SignalLaneTelemetry telemetry)
-            {
-                telemetry.LaneHash = SignalBus<T>.LaneHash;
-                telemetry.QueuedBeforeFlush = _queuedBeforeFlush;
-                telemetry.SnapshotCount = SignalBus<T>.SnapshotCount;
-                telemetry.DroppedCount = _droppedLastFlush + Volatile.Read(ref _corruptedSignalTotal);
-                telemetry.CoalescedCount = _coalescedLastFlush;
-                telemetry.Flags = (byte)(
-                    (_stormDetectedLastFlush != 0 ? 1 : 0) |
-                    (SignalLanePolicyCache<T>.NonCriticalVfx ? 2 : 0) |
-                    (SignalLanePolicyCache<T>.FatalInterrupt ? 4 : 0) |
-                    (_coalescedLastFlush > 0 ? 8 : 0));
-            }
-        }
     }
 
     internal static class SignalLanePolicyCache<T>
@@ -5654,7 +5622,7 @@ namespace Hecton8.Core
             get
             {
                 EnsureInitialized();
-                return _impactSignals.AsParallelWriter();
+                return SignalBus<ImpactSignal>.ParallelWriter;
             }
         }
 
@@ -5664,7 +5632,7 @@ namespace Hecton8.Core
             get
             {
                 EnsureInitialized();
-                return _aupPreShiftSignals.AsParallelWriter();
+                return SignalBus<AupPreShiftSignal>.ParallelWriter;
             }
         }
 
@@ -5674,7 +5642,7 @@ namespace Hecton8.Core
             get
             {
                 EnsureInitialized();
-                return _aupShiftSignals.AsParallelWriter();
+                return SignalBus<AupShiftSignal>.ParallelWriter;
             }
         }
 
@@ -5684,7 +5652,7 @@ namespace Hecton8.Core
             get
             {
                 EnsureInitialized();
-                return _brownoutSignals.AsParallelWriter();
+                return SignalBus<BrownoutSignal>.ParallelWriter;
             }
         }
 
@@ -5694,7 +5662,7 @@ namespace Hecton8.Core
             get
             {
                 EnsureInitialized();
-                return _deflectSignals.AsParallelWriter();
+                return SignalBus<DeflectSignal>.ParallelWriter;
             }
         }
 
@@ -5704,7 +5672,7 @@ namespace Hecton8.Core
             get
             {
                 EnsureInitialized();
-                return _entityDeathSignals.AsParallelWriter();
+                return SignalBus<EntityDeathSignal>.ParallelWriter;
             }
         }
 
@@ -5714,7 +5682,7 @@ namespace Hecton8.Core
             get
             {
                 EnsureInitialized();
-                return _anomalySignals.AsParallelWriter();
+                return SignalBus<AnomalySignal>.ParallelWriter;
             }
         }
 
@@ -5724,7 +5692,7 @@ namespace Hecton8.Core
             get
             {
                 EnsureInitialized();
-                return _acousticPingSignals.AsParallelWriter();
+                return SignalBus<AcousticPingSignal>.ParallelWriter;
             }
         }
 
@@ -5734,7 +5702,7 @@ namespace Hecton8.Core
             get
             {
                 EnsureInitialized();
-                return _movementAcousticSignals.AsParallelWriter();
+                return SignalBus<MovementAcousticSignal>.ParallelWriter;
             }
         }
 
@@ -5744,7 +5712,7 @@ namespace Hecton8.Core
             get
             {
                 EnsureInitialized();
-                return _hypoxiaSignals.AsParallelWriter();
+                return SignalBus<HypoxiaSignal>.ParallelWriter;
             }
         }
 
@@ -5754,7 +5722,7 @@ namespace Hecton8.Core
             get
             {
                 EnsureInitialized();
-                return _scanCompleteSignals.AsParallelWriter();
+                return SignalBus<ScanCompleteSignal>.ParallelWriter;
             }
         }
 
@@ -5764,7 +5732,7 @@ namespace Hecton8.Core
             get
             {
                 EnsureInitialized();
-                return _blueprintUnlockedSignals.AsParallelWriter();
+                return SignalBus<BlueprintUnlockedSignal>.ParallelWriter;
             }
         }
 
@@ -5774,7 +5742,7 @@ namespace Hecton8.Core
             get
             {
                 EnsureInitialized();
-                return _craftingStartedSignals.AsParallelWriter();
+                return SignalBus<CraftingStartedSignal>.ParallelWriter;
             }
         }
 
@@ -5784,7 +5752,7 @@ namespace Hecton8.Core
             get
             {
                 EnsureInitialized();
-                return _craftingCompletedSignals.AsParallelWriter();
+                return SignalBus<CraftingCompletedSignal>.ParallelWriter;
             }
         }
 
@@ -5794,7 +5762,7 @@ namespace Hecton8.Core
             get
             {
                 EnsureInitialized();
-                return _toolAcousticSignals.AsParallelWriter();
+                return SignalBus<ToolAcousticSignal>.ParallelWriter;
             }
         }
 
@@ -5804,7 +5772,7 @@ namespace Hecton8.Core
             get
             {
                 EnsureInitialized();
-                return _toolStateChangedSignals.AsParallelWriter();
+                return SignalBus<ToolStateChangedSignal>.ParallelWriter;
             }
         }
 
@@ -5814,7 +5782,7 @@ namespace Hecton8.Core
             get
             {
                 EnsureInitialized();
-                return _powerDrainSignals.AsParallelWriter();
+                return SignalBus<PowerDrainSignal>.ParallelWriter;
             }
         }
 
@@ -5824,7 +5792,7 @@ namespace Hecton8.Core
             get
             {
                 EnsureInitialized();
-                return _deconstructRequestSignals.AsParallelWriter();
+                return SignalBus<DeconstructRequestSignal>.ParallelWriter;
             }
         }
 
@@ -5834,7 +5802,7 @@ namespace Hecton8.Core
             get
             {
                 EnsureInitialized();
-                return _deconstructResultSignals.AsParallelWriter();
+                return SignalBus<DeconstructResultSignal>.ParallelWriter;
             }
         }
 
@@ -5844,7 +5812,7 @@ namespace Hecton8.Core
             get
             {
                 EnsureInitialized();
-                return _toolTriggerSignals.AsParallelWriter();
+                return SignalBus<ToolTriggerSignal>.ParallelWriter;
             }
         }
 
@@ -5854,7 +5822,7 @@ namespace Hecton8.Core
             get
             {
                 EnsureInitialized();
-                return _hudNotificationSignals.AsParallelWriter();
+                return SignalBus<HUDNotificationSignal>.ParallelWriter;
             }
         }
 
@@ -5864,7 +5832,7 @@ namespace Hecton8.Core
             get
             {
                 EnsureInitialized();
-                return _rigidbodySleepSignals.AsParallelWriter();
+                return SignalBus<RigidbodySleepSignal>.ParallelWriter;
             }
         }
 
@@ -5874,7 +5842,7 @@ namespace Hecton8.Core
             get
             {
                 EnsureInitialized();
-                return _pipeRuptureSignals.AsParallelWriter();
+                return SignalBus<PipeRuptureSignal>.ParallelWriter;
             }
         }
 
@@ -5884,7 +5852,7 @@ namespace Hecton8.Core
             get
             {
                 EnsureInitialized();
-                return _scannerToolActiveSignals.AsParallelWriter();
+                return SignalBus<ScannerToolActiveSignal>.ParallelWriter;
             }
         }
 
@@ -5894,7 +5862,7 @@ namespace Hecton8.Core
             get
             {
                 EnsureInitialized();
-                return _globalTimeSyncSignals.AsParallelWriter();
+                return SignalBus<GlobalTimeSyncSignal>.ParallelWriter;
             }
         }
 
@@ -5904,7 +5872,7 @@ namespace Hecton8.Core
             get
             {
                 EnsureInitialized();
-                return _seismicSignals.AsParallelWriter();
+                return SignalBus<SeismicSignal>.ParallelWriter;
             }
         }
 
@@ -5914,7 +5882,7 @@ namespace Hecton8.Core
             get
             {
                 EnsureInitialized();
-                return _itemAcquiredSignals.AsParallelWriter();
+                return SignalBus<ItemAcquiredSignal>.ParallelWriter;
             }
         }
 
@@ -5924,7 +5892,7 @@ namespace Hecton8.Core
             get
             {
                 EnsureInitialized();
-                return _radiationDoseSignals.AsParallelWriter();
+                return SignalBus<RadiationDoseSignal>.ParallelWriter;
             }
         }
 
@@ -5934,7 +5902,7 @@ namespace Hecton8.Core
             get
             {
                 EnsureInitialized();
-                return _resourceDepletionDeltaSignals.AsParallelWriter();
+                return SignalBus<ResourceDepletionDeltaSignal>.ParallelWriter;
             }
         }
 
@@ -5944,7 +5912,7 @@ namespace Hecton8.Core
             get
             {
                 EnsureInitialized();
-                return _progressionEventSignals.AsParallelWriter();
+                return SignalBus<ProgressionEventSignal>.ParallelWriter;
             }
         }
 
@@ -5954,7 +5922,7 @@ namespace Hecton8.Core
             get
             {
                 EnsureInitialized();
-                return _globalWorldStateSignals.AsParallelWriter();
+                return SignalBus<GlobalWorldStateSignal>.ParallelWriter;
             }
         }
 
@@ -5964,7 +5932,7 @@ namespace Hecton8.Core
             get
             {
                 EnsureInitialized();
-                return _biomeChangedSignals.AsParallelWriter();
+                return SignalBus<BiomeChangedSignal>.ParallelWriter;
             }
         }
 
@@ -5974,7 +5942,7 @@ namespace Hecton8.Core
             get
             {
                 EnsureInitialized();
-                return _crashTelemetrySignals.AsParallelWriter();
+                return SignalBus<CrashTelemetrySignal>.ParallelWriter;
             }
         }
 
@@ -6394,7 +6362,6 @@ namespace Hecton8.Core
             if (guardCode != 0)
                 GlobalTelemetryBus.PublishMathGuardInvalidNumber(guardCode);
 
-            _impactSignals.Enqueue(sanitizedSignal);
             SignalBus<ImpactSignal>.Push(in sanitizedSignal);
         }
 
@@ -6478,7 +6445,6 @@ namespace Hecton8.Core
             if (dispatcher != null)
                 dispatcher.RequestAupPreShiftPause(shiftFrameId);
 
-            _aupPreShiftSignals.Enqueue(signal);
             SignalBus<AupPreShiftSignal>.Push(in signal);
         }
 
@@ -6487,7 +6453,6 @@ namespace Hecton8.Core
         {
             EnsureInitialized();
             GlobalRegistry.JobAdmission?.SetAupBarrierActive(false);
-            _aupShiftSignals.Enqueue(signal);
             SignalBus<AupShiftSignal>.Push(in signal);
         }
 
@@ -6509,7 +6474,6 @@ namespace Hecton8.Core
         public static void Publish(in BrownoutSignal signal)
         {
             EnsureInitialized();
-            _brownoutSignals.Enqueue(signal);
             SignalBus<BrownoutSignal>.Push(in signal);
         }
 
@@ -6517,7 +6481,6 @@ namespace Hecton8.Core
         public static void Publish(in DebrisSpawnSignal signal)
         {
             EnsureInitialized();
-            _debrisSpawnSignals.Enqueue(signal);
             SignalBus<DebrisSpawnSignal>.Push(in signal);
         }
 
@@ -6525,14 +6488,13 @@ namespace Hecton8.Core
         public static void Publish(in DeflectSignal signal)
         {
             EnsureInitialized();
-            _deflectSignals.Enqueue(signal);
+            SignalBus<DeflectSignal>.Push(in signal);
         }
 
         /// <summary>Queues one entity death packet from the main thread.</summary>
         public static void Publish(in EntityDeathSignal signal)
         {
             EnsureInitialized();
-            _entityDeathSignals.Enqueue(signal);
             SignalBus<EntityDeathSignal>.Push(in signal);
         }
 
@@ -6547,112 +6509,111 @@ namespace Hecton8.Core
         public static void Publish(in SolarFlareSignal signal)
         {
             EnsureInitialized();
-            _solarFlareSignals.Enqueue(signal);
+            SignalBus<SolarFlareSignal>.Push(in signal);
         }
 
         /// <summary>Queues one origin rebase packet from the main thread.</summary>
         public static void Publish(in RebaseSignal signal)
         {
             EnsureInitialized();
-            _rebaseSignals.Enqueue(signal);
+            SignalBus<RebaseSignal>.Push(in signal);
         }
 
         /// <summary>Queues one input control packet from the main thread.</summary>
         public static void Publish(in ControlSignal signal)
         {
             EnsureInitialized();
-            _controlSignals.Enqueue(signal);
+            SignalBus<ControlSignal>.Push(in signal);
         }
 
         /// <summary>Queues one runtime anomaly packet from the main thread.</summary>
         public static void Publish(in AnomalySignal signal)
         {
             EnsureInitialized();
-            _anomalySignals.Enqueue(signal);
+            SignalBus<AnomalySignal>.Push(in signal);
         }
 
         /// <summary>Queues one telemetry anomaly packet from the main thread.</summary>
         public static void Publish(in TelemetryAnomalySignal signal)
         {
             EnsureInitialized();
-            _telemetryAnomalySignals.Enqueue(signal);
+            SignalBus<TelemetryAnomalySignal>.Push(in signal);
         }
 
         /// <summary>Queues one postmortem crash telemetry packet from the main thread.</summary>
         public static void Publish(in CrashTelemetrySignal signal)
         {
             EnsureInitialized();
-            _crashTelemetrySignals.Enqueue(signal);
+            SignalBus<CrashTelemetrySignal>.Push(in signal);
         }
 
         /// <summary>Queues one habitat construction packet from the main thread.</summary>
         public static void Publish(in HabitatConstructionSignal signal)
         {
             EnsureInitialized();
-            _habitatConstructionSignals.Enqueue(signal);
+            SignalBus<HabitatConstructionSignal>.Push(in signal);
         }
 
         /// <summary>Queues one habitat deconstruction request packet from the main thread.</summary>
         public static void Publish(in DeconstructRequestSignal signal)
         {
             EnsureInitialized();
-            _deconstructRequestSignals.Enqueue(signal);
+            SignalBus<DeconstructRequestSignal>.Push(in signal);
         }
 
         /// <summary>Queues one habitat deconstruction result packet from the main thread.</summary>
         public static void Publish(in DeconstructResultSignal signal)
         {
             EnsureInitialized();
-            _deconstructResultSignals.Enqueue(signal);
+            SignalBus<DeconstructResultSignal>.Push(in signal);
         }
 
         /// <summary>Queues one persistence-facing habitat deletion delta packet from the main thread.</summary>
         public static void Publish(in ModuleDeconstructSignal signal)
         {
             EnsureInitialized();
-            _moduleDeconstructSignals.Enqueue(signal);
+            SignalBus<ModuleDeconstructSignal>.Push(in signal);
         }
 
         /// <summary>Queues one player-vital warning packet from the main thread.</summary>
         public static void Publish(in VitalWarningSignal signal)
         {
             EnsureInitialized();
-            _vitalWarningSignals.Enqueue(signal);
+            SignalBus<VitalWarningSignal>.Push(in signal);
         }
 
         /// <summary>Queues one crush-depth warning packet from the main thread.</summary>
         public static void Publish(in CrushWarningSignal signal)
         {
             EnsureInitialized();
-            _crushWarningSignals.Enqueue(signal);
+            SignalBus<CrushWarningSignal>.Push(in signal);
         }
 
         /// <summary>Queues one vocal warning packet from the main thread.</summary>
         public static void Publish(in VocalWarningSignal signal)
         {
             EnsureInitialized();
-            _vocalWarningSignals.Enqueue(signal);
+            SignalBus<VocalWarningSignal>.Push(in signal);
         }
 
         /// <summary>Queues one subtitle packet from the main thread.</summary>
         public static void Publish(in SubtitleSignal signal)
         {
             EnsureInitialized();
-            _subtitleSignals.Enqueue(signal);
+            SignalBus<SubtitleSignal>.Push(in signal);
         }
 
         /// <summary>Queues one editor data reload packet from the main thread.</summary>
         public static void Publish(in DataReloadSignal signal)
         {
             EnsureInitialized();
-            _dataReloadSignals.Enqueue(signal);
+            SignalBus<DataReloadSignal>.Push(in signal);
         }
 
         /// <summary>Queues one memory pressure packet from the main thread.</summary>
         public static void Publish(in MemoryPressureSignal signal)
         {
             EnsureInitialized();
-            _memoryPressureSignals.Enqueue(signal);
             SignalBus<MemoryPressureSignal>.Push(in signal);
         }
 
@@ -6690,7 +6651,6 @@ namespace Hecton8.Core
             EnsureInitialized();
             _latestAcousticPingSignal = signal;
             AdvanceSignalSequence(ref _latestAcousticPingSignalSequence);
-            _acousticPingSignals.Enqueue(signal);
             SignalBus<AcousticPingSignal>.Push(in signal);
         }
 
@@ -6698,7 +6658,6 @@ namespace Hecton8.Core
         public static void Publish(in MovementAcousticSignal signal)
         {
             EnsureInitialized();
-            _movementAcousticSignals.Enqueue(signal);
             SignalBus<MovementAcousticSignal>.Push(in signal);
         }
 
@@ -6713,42 +6672,42 @@ namespace Hecton8.Core
         public static void Publish(in SonarPingSignal signal)
         {
             EnsureInitialized();
-            _sonarPingSignals.Enqueue(signal);
+            SignalBus<SonarPingSignal>.Push(in signal);
         }
 
         /// <summary>Queues one hypoxia packet from the main thread.</summary>
         public static void Publish(in HypoxiaSignal signal)
         {
             EnsureInitialized();
-            _hypoxiaSignals.Enqueue(signal);
+            SignalBus<HypoxiaSignal>.Push(in signal);
         }
 
         /// <summary>Queues one oxygen critical packet from the main thread.</summary>
         public static void Publish(in OxygenCriticalSignal signal)
         {
             EnsureInitialized();
-            _oxygenCriticalSignals.Enqueue(signal);
+            SignalBus<OxygenCriticalSignal>.Push(in signal);
         }
 
         /// <summary>Queues one interaction UI packet from the main thread.</summary>
         public static void Publish(in InteractionUiSignal signal)
         {
             EnsureInitialized();
-            _interactionUiSignals.Enqueue(signal);
+            SignalBus<InteractionUiSignal>.Push(in signal);
         }
 
         /// <summary>Queues one UI rescale request packet from the main thread.</summary>
         public static void Publish(in UIRescaleRequestSignal signal)
         {
             EnsureInitialized();
-            _uiRescaleRequestSignals.Enqueue(signal);
+            SignalBus<UIRescaleRequestSignal>.Push(in signal);
         }
 
         /// <summary>Queues one fluid incursion packet from the main thread.</summary>
         public static void Publish(in FluidIncursionSignal signal)
         {
             EnsureInitialized();
-            _fluidIncursionSignals.Enqueue(signal);
+            SignalBus<FluidIncursionSignal>.Push(in signal);
         }
 
         /// <summary>Queues one submarine flood mass-state packet from the main thread.</summary>
@@ -6764,28 +6723,28 @@ namespace Hecton8.Core
             EnsureInitialized();
             _latestFluidDensityChangedSignal = signal;
             AdvanceSignalSequence(ref _latestFluidDensityChangedSignalSequence);
-            _fluidDensityChangedSignals.Enqueue(signal);
+            SignalBus<FluidDensityChangedSignal>.Push(in signal);
         }
 
         /// <summary>Queues one fluid pipe rupture packet from the main thread.</summary>
         public static void Publish(in PipeRuptureSignal signal)
         {
             EnsureInitialized();
-            _pipeRuptureSignals.Enqueue(signal);
+            SignalBus<PipeRuptureSignal>.Push(in signal);
         }
 
         /// <summary>Queues one spectrum scan packet from the main thread.</summary>
         public static void Publish(in SpectrumScanSignal signal)
         {
             EnsureInitialized();
-            _spectrumScanSignals.Enqueue(signal);
+            SignalBus<SpectrumScanSignal>.Push(in signal);
         }
 
         /// <summary>Queues one rigidbody sleep packet from the main thread.</summary>
         public static void Publish(in RigidbodySleepSignal signal)
         {
             EnsureInitialized();
-            _rigidbodySleepSignals.Enqueue(signal);
+            SignalBus<RigidbodySleepSignal>.Push(in signal);
         }
 
         /// <summary>Queues one scanner-active packet from the main thread.</summary>
@@ -6794,7 +6753,6 @@ namespace Hecton8.Core
             EnsureInitialized();
             _latestScannerToolActiveSignal = signal;
             AdvanceSignalSequence(ref _latestScannerToolActiveSignalSequence);
-            _scannerToolActiveSignals.Enqueue(signal);
             SignalBus<ScannerToolActiveSignal>.Push(in signal);
         }
 
@@ -6802,7 +6760,7 @@ namespace Hecton8.Core
         public static void Publish(in ScanCompleteSignal signal)
         {
             EnsureInitialized();
-            _scanCompleteSignals.Enqueue(signal);
+            SignalBus<ScanCompleteSignal>.Push(in signal);
         }
 
         /// <summary>Queues one lore-fragment scanned packet from the main thread.</summary>
@@ -6816,14 +6774,14 @@ namespace Hecton8.Core
         public static void Publish(in BlueprintUnlockedSignal signal)
         {
             EnsureInitialized();
-            _blueprintUnlockedSignals.Enqueue(signal);
+            SignalBus<BlueprintUnlockedSignal>.Push(in signal);
         }
 
         /// <summary>Queues one crafting-started packet from the main thread.</summary>
         public static void Publish(in CraftingStartedSignal signal)
         {
             EnsureInitialized();
-            _craftingStartedSignals.Enqueue(signal);
+            SignalBus<CraftingStartedSignal>.Push(in signal);
         }
 
         /// <summary>Queues one crafting-completed packet from the main thread.</summary>
@@ -6836,7 +6794,6 @@ namespace Hecton8.Core
             if (sequencedSignal.Quantity > 0)
                 AdvanceSignalCounter(ref _latestCraftingCompletedUnitCount, sequencedSignal.Quantity);
 
-            _craftingCompletedSignals.Enqueue(sequencedSignal);
             SignalBus<CraftingCompletedSignal>.Push(in sequencedSignal);
         }
 
@@ -6846,7 +6803,7 @@ namespace Hecton8.Core
             EnsureInitialized();
             _latestToolStateChangedSignal = signal;
             AdvanceSignalSequence(ref _latestToolStateChangedSignalSequence);
-            _toolStateChangedSignals.Enqueue(signal);
+            SignalBus<ToolStateChangedSignal>.Push(in signal);
         }
 
         /// <summary>Queues one player tool loadout or active-slot dirty packet.</summary>
@@ -6860,28 +6817,28 @@ namespace Hecton8.Core
         public static void Publish(in ToolAcousticSignal signal)
         {
             EnsureInitialized();
-            _toolAcousticSignals.Enqueue(signal);
+            SignalBus<ToolAcousticSignal>.Push(in signal);
         }
 
         /// <summary>Queues one power-drain packet from the main thread.</summary>
         public static void Publish(in PowerDrainSignal signal)
         {
             EnsureInitialized();
-            _powerDrainSignals.Enqueue(signal);
+            SignalBus<PowerDrainSignal>.Push(in signal);
         }
 
         /// <summary>Queues one tool trigger packet from the main thread.</summary>
         public static void Publish(in ToolTriggerSignal signal)
         {
             EnsureInitialized();
-            _toolTriggerSignals.Enqueue(signal);
+            SignalBus<ToolTriggerSignal>.Push(in signal);
         }
 
         /// <summary>Queues one HUD notification packet from the main thread.</summary>
         public static void Publish(in HUDNotificationSignal signal)
         {
             EnsureInitialized();
-            _hudNotificationSignals.Enqueue(signal);
+            SignalBus<HUDNotificationSignal>.Push(in signal);
         }
 
         /// <summary>Queues one diegetic HUD prompt packet from the main thread.</summary>
@@ -6996,14 +6953,14 @@ namespace Hecton8.Core
         public static void Publish(in ReconDataSignal signal)
         {
             EnsureInitialized();
-            _reconDataSignals.Enqueue(signal);
+            SignalBus<ReconDataSignal>.Push(in signal);
         }
 
         /// <summary>Queues one save lifecycle packet from the main thread.</summary>
         public static void Publish(in SaveLifecycleSignal signal)
         {
             EnsureInitialized();
-            _saveLifecycleSignals.Enqueue(signal);
+            SignalBus<SaveLifecycleSignal>.Push(in signal);
         }
 
         /// <summary>Queues one macro database hydration packet on the typed native lane.</summary>
@@ -7038,14 +6995,14 @@ namespace Hecton8.Core
         public static void Publish(in ComplianceViolationSignal signal)
         {
             EnsureInitialized();
-            _complianceViolationSignals.Enqueue(signal);
+            SignalBus<ComplianceViolationSignal>.Push(in signal);
         }
 
         /// <summary>Queues one global time sync packet from the main thread.</summary>
         public static void Publish(in GlobalTimeSyncSignal signal)
         {
             EnsureInitialized();
-            _globalTimeSyncSignals.Enqueue(signal);
+            SignalBus<GlobalTimeSyncSignal>.Push(in signal);
         }
 
         /// <summary>Queues one deterministic seismic/tide packet from the main thread.</summary>
@@ -7054,7 +7011,6 @@ namespace Hecton8.Core
             EnsureInitialized();
             _latestSeismicSignal = signal;
             AdvanceSignalSequence(ref _latestSeismicSignalSequence);
-            _seismicSignals.Enqueue(signal);
             SignalBus<SeismicSignal>.Push(in signal);
         }
 
@@ -7069,7 +7025,7 @@ namespace Hecton8.Core
 
             Volatile.Write(ref _timeDilationScalarMilli, (int)math.round(math.max(0f, sanitizedSignal.Scalar) * 1000f));
             Volatile.Write(ref _timeDilationSequence, unchecked((int)sanitizedSignal.Sequence));
-            _timeDilationSignals.Enqueue(sanitizedSignal);
+            SignalBus<TimeDilationSignal>.Push(in sanitizedSignal);
         }
 
         /// <summary>Queues one pause/unpause packet from the main thread.</summary>
@@ -7082,7 +7038,7 @@ namespace Hecton8.Core
                 GlobalTelemetryBus.PublishMathGuardInvalidNumber(guardCode);
 
             Volatile.Write(ref _simulationPaused, sanitizedSignal.Paused != 0 ? 1 : 0);
-            _simulationPauseSignals.Enqueue(sanitizedSignal);
+            SignalBus<SimulationPauseSignal>.Push(in sanitizedSignal);
             SystemPauseSignal pauseSignal = default;
             pauseSignal.SourceHash = sanitizedSignal.SourceHash;
             pauseSignal.Frame = sanitizedSignal.Frame;
@@ -7110,7 +7066,7 @@ namespace Hecton8.Core
                 GlobalTelemetryBus.PublishMathGuardInvalidNumber(guardCode);
 
             Volatile.Write(ref _bulletTimeVisualMilli, (int)math.round(math.saturate(sanitizedSignal.Intensity01) * 1000f));
-            _bulletTimeVisualSignals.Enqueue(sanitizedSignal);
+            SignalBus<BulletTimeVisualSignal>.Push(in sanitizedSignal);
         }
 
         /// <summary>Queues one weather strength packet from the main thread.</summary>
@@ -7122,7 +7078,7 @@ namespace Hecton8.Core
             if (guardCode != 0)
                 GlobalTelemetryBus.PublishMathGuardInvalidNumber(guardCode);
 
-            _weatherStrengthSignals.Enqueue(sanitizedSignal);
+            SignalBus<WeatherStrengthSignal>.Push(in sanitizedSignal);
             WeatherChangedSignal weatherSignal = default;
             weatherSignal.Strength01 = sanitizedSignal.Strength01;
             weatherSignal.FlowFieldScale = sanitizedSignal.FlowFieldScale;
@@ -7138,14 +7094,13 @@ namespace Hecton8.Core
         public static void Publish(in ItemDecaySignal signal)
         {
             EnsureInitialized();
-            _itemDecaySignals.Enqueue(signal);
+            SignalBus<ItemDecaySignal>.Push(in signal);
         }
 
         /// <summary>Queues one resource-acquired packet from the main thread.</summary>
         public static void Publish(in ItemAcquiredSignal signal)
         {
             EnsureInitialized();
-            _itemAcquiredSignals.Enqueue(signal);
             SignalBus<ItemAcquiredSignal>.Push(in signal);
         }
 
@@ -7153,14 +7108,14 @@ namespace Hecton8.Core
         public static void Publish(in RadiationDoseSignal signal)
         {
             EnsureInitialized();
-            _radiationDoseSignals.Enqueue(signal);
+            SignalBus<RadiationDoseSignal>.Push(in signal);
         }
 
         /// <summary>Queues one resource-depletion delta packet from the main thread.</summary>
         public static void Publish(in ResourceDepletionDeltaSignal signal)
         {
             EnsureInitialized();
-            _resourceDepletionDeltaSignals.Enqueue(signal);
+            SignalBus<ResourceDepletionDeltaSignal>.Push(in signal);
         }
 
         /// <summary>Legacy alias pinned to the typed signal lane.</summary>
@@ -7178,7 +7133,7 @@ namespace Hecton8.Core
             EnsureInitialized();
             _latestLightLevelSignal = signal;
             AdvanceSignalSequence(ref _latestLightLevelSignalSequence);
-            _lightLevelSignals.Enqueue(signal);
+            SignalBus<LightLevelSignal>.Push(in signal);
         }
 
         /// <summary>Queues one player/submersible headlight state packet into the typed lane.</summary>
@@ -7192,7 +7147,6 @@ namespace Hecton8.Core
         public static void Publish(in FaunaStateChangedSignal signal)
         {
             EnsureInitialized();
-            _faunaStateChangedSignals.Enqueue(signal);
             SignalBus<FaunaStateChangedSignal>.Push(in signal);
         }
 
@@ -7228,7 +7182,7 @@ namespace Hecton8.Core
         public static void Publish(in TraumaSignal signal)
         {
             EnsureInitialized();
-            _traumaSignals.Enqueue(signal);
+            SignalBus<TraumaSignal>.Push(in signal);
         }
 
         /// <summary>Queues one procedural flora wake packet from the main thread.</summary>
@@ -7256,21 +7210,20 @@ namespace Hecton8.Core
         public static void Publish(in ProgressionEventSignal signal)
         {
             EnsureInitialized();
-            _progressionEventSignals.Enqueue(signal);
+            SignalBus<ProgressionEventSignal>.Push(in signal);
         }
 
         /// <summary>Queues one AUP-independent global world-state mutation from the main thread.</summary>
         public static void Publish(in GlobalWorldStateSignal signal)
         {
             EnsureInitialized();
-            _globalWorldStateSignals.Enqueue(signal);
+            SignalBus<GlobalWorldStateSignal>.Push(in signal);
         }
 
         /// <summary>Queues one biome transition packet from the main thread.</summary>
         public static void Publish(in BiomeChangedSignal signal)
         {
             EnsureInitialized();
-            _biomeChangedSignals.Enqueue(signal);
             SignalBus<BiomeChangedSignal>.Push(in signal);
         }
 
@@ -7278,42 +7231,42 @@ namespace Hecton8.Core
         public static void Publish(in NarrativeFocusSignal signal)
         {
             EnsureInitialized();
-            _narrativeFocusSignals.Enqueue(signal);
+            SignalBus<NarrativeFocusSignal>.Push(in signal);
         }
 
         /// <summary>Queues one player-authored focus break packet from the main thread.</summary>
         public static void Publish(in FocusBrokenSignal signal)
         {
             EnsureInitialized();
-            _focusBrokenSignals.Enqueue(signal);
+            SignalBus<FocusBrokenSignal>.Push(in signal);
         }
 
         /// <summary>Queues one mixer-state request packet from the main thread.</summary>
         public static void Publish(in MixerStateSignal signal)
         {
             EnsureInitialized();
-            _mixerStateSignals.Enqueue(signal);
+            SignalBus<MixerStateSignal>.Push(in signal);
         }
 
         /// <summary>Queues one diegetic narrative waypoint packet from the main thread.</summary>
         public static void Publish(in NarrativeHudWaypointSignal signal)
         {
             EnsureInitialized();
-            _narrativeHudWaypointSignals.Enqueue(signal);
+            SignalBus<NarrativeHudWaypointSignal>.Push(in signal);
         }
 
         /// <summary>Queues one soundscape profile handoff packet from the main thread.</summary>
         public static void Publish(in SoundscapeProfileSignal signal)
         {
             EnsureInitialized();
-            _soundscapeProfileSignals.Enqueue(signal);
+            SignalBus<SoundscapeProfileSignal>.Push(in signal);
         }
 
         /// <summary>Queues one narrative POI save-state packet from the main thread.</summary>
         public static void Publish(in NarrativePoiStateSignal signal)
         {
             EnsureInitialized();
-            _narrativePoiStateSignals.Enqueue(signal);
+            SignalBus<NarrativePoiStateSignal>.Push(in signal);
         }
 
         public static bool TryDequeueImpact(out ImpactSignal signal) => TryDequeue(ref _impactSignals, out signal);
@@ -7544,17 +7497,17 @@ namespace Hecton8.Core
                 if (laneIndex >= laneCount)
                     laneIndex -= laneCount;
 
-                ISignalLane lane = SignalBusRegistry.GetLaneAt(laneIndex);
-                if (lane == null)
+                if (!SignalBusRegistry.TryCopyTelemetryAt(laneIndex, out SignalLaneTelemetry telemetry))
                     continue;
 
-                int snapshotCount = lane.SnapshotCount;
-                int pushedCount = lane.PushedLastFlush;
-                int droppedCount = lane.DroppedLastFlush;
-                int coalescedCount = lane.CoalescedLastFlush;
-                int corruptedCount = lane.CorruptedSignalTotal;
-                if (lane.QueuedBeforeFlush > peakSignals)
-                    peakSignals = lane.QueuedBeforeFlush;
+                int snapshotCount = telemetry.SnapshotCount;
+                int droppedCount = telemetry.DroppedCount;
+                int coalescedCount = telemetry.CoalescedCount;
+                int pushedCount = DecodeSignalLaneTelemetryPushed(in telemetry);
+                int corruptedCount = DecodeSignalLaneTelemetryCorrupted(in telemetry);
+                int queuedBeforeFlush = telemetry.QueuedBeforeFlush;
+                if (queuedBeforeFlush > peakSignals)
+                    peakSignals = queuedBeforeFlush;
                 if (pushedCount > 0)
                     pushedSignals += pushedCount;
                 if (coalescedCount > 0)
@@ -7564,24 +7517,26 @@ namespace Hecton8.Core
                 if (corruptedCount > 0)
                     corruptedSignals += corruptedCount;
 
-                if (snapshotCount <= 0 && droppedCount <= 0)
+                if (snapshotCount <= 0 && droppedCount <= 0 && corruptedCount <= 0)
                     continue;
 
-                bool critical = droppedCount > 0 || lane.StormDetectedLastFlush;
+                bool stormDetected = (telemetry.Flags & 1) != 0;
+                bool critical = droppedCount > 0 || corruptedCount > 0 || stormDetected;
                 if (!critical && sampledNonCritical >= SignalTelemetryLaneBudgetPerFrame)
                     continue;
 
+                int droppedOrCorruptedCount = DecodeSignalLaneTelemetryDroppedOrCorrupted(droppedCount, corruptedCount);
                 CrashTelemetryBuffer.ReportSignalLaneStats(
-                    lane.LaneHash,
-                    lane.QueuedBeforeFlush,
+                    telemetry.LaneHash,
+                    queuedBeforeFlush,
                     snapshotCount,
-                    droppedCount);
+                    droppedOrCorruptedCount);
 
                 if (!critical)
                     sampledNonCritical++;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                if (lane.StormDetectedLastFlush)
+                if (stormDetected)
                     Debug.LogWarning("[SIGNAL STORM DETECTED]");
 #endif
             }
@@ -7617,6 +7572,32 @@ namespace Hecton8.Core
 
                 Volatile.Write(ref _signalTelemetryLastCorruptedTotal, corruptedSignals);
             }
+        }
+
+        private static int DecodeSignalLaneTelemetryPushed(in SignalLaneTelemetry telemetry)
+        {
+            uint packed = (uint)(telemetry.Reserved2 & uint.MaxValue);
+            if (packed != 0u)
+                return packed > int.MaxValue ? int.MaxValue : (int)packed;
+
+            return math.max(0, telemetry.SnapshotCount + telemetry.DroppedCount + telemetry.CoalescedCount);
+        }
+
+        private static int DecodeSignalLaneTelemetryCorrupted(in SignalLaneTelemetry telemetry)
+        {
+            uint packed = (uint)(telemetry.Reserved2 >> 32);
+            return packed > int.MaxValue ? int.MaxValue : (int)packed;
+        }
+
+        private static int DecodeSignalLaneTelemetryDroppedOrCorrupted(int droppedCount, int corruptedCount)
+        {
+            if (droppedCount < 0)
+                droppedCount = 0;
+            if (corruptedCount < 0)
+                corruptedCount = 0;
+
+            int headroom = int.MaxValue - droppedCount;
+            return corruptedCount > headroom ? int.MaxValue : droppedCount + corruptedCount;
         }
 
         private static bool ShouldDumpSignalDropStorm(int frame)
@@ -8051,20 +8032,6 @@ namespace Hecton8.Core
 
             SignalBus<T>.Dispose();
             queue = default;
-        }
-
-        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
-            where T : unmanaged
-        {
-            if (!queue.IsCreated || capacity <= 0)
-                return;
-
-            for (int i = 0; i < capacity; i++)
-                queue.Enqueue(default);
-
-            while (queue.TryDequeue(out _))
-            {
-            }
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
