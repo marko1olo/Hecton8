@@ -614,3 +614,29 @@ Estimated microseconds saved: no profiler number claimed. Removed one slow-tick 
     <Compile>Not launched. User explicitly forbade premature rebuild; no generated `Hecton8.World.Economy*.csproj` exists for a scoped dotnet build.</Compile>
   </VERIFICATION_DELTA>
 </SELF_AUDIT_DELTA>
+
+---
+
+## Loop 25 Polish Pass - 2026-05-20
+
+What was wrong: after Loop 24, `ProceduralOreSpawner` still resolved player state through `WorldRuntimeReferenceUtility.TryResolvePlayerTransform` in `SlowTick()` and read `GlobalRegistry.Player` inside `TryResolvePlayerAup()`. Terrain services were event-cached, but player/AUP authority still had a recurring registry/helper route.
+
+What was done: added `_playerContext` as a cached `IPlayerRuntimeContext`. `CacheRuntimeServices()` initializes player, terrain, and MapMagic services during enable. `QueueRegistryServiceRebind()` now handles `GlobalRegistryServiceSlot.Player`, refreshing or clearing the cached player context and runtime transform on service replacement. `SlowTick()` calls `RefreshCachedPlayerRuntimeReference()` instead of `WorldRuntimeReferenceUtility`, and `TryResolvePlayerAup()` consumes `_playerContext` only.
+
+Cinematic cheats used: unchanged. The system still derives ore from deterministic AUP sector slots, SDF/height samples, HZB-gated visual-only matrices, and `Graphics.DrawProceduralIndirect`; no player-proximity collider, physics query, or proxy object path was introduced.
+
+Estimated microseconds saved: no profiler number claimed. The change removes one recurring helper lookup and one recurring `GlobalRegistry.Player` read from the sector refresh path. The saved CPU budget remains allocated to continuous quality paths: cheap mock SDF at low quality, bounded height refinement and visual-only clusters at higher quality.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_153" evidence="STATIC_SOURCE" runtime_status="PENDING_VERIFICATION">
+  <PLAYER_SERVICE_CACHE_DELTA>
+    <Before>`SlowTick()` called `WorldRuntimeReferenceUtility.TryResolvePlayerTransform`; `TryResolvePlayerAup()` read `GlobalRegistry.Player`.</Before>
+    <After>`SlowTick()` refreshes the cached transform through `_playerContext`; `TryResolvePlayerAup()` reads the cached `IPlayerRuntimeContext` only.</After>
+    <Route>`GlobalRegistryServiceSlot.Player` hot-swap events update `_playerContext`, preserving owner-local player authority through the contract boundary.</Route>
+  </PLAYER_SERVICE_CACHE_DELTA>
+  <VERIFICATION_DELTA>
+    <StaticScan>`ProceduralOreSpawner` has no `WorldRuntimeReferenceUtility` calls. The only `GlobalRegistry.Player` read is cold `CacheRuntimeServices()`.</StaticScan>
+    <ForbiddenScan>Scoped owned-source scan returned no direct buffer APIs, legacy Vault pointer handles, hot native allocation, raw `.Complete()`, Unity/System random, Unity time, `File.ReadAllBytes`, LINQ, `string.Format`, or direct sibling-domain hits.</ForbiddenScan>
+    <DiffCheck>`git diff --check` returned only CRLF normalization warnings.</DiffCheck>
+    <Compile>Not launched. User explicitly forbade premature rebuild; no generated owner asmdef project exists for a scoped dotnet build.</Compile>
+  </VERIFICATION_DELTA>
+</SELF_AUDIT_DELTA>

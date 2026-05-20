@@ -113,6 +113,8 @@ Task 20 addendum Loop 67: the shared shader-global bridge used by SHINOBU Visual
 
 Task 20 addendum Loop 68: med-bay target resolution now actually consumes `RespawnTuningDTO.MedicalBaySearchRadiusMeters` in both the PreSimulation resolver and the Burst fallback scan. Runtime/editor tuning writes pass through one shared sanitizer that clamps fallback AUP, fade rates, penalty scalar, clearance, invulnerability seconds, and med-bay search radius. Rejected med-bay candidates accumulate `InvalidTargetAup` only in a local rejected-candidate mask; that mask is published only if the route falls back to the deterministic lifepod, while a later valid med bay publishes only its selected `MockMedicalBay` flag. This removes a false-positive black-box fault bit on valid rebirths after an earlier invalid/out-of-radius candidate. Static scans over the touched Physiology files found no LINQ, foreach, managed collection allocation, `Pack=`, DTO property, legacy Vault handle, or `.Resolve(vault)` hit. Active/archive mirrors hash-match. CPU sampled `100%`, so build was not launched.
 
+Task 20 addendum Loop 69: corrupted med-bay rows now contribute to the same rejected-candidate mask when their bay AUP, death delta, local distance, terrain clearance delta, or hash is invalid. If every candidate is corrupt or out of range, fallback lifepod flags include `InvalidTargetAup`; if a later valid bay is selected, those rejected-row faults stay out of final route flags. The cold fallback mock med-bay hydration path now invokes `GenerateMockRespawnPointsJob.Run(bays.Length)` instead of hand-calling `Execute(i)`, preserving the job wrapper/proof route without adding a gameplay-frame `Complete()`. Build not launched.
+
 ## Loop Log
 
 ### Loop 0 - Prompt Extraction And Mandates

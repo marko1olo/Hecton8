@@ -3887,13 +3887,13 @@ namespace Hecton8.Building
             Gizmos.DrawWireSphere(playerCamera.transform.position, buildDistance);
 
             // Vizualizatsiya snap-zony (tolko v Play Mode pri nalichii prizraka)
-            if (Application.isPlaying && _currentGhostObj != null)
+            if (Application.isPlaying && _builderGhostPreviewActive)
             {
                 if (_isSnapped && _snappedSocketTransform != null)
                 {
                     // Snap active — zelenaya liniya k soketu
                     Gizmos.color = Color.green;
-                    Gizmos.DrawLine(_currentGhostObj.transform.position,
+                    Gizmos.DrawLine(_builderGhostPreviewPosition,
                                     _snappedSocketTransform.position);
                     Gizmos.DrawWireSphere(_snappedSocketTransform.position, 0.2f);
                 }

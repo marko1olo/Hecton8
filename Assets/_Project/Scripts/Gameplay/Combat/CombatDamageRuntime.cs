@@ -103,24 +103,24 @@ namespace Hecton8.Gameplay
         public const ushort Deflected = 1 << 8;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct CombatDamageRequest
     {
-        public int TargetId;
-        public int SourceId;
-        public float Amount;
-        public float ImpulseMagnitude;
-        public float3 Direction;
-        public uint PackedMeta;
+        [FieldOffset(0)] public int TargetId;
+        [FieldOffset(4)] public int SourceId;
+        [FieldOffset(8)] public float Amount;
+        [FieldOffset(12)] public float ImpulseMagnitude;
+        [FieldOffset(16)] public float3 Direction;
+        [FieldOffset(28)] public uint PackedMeta;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct CombatDamageSignalDetail
     {
-        public float3 LocalPoint;
-        public float3 ArmorNormal;
-        public float LocalTemperatureCelsius;
-        public float StatusDurationSeconds;
+        [FieldOffset(0)] public float3 LocalPoint;
+        [FieldOffset(12)] public float3 ArmorNormal;
+        [FieldOffset(24)] public float LocalTemperatureCelsius;
+        [FieldOffset(28)] public float StatusDurationSeconds;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 80)]
@@ -136,33 +136,35 @@ namespace Hecton8.Gameplay
         [FieldOffset(28)] public float MaxHealth;
         [FieldOffset(32)] public float3 Direction;
         [FieldOffset(44)] public byte TraumaLevel;
+        [FieldOffset(45)] private byte _pad0;
         [FieldOffset(46)] public ushort Flags;
         [FieldOffset(48)] public byte Channel;
         [FieldOffset(49)] public byte DirectionOctant;
+        [FieldOffset(50)] private ushort _pad1;
         [FieldOffset(52)] public float3 LocalPoint;
         [FieldOffset(64)] public float3 SurfaceNormal;
         [FieldOffset(76)] public float Depth;
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 64)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct CombatTelemetryEntry
     {
-        public uint FrameIndex;
-        public uint Sequence;
-        public uint PhaseHash;
-        public uint TargetHash;
-        public uint SourceHash;
-        public uint StatusBits;
-        public uint StateHash;
-        public uint AnomalyHash;
-        public float PreviousHealth;
-        public float NextHealth;
-        public float AppliedDamage;
-        public float3 LocalPoint;
-        public ushort Flags;
-        public byte TraumaLevel;
-        public byte DirectionOctant;
-        public uint Reserved;
+        [FieldOffset(0)] public uint FrameIndex;
+        [FieldOffset(4)] public uint Sequence;
+        [FieldOffset(8)] public uint PhaseHash;
+        [FieldOffset(12)] public uint TargetHash;
+        [FieldOffset(16)] public uint SourceHash;
+        [FieldOffset(20)] public uint StatusBits;
+        [FieldOffset(24)] public uint StateHash;
+        [FieldOffset(28)] public uint AnomalyHash;
+        [FieldOffset(32)] public float PreviousHealth;
+        [FieldOffset(36)] public float NextHealth;
+        [FieldOffset(40)] public float AppliedDamage;
+        [FieldOffset(44)] public float3 LocalPoint;
+        [FieldOffset(56)] public ushort Flags;
+        [FieldOffset(58)] public byte TraumaLevel;
+        [FieldOffset(59)] public byte DirectionOctant;
+        [FieldOffset(60)] public uint Reserved;
     }
 
     public interface ICombatDamageEventListener

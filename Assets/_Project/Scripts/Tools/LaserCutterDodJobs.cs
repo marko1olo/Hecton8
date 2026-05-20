@@ -6,6 +6,7 @@ namespace Hecton8.Tools
     using Unity.Burst;
     using Unity.Burst.CompilerServices;
     using Unity.Collections;
+    using Unity.Collections.LowLevel.Unsafe;
     using Unity.Jobs;
     using Unity.Mathematics;
     using UnityEngine;
@@ -158,7 +159,7 @@ namespace Hecton8.Tools
         [WriteOnly, NoAlias] public NativeArray<LaserCutBatteryDrainRequest> BatteryDrainRequests;
         [WriteOnly, NoAlias] public NativeArray<LaserCutGlowDecalRequestDTO> GlowDecalRequests;
         [WriteOnly, NoAlias] public NativeArray<LaserCutImpactVfxDTO> ImpactVfxRequests;
-        [NoAlias] public NativeArray<LaserCutTelemetryEntry> TelemetryRing;
+        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<LaserCutTelemetryEntry> TelemetryRing;
         public double3 PresentationOriginAUP;
         public uint TelemetryCursorBase;
         public float GlobalQualityWeight;

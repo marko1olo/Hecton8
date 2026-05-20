@@ -86,6 +86,62 @@ Exact Microseconds saved: Scene reload stall target removed: legacy 15 s class s
   </dear_lie_confirmation>
 </SELF_AUDIT>
 
+## 2026-05-20 - Corrupt Med-Bay Fault Accounting And Mock Job Run
+
+What was wrong: corrupted med-bay rows with non-finite AUP/delta/distance or zero hash could force fallback without leaving `InvalidTargetAup` in the black-box cursor. The cold mock generator was also called by direct `Execute(i)`, bypassing the job wrapper claimed by the proof files.
+
+What was done: both med-bay search paths now put corrupt candidates into the local rejected-candidate mask, while still keeping that mask out of final flags when a later valid bay wins. `ValidateMedicalBay` rejects zero hash. Default mock row hydration now calls `GenerateMockRespawnPointsJob.Run(bays.Length)`.
+
+Cinematic Cheats used: unchanged. Respawn remains Vault AUP teleport plus shader Dear Lie cover, not scene reload, nav traversal, or physics relocation.
+
+Exact Microseconds saved: no steady-state cost. Rare corrupt-row death path adds scalar checks that can prevent postmortem ambiguity. Cold mock generation remains eight rows, outside gameplay frame cadence.
+
+<SELF_AUDIT agent_id="SHINOBU_155" focus="CORRUPT_MED_BAY_FAULT_ACCOUNTING" status="PENDING_COMPILE_RUNTIME_PROOF_EXTERNAL_BRIDGE_ERRORS">
+  <task_reconciliation>
+    <task id="01" status="PASS">No scene reload API added.</task>
+    <task id="02" status="PASS">No player destroy/instantiate route added.</task>
+    <task id="03" status="PASS">No hot DTO properties introduced.</task>
+    <task id="04" status="PASS">No DTO size, field offset, or `Pack=` change.</task>
+    <task id="05" status="PASS">Fallback mock med-bay generator now runs through `IJobParallelFor.Run` instead of direct `Execute` calls.</task>
+    <task id="06" status="PASS">Fatal signal route unchanged.</task>
+    <task id="07" status="PASS">Reset kernel fallback scan now fault-accounts corrupt rows.</task>
+    <task id="08" status="PASS">Dear Lie shader transition unchanged.</task>
+    <task id="09" status="PASS">AUP teleport route unchanged.</task>
+    <task id="10" status="PASS">Async fade route unchanged.</task>
+    <task id="11" status="PASS">No binary quality switch added.</task>
+    <task id="12" status="PASS">Ecosystem aggro reset route unchanged.</task>
+    <task id="13" status="PASS">AUP deltas remain double-first before local float checks.</task>
+    <task id="14" status="PASS">Rollback/blittable DTO route unchanged.</task>
+    <task id="15" status="PASS">No private native allocation added.</task>
+    <task id="16" status="PASS">Black-box fallback fault flags now reflect corrupt med-bay tables.</task>
+    <task id="17" status="PASS">Editor tuning facade unchanged after prior sanitizer repair.</task>
+    <task id="18" status="PASS">CSV penalty ingestor unchanged.</task>
+    <task id="19" status="PASS">Editor gizmo unchanged.</task>
+    <task id="20" status="PARTIAL">Static source/docs updated. Unity import, profiler/GCMonitor, and player proof remain pending.</task>
+  </task_reconciliation>
+  <struct_layout_verification>
+    No layout changed. Primary touched DTOs remain `MedicalBayRespawnPointDTO=64` and `RespawnTuningDTO=64`; existing cold guards still verify every field offset before Vault allocation.
+  </struct_layout_verification>
+  <scalability_curve_explanation>
+    No quality branch was introduced. Radius remains a continuous tuning scalar, and presentation still scales through the existing `GlobalQualityWeight` fade/shader detail curve.
+  </scalability_curve_explanation>
+  <h_phi_vault_status>
+    No private array allocation was introduced. Existing Vault lanes `71605` med bays, `71609` tuning, `71604` state, and `71613` request remain the owned data route.
+  </h_phi_vault_status>
+  <pointer_aliasing_dependency_graph>
+    Runtime job graph unchanged: dispatcher dependency to reset job, reset to fade job, returned active handle. Mock bay hydration is cold default setup via `GenerateMockRespawnPointsJob.Run`; reset/fade pointer lanes remain `[NoAlias]`.
+  </pointer_aliasing_dependency_graph>
+  <compile_guard>
+    No asmdef or namespace dependency changed. No sibling runtime reference was added.
+  </compile_guard>
+  <dear_lie_confirmation>
+    Heavy respawn simulation remains replaced by O(1) signal/Vault state, bounded O(8) med-bay selection, and shader blackout/grain/chroma.
+  </dear_lie_confirmation>
+  <verification>
+    Static source scan found no `mockJob.Execute` hit and found `MedicalBayHashID == 0u` validation in both runtime and Burst fallback validation helpers. Build not launched.
+  </verification>
+</SELF_AUDIT>
+
 ## 2026-05-20 - Proof Drift Archive Sync And Static Verification
 
 What was wrong: active proof files had been corrected to the current 128-byte `PlayerRespawnSignal` contract and coherent request/commit semantics, but direct Batch010 archive mirrors needed a fresh hash sync. Leaving archive mirrors stale would preserve the exact false evidence this pass is eliminating.

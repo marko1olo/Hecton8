@@ -80,7 +80,7 @@ This ledger remains static binary/documentation orientation, not runtime payload
 - Each record carries source/output hashes, LOD1/LOD2 mesh hashes, original and generated triangle counts, primitive/convex collider counts, continuous quality/depth/ratio/tolerance fields, decimation window, warning flags, and state hash. It contains no Unity object reference, string, pointer, managed array, rollback state, or gameplay authority.
 - Generated mesh assets use a 32-byte interleaved vertex layout, primitive-first collider authoring, and bounded 8..32 support hull fallback. Invalid hull topology, failed hull asset binding, corrupt index/range/vertex streams, and mock asset reload failures fail closed instead of creating unsafe runtime payload state.
 - The manifest is immutable editor output only. It is not a `GlobalDataVault` buffer, not netcode rollback state, and not a runtime owner. Runtime BRG/LOD consumers must import it through their own owner lane before claiming Play Mode, Burst, profiler, GC, or player-build proof.
-- Verification status: static source/docs only. Pre-endian local Roslyn probe previously passed under `Temp/SHINOBU_213_CompileProbe`, but the explicit-endian, bounded-hull, fail-closed asset-binding, hull-safety, index-stream, and mock-reload edits still require a post-endian safety-index probe when CPU drops below the build gate. Unity import, manifest bake, generated asset inspection, profiler/GCMonitor, and player-build proof remain pending.
+- Verification status: static source/docs only. Pre-endian local Roslyn probe previously passed under `Temp/SHINOBU_213_CompileProbe`, but the explicit-endian, bounded-hull, fail-closed asset-binding, hull-safety, index-stream, mock-reload, binary-ledger, and hot geometry DTO explicit-layout edits still require a post-endian safety-index hot-struct probe when CPU drops below the build gate. Unity import, manifest bake, generated asset inspection, profiler/GCMonitor, and player-build proof remain pending.
 
 ## 2026-05-19 SHINOBU_160 Asynchronous Telemetry Export Vault Lane
 
@@ -2265,6 +2265,21 @@ hierarchy. Non-template buildables keep the existing prefab branch and are outsi
 
 Static source only: no BufferID, DTO size, signal layout, or asmdef edge changed. Unity import, profiler/GCMonitor, Frame
 Debugger, and player-build proof remain pending behind the existing Core.Memory compile wall.
+
+## 2026-05-20 SHINOBU_153 Player Context Service Cache Addendum
+
+`ProceduralOreSpawner` binary payloads are unchanged in this addendum. `ResourceNodeDTO` remains 128 bytes, telemetry remains
+the fixed 300-frame Vault ring, indirect args remain the existing `GeologyIndirectArgsDTO` row, and no Vault ID or asmdef
+edge changed.
+
+The recurring geology sector path no longer calls `WorldRuntimeReferenceUtility.TryResolvePlayerTransform` or reads
+`GlobalRegistry.Player`. `IPlayerRuntimeContext` is cached during enable and maintained through
+`GlobalRegistryServiceSlot.Player` hot-swap events. AUP sector refresh now consumes that cached contract to resolve the
+player pose/current AUP, while `playerTransform` is refreshed only as a presentation/telemetry runtime view.
+
+Static source only: owned-source scans found no direct buffer APIs, legacy Vault pointer handles, hot native allocation,
+raw `.Complete()`, Unity/System random, Unity time, file byte staging, LINQ, string-format, or direct sibling-domain hits.
+Unity import, Burst Inspector, Profiler/GCMonitor, and player-build proof remain pending behind the no-premature-build gate.
 ## 2026-05-20 SHINOBU_201 Gameplay ParallelFor Safety Proof Addendum
 
 Gameplay buoyancy payloads are unchanged. `BuoyancyStateDTO` remains an explicit 64-byte row

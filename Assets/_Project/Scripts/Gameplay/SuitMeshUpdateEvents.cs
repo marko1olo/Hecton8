@@ -5,26 +5,30 @@ using UnityEngine;
 
 namespace Hecton8.Gameplay
 {
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public readonly struct SuitMeshUpdateSignal
     {
+        public const uint EmissiveUpgradeFlag = 1u << 0;
+
         public SuitMeshUpdateSignal(ulong upgradeMask, ulong effectiveUpgradeMask, uint sequence)
         {
-            _upgradeMask = upgradeMask;
-            _effectiveUpgradeMask = effectiveUpgradeMask;
-            _sequence = sequence;
-            _hasEmissiveUpgrade = effectiveUpgradeMask != 0UL ? (byte)1 : (byte)0;
+            this = default;
+            UpgradeMask = upgradeMask;
+            EffectiveUpgradeMask = effectiveUpgradeMask;
+            Sequence = sequence;
+            StatusFlags = effectiveUpgradeMask != 0UL ? EmissiveUpgradeFlag : 0u;
         }
 
-        private readonly ulong _upgradeMask;
-        private readonly ulong _effectiveUpgradeMask;
-        private readonly uint _sequence;
-        private readonly byte _hasEmissiveUpgrade;
+        [FieldOffset(0)] public readonly ulong UpgradeMask;
+        [FieldOffset(8)] public readonly ulong EffectiveUpgradeMask;
+        [FieldOffset(16)] public readonly uint Sequence;
+        [FieldOffset(20)] public readonly uint StatusFlags;
+        [FieldOffset(24)] private readonly ulong _pad0;
 
-        public ulong UpgradeMask => _upgradeMask;
-        public ulong EffectiveUpgradeMask => _effectiveUpgradeMask;
-        public uint Sequence => _sequence;
-        public bool HasEmissiveUpgrade => _hasEmissiveUpgrade != 0;
+        public static bool HasEmissiveUpgrade(uint statusFlags)
+        {
+            return (statusFlags & EmissiveUpgradeFlag) != 0u;
+        }
     }
 
     public interface ISuitMeshUpdateEventListener

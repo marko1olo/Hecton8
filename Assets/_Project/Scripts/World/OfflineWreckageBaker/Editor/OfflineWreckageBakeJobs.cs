@@ -672,10 +672,14 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
 
         private static float Angle(float3 a, float3 b)
         {
-            float la = math.max(math.dot(a, a), 0.0000001f);
-            float lb = math.max(math.dot(b, b), 0.0000001f);
-            float d = math.dot(a, b) * math.rsqrt(la * lb);
-            return math.acos(math.clamp(d, -1f, 1f));
+            float la = math.dot(a, a);
+            float lb = math.dot(b, b);
+            if (!math.isfinite(la) || !math.isfinite(lb) || la <= 0.0000001f || lb <= 0.0000001f)
+                return 0f;
+
+            float denom = math.max(la * lb, 0.0000001f);
+            float d = math.dot(a, b) * math.rsqrt(denom);
+            return math.isfinite(d) ? math.acos(math.clamp(d, -1f, 1f)) : 0f;
         }
     }
 

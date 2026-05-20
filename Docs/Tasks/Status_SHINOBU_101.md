@@ -210,3 +210,16 @@ Status: PENDING VERIFICATION
 - [x] Static scan: `ResolveHardwareBudgetWeight`, `ResolveQualityCurve`, `math.smoothstep`, `math.lerp`, `math.select`, and `HomeostasisBrain.GlobalQualityWeight` resolve to expected code paths.
 - [x] Static scan: `git diff --check -- Assets/_Project/Scripts/Optimization/VRAMEnforcer.cs` reports LF-to-CRLF warning only.
 - [ ] Compile verification R37 | PENDING VERIFICATION: not launched. Known external missing `Assets/_Project/Scripts/Construction/LogisticsPipeEvents.cs` still blocks `Hecton8.Core.csproj` before SHINOBU verification, and the user explicitly forbade needless build/rebuild runs.
+
+## R38 Bootstrap Default And Dispatcher Hardware Cache
+
+- [x] Re-read active SHINOBU status/rationale, checked active batch authority, and re-read the binary payload ledger before code edits.
+- [x] Found a cold-path regression in `VRAMEnforcer`: `_hardwareBudgetWeight` defaulted to `0f` before SubsystemRegistration/init, so non-playing editor/offline boid budget calls could collapse authored counts to the minimum scale.
+- [x] `_hardwareBudgetWeight` now defaults to `1f`, and `ApplyBoidPopulationBudget()` returns the clamped authored count when the runtime budget has not initialized outside Play Mode.
+- [x] Found a tick-path hardware query in `AssetLoadDispatcher.EvaluateUiMipBiasGate()`: `SystemInfo.graphicsMemorySize` was read during every UI mip gate evaluation.
+- [x] Added `_graphicsBudgetBytes` plus `RefreshGraphicsBudgetBytes()` on `OnEnable()` and `Start()`; UI mip gate now uses the cached byte budget and only refreshes if the cache is invalid.
+- [x] Static scan: `_hardwareBudgetWeight`, non-playing init guard, `RefreshGraphicsBudgetBytes`, and `_graphicsBudgetBytes` resolve to expected code paths.
+- [x] Static scan: forbidden binary hardware and private native/managed collection markers across `AssetLoadDispatcher.cs`, `VRAMPressureMonitor.cs`, and `VRAMEnforcer.cs` report no results.
+- [x] Static scan: `Addressables.Release(` remains only at `Assets/_Project/Scripts/Optimization/AssetLifecycleGovernor.cs:4332`; `Addressables.ReleaseInstance(` remains only at `Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2275`.
+- [x] Static scan: `git diff --check -- Assets/_Project/Scripts/Optimization/AssetLoadDispatcher.cs Assets/_Project/Scripts/Optimization/VRAMEnforcer.cs` reports LF-to-CRLF warnings only.
+- [ ] Compile verification R38 | PENDING VERIFICATION: not launched. Known external missing `Assets/_Project/Scripts/Construction/LogisticsPipeEvents.cs` still blocks `Hecton8.Core.csproj` before SHINOBU verification, and the user explicitly forbade needless build/rebuild runs.

@@ -721,8 +721,7 @@ namespace Hecton8.Tools
                 RootAup = rootAup,
                 BaseToolHash = EquipmentMockBaseToolHash
             };
-            for (int i = 0; i < MaxTrackedTools; i++)
-                job.Execute(i);
+            job.Run(MaxTrackedTools);
 
             PublishActiveEquipmentReadback(ref views);
         }
@@ -993,8 +992,7 @@ namespace Hecton8.Tools
                 CounterLength = GetCreatedLength(views.EquipmentIntegrationCounters),
                 HardwareSpecLength = GetCreatedLength(views.EquipmentHardwareSpecs)
             };
-            for (int i = 0; i < jobLength; i++)
-                job.Execute(i);
+            job.Run(jobLength);
         }
 
         private static int GetCreatedLength<T>(NativeArray<T> array)

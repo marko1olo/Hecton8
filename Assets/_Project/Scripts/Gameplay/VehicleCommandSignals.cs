@@ -17,19 +17,19 @@ namespace Hecton8.Gameplay
         CriticalList = 1 << 5
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct VehicleCommandSignal
     {
-        public int TargetInstanceId;
-        public float Pitch;
-        public float Yaw;
-        public float Throttle;
-        public float BallastDelta;
-        public uint Sequence;
-        public byte Flags;
-        private byte _pad0;
-        private ushort _pad1;
-        private int _pad2;
+        [FieldOffset(0)] public int TargetInstanceId;
+        [FieldOffset(4)] public float Pitch;
+        [FieldOffset(8)] public float Yaw;
+        [FieldOffset(12)] public float Throttle;
+        [FieldOffset(16)] public float BallastDelta;
+        [FieldOffset(20)] public uint Sequence;
+        [FieldOffset(24)] public byte Flags;
+        [FieldOffset(25)] private byte _pad0;
+        [FieldOffset(26)] private ushort _pad1;
+        [FieldOffset(28)] private int _pad2;
     }
 
     public interface IVehicleCommandSignalListener

@@ -255,6 +255,7 @@ namespace Hecton8.Tools
                     out NativeArray<LaserCutTelemetryEntry> telemetry,
                     out NativeArray<int> telemetryCursor))
             {
+                _scheduledRaycastHandle.Complete();
                 _scheduledRaycastActive = false;
                 _scheduledRaycastCount = 0;
                 return false;
