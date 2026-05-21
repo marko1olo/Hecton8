@@ -1074,3 +1074,19 @@ Solution: Changed the low-tier capacity argument to `FloodMuffleSignalCapacity`,
 Rejected Alternatives: Keeping 8 as a "survival" profile was rejected because dropped flood muffle payloads create a discontinuity in audio feedback. Moving flood muffle into a per-frame poll was rejected because the existing SignalBus lane is the first-party route.
 Scalability potential: Low devices still scale audio processing elsewhere; the flood muffle fact keeps invariant admission. High/ultra can render richer mixer/material response without route divergence.
 Hardware Impact: 0 us speed claim. The lane reserves existing declared capacity; no new allocation or hot polling was added.
+
+## Hull Dent Shader Quality Proxy Continuum
+
+Problem: Vehicle hull dent presentation retained a binary low-tier concept: the shader parameter treated `.y` as a bypass bit, exact displacement disappeared abruptly, and weak devices received a hard scar branch instead of a continuous quality curve.
+Solution: Use continuous `GlobalQualityWeight` to derive a scar-proxy weight and a complementary exact-displacement weight. CoreLit and UberNoir now early-exit exact legacy dent loops only when the exact weight mathematically collapses to zero; DryZone blends the detail-mask scar proxy by the same scalar. `HullDeformedSignal` layout and dent facts stay unchanged.
+Rejected Alternatives: Keeping the bypass bit was rejected because it encoded hardware identity. Running exact dent loops on every device was rejected because the scar is a visual fake and can collapse to one scalar texture lookup at minimum quality.
+Scalability potential: Low devices show a cheap scar proxy; middle devices blend proxy and exact dent displacement; high/ultra spend GPU work on exact dent deformation and UberNoir scratch/rust detail.
+Hardware Impact: 0 us speed claim. Minimum-quality legacy exact dent work reduces from unrolled per-dent distance/falloff loops to a scalar proxy branch in the touched shader paths; profiler proof still required.
+
+## Waterline And Construction Signal Capacity Unification
+
+Problem: `WaterlineBreachSignal`, `ConstructionPreviewSignal`, `BaseStructuralWarningSignal`, and `FloraExclusionSignal` had smaller `lowTierFrameSignals` than their max capacity in bounded routes. That makes hardware profile a data-loss mechanism for dynamic music impulses, builder previews, pylon fallback input, structural warnings, and flora exclusion requests.
+Solution: Set minimum-quality capacities to the maximum declared capacities in `ShinobuOceanSurfaceAtmosphereRuntime`, `HectonBlueprintPreviewBatch`, `FoundationPylonGpuBatch`, and `PlayerBuilder`. Lane hashes, DTO layouts, producers, and consumers were left intact.
+Rejected Alternatives: Leaving small low-tier capacities was rejected because route admission is not optional visual polish. Replacing the lanes with polling was rejected because SignalBus is the first-party hot broadcast path.
+Scalability potential: Low devices keep the same event admission and can scale downstream rendering/audio cadence; middle through ultra devices receive identical facts and may spend more presentation work on them.
+Hardware Impact: 0 us speed claim. This reserves existing max lane slots and removes binary shedding; no new allocation route or hot `GlobalRegistry` poll was added.

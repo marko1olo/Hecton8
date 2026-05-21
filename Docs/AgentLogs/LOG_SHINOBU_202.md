@@ -5556,3 +5556,25 @@ Static verification:
 - Focused executable scan found no direct `vault.TryGetBuffer`, `vault.GetBuffer`, `VaultBufferHandle<T>`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `.ptr`, or `VaultGenerationID` hits in `HeadlessStressFractureBot.cs`.
 - Remaining `GetBuffer<` / `GetBufferHandle<` hits are source-audit string literals in `CountOrdinal`, retained intentionally.
 - Descriptor scan confirms `TryReadRigidbodyAupBuffer`, `TryGetGenerationHandle`, `VaultGenerationHandle<double3>`, and `TryReadHandle`. `git diff --check` passed with CRLF warning only. Build was not relaunched because `VBCSCompiler.exe` was active.
+
+## 2026-05-22 - Loop 236 - Vault Sovereignty Maintenance Descriptor Route
+
+What was wrong:
+- `Assets/_Project/Scripts/Core/Memory/VaultMemoryContracts.cs` still used direct `GetBuffer` / `TryGetBuffer` inside `VaultSovereigntyMaintenance`.
+- That owner path touched CoreDataVault maintenance rows while marking external views, which can block live relocation and weaken the stale-pointer proof.
+
+What was done:
+- Added CoreDataVault-local descriptor helpers: `TryEnsureCoreVaultBuffer`, `TryResolveCoreVaultBuffer`, `TryReadCoreVaultBuffer`, and `IsCoreVaultHandle`.
+- Replaced direct opens for active count, address-shift count, address-shift records, CSV scratch, sector-local AUP, AUP64, hot entity rows, and memory-layout config.
+- Mutable compaction job inputs use `TryResolveHandle`; config/final count readbacks use pure `TryReadHandle`.
+
+Cinematic cheats used:
+- No new visual fake. This is a memory authority patch. Existing continuous sweep-budget math remains the cheap substitute for a full monolithic per-frame compaction pass.
+
+Exact microseconds saved:
+- No measured speedup claimed. The useful result is relocation eligibility and owner proof. Added work is one O(1) descriptor validation at prewarm/frost boundaries, not per entity.
+
+Static verification:
+- Focused direct/legacy route scan found no `vault.TryGetBuffer`, `vault.GetBuffer<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `VaultBufferHandle<T>`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, or `.ptr` hits in `VaultMemoryContracts.cs`.
+- Descriptor scan confirms `TryEnsureCoreVaultBuffer`, `TryResolveCoreVaultBuffer`, `TryReadCoreVaultBuffer`, `IsCoreVaultHandle`, `VaultGenerationHandle<T>`, `GetGenerationHandle`, `TryGetGenerationHandle`, `TryResolveHandle`, and `TryReadHandle`.
+- Brace/preprocessor counts are balanced: braces `86/86`, `#if/#endif` `0/0`. `git diff --check` passed with CRLF warning only. Build was not relaunched because CPU was 100 percent.

@@ -601,3 +601,27 @@ Route impact: The editor facade now enforces visibility of all binary DTO sizes 
 Proof required: Static source/self-audit now; Unity Editor menu invocation remains pending.
 Parked work rejected: Hot-path string work, exact-token self-reference, and build launch under active CPU/dotnet/csc pressure.
 Static verification: `layoutProofOutput` participates in the self-audit pass/fail log; generated tokens find the actual menu and self-audit output lines; owned forbidden scan is clean; runtime/editor/shader brace and preprocessor balances are zero.
+
+## Polish Pass 54 Decisions
+Problem: Cold CSV profile hydration and generic Vault clearing still used NativeArray indexer setters (`profiles[count++] = profile`, `profiles[i] = default`, `buffer[i] = default`). These are not frame-loop paths, but the rows become Vault-owned binary state and should obey the same direct-memory DTO mutation discipline as the hot kernels.
+Solution: Marked `TryParseBiomeProfiles` unsafe and wrote parsed `FloraBiomeSwayProfileDTO` rows through byte-offset pointer math plus `UnsafeUtility.AsRef<FloraBiomeSwayProfileDTO>`. Replaced profile and generic buffer clearing loops with `ClearNativeArray<T>` using `UnsafeUtility.MemClear`. Added `coldVaultMutation` to `FloraAmbientSwaySelfAudit` so indexer-write regressions fail.
+Rejected Alternatives: Keeping indexer setters because the code is cold was rejected; the mandate is about binary state ownership, not only frame time. Per-element `default` writes were rejected because `MemClear` is simpler and expresses the intent directly. Moving CSV parsing to managed objects was rejected because Task 17 requires `ReadOnlySpan<byte>` plus unmanaged DTO writes.
+Scalability potential: No runtime visual-tier behavior changes. The shader still handles Low/Middle/High/Ultra by continuous quality curves. This pass protects cold profile data used by those curves.
+Hardware Impact: 0 hot runtime us. Cold boot/editor CSV load may be marginally cheaper by replacing N indexer stores with a single MemClear plus pointer writes; no gameplay frame cost.
+First 20 Minutes moment: World load and swim readability on the selected Copper Wire route biome.
+Route impact: Biome tuning rows are now hydrated and cleared through the same direct-memory lane as runtime CBuffer/telemetry DTO writes.
+Proof required: Static source/self-audit now; Unity Editor CSV import/menu invocation remains pending.
+Parked work rejected: Build launch while CPU is at 100%, unrelated Vault cleanup in sibling domains, and runtime StreamingAssets text IO.
+Static verification: No owned `profiles[count++] =`, `profiles[i] =`, `buffer[i] =`, hot indexer write, forbidden vector upload, random, `foreach`, `Pack=1`, `Marshal.OffsetOf`, `BinaryWriter`, `.Run()`, `.Complete()`, or hardcoded size proof strings remain; `coldVaultMutation` participates in self-audit pass/fail; runtime/editor/shader brace and preprocessor balances are zero; `git diff --check` reported no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 100%, dotnet=0, csc=0.
+
+## Polish Pass 55 Decisions
+Problem: Broad forbidden scans were clean, but the self-audit did not prove the exact hot owner method bodies. A future edit could add `new`, `File`, hot `GlobalRegistry`, `.Run`, `.Complete`, or scene search inside `PreSimulationTick`/`VisualSyncTick` while still being obscured by broad false-positive hygiene.
+Solution: Added `ownerPhasePurity` to `FloraAmbientSwaySelfAudit`. It slices the runtime source from `PreSimulationTick` to `ScheduleSimulation`, and from `VisualSyncTick` to `ApplyEditorTuning`, then verifies function-pointer kernels and constant-buffer upload are present while rejecting hot allocation/blocking/search/registry/file tokens. Split `.Run`/`.Complete` tokens prevent the checker from polluting broad scans.
+Rejected Alternatives: Relying on broad `rg` only was rejected because method locality matters. Adding runtime instrumentation was rejected because the proof is structural and editor-only. Launching a build was rejected under the active CPU/dotnet gate.
+Scalability potential: No runtime tier behavior change. This guards the frame-loop route that feeds continuous quality scaling without adding frame work.
+Hardware Impact: 0 player us. Editor self-audit source slicing only.
+First 20 Minutes moment: World load and swim readability on the selected Copper Wire route biome.
+Route impact: Future changes cannot add hot managed allocation, hot file IO, hot registry lookup, or hidden job blocking inside the two SHINOBU_267 owner phases without tripping self-audit.
+Proof required: Static source/self-audit now; Unity Editor self-audit invocation remains pending.
+Parked work rejected: Build launch at 100% CPU, runtime profiling instrumentation, and unrelated hot-phase audits in sibling domains.
+Static verification: Extracted hot method slices report `preForbidden=0`, `visForbidden=0`, kernels present, upload present; owned broad forbidden scan is clean after split `.Run`/`.Complete` audit tokens; `git diff --check` reported no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 100%, dotnet=1, csc=0.

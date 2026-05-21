@@ -914,3 +914,10 @@ The scan proves repo-wide debt, not successful consumer migration. A full rename
 - Rigidbody AUP scan now borrows `BufferID.RigidbodyAUPs` through `TryGetGenerationHandle<double3>` and pure `TryReadHandle` with expected owner `SystemID.GlobalPhysicsStateManager`.
 - Remaining `GetBuffer<` / `GetBufferHandle<` hits are source-audit string literals used by the bot to count debt in other files.
 - This entry does not change `double3` AUP storage, `BufferID.RigidbodyAUPs`, physics ownership, rollback Merkle descriptors, blackbox dump format, or QA result JSON schema.
+
+## 2026-05-22 Vault Sovereignty Maintenance Descriptor Route
+
+- `Assets/_Project/Scripts/Core/Memory/VaultMemoryContracts.cs` no longer has direct `vault.TryGetBuffer`, `vault.GetBuffer<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `VaultBufferHandle<T>`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, or `.ptr` routes.
+- `VaultSovereigntyMaintenance` now opens CoreDataVault rows through `VaultGenerationHandle<T>` descriptors with exact BufferID, `SystemID.CoreDataVault`, nonzero generation, required length, and compaction-fence rejection.
+- Owner-created rows use `GetGenerationHandle` plus phase-local `TryResolveHandle`; existing read-only rows use `TryGetGenerationHandle` plus pure `TryReadHandle`.
+- This entry does not change `VaultAup64`, `VaultAupSectorLocal32`, `VaultHotEntityData`, `VaultMemoryAddressShiftRecord`, BufferIDs `551`, `553`, `637`, `638`, `640`, `641`, memory-layout CSV bytes, sweep-budget math, or CoreDataVault authority.

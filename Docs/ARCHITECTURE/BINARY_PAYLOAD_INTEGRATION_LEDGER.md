@@ -4752,6 +4752,20 @@ Fault route: `ExosuitTelemetryEntry[300]` dumps fixed 64-byte rows to `Docs/Agen
 - Policy impact: habitat flood muffle feedback is no longer dropped by binary low-tier signal capacity. Presentation quality can still scale downstream without changing the event route.
 - Verification: targeted signal-capacity scan clean for the reduced flood muffle lane; `git diff --check` passed with line-ending warning only. Build was not relaunched because the external DiegeticGlitch compile wall is active.
 
+## 2026-05-22 - SHINOBU_SYSTEMIC_SURGEON Hull Dent Shader Quality Proxy Note
+
+- `Assets/_Project/Scripts/Vehicles/VFX/HullDentShaderController.cs` uses continuous quality weight for hull-dent shader metadata; `_HectonHullDentParams.y` is a scar-proxy weight and `.w` is the quality-weight byte in the inspected route.
+- Binary payload impact: none. `HullDeformedSignal` remains `StructLayout(LayoutKind.Explicit, Size = 64)` with the existing field offsets; no SignalBus ABI, lane hash, BufferID, save identity, or dent vault layout changed.
+- Policy impact: CoreLit, DryZone, and UberNoir blend exact dent displacement against a scalar scar proxy. Minimum quality can collapse exact legacy dent loops to the proxy; high quality restores exact deformation.
+- Verification: targeted listener/tier scan clean for `HullDentShaderController.cs`; targeted shader scan has no hull-dent low-tier bypass hits in the touched routes; `git diff --check` passed with line-ending warnings only. Build was not launched because CPU probe returned 100% with active `dotnet` and `VBCSCompiler` processes.
+
+## 2026-05-22 - SHINOBU_SYSTEMIC_SURGEON Waterline Construction Lane Capacity Note
+
+- `ShinobuOceanSurfaceAtmosphereRuntime`, `HectonBlueprintPreviewBatch`, `FoundationPylonGpuBatch`, and `PlayerBuilder` now configure the bounded waterline/construction lanes with minimum-quality capacity equal to max capacity.
+- Binary payload impact: none. `WaterlineBreachSignal`, `ConstructionPreviewSignal`, `BaseStructuralWarningSignal`, and `FloraExclusionSignal` DTO layouts, lane hashes, producer fields, and snapshot consumers are unchanged.
+- Policy impact: waterline breach music impulses, builder preview frames, pylon fallback input, structural warnings, and flora exclusion requests no longer lose SignalBus admission by binary hardware profile.
+- Verification: targeted capacity scan found `lowTierFrameSignals: 8` for waterline and construction preview/flora lanes and `lowTierFrameSignals: 32` for structural warnings; `git diff --check` passed with line-ending warnings only. Build was not launched because CPU probe returned 100% with active `dotnet` and `VBCSCompiler` processes.
+
 ## 2026-05-22 - SHINOBU_202 Save Pager Descriptor Route Update
 
 - `Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs` migrated retained pager Vault lanes from pointer-era handles to `VaultGenerationHandle<T>` descriptors.
@@ -4780,3 +4794,10 @@ Fault route: `ExosuitTelemetryEntry[300]` dumps fixed 64-byte rows to `Docs/Agen
 - Binary payload impact: route-only. `BufferID.RigidbodyAUPs`, `double3` AUP storage, rollback Merkle descriptor identity, fracture bot blackbox bytes, QA JSON schema, and physics authority are unchanged.
 - Authority impact: `GlobalPhysicsStateManager` remains the owner of Rigidbody AUP storage. The headless bot is a read-only diagnostic consumer and does not allocate, grow, mutate, or release the physics AUP buffer.
 - Verification: focused executable scan clean for direct `vault.TryGetBuffer`, `vault.GetBuffer`, `VaultBufferHandle<T>`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `.ptr`, and `VaultGenerationID` in `HeadlessStressFractureBot.cs`. Remaining `GetBuffer<` / `GetBufferHandle<` hits are intentional source-audit string literals. Descriptor scan confirmed `TryReadRigidbodyAupBuffer`, `TryGetGenerationHandle`, `VaultGenerationHandle<double3>`, and `TryReadHandle`; `git diff --check` passed with line-ending warning only. Build was not relaunched because `VBCSCompiler.exe` was active.
+
+## 2026-05-22 - SHINOBU_202 Vault Sovereignty Maintenance Descriptor Route
+
+- `Assets/_Project/Scripts/Core/Memory/VaultMemoryContracts.cs` replaced direct `VaultSovereigntyMaintenance` buffer opens with CoreDataVault generation-descriptor routes.
+- Binary payload impact: route-only. `VaultAup64` remains 48 bytes, `VaultAupSectorLocal32` remains 64 bytes, `VaultHotEntityData` remains 64 bytes, `VaultMemoryAddressShiftRecord` remains unchanged, and BufferIDs `VaultHotEntityData`, `VaultAup64`, `VaultAupSectorLocal32`, `VaultSovereigntyActiveEntityCount`, `VaultMemoryProfileCsvScratch`, `VaultMemoryAddressShiftRecords`, and `VaultMemoryAddressShiftCount` are unchanged.
+- Authority impact: `SystemID.CoreDataVault` remains the owner. Prewarm can allocate/grow through `GetGenerationHandle`; frost maintenance and final readbacks use exact-owner descriptors and reject compaction-fence windows. No sibling assembly dependency or public ABI route was added.
+- Verification: focused direct/legacy scan clean for `vault.TryGetBuffer`, `vault.GetBuffer<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `VaultBufferHandle<T>`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, and `.ptr` in `VaultMemoryContracts.cs`. Descriptor scan confirmed `TryEnsureCoreVaultBuffer`, `TryResolveCoreVaultBuffer`, `TryReadCoreVaultBuffer`, `IsCoreVaultHandle`, `VaultGenerationHandle<T>`, `GetGenerationHandle`, `TryGetGenerationHandle`, `TryResolveHandle`, and `TryReadHandle`. Brace/preprocessor counts are `86/86` and `0/0`; `git diff --check` passed with line-ending warning only. Build was not relaunched because CPU was 100 percent.

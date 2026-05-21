@@ -366,7 +366,7 @@ namespace Hecton8.Construction
             SignalBus<ConstructionPreviewSignal>.Configure(
                 expectedCapacity: 4,
                 maxFrameSignals: 8,
-                lowTierFrameSignals: 1,
+                lowTierFrameSignals: 8,
                 laneHash: ConstructionPreviewSignal.LaneHash);
         }
 

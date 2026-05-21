@@ -96,7 +96,8 @@ namespace Hecton8.Physics.Editor
                                "    \"ownedPathScanPerformed\": false,\n" +
                                "    \"ownedPathScanReason\": \"Water_Interface_Scanner excludes Plugins/Crest so Task 19 measures external callers only; owned runtime forbidden patterns are verified by SHINOBU_261 scoped static gates.\",\n" +
                                "    \"ownedAdapterLegacyFacadeAllowed\": true,\n" +
-                               "    \"ownedAdapterLegacyFacadeRoute\": \"Crest4KinematicsAdapter retains managed single-sample compatibility facades until Player/Flora migration; hot-path authority is the Vault-backed batch route.\"\n" +
+                               "    \"ownedAdapterLegacyFacadeRoute\": \"Crest4KinematicsAdapter retains managed single-sample compatibility facades until Player/Flora migration; hot-path authority is the Vault-backed batch route.\",\n" +
+                               "    \"compileGuardCaveat\": \"Hecton8.Crest.Bridge.asmdef still has a shared Hecton8.Core reference for legacy Crest bridge files and explicit cold registration/origin/quality seams; SHINOBU_261 scoped runtime files do not import Hecton8.Core directly and no sibling gameplay domain reference was added.\"\n" +
                                "  },\n" +
                                "  \"scannedScripts\": " + scanned.ToString() + ",\n" +
                                "  \"directOceanRendererLookups\": " + directOceanRendererLookups.ToString() + ",\n" +

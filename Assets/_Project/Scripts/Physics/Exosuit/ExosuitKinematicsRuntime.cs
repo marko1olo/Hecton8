@@ -1046,6 +1046,8 @@ namespace Hecton8.Physics.Exosuit
 
             _voxelSdfDescriptorLocked = true;
             if (!vault.TryGetGenerationHandle<VoxelSdfPayloadDescriptorDTO>(BufferID.VoxelSdfPayloadDescriptor, out VaultGenerationHandle<VoxelSdfPayloadDescriptorDTO> descriptorHandle) ||
+                descriptorHandle.BufferID != unchecked((uint)(int)BufferID.VoxelSdfPayloadDescriptor) ||
+                descriptorHandle.SystemID != (uint)SystemID.WorldStreaming ||
                 !vault.TryReadHandle(in descriptorHandle, out NativeArray<VoxelSdfPayloadDescriptorDTO> descriptors) ||
                 !descriptors.IsCreated ||
                 descriptors.Length <= 0)
@@ -1075,6 +1077,9 @@ namespace Hecton8.Physics.Exosuit
 
             _voxelSdfBufferLocked = true;
             if (!vault.TryGetGenerationHandle<byte>(BufferID.VoxelSdfTexture3D, out VaultGenerationHandle<byte> sdfHandle) ||
+                sdfHandle.BufferID != unchecked((uint)(int)BufferID.VoxelSdfTexture3D) ||
+                sdfHandle.SystemID != (uint)SystemID.WorldStreaming ||
+                sdfHandle.Generation == 0u ||
                 sdfHandle.Generation != descriptor.BufferGeneration ||
                 !vault.TryReadHandle(in sdfHandle, out NativeArray<byte> resolvedSdf) ||
                 !resolvedSdf.IsCreated ||

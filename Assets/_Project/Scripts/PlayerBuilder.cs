@@ -1421,12 +1421,12 @@ namespace Hecton8.Building
             SignalBus<ConstructionPreviewSignal>.Configure(
                 expectedCapacity: 4,
                 maxFrameSignals: 8,
-                lowTierFrameSignals: 1,
+                lowTierFrameSignals: 8,
                 laneHash: ConstructionPreviewSignal.LaneHash);
             SignalBus<FloraExclusionSignal>.Configure(
                 expectedCapacity: 4,
                 maxFrameSignals: 8,
-                lowTierFrameSignals: 1,
+                lowTierFrameSignals: 8,
                 laneHash: FloraExclusionSignal.LaneHash);
             SignalBus<ConstructionPreviewSignal>.EnsureInitialized();
             SignalBus<FloraExclusionSignal>.EnsureInitialized();

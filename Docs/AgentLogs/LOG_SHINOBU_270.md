@@ -89,6 +89,32 @@ Verification:
   <CompileStatus>BLOCKED_BY_CPU_GATE_100_PERCENT</CompileStatus>
 </SELF_AUDIT>
 
+## SHINOBU_270 POLISH ADDENDUM - REPORT ARTIFACT REVERIFICATION
+
+What was wrong:
+- The live `CURRENT_BATCH.md` extraction initially failed because the exact-tag parser ignored `role` and `chat_name` attributes on the `SHINOBU_270` prompt.
+- `HUDCanvasInquisition` source had been patched to emit `generatedProjectStale`, but the existing shared rendering report artifact did not yet expose those generated-project fields.
+- The older report text still implied renderer `Create()` shader warmup, which is no longer the owned route.
+
+What was done:
+- Re-extracted `<AGENT_PROMPT id="SHINOBU_270" role="VISOR_AR_STENCIL_RENDERER" chat_name="SHINOBU_270">` with an attribute-aware CLI regex. Result: `PROMPT_BYTES=17478`, `TASK_COUNT=20`.
+- Added `shinobu_270_visor_ar_stencil` to `Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json` without deleting neighboring agent objects.
+- The new report section marks `generatedProjectIncludesRendererFeature=false`, `generatedProjectIncludesStencilPreviewGizmo=false`, and `generatedProjectStale=true`.
+- Corrected the older shader warmup report wording to the bootstrap `BootstrapController.shaderVariantCollections` route; renderer `Create()` does not own shader warmup.
+
+Cinematic Cheats used:
+- No Canvas revival, TMP text path, or CPU physics route was added. The report continues to prove the Dear Lie route: stencil-gated fullscreen visor shader, procedural digits, AUP-local AR brackets, and shader-side fog/scanline/glitch.
+
+Exact Microseconds saved:
+- Runtime: 0 us changed in this pass. This is evidence hygiene.
+- Review/build time saved: prevents a false `dotnet build Hecton8.Core.csproj` proof while the generated project omits the new renderer/gizmo scripts.
+
+Verification:
+- JSON parses after the report patch.
+- Scoped scan returned no hot-path C# property tokens, LINQ, foreach, string formatting/interpolation, `Shader.SetGlobal*` static calls, `Canvas.ForceUpdateCanvases`, `GlobalSignals`, `FromRuntimePosition`, `TryGetLatestCreated`, persistent `NativeArray`, `.Run()`, or `.Complete()` in the SHINOBU_270 target files.
+- `Hecton8.Core.csproj` still includes `HectonVisorFluidDistortionFeature.cs` and still omits `HectonVisorARStencilRendererFeature.cs` / `HectonVisorStencilPreviewGizmo.cs`.
+- Build not launched: no compiler rows were visible in the latest process sample, but CPU was 87% by CIM and 91.87%, 67.06%, 79.33% by processor counter samples.
+
 ## 2026-05-22 - RenderGraph Suppression Fail-Open Watchdog
 
 What was wrong:

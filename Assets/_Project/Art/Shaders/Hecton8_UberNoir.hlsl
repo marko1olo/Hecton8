@@ -1031,6 +1031,16 @@ float3 H8UberNoirEvaluateDeformationNormalBiasOS(float3 positionOS, float3 norma
     return H8UberNoirFinite3(bias * featureMask * lerp(0.35, 1.0, quality), float3(0.0, 0.0, 0.0));
 }
 
+float H8UberNoirHullDentProxyWeight()
+{
+    return saturate(_HectonHullDentParams.y);
+}
+
+float H8UberNoirHullDentExactWeight()
+{
+    return saturate(1.0 - H8UberNoirHullDentProxyWeight());
+}
+
 float3 H8UberNoirApplyHullDentsOS(float3 positionOS, float3 normalOS)
 {
     float featureMask = H8UberNoirFeatureScalar(_UberNoirFeatureFlags.z);
@@ -1080,7 +1090,10 @@ float3 H8UberNoirApplyHullDentsOS(float3 positionOS, float3 normalOS)
         return H8UberNoirFinite3(dentedPosition, positionOS);
     }
 
+    float exactWeight = H8UberNoirHullDentExactWeight();
     float activeCount = clamp(_HectonHullDentParams.x, 0.0, (float)H8_UBER_NOIR_MAX_HULL_DENTS);
+    if (activeCount <= 0.5 || exactWeight <= H8_UBER_NOIR_EPS)
+        return H8UberNoirFinite3(dentedPosition, positionOS);
 
     [unroll(H8_UBER_NOIR_MAX_HULL_DENTS)]
     for (int dentIndex = 0; dentIndex < H8_UBER_NOIR_MAX_HULL_DENTS; dentIndex++)
@@ -1091,7 +1104,7 @@ float3 H8UberNoirApplyHullDentsOS(float3 positionOS, float3 normalOS)
         float depth = H8UberNoirUnpackDentDepth(dent.w);
         float3 delta = dentedPosition - dent.xyz;
         float falloff = saturate(1.0 - dot(delta, delta) * H8UberNoirSafeRcp(radius * radius));
-        dentedPosition -= safeNormalOS * (falloff * falloff * depth * strength * active);
+        dentedPosition -= safeNormalOS * (falloff * falloff * depth * strength * active * exactWeight);
     }
 
     return H8UberNoirFinite3(dentedPosition, positionOS);
@@ -1229,7 +1242,13 @@ float H8UberNoirEvaluateHullDentScarOS(float3 positionOS)
         return saturate(scar * featureMask);
     }
 
+    float proxyWeight = H8UberNoirHullDentProxyWeight();
+    float exactWeight = H8UberNoirHullDentExactWeight();
+    float proxyScar = saturate(_HectonHullDentParams.z * proxyWeight);
     float activeCount = clamp(_HectonHullDentParams.x, 0.0, (float)H8_UBER_NOIR_MAX_HULL_DENTS);
+    if (activeCount <= 0.5 || exactWeight <= H8_UBER_NOIR_EPS)
+        return saturate(proxyScar * featureMask);
+
     [unroll(H8_UBER_NOIR_MAX_HULL_DENTS)]
     for (int dentIndex = 0; dentIndex < H8_UBER_NOIR_MAX_HULL_DENTS; dentIndex++)
     {
@@ -1242,7 +1261,7 @@ float H8UberNoirEvaluateHullDentScarOS(float3 positionOS)
         scar = max(scar, falloff * falloff * depth * active);
     }
 
-    return saturate(scar * featureMask);
+    return saturate(max(scar * exactWeight, proxyScar) * featureMask);
 }
 
 half3 H8UberNoirApplyBentHullNormalBiasWS(half3 normalWS, half3 viewDirWS)

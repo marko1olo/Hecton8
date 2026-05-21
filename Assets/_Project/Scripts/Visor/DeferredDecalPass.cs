@@ -242,7 +242,7 @@ namespace Hecton8.Visor
                         context.cmd.SetGlobalTexture(ShaderConstants.BlitTextureId, data.Source);
                         context.cmd.SetGlobalTexture(ShaderConstants.CameraDepthTextureId, data.Depth);
                         if (data.DecalAtlas != null)
-                            data.Material.SetTexture(ShaderConstants.DecalAtlasName, data.DecalAtlas);
+                            context.cmd.SetGlobalTexture(ShaderConstants.DecalAtlasId, data.DecalAtlas);
                         context.cmd.SetGlobalBuffer(ShaderConstants.DecalBufferId, decalBuffer);
                         context.cmd.SetGlobalInt(ShaderConstants.DecalCountId, data.DecalCount);
                         context.cmd.SetGlobalVector(ShaderConstants.DecalAtlasParamsId, data.DecalAtlasParams);
@@ -374,7 +374,6 @@ namespace Hecton8.Visor
             internal static readonly int DecalBufferId = Shader.PropertyToID("_GlobalVisorWounds");
             internal static readonly int DecalCountId = Shader.PropertyToID("_GlobalVisorWoundCount");
             internal static readonly int DecalAtlasId = Shader.PropertyToID("_GlobalVisorWoundAtlas");
-            internal const string DecalAtlasName = "_GlobalVisorWoundAtlas";
             internal static readonly int DecalAtlasParamsId = Shader.PropertyToID("_GlobalVisorWoundParams");
             internal static readonly int DecalRefractionParamsId = Shader.PropertyToID("_GlobalVisorWoundRefractionParams");
             internal static readonly int DecalTintId = Shader.PropertyToID("_GlobalVisorWoundTint");

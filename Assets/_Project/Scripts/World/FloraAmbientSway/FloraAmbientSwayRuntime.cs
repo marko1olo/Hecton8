@@ -635,7 +635,7 @@ namespace Hecton8.World.FloraAmbientSway
             return field == null ? -1 : UnsafeUtility.GetFieldOffset(field);
         }
 
-        public static bool TryParseBiomeProfiles(ReadOnlySpan<byte> csvBytes, NativeArray<FloraBiomeSwayProfileDTO> profiles, out int count)
+        public static unsafe bool TryParseBiomeProfiles(ReadOnlySpan<byte> csvBytes, NativeArray<FloraBiomeSwayProfileDTO> profiles, out int count)
         {
             count = 0;
             if (!profiles.IsCreated || profiles.Length == 0)
@@ -643,6 +643,8 @@ namespace Hecton8.World.FloraAmbientSway
 
             int cursor = 0;
             bool any = false;
+            void* profilesPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(profiles);
+            int profileSize = UnsafeUtility.SizeOf<FloraBiomeSwayProfileDTO>();
             while (cursor < csvBytes.Length && count < profiles.Length)
             {
                 ReadOnlySpan<byte> line = ReadLine(csvBytes, ref cursor);
@@ -654,7 +656,10 @@ namespace Hecton8.World.FloraAmbientSway
 
                 if (TryParseProfileRow(line, out FloraBiomeSwayProfileDTO profile))
                 {
-                    profiles[count++] = profile;
+                    int targetIndex = count;
+                    void* profilePtr = (byte*)profilesPtr + (targetIndex * profileSize);
+                    UnsafeUtility.AsRef<FloraBiomeSwayProfileDTO>(profilePtr) = profile;
+                    count = targetIndex + 1;
                     any = true;
                 }
             }
@@ -870,8 +875,7 @@ namespace Hecton8.World.FloraAmbientSway
             if (bytesRead <= 0)
                 return false;
 
-            for (int i = 0; i < profiles.Length; i++)
-                profiles[i] = default;
+            ClearNativeArray(profiles);
 
             void* readPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(scratch);
             return TryParseBiomeProfiles(new ReadOnlySpan<byte>(readPtr, bytesRead), profiles, out _);
@@ -1163,8 +1167,16 @@ namespace Hecton8.World.FloraAmbientSway
             if (!TryResolve(vault, in handle, out NativeArray<T> buffer))
                 return;
 
-            for (int i = 0; i < buffer.Length; i++)
-                buffer[i] = default;
+            ClearNativeArray(buffer);
+        }
+
+        private static unsafe void ClearNativeArray<T>(NativeArray<T> buffer) where T : struct
+        {
+            if (!buffer.IsCreated || buffer.Length == 0)
+                return;
+
+            void* ptr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(buffer);
+            UnsafeUtility.MemClear(ptr, (long)UnsafeUtility.SizeOf<T>() * buffer.Length);
         }
 
         private static bool IsHeader(ReadOnlySpan<byte> line)

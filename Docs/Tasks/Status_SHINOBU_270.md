@@ -4,7 +4,7 @@ Agent: SHINOBU_270
 Domain: ECHELON 8 Presentation & UX / Visor AR (HUD)
 Prompt role: VISOR_AR_STENCIL_RENDERER
 Task count: 20
-Status: RENDERGRAPH FAIL-OPEN WATCHDOG PATCHED / TARGET UPLOAD MEMCPY PATCHED / VAULT LIFECYCLE PATCHED / STATIC SCAN CLEAN / GENERATED CSPROJ STALE / COMPILE BLOCKED BY CPU/PROJECT GATE
+Status: RENDERGRAPH FAIL-OPEN WATCHDOG PATCHED / TARGET UPLOAD MEMCPY PATCHED / VAULT LIFECYCLE PATCHED / STATIC SCAN CLEAN / GENERATED CSPROJ STALE EXPOSED IN REPORT / COMPILE BLOCKED BY CPU/PROJECT GATE
 
 ## Mandates Read
 
@@ -172,3 +172,10 @@ Status: RENDERGRAPH FAIL-OPEN WATCHDOG PATCHED / TARGET UPLOAD MEMCPY PATCHED / 
 - [x] Post-watchdog verification rerun | Justification: targeted visor/UI/shader forbidden scan returned no hits; `git diff --check` reported only Git LF-to-CRLF warnings; generated `Hecton8.Core.csproj` still includes SuitHUD/ARWaypoint/old fluid feature but not the new SHINOBU_270 renderer/gizmo scripts | Alternatives Rejected: stale generated-project build proof or manual `.csproj` edits | Estimated impact: proof only
 - [x] Build gate resampled after watchdog patch | Justification: active `csc.exe`, multiple `dotnet.exe`, and `VBCSCompiler.exe` were initially present at 100% CPU; later gate still had active `dotnet.exe`/`VBCSCompiler.exe` rows and a 51.50% processor counter sample, so `dotnet build` was not launched | Alternatives Rejected: launching a competing compiler under active compiler/CPU gate | Estimated impact: protects shared workstation and avoids false compile proof
 - [x] Generated-project static gate added | Justification: `HUDCanvasInquisition` now reports `generatedProjectIncludesRendererFeature`, `generatedProjectIncludesStencilPreviewGizmo`, and `generatedProjectStale`, so stale external project-file proof is visible in the shared rendering report | Alternatives Rejected: editing Unity-generated `.csproj` or claiming import coverage from manual Select-String evidence | Estimated impact: editor-only 0 runtime us; prevents false compile/report evidence
+
+## Iteration 22: Report Artifact Reverification
+
+- [x] XML prompt re-extracted with attributed tag | Justification: exact-tag parser was rejected because live `CURRENT_BATCH.md` uses `role`/`chat_name`; attribute-aware CLI extraction returned `PROMPT_BYTES=17478` and `TASK_COUNT=20` | Alternatives Rejected: relying on compressed chat memory or failed exact-tag extraction | Estimated impact: proof only
+- [x] Shared rendering report refreshed | Justification: `Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json` now contains a top-level `shinobu_270_visor_ar_stencil` object with `generatedProjectIncludesRendererFeature=false`, `generatedProjectIncludesStencilPreviewGizmo=false`, and `generatedProjectStale=true`, preserving neighboring agent report objects | Alternatives Rejected: waiting for a Unity menu run, overwriting the shared report root, or editing generated `.csproj` | Estimated impact: editor/report only 0 runtime us
+- [x] Static scans rerun | Justification: scoped scan returned no hot-path C# property tokens, LINQ, foreach, string formatting/interpolation, Shader.SetGlobal static calls, Canvas.ForceUpdateCanvases, GlobalSignals, FromRuntimePosition, TryGetLatestCreated, persistent NativeArray, `.Run()`, or `.Complete()` in SHINOBU_270 target files | Alternatives Rejected: treating broad token hits in cold GlobalRegistry registration and RenderGraph command-buffer binding as proof without method-scope review | Estimated impact: proof only
+- [x] Build gate resampled | Justification: no compiler process rows were returned, but CPU was 87% by CIM and 91.87%, 67.06%, 79.33% by processor counter samples; `dotnet build` was not launched | Alternatives Rejected: building under the AGENTS.md >50% CPU ban or using stale `Hecton8.Core.csproj` as source coverage | Estimated impact: protects shared workstation and avoids false compile proof

@@ -719,7 +719,7 @@ namespace Hecton8.Atmosphere
             SignalBus<WaterlineBreachSignal>.Configure(
                 expectedCapacity: 4,
                 maxFrameSignals: 8,
-                lowTierFrameSignals: 2,
+                lowTierFrameSignals: 8,
                 laneHash: OceanSurfaceAtmosphereConstants.WaterlineBreachLaneHash);
             SignalBus<WaterlineBreachSignal>.EnsureInitialized();
         }

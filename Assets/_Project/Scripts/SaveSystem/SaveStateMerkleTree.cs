@@ -367,63 +367,85 @@ namespace Hecton8.SaveSystem
                 math.max(1, blockHeaderCapacity),
                 ResolveRequiredSubBlockCount(safeDeltaBytes, DefaultSubBlockBytes));
 
-            buffers.CurrentTree = vault.GetBuffer<MerkleNodeDTO>(
+            bool hasCurrentTree = TryEnsureSaveMerkleVaultBuffer<MerkleNodeDTO>(
+                vault,
                 BufferID.SaveMerkleNodeFront,
                 TotalNodeCount,
-                SystemID.SavePersistence,
-                NativeArrayOptions.UninitializedMemory);
-            buffers.PreviousTree = vault.GetBuffer<MerkleNodeDTO>(
+                NativeArrayOptions.UninitializedMemory,
+                out buffers.CurrentTree);
+            bool hasPreviousTree = TryEnsureSaveMerkleVaultBuffer<MerkleNodeDTO>(
+                vault,
                 BufferID.SaveMerkleNodeBack,
                 TotalNodeCount,
-                SystemID.SavePersistence,
-                NativeArrayOptions.ClearMemory);
-            buffers.LeafDescriptors = vault.GetBuffer<StateLeafDescriptor>(
+                NativeArrayOptions.ClearMemory,
+                out buffers.PreviousTree);
+            bool hasLeafDescriptors = TryEnsureSaveMerkleVaultBuffer<StateLeafDescriptor>(
+                vault,
                 BufferID.SaveMerkleLeafDescriptors,
                 LeafCount,
-                SystemID.SavePersistence,
-                NativeArrayOptions.ClearMemory);
-            buffers.DeltaRecords = vault.GetBuffer<StateDeltaRecordDTO>(
+                NativeArrayOptions.ClearMemory,
+                out buffers.LeafDescriptors);
+            bool hasDeltaRecords = TryEnsureSaveMerkleVaultBuffer<StateDeltaRecordDTO>(
+                vault,
                 BufferID.SaveMerkleDeltaRecords,
                 LeafCount,
-                SystemID.SavePersistence,
-                NativeArrayOptions.UninitializedMemory);
-            buffers.DeltaBytes = vault.GetBuffer<byte>(
+                NativeArrayOptions.UninitializedMemory,
+                out buffers.DeltaRecords);
+            bool hasDeltaBytes = TryEnsureSaveMerkleVaultBuffer<byte>(
+                vault,
                 BufferID.SaveMerkleDeltaBytes,
                 safeDeltaBytes,
-                SystemID.SavePersistence,
-                NativeArrayOptions.UninitializedMemory);
-            buffers.PrunedDeltaBytes = vault.GetBuffer<byte>(
+                NativeArrayOptions.UninitializedMemory,
+                out buffers.DeltaBytes);
+            bool hasPrunedDeltaBytes = TryEnsureSaveMerkleVaultBuffer<byte>(
+                vault,
                 BufferID.SaveMerklePrunedDeltaBytes,
                 safeDeltaBytes,
-                SystemID.SavePersistence,
-                NativeArrayOptions.UninitializedMemory);
-            buffers.CompressedBytes = vault.GetBuffer<byte>(
+                NativeArrayOptions.UninitializedMemory,
+                out buffers.PrunedDeltaBytes);
+            bool hasCompressedBytes = TryEnsureSaveMerkleVaultBuffer<byte>(
+                vault,
                 BufferID.SaveMerkleCompressedBytes,
                 safeCompressedBytes,
-                SystemID.SavePersistence,
-                NativeArrayOptions.UninitializedMemory);
-            buffers.Lz4BlockHeaders = vault.GetBuffer<Lz4SubBlockHeader>(
+                NativeArrayOptions.UninitializedMemory,
+                out buffers.CompressedBytes);
+            bool hasLz4BlockHeaders = TryEnsureSaveMerkleVaultBuffer<Lz4SubBlockHeader>(
+                vault,
                 BufferID.SaveMerkleLz4BlockHeaders,
                 safeBlockHeaders,
-                SystemID.SavePersistence,
-                NativeArrayOptions.UninitializedMemory);
-            buffers.TelemetryRing = vault.GetBuffer<SaveMerkleTelemetryEntry>(
+                NativeArrayOptions.UninitializedMemory,
+                out buffers.Lz4BlockHeaders);
+            bool hasTelemetryRing = TryEnsureSaveMerkleVaultBuffer<SaveMerkleTelemetryEntry>(
+                vault,
                 BufferID.SaveMerkleTelemetryRing,
                 TelemetryRingFrames,
-                SystemID.SavePersistence,
-                NativeArrayOptions.ClearMemory);
-            buffers.Counters = vault.GetBuffer<int>(
+                NativeArrayOptions.ClearMemory,
+                out buffers.TelemetryRing);
+            bool hasCounters = TryEnsureSaveMerkleVaultBuffer<int>(
+                vault,
                 BufferID.SaveMerkleCounters,
                 CounterCapacity,
-                SystemID.SavePersistence,
-                NativeArrayOptions.ClearMemory);
-            buffers.Lz4HashTable = vault.GetBuffer<int>(
+                NativeArrayOptions.ClearMemory,
+                out buffers.Counters);
+            bool hasLz4HashTable = TryEnsureSaveMerkleVaultBuffer<int>(
+                vault,
                 BufferID.SaveMerkleLz4HashTable,
                 HashTableSlots,
-                SystemID.SavePersistence,
-                NativeArrayOptions.UninitializedMemory);
+                NativeArrayOptions.UninitializedMemory,
+                out buffers.Lz4HashTable);
 
-            return buffers.CurrentTree.IsCreated &&
+            return hasCurrentTree &&
+                   hasPreviousTree &&
+                   hasLeafDescriptors &&
+                   hasDeltaRecords &&
+                   hasDeltaBytes &&
+                   hasPrunedDeltaBytes &&
+                   hasCompressedBytes &&
+                   hasLz4BlockHeaders &&
+                   hasTelemetryRing &&
+                   hasCounters &&
+                   hasLz4HashTable &&
+                   buffers.CurrentTree.IsCreated &&
                    buffers.PreviousTree.IsCreated &&
                    buffers.LeafDescriptors.IsCreated &&
                    buffers.DeltaRecords.IsCreated &&
@@ -434,6 +456,36 @@ namespace Hecton8.SaveSystem
                    buffers.TelemetryRing.IsCreated &&
                    buffers.Counters.IsCreated &&
                    buffers.Lz4HashTable.IsCreated;
+        }
+
+        private static bool TryEnsureSaveMerkleVaultBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                vault.IsAllocationLocked ||
+                vault.IsCompactionFenceActive)
+            {
+                return false;
+            }
+
+            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.SavePersistence,
+                options);
+
+            return handle.BufferID == (uint)bufferId &&
+                handle.SystemID == (uint)SystemID.SavePersistence &&
+                handle.Generation != 0u &&
+                vault.TryResolveHandle(in handle, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= requiredLength;
         }
 
         internal static int ResolveWalBudgetBytesPerFrame(in SaveMerkleRuntimeConfig config, float deltaTimeSeconds, bool slowMicroSdIo)

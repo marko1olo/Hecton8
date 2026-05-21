@@ -741,3 +741,10 @@ Build gate: CPU average 29, but active `csc` (`Id=11936`) and active `dotnet` pr
   <scanner_root_false_field result="PASS">SHINOBU_261 root report block no longer contains `forbiddenRuntimePatternsFoundInOwnedPath`; other agents' root fields were left untouched.</scanner_root_false_field>
   <compile_gate result="NOT_RUN" reason="active csc/dotnet process gate" />
 </SELF_AUDIT_REVISION>
+
+<SELF_AUDIT_REVISION id="SHINOBU_261_COMPILE_GUARD_CAVEAT_2026_05_22">
+  <what_was_wrong>A future final audit could overclaim contracts-only assembly routing even though `Hecton8.Crest.Bridge.asmdef` still references `Hecton8.Core`.</what_was_wrong>
+  <what_was_done>Added `compileGuardCaveat` to the Unity scanner generator, the SHINOBU_261 sidecar report, and the shared physics optimization report. The caveat states that scoped runtime files avoid broad `using Hecton8.Core;`, but explicit cold Core seams and the shared asmdef reference remain.</what_was_done>
+  <cinematic_cheats_used>None. This is compile-wall proof hygiene.</cinematic_cheats_used>
+  <microseconds_saved>0 runtime us. It prevents integration time loss from a false compile-wall report.</microseconds_saved>
+</SELF_AUDIT_REVISION>

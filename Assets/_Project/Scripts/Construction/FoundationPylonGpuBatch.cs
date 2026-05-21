@@ -208,7 +208,7 @@ namespace Hecton8.Construction
             SignalBus<BaseStructuralWarningSignal>.Configure(
                 expectedCapacity: 8,
                 maxFrameSignals: 32,
-                lowTierFrameSignals: 4,
+                lowTierFrameSignals: 32,
                 laneHash: BaseStructuralWarningSignal.LaneHash);
         }
 

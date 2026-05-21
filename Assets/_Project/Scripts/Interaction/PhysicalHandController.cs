@@ -83,6 +83,8 @@ namespace Hecton8.Interaction
         private const float FingerCastRadius = 0.012f;
         private const float FingerCastLength = 0.09f;
         private const float FingerInterpolationSpeed = 18f;
+        private const int FingerPoseMinIntervalFrames = 1;
+        private const int FingerPoseMaxIntervalFrames = 6;
         private const float MaxSupportedGrabMass = 500f;
         private const float MinimumDeltaTime = 0.0001f;
         private const float MaximumSafeDeltaTime = 0.02f;
@@ -649,7 +651,9 @@ namespace Hecton8.Interaction
 
             if (IsGrabbing)
             {
-                ScheduleFingerPoseBatch();
+                if (ShouldScheduleFingerPoseBatch())
+                    ScheduleFingerPoseBatch();
+
                 FinalizeControllerPoseState(controllerPosition, controllerRotation);
             }
         }
@@ -735,8 +739,7 @@ namespace Hecton8.Interaction
             EnsureRuntimeProxy();
             CacheInteractionProbeColliderCold();
             CacheOpposingHandAttachmentCold();
-            if (HectonXRRuntimeState.IsXRActive)
-                AllocatePersistentBuffers();
+            AllocatePersistentBuffersCold();
             ResolveFingerSegments();
             if (enableSuitCollisionShell)
                 EnsureSuitCollisionShell();
@@ -747,8 +750,7 @@ namespace Hecton8.Interaction
         {
             CacheKinematicBridgeCold(true);
             CacheInteractionProbeColliderCold();
-            if (HectonXRRuntimeState.IsXRActive)
-                AllocatePersistentBuffers();
+            AllocatePersistentBuffersCold();
             if (enableSuitCollisionShell)
                 EnsureSuitCollisionShell();
         }
@@ -1526,7 +1528,22 @@ namespace Hecton8.Interaction
             return math.saturate(math.select(1f, weight, math.isfinite(weight)));
         }
 
-        private void AllocatePersistentBuffers()
+        private bool ShouldScheduleFingerPoseBatch()
+        {
+            int interval = ResolveFingerPoseIntervalFrames(ResolveGlobalQualityWeight01());
+            return interval <= FingerPoseMinIntervalFrames ||
+                   (_handFixedFrameIndex % (uint)interval) == 0u;
+        }
+
+        private static int ResolveFingerPoseIntervalFrames(float globalQualityWeight)
+        {
+            float q = math.saturate(math.select(1f, globalQualityWeight, math.isfinite(globalQualityWeight)));
+            float shaped = q * q * (3f - 2f * q);
+            float interval = math.lerp(FingerPoseMaxIntervalFrames, FingerPoseMinIntervalFrames, shaped);
+            return math.max(FingerPoseMinIntervalFrames, (int)math.round(interval));
+        }
+
+        private void AllocatePersistentBuffersCold()
         {
             DispatcherJobSwap.TryFinalizeCompleted(ref _fingerPoseDisposeHandle);
             if (!_fingerPoseDisposeHandle.IsCompleted)
@@ -1576,6 +1593,15 @@ namespace Hecton8.Interaction
                 LocalKnuckleOffset = DefaultLittleKnuckleOffset,
                 LocalFingerDirection = DefaultFingerDirection
             };
+        }
+
+        private bool HasFingerPoseBuffers()
+        {
+            return _fingerCommands.IsCreated &&
+                   _fingerHits.IsCreated &&
+                   _fingerPoses.IsCreated &&
+                   _fingerRayDefinitions.IsCreated &&
+                   _fingerRayRuntime.IsCreated;
         }
 
         private void DisposePersistentBuffers()
@@ -2089,15 +2115,8 @@ namespace Hecton8.Interaction
             if (fingerCollisionMask.value == 0)
                 return;
 
-            if (!_fingerCommands.IsCreated ||
-                !_fingerHits.IsCreated ||
-                !_fingerPoses.IsCreated ||
-                !_fingerRayDefinitions.IsCreated ||
-                !_fingerRayRuntime.IsCreated)
-            {
-                AllocatePersistentBuffers();
+            if (!HasFingerPoseBuffers())
                 return;
-            }
 
             QueryParameters queryParameters = new QueryParameters(
                 fingerCollisionMask.value,

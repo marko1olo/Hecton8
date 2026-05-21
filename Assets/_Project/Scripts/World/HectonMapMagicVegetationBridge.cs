@@ -2325,28 +2325,36 @@ namespace Hecton8.World
         }
 
         /// <summary>Active surface matrix cache in persistent native memory for direct GraphicsBuffer upload handoff.</summary>
-        public NativeArray<Matrix4x4> ActiveSurfaceMatricesNative => _surfaceAggregateFrontBuffers.Matrices;
+        public NativeArray<Matrix4x4>.ReadOnly ActiveSurfaceMatricesNative =>
+            _surfaceAggregateFrontBuffers.Matrices.IsCreated ? _surfaceAggregateFrontBuffers.Matrices.AsReadOnly() : default;
 
         /// <summary>Active surface metadata cache in persistent native memory for direct GraphicsBuffer upload handoff.</summary>
-        public NativeArray<HectonVegetationInstanceData> ActiveSurfaceMetadataNative => _surfaceAggregateFrontBuffers.Metadata;
+        public NativeArray<HectonVegetationInstanceData>.ReadOnly ActiveSurfaceMetadataNative =>
+            _surfaceAggregateFrontBuffers.Metadata.IsCreated ? _surfaceAggregateFrontBuffers.Metadata.AsReadOnly() : default;
 
         /// <summary>Active surface type cache in persistent native memory for direct GraphicsBuffer upload handoff.</summary>
-        public NativeArray<int> ActiveSurfaceTypesNative => _surfaceAggregateFrontBuffers.Types;
+        public NativeArray<int>.ReadOnly ActiveSurfaceTypesNative =>
+            _surfaceAggregateFrontBuffers.Types.IsCreated ? _surfaceAggregateFrontBuffers.Types.AsReadOnly() : default;
 
         /// <summary>Active surface semantic-type cache in persistent native memory for AI/ocean handoff.</summary>
-        public NativeArray<int> ActiveSurfaceSemanticTypesNative => _surfaceAggregateFrontBuffers.SemanticTypes;
+        public NativeArray<int>.ReadOnly ActiveSurfaceSemanticTypesNative =>
+            _surfaceAggregateFrontBuffers.SemanticTypes.IsCreated ? _surfaceAggregateFrontBuffers.SemanticTypes.AsReadOnly() : default;
 
         /// <summary>Active surface biome-layer cache in persistent native memory for AI/ocean handoff.</summary>
-        public NativeArray<byte> ActiveSurfaceBiomeLayersNative => _surfaceAggregateFrontBuffers.BiomeLayers;
+        public NativeArray<byte>.ReadOnly ActiveSurfaceBiomeLayersNative =>
+            _surfaceAggregateFrontBuffers.BiomeLayers.IsCreated ? _surfaceAggregateFrontBuffers.BiomeLayers.AsReadOnly() : default;
 
         /// <summary>Active surface flow-direction cache in persistent native memory for ocean/renderer handoff.</summary>
-        public NativeArray<Vector2> ActiveSurfaceFlowDirectionsNative => _surfaceAggregateFrontBuffers.FlowDirections;
+        public NativeArray<Vector2>.ReadOnly ActiveSurfaceFlowDirectionsNative =>
+            _surfaceAggregateFrontBuffers.FlowDirections.IsCreated ? _surfaceAggregateFrontBuffers.FlowDirections.AsReadOnly() : default;
 
         /// <summary>Active surface 3D flow-vector cache in persistent native memory for abyssal current consumers.</summary>
-        public NativeArray<Vector3> ActiveSurfaceFlowVectorsNative => _surfaceAggregateFrontBuffers.FlowVectors;
+        public NativeArray<Vector3>.ReadOnly ActiveSurfaceFlowVectorsNative =>
+            _surfaceAggregateFrontBuffers.FlowVectors.IsCreated ? _surfaceAggregateFrontBuffers.FlowVectors.AsReadOnly() : default;
 
         /// <summary>Active underwater matrix cache in persistent native memory for direct GraphicsBuffer upload handoff.</summary>
-        public NativeArray<Matrix4x4> ActiveUnderwaterMatricesNative => _underwaterAggregateFrontBuffers.Matrices;
+        public NativeArray<Matrix4x4>.ReadOnly ActiveUnderwaterMatricesNative =>
+            _underwaterAggregateFrontBuffers.Matrices.IsCreated ? _underwaterAggregateFrontBuffers.Matrices.AsReadOnly() : default;
 
         /// <summary>Accumulated floating-origin offset applied at render/query time instead of rewriting chunk-pool matrices.</summary>
         public Vector3 TotalUniverseOffset => _totalUniverseOffset;
@@ -2436,31 +2444,51 @@ namespace Hecton8.World
         }
 
         /// <summary>Active underwater metadata cache in persistent native memory for direct GraphicsBuffer upload handoff.</summary>
-        public NativeArray<HectonVegetationInstanceData> ActiveUnderwaterMetadataNative => _underwaterAggregateFrontBuffers.Metadata;
+        public NativeArray<HectonVegetationInstanceData>.ReadOnly ActiveUnderwaterMetadataNative =>
+            _underwaterAggregateFrontBuffers.Metadata.IsCreated ? _underwaterAggregateFrontBuffers.Metadata.AsReadOnly() : default;
 
         /// <summary>Active underwater type cache in persistent native memory for direct GraphicsBuffer upload handoff.</summary>
-        public NativeArray<int> ActiveUnderwaterTypesNative => _underwaterAggregateFrontBuffers.Types;
+        public NativeArray<int>.ReadOnly ActiveUnderwaterTypesNative =>
+            _underwaterAggregateFrontBuffers.Types.IsCreated ? _underwaterAggregateFrontBuffers.Types.AsReadOnly() : default;
 
         /// <summary>Active underwater semantic-type cache in persistent native memory for AI/ocean handoff.</summary>
-        public NativeArray<int> ActiveUnderwaterSemanticTypesNative => _underwaterAggregateFrontBuffers.SemanticTypes;
+        public NativeArray<int>.ReadOnly ActiveUnderwaterSemanticTypesNative =>
+            _underwaterAggregateFrontBuffers.SemanticTypes.IsCreated ? _underwaterAggregateFrontBuffers.SemanticTypes.AsReadOnly() : default;
 
         /// <summary>Active underwater biome-layer cache in persistent native memory for AI/ocean handoff.</summary>
-        public NativeArray<byte> ActiveUnderwaterBiomeLayersNative => _underwaterAggregateFrontBuffers.BiomeLayers;
+        public NativeArray<byte>.ReadOnly ActiveUnderwaterBiomeLayersNative =>
+            _underwaterAggregateFrontBuffers.BiomeLayers.IsCreated ? _underwaterAggregateFrontBuffers.BiomeLayers.AsReadOnly() : default;
 
         /// <summary>Active underwater flow-direction cache in persistent native memory for ocean/renderer handoff.</summary>
-        public NativeArray<Vector2> ActiveUnderwaterFlowDirectionsNative => _underwaterAggregateFrontBuffers.FlowDirections;
+        public NativeArray<Vector2>.ReadOnly ActiveUnderwaterFlowDirectionsNative =>
+            _underwaterAggregateFrontBuffers.FlowDirections.IsCreated ? _underwaterAggregateFrontBuffers.FlowDirections.AsReadOnly() : default;
 
         /// <summary>Active underwater 3D flow-vector cache in persistent native memory for abyssal current consumers.</summary>
-        public NativeArray<Vector3> ActiveUnderwaterFlowVectorsNative => _underwaterAggregateFrontBuffers.FlowVectors;
+        public NativeArray<Vector3>.ReadOnly ActiveUnderwaterFlowVectorsNative =>
+            _underwaterAggregateFrontBuffers.FlowVectors.IsCreated ? _underwaterAggregateFrontBuffers.FlowVectors.AsReadOnly() : default;
 
         /// <summary>Active resident abyssal anchor positions for sonar/acoustic consumers.</summary>
         public Vector3[] ActiveAbyssalAnchors => _abyssalAnchorPositions;
 
         /// <summary>Active resident abyssal anchor positions in persistent native memory for direct readback.</summary>
-        public NativeArray<Vector3> ActiveAbyssalAnchorsNative => GetAbyssalAnchorNativeView();
+        public NativeArray<Vector3>.ReadOnly ActiveAbyssalAnchorsNative
+        {
+            get
+            {
+                NativeArray<Vector3> anchors = GetAbyssalAnchorNativeView();
+                return anchors.IsCreated ? anchors.AsReadOnly() : default;
+            }
+        }
 
         /// <summary>Active resident abyssal anchor positions as AUP in persistent native memory for acoustic consumers.</summary>
-        public NativeArray<AbsoluteUniversePosition> ActiveAbyssalAnchorAupsNative => GetAbyssalAnchorAupNativeView();
+        public NativeArray<AbsoluteUniversePosition>.ReadOnly ActiveAbyssalAnchorAupsNative
+        {
+            get
+            {
+                NativeArray<AbsoluteUniversePosition> anchors = GetAbyssalAnchorAupNativeView();
+                return anchors.IsCreated ? anchors.AsReadOnly() : default;
+            }
+        }
 
         /// <summary>Number of active surface instances.</summary>
         public int ActiveSurfaceInstanceCount => _surfaceFrontCount;
@@ -2481,19 +2509,47 @@ namespace Hecton8.World
         public Vector3[] ActiveAbyssalNavNodes => _abyssalNavNodeSnapshot;
 
         /// <summary>Immutable native snapshot of the current abyssal safe-navigation nodes.</summary>
-        public NativeArray<Vector3> ActiveAbyssalNavNodesNative => GetAbyssalNavNodeSnapshotNativeView();
+        public NativeArray<Vector3>.ReadOnly ActiveAbyssalNavNodesNative
+        {
+            get
+            {
+                NativeArray<Vector3> nodes = GetAbyssalNavNodeSnapshotNativeView();
+                return nodes.IsCreated ? nodes.AsReadOnly() : default;
+            }
+        }
 
         /// <summary>Number of active abyssal safe-navigation nodes currently exported by the bridge.</summary>
         public int ActiveAbyssalNavNodeCount => ResolveAbyssalNavNodeViewCount();
 
         /// <summary>Current ecosystem threat grid. Treat as read-only and reacquire after each SlowTick.</summary>
-        public NativeArray<float> EcosystemThreatGrid => GetThreatGridFloatView();
+        public NativeArray<float>.ReadOnly EcosystemThreatGrid
+        {
+            get
+            {
+                NativeArray<float> grid = GetThreatGridFloatView();
+                return grid.IsCreated ? grid.AsReadOnly() : default;
+            }
+        }
 
         /// <summary>Compressed ecosystem threat grid used by AI/flow-field consumers that do not need float precision.</summary>
-        public NativeArray<byte> EcosystemThreatGridCompressed => GetThreatGridByteView(_nativeMemory.EcosystemThreatGridCompressedCurrentNative);
+        public NativeArray<byte>.ReadOnly EcosystemThreatGridCompressed
+        {
+            get
+            {
+                NativeArray<byte> grid = GetThreatGridByteView(_nativeMemory.EcosystemThreatGridCompressedCurrentNative);
+                return grid.IsCreated ? grid.AsReadOnly() : default;
+            }
+        }
 
         /// <summary>Permanent threat-echo flags aligned to the compressed ecosystem threat grid. 1 means the cell never decays below the echo floor.</summary>
-        public NativeArray<byte> EcosystemThreatEchoFlags => GetThreatGridByteView(_nativeMemory.EcosystemThreatEchoCurrentNative);
+        public NativeArray<byte>.ReadOnly EcosystemThreatEchoFlags
+        {
+            get
+            {
+                NativeArray<byte> echoFlags = GetThreatGridByteView(_nativeMemory.EcosystemThreatEchoCurrentNative);
+                return echoFlags.IsCreated ? echoFlags.AsReadOnly() : default;
+            }
+        }
 
         /// <summary>Current ecosystem threat grid resolution in cells along one axis.</summary>
         public int EcosystemThreatGridResolution => _ecosystemThreatGridResolution;
@@ -2502,28 +2558,52 @@ namespace Hecton8.World
         public Vector3 EcosystemThreatGridCenter => _ecosystemThreatGridCenter;
 
         /// <summary>Current abyssal flow-field. Treat as read-only and reacquire after each SlowTick.</summary>
-        public NativeArray<float2> EcosystemFlowField => GetFlowFieldView();
+        public NativeArray<float2>.ReadOnly EcosystemFlowField
+        {
+            get
+            {
+                NativeArray<float2> field = GetFlowFieldView();
+                return field.IsCreated ? field.AsReadOnly() : default;
+            }
+        }
 
         /// <summary>Current abyssal flow-field center in world space.</summary>
         public Vector3 EcosystemFlowFieldCenter => _ecosystemFlowFieldCenter;
 
         /// <summary>Current abyssal thermal grid. Treat as read-only and reacquire after each SlowTick.</summary>
-        public NativeArray<float> AbyssalThermalGrid => GetAbyssalThermalGridView();
+        public NativeArray<float>.ReadOnly AbyssalThermalGrid
+        {
+            get
+            {
+                NativeArray<float> grid = GetAbyssalThermalGridView();
+                return grid.IsCreated ? grid.AsReadOnly() : default;
+            }
+        }
 
         /// <summary>Current 3D abyssal flow volume. Treat as read-only and reacquire after each SlowTick.</summary>
-        public NativeArray<float3> AbyssalFlowVolume => GetAbyssalFlowVolumeView();
+        public NativeArray<float3>.ReadOnly AbyssalFlowVolume
+        {
+            get
+            {
+                NativeArray<float3> volume = GetAbyssalFlowVolumeView();
+                return volume.IsCreated ? volume.AsReadOnly() : default;
+            }
+        }
 
         /// <summary>Current abyssal thermal-grid center in world space.</summary>
         public Vector3 AbyssalThermalGridCenter => _abyssalThermalGridCenter;
 
         /// <summary>Current mega-wreck section streaming payload. Treat as read-only and reacquire after each rebuild.</summary>
-        public NativeArray<MegaWreckStreamSection> MegaWreckStreamSections => _nativeMemory.MegaWreckStreamSnapshotNative;
+        public NativeArray<MegaWreckStreamSection>.ReadOnly MegaWreckStreamSections =>
+            _nativeMemory.MegaWreckStreamSnapshotNative.IsCreated ? _nativeMemory.MegaWreckStreamSnapshotNative.AsReadOnly() : default;
 
         /// <summary>Current immutable HLOD registry payload for large distant structures.</summary>
-        public NativeArray<HLODData> HLODRegistry => _nativeMemory.HlodRegistrySnapshotNative;
+        public NativeArray<HLODData>.ReadOnly HLODRegistry =>
+            _nativeMemory.HlodRegistrySnapshotNative.IsCreated ? _nativeMemory.HlodRegistrySnapshotNative.AsReadOnly() : default;
 
         /// <summary>Current immutable visible HLOD payload after frustum and distance culling.</summary>
-        public NativeArray<HLODData> VisibleHLODRegistry => _nativeMemory.VisibleHlodSnapshotNative;
+        public NativeArray<HLODData>.ReadOnly VisibleHLODRegistry =>
+            _nativeMemory.VisibleHlodSnapshotNative.IsCreated ? _nativeMemory.VisibleHlodSnapshotNative.AsReadOnly() : default;
 
         /// <summary>Current ecosystem threat hotspot level from the last completed propagation step.</summary>
         public float CurrentThreatHotspotLevel => _currentThreatHotspotLevel;
@@ -2532,7 +2612,14 @@ namespace Hecton8.World
         public Vector3 CurrentThreatHotspotPosition => _currentThreatHotspotPosition;
 
         /// <summary>Latest native abyssal path result. Treat as read-only and reacquire after each completed path solve.</summary>
-        public NativeArray<Vector3> ActiveAbyssalPathNative => GetAbyssalPathNativeView();
+        public NativeArray<Vector3>.ReadOnly ActiveAbyssalPathNative
+        {
+            get
+            {
+                NativeArray<Vector3> path = GetAbyssalPathNativeView();
+                return path.IsCreated ? path.AsReadOnly() : default;
+            }
+        }
 
         /// <summary>Number of valid waypoints in the latest completed abyssal path result.</summary>
         public int ActiveAbyssalPathCount => ResolveAbyssalPathViewCount();

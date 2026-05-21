@@ -3185,3 +3185,39 @@ Verification:
     Targeted `rg` found `lowTierFrameSignals: FloodMuffleSignalCapacity` for `HabitatFloodAcousticMuffleSignal`; `git diff --check` passed with line-ending warning only. Build remains blocked by the external `DiegeticGlitchSurgeonRuntime.cs` compile wall and active `VBCSCompiler`.
   </VERIFICATION>
 </SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="HullDentShaderQualityProxyContinuum">
+  <WHAT_WAS_WRONG>
+    Hull dent presentation still used a binary low-tier shader bypass concept. `_HectonHullDentParams.y` acted as a hard bypass bit, so exact dent deformation disappeared abruptly and weak devices received a separate scar branch instead of a continuous quality curve.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    The inspected hull dent route now treats `_HectonHullDentParams.y` as a continuous scar-proxy weight derived from `GlobalQualityWeight`, with exact displacement weighted by `1 - proxy`. CoreLit and UberNoir legacy dent loops early-exit only when exact weight collapses to zero; DryZone blends the detail-mask scar proxy by the same scalar. `HullDeformedSignal` remains 64 bytes and no SignalBus ABI changed.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    The Dear Lie is a scalar scar proxy: at minimum quality, the shader can avoid per-dent distance/falloff displacement and use one material-mask scar cue. Middle quality blends proxy and exact deformation; high/ultra restores exact dent displacement and richer scratch/rust response.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No runtime speed claim. Theoretical legacy hull-dent vertex path collapses from O(dents) distance/falloff work per vertex to O(1) scar proxy at minimum quality in the touched shader paths; GPU capture is required for actual timing.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted `rg` found no `IScalabilityChangedEventListener`, `ScalabilityEvents`, `OnScalabilityChanged`, `_lowTier`, `ScalabilityTier`, or hull-dent low-tier bypass route in `HullDentShaderController.cs`; shader scan only found unrelated habitat crease naming. `git diff --check` passed with line-ending warnings only.
+  </VERIFICATION>
+</SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="WaterlineConstructionLaneCapacityUnification">
+  <WHAT_WAS_WRONG>
+    `WaterlineBreachSignal`, `ConstructionPreviewSignal`, `BaseStructuralWarningSignal`, and `FloraExclusionSignal` used reduced low-tier SignalBus capacities in bounded routes, making hardware profile a possible event-loss mechanism for feedback and construction facts.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Set minimum-quality capacities to match max capacities: waterline breach 8/8, construction preview 8/8 in both configuring owners, flora exclusion 8/8, and structural warning 32/32. Lane hashes, DTO layouts, producers, consumers, and ownership routes are unchanged.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    None for event admission. These lanes carry facts or player-facing hazard/preview feedback, so quality may scale downstream rendering/audio cadence but must not drop the route itself.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. This is correctness: the existing declared lane capacity is preserved on every profile.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted scan found `lowTierFrameSignals: 8` for `WaterlineBreachSignal`, `ConstructionPreviewSignal`, and `FloraExclusionSignal`, plus `lowTierFrameSignals: 32` for `BaseStructuralWarningSignal`. `git diff --check` passed with line-ending warnings only. Build was not launched because CPU probe returned 100% with active `dotnet` and `VBCSCompiler` processes.
+  </VERIFICATION>
+</SELF_AUDIT>

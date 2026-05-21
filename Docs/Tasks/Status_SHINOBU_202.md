@@ -4208,3 +4208,20 @@ Mandates read before coding:
 - Descriptor route scan confirmed `TryReadRigidbodyAupBuffer`, `TryGetGenerationHandle`, `VaultGenerationHandle<double3>`, and `TryReadHandle`.
 - `git diff --check` passed for `HeadlessStressFractureBot.cs`; CRLF warning only.
 - Build not relaunched after this QA patch: CPU sampled at 1 percent, but `VBCSCompiler.exe` was active, so the compiler-process gate blocked a new `dotnet build`.
+
+## Loop 236 - Vault Sovereignty Maintenance Descriptor Route
+- [x] Replaced CoreDataVault-owned maintenance `GetBuffer` / `TryGetBuffer` routes in `VaultSovereigntyMaintenance`.
+  DOD practice: `PrewarmBuffers` and `RunPreSimulationFrost` now open active-count, address-shift rows, CSV scratch, sector-local AUP, hot entity, and AUP rows through generation descriptors with exact BufferID, `SystemID.CoreDataVault`, nonzero generation, required length, compaction-fence rejection, and `TryResolveHandle` or pure `TryReadHandle`.
+  Rejected: keeping owner maintenance on direct `GetBuffer` because `GetBuffer` marks external views and can block the relocation proof that this system is supposed to maintain. Rewriting the FrostTick job topology, DTO layouts, BufferIDs, or dispatcher completion policy was rejected as outside this descriptor-route pass.
+  Estimate: one O(1) descriptor proof at prewarm/frost boundaries; no per-entity inner-loop validation added.
+- [x] Preserved mutable/read access separation.
+  DOD practice: mutable job inputs (`VaultHotEntityData`, `VaultAup64`, `VaultAupSectorLocal32`, active count, shift counters) use descriptor resolve, while `VaultMemoryLayoutConfig` and final active-count readback use pure descriptor read.
+  Rejected: using read descriptors for compaction jobs because the jobs swap-pop and normalize AUP/state rows.
+  Estimate: 0 DTO/ABI change; runtime cost stays boundary-only.
+
+## Compile State Update 230
+- Focused direct/legacy route scan on `VaultMemoryContracts.cs` found no `vault.TryGetBuffer`, `vault.GetBuffer<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `VaultBufferHandle<T>`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, or `.ptr` hits.
+- Descriptor route scan confirmed `TryEnsureCoreVaultBuffer`, `TryResolveCoreVaultBuffer`, `TryReadCoreVaultBuffer`, `IsCoreVaultHandle`, `VaultGenerationHandle<T>`, `GetGenerationHandle`, `TryGetGenerationHandle`, `TryResolveHandle`, and `TryReadHandle`.
+- Brace/preprocessor counts are balanced: `VaultMemoryContracts.cs` braces `86/86`, preprocessor `#if/#endif` `0/0`.
+- `git diff --check` passed for `VaultMemoryContracts.cs`; CRLF warning only.
+- Build not relaunched: CPU sampled at 100 percent. The explicit CPU gate forbids `dotnet build` while the machine is saturated.

@@ -585,6 +585,29 @@ namespace Hecton8.Editor.FloraAmbientSway
                 !runtime.Contains(oldShaderParamsResolver) &&
                 !runtime.Contains(oldFrameResolver) &&
                 !runtime.Contains(oldVisualFrameResolver);
+            string preSimulationSlice = ExtractSlice(runtime, "public void PreSimulationTick", "public JobHandle ScheduleSimulation");
+            string visualSyncSlice = ExtractSlice(runtime, "public void VisualSyncTick", "public void ApplyEditorTuning");
+            string forbiddenRunCall = ".Ru" + "n(";
+            string forbiddenCompleteCall = ".Comple" + "te(";
+            bool ownerPhasePurity =
+                preSimulationSlice.Length > 0 &&
+                visualSyncSlice.Length > 0 &&
+                preSimulationSlice.Contains("RunMockAmbientFlowKernel(mockFlowJob)") &&
+                preSimulationSlice.Contains("RunCalculateFloraSwayParametersKernel(parametersJob)") &&
+                visualSyncSlice.Contains("LockBufferForWrite<FloraSwayParamsDTO>") &&
+                visualSyncSlice.Contains("SetGlobalConstantBuffer") &&
+                !preSimulationSlice.Contains("new ") &&
+                !preSimulationSlice.Contains("GlobalRegistry.") &&
+                !preSimulationSlice.Contains("File.") &&
+                !preSimulationSlice.Contains(forbiddenRunCall) &&
+                !preSimulationSlice.Contains(forbiddenCompleteCall) &&
+                !preSimulationSlice.Contains("FindObject") &&
+                !visualSyncSlice.Contains("new ") &&
+                !visualSyncSlice.Contains("GlobalRegistry.") &&
+                !visualSyncSlice.Contains("File.") &&
+                !visualSyncSlice.Contains(forbiddenRunCall) &&
+                !visualSyncSlice.Contains(forbiddenCompleteCall) &&
+                !visualSyncSlice.Contains("FindObject");
             bool runtimeQualityFailClosed =
                 runtime.Contains("private static float ResolveGlobalQualityWeight()") &&
                 runtime.Contains("return math.saturate(weight);") &&
@@ -595,6 +618,17 @@ namespace Hecton8.Editor.FloraAmbientSway
                 runtime.Contains("UnsafeUtility.AsRef<FloraSwayParamsDTO>(paramsPtr) = next") &&
                 !runtime.Contains("FlowState" + "[0] =") &&
                 !runtime.Contains("Params" + "[0] =");
+            string forbiddenProfileAppendWrite = "profiles" + "[count++] =";
+            string forbiddenProfileClearWrite = "profiles" + "[i] =";
+            string forbiddenGenericClearWrite = "buffer" + "[i] =";
+            bool coldVaultMutation =
+                runtime.Contains("public static unsafe bool TryParseBiomeProfiles") &&
+                runtime.Contains("UnsafeUtility.AsRef<FloraBiomeSwayProfileDTO>(profilePtr) = profile") &&
+                runtime.Contains("ClearNativeArray(profiles)") &&
+                runtime.Contains("UnsafeUtility.MemClear(ptr, (long)UnsafeUtility.SizeOf<T>() * buffer.Length)") &&
+                !runtime.Contains(forbiddenProfileAppendWrite) &&
+                !runtime.Contains(forbiddenProfileClearWrite) &&
+                !runtime.Contains(forbiddenGenericClearWrite);
             string forbiddenMathSqrt = "math." + "sqrt";
             string forbiddenTuningIndexerWrite = "tuning" + "[0] =";
             string forbiddenRingIndexerWrite = "ring" + "[cursor] =";
@@ -651,7 +685,7 @@ namespace Hecton8.Editor.FloraAmbientSway
                 HasProjectFile("Assets/_Project/Scripts/Editor/FloraAmbientSway.meta") &&
                 HasProjectFile("Assets/_Project/Scripts/Editor/FloraAmbientSway/FloraAmbientSwayEditorTools.cs.meta") &&
                 HasProjectFile("Assets/_Project/Scripts/Editor/FloraAmbientSway/Hecton8.World.FloraAmbientSway.Editor.asmdef.meta");
-            bool pass = layout && layoutOffsetApi && layoutProofOutput && dispatcher && fmod && upload && shaderQuality && telemetry && vertexColorDebug && littleEndianDump && readAccessorPurity && runtimeQualityFailClosed && unsafeDtoMutation && hotOwnerMutationAndMath && hotValueNewHygiene && burstFloatMode && burstFunctionPointers && aotFunctionPointerAbi && asmdefBoundary && metaIdentity;
+            bool pass = layout && layoutOffsetApi && layoutProofOutput && dispatcher && fmod && upload && shaderQuality && telemetry && vertexColorDebug && littleEndianDump && readAccessorPurity && ownerPhasePurity && runtimeQualityFailClosed && unsafeDtoMutation && coldVaultMutation && hotOwnerMutationAndMath && hotValueNewHygiene && burstFloatMode && burstFunctionPointers && aotFunctionPointerAbi && asmdefBoundary && metaIdentity;
             if (!pass)
             {
                 Debug.LogError(
@@ -671,8 +705,10 @@ namespace Hecton8.Editor.FloraAmbientSway
                     " vertexColorDebug=" + vertexColorDebug +
                     " littleEndianDump=" + littleEndianDump +
                     " readAccessorPurity=" + readAccessorPurity +
+                    " ownerPhasePurity=" + ownerPhasePurity +
                     " runtimeQualityFailClosed=" + runtimeQualityFailClosed +
                     " unsafeDtoMutation=" + unsafeDtoMutation +
+                    " coldVaultMutation=" + coldVaultMutation +
                     " hotOwnerMutationAndMath=" + hotOwnerMutationAndMath +
                     " hotValueNewHygiene=" + hotValueNewHygiene +
                     " burstFloatMode=" + burstFloatMode +
@@ -710,6 +746,16 @@ namespace Hecton8.Editor.FloraAmbientSway
             }
 
             return count;
+        }
+
+        private static string ExtractSlice(string value, string startToken, string endToken)
+        {
+            int start = value.IndexOf(startToken, StringComparison.Ordinal);
+            if (start < 0)
+                return string.Empty;
+
+            int end = value.IndexOf(endToken, start + startToken.Length, StringComparison.Ordinal);
+            return end < 0 ? value.Substring(start) : value.Substring(start, end - start);
         }
 
         private static bool HasProjectFile(string path)

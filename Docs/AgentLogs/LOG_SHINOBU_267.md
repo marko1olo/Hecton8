@@ -1244,3 +1244,57 @@ Exact Microseconds saved:
   <PARKED_WORK_REJECTED>Hot-path string work, exact-token self-reference, and build launch under active CPU/dotnet/csc pressure.</PARKED_WORK_REJECTED>
   <STATIC_VERIFICATION>`layoutProofOutput` participates in the self-audit pass/fail log; generated tokens find the actual menu and self-audit output lines; owned forbidden scan is clean; runtime/editor/shader brace and preprocessor balances are zero.</STATIC_VERIFICATION>
 </SELF_AUDIT_DELTA>
+
+## 2026-05-22 - Polish Pass 54
+
+What was wrong:
+- Cold CSV profile hydration and Vault clearing still used NativeArray indexer setters for Vault-backed DTO memory.
+
+What was done:
+- `TryParseBiomeProfiles` now writes parsed biome profile DTOs through pointer-offset `UnsafeUtility.AsRef<FloraBiomeSwayProfileDTO>`.
+- Generic Vault clearing now routes through `ClearNativeArray<T>` and `UnsafeUtility.MemClear`.
+- `coldVaultMutation` was added to the editor self-audit.
+
+Cinematic Cheats used:
+- No physical flora simulation was added. Biome profiles still feed the shader-side Dear Lie.
+
+Exact Microseconds saved:
+- 0 hot us. Cold path may reduce import/boot stores by using one MemClear instead of per-element setters.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_267" revision="2026-05-22-P54_COLD_VAULT_MUTATION_CLOSURE">
+  <TASK id="03" status="PASS">Cold profile DTO mutation now uses `UnsafeUtility.AsRef` instead of NativeArray indexer setters.</TASK>
+  <TASK id="17" status="PASS">CSV parser remains `ReadOnlySpan<byte>` based and writes directly into unmanaged Vault DTO rows.</TASK>
+  <TASK id="20" status="PASS">`coldVaultMutation` joins the self-audit pass condition and rejects profile/generic clear indexer-write regressions.</TASK>
+  <HARDWARE_IMPACT>0 hot runtime us. Cold boot/editor CSV load replaces per-row/default setter loops with pointer writes and MemClear.</HARDWARE_IMPACT>
+  <FIRST_20_MINUTES_MOMENT>World load and swim readability on the selected Copper Wire route biome.</FIRST_20_MINUTES_MOMENT>
+  <ROUTE_IMPACT>Biome tuning rows are now hydrated and cleared through the same direct-memory lane as runtime CBuffer and telemetry DTO writes.</ROUTE_IMPACT>
+  <PROOF_REQUIRED>Static source/self-audit now; Unity Editor CSV import/menu invocation remains pending.</PROOF_REQUIRED>
+  <PARKED_WORK_REJECTED>Build launch while CPU is at 100%, unrelated Vault cleanup in sibling domains, and runtime StreamingAssets text IO.</PARKED_WORK_REJECTED>
+  <STATIC_VERIFICATION>No owned `profiles[count++] =`, `profiles[i] =`, `buffer[i] =`, hot indexer write, forbidden vector upload, random, `foreach`, `Pack=1`, `Marshal.OffsetOf`, `BinaryWriter`, `.Run()`, `.Complete()`, or hardcoded size proof strings remain; `coldVaultMutation` participates in self-audit pass/fail; runtime/editor/shader brace and preprocessor balances are zero; `git diff --check` found no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 100%, dotnet=0, csc=0.</STATIC_VERIFICATION>
+</SELF_AUDIT_DELTA>
+
+## 2026-05-22 - Polish Pass 55
+
+What was wrong:
+- The self-audit did not prove forbidden tokens were absent from the exact hot owner phase method bodies.
+
+What was done:
+- Added `ownerPhasePurity` to slice `PreSimulationTick` and `VisualSyncTick`.
+- The audit now requires Burst function-pointer kernels and constant-buffer upload while rejecting hot `new`, `GlobalRegistry`, `File`, `.Run`, `.Complete`, and scene-search calls in those slices.
+
+Cinematic Cheats used:
+- No simulation work changed. The phase still feeds one shader-side optical sway fake.
+
+Exact Microseconds saved:
+- 0 player us in this pass. The protected model remains no per-flora CPU work and no hot blocking job path.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_267" revision="2026-05-22-P55_OWNER_PHASE_PURITY_GATE">
+  <TASK id="06" status="PASS">`PreSimulationTick` is now self-audited for FunctionPointer kernels and absence of hot blocking/allocation/search/file/registry tokens.</TASK>
+  <TASK id="10" status="PASS">`VisualSyncTick` is now self-audited for constant-buffer upload and absence of hot blocking/allocation/search/file/registry tokens.</TASK>
+  <TASK id="20" status="PASS">`ownerPhasePurity` joins the self-audit pass condition and failure log.</TASK>
+  <FIRST_20_MINUTES_MOMENT>World load and swim readability on the selected Copper Wire route biome.</FIRST_20_MINUTES_MOMENT>
+  <ROUTE_IMPACT>Future edits cannot add hot managed allocation, hot file IO, hot registry lookup, or hidden job blocking to the two owner phases without tripping self-audit.</ROUTE_IMPACT>
+  <PROOF_REQUIRED>Static source/self-audit now; Unity Editor self-audit invocation remains pending.</PROOF_REQUIRED>
+  <PARKED_WORK_REJECTED>Build launch at 100% CPU, runtime profiling instrumentation, and unrelated hot-phase audits in sibling domains.</PARKED_WORK_REJECTED>
+  <STATIC_VERIFICATION>Extracted hot method slices report `preForbidden=0`, `visForbidden=0`, kernels present, upload present; owned broad forbidden scan is clean after split `.Run`/`.Complete` audit tokens; `git diff --check` found no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 100%, dotnet=1, csc=0.</STATIC_VERIFICATION>
+</SELF_AUDIT_DELTA>

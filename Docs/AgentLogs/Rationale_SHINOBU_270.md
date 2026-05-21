@@ -436,3 +436,11 @@ Solution: Extended `HUDCanvasInquisition` to read generated `Hecton8.Core.csproj
 Rejected Alternatives: Editing the Unity-generated `.csproj`, broad global compliance mutation during a domain task, or treating a build against stale project files as proof.
 Scalability potential: Runtime Low/Middle/High/Ultra behavior unchanged; the gate protects verification integrity only.
 Hardware Impact: Runtime 0 us. Editor report cost is cold file read and string search only when the inquisition menu is run.
+
+### D054 Shared Report Artifact Refresh
+
+Problem: The source for `HUDCanvasInquisition` emitted generated-project staleness fields, but the existing `Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json` artifact had not been regenerated and therefore did not expose the stale-project proof the CTO actually reads.
+Solution: Added a preserved top-level `shinobu_270_visor_ar_stencil` object to the shared report with `generatedProjectIncludesRendererFeature=false`, `generatedProjectIncludesStencilPreviewGizmo=false`, and `generatedProjectStale=true`. The patch also corrected the older shader warmup wording from renderer `Create()` warmup to the bootstrap `BootstrapController.shaderVariantCollections` prewarm route.
+Rejected Alternatives: Running Unity editor menu work without an editor session, overwriting the shared report root, editing generated `.csproj`, or claiming stale `dotnet build` coverage.
+Scalability potential: Runtime Low/Middle/High/Ultra route unchanged. This is evidence hygiene: the continuous `GlobalQualityWeight` shader path and fail-open Canvas suppression proof remain the same.
+Hardware Impact: Runtime 0 us. Prevents false build/report evidence from consuming review time or masking missing Unity project-file import.

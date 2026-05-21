@@ -607,3 +607,9 @@ Solution: Focused scan confirmed `OffsetOfQueueCounters`, `QueueCountersSize`, `
 Rejected Alternatives: Claiming the broad forbidden scan proved the new ABI was rejected.
 Scalability potential: Runtime unchanged.
 Hardware Impact: 0 runtime us.
+
+Problem: The final audit template asks for a contracts-only compile guard, but the shared Crest bridge assembly still contains a `Hecton8.Core` reference and SHINOBU_261 retains explicit cold Core seams for runtime provider registration, floating-origin AUP, and continuous quality weight.
+Solution: Patched the scanner generator and both report artifacts to carry `compileGuardCaveat`. The scoped SHINOBU_261 runtime files still avoid broad `using Hecton8.Core;`; the remaining Core seams are explicit and visible instead of hidden behind an overbroad import.
+Rejected Alternatives: Removing `Hecton8.Core` from `Hecton8.Crest.Bridge.asmdef` was rejected because adjacent Crest bridge files still require it and this lane does not own the full assembly migration. Claiming contracts-only was rejected because the asmdef evidence contradicts it.
+Scalability potential: Runtime unchanged. Low/Middle/High/Ultra quality behavior still comes from continuous `GlobalQualityWeight`; the caveat only prevents proof overclaiming.
+Hardware Impact: 0 runtime us.
