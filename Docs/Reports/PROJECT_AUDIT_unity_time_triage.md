@@ -356,3 +356,29 @@ Updated static counts from that artifact:
 - `unityTimeRiskGameplayDelta`: 1
 
 Residual examples now include `CurrentVolume`, `FaunaBrain` corpse-bloat shader timer, player fixed/render interpolation, random event shockwave shader timestamp, atmosphere/celestial/fluid clocks, RT lifecycle diagnostics, footstep audio cadence, leak plume shader time, voxel cut heat shader time, abyssal fluid decal time, LOD cadence, micro-fauna hit flash, and scatter candidate acceptance time.
+
+## 2026-05-22 Current/Atmosphere/Celestial/Decal/Shader Follow-Up
+
+Six direct runtime time rows were removed or made explicit:
+
+- `CurrentVolume`: shared current sample time now uses bounded dispatcher `DilatedTimeSeconds`.
+- `AbyssalFluidDecalManager`: decal advection now uses `_fluidDecalClockSeconds`, advanced from sanitized dispatcher tick delta.
+- `HectonAtmosphereManager`: atmosphere timeline and procedural biome influence refresh now use bounded dispatcher timeline time.
+- `HectonCelestialEngine`: celestial timeline accumulation now uses bounded dispatcher timeline time.
+- `RandomEventSystem`: meteor water impact timestamp now uses `ResolveMeteorWaterImpactShaderClockSeconds()` because the payload is a shader age bridge.
+- `VoxelDeltaProcessor`: recent laser cut heat timestamp now uses `ResolveLaserCutHeatShaderClockSeconds()` because the payload is a shader heat-age bridge.
+
+Focused proof:
+
+- Focused scan over the six touched files shows no direct `Time.time`, `Time.unscaledTime`, `Time.deltaTime`, or `Time.fixedDeltaTime`.
+- `git diff --check --` on touched files reports only LF-to-CRLF warnings.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_time_after_current_atmo_celestial_decal_shader_clock.json`.
+
+Updated static counts from that artifact:
+
+- `unityTimeCritical`: 883
+- `unityTimeWallClock`: 48
+- `unityTimeRiskGameplayWallClock`: 14
+- `unityTimeRiskGameplayDelta`: 1
+
+Residual gameplay-wall-clock examples now concentrate in `RenderTextureLifecycleTracker` diagnostics, `FaunaBrain` corpse-bloat shader timer, fixed/render interpolation in player camera/movement, `HectonFluidEngine` shader/presentation timing, footstep audio cadence, leak plume shader time, LOD cadence, micro-fauna hit flash, and scatter candidate acceptance time.

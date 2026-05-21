@@ -4484,7 +4484,12 @@ namespace Hecton8.AI
 
         private void ArmCorpseBloatShaderTimer()
         {
-            ApplyCorpseBloatShaderTimer(Time.time);
+            ApplyCorpseBloatShaderTimer(ResolveCorpseBloatShaderClockSeconds());
+        }
+
+        private static float ResolveCorpseBloatShaderClockSeconds()
+        {
+            return Time.timeSinceLevelLoad;
         }
 
         private void ApplyCorpseBloatShaderTimer(float startTimeSeconds)

@@ -284,3 +284,27 @@ Solution: Added bounded `s_HeadlessSimulationClockSeconds`, advanced from saniti
 Rejected Alternatives: Reusing `s_PhantomDronePhaseSeconds`, because that is a render-phase clock wrapped at 60 seconds; using Unity wall clock; changing `DroneCognitionJob` layout; changing flow sampling math or drone DTOs.
 Scalability potential: Low/MX350/Quest keeps drone phantom flow deterministic relative to dispatcher cadence. Middle/high/ultra can raise visual/cognition richness through existing quality curves while phantom flow no longer drifts with wall-clock hitches.
 Hardware Impact: 0 us measured. Static outcome: broad audit after surface/biome/pipe/drone pass reports `unityTimeCritical=890`, `unityTimeWallClock=54`, and `unityTimeRiskGameplayWallClock=20`. Focused diff check reports only LF-to-CRLF warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+Problem: `CurrentVolume` used `Time.time` for shared ambient current sampling and per-volume pulse/turbulence cache. That value feeds movement/current influence, so it is simulation input.
+Solution: Added `ResolveCurrentSampleClockSeconds()` and bounded dispatcher `DilatedTimeSeconds` to `CurrentSampleClockMaxSeconds`. The per-frame cache still avoids repeated clock reads inside the same frame.
+Rejected Alternatives: Keeping Unity wall clock because currents are visual; changing `CurrentManager.SampleCurrent`; adding new DTOs or Vault handles. The existing dispatcher snapshot is the narrow route.
+Scalability potential: Low/MX350/Quest keeps cheap current sampling stable under frame pacing and time dilation. Middle/high/ultra can raise current/noise richness through existing quality/frequency controls without wall-clock drift.
+Hardware Impact: 0 us measured. Static proof only: focused scan finds no direct `Time.time`, `Time.unscaledTime`, `Time.deltaTime`, or `Time.fixedDeltaTime` in `CurrentVolume`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+Problem: `AbyssalFluidDecalManager` used `Time.time` to sample current advection for fluid aftermath decals. It is a visual fake, but the sampled drift is owner state advanced inside the manager tick.
+Solution: Added `_fluidDecalClockSeconds`, reset in `Awake`, advanced from finite non-negative `Tick(float dt)`, and used it in `ResolveCurrentVelocity()`.
+Rejected Alternatives: Using shader `_Time`, changing decal arrays into a fluid simulation, changing material/mesh draw ABI, or sampling `GlobalRegistry` in hot loops. The decal manager already owns a dispatcher tick.
+Scalability potential: Low/MX350/Quest keeps one batched quad/decal fake with cheap current advection instead of particle fluid. Middle/high/ultra can increase decal count/material richness while the CPU still moves compact states.
+Hardware Impact: 0 us measured. Static proof only: focused scan finds no direct Unity wall-clock rows in `AbyssalFluidDecalManager`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+Problem: `HectonAtmosphereManager` and `HectonCelestialEngine` accumulated slow-tick timeline elapsed time from Unity wall clocks. Atmosphere also throttled procedural biome influence refresh with `Time.unscaledTime`. These paths affect sky/fog/celestial state.
+Solution: Added bounded dispatcher timeline helpers for both managers and routed atmosphere biome refresh through the same atmosphere timeline helper.
+Rejected Alternatives: Fixed slow-tick counters, editor preview time, Unity unscaled time, or changing atmosphere/celestial profiles and shader ABI. Dispatcher `DilatedTimeSeconds` is the current runtime owner snapshot.
+Scalability potential: Low/MX350/Quest gets stable atmospheric/celestial cadence under thermal pacing and dilation. Middle/high/ultra can buy more firmament/lighting visual overkill without wall-clock divergence.
+Hardware Impact: 0 us measured. Static proof only: focused scan finds no direct `Time.time`, `Time.unscaledTime`, `Time.deltaTime`, or `Time.fixedDeltaTime` in the touched runtime rows. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+Problem: `RandomEventSystem` and `VoxelDeltaProcessor` used `Time.time` for meteor water impact and laser cut heat shader timestamps. Both are payloads consumed as GPU age against Unity shader `_Time`, not rollback truth.
+Solution: Added explicit shader-clock helpers backed by `Time.timeSinceLevelLoad`, making the presentation-clock boundary visible without changing payload layout.
+Rejected Alternatives: Dispatcher owner-clock, new shader global clock, changing `_MeteorWaterImpactParams` or `_HectonRecentCutHeatStrengthTime`, or moving either effect into CPU particle/fluid simulation.
+Scalability potential: Low/MX350/Quest keeps the meteor shock/laser heat as compact scalar shader fakes. Middle/high/ultra can make the water shock and heat scar visually richer in shader without CPU simulation ownership.
+Hardware Impact: 0 us measured. Static outcome: broad audit after this pass reports `unityTimeCritical=883`, `unityTimeWallClock=48`, and `unityTimeRiskGameplayWallClock=14`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

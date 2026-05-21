@@ -5872,7 +5872,7 @@ namespace Hecton8.World
                 _ParasiteGlobalsId,
                 new Vector4(
                     _publishedParasiteAnchorCount,
-                    Time.time,
+                    GetCurrentSimulationTimeSeconds(),
                     0.35f,
                     1f));
         }

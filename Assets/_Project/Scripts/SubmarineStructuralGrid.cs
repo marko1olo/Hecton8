@@ -124,6 +124,7 @@ namespace Hecton8.Physics
         private const uint HullDentVisualSourceHash = 0xD3CA0149u;
         private const float DefaultLeakPlumeParticleSizeMeters = 0.18f;
         private const float DefaultLeakPlumeRenderBoundsPaddingMeters = 4f;
+        private const float LeakPlumeClockMaxSeconds = 16777215f;
         private const float Epsilon = 0.0001f;
         private const string LeakPlumeComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_LeakPlume.compute";
         private const string LeakPlumeMaterialAssetPath = "Assets/_Project/Art/Materials/VFX/Mat_LeakPlume.mat";
@@ -527,6 +528,7 @@ namespace Hecton8.Physics
         private float _pendingRepairSeverityDelta;
         private float3 _pendingRepairLocalPoint;
         private float _leakAudioTimer;
+        private float _leakPlumeClockSeconds;
         private float _criticalBreachWarningTimer;
         private float _debugCompressionScale = 1f;
         private Vector4 _publishedCrushCenterRadius = new Vector4(float.NaN, 0f, 0f, 0f);
@@ -1329,6 +1331,11 @@ namespace Hecton8.Physics
 
         private void DispatchLeakPlumeCompute(float fixedDeltaTime)
         {
+            float safeFixedDeltaTime = math.isfinite(fixedDeltaTime)
+                ? math.max(0f, fixedDeltaTime)
+                : 0f;
+            AdvanceLeakPlumeClock(safeFixedDeltaTime);
+
             if (!TryResolveBreachBuffer(out var breaches) || leakPlumeCompute == null)
                 return;
 
@@ -1364,12 +1371,25 @@ namespace Hecton8.Physics
             leakPlumeCompute.SetBuffer(_leakPlumeKernelIndex, _LeakParticleBufferId, _leakPlumeParticleBuffer);
             leakPlumeCompute.SetInt(_LeakBreachCountId, _activeBreachCount);
             leakPlumeCompute.SetInt(_LeakVisibleBreachCountId, _visibleBreachCount);
-            leakPlumeCompute.SetFloat(_LeakDeltaTimeId, math.max(0f, fixedDeltaTime));
-            leakPlumeCompute.SetFloat(_LeakTimeId, Time.time);
+            leakPlumeCompute.SetFloat(_LeakDeltaTimeId, safeFixedDeltaTime);
+            leakPlumeCompute.SetFloat(_LeakTimeId, ResolveLeakPlumeClockSeconds());
             leakPlumeCompute.SetVector(_LeakParamsId, new Vector4(LeakPlumeParticleCapacity, MaxActiveBreaches, 0f, 0f));
             leakPlumeCompute.Dispatch(_leakPlumeKernelIndex, 1, 1, 1);
             Shader.SetGlobalBuffer(_LeakParticleBufferId, _leakPlumeParticleBuffer);
             Shader.SetGlobalInt(_LeakVisibleBreachCountId, _visibleBreachCount);
+        }
+
+        private void AdvanceLeakPlumeClock(float deltaTime)
+        {
+            if (deltaTime <= 0f)
+                return;
+
+            _leakPlumeClockSeconds = math.min(LeakPlumeClockMaxSeconds, _leakPlumeClockSeconds + deltaTime);
+        }
+
+        private float ResolveLeakPlumeClockSeconds()
+        {
+            return _leakPlumeClockSeconds;
         }
 
         private void RenderLeakPlumeParticles()

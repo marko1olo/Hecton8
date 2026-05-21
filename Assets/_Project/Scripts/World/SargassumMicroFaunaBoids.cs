@@ -6021,8 +6021,13 @@ namespace Hecton8.World
             _hitFlashOriginWS = originWS;
             _hitFlashRuntimeRadius = math.max(0f, radiusMeters > 0.0001f ? radiusMeters : hitFlashRadiusMeters);
             _hitFlashRuntimeIntensity = clampedIntensity;
-            _hitFlashStartTime = Time.time;
+            _hitFlashStartTime = ResolveHitFlashShaderClockSeconds();
             _hitFlashPropertiesDirty = true;
+        }
+
+        private static float ResolveHitFlashShaderClockSeconds()
+        {
+            return Time.timeSinceLevelLoad;
         }
 
         private void UpdateFragmentationState(

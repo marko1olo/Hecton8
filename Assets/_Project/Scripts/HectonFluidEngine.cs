@@ -309,6 +309,7 @@ namespace Hecton8.Physics
         private const int FluidAdvectionTelemetryCapacity = 300;
         private const int FluidAdvectionSignalDrainBudget = 64;
         private const int FluidAdvectionGlobalTelemetryIntervalFrames = 30;
+        private const float FluidFallbackClockMaxSeconds = 16777215f;
         private const int DynamicWakeGpuCapacity = 16;
         private const int DynamicWakeLowTierGpuCapacity = 4;
         private const int MaxAdvectedSiltCount = 4096;
@@ -5752,7 +5753,20 @@ namespace Hecton8.Physics
             float syncedTime = weatherSnapshot.CurrentMeta.TimeAccumulator;
             return math.isfinite(syncedTime) && syncedTime > 0f
                 ? syncedTime
-                : Time.time;
+                : ResolveFluidFallbackClockSeconds();
+        }
+
+        private static float ResolveFluidFallbackClockSeconds()
+        {
+            SystemDispatcher dispatcher = SystemDispatcher.ActiveRuntimeInstance;
+            if (dispatcher == null)
+                return 0f;
+
+            double timeSeconds = dispatcher.DilatedTimeSeconds;
+            if (!math.isfinite(timeSeconds) || timeSeconds <= 0d)
+                return 0f;
+
+            return (float)math.min(FluidFallbackClockMaxSeconds, timeSeconds);
         }
 
         private void EnsureGpuBuoyancyBuffers(int capacity)

@@ -3,7 +3,6 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
-using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -21,8 +20,7 @@ namespace Hecton8.VFX.Materials
     public sealed class MaterialDecayRuntime : MonoBehaviour,
         IUpdatable,
         IGlobalRegistryHotSwapListener,
-        IGlobalRegistryHotSwapRefListener,
-        IScalabilityChangedEventListener
+        IGlobalRegistryHotSwapRefListener
     {
         private const int TelemetryCapacity = 300;
         private const int MaterialDecayStateSizeBytes = 32;
@@ -31,10 +29,9 @@ namespace Hecton8.VFX.Materials
         private const float WetnessFadeSeconds = 5f;
         private const float ShaderUniformEpsilon = 0.0005f;
         private const uint MaterialDecayToolHash = 0x4D445043u; // MDPC
-        private const byte TelemetryFlagLowTier = 1 << 0;
-        private const byte TelemetryFlagRustActive = 1 << 1;
-        private const byte TelemetryFlagWet = 1 << 2;
-        private const byte TelemetryFlagBlood = 1 << 3;
+        private const byte TelemetryFlagRustActive = 1 << 0;
+        private const byte TelemetryFlagWet = 1 << 1;
+        private const byte TelemetryFlagBlood = 1 << 2;
 
         private static readonly int HectonEquipmentRust01Id = Shader.PropertyToID("_HectonEquipmentRust01");
         private static readonly int HectonMaterialDecayRuntimeId = Shader.PropertyToID("_HectonMaterialDecayRuntime");
@@ -73,14 +70,14 @@ namespace Hecton8.VFX.Materials
         private uint _lastItemHash;
         private ushort _lastSlotIndex;
         private byte _lastReason;
+        private byte _qualityWeightByte = 255;
         private bool _registered;
         private bool _hotSwapRegistered;
-        private bool _scalabilityEventsRegistered;
         private bool _dispatcherReady;
-        private bool _lowTier;
         private bool _hasDurabilitySignal;
         private bool _blackBoxReady;
         private bool _dumpedFault;
+        private float _globalQualityWeight01 = 1f;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -113,6 +110,7 @@ namespace Hecton8.VFX.Materials
 
             s_runtimeInstance = this;
             _rust01 = SanitizeUnit(defaultRust01);
+            RefreshQualityState();
             EnsureBlackBox();
             BindRustAtlas();
         }
@@ -127,7 +125,7 @@ namespace Hecton8.VFX.Materials
 
             s_runtimeInstance = this;
             TryRegisterHotSwapListener();
-            TryRegisterScalabilityEvents();
+            RefreshQualityState();
             EnsureBlackBox();
             BindRustAtlas();
             UploadShaderGlobals(force: true);
@@ -137,14 +135,12 @@ namespace Hecton8.VFX.Materials
         private void Start()
         {
             TryRegisterHotSwapListener();
-            TryRegisterScalabilityEvents();
             TryRegisterTick();
         }
 
         private void OnDisable()
         {
             TryUnregisterTick();
-            TryUnregisterScalabilityEvents();
             TryUnregisterHotSwapListener();
             _tickDispatcher = null;
             _dispatcherReady = false;
@@ -155,7 +151,6 @@ namespace Hecton8.VFX.Materials
         private void OnDestroy()
         {
             TryUnregisterTick();
-            TryUnregisterScalabilityEvents();
             TryUnregisterHotSwapListener();
             if (ReferenceEquals(s_runtimeInstance, this))
                 s_runtimeInstance = null;
@@ -179,6 +174,7 @@ namespace Hecton8.VFX.Materials
 
             ConsumeDurabilitySignals();
             ConsumePlayerState();
+            RefreshQualityState();
 
             if (_wetnessFadeRemaining > 0f)
                 _wetnessFadeRemaining = math.max(0f, _wetnessFadeRemaining - deltaTime);
@@ -219,31 +215,6 @@ namespace Hecton8.VFX.Materials
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapRegistered = false;
-        }
-
-        private void TryRegisterScalabilityEvents()
-        {
-            if (!_scalabilityEventsRegistered)
-            {
-                ScalabilityEvents.Register(this);
-                _scalabilityEventsRegistered = true;
-            }
-
-            _lowTier = IsLowTier(GlobalRegistry.ScalabilityTier);
-        }
-
-        private void TryUnregisterScalabilityEvents()
-        {
-            if (!_scalabilityEventsRegistered)
-                return;
-
-            ScalabilityEvents.Unregister(this);
-            _scalabilityEventsRegistered = false;
-        }
-
-        void IScalabilityChangedEventListener.OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            _lowTier = IsLowTier(payload.CurrentQualityTier);
         }
 
         void IGlobalRegistryHotSwapRefListener.OnGlobalRegistryServiceRebound(
@@ -360,9 +331,9 @@ namespace Hecton8.VFX.Materials
         {
             float rust01 = _hasDurabilitySignal ? SanitizeUnit(_rust01) : SanitizeUnit(defaultRust01);
             float wetness01 = math.saturate(_wetnessFadeRemaining * (1f / WetnessFadeSeconds));
-            float lowTier01 = _lowTier ? 1f : 0f;
+            float qualityPressure01 = ResolveQualityPressure01();
             float stableSeed01 = (_lastItemHash & 0x3FFu) * (1f / 1023f);
-            Vector4 runtimeVector = new Vector4(rust01, wetness01, lowTier01, stableSeed01);
+            Vector4 runtimeVector = new Vector4(rust01, wetness01, qualityPressure01, stableSeed01);
             float bloodActive01 = math.saturate(math.max(_stress01, _healthDamage01));
             Vector4 bloodVector = new Vector4(_stress01, _healthDamage01, bloodGlossBoost, bloodActive01);
 
@@ -574,7 +545,6 @@ namespace Hecton8.VFX.Materials
             float rust01 = _hasDurabilitySignal ? SanitizeUnit(_rust01) : SanitizeUnit(defaultRust01);
             float wetness01 = math.saturate(_wetnessFadeRemaining * (1f / WetnessFadeSeconds));
             byte flags = 0;
-            if (_lowTier) flags |= TelemetryFlagLowTier;
             if (rust01 > RustPomGate) flags |= TelemetryFlagRustActive;
             if (wetness01 > 0.001f) flags |= TelemetryFlagWet;
             if (math.max(_stress01, _healthDamage01) > 0.001f) flags |= TelemetryFlagBlood;
@@ -588,8 +558,9 @@ namespace Hecton8.VFX.Materials
                 Blood01 = math.saturate(math.max(_stress01, _healthDamage01)),
                 SlotIndex = _lastSlotIndex,
                 Reason = _lastReason,
+                QualityWeightByte = _qualityWeightByte,
                 Flags = flags,
-                StateHash = Mix(_lastItemHash ^ (uint)(_lastSlotIndex << 16) ^ (uint)(_lastReason << 8) ^ flags)
+                StateHash = Mix(_lastItemHash ^ (uint)(_lastSlotIndex << 16) ^ (uint)(_lastReason << 8) ^ ((uint)_qualityWeightByte << 24) ^ flags)
             };
 
             _blackBoxCursor++;
@@ -625,6 +596,7 @@ namespace Hecton8.VFX.Materials
                     writer.Write(state.Blood01);
                     writer.Write(state.SlotIndex);
                     writer.Write(state.Reason);
+                    writer.Write(state.QualityWeightByte);
                     writer.Write(state.Flags);
                     writer.Write(state.StateHash);
                 }
@@ -648,11 +620,23 @@ namespace Hecton8.VFX.Materials
             return math.isfinite(value) ? math.saturate(value) : 0f;
         }
 
-        private static bool IsLowTier(HectonQualityTier tier)
+        private void RefreshQualityState()
         {
-            return tier == HectonQualityTier.Unknown ||
-                   tier == HectonQualityTier.Low ||
-                   tier == HectonQualityTier.Mx350;
+            float weight = HomeostasisBrain.GlobalQualityWeight;
+            _globalQualityWeight01 = math.isfinite(weight) ? math.saturate(weight) : 1f;
+            _qualityWeightByte = EncodeQualityWeightByte(_globalQualityWeight01);
+        }
+
+        private float ResolveQualityPressure01()
+        {
+            float pressure = 1f - _globalQualityWeight01;
+            return math.smoothstep(0f, 1f, pressure);
+        }
+
+        private static byte EncodeQualityWeightByte(float qualityWeight01)
+        {
+            int encoded = (int)math.round(SanitizeUnit(qualityWeight01) * 255f);
+            return (byte)math.clamp(encoded, 0, 255);
         }
 
         private static uint Mix(uint value)
@@ -675,9 +659,11 @@ namespace Hecton8.VFX.Materials
             [FieldOffset(16)] public float Blood01;
             [FieldOffset(20)] public ushort SlotIndex;
             [FieldOffset(22)] public byte Reason;
-            [FieldOffset(23)] public byte Flags;
-            [FieldOffset(24)] public uint StateHash;
-            [FieldOffset(28)] private uint _pad0;
+            [FieldOffset(23)] public byte QualityWeightByte;
+            [FieldOffset(24)] public byte Flags;
+            [FieldOffset(25)] private byte _pad0;
+            [FieldOffset(26)] private ushort _pad1;
+            [FieldOffset(28)] public uint StateHash;
         }
     }
 }

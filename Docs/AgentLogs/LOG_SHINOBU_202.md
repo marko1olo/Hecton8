@@ -5412,3 +5412,27 @@ Static verification:
 - Focused scan found no `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `GetBuffer<T>`, direct `TryGetBuffer(...)`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `TryGetLatestCreated`, `TryGetBufferGeneration`, `VaultGenerationID`, or `.ptr` hits in the two visor partials.
 - Descriptor scan confirms `VaultGenerationHandle<T>`, `TryGetGenerationHandle<T>`, `GetGenerationHandle<T>`, `TryResolveHandle`, `TryReadHandle`, reconstruction read/resolve helpers, Noir read/resolve helpers, and both release paths.
 - Brace/preprocessor counts: `HectonVisorUberPostFeature.cs` `166/166`, `#if/#endif` `10/10`; `HectonVisorUberPostFeature.Noir.cs` `123/123`, `#if/#endif` `7/7`. `git diff --check` passed with CRLF warnings only. Build was not relaunched.
+
+## 2026-05-22 - Loop 230 - Biolum Pulse Sync Descriptor Route
+
+What was wrong:
+- Biolum pulse sync owns thirteen VFX Vault lanes that feed scheduled pulse/glow work, mock stimulus mirroring, editor facades, shader scalar publication, CSV tuning, and blackbox dump scratch.
+- The route needed explicit disk proof that no pointer-era retained handle, direct resolve, retained handle created check, generation-id side channel, or mutating editor read facade remained.
+
+What was done:
+- Verified profile floats, pulse state, telemetry ring, glow SOA, AUP origins, sync pulses, sync ages, mock weather/predator/damage, species tuning, CSV scratch, and dump scratch all use `VaultGenerationHandle<T>`.
+- Verified each route validates exact BufferID, `SystemID.Vfx`, nonzero generation, required length, descriptor read/resolve, and `IsCreated`.
+- Verified disable, dispose, and DataVault hot-swap release all thirteen descriptors through `ReleaseBuffer(in handle)`.
+- Verified editor reads are pure descriptor reads and editor writes/pulse triggers use descriptor write locks.
+- Verified `Hecton8.VFX.Bioluminescence.Runtime.asmdef` has no sibling runtime dependency.
+
+Cinematic cheats used:
+- Existing Biolum Dear Lie remains shader-side grouped oscillation and scalar glow response. The route avoids per-light/per-instance CPU simulation and uses continuous quality-weight pressure for density/intensity instead of binary device switches.
+
+Exact microseconds saved:
+- No measured runtime speedup claimed. Descriptor proof is O(1) and paid at bounded phase/facade edges only. Avoiding 50k CPU light/pulse truth simulation keeps the route in shader scalar and BRG-friendly territory.
+
+Static verification:
+- Focused scan found no `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, direct `GetBuffer<T>`, direct `TryGetBuffer(...)`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `TryGetLatestCreated`, `TryGetBufferGeneration`, `VaultGenerationID`, or `.ptr` hits in `BiolumPulseSyncRuntime.cs`.
+- Descriptor scan confirms `VaultGenerationHandle<T>`, `TryGetGenerationHandle`, `GetGenerationHandle`, `TryResolveBiolumVaultBuffer`, `TryReadBiolumVaultBuffer`, `TryAcquireWriteLock`, `ReleaseWriteLock`, `ReleaseBiolumVaultHandle`, `ReleaseVaultHandlesOnly`, and `ReleaseBuffer(in handle)`.
+- Brace/preprocessor counts are balanced: braces `348/348`, `#if/#endif` `10/10`. `git diff --check` passed. Build was not relaunched because CPU was 100 percent and `dotnet.exe`/`csc.exe` were already active.

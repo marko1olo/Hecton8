@@ -861,3 +861,13 @@ The scan proves repo-wide debt, not successful consumer migration. A full rename
 - `Dispose` and `OnGlobalRegistryServiceReplaced(DataVault)` release the five owned GraphicsScalability reconstruction descriptors through `ReleaseBuffer(in handle)` and tombstone local route state.
 - The GraphicsBuffer A/B constant upload path remains renderer-owned GPU state and is intentionally unchanged.
 - This entry does not change `UberNoirReconstructionConstantsDTO`, `MockReconstructionInputSignal`, `ReconstructionTelemetryEntry`, `NoirAestheticProfileDTO`, BufferIDs `71030..71034`, CSV parser contract, shader property IDs, RenderGraph pass ABI, constant-buffer stride, telemetry dump format, or GraphicsScalability authority.
+
+## 2026-05-22 Biolum Pulse Sync Descriptor Route Update
+
+- `Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs` no longer has `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, direct `GetBuffer<T>`, direct `TryGetBuffer(...)`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `TryGetLatestCreated`, `TryGetBufferGeneration`, `VaultGenerationID`, or `.ptr` hits.
+- Profile floats, pulse state, blackbox telemetry, glow states, glow AUP origins, sync pulses, sync pulse ages, mock weather, mock predator, mock damage, species tuning, CSV scratch, and blackbox dump scratch use `VaultGenerationHandle<T>` descriptors.
+- Each route validates exact BufferID, `SystemID.Vfx`, nonzero generation, required length, `TryResolveHandle` or pure `TryReadHandle`, and `IsCreated` before returning a native view.
+- Disable, dispose, and DataVault hot-swap release all thirteen VFX-owned descriptors through `ReleaseBuffer(in handle)` after active work is fenced.
+- Editor `Copy*` facades use pure descriptor readback. Editor `TryWrite*` and pulse-trigger facades use descriptor write locks and release them in `finally`.
+- Compile-wall guard: `Hecton8.VFX.Bioluminescence.Runtime.asmdef` references `Hecton8.Core.Contracts`, `Hecton8.Core`, `Hecton8.Core.Memory`, and Unity packages only; no sibling runtime assembly dependency was introduced.
+- This entry does not change `GlowStateDTO`, `SyncPulseDTO`, `MockWeatherSignal`, `BiolumPulseStateDTO`, `BiolumSpeciesTuningDTO`, `MockPredatorProximitySignal`, `MockCombatDamageSignal`, `BiolumPulseTelemetryEntry`, BufferIDs, CSV parser contract, shader property IDs, SignalBus payloads, blackbox dump format, pulse math, or VFX authority.

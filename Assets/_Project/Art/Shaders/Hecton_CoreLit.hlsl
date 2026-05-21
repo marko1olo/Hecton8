@@ -135,7 +135,7 @@ float _HectonMathLodMode;              // 0=cheap dominant-axis, 1=exact high
 float _HectonMathLodDistanceSq;        // C# scalability bridge debug/readback value
 float4 _HectonWorldShake;              // xyz=seismic vertex offset, w=intensity
 float _HectonEquipmentRust01;          // global equipment corrosion scalar, 0 clean -> 1 ruined
-float4 _HectonMaterialDecayRuntime;    // x=rust01, y=recent wetness01, z=low tier, w=stable seed
+float4 _HectonMaterialDecayRuntime;    // x=rust01, y=recent wetness01, z=quality pressure, w=stable seed
 float4 _HectonPlayerBloodSplatter;     // x=stress01, y=health damage01, z=gloss boost, w=active01
 float _InternalWaterlineY;
 float4 _InternalWaterlineRuntime;      // xyz/w owned by InternalFloodWaterlineRuntime
@@ -895,7 +895,9 @@ float2 HectonCoreLitResolveDynamicWearUv(
 #if defined(_MATH_LOD_LOW)
     return baseUv;
 #else
-    if (rust01 <= 0.3001h || _HectonMaterialDecayRuntime.z > 0.5)
+    float qualityPressure = saturate(_HectonMaterialDecayRuntime.z);
+    float rustPomWeight = 1.0 - smoothstep(0.18, 0.72, qualityPressure);
+    if (rust01 <= 0.3001h || rustPomWeight <= 0.001)
         return baseUv;
 
     float3 safeNormalWS;
@@ -905,7 +907,7 @@ float2 HectonCoreLitResolveDynamicWearUv(
     float3 safeViewWS = HectonCoreLitSafeNormalize(viewDirWS);
     float3 viewDirTS = float3(dot(safeViewWS, safeTangentWS), dot(safeViewWS, safeBitangentWS), max(dot(safeViewWS, safeNormalWS), 0.24));
     float viewInvZ = rcp(max(abs(viewDirTS.z), 0.24));
-    float2 parallaxStep = viewDirTS.xy * viewInvZ * (0.012 + rust01 * 0.026) * rust01;
+    float2 parallaxStep = viewDirTS.xy * viewInvZ * (0.012 + rust01 * 0.026) * rust01 * rustPomWeight;
     float2 resolvedUv = rustUv;
     float layerDepth = 0.0;
 

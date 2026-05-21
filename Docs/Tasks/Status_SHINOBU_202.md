@@ -4109,3 +4109,20 @@ Mandates read before coding:
 - Brace/preprocessor counts are balanced: `HectonVisorUberPostFeature.cs` braces `166/166`, preprocessor `#if/#endif` `10/10`; `HectonVisorUberPostFeature.Noir.cs` braces `123/123`, preprocessor `#if/#endif` `7/7`.
 - `git diff --check` passed for both visor partials; CRLF warnings only.
 - Build not relaunched under the explicit no-rebuild command discipline.
+
+## Loop 230 - Biolum Pulse Sync Descriptor Route
+- [x] Verified `BiolumPulseSyncRuntime.cs` VFX Vault lanes use generation descriptors and no pointer-era routes.
+  DOD practice: profile floats, pulse state, 300-frame blackbox telemetry, glow state SOA, glow AUP origins, sync pulses, sync pulse ages, mock weather, mock predator, mock damage, species tuning, CSV scratch, and blackbox dump scratch retain `VaultGenerationHandle<T>` descriptors and open only through exact BufferID, `SystemID.Vfx`, nonzero generation, required length, `TryResolveHandle` or pure `TryReadHandle`, and `IsCreated` proof.
+  Rejected: retaining `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `.Resolve(vault)`, retained handle created/length checks, `GetElementAsRef`, `GetElementAsReadOnlyRef`, and `VaultGenerationID` owner checks because this route crosses scheduled VFX jobs, mock-signal mirroring, CSV tuning, shader global publication, editor facades, and blackbox dump scratch.
+  Estimate: descriptor validation runs at cold ensure, editor read/write facade, SlowTick scheduling, mock generation, sync pulse aging, CSV reload, telemetry copy, blackbox dump, and DataVault hot-swap boundaries only; no DTO layout, BufferID, shader property ID, CSV byte schema, SignalBus ABI, or VFX authority changed.
+- [x] Verified owned VFX release, pure editor reads, and compile-wall boundary.
+  DOD practice: disable, dispose, and DataVault hot-swap release all thirteen VFX-owned descriptors through `ReleaseBuffer(in handle)` after active work is fenced, then tombstone route state. Editor `Copy*` facades use pure `TryReadHandle`; editor `TryWrite*` and pulse-trigger paths use descriptor write locks and release them in `finally`.
+  Rejected: acquiring write locks from read facades because read accessors must not mutate global state or publish side effects. Rewriting biolum pulse math, sync-pulse shader fake, CSV parser, mock ecology inputs, blackbox byte format, or shader CBuffer packing was rejected because this loop targets stale Vault provenance only.
+  Estimate: cold lifecycle and authoring facade proof only. `Hecton8.VFX.Bioluminescence.Runtime.asmdef` references Core/Contracts/Memory plus Unity packages only; no sibling runtime assembly route was introduced.
+
+## Compile State Update 224
+- Focused legacy/direct route scan on `BiolumPulseSyncRuntime.cs` found no `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `GetBuffer<T>`, direct `TryGetBuffer(...)`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `TryGetLatestCreated`, `TryGetBufferGeneration`, `VaultGenerationID`, or `.ptr` hits.
+- Descriptor route scan confirmed expected `VaultGenerationHandle<T>`, `TryGetGenerationHandle`, `GetGenerationHandle`, `TryResolveBiolumVaultBuffer`, `TryReadBiolumVaultBuffer`, `TryAcquireWriteLock`, `ReleaseWriteLock`, `ReleaseBiolumVaultHandle`, `ReleaseVaultHandlesOnly`, and `ReleaseBuffer(in handle)` hits.
+- Brace/preprocessor counts are balanced: `BiolumPulseSyncRuntime.cs` braces `348/348`, preprocessor `#if/#endif` `10/10`.
+- `git diff --check` passed for `BiolumPulseSyncRuntime.cs`.
+- Build not relaunched: CPU sampled at 100 percent and `dotnet.exe`/`csc.exe` were already running, so the explicit no-rebuild and CPU gate blocked a new build.

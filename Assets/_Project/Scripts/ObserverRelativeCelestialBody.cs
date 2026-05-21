@@ -607,13 +607,18 @@ namespace Hecton8.Celestial
                 return (float)atmosphereManager.ElapsedCycleTimeSeconds;
 
             if (Application.isPlaying)
-                return Time.time;
+                return ResolveRuntimePresentationClockSeconds();
 
 #if UNITY_EDITOR
             return (float)EditorApplication.timeSinceStartup;
 #else
             return 0f;
 #endif
+        }
+
+        private static float ResolveRuntimePresentationClockSeconds()
+        {
+            return Time.timeSinceLevelLoad;
         }
 
 #if UNITY_EDITOR

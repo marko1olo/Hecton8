@@ -3023,3 +3023,21 @@ Verification:
     Targeted `rg` found no `ScalabilityChangedEvent`, `ConsumeScalabilityChangedSignals`, `GlobalRegistry.ScalabilityTier`, `GlobalRegistry.H8_LOW_MEMORY_PROFILE`, `HectonQualityTier`, or `QualityTier` in `AcousticEchoLocationRuntime.cs`. `git diff --check` passed for acoustic echo and the binary payload ledger. Guarded `dotnet build .\Assembly-CSharp.csproj --no-restore --nologo -m:1 -clp:ErrorsOnly` succeeded with 0 errors and 152 warnings after an initial normal-output run exited 1 without visible compiler diagnostics.
   </VERIFICATION>
 </SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="OrbitalReentryVfxQualityPressureContinuum">
+  <WHAT_WAS_WRONG>
+    Orbital reentry VFX still consumed scalability events and hardware registry tier/profile/low-memory state, emitted `FlagLowTier`, and drove a shader `_PlasmaLowTier` binary branch.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Removed the scalability listener route, tier/profile fields, low-memory flag, low-tier signal/telemetry publication, and shader low-tier branch. Reentry VFX now uploads `_PlasmaQualityPressure` from continuous `GlobalQualityWeight`; telemetry preserves the byte offset as `QualityWeightByte`.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    The Dear Lie is the camera-local plasma overlay: reentry heat, opacity, velocity, altitude, splash, and ocean handoff remain scalar-driven visual fakes. Quality pressure blends visual richness instead of changing sequence truth.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. Removed listener/registry binary policy and a shader early-out; the active shader now favors continuous blend semantics over binary ALU shedding.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted `rg` found no `ScalabilityChangedEvent`, `IScalabilityChangedEventListener`, `ScalabilityEvents`, `GlobalRegistry.ScalabilityTier`, `GlobalRegistry.ScalabilityTierProfileByte`, `GlobalRegistry.H8_LOW_MEMORY_PROFILE`, `HectonQualityTier`, `_lowTier`, `_lowMemoryProfile`, `_qualityTier`, `QualityTierByte`, `PlasmaLowTier`, `FlagLowTier`, or `LowTier` in the reentry VFX controller and shader. `git diff --check` passed with line-ending warnings only. Guarded `dotnet build .\Assembly-CSharp.csproj --no-restore --nologo -m:1 -clp:ErrorsOnly` succeeded with 0 errors and 30 warnings after the unrelated Biolum handle wall cleared.
+  </VERIFICATION>
+</SELF_AUDIT>
