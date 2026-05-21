@@ -275,22 +275,28 @@ namespace Hecton8.Quest
     /// </summary>
     public struct QuestDagBufferHandles
     {
-        public VaultBufferHandle<ulong> GlobalStateMasks;
-        public VaultBufferHandle<ulong> OldStateMasks;
-        public VaultBufferHandle<QuestNodeDTO> Nodes;
-        public VaultBufferHandle<QuestNodeRuntimeDTO> NodeRuntime;
-        public VaultBufferHandle<TriggerVolumeDTO> TriggerVolumes;
-        public VaultBufferHandle<uint> RequiredItemHashes;
-        public VaultBufferHandle<int> RequiredItemQuantities;
-        public VaultBufferHandle<uint> PlayerItemHashes;
-        public VaultBufferHandle<int> PlayerItemQuantities;
-        public VaultBufferHandle<float> FactionStandings;
-        public VaultBufferHandle<QuestDagTelemetryEntry> TelemetryRing;
-        public VaultBufferHandle<int> TelemetryCursor;
-        public VaultBufferHandle<int> Counters;
-        public VaultBufferHandle<int> TriggerNodeIndices;
-        public VaultBufferHandle<int> NoTriggerNodeIndices;
-        public VaultBufferHandle<long> CsvMonitor;
+        public VaultGenerationHandle<ulong> GlobalStateMasks;
+        public VaultGenerationHandle<ulong> OldStateMasks;
+        public VaultGenerationHandle<QuestNodeDTO> Nodes;
+        public VaultGenerationHandle<QuestNodeRuntimeDTO> NodeRuntime;
+        public VaultGenerationHandle<TriggerVolumeDTO> TriggerVolumes;
+        public VaultGenerationHandle<uint> RequiredItemHashes;
+        public VaultGenerationHandle<int> RequiredItemQuantities;
+        public VaultGenerationHandle<uint> PlayerItemHashes;
+        public VaultGenerationHandle<int> PlayerItemQuantities;
+        public VaultGenerationHandle<float> FactionStandings;
+        public VaultGenerationHandle<QuestDagTelemetryEntry> TelemetryRing;
+        public VaultGenerationHandle<int> TelemetryCursor;
+        public VaultGenerationHandle<int> Counters;
+        public VaultGenerationHandle<int> TriggerNodeIndices;
+        public VaultGenerationHandle<int> NoTriggerNodeIndices;
+        public VaultGenerationHandle<long> CsvMonitor;
+        public int NodeCapacity;
+        public int TriggerCapacity;
+        public int StateChunkCount;
+        public int ItemLinkCapacity;
+        public int PlayerItemCapacity;
+        public int FactionCapacity;
     }
 
     /// <summary>

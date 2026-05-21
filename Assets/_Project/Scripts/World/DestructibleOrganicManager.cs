@@ -2584,11 +2584,12 @@ namespace Hecton8.World
             SetLaneHealth(underwater, activeIndex, nextHealth);
             _healthByInstanceUid.Remove(instanceUid);
             _healthByInstanceUid.TryAdd(instanceUid, (Unity.Mathematics.half)nextHealth);
-            MarkOrganicTouched(instanceUid, Time.time);
+            float currentTime = ResolveOrganicClockSeconds();
+            MarkOrganicTouched(instanceUid, currentTime);
 
             PublishExternalInteraction(hitPoint, direction * Mathf.Max(0.25f, normalizedPower * OrganicBurstVelocityScale), interactionBurstRadius);
             bool harvestStateChanged = previousHarvestState != nextHarvestState;
-            ApplyDamageVisualState(instanceUid, underwater, activeIndex, templateIndex, baseHealth, nextHealth, nextHeightScale, harvestStateChanged, Time.time);
+            ApplyDamageVisualState(instanceUid, underwater, activeIndex, templateIndex, baseHealth, nextHealth, nextHeightScale, harvestStateChanged, currentTime);
             if (harvestStateChanged)
                 DispatchHarvestAudioTransition(instanceUid, templateIndex, previousHarvestState, nextHarvestState, instancePosition);
 
@@ -3043,7 +3044,7 @@ namespace Hecton8.World
 
                 int templateIndex = ResolveTemplateIndex(metadata[i], materialClass);
                 ApplyPassiveDecomposition(underwater, i, instanceUid, materialClass, templateIndex, rootPosition);
-                PrimeDecompositionState(instanceUid, Time.time - OrganicDecompositionDurationSeconds);
+                PrimeDecompositionState(instanceUid, ResolveOrganicClockSeconds() - OrganicDecompositionDurationSeconds);
                 ApplyDecompositionToLaneInstance(underwater, i, instanceUid, 1f);
                 killedCount++;
             }
@@ -3238,7 +3239,7 @@ namespace Hecton8.World
             {
                 EnsureDearLieVaultLaneCapacity(false, count);
             }
-            float currentTime = Time.time;
+            float currentTime = ResolveOrganicClockSeconds();
 
             for (int i = 0; i < count; i++)
             {
@@ -3366,7 +3367,7 @@ namespace Hecton8.World
 
                 _destroyedByInstanceUid.TryAdd(record.InstanceUid, 1);
                 ClearOrganicLifecycleState(record.InstanceUid);
-                PrimeDecompositionState(record.InstanceUid, Time.time - OrganicDecompositionDurationSeconds);
+                PrimeDecompositionState(record.InstanceUid, ResolveOrganicClockSeconds() - OrganicDecompositionDurationSeconds);
                 _healthByInstanceUid.Remove(record.InstanceUid);
                 _healthByInstanceUid.TryAdd(record.InstanceUid, (Unity.Mathematics.half)0f);
             }
@@ -4064,7 +4065,7 @@ namespace Hecton8.World
             _healthByInstanceUid.TryAdd(instanceUid, (Unity.Mathematics.half)0f);
             if (_damageVisualProgressByInstanceUid.IsCreated)
                 _damageVisualProgressByInstanceUid.Remove(instanceUid);
-            PrimeDecompositionState(instanceUid, Time.time);
+            PrimeDecompositionState(instanceUid, ResolveOrganicClockSeconds());
             SetLaneHealth(underwater, activeIndex, 0f);
             if (_pendingWiltEndTimeByInstanceUid.IsCreated)
                 _pendingWiltEndTimeByInstanceUid.Remove(instanceUid);
@@ -4123,7 +4124,7 @@ namespace Hecton8.World
             if (_regrowthPositionByInstanceUid.IsCreated)
                 _regrowthPositionByInstanceUid.Remove(instanceUid);
 
-            PrimeDecompositionState(instanceUid, Time.time);
+            PrimeDecompositionState(instanceUid, ResolveOrganicClockSeconds());
             SetLaneHealth(underwater, activeIndex, 0f);
             float parentMassKg = ResolveParentMassKg(underwater, activeIndex, materialClass, templateIndex);
             ApplyRuntimeFlagsToLaneInstance(underwater, activeIndex, runtimeFlags);
@@ -4324,7 +4325,7 @@ namespace Hecton8.World
             _destroyedByInstanceUid.TryAdd(instanceUid, 1);
             _healthByInstanceUid.Remove(instanceUid);
             _healthByInstanceUid.TryAdd(instanceUid, (Unity.Mathematics.half)0f);
-            PrimeDecompositionState(instanceUid, Time.time - OrganicDecompositionDurationSeconds);
+            PrimeDecompositionState(instanceUid, ResolveOrganicClockSeconds() - OrganicDecompositionDurationSeconds);
             ClearOrganicLifecycleState(instanceUid);
 
             PersistentWorldRegistry registry = _persistentWorldRegistry;
@@ -5570,7 +5571,7 @@ namespace Hecton8.World
             if (TryResolveActiveInstanceByUid(instanceUid, out bool underwater, out int activeIndex, out int templateIndex))
             {
                 ApplyMaturationVisualToLaneInstance(underwater, activeIndex, instanceUid, clampedProgress, scaleMultiplier);
-                TryDispatchMatureSporeAcoustic(instanceUid, clampedProgress, underwater, activeIndex, templateIndex, Time.time);
+                TryDispatchMatureSporeAcoustic(instanceUid, clampedProgress, underwater, activeIndex, templateIndex, ResolveOrganicClockSeconds());
                 if (clampedProgress >= TitanRootMoundMatureThreshold01)
                     TryApplyTitanRootMound(underwater, activeIndex, instanceUid);
             }
@@ -5791,7 +5792,7 @@ namespace Hecton8.World
                 Mathf.Clamp01(normalizedHealth),
                 damage01,
                 Mathf.Clamp01(normalizedHeightScale),
-                Time.time);
+                ResolveOrganicClockSeconds());
             PersistFloraStateOverride(
                 instanceUid,
                 templateIndex,
@@ -5856,7 +5857,7 @@ namespace Hecton8.World
             if (_destroyedByInstanceUid.IsCreated)
                 _destroyedByInstanceUid.Remove(instanceUid);
             ClearDeadRuntimeFlag(instanceUid);
-            MarkOrganicTouched(instanceUid, Time.time);
+            MarkOrganicTouched(instanceUid, ResolveOrganicClockSeconds());
 
             if (_pendingWiltEndTimeByInstanceUid.IsCreated)
                 _pendingWiltEndTimeByInstanceUid.Remove(instanceUid);
@@ -5904,7 +5905,7 @@ namespace Hecton8.World
 
             if (_decompositionStartTimeByInstanceUid.IsCreated)
                 _decompositionStartTimeByInstanceUid.Remove(instanceUid);
-            MarkOrganicTouched(instanceUid, Time.time);
+            MarkOrganicTouched(instanceUid, ResolveOrganicClockSeconds());
 
             PersistentWorldRegistry registry = _persistentWorldRegistry;
             if (registry != null)

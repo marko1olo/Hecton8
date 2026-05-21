@@ -10,6 +10,7 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -22,6 +23,8 @@ namespace Hecton8.Quest
     /// </summary>
     public static unsafe class QuestDagVault
     {
+        private const SystemID VaultOwnerSystem = SystemID.QuestDag;
+
         /// <summary>
         /// Creates or resolves all persistent buffers required by the quest DAG.
         /// </summary>
