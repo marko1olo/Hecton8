@@ -216,3 +216,15 @@ Cinematic Cheats used: None. This is evidence/tooling work.
 Exact Microseconds saved: 0 us measured. Static outcome: raw mutable API exposure is preserved at `268 files=97`; diagnostic/editor-named runtime mutable views are split into `61 files=36`, leaving `114` gameplay-looking runtime `out/ref` mutable views and `58` gameplay-looking runtime mutable return/property views.
 
 Evidence: `python Tools\test_polish_mandate_static_audit.py` ran 10 tests OK. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_native_api_exposure.json --report-path Docs\Reports\PROJECT_AUDIT_polish_native_api_exposure.md` returned `PASS_WITH_WARNINGS`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-21 - Unity Time Risk Buckets and Fixed-Delta Cleanup
+
+What was wrong: `unityTimeCritical=964` was not actionable. It mixed `Time.frameCount` telemetry stamps, `Time.time` cooldowns, editor/proof rows, and true `Time.deltaTime/fixedDeltaTime` simulation reads.
+
+What was done: Extended `Tools/PolishMandateStaticAudit.py` with Unity time kind/build/risk buckets and added unit coverage. Replaced `Time.fixedDeltaTime` in `FaunaBrain.TryResolvePredatorLungeCcdPosition()` with cached dispatcher `FixedTick(float fdt)`. Replaced `Time.fixedDeltaTime` in `SubmarineFluidDynamics.UpdateBrineHullBreachState()` with `_currentFixedDeltaTime`, already assigned from dispatcher `FixedTick(float fixedDeltaTime)`. Wrote `Docs/Reports/PROJECT_AUDIT_unity_time_triage.md`.
+
+Cinematic Cheats used: Existing predator lunge CCD remains the Dear Lie: a sweep guard over a teleported lunge presentation instead of full continuous physics simulation. No new physics was added.
+
+Exact Microseconds saved: 0 us measured. Static outcome: `unityTimeCritical` dropped from `964` to `962`; `unityTimeRiskGameplayDelta` dropped from `3` to `1`. Remaining buckets: `806` frame stamp/telemetry rows, `80` gameplay wall-clock rows, `38` cooldown/perf-log rows, `37` editor/proof rows, and one gameplay delta row in shoreline foam presentation.
+
+Evidence: `python Tools\test_polish_mandate_static_audit.py` ran 11 tests OK. `python -X faulthandler Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_time_risk_buckets.json --report-path Docs\Reports\PROJECT_AUDIT_polish_time_risk_buckets.md` returned `PASS_WITH_WARNINGS` with `unityTimeRiskGameplayDelta=1 files=1`. Focused `rg -n "Time\.(deltaTime|fixedDeltaTime)"` over the three inspected files now leaves only `ShorelineFoamGraftContracts.cs:616`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

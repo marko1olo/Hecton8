@@ -794,3 +794,19 @@ Solution: Removed the scalability tier cache. The camera-slide fake is now selec
 Rejected Alternatives: Keeping a binary tier branch for VR climb IK was rejected because VR grip parity and hand feedback should not collapse on weaker hardware. Driving the climb fake directly from `GlobalQualityWeight` was rejected because this is not an optional visual density parameter; it switches animation/control presentation mode.
 Scalability potential: Low/Middle/High/Ultra share the same VR grip IK behavior. Non-VR keeps the cheap camera-slide Dear Lie because there is no tracked grip authority to solve, while VR hardware uses the full elbow solution on every tier.
 Hardware Impact: 0 us speed claim. One cold registry tier read is removed from climb begin; weak VR devices now spend the same IK solve path to preserve player-control feedback.
+
+## Biome Boundary SDF Authority Radius Pinning
+
+Problem: `BiomeBoundarySdfRuntime` reduced sample radius from 5x5 to 3x3 when forced low tier, low-memory profile, tier profile byte 0, Unknown, Low, or Mx350. That changes biome gradient blend, biome hashes, and transition signals by hardware. The slow-tick AUP read also polled `GlobalRegistry.Player` directly.
+Solution: Removed the low-tier kernel resolver and serialized force flag from runtime. `SampleRadiusCells` is now pinned to 2 for the full 5x5 kernel with no runtime low-tier flag. The player runtime context is cached during lifecycle cold paths and the slow tick reads the cached interface.
+Rejected Alternatives: Continuous sample radius scaling was rejected because radius is integer topology over the heatmap and changes biome boundary facts. Keeping a forced low-tier diagnostic override was rejected because it still mutates runtime authority output.
+Scalability potential: Low/Middle/High/Ultra share identical biome gradient sampling and signal output. Device savings must come from heatmap debug display, biome VFX, map UI refresh, or presentation-only transition effects.
+Hardware Impact: 0 us speed claim. Weak devices spend the full 5x5 boundary sample to preserve environmental parity; one slow-tick registry poll is removed.
+
+## Submarine Flood State Math LOD Pinning
+
+Problem: `SubmarineFluidDynamics` converted `HomeostasisBrain.GlobalQualityWeight` into a 0..3 `SubmarineFloodStateSignal.MathLod`. That signal is consumed downstream as flood-state fidelity, so hardware pressure could change how flood mass/center signals are interpreted.
+Solution: Added `AuthoritativeFloodStateMathLod = 3`, initialized the cached value to it, and made scalability-event refreshes reapply the canonical value instead of recomputing from quality.
+Rejected Alternatives: Keeping the continuous curve was rejected because the LOD byte leaves the owner as a gameplay-adjacent signal, not just a shader scalar. Deleting the scalability listener outright was rejected in this pass to avoid broad lifecycle churn; it now writes a canonical value.
+Scalability potential: Low/Middle/High/Ultra share the same flood-state signal fidelity. Device savings must move to VFX, audio, dashboard refresh, or non-authority telemetry around the same flood facts.
+Hardware Impact: 0 us speed claim. One quality read and lerp/smoothstep path is removed from scalability refresh; the main result is consumer parity.

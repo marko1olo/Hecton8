@@ -76,7 +76,7 @@ Microseconds saved:
       <math>8 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4 = 40 bytes; 40 % 8 = 0.</math>
     </GerstnerWaveDTO>
     <OceanKinematicsTelemetryEntry size="64" false_sharing_note="ring rows are 64-byte entries; no atomic per-worker counter row added in this pass" />
-    <OceanKinematicsQueueCountersDTO size="32" note="serial drain/counter pass owns mutation; not used as parallel atomic counters" />
+    <OceanKinematicsQueueCountersDTO size="64" note="serial drain/counter pass owns mutation; single cache-line lane includes result hash/nonfinite proof counters" />
   </struct_layout_verification>
   <scalability_curve>
     When `GlobalQualityWeight` falls below `0.3`, active octaves resolve near the one-octave minimum, polynomial sine blends toward the cheaper cubic approximation, and depth-cull early-out suppresses all wave math below the configured threshold. Middle weights raise octaves smoothly through `math.lerp`; high/ultra weights evaluate the authored spectrum cap and higher-order polynomial approximation. The DTO layout, rollback fence, BufferIDs, and authority route do not change with quality.
@@ -601,5 +601,33 @@ Build gate: CPU average 100 with active `csc` (`Id=26488`) and `dotnet` (`Id=201
     <caller file="Assets/_Project/Scripts/HectonPlayerMovement.cs" line="6984" api="GetSurfaceFlow" />
     <caller file="Assets/_Project/Scripts/World/FloraInteractionManager.cs" line="7014" api="GetSurfaceFlow" />
   </legacy_oop_callers>
+  <compile_gate result="NOT_RUN" reason="CPU=100 active csc/dotnet" />
+</SELF_AUDIT_REVISION>
+
+## Runtime Patch: Telemetry Result Hash Moved Off Main Thread
+What was wrong: `TryRecordTelemetry` computed the rollback result hash by scanning up to 50,000 `FluidSampleResultDTO` rows on the caller thread.
+What was done: `CountOceanSampleDepthCullsJob` now reads the separate `Results` Vault lane with `[ReadOnly, NoAlias]`, computes `QueueCounterResultHash` and `QueueCounterResultNonFinite`, and writes them into a widened 64-byte QueueCounters lane. `TryRecordTelemetry` reads fixed counters only.
+Cinematic Cheats used: None; this is a black-box/rollback proof-route repair. Existing Dear Lie GPU-cache path is unchanged.
+Exact Microseconds saved: No measured profiler claim. Complexity on telemetry caller path changes from O(N result rows) to O(1 counter reads); the remaining O(N) result hash work is in the dispatcher-owned Burst post-pass.
+Build gate: CPU average 100 with active `csc` (`Id=31708`) and `dotnet` (`Id=10784`); rebuild was not launched.
+
+<SELF_AUDIT_REVISION id="SHINOBU_261_TELEMETRY_RESULT_HASH_PURGE">
+  <struct_layout name="OceanKinematicsQueueCountersDTO" size="64">
+    <field name="PackedCount" offset="0" size="4" />
+    <field name="DroppedCount" offset="4" size="4" />
+    <field name="DuplicateCount" offset="8" size="4" />
+    <field name="CacheHitCount" offset="12" size="4" />
+    <field name="CacheMissCount" offset="16" size="4" />
+    <field name="DepthCulledCount" offset="20" size="4" />
+    <field name="ActiveOctaves" offset="24" size="4" />
+    <field name="NonFiniteCount" offset="28" size="4" />
+    <field name="ResultHash" offset="32" size="4" />
+    <field name="ResultNonFiniteCount" offset="36" size="4" />
+    <padding bytes="24" range="40..63" />
+    <math>10 * 4 + 24 = 64 bytes; 64 % 64 = 0.</math>
+  </struct_layout>
+  <dependency_graph>`inputDeps -> DrainOceanSampleRequestQueueJob -> evaluate/cache/mock job -> CountOceanSampleDepthCullsJob(result hash + counters) -> dispatcher completion -> TryRecordTelemetry(O(1))`</dependency_graph>
+  <noalias result="PASS">`Requests`, `Results`, and `QueueCounters` are distinct Vault buffers and are annotated `[NoAlias]` in the counter/hash job.</noalias>
+  <main_thread_scan result="REMOVED">`ComputeResultHash` no longer exists in `OceanKinematicsVaultRuntime`.</main_thread_scan>
   <compile_gate result="NOT_RUN" reason="CPU=100 active csc/dotnet" />
 </SELF_AUDIT_REVISION>

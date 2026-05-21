@@ -493,3 +493,15 @@ Route impact: Central docs now match the source/self-audit lock used by the earl
 Proof required: Static doc/source scan now; Unity import/Console, selected route run, profiler/GC, Burst/import proof, Frame Debugger, screenshot/clip, and save/load diff remain pending.
 Parked work rejected: Rewriting unrelated payload ledger sections, launching build under CPU gate, and changing DTO/shader ABI.
 Static verification: Doc scan shows both central SHINOBU_267 docs contain `CompileSynchronously=true`, `FloatMode.Deterministic`, and `FloatPrecision.Standard` on the flora route; asmdef/report JSON parse passed; focused `git diff --check` reported no whitespace errors. Build not launched because CPU preflight reported 100%, dotnet=0, csc=0.
+
+## Polish Pass 45 Decisions
+Problem: The black-box fault path still used `BinaryWriter`, which made the dump ABI depend on framework writer behavior instead of an explicit HECTON-8 little-endian contract.
+Solution: Replaced `DumpTelemetryOnce()` output with `FileStream` plus explicit 4-byte little-endian scalar helpers. `WriteSingleLittleEndian` serializes floats through `math.asuint`; the 12-byte header is `TelemetrySourceHash`, row count, and cursor, followed by 300 fixed 32-byte `SwayTelemetryEntry` rows.
+Rejected Alternatives: Keeping `BinaryWriter` was rejected because binary telemetry is a forensic ABI, not a convenience path. Writing raw struct bytes was rejected because that would couple dump files to platform endian/packing assumptions and weaken field-level compatibility.
+Scalability potential: No Low/Middle/High/Ultra visual behavior change. The hot path remains one 32B CBuffer and continuous shader quality curves; the dump path is fault-only and exists to prove postmortem data.
+Hardware Impact: 0 hot runtime us. Fault-path disk output uses simple byte stores; no frame-loop allocation or gameplay route is added.
+First 20 Minutes moment: World load and swim readability on the selected Copper Wire route biome.
+Route impact: If the route hits invalid flora math, the exported 300-frame ring is stable across x86 and ARM64 readers.
+Proof required: Static source/self-audit now; Unity import/Console, selected route run, profiler/GC, Burst/import proof, Frame Debugger, screenshot/clip, save/load diff, and actual dump-read smoke test remain pending.
+Parked work rejected: Launching build under CPU/dotnet/csc gate, moving disk I/O into the hot owner frame beyond existing fault-only trigger, and changing telemetry DTO size.
+Static verification: Runtime `BinaryWriter` count is 0; explicit little-endian helpers and `math.asuint` float serialization are present; editor self-audit contains `littleEndianDump`; owned forbidden scan is clean; runtime/editor/shader brace and preprocessor balances are zero; asmdef/report JSON parse passed; `git diff --check` reported no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 97.3%, dotnet=1, csc=1.

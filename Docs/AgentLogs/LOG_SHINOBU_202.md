@@ -5239,3 +5239,27 @@ Exact microseconds saved:
 Static verification:
 - Focused scan on `VRSomaticProvider.cs` and `VRSomaticProvider.Comfort.cs` finds no executable legacy handle/direct-buffer/Vault resolve/byref/latest-created/generation-id/word-boundary `ResolveBuffer` hits. Descriptor scan confirms `VaultGenerationHandle<T>`, `GetGenerationHandle<T>`, `TryResolveHandle`, `TryReadHandle`, `AsNativeArray`, `Release()`, `ReleaseBuffer(in _handle)`, `RegisterHotSwapListener`, and `OnGlobalRegistryServiceReplaced`. Brace counts are `281/281` and `132/132`; EOF checks passed. `git diff --check` passed. Build was not relaunched.
 - `git status --short` does not currently report the provider files after patching; this loop records the audited on-disk route state and documentation evidence, not repository index ownership.
+
+## 2026-05-21 - Loop 223 - World Chunk Residency Ledger Descriptor Route
+
+What was wrong:
+- `Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs` retained five WorldStreaming ledger lanes as pointer-era handles.
+- Chunk residency DTOs, Addressables request DTOs, HLOD impostor DTOs, runtime streaming tuning, and mock AUP shift signal opened through `GetBufferHandle`, retained created checks, and `.Resolve(_dataVault)`.
+- DataVault hot-swap only replaced the cached service reference; old ledger descriptors were not released or tombstoned.
+
+What was done:
+- Converted the five ledger lanes to `VaultGenerationHandle<T>`.
+- Added WorldStreaming descriptor helpers that validate exact BufferID, `SystemID.WorldStreaming`, nonzero generation, required length, `TryResolveHandle`, and `IsCreated`.
+- Owned lanes now acquire through `GetGenerationHandle` and release through `ReleaseBuffer(in handle)` during `DisposeNativeState` and DataVault hot-swap.
+- DataVault hot-swap completes the active residency job before releasing/rebinding ledger descriptors.
+- Added `[NoAlias]` to the residency, load-priority sort, HLOD swap, HLOD fade-cull, and HLOD AUP-shift job native lanes.
+
+Cinematic cheats used:
+- Existing chunk streaming remains fake-first: bounded HLOD impostor matrices, predictive radius math, cheap fade flags, Addressables request DTOs, pager metadata, and deferred/blind-frame release policy stand in for simulating every distant chunk as live scene content. This loop does not add scene searches, GameObjects, shader variants, physics probes, or new truth routes.
+
+Exact microseconds saved:
+- No measured runtime saving claimed. The loop removes stale pointer trust and descriptor release ambiguity. Chunk DTO strides, BufferIDs, Addressables behavior, active chunk state truth, AUP math, HLOD matrix ABI, SignalBus payloads, and WorldStreaming authority are unchanged.
+
+Static verification:
+- Focused scan on `WorldChunkResidencyManager.cs` finds no executable legacy handle/Vault handle/byref/latest-created/generation-id/word-boundary `ResolveBuffer` hits. Descriptor scan confirms `VaultGenerationHandle<T>`, `GetGenerationHandle<T>`, `TryResolveHandle`, `ReleaseStreamingLedgerBuffers`, `EnsureWorldStreamingVaultBuffer`, `TryResolveWorldStreamingVaultBuffer`, `ReleaseBuffer(in handle)`, and `[NoAlias]`. Brace count is `487/487`; EOF check passed. `git diff --check` passed with CRLF warning only. Build was not relaunched.
+- Residual debt is explicit: the same file still has the preexisting `AcquireWorldStreamingArray<T>` direct `GetBuffer<T>` route and 17 persistent `NativeArray<T>` fields. This loop claims only the five retained ledger handle routes and job alias metadata.

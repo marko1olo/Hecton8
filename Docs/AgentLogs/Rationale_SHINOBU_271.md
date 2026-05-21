@@ -337,3 +337,17 @@ Solution: Sampled for roughly 10 minutes at 20-second cadence. All 30 samples st
 Rejected Alternatives: Starting `dotnet build` at 73-100% CPU, terminating non-compiler Python/node/VS Code/System work, or claiming compile proof from static scans. The first violates the local build discipline, the second risks other agents' jobs, and the third is not a compiler artifact.
 Scalability potential: Runtime behavior unchanged. This preserves the multi-agent compile wall policy.
 Hardware Impact: 0 runtime microseconds. Solution compile proof remains pending verification.
+
+## Loop 12 CPU Override Build Decisions
+
+Problem: The user explicitly overrode the CPU gate for project-wide compile repair, but the first override build wrapper used `$log.tmp`, which PowerShell interpreted as property access on `$log` instead of a sibling temp path.
+Solution: Recorded `Docs/AgentLogs/Build_SHINOBU_271_solution_loop12_01.log` as invalid proof and corrected the wrapper to use a dedicated `$tmpLog` path.
+Rejected Alternatives: Treating the failed wrapper as compiler evidence, or continuing to wait on the CPU gate after the user explicitly authorized override. The first corrupts proof; the second disobeys the current repair directive.
+Scalability potential: Runtime behavior unchanged. Build orchestration only.
+Hardware Impact: 0 runtime microseconds.
+
+Problem: The corrected `loop12_02` solution build returned `EXIT_CODE=-1` while the captured minimal log only shows restore/package project progress and no explicit compiler/MSBuild error markers.
+Solution: Verified no `dotnet`, `csc`, or `VBCSCompiler` processes remained, scanned the log for `: error`, `MSB####`, `CSC : error`, `Exception`, `Unhandled`, and `FAILED`, and rejected it as non-diagnostic proof. The next build must run with normal verbosity and full-path diagnostics.
+Rejected Alternatives: Claiming success because no errors were printed, or editing code without a concrete failing file/target. `EXIT_CODE=-1` is a hard failure signal; blind edits create churn.
+Scalability potential: Runtime behavior unchanged. The compile-repair loop stays evidence-based.
+Hardware Impact: 0 runtime microseconds.

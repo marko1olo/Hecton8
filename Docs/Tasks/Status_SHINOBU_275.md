@@ -212,3 +212,10 @@ State: POLISH ACTIVE / COMPILE BLOCKED BY EXTERNAL DEPENDENCY ERRORS
 - [x] Dump row ABI preserved | DOD: row writer emits offsets 0..52 matching the explicit telemetry fields and leaves bytes 56..63 as zero pad, preserving the documented 64B row stride | Alternative rejected: compact 56B row or raw native memcpy without endian proof | Estimate: proof-only
 - [x] Loop 21 static verification | DOD: `rg` found no `BinaryWriter` in `DynamicDecalVaultRuntime`; scanner PASS at 2026-05-21T19:41:50Z with 0 active GameObject/URP decal violations; JSON validates; `git diff --check` has only CRLF warnings | Alternative rejected: claiming the dump patch without rerunning scanner/report/diff proof | Estimate: proof-only
 - [ ] Loop 21 compile gate | BLOCKED BY HOST POLICY: CPU sampled at 100%/83% with `VBCSCompiler` PID 32428 active, then 73% with no compiler process returned; build not launched because CPU remains above 50%
+
+## Polish Loop 22
+
+- [x] RenderGraph texture material mutation removed | DOD: wound atlas and visor post texture bindings now use `RasterCommandBuffer.SetGlobalTexture`; owned raster binding scan has no `Material.Set*`/`.SetBuffer` hit in `DeferredDecalPass` or `HectonVisorUberPostFeature` | Alternative rejected: dirty-gated `Material.SetTexture` inside RenderGraph render functions | Estimate: removes render-state mutation risk, no measured frame-time claim
+- [x] Runtime state ref exception removed | DOD: `DynamicDecalVaultRuntime` runtime state row access now uses a non-throwing pointer guard and marks the existing layout fault path on invalid Vault state | Alternative rejected: managed `InvalidOperationException` in VISUAL_SYNC | Estimate: failure-path only, avoids exception allocation/abort
+- [ ] Loop 22 static verification | PENDING: scanner/report/diff hygiene not yet rerun after docs/code patch
+- [ ] Loop 22 compile gate | PENDING: build gate not sampled after Loop 22 patch

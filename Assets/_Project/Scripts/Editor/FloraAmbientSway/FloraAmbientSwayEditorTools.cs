@@ -522,6 +522,13 @@ namespace Hecton8.Editor.FloraAmbientSway
                 !shader.Contains(forbiddenMx350Keyword) &&
                 !shader.Contains(forbiddenHighKeyword);
             bool telemetry = runtime.Contains("SwayTelemetryCapacity = 300") && runtime.Contains("Dump_SHINOBU_267.bin");
+            string forbiddenManagedDumpWriter = "Binary" + "Writer";
+            bool littleEndianDump =
+                runtime.Contains("WriteUInt32LittleEndian(stream, TelemetrySourceHash)") &&
+                runtime.Contains("WriteSingleLittleEndian(stream, entry.WrappedTime)") &&
+                runtime.Contains("WriteUInt32LittleEndian(stream, math.asuint(value))") &&
+                runtime.Contains("stream.WriteByte((byte)(value >> 24))") &&
+                !runtime.Contains(forbiddenManagedDumpWriter);
             string oldShaderParamsResolver = "ResolveNextShaderParams" + "Buffer";
             string oldFrameResolver = "Resolve" + "FrameId";
             string oldVisualFrameResolver = "ResolveVisual" + "FrameId";
@@ -595,7 +602,7 @@ namespace Hecton8.Editor.FloraAmbientSway
                 HasProjectFile("Assets/_Project/Scripts/Editor/FloraAmbientSway.meta") &&
                 HasProjectFile("Assets/_Project/Scripts/Editor/FloraAmbientSway/FloraAmbientSwayEditorTools.cs.meta") &&
                 HasProjectFile("Assets/_Project/Scripts/Editor/FloraAmbientSway/Hecton8.World.FloraAmbientSway.Editor.asmdef.meta");
-            bool pass = layout && dispatcher && fmod && upload && shaderQuality && telemetry && readAccessorPurity && runtimeQualityFailClosed && unsafeDtoMutation && hotOwnerMutationAndMath && hotValueNewHygiene && burstFloatMode && burstFunctionPointers && aotFunctionPointerAbi && asmdefBoundary && metaIdentity;
+            bool pass = layout && dispatcher && fmod && upload && shaderQuality && telemetry && littleEndianDump && readAccessorPurity && runtimeQualityFailClosed && unsafeDtoMutation && hotOwnerMutationAndMath && hotValueNewHygiene && burstFloatMode && burstFunctionPointers && aotFunctionPointerAbi && asmdefBoundary && metaIdentity;
             if (!pass)
             {
                 Debug.LogError(
@@ -608,6 +615,7 @@ namespace Hecton8.Editor.FloraAmbientSway
                     " upload=" + upload +
                     " shaderQuality=" + shaderQuality +
                     " blackBox=" + telemetry +
+                    " littleEndianDump=" + littleEndianDump +
                     " readAccessorPurity=" + readAccessorPurity +
                     " runtimeQualityFailClosed=" + runtimeQualityFailClosed +
                     " unsafeDtoMutation=" + unsafeDtoMutation +

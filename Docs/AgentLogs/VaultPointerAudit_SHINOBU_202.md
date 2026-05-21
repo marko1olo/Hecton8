@@ -792,3 +792,13 @@ The scan proves repo-wide debt, not successful consumer migration. A full rename
 - Provider and comfort teardown release descriptor-backed lanes through `ReleaseBuffer(in _handle)` after pending jobs are completed.
 - DataVault replacement is handled by `IGlobalRegistryHotSwapListener.OnGlobalRegistryServiceReplaced`, not by mutating inside `ResolveDataVault`.
 - This entry claims only VR Somatic Vault route cleanup. `VRSomaticBlackBoxEntry`, `CapsulecastCommand`, `RaycastHit`, `HeadCastSample`, `VRSomaticRootSyncInput`, `VRSomaticRootSyncOutput`, `SomaticComfortStateDTO`, `SomaticDerivativeDTO`, `SomaticKinematicHistoryDTO`, `VrComfortProfileDTO`, `VrComfortProfileLookupSlotDTO`, `ComfortTelemetryEntry`, `SomaticMockSicknessSampleDTO`, BufferIDs, root/hand/head/comfort job math, shader property IDs, CSV parser contracts, blackbox dump format, and GameplayPlayer authority are unchanged by this loop.
+
+## 2026-05-21 World Chunk Residency Ledger Descriptor Route Update
+
+- `Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs` no longer has executable `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `TryGetLatestCreated`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `TryGetBufferGeneration`, `VaultGenerationID`, or word-boundary `ResolveBuffer` hits.
+- Chunk residency DTO, Addressables request DTO, HLOD impostor DTO, runtime streaming tuning, and mock AUP shift signal routes now use `VaultGenerationHandle<T>` descriptors.
+- Each migrated route validates exact BufferID, `SystemID.WorldStreaming`, nonzero generation, required length, `TryResolveHandle`, and `IsCreated` before returning a native view.
+- `DisposeNativeState` and DataVault hot-swap release the five owned descriptors through `ReleaseBuffer(in handle)` and tombstone route state. DataVault hot-swap completes the active residency job before ledger release/rebind.
+- Residency, load-priority sort, HLOD swap, HLOD fade-cull, and HLOD AUP-shift jobs now mark non-overlapping native lanes with `[NoAlias]`.
+- Residual debt remains visible: `AcquireWorldStreamingArray<T>` still uses direct `GetBuffer<T>` and the manager still has 17 persistent `NativeArray<T>` fields. This entry does not claim that larger resident-state alias route as migrated.
+- This entry claims only World Chunk Residency ledger Vault route cleanup. `ChunkResidencyDTO`, `AddressablesRequestDTO`, `HLOD_ImpostorDTO`, `WorldStreamingRuntimeTuning`, `MockAupShiftSignal`, BufferIDs 70560-70564, Addressables request behavior, HLOD matrix ABI, SignalBus payloads, tuning CSV contract, active chunk state truth, and WorldStreaming authority are unchanged by this loop.

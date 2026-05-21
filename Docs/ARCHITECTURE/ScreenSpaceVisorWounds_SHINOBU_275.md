@@ -18,7 +18,7 @@ Route:
 - Noir integration is pre-tonemap. URP Volume Tonemapping owns final ACES; the active Noir shader performs grade/glitch/crack shaping without a local fragment tonemap curve or `saturate(color)` HDR clamp.
 - Active Noir constant generation/upload is dispatcher-owned through `HectonVisorUberPostFeature.LateFrameTick`; `AddRenderPasses()` only checks the last valid `GraphicsBuffer` and enqueues the RenderGraph pass. The one-row mock/parameter math is direct scalar code, not tiny `IJob.Run()`.
 - Reconstruction constant publication uses A/B `GraphicsBuffer.Target.Constant` targets and a published active buffer. `AddRenderPasses()` only stages camera/runtime inputs and consumes the last active buffer; dispatcher `LateFrameTick()` writes changed constants into the next mapped buffer, mirrors constants into Vault, records telemetry, and owns any black-box dump.
-- Visor post scalar/vector/texture state and wound atlas state are carried by RenderGraph pass data and bound inside raster render functions with `RasterCommandBuffer.SetGlobal*`. The owned visor post shaders no longer rely on `UnityPerMaterial` or pre-render material mutation for those trauma constants.
+- Visor post scalar/vector/texture state and wound atlas state are carried by RenderGraph pass data and bound inside raster render functions with `RasterCommandBuffer.SetGlobal*`. Loop 22 verified texture binding also uses command-buffer globals (`SetGlobalTexture`) instead of `Material.SetTexture`; the owned visor post shaders no longer rely on `UnityPerMaterial` or material mutation for trauma constants.
 - `HectonVisorUberPost.shader` and `Hecton_BilateralUpsample.shader` consume dispatcher-published visual time globals (`_HectonUberVisualTime`, `_H8UberNoirVisualTime`) instead of engine `_Time`.
 - Reconstruction aesthetic CSV rows are loaded only from cold create/DataVault hot-swap lanes, then copied into a fixed 32-row cold cache. Render enqueue selects profiles from that snapshot and does not lock the profile Vault buffer or retry file IO.
 - Noir color CSV rows are also copied into a fixed cold 32-row snapshot; LateFrame profile selection does not resolve the Noir profile Vault array on cache misses.
@@ -27,6 +27,7 @@ Route:
 - The live matrix debug view is editor-owned by `ScreenSpaceDecalTunerWindow` through `SceneView.duringSceneGui`; `DynamicDecalGizmoVisualizer` is compiled only under `UNITY_EDITOR`, so player builds do not carry a scene-component proof surface.
 - Diagnostic `TryGetTuning`, `TryGetRuntimeState`, and `TryGetLatestTelemetry` calls return immutable owner-phase snapshots. They do not lock Vault buffers, resolve native arrays, complete jobs, allocate, or mutate global lock state.
 - `TryAcquireDecalBufferRead` / `ReleaseDecalBufferRead` is also compiled only under `UNITY_EDITOR`; it is an explicit acquire/release debug lane for SceneView gizmos and is not available to player runtime callers.
+- Runtime state pointer access in `ExecuteVisualSync()` is fail-closed. A stale or invalid one-row Vault state buffer marks the existing layout/fault telemetry bit and returns false instead of throwing a managed gameplay exception.
 
 Constraints:
 - No `DecalProjector` GameObjects, Canvas blood overlays, material clones, or per-wound GameObject hierarchy.

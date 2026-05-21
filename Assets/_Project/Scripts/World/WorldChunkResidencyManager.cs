@@ -12,6 +12,7 @@ using Hecton8.Data;
 using Hecton8.Gameplay;
 using Hecton8.Optimization;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -157,12 +158,12 @@ namespace Hecton8.World
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct RadiusBasedStreamingJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<long> ChunkIds;
-        [ReadOnly] public NativeArray<AbsoluteUniversePositionBlit> ChunkCenters;
-        [ReadOnly] public NativeParallelHashMap<long, ChunkState> ChunkStates;
-        public NativeArray<ChunkResidencyDTO> ResidencyDtos;
-        public NativeList<long>.ParallelWriter ChunksToLoad;
-        public NativeList<long>.ParallelWriter ChunksToUnload;
+        [ReadOnly, NoAlias] public NativeArray<long> ChunkIds;
+        [ReadOnly, NoAlias] public NativeArray<AbsoluteUniversePositionBlit> ChunkCenters;
+        [ReadOnly, NoAlias] public NativeParallelHashMap<long, ChunkState> ChunkStates;
+        [NoAlias] public NativeArray<ChunkResidencyDTO> ResidencyDtos;
+        [NoAlias] public NativeList<long>.ParallelWriter ChunksToLoad;
+        [NoAlias] public NativeList<long>.ParallelWriter ChunksToUnload;
         public double3 PlayerAbsolute;
         public float3 PlayerVelocity;
         public double LoadRadiusSq;
@@ -286,10 +287,10 @@ namespace Hecton8.World
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct ChunkLoadPrioritySortJob : IJob
     {
-        public NativeList<long> ChunksToLoad;
-        public NativeList<ChunkLoadSortRecord> SortRecords;
-        [ReadOnly] public NativeParallelHashMap<long, int> ChunkIndexById;
-        [ReadOnly] public NativeArray<AbsoluteUniversePositionBlit> ChunkCenters;
+        [NoAlias] public NativeList<long> ChunksToLoad;
+        [NoAlias] public NativeList<ChunkLoadSortRecord> SortRecords;
+        [ReadOnly, NoAlias] public NativeParallelHashMap<long, int> ChunkIndexById;
+        [ReadOnly, NoAlias] public NativeArray<AbsoluteUniversePositionBlit> ChunkCenters;
         public double3 ProjectedAbsolute;
 
         public void Execute()
@@ -335,16 +336,16 @@ namespace Hecton8.World
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct HlodImpostorSwapJob : IJob
     {
-        public NativeArray<float4x4> ActiveImpostors;
-        public NativeArray<int> ImpostorTypes;
-        public NativeArray<long> ChunkIds;
-        public NativeArray<float> SpawnTimes;
-        public NativeArray<float3> Centers;
-        public NativeArray<float3> Sizes;
-        public NativeArray<uint> Flags;
-        public NativeArray<StreamingHlodImpostorPoint> CartographyPoints;
-        public NativeArray<int> ActiveCount;
-        public NativeArray<int> FadeOutCount;
+        [NoAlias] public NativeArray<float4x4> ActiveImpostors;
+        [NoAlias] public NativeArray<int> ImpostorTypes;
+        [NoAlias] public NativeArray<long> ChunkIds;
+        [NoAlias] public NativeArray<float> SpawnTimes;
+        [NoAlias] public NativeArray<float3> Centers;
+        [NoAlias] public NativeArray<float3> Sizes;
+        [NoAlias] public NativeArray<uint> Flags;
+        [NoAlias] public NativeArray<StreamingHlodImpostorPoint> CartographyPoints;
+        [NoAlias] public NativeArray<int> ActiveCount;
+        [NoAlias] public NativeArray<int> FadeOutCount;
         public long ChunkId;
         public float3 Center;
         public float3 Size;
@@ -481,16 +482,16 @@ namespace Hecton8.World
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct HlodImpostorFadeCullJob : IJob
     {
-        public NativeArray<float4x4> ActiveImpostors;
-        public NativeArray<int> ImpostorTypes;
-        public NativeArray<long> ChunkIds;
-        public NativeArray<float> SpawnTimes;
-        public NativeArray<float3> Centers;
-        public NativeArray<float3> Sizes;
-        public NativeArray<uint> Flags;
-        public NativeArray<StreamingHlodImpostorPoint> CartographyPoints;
-        public NativeArray<int> ActiveCount;
-        public NativeArray<int> FadeOutCount;
+        [NoAlias] public NativeArray<float4x4> ActiveImpostors;
+        [NoAlias] public NativeArray<int> ImpostorTypes;
+        [NoAlias] public NativeArray<long> ChunkIds;
+        [NoAlias] public NativeArray<float> SpawnTimes;
+        [NoAlias] public NativeArray<float3> Centers;
+        [NoAlias] public NativeArray<float3> Sizes;
+        [NoAlias] public NativeArray<uint> Flags;
+        [NoAlias] public NativeArray<StreamingHlodImpostorPoint> CartographyPoints;
+        [NoAlias] public NativeArray<int> ActiveCount;
+        [NoAlias] public NativeArray<int> FadeOutCount;
         public float NowSeconds;
         public float FadeOutSeconds;
         public uint FadeOutFlag;
@@ -555,9 +556,9 @@ namespace Hecton8.World
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct HlodImpostorAupShiftJob : IJobParallelFor
     {
-        public NativeArray<float4x4> ActiveImpostors;
-        public NativeArray<float3> Centers;
-        public NativeArray<StreamingHlodImpostorPoint> CartographyPoints;
+        [NoAlias] public NativeArray<float4x4> ActiveImpostors;
+        [NoAlias] public NativeArray<float3> Centers;
+        [NoAlias] public NativeArray<StreamingHlodImpostorPoint> CartographyPoints;
         public float3 ShiftMeters;
 
         public void Execute(int index)
@@ -669,6 +670,7 @@ namespace Hecton8.World
         private const BufferID HlodImpostorVaultBufferId = (BufferID)70562;
         private const BufferID StreamingTuningVaultBufferId = (BufferID)70563;
         private const BufferID MockAupShiftVaultBufferId = (BufferID)70564;
+        private const SystemID VaultOwnerSystem = SystemID.WorldStreaming;
         private const BufferID HydrationApplyRecordVaultBufferId = (BufferID)70565;
         private const BufferID ChunkIdsVaultBufferId = (BufferID)70566;
         private const BufferID ChunkCentersVaultBufferId = (BufferID)70567;
@@ -942,11 +944,12 @@ namespace Hecton8.World
         private ChunkStreamingScalabilityTier _resolvedTier = ChunkStreamingScalabilityTier.Low;
         private WorldStreamingRuntimeTuning _coldStartTuning;
         private IAmbientBiotaService _ambientBiotaService;
-        private VaultBufferHandle<ChunkResidencyDTO> _chunkResidencyDtoHandle;
-        private VaultBufferHandle<AddressablesRequestDTO> _addressablesRequestDtoHandle;
-        private VaultBufferHandle<HLOD_ImpostorDTO> _hlodImpostorDtoHandle;
-        private VaultBufferHandle<WorldStreamingRuntimeTuning> _streamingTuningHandle;
-        private VaultBufferHandle<MockAupShiftSignal> _mockAupShiftHandle;
+        private IDataVault _streamingLedgerVault;
+        private VaultGenerationHandle<ChunkResidencyDTO> _chunkResidencyDtoHandle;
+        private VaultGenerationHandle<AddressablesRequestDTO> _addressablesRequestDtoHandle;
+        private VaultGenerationHandle<HLOD_ImpostorDTO> _hlodImpostorDtoHandle;
+        private VaultGenerationHandle<WorldStreamingRuntimeTuning> _streamingTuningHandle;
+        private VaultGenerationHandle<MockAupShiftSignal> _mockAupShiftHandle;
         private long[] _chunkIdsByDefinitionIndex;
         private GameObject[][] _spawnedInstancesByChunk;
         private int[] _spawnedCountsByChunk;
@@ -1073,34 +1076,52 @@ namespace Hecton8.World
 
         private NativeArray<ChunkResidencyDTO> ResolveChunkResidencyDtos()
         {
-            if (!_chunkResidencyDtoHandle.IsCreated)
-                return default;
-
-            return _chunkResidencyDtoHandle.Resolve(_dataVault);
+            return TryResolveWorldStreamingVaultBuffer(
+                in _chunkResidencyDtoHandle,
+                ChunkResidencyVaultBufferId,
+                ResolveStreamingLedgerCapacity(),
+                out NativeArray<ChunkResidencyDTO> buffer)
+                ? buffer
+                : default;
         }
 
         private NativeArray<AddressablesRequestDTO> ResolveAddressablesRequestDtos()
         {
-            if (!_addressablesRequestDtoHandle.IsCreated)
-                return default;
-
-            return _addressablesRequestDtoHandle.Resolve(_dataVault);
+            return TryResolveWorldStreamingVaultBuffer(
+                in _addressablesRequestDtoHandle,
+                AddressablesRequestVaultBufferId,
+                ResolveStreamingLedgerCapacity(),
+                out NativeArray<AddressablesRequestDTO> buffer)
+                ? buffer
+                : default;
         }
 
         private NativeArray<HLOD_ImpostorDTO> ResolveHlodImpostorDtos()
         {
-            if (!_hlodImpostorDtoHandle.IsCreated)
-                return default;
-
-            return _hlodImpostorDtoHandle.Resolve(_dataVault);
+            return TryResolveWorldStreamingVaultBuffer(
+                in _hlodImpostorDtoHandle,
+                HlodImpostorVaultBufferId,
+                ResolveStreamingLedgerCapacity(),
+                out NativeArray<HLOD_ImpostorDTO> buffer)
+                ? buffer
+                : default;
         }
 
         private NativeArray<WorldStreamingRuntimeTuning> ResolveStreamingTuning()
         {
-            if (!_streamingTuningHandle.IsCreated)
-                return default;
+            return TryResolveWorldStreamingVaultBuffer(
+                in _streamingTuningHandle,
+                StreamingTuningVaultBufferId,
+                1,
+                out NativeArray<WorldStreamingRuntimeTuning> buffer)
+                ? buffer
+                : default;
+        }
 
-            return _streamingTuningHandle.Resolve(_dataVault);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int ResolveStreamingLedgerCapacity()
+        {
+            return _chunkIds.IsCreated ? _chunkIds.Length : math.max(1, maxChunkCount);
         }
 
         public bool IsChunkImpostorAudioMuted(long chunkId)
@@ -1714,39 +1735,52 @@ namespace Hecton8.World
         {
             IDataVault vault = _dataVault;
             _streamingVaultBacked = false;
-            if (vault != null)
+            if (vault == null || capacity <= 0)
             {
-                _chunkResidencyDtoHandle = vault.GetBufferHandle<ChunkResidencyDTO>(
+                ReleaseStreamingLedgerBuffers();
+                return;
+            }
+
+            if (_streamingLedgerVault != null && !ReferenceEquals(_streamingLedgerVault, vault))
+                ReleaseStreamingLedgerBuffers(_streamingLedgerVault);
+
+            _streamingLedgerVault = vault;
+            if (EnsureWorldStreamingVaultBuffer(
+                    vault,
+                    ref _chunkResidencyDtoHandle,
                     ChunkResidencyVaultBufferId,
                     capacity,
-                    SystemID.WorldStreaming,
-                    NativeArrayOptions.UninitializedMemory);
-                _addressablesRequestDtoHandle = vault.GetBufferHandle<AddressablesRequestDTO>(
+                    NativeArrayOptions.UninitializedMemory,
+                    out NativeArray<ChunkResidencyDTO> residencyDtos) &&
+                EnsureWorldStreamingVaultBuffer(
+                    vault,
+                    ref _addressablesRequestDtoHandle,
                     AddressablesRequestVaultBufferId,
                     capacity,
-                    SystemID.WorldStreaming,
-                    NativeArrayOptions.ClearMemory);
-                _hlodImpostorDtoHandle = vault.GetBufferHandle<HLOD_ImpostorDTO>(
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<AddressablesRequestDTO> addressableRequests) &&
+                EnsureWorldStreamingVaultBuffer(
+                    vault,
+                    ref _hlodImpostorDtoHandle,
                     HlodImpostorVaultBufferId,
                     capacity,
-                    SystemID.WorldStreaming,
-                    NativeArrayOptions.ClearMemory);
-                _streamingTuningHandle = vault.GetBufferHandle<WorldStreamingRuntimeTuning>(
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<HLOD_ImpostorDTO> hlodImpostors) &&
+                EnsureWorldStreamingVaultBuffer(
+                    vault,
+                    ref _streamingTuningHandle,
                     StreamingTuningVaultBufferId,
                     1,
-                    SystemID.WorldStreaming,
-                    NativeArrayOptions.ClearMemory);
-                _mockAupShiftHandle = vault.GetBufferHandle<MockAupShiftSignal>(
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<WorldStreamingRuntimeTuning> tuning) &&
+                EnsureWorldStreamingVaultBuffer(
+                    vault,
+                    ref _mockAupShiftHandle,
                     MockAupShiftVaultBufferId,
                     1,
-                    SystemID.WorldStreaming,
-                    NativeArrayOptions.ClearMemory);
-
-                NativeArray<ChunkResidencyDTO> residencyDtos = _chunkResidencyDtoHandle.Resolve(vault);
-                NativeArray<AddressablesRequestDTO> addressableRequests = _addressablesRequestDtoHandle.Resolve(vault);
-                NativeArray<HLOD_ImpostorDTO> hlodImpostors = _hlodImpostorDtoHandle.Resolve(vault);
-                NativeArray<WorldStreamingRuntimeTuning> tuning = _streamingTuningHandle.Resolve(vault);
-                NativeArray<MockAupShiftSignal> mockAupShift = _mockAupShiftHandle.Resolve(vault);
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<MockAupShiftSignal> mockAupShift))
+            {
                 _streamingVaultBacked =
                     residencyDtos.IsCreated &&
                     addressableRequests.IsCreated &&
@@ -2012,7 +2046,11 @@ namespace Hecton8.World
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.DataVault:
+                    CompleteResidencyJobForTeardown();
+                    ReleaseStreamingLedgerBuffers(previousService as IDataVault);
                     _dataVault = currentService as IDataVault;
+                    if (_dataVault != null && _chunkIds.IsCreated)
+                        ResolveStreamingLedgerBuffers(_chunkIds.Length);
                     break;
                 case GlobalRegistryServiceSlot.JobAdmissionRuntime:
                     _jobAdmissionService = currentService as IJobAdmissionService;
@@ -5233,12 +5271,98 @@ namespace Hecton8.World
 
         private void ReleaseStreamingLedgerBuffers()
         {
-            _chunkResidencyDtoHandle = default;
-            _addressablesRequestDtoHandle = default;
-            _hlodImpostorDtoHandle = default;
-            _streamingTuningHandle = default;
-            _mockAupShiftHandle = default;
+            ReleaseStreamingLedgerBuffers(null);
+        }
+
+        private void ReleaseStreamingLedgerBuffers(IDataVault releaseVault)
+        {
+            IDataVault vault = releaseVault ?? _streamingLedgerVault ?? _dataVault;
+            ReleaseWorldStreamingVaultHandle(vault, ref _chunkResidencyDtoHandle, ChunkResidencyVaultBufferId);
+            ReleaseWorldStreamingVaultHandle(vault, ref _addressablesRequestDtoHandle, AddressablesRequestVaultBufferId);
+            ReleaseWorldStreamingVaultHandle(vault, ref _hlodImpostorDtoHandle, HlodImpostorVaultBufferId);
+            ReleaseWorldStreamingVaultHandle(vault, ref _streamingTuningHandle, StreamingTuningVaultBufferId);
+            ReleaseWorldStreamingVaultHandle(vault, ref _mockAupShiftHandle, MockAupShiftVaultBufferId);
+            _streamingLedgerVault = null;
             _streamingVaultBacked = false;
+        }
+
+        private bool EnsureWorldStreamingVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null || requiredLength <= 0)
+                return false;
+
+            if (TryResolveWorldStreamingVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer))
+                return true;
+
+            if (handle.Generation != 0u)
+            {
+                if (ReferenceEquals(_streamingLedgerVault, vault))
+                    ReleaseWorldStreamingVaultHandle(vault, ref handle, bufferId);
+                else
+                    handle = default;
+            }
+
+            handle = vault.GetGenerationHandle<T>(bufferId, requiredLength, VaultOwnerSystem, options);
+            return TryResolveWorldStreamingVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer);
+        }
+
+        private bool TryResolveWorldStreamingVaultBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            return TryResolveWorldStreamingVaultBuffer(_dataVault, in handle, bufferId, requiredLength, out buffer);
+        }
+
+        private static bool TryResolveWorldStreamingVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                !IsWorldStreamingVaultHandle(in handle, bufferId) ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static void ReleaseWorldStreamingVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            if (vault != null && IsWorldStreamingVaultHandle(in handle, bufferId))
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsWorldStreamingVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == (uint)bufferId &&
+                   handle.SystemID == (uint)VaultOwnerSystem &&
+                   handle.Generation != 0u;
         }
 
         private void ReleaseWorldStreamingArray<T>(ref NativeArray<T> array, string label, ulong vaultBit) where T : struct

@@ -4,7 +4,7 @@ Agent: SHINOBU_270
 Domain: ECHELON 8 Presentation & UX / Visor AR (HUD)
 Prompt role: VISOR_AR_STENCIL_RENDERER
 Task count: 20
-Status: BOOT WARMUP ROUTE PATCHED / STATIC RECHECK CLEAN / COMPILE BLOCKED BY CPU GATE
+Status: STATIC API RECHECK CLEAN / COMPILE BLOCKED BY ACTIVE COMPILER AND CPU GATE
 
 ## Mandates Read
 
@@ -134,3 +134,11 @@ Status: BOOT WARMUP ROUTE PATCHED / STATIC RECHECK CLEAN / COMPILE BLOCKED BY CP
 - [x] Post-bootstrap-route static verification rerun | Justification: targeted forbidden scan and RenderGraph/stencil scan returned clean; `00_BOOTSTRAP` component script GUID `37290befeffd3d94796e62b9097c7db9` matches `BootstrapController.cs.meta`; scene YAML contains SVC guid `27027027027027027027027027027027`; JSON parses; custom trailing-whitespace scan returned clean | Alternatives Rejected: trusting subagent report without local proof | Estimated impact: proof only
 - [x] Build gate sampled after bootstrap-route patch | Justification: no compiler process was present, but CPU remained 90% by CIM and 63.74%, 64.3%, 93.08%, 100%, 100% by processor counter samples, so `dotnet build` was not launched | Alternatives Rejected: building under saturated CPU or claiming compile proof from static scans | Estimated impact: protects parallel agents and local IO; compile remains PENDING VERIFICATION
 - [x] Final build gate resampled | Justification: no compiler process was present, but CPU returned to 100% by CIM and 100%, 100%, 100% by processor counter samples; build remains legally blocked | Alternatives Rejected: launching `dotnet build` under saturated CPU | Estimated impact: protects parallel agents and local IO
+
+## Iteration 16: Static API Recheck / Active Compiler Gate
+
+- [x] Owned-file git state rechecked | Justification: SHINOBU_270 source/docs/assets are tracked and show no local diff; current dirty worktree entries belong to other agents/domains and were not touched | Alternatives Rejected: reverting or normalizing unrelated files | Estimated impact: prevents accidental cross-agent damage; runtime 0 us
+- [x] RenderGraph ABI revalidated against local SRP package | Justification: local `RasterCommandBuffer` exposes `SetGlobalTexture(int, TextureHandle)`, `SetGlobalBuffer(int, GraphicsBuffer)`, `SetGlobalConstantBuffer(GraphicsBuffer, int, int, int)`, and `CoreUtils.DrawFullScreen(RasterCommandBuffer, ...)`; SHINOBU_270 bindings match those signatures | Alternatives Rejected: waiting for build output to catch deterministic API shape or swapping to legacy `Shader.SetGlobal*` calls | Estimated impact: compile/import risk reduced; runtime 0 us
+- [x] Shader/DTO binding ABI rechecked | Justification: C# constant-buffer names `HectonVisorHudParams` and `HectonVisorDigitParams` match shader `CBUFFER_START` names; `_HectonVisorArTargets` structured buffer name matches the C# global buffer id; DTO field order remains 4x `float4` per 64-byte payload | Alternatives Rejected: string-renaming shader buffers without C# proof | Estimated impact: prevents silent blank AR resolve; runtime 0 us
+- [x] Subagent static audit rerun | Justification: Locke returned no P0/P1/P2 findings after checking scoped source/import/RenderGraph/scene/SVC risks without edits or builds | Alternatives Rejected: relying only on primary-agent scan | Estimated impact: proof only
+- [x] Build gate blocked by another compiler | Justification: active `dotnet` PID 10784 and `csc` PID 25392 were present; CPU was 100% by CIM and 86.74%, 94.06%, 96.76% by processor counter samples, so SHINOBU_270 did not launch `dotnet build` | Alternatives Rejected: launching a competing compiler, killing another agent's build, or claiming compile proof from static scans | Estimated impact: protects shared workstation and IO; compile remains PENDING VERIFICATION

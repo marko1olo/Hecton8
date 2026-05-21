@@ -148,7 +148,8 @@ namespace Hecton8.Physics
             int fallbackActiveOctaves = ResolveActiveOctaves(tuning.GlobalQualityWeight, tuning.MaxOctaveLimit, OceanKinematicsConstants.WaveCapacity);
             int activeOctaves = ResolveCounter(queueCounters, OceanKinematicsConstants.QueueCounterActiveOctaves, fallbackActiveOctaves);
             int nonFinite = ResolveCounter(queueCounters, OceanKinematicsConstants.QueueCounterNonFinite, 0);
-            uint resultHash = ComputeResultHash(results, resultCount, out int resultNonFinite);
+            uint resultHash = unchecked((uint)ResolveCounter(queueCounters, OceanKinematicsConstants.QueueCounterResultHash, unchecked((int)2166136261u)));
+            int resultNonFinite = ResolveCounter(queueCounters, OceanKinematicsConstants.QueueCounterResultNonFinite, 0);
             nonFinite += resultNonFinite;
             float micros = math.select(0f, burstExecutionMicros, math.isfinite(burstExecutionMicros));
             uint flags = tuning.Flags;
@@ -359,29 +360,6 @@ namespace Hecton8.Physics
                 return counters[index];
 
             return fallback;
-        }
-
-        private static uint ComputeResultHash(NativeArray<FluidSampleResultDTO> results, int resultCount, out int nonFiniteCount)
-        {
-            nonFiniteCount = 0;
-            uint hash = 2166136261u;
-            if (!results.IsCreated || resultCount <= 0)
-                return hash;
-
-            int count = math.min(resultCount, results.Length);
-            for (int i = 0; i < count; i++)
-            {
-                FluidSampleResultDTO result = results[i];
-                if (!math.isfinite(result.WaterHeight) || !math.all(math.isfinite(result.SurfaceVelocity)))
-                    nonFiniteCount++;
-
-                hash = Mix(hash, AsUInt32(result.WaterHeight));
-                hash = Mix(hash, AsUInt32(result.SurfaceVelocity.x));
-                hash = Mix(hash, AsUInt32(result.SurfaceVelocity.y));
-                hash = Mix(hash, AsUInt32(result.SurfaceVelocity.z));
-            }
-
-            return hash;
         }
 
         private static uint ComputeMacroHash(in OceanMacroStateDTO state)

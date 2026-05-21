@@ -1,6 +1,6 @@
 # Rationale_SHINOBU_270
 
-Status: BOOT WARMUP ROUTE PATCHED / STATIC RECHECK CLEAN / COMPILE BLOCKED BY CPU GATE
+Status: STATIC API RECHECK CLEAN / COMPILE BLOCKED BY ACTIVE COMPILER AND CPU GATE
 Domain: ECHELON 8 Presentation & UX / Visor AR (HUD)
 
 ## Mandate Selection
@@ -340,3 +340,19 @@ Solution: Resampled the gate after the final static scans. No `dotnet.exe`, `csc
 Rejected Alternatives: Starting a compiler under saturated CPU or claiming compile proof from static source scans.
 Scalability potential: No runtime route change.
 Hardware Impact: Protects shared workstation CPU/IO. Compile remains PENDING VERIFICATION.
+
+### D042 Static API Recheck After Bootstrap Warmup
+
+Problem: After context compaction and another user mandate, the source had to be revalidated from disk instead of trusting chat memory. The specific risk was a silent RenderGraph or shader-binding ABI mismatch that a static forbidden-token scan would not catch.
+Solution: Rechecked owned-file git state, local SRP package signatures, existing in-repo RenderGraph post passes, shader CBUFFER names, structured-buffer id binding, bootstrap scene/SVC GUID route, JSON parse, and whitespace. `RasterCommandBuffer` exposes `SetGlobalTexture(int, TextureHandle)`, `SetGlobalBuffer(int, GraphicsBuffer)`, `SetGlobalConstantBuffer(GraphicsBuffer, int, int, int)`, and `CoreUtils.DrawFullScreen(RasterCommandBuffer, ...)`; SHINOBU_270 uses those exact call shapes. C# property ids match shader `CBUFFER_START(HectonVisorHudParams)`, `CBUFFER_START(HectonVisorDigitParams)`, and `_HectonVisorArTargets`.
+Rejected Alternatives: Replacing RenderGraph bindings with legacy `Shader.SetGlobal*`, touching unrelated dirty files, or waiting for a build before checking deterministic local API shape.
+Scalability potential: Runtime Low/Middle/High/Ultra route unchanged. This protects the single RenderGraph stencil path; quality remains a continuous shader parameter, not a variant or route switch.
+Hardware Impact: Runtime 0 us. It prevents silent blank AR resolve/import failure that would otherwise fall back to Canvas or hide HUD proof.
+
+### D043 Active Compiler Build Gate
+
+Problem: Compile proof is still pending, but AGENTS.md forbids launching `dotnet build` when another `dotnet`/`csc` is active or CPU is above 50%.
+Solution: Sampled the gate after static API recheck. Active `dotnet` PID 10784 and `csc` PID 25392 were present, with CPU 100% by CIM and 86.74%, 94.06%, 96.76% by processor counter samples. Build was not launched.
+Rejected Alternatives: Launching a competing compiler, killing another agent's compiler, or claiming compile proof from static scans.
+Scalability potential: No runtime route change.
+Hardware Impact: Protects shared workstation CPU/IO. Compile remains PENDING VERIFICATION until no compiler process is active and CPU is below 50%.

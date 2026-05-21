@@ -904,22 +904,22 @@ namespace Hecton8.World.FloraAmbientSway
                 string directory = Path.Combine(root, "Docs", "AgentLogs");
                 Directory.CreateDirectory(directory);
                 string path = Path.Combine(directory, "Dump_SHINOBU_267.bin");
-                using (BinaryWriter writer = new BinaryWriter(File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read)))
+                using (FileStream stream = File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read))
                 {
-                    writer.Write(TelemetrySourceHash);
-                    writer.Write(ring.Length);
-                    writer.Write(ReadTelemetryCursor(cursorArray));
+                    WriteUInt32LittleEndian(stream, TelemetrySourceHash);
+                    WriteInt32LittleEndian(stream, ring.Length);
+                    WriteInt32LittleEndian(stream, ReadTelemetryCursor(cursorArray));
                     for (int i = 0; i < ring.Length; i++)
                     {
                         ref readonly SwayTelemetryEntry entry = ref ReadTelemetryEntryReadonly(ring, i);
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.WrappedTime);
-                        writer.Write(entry.FlowMagnitude);
-                        writer.Write(entry.GlobalQualityWeight);
-                        writer.Write(entry.AmplitudeMeters);
-                        writer.Write(entry.StateHash);
-                        writer.Write(entry.SourceHash);
+                        WriteUInt32LittleEndian(stream, entry.Frame);
+                        WriteUInt32LittleEndian(stream, entry.Flags);
+                        WriteSingleLittleEndian(stream, entry.WrappedTime);
+                        WriteSingleLittleEndian(stream, entry.FlowMagnitude);
+                        WriteSingleLittleEndian(stream, entry.GlobalQualityWeight);
+                        WriteSingleLittleEndian(stream, entry.AmplitudeMeters);
+                        WriteUInt32LittleEndian(stream, entry.StateHash);
+                        WriteUInt32LittleEndian(stream, entry.SourceHash);
                     }
                 }
             }
@@ -927,10 +927,32 @@ namespace Hecton8.World.FloraAmbientSway
             {
                 CrashTelemetryBuffer.ReportBlackBoxExportFailure();
             }
+            catch (NotSupportedException)
+            {
+                CrashTelemetryBuffer.ReportBlackBoxExportFailure();
+            }
             catch (UnauthorizedAccessException)
             {
                 CrashTelemetryBuffer.ReportBlackBoxExportFailure();
             }
+        }
+
+        private static void WriteInt32LittleEndian(Stream stream, int value)
+        {
+            WriteUInt32LittleEndian(stream, unchecked((uint)value));
+        }
+
+        private static void WriteSingleLittleEndian(Stream stream, float value)
+        {
+            WriteUInt32LittleEndian(stream, math.asuint(value));
+        }
+
+        private static void WriteUInt32LittleEndian(Stream stream, uint value)
+        {
+            stream.WriteByte((byte)value);
+            stream.WriteByte((byte)(value >> 8));
+            stream.WriteByte((byte)(value >> 16));
+            stream.WriteByte((byte)(value >> 24));
         }
 
         private static unsafe int ReadTelemetryCursor(NativeArray<int> cursorArray)

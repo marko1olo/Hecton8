@@ -35,7 +35,6 @@ namespace Hecton8.World.Biomes
         [SerializeField] private float heatmapOriginAupZ;
         [SerializeField, Min(0.5f)] private float heatmapCellSizeMeters = DefaultCellSizeMeters;
         [SerializeField, Min(0.01f)] private float blendWidthMeters = DefaultBlendWidthMeters;
-        [SerializeField] private bool forceLowTierKernel;
 
         [Header("Diagnostics")]
         [SerializeField] private bool _debugMapReady;
@@ -49,6 +48,7 @@ namespace Hecton8.World.Biomes
         private NativeArray<uint> _globalBiomeHashMap;
         private NativeArray<BiomeBoundarySdfResult> _sampleResult;
         private NativeArray<BiomeBoundaryTelemetryEntry> _telemetryRing;
+        private IPlayerRuntimeContext _playerContext;
         private int _telemetryCursor;
         private int _telemetryCount;
         private int _lastBlobBytes;
@@ -71,6 +71,7 @@ namespace Hecton8.World.Biomes
                 return;
 
             EnsureNativeStorage();
+            RefreshColdRegistryReferences();
         }
 
         private void OnEnable()
@@ -79,12 +80,14 @@ namespace Hecton8.World.Biomes
                 return;
 
             EnsureNativeStorage();
+            RefreshColdRegistryReferences();
             TryRegister();
             TryRegisterOriginShift();
         }
 
         private void Start()
         {
+            RefreshColdRegistryReferences();
             TryRegister();
             TryRegisterOriginShift();
             RefreshGlobalBiomeMapIfDirty();
@@ -94,6 +97,7 @@ namespace Hecton8.World.Biomes
         {
             TryUnregister();
             TryUnregisterOriginShift();
+            _playerContext = null;
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
@@ -126,15 +130,14 @@ namespace Hecton8.World.Biomes
                 return;
             }
 
-            bool lowTier = ResolveLowTierKernel();
             BiomeBoundarySdfSettings settings = new BiomeBoundarySdfSettings
             {
                 Resolution = new int2(BiomeHeatmapResolution, BiomeHeatmapResolution),
                 OriginAupXZ = new double2(heatmapOriginAupX, heatmapOriginAupZ),
                 CellSizeMeters = math.max(0.5f, heatmapCellSizeMeters),
                 BlendWidthMeters = math.max(0.01f, blendWidthMeters),
-                SampleRadiusCells = lowTier ? 1 : 2,
-                Flags = (byte)(lowTier ? BiomeBoundarySdfFlags.LowTierKernel : BiomeBoundarySdfFlags.None)
+                SampleRadiusCells = 2,
+                Flags = (byte)BiomeBoundarySdfFlags.None
             };
 
             var job = new BiomeBoundarySdfJobs.BiomeBoundarySdfSampleJob
@@ -195,6 +198,11 @@ namespace Hecton8.World.Biomes
                 return;
 
             _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+        }
+
+        private void RefreshColdRegistryReferences()
+        {
+            _playerContext = GlobalRegistry.Player;
         }
 
         private void TryUnregister()
@@ -321,7 +329,7 @@ namespace Hecton8.World.Biomes
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
             playerAup = default;
-            IPlayerRuntimeContext player = GlobalRegistry.Player;
+            IPlayerRuntimeContext player = _playerContext;
             if (player != null && player.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot))
             {
                 playerAup = snapshot.Aup;
@@ -330,18 +338,6 @@ namespace Hecton8.World.Biomes
 
             return false;
         }
-
-        private bool ResolveLowTierKernel()
-        {
-            if (forceLowTierKernel || GlobalRegistry.H8_LOW_MEMORY_PROFILE || GlobalRegistry.ScalabilityTierProfileByte == 0)
-                return true;
-
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            return tier == HectonQualityTier.Unknown ||
-                   tier == HectonQualityTier.Low ||
-                   tier == HectonQualityTier.Mx350;
-        }
-
         private void PublishGradientSignal(in AbsoluteUniversePosition playerAup, in BiomeBoundarySdfResult result, float cellSizeMeters)
         {
             _sequence++;

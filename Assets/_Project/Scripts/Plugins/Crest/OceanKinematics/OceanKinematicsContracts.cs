@@ -21,9 +21,9 @@ namespace Hecton8.Physics
         public const int MacroStateBytes = 32;
         public const int TelemetryBytes = 64;
         public const int CachedSampleBytes = 32;
-        public const int QueueCountersBytes = 32;
+        public const int QueueCountersBytes = 64;
         public const int RollbackFenceBytes = 32;
-        public const int QueueCounterCapacity = 8;
+        public const int QueueCounterCapacity = 16;
         public const float TwoPi = 6.2831853071795864769f;
         public const float RcpTwoPi = 0.15915494309189533577f;
         public const float DefaultDepthCullMeters = 50f;
@@ -47,6 +47,8 @@ namespace Hecton8.Physics
         public const int QueueCounterDepthCulled = 5;
         public const int QueueCounterActiveOctaves = 6;
         public const int QueueCounterNonFinite = 7;
+        public const int QueueCounterResultHash = 8;
+        public const int QueueCounterResultNonFinite = 9;
     }
 
     /// <summary>
@@ -155,7 +157,7 @@ namespace Hecton8.Physics
     }
 
     /// <summary>
-    /// Packed queue counters written by pre-simulation orchestration. Size: 32 bytes.
+    /// Packed queue counters and result-hash proof lane written by pre/post-simulation orchestration. Size: 64 bytes.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = OceanKinematicsConstants.QueueCountersBytes)]
     public struct OceanKinematicsQueueCountersDTO
@@ -168,6 +170,14 @@ namespace Hecton8.Physics
         [FieldOffset(20)] public int DepthCulledCount;
         [FieldOffset(24)] public int ActiveOctaves;
         [FieldOffset(28)] public int NonFiniteCount;
+        [FieldOffset(32)] public int ResultHash;
+        [FieldOffset(36)] public int ResultNonFiniteCount;
+        [FieldOffset(40)] public int _pad0;
+        [FieldOffset(44)] public int _pad1;
+        [FieldOffset(48)] public int _pad2;
+        [FieldOffset(52)] public int _pad3;
+        [FieldOffset(56)] public int _pad4;
+        [FieldOffset(60)] public int _pad5;
     }
 
     /// <summary>

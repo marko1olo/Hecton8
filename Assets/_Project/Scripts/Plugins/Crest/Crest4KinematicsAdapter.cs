@@ -313,6 +313,7 @@ namespace Hecton8.Physics
             return new CountOceanSampleDepthCullsJob
             {
                 Requests = packedRequests,
+                Results = results,
                 QueueCounters = queueCounters,
                 Tuning = jobTuning,
                 RequestCount = scheduleCount,
@@ -390,6 +391,7 @@ namespace Hecton8.Physics
             return new CountOceanSampleDepthCullsJob
             {
                 Requests = packedRequests,
+                Results = results,
                 QueueCounters = queueCounters,
                 Tuning = jobTuning,
                 RequestCount = scheduleCount,
@@ -481,6 +483,7 @@ namespace Hecton8.Physics
             return new CountOceanSampleDepthCullsJob
             {
                 Requests = packedRequests,
+                Results = results,
                 QueueCounters = queueCounters,
                 Tuning = jobTuning,
                 RequestCount = scheduleCount,

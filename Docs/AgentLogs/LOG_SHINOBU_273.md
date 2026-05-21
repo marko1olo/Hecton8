@@ -924,3 +924,21 @@ Verification:
     Before: a CPU/Canvas waveform would be O(terminals*segments) and rebuild UI. After: O(copied puzzle rows) bounded GPU upload plus O(visible pixels) shader sine distance fields. Loop 16 keeps that fake bounded to valid uploaded rows.
   </DEAR_LIE_CONFIRMATION>
 </SELF_AUDIT>
+## Loop 18 - Scheduled Frame And Terminal Wrapper Bounds Closure
+
+What was wrong: Hooke found a P1 frame identity mismatch: a completed decryption job could publish `TerminalUnlockedSignal.Frame` from `_decryptionScheduleFrame` while telemetry/dump rows used the current dispatcher frame. Local review also found terminal wrapper paths still trusting `_terminalCount` for copies, dirty routes, jobs, GPU uploads, bounds, and layout hash.
+
+What was done: `TryFinalizeDecryptionJob()` now resolves the stored scheduled frame internally and clears it after capture. Terminal wrapper routes clamp by current Vault/GPU lengths. Visual blit time no longer reads `Time.unscaledTime`; it uses owner-frame fixed-step seconds. Owner terminal blackbox dump writes a little-endian header and raw rows instead of `BinaryWriter`.
+
+Cinematic cheat used: the oscilloscope remains shader-side sine/noise from scalar DTOs; no Canvas, LineRenderer, or CPU waveform mesh was introduced.
+
+Exact microseconds saved: no profiler claim. Estimated avoided failure cost is undefined memory read/write and one-frame rollback proof mismatch, not a stable frame-time delta.
+
+<SELF_AUDIT agent_id="SHINOBU_273" loop="18">
+  <TASK_RECONCILIATION count="20">Tasks 01-20 remain implemented in the existing Vault DTO + SignalBus + shader route; Loop 18 hardens Task 13 rollback frame identity, Task 15 telemetry proof, Task 19 proof artifact truth, and Task 20 self-audit.</TASK_RECONCILIATION>
+  <STRUCT_LAYOUT>DecryptionPuzzleDTO offsets unchanged: PlayerFrequency float@0, PlayerPhase float@4, TargetFrequency float@8, TargetPhase float@12, AlignmentAccuracy01 float@16, PuzzleID uint@20, Flags uint@24, _pad0 uint@28; total 32 bytes.</STRUCT_LAYOUT>
+  <SCALABILITY>GlobalQualityWeight still controls idle solver stride 6..1 and shader density/noise/thickness continuously. Loop 18 adds invariant bounds only; it does not create low/high binary route switches.</SCALABILITY>
+  <VAULT_STATUS>Vault BufferIDs unchanged: 71376 puzzles, 71377 terminals, 71378 knob input, 71379 telemetry ring. No new private NativeArray ownership was added.</VAULT_STATUS>
+  <DEPENDENCY_GRAPH>Decryption finalize now records telemetry against stored schedule frame; public read routes remain pure TryReadHandle paths. Job handles still finalize in owner LateFrameTick only.</DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No dotnet build launched. Gate sample after edits: CPU 98,62,83 with csc,dotnet processes active.</COMPILE_GUARD>
+</SELF_AUDIT>

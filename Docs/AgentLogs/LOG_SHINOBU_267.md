@@ -187,6 +187,35 @@ Exact Microseconds saved:
   <STATIC_VERIFICATION>Re-extracted SHINOBU_267 XML from `CURRENT_BATCH.md` with `task_count=20`; owned forbidden scan clean; runtime old `Resolve*`/indexer scan clean; shader `_QUALITY_*` scan clean; shader early alpha-mask clip order passes; runtime/editor/shader brace and preprocessor balances are zero; asmdef/report JSON parse passed; `git diff --check` found no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 92.3%, dotnet=0, csc=0.</STATIC_VERIFICATION>
 </SELF_AUDIT_DELTA>
 
+## 2026-05-21 - Polish Pass 45
+
+What was wrong:
+- `DumpTelemetryOnce()` still wrote black-box telemetry through `BinaryWriter`.
+- That made the forensic dump depend on framework writer behavior instead of a documented little-endian ABI.
+
+What was done:
+- Replaced the dump path with `FileStream` plus explicit little-endian `WriteByte` scalar helpers.
+- Serialized float lanes through `math.asuint`.
+- Added `littleEndianDump` to the editor self-audit.
+- Updated `FLORA_PROCEDURAL_SWAY_FIELD.md` and `BINARY_PAYLOAD_INTEGRATION_LEDGER.md`.
+
+Cinematic Cheats used:
+- No physical simulation was added. The route remains shader-side global sine displacement; the dump change only hardens fault evidence.
+
+Exact Microseconds saved:
+- 0 hot us. This is fault-path ABI hardening; active gameplay still pays no disk write.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_267" revision="2026-05-21-P45_EXPLICIT_DUMP_ENDIANNESS">
+  <TASK id="15" status="PASS">`Dump_SHINOBU_267.bin` now writes a fixed 12-byte little-endian header plus 300 fixed 32-byte telemetry rows.</TASK>
+  <TASK id="16" status="PASS">Telemetry float lanes are serialized through `math.asuint` before explicit byte emission.</TASK>
+  <TASK id="20" status="PASS">Self-audit now enforces `littleEndianDump` and rejects runtime `BinaryWriter` residue.</TASK>
+  <FIRST_20_MINUTES_MOMENT>World load and swim readability on the selected Copper Wire route biome.</FIRST_20_MINUTES_MOMENT>
+  <ROUTE_IMPACT>Invalid flora math on the route exports a cross-platform forensic ring instead of platform-default writer bytes.</ROUTE_IMPACT>
+  <PROOF_REQUIRED>Static source/self-audit now; Unity import/Console, selected route run, profiler/GC, Burst/import proof, Frame Debugger, screenshot/clip, save/load diff, and actual dump-read smoke test remain pending.</PROOF_REQUIRED>
+  <PARKED_WORK_REJECTED>Build launch under CPU/dotnet/csc gate, changing telemetry DTO size, and raw struct dump coupling.</PARKED_WORK_REJECTED>
+  <STATIC_VERIFICATION>Runtime `BinaryWriter` count is 0; little-endian helpers and `math.asuint` float serialization are present; editor self-audit contains `littleEndianDump`; owned forbidden scan is clean; runtime/editor/shader brace and preprocessor balances are zero; asmdef/report JSON parse passed; `git diff --check` found no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 97.3%, dotnet=1, csc=1.</STATIC_VERIFICATION>
+</SELF_AUDIT_DELTA>
+
 ## 2026-05-21 - Polish Pass 9
 
 What was wrong:
@@ -979,4 +1008,30 @@ Exact Microseconds saved:
   <PROOF_REQUIRED>Static source/self-audit now; Unity import/Console, selected route run, profiler/GC, Burst/import proof, Frame Debugger, screenshot/clip, and save/load diff remain pending.</PROOF_REQUIRED>
   <PARKED_WORK_REJECTED>Generic Fast-mode substitution, build launch under CPU/csc/dotnet gate, and historical log rewriting.</PARKED_WORK_REJECTED>
   <STATIC_VERIFICATION>SHINOBU_267 XML extraction remains 15929 chars; runtime has `DeterministicCount=4`, `FastCount=0`, `StandardPrecisionCount=4`, `CompileSyncCount=4`; owned forbidden scan is clean for `FloatMode.Fast`, `parameters[0]`, `.Run()`, `.Complete()`, direct kernel `Execute()`, vector upload, random, `foreach`, and `Pack=1`; runtime/editor/shader brace and full preprocessor balances are zero; asmdef/report JSON parse passed; `git diff --check` found no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 100%, dotnet=1, csc=1.</STATIC_VERIFICATION>
+</SELF_AUDIT_DELTA>
+
+## 2026-05-21 - Polish Pass 44
+
+What was wrong:
+- Central route docs did not explicitly carry the P43 XML-specific deterministic Burst lock.
+
+What was done:
+- Updated `Docs/ARCHITECTURE/FLORA_PROCEDURAL_SWAY_FIELD.md`.
+- Updated the SHINOBU_267 row in `Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md`.
+
+Cinematic Cheats used:
+- No runtime route changed. The Dear Lie remains shader-side sine displacement from one global DTO.
+
+Exact Microseconds saved:
+- 0 runtime us. This is integration-documentation hardening.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_267" revision="2026-05-21-P44_CENTRAL_DOCS_DETERMINISTIC_ROUTE_RECONCILIATION">
+  <TASK id="06" status="PASS">Central docs now state the XML Task 06 deterministic Burst lock.</TASK>
+  <TASK id="13" status="PASS">Central docs also state that deterministic visual time is excluded from save/WAL/rollback/gameplay authority.</TASK>
+  <TASK id="20" status="PASS">Disk evidence now exists in source, self-audit, status/rationale/log, route doc, and binary payload ledger.</TASK>
+  <FIRST_20_MINUTES_MOMENT>World load and swim readability on the selected Copper Wire route biome.</FIRST_20_MINUTES_MOMENT>
+  <ROUTE_IMPACT>Future integrators see the Burst mode rule at the central route-card layer, not only in SHINOBU_267 local logs.</ROUTE_IMPACT>
+  <PROOF_REQUIRED>Static doc/source scan now; Unity import/Console, selected route run, profiler/GC, Burst/import proof, Frame Debugger, screenshot/clip, and save/load diff remain pending.</PROOF_REQUIRED>
+  <PARKED_WORK_REJECTED>Unrelated ledger edits, build launch under CPU gate, DTO/shader ABI changes.</PARKED_WORK_REJECTED>
+  <STATIC_VERIFICATION>Doc scan shows both central SHINOBU_267 docs contain `CompileSynchronously=true`, `FloatMode.Deterministic`, and `FloatPrecision.Standard` on the flora route; asmdef/report JSON parse passed; focused `git diff --check` found no whitespace errors. Build not launched because CPU preflight reported 100%, dotnet=0, csc=0.</STATIC_VERIFICATION>
 </SELF_AUDIT_DELTA>

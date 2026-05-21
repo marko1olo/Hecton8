@@ -85,6 +85,10 @@ Loop 20 render ownership addendum:
 - Owned visor post/reconstruction shaders consume dispatcher-published visual time globals, not shader `_Time`.
 - Noir/reconstruction CSV profile selection reads fixed cold snapshots after parse; hot paths do not resolve profile Vault NativeArrays.
 
+Loop 22 render/fault addendum:
+- Wound atlas and visor post texture bindings now use `RasterCommandBuffer.SetGlobalTexture` inside RenderGraph raster functions. No owned wound/noir raster binding path mutates `Material.SetTexture`.
+- `DynamicDecalVaultRuntime` no longer throws from the runtime state ref helper; invalid Vault state access marks the existing layout fault route and fails closed.
+
 GC proof required:
 - Unity Profiler / GCMonitor capture in Play Mode. Static source proof only exists now.
 

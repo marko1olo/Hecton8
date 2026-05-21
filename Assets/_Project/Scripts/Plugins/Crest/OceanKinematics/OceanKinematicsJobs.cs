@@ -607,17 +607,18 @@ namespace Hecton8.Physics
     public struct CountOceanSampleDepthCullsJob : IJob
     {
         [ReadOnly, NoAlias] public NativeArray<OceanKinematicsSampleRequestDTO> Requests;
+        [ReadOnly, NoAlias] public NativeArray<FluidSampleResultDTO> Results;
         // SAFETY_JUSTIFICATION_PARAGRAPH_1:
-        // Depth-cull counting is a serial IJob over fixed QueueCounters slots. No ParallelFor worker writes
-        // this lane during the pass.
+        // Depth-cull/hash counting is a serial IJob over fixed QueueCounters slots. No ParallelFor worker
+        // writes this lane during the pass.
         //
         // SAFETY_JUSTIFICATION_PARAGRAPH_2:
-        // Requests and QueueCounters come from distinct Vault buffers, so [NoAlias] is valid. The pass reads
-        // immutable request rows and writes only aggregate counter slots.
+        // Requests, Results, and QueueCounters come from distinct Vault buffers, so [NoAlias] is valid. The
+        // pass reads immutable request/result rows and writes only aggregate counter slots.
         //
         // SAFETY_JUSTIFICATION_PARAGRAPH_3:
-        // All counter writes go through bounded SetCounter calls. Rejected per-request atomic counters
-        // because the serial post-pass is cheaper and deterministic for this small aggregate.
+        // All counter writes go through bounded SetCounter calls. Rejected main-thread result hashing because
+        // telemetry must read O(1) counters after dispatcher completion.
         [NativeDisableParallelForRestriction, NoAlias] public NativeArray<int> QueueCounters;
         public OceanKinematicsTuningDTO Tuning;
         public int RequestCount;
@@ -629,11 +630,14 @@ namespace Hecton8.Physics
                 return;
 
             int count = math.min(math.max(0, ResolveRequestCount()), Requests.Length);
+            int resultCount = Results.IsCreated ? math.min(count, Results.Length) : 0;
             float surfaceY = SanitizeFinite(Tuning.OceanSurfaceY, 0f);
             float depthCull = math.max(0f, SanitizeFinite(Tuning.DepthCullingThresholdMeters, OceanKinematicsConstants.DefaultDepthCullMeters));
             double3 rootAup = math.select(double3.zero, Tuning.OceanRootAUP, math.isfinite(Tuning.OceanRootAUP));
             int depthCulled = 0;
             int nonFinite = 0;
+            int resultNonFinite = 0;
+            uint resultHash = 2166136261u;
 
             for (int i = 0; i < count; i++)
             {
@@ -641,18 +645,33 @@ namespace Hecton8.Physics
                 if (!math.all(math.isfinite(request.RequestedAUP)))
                 {
                     nonFinite++;
-                    continue;
+                }
+                else
+                {
+                    double3 delta = request.RequestedAUP - rootAup;
+                    float localY = SanitizeFinite((float)delta.y, surfaceY);
+                    if (surfaceY - localY > depthCull)
+                        depthCulled++;
                 }
 
-                double3 delta = request.RequestedAUP - rootAup;
-                float localY = SanitizeFinite((float)delta.y, surfaceY);
-                if (surfaceY - localY > depthCull)
-                    depthCulled++;
+                if (i < resultCount)
+                {
+                    FluidSampleResultDTO result = Results[i];
+                    if (!math.isfinite(result.WaterHeight) || !math.all(math.isfinite(result.SurfaceVelocity)))
+                        resultNonFinite++;
+
+                    resultHash = Mix(resultHash, math.asuint(result.WaterHeight));
+                    resultHash = Mix(resultHash, math.asuint(result.SurfaceVelocity.x));
+                    resultHash = Mix(resultHash, math.asuint(result.SurfaceVelocity.y));
+                    resultHash = Mix(resultHash, math.asuint(result.SurfaceVelocity.z));
+                }
             }
 
             WriteCounter(OceanKinematicsConstants.QueueCounterDepthCulled, depthCulled);
             WriteCounter(OceanKinematicsConstants.QueueCounterActiveOctaves, ResolveActiveOctaves());
             WriteCounter(OceanKinematicsConstants.QueueCounterNonFinite, nonFinite);
+            WriteCounter(OceanKinematicsConstants.QueueCounterResultHash, unchecked((int)resultHash));
+            WriteCounter(OceanKinematicsConstants.QueueCounterResultNonFinite, resultNonFinite);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -687,6 +706,20 @@ namespace Hecton8.Physics
         private static float SanitizeFinite(float value, float fallback)
         {
             return math.select(fallback, value, math.isfinite(value));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint Mix(uint hash, uint value)
+        {
+            hash ^= value & 0xFFu;
+            hash *= 16777619u;
+            hash ^= (value >> 8) & 0xFFu;
+            hash *= 16777619u;
+            hash ^= (value >> 16) & 0xFFu;
+            hash *= 16777619u;
+            hash ^= (value >> 24) & 0xFFu;
+            hash *= 16777619u;
+            return hash;
         }
     }
 }

@@ -242,12 +242,11 @@ namespace Hecton8.UI
 
             int ownerFrame = Time.frameCount;
             bool hasSimulationFrame = TryResolveSimulationFrame(out int simulationFrame);
-            int decryptionFinalizeFrame = hasSimulationFrame ? simulationFrame : ResolveScheduledDecryptionFrameForOwner();
             RefreshRuntimeOriginSnapshotForOwner();
             RefreshScalabilityPolicy();
             TryFinalizeClickResolveJob();
             TryFinalizeTerminalInteractionJob();
-            TryFinalizeDecryptionJob(decryptionFinalizeFrame);
+            TryFinalizeDecryptionJob();
 
             bool visualPipelineBlocked = false;
             if (_formatScheduled)
@@ -269,12 +268,12 @@ namespace Hecton8.UI
             int dispatchedCount = 0;
             if (!visualPipelineBlocked)
             {
-                dirtyCount = BuildDirtyList();
+                dirtyCount = BuildDirtyList(ownerFrame);
                 if (dirtyCount > 0)
                 {
                     bool uploaded = UploadDirtyPayloads(dirtyCount);
                     if (uploaded)
-                        dispatchedCount = DispatchDirtyScreens(dirtyCount);
+                        dispatchedCount = DispatchDirtyScreens(dirtyCount, ownerFrame);
                     if (dispatchedCount == dirtyCount)
                         ClearDirtyFlags(dirtyCount);
                 }
@@ -402,7 +401,7 @@ namespace Hecton8.UI
         {
             if (!TryReadVaultBuffer(in _terminalInteractionsHandle, out NativeArray<TerminalInteractionDTO> interactions) ||
                 index < 0 ||
-                index >= _terminalCount)
+                index >= math.min(_terminalCount, interactions.Length))
             {
                 interaction = default;
                 return false;
@@ -549,7 +548,7 @@ namespace Hecton8.UI
         {
             if (!TryReadVaultBuffer(in _terminalStatesHandle, out NativeArray<TerminalStateDTO> terminalStates) ||
                 index < 0 ||
-                index >= _terminalCount)
+                index >= math.min(_terminalCount, terminalStates.Length))
             {
                 state = default;
                 return false;
@@ -563,7 +562,7 @@ namespace Hecton8.UI
         {
             if (!TryReadVaultBuffer(in _screenCommandsHandle, out NativeArray<ScreenCommandDTO> screenCommands) ||
                 index < 0 ||
-                index >= _terminalCount)
+                index >= math.min(_terminalCount, screenCommands.Length))
             {
                 command = default;
                 return false;
@@ -575,7 +574,9 @@ namespace Hecton8.UI
 
         private ref TerminalStateDTO OpenTerminalStateRefForOwner(int index)
         {
-            if (_vault == null || !IsValidVaultHandle(in _terminalStatesHandle) || index < 0 || index >= _terminalCount)
+            if (!TryOpenVaultBuffer(ref _terminalStatesHandle, out NativeArray<TerminalStateDTO> terminalStates) ||
+                index < 0 ||
+                index >= math.min(_terminalCount, terminalStates.Length))
             {
                 _lastFaultFlags |= FaultVaultUnavailable;
                 s_invalidTerminalStateRef = default;
@@ -589,7 +590,7 @@ namespace Hecton8.UI
         {
             if (!TryOpenVaultBuffer(ref _terminalStatesHandle, out NativeArray<TerminalStateDTO> terminalStates) ||
                 index < 0 ||
-                index >= _terminalCount)
+                index >= math.min(_terminalCount, terminalStates.Length))
             {
                 return false;
             }
@@ -607,7 +608,7 @@ namespace Hecton8.UI
         {
             if (!TryOpenVaultBuffer(ref _screenCommandsHandle, out NativeArray<ScreenCommandDTO> screenCommands) ||
                 index < 0 ||
-                index >= _terminalCount)
+                index >= math.min(_terminalCount, screenCommands.Length))
                 return;
 
             ScreenCommandDTO command = screenCommands[index];
@@ -622,7 +623,7 @@ namespace Hecton8.UI
         {
             if (!TryOpenVaultBuffer(ref _terminalPlanesHandle, out NativeArray<TerminalPlaneDTO> terminalPlanes) ||
                 index < 0 ||
-                index >= _terminalCount)
+                index >= math.min(_terminalCount, terminalPlanes.Length))
                 return;
 
             TerminalPlaneDTO plane = terminalPlanes[index];
@@ -706,22 +707,27 @@ namespace Hecton8.UI
 
         private void ForceDirty(int index)
         {
-            if (_vault == null || !IsValidVaultHandle(in _terminalStatesHandle) || index < 0 || index >= _terminalCount)
+            if (!TryOpenVaultBuffer(ref _terminalStatesHandle, out NativeArray<TerminalStateDTO> terminalStates) ||
+                index < 0 ||
+                index >= math.min(_terminalCount, terminalStates.Length))
                 return;
 
-            ref TerminalStateDTO state = ref OpenTerminalStateRefForOwnerUnchecked(index);
+            TerminalStateDTO state = terminalStates[index];
             state.IsDirty = 1;
+            terminalStates[index] = state;
         }
 
         private void ForceAllDirty()
         {
-            if (_vault == null || !IsValidVaultHandle(in _terminalStatesHandle))
+            if (!TryOpenVaultBuffer(ref _terminalStatesHandle, out NativeArray<TerminalStateDTO> terminalStates))
                 return;
 
-            for (int i = 0; i < _terminalCount; i++)
+            int count = math.min(_terminalCount, terminalStates.Length);
+            for (int i = 0; i < count; i++)
             {
-                ref TerminalStateDTO state = ref OpenTerminalStateRefForOwnerUnchecked(i);
+                TerminalStateDTO state = terminalStates[i];
                 state.IsDirty = 1;
+                terminalStates[i] = state;
             }
         }
 
@@ -739,7 +745,7 @@ namespace Hecton8.UI
 
         private void ApplyDiegeticGlitchIntensity(float intensity01)
         {
-            if (_vault == null || !IsValidVaultHandle(in _terminalStatesHandle))
+            if (!TryOpenVaultBuffer(ref _terminalStatesHandle, out NativeArray<TerminalStateDTO> terminalStates))
             {
                 _lastDiegeticGlitchIntensity = intensity01;
                 _panelInstanceUploadDirty = true;
@@ -747,9 +753,10 @@ namespace Hecton8.UI
                 return;
             }
 
-            for (int i = 0; i < _terminalCount; i++)
+            int count = math.min(_terminalCount, terminalStates.Length);
+            for (int i = 0; i < count; i++)
             {
-                ref TerminalStateDTO state = ref OpenTerminalStateRefForOwnerUnchecked(i);
+                TerminalStateDTO state = terminalStates[i];
                 float current = math.isfinite(state.Value2) ? state.Value2 : 0f;
                 float preservedExternal = current <= _lastDiegeticGlitchIntensity + 0.001f
                     ? 0f
@@ -759,6 +766,7 @@ namespace Hecton8.UI
                 {
                     state.Value2 = next;
                     state.IsDirty = 1;
+                    terminalStates[i] = state;
                 }
             }
 
@@ -1303,9 +1311,22 @@ namespace Hecton8.UI
                 return;
             }
 
+            if (gazeRays.Length <= 0)
+            {
+                _lastFaultFlags |= FaultVaultUnavailable;
+                return;
+            }
+
             _buttonCount = 0;
             gazeRays[0] = default;
-            for (int i = 0; i < _terminalCount; i++)
+            int count = math.min(
+                _terminalCount,
+                math.min(
+                    math.min(terminalStates.Length, screenCommands.Length),
+                    math.min(
+                        math.min(terminalPositions.Length, terminalForward.Length),
+                        math.min(math.min(panelInstances.Length, terminalPlanes.Length), interactions.Length))));
+            for (int i = 0; i < count; i++)
             {
                 uint terminalHash = TerminalOsHash.HashIndex(i);
                 TerminalStateDTO state = default;
@@ -1580,19 +1601,19 @@ namespace Hecton8.UI
             _groupsY = (resolution + _threadsY - 1) / _threadsY;
         }
 
-        private int BuildDirtyList()
+        private int BuildDirtyList(int ownerFrame)
         {
             if (!TryOpenVaultBuffer(ref _dirtyIndicesHandle, out NativeArray<int> dirtyIndices) ||
-                _vault == null ||
-                !IsValidVaultHandle(in _terminalStatesHandle))
+                !TryOpenVaultBuffer(ref _terminalStatesHandle, out NativeArray<TerminalStateDTO> terminalStates))
                 return 0;
 
-            bool hasCamera = TryCaptureCameraFrameForOwner(out float3 cameraPosition, out float3 cameraForward);
+            bool hasCamera = TryCaptureCameraFrameForOwner(ownerFrame, out float3 cameraPosition, out float3 cameraForward);
             int dirtyCount = 0;
             _lastFaultFlags &= ~FaultNonFinite;
-            for (int i = 0; i < _terminalCount; i++)
+            int count = math.min(_terminalCount, math.min(dirtyIndices.Length, terminalStates.Length));
+            for (int i = 0; i < count; i++)
             {
-                ref TerminalStateDTO state = ref OpenTerminalStateRefForOwnerUnchecked(i);
+                TerminalStateDTO state = terminalStates[i];
                 if (state.IsDirty == 0)
                     continue;
 
@@ -1604,6 +1625,7 @@ namespace Hecton8.UI
                 if (!math.isfinite(state.Value1) || !math.isfinite(state.Value2))
                 {
                     state.IsDirty = 0;
+                    terminalStates[i] = state;
                     _lastFaultFlags |= FaultNonFinite;
                     continue;
                 }
@@ -1614,9 +1636,9 @@ namespace Hecton8.UI
             return dirtyCount;
         }
 
-        private bool TryCaptureCameraFrameForOwner(out float3 cameraPosition, out float3 cameraForward)
+        private bool TryCaptureCameraFrameForOwner(int ownerFrame, out float3 cameraPosition, out float3 cameraForward)
         {
-            Camera camera = RefreshAttentionCameraForOwner(Time.frameCount);
+            Camera camera = RefreshAttentionCameraForOwner(ownerFrame);
 
             if (camera == null)
             {
@@ -1828,13 +1850,17 @@ namespace Hecton8.UI
                 !TryOpenVaultBuffer(ref _screenCommandsHandle, out NativeArray<ScreenCommandDTO> screenCommands))
                 return false;
 
+            int uploadCount = math.min(_terminalCount, math.min(screenCommands.Length, _screenCommandBuffer.count));
+            if (uploadCount <= 0)
+                return false;
+
             bool copied = false;
-            NativeArray<ScreenCommandDTO> mapped = _screenCommandBuffer.LockBufferForWrite<ScreenCommandDTO>(0, _terminalCount);
+            NativeArray<ScreenCommandDTO> mapped = _screenCommandBuffer.LockBufferForWrite<ScreenCommandDTO>(0, uploadCount);
             try
             {
                 void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(screenCommands);
                 void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
-                long copyBytes = (long)UnsafeUtility.SizeOf<ScreenCommandDTO>() * _terminalCount;
+                long copyBytes = (long)UnsafeUtility.SizeOf<ScreenCommandDTO>() * uploadCount;
                 long destinationBytes = (long)UnsafeUtility.SizeOf<ScreenCommandDTO>() * mapped.Length;
                 copied = UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes);
                 if (!copied)
@@ -1842,7 +1868,7 @@ namespace Hecton8.UI
             }
             finally
             {
-                _screenCommandBuffer.UnlockBufferAfterWrite<ScreenCommandDTO>(_terminalCount);
+                _screenCommandBuffer.UnlockBufferAfterWrite<ScreenCommandDTO>(uploadCount);
             }
 
             if (copied)
@@ -1884,13 +1910,17 @@ namespace Hecton8.UI
                 !TryOpenVaultBuffer(ref _panelInstancesHandle, out NativeArray<TerminalPanelInstanceDTO> panelInstances))
                 return false;
 
+            int uploadCount = math.min(_terminalCount, math.min(panelInstances.Length, _panelInstanceBuffer.count));
+            if (uploadCount <= 0)
+                return false;
+
             bool copied = false;
-            NativeArray<TerminalPanelInstanceDTO> mapped = _panelInstanceBuffer.LockBufferForWrite<TerminalPanelInstanceDTO>(0, _terminalCount);
+            NativeArray<TerminalPanelInstanceDTO> mapped = _panelInstanceBuffer.LockBufferForWrite<TerminalPanelInstanceDTO>(0, uploadCount);
             try
             {
                 void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(panelInstances);
                 void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
-                long copyBytes = (long)UnsafeUtility.SizeOf<TerminalPanelInstanceDTO>() * _terminalCount;
+                long copyBytes = (long)UnsafeUtility.SizeOf<TerminalPanelInstanceDTO>() * uploadCount;
                 long destinationBytes = (long)UnsafeUtility.SizeOf<TerminalPanelInstanceDTO>() * mapped.Length;
                 copied = UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes);
                 if (!copied)
@@ -1898,7 +1928,7 @@ namespace Hecton8.UI
             }
             finally
             {
-                _panelInstanceBuffer.UnlockBufferAfterWrite<TerminalPanelInstanceDTO>(_terminalCount);
+                _panelInstanceBuffer.UnlockBufferAfterWrite<TerminalPanelInstanceDTO>(uploadCount);
             }
 
             if (copied)
@@ -1967,7 +1997,7 @@ namespace Hecton8.UI
             BindTerminalRenderers();
         }
 
-        private int DispatchDirtyScreens(int dirtyCount)
+        private int DispatchDirtyScreens(int dirtyCount, int ownerFrame)
         {
             if (terminalBlitCompute == null || _blitKernel < 0 || _terminalTextureArray == null || dirtyCount <= 0)
                 return 0;
@@ -1987,7 +2017,7 @@ namespace Hecton8.UI
             terminalBlitCompute.SetInt(TerminalResolutionXId, _textureResolution);
             terminalBlitCompute.SetInt(TerminalResolutionYId, _textureResolution);
             terminalBlitCompute.SetInt(DirtyTerminalCountId, dirtyCount);
-            terminalBlitCompute.SetFloat(TimeSeedId, Time.unscaledTime);
+            terminalBlitCompute.SetFloat(TimeSeedId, ownerFrame * HectonPhysicsContract.FixedDeltaTimeSeconds);
             terminalBlitCompute.SetFloat(HectonDiegeticGlitchQualityWeightId, _globalQualityWeight);
             terminalBlitCompute.Dispatch(_blitKernel, _groupsX, _groupsY, dirtyCount);
             _writeBufferIndex = 1 - _writeBufferIndex;
@@ -1997,13 +2027,19 @@ namespace Hecton8.UI
 
         private void ClearDirtyFlags(int dirtyCount)
         {
-            if (!TryOpenVaultBuffer(ref _dirtyIndicesHandle, out NativeArray<int> dirtyIndices))
+            if (!TryOpenVaultBuffer(ref _dirtyIndicesHandle, out NativeArray<int> dirtyIndices) ||
+                !TryOpenVaultBuffer(ref _terminalStatesHandle, out NativeArray<TerminalStateDTO> terminalStates))
                 return;
 
             for (int i = 0; i < dirtyCount; i++)
             {
-                ref TerminalStateDTO state = ref OpenTerminalStateRefForOwnerUnchecked(dirtyIndices[i]);
+                int index = dirtyIndices[i];
+                if (index < 0 || index >= math.min(_terminalCount, terminalStates.Length))
+                    continue;
+
+                TerminalStateDTO state = terminalStates[index];
                 state.IsDirty = 0;
+                terminalStates[index] = state;
             }
         }
 
@@ -2011,8 +2047,7 @@ namespace Hecton8.UI
         {
             if (_formatScheduled ||
                 !mockGeneratorEnabled ||
-                _vault == null ||
-                !IsValidVaultHandle(in _terminalStatesHandle))
+                !TryOpenVaultBuffer(ref _terminalStatesHandle, out NativeArray<TerminalStateDTO> terminalStates))
                 return;
 
             if (frame % _framesBetweenUpdates != 0)
@@ -2028,22 +2063,23 @@ namespace Hecton8.UI
             }
 
             long start = Stopwatch.GetTimestamp();
-            TerminalStateDTO* statePtr = OpenTerminalStatePointerForOwner();
-            if (statePtr == null)
+            int formatCount = math.min(_terminalCount, terminalStates.Length);
+            if (formatCount <= 0)
             {
                 _lastFaultFlags |= FaultVaultUnavailable;
                 return;
             }
 
+            TerminalStateDTO* statePtr = (TerminalStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(terminalStates);
             _formatHandle = new UpdateTerminalTextJob
             {
                 States = statePtr,
                 PowerSignals = mockPowerSignal,
                 DamageSignals = mockDamageSignal,
                 PowerStatusSignals = mockPowerStatusSignal,
-                TerminalCount = _terminalCount,
+                TerminalCount = formatCount,
                 Frame = (uint)frame
-            }.Schedule(_terminalCount, 16);
+            }.Schedule(formatCount, 16);
             _formatScheduled = true;
             _lastFormatMainThreadMilliseconds = ElapsedMilliseconds(start);
         }
@@ -2090,7 +2126,7 @@ namespace Hecton8.UI
                 Clicks = clickScratch.AsReadOnly(),
                 ClickCount = count,
                 Buttons = buttons,
-                ButtonCount = _buttonCount,
+                ButtonCount = math.min(_buttonCount, buttons.Length),
                 Commands = SignalBus<TerminalCommandSignal>.OpenParallelWriter()
             }.Schedule(count, 1);
             _clickResolveScheduled = true;
@@ -2116,6 +2152,10 @@ namespace Hecton8.UI
             {
                 return;
             }
+
+            int terminalJobCount = math.min(_terminalCount, math.min(terminalPlanes.Length, interactions.Length));
+            if (terminalJobCount <= 0 || gazeRays.Length <= 0)
+                return;
 
             if (refreshAvailabilityFromStates)
                 RefreshTerminalPlaneAvailability(terminalPlanes);
@@ -2147,31 +2187,31 @@ namespace Hecton8.UI
                 Planes = terminalPlanes,
                 GazeRays = gazeRays,
                 Interactions = interactions,
-                TerminalCount = _terminalCount,
+                TerminalCount = terminalJobCount,
                 MaxDistanceMeters = maxDistance,
                 ViewConeCos = viewCone
-            }.Schedule(_terminalCount, batchSize, gazeHandle);
+            }.Schedule(terminalJobCount, batchSize, gazeHandle);
 
             JobHandle intersectionHandle = new TerminalIntersectionJob
             {
                 Planes = terminalPlanes,
                 GazeRays = gazeRays,
                 Interactions = interactions,
-                TerminalCount = _terminalCount,
+                TerminalCount = terminalJobCount,
                 MaxDistanceMeters = maxDistance
-            }.Schedule(_terminalCount, batchSize, cullHandle);
+            }.Schedule(terminalJobCount, batchSize, cullHandle);
 
             _terminalInteractionHandle = new EvaluateTerminalButtonsJob
             {
                 Interactions = interactions,
                 Planes = terminalPlanes,
                 Buttons = buttons,
-                TerminalCount = _terminalCount,
-                ButtonCount = _buttonCount,
+                TerminalCount = terminalJobCount,
+                ButtonCount = math.min(_buttonCount, buttons.Length),
                 Frame = (uint)frame,
                 Commands = SignalBus<TerminalCommandSignal>.OpenParallelWriter(),
                 UiSignals = SignalBus<InteractionUiSignal>.OpenParallelWriter()
-            }.Schedule(_terminalCount, batchSize, intersectionHandle);
+            }.Schedule(terminalJobCount, batchSize, intersectionHandle);
             _terminalInteractionScheduled = true;
         }
 
@@ -2241,7 +2281,7 @@ namespace Hecton8.UI
             _decryptionScheduled = true;
         }
 
-        private void TryFinalizeDecryptionJob(int simulationFrame)
+        private void TryFinalizeDecryptionJob()
         {
             if (!_decryptionScheduled)
                 return;
@@ -2250,10 +2290,12 @@ namespace Hecton8.UI
                 return;
 
             _decryptionScheduled = false;
+            int simulationFrame = ResolveScheduledDecryptionFrameForOwner();
             _lastDecryptionBurstMicroseconds = _decryptionScheduleTicks > 0
                 ? ElapsedMicroseconds(_decryptionScheduleTicks)
                 : 0f;
             _decryptionScheduleTicks = 0;
+            _decryptionScheduleFrame = 0u;
             uint faultFlags = 0u;
             if (_lastDecryptionBurstMicroseconds > 100f)
                 faultFlags |= FaultDecryptionBudget;
@@ -2891,7 +2933,8 @@ namespace Hecton8.UI
             if (!TryOpenVaultBuffer(ref _terminalStatesHandle, out NativeArray<TerminalStateDTO> terminalStates))
                 return -1;
 
-            for (int i = 0; i < _terminalCount; i++)
+            int count = math.min(_terminalCount, terminalStates.Length);
+            for (int i = 0; i < count; i++)
             {
                 if (terminalStates[i].TerminalHash == hash)
                     return i;
@@ -2914,7 +2957,7 @@ namespace Hecton8.UI
                                  math.abs(_lastPanelInstanceGlitchIntensity - glitch) > 0.0005f;
             bool forceRewrite = _panelInstanceUploadDirty || scalarChanged;
             bool changed = forceRewrite;
-            int count = math.min(_terminalCount, ResolveBoundPanelCount());
+            int count = math.min(_terminalCount, math.min(ResolveBoundPanelCount(), panelInstances.Length));
             for (int i = 0; i < count; i++)
             {
                 Transform terminal = ResolveTerminalTransform(i);
@@ -3136,7 +3179,8 @@ namespace Hecton8.UI
             float3 minBounds = new float3(float.MaxValue);
             float3 maxBounds = new float3(float.MinValue);
             int validCount = 0;
-            for (int i = 0; i < _terminalCount; i++)
+            int count = math.min(_terminalCount, panelInstances.Length);
+            for (int i = 0; i < count; i++)
             {
                 float3 center = panelInstances[i].LocalToWorld.c3.xyz;
                 if (!math.all(math.isfinite(center)))
@@ -3372,7 +3416,8 @@ namespace Hecton8.UI
                 return 0u;
 
             uint hash = 2166136261u;
-            for (int i = 0; i < _terminalCount; i++)
+            int count = math.min(_terminalCount, screenCommands.Length);
+            for (int i = 0; i < count; i++)
             {
                 ScreenCommandDTO command = screenCommands[i];
                 hash = (hash ^ math.asuint(command.Position.x)) * 16777619u;
@@ -3418,41 +3463,38 @@ namespace Hecton8.UI
             }
         }
 
-        private void WriteBlackBoxDump(string path, uint faultFlags, NativeArray<TerminalTelemetryEntry> telemetryRing)
+        private unsafe void WriteBlackBoxDump(string path, uint faultFlags, NativeArray<TerminalTelemetryEntry> telemetryRing)
         {
             string directory = Path.GetDirectoryName(path);
             if (!string.IsNullOrEmpty(directory))
                 Directory.CreateDirectory(directory);
 
             using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
             {
-                writer.Write(0x544F5348u); // HSOT
-                writer.Write(1u);
-                writer.Write(faultFlags);
-                writer.Write(telemetryRing.Length);
-                writer.Write(_telemetryCursor);
+                int rowBytes = UnsafeUtility.SizeOf<TerminalTelemetryEntry>();
+                Span<byte> header = stackalloc byte[24];
+                WriteUInt32LittleEndian(header, 0, 0x544F5348u); // HSOT
+                WriteUInt32LittleEndian(header, 4, 2u);
+                WriteUInt32LittleEndian(header, 8, faultFlags);
+                WriteUInt32LittleEndian(header, 12, unchecked((uint)telemetryRing.Length));
+                WriteUInt32LittleEndian(header, 16, unchecked((uint)_telemetryCursor));
+                WriteUInt32LittleEndian(header, 20, unchecked((uint)rowBytes));
+                stream.Write(header);
+
                 for (int i = 0; i < telemetryRing.Length; i++)
                 {
                     TerminalTelemetryEntry entry = telemetryRing[i];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.TerminalCount);
-                    writer.Write(entry.DirtyCount);
-                    writer.Write(entry.DispatchedCount);
-                    writer.Write(entry.FormatMainThreadMilliseconds);
-                    writer.Write(entry.UploadMicroseconds);
-                    writer.Write(entry.DispatchMicroseconds);
-                    writer.Write(entry.FaultFlags);
-                    writer.Write(entry.LayoutHash);
-                    writer.Write(entry.HoveredTerminalHash);
-                    writer.Write(entry.LastPower01);
-                    writer.Write(entry.LastDamage01);
-                    writer.Write(entry.EvaluatedTerminals);
-                    writer.Write(entry.FramesBetweenUpdates);
-                    writer.Write(entry.IntersectionMicroseconds);
-                    writer.Write(entry.GlobalQualityWeight);
+                    stream.Write(new ReadOnlySpan<byte>(UnsafeUtility.AddressOf(ref entry), rowBytes));
                 }
             }
+        }
+
+        private static void WriteUInt32LittleEndian(Span<byte> destination, int offset, uint value)
+        {
+            destination[offset] = unchecked((byte)value);
+            destination[offset + 1] = unchecked((byte)(value >> 8));
+            destination[offset + 2] = unchecked((byte)(value >> 16));
+            destination[offset + 3] = unchecked((byte)(value >> 24));
         }
 
         private void TryDumpDecryptionBlackBox(uint faultFlags)

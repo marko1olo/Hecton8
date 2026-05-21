@@ -552,7 +552,14 @@ namespace Hecton8.Visor
                     tuningArray[0] = tuning;
                     _lastTuningSnapshot = tuning;
                     _hasTuningSnapshot = true;
-                    ref DecalRuntimeStateDTO state = ref GetDynamicDecalElementRef(stateArray, 0);
+                    if (!TryGetDynamicDecalElementPtr(stateArray, 0, out void* statePtr))
+                    {
+                        faultFlags |= RuntimeLayoutFaultFlag;
+                        MarkFault(RuntimeLayoutFaultFlag);
+                        return false;
+                    }
+
+                    ref DecalRuntimeStateDTO state = ref UnsafeUtility.AsRef<DecalRuntimeStateDTO>(statePtr);
                     state.NormalRefractionIntensity = tuning.NormalRefractionIntensity;
                     bool hadRuntimeState = (state.Flags & RuntimeInitializedFlag) != 0u;
                     if (!hadRuntimeState)
@@ -1196,13 +1203,15 @@ namespace Hecton8.Visor
                    handle.Generation != 0u;
         }
 
-        private static ref T GetDynamicDecalElementRef<T>(NativeArray<T> buffer, int index) where T : struct
+        private static bool TryGetDynamicDecalElementPtr<T>(NativeArray<T> buffer, int index, out void* elementPtr) where T : struct
         {
+            elementPtr = null;
             if (!buffer.IsCreated || (uint)index >= (uint)buffer.Length)
-                throw new InvalidOperationException("DynamicDecalVaultRuntime Vault index is out of range.");
+                return false;
 
             void* ptr = NativeArrayUnsafeUtility.GetUnsafePtr(buffer);
-            return ref UnsafeUtility.ArrayElementAsRef<T>(ptr, index);
+            elementPtr = (byte*)ptr + (UnsafeUtility.SizeOf<T>() * index);
+            return true;
         }
 
         private static void ReleaseDynamicDecalVaultHandles(IDataVault vault)

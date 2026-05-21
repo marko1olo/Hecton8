@@ -67,6 +67,42 @@ Remaining blocked/pending:
   <QUALITY status="DRS shader uses continuous scale-deficit curve; no binary low-tier switch added" />
 </SELF_AUDIT>
 
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="SubmarineFloodStateMathLod">
+  <WHAT_WAS_WRONG>
+    Submarine flood-state signal `MathLod` was derived from `HomeostasisBrain.GlobalQualityWeight`, allowing downstream flood/mass consumers to see different fidelity by hardware.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Added canonical `AuthoritativeFloodStateMathLod = 3`, initialized the cached LOD to it, and made scalability refreshes reapply the canonical value instead of recomputing from quality.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    Flood dashboard, audio, VFX, and telemetry can scale. Flood mass and center-of-mass signal fidelity no longer scales.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. One quality read and curve path removed from scalability refresh; authority parity is the point.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted scans found no `RefreshFloodStateMathLodFromQuality`, `ResolveFloodStateMathLodByte`, `HomeostasisBrain.GlobalQualityWeight`, `ScalabilityTier`, or `LowTier` route in `SubmarineFluidDynamics.cs`. `git diff --check` passed with line-ending warnings only.
+  </VERIFICATION>
+</SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="BiomeBoundarySdfAuthorityRadius">
+  <WHAT_WAS_WRONG>
+    Biome boundary SDF runtime used forced low-tier, low-memory profile, scalability profile byte, and scalability tier to shrink the sample kernel from 5x5 to 3x3. That changes biome gradient and transition signal facts by hardware.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Removed the low-tier kernel resolver and runtime force flag. Sampling now always uses `SampleRadiusCells = 2` with no low-tier runtime flag. Player context is cached in cold lifecycle methods instead of polling `GlobalRegistry.Player` from the slow-tick read.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    Biome VFX, debug heatmap, map UI, and transition presentation can still scale separately. The biome gradient fact no longer has a cheap kernel fake.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. One slow-tick registry poll is removed; weak devices now spend the full boundary sample.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted scans found no `forceLowTierKernel`, `ResolveLowTierKernel`, `ScalabilityTier`, `ScalabilityTierProfileByte`, or `H8_LOW_MEMORY_PROFILE` in `BiomeBoundarySdfRuntime.cs`. `git diff --check` passed with line-ending warnings only.
+  </VERIFICATION>
+</SELF_AUDIT>
+
 <SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="LadderClimbIkHardwareTierDetachment">
   <WHAT_WAS_WRONG>
     Ladder climb runtime used `GlobalRegistry.ScalabilityTierProfileByte` to force the fake camera-slide/elbow path on tier 0, including VR grip mode. That made climb IK feedback hardware-dependent.

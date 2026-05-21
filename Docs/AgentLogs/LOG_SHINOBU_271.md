@@ -358,3 +358,25 @@ Exact microseconds saved:
 Verification:
 - Gate log: `Docs/AgentLogs/Build_SHINOBU_271_solution_loop11_05_gate.log`.
 - Build log `Docs/AgentLogs/Build_SHINOBU_271_solution_loop11_05.log` was not created because the gate never opened.
+
+## 2026-05-21 Ultra-Polish Loop 12.1 CPU Override Build Probe
+
+What was wrong:
+- The user explicitly authorized overriding the CPU gate for project-wide compile repair.
+- The first override wrapper used `$log.tmp`, causing PowerShell to resolve a null temp path and losing useful build output.
+- The corrected minimal build returned `EXIT_CODE=-1` without a visible compiler/MSBuild error in the captured log.
+
+What was done:
+- Marked `Build_SHINOBU_271_solution_loop12_01.log` as invalid wrapper proof.
+- Captured `Build_SHINOBU_271_solution_loop12_02.log` with a corrected `$tmpLog` path.
+- Searched the corrected log for compiler/MSBuild failure markers and verified no compiler processes remained.
+
+Cinematic cheats used:
+- None. Build orchestration only.
+
+Exact microseconds saved:
+- Runtime microseconds saved: 0.
+
+Verification:
+- `loop12_02` is not accepted as compile proof because it ended with `EXIT_CODE=-1`.
+- Next required action: rerun `dotnet build Hecton8.slnx` with normal verbosity and full diagnostic markers.

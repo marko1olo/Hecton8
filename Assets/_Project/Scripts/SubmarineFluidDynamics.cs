@@ -130,6 +130,7 @@ namespace Hecton8.Physics
         private const int ExteriorBuoyancySampleCount = 8;
         private const int ExteriorThermalAnomalyCapacity = 8;
         private const int ExteriorThermalContactCapacity = 16;
+        private const byte AuthoritativeFloodStateMathLod = 3;
         private const int VaultCompartmentFloodVolumesFlag = 1 << 0;
         private const int VaultCompartmentViscosityFlag = 1 << 1;
         private const int VaultCompartmentBaseMaxVolumesFlag = 1 << 2;
@@ -668,7 +669,7 @@ namespace Hecton8.Physics
         private IPowerGridService _powerGridService;
         private IThermodynamicsService _thermodynamicsService;
         private HectonAtmosphereManager _atmosphereRuntime;
-        private byte _cachedFloodStateMathLod;
+        private byte _cachedFloodStateMathLod = AuthoritativeFloodStateMathLod;
         private bool _registered;
         private bool _registeredOriginShiftListener;
         private bool _registeredHotSwapListener;
@@ -1475,7 +1476,7 @@ namespace Hecton8.Physics
 
         public void OnScalabilityChanged(in Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent payload)
         {
-            RefreshFloodStateMathLodFromQuality();
+            RefreshFloodStateMathLodAuthority();
         }
 
         /// <summary>
@@ -2498,7 +2499,7 @@ namespace Hecton8.Physics
             if (_registeredScalabilityListener || !Application.isPlaying)
                 return;
 
-            RefreshFloodStateMathLodFromQuality();
+            RefreshFloodStateMathLodAuthority();
             ScalabilityEvents.Register(this);
             _registeredScalabilityListener = true;
         }
@@ -5425,18 +5426,9 @@ namespace Hecton8.Physics
             return _cachedFloodStateMathLod;
         }
 
-        private void RefreshFloodStateMathLodFromQuality()
+        private void RefreshFloodStateMathLodAuthority()
         {
-            _cachedFloodStateMathLod = ResolveFloodStateMathLodByte(HomeostasisBrain.GlobalQualityWeight);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static byte ResolveFloodStateMathLodByte(float qualityWeight01)
-        {
-            float quality = math.isfinite(qualityWeight01) ? math.saturate(qualityWeight01) : 0f;
-            float curvedQuality = math.smoothstep(0.08f, 0.92f, quality);
-            int lod = (int)math.floor(math.lerp(0f, 3.999f, curvedQuality));
-            return (byte)math.clamp(lod, 0, 3);
+            _cachedFloodStateMathLod = AuthoritativeFloodStateMathLod;
         }
 
         private void RefreshRuntimeActorContextsIfMissing()

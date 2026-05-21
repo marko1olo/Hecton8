@@ -3989,3 +3989,21 @@ Mandates read before coding:
 - `git diff --check` passed for both VR Somatic provider files.
 - Build not relaunched under the explicit no-rebuild command discipline.
 - Note: `git status --short` does not currently show these two provider files after the patch, even though the on-disk scans verify the descriptor-backed route. This loop claims the audited route migration and documentation evidence, not repository index ownership.
+
+## Loop 223 - World Chunk Residency Ledger Descriptor Route
+- [x] Replaced World Chunk Residency retained ledger Vault handles with generation descriptors.
+  DOD practice: chunk residency DTOs, Addressables request DTOs, HLOD impostor DTOs, runtime streaming tuning, and mock AUP shift signal now retain `VaultGenerationHandle<T>` descriptors and open through exact BufferID, `SystemID.WorldStreaming`, nonzero generation, required length, `TryResolveHandle`, and `IsCreated` proof.
+  Rejected: keeping `VaultBufferHandle<T>`, `GetBufferHandle`, retained handle `.IsCreated`, and `.Resolve(_dataVault)` because the ledger crosses residency jobs, Addressables DTO writes, HLOD publication, runtime tuning, and DataVault hot-swap.
+  Estimate: descriptor proof runs at cold ledger bind, residency job setup, Addressables request record, HLOD snapshot update, tuning read/write, and DataVault replacement; DTO strides, BufferIDs, Addressables behavior, SignalBus payloads, and streaming authority are unchanged.
+- [x] Added WorldStreaming-owned release and Burst aliasing proof for residency jobs.
+  DOD practice: `DisposeNativeState` and DataVault hot-swap release five nonzero WorldStreaming descriptors through `ReleaseBuffer(in handle)` and tombstone the route. Residency, load-sort, HLOD swap/fade/shift jobs now mark non-overlapping native lanes with `[NoAlias]`.
+  Rejected: releasing or redesigning the broader preexisting `AcquireWorldStreamingArray<T>` cached native-array route in this loop because that is a larger resident-state migration touching 17 active SOA fields and fallback allocator semantics.
+  Estimate: cold lifecycle and phase-boundary only; no DTO layout, save identity, chunk state truth, Addressables handle ABI, or load cadence change.
+
+## Compile State Update 217
+- Focused legacy route scan on `WorldChunkResidencyManager.cs` found no executable `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `TryGetLatestCreated`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `TryGetBufferGeneration`, `VaultGenerationID`, or word-boundary `ResolveBuffer` hits.
+- Descriptor route scan confirmed expected `VaultGenerationHandle<T>`, `GetGenerationHandle<T>`, `TryResolveHandle`, `ReleaseStreamingLedgerBuffers`, `EnsureWorldStreamingVaultBuffer`, `TryResolveWorldStreamingVaultBuffer`, `ReleaseBuffer(in handle)`, and `[NoAlias]`.
+- Brace count is balanced: `WorldChunkResidencyManager.cs` `487/487`; EOF check passed.
+- `git diff --check` passed for `WorldChunkResidencyManager.cs`; CRLF warning only.
+- Residual debt: the same file still contains the preexisting `AcquireWorldStreamingArray<T>` direct `GetBuffer<T>` route and 17 persistent `NativeArray<T>` fields. This loop does not claim those larger resident-state aliases as migrated.
+- Build not relaunched under the explicit no-rebuild command discipline.

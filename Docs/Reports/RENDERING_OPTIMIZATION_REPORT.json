@@ -214,6 +214,7 @@
     "shaderVariantPatch": "Hecton_DiegeticTerminal uses a material scalar _HectonTerminalInstancedMode instead of shader_feature_local/keyword toggles, avoiding a runtime variant warmup hitch.",
     "shaderReadBoundsPatch": "_GlobalDecryptionPuzzleCount is bound to the last successful bounded GPU upload count, clamped by terminal capacity; upload failure clears the material count to zero so the shader fails closed instead of reading stale or beyond-upload DTO rows.",
     "solverVaultBoundsPatch": "EvaluateDecryptionPipelineJob is scheduled only after dispatcher frame resolve and clamps row count by puzzle and terminal Vault lengths; zero-length knob input fails closed and cold ValidateNativeBuffers requires requested capacities before native readiness.",
+    "loop18FrameAndTerminalBoundsPatch": "Completed decryption jobs record telemetry from stored _decryptionScheduleFrame, matching TerminalUnlockedSignal.Frame. Terminal wrapper copies, writes, dirty routes, interaction jobs, uploads, bounds, and layout hash clamp by current Vault/GPU lengths; visual blit seed uses owner-frame fixed-step seconds instead of Time.unscaledTime.",
     "status": "STATIC_PASS_COMPILE_BLOCKED_BY_CPU_GATE",
     "notes": "Terminal hacking now routes through Vault DTOs and shader buffer overlay. DataMonolith static_data.h8bin is missing, so CSV/mock data is fallback only. dotnet build remains gated by CPU/compiler policy."
   },
