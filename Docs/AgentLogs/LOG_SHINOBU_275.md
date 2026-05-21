@@ -1000,7 +1000,7 @@ Verification:
 - `python Tools\Decal_Projector_Inquisition.py`: PASS at `2026-05-21T19:41:50Z`; 5825 scanned assets, 336 candidates, 0 active GameObject decal violations, 0 active URP decal renderer feature violations.
 - `python -m json.tool Docs\Reports\RENDERING_OPTIMIZATION_REPORT.json` validates.
 - `git diff --check` reports only LF-to-CRLF warnings in edited files.
-- Compile not launched: CPU sampled at 100% and `VBCSCompiler` PID 32428 was active.
+- Compile not launched: CPU sampled at 100%/83% with `VBCSCompiler` PID 32428 active, then 73% with no compiler process returned.
 
 <SELF_AUDIT agent_id="SHINOBU_275" loop="21_black_box_dump_writer">
   <TASK_RECONCILIATION>
@@ -1029,6 +1029,6 @@ Verification:
   <SCALABILITY_CURVE>No quality behavior changed in Loop 21. The existing curve still scales active wound count, thermal fade pressure, shader refraction, reconstruction/noir richness, and optional telemetry intensity continuously through `GlobalQualityWeight`.</SCALABILITY_CURVE>
   <H_PHI_VAULT_STATUS>Vault lanes unchanged: 71490 instances, 71491 upload scratch, 71492 runtime state, 71493 telemetry ring, 71494 tuning, 71495 material profiles, 71496 CSV scratch. No new persistent private native collection was introduced.</H_PHI_VAULT_STATUS>
   <POINTER_ALIASING_DEPENDENCY_GRAPH>Job graph unchanged. Dump writes occur only from the fault/diagnostic lane after telemetry lock acquisition; no new `Complete()` or same-frame schedule/readback loop was added.</POINTER_ALIASING_DEPENDENCY_GRAPH>
-  <COMPILE_GUARD>No direct sibling runtime dependency was added. Compile was not launched because CPU was 100% and `VBCSCompiler` PID 32428 was active.</COMPILE_GUARD>
+  <COMPILE_GUARD>No direct sibling runtime dependency was added. Compile was not launched because CPU sampled 100%/83% with `VBCSCompiler` PID 32428 active, then 73% with no compiler process returned.</COMPILE_GUARD>
   <DEAR_LIE_CONFIRMATION>Before/after visual complexity is unchanged: screen-space wound projection remains O(N_visible capped at 128), not object decals or physical fracture simulation. Loop 21 only hardens the forensic output format.</DEAR_LIE_CONFIRMATION>
 </SELF_AUDIT>

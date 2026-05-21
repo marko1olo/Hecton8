@@ -152,7 +152,7 @@ NATIVE_API_EXPOSURE_RISK_BUCKET_KEYS = (
     "nativeApiRiskRuntimeAmbiguousMutableView",
 )
 NATIVE_API_DIAGNOSTIC_NAME_RE = re.compile(
-    r"\b(?:ForEditor|Debug|Diagnostic|Readback|Tuner|Snapshot|Telemetry|Inspector|Gizmo)\b",
+    r"(?:ForEditor|Debug|Diagnostic|Readback|Tuner|Snapshot|Telemetry|Inspector|Gizmo)",
     re.IGNORECASE,
 )
 STRING_LITERAL_RE = re.compile(
