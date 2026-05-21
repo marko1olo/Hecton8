@@ -4917,6 +4917,13 @@ Fault route: `ExosuitTelemetryEntry[300]` dumps fixed 64-byte rows to `Docs/Agen
 - Authority impact: terminal quality remains owner-phase pull from `HomeostasisBrain.GlobalQualityWeight` inside `RefreshScalabilityPolicy`. Quality scales render resolution/cadence/decryption visual stride only; terminal state, click command, unlock signal, puzzle DTOs, and blackbox rows are unchanged.
 - Verification: targeted scan clean for scalability listener/callback/registration, quality tier, scalability tier, low-tier route, `LowResolution`, and `HighResolution` in `TerminalOsRuntime.cs`; `git diff --check` passed with line-ending warning only. Build was not launched because CPU probe returned 96% with active `dotnet` and `csc` processes.
 
+## 2026-05-22 - SHINOBU_SYSTEMIC_SURGEON Wrist Hologram HUD Quality Pull Note
+
+- `Assets/_Project/Scripts/UI/WristHologramHudRuntime.cs` removed scalability-event listener routing and now refreshes continuous quality during owner tick signal draining.
+- Binary payload impact: none. `WristHudQuadTransformDTO` remains 112 bytes, `WristHudStateDTO` remains 248 bytes, `WristHudTelemetryEntry` remains 64 bytes, `WristHudBlackBoxDumpHeader` remains 32 bytes, and existing quality byte/telemetry fields retain their offsets.
+- Authority impact: quality remains a local presentation scalar from `HomeostasisBrain.GlobalQualityWeight`. Vitals/PDA/radiation/system-health signal facts, NativeQueue capacities, DataVault handles, and blackbox dump format are unchanged.
+- Verification: targeted scan clean for scalability listener/callback/registration, `GlobalRegistry.Scalability*`, quality tier, scalability tier, low-tier route, and `LOW LOD` text in `WristHologramHudRuntime.cs`; `git diff --check` passed with line-ending warning only. Build was not launched because CPU probe returned 93% with active `dotnet` and `csc` processes.
+
 ## 2026-05-22 - SHINOBU_275 Visor Wound Disk-State Texture Binding And Constants Clear Ownership
 
 - `Assets/_Project/Scripts/Visor/DeferredDecalPass.cs` and `Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs` now bind wound atlas, crack, lens dirt, blue-noise, and VR comfort textures through `RasterCommandBuffer.SetGlobalTexture` in the active disk source.

@@ -68,10 +68,13 @@
         "*.slnx": "*.csproj"
     },
     "dotnet.defaultSolution": "Hecton8.slnx",
+    "git.enabled": false,
     "git.autorefresh": false,
     "git.decorations.enabled": false,
     "git.countBadge": "off",
     "git.openRepositoryInParentFolders": "never",
+    "scm.diffDecorations": "none",
+    "scm.countBadge": "off",
     "files.watcherExclude": {
         "**/.git/objects/**": true,
         "**/.git/subtree-cache/**": true,

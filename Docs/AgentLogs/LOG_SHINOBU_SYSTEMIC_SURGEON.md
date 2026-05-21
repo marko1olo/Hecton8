@@ -3377,3 +3377,36 @@ Verification:
     Targeted scan found no `IScalabilityChangedEventListener`, `ScalabilityEvents`, `ScalabilityChangedEvent`, registered scalability listener state, quality tier, scalability tier, low-tier route, `LowResolution`, or `HighResolution` in `TerminalOsRuntime.cs`. `git diff --check` passed with line-ending warning only. Build was not launched because active compiler processes and 96 percent CPU violated AGENTS guard.
   </VERIFICATION>
 </SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="WristHologramHudQualityPull">
+  <WHAT_WAS_WRONG>
+    `WristHologramHudRuntime` retained `IScalabilityChangedEventListener`, `ScalabilityEvents` register/unregister calls, and a callback that ignored payload data and only re-read continuous `HomeostasisBrain.GlobalQualityWeight`.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Removed the listener interface, registration flag, lifecycle calls, and callback. `DrainSignalQueues` now refreshes quality in the owner tick before pressure evaluation, preserving existing material dirtiness through the current `ResolveMathLodPressure01` delta check.
+  </WHAT_WAS_DONE>
+  <STRUCT_LAYOUT>
+    No DTO layout changed. Existing explicit DTOs remain: `WristHudQuadTransformDTO` 112 bytes, `WristHudStateDTO` 248 bytes, `WristHudTelemetryEntry` 64 bytes, and `WristHudBlackBoxDumpHeader` 32 bytes. `QualityWeightQ8` remains in `WristHudStateDTO`; telemetry ring capacity remains 300.
+  </STRUCT_LAYOUT>
+  <SCALABILITY_CURVE>
+    Quality remains continuous: `QualityWeightQ8` encodes `GlobalQualityWeight`, `ResolveMathLodPressure01` blends quality pressure with system/survival pressure, and `ResolveMockAcousticTapCapacity` lerps acoustic visual tap capacity 12..36. No hardware tier or low-tier branch was introduced.
+  </SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>
+    Existing Wrist HUD DataVault handles, NativeQueue lanes, telemetry ring, counters, glyph buffers, and state buffer are unchanged. No new private native container, BufferID, SignalBus lane, or authority owner route was added.
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    Existing `MockVitalsGeneratorJob` and `TextToQuadsJob` remain unchanged. Job finalization still routes through `DispatcherJobFence.TryComplete`; this pass added no raw `.Complete()` and no dependency-chain mutation.
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>
+    No asmdef, sibling runtime reference, DTO ABI, SignalBus lane, or GlobalRegistry route changed. Build was skipped because CPU probe returned 93 percent with active `dotnet` and `csc`.
+  </COMPILE_GUARD>
+  <CINEMATIC_CHEATS>
+    Wrist HUD remains a retained glyph/quad visual fake over vault-owned vitals/PDA facts. Quality scales visual budget and acoustic mock tap density; it does not change survival facts, PDA state, radiation dose, or queue identities.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No measured speed claim. Removed one callback route and lifecycle registration pair.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted scan found no `IScalabilityChangedEventListener`, `ScalabilityEvents`, `ScalabilityChangedEvent`, callback/register/unregister state, `GlobalRegistry.Scalability*`, `QualityTier`, `ScalabilityTier`, `LowTier`, `lowTier`, or `LOW LOD` route in `WristHologramHudRuntime.cs`. `git diff --check` passed with line-ending warning only. Build was not launched because CPU probe returned 93 percent with active `dotnet` and `csc`.
+  </VERIFICATION>
+</SELF_AUDIT>

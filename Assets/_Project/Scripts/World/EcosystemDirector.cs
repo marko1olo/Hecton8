@@ -1876,12 +1876,12 @@ namespace Hecton8.World
             return _saveSnapshotSectors.GetSubArray(0, math.min(_saveSnapshotSectorCount, _saveSnapshotSectors.Length));
         }
 
-        internal NativeArray<EcosystemBiomassSaveRun> GetBiomassSaveSnapshotArray()
+        internal NativeArray<EcosystemBiomassSaveRun>.ReadOnly GetBiomassSaveSnapshotArray()
         {
             if (!_saveSnapshotBiomassRuns.IsCreated || _saveSnapshotBiomassRunCount <= 0)
                 return default;
 
-            return _saveSnapshotBiomassRuns.GetSubArray(0, math.min(_saveSnapshotBiomassRunCount, _saveSnapshotBiomassRuns.Length));
+            return _saveSnapshotBiomassRuns.GetSubArray(0, math.min(_saveSnapshotBiomassRunCount, _saveSnapshotBiomassRuns.Length)).AsReadOnly();
         }
 
         internal unsafe void RestoreFromLoadedRecords(EcosystemSectorSaveRecord[] loadedRecords)

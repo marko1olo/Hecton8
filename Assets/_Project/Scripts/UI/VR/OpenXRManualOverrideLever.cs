@@ -3,7 +3,6 @@ using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
-using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 using Hecton8.Input.Universal;
 using Hecton8.Interaction;
 using Hecton8.Tools;
@@ -24,7 +23,7 @@ namespace Hecton8.UI.VR
     [DisallowMultipleComponent]
     [RequireComponent(typeof(BoxCollider))]
     [AddComponentMenu("Hecton8/UI/VR/OpenXR Manual Override Lever")]
-    public sealed class OpenXRManualOverrideLever : MonoBehaviour, IUpdatable, IPhysicalPanelButtonReceiver, IManualOverrideLeverReadModel, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
+    public sealed class OpenXRManualOverrideLever : MonoBehaviour, IUpdatable, IPhysicalPanelButtonReceiver, IManualOverrideLeverReadModel, IGlobalRegistryHotSwapListener
     {
         private const int LeverCount = 1;
         private const int BlackBoxFrameCount = 300;
@@ -95,7 +94,6 @@ namespace Hecton8.UI.VR
         private JobHandle _disposeHandle;
         private bool _registeredTick;
         private bool _registeredHotSwapListener;
-        private bool _registeredScalabilityListener;
         private bool _receiverRegistered;
         private bool _dispatcherAvailable;
         private bool _grabbed;
@@ -151,7 +149,6 @@ namespace Hecton8.UI.VR
             _dispatcherAvailable = GlobalRegistry.Dispatcher != null;
             RefreshQualityPolicy();
             TryRegisterHotSwapListener();
-            TryRegisterScalabilityListener();
             TryRegisterTick();
             TryRegisterReceiver();
         }
@@ -162,7 +159,6 @@ namespace Hecton8.UI.VR
             _dispatcherAvailable = false;
             TryUnregisterTick();
             TryUnregisterReceiver();
-            TryUnregisterScalabilityListener();
             TryUnregisterHotSwapListener();
         }
 
@@ -171,7 +167,6 @@ namespace Hecton8.UI.VR
             _dispatcherAvailable = false;
             TryUnregisterTick();
             TryUnregisterReceiver();
-            TryUnregisterScalabilityListener();
             TryUnregisterHotSwapListener();
             DisposeNativeState();
         }
@@ -187,6 +182,7 @@ namespace Hecton8.UI.VR
 
             _frameThisTick = Time.frameCount;
             float dt = SanitizeDeltaSeconds(deltaTime);
+            RefreshQualityPolicy();
             _lastInputSignal = BuildUniversalInputSignal();
             bool gripHeld = (_lastInputSignal.ActionsBitmask & GripActionMask) != 0u;
             _xrActiveThisFrame = XRSettings.enabled && XRSettings.isDeviceActive;
@@ -432,7 +428,6 @@ namespace Hecton8.UI.VR
 
             TryUnregisterReceiver();
             TryUnregisterTick();
-            TryUnregisterScalabilityListener();
             TryUnregisterHotSwapListener();
         }
 
@@ -538,18 +533,6 @@ namespace Hecton8.UI.VR
             }
         }
 
-        /// <summary>
-        /// Applies cold scalability profile changes to lever presentation math without polling the registry in Tick.
-        /// </summary>
-        /// <param name="payload">Scalability transition payload.</param>
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            if (!isActiveAndEnabled || _latched)
-                return;
-
-            RefreshQualityPolicy();
-        }
-
         private void WriteBlackBoxFrame(float angleDegrees)
         {
             float velocity = _leverVelocities[0];
@@ -583,7 +566,7 @@ namespace Hecton8.UI.VR
                 flags |= 1 << 0;
             if (_latched)
                 flags |= 1 << 1;
-            if (_ikQualityWeight01 <= 0.3f)
+            if (ResolveIkQualityPressure01() > 0.001f)
                 flags |= 1 << 2;
             if (_xrActiveThisFrame)
                 flags |= 1 << 3;
@@ -842,21 +825,6 @@ namespace Hecton8.UI.VR
             _registeredHotSwapListener = false;
         }
 
-        private void TryRegisterScalabilityListener()
-        {
-            if (_registeredScalabilityListener || _latched || !Application.isPlaying)
-                return;
-
-            ScalabilityEvents.Register(this);
-            _registeredScalabilityListener = true;
-        }
-
-        private void TryUnregisterScalabilityListener()
-        {
-            ScalabilityEvents.Unregister(this);
-            _registeredScalabilityListener = false;
-        }
-
         private void RefreshQualityPolicy()
         {
             float quality = HomeostasisBrain.GlobalQualityWeight;
@@ -866,6 +834,11 @@ namespace Hecton8.UI.VR
             _ikQualityWeight01 = math.saturate(quality);
             float curve = SmoothStep01(_ikQualityWeight01);
             _activeIkBlend = math.saturate(math.lerp(minimumQualityIkBlend, maximumQualityIkBlend, curve));
+        }
+
+        private float ResolveIkQualityPressure01()
+        {
+            return 1f - SmoothStep01(_ikQualityWeight01);
         }
 
         private float ResolveNormalized01(float angleDegrees)

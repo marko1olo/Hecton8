@@ -19,6 +19,7 @@ namespace Hecton8.World.ShinobuBiomimetic.Editor
         private const int DefaultRuleCapacity = 256;
         private const int DefaultBoundsCapacity = 256;
         private const int DefaultPreviewLimit = 256;
+        private const SystemID PoiOwnerSystem = SystemID.WorldStreaming;
         private const string CsvPath = "poi_spawn_rules.csv";
 
         private float _globalDensity = 1f;
@@ -175,11 +176,15 @@ namespace Hecton8.World.ShinobuBiomimetic.Editor
             if (vault == null)
                 return;
 
-            NativeArray<PoiOfflineBakeConfigDTO> config = vault.GetBuffer<PoiOfflineBakeConfigDTO>(
-                ShinobuPoiVaultBridge.PoiBakeConfigBufferId,
-                1,
-                SystemID.WorldStreaming,
-                NativeArrayOptions.UninitializedMemory);
+            if (!TryEnsurePoiVaultBuffer(
+                    vault,
+                    ShinobuPoiVaultBridge.PoiBakeConfigBufferId,
+                    1,
+                    NativeArrayOptions.UninitializedMemory,
+                    out NativeArray<PoiOfflineBakeConfigDTO> config))
+            {
+                return;
+            }
 
             config[0] = new PoiOfflineBakeConfigDTO
             {
@@ -203,6 +208,96 @@ namespace Hecton8.World.ShinobuBiomimetic.Editor
             };
         }
 
+        private static bool TryEnsurePoiVaultBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            int length = math.max(1, requiredLength);
+            if (vault == null || vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                return false;
+
+            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                length,
+                PoiOwnerSystem,
+                options);
+            return TryResolvePoiVaultBuffer(vault, in handle, bufferId, length, out buffer);
+        }
+
+        private static bool TryReadPoiVaultBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) ||
+                !IsPoiVaultHandle(in handle, bufferId) ||
+                !vault.TryReadHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryResolveExistingPoiVaultBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle))
+            {
+                return false;
+            }
+
+            return TryResolvePoiVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer);
+        }
+
+        private static bool TryResolvePoiVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                !IsPoiVaultHandle(in handle, bufferId) ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsPoiVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == (uint)bufferId &&
+                   handle.SystemID == (uint)PoiOwnerSystem &&
+                   handle.Generation != 0u;
+        }
+
         private void ImportCsvRules()
         {
             if (HasPendingBake())
@@ -212,16 +307,21 @@ namespace Hecton8.World.ShinobuBiomimetic.Editor
             if (vault == null)
                 return;
 
-            NativeArray<PoiPlacementRuleDTO> rules = vault.GetBuffer<PoiPlacementRuleDTO>(
-                ShinobuPoiVaultBridge.PoiRulesBufferId,
-                DefaultRuleCapacity,
-                SystemID.WorldStreaming,
-                NativeArrayOptions.UninitializedMemory);
-            NativeArray<StructuralBoundsDTO> bounds = vault.GetBuffer<StructuralBoundsDTO>(
-                ShinobuPoiVaultBridge.PoiBoundsBufferId,
-                DefaultBoundsCapacity,
-                SystemID.WorldStreaming,
-                NativeArrayOptions.UninitializedMemory);
+            if (!TryEnsurePoiVaultBuffer(
+                    vault,
+                    ShinobuPoiVaultBridge.PoiRulesBufferId,
+                    DefaultRuleCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    out NativeArray<PoiPlacementRuleDTO> rules) ||
+                !TryEnsurePoiVaultBuffer(
+                    vault,
+                    ShinobuPoiVaultBridge.PoiBoundsBufferId,
+                    DefaultBoundsCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    out NativeArray<StructuralBoundsDTO> bounds))
+            {
+                return;
+            }
 
             _lastImportedRules = TryReadCsvBytes(vault, out NativeArray<byte> bytes, out int byteCount)
                 ? ShinobuPoiCsvRulesIngestor.Parse(bytes, byteCount, rules, bounds)
@@ -245,13 +345,15 @@ namespace Hecton8.World.ShinobuBiomimetic.Editor
                         return false;
 
                     byteCount = (int)length;
-                    bytes = vault.GetBuffer<byte>(
-                        ShinobuPoiVaultBridge.PoiCsvScratchBufferId,
-                        byteCount,
-                        SystemID.WorldStreaming,
-                        NativeArrayOptions.UninitializedMemory);
-                    if (!bytes.IsCreated || bytes.Length < byteCount)
+                    if (!TryEnsurePoiVaultBuffer(
+                            vault,
+                            ShinobuPoiVaultBridge.PoiCsvScratchBufferId,
+                            byteCount,
+                            NativeArrayOptions.UninitializedMemory,
+                            out bytes))
+                    {
                         return false;
+                    }
 
                     byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(bytes);
                     Span<byte> target = new Span<byte>(ptr, byteCount);
@@ -290,8 +392,14 @@ namespace Hecton8.World.ShinobuBiomimetic.Editor
         private void DumpBlackBox()
         {
             IDataVault vault = GlobalRegistry.DataVault;
-            if (vault == null || !vault.TryGetBuffer(ShinobuPoiVaultBridge.PoiTelemetryRingBufferId, out NativeArray<PoiPlacementTelemetryEntry> telemetry))
+            if (!TryReadPoiVaultBuffer(
+                    vault,
+                    ShinobuPoiVaultBridge.PoiTelemetryRingBufferId,
+                    ShinobuPoiVaultBridge.BlackBoxFrameCount,
+                    out NativeArray<PoiPlacementTelemetryEntry> telemetry))
+            {
                 return;
+            }
 
             ShinobuPoiTelemetryDump.TryDumpTelemetryRing(telemetry);
             ShinobuPoiTelemetryDump.TryDumpPromptAlias(telemetry);
@@ -306,41 +414,66 @@ namespace Hecton8.World.ShinobuBiomimetic.Editor
             ImportCsvRules();
 
             IDataVault vault = GlobalRegistry.DataVault;
-            if (vault == null ||
-                !vault.TryGetBuffer(ShinobuPoiVaultBridge.PoiBakeConfigBufferId, out NativeArray<PoiOfflineBakeConfigDTO> config) ||
-                !vault.TryGetBuffer(ShinobuPoiVaultBridge.PoiRulesBufferId, out NativeArray<PoiPlacementRuleDTO> rules) ||
-                !vault.TryGetBuffer(ShinobuPoiVaultBridge.PoiBoundsBufferId, out NativeArray<StructuralBoundsDTO> bounds) ||
-                !vault.TryGetBuffer(ShinobuPoiVaultBridge.PoiTelemetryRingBufferId, out NativeArray<PoiPlacementTelemetryEntry> telemetry))
+            if (!TryReadPoiVaultBuffer(
+                    vault,
+                    ShinobuPoiVaultBridge.PoiBakeConfigBufferId,
+                    1,
+                    out NativeArray<PoiOfflineBakeConfigDTO> config) ||
+                !TryReadPoiVaultBuffer(
+                    vault,
+                    ShinobuPoiVaultBridge.PoiRulesBufferId,
+                    DefaultRuleCapacity,
+                    out NativeArray<PoiPlacementRuleDTO> rules) ||
+                !TryReadPoiVaultBuffer(
+                    vault,
+                    ShinobuPoiVaultBridge.PoiBoundsBufferId,
+                    DefaultBoundsCapacity,
+                    out NativeArray<StructuralBoundsDTO> bounds) ||
+                !TryResolveExistingPoiVaultBuffer(
+                    vault,
+                    ShinobuPoiVaultBridge.PoiTelemetryRingBufferId,
+                    ShinobuPoiVaultBridge.BlackBoxFrameCount,
+                    out NativeArray<PoiPlacementTelemetryEntry> telemetry))
+            {
                 return;
+            }
 
             PoiOfflineBakeConfigDTO bakeConfig = config.Length > 0 ? config[0] : default;
             int candidateCount = math.clamp(bakeConfig.CandidateCount > 0 ? bakeConfig.CandidateCount : 512, 1, 8192);
             int transformCapacity = math.clamp(bakeConfig.MaxPoiTransforms > 0 ? bakeConfig.MaxPoiTransforms : 8192, 1, 50000);
-            NativeArray<double3> candidates = vault.GetBuffer<double3>(
-                ShinobuPoiVaultBridge.PoiCandidateAupsBufferId,
-                candidateCount,
-                SystemID.WorldStreaming,
-                NativeArrayOptions.UninitializedMemory);
-            NativeArray<MockGeologySignal> signals = vault.GetBuffer<MockGeologySignal>(
-                ShinobuPoiVaultBridge.PoiMockSignalsBufferId,
-                candidateCount,
-                SystemID.WorldStreaming,
-                NativeArrayOptions.UninitializedMemory);
-            NativeArray<PoiTransformDTO> transforms = vault.GetBuffer<PoiTransformDTO>(
-                ShinobuPoiVaultBridge.PoiTransformsBufferId,
-                transformCapacity,
-                SystemID.WorldStreaming,
-                NativeArrayOptions.UninitializedMemory);
-            NativeArray<VisualAnchorSampleDTO> anchors = vault.GetBuffer<VisualAnchorSampleDTO>(
-                ShinobuPoiVaultBridge.PoiVisualAnchorsBufferId,
-                candidateCount,
-                SystemID.WorldStreaming,
-                NativeArrayOptions.UninitializedMemory);
-            NativeArray<int> counters = vault.GetBuffer<int>(
-                ShinobuPoiVaultBridge.PoiPlacementCountersBufferId,
-                4,
-                SystemID.WorldStreaming,
-                NativeArrayOptions.UninitializedMemory);
+            if (!TryEnsurePoiVaultBuffer(
+                    vault,
+                    ShinobuPoiVaultBridge.PoiCandidateAupsBufferId,
+                    candidateCount,
+                    NativeArrayOptions.UninitializedMemory,
+                    out NativeArray<double3> candidates) ||
+                !TryEnsurePoiVaultBuffer(
+                    vault,
+                    ShinobuPoiVaultBridge.PoiMockSignalsBufferId,
+                    candidateCount,
+                    NativeArrayOptions.UninitializedMemory,
+                    out NativeArray<MockGeologySignal> signals) ||
+                !TryEnsurePoiVaultBuffer(
+                    vault,
+                    ShinobuPoiVaultBridge.PoiTransformsBufferId,
+                    transformCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    out NativeArray<PoiTransformDTO> transforms) ||
+                !TryEnsurePoiVaultBuffer(
+                    vault,
+                    ShinobuPoiVaultBridge.PoiVisualAnchorsBufferId,
+                    candidateCount,
+                    NativeArrayOptions.UninitializedMemory,
+                    out NativeArray<VisualAnchorSampleDTO> anchors) ||
+                !TryEnsurePoiVaultBuffer(
+                    vault,
+                    ShinobuPoiVaultBridge.PoiPlacementCountersBufferId,
+                    4,
+                    NativeArrayOptions.UninitializedMemory,
+                    out NativeArray<int> counters))
+            {
+                return;
+            }
 
             FillEditorCandidates(candidates, bakeConfig.Seed);
             for (int i = 0; i < counters.Length; i++)
@@ -436,13 +569,17 @@ namespace Hecton8.World.ShinobuBiomimetic.Editor
         private void ReadPlacementCounters()
         {
             IDataVault vault = GlobalRegistry.DataVault;
-            if (vault == null || !vault.TryGetBuffer(ShinobuPoiVaultBridge.PoiPlacementCountersBufferId, out NativeArray<int> counters))
+            if (!TryReadPoiVaultBuffer(
+                    vault,
+                    ShinobuPoiVaultBridge.PoiPlacementCountersBufferId,
+                    2,
+                    out NativeArray<int> counters))
+            {
                 return;
+            }
 
-            if (counters.IsCreated && counters.Length > 0)
-                _lastGeneratedPoiCount = math.max(0, counters[0]);
-            if (counters.IsCreated && counters.Length > 1)
-                _lastAnchorCount = math.max(0, counters[1]);
+            _lastGeneratedPoiCount = math.max(0, counters[0]);
+            _lastAnchorCount = math.max(0, counters[1]);
         }
 
         private void OnSceneGui(SceneView sceneView)
@@ -462,11 +599,23 @@ namespace Hecton8.World.ShinobuBiomimetic.Editor
             int poiCount = ResolvePlacementCounter(vault, 0, _previewLimit);
             int anchorCount = ResolvePlacementCounter(vault, 1, _previewLimit);
 
-            if (vault.TryGetBuffer(ShinobuPoiVaultBridge.PoiTransformsBufferId, out NativeArray<PoiTransformDTO> poiTransforms))
+            if (TryReadPoiVaultBuffer(
+                    vault,
+                    ShinobuPoiVaultBridge.PoiTransformsBufferId,
+                    1,
+                    out NativeArray<PoiTransformDTO> poiTransforms))
+            {
                 DrawPoiMatrices(poiTransforms, poiCount);
+            }
 
-            if (vault.TryGetBuffer(ShinobuPoiVaultBridge.PoiVisualAnchorsBufferId, out NativeArray<VisualAnchorSampleDTO> anchors))
+            if (TryReadPoiVaultBuffer(
+                    vault,
+                    ShinobuPoiVaultBridge.PoiVisualAnchorsBufferId,
+                    1,
+                    out NativeArray<VisualAnchorSampleDTO> anchors))
+            {
                 DrawAnchorHeatmap(anchors, anchorCount);
+            }
         }
 
         private void DrawPoiMatrices(NativeArray<PoiTransformDTO> poiTransforms, int generatedCount)
@@ -510,9 +659,11 @@ namespace Hecton8.World.ShinobuBiomimetic.Editor
 
         private static int ResolvePlacementCounter(IDataVault vault, int counterIndex, int fallback)
         {
-            if (vault != null &&
-                vault.TryGetBuffer(ShinobuPoiVaultBridge.PoiPlacementCountersBufferId, out NativeArray<int> counters) &&
-                counters.IsCreated &&
+            if (TryReadPoiVaultBuffer(
+                    vault,
+                    ShinobuPoiVaultBridge.PoiPlacementCountersBufferId,
+                    counterIndex + 1,
+                    out NativeArray<int> counters) &&
                 (uint)counterIndex < (uint)counters.Length)
             {
                 return math.max(0, counters[counterIndex]);

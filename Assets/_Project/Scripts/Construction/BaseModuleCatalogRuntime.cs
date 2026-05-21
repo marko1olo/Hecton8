@@ -583,7 +583,7 @@ namespace Hecton8.Construction
             if (!TryGetModuleDefinition(views, prefabHashId, out definition))
                 return false;
 
-            if (!TryGetSocketRange(definition, views.Sockets, out start, out count))
+            if (!TryGetSocketRange(definition, views.Sockets.AsReadOnly(), out start, out count))
                 return false;
 
             sockets = views.Sockets.AsReadOnly();
@@ -640,12 +640,11 @@ namespace Hecton8.Construction
             return new ReadOnlySpan<SocketDefinitionDTO>(ptr + start, count);
         }
 
-        public static bool TryGetSocketRange(in ModuleDefinitionDTO module, NativeArray<SocketDefinitionDTO> sockets, out int start, out int count)
+        public static bool TryGetSocketRange(in ModuleDefinitionDTO module, NativeArray<SocketDefinitionDTO>.ReadOnly sockets, out int start, out int count)
         {
             start = module.SocketStartIndex;
             count = (int)module.SocketCount;
-            return sockets.IsCreated &&
-                   start >= 0 &&
+            return start >= 0 &&
                    count >= 0 &&
                    start <= sockets.Length &&
                    start + count <= sockets.Length;
