@@ -428,3 +428,11 @@ Solution: Re-ran the targeted forbidden-token scan, diff whitespace check, gener
 Rejected Alternatives: Launching `dotnet build` while active `csc.exe`/`dotnet.exe`/`VBCSCompiler.exe` processes exist, manually editing the generated `.csproj`, or treating stale generated project coverage as compile proof.
 Scalability potential: Runtime route unchanged: Low fail-opens to Canvas only when RenderGraph proof is absent; Middle/High/Ultra keep shader-side visor overkill once proof exists.
 Hardware Impact: Runtime 0 us. Build was not launched because active compilers were present and CPU sampled 100% by CIM plus processor counter; this protects shared IO/CPU and keeps compile proof PENDING VERIFICATION.
+
+### D053 Generated Project Coverage Gate
+
+Problem: Subagent P2 correctly identified that external Roslyn/MSBuild paths can miss new SHINOBU_270 scripts while `Hecton8.Core.csproj` is stale. A one-off `Select-String` proof is not enough; the editor report needs a repeatable visible gate.
+Solution: Extended `HUDCanvasInquisition` to read generated `Hecton8.Core.csproj` cold, check exact `Compile Include` coverage for `HectonVisorARStencilRendererFeature.cs` and `HectonVisorStencilPreviewGizmo.cs`, and emit `generatedProjectIncludesRendererFeature`, `generatedProjectIncludesStencilPreviewGizmo`, and `generatedProjectStale` into the shared rendering report section.
+Rejected Alternatives: Editing the Unity-generated `.csproj`, broad global compliance mutation during a domain task, or treating a build against stale project files as proof.
+Scalability potential: Runtime Low/Middle/High/Ultra behavior unchanged; the gate protects verification integrity only.
+Hardware Impact: Runtime 0 us. Editor report cost is cold file read and string search only when the inquisition menu is run.

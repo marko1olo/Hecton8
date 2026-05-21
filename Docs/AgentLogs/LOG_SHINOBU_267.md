@@ -1219,3 +1219,28 @@ Exact Microseconds saved:
   <PARKED_WORK_REJECTED>Build launch before it is useful, removing the compatibility overload, and hardcoded measured-size strings.</PARKED_WORK_REJECTED>
   <STATIC_VERIFICATION>Runtime exposes both three-output and five-output validators; editor calls the five-output validator in the menu and self-audit; editor output contains measured `Flow=` and `Tuning=` lanes; owned scan reports no hardcoded `Flow=32`, `Tuning=32`, `Params=32`, `Telemetry=32`, or `Profile=32`; brace/preprocessor balances are zero; `git diff --check` found no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 100%, dotnet=8, csc=1.</STATIC_VERIFICATION>
 </SELF_AUDIT_DELTA>
+
+## 2026-05-22 - Polish Pass 53
+
+What was wrong:
+- The self-audit did not fail if future editor edits removed the new Flow/Tuning measured-size proof output.
+
+What was done:
+- Added `layoutProofOutput` to the self-audit pass condition and failure log.
+- Built the searched source tokens from split strings so the checker cannot satisfy itself with its own full literal.
+
+Cinematic Cheats used:
+- No simulation work changed. The visual fake remains shader-side sway from one global CBuffer.
+
+Exact Microseconds saved:
+- 0 player us. Editor audit guard only.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_267" revision="2026-05-22-P53_LAYOUT_PROOF_OUTPUT_GATE">
+  <TASK id="04" status="PASS">Measured layout proof output is now guarded by the runnable editor self-audit.</TASK>
+  <TASK id="20" status="PASS">`layoutProofOutput` joins the self-audit pass condition and failure log.</TASK>
+  <FIRST_20_MINUTES_MOMENT>World load and swim readability on the selected Copper Wire route biome.</FIRST_20_MINUTES_MOMENT>
+  <ROUTE_IMPACT>Removal of Flow/Tuning measured-size output now fails the SHINOBU_267 self-audit instead of silently degrading evidence.</ROUTE_IMPACT>
+  <PROOF_REQUIRED>Static source/self-audit now; Unity Editor menu invocation remains pending.</PROOF_REQUIRED>
+  <PARKED_WORK_REJECTED>Hot-path string work, exact-token self-reference, and build launch under active CPU/dotnet/csc pressure.</PARKED_WORK_REJECTED>
+  <STATIC_VERIFICATION>`layoutProofOutput` participates in the self-audit pass/fail log; generated tokens find the actual menu and self-audit output lines; owned forbidden scan is clean; runtime/editor/shader brace and preprocessor balances are zero.</STATIC_VERIFICATION>
+</SELF_AUDIT_DELTA>
