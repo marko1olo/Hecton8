@@ -124,7 +124,7 @@ Verification:
 - Publication fence static scan: PASS. `PostSimulationRadiation` no longer returns on blocked structural mutation before publication; Simulation preserves snapshots while waiting.
 - Signal ingress static scan: PASS. Public source/external-dose payloads use explicit finite guards.
 - Blackbox ABI static scan: PASS. Dump writer order matches telemetry explicit offsets and layout guard validates telemetry offsets.
-- Build not relaunched yet under this Loop 15 patch; CPU/compiler gate still must be checked before any dotnet attempt.
+- Build not relaunched: known external dependency files remain missing, active `csc.exe`/`dotnet.exe` processes were present, and CPU sampled at `84.675630`, above the repository build gate.
 
 <SELF_AUDIT agent="SHINOBU_274" domain="Radiation Scrubber" date="2026-05-21" pass="loop_15_incremental">
   <TaskReconciliation>
