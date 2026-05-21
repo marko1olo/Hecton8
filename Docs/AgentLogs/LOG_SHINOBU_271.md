@@ -422,6 +422,7 @@ What was wrong:
 - Suit damage and panel button samples used `Time.frameCount`; finger pose jobs used `FloatMode.Fast`.
 - Fault dumps could execute managed file IO directly from fixed-step fault handling.
 - SHINOBU_271 physics reports still carried stale missing-source compile proof, and the shared report did not actually contain the SHINOBU_271 block.
+- The first Loop 13 solution wrapper returned `EXIT_CODE=-1` without C#/MSBuild error markers.
 
 What was done:
 - Removed the implicit-origin runtime-position overload and updated the editor gizmo to pass a snapped origin explicitly.
@@ -429,7 +430,8 @@ What was done:
 - Added owner-local frame counters for hand fixed steps and panel sample stamps; suit damage events now use the fixed-step counter.
 - Changed finger pose jobs to deterministic Burst float mode.
 - Deferred black-box file IO out of fixed-step by marking a pending dump and flushing in late-frame/teardown.
-- Updated dedicated/shared reports to Loop 12 solution compile green and changed editor shared-report mutation to `JObject`.
+- Updated dedicated/shared reports to Loop 13 solution compile green and changed editor shared-report mutation to `JObject`.
+- Rebuilt touched narrow projects and the full solution after source changes.
 
 Cinematic cheats used:
 - Pocket pickup is treated as a transform-only pull before inventory insertion, not a Rigidbody motion solve.
@@ -443,4 +445,6 @@ Exact microseconds saved:
 Verification:
 - JSON reports parse.
 - Focused scans found no residual `MovePosition(`, `Time.frameCount`, `FloatMode.Fast`, implicit-origin `TryResolveRuntimePosition`, stale `IBuildPlacementRule` compile proof, or shared-report string-surgery helpers in SHINOBU_271 touched files.
-- New dotnet compile proof is pending after Loop 13 C# source changes.
+- `Docs/AgentLogs/Build_SHINOBU_271_core_loop13_04.log`: `Build succeeded`, `29 Warning(s)`, `0 Error(s)`, `EXIT_CODE=0`.
+- `Docs/AgentLogs/Build_SHINOBU_271_editor_loop13_05.log`: `Build succeeded`, `46 Warning(s)`, `0 Error(s)`, `EXIT_CODE=0`.
+- `Docs/AgentLogs/Build_SHINOBU_271_solution_loop13_06.log`: `Build succeeded`, `100 Warning(s)`, `0 Error(s)`, `EXIT_CODE=0`.

@@ -421,7 +421,13 @@ Scalability potential: Weak devices avoid fixed-step IO stalls on fault frames; 
 Hardware Impact: Normal-frame cost is one boolean branch in LateFrame. Fault-frame IO is moved out of fixed-step, not eliminated.
 
 Problem: The dedicated/shared physics reports still carried stale compile-failure proof, and `VRPhysicsInquisition` upserted shared JSON through fragile string/brace surgery.
-Solution: Updated both reports to the Loop 12 solution green proof and replaced the editor upsert route with `Newtonsoft.Json.Linq.JObject` mutation.
+Solution: Updated both reports to the Loop 13 solution green proof and replaced the editor upsert route with `Newtonsoft.Json.Linq.JObject` mutation.
 Rejected Alternatives: Leaving stale report artifacts or continuing manual JSON splicing. Stale proof contradicts build logs; string surgery created a missing shared SHINOBU_271 block.
 Scalability potential: No runtime effect. Proof artifacts now match actual compile state while still naming Unity/profiler/device gaps.
 Hardware Impact: Runtime 0 microseconds; editor-only report write cost is irrelevant to frame budget.
+
+Problem: The first Loop 13 solution wrapper returned `EXIT_CODE=-1` after early package-project output with no C#/MSBuild error markers.
+Solution: Treated it as invalid proof, built the touched `Hecton8.Core.csproj` and `Hecton8.Editor.csproj` narrowly to expose real C# errors, then reran solution build with direct log redirection instead of PowerShell output-array capture.
+Rejected Alternatives: Claiming failure from a diagnostic-empty `-1`, editing code blindly, or stopping after narrow builds. The source changes needed solution proof after the editor Newtonsoft route changed.
+Scalability potential: Runtime unchanged. Build proof now covers the current source graph.
+Hardware Impact: Runtime 0 microseconds. `Docs/AgentLogs/Build_SHINOBU_271_solution_loop13_06.log` reports `EXIT_CODE=0`, `100 Warning(s)`, `0 Error(s)`.

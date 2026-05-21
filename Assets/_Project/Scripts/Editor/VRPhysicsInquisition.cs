@@ -26,10 +26,9 @@ namespace Hecton8.Editor
         private const string SharedReportPath = "Docs/Reports/PHYSICS_OPTIMIZATION_REPORT.json";
         private const string DedicatedReportPath = "Docs/Reports/PHYSICS_OPTIMIZATION_REPORT_SHINOBU_271.json";
         private const string SelfAuditPath = "Docs/Reports/VR_INTERACTION_SELF_AUDIT_SHINOBU_271.md";
+        private const string StatusPath = "Docs/Tasks/Status_SHINOBU_271.md";
         private const string RootPath = "Assets/_Project/Scripts";
         private const string SharedReportKey = "shinobu271VRKinematicBridgeScanner";
-        private const string CompileProof =
-            "dotnet build Hecton8.slnx --no-restore -nologo -v:minimal -maxcpucount:1 /nr:false /p:UseSharedCompilation=false /p:GenerateFullPaths=true returned EXIT_CODE=0 in Docs/AgentLogs/Build_SHINOBU_271_solution_loop13_06.log with 100 Warning(s), 0 Error(s).";
         private const string RuntimeProofLimit =
             "Unity import, Unity Console, Play Mode GCMonitor, profiler captures, player-build, Quest/Steam Deck runtime, and live VR device proof remain pending.";
 
@@ -70,6 +69,7 @@ namespace Hecton8.Editor
 
             bool layoutValid = VRInteractionKinematicBridgeLayout.Validate();
             bool bridgePurgedDefault = physicalHandArticulationHits > 0 && physicalHandRigidbodyShellHits > 0;
+            string compileProof = ResolveCompileProofForReport();
 
             StringBuilder builder = new StringBuilder(2048);
             builder.AppendLine("{");
@@ -90,11 +90,11 @@ namespace Hecton8.Editor
             AppendJson(builder, "sdfRoute", "IVoxelSonarSdfReadModel.TryReadNearestSonarSdf -> VRHandStateDTO -> transform-only runtime target", true);
             AppendJson(builder, "hotPathAmendments", "cached IDataVault TryResolveExisting in fixed-step; live VRControllerMatrixDTO ingestion; all-active socket scan; over-budget state is telemetry-only.", true);
             AppendJson(builder, "continuousQuality", "GlobalQualityWeight maps continuously to a 2..8 presentation/telemetry iteration hint. Authoritative SDF truth uses the deterministic 8-step fence for rollback.", true);
-            AppendJson(builder, "compileProof", CompileProof, true);
+            AppendJson(builder, "compileProof", compileProof, true);
             AppendJson(builder, "verificationLimit", RuntimeProofLimit, false);
             builder.AppendLine("}");
             File.WriteAllText(DedicatedReportPath, builder.ToString());
-            UpsertSharedReport(BuildSharedReportBlock(layoutValid, springJointHits, configurableJointHits, fixedJointHits, handMovePositionHits, physicalHandArticulationHits, physicalHandRigidbodyShellHits));
+            UpsertSharedReport(BuildSharedReportBlock(layoutValid, springJointHits, configurableJointHits, fixedJointHits, handMovePositionHits, physicalHandArticulationHits, physicalHandRigidbodyShellHits, compileProof));
             WriteSelfAudit();
             AssetDatabase.Refresh();
 
@@ -224,7 +224,8 @@ namespace Hecton8.Editor
             int fixedJointHits,
             int handMovePositionHits,
             int physicalHandArticulationHits,
-            int physicalHandRigidbodyShellHits)
+            int physicalHandRigidbodyShellHits,
+            string compileProof)
         {
             StringBuilder builder = new StringBuilder(2048);
             builder.Append("  \"").Append(SharedReportKey).AppendLine("\": {");
@@ -245,10 +246,26 @@ namespace Hecton8.Editor
             builder.AppendLine("    \"sdfRoute\": \"IVoxelSonarSdfReadModel.TryReadNearestSonarSdf -> VRHandStateDTO -> resolved float4x4 matrix\",");
             builder.AppendLine("    \"hotPathAmendments\": \"cached IDataVault TryResolveExisting in fixed-step; live VRControllerMatrixDTO ingestion; all-active socket scan; mutation guard; over-budget telemetry-only flag\",");
             builder.AppendLine("    \"blackBoxDump\": \"Docs/AgentLogs/Dump_SHINOBU_271.bin\",");
-            builder.Append("    \"compileProof\": \"").Append(Escape(CompileProof)).AppendLine("\",");
+            builder.Append("    \"compileProof\": \"").Append(Escape(compileProof)).AppendLine("\",");
             builder.Append("    \"verificationLimit\": \"").Append(Escape(RuntimeProofLimit)).AppendLine("\"");
             builder.Append("  }");
             return builder.ToString();
+        }
+
+        private static string ResolveCompileProofForReport()
+        {
+            if (!File.Exists(StatusPath))
+                return "Status_SHINOBU_271.md missing; compile proof must be read from Docs/AgentLogs build logs.";
+
+            string[] lines = File.ReadAllLines(StatusPath);
+            for (int i = 0; i < lines.Length; i++)
+            {
+                string line = lines[i];
+                if (line.StartsWith("Verification state:", StringComparison.Ordinal))
+                    return line.Substring("Verification state:".Length).Trim();
+            }
+
+            return "Status_SHINOBU_271.md has no Verification state line; compile proof must be read from Docs/AgentLogs build logs.";
         }
 
         private static void UpsertSharedReport(string block)

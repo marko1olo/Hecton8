@@ -251,19 +251,19 @@ namespace Hecton8.VFX.Bioluminescence
         private static BiolumPulseSyncRuntime s_activeRuntime;
 
         private IDataVault _dataVault;
-        private VaultBufferHandle<float> _profileFloatsHandle;
-        private VaultBufferHandle<BiolumPulseStateDTO> _pulseStateHandle;
-        private VaultBufferHandle<BiolumPulseTelemetryEntry> _blackBoxHandle;
-        private VaultBufferHandle<GlowStateDTO> _glowStatesHandle;
-        private VaultBufferHandle<double3> _glowAupOriginsHandle;
-        private VaultBufferHandle<SyncPulseDTO> _syncPulsesHandle;
-        private VaultBufferHandle<float> _syncPulseAgesHandle;
-        private VaultBufferHandle<MockWeatherSignal> _mockWeatherSignalHandle;
-        private VaultBufferHandle<MockPredatorProximitySignal> _mockPredatorSignalHandle;
-        private VaultBufferHandle<MockCombatDamageSignal> _mockDamageSignalHandle;
-        private VaultBufferHandle<BiolumSpeciesTuningDTO> _speciesTuningHandle;
-        private VaultBufferHandle<byte> _csvScratchHandle;
-        private VaultBufferHandle<byte> _blackBoxDumpScratchHandle;
+        private VaultGenerationHandle<float> _profileFloatsHandle;
+        private VaultGenerationHandle<BiolumPulseStateDTO> _pulseStateHandle;
+        private VaultGenerationHandle<BiolumPulseTelemetryEntry> _blackBoxHandle;
+        private VaultGenerationHandle<GlowStateDTO> _glowStatesHandle;
+        private VaultGenerationHandle<double3> _glowAupOriginsHandle;
+        private VaultGenerationHandle<SyncPulseDTO> _syncPulsesHandle;
+        private VaultGenerationHandle<float> _syncPulseAgesHandle;
+        private VaultGenerationHandle<MockWeatherSignal> _mockWeatherSignalHandle;
+        private VaultGenerationHandle<MockPredatorProximitySignal> _mockPredatorSignalHandle;
+        private VaultGenerationHandle<MockCombatDamageSignal> _mockDamageSignalHandle;
+        private VaultGenerationHandle<BiolumSpeciesTuningDTO> _speciesTuningHandle;
+        private VaultGenerationHandle<byte> _csvScratchHandle;
+        private VaultGenerationHandle<byte> _blackBoxDumpScratchHandle;
         private ITickDispatcher _tickDispatcher;
         private AutoResetEvent _blackBoxDumpSignal;
         private Thread _blackBoxDumpThread;
@@ -288,7 +288,6 @@ namespace Hecton8.VFX.Bioluminescence
         private float _dearLieBlend01 = 1f;
         private uint _frameCounter;
         private uint _profileSourceHash = ProfileFallbackHash;
-        private uint _vaultGenerationId;
         private uint _lastBiomeHash;
         private uint _lastPredatorSignalFrame;
         private int _publishedGlobalStateCount = SyncGroupCount;
@@ -411,7 +410,7 @@ namespace Hecton8.VFX.Bioluminescence
             StopCsvBackgroundWatcher();
 #endif
             if (dumpWorkerStopped)
-                ReleaseVaultHandlesOnly(invalidateProfiles: false);
+                ReleaseVaultHandlesOnly(_dataVault, invalidateProfiles: false);
             _tickDispatcher = null;
             ReleaseRuntimeOwnerClaim();
         }
@@ -490,7 +489,7 @@ namespace Hecton8.VFX.Bioluminescence
             StopCsvBackgroundWatcher();
 #endif
             if (dumpWorkerStopped)
-                ReleaseVaultHandlesOnly(invalidateProfiles: true);
+                ReleaseVaultHandlesOnly(_dataVault, invalidateProfiles: true);
             if (dumpWorkerStopped)
                 _dataVault = null;
             _tickDispatcher = null;
@@ -1176,8 +1175,9 @@ namespace Hecton8.VFX.Bioluminescence
                 if (!StopBlackBoxDumpWorker())
                     return;
 
+                IDataVault previousVault = _dataVault;
+                ReleaseVaultHandlesOnly(previousVault, invalidateProfiles: true);
                 _dataVault = currentVault;
-                ReleaseVaultHandlesOnly(invalidateProfiles: true);
                 if (currentVault != null && _runtimeClaimHeld)
                 {
                     EnsureVaultBuffers();
@@ -1198,191 +1198,36 @@ namespace Hecton8.VFX.Bioluminescence
             if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
-            if (_vaultGenerationId != 0u && _vaultGenerationId != vault.VaultGenerationID)
-            {
-                FenceScheduledJobBeforeVaultHandleInvalidation();
-                if (!StopBlackBoxDumpWorker())
-                    return false;
+            bool hadProfiles = HasBiolumVaultBuffer(vault, in _profileFloatsHandle, BufferID.BiolumProfileFloats, ProfileFloatCount);
+            bool hadGlowStates = HasBiolumVaultBuffer(vault, in _glowStatesHandle, BufferID.BiolumGlowStates, MaxGlowInstances);
+            bool hadGlowAup = HasBiolumVaultBuffer(vault, in _glowAupOriginsHandle, BufferID.BiolumGlowAupOrigins, MaxGlowInstances);
+            bool hadSpecies = HasBiolumVaultBuffer(vault, in _speciesTuningHandle, BufferID.BiolumSpeciesTuning, MaxSpeciesTuningCount);
 
-                ReleaseVaultHandlesOnly(invalidateProfiles: false);
+            if (!EnsureBiolumVaultBuffer(vault, ref _profileFloatsHandle, BufferID.BiolumProfileFloats, ProfileFloatCount, NativeArrayOptions.ClearMemory, out _) ||
+                !EnsureBiolumVaultBuffer(vault, ref _pulseStateHandle, BiolumPulseStateBufferId, 1, NativeArrayOptions.UninitializedMemory, out _) ||
+                !EnsureBiolumVaultBuffer(vault, ref _blackBoxHandle, BufferID.BiolumBlackBox, BlackBoxFrameCount, NativeArrayOptions.ClearMemory, out _) ||
+                !EnsureBiolumVaultBuffer(vault, ref _glowStatesHandle, BufferID.BiolumGlowStates, MaxGlowInstances, NativeArrayOptions.UninitializedMemory, out _) ||
+                !EnsureBiolumVaultBuffer(vault, ref _glowAupOriginsHandle, BufferID.BiolumGlowAupOrigins, MaxGlowInstances, NativeArrayOptions.UninitializedMemory, out _) ||
+                !EnsureBiolumVaultBuffer(vault, ref _syncPulsesHandle, BufferID.BiolumSyncPulses, SyncPulseCapacity, NativeArrayOptions.ClearMemory, out _) ||
+                !EnsureBiolumVaultBuffer(vault, ref _syncPulseAgesHandle, BufferID.BiolumSyncPulseAges, SyncPulseCapacity, NativeArrayOptions.ClearMemory, out _) ||
+                !EnsureBiolumVaultBuffer(vault, ref _mockWeatherSignalHandle, BufferID.BiolumMockWeatherSignal, 1, NativeArrayOptions.ClearMemory, out _) ||
+                !EnsureBiolumVaultBuffer(vault, ref _mockPredatorSignalHandle, BufferID.BiolumMockPredatorSignal, 1, NativeArrayOptions.ClearMemory, out _) ||
+                !EnsureBiolumVaultBuffer(vault, ref _mockDamageSignalHandle, BufferID.BiolumMockDamageSignal, 1, NativeArrayOptions.ClearMemory, out _) ||
+                !EnsureBiolumVaultBuffer(vault, ref _speciesTuningHandle, BufferID.BiolumSpeciesTuning, MaxSpeciesTuningCount, NativeArrayOptions.UninitializedMemory, out _) ||
+                !EnsureBiolumVaultBuffer(vault, ref _csvScratchHandle, BufferID.BiolumCsvScratch, CsvScratchByteCount, NativeArrayOptions.ClearMemory, out _) ||
+                !EnsureBiolumVaultBuffer(vault, ref _blackBoxDumpScratchHandle, BiolumBlackBoxDumpScratchBufferId, BlackBoxDumpByteCount, NativeArrayOptions.UninitializedMemory, out _))
+            {
+                return false;
             }
 
-            if (!_profileFloatsHandle.IsCreated ||
-                _profileFloatsHandle.BufferId != BufferID.BiolumProfileFloats ||
-                _profileFloatsHandle.Length < ProfileFloatCount)
-            {
-                if (vault.TryGetBufferHandle(BufferID.BiolumProfileFloats, out VaultBufferHandle<float> existingProfileHandle) &&
-                    existingProfileHandle.Length >= ProfileFloatCount)
-                {
-                    _profileFloatsHandle = existingProfileHandle;
-                }
-                else
-                {
-                    _profilesLoaded = false;
-                    _profileFloatsHandle = vault.GetBufferHandle<float>(
-                        BufferID.BiolumProfileFloats,
-                        ProfileFloatCount,
-                        SystemID.Vfx,
-                        NativeArrayOptions.ClearMemory);
-                }
-            }
-
-            if (!_pulseStateHandle.IsCreated ||
-                _pulseStateHandle.BufferId != BiolumPulseStateBufferId ||
-                _pulseStateHandle.Length < 1)
-            {
-                _pulseStateHandle = vault.GetBufferHandle<BiolumPulseStateDTO>(
-                    BiolumPulseStateBufferId,
-                    1,
-                    SystemID.Vfx,
-                    NativeArrayOptions.UninitializedMemory);
-            }
-
-            if (!_blackBoxHandle.IsCreated ||
-                _blackBoxHandle.BufferId != BufferID.BiolumBlackBox ||
-                _blackBoxHandle.Length < BlackBoxFrameCount)
-            {
-                _blackBoxHandle = vault.GetBufferHandle<BiolumPulseTelemetryEntry>(
-                    BufferID.BiolumBlackBox,
-                    BlackBoxFrameCount,
-                    SystemID.Vfx,
-                        NativeArrayOptions.ClearMemory);
-            }
-
-            if (!_glowStatesHandle.IsCreated ||
-                _glowStatesHandle.BufferId != BufferID.BiolumGlowStates ||
-                _glowStatesHandle.Length < MaxGlowInstances)
-            {
-                _glowStatesHandle = vault.GetBufferHandle<GlowStateDTO>(
-                    BufferID.BiolumGlowStates,
-                    MaxGlowInstances,
-                    SystemID.Vfx,
-                    NativeArrayOptions.UninitializedMemory);
+            if (!hadProfiles)
+                _profilesLoaded = false;
+            if (!hadGlowStates || !hadGlowAup || !hadSpecies)
                 _mockGlowsInitialized = false;
-            }
+            if (_runtimeClaimHeld)
+                EnsureBlackBoxDumpWorker();
 
-            if (!_glowAupOriginsHandle.IsCreated ||
-                _glowAupOriginsHandle.BufferId != BufferID.BiolumGlowAupOrigins ||
-                _glowAupOriginsHandle.Length < MaxGlowInstances)
-            {
-                _glowAupOriginsHandle = vault.GetBufferHandle<double3>(
-                    BufferID.BiolumGlowAupOrigins,
-                    MaxGlowInstances,
-                    SystemID.Vfx,
-                    NativeArrayOptions.UninitializedMemory);
-                _mockGlowsInitialized = false;
-            }
-
-            if (!_syncPulsesHandle.IsCreated ||
-                _syncPulsesHandle.BufferId != BufferID.BiolumSyncPulses ||
-                _syncPulsesHandle.Length < SyncPulseCapacity)
-            {
-                _syncPulsesHandle = vault.GetBufferHandle<SyncPulseDTO>(
-                    BufferID.BiolumSyncPulses,
-                    SyncPulseCapacity,
-                    SystemID.Vfx,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            if (!_syncPulseAgesHandle.IsCreated ||
-                _syncPulseAgesHandle.BufferId != BufferID.BiolumSyncPulseAges ||
-                _syncPulseAgesHandle.Length < SyncPulseCapacity)
-            {
-                _syncPulseAgesHandle = vault.GetBufferHandle<float>(
-                    BufferID.BiolumSyncPulseAges,
-                    SyncPulseCapacity,
-                    SystemID.Vfx,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            if (!_mockWeatherSignalHandle.IsCreated ||
-                _mockWeatherSignalHandle.BufferId != BufferID.BiolumMockWeatherSignal ||
-                _mockWeatherSignalHandle.Length < 1)
-            {
-                _mockWeatherSignalHandle = vault.GetBufferHandle<MockWeatherSignal>(
-                    BufferID.BiolumMockWeatherSignal,
-                    1,
-                    SystemID.Vfx,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            if (!_mockPredatorSignalHandle.IsCreated ||
-                _mockPredatorSignalHandle.BufferId != BufferID.BiolumMockPredatorSignal ||
-                _mockPredatorSignalHandle.Length < 1)
-            {
-                _mockPredatorSignalHandle = vault.GetBufferHandle<MockPredatorProximitySignal>(
-                    BufferID.BiolumMockPredatorSignal,
-                    1,
-                    SystemID.Vfx,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            if (!_mockDamageSignalHandle.IsCreated ||
-                _mockDamageSignalHandle.BufferId != BufferID.BiolumMockDamageSignal ||
-                _mockDamageSignalHandle.Length < 1)
-            {
-                _mockDamageSignalHandle = vault.GetBufferHandle<MockCombatDamageSignal>(
-                    BufferID.BiolumMockDamageSignal,
-                    1,
-                    SystemID.Vfx,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            if (!_speciesTuningHandle.IsCreated ||
-                _speciesTuningHandle.BufferId != BufferID.BiolumSpeciesTuning ||
-                _speciesTuningHandle.Length < MaxSpeciesTuningCount)
-            {
-                _speciesTuningHandle = vault.GetBufferHandle<BiolumSpeciesTuningDTO>(
-                    BufferID.BiolumSpeciesTuning,
-                    MaxSpeciesTuningCount,
-                    SystemID.Vfx,
-                    NativeArrayOptions.UninitializedMemory);
-                _mockGlowsInitialized = false;
-            }
-
-            if (!_csvScratchHandle.IsCreated ||
-                _csvScratchHandle.BufferId != BufferID.BiolumCsvScratch ||
-                _csvScratchHandle.Length < CsvScratchByteCount)
-            {
-                _csvScratchHandle = vault.GetBufferHandle<byte>(
-                    BufferID.BiolumCsvScratch,
-                    CsvScratchByteCount,
-                    SystemID.Vfx,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            if (!_blackBoxDumpScratchHandle.IsCreated ||
-                _blackBoxDumpScratchHandle.BufferId != BiolumBlackBoxDumpScratchBufferId ||
-                _blackBoxDumpScratchHandle.Length < BlackBoxDumpByteCount)
-            {
-                _blackBoxDumpScratchHandle = vault.GetBufferHandle<byte>(
-                    BiolumBlackBoxDumpScratchBufferId,
-                    BlackBoxDumpByteCount,
-                    SystemID.Vfx,
-                    NativeArrayOptions.UninitializedMemory);
-            }
-
-            bool ready = _profileFloatsHandle.IsCreated &&
-                         _pulseStateHandle.IsCreated &&
-                         _blackBoxHandle.IsCreated &&
-                         _glowStatesHandle.IsCreated &&
-                         _glowAupOriginsHandle.IsCreated &&
-                         _syncPulsesHandle.IsCreated &&
-                         _syncPulseAgesHandle.IsCreated &&
-                         _mockWeatherSignalHandle.IsCreated &&
-                         _mockPredatorSignalHandle.IsCreated &&
-                         _mockDamageSignalHandle.IsCreated &&
-                         _speciesTuningHandle.IsCreated &&
-                         _csvScratchHandle.IsCreated &&
-                         _blackBoxDumpScratchHandle.IsCreated;
-            if (ready)
-            {
-                _vaultGenerationId = vault.VaultGenerationID;
-                if (_runtimeClaimHeld)
-                    EnsureBlackBoxDumpWorker();
-            }
-
-            return ready;
+            return true;
         }
 
         private bool HasVaultBuffers()
@@ -1390,181 +1235,138 @@ namespace Hecton8.VFX.Bioluminescence
             IDataVault vault = _dataVault;
             return vault != null &&
                    !vault.IsCompactionFenceActive &&
-                   _vaultGenerationId != 0u &&
-                   _vaultGenerationId == vault.VaultGenerationID &&
-                   _profileFloatsHandle.IsCreated &&
-                   _profileFloatsHandle.BufferId == BufferID.BiolumProfileFloats &&
-                   _profileFloatsHandle.Length >= ProfileFloatCount &&
-                   _pulseStateHandle.IsCreated &&
-                   _pulseStateHandle.BufferId == BiolumPulseStateBufferId &&
-                   _pulseStateHandle.Length >= 1 &&
-                   _blackBoxHandle.IsCreated &&
-                   _blackBoxHandle.BufferId == BufferID.BiolumBlackBox &&
-                   _blackBoxHandle.Length >= BlackBoxFrameCount &&
-                   _glowStatesHandle.IsCreated &&
-                   _glowStatesHandle.BufferId == BufferID.BiolumGlowStates &&
-                   _glowStatesHandle.Length >= MaxGlowInstances &&
-                   _glowAupOriginsHandle.IsCreated &&
-                   _glowAupOriginsHandle.BufferId == BufferID.BiolumGlowAupOrigins &&
-                   _glowAupOriginsHandle.Length >= MaxGlowInstances &&
-                   _syncPulsesHandle.IsCreated &&
-                   _syncPulsesHandle.BufferId == BufferID.BiolumSyncPulses &&
-                   _syncPulsesHandle.Length >= SyncPulseCapacity &&
-                   _syncPulseAgesHandle.IsCreated &&
-                   _syncPulseAgesHandle.BufferId == BufferID.BiolumSyncPulseAges &&
-                   _syncPulseAgesHandle.Length >= SyncPulseCapacity &&
-                   _mockWeatherSignalHandle.IsCreated &&
-                   _mockWeatherSignalHandle.BufferId == BufferID.BiolumMockWeatherSignal &&
-                   _mockWeatherSignalHandle.Length >= 1 &&
-                   _mockPredatorSignalHandle.IsCreated &&
-                   _mockPredatorSignalHandle.BufferId == BufferID.BiolumMockPredatorSignal &&
-                   _mockPredatorSignalHandle.Length >= 1 &&
-                   _mockDamageSignalHandle.IsCreated &&
-                   _mockDamageSignalHandle.BufferId == BufferID.BiolumMockDamageSignal &&
-                   _mockDamageSignalHandle.Length >= 1 &&
-                   _speciesTuningHandle.IsCreated &&
-                   _speciesTuningHandle.BufferId == BufferID.BiolumSpeciesTuning &&
-                   _speciesTuningHandle.Length >= MaxSpeciesTuningCount &&
-                   _csvScratchHandle.IsCreated &&
-                   _csvScratchHandle.BufferId == BufferID.BiolumCsvScratch &&
-                   _csvScratchHandle.Length >= CsvScratchByteCount &&
-                   _blackBoxDumpScratchHandle.IsCreated &&
-                   _blackBoxDumpScratchHandle.BufferId == BiolumBlackBoxDumpScratchBufferId &&
-                   _blackBoxDumpScratchHandle.Length >= BlackBoxDumpByteCount;
+                   HasBiolumVaultBuffer(vault, in _profileFloatsHandle, BufferID.BiolumProfileFloats, ProfileFloatCount) &&
+                   HasBiolumVaultBuffer(vault, in _pulseStateHandle, BiolumPulseStateBufferId, 1) &&
+                   HasBiolumVaultBuffer(vault, in _blackBoxHandle, BufferID.BiolumBlackBox, BlackBoxFrameCount) &&
+                   HasBiolumVaultBuffer(vault, in _glowStatesHandle, BufferID.BiolumGlowStates, MaxGlowInstances) &&
+                   HasBiolumVaultBuffer(vault, in _glowAupOriginsHandle, BufferID.BiolumGlowAupOrigins, MaxGlowInstances) &&
+                   HasBiolumVaultBuffer(vault, in _syncPulsesHandle, BufferID.BiolumSyncPulses, SyncPulseCapacity) &&
+                   HasBiolumVaultBuffer(vault, in _syncPulseAgesHandle, BufferID.BiolumSyncPulseAges, SyncPulseCapacity) &&
+                   HasBiolumVaultBuffer(vault, in _mockWeatherSignalHandle, BufferID.BiolumMockWeatherSignal, 1) &&
+                   HasBiolumVaultBuffer(vault, in _mockPredatorSignalHandle, BufferID.BiolumMockPredatorSignal, 1) &&
+                   HasBiolumVaultBuffer(vault, in _mockDamageSignalHandle, BufferID.BiolumMockDamageSignal, 1) &&
+                   HasBiolumVaultBuffer(vault, in _speciesTuningHandle, BufferID.BiolumSpeciesTuning, MaxSpeciesTuningCount) &&
+                   HasBiolumVaultBuffer(vault, in _csvScratchHandle, BufferID.BiolumCsvScratch, CsvScratchByteCount) &&
+                   HasBiolumVaultBuffer(vault, in _blackBoxDumpScratchHandle, BiolumBlackBoxDumpScratchBufferId, BlackBoxDumpByteCount);
         }
 
         private bool TryRefreshExistingVaultHandlesForOwnerSwap()
         {
-            IDataVault vault = _dataVault;
-            if (vault == null || vault.IsCompactionFenceActive)
-                return false;
-
-            if (_vaultGenerationId != 0u && _vaultGenerationId != vault.VaultGenerationID)
-            {
-                FenceScheduledJobBeforeVaultHandleInvalidation();
-                if (!StopBlackBoxDumpWorker())
-                    return false;
-
-                ReleaseVaultHandlesOnly(invalidateProfiles: false);
-            }
-
-            if (!vault.TryGetBufferHandle(BufferID.BiolumProfileFloats, out VaultBufferHandle<float> profileHandle) ||
-                profileHandle.Length < ProfileFloatCount)
-            {
-                return false;
-            }
-
-            if (!vault.TryGetBufferHandle(BiolumPulseStateBufferId, out VaultBufferHandle<BiolumPulseStateDTO> pulseStateHandle) ||
-                pulseStateHandle.Length < 1)
-            {
-                return false;
-            }
-
-            if (!vault.TryGetBufferHandle(BufferID.BiolumBlackBox, out VaultBufferHandle<BiolumPulseTelemetryEntry> blackBoxHandle) ||
-                blackBoxHandle.Length < BlackBoxFrameCount)
-            {
-                return false;
-            }
-
-            if (!vault.TryGetBufferHandle(BufferID.BiolumGlowStates, out VaultBufferHandle<GlowStateDTO> glowStatesHandle) ||
-                glowStatesHandle.Length < MaxGlowInstances)
-            {
-                return false;
-            }
-
-            if (!vault.TryGetBufferHandle(BufferID.BiolumGlowAupOrigins, out VaultBufferHandle<double3> glowAupOriginsHandle) ||
-                glowAupOriginsHandle.Length < MaxGlowInstances)
-            {
-                return false;
-            }
-
-            if (!vault.TryGetBufferHandle(BufferID.BiolumSyncPulses, out VaultBufferHandle<SyncPulseDTO> syncPulsesHandle) ||
-                syncPulsesHandle.Length < SyncPulseCapacity)
-            {
-                return false;
-            }
-
-            if (!vault.TryGetBufferHandle(BufferID.BiolumSyncPulseAges, out VaultBufferHandle<float> syncPulseAgesHandle) ||
-                syncPulseAgesHandle.Length < SyncPulseCapacity)
-            {
-                return false;
-            }
-
-            if (!vault.TryGetBufferHandle(BufferID.BiolumMockWeatherSignal, out VaultBufferHandle<MockWeatherSignal> mockWeatherSignalHandle) ||
-                mockWeatherSignalHandle.Length < 1)
-            {
-                return false;
-            }
-
-            if (!vault.TryGetBufferHandle(BufferID.BiolumMockPredatorSignal, out VaultBufferHandle<MockPredatorProximitySignal> mockPredatorSignalHandle) ||
-                mockPredatorSignalHandle.Length < 1)
-            {
-                return false;
-            }
-
-            if (!vault.TryGetBufferHandle(BufferID.BiolumMockDamageSignal, out VaultBufferHandle<MockCombatDamageSignal> mockDamageSignalHandle) ||
-                mockDamageSignalHandle.Length < 1)
-            {
-                return false;
-            }
-
-            if (!vault.TryGetBufferHandle(BufferID.BiolumSpeciesTuning, out VaultBufferHandle<BiolumSpeciesTuningDTO> speciesTuningHandle) ||
-                speciesTuningHandle.Length < MaxSpeciesTuningCount)
-            {
-                return false;
-            }
-
-            if (!vault.TryGetBufferHandle(BufferID.BiolumCsvScratch, out VaultBufferHandle<byte> csvScratchHandle) ||
-                csvScratchHandle.Length < CsvScratchByteCount)
-            {
-                return false;
-            }
-
-            if (!vault.TryGetBufferHandle(BiolumBlackBoxDumpScratchBufferId, out VaultBufferHandle<byte> blackBoxDumpScratchHandle) ||
-                blackBoxDumpScratchHandle.Length < BlackBoxDumpByteCount)
-            {
-                return false;
-            }
-
-            _profileFloatsHandle = profileHandle;
-            _pulseStateHandle = pulseStateHandle;
-            _blackBoxHandle = blackBoxHandle;
-            _glowStatesHandle = glowStatesHandle;
-            _glowAupOriginsHandle = glowAupOriginsHandle;
-            _syncPulsesHandle = syncPulsesHandle;
-            _syncPulseAgesHandle = syncPulseAgesHandle;
-            _mockWeatherSignalHandle = mockWeatherSignalHandle;
-            _mockPredatorSignalHandle = mockPredatorSignalHandle;
-            _mockDamageSignalHandle = mockDamageSignalHandle;
-            _speciesTuningHandle = speciesTuningHandle;
-            _csvScratchHandle = csvScratchHandle;
-            _blackBoxDumpScratchHandle = blackBoxDumpScratchHandle;
-            _vaultGenerationId = vault.VaultGenerationID;
-            if (_runtimeClaimHeld)
-                EnsureBlackBoxDumpWorker();
-            return true;
+            return EnsureVaultBuffers();
         }
 
-        private void ReleaseVaultHandlesOnly(bool invalidateProfiles)
+        private void ReleaseVaultHandlesOnly(IDataVault vault, bool invalidateProfiles)
         {
-            _profileFloatsHandle = default;
-            _pulseStateHandle = default;
-            _blackBoxHandle = default;
-            _glowStatesHandle = default;
-            _glowAupOriginsHandle = default;
-            _syncPulsesHandle = default;
-            _syncPulseAgesHandle = default;
-            _mockWeatherSignalHandle = default;
-            _mockPredatorSignalHandle = default;
-            _mockDamageSignalHandle = default;
-            _speciesTuningHandle = default;
-            _csvScratchHandle = default;
-            _blackBoxDumpScratchHandle = default;
-            _vaultGenerationId = 0u;
+            ReleaseBiolumVaultHandle(vault, ref _profileFloatsHandle, BufferID.BiolumProfileFloats);
+            ReleaseBiolumVaultHandle(vault, ref _pulseStateHandle, BiolumPulseStateBufferId);
+            ReleaseBiolumVaultHandle(vault, ref _blackBoxHandle, BufferID.BiolumBlackBox);
+            ReleaseBiolumVaultHandle(vault, ref _glowStatesHandle, BufferID.BiolumGlowStates);
+            ReleaseBiolumVaultHandle(vault, ref _glowAupOriginsHandle, BufferID.BiolumGlowAupOrigins);
+            ReleaseBiolumVaultHandle(vault, ref _syncPulsesHandle, BufferID.BiolumSyncPulses);
+            ReleaseBiolumVaultHandle(vault, ref _syncPulseAgesHandle, BufferID.BiolumSyncPulseAges);
+            ReleaseBiolumVaultHandle(vault, ref _mockWeatherSignalHandle, BufferID.BiolumMockWeatherSignal);
+            ReleaseBiolumVaultHandle(vault, ref _mockPredatorSignalHandle, BufferID.BiolumMockPredatorSignal);
+            ReleaseBiolumVaultHandle(vault, ref _mockDamageSignalHandle, BufferID.BiolumMockDamageSignal);
+            ReleaseBiolumVaultHandle(vault, ref _speciesTuningHandle, BufferID.BiolumSpeciesTuning);
+            ReleaseBiolumVaultHandle(vault, ref _csvScratchHandle, BufferID.BiolumCsvScratch);
+            ReleaseBiolumVaultHandle(vault, ref _blackBoxDumpScratchHandle, BiolumBlackBoxDumpScratchBufferId);
             _mockGlowsInitialized = false;
             _activeGlowingInstanceCount = 0;
             if (invalidateProfiles)
                 _profilesLoaded = false;
+        }
+
+        private static bool EnsureBiolumVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null || vault.IsCompactionFenceActive || requiredLength <= 0)
+                return false;
+
+            if (TryResolveBiolumVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer))
+                return true;
+
+            if (vault.IsAllocationLocked)
+                return false;
+
+            VaultGenerationHandle<T> acquired = vault.GetGenerationHandle<T>(bufferId, requiredLength, SystemID.Vfx, options);
+            if (TryResolveBiolumVaultBuffer(vault, in acquired, bufferId, requiredLength, out buffer))
+            {
+                handle = acquired;
+                return true;
+            }
+
+            handle = default;
+            buffer = default;
+            return false;
+        }
+
+        private static bool TryResolveBiolumVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   !vault.IsCompactionFenceActive &&
+                   requiredLength > 0 &&
+                   IsBiolumVaultHandle(in handle, bufferId) &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static bool TryReadBiolumVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   !vault.IsCompactionFenceActive &&
+                   requiredLength > 0 &&
+                   IsBiolumVaultHandle(in handle, bufferId) &&
+                   vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static bool HasBiolumVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength) where T : struct
+        {
+            return TryReadBiolumVaultBuffer(vault, in handle, bufferId, requiredLength, out _);
+        }
+
+        private static bool IsBiolumVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == (uint)SystemID.Vfx &&
+                   handle.Generation != 0u;
+        }
+
+        private static void ReleaseBiolumVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            if (vault != null && IsBiolumVaultHandle(in handle, bufferId))
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         private static bool AreSyncLayoutsValid()

@@ -333,3 +333,26 @@ Updated static counts from that artifact:
 - `unityTimeRiskGameplayDelta`: 1
 
 Residual note: `WorldCaveDirector` still has larger non-time debt: managed dictionaries/lists and async cave spawn lifecycle remain owner-local managed state. This pass only removed direct wall-clock authority.
+
+## 2026-05-22 Surface/Biome/Pipe/Drone Follow-Up
+
+Four direct runtime wall-clock rows were removed or rerouted:
+
+- `SurfaceWeatherVfxRig`: splash impulse timestamp now uses `ResolveWeatherShaderClockSeconds()` because `Hecton_OceanRainRippleDecal.shader` computes `_Time.y - impulse.z`.
+- `BiomeMatrixDirector`: seismic dust entry cooldown now uses bounded dispatcher `DilatedTimeSeconds`.
+- `ConnectionSplineBatchRenderer`: pipe rupture start timestamp now uses `ResolvePipeShaderClockSeconds()` because `Hecton_FlexiblePipe.shader` computes `_Time.y - ruptureStartTime`.
+- `DroneFleetManager`: `DroneCognitionJob.PhantomFlowTime` now uses `s_HeadlessSimulationClockSeconds`, advanced from sanitized headless `Tick(deltaTime)`.
+
+Focused proof:
+
+- Focused scan over the four touched files shows no direct `Time.time`, `Time.unscaledTime`, `Time.deltaTime`, or `Time.fixedDeltaTime`; `Time.timeSinceLevelLoad` remains only in shader-clock helpers.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_time_after_surface_biome_pipe_drone_clock.json`.
+
+Updated static counts from that artifact:
+
+- `unityTimeCritical`: 890
+- `unityTimeWallClock`: 54
+- `unityTimeRiskGameplayWallClock`: 20
+- `unityTimeRiskGameplayDelta`: 1
+
+Residual examples now include `CurrentVolume`, `FaunaBrain` corpse-bloat shader timer, player fixed/render interpolation, random event shockwave shader timestamp, atmosphere/celestial/fluid clocks, RT lifecycle diagnostics, footstep audio cadence, leak plume shader time, voxel cut heat shader time, abyssal fluid decal time, LOD cadence, micro-fauna hit flash, and scatter candidate acceptance time.

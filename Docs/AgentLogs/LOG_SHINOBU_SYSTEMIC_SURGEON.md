@@ -3005,3 +3005,21 @@ Verification:
     Targeted `rg` found no `lowTierFrameSignals: 8`, `ScalabilityChangedEvent`, `ResolveQualityTierFallbackWeight`, `CurrentQualityTier`, `GlobalRegistry.ScalabilityTier`, `GlobalRegistry.MathPrecisionLowBlend01`, or `H8_LOW_MEMORY_PROFILE` in `AdaptiveStemAudioMixer.cs`, `HectonMusicDirector.cs`, or `DynamicMusicGranularSynthesizer.cs`. `git diff --check` passed with line-ending warnings only. Compile Check 101 was skipped because active `dotnet` and `csc` processes were present while CPU was 18%.
   </VERIFICATION>
 </SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="AcousticEchoQualityEventDrainRemoval">
+  <WHAT_WAS_WRONG>
+    `AcousticEchoLocationRuntime` still scanned `SignalBus<ScalabilityChangedEvent>` inside the per-frame refresh path to update an optional quality byte, even though the byte already came from continuous `HomeostasisBrain.GlobalQualityWeight`.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Removed `ConsumeScalabilityChangedSignals` and its call site. Echo tap queues, portal/DSP hydration, AUP trail state, deterministic tracking job, and 300-frame blackbox writes were left untouched.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    The quality byte remains presentation/proof data for acoustic head-sweep animation. Predator acoustic trail truth is still driven by tap intensity, transmission, source AUP, and silence timeout, not hardware tier.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. One typed scalability snapshot scan was removed from the acoustic refresh path.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted `rg` found no `ScalabilityChangedEvent`, `ConsumeScalabilityChangedSignals`, `GlobalRegistry.ScalabilityTier`, `GlobalRegistry.H8_LOW_MEMORY_PROFILE`, `HectonQualityTier`, or `QualityTier` in `AcousticEchoLocationRuntime.cs`. `git diff --check` passed for acoustic echo and the binary payload ledger. Guarded `dotnet build .\Assembly-CSharp.csproj --no-restore --nologo -m:1 -clp:ErrorsOnly` succeeded with 0 errors and 152 warnings after an initial normal-output run exited 1 without visible compiler diagnostics.
+  </VERIFICATION>
+</SELF_AUDIT>

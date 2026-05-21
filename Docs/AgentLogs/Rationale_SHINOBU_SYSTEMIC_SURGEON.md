@@ -978,3 +978,11 @@ Solution: Set the music director and granular synth signal configuration to `low
 Rejected Alternatives: Leaving only the adaptive owner patched was rejected because SignalBus configuration is shared by type, not by producer. Reducing all owners to 8 was rejected because music scalar event loss is a binary hardware behavior.
 Scalability potential: Low/Middle/High/Ultra keep the same scalar-event route capacity. Weak devices still shed cost through continuous synth quality and kernel cadence; high/ultra can use all scalar updates for richer stingers and granular motion.
 Hardware Impact: 0 us speed claim. No new hot-path work beyond preserving signal capacity. Build not launched because `dotnet` and `csc` were active; targeted scan and `git diff --check` passed.
+
+## Acoustic Echo Quality Event Drain Removal
+
+Problem: `AcousticEchoLocationRuntime.RefreshForFrame` refreshed `_cachedQualityWeightByte` from continuous `HomeostasisBrain.GlobalQualityWeight`, then called `ConsumeScalabilityChangedSignals`, which scanned `SignalBus<ScalabilityChangedEvent>` and re-read the same byte when any binary scalability event existed. This preserved a stale hot snapshot route in AI sensory.
+Solution: Removed the scalability event drain and helper. Acoustic trail state, pending tap queue, portal/DSP hydration, AUP deltas, deterministic Burst tracking, and blackbox rows are unchanged. The optional `QualityWeightByte` still refreshes once per frame from the continuous global quality scalar.
+Rejected Alternatives: Mapping `CurrentQualityTier` into a byte was rejected because acoustic head-sweep presentation should follow the continuous quality scalar, not hardware class. Removing `QualityWeightByte` entirely was rejected because it is part of existing explicit DTO layouts and a visual/head-sweep proof lane.
+Scalability potential: Low devices can reduce the visual head-sweep amplitude through the existing quality curve; middle devices interpolate; high/ultra get full sweep amplitude. Predator acoustic target, trail intensity, source AUP, and hunt trigger facts remain hardware-invariant.
+Hardware Impact: 0 us speed claim. Removed one typed scalability snapshot scan from the per-frame acoustic refresh path. Guarded build rerun passed with 0 errors and 152 warnings.
