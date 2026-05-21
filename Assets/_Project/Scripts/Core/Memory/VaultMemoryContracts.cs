@@ -630,37 +630,47 @@ namespace Hecton8.Core.Memory
 
             int capacity = ResolvePrewarmCapacity(hotEntityCapacity);
             bool ok = VaultSovereigntyTelemetry.EnsureRing(vault);
-            NativeArray<int> activeCount = vault.GetBuffer<int>(
+            bool hasActiveCount = TryEnsureCoreVaultBuffer(
+                vault,
                 BufferID.VaultSovereigntyActiveEntityCount,
                 1,
-                SystemID.CoreDataVault,
-                NativeArrayOptions.ClearMemory);
-            NativeArray<int> shiftCount = vault.GetBuffer<int>(
+                NativeArrayOptions.ClearMemory,
+                out NativeArray<int> activeCount);
+            bool hasShiftCount = TryEnsureCoreVaultBuffer(
+                vault,
                 BufferID.VaultMemoryAddressShiftCount,
                 1,
-                SystemID.CoreDataVault,
-                NativeArrayOptions.ClearMemory);
-            NativeArray<VaultMemoryAddressShiftRecord> shiftRecords = vault.GetBuffer<VaultMemoryAddressShiftRecord>(
+                NativeArrayOptions.ClearMemory,
+                out NativeArray<int> shiftCount);
+            bool hasShiftRecords = TryEnsureCoreVaultBuffer(
+                vault,
                 BufferID.VaultMemoryAddressShiftRecords,
                 capacity,
-                SystemID.CoreDataVault,
-                NativeArrayOptions.UninitializedMemory);
-            NativeArray<byte> csvScratch = vault.GetBuffer<byte>(
+                NativeArrayOptions.UninitializedMemory,
+                out NativeArray<VaultMemoryAddressShiftRecord> shiftRecords);
+            bool hasCsvScratch = TryEnsureCoreVaultBuffer(
+                vault,
                 BufferID.VaultMemoryProfileCsvScratch,
                 VaultLegacyBinaryArchaeology.CsvScratchBytes,
-                SystemID.CoreDataVault,
-                NativeArrayOptions.UninitializedMemory);
+                NativeArrayOptions.UninitializedMemory,
+                out NativeArray<byte> csvScratch);
 
             int aupCapacity = capacity;
-            if (vault.TryGetBuffer(BufferID.VaultAup64, out NativeArray<VaultAup64> aups) && aups.IsCreated)
+            if (TryReadCoreVaultBuffer(vault, BufferID.VaultAup64, 1, out NativeArray<VaultAup64> aups))
                 aupCapacity = math.max(aupCapacity, aups.Length);
-            NativeArray<VaultAupSectorLocal32> sectorLocal = vault.GetBuffer<VaultAupSectorLocal32>(
+            bool hasSectorLocal = TryEnsureCoreVaultBuffer(
+                vault,
                 BufferID.VaultAupSectorLocal32,
                 aupCapacity,
-                SystemID.CoreDataVault,
-                NativeArrayOptions.UninitializedMemory);
+                NativeArrayOptions.UninitializedMemory,
+                out NativeArray<VaultAupSectorLocal32> sectorLocal);
 
             return ok &&
+                hasActiveCount &&
+                hasShiftCount &&
+                hasShiftRecords &&
+                hasCsvScratch &&
+                hasSectorLocal &&
                 activeCount.IsCreated &&
                 shiftCount.IsCreated &&
                 shiftRecords.IsCreated &&
@@ -684,42 +694,47 @@ namespace Hecton8.Core.Memory
             bool scheduled = false;
 
             NativeArray<VaultHotEntityData> hotEntities = default;
-            vault.TryGetBuffer(BufferID.VaultHotEntityData, out hotEntities);
+            TryResolveCoreVaultBuffer(vault, BufferID.VaultHotEntityData, 1, out hotEntities);
 
-            if (vault.TryGetBuffer(BufferID.VaultAup64, out NativeArray<VaultAup64> aups) &&
+            if (TryResolveCoreVaultBuffer(vault, BufferID.VaultAup64, 1, out NativeArray<VaultAup64> aups) &&
                 aups.IsCreated &&
                 hotEntities.IsCreated)
             {
                 int count = math.min(aups.Length, hotEntities.Length);
                 if (count > 0)
                 {
-                    NativeArray<VaultAupSectorLocal32> sectorLocal = vault.GetBuffer<VaultAupSectorLocal32>(
+                    bool hasSectorLocal = TryEnsureCoreVaultBuffer(
+                        vault,
                         BufferID.VaultAupSectorLocal32,
                         count,
-                        SystemID.CoreDataVault,
-                        NativeArrayOptions.UninitializedMemory);
-                    handle = new VaultAupPrecisionDeltaCompactionJob
+                        NativeArrayOptions.UninitializedMemory,
+                        out NativeArray<VaultAupSectorLocal32> sectorLocal);
+                    if (hasSectorLocal && sectorLocal.IsCreated)
                     {
-                        Aups = aups,
-                        SectorLocal32 = sectorLocal,
-                        HotEntities = hotEntities,
-                        SectorSizeMeters = HectonPhysicsContract.AupSectorSizeMetersFloat,
-                        Frame = frame
-                    }.Schedule(count, 128, handle);
-                    scheduled = true;
-                    stats.AupRowsVisited = count;
-                    stats.Flags |= FlagAupWrapped;
+                        handle = new VaultAupPrecisionDeltaCompactionJob
+                        {
+                            Aups = aups,
+                            SectorLocal32 = sectorLocal,
+                            HotEntities = hotEntities,
+                            SectorSizeMeters = HectonPhysicsContract.AupSectorSizeMetersFloat,
+                            Frame = frame
+                        }.Schedule(count, 128, handle);
+                        scheduled = true;
+                        stats.AupRowsVisited = count;
+                        stats.Flags |= FlagAupWrapped;
+                    }
                 }
             }
 
             if (hotEntities.IsCreated && hotEntities.Length > 0)
             {
-                NativeArray<int> activeCount = vault.GetBuffer<int>(
+                bool hasActiveCount = TryEnsureCoreVaultBuffer(
+                    vault,
                     BufferID.VaultSovereigntyActiveEntityCount,
                     1,
-                    SystemID.CoreDataVault,
-                    NativeArrayOptions.ClearMemory);
-                if (activeCount.IsCreated)
+                    NativeArrayOptions.ClearMemory,
+                    out NativeArray<int> activeCount);
+                if (hasActiveCount && activeCount.IsCreated)
                 {
                     int active = activeCount[0];
                     if (active <= 0 || active > hotEntities.Length)
@@ -727,16 +742,18 @@ namespace Hecton8.Core.Memory
 
                     int budget = ResolveSweepBudget(activeCount[0], hotEntities.Length, quality, strideAggressiveness);
                     stats.ScanBudget = budget;
-                    NativeArray<VaultMemoryAddressShiftRecord> shiftRecords = vault.GetBuffer<VaultMemoryAddressShiftRecord>(
+                    TryEnsureCoreVaultBuffer(
+                        vault,
                         BufferID.VaultMemoryAddressShiftRecords,
                         math.max(1, budget),
-                        SystemID.CoreDataVault,
-                        NativeArrayOptions.UninitializedMemory);
-                    NativeArray<int> shiftCount = vault.GetBuffer<int>(
+                        NativeArrayOptions.UninitializedMemory,
+                        out NativeArray<VaultMemoryAddressShiftRecord> shiftRecords);
+                    TryEnsureCoreVaultBuffer(
+                        vault,
                         BufferID.VaultMemoryAddressShiftCount,
                         1,
-                        SystemID.CoreDataVault,
-                        NativeArrayOptions.ClearMemory);
+                        NativeArrayOptions.ClearMemory,
+                        out NativeArray<int> shiftCount);
                     if (shiftCount.IsCreated && shiftCount.Length > 0)
                         shiftCount[0] = 0;
 
@@ -766,7 +783,7 @@ namespace Hecton8.Core.Memory
                 stats.Flags |= FlagCompleted;
             }
 
-            if (vault.TryGetBuffer(BufferID.VaultSovereigntyActiveEntityCount, out NativeArray<int> resolvedCount) &&
+            if (TryReadCoreVaultBuffer(vault, BufferID.VaultSovereigntyActiveEntityCount, 1, out NativeArray<int> resolvedCount) &&
                 resolvedCount.IsCreated &&
                 resolvedCount.Length > 0)
             {
@@ -782,17 +799,17 @@ namespace Hecton8.Core.Memory
 
         private static NativeArray<VaultAup64> ResolveOptionalAup64(IDataVault vault)
         {
-            return vault.TryGetBuffer(BufferID.VaultAup64, out NativeArray<VaultAup64> aups) ? aups : default;
+            return TryResolveCoreVaultBuffer(vault, BufferID.VaultAup64, 1, out NativeArray<VaultAup64> aups) ? aups : default;
         }
 
         private static NativeArray<VaultAupSectorLocal32> ResolveOptionalSectorLocal32(IDataVault vault)
         {
-            return vault.TryGetBuffer(BufferID.VaultAupSectorLocal32, out NativeArray<VaultAupSectorLocal32> local32) ? local32 : default;
+            return TryResolveCoreVaultBuffer(vault, BufferID.VaultAupSectorLocal32, 1, out NativeArray<VaultAupSectorLocal32> local32) ? local32 : default;
         }
 
         private static float ResolveStrideAggressiveness(IDataVault vault)
         {
-            if (vault.TryGetBuffer(BufferID.VaultMemoryLayoutConfig, out NativeArray<VaultMemoryLayoutConfig> configs) &&
+            if (TryReadCoreVaultBuffer(vault, BufferID.VaultMemoryLayoutConfig, 1, out NativeArray<VaultMemoryLayoutConfig> configs) &&
                 configs.IsCreated &&
                 configs.Length > 0)
             {
@@ -801,6 +818,88 @@ namespace Hecton8.Core.Memory
             }
 
             return 0.35f;
+        }
+
+        private static bool TryEnsureCoreVaultBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                vault.IsAllocationLocked ||
+                vault.IsCompactionFenceActive)
+            {
+                return false;
+            }
+
+            VaultGenerationHandle<T> handle = vault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.CoreDataVault,
+                options);
+
+            return IsCoreVaultHandle(in handle, bufferId) &&
+                vault.TryResolveHandle(in handle, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= requiredLength;
+        }
+
+        private static bool TryResolveCoreVaultBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) ||
+                !IsCoreVaultHandle(in handle, bufferId) ||
+                !vault.TryResolveHandle(in handle, out NativeArray<T> resolved) ||
+                !resolved.IsCreated ||
+                resolved.Length < requiredLength)
+            {
+                return false;
+            }
+
+            buffer = resolved;
+            return true;
+        }
+
+        private static bool TryReadCoreVaultBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) ||
+                !IsCoreVaultHandle(in handle, bufferId) ||
+                !vault.TryReadHandle(in handle, out NativeArray<T> resolved) ||
+                !resolved.IsCreated ||
+                resolved.Length < requiredLength)
+            {
+                return false;
+            }
+
+            buffer = resolved;
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsCoreVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == (uint)bufferId &&
+                handle.SystemID == (uint)SystemID.CoreDataVault &&
+                handle.Generation != 0u;
         }
 
         private static int ResolvePrewarmCapacity(int hotEntityCapacity)

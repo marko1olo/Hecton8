@@ -15,7 +15,7 @@ namespace Hecton8.Vehicles.VFX
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Vehicles/VFX/Hull Dent Shader Controller")]
-    public sealed class HullDentShaderController : MonoBehaviour, ILateFrameTickable, IScalabilityChangedEventListener, IGlobalRegistryHotSwapListener
+    public sealed class HullDentShaderController : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int MaxHullDents = 16;
         private const int RadiusQuantizationStepsPerMeter = 16;
@@ -60,12 +60,11 @@ namespace Hecton8.Vehicles.VFX
         private int _writeHead;
         private int _activeDentCount;
         private int _lastProcessedFrame = int.MinValue;
-        private byte _qualityTier;
-        private bool _lowTier;
+        private byte _qualityWeightByte = byte.MaxValue;
+        private float _qualityWeight01 = 1f;
         private bool _dirty;
         private bool _registeredLateFrame;
         private bool _registeredHotSwap;
-        private bool _registeredScalabilityListener;
         private bool _ownsHullDentsBuffer;
 
         private void OnEnable()
@@ -73,19 +72,17 @@ namespace Hecton8.Vehicles.VFX
             ResolveRoot();
             ResolveBreachReadModel();
             ResolveTickDispatcher();
-            RefreshQualityTierCold();
+            RefreshQualityPolicy();
             CacheDataVaultCold();
             EnsureHullDentsBuffer();
             SyncDentBufferFromVault();
             TryRegisterLateFrameTickable();
             TryRegisterHotSwapListener();
-            TryRegisterScalabilityListener();
             UploadShaderGlobals();
         }
 
         private void OnDisable()
         {
-            TryUnregisterScalabilityListener();
             TryUnregisterHotSwapListener();
 
             if (_registeredLateFrame)
@@ -99,11 +96,6 @@ namespace Hecton8.Vehicles.VFX
             ReleaseHullDentsBuffer();
             _tickDispatcher = null;
             _dataVault = null;
-        }
-
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            ApplyQualityTierCandidate(payload.CurrentTier, payload.CurrentQualityTier);
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -141,6 +133,7 @@ namespace Hecton8.Vehicles.VFX
 
                 int acceptedSignals = ConsumeCombatDamageSignals();
                 bool repairChanged = ApplyRepairCoupling(ResolveUnscaledDeltaTime());
+                RefreshQualityPolicy();
 
                 if (_dirty)
                     UploadShaderGlobals();
@@ -176,24 +169,6 @@ namespace Hecton8.Vehicles.VFX
             _registeredHotSwap = false;
         }
 
-        private void TryRegisterScalabilityListener()
-        {
-            if (_registeredScalabilityListener || !Application.isPlaying)
-                return;
-
-            ScalabilityEvents.Register(this);
-            _registeredScalabilityListener = true;
-        }
-
-        private void TryUnregisterScalabilityListener()
-        {
-            if (!_registeredScalabilityListener)
-                return;
-
-            ScalabilityEvents.Unregister(this);
-            _registeredScalabilityListener = false;
-        }
-
         private void ResolveRoot()
         {
             _cachedRoot = submarineRoot != null ? submarineRoot : transform;
@@ -217,25 +192,37 @@ namespace Hecton8.Vehicles.VFX
                 _dataVault = GlobalRegistry.DataVault;
         }
 
-        private void RefreshQualityTierCold()
+        private bool RefreshQualityPolicy()
         {
-            byte newQualityTier = GlobalRegistry.ScalabilityTierProfileByte;
-            HectonQualityTier tier = GlobalRegistry.ScalabilityTier;
-            ApplyQualityTierCandidate(newQualityTier, tier);
+            float nextQualityWeight01 = ResolveCurrentQualityWeight(_qualityWeight01);
+            byte nextQualityWeightByte = ResolveQualityWeightByte(nextQualityWeight01);
+            if (math.abs(nextQualityWeight01 - _qualityWeight01) <= 0.001f &&
+                nextQualityWeightByte == _qualityWeightByte)
+            {
+                _qualityWeight01 = nextQualityWeight01;
+                return false;
+            }
+
+            _qualityWeight01 = nextQualityWeight01;
+            _qualityWeightByte = nextQualityWeightByte;
+            _dirty = true;
+            return true;
         }
 
-        private void ApplyQualityTierCandidate(byte newQualityTier, HectonQualityTier tier)
+        private static float ResolveCurrentQualityWeight(float fallbackWeight01)
         {
-            bool newLowTier = tier == HectonQualityTier.Unknown ||
-                              tier == HectonQualityTier.Low ||
-                              tier == HectonQualityTier.Mx350;
+            float qualityWeight01 = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.select(fallbackWeight01, qualityWeight01, math.isfinite(qualityWeight01)));
+        }
 
-            if (newQualityTier == _qualityTier && newLowTier == _lowTier)
-                return;
+        private static byte ResolveQualityWeightByte(float qualityWeight01)
+        {
+            return (byte)math.clamp((int)math.round(math.saturate(qualityWeight01) * 255f), 0, 255);
+        }
 
-            _qualityTier = newQualityTier;
-            _lowTier = newLowTier;
-            _dirty = true;
+        private static float ResolveDearLieScarProxyWeight(float qualityWeight01)
+        {
+            return math.saturate(1f - math.smoothstep(0.18f, 0.72f, math.saturate(qualityWeight01)));
         }
 
         private int ConsumeCombatDamageSignals()
@@ -452,11 +439,12 @@ namespace Hecton8.Vehicles.VFX
         private void UploadShaderGlobalsFromLocal()
         {
             _activeDentCount = CountActiveDents();
-            float scarScalar = ResolveLowTierScarScalar();
+            float scarScalar = ResolveHullScarScalar();
+            float scarProxyWeight = ResolveDearLieScarProxyWeight(_qualityWeight01);
             Shader.SetGlobalVectorArray(_HullDentsId, _dentBuffer);
             Shader.SetGlobalVector(
                 _HullDentParamsId,
-                new Vector4(_activeDentCount, _lowTier ? 1f : 0f, scarScalar, _qualityTier));
+                new Vector4(_activeDentCount, scarProxyWeight, scarScalar, _qualityWeightByte));
             _dirty = false;
         }
 
@@ -707,7 +695,7 @@ namespace Hecton8.Vehicles.VFX
             _writeHead = 0;
         }
 
-        private float ResolveLowTierScarScalar()
+        private float ResolveHullScarScalar()
         {
             float scar = 0f;
             for (int i = 0; i < MaxHullDents; i++)
@@ -730,8 +718,6 @@ namespace Hecton8.Vehicles.VFX
         {
             float intensity01 = math.saturate(depth * math.rcp(FiniteAtLeast(maxDentDepthMeters, 0.01f)));
             byte flags = 0;
-            if (_lowTier)
-                flags |= HullDeformedSignal.LowTierVisualOnlyFlag;
             if ((signal.Flags & CombatDamageSignal.LegacyMirrorFlag) != 0)
                 flags |= HullDeformedSignal.LegacyLocalPointFlag;
 
@@ -748,7 +734,7 @@ namespace Hecton8.Vehicles.VFX
                 SourceId = signal.SourceId,
                 ActiveDentCount = (byte)math.min(MaxHullDents, _activeDentCount),
                 Flags = flags,
-                QualityTier = _qualityTier,
+                QualityTier = _qualityWeightByte,
                 Channel = signal.Channel,
                 DamageType = signal.DamageType
             };
@@ -757,8 +743,8 @@ namespace Hecton8.Vehicles.VFX
 
         private uint BuildTelemetryFlags()
         {
-            uint flags = _lowTier ? 1u : 0u;
-            return flags | ((uint)_qualityTier << 8);
+            uint scarProxyByte = ResolveQualityWeightByte(ResolveDearLieScarProxyWeight(_qualityWeight01));
+            return (uint)_qualityWeightByte | (scarProxyByte << 8);
         }
 
         private static float PackRadiusDepth(float radius, float depth)

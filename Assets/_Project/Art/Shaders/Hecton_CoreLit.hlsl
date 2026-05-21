@@ -121,7 +121,7 @@ float4 _HectonParasiteGlobals;
 float4 _HectonSubmarineCrushCenterRadius;
 float4 _HectonSubmarineCrushDepthParams;
 float4 _HectonHullDents[HECTON_HULL_DENT_MAX]; // xyz=local impact point, w=packed radius/depth
-float4 _HectonHullDentParams;                  // x=active count, y=low-tier bypass, z=scar scalar, w=quality tier
+float4 _HectonHullDentParams;                  // x=active count, y=scar proxy weight, z=scar scalar, w=quality weight byte
 float4 _HectonHabitatStressCenterRadius; // xyz=center, w=radius
 float4 _HectonHabitatStressParams;       // x=stress, y=max displacement, z=grid scale, w=seed
 float4 _HectonXRFoveatedParams;        // x=active, y=periphery resolve weight, z=reserved, w=refresh Hz
@@ -199,12 +199,18 @@ void HectonCoreLitUnpackHullDent(float packedRadiusDepth, out float radius, out 
     depth = saturate(depthQ * rcp(255.0));
 }
 
+float HectonCoreLitHullDentExactWeight()
+{
+    return saturate(1.0 - _HectonHullDentParams.y);
+}
+
 float HectonCoreLitEvaluateHullDentDepthOS(float3 positionOS)
 {
     float3 safePositionOS = HectonCoreLitSanitizePositionOS(positionOS);
     float dentDepth = 0.0;
+    float exactWeight = HectonCoreLitHullDentExactWeight();
 
-    if (_HectonHullDentParams.y > 0.5 || _HectonHullDentParams.x <= 0.5)
+    if (_HectonHullDentParams.x <= 0.5 || exactWeight <= 0.0001)
         return 0.0;
 
     [unroll]
@@ -227,13 +233,13 @@ float HectonCoreLitEvaluateHullDentDepthOS(float3 positionOS)
         dentDepth = max(dentDepth, falloff * falloff * depth);
     }
 
-    return dentDepth;
+    return dentDepth * exactWeight;
 }
 
 float3 HectonCoreLitApplyHullDentsOS(float3 positionOS, float3 normalOS, out half dentShadow)
 {
     float3 safePositionOS = HectonCoreLitSanitizePositionOS(positionOS);
-    if (_HectonHullDentParams.y > 0.5 || _HectonHullDentParams.x <= 0.5)
+    if (_HectonHullDentParams.x <= 0.5)
     {
         dentShadow = 0.0h;
         return safePositionOS;
