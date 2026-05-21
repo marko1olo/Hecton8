@@ -144,6 +144,7 @@ namespace Hecton8.World
         private AbsoluteUniversePosition _viewerAupCache;
         private float _cameraResolveRetryTimer;
         private float _defaultLODBias = 1f;
+        private float _lodRuntimeClockSeconds;
         private float _nextNullCleanupTime;
         private int _nullCleanupCursor;
         private int _lodHotPathCursor;
@@ -203,6 +204,8 @@ namespace Hecton8.World
             CacheRegistryServicesCold();
             EnsureDistanceScratchAllocated();
             _defaultLODBias = QualitySettings.lodBias;
+            _lodRuntimeClockSeconds = 0f;
+            _nextNullCleanupTime = 0f;
             TryResolveMainCamera();
             ApplyQualityPreset(_qualityPreset);
 
@@ -383,6 +386,7 @@ namespace Hecton8.World
         public void Tick(float dt)
         {
             _lastFrameTransitionCount = 0;
+            AdvanceLodRuntimeClock(dt);
 
             // Cache camera reference
             if (_mainCamera == null && !TryResolveMainCamera(dt))
@@ -393,7 +397,7 @@ namespace Hecton8.World
             // Early exit if no LOD groups registered
             if (_registeredLODGroups.Count == 0) return;
 
-            float now = Time.time;
+            float now = ResolveLodRuntimeClockSeconds();
             if (now >= _nextNullCleanupTime)
             {
                 _nextNullCleanupTime = now + 1f;
@@ -415,6 +419,17 @@ namespace Hecton8.World
                 _lodSystemCPUTime = (endTicks - startTicks) / (float)System.Diagnostics.Stopwatch.Frequency * 1000f;
                 PublishLODPerformanceWarningIfNeeded(_lodSystemCPUTime);
             }
+        }
+
+        private void AdvanceLodRuntimeClock(float deltaTime)
+        {
+            float safeDeltaTime = math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f;
+            _lodRuntimeClockSeconds = math.min(_lodRuntimeClockSeconds + safeDeltaTime, 86400f);
+        }
+
+        private float ResolveLodRuntimeClockSeconds()
+        {
+            return math.isfinite(_lodRuntimeClockSeconds) ? _lodRuntimeClockSeconds : 0f;
         }
 
         // ══════════════════════════════════════════════════════════

@@ -1227,6 +1227,7 @@ namespace Hecton8.Gameplay
         private Vector3 _lastKinematicRepairProbeCullDirection = Vector3.forward;
         private int _kinematicRepairProbeAupGateSkipCount;
         private uint _kinematicRepairStateBits;
+        private float _sargassumInfluenceClockSeconds;
         private float _nextSargassumEntanglementAudioTime = float.NegativeInfinity;
         private float _basePlayerHeight;
         private float _baseCapsuleHeight;
@@ -3458,8 +3459,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            float fixedDt = math.max(_currentFixedDeltaTime, 0.0001f);
-            float alpha = math.saturate((Time.time - Time.fixedTime) / fixedDt);
+            float alpha = ResolveFixedInterpolationAlpha();
             _renderInterpolatedCameraYaw = LerpAngleDegrees(_previousRenderInterpolationState.CameraYaw, _currentRenderInterpolationState.CameraYaw, alpha);
             _renderInterpolatedBodyYaw = LerpAngleDegrees(_previousRenderInterpolationState.BodyYaw, _currentRenderInterpolationState.BodyYaw, alpha);
             _renderInterpolatedLinearVelocity = _previousRenderInterpolationState.LinearVelocity
@@ -3478,6 +3478,12 @@ namespace Hecton8.Gameplay
             return _cachedTransform != null
                 ? HectonPlayerMotor.SafeVelocity(_cachedTransform.position)
                 : Vector3.zero;
+        }
+
+        private static float ResolveFixedInterpolationAlpha()
+        {
+            float alpha = HectonFloatingOrigin.CurrentFixedInterpolationAlpha;
+            return math.isfinite(alpha) ? math.saturate(alpha) : 0f;
         }
 
         private void RefreshFixedFrameSpatialCache()
@@ -5842,6 +5848,8 @@ namespace Hecton8.Gameplay
 
         private void AdvanceSargassumInfluence(float fixedDeltaTime, PlayerTransportPreset transportPreset)
         {
+            AdvanceSargassumInfluenceClock(fixedDeltaTime);
+
             if (_sargassumMovementInfluence == null)
                 return;
 
@@ -6297,7 +6305,8 @@ namespace Hecton8.Gameplay
 
         private void TryPlaySargassumEntanglementAudio(SargassumGlobalDragManager.EntanglementStrainSignal signal)
         {
-            if (signal.Shake01 <= 0.0001f || Time.fixedTime < _nextSargassumEntanglementAudioTime)
+            float now = ResolveSargassumInfluenceClockSeconds();
+            if (signal.Shake01 <= 0.0001f || now < _nextSargassumEntanglementAudioTime)
                 return;
 
             AudioClip clip = sargassumEntanglementStrainClip != null
@@ -6313,7 +6322,18 @@ namespace Hecton8.Gameplay
             float volume = math.lerp(0.12f, 0.42f, signal.Shake01);
             float pitch = math.lerp(0.72f, 0.94f, signal.EscapeIntent01);
             audioManager.PlayAtPoint(clip, signal.PositionWS, volume, pitch);
-            _nextSargassumEntanglementAudioTime = Time.fixedTime + sargassumEntanglementAudioCooldown;
+            _nextSargassumEntanglementAudioTime = now + sargassumEntanglementAudioCooldown;
+        }
+
+        private void AdvanceSargassumInfluenceClock(float fixedDeltaTime)
+        {
+            float safeDeltaTime = math.isfinite(fixedDeltaTime) ? math.max(0f, fixedDeltaTime) : 0f;
+            _sargassumInfluenceClockSeconds = math.min(_sargassumInfluenceClockSeconds + safeDeltaTime, 86400f);
+        }
+
+        private float ResolveSargassumInfluenceClockSeconds()
+        {
+            return math.isfinite(_sargassumInfluenceClockSeconds) ? _sargassumInfluenceClockSeconds : 0f;
         }
 
         private void AdvanceExternalEnvironmentalDrag(float fixedDeltaTime)

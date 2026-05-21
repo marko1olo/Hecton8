@@ -1805,71 +1805,72 @@ namespace Hecton8.Vehicles.Automation
             if (_initialized && _resolvedVehicleCapacity != 0 && _resolvedVehicleCapacity != capacity)
                 _initialized = false;
 
-            if (!_dataVault.TryGetBufferHandle(BufferID.SubmarineKinematicStates, out _kinematicHandle) || _kinematicHandle.Length < capacity)
+            ReleaseAutopilotVaultHandles(_dataVault);
+
+            if (!_dataVault.TryGetGenerationHandle(BufferID.SubmarineKinematicStates, out _kinematicHandle) ||
+                !HasAutopilotVaultBuffer(_dataVault, in _kinematicHandle, BufferID.SubmarineKinematicStates, capacity))
             {
-                _kinematicHandle = _dataVault.GetBufferHandle<SubmarineKinematicState>(
-                    BufferID.SubmarineKinematicStates,
-                    capacity,
-                    SystemID.VehiclesPhysics,
-                    NativeArrayOptions.ClearMemory);
+                _kinematicHandle = default;
+                _buffersReady = false;
+                return false;
             }
 
-            _autopilotHandle = _dataVault.GetBufferHandle<AutopilotStateDTO>(
+            _autopilotHandle = _dataVault.GetGenerationHandle<AutopilotStateDTO>(
                 SubmarineAutopilotVaultRoute.AutopilotStates,
                 capacity,
                 SystemID.VehiclesPhysics,
                 NativeArrayOptions.UninitializedMemory);
-            _avoidanceHandle = _dataVault.GetBufferHandle<AutopilotAvoidanceDTO>(
+            _avoidanceHandle = _dataVault.GetGenerationHandle<AutopilotAvoidanceDTO>(
                 SubmarineAutopilotVaultRoute.AutopilotAvoidance,
                 capacity,
                 SystemID.VehiclesPhysics,
                 NativeArrayOptions.UninitializedMemory);
-            _feelerHandle = _dataVault.GetBufferHandle<AutopilotFeelerResultDTO>(
+            _feelerHandle = _dataVault.GetGenerationHandle<AutopilotFeelerResultDTO>(
                 SubmarineAutopilotVaultRoute.AutopilotFeelerResults,
                 capacity * SubmarineAutopilotConstants.MaxFeelersPerVehicle,
                 SystemID.VehiclesPhysics,
                 NativeArrayOptions.UninitializedMemory);
-            _waypointHandle = _dataVault.GetBufferHandle<AutopilotWaypointDTO>(
+            _waypointHandle = _dataVault.GetGenerationHandle<AutopilotWaypointDTO>(
                 SubmarineAutopilotVaultRoute.AutopilotWaypoints,
                 SubmarineAutopilotConstants.WaypointCapacity,
                 SystemID.VehiclesPhysics,
                 NativeArrayOptions.UninitializedMemory);
-            _routeHandle = _dataVault.GetBufferHandle<AutopilotRouteRangeDTO>(
+            _routeHandle = _dataVault.GetGenerationHandle<AutopilotRouteRangeDTO>(
                 SubmarineAutopilotVaultRoute.AutopilotRouteRanges,
                 capacity,
                 SystemID.VehiclesPhysics,
                 NativeArrayOptions.UninitializedMemory);
-            _tuningHandle = _dataVault.GetBufferHandle<AutopilotTuningDTO>(
+            _tuningHandle = _dataVault.GetGenerationHandle<AutopilotTuningDTO>(
                 SubmarineAutopilotVaultRoute.AutopilotTuning,
                 1,
                 SystemID.VehiclesPhysics,
                 NativeArrayOptions.UninitializedMemory);
-            _telemetryHandle = _dataVault.GetBufferHandle<AutopilotTelemetryEntry>(
+            _telemetryHandle = _dataVault.GetGenerationHandle<AutopilotTelemetryEntry>(
                 SubmarineAutopilotVaultRoute.AutopilotTelemetryRing,
                 SubmarineAutopilotConstants.BlackBoxFrames,
                 SystemID.VehiclesPhysics,
                 NativeArrayOptions.UninitializedMemory);
-            _telemetryCursorHandle = _dataVault.GetBufferHandle<uint>(
+            _telemetryCursorHandle = _dataVault.GetGenerationHandle<uint>(
                 SubmarineAutopilotVaultRoute.AutopilotTelemetryCursor,
                 1,
                 SystemID.VehiclesPhysics,
                 NativeArrayOptions.UninitializedMemory);
-            _mockSdfHandle = _dataVault.GetBufferHandle<byte>(
+            _mockSdfHandle = _dataVault.GetGenerationHandle<byte>(
                 SubmarineAutopilotVaultRoute.AutopilotMockSdf,
                 SubmarineAutopilotConstants.MockSdfVoxelCount,
                 SystemID.VehiclesPhysics,
                 NativeArrayOptions.UninitializedMemory);
-            _flowHandle = _dataVault.GetBufferHandle<float3>(
+            _flowHandle = _dataVault.GetGenerationHandle<float3>(
                 SubmarineAutopilotVaultRoute.AutopilotFlowSamples,
                 SubmarineAutopilotConstants.FlowSampleCount,
                 SystemID.VehiclesPhysics,
                 NativeArrayOptions.UninitializedMemory);
-            _csvScratchHandle = _dataVault.GetBufferHandle<byte>(
+            _csvScratchHandle = _dataVault.GetGenerationHandle<byte>(
                 SubmarineAutopilotVaultRoute.AutopilotCsvScratch,
                 SubmarineAutopilotConstants.CsvScratchBytes,
                 SystemID.VehiclesPhysics,
                 NativeArrayOptions.UninitializedMemory);
-            _handlingProfileHandle = _dataVault.GetBufferHandle<AutopilotHandlingProfileDTO>(
+            _handlingProfileHandle = _dataVault.GetGenerationHandle<AutopilotHandlingProfileDTO>(
                 SubmarineAutopilotVaultRoute.AutopilotHandlingProfiles,
                 SubmarineAutopilotConstants.HandlingProfileCapacity,
                 SystemID.VehiclesPhysics,
@@ -1890,34 +1891,117 @@ namespace Hecton8.Vehicles.Automation
         private bool AreVaultHandlesReady(int capacity)
         {
             return
-                _kinematicHandle.IsCreated && _kinematicHandle.Length >= capacity &&
-                _autopilotHandle.IsCreated && _autopilotHandle.Length >= capacity &&
-                _avoidanceHandle.IsCreated && _avoidanceHandle.Length >= capacity &&
-                _feelerHandle.IsCreated && _feelerHandle.Length >= capacity * SubmarineAutopilotConstants.MaxFeelersPerVehicle &&
-                _waypointHandle.IsCreated && _waypointHandle.Length >= SubmarineAutopilotConstants.WaypointCapacity &&
-                _routeHandle.IsCreated && _routeHandle.Length >= capacity &&
-                _tuningHandle.IsCreated && _tuningHandle.Length >= 1 &&
-                _telemetryHandle.IsCreated && _telemetryHandle.Length >= SubmarineAutopilotConstants.BlackBoxFrames &&
-                _telemetryCursorHandle.IsCreated && _telemetryCursorHandle.Length >= 1 &&
-                _mockSdfHandle.IsCreated && _mockSdfHandle.Length >= SubmarineAutopilotConstants.MockSdfVoxelCount &&
-                _flowHandle.IsCreated && _flowHandle.Length >= SubmarineAutopilotConstants.FlowSampleCount &&
-                _csvScratchHandle.IsCreated && _csvScratchHandle.Length >= SubmarineAutopilotConstants.CsvScratchBytes &&
-                _handlingProfileHandle.IsCreated && _handlingProfileHandle.Length >= SubmarineAutopilotConstants.HandlingProfileCapacity;
+                HasAutopilotVaultBuffer(_dataVault, in _kinematicHandle, BufferID.SubmarineKinematicStates, capacity) &&
+                HasAutopilotVaultBuffer(_dataVault, in _autopilotHandle, SubmarineAutopilotVaultRoute.AutopilotStates, capacity) &&
+                HasAutopilotVaultBuffer(_dataVault, in _avoidanceHandle, SubmarineAutopilotVaultRoute.AutopilotAvoidance, capacity) &&
+                HasAutopilotVaultBuffer(_dataVault, in _feelerHandle, SubmarineAutopilotVaultRoute.AutopilotFeelerResults, capacity * SubmarineAutopilotConstants.MaxFeelersPerVehicle) &&
+                HasAutopilotVaultBuffer(_dataVault, in _waypointHandle, SubmarineAutopilotVaultRoute.AutopilotWaypoints, SubmarineAutopilotConstants.WaypointCapacity) &&
+                HasAutopilotVaultBuffer(_dataVault, in _routeHandle, SubmarineAutopilotVaultRoute.AutopilotRouteRanges, capacity) &&
+                HasAutopilotVaultBuffer(_dataVault, in _tuningHandle, SubmarineAutopilotVaultRoute.AutopilotTuning, 1) &&
+                HasAutopilotVaultBuffer(_dataVault, in _telemetryHandle, SubmarineAutopilotVaultRoute.AutopilotTelemetryRing, SubmarineAutopilotConstants.BlackBoxFrames) &&
+                HasAutopilotVaultBuffer(_dataVault, in _telemetryCursorHandle, SubmarineAutopilotVaultRoute.AutopilotTelemetryCursor, 1) &&
+                HasAutopilotVaultBuffer(_dataVault, in _mockSdfHandle, SubmarineAutopilotVaultRoute.AutopilotMockSdf, SubmarineAutopilotConstants.MockSdfVoxelCount) &&
+                HasAutopilotVaultBuffer(_dataVault, in _flowHandle, SubmarineAutopilotVaultRoute.AutopilotFlowSamples, SubmarineAutopilotConstants.FlowSampleCount) &&
+                HasAutopilotVaultBuffer(_dataVault, in _csvScratchHandle, SubmarineAutopilotVaultRoute.AutopilotCsvScratch, SubmarineAutopilotConstants.CsvScratchBytes) &&
+                HasAutopilotVaultBuffer(_dataVault, in _handlingProfileHandle, SubmarineAutopilotVaultRoute.AutopilotHandlingProfiles, SubmarineAutopilotConstants.HandlingProfileCapacity);
+        }
+
+        private static bool HasAutopilotVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength)
+            where T : struct
+        {
+            return TryReadAutopilotVaultBuffer(vault, in handle, bufferId, requiredLength, out _);
+        }
+
+        private static bool TryResolveAutopilotVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   IsAutopilotVaultHandle(in handle, bufferId) &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static bool TryReadAutopilotVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   IsAutopilotVaultHandle(in handle, bufferId) &&
+                   vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static bool IsAutopilotVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId)
+            where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == (uint)SystemID.VehiclesPhysics &&
+                   handle.Generation != 0u;
+        }
+
+        private void ReleaseAutopilotVaultHandles(IDataVault vault)
+        {
+            ReleaseOwnedAutopilotVaultHandle(vault, ref _autopilotHandle, SubmarineAutopilotVaultRoute.AutopilotStates);
+            ReleaseOwnedAutopilotVaultHandle(vault, ref _avoidanceHandle, SubmarineAutopilotVaultRoute.AutopilotAvoidance);
+            ReleaseOwnedAutopilotVaultHandle(vault, ref _feelerHandle, SubmarineAutopilotVaultRoute.AutopilotFeelerResults);
+            ReleaseOwnedAutopilotVaultHandle(vault, ref _waypointHandle, SubmarineAutopilotVaultRoute.AutopilotWaypoints);
+            ReleaseOwnedAutopilotVaultHandle(vault, ref _routeHandle, SubmarineAutopilotVaultRoute.AutopilotRouteRanges);
+            ReleaseOwnedAutopilotVaultHandle(vault, ref _tuningHandle, SubmarineAutopilotVaultRoute.AutopilotTuning);
+            ReleaseOwnedAutopilotVaultHandle(vault, ref _telemetryHandle, SubmarineAutopilotVaultRoute.AutopilotTelemetryRing);
+            ReleaseOwnedAutopilotVaultHandle(vault, ref _telemetryCursorHandle, SubmarineAutopilotVaultRoute.AutopilotTelemetryCursor);
+            ReleaseOwnedAutopilotVaultHandle(vault, ref _mockSdfHandle, SubmarineAutopilotVaultRoute.AutopilotMockSdf);
+            ReleaseOwnedAutopilotVaultHandle(vault, ref _flowHandle, SubmarineAutopilotVaultRoute.AutopilotFlowSamples);
+            ReleaseOwnedAutopilotVaultHandle(vault, ref _csvScratchHandle, SubmarineAutopilotVaultRoute.AutopilotCsvScratch);
+            ReleaseOwnedAutopilotVaultHandle(vault, ref _handlingProfileHandle, SubmarineAutopilotVaultRoute.AutopilotHandlingProfiles);
+
+            _kinematicHandle = default;
+            _buffersReady = false;
+            _initialized = false;
+            _resolvedVehicleCapacity = 0;
+        }
+
+        private static void ReleaseOwnedAutopilotVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId)
+            where T : struct
+        {
+            if (vault != null && IsAutopilotVaultHandle(in handle, bufferId))
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         private void WriteColdDefaults()
         {
-            AutopilotTuningDTO* tuning = (AutopilotTuningDTO*)_tuningHandle.ResolvePointer(_dataVault);
-            if (tuning != null)
+            if (TryResolveAutopilotVaultBuffer(_dataVault, in _tuningHandle, SubmarineAutopilotVaultRoute.AutopilotTuning, 1, out NativeArray<AutopilotTuningDTO> tuning))
                 tuning[0] = BuildDefaultTuning();
 
-            uint* cursor = (uint*)_telemetryCursorHandle.ResolvePointer(_dataVault);
-            if (cursor != null)
+            if (TryResolveAutopilotVaultBuffer(_dataVault, in _telemetryCursorHandle, SubmarineAutopilotVaultRoute.AutopilotTelemetryCursor, 1, out NativeArray<uint> cursor))
                 cursor[0] = 0u;
 
-            AutopilotHandlingProfileDTO* profiles = (AutopilotHandlingProfileDTO*)_handlingProfileHandle.ResolvePointer(_dataVault);
-            if (profiles != null)
-                WriteDefaultHandlingProfiles(profiles, _handlingProfileHandle.Length);
+            if (TryResolveAutopilotVaultBuffer(_dataVault, in _handlingProfileHandle, SubmarineAutopilotVaultRoute.AutopilotHandlingProfiles, SubmarineAutopilotConstants.HandlingProfileCapacity, out NativeArray<AutopilotHandlingProfileDTO> profileBuffer))
+            {
+                AutopilotHandlingProfileDTO* profiles = (AutopilotHandlingProfileDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(profileBuffer);
+                WriteDefaultHandlingProfiles(profiles, profileBuffer.Length);
+            }
         }
 
         private void ScheduleInitialization()
@@ -1925,16 +2009,27 @@ namespace Hecton8.Vehicles.Automation
             if (!LockInitializationBuffers())
                 return;
 
-            SubmarineKinematicState* kinematic = (SubmarineKinematicState*)_kinematicHandle.ResolvePointer(_dataVault);
-            AutopilotStateDTO* states = (AutopilotStateDTO*)_autopilotHandle.ResolvePointer(_dataVault);
-            AutopilotAvoidanceDTO* avoidance = (AutopilotAvoidanceDTO*)_avoidanceHandle.ResolvePointer(_dataVault);
-            AutopilotRouteRangeDTO* routes = (AutopilotRouteRangeDTO*)_routeHandle.ResolvePointer(_dataVault);
-            byte* sdf = (byte*)_mockSdfHandle.ResolvePointer(_dataVault);
-            float3* flows = (float3*)_flowHandle.ResolvePointer(_dataVault);
+            int capacity = math.clamp(vehicleCapacity, 1, SubmarineAutopilotConstants.MaxVehicles);
+            if (!TryResolveAutopilotVaultBuffer(_dataVault, in _kinematicHandle, BufferID.SubmarineKinematicStates, capacity, out NativeArray<SubmarineKinematicState> kinematicBuffer) ||
+                !TryResolveAutopilotVaultBuffer(_dataVault, in _autopilotHandle, SubmarineAutopilotVaultRoute.AutopilotStates, capacity, out NativeArray<AutopilotStateDTO> stateBuffer) ||
+                !TryResolveAutopilotVaultBuffer(_dataVault, in _avoidanceHandle, SubmarineAutopilotVaultRoute.AutopilotAvoidance, capacity, out NativeArray<AutopilotAvoidanceDTO> avoidanceBuffer) ||
+                !TryResolveAutopilotVaultBuffer(_dataVault, in _routeHandle, SubmarineAutopilotVaultRoute.AutopilotRouteRanges, capacity, out NativeArray<AutopilotRouteRangeDTO> routeBuffer) ||
+                !TryResolveAutopilotVaultBuffer(_dataVault, in _mockSdfHandle, SubmarineAutopilotVaultRoute.AutopilotMockSdf, SubmarineAutopilotConstants.MockSdfVoxelCount, out NativeArray<byte> sdfBuffer) ||
+                !TryResolveAutopilotVaultBuffer(_dataVault, in _flowHandle, SubmarineAutopilotVaultRoute.AutopilotFlowSamples, SubmarineAutopilotConstants.FlowSampleCount, out NativeArray<float3> flowBuffer))
+            {
+                UnlockBuffers();
+                return;
+            }
+
+            SubmarineKinematicState* kinematic = (SubmarineKinematicState*)NativeArrayUnsafeUtility.GetUnsafePtr(kinematicBuffer);
+            AutopilotStateDTO* states = (AutopilotStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(stateBuffer);
+            AutopilotAvoidanceDTO* avoidance = (AutopilotAvoidanceDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(avoidanceBuffer);
+            AutopilotRouteRangeDTO* routes = (AutopilotRouteRangeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(routeBuffer);
+            byte* sdf = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(sdfBuffer);
+            float3* flows = (float3*)NativeArrayUnsafeUtility.GetUnsafePtr(flowBuffer);
             AutopilotTuningDTO tuning = BuildDefaultTuning();
-            AutopilotTuningDTO* tuningPtr = (AutopilotTuningDTO*)_tuningHandle.ResolvePointer(_dataVault);
-            if (tuningPtr != null)
-                tuning = SanitizeTuning(tuningPtr[0]);
+            if (TryResolveAutopilotVaultBuffer(_dataVault, in _tuningHandle, SubmarineAutopilotVaultRoute.AutopilotTuning, 1, out NativeArray<AutopilotTuningDTO> tuningBuffer))
+                tuning = SanitizeTuning(tuningBuffer[0]);
 
             InitializeAutopilotBuffersJob initJob = new InitializeAutopilotBuffersJob
             {
@@ -1942,7 +2037,7 @@ namespace Hecton8.Vehicles.Automation
                 AutopilotStates = states,
                 Avoidance = avoidance,
                 RouteRanges = routes,
-                VehicleCapacity = math.clamp(vehicleCapacity, 1, SubmarineAutopilotConstants.MaxVehicles),
+                VehicleCapacity = capacity,
                 TargetSpeedFallback = tuning.TargetSpeedFallback,
                 AcceptanceRadius = tuning.WaypointAcceptanceRadius
             };
@@ -1966,7 +2061,7 @@ namespace Hecton8.Vehicles.Automation
                 CellSize = tuning.FlowCellSize
             };
 
-            JobHandle initHandle = initJob.Schedule(math.clamp(vehicleCapacity, 1, SubmarineAutopilotConstants.MaxVehicles), 4);
+            JobHandle initHandle = initJob.Schedule(capacity, 4);
             JobHandle sdfHandle = sdfJob.Schedule(SubmarineAutopilotConstants.MockSdfVoxelCount, 64, initHandle);
             _initHandle = flowJob.Schedule(SubmarineAutopilotConstants.FlowSampleCount, 32, sdfHandle);
             _initPending = true;
@@ -1980,30 +2075,42 @@ namespace Hecton8.Vehicles.Automation
 
             int capacity = math.clamp(vehicleCapacity, 1, SubmarineAutopilotConstants.MaxVehicles);
             AutopilotTuningDTO tuning = BuildDefaultTuning();
-            AutopilotTuningDTO* tuningPtr = (AutopilotTuningDTO*)_tuningHandle.ResolvePointer(_dataVault);
-            if (tuningPtr != null)
-                tuning = SanitizeTuning(tuningPtr[0]);
+            bool tuningResolved = TryResolveAutopilotVaultBuffer(_dataVault, in _tuningHandle, SubmarineAutopilotVaultRoute.AutopilotTuning, 1, out NativeArray<AutopilotTuningDTO> tuningBuffer);
+            if (tuningResolved)
+                tuning = SanitizeTuning(tuningBuffer[0]);
             tuning.ResolvedQualityWeight = ResolveRuntimeQualityWeight(tuning.GlobalQualityWeight);
             tuning.ActiveVehicleCount = capacity;
-            if (tuningPtr != null)
-                tuningPtr[0] = tuning;
+            if (tuningResolved)
+                tuningBuffer[0] = tuning;
 
-            SubmarineKinematicState* kinematic = (SubmarineKinematicState*)_kinematicHandle.ResolvePointer(_dataVault);
-            AutopilotStateDTO* states = (AutopilotStateDTO*)_autopilotHandle.ResolvePointer(_dataVault);
-            AutopilotAvoidanceDTO* avoidance = (AutopilotAvoidanceDTO*)_avoidanceHandle.ResolvePointer(_dataVault);
-            AutopilotFeelerResultDTO* feelers = (AutopilotFeelerResultDTO*)_feelerHandle.ResolvePointer(_dataVault);
-            AutopilotWaypointDTO* waypoints = (AutopilotWaypointDTO*)_waypointHandle.ResolvePointer(_dataVault);
-            AutopilotRouteRangeDTO* routes = (AutopilotRouteRangeDTO*)_routeHandle.ResolvePointer(_dataVault);
-            byte* sdf = (byte*)_mockSdfHandle.ResolvePointer(_dataVault);
-            float3* flow = (float3*)_flowHandle.ResolvePointer(_dataVault);
-            AutopilotHandlingProfileDTO* profiles = (AutopilotHandlingProfileDTO*)_handlingProfileHandle.ResolvePointer(_dataVault);
-            AutopilotTelemetryEntry* telemetry = (AutopilotTelemetryEntry*)_telemetryHandle.ResolvePointer(_dataVault);
-            uint* cursor = (uint*)_telemetryCursorHandle.ResolvePointer(_dataVault);
-            if (kinematic == null || states == null || avoidance == null || feelers == null || sdf == null || telemetry == null || cursor == null)
+            if (!tuningResolved ||
+                !TryResolveAutopilotVaultBuffer(_dataVault, in _kinematicHandle, BufferID.SubmarineKinematicStates, capacity, out NativeArray<SubmarineKinematicState> kinematicBuffer) ||
+                !TryResolveAutopilotVaultBuffer(_dataVault, in _autopilotHandle, SubmarineAutopilotVaultRoute.AutopilotStates, capacity, out NativeArray<AutopilotStateDTO> stateBuffer) ||
+                !TryResolveAutopilotVaultBuffer(_dataVault, in _avoidanceHandle, SubmarineAutopilotVaultRoute.AutopilotAvoidance, capacity, out NativeArray<AutopilotAvoidanceDTO> avoidanceBuffer) ||
+                !TryResolveAutopilotVaultBuffer(_dataVault, in _feelerHandle, SubmarineAutopilotVaultRoute.AutopilotFeelerResults, capacity * SubmarineAutopilotConstants.MaxFeelersPerVehicle, out NativeArray<AutopilotFeelerResultDTO> feelerBuffer) ||
+                !TryResolveAutopilotVaultBuffer(_dataVault, in _waypointHandle, SubmarineAutopilotVaultRoute.AutopilotWaypoints, SubmarineAutopilotConstants.WaypointCapacity, out NativeArray<AutopilotWaypointDTO> waypointBuffer) ||
+                !TryResolveAutopilotVaultBuffer(_dataVault, in _routeHandle, SubmarineAutopilotVaultRoute.AutopilotRouteRanges, capacity, out NativeArray<AutopilotRouteRangeDTO> routeBuffer) ||
+                !TryResolveAutopilotVaultBuffer(_dataVault, in _mockSdfHandle, SubmarineAutopilotVaultRoute.AutopilotMockSdf, SubmarineAutopilotConstants.MockSdfVoxelCount, out NativeArray<byte> sdfBuffer) ||
+                !TryResolveAutopilotVaultBuffer(_dataVault, in _flowHandle, SubmarineAutopilotVaultRoute.AutopilotFlowSamples, SubmarineAutopilotConstants.FlowSampleCount, out NativeArray<float3> flowBuffer) ||
+                !TryResolveAutopilotVaultBuffer(_dataVault, in _handlingProfileHandle, SubmarineAutopilotVaultRoute.AutopilotHandlingProfiles, SubmarineAutopilotConstants.HandlingProfileCapacity, out NativeArray<AutopilotHandlingProfileDTO> profileBuffer) ||
+                !TryResolveAutopilotVaultBuffer(_dataVault, in _telemetryHandle, SubmarineAutopilotVaultRoute.AutopilotTelemetryRing, SubmarineAutopilotConstants.BlackBoxFrames, out NativeArray<AutopilotTelemetryEntry> telemetryBuffer) ||
+                !TryResolveAutopilotVaultBuffer(_dataVault, in _telemetryCursorHandle, SubmarineAutopilotVaultRoute.AutopilotTelemetryCursor, 1, out NativeArray<uint> cursorBuffer))
             {
                 UnlockBuffers();
                 return false;
             }
+
+            SubmarineKinematicState* kinematic = (SubmarineKinematicState*)NativeArrayUnsafeUtility.GetUnsafePtr(kinematicBuffer);
+            AutopilotStateDTO* states = (AutopilotStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(stateBuffer);
+            AutopilotAvoidanceDTO* avoidance = (AutopilotAvoidanceDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(avoidanceBuffer);
+            AutopilotFeelerResultDTO* feelers = (AutopilotFeelerResultDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(feelerBuffer);
+            AutopilotWaypointDTO* waypoints = (AutopilotWaypointDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(waypointBuffer);
+            AutopilotRouteRangeDTO* routes = (AutopilotRouteRangeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(routeBuffer);
+            byte* sdf = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(sdfBuffer);
+            float3* flow = (float3*)NativeArrayUnsafeUtility.GetUnsafePtr(flowBuffer);
+            AutopilotHandlingProfileDTO* profiles = (AutopilotHandlingProfileDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(profileBuffer);
+            AutopilotTelemetryEntry* telemetry = (AutopilotTelemetryEntry*)NativeArrayUnsafeUtility.GetUnsafePtr(telemetryBuffer);
+            uint* cursor = (uint*)NativeArrayUnsafeUtility.GetUnsafePtr(cursorBuffer);
 
             EvaluateCollisionAvoidanceJob evaluate = new EvaluateCollisionAvoidanceJob
             {
@@ -2013,8 +2120,8 @@ namespace Hecton8.Vehicles.Automation
                 FeelerResults = feelers,
                 EncodedSdf = sdf,
                 VehicleCount = capacity,
-                FeelerResultLength = _feelerHandle.Length,
-                EncodedSdfLength = _mockSdfHandle.Length,
+                FeelerResultLength = feelerBuffer.Length,
+                EncodedSdfLength = sdfBuffer.Length,
                 Tuning = tuning,
                 GlobalQualityWeight = tuning.ResolvedQualityWeight
             };
@@ -2029,9 +2136,9 @@ namespace Hecton8.Vehicles.Automation
                 FlowSamples = flow,
                 HandlingProfiles = profiles,
                 VehicleCount = capacity,
-                WaypointLength = _waypointHandle.Length,
-                FlowSampleLength = _flowHandle.Length,
-                HandlingProfileLength = _handlingProfileHandle.Length,
+                WaypointLength = waypointBuffer.Length,
+                FlowSampleLength = flowBuffer.Length,
+                HandlingProfileLength = profileBuffer.Length,
                 Tuning = tuning,
                 DeltaTime = fixedDeltaTime,
                 Frame = _frame
@@ -2194,15 +2301,15 @@ namespace Hecton8.Vehicles.Automation
 
         private void CheckLatestTelemetryForFault()
         {
-            if (_dataVault == null || !_telemetryHandle.IsCreated || !_telemetryCursorHandle.IsCreated)
+            if (!TryReadAutopilotVaultBuffer(_dataVault, in _telemetryHandle, SubmarineAutopilotVaultRoute.AutopilotTelemetryRing, SubmarineAutopilotConstants.BlackBoxFrames, out NativeArray<AutopilotTelemetryEntry> telemetry) ||
+                !TryReadAutopilotVaultBuffer(_dataVault, in _telemetryCursorHandle, SubmarineAutopilotVaultRoute.AutopilotTelemetryCursor, 1, out NativeArray<uint> cursor))
                 return;
 
-            AutopilotTelemetryEntry* telemetry = (AutopilotTelemetryEntry*)_telemetryHandle.ResolvePointer(_dataVault);
-            uint* cursor = (uint*)_telemetryCursorHandle.ResolvePointer(_dataVault);
-            if (telemetry == null || cursor == null)
+            uint cursorValue = cursor[0];
+            if (cursorValue == 0u)
                 return;
 
-            int latest = ((int)cursor[0] - 1 + SubmarineAutopilotConstants.BlackBoxFrames) % SubmarineAutopilotConstants.BlackBoxFrames;
+            int latest = ((int)cursorValue - 1 + SubmarineAutopilotConstants.BlackBoxFrames) % SubmarineAutopilotConstants.BlackBoxFrames;
             uint flags = telemetry[latest].Flags;
             if ((flags & (SubmarineAutopilotConstants.NavFlagFatalNaN | SubmarineAutopilotConstants.NavFlagSlowBurst)) != 0u)
             {
@@ -2213,11 +2320,8 @@ namespace Hecton8.Vehicles.Automation
 
         private void DumpBlackBoxIfFaulted()
         {
-            if (!_faulted || _dumped || _dataVault == null || !_telemetryHandle.IsCreated)
-                return;
-
-            AutopilotTelemetryEntry* telemetry = (AutopilotTelemetryEntry*)_telemetryHandle.ResolvePointer(_dataVault);
-            if (telemetry == null)
+            if (!_faulted || _dumped ||
+                !TryReadAutopilotVaultBuffer(_dataVault, in _telemetryHandle, SubmarineAutopilotVaultRoute.AutopilotTelemetryRing, SubmarineAutopilotConstants.BlackBoxFrames, out NativeArray<AutopilotTelemetryEntry> telemetry))
                 return;
 
             try
@@ -2225,8 +2329,9 @@ namespace Hecton8.Vehicles.Automation
                 string logDir = Path.Combine(_projectRoot, "Docs", "AgentLogs");
                 Directory.CreateDirectory(logDir);
                 int bytes = UnsafeUtility.SizeOf<AutopilotTelemetryEntry>() * SubmarineAutopilotConstants.BlackBoxFrames;
-                bool wrote = WriteTelemetryDump(Path.Combine(logDir, AgentDumpFileName), telemetry, bytes);
-                wrote |= WriteTelemetryDump(Path.Combine(logDir, NavigationSurgeonDumpFileName), telemetry, bytes);
+                AutopilotTelemetryEntry* telemetryPtr = (AutopilotTelemetryEntry*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
+                bool wrote = WriteTelemetryDump(Path.Combine(logDir, AgentDumpFileName), telemetryPtr, bytes);
+                wrote |= WriteTelemetryDump(Path.Combine(logDir, NavigationSurgeonDumpFileName), telemetryPtr, bytes);
                 _dumped = wrote;
             }
             catch (IOException)
@@ -2289,16 +2394,17 @@ namespace Hecton8.Vehicles.Automation
                 if (!profilesLocked)
                     return false;
 
-                byte* scratch = (byte*)_csvScratchHandle.ResolvePointer(_dataVault);
-                AutopilotHandlingProfileDTO* profiles = (AutopilotHandlingProfileDTO*)_handlingProfileHandle.ResolvePointer(_dataVault);
-                if (scratch == null || profiles == null)
+                if (!TryResolveAutopilotVaultBuffer(_dataVault, in _csvScratchHandle, SubmarineAutopilotVaultRoute.AutopilotCsvScratch, SubmarineAutopilotConstants.CsvScratchBytes, out NativeArray<byte> scratchBuffer) ||
+                    !TryResolveAutopilotVaultBuffer(_dataVault, in _handlingProfileHandle, SubmarineAutopilotVaultRoute.AutopilotHandlingProfiles, SubmarineAutopilotConstants.HandlingProfileCapacity, out NativeArray<AutopilotHandlingProfileDTO> profileBuffer))
                     return false;
 
-                int length = ReadCsvBytes(_csvPath, scratch, _csvScratchHandle.Length);
+                byte* scratch = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(scratchBuffer);
+                AutopilotHandlingProfileDTO* profiles = (AutopilotHandlingProfileDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(profileBuffer);
+                int length = ReadCsvBytes(_csvPath, scratch, scratchBuffer.Length);
                 if (length <= 0)
                     return false;
 
-                ParseHandlingProfiles(new ReadOnlySpan<byte>(scratch, length), profiles, _handlingProfileHandle.Length);
+                ParseHandlingProfiles(new ReadOnlySpan<byte>(scratch, length), profiles, profileBuffer.Length);
                 _csvLastWriteTicks = ticks;
                 return true;
             }
@@ -2539,11 +2645,13 @@ namespace Hecton8.Vehicles.Automation
 
         private void OnDrawGizmos()
         {
-            if (!drawFeelerGizmos || _dataVault == null || !_feelerHandle.IsCreated)
-                return;
-
-            NativeArray<AutopilotFeelerResultDTO> feelers = _feelerHandle.Resolve(_dataVault);
-            if (!feelers.IsCreated)
+            if (!drawFeelerGizmos ||
+                !TryReadAutopilotVaultBuffer(
+                    _dataVault,
+                    in _feelerHandle,
+                    SubmarineAutopilotVaultRoute.AutopilotFeelerResults,
+                    math.clamp(vehicleCapacity, 1, SubmarineAutopilotConstants.MaxVehicles) * SubmarineAutopilotConstants.MaxFeelersPerVehicle,
+                    out NativeArray<AutopilotFeelerResultDTO> feelers))
                 return;
 
             int count = math.min(feelers.Length, math.clamp(vehicleCapacity, 1, SubmarineAutopilotConstants.MaxVehicles) * SubmarineAutopilotConstants.MaxFeelersPerVehicle);
@@ -2631,9 +2739,8 @@ namespace Hecton8.Vehicles.Automation
             float qualityCap = 1f;
             if (_buffersReady && _dataVault != null && !_buffersLocked)
             {
-                AutopilotTuningDTO* tuningPtr = (AutopilotTuningDTO*)_tuningHandle.ResolvePointer(_dataVault);
-                if (tuningPtr != null)
-                    qualityCap = SanitizeQualityWeight(tuningPtr[0].GlobalQualityWeight, 1f);
+                if (TryReadAutopilotVaultBuffer(_dataVault, in _tuningHandle, SubmarineAutopilotVaultRoute.AutopilotTuning, 1, out NativeArray<AutopilotTuningDTO> tuning))
+                    qualityCap = SanitizeQualityWeight(tuning[0].GlobalQualityWeight, 1f);
             }
 
             return ResolveRuntimeQualityWeight(qualityCap);

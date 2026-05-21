@@ -194,8 +194,7 @@ namespace Hecton8.Gameplay
 
         private Vector3 ResolveLateFrameKccLocalOffset(in HectonCameraState state)
         {
-            float fixedDeltaTime = math.max(MinimumBlendDeltaTime, state.FixedDeltaTime);
-            float alpha = math.saturate((Time.time - Time.fixedTime) / fixedDeltaTime);
+            float alpha = ResolveFixedInterpolationAlpha();
             Vector3 currentFixedPosition = SanitizeVector3(state.CurrentFixedPosition, Vector3.zero);
             Vector3 previousFixedPosition = SanitizeVector3(state.PreviousFixedPosition, currentFixedPosition);
             Vector3 interpolatedFixedPosition = previousFixedPosition + ((currentFixedPosition - previousFixedPosition) * alpha);
@@ -206,6 +205,12 @@ namespace Hecton8.Gameplay
 
             Transform parent = cameraTransform != null ? cameraTransform.parent : null;
             return parent != null ? parent.InverseTransformVector(worldOffset) : worldOffset;
+        }
+
+        private static float ResolveFixedInterpolationAlpha()
+        {
+            float alpha = HectonFloatingOrigin.CurrentFixedInterpolationAlpha;
+            return math.isfinite(alpha) ? math.saturate(alpha) : 0f;
         }
 
         private static float ResolvePresentationBlendT(float sharpness, float deltaTime)

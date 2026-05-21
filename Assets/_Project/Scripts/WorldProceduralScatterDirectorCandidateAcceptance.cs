@@ -4,6 +4,7 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using Hecton8.Core;
 using Hecton8.Environment;
 
 namespace Hecton8.World
@@ -1316,7 +1317,7 @@ namespace Hecton8.World
                 _desiredPlacements,
                 _retainedPlacements,
                 _placementLastSeenTimes,
-                Application.isPlaying ? Time.time : 0f);
+                ResolveScatterCandidateAcceptanceClockSeconds());
 
             for (int i = 0; i < orderedCandidates.Count; i++)
             {
@@ -1784,6 +1785,25 @@ namespace Hecton8.World
 
             job.Execute();
             return _memory.CandidateAcceptanceResult[0] != 0;
+        }
+
+        private float ResolveScatterCandidateAcceptanceClockSeconds()
+        {
+            if (!Application.isPlaying)
+                return 0f;
+
+            if (math.isfinite(_samplingNow) && _samplingNow > 0f)
+                return _samplingNow;
+
+            SystemDispatcher dispatcher = SystemDispatcher.ActiveRuntimeInstance;
+            if (dispatcher == null)
+                return 0f;
+
+            double timeSeconds = dispatcher.DilatedTimeSeconds;
+            if (!math.isfinite(timeSeconds) || timeSeconds <= 0d)
+                return 0f;
+
+            return (float)math.min(timeSeconds, 86400d);
         }
     }
 }

@@ -177,6 +177,7 @@ namespace Hecton8.Audio
         private float _lastStepTime;
         private RaycastHit _surfaceHit;
         private bool _surfaceHitValid;
+        private float _footstepClockSeconds;
         private int _lastClipIndex = -1;
         private uint _footstepRandomState;
         private uint _lastConsumedFootstepSignalFrame;
@@ -198,6 +199,7 @@ namespace Hecton8.Audio
 
             uint entitySeed = unchecked((uint)EntityId.ToULong(GetEntityId()));
             _footstepRandomState = entitySeed != 0u ? entitySeed : 0xA511E9B3u;
+            _footstepClockSeconds = 0f;
             _lastStepTime = -1f;
         }
 
@@ -250,6 +252,8 @@ namespace Hecton8.Audio
 
         public void Tick(float deltaTime)
         {
+            AdvanceFootstepClock(deltaTime);
+
             ReadOnlySpan<PlayerFootstepSignal> signals = SignalBus<PlayerFootstepSignal>.GetFrameSnapshot();
             for (int i = 0; i < signals.Length; i++)
             {
@@ -274,7 +278,7 @@ namespace Hecton8.Audio
                 return;
 
             // ── Cooldown ──
-            float currentTime = Time.time;
+            float currentTime = ResolveFootstepClockSeconds();
             if (currentTime - _lastStepTime < minStepInterval) return;
             _lastStepTime = currentTime;
 
@@ -361,6 +365,17 @@ namespace Hecton8.Audio
                 return 0;
 
             return (int)(NextFootstepRandomUInt() % (uint)exclusiveMax);
+        }
+
+        private void AdvanceFootstepClock(float deltaTime)
+        {
+            float safeDeltaTime = math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f;
+            _footstepClockSeconds = math.min(_footstepClockSeconds + safeDeltaTime, 86400f);
+        }
+
+        private float ResolveFootstepClockSeconds()
+        {
+            return math.isfinite(_footstepClockSeconds) ? _footstepClockSeconds : 0f;
         }
 
         private float NextFootstepRange(float min, float max)

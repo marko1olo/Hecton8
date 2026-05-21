@@ -383,6 +383,7 @@ namespace Hecton8.Rendering.OceanSinglePass
                 waterSurfaceAupY,
                 quality,
                 _frame,
+                timing.FrameDelta,
                 _lastDepthPassMicroseconds);
             UploadPropwashEventsToGpu();
             RecordTelemetry(quality);

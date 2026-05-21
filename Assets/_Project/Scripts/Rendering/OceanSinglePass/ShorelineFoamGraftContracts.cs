@@ -589,6 +589,7 @@ namespace Hecton8.Rendering.OceanSinglePass
             double waterSurfaceAupY,
             float qualityWeight,
             uint frame,
+            float frameDeltaSeconds,
             float depthPassMicroseconds)
         {
             if (vault == null)
@@ -613,7 +614,7 @@ namespace Hecton8.Rendering.OceanSinglePass
             float quality = ShorelineFoamMath.SanitizeQuality(qualityWeight);
             float waterLocalY = ShorelineFoamMath.LocalizeWaterSurfaceY(waterSurfaceAupY, cameraAup.y);
             float cameraLocalY = (float)math.clamp(cameraAup.y, -4096.0, 4096.0);
-            float deltaSeconds = Time.deltaTime;
+            float deltaSeconds = math.clamp(math.isfinite(frameDeltaSeconds) ? frameDeltaSeconds : 0f, 0f, 0.1f);
             float decayRate = ShorelineFoamMath.ResolveDecayRate(quality, profile.DecayRate);
 
             DecayShorelineFoamOpacityJob decayJob = new DecayShorelineFoamOpacityJob
