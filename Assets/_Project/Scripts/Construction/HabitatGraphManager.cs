@@ -193,6 +193,7 @@ namespace Hecton8.Construction
         private const float AnalyticalLowTierFeedbackThreshold01 = 0.42f;
         private const float AnalyticalLowTierFeedbackCooldownSeconds = 3.5f;
         private const float AnalyticalEmergencyRemainingIntegrityThreshold01 = 0.2f;
+        private const float HabitatClockMaxSeconds = 16777215f;
         private const int AnalyticalBreachMinimumThreshold = 4;
         private const int AnalyticalBreachMaximumThreshold = 96;
         private const float HabitatVibrationDecayPerSecond = 0.75f;
@@ -307,6 +308,7 @@ namespace Hecton8.Construction
         private float _lastPublishedAnalyticalDisplacementMaxMeters = -1f;
         private float3 _lastPublishedAnalyticalCenter;
         private float _lastPublishedAnalyticalRadius = -1f;
+        private float _habitatClockSeconds;
         private float _nextAnalyticalLowTierFeedbackTime;
         private uint _lastPublishedAnalyticalBreachNodeId;
         private uint _analyticalBreachNodeId;
@@ -534,7 +536,11 @@ namespace Hecton8.Construction
                 return;
             }
 
-            if (deltaTime <= 0f || _moduleBuffer.Count <= 0)
+            if (deltaTime <= 0f)
+                return;
+
+            AdvanceHabitatClock(deltaTime);
+            if (_moduleBuffer.Count <= 0)
                 return;
 
             const HectonQualityTier scalabilityTier = HectonQualityTier.Ultra;
@@ -560,6 +566,16 @@ namespace Hecton8.Construction
 
         internal float AnalyticalStress => _analyticalStress;
         internal float AnalyticalIntegrity => _analyticalIntegrity;
+
+        private void AdvanceHabitatClock(float deltaTime)
+        {
+            _habitatClockSeconds = math.min(HabitatClockMaxSeconds, _habitatClockSeconds + deltaTime);
+        }
+
+        private float ResolveHabitatClockSeconds()
+        {
+            return _habitatClockSeconds;
+        }
 
         internal void RegisterSeismicVibration(Vector3 epicenter, float radiusMeters, float impulseMagnitude)
         {
@@ -1621,7 +1637,7 @@ namespace Hecton8.Construction
                 return;
             }
 
-            float now = Time.time;
+            float now = ResolveHabitatClockSeconds();
             if (now < _nextAnalyticalLowTierFeedbackTime)
                 return;
 
@@ -1719,7 +1735,7 @@ namespace Hecton8.Construction
                 return;
 
             byte threshold = ResolveAnalyticalBreachThreshold(stress);
-            uint timeSeconds = (uint)Mathf.Max(0, Mathf.FloorToInt(Time.time));
+            uint timeSeconds = (uint)Mathf.Max(0, Mathf.FloorToInt(ResolveHabitatClockSeconds()));
             int startIndex = moduleCount > 0 ? (int)(timeSeconds % (uint)moduleCount) : 0;
             for (int offset = 0, nodeIndex = startIndex; offset < moduleCount; offset++, nodeIndex++)
             {

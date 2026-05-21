@@ -822,3 +822,12 @@ The scan proves repo-wide debt, not successful consumer migration. A full rename
 - `GetStateRef` no longer uses the legacy retained-handle byref helper; it resolves a phase-local state view and derives the ref through `UnsafeUtility.ArrayElementAsRef`.
 - AISensory chemical readback buffers remain borrowed: metabolism opens fixed BufferIDs through `TryGetGenerationHandle` plus `TryReadHandle` and never releases those descriptors.
 - This entry claims only Shinobu Metabolism Vault route cleanup. `MetabolicStateDTO`, `MetabolicSpeciesRuleDTO`, `MetabolismTuningDTO`, `MetabolicTelemetryEntry`, `MetabolismShaderGlobalsDTO`, `MetabolismChemical*MirrorDTO`, BufferIDs, CSV parser contract, SignalBus payloads, shader property IDs, blackbox dump format, and GameplayPlayer authority are unchanged by this loop.
+
+## 2026-05-22 QA Watchdog Descriptor Route Update
+
+- `Assets/_Project/Scripts/QA/Headless/Shinobu38QaWatchdogRuntime.cs` no longer has executable `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `TryGetLatestCreated`, `TryGetBufferGeneration`, `VaultGenerationID`, or `.ptr` hits.
+- State, snapshot, input-current bridge, route waypoint, mock rebase signal, tuning, mock vault, telemetry ring, CSV scratch, waypoint scratch, dump scratch, file-write command, file-write payload, writer state, writer cursor, and waypoint-ingest state now use `VaultGenerationHandle<T>` descriptors.
+- Each route validates exact BufferID, nonzero generation, required length, `TryResolveHandle` or pure `TryReadHandle`, and `IsCreated` before returning a native view.
+- Byref mutations now derive from already-resolved local views via `ElementRef`; retained handle byref helpers are gone from the file.
+- Teardown completes the active navigation job, stops/joins the file writer, unregisters tick lanes, unlocks all 16 runtime buffer IDs, releases acquired descriptors through `ReleaseBuffer(in handle)`, and tombstones local state.
+- This entry claims only QA watchdog Vault route cleanup. `WatchdogStateDTO`, `TelemetrySnapshotDTO`, `Shinobu38RouteWaypointDTO`, `MockRebaseSignal`, `Shinobu38TuningDTO`, `Shinobu38MockVaultDTO`, `Shinobu38WatchdogTelemetryEntry`, file writer DTOs, waypoint ingest DTO, BufferIDs `70580..70594`, `BufferID.ShinobuInputCurrentDto`, file output schemas, AUP-local math, and QA authority route are unchanged by this loop.

@@ -914,3 +914,19 @@ Solution: Replaced the tier byte with `_cachedQualityProfileByte`, derived from 
 Rejected Alternatives: Keeping the tier event as metadata was rejected because downstream consumers can treat metadata as authority. Mapping profile tier through `ScalabilityTierProfiles.Normalize` was rejected because the source remains binary hardware identity.
 Scalability potential: Low/Middle/High/Ultra deformation metadata now moves smoothly with quality and structural health pressure. Weak devices reduce tracked dent/shader upload capacity through continuous curves; high/ultra receive full overkill metadata without changing structural facts.
 Hardware Impact: 0 us speed claim. Removed one cold registry read and one SignalBus snapshot scan; dent/deformation authority remains unchanged.
+
+## Vocal Warning Radio Degradation Continuum
+
+Problem: `VocalWarningSystem` cached `GlobalRegistry.ScalabilityTier` and drained scalability-tier signals every update to decide whether habitat integrity warnings got radio degradation. That made an audio presentation cue jump by binary hardware tier.
+Solution: Removed the scalability signal drain, tier cache, and cold tier read. Habitat integrity warning distortion now resolves as a continuous lerp from 0.38 to 0.72 using a smooth `GlobalQualityWeight` curve. Warning ID, queue order, cooldown, subtitle, and telemetry routes are unchanged.
+Rejected Alternatives: Keeping degradation as high-tier-only was rejected because audio presentation should shed continuously. Moving warning queue cadence by quality was rejected because warning timing and priority are player-safety feedback.
+Scalability potential: Low devices use cleaner/cheaper radio treatment, middle devices receive partial degradation, high/ultra receive the full damaged-radio noir treatment on the same warning facts.
+Hardware Impact: 0 us speed claim. Removed one per-update SignalBus scalability snapshot scan and one cold registry tier read.
+
+## Prologue Acoustic Quality Continuum
+
+Problem: `PrologueAcousticOrchestrator` cached low-memory and low-tier flags, drained scalability tier signals, disabled granular plasma audio on low tier, and emitted a low-tier proxy flag through the prologue transition state. That leaked binary hardware identity into an audio presentation route.
+Solution: Removed the low-memory/low-tier fields, scalability signal drain, binary granular gate, and low-tier proxy flag publication. The prologue keeps publishing the existing quality byte, now derived directly from continuous `HomeostasisBrain.GlobalQualityWeight`; granular plasma stress is multiplied by a smooth polynomial quality curve.
+Rejected Alternatives: Keeping the tier event as metadata was rejected because downstream audio can treat metadata as a branch key. Disabling granular plasma below a threshold was rejected because prologue audio should degrade continuously, not pop between completely absent and present.
+Scalability potential: Low devices get reduced granular plasma stress, middle devices interpolate, and high/ultra receive full granular overdrive. Transition timing, stage identity, splashdown, portal blend, and low-pass/LFE facts remain unchanged.
+Hardware Impact: 0 us speed claim. Removed one per-frame scalability signal scan and two cached binary hardware fields from the prologue audio route.

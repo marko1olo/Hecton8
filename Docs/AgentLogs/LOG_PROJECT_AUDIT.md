@@ -300,3 +300,27 @@ Cinematic Cheats used: Existing topographical sonar remains a fake: ping-schedul
 Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped from `unityTimeCritical=926` to `923`, from `unityTimeWallClock=80` to `77`, and from `unityTimeRiskGameplayWallClock=45` to `42`.
 
 Evidence: Focused `rg -n "Time\.time\b|Time\.unscaledTime\b|Time\.fixedDeltaTime\b|Time\.deltaTime\b" Assets/_Project/Scripts/UI/TopographicalSonar/TopographicalSonarSynthesizer.cs` returns no rows. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_time_after_topographical_sonar_clock.json --report-path Docs\Reports\PROJECT_AUDIT_polish_time_after_topographical_sonar_clock.md` returned `PASS_WITH_WARNINGS` with `unityTimeCritical=923`, `unityTimeWallClock=77`, and `unityTimeRiskGameplayWallClock=42`. `git diff --check -- Assets/_Project/Scripts/UI/TopographicalSonar/TopographicalSonarSynthesizer.cs` reports only LF-to-CRLF warning. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - PlayerPDA Owner Clock
+
+What was wrong: `PlayerPDA` used `Time.time` for open start, normal close duration, force-close duration, and debug open duration. That duration is UI state, but it is also emitted through `PDAEvents.RaiseClosed(duration)`, so it should not depend on Unity wall-clock seconds.
+
+What was done: Added bounded `_pdaClockSeconds`, advanced from dispatcher `Tick(float deltaTime)`. `Open`, `Close`, `ForceClose`, and diagnostics now use `ResolvePdaClockSeconds()` / `ResolvePdaOpenDurationSeconds()`.
+
+Cinematic Cheats used: Existing PDA remains a UI/RenderTexture fake with preallocated tab history and event payloads. No extra simulation, no event DTO mutation, no input-route mutation.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped from `unityTimeCritical=923` to `918`, from `unityTimeWallClock=77` to `73`, and from `unityTimeRiskGameplayWallClock=42` to `39`.
+
+Evidence: Focused `rg -n "Time\.time\b|Time\.unscaledTime\b|Time\.fixedDeltaTime\b|Time\.deltaTime\b" Assets/_Project/Scripts/PlayerPDA.cs` returns no rows. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_time_after_player_pda_clock.json --report-path Docs\Reports\PROJECT_AUDIT_polish_time_after_player_pda_clock.md` returned `PASS_WITH_WARNINGS` with `unityTimeCritical=918`, `unityTimeWallClock=73`, and `unityTimeRiskGameplayWallClock=39`. `git diff --check -- Assets/_Project/Scripts/PlayerPDA.cs` reports only LF-to-CRLF warning. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - HabitatGraphManager Owner Clock
+
+What was wrong: `HabitatGraphManager` used `Time.time` for analytical low-tier stress feedback cooldown and the `timeSeconds` value feeding analytical breach-gate traversal. Both affect habitat stress/breach behavior and were not safe to leave on Unity wall clock.
+
+What was done: Added bounded `_habitatClockSeconds`, advanced from `ApplyHydrodynamicStress(float deltaTime)`. Analytical feedback cooldown and breach-gate `timeSeconds` now use `ResolveHabitatClockSeconds()`.
+
+Cinematic Cheats used: Existing habitat stress remains analytical: graph stress, module scalar upload, shader displacement, and low-tier audio/camera feedback replace full structural finite-element simulation.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped from `unityTimeCritical=918` to `915`, from `unityTimeWallClock=73` to `71`, and from `unityTimeRiskGameplayWallClock=39` to `37`.
+
+Evidence: Focused `rg -n "Time\.time\b|Time\.unscaledTime\b|Time\.fixedDeltaTime\b|Time\.deltaTime\b" Assets/_Project/Scripts/Construction/HabitatGraphManager.cs` returns no rows. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_time_after_habitat_clock.json --report-path Docs\Reports\PROJECT_AUDIT_polish_time_after_habitat_clock.md` returned `PASS_WITH_WARNINGS` with `unityTimeCritical=915`, `unityTimeWallClock=71`, and `unityTimeRiskGameplayWallClock=37`. `git diff --check -- Assets/_Project/Scripts/Construction/HabitatGraphManager.cs` reports only LF-to-CRLF warning. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

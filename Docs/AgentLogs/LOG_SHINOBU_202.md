@@ -5313,3 +5313,27 @@ Static verification:
 - Focused scan on `ShinobuMetabolismRuntime.cs` finds no executable `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `TryGetLatestCreated`, `TryGetBufferGeneration`, `VaultGenerationID`, `.ptr`, or `ChemicalInfluenceGrid.Chemical*` hits.
 - Descriptor scan confirms `VaultGenerationHandle<T>`, `GetGenerationHandle<T>`, `TryGetGenerationHandle<T>`, `TryResolveHandle`, `TryReadHandle`, `TryReadChemicalVaultBuffer`, `ReleaseMetabolismVaultHandles`, and `ReleaseBuffer(in handle)`.
 - Brace count is `151/151`; `git diff --check` passed with CRLF warning only. Build was not relaunched.
+
+## 2026-05-22 - Loop 226 - QA Watchdog Descriptor Route
+
+What was wrong:
+- `Assets/_Project/Scripts/QA/Headless/Shinobu38QaWatchdogRuntime.cs` retained sixteen QA watchdog Vault lanes as pointer-era handles.
+- State, telemetry snapshot, input-current bridge, route waypoints, rebase signal, tuning, mock vault, telemetry ring, CSV scratch, waypoint scratch, dump scratch, file-write commands, file-write payload, writer state, writer cursor, and waypoint-ingest state opened through `GetBufferHandle`, `.Resolve(vault)`, handle `.IsCreated`, `GetElementAsRef`, and `GetElementAsReadOnlyRef`.
+- The route crossed a scheduled navigation job, SPSC background file writer, waypoint CSV ingest, telemetry dump, result JSON write, and debug facade reads.
+
+What was done:
+- Converted all sixteen retained lanes to `VaultGenerationHandle<T>`.
+- Added watchdog-local helpers requiring exact BufferID, nonzero generation, required length, `TryResolveHandle` or pure `TryReadHandle`, and `IsCreated` before returning a phase-local `NativeArray<T>`.
+- Replaced byref helper calls with `ElementRef` over already-resolved local native views.
+- `OnDestroy` now force-completes active navigation work, stops/joins the file writer, unregisters tick lanes, unlocks all 16 runtime buffer IDs, releases all nonzero descriptors through `ReleaseBuffer(in handle)`, and tombstones local descriptor state.
+
+Cinematic cheats used:
+- Existing QA navigation remains fake-first: analytic SDF distance/normal and quality-weight normal collapse below `0.3` stand in for scene physics, terrain raycasts, mesh colliders, and object navigation. No GameObject spawning, PhysX queries, shader variants, or new scene searches were added.
+
+Exact microseconds saved:
+- No measured runtime speedup claimed. Descriptor validation is paid at startup clear, FastTick schedule, LateFrame consume, CSV queue, writer-thread drain, waypoint ingest, debug facade read, and telemetry dump boundaries only. Avoided cost is stale pointer/UAF corruption of the QA proof artifact after Vault relocation.
+
+Static verification:
+- Focused scan found no executable `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `TryGetLatestCreated`, `TryGetBufferGeneration`, `VaultGenerationID`, or `.ptr` hits in `Shinobu38QaWatchdogRuntime.cs`.
+- Descriptor scan confirms `VaultGenerationHandle<T>`, `GetGenerationHandle<T>`, `TryResolveHandle`, `TryReadHandle`, `ReleaseWatchdogVaultHandles`, `ReleaseWatchdogVaultHandle`, `ReleaseBuffer(in handle)`, and `ElementRef`.
+- Brace count is `237/237`; `git diff --check` passed. Build was not relaunched.

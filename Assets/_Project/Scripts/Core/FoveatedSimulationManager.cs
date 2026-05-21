@@ -215,6 +215,7 @@ namespace Hecton8.Core
         private const float ImportanceEvaluationIntervalSeconds = 0.1f;
         private const float FrustumForwardDotThreshold = 0.34202015f;
         private const float Tier0CombatLockSeconds = 10.0f;
+        private const float FoveatedClockMaxSeconds = 16777215f;
         private const int TelemetryCapacity = 300;
         private const uint TelemetryMagic = 0x46384C44u;
         private const float SoundSpeedWaterMetersPerSecond = HectonPhysicsContract.SoundSpeedWaterMetersPerSecondConst;
@@ -359,6 +360,7 @@ namespace Hecton8.Core
         private int _tier2Count;
         private byte _homeostasisPressureTier;
         private int _telemetryCursor;
+        private float _foveatedClockSeconds;
         private float _importanceAccumulator;
         private float _activeDistanceMeters = DefaultActiveDistanceMeters;
         private float _frozenDistanceMeters = DefaultFrozenDistanceMeters;
@@ -418,7 +420,7 @@ namespace Hecton8.Core
 
         public void LockTier0(uint entityHash, ushort entityId, float seconds)
         {
-            float lockUntil = Time.time + math.max(seconds, Tier0CombatLockSeconds);
+            float lockUntil = ResolveFoveatedClockSeconds() + math.max(seconds, Tier0CombatLockSeconds);
             for (int i = 0; i < _targetCount; i++)
             {
                 bool hashMatch = entityHash != 0u && _entityHashes[i] == entityHash;
@@ -549,6 +551,7 @@ namespace Hecton8.Core
         public void BeginDispatcherFrame(float frameDeltaTime)
         {
             TryCompleteFrameJobsInternal(true, forceComplete: false);
+            AdvanceFoveatedClock(frameDeltaTime);
             if (!EnsureNativeBuffersAllocated())
                 return;
 
@@ -565,6 +568,19 @@ namespace Hecton8.Core
             RefreshListenerBinding(frameDeltaTime);
             UpdateListenerVelocity(frameDeltaTime);
             UpdateDopplerProtection();
+        }
+
+        private void AdvanceFoveatedClock(float frameDeltaTime)
+        {
+            if (!math.isfinite(frameDeltaTime) || frameDeltaTime <= 0f)
+                return;
+
+            _foveatedClockSeconds = math.min(FoveatedClockMaxSeconds, _foveatedClockSeconds + frameDeltaTime);
+        }
+
+        private float ResolveFoveatedClockSeconds()
+        {
+            return _foveatedClockSeconds;
         }
 
         public bool TryResolveTick(IUpdatable item, float frameDeltaTime, out float effectiveDeltaTime)
@@ -990,7 +1006,7 @@ namespace Hecton8.Core
             _tier2Count = 0;
             _frozenEntityCount = 0;
             TryResolveScoringCamera(out Vector3 cameraPosition, out Vector3 cameraForward, out _);
-            float now = Time.time;
+            float now = ResolveFoveatedClockSeconds();
             for (int i = 0; i < _targetCount; i++)
             {
                 IFoveatedSimulationTarget target = GetTargetAt(i);

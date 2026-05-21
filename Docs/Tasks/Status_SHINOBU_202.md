@@ -4041,3 +4041,20 @@ Mandates read before coding:
 - Brace count is balanced: `ShinobuMetabolismRuntime.cs` `151/151`.
 - `git diff --check` passed for `ShinobuMetabolismRuntime.cs`; CRLF warning only.
 - Build not relaunched under the explicit no-rebuild command discipline.
+
+## Loop 226 - QA Watchdog Descriptor Route
+- [x] Replaced SHINOBU_38 QA watchdog retained Vault handles with generation descriptors.
+  DOD practice: state, snapshot, input-current bridge, route waypoints, rebase signal, tuning, mock vault, 300-frame telemetry, CSV scratch, waypoint scratch, dump scratch, file-write command queue, file-write payload, writer state, writer cursor, and waypoint-ingest state now retain `VaultGenerationHandle<T>` descriptors and open through exact BufferID, nonzero generation, required length, `TryResolveHandle` or pure `TryReadHandle`, and `IsCreated` proof.
+  Rejected: keeping `VaultBufferHandle<T>`, `GetBufferHandle`, `.Resolve(vault)`, retained handle `.IsCreated`, `GetElementAsRef`, and `GetElementAsReadOnlyRef` because this watchdog spans a scheduled navigation job, SPSC background file writer, waypoint CSV ingestion, telemetry dumps, and batch-mode result writes.
+  Estimate: descriptor proof runs at startup clear, FastTick scheduling, LateFrame consumption, CSV queueing, writer-thread drain, waypoint ingest, telemetry dump, and debug facade boundaries; DTO layouts, BufferIDs, file output paths, QA SignalBus routes, AUP-local math, and `SystemID.External` watchdog authority are unchanged.
+- [x] Added cold release for watchdog descriptors after job/thread fences.
+  DOD practice: `OnDestroy` force-completes the active navigation job, stops and joins the file writer, unregisters dispatcher lanes, unlocks all 16 runtime buffer IDs, then releases the 16 nonzero descriptors through `ReleaseBuffer(in handle)` and tombstones local route state.
+  Rejected: releasing before the file writer joins because the writer thread holds frame-local cursor/command/payload views. Rewriting the QA file writer, profiler recorder sampling, result JSON schema, waypoint CSV parser, or continuous quality torture curve was rejected as outside this stale pointer route loop.
+  Estimate: cold teardown only; no hot-path managed allocation, new job, DTO stride change, save identity change, shader variant, or new runtime GlobalRegistry polling was introduced.
+
+## Compile State Update 220
+- Focused legacy route scan on `Shinobu38QaWatchdogRuntime.cs` found no executable `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `TryGetLatestCreated`, `TryGetBufferGeneration`, `VaultGenerationID`, or `.ptr` hits.
+- Descriptor route scan confirmed expected `VaultGenerationHandle<T>`, `GetGenerationHandle<T>`, `TryResolveHandle`, `TryReadHandle`, `ReleaseWatchdogVaultHandles`, `ReleaseWatchdogVaultHandle`, `ReleaseBuffer(in handle)`, and `ElementRef`.
+- Brace count is balanced: `Shinobu38QaWatchdogRuntime.cs` `237/237`.
+- `git diff --check` passed for `Shinobu38QaWatchdogRuntime.cs`.
+- Build not relaunched under the explicit no-rebuild command discipline.

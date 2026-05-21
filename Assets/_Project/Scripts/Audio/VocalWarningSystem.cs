@@ -624,7 +624,7 @@ namespace Hecton8.Audio
 
         private static float ResolveGlobalQualityWeight01()
         {
-            float value = Hecton8.Gameplay.HomeostasisBrain.GlobalQualityWeight;
+            float value = Hecton8.Core.HomeostasisBrain.GlobalQualityWeight;
             return math.saturate(math.select(1f, value, math.isfinite(value)));
         }
 

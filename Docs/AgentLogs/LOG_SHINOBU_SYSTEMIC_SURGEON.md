@@ -67,6 +67,42 @@ Remaining blocked/pending:
   <QUALITY status="DRS shader uses continuous scale-deficit curve; no binary low-tier switch added" />
 </SELF_AUDIT>
 
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="PrologueAcousticQualityContinuum">
+  <WHAT_WAS_WRONG>
+    Prologue acoustic transition publication used low-memory/low-tier cached fields and scalability signal drains to disable granular plasma audio and publish a low-tier proxy flag. This made a presentation cue branch on binary hardware identity.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    `PrologueAcousticOrchestrator` now derives `_qualityTierByte` from continuous `HomeostasisBrain.GlobalQualityWeight`, removes low-memory/low-tier storage, removes scalability signal consumption, and scales granular plasma stress through a smooth quality curve.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    Granular plasma remains an audio fake over the same prologue stage facts. Low devices reduce granular stress continuously; high/ultra devices spend the same route on heavier plasma texture without changing transition authority.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. One per-frame scalability signal scan and binary hardware proxy branch were removed; this is presentation correctness and route cleanup.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted `rg` found no `_lowTier`, `_lowMemoryProfile`, `_lastScalabilitySignalFrame`, `ScalabilityTier`, `ScalabilityTierProfileByte`, `H8_LOW_MEMORY_PROFILE`, `CacheQualityPolicy`, `ConsumeScalabilitySignals`, `HandleScalabilityChanged`, or `FlagLowTierProxy` route in `PrologueAcousticOrchestrator.cs`. `git diff --check` passed with line-ending warnings only. Build skipped because CPU was 100% with active `csc` and `dotnet`.
+  </VERIFICATION>
+</SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="VocalWarningRadioDegradationContinuum">
+  <WHAT_WAS_WRONG>
+    `VocalWarningSystem` used scalability tier signals and a cached hardware tier to switch radio degradation on/off for habitat warnings.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Removed scalability-tier signal drain and registry tier cache. Radio distortion now lerps continuously from 0.38 to 0.72 using `GlobalQualityWeight`.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    Radio degradation is an audio presentation fake. Warning identity, priority, cooldown, subtitles, and queue truth are unchanged.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. One update-time scalability snapshot scan and one cold registry tier read were removed.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted `rg` found no `Scalability`, `ScalabilityChangedEvent`, `_qualityTier`, `GlobalRegistry.ScalabilityTier`, or `ShouldUseRadioDegradation` route in `VocalWarningSystem.cs`. Targeted `git diff --check` passed with line-ending warnings only.
+  </VERIFICATION>
+</SELF_AUDIT>
+
 <SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="HullIntegrityQualityProfileContinuum">
   <WHAT_WAS_WRONG>
     `HullIntegrityRuntime` routed hardware tier profile bytes into deformation samples, shader parameters, and deformation signals. That made proof/presentation metadata hardware-discrete.

@@ -189,3 +189,39 @@ Updated static counts from that artifact:
 - `unityTimeRiskGameplayDelta`: 1
 
 Residual note: the sonar owner clock currently advances in `Render(float deltaTime)`, because the class implements `IRenderable` and `ILateFrameTickable` but not `ITickable`. Late-frame ping cadence can therefore observe the previous render tick by one frame. That is acceptable for the UI point-cloud fake, but a future dispatcher API that passes delta to late-frame tickables would make the route cleaner.
+
+## 2026-05-22 PlayerPDA Follow-Up
+
+`PlayerPDA` no longer uses direct Unity wall-clock time for open duration. It owns `_pdaClockSeconds`, advances it from dispatcher `Tick(float deltaTime)`, and uses the local clock for open start, normal close duration, force-close duration, and `_debugOpenDuration`.
+
+Focused proof:
+
+- `rg -n "Time\.time\b|Time\.unscaledTime\b|Time\.fixedDeltaTime\b|Time\.deltaTime\b" Assets/_Project/Scripts/PlayerPDA.cs` returns no rows.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_time_after_player_pda_clock.json`.
+
+Updated static counts from that artifact:
+
+- `unityTimeCritical`: 918
+- `unityTimeWallClock`: 73
+- `unityTimeRiskGameplayWallClock`: 39
+- `unityTimeRiskGameplayDelta`: 1
+
+Residual note: PDA clock starts at zero and advances only while dispatcher ticks the PDA. External `Open()` calls before the first tick will produce a zero start timestamp until the next dispatcher tick, which is acceptable for UI duration and avoids Unity wall-clock dependency.
+
+## 2026-05-22 HabitatGraphManager Follow-Up
+
+`HabitatGraphManager` no longer uses direct Unity wall-clock time for analytical stress behavior. It owns `_habitatClockSeconds`, advances it from `ApplyHydrodynamicStress(float deltaTime)`, and uses the local clock for low-tier analytical feedback cooldown and breach-gate `timeSeconds`.
+
+Focused proof:
+
+- `rg -n "Time\.time\b|Time\.unscaledTime\b|Time\.fixedDeltaTime\b|Time\.deltaTime\b" Assets/_Project/Scripts/Construction/HabitatGraphManager.cs` returns no rows.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_time_after_habitat_clock.json`.
+
+Updated static counts from that artifact:
+
+- `unityTimeCritical`: 915
+- `unityTimeWallClock`: 71
+- `unityTimeRiskGameplayWallClock`: 37
+- `unityTimeRiskGameplayDelta`: 1
+
+Residual note: `ApplyHydrodynamicStress` currently hardcodes `HectonQualityTier.Ultra` for module stress, but `binaryHardwareSwitch=0` remains green because this is not a low/high branch. The quality ownership of habitat analytical stress is separate debt from wall-clock ownership.

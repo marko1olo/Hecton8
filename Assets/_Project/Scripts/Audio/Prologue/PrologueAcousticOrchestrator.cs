@@ -2,7 +2,6 @@ using System;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
-using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -39,13 +38,10 @@ namespace Hecton8.Audio.Prologue
         private ITickDispatcher _tickDispatcher;
         private bool _lateFrameRegistered;
         private bool _hotSwapRegistered;
-        private bool _lowMemoryProfile;
-        private bool _lowTier;
         private byte _qualityTierByte;
         private int _lastLateFrame = -1;
         private int _lastAtmosphericFrame = -1;
         private int _lastCompleteFrame = -1;
-        private int _lastScalabilitySignalFrame = -4096;
         private uint _transitionSequence;
         private ushort _lastCompleteSequence;
         private ushort _lastWhiteoutCompleteSequence;
@@ -149,31 +145,11 @@ namespace Hecton8.Audio.Prologue
 
             _lastLateFrame = frame;
             _tickCount++;
-            ConsumeScalabilitySignals();
+            RefreshQualityPolicyCold();
             ConsumeAtmosphericSignals();
             ConsumePrologueCompleteSignals();
             AdvanceFilterSweep(ResolveUnscaledDeltaTime());
             PublishAudioTransition(frame);
-        }
-
-        private void HandleScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            CacheQualityPolicy(payload.CurrentQualityTier, payload.CurrentTier, _lowMemoryProfile);
-        }
-
-        private void ConsumeScalabilitySignals()
-        {
-            int frame = Time.frameCount;
-            if (_lastScalabilitySignalFrame == frame)
-                return;
-
-            _lastScalabilitySignalFrame = frame;
-            ReadOnlySpan<ScalabilityChangedEvent> signals = SignalBus<ScalabilityChangedEvent>.GetFrameSnapshot();
-            for (int i = 0; i < signals.Length; i++)
-            {
-                ScalabilityChangedEvent payload = signals[i];
-                HandleScalabilityChanged(in payload);
-            }
         }
 
         /// <inheritdoc />
@@ -342,24 +318,22 @@ namespace Hecton8.Audio.Prologue
             float heat01 = SaturateFiniteOrZero(_heat01);
             bool plasmaStage = _stage == AudioTransitionState.StagePlasma || _stage == AudioTransitionState.StageWhiteout;
             bool portalStage = _stage == AudioTransitionState.StageOceanHandoff;
-            bool granularEnabled = plasmaStage && !_lowTier;
+            float qualityCurve = ResolveQualityCurve01();
 
             byte flags = 0;
             if (_splashdownPending)
                 flags |= AudioTransitionState.FlagSplashdown;
             if (portalStage)
                 flags |= AudioTransitionState.FlagPortalActive;
-            if (granularEnabled)
-                flags |= AudioTransitionState.FlagGranularEnabled;
-            if (plasmaStage && _lowTier)
-                flags |= AudioTransitionState.FlagLowTierProxy;
             if (nonFiniteGuard)
                 flags |= AudioTransitionState.FlagNonFiniteGuard;
 
             float lowPassCutoffHertz = ClampCutoff(_currentLowPassCutoffHertz);
             float lfeGain = ResolveLfeGain(velocity01, plasmaStage, portalStage);
             float granularGain = SaturateFiniteOrZero(plasmaGranularStressGain);
-            float granularStress = granularEnabled ? math.saturate(velocity01 * granularGain) : 0f;
+            float granularStress = plasmaStage ? math.saturate(velocity01 * granularGain) * qualityCurve : 0f;
+            if (granularStress > GainPublishEpsilon)
+                flags |= AudioTransitionState.FlagGranularEnabled;
             float splashdownGain01 = _splashdownPending ? SaturateFiniteOrZero(splashdownGain) : 0f;
             float portalBlend01 = portalStage ? ResolvePortalBlend01() : 0f;
             if (!ShouldPublishTransition(lowPassCutoffHertz, lfeGain, granularStress, splashdownGain01, portalBlend01, flags))
@@ -446,20 +420,26 @@ namespace Hecton8.Audio.Prologue
 
         private void RefreshQualityPolicyCold()
         {
-            CacheQualityPolicy(
-                GlobalRegistry.ScalabilityTier,
-                GlobalRegistry.ScalabilityTierProfileByte,
-                GlobalRegistry.H8_LOW_MEMORY_PROFILE);
+            _qualityTierByte = ResolveQualityTierByte(ResolveGlobalQualityWeight01());
         }
 
-        private void CacheQualityPolicy(HectonQualityTier tier, byte qualityTierByte, bool lowMemoryProfile)
+        private static float ResolveGlobalQualityWeight01()
         {
-            _lowMemoryProfile = lowMemoryProfile;
-            _qualityTierByte = qualityTierByte;
-            _lowTier = tier == HectonQualityTier.Unknown ||
-                       tier == HectonQualityTier.Low ||
-                       tier == HectonQualityTier.Mx350 ||
-                       _lowMemoryProfile;
+            float quality = Hecton8.Gameplay.HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.select(1f, quality, math.isfinite(quality)));
+        }
+
+        private static byte ResolveQualityTierByte(float quality)
+        {
+            float q = math.saturate(math.select(1f, quality, math.isfinite(quality)));
+            return (byte)math.clamp((int)math.round(q * byte.MaxValue), 0, byte.MaxValue);
+        }
+
+        private float ResolveQualityCurve01()
+        {
+            float q = _qualityTierByte * math.rcp(byte.MaxValue);
+            q = math.saturate(q);
+            return q * q * (3f - 2f * q);
         }
 
         private float ResolveHeat01(in AtmosphericReentrySignal signal)

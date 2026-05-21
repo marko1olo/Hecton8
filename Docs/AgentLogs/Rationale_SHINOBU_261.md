@@ -595,3 +595,15 @@ Solution: Recounted `Assets/_Project/Scripts` excluding `Plugins/Crest` at 2178 
 Rejected Alternatives: Leaving stale line proof was rejected because Task 19 is proof-artifact driven. Running Unity menu scanner was rejected while CPU/build gate is closed.
 Scalability potential: Runtime unchanged; this is audit correctness only.
 Hardware Impact: 0 runtime us.
+
+Problem: Latest proof repair exposed three stale claims: scanner-owned-path zero-count proof was false, self-audit omitted QueueCounters ABI fields, and Task 10 was over-marked as done despite lacking a dispatcher-owned producer-fence contract.
+Solution: Scanner generator/root/sidecar now state `ownedPathScanPerformed=false`; `OceanKinematicsSelfAuditReport` is 128 bytes and records QueueCounters offsets/padding plus static-proof-only status; Task 10 is downgraded to partial pending dispatcher/integrator fence ownership.
+Rejected Alternatives: Expanding SHINOBU_261 into Player/Flora or dispatcher ownership was rejected. Repeating the full solution build was rejected after it failed on unrelated editor/core compile-wall errors.
+Scalability potential: Runtime quality behavior unchanged. Low/Middle/High/Ultra still scale through `GlobalQualityWeight`; DTO layout, Vault IDs, save identity, and authority route remain fixed.
+Hardware Impact: Runtime 0 us. This is proof correction and cold self-audit ABI expansion; targeted compile remains process-gated by active `csc`/`dotnet`.
+
+Problem: New proof fields required positive source-shape verification, not only forbidden-token absence.
+Solution: Focused scan confirmed `OffsetOfQueueCounters`, `QueueCountersSize`, `QueueCountersPadBytes`, `FlagStaticProofOnly`, `VaultBufferIdMax`, self-audit `Size=128`, `_pad4@120`, QueueCounters `_pad5@60`, and SHINOBU_261 root false-field removal.
+Rejected Alternatives: Claiming the broad forbidden scan proved the new ABI was rejected.
+Scalability potential: Runtime unchanged.
+Hardware Impact: 0 runtime us.
