@@ -67,5 +67,40 @@
         "*.sln": "*.csproj",
         "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "Hecton8.slnx"
+    "dotnet.defaultSolution": "Hecton8.slnx",
+    "git.autorefresh": false,
+    "git.decorations.enabled": false,
+    "git.countBadge": "off",
+    "git.openRepositoryInParentFolders": "never",
+    "files.watcherExclude": {
+        "**/.git/objects/**": true,
+        "**/.git/subtree-cache/**": true,
+        "**/.vs/**": true,
+        "**/.codex*/**": true,
+        "**/.codexbuild/**": true,
+        "**/CodexArtifacts/**": true,
+        "**/Library/**": true,
+        "**/Temp/**": true,
+        "**/Logs/**": true,
+        "**/Obj/**": true,
+        "**/UserSettings/**": true,
+        "**/Docs/Reports/**": true,
+        "**/Docs/AgentLogs/**": true,
+        "**/node_modules/**": true
+    },
+    "search.exclude": {
+        "**/.git/**": true,
+        "**/.vs/**": true,
+        "**/.codex*/**": true,
+        "**/.codexbuild/**": true,
+        "**/CodexArtifacts/**": true,
+        "**/Library/**": true,
+        "**/Temp/**": true,
+        "**/Logs/**": true,
+        "**/Obj/**": true,
+        "**/UserSettings/**": true,
+        "**/Docs/Reports/**": true,
+        "**/Docs/AgentLogs/**": true,
+        "**/node_modules/**": true
+    }
 }
