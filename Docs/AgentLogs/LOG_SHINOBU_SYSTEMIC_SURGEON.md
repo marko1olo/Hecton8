@@ -3257,3 +3257,21 @@ Verification:
     Targeted `rg` found no `IScalabilityChangedEventListener`, `ScalabilityEvents`, `OnScalabilityChanged`, `ScalabilityChangedEvent`, registered scalability state, `GlobalRegistry.ScalabilityTier`, or `HectonQualityTier` in `PDADecryptionSpectrogramPanel.cs`; `git diff --check` passed with line-ending warning only. Build was not launched because `VBCSCompiler` remained active while CPU probe returned 40%.
   </VERIFICATION>
 </SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="CameraJuiceQualityResidueCleanup">
+  <WHAT_WAS_WRONG>
+    `CameraJuiceSystem` still retained a stale `ScalabilityChangedEvent` alias and direct `QualitySettings.GetQualityLevel()==0` branches that disabled camera presentation features by a binary Unity quality tier.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Removed the stale alias and binary quality-level gates. Camera procedural noise sample interval and post-fx pressure now resolve from continuous `HomeostasisBrain.GlobalQualityWeight`; authored feature toggles remain the explicit control path.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    Camera shake and post-fx are presentation fakes. Minimum quality reduces resampling/post-fx pressure through scalar curves; high/ultra preserves full procedural noise and post-fx intensity when authored flags permit it.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. Removed discrete quality branch residue; runtime impact requires profiler capture.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted `rg` found no `IScalabilityChangedEventListener`, `ScalabilityEvents`, `OnScalabilityChanged`, `ScalabilityChangedEvent`, cached scalability tier, low-tier names, `HectonQualityTier`, `GlobalRegistry.ScalabilityTier`, or `QualitySettings.GetQualityLevel` in `CameraJuiceSystem.cs`; `git diff --check` passed with line-ending warning only. Build pending under CPU/compiler guard.
+  </VERIFICATION>
+</SELF_AUDIT>

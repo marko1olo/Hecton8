@@ -1106,3 +1106,11 @@ Solution: Removed the scalability listener route. The panel now samples continuo
 Rejected Alternatives: Keeping callback-driven rebuild was rejected because it couples binary events to job lifecycle and can block outside the dispatcher-owned completion window. Rebuilding resources every tick was rejected because stable quality should not churn vault/gpu buffers.
 Scalability potential: Low devices use fewer wave points, middle devices interpolate, high/ultra get the full 128-point spectrogram. Puzzle target truth, input, error computation, telemetry ring, and DataVault buffer IDs stay unchanged.
 Hardware Impact: 0 us speed claim. Removed one scalability listener route and one callback-triggered job completion path; exact frame impact requires Unity profiler proof.
+
+## Camera Juice Quality Residue Cleanup
+
+Problem: `CameraJuiceSystem` retained a stale `ScalabilityChangedEvent` alias and direct `QualitySettings.GetQualityLevel()==0` branches that hard-disabled camera post effects and interaction DoF by a binary Unity quality tier.
+Solution: Removed the alias and binary `QualitySettings` gates. Procedural camera-noise sample interval already resolves from continuous `GlobalQualityWeight`; post-fx pressure now multiplies by a continuous quality scale before the existing threshold/authoring flags decide interaction DoF.
+Rejected Alternatives: Keeping Unity quality level as a shortcut was rejected because it is a discrete presentation tier. Forcing DoF or motion blur always on was rejected because authored toggles and adaptive post-fx pressure must remain respected.
+Scalability potential: Low devices reduce camera-noise resampling and post-fx pressure smoothly; middle devices interpolate; high/ultra keep full procedural noise and post-fx budget if authored settings allow.
+Hardware Impact: 0 us speed claim. Removes branch-key residue and keeps quality as a continuous scalar; frame impact requires runtime capture.

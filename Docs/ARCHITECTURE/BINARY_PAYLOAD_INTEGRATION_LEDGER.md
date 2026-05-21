@@ -4783,6 +4783,13 @@ Fault route: `ExosuitTelemetryEntry[300]` dumps fixed 64-byte rows to `Docs/Agen
 - Policy impact: point count still scales continuously from 32 to 128 through `GlobalQualityWeight` and video-memory pressure, but quality refresh no longer completes a scheduled wave job. Rebuild is deferred if a job is in flight.
 - Verification: targeted listener/tier scan clean for `PDADecryptionSpectrogramPanel.cs`; `git diff --check` passed with line-ending warning only. Build was not launched because `VBCSCompiler` remained active while CPU probe returned 40%.
 
+## 2026-05-22 - SHINOBU_SYSTEMIC_SURGEON Camera Juice Quality Residue Note
+
+- `Assets/_Project/Scripts/VFX/CameraJuiceSystem.cs` removed the stale `ScalabilityChangedEvent` alias and binary `QualitySettings.GetQualityLevel()==0` presentation gates.
+- Binary payload impact: none. `CameraJuiceTelemetryEntry` remains 64 bytes, the 300-row telemetry ring BufferID/owner route is unchanged, and no SignalBus payload ABI changed.
+- Policy impact: camera procedural noise cadence and post-fx pressure now resolve from continuous `HomeostasisBrain.GlobalQualityWeight`; authored enable flags still control whether DoF/motion blur features are allowed.
+- Verification: targeted binary/listener scan clean for `CameraJuiceSystem.cs`; `git diff --check` passed with line-ending warning only. Build pending under compiler guard.
+
 ## 2026-05-22 - SHINOBU_202 Save Pager Descriptor Route Update
 
 - `Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs` migrated retained pager Vault lanes from pointer-era handles to `VaultGenerationHandle<T>` descriptors.
@@ -4838,4 +4845,4 @@ Fault route: `ExosuitTelemetryEntry[300]` dumps fixed 64-byte rows to `Docs/Agen
 - `Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs` now maps public `RegisterSource(... intensity <= 0 or non-finite ...)` to `UnregisterSource(sourceId)` and maps invalid/non-positive radius to `DefaultSourceRadiusMeters`, matching the internal owner drain behavior.
 - Binary payload impact: route-only. `RadiationSourceSignal` remains 64 bytes, `RadiationStateDTO` remains 32 bytes, `RadiationTelemetryEntry` remains 64 bytes, BufferIDs `72740..72751`, blackbox dump row order, shader property IDs, save identity, and CombatDamageSignal ABI are unchanged.
 - Authority impact: zero-intensity source updates no longer silently preserve old source truth. Removal still travels through the typed `SignalBus<RadiationSourceSignal>` lane and is applied by the `RadiationHazardGrid` owner phase.
-- Verification: source lifecycle scan confirmed public facade removal and internal owner removal parity; `git diff --check -- Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs` passed with CRLF warning only. Build was not launched because `VBCSCompiler` was active.
+- Verification: source lifecycle scan confirmed public facade removal and internal owner removal parity; `git diff --check -- Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs` passed with CRLF warning only. Build was not launched because CPU sampled at 100 percent with active `dotnet`, `dotnet`, and `VBCSCompiler` processes.

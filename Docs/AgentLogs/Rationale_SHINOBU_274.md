@@ -301,4 +301,4 @@ Hardware Impact: 0 steady-state frame cost. The remove signal is emitted only on
 Verification:
 - `git diff --check -- Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs`: PASS with CRLF warning only.
 - Source lifecycle scan: public zero-intensity facade and internal owner drain now both remove by source id; invalid radius falls back to `DefaultSourceRadiusMeters`.
-- Build not launched: CPU sampled at 45 percent, but `VBCSCompiler` was active.
+- Build not launched: latest probe sampled CPU at 100 percent and found active `dotnet`, `dotnet`, and `VBCSCompiler`.

@@ -116,7 +116,7 @@ Exact microseconds saved:
 Verification:
 - `git diff --check -- Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs`: PASS with CRLF warning only.
 - Source lifecycle scan confirmed public zero-intensity facade and internal owner drain both remove by source id, and both use the same invalid-radius fallback.
-- Build not launched because `VBCSCompiler` was active even though CPU sampled at 45 percent.
+- Build not launched because latest probe sampled CPU at 100 percent and found active `dotnet`, `dotnet`, and `VBCSCompiler`.
 
 <SELF_AUDIT agent="SHINOBU_274" domain="Radiation Scrubber" date="2026-05-22" pass="loop_16_source_facade">
   <TaskReconciliation>Tasks 01-19 remain PASS. Task 20 remains PARTIAL because compile/import/profiler proof is still blocked by active compiler/dependency gates. Loop 16 additionally aligns public source radius fallback with the owner drain.</TaskReconciliation>
@@ -124,7 +124,7 @@ Verification:
   <ScalabilityCurve>Source removal identity is independent of GlobalQualityWeight. Quality still only scales cadence, SDF/bulkhead sample budgets, and GPU presentation scalars.</ScalabilityCurve>
   <HphiVaultStatus>No new private NativeArray ownership. Source storage remains in Vault lane 72741 and source count in 72742.</HphiVaultStatus>
   <DependencyGraph>No hot `.Complete()` added. Public facade publishes the existing typed remove signal; owner phase drains it under the existing Simulation/PostSimulation fence.</DependencyGraph>
-  <CompileGuard>No asmdef edge or sibling runtime dependency added. Build not launched under active `VBCSCompiler` gate.</CompileGuard>
+  <CompileGuard>No asmdef edge or sibling runtime dependency added. Build not launched under CPU 100 percent plus active `dotnet`, `dotnet`, and `VBCSCompiler` gate.</CompileGuard>
   <DearLie>No physical simulation added. Source removal fix preserves the existing mathematical dose path and GPU mutation fake.</DearLie>
 </SELF_AUDIT>
 
