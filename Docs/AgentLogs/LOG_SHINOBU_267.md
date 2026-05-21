@@ -1113,3 +1113,28 @@ Exact Microseconds saved:
   <PARKED_WORK_REJECTED>Runtime material swapping, replacement shader instantiation, build launch under CPU/dotnet/csc gate.</PARKED_WORK_REJECTED>
   <STATIC_VERIFICATION>Static scan shows `Toggle Vertex Color Debug`, `Shader.SetGlobalFloat(DebugId...)`, `_HectonFloraVertexColorDebug`, `half4(input.color)`, and `return half4(input.biolumColor.rgb, 1.0h)` are present; owned forbidden scan is clean; runtime/editor/shader brace and preprocessor balances are zero; `git diff --check` found no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 70.1%, dotnet=1, csc=1.</STATIC_VERIFICATION>
 </SELF_AUDIT_DELTA>
+
+## 2026-05-21 - Polish Pass 49
+
+What was wrong:
+- Editor success logs hardcoded DTO sizes instead of printing the validated values.
+
+What was done:
+- `Validate DTO Layouts` now prints `paramsSize`, `telemetrySize`, and `profileSize`.
+- `Run Self Audit` success now prints the same measured values.
+
+Cinematic Cheats used:
+- No runtime path changed. This is proof-output hygiene.
+
+Exact Microseconds saved:
+- 0 player us. Editor-only logging change.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_267" revision="2026-05-21-P49_DYNAMIC_LAYOUT_PROOF_TEXT">
+  <TASK id="04" status="PASS">Editor layout output now reports measured DTO sizes instead of stale hardcoded proof text.</TASK>
+  <TASK id="20" status="PASS">Self-audit success output now reports measured DTO sizes.</TASK>
+  <FIRST_20_MINUTES_MOMENT>World load and swim readability on the selected Copper Wire route biome.</FIRST_20_MINUTES_MOMENT>
+  <ROUTE_IMPACT>Integrator/editor proof text now reflects actual DTO sizes when validation runs.</ROUTE_IMPACT>
+  <PROOF_REQUIRED>Static source scan now; Unity Editor menu invocation remains pending.</PROOF_REQUIRED>
+  <PARKED_WORK_REJECTED>Build launch under CPU/dotnet/csc gate and DTO size changes.</PARKED_WORK_REJECTED>
+  <STATIC_VERIFICATION>Editor scan reports no hardcoded `Params=32`, `Telemetry=32`, or `Profile=32` success strings; owned forbidden scan is clean; editor brace/preprocessor balance is zero; `git diff --check` found no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 72.8%, dotnet=1, csc=1.</STATIC_VERIFICATION>
+</SELF_AUDIT_DELTA>

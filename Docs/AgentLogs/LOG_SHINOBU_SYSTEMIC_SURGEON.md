@@ -67,6 +67,24 @@ Remaining blocked/pending:
   <QUALITY status="DRS shader uses continuous scale-deficit curve; no binary low-tier switch added" />
 </SELF_AUDIT>
 
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="OceanFluidAuthority">
+  <WHAT_WAS_WRONG>
+    `HectonFluidEngine` used hardware tier and low-memory state to change ocean physics truth: CPU flow quality, Gerstner wave budget, buoyancy surface normals, tidal shear, maelstrom count/tangent velocity/clamp, and splashdown impulse field scheduling all varied by device.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Added canonical fluid authority constants and routed CPU water height, buoyancy wave data, WaveQueryJob, BuoyancyJob, analytical maelstrom packing, and splashdown impulse upload through full authority math. Removed the cached maelstrom low-tier field, the low-memory hot registry poll, the cached high-tier byte helper, and the binary fluid-advection low-tier resolver. Dynamic wake/advection presentation now scales continuously from `HomeostasisBrain.GlobalQualityWeight`.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    The Dear Lie remains in GPU advection, dynamic wake capacity, bubble/debris/silt presentation, and shader flow texture density. The CPU force, buoyancy, current, and maelstrom facts no longer use that fake.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. Authority cost intentionally rises on weak devices; removed hot low-memory registry polling and binary tier checks from the fluid path.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted `rg` found no `IsLowMaelstromTier`, `_cachedLowMaelstromTier`, `ResolveFluidAdvectionLowTier`, `_cachedLowMemoryProfile`, `H8_LOW_MEMORY_PROFILE`, `ResolveCachedHighScalabilityTierByte`, or Gerstner authority budget call through `ResolveCachedScalabilityTier`. `git diff --check` passed with line-ending warnings only. Build skipped because CPU was 79% with active `dotnet` and `csc`.
+  </VERIFICATION>
+</SELF_AUDIT>
+
 <SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="FaunaLeviathanIkAuthority">
   <WHAT_WAS_WRONG>
     `FaunaKinematicsRuntime` allowed hardware quality and system stress to alter leviathan terrain and bite IK authority. Real quality selected active segment count, constraint iterations, SDF payload availability, and terrain job quality. Stress/quality flags could degrade bite mandible/tentacle solve behavior.
