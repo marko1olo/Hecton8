@@ -3074,6 +3074,24 @@ Verification:
     No speed claim. Removed one scalability listener route and one binary tier registry dependency; actual GPU cost depends on XR runtime support and must be proven with Frame Debugger/player capture.
   </MICROSECONDS_SAVED>
   <VERIFICATION>
-    Targeted `rg` found no `ScalabilityChangedEvent`, `IScalabilityChangedEventListener`, `ScalabilityEvents`, `GlobalRegistry.ScalabilityTier`, `HectonQualityTier`, `_qualityTier`, `IsHighEndTier`, `HighEndFixed`, `HighEnd`, `LowTier`, `lowTier`, or `QualityTier` in `FoveatedRenderCommander.cs`. `git diff --check` passed with line-ending warning only. Build was not launched because `VBCSCompiler` was active while CPU probe returned 2%.
+    Targeted `rg` found no `ScalabilityChangedEvent`, `IScalabilityChangedEventListener`, `ScalabilityEvents`, `GlobalRegistry.ScalabilityTier`, `HectonQualityTier`, `_qualityTier`, `IsHighEndTier`, `HighEndFixed`, `HighEnd`, `LowTier`, `lowTier`, or `QualityTier` in `FoveatedRenderCommander.cs`. `git diff --check` passed with line-ending warning only. The later guarded build covering this script and the sonar UI script returned 0 errors and 161 warnings after one no-diagnostics `-clp:ErrorsOnly` exit.
+  </VERIFICATION>
+</SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="SubmarineSonarHoloMapQualityPull">
+  <WHAT_WAS_WRONG>
+    `SubmarineSonarHoloMapRenderer` still implemented `IScalabilityChangedEventListener` and registered with `ScalabilityEvents` solely to refresh a cached quality float, while its actual grid/cadence math was already continuous.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Removed the scalability listener interface, registration state, event callback, and register/unregister calls. Visual sync now refreshes `_cachedQualityWeight01` directly from finite-guarded `HomeostasisBrain.GlobalQualityWeight`; low/high tier constant names were replaced with minimum/maximum quality interval names.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    The holo map remains a diegetic mesh fake over voxel/nav samples. Weak hardware reduces grid density and refresh cadence through a scalar curve instead of changing sonar truth or adding physical scan simulation.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. One stale lifecycle event route was removed; mesh arrays, material, and line-index buffers remain preallocated.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted `rg` found no `ScalabilityChangedEvent`, `IScalabilityChangedEventListener`, `ScalabilityEvents`, `LowTier`, `lowTier`, `HighTier`, or `QualityTier` in `SubmarineSonarHoloMapRenderer.cs`; only `MinimumQuality`, `MaximumQuality`, and `HomeostasisBrain.GlobalQualityWeight` remain. `git diff --check` passed with line-ending warning only. Guarded `dotnet build .\Assembly-CSharp.csproj --no-restore --nologo -m:1` returned 0 errors and 161 warnings after one no-diagnostics `-clp:ErrorsOnly` exit.
   </VERIFICATION>
 </SELF_AUDIT>

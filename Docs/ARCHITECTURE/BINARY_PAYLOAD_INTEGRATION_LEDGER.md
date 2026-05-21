@@ -4715,4 +4715,11 @@ Fault route: `ExosuitTelemetryEntry[300]` dumps fixed 64-byte rows to `Docs/Agen
 - `Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs` removed the scalability-event/tier route and now resolves fixed foveation relief from continuous `HomeostasisBrain.GlobalQualityWeight`.
 - Binary payload impact: route-only. `FoveatedRenderTelemetryEntry` remains `StructLayout(LayoutKind.Explicit, Size = 64)` with the existing field map and `FlagQualityReliefActive` reusing the former private bit position 10; no BufferID, telemetry row size, dump magic/version, save identity, SignalBus ABI, or XR runtime state ABI changed.
 - Policy impact: target foveation level is now `lerp(requestedLevel, 0, smoothQualityRelief * (1 - smoothPolicyPressure))`. Policy pressure blends system stress, health pressure tiers, GPU utilization, fresh GPU frame time, and thermal severity; Quest 2 lock remains an explicit XR compatibility gate.
-- Verification: targeted tier/listener scan clean for `FoveatedRenderCommander.cs`; `git diff --check` passed with line-ending warning only. Build was not launched because `VBCSCompiler` was active while CPU probe returned 2%.
+- Verification: targeted tier/listener scan clean for `FoveatedRenderCommander.cs`; `git diff --check` passed with line-ending warning only. Later guarded `dotnet build .\Assembly-CSharp.csproj --no-restore --nologo -m:1` returned 0 errors and 161 warnings after one no-diagnostics `-clp:ErrorsOnly` exit.
+
+## 2026-05-22 - SHINOBU_SYSTEMIC_SURGEON Submarine Sonar Holo Map Quality Pull Note
+
+- `Assets/_Project/Scripts/UI/SubmarineSonarHoloMapRenderer.cs` removed the scalability-event route and refreshes UI presentation quality from continuous `HomeostasisBrain.GlobalQualityWeight` during visual sync.
+- Binary payload impact: none. The script owns no runtime DTO, DataVault buffer, SignalBus ABI, save identity, shader property ID, or dump row. Existing managed mesh arrays, line-index array, runtime mesh, and runtime material allocation sites are unchanged.
+- Policy impact: sonar holo-map grid cell count, refresh interval, and interpolation blend remain continuous quality curves; the stale low/high-tier interval names were replaced with minimum/maximum quality terms.
+- Verification: targeted tier/listener scan clean for `SubmarineSonarHoloMapRenderer.cs`; `git diff --check` passed with line-ending warning only; guarded `dotnet build .\Assembly-CSharp.csproj --no-restore --nologo -m:1` returned 0 errors and 161 warnings.

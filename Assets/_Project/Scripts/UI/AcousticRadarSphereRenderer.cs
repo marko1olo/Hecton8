@@ -9,7 +9,6 @@ using UnityEngine.Rendering;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
-using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 
 namespace Hecton8.UI
 {
@@ -18,7 +17,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Acoustic Radar Sphere Renderer")]
-    public sealed class AcousticRadarSphereRenderer : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
+    public sealed class AcousticRadarSphereRenderer : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int MaxBlips = 64;
         private const int MinimumQualityBlipCapacity = 16;
@@ -64,14 +63,12 @@ namespace Hecton8.UI
         private SpatialAudioManager _cachedAudioManager;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private bool _hotSwapListenerRegistered;
-        private bool _scalabilityListenerRegistered;
         private int _qualityMatrixCapacity = MaxBlips;
 
         private void OnEnable()
         {
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
-            TryRegisterScalabilityListener();
             EnsureResources();
             TryRegisterTickManager();
         }
@@ -79,7 +76,6 @@ namespace Hecton8.UI
         private void Start()
         {
             CacheRegistryServicesCold();
-            TryRegisterScalabilityListener();
             EnsureResources();
             TryRegisterTickManager();
         }
@@ -88,14 +84,12 @@ namespace Hecton8.UI
         {
             _matrixCount = 0;
             TryUnregisterTickManager();
-            TryUnregisterScalabilityListener();
             TryUnregisterHotSwapListener();
         }
 
         private void OnDestroy()
         {
             TryUnregisterTickManager();
-            TryUnregisterScalabilityListener();
             TryUnregisterHotSwapListener();
             if (_runtimeMaterial != null)
             {
@@ -113,6 +107,7 @@ namespace Hecton8.UI
 
         private void RefreshMatricesForLateFrame()
         {
+            RefreshQualityPolicy();
             EnsureResources();
             _matrixCount = 0;
             if (_runtimeMaterial == null || _runtimeVoxelMesh == null)
@@ -222,11 +217,6 @@ namespace Hecton8.UI
             }
         }
 
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            RefreshQualityPolicy();
-        }
-
         private void TryRegisterHotSwapListener()
         {
             if (_hotSwapListenerRegistered || !Application.isPlaying)
@@ -244,24 +234,6 @@ namespace Hecton8.UI
             _hotSwapListenerRegistered = false;
         }
 
-        private void TryRegisterScalabilityListener()
-        {
-            if (_scalabilityListenerRegistered || !Application.isPlaying)
-                return;
-
-            ScalabilityEvents.Register(this);
-            _scalabilityListenerRegistered = true;
-        }
-
-        private void TryUnregisterScalabilityListener()
-        {
-            if (!_scalabilityListenerRegistered)
-                return;
-
-            ScalabilityEvents.Unregister(this);
-            _scalabilityListenerRegistered = false;
-        }
-
         private void CacheRegistryServicesCold()
         {
             RefreshQualityPolicy();
@@ -276,7 +248,7 @@ namespace Hecton8.UI
 
         private void RefreshQualityPolicy()
         {
-            float qualityWeight01 = math.saturate(HomeostasisBrain.GlobalQualityWeight);
+            float qualityWeight01 = HomeostasisBrain.GlobalQualityWeight;
             float qualityCurve = SmoothStep01(qualityWeight01);
             _qualityMatrixCapacity = math.clamp(
                 (int)math.round(math.lerp(MinimumQualityBlipCapacity, MaxBlips, qualityCurve)),
