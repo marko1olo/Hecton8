@@ -928,3 +928,10 @@ The scan proves repo-wide debt, not successful consumer migration. A full rename
 - `SaveStateMerkleTree.TryResolveVaultBuffers` now opens SavePersistence rows through `VaultGenerationHandle<T>` descriptors with exact BufferID, `SystemID.SavePersistence`, nonzero generation, required length, allocation-lock rejection, and compaction-fence rejection.
 - `SaveMerkleVaultBufferSet` remains a phase-local native view set; no retained raw pointer or handle export was added.
 - This entry does not change `MerkleNodeDTO`, `StateLeafDescriptor`, `StateDeltaRecordDTO`, `Lz4SubBlockHeader`, `SaveMerkleTelemetryEntry`, BufferIDs `70270..70283`, WAL bytes, LZ4 block bytes, save identity, or SavePersistence authority.
+
+## 2026-05-22 Radiation Editor Tuning Descriptor Write Lock
+
+- `Assets/_Project/Scripts/Editor/RadiationShieldingTunerWindow.cs` no longer has direct `TryGetBuffer`, `GetBuffer<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `VaultBufferHandle<T>`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, or `.ptr` routes.
+- Telemetry readback uses pure `TryReadHandle` after exact BufferID, `SystemID.GameplayRadiation`, and nonzero generation validation.
+- Tuning mutation uses `TryAcquireWriteLock` and releases the owner write lock in `finally`.
+- This entry does not change `RadiationTuningDTO`, `RadiationTelemetryEntry`, BufferIDs `Shinobu274RadiationTuning`, `Shinobu274RadiationTelemetryRing`, `Shinobu274RadiationTelemetryCursor`, shader preview globals, or GameplayRadiation authority.

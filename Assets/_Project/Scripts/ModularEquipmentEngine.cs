@@ -41,7 +41,7 @@ namespace Hecton8.Tools
         private const float HeatWarningThreshold = 0.90f;
         private const float HeatWarningResetThreshold = 0.85f;
         private const float OverheatRecoveryThreshold = 0.15f;
-        private const float ToolSignalLowTierFloatDelta = 0.02f;
+        private const float ToolSignalMinQualityFloatDelta = 0.02f;
         private const float ToolSignalMidTierFloatDelta = 0.01f;
         private const float ToolSignalHighTierFloatDelta = 0.005f;
         private const float ToolSignalUltraTierFloatDelta = 0.0025f;
@@ -2404,15 +2404,12 @@ namespace Hecton8.Tools
             }
 
             float quality01 = math.saturate(math.isfinite(_lastGlobalQualityWeight) ? _lastGlobalQualityWeight : 1f);
-            int lowPresentationProxy = 1 - (int)math.step(0.3f, quality01);
 
             byte flags = 0;
             if (equipped)
                 flags |= ToolStateChangedSignal.FlagEquipped;
             if (visible)
                 flags |= ToolStateChangedSignal.FlagVisible;
-            if (lowPresentationProxy != 0)
-                flags |= ToolStateChangedSignal.FlagLowTierFallback;
 
             ToolStateChangedSignal signal = new ToolStateChangedSignal
             {
@@ -2469,7 +2466,7 @@ namespace Hecton8.Tools
             float lowToMid = math.smoothstep(0f, 0.45f, q);
             float midToHigh = math.smoothstep(0.35f, 0.75f, q);
             float highToUltra = math.smoothstep(0.65f, 1f, q);
-            float lowMidDelta = math.lerp(ToolSignalLowTierFloatDelta, ToolSignalMidTierFloatDelta, lowToMid);
+            float lowMidDelta = math.lerp(ToolSignalMinQualityFloatDelta, ToolSignalMidTierFloatDelta, lowToMid);
             float highUltraDelta = math.lerp(ToolSignalHighTierFloatDelta, ToolSignalUltraTierFloatDelta, highToUltra);
             return math.lerp(lowMidDelta, highUltraDelta, midToHigh);
         }

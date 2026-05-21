@@ -319,7 +319,7 @@ Hardware Impact: No measured profiler claim. Static path proof restores the low-
 ## Decision 39: Telemetry Elapsed Patch Write Gate
 
 Problem: `PatchLastTelemetryElapsed` mutates the latest telemetry row after job completion, but a generic `TryResolveBuffer` call looked like a read-shaped access path even though the scheduled job writer locks are still held.
-Solution: Gate this mutation through `TryResolveHeldJobWriteBuffer`, which requires `_jobBuffersLocked`, a Physics-owned handle, exact telemetry/cursor BufferIDs, and a valid non-empty view before the elapsed time and budget flag are patched.
+Solution: Gate this mutation through `TryOpenHeldJobWriteBuffer`, which requires `_jobBuffersLocked`, a Physics-owned handle, exact telemetry/cursor BufferIDs, and a valid non-empty view before the elapsed time and budget flag are patched.
 Rejected Alternatives: Taking a second writer lock inside the completed job window was rejected because the first scheduled writer lock is intentionally still held. Leaving the generic helper was rejected because it weakens the proof boundary for a mutation.
 Scalability potential: No quality behavior changes. The telemetry proof remains identical for Low, Middle, High, and Ultra; only the mutation gate is clearer.
 Hardware Impact: One bounded branch path during completed job readback. No Burst solver math cost and no frame-time claim.
@@ -334,7 +334,7 @@ Hardware Impact: Editor-only string scan. No runtime frame cost.
 
 ## Decision 41: Borrowed Voxel SDF Generation Owner Fence
 
-Problem: `TryResolveVoxelSdfPayload` validated `descriptor.OwnerSystemId == WorldStreaming`, but it did not prove that the descriptor or byte SDF generation handles themselves were WorldStreaming-owned. A stale or foreign-owned same-BufferID handle could expose data if the payload row claimed the right owner.
+Problem: The external SDF acquire route validated `descriptor.OwnerSystemId == WorldStreaming`, but it did not prove that the descriptor or byte SDF generation handles themselves were WorldStreaming-owned. A stale or foreign-owned same-BufferID handle could expose data if the payload row claimed the right owner.
 Solution: Require the descriptor handle to prove exact `BufferID.VoxelSdfPayloadDescriptor` and `SystemID.WorldStreaming`, and require the byte SDF handle to prove exact `BufferID.VoxelSdfTexture3D`, `SystemID.WorldStreaming`, nonzero generation, and equality to `descriptor.BufferGeneration` before the SDF array reaches the scheduled Burst job.
 Rejected Alternatives: Trusting payload fields alone was rejected because owner proof must be attached to the route, not only to mutable data. Acquiring SHINOBU ownership of the SDF payload was rejected because WorldStreaming remains the single owner and SHINOBU is a read-only consumer.
 Scalability potential: Low, Middle, High, and Ultra quality math is unchanged. The low nearest-SDF path and high trilinear/finite-difference path consume the same borrowed payload after stronger owner proof.
@@ -355,3 +355,11 @@ Solution: Add authority mutation route tracking for `UpdateDynamicCollisionProfi
 Rejected Alternatives: Relying on this manual audit was rejected because the proof artifact must catch regressions. Scanning every collider/Rigidbody use globally as a hard failure was rejected because non-exosuit and lifecycle routes exist outside SHINOBU authority.
 Scalability potential: Editor-only. It protects the continuous-quality SDF route by preventing silent reintroduction of Unity physics mutation during kinematic authority.
 Hardware Impact: Editor-only string scan. No runtime cost.
+
+## Decision 44: Read-Shaped Mutation Name Closure
+
+Problem: Two SHINOBU runtime helpers and one adjacent player bridge helper still advertised mutation through read-shaped names. `TryResolveVoxelSdfPayload` takes Vault read locks and mutates external SDF lock flags, `TryResolveHeldJobWriteBuffer` exposes writer-locked rows for telemetry mutation, and `ResolveHeavyTowWinchRuntime` lazily fills a cached component reference with `TryGetComponent`.
+Solution: Rename them to `TryAcquireVoxelSdfPayload`, `TryOpenHeldJobWriteBuffer`, and `EnsureHeavyTowWinchRuntime`. Add `RefreshHeavyTowActive()` for the player diagnostics path so one cache refresh/read feeds all heavy-tow debug fields in a block.
+Rejected Alternatives: Keeping old names was rejected because project doctrine treats read accessors as pure. Taking a second writer lock for telemetry elapsed patching was rejected because the scheduled job writer locks are intentionally still held until readback/dump patching finishes. Removing heavy-tow presentation refresh was rejected because tow camera response is non-authoritative presentation and remains valid outside SHINOBU movement truth.
+Scalability potential: Low, Middle, High, and Ultra movement truth is unchanged. The change protects the proof boundary: quality still scales SDF taps/substeps/presentation, not ownership or DTO identity.
+Hardware Impact: Runtime solver cost unchanged. Diagnostics now avoid repeated heavy-tow active helper calls in the same block; exact gain is not claimed without profiler proof.

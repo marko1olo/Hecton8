@@ -190,7 +190,7 @@ namespace Hecton8.World
                 pathSourceHandle = astarJob.Schedule();
             }
 
-            NativeArray<byte> navPassabilityGrid = default;
+            NativeArray<byte>.ReadOnly navPassabilityGrid = default;
             int3 navPassabilityDimensions = int3.zero;
             float3 navPassabilityOrigin = float3.zero;
             float navPassabilityCellSize = 0f;
@@ -211,7 +211,7 @@ namespace Hecton8.World
                     out navPassabilityCellSize);
             }
 
-            if (!navPassabilityGrid.IsCreated &&
+            if (navPassabilityGrid.Length <= 0 &&
                 endUsesVoxel &&
                 !VoxelDynamicNavGridRuntime.TryGetContainingPassabilityPayload(
                     endProbe,

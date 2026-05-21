@@ -187,6 +187,32 @@ Exact Microseconds saved:
   <STATIC_VERIFICATION>Re-extracted SHINOBU_267 XML from `CURRENT_BATCH.md` with `task_count=20`; owned forbidden scan clean; runtime old `Resolve*`/indexer scan clean; shader `_QUALITY_*` scan clean; shader early alpha-mask clip order passes; runtime/editor/shader brace and preprocessor balances are zero; asmdef/report JSON parse passed; `git diff --check` found no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 92.3%, dotnet=0, csc=0.</STATIC_VERIFICATION>
 </SELF_AUDIT_DELTA>
 
+## 2026-05-22 - Polish Pass 58
+
+What was wrong:
+- `FloraAnimationScanner` preserved report fields after P57, but `WriteMergedReport` still wrote directly to the shared report path.
+
+What was done:
+- Added `WriteReportFileAtomically`: write `.tmp`, preserve `.bak`, then `File.Replace` the shared report.
+- Extended `reportProofArtifact` so self-audit requires the atomic write route.
+- Mirrored the `.tmp`/`.bak`/`File.Replace` report contract in the flora route doc and binary payload ledger.
+
+Cinematic Cheats used:
+- No new simulation. This protects the proof artifact that keeps flora motion on the shader-side Dear Lie route.
+
+Exact Microseconds saved:
+- 0 player us. Editor-only report commit hardening.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_267" revision="2026-05-22-P58_ATOMIC_SHARED_REPORT_WRITE">
+  <TASK id="19" status="PASS">Shared rendering report writes now use `.tmp` + `.bak` + `File.Replace` instead of direct path overwrite.</TASK>
+  <TASK id="20" status="PASS">`reportProofArtifact` now rejects scanner report-field drift and direct-write regression.</TASK>
+  <FIRST_20_MINUTES_MOMENT>World load and swim readability on the selected Copper Wire route biome.</FIRST_20_MINUTES_MOMENT>
+  <ROUTE_IMPACT>Scanner report writes preserve a backup and do not directly overwrite the shared report path.</ROUTE_IMPACT>
+  <PROOF_REQUIRED>Static source/doc scan now; Unity editor scanner invocation remains pending.</PROOF_REQUIRED>
+  <PARKED_WORK_REJECTED>Runtime report writer, whole-project build under active compiler processes, and broad report rewrites.</PARKED_WORK_REJECTED>
+  <STATIC_VERIFICATION>Scanner slice reports `atomicReportWrite=True`, `directPathWriteCount=0`, and `tempWriteCount=1`; editor braces/preprocessor are balanced; architecture docs contain `.tmp`, `.bak`, and `File.Replace`; focused `git diff --check` reports no whitespace errors. Build not launched because active compiler processes remain and no SHINOBU_267-specific generated `.csproj` exists.</STATIC_VERIFICATION>
+</SELF_AUDIT_DELTA>
+
 ## 2026-05-22 - Polish Pass 57
 
 What was wrong:
@@ -196,6 +222,7 @@ What was done:
 - `FloraAnimationScanner` now writes timestamp, active violation count, finding count, scanned flora prefab/scene counts, eradication boolean, evidence class, and notes.
 - `FloraAmbientSwaySelfAudit` now includes `reportProofArtifact`, slicing the scanner class and requiring those report fields.
 - `RENDERING_OPTIMIZATION_REPORT.json` SHINOBU_267 section now also carries `summary`, `reportSchema`, `rule`, and `findingCount=0`.
+- `FLORA_PROCEDURAL_SWAY_FIELD.md` and `BINARY_PAYLOAD_INTEGRATION_LEDGER.md` now name the scanner/report/self-audit route.
 
 Cinematic Cheats used:
 - No new simulation. This protects the scanner artifact that prevents CPU-bone flora regressions from entering the shader-side visual fake route.
@@ -210,7 +237,7 @@ Exact Microseconds saved:
   <ROUTE_IMPACT>Future editor scanner runs preserve integration-proof fields instead of downgrading SHINOBU_267 report evidence.</ROUTE_IMPACT>
   <PROOF_REQUIRED>Static source/report parse now; Unity editor menu invocation remains pending.</PROOF_REQUIRED>
   <PARKED_WORK_REJECTED>Whole-project build, unrelated report rewrites, and runtime scanner/report generation.</PARKED_WORK_REJECTED>
-  <STATIC_VERIFICATION>Report JSON parses; SHINOBU_267 has `activeViolationCount=0`, `findingCount=0`, `summary=OOP Flora Animations Eradicated`, `reportSchema=1`, and the no-SkinnedMeshRenderer/Animator rule. Scanner slice contains timestamp, active/finding counts, scan counts, evidence class, and eradication boolean. Owned forbidden scan is clean; runtime/editor/shader brace and preprocessor balances are zero; focused `git diff --check` reports no whitespace errors.</STATIC_VERIFICATION>
+  <STATIC_VERIFICATION>Report JSON parses; SHINOBU_267 has `activeViolationCount=0`, `findingCount=0`, `summary=OOP Flora Animations Eradicated`, `reportSchema=1`, and the no-SkinnedMeshRenderer/Animator rule. Scanner slice contains timestamp, active/finding counts, scan counts, evidence class, and eradication boolean. Architecture docs contain `reportProofArtifact` and the scanner/report route. Owned forbidden scan is clean; runtime/editor/shader brace and preprocessor balances are zero; focused `git diff --check` reports no whitespace errors. Build not launched because `csc` and `dotnet` were active and no SHINOBU_267-specific generated `.csproj` exists.</STATIC_VERIFICATION>
 </SELF_AUDIT_DELTA>
 
 ## 2026-05-21 - Polish Pass 9

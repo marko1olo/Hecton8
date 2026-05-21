@@ -5601,3 +5601,25 @@ Static verification:
 - Descriptor scan confirms `TryEnsureSaveMerkleVaultBuffer`, `VaultGenerationHandle<T>`, `GetGenerationHandle`, `TryResolveHandle`, and `SystemID.SavePersistence`.
 - Brace/preprocessor counts are balanced: braces `269/269`, `#if/#endif` `2/2`. `git diff --check` passed with CRLF warning only.
 - Build verification: first guarded `-clp:ErrorsOnly` attempt timed out after 120s while the process was still alive, so that result was discarded. After the CPU/process gate cleared again, `dotnet build Hecton8.slnx -nologo -v:minimal -maxcpucount:1` returned 0 errors, 175 warnings, elapsed 00:02:55.98.
+
+## 2026-05-22 - Loop 238 - Radiation Editor Tuning Descriptor Write Lock
+
+What was wrong:
+- `Assets/_Project/Scripts/Editor/RadiationShieldingTunerWindow.cs` mutated `Shinobu274RadiationTuning` through direct `vault.TryGetBuffer`.
+- The facade also read telemetry without validating expected owner IDs on the descriptors.
+
+What was done:
+- Added `TryReadRadiationVaultBuffer` and `IsRadiationVaultHandle`.
+- Telemetry ring and cursor now use exact-owner pure descriptor reads.
+- Tuning slider writes now acquire a `VaultGenerationHandle<RadiationTuningDTO>`, validate `SystemID.GameplayRadiation`, and mutate under `TryAcquireWriteLock` with `ReleaseWriteLock` in `finally`.
+
+Cinematic cheats used:
+- No new visual fake. This is editor facade authority work. Existing shader preview sliders still publish globals for visual tuning without runtime simulation changes.
+
+Exact microseconds saved:
+- No runtime speedup claimed. Editor-only cost is one descriptor proof and one write-lock pair per tuning mutation.
+
+Static verification:
+- Focused direct/legacy route scan found no `TryGetBuffer`, `GetBuffer<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `VaultBufferHandle<T>`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, or `.ptr` hits in `RadiationShieldingTunerWindow.cs`.
+- Descriptor scan confirms `TryReadRadiationVaultBuffer`, `IsRadiationVaultHandle`, `VaultGenerationHandle<T>`, `TryAcquireWriteLock`, `ReleaseWriteLock`, `TryReadHandle`, and `SystemID.GameplayRadiation`.
+- Brace/preprocessor counts are balanced: braces `75/75`, `#if/#endif` `0/0`. `git diff --check` passed with CRLF warning only. Build was not relaunched because CPU was 100 percent with compiler activity.

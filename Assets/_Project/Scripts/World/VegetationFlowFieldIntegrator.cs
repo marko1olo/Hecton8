@@ -3284,7 +3284,7 @@ namespace Hecton8.World
             [ReadOnly, NoAlias] public NativeArray<TerrainHoleRecord> TerrainHoles;
             [ReadOnly, NoAlias] public NativeArray<ArtificialStructureRecord> ArtificialStructures;
             [ReadOnly, NoAlias] public NativeParallelMultiHashMap<int, int> ArtificialStructureHash;
-            [ReadOnly, NoAlias] public NativeArray<byte> NavPassabilityGrid;
+            [ReadOnly, NoAlias] public NativeArray<byte>.ReadOnly NavPassabilityGrid;
             [ReadOnly, NoAlias] public NativeArray<byte> ThreatVoxelGrid;
             [NoAlias] public NativeList<Vector3> OutputPath;
             public int ChunkCount;
@@ -3715,9 +3715,19 @@ namespace Hecton8.World
                        HasUsableUniformVoxelCellSize(NavPassabilityCellSize);
             }
 
+            private static bool HasCompleteVoxelGrid(NativeArray<byte>.ReadOnly grid, int3 dimensions)
+            {
+                return HasCompleteVoxelGridLength(grid.Length, dimensions);
+            }
+
             private static bool HasCompleteVoxelGrid(NativeArray<byte> grid, int3 dimensions)
             {
-                if (!grid.IsCreated ||
+                return grid.IsCreated && HasCompleteVoxelGridLength(grid.Length, dimensions);
+            }
+
+            private static bool HasCompleteVoxelGridLength(int gridLength, int3 dimensions)
+            {
+                if (gridLength <= 0 ||
                     dimensions.x <= 0 ||
                     dimensions.y <= 0 ||
                     dimensions.z <= 0)
@@ -3728,7 +3738,7 @@ namespace Hecton8.World
                 long expectedLength = (long)dimensions.x * dimensions.y * dimensions.z;
                 return expectedLength > 0L &&
                        expectedLength <= int.MaxValue &&
-                       grid.Length >= expectedLength;
+                       gridLength >= expectedLength;
             }
 
             private static bool HasUsableUniformVoxelCellSize(float cellSize)

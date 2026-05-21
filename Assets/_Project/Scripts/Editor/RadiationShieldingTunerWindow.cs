@@ -123,10 +123,8 @@ namespace Hecton8.EditorTools
         {
             IDataVault vault = GlobalRegistry.DataVault;
             if (vault == null ||
-                !vault.TryGetGenerationHandle(BufferID.Shinobu274RadiationTelemetryRing, out VaultGenerationHandle<RadiationHazardGrid.RadiationTelemetryEntry> ringHandle) ||
-                !vault.TryGetGenerationHandle(BufferID.Shinobu274RadiationTelemetryCursor, out VaultGenerationHandle<uint> cursorHandle) ||
-                !vault.TryReadHandle(in ringHandle, out NativeArray<RadiationHazardGrid.RadiationTelemetryEntry> telemetryRing) ||
-                !vault.TryReadHandle(in cursorHandle, out NativeArray<uint> cursorLane) ||
+                !TryReadRadiationVaultBuffer(vault, BufferID.Shinobu274RadiationTelemetryRing, out NativeArray<RadiationHazardGrid.RadiationTelemetryEntry> telemetryRing) ||
+                !TryReadRadiationVaultBuffer(vault, BufferID.Shinobu274RadiationTelemetryCursor, out NativeArray<uint> cursorLane) ||
                 !telemetryRing.IsCreated ||
                 !cursorLane.IsCreated ||
                 telemetryRing.Length == 0 ||
@@ -147,14 +145,53 @@ namespace Hecton8.EditorTools
         {
             IDataVault vault = GlobalRegistry.DataVault;
             if (vault == null ||
-                !vault.TryGetBuffer(BufferID.Shinobu274RadiationTuning, out NativeArray<RadiationHazardGrid.RadiationTuningDTO> tuning) ||
+                !vault.TryGetGenerationHandle(
+                    BufferID.Shinobu274RadiationTuning,
+                    out VaultGenerationHandle<RadiationHazardGrid.RadiationTuningDTO> tuningHandle) ||
+                !IsRadiationVaultHandle(in tuningHandle, BufferID.Shinobu274RadiationTuning) ||
+                !vault.TryAcquireWriteLock(in tuningHandle, SystemID.GameplayRadiation, out NativeArray<RadiationHazardGrid.RadiationTuningDTO> tuning) ||
                 !tuning.IsCreated ||
                 tuning.Length == 0)
             {
                 return;
             }
 
-            tuning[0] = mutator(tuning[0]);
+            try
+            {
+                tuning[0] = mutator(tuning[0]);
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in tuningHandle, SystemID.GameplayRadiation);
+            }
+        }
+
+        private static bool TryReadRadiationVaultBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) ||
+                !IsRadiationVaultHandle(in handle, bufferId) ||
+                !vault.TryReadHandle(in handle, out NativeArray<T> resolved) ||
+                !resolved.IsCreated ||
+                resolved.Length == 0)
+            {
+                return false;
+            }
+
+            buffer = resolved;
+            return true;
+        }
+
+        private static bool IsRadiationVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == (uint)bufferId &&
+                handle.SystemID == (uint)SystemID.GameplayRadiation &&
+                handle.Generation != 0u;
         }
     }
 

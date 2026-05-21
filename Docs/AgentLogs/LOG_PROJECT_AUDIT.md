@@ -480,3 +480,15 @@ Cinematic Cheats used: None added. This is API surface hardening for existing ve
 Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `236` to `225`; `nativeApiExposureOutRefMutable` dropped from `184` to `173`.
 
 Evidence: Focused search for the converted method names found declarations only, with no first-party call sites. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_vegetation_readonly_nocallsite_payloads.json --report-path Docs\Reports\PROJECT_AUDIT_polish_after_vegetation_readonly_nocallsite_payloads.md` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=225`, `nativeApiExposureBuildPlayerRuntime=211`, and `nativeApiExposureOutRefMutable=173`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Voxel Passability Read-Only Snapshot Narrowing
+
+What was wrong: `VoxelDynamicNavGridRuntime` returned mutable passability grid arrays through three read accessors. The observed consumer, vegetation path smoothing, already treats the grid as `[ReadOnly, NoAlias]` job input.
+
+What was done: Converted `TryGetPassabilityPayload`, `TryGetContainingPassabilityPayload`, and `TryGetNearestPassabilityPayload` to `NativeArray<byte>.ReadOnly`. Updated `VegetationNavGridSynchronizer` and the `StringPullPathJob` field to carry the read-only view. Build-time passability buffers, pure-void scan buffers, and owner mutation paths were left mutable.
+
+Cinematic Cheats used: No new physical simulation was added. The existing abyssal path string-pull/DDA route remains a cheap voxel/passability sampling fake instead of a physics or collider query path.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `225` to `222`; `nativeApiExposureOutRefMutable` dropped from `173` to `170`.
+
+Evidence: Focused scans found no stale `out NativeArray<byte>` passability declarations. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_voxel_passability_readonly.json --report-path Docs\Reports\PROJECT_AUDIT_polish_after_voxel_passability_readonly.md` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=222`, `nativeApiExposureBuildPlayerRuntime=208`, `nativeApiExposureOutRefMutable=170`, and `nativeApiRiskRuntimeOutRefMutableView=95`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

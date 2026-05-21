@@ -7,8 +7,8 @@ Shader "Hecton8/UI/ToolScreenDiegetic"
         _MainTex ("Main Tex", 2D) = "black" {}
         _EmissionMap ("Emission Map", 2D) = "black" {}
         _Color ("Tint", Color) = (0.75, 1.0, 0.82, 1.0)
-        _FallbackTint ("Low Tier Tint", Color) = (0.08, 0.55, 0.18, 1.0)
-        _ToolLowTierFallback01 ("Low Tier Fallback", Range(0, 1)) = 0
+        _FallbackTint ("Fallback Tint", Color) = (0.08, 0.55, 0.18, 1.0)
+        _ToolFallback01 ("Fallback", Range(0, 1)) = 0
     }
 
     SubShader
@@ -57,7 +57,7 @@ Shader "Hecton8/UI/ToolScreenDiegetic"
                 float4 _Color;
                 float4 _FallbackTint;
                 float4 _ToolScreenTex_ST;
-                float _ToolLowTierFallback01;
+                float _ToolFallback01;
             CBUFFER_END
 
             TEXTURE2D(_ToolScreenTex);
@@ -103,7 +103,7 @@ Shader "Hecton8/UI/ToolScreenDiegetic"
                 half4 screenSample = SAMPLE_TEXTURE2D(_ToolScreenTex, sampler_ToolScreenTex, uv);
 
                 float3 signal = screenSample.rgb;
-                float fallback = saturate(_ToolLowTierFallback01);
+                float fallback = saturate(_ToolFallback01);
                 float overkill = saturate(_ToolVisualOverkill01) * (1.0 - fallback);
                 float scanline = lerp(0.86, 1.10, step(0.5, frac(uv.y * 192.0 + _Time.y * 0.55)));
                 float3 color = lerp(signal * _Color.rgb, _FallbackTint.rgb * (0.45 + 0.18 * scanline), fallback);

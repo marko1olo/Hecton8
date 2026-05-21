@@ -1903,7 +1903,7 @@ namespace Hecton8.Gameplay
         internal float CurrentAbyssalShearSpeedMultiplier => math.clamp(_abyssalShearSpeedMultiplier, abyssalCurrentShearMaxSpeedMultiplier, 1f);
         internal float CurrentAbyssalShearDrainMultiplier => math.max(1f, _abyssalShearDrainMultiplier);
         internal Vector3 CurrentAbyssalFlowWeatherCurrent => _abyssalFlowWeatherCurrent;
-        internal bool HasActiveTowCable => ResolveHeavyTowWinchRuntime() && _heavyTowWinch != null && _heavyTowWinch.HasActiveTow;
+        internal bool HasActiveTowCable => EnsureHeavyTowWinchRuntime() && _heavyTowWinch != null && _heavyTowWinch.HasActiveTow;
 
         internal bool TryGetKinematicRepairSnap(
             out KinematicRepairTargetProbe probe,
@@ -1930,7 +1930,7 @@ namespace Hecton8.Gameplay
 
         internal bool TryTransferHeavyTowToTransport(Rigidbody transportBody, Transform transportAnchor)
         {
-            return ResolveHeavyTowWinchRuntime() &&
+            return EnsureHeavyTowWinchRuntime() &&
                    _heavyTowWinch != null &&
                    _heavyTowWinch.TryTransferTowToTransport(transportBody, transportAnchor);
         }
@@ -5759,13 +5759,13 @@ namespace Hecton8.Gameplay
             return math.lerp(1f, maxHeavyCarryBodyYawSpringMultiplier, heavyCarryLoad);
         }
 
-        private bool IsHeavyTowActive()
+        private bool RefreshHeavyTowActive()
         {
-            ResolveHeavyTowWinchRuntime();
+            EnsureHeavyTowWinchRuntime();
             return _heavyTowWinch != null && _heavyTowWinch.HasActiveTow;
         }
 
-        private bool ResolveHeavyTowWinchRuntime()
+        private bool EnsureHeavyTowWinchRuntime()
         {
             if (!_resolvedHeavyTowWinch)
             {
@@ -5783,7 +5783,7 @@ namespace Hecton8.Gameplay
             Vector3 targetCameraOffset = Vector3.zero;
             Vector3 targetCenterOfMassOffset = Vector3.zero;
 
-            if (IsHeavyTowActive())
+            if (RefreshHeavyTowActive())
             {
                 float tension01 = _heavyTowWinch.CurrentTension01;
                 float stress01 = _heavyTowWinch.CurrentStress01;
@@ -13287,12 +13287,13 @@ namespace Hecton8.Gameplay
             _debugWipeoutTimer = _wipeoutTimer;
             _debugDynamicCollisionTuck = _dynamicCollisionTuck01;
             _debugAbyssalCurrentIntensity = _abyssalDowndraftIntensity;
-            _debugHeavyTowActive = IsHeavyTowActive();
-            _debugHeavyTowTension01 = IsHeavyTowActive() ? _heavyTowWinch.CurrentTension01 : 0f;
-            _debugHeavyTowStress01 = IsHeavyTowActive() ? _heavyTowWinch.CurrentStress01 : 0f;
-            _debugHeavyTowDragMultiplier = IsHeavyTowActive() ? _heavyTowWinch.CurrentTowDragMultiplier : 1f;
-            _debugHeavyTowSignedLateralPull = IsHeavyTowActive() ? _heavyTowWinch.CurrentSignedLateralPull01 : 0f;
-            _debugHeavyTowBackwardPull = IsHeavyTowActive() ? _heavyTowWinch.CurrentBackwardPull01 : 0f;
+            bool heavyTowActive = RefreshHeavyTowActive();
+            _debugHeavyTowActive = heavyTowActive;
+            _debugHeavyTowTension01 = heavyTowActive ? _heavyTowWinch.CurrentTension01 : 0f;
+            _debugHeavyTowStress01 = heavyTowActive ? _heavyTowWinch.CurrentStress01 : 0f;
+            _debugHeavyTowDragMultiplier = heavyTowActive ? _heavyTowWinch.CurrentTowDragMultiplier : 1f;
+            _debugHeavyTowSignedLateralPull = heavyTowActive ? _heavyTowWinch.CurrentSignedLateralPull01 : 0f;
+            _debugHeavyTowBackwardPull = heavyTowActive ? _heavyTowWinch.CurrentBackwardPull01 : 0f;
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -13342,12 +13343,13 @@ namespace Hecton8.Gameplay
             _debugWipeoutTimer = _wipeoutTimer;
             _debugDynamicCollisionTuck = _dynamicCollisionTuck01;
             _debugAbyssalCurrentIntensity = _abyssalDowndraftIntensity;
-            _debugHeavyTowActive = IsHeavyTowActive();
-            _debugHeavyTowTension01 = IsHeavyTowActive() ? _heavyTowWinch.CurrentTension01 : 0f;
-            _debugHeavyTowStress01 = IsHeavyTowActive() ? _heavyTowWinch.CurrentStress01 : 0f;
-            _debugHeavyTowDragMultiplier = IsHeavyTowActive() ? _heavyTowWinch.CurrentTowDragMultiplier : 1f;
-            _debugHeavyTowSignedLateralPull = IsHeavyTowActive() ? _heavyTowWinch.CurrentSignedLateralPull01 : 0f;
-            _debugHeavyTowBackwardPull = IsHeavyTowActive() ? _heavyTowWinch.CurrentBackwardPull01 : 0f;
+            bool heavyTowActive = RefreshHeavyTowActive();
+            _debugHeavyTowActive = heavyTowActive;
+            _debugHeavyTowTension01 = heavyTowActive ? _heavyTowWinch.CurrentTension01 : 0f;
+            _debugHeavyTowStress01 = heavyTowActive ? _heavyTowWinch.CurrentStress01 : 0f;
+            _debugHeavyTowDragMultiplier = heavyTowActive ? _heavyTowWinch.CurrentTowDragMultiplier : 1f;
+            _debugHeavyTowSignedLateralPull = heavyTowActive ? _heavyTowWinch.CurrentSignedLateralPull01 : 0f;
+            _debugHeavyTowBackwardPull = heavyTowActive ? _heavyTowWinch.CurrentBackwardPull01 : 0f;
         }
 
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â

@@ -3290,6 +3290,6 @@ Verification:
     No speed claim. The route removes one event listener and cached tier write. Theoretical visual work remains O(groups + fixed pulse slots), not O(glow instances) CPU simulation.
   </MICROSECONDS_SAVED>
   <VERIFICATION>
-    Targeted scan found no `IScalabilityChangedEventListener`, `ScalabilityEvents`, `OnScalabilityChanged`, cached scalability state, `HectonQualityTier`, `GlobalRegistry.ScalabilityTier`, or low-tier route in `BiolumPulseSyncRuntime.cs`; `git diff --check` passed with line-ending warning only. Build guard still pending for Compile Check 115.
+    Targeted scan found no `IScalabilityChangedEventListener`, `ScalabilityEvents`, `OnScalabilityChanged`, cached scalability state, `HectonQualityTier`, `GlobalRegistry.ScalabilityTier`, or low-tier route in `BiolumPulseSyncRuntime.cs`; `git diff --check` passed for the Biolum/docs set with line-ending warnings only. Build was not launched because CPU probe returned 97% with active `dotnet` and `csc` processes.
   </VERIFICATION>
 </SELF_AUDIT>

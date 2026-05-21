@@ -1343,7 +1343,7 @@ namespace Hecton8.World
 
         internal static bool TryGetPassabilityPayload(
             HectonVoxelVolume volume,
-            out NativeArray<byte> passability,
+            out NativeArray<byte>.ReadOnly passability,
             out int3 dimensions,
             out float3 origin,
             out float cellSize)
@@ -1362,7 +1362,7 @@ namespace Hecton8.World
                 return false;
             }
 
-            passability = record.Current;
+            passability = record.Current.IsCreated ? record.Current.AsReadOnly() : default;
             dimensions = record.Dimensions;
             origin = record.Origin;
             cellSize = record.CellSize;
@@ -1414,7 +1414,7 @@ namespace Hecton8.World
 
         internal static bool TryGetContainingPassabilityPayload(
             float3 worldPosition,
-            out NativeArray<byte> passability,
+            out NativeArray<byte>.ReadOnly passability,
             out int3 dimensions,
             out float3 origin,
             out float cellSize)
@@ -1429,7 +1429,7 @@ namespace Hecton8.World
                 return false;
             }
 
-            passability = record.Current;
+            passability = record.Current.IsCreated ? record.Current.AsReadOnly() : default;
             dimensions = record.Dimensions;
             origin = record.Origin;
             cellSize = record.CellSize;
@@ -1438,7 +1438,7 @@ namespace Hecton8.World
 
         internal static bool TryGetNearestPassabilityPayload(
             float3 worldPosition,
-            out NativeArray<byte> passability,
+            out NativeArray<byte>.ReadOnly passability,
             out int3 dimensions,
             out float3 origin,
             out float cellSize)
@@ -1485,7 +1485,7 @@ namespace Hecton8.World
             if (!foundContainingRecord && nearestDistanceSq > math.max(nearestRecord.CellSize * nearestRecord.CellSize, 1f))
                 return false;
 
-            passability = nearestRecord.Current;
+            passability = nearestRecord.Current.IsCreated ? nearestRecord.Current.AsReadOnly() : default;
             dimensions = nearestRecord.Dimensions;
             origin = nearestRecord.Origin;
             cellSize = nearestRecord.CellSize;

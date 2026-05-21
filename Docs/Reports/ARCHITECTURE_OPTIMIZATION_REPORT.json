@@ -1,7 +1,7 @@
 {
   "agent": "SHINOBU_260",
   "role": "CREST_VERSION_QUARANTINE_DIRECTOR",
-  "timestamp_utc": "20260521_232205",
+  "timestamp_utc": "20260521_232630",
   "allowed_bridge_prefixes": [
     "Assets/_Project/Scripts/Plugins/Crest"
   ],
@@ -898,13 +898,13 @@
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 13310,
+      "line": 13311,
       "text": "_debugCrestAvailable = _crestAvailable;"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 13311,
+      "line": 13312,
       "text": "_debugCrestSampling = _crestSamplingSucceeded;"
     },
     {

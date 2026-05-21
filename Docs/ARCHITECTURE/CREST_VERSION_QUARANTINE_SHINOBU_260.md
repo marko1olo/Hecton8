@@ -158,4 +158,5 @@ Task 12 status: blocked by dependency. Full suppression of Crest `OceanRenderer.
 - Exact shader scan: Crest HLSL include hits exist only under `Assets/_Project/Scripts/Plugins/Crest/Shaders/`.
 - Exact scene/build scan: no active `03_HECTON_WORLD_CREST5` hits remain under `ProjectSettings` or `Assets/_Project/Scenes`.
 - asmdef JSON parse check: passed for touched asmdefs.
+- Unity/dotnet rebuild check: skipped by explicit build gate because active `csc` and `dotnet` processes were present during final verification.
 - dotnet/Unity compile: skipped because the latest gate found active `dotnet`/`csc` processes and CPU sampled at 88; build gate forbids `dotnet`/`csc` under load.

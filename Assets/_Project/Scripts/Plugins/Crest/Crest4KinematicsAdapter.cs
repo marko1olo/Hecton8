@@ -492,10 +492,10 @@ namespace Hecton8.Physics
         }
 
         /// <summary>
-        /// Schedules a completed GPU readback fold into the previous-frame Dear Lie cache. Never blocks on pending requests.
+        /// Schedules a completed GPU readback fold into the previous-frame Dear Lie cache from caller-owned staging memory.
         /// </summary>
-        public static JobHandle ScheduleDearLieCacheUpdateFromReadback(
-            in AsyncGPUReadbackRequest readbackRequest,
+        public static JobHandle ScheduleDearLieCacheUpdateFromStagedReadback(
+            NativeArray<float4> stagedReadbackSamples,
             NativeArray<OceanKinematicsSampleRequestDTO> completedRequests,
             NativeArray<OceanCachedFluidSampleDTO> cachedReadbackResults,
             int completedCount,
@@ -503,8 +503,7 @@ namespace Hecton8.Physics
             JobHandle inputDeps)
         {
             scheduledCount = 0;
-            if (!readbackRequest.done ||
-                readbackRequest.hasError ||
+            if (!stagedReadbackSamples.IsCreated ||
                 !completedRequests.IsCreated ||
                 !cachedReadbackResults.IsCreated ||
                 cachedReadbackResults.Length == 0 ||
@@ -513,8 +512,7 @@ namespace Hecton8.Physics
                 return inputDeps;
             }
 
-            NativeArray<float4> readbackData = readbackRequest.GetData<float4>();
-            int count = math.min(completedCount, math.min(completedRequests.Length, readbackData.Length));
+            int count = math.min(completedCount, math.min(completedRequests.Length, stagedReadbackSamples.Length));
             if (count <= 0)
                 return inputDeps;
 
@@ -522,7 +520,7 @@ namespace Hecton8.Physics
             UpdateDearLieCacheFromReadbackJob job = new UpdateDearLieCacheFromReadbackJob
             {
                 CompletedRequests = completedRequests,
-                ReadbackSamples = readbackData,
+                ReadbackSamples = stagedReadbackSamples,
                 CachedResults = cachedReadbackResults,
                 CompletedCount = count
             };
@@ -541,14 +539,14 @@ namespace Hecton8.Physics
 
         private void OnEnable()
         {
-            OceanVisualBridgeRegistry.Register(this);
+            Hecton8.Core.OceanVisualBridgeRegistry.Register(this);
             Hecton8.Core.OceanKinematicsRuntimeService.RegisterProvider(this);
         }
 
         private void OnDisable()
         {
             Hecton8.Core.OceanKinematicsRuntimeService.UnregisterProvider(this);
-            OceanVisualBridgeRegistry.Unregister(this);
+            Hecton8.Core.OceanVisualBridgeRegistry.Unregister(this);
         }
 
         /// <inheritdoc />

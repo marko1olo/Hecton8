@@ -4243,3 +4243,20 @@ Mandates read before coding:
 - `git diff --check` passed for `SaveStateMerkleTree.cs`; CRLF warning only.
 - First guarded build attempt with `-clp:ErrorsOnly` timed out after 120s while the build process was still alive; process later cleared without a trustworthy exit code.
 - After CPU/process gate cleared again, `dotnet build Hecton8.slnx -nologo -v:minimal -maxcpucount:1` returned 0 errors, 175 warnings, elapsed 00:02:55.98.
+
+## Loop 238 - Radiation Editor Tuning Descriptor Write Lock
+- [x] Replaced the radiation editor facade direct tuning `TryGetBuffer`.
+  DOD practice: `RadiationShieldingTunerWindow.MutateTuning` now borrows `Shinobu274RadiationTuning` through `TryGetGenerationHandle`, validates exact BufferID, `SystemID.GameplayRadiation`, nonzero generation, and mutates only under `TryAcquireWriteLock`/`ReleaseWriteLock`.
+  Rejected: keeping an editor-only direct `TryGetBuffer` because editor facades still train unsafe Vault route patterns and can mark external views. Rewriting radiation runtime, DTOs, shader preview sliders, or scanner output was rejected as outside this pointer-route fix.
+  Estimate: editor-only; one descriptor lookup and one write-lock pair per slider mutation.
+- [x] Hardened telemetry readback owner proof.
+  DOD practice: telemetry ring/cursor reads now route through `TryReadRadiationVaultBuffer` with exact owner and pure `TryReadHandle`.
+  Rejected: using mutable resolve for readout because read accessors must remain pure.
+  Estimate: editor-only; no runtime player-frame cost.
+
+## Compile State Update 232
+- Focused direct/legacy route scan on `RadiationShieldingTunerWindow.cs` found no `TryGetBuffer`, `GetBuffer<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `VaultBufferHandle<T>`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, or `.ptr` hits.
+- Descriptor route scan confirmed `TryReadRadiationVaultBuffer`, `IsRadiationVaultHandle`, `VaultGenerationHandle<T>`, `TryAcquireWriteLock`, `ReleaseWriteLock`, `TryReadHandle`, and `SystemID.GameplayRadiation`.
+- Brace/preprocessor counts are balanced: `RadiationShieldingTunerWindow.cs` braces `75/75`, preprocessor `#if/#endif` `0/0`.
+- `git diff --check` passed for `RadiationShieldingTunerWindow.cs`; CRLF warning only.
+- Build not relaunched after this editor patch: CPU sampled at 100 percent and compiler activity was present.

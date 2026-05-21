@@ -1,7 +1,6 @@
 using System;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
-using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 using Hecton8.Gameplay;
 using Hecton8.Optimization;
 using Hecton8.Tools;
@@ -15,7 +14,7 @@ namespace Hecton8.UI.Tools
     /// Drives a held-tool diegetic status screen from the native tool-state signal lane.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class ToolDiegeticDisplayController : MonoBehaviour, IUpdatable, ISlowTickable, IScalabilityChangedEventListener, IGlobalRegistryHotSwapListener
+    public sealed class ToolDiegeticDisplayController : MonoBehaviour, IUpdatable, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         private const int RenderTextureSize = 256;
         private const int TextBufferCapacity = 96;
@@ -26,7 +25,6 @@ namespace Hecton8.UI.Tools
         private const float InvisibleReleaseSeconds = 0.75f;
         private const float PropertyEpsilon = 0.0005f;
         private const string ToolUiLayerName = "ToolUI";
-        private const byte ForcedFallbackFlag = ToolStateChangedSignal.FlagLowTierFallback;
         private const int StatusOk = 0;
         private const int StatusLowPower = 1;
         private const int StatusOverheated = 2;
@@ -44,7 +42,7 @@ namespace Hecton8.UI.Tools
         private static readonly int _ToolDistanceMetersId = Shader.PropertyToID("_ToolDistanceMeters");
         private static readonly int _ToolAmmoUnitsId = Shader.PropertyToID("_ToolAmmoUnits");
         private static readonly int _ToolCriticalFlash01Id = Shader.PropertyToID("_ToolCriticalFlash01");
-        private static readonly int _ToolFallback01Id = Shader.PropertyToID("_ToolLowTierFallback01");
+        private static readonly int _ToolFallback01Id = Shader.PropertyToID("_ToolFallback01");
         private static readonly int _ToolBatteryNormalizedId = Shader.PropertyToID("_ToolBatteryNormalized");
         private static readonly int _ToolVisualOverkill01Id = Shader.PropertyToID("_ToolVisualOverkill01");
         private static readonly int _ToolFault01Id = Shader.PropertyToID("_ToolFault01");
@@ -104,7 +102,6 @@ namespace Hecton8.UI.Tools
         private float _qualityWeight01 = 1f;
         private float _visualOverkill01 = 1f;
         private float _qualityFallback01;
-        private bool _registeredScalabilityListener;
         private int _lastSignalSequence;
         private int _lastScannerSignalSequence;
         private int _lastAmmoBucket = InvalidDisplayBucket;
@@ -161,7 +158,6 @@ namespace Hecton8.UI.Tools
             _notRenderableSeconds = 0f;
             ResolveQualityImmediate();
             TryRegisterHotSwapListener();
-            TryRegisterScalabilityListener();
             TryRegisterUpdatable();
             TryRegisterSlowTickable();
             ApplyScreenTexture(_fallbackEmissiveTexture, fallbackActive: true);
@@ -179,7 +175,6 @@ namespace Hecton8.UI.Tools
         {
             TryUnregisterUpdatable();
             TryUnregisterSlowTickable();
-            TryUnregisterScalabilityListener();
             TryUnregisterHotSwapListener();
             ApplyCameraRenderState(renderThisFrame: false);
             ReleaseRenderTexture();
@@ -188,11 +183,6 @@ namespace Hecton8.UI.Tools
             _poolRetrySeconds = 0f;
             _notRenderableSeconds = 0f;
             ApplyScreenTexture(_fallbackEmissiveTexture, fallbackActive: true);
-        }
-
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            QueueQualityCandidate(HomeostasisBrain.GlobalQualityWeight);
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -852,8 +842,7 @@ namespace Hecton8.UI.Tools
 
         private bool ResolveRequestedFallback()
         {
-            bool forcedFallback = (_stateFlags & ForcedFallbackFlag) != 0;
-            return forcedFallback || _qualityFallback01 >= 0.75f || _poolUnavailableFallback;
+            return _qualityFallback01 >= 0.75f || _poolUnavailableFallback;
         }
 
         private void TryRegisterUpdatable()
@@ -905,24 +894,6 @@ namespace Hecton8.UI.Tools
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _registeredHotSwapListener = false;
-        }
-
-        private void TryRegisterScalabilityListener()
-        {
-            if (_registeredScalabilityListener || !Application.isPlaying)
-                return;
-
-            ScalabilityEvents.Register(this);
-            _registeredScalabilityListener = true;
-        }
-
-        private void TryUnregisterScalabilityListener()
-        {
-            if (!_registeredScalabilityListener)
-                return;
-
-            ScalabilityEvents.Unregister(this);
-            _registeredScalabilityListener = false;
         }
 
         private static int ResolveStatusBucket(uint statusMask)

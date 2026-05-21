@@ -388,14 +388,34 @@ namespace Hecton8.Editor.FloraAmbientSway
             int close = root.LastIndexOf('}');
             if (close < 0)
             {
-                File.WriteAllText(path, "{\n" + sectionJson + "\n}");
+                WriteReportFileAtomically(path, "{\n" + sectionJson + "\n}");
                 return;
             }
 
             string prefix = root.Substring(0, close).TrimEnd();
             bool hasExistingProperties = prefix.Length > 1 && prefix[prefix.Length - 1] != '{';
             string merged = prefix + (hasExistingProperties ? "," : string.Empty) + Environment.NewLine + sectionJson + Environment.NewLine + "}";
-            File.WriteAllText(path, merged);
+            WriteReportFileAtomically(path, merged);
+        }
+
+        private static void WriteReportFileAtomically(string path, string content)
+        {
+            string tempPath = path + ".tmp";
+            string backupPath = path + ".bak";
+            if (File.Exists(tempPath))
+                File.Delete(tempPath);
+
+            File.WriteAllText(tempPath, content);
+            if (!File.Exists(path))
+            {
+                File.Move(tempPath, path);
+                return;
+            }
+
+            if (File.Exists(backupPath))
+                File.Delete(backupPath);
+
+            File.Replace(tempPath, path, backupPath);
         }
 
         private static string RemoveExistingSection(string json)
@@ -591,7 +611,11 @@ namespace Hecton8.Editor.FloraAmbientSway
                 scannerSlice.Contains("scannedFloraPrefabs") &&
                 scannerSlice.Contains("scannedFloraScenes") &&
                 scannerSlice.Contains("evidenceClass") &&
-                scannerSlice.Contains("STATIC_SOURCE_TARGETED");
+                scannerSlice.Contains("STATIC_SOURCE_TARGETED") &&
+                scannerSlice.Contains("WriteReportFileAtomically(path,") &&
+                scannerSlice.Contains("path + \".tmp\"") &&
+                scannerSlice.Contains("path + \".bak\"") &&
+                scannerSlice.Contains("File.Replace(tempPath, path, backupPath)");
             string forbiddenManagedDumpWriter = "Binary" + "Writer";
             bool littleEndianDump =
                 runtime.Contains("WriteUInt32LittleEndian(stream, TelemetryDumpMagic)") &&

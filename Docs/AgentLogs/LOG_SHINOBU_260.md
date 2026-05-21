@@ -988,3 +988,51 @@ Verification:
   <TASK id="19" result="PASS">Dependency scanner remains breach_count=0 and now reports global_scripting_define_hit_count=1.</TASK>
   <TASK id="20" result="PASS_WITH_BUILD_GATE">Static proof and disk logs updated; Unity compile remains gated by active VBCSCompiler.</TASK>
 </SELF_AUDIT_UPDATE>
+
+## 2026-05-22 Project-Side Crest4 Binding Backup
+
+What was wrong:
+
+- The baseline backup covered `Assets/Crest` and the now-quarantined Crest5 package, but not project-side selected-donor bindings.
+- Active Crest4 bindings remain in `Assets/_Project/Data/Ocean`, `Assets/_Project/crest`, `Assets/_Project/Prefabs/Ocean_Crest.prefab`, and `Assets/_Project/Scenes/02_HECTON_WORLD.unity`. A vendor-folder restore alone would not rebuild a damaged ocean prefab/settings/scene state.
+
+What was done:
+
+- Added these roots to `Tools/Crest_Baseline_Archiver.py`:
+  - `crest4_project_ocean_settings`
+  - `crest4_project_legacy_crest_settings`
+  - `crest4_project_ocean_prefab`
+  - `crest4_project_ocean_prefab_meta`
+  - `crest4_project_world_ocean_scene`
+  - `crest4_project_world_ocean_scene_meta`
+- Ran `python Tools\Crest_Baseline_Archiver.py --execute`.
+- Added `crest4_project_bindings_have_baseline_archives` to `Tools/Crest_Quarantine_Polish_Audit.py`.
+
+Cinematic Cheats used:
+
+- No runtime simulation changed. This is restore-path hardening: preserve project-side donor bindings in cold archive payloads instead of writing runtime recovery logic.
+
+Exact Microseconds saved:
+
+- Runtime saving: 0 us.
+- Editor/recovery saving: avoids manual scene/prefab/settings reconstruction after a failed Crest experiment; expected recovery saving is minutes to hours, not frame time.
+
+Verification:
+
+- New archive payloads:
+  - `crest4_project_ocean_settings_20260521_232038.zip`: 10 files, 4,423 bytes.
+  - `crest4_project_legacy_crest_settings_20260521_232038.zip`: 6 files, 1,745 bytes.
+  - `crest4_project_ocean_prefab_20260521_232038.zip`: 1 file, 22,374 bytes.
+  - `crest4_project_ocean_prefab_meta_20260521_232038.zip`: 1 file, 161 bytes.
+  - `crest4_project_world_ocean_scene_20260521_232038.zip`: 1 file, 33,756,552 bytes.
+  - `crest4_project_world_ocean_scene_meta_20260521_232038.zip`: 1 file, 162 bytes.
+- `python -m py_compile Tools\Crest_Baseline_Archiver.py Tools\Crest_Dependency_Scanner.py Tools\Crest_Quarantine_Polish_Audit.py`: PASS.
+- `python Tools\Crest_Quarantine_Polish_Audit.py`: PASS, `failed_count=0`, including `crest4_project_bindings_have_baseline_archives`.
+- `python Tools\Crest_Dependency_Scanner.py`: PASS, `breach_count=0`, `global_scripting_define_hit_count=1`, `vocabulary_debt_hit_count=111`.
+- No Unity/dotnet rebuild launched; final build gate found active `csc` and `dotnet` processes, so rebuild remains policy-blocked.
+
+<SELF_AUDIT_UPDATE agent_id="SHINOBU_260" scope="PROJECT_SIDE_CREST4_BINDING_BACKUP">
+  <TASK id="01" result="PASS">Backup pipeline now captures project-side Crest4 settings, prefab, and world scene binding payloads.</TASK>
+  <TASK id="19" result="PASS">Polish audit gates the presence of project-side baseline archive records.</TASK>
+  <TASK id="20" result="PASS_WITH_BUILD_GATE">Static proof and disk logs updated; Unity compile remains gated by active compiler processes.</TASK>
+</SELF_AUDIT_UPDATE>

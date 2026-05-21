@@ -474,3 +474,31 @@ Updated static counts from that artifact:
 - `jobHandleComplete`: 112, unchanged; bounded runtime grep found no remaining executable runtime candidates outside the core fence helper.
 
 This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 Voxel Passability Native API Follow-Up
+
+Additional native API narrowing after the vegetation snapshot pass:
+
+- `VoxelDynamicNavGridRuntime.TryGetPassabilityPayload` now returns `NativeArray<byte>.ReadOnly`.
+- `VoxelDynamicNavGridRuntime.TryGetContainingPassabilityPayload` now returns `NativeArray<byte>.ReadOnly`.
+- `VoxelDynamicNavGridRuntime.TryGetNearestPassabilityPayload` now returns `NativeArray<byte>.ReadOnly`.
+- `VegetationNavGridSynchronizer` and `StringPullPathJob.NavPassabilityGrid` now consume the read-only view.
+
+Rejected:
+
+- PDA/cartography upload narrowing in this pass, because `GraphicsBufferUploadUtility.UploadNativeArray` currently accepts mutable `NativeArray<T>` and needs separate core/local unsafe upload proof.
+- Voxel build buffers and pure-void scan buffers, because those are legitimate writer-side job buffers.
+
+Focused proof:
+
+- Focused scans found no stale `out NativeArray<byte>` passability declarations.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_after_voxel_passability_readonly.json`.
+
+Updated static counts from that artifact:
+
+- `nativeCollectionPublicMutableApiExposure`: 222, down from 225.
+- `nativeApiExposureBuildPlayerRuntime`: 208, down from 211.
+- `nativeApiExposureOutRefMutable`: 170, down from 173.
+- `nativeApiRiskRuntimeOutRefMutableView`: 95, down from 98.
+
+This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

@@ -397,7 +397,7 @@ namespace Hecton8.Physics.Exosuit
                    buffer.Length > 0;
         }
 
-        private bool TryResolveHeldJobWriteBuffer<T>(
+        private bool TryOpenHeldJobWriteBuffer<T>(
             in VaultGenerationHandle<T> handle,
             BufferID expectedBufferId,
             out NativeArray<T> buffer)
@@ -724,7 +724,7 @@ namespace Hecton8.Physics.Exosuit
                 return;
             }
 
-            TryResolveVoxelSdfPayload(
+            TryAcquireVoxelSdfPayload(
                 state[0],
                 terrain[0],
                 out NativeArray<byte> voxelSdf,
@@ -813,8 +813,8 @@ namespace Hecton8.Physics.Exosuit
 
         private void PatchLastTelemetryElapsed(float elapsedMs, bool budgetExceeded)
         {
-            if (!TryResolveHeldJobWriteBuffer(in _telemetryHandle, BufferID.ShinobuExosuitTelemetryRing, out NativeArray<ExosuitTelemetryEntry> telemetry) ||
-                !TryResolveHeldJobWriteBuffer(in _telemetryCursorHandle, BufferID.ShinobuExosuitTelemetryCursor, out NativeArray<int> cursorBuffer))
+            if (!TryOpenHeldJobWriteBuffer(in _telemetryHandle, BufferID.ShinobuExosuitTelemetryRing, out NativeArray<ExosuitTelemetryEntry> telemetry) ||
+                !TryOpenHeldJobWriteBuffer(in _telemetryCursorHandle, BufferID.ShinobuExosuitTelemetryCursor, out NativeArray<int> cursorBuffer))
                 return;
 
             int index = cursorBuffer[0] - 1;
@@ -1009,7 +1009,7 @@ namespace Hecton8.Physics.Exosuit
             return true;
         }
 
-        private bool TryResolveVoxelSdfPayload(
+        private bool TryAcquireVoxelSdfPayload(
             in ExosuitStateDTO state,
             in MockTerrainSDF terrain,
             out NativeArray<byte> voxelSdf,

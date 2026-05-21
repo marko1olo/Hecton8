@@ -392,7 +392,7 @@ What was wrong: `PatchLastTelemetryElapsed` wrote elapsed time and budget flags 
 
 What was done: Added the explicit held-job write gate in the proof route: telemetry and cursor rows must resolve while `_jobBuffersLocked` is true and their BufferIDs match `ShinobuExosuitTelemetryRing` and `ShinobuExosuitTelemetryCursor`.
 
-Verification: Targeted scan finds `TryResolveHeldJobWriteBuffer` and both expected telemetry BufferIDs in `PatchLastTelemetryElapsed`. No rebuild was launched.
+Verification: Targeted scan finds `TryOpenHeldJobWriteBuffer` and both expected telemetry BufferIDs in `PatchLastTelemetryElapsed`. No rebuild was launched.
 
 Cinematic Cheats used: None new. This protects black-box timing proof for the existing byte-SDF kinematic movement cheat.
 
@@ -412,7 +412,7 @@ Exact Microseconds saved: Editor-only scanner. Runtime cost is zero.
 
 ## 2026-05-22 Polish Pass: External SDF Owner Handles And Player Physics Mutation Gate
 
-What was wrong: Dalton's read-only audit found two remaining route holes. `TryResolveVoxelSdfPayload` checked the descriptor payload owner but not the descriptor/SDF generation-handle owners. `HectonPlayerMovement` also still ran dynamic collision and heavy-tow response in authority frames, allowing `CapsuleCollider` shape and `Rigidbody.centerOfMass` writes beside the Vault kinematic solver.
+What was wrong: Dalton's read-only audit found two remaining route holes. The external SDF acquire route checked the descriptor payload owner but not the descriptor/SDF generation-handle owners. `HectonPlayerMovement` also still ran dynamic collision and heavy-tow response in authority frames, allowing `CapsuleCollider` shape and `Rigidbody.centerOfMass` writes beside the Vault kinematic solver.
 
 What was done: Added exact BufferID plus `SystemID.WorldStreaming` checks for borrowed voxel descriptor/SDF handles, including nonzero SDF generation equality to the descriptor. Passed `exosuitKinematicAuthority` into dynamic collision and heavy-tow response; active authority now skips collider profile application and center-of-mass writes while preserving blend/presentation state. Extended `Exosuit_Physics_Inquisition` to fail unguarded authority-sensitive mutation calls/scopes and count guarded routes separately.
 
@@ -421,3 +421,15 @@ Verification: Targeted scans show fail-closed WorldStreaming owner checks for de
 Cinematic Cheats used: The movement truth remains the Dear Lie: one byte-SDF kinematic solver row instead of Rigidbody/joint/collider authority. The new gate prevents generic player physics mutations from leaking back into that fake.
 
 Exact Microseconds saved: Profiler pending. Static change removes active-authority collider shape writes and center-of-mass writes; SDF owner checks add only admission-time integer comparisons.
+
+## 2026-05-22 Polish Pass: Read-Shaped Mutation Name Closure
+
+What was wrong: SHINOBU runtime still had mutation-capable helpers named like read accessors. The SDF helper acquired Vault read locks and toggled external lock flags under a `TryResolve*` name, the telemetry elapsed helper exposed writer-locked rows under a `TryResolve*` name, and the player heavy-tow bridge lazily ran `TryGetComponent` under `ResolveHeavyTowWinchRuntime`.
+
+What was done: Renamed the SDF helper to `TryAcquireVoxelSdfPayload`, the telemetry elapsed gate to `TryOpenHeldJobWriteBuffer`, and the player bridge cache helper to `EnsureHeavyTowWinchRuntime`. The heavy-tow diagnostics path now calls `RefreshHeavyTowActive()` once per block and reuses the result for all debug fields.
+
+Verification: Targeted source scan finds the new helper names and no remaining old names in SHINOBU runtime or `HectonPlayerMovement`. Dedicated JSON, self-audit XML, architecture doc, status, and rationale were updated. No rebuild was launched.
+
+Cinematic Cheats used: None new. This protects the existing Dear Lie route by keeping acquire/open mutation gates visibly separate from pure read routes.
+
+Exact Microseconds saved: Solver cost unchanged. Diagnostics avoid repeated heavy-tow active helper calls in the same block; profiler proof pending.
