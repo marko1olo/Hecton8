@@ -252,10 +252,6 @@
 
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'Hecton8.Core' And '$(HectonBuildProjectReferences)' != 'true'">
     <ProjectReference Remove="@(ProjectReference)" />
-    <Reference Include="Crest" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Crest.dll') And !$([System.String]::Copy('@(Reference)').Contains('Crest'))">
-      <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Crest.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="GPUInstancer" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\GPUInstancer.dll') And !$([System.String]::Copy('@(Reference)').Contains('GPUInstancer'))">
       <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\GPUInstancer.dll</HintPath>
       <Private>False</Private>
@@ -270,14 +266,6 @@
     </Reference>
     <Reference Include="Unity.RenderPipelines.Universal.Runtime" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Unity.RenderPipelines.Universal.Runtime.dll') And !$([System.String]::Copy('@(Reference)').Contains('Unity.RenderPipelines.Universal.Runtime'))">
       <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Unity.RenderPipelines.Universal.Runtime.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="WaveHarmonic.Crest" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\WaveHarmonic.Crest.dll') And !$([System.String]::Copy('@(Reference)').Contains('WaveHarmonic.Crest'))">
-      <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\WaveHarmonic.Crest.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="WaveHarmonic.Crest.Shared" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\WaveHarmonic.Crest.Shared.dll') And !$([System.String]::Copy('@(Reference)').Contains('WaveHarmonic.Crest.Shared'))">
-      <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\WaveHarmonic.Crest.Shared.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
