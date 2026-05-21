@@ -122,6 +122,22 @@ Post-watchdog gate:
 - CPU gate was closed: CIM CPU 100%; processor counter samples were effectively 100%.
 - Compile remains PENDING VERIFICATION; Unity project regeneration/import is still required before external `dotnet build` covers the new SHINOBU_270 renderer scripts.
 
+## 2026-05-22 - Generated Project Static Gate
+
+What was wrong:
+- The stale generated `Hecton8.Core.csproj` problem was documented, but the SHINOBU_270 editor proof facade did not expose it as a repeatable report field.
+
+What was done:
+- `HUDCanvasInquisition` now reads `Hecton8.Core.csproj` cold and checks exact `Compile Include` coverage for `HectonVisorARStencilRendererFeature.cs` and `HectonVisorStencilPreviewGizmo.cs`.
+- The shared rendering report section now emits `generatedProjectIncludesRendererFeature`, `generatedProjectIncludesStencilPreviewGizmo`, and `generatedProjectStale`.
+
+Cinematic Cheats used:
+- Runtime route unchanged: shader-side digits/fog/brackets behind stencil. This patch is editor proof only.
+
+Exact Microseconds saved:
+- Runtime: 0 us.
+- Proof protection: prevents stale generated project coverage from being mistaken for compile evidence.
+
 ## 2026-05-22 - AR Target Upload MemCpy Patch
 
 What was wrong:
