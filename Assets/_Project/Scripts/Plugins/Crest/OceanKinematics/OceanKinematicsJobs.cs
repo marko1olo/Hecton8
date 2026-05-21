@@ -84,7 +84,7 @@ namespace Hecton8.Physics
     /// Deterministic emergency ocean wave generator for isolated kinematics stress tests.
     /// </summary>
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    public unsafe struct GenerateMockOceanWavesJob : IJobParallelFor
+    public unsafe struct GenerateMockOceanWavesJob : IJobParallelForBatch
     {
         [ReadOnly, NoAlias] public NativeArray<OceanKinematicsSampleRequestDTO> Requests;
         [ReadOnly, NoAlias] public NativeArray<int> RequestCounter;
@@ -104,15 +104,22 @@ namespace Hecton8.Physics
         public OceanKinematicsTuningDTO Tuning;
         public int RequestCount;
 
-        public void Execute(int index)
+        public void Execute(int startIndex, int count)
         {
             if (!Requests.IsCreated || !Results.IsCreated)
                 return;
 
-            int count = math.min(math.max(0, ResolveRequestCount()), Requests.Length);
-            if ((uint)index >= (uint)count)
+            int requestCount = math.min(math.max(0, ResolveRequestCount()), Requests.Length);
+            int endIndex = math.min(startIndex + count, requestCount);
+            if ((uint)startIndex >= (uint)endIndex)
                 return;
 
+            for (int index = startIndex; index < endIndex; index++)
+                ExecuteIndex(index);
+        }
+
+        private void ExecuteIndex(int index)
+        {
             OceanKinematicsSampleRequestDTO request = Requests[index];
             int resultIndex = index;
             if ((uint)resultIndex >= (uint)Results.Length)
@@ -257,7 +264,7 @@ namespace Hecton8.Physics
     /// Burst analytical Gerstner wave evaluator for AUP ocean kinematics.
     /// </summary>
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    public unsafe struct EvaluateAnalyticalWavesJob : IJobParallelFor
+    public unsafe struct EvaluateAnalyticalWavesJob : IJobParallelForBatch
     {
         [ReadOnly, NoAlias] public NativeArray<OceanKinematicsSampleRequestDTO> Requests;
         [ReadOnly, NoAlias] public NativeArray<GerstnerWaveDTO> Waves;
@@ -278,15 +285,22 @@ namespace Hecton8.Physics
         public int RequestCount;
         public int WaveCount;
 
-        public void Execute(int index)
+        public void Execute(int startIndex, int count)
         {
             if (!Requests.IsCreated || !Results.IsCreated)
                 return;
 
-            int count = math.min(math.max(0, ResolveRequestCount()), Requests.Length);
-            if ((uint)index >= (uint)count)
+            int requestCount = math.min(math.max(0, ResolveRequestCount()), Requests.Length);
+            int endIndex = math.min(startIndex + count, requestCount);
+            if ((uint)startIndex >= (uint)endIndex)
                 return;
 
+            for (int index = startIndex; index < endIndex; index++)
+                ExecuteIndex(index);
+        }
+
+        private void ExecuteIndex(int index)
+        {
             OceanKinematicsSampleRequestDTO request = Requests[index];
             int resultIndex = index;
             if ((uint)resultIndex >= (uint)Results.Length)
@@ -521,7 +535,7 @@ namespace Hecton8.Physics
     /// Immediate previous-frame water response for the Dear Lie GPU readback path.
     /// </summary>
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    public unsafe struct ResolveDearLieCachedResultsJob : IJobParallelFor
+    public unsafe struct ResolveDearLieCachedResultsJob : IJobParallelForBatch
     {
         [ReadOnly, NoAlias] public NativeArray<OceanKinematicsSampleRequestDTO> Requests;
         [ReadOnly, NoAlias] public NativeArray<int> RequestCounter;
@@ -541,15 +555,22 @@ namespace Hecton8.Physics
         public OceanKinematicsTuningDTO Tuning;
         public int RequestCount;
 
-        public void Execute(int index)
+        public void Execute(int startIndex, int count)
         {
             if (!Requests.IsCreated || !Results.IsCreated)
                 return;
 
-            int count = math.min(math.max(0, ResolveRequestCount()), Requests.Length);
-            if ((uint)index >= (uint)count)
+            int requestCount = math.min(math.max(0, ResolveRequestCount()), Requests.Length);
+            int endIndex = math.min(startIndex + count, requestCount);
+            if ((uint)startIndex >= (uint)endIndex)
                 return;
 
+            for (int index = startIndex; index < endIndex; index++)
+                ExecuteIndex(index);
+        }
+
+        private void ExecuteIndex(int index)
+        {
             OceanKinematicsSampleRequestDTO request = Requests[index];
             int resultIndex = index;
             if ((uint)resultIndex >= (uint)Results.Length)

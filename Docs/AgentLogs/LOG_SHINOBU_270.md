@@ -598,3 +598,34 @@ Build gate:
 - Active compiler processes found: `dotnet` PID 30716 and `csc` PID 14152.
 - CPU gate stayed closed: CIM CPU 73%; processor counter samples 60.81%, 67.67%, 50.23%.
 - Compile remains PENDING VERIFICATION.
+
+## 2026-05-22 - Vault Descriptor Lifecycle Patch
+
+What was wrong:
+- `HectonVisorARStencilRendererFeature` dropped local `VaultGenerationHandle<T>` descriptors without releasing the underlying Vault references on dispose, DataVault service replacement, or cold service rebind.
+- The old private helper encoded the wrong local pattern: clear metadata first, native ownership unresolved.
+
+What was done:
+- Added release-first descriptor cleanup for the seven SHINOBU_270 visual lanes: HUD params, source targets, projected targets, digit params, telemetry ring, profile DTOs, and CSV scratch.
+- Dispose now releases owned Vault descriptors and nulls `_dataVault`.
+- DataVault hot-swap and cold service rebind release old descriptors before binding the new vault.
+- Removed the stale `ClearVaultHandles()` helper.
+- Updated status, rationale, architecture docs, and payload ledger.
+
+Cinematic Cheats used:
+- Runtime route unchanged: one cheap stencil mask draw plus shader-side procedural digits, scanlines, breath fog, and AR brackets. No Canvas/TMP text renderer, CPU particles, or physical fog simulation was restored.
+
+Exact Microseconds saved:
+- Steady frame: 0 us claimed; this is lifecycle ownership hardening.
+- Cold reload/hot-swap: prevents stale native refcounts and compaction blockers. Exact memory/time delta requires Unity Memory Profiler and DataVault telemetry proof.
+
+Verification:
+- Targeted visor/UI/shader forbidden scan returned no hits for `GlobalSignals`, `FromRuntimePosition`, shader global setters, `Canvas.ForceUpdateCanvases`, `TryGetLatestCreated`, Burst/job/tiny-run wrappers, `.Complete()`, persistent runtime `NativeArray`, or `_CameraDepthTexture`.
+- `git diff --check` on the patched renderer reported only Git LF-to-CRLF warning.
+- Local source confirms `ReleaseVaultHandles()` calls `IDataVault.ReleaseBuffer(in handle)` only when the handle has a nonzero BufferID and Generation, then tombstones the descriptor.
+
+Build gate:
+- Build not launched.
+- Active compiler processes found: `dotnet` PID 34832 and `csc` PID 15644.
+- CPU gate stayed closed: CIM CPU 100%; processor counter samples 90.05%, 82.47%, 86.72%.
+- Compile remains PENDING VERIFICATION; generated `Hecton8.Core.csproj` is still stale until Unity regenerates/imports SHINOBU_270 new scripts.
