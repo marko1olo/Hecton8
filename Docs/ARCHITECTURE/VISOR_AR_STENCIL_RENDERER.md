@@ -21,6 +21,8 @@ Rollback must not serialize, hash, or reconcile these buffers. They are "Dear Li
 
 CSV profile hydration is editor/source-data only: `Assets/_SourceData/Visor/visor_hud_profiles.csv` may be parsed through the existing native scratch lane during editor cold setup. Player/runtime builds must not load human-readable visor profile data from `StreamingAssets`; production profile truth must arrive through a baked DataMonolith or domain `.h8bin` route.
 
+`HectonVisorARStencilRendererFeature` owns the reference lifecycle for these visual descriptors. It releases all seven generation handles through `IDataVault.ReleaseBuffer(in handle)` on renderer disposal, DataVault service replacement, and cold service rebind before tombstoning local descriptors. It must not use `ReleaseOwnerBuffers(SystemID.UI)` because UI owns neighboring presentation lanes outside SHINOBU_270.
+
 ## Render Route
 
 1. `SuitHUDPresentationController` defaults to `StencilRenderGraph`, but runtime Canvas suppression is owned by `HectonVisorARStencilRendererFeature`, not by the presentation controller.

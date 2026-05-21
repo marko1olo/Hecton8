@@ -253,7 +253,7 @@ namespace Hecton8.Physics
                 RequestCount = count,
                 WaveCount = waveCount
             };
-            return job.Schedule(count, ResolveInnerLoopBatchCount(count), inputDeps);
+            return job.ScheduleBatch(count, ResolveInnerLoopBatchCount(count), inputDeps);
         }
 
         /// <summary>
@@ -309,7 +309,7 @@ namespace Hecton8.Physics
                 RequestCount = scheduleCount,
                 WaveCount = waveCount
             };
-            JobHandle evaluateHandle = evaluateJob.Schedule(scheduleCount, ResolveInnerLoopBatchCount(scheduleCount), drainHandle);
+            JobHandle evaluateHandle = evaluateJob.ScheduleBatch(scheduleCount, ResolveInnerLoopBatchCount(scheduleCount), drainHandle);
             return new CountOceanSampleDepthCullsJob
             {
                 Requests = packedRequests,
@@ -387,7 +387,7 @@ namespace Hecton8.Physics
                 Tuning = jobTuning,
                 RequestCount = scheduleCount
             };
-            JobHandle cacheHandle = cacheJob.Schedule(scheduleCount, ResolveInnerLoopBatchCount(scheduleCount), drainHandle);
+            JobHandle cacheHandle = cacheJob.ScheduleBatch(scheduleCount, ResolveInnerLoopBatchCount(scheduleCount), drainHandle);
             return new CountOceanSampleDepthCullsJob
             {
                 Requests = packedRequests,
@@ -427,7 +427,7 @@ namespace Hecton8.Physics
                 Tuning = jobTuning,
                 RequestCount = count
             };
-            return job.Schedule(count, ResolveInnerLoopBatchCount(count), inputDeps);
+            return job.ScheduleBatch(count, ResolveInnerLoopBatchCount(count), inputDeps);
         }
 
         /// <summary>
@@ -479,7 +479,7 @@ namespace Hecton8.Physics
                 Tuning = jobTuning,
                 RequestCount = scheduleCount
             };
-            JobHandle mockHandle = job.Schedule(scheduleCount, ResolveInnerLoopBatchCount(scheduleCount), drainHandle);
+            JobHandle mockHandle = job.ScheduleBatch(scheduleCount, ResolveInnerLoopBatchCount(scheduleCount), drainHandle);
             return new CountOceanSampleDepthCullsJob
             {
                 Requests = packedRequests,
