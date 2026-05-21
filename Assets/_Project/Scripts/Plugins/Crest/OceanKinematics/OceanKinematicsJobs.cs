@@ -650,7 +650,7 @@ namespace Hecton8.Physics
         // parallel write races and matches the old last-writer-wins cache semantics.
         //
         // SAFETY_JUSTIFICATION_PARAGRAPH_2:
-        // The main thread only checks AsyncGPUReadback completion and schedules this job. Hashing, finite
+        // The owner checks completed Unity async readback staging and schedules this job. Hashing, finite
         // sanitation, and cache writes are moved into the dispatcher-owned job window.
         //
         // SAFETY_JUSTIFICATION_PARAGRAPH_3:

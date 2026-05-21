@@ -1,6 +1,6 @@
 # Rationale_SHINOBU_260
 
-Status: PENDING VERIFICATION / POLISH PASS LOOP 20 WITH TASK 12 BLOCKED BY DEPENDENCY / NO BUILD DUE COMPILER PROCESS GATE
+Status: PENDING VERIFICATION / POLISH PASS LOOP 21 WITH TASK 12 BLOCKED BY DEPENDENCY / NO BUILD DUE COMPILER PROCESS GATE
 
 ## Decision 001: Resolve Duplicate SHINOBU_260 Prompt By ID And Role
 
@@ -186,3 +186,27 @@ Solution: Extend `Tools/Crest_Baseline_Archiver.py` so the normal baseline comma
 Rejected Alternatives: Moving selected Crest4 settings out of `Assets` was rejected because Crest4 is the active donor and the scene/prefab still needs those ScriptableObject bindings. Creating a Unity-visible quarantine copy was rejected because backups must stay outside Unity import visibility. Leaving this as documentation-only was rejected because the restore claim depends on actual archive payloads.
 Scalability potential: Low/Middle/High/Ultra runtime behavior is unchanged. Recovery scalability improves: low-end developer machines avoid manual scene/prefab reconstruction after a failed Crest experiment.
 Hardware Impact: Runtime frame saving is 0 microseconds. Editor recovery impact is avoided minutes to hours of manual binding reconstruction; the archive write itself is cold tooling.
+
+## Decision 024: Treat Compliance Denylists As Visible Evidence, Not Hidden Coupling
+
+Problem: `Assets/_Project/Scripts/Editor/HectonComplianceValidator.cs` intentionally contains `Crest`, `WaveHarmonic.Crest`, `using Crest`, and `Crest.` string literals as forbidden-token denylist entries. These are not runtime or asmdef references, but broad `rg` scans surface them outside the Crest bridge and the old dependency report did not explain them.
+Solution: Add `scan_compliance_denylist_strings()` to `Tools/Crest_Dependency_Scanner.py`, report the strings as non-failing `compliance_denylist_hits`, and gate the schema through `Tools/Crest_Quarantine_Polish_Audit.py`.
+Rejected Alternatives: Deleting the denylist strings was rejected because that weakens the existing editor build gate against third-party leakage. Treating them as hard breaches was rejected because they are policy data, not a dependency route. Leaving them invisible in the main scanner report was rejected because it creates false audit debt.
+Scalability potential: Low/Middle/High/Ultra runtime behavior is unchanged. Developer scalability improves because policy-only strings are classified once and do not trigger repeated manual grep adjudication.
+Hardware Impact: Runtime frame saving is 0 microseconds. Editor/process impact is reduced false-positive triage time while preserving the compliance gate.
+
+## Decision 025: Remove Absent HDRP/PostProcessing Assembly References From The Selected Crest4 Donor
+
+Problem: `Assets/Crest/Crest/Scripts/Crest.asmdef` referenced `Unity.RenderPipelines.HighDefinition.Runtime` and `Unity.Postprocessing.Runtime`, but `Packages/manifest.json`, `Packages/packages-lock.json`, and physical `Packages/` do not contain HDRP or PostProcessing packages. The active donor is selected for URP, so these references create a compile/import fragility without providing a valid route.
+Solution: Remove the two absent assembly references from the selected Crest4 donor asmdef and add a dependency-scanner gate that hard-fails reintroduced optional donor references when their backing Unity package is absent.
+Rejected Alternatives: Adding HDRP/PostProcessing packages was rejected because it widens package import scope and contradicts the URP-only project route. Leaving the references because they are inside the donor was rejected because the selected donor must be import-clean and leaf-isolated.
+Scalability potential: Low/Middle/High/Ultra runtime behavior is unchanged. Developer scalability improves because the Crest donor no longer asks Unity to resolve assemblies for packages not installed in this URP project.
+Hardware Impact: Runtime frame saving is 0 microseconds. Editor/build impact is avoided missing-assembly compile/import churn on developer machines.
+
+## Decision 026: Quarantine Stale Generated Profiler Report Rows
+
+Problem: `Assets/profilermarkers.csv` was Unity-visible and contained stale Crest assembly/method profiler rows, including `AssemblyDataFrom Crest.dll` and `Crest::UnderwaterRenderer` rows. The old scanner did not inspect `.csv`, so stale generated report evidence could survive active import visibility.
+Solution: Move `Assets/profilermarkers.csv` and `.meta` to `Docs/Archive/Crest_Version_Quarantine/Assets/`, preserving forensic evidence outside Unity visibility. Add a scanner gate for Unity-visible generated profiler reports containing Crest rows and a polish audit gate for the archive state.
+Rejected Alternatives: Editing the CSV in place was rejected because it is generated profiler output, not source authority. Leaving it active was rejected because Unity-visible generated reports should not carry stale donor assembly evidence after quarantine.
+Scalability potential: Low/Middle/High/Ultra runtime behavior is unchanged. The archive keeps forensic data available without letting stale rows confuse active dependency proof.
+Hardware Impact: Runtime frame saving is 0 microseconds. Editor/import hygiene improves; the active Assets tree no longer carries a 2.7 MB stale profiler CSV with donor rows.

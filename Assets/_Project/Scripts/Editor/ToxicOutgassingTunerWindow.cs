@@ -116,12 +116,12 @@ namespace Hecton8.Atmosphere
                 }
             }
 
-            if (!_runtime.TryGetGridReadback(out NativeArray<float> density, out int resolution, out double3 originAup, out float cellSize, out int version))
+            if (!_runtime.TryGetGridReadback(out NativeArray<float>.ReadOnly density, out int resolution, out double3 originAup, out float cellSize, out int version))
             {
                 return;
             }
 
-            if (!density.IsCreated || resolution <= 0 || cellSize <= 0f)
+            if (density.Length <= 0 || resolution <= 0 || cellSize <= 0f)
             {
                 return;
             }

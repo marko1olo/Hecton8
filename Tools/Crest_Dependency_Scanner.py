@@ -40,6 +40,14 @@ CREST_SCRIPTING_DEFINE_SYMBOLS = (
     "CREST_OCEAN",
     "CREST_URP",
 )
+COMPLIANCE_DENYLIST_PATH = Path("Assets/_Project/Scripts/Editor/HectonComplianceValidator.cs")
+GENERATED_REPORT_PATHS = (
+    Path("Assets/profilermarkers.csv"),
+)
+CREST_DONOR_OPTIONAL_REFERENCE_PACKAGES = {
+    "Unity.RenderPipelines.HighDefinition.Runtime": "com.unity.render-pipelines.high-definition",
+    "Unity.Postprocessing.Runtime": "com.unity.postprocessing",
+}
 QUARANTINED_ASSET_GUIDS = {
     "ed12880d16f3f2f4e80ceee64594101d",  # archived Crest5_WaveSpectrum.asset
     "149ebcba5c729ad49911b1ea4b8456fd",  # archived Crest5_FoamSettings.asset
@@ -235,6 +243,56 @@ def scan_crest_donor_autoreference() -> list[dict]:
                 "detail": "Active Crest donor assemblies must remain autoReferenced=false to preserve the compile wall.",
             }
         )
+    return breaches
+
+
+def load_package_ids() -> set[str]:
+    package_ids: set[str] = set()
+    manifest_path = PROJECT_ROOT / "Packages" / "manifest.json"
+    lock_path = PROJECT_ROOT / "Packages" / "packages-lock.json"
+
+    for path in (manifest_path, lock_path):
+        if not path.exists():
+            continue
+        try:
+            data = json.loads(path.read_text(encoding="utf-8-sig"))
+        except Exception:
+            continue
+        dependencies = data.get("dependencies", {})
+        if isinstance(dependencies, dict):
+            package_ids.update(key for key in dependencies if isinstance(key, str))
+    return package_ids
+
+
+def scan_crest_donor_missing_optional_references() -> list[dict]:
+    """Fail selected Crest donor references to optional Unity assemblies when the backing package is absent."""
+    breaches: list[dict] = []
+    package_ids = load_package_ids()
+    for relative_path in CREST_DONOR_ASMDEF_PATHS:
+        path = PROJECT_ROOT / relative_path
+        if not path.exists():
+            continue
+        try:
+            data = json.loads(path.read_text(encoding="utf-8-sig"))
+        except Exception as exc:  # noqa: BLE001
+            breaches.append({"kind": "crest_donor_asmdef_parse_error", "path": relative_path.as_posix(), "detail": str(exc)})
+            continue
+        references = data.get("references", [])
+        if not isinstance(references, list):
+            continue
+        for reference in references:
+            package_id = CREST_DONOR_OPTIONAL_REFERENCE_PACKAGES.get(reference)
+            if package_id is None or package_id in package_ids:
+                continue
+            breaches.append(
+                {
+                    "kind": "crest_donor_missing_optional_package_reference",
+                    "path": relative_path.as_posix(),
+                    "reference": reference,
+                    "missing_package": package_id,
+                    "detail": "Selected Crest donor asmdef references an assembly whose Unity package is not present in manifest or packages-lock.",
+                }
+            )
     return breaches
 
 
@@ -499,6 +557,32 @@ def scan_active_package_visibility() -> list[dict]:
     ]
 
 
+def scan_generated_report_crest_rows() -> list[dict]:
+    """Fail Unity-visible generated reports that still contain stale donor assembly/profile rows."""
+    breaches: list[dict] = []
+    for relative_path in GENERATED_REPORT_PATHS:
+        path = PROJECT_ROOT / relative_path
+        if not path.exists():
+            continue
+        try:
+            lines = path.read_text(encoding="utf-8-sig", errors="replace").splitlines()
+        except Exception as exc:  # noqa: BLE001
+            breaches.append({"kind": "generated_report_read_error", "path": relative_path.as_posix(), "detail": str(exc)})
+            continue
+        for line_number, line in enumerate(lines, start=1):
+            if "Crest" not in line and "WaveHarmonic" not in line:
+                continue
+            breaches.append(
+                {
+                    "kind": "generated_report_crest_reference",
+                    "path": relative_path.as_posix(),
+                    "line": line_number,
+                    "text": line.strip(),
+                }
+            )
+    return breaches
+
+
 def scan_global_scripting_defines() -> list[dict]:
     """Report global Crest scripting symbols; they are donor state, not a first-party route by themselves."""
     path = PROJECT_ROOT / "ProjectSettings" / "ProjectSettings.asset"
@@ -528,6 +612,41 @@ def scan_global_scripting_defines() -> list[dict]:
                 "line": line_number,
                 "platform": platform,
                 "symbols": symbols,
+                "text": line.strip(),
+            }
+        )
+    return hits
+
+
+def scan_compliance_denylist_strings() -> list[dict]:
+    """Report editor compliance denylist strings so policy-only Crest mentions are visible evidence."""
+    path = PROJECT_ROOT / COMPLIANCE_DENYLIST_PATH
+    if not path.exists():
+        return []
+
+    try:
+        lines = path.read_text(encoding="utf-8-sig", errors="replace").splitlines()
+    except Exception as exc:  # noqa: BLE001
+        return [
+            {
+                "kind": "compliance_denylist_read_error",
+                "path": COMPLIANCE_DENYLIST_PATH.as_posix(),
+                "detail": str(exc),
+            }
+        ]
+
+    hits: list[dict] = []
+    denylist_tokens = tuple(sorted(CREST_ASSEMBLIES | {"using Crest", "global::Crest", "Crest."}))
+    for line_number, line in enumerate(lines, start=1):
+        tokens = [token for token in denylist_tokens if token in line]
+        if not tokens:
+            continue
+        hits.append(
+            {
+                "kind": "crest_compliance_denylist_string",
+                "path": str(rel(path)),
+                "line": line_number,
+                "tokens": tokens,
                 "text": line.strip(),
             }
         )
@@ -574,7 +693,10 @@ def main() -> int:
     active_asset_breaches = scan_active_assets()
     active_package_breaches = scan_active_package_visibility()
     donor_autoreference_breaches = scan_crest_donor_autoreference()
+    donor_missing_reference_breaches = scan_crest_donor_missing_optional_references()
+    generated_report_breaches = scan_generated_report_crest_rows()
     global_define_hits = scan_global_scripting_defines()
+    compliance_denylist_hits = scan_compliance_denylist_strings()
     vocabulary_debt_hits = scan_vocabulary_debt()
     breaches = (
         asmdef_breaches
@@ -583,6 +705,8 @@ def main() -> int:
         + active_asset_breaches
         + active_package_breaches
         + donor_autoreference_breaches
+        + donor_missing_reference_breaches
+        + generated_report_breaches
     )
     allowed_hits = asmdef_allowed + csharp_allowed + define_allowed
 
@@ -597,11 +721,13 @@ def main() -> int:
         "quarantine_breaches_prevented": len(allowed_hits),
         "reflection_string_hit_count": len(reflection_hits),
         "global_scripting_define_hit_count": len(global_define_hits),
+        "compliance_denylist_hit_count": len(compliance_denylist_hits),
         "vocabulary_debt_hit_count": len(vocabulary_debt_hits),
         "breaches": breaches,
         "allowed_hits": allowed_hits,
         "reflection_string_hits": reflection_hits,
         "global_scripting_define_hits": global_define_hits,
+        "compliance_denylist_hits": compliance_denylist_hits,
         "vocabulary_debt_hits": vocabulary_debt_hits,
     }
     REPORT_PATH.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

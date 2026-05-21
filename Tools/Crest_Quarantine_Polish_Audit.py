@@ -125,6 +125,15 @@ def main() -> int:
         and (ROOT / "Docs/Archive/Crest_Version_Quarantine/Assets/_Project/Scenes/03_HECTON_WORLD_CREST5.unity.meta").exists(),
         "Binary Crest5 sandbox scene and meta are archived outside Unity visibility.",
     )
+    add_check(
+        checks,
+        "stale_profiler_markers_outside_unity_visibility",
+        not (ROOT / "Assets/profilermarkers.csv").exists()
+        and not (ROOT / "Assets/profilermarkers.csv.meta").exists()
+        and (ROOT / "Docs/Archive/Crest_Version_Quarantine/Assets/profilermarkers.csv").exists()
+        and (ROOT / "Docs/Archive/Crest_Version_Quarantine/Assets/profilermarkers.csv.meta").exists(),
+        "Stale Unity profiler marker CSV with Crest assembly rows is archived outside active Assets with its meta.",
+    )
     quarantine_report_path = ROOT / "Docs/Reports/CREST_QUARANTINE_REPORT.json"
     quarantine_report = {}
     if quarantine_report_path.exists():
@@ -348,6 +357,13 @@ def main() -> int:
         '"autoReferenced": false' in crest_donor_asmdef and '"autoReferenced": false' in crest_donor_editor_asmdef,
         "Active Crest donor runtime/editor asmdefs are leaf-import guarded with autoReferenced=false.",
     )
+    add_check(
+        checks,
+        "crest_donor_no_absent_hdrp_postprocessing_references",
+        "Unity.RenderPipelines.HighDefinition.Runtime" not in crest_donor_asmdef
+        and "Unity.Postprocessing.Runtime" not in crest_donor_asmdef,
+        "Active Crest donor asmdef no longer references absent HDRP or PostProcessing assemblies.",
+    )
 
     bridge = read_text("Assets/_Project/Scripts/Plugins/Crest/CrestBridge.cs")
     has_underwater_start = bridge.find("public bool HasUnderwaterPass")
@@ -495,6 +511,14 @@ def main() -> int:
         and isinstance(dependency_report.get("global_scripting_define_hits"), list),
         "Dependency scanner reports global Crest scripting symbols and hard-fails first-party Crest preprocessor branches outside the bridge.",
     )
+    add_check(
+        checks,
+        "dependency_scanner_tracks_compliance_denylist_strings",
+        isinstance(dependency_report.get("compliance_denylist_hit_count"), int)
+        and isinstance(dependency_report.get("compliance_denylist_hits"), list)
+        and "scan_compliance_denylist_strings" in read_text("Tools/Crest_Dependency_Scanner.py"),
+        "Dependency scanner reports policy-only Crest strings in HectonComplianceValidator as non-failing evidence, not hidden runtime coupling.",
+    )
     dependency_scanner_source = read_text("Tools/Crest_Dependency_Scanner.py")
     add_check(
         checks,
@@ -533,6 +557,23 @@ def main() -> int:
         and "crest_donor_asmdef_auto_referenced" in dependency_scanner_source
         and "bridge_crest_asmdef_auto_referenced" in dependency_scanner_source,
         "Dependency scanner hard-fails Crest donor or bridge asmdefs if autoReferenced is re-enabled.",
+    )
+    add_check(
+        checks,
+        "dependency_scanner_blocks_absent_optional_donor_references",
+        "scan_crest_donor_missing_optional_references" in dependency_scanner_source
+        and "Unity.RenderPipelines.HighDefinition.Runtime" in dependency_scanner_source
+        and "Unity.Postprocessing.Runtime" in dependency_scanner_source
+        and "crest_donor_missing_optional_package_reference" in dependency_scanner_source,
+        "Dependency scanner hard-fails selected Crest donor references to optional Unity assemblies when the backing package is absent.",
+    )
+    add_check(
+        checks,
+        "dependency_scanner_blocks_stale_generated_report_crest_rows",
+        "scan_generated_report_crest_rows" in dependency_scanner_source
+        and "Assets/profilermarkers.csv" in dependency_scanner_source
+        and "generated_report_crest_reference" in dependency_scanner_source,
+        "Dependency scanner hard-fails Unity-visible generated profiler reports that retain Crest rows.",
     )
     add_check(
         checks,

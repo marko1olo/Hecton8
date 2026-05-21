@@ -42,6 +42,11 @@
       "status": "PASS"
     },
     {
+      "detail": "Stale Unity profiler marker CSV with Crest assembly rows is archived outside active Assets with its meta.",
+      "name": "stale_profiler_markers_outside_unity_visibility",
+      "status": "PASS"
+    },
+    {
       "detail": "Crest baseline archiver captured project-side Crest4 settings, prefab, and 02_HECTON_WORLD ocean scene bindings in Docs/Archive.",
       "name": "crest4_project_bindings_have_baseline_archives",
       "status": "PASS"
@@ -142,6 +147,11 @@
       "status": "PASS"
     },
     {
+      "detail": "Active Crest donor asmdef no longer references absent HDRP or PostProcessing assemblies.",
+      "name": "crest_donor_no_absent_hdrp_postprocessing_references",
+      "status": "PASS"
+    },
+    {
       "detail": "Base Crest visual bridge reads only cold-bound renderer/cache hooks and does not poll Crest singletons.",
       "name": "base_bridge_no_ocean_singleton_polling",
       "status": "PASS"
@@ -212,6 +222,11 @@
       "status": "PASS"
     },
     {
+      "detail": "Dependency scanner reports policy-only Crest strings in HectonComplianceValidator as non-failing evidence, not hidden runtime coupling.",
+      "name": "dependency_scanner_tracks_compliance_denylist_strings",
+      "status": "PASS"
+    },
+    {
       "detail": "Dependency scanner uses ripgrep for the widened active serialized surface, keeps bounded Python fallback, and hard-fails visible Crest5 package reactivation.",
       "name": "dependency_scanner_uses_rg_for_broad_serialized_surface",
       "status": "PASS"
@@ -229,6 +244,16 @@
     {
       "detail": "Dependency scanner hard-fails Crest donor or bridge asmdefs if autoReferenced is re-enabled.",
       "name": "dependency_scanner_blocks_auto_referenced_crest_assemblies",
+      "status": "PASS"
+    },
+    {
+      "detail": "Dependency scanner hard-fails selected Crest donor references to optional Unity assemblies when the backing package is absent.",
+      "name": "dependency_scanner_blocks_absent_optional_donor_references",
+      "status": "PASS"
+    },
+    {
+      "detail": "Dependency scanner hard-fails Unity-visible generated profiler reports that retain Crest rows.",
+      "name": "dependency_scanner_blocks_stale_generated_report_crest_rows",
       "status": "PASS"
     },
     {

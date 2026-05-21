@@ -11,7 +11,6 @@ using Hecton8.World;
 using TMPro;
 using Unity.Burst;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -27,14 +26,12 @@ namespace Hecton8.UI
     /// Dispatcher-owned diegetic submarine cockpit bridge: analytical controls, off-screen screens, and GPU sonar radar.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class VehicleSubOsCockpitRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IRenderable, ISubmarineOsEventListener, IPowerGridTelemetryListener, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
+    public sealed class VehicleSubOsCockpitRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IRenderable, ISubmarineOsEventListener, IPowerGridTelemetryListener, IGlobalRegistryHotSwapListener
     {
         private const int MaxRadarPoints = 4096;
-        private const int MidRadarPoints = 2048;
-        private const int LowRadarPoints = 512;
-        private const int HighRadarPointsPerTap = 256;
-        private const int MidRadarPointsPerTap = 128;
-        private const int LowRadarPointsPerTap = 32;
+        private const int MinQualityRadarPoints = 512;
+        private const int MaxRadarPointsPerTap = 256;
+        private const int MinQualityRadarPointsPerTap = 32;
         private const float CheapVisualQualityThreshold = 0.3f;
         private const float CheapVisualQualityRampInv = 5.5555553f;
         private const float ExternalFeedEnableThreshold = 0.18f;
@@ -42,7 +39,7 @@ namespace Hecton8.UI
         private const float RadarPointTapQuantumInv = 0.0625f;
         private const int MaxButtons = 32;
         private const int MaxDamageHologramPoints = 512;
-        private const int LowTierDamageWarningPoints = 7;
+        private const int FallbackDamageWarningPoints = 7;
         private const int MaxDamageHologramRooms = 32;
         private const int MinDamageProxyVertices = 8;
         private const float DamageHologramFlickerSeconds = 0.5f;
@@ -50,8 +47,8 @@ namespace Hecton8.UI
         private const float Hash24Inv = 5.9604648e-8f;
         private const int MinUiRenderTextureWidth = 256;
         private const int MinUiRenderTextureHeight = 128;
-        private const int LowUiRenderTextureMaxWidth = 512;
-        private const int LowUiRenderTextureMaxHeight = 256;
+        private const int MinQualityUiRenderTextureMaxWidth = 512;
+        private const int MinQualityUiRenderTextureMaxHeight = 256;
         private const int MinExternalRenderTextureWidth = 256;
         private const int MinExternalRenderTextureHeight = 144;
         private const int TelemetryCapacity = 300;
@@ -73,8 +70,8 @@ namespace Hecton8.UI
         private const int InvalidDisplayBucket = int.MinValue;
         private const int StatusModeInternalBus = 0;
         private const int StatusModeExternalLive = 1;
-        private const int StatusModeLowStatic = 2;
-        private const int StatusModeLowLocked = 3;
+        private const int StatusModeExternalStatic = 2;
+        private const int StatusModeExternalLocked = 3;
 
         private static readonly int SonarTapsId = Shader.PropertyToID("_SonarEchoTaps");
         private static readonly int RadarBlipsId = Shader.PropertyToID("_RadarBlips");
@@ -179,7 +176,7 @@ namespace Hecton8.UI
             new Vector3(0.08f, -0.42f, 0.0f),
             new Vector3(-0.74f, -0.12f, 0.0f),
             new Vector3(0.74f, -0.12f, 0.0f)
-        }; // COLD ALLOC: Vector3[32] - fallback low-poly submarine proxy when LOD3 mesh is not wired - owner: VehicleSubOsCockpitRuntime
+        }; // COLD ALLOC: Vector3[32] - fallback coarse submarine proxy when LOD3 mesh is not wired - owner: VehicleSubOsCockpitRuntime
 
         [Header("Radar")]
         [SerializeField] private Transform radarDomeAnchor;
@@ -235,7 +232,7 @@ namespace Hecton8.UI
         private readonly char[] _sonarTextBuffer = new char[TextBufferCapacity];
         private readonly char[] _statusTextBuffer = new char[TextBufferCapacity];
         private readonly float[] _damageRoomWaterUpload = new float[MaxDamageHologramRooms]; // COLD ALLOC: float[32] - habitat room flood upload staging - owner: VehicleSubOsCockpitRuntime
-        private readonly Vector4[] _damageLowTierPoint = new Vector4[LowTierDamageWarningPoints]; // COLD ALLOC: Vector4[7] - static warning glyph upload for MX350 fallback - owner: VehicleSubOsCockpitRuntime
+        private readonly Vector4[] _damageFallbackPoint = new Vector4[FallbackDamageWarningPoints]; // COLD ALLOC: Vector4[7] - static warning glyph upload fallback - owner: VehicleSubOsCockpitRuntime
 
         private NativeArray<byte> _buttonStates;
         private NativeArray<byte> _buttonTargets;
@@ -273,11 +270,8 @@ namespace Hecton8.UI
         private bool _registeredLateFrame;
         private bool _registeredRenderable;
         private bool _hotSwapListenerRegistered;
-        private bool _scalabilityListenerRegistered;
         private bool _externalFeedRequested;
         private bool _externalFeedActive;
-        private bool _lastExternalFeedActive;
-        private bool _lowTier;
         private bool _radarPowered;
         private bool _screenDirty = true;
         private bool _offscreenUiCameraRenderRequested = true;
@@ -289,14 +283,15 @@ namespace Hecton8.UI
         private bool _damageHologramResourcesReady;
         private bool _radarMaterialBufferBound;
         private bool _damageHologramMaterialBufferBound;
-        private bool _damageHologramLowTierPointUploaded;
-        private bool _damageHologramLowTierWarningActive;
+        private bool _damageHologramFallbackPointUploaded;
+        private bool _damageHologramFallbackWarningActive;
+        private bool _damageHologramUsingFallbackGlyph;
         private bool _damageHologramHadSignal;
         private bool _radarUsingGpr;
         private RenderTextureFormat _uiRenderTextureFormat = RenderTextureFormat.ARGB32;
         private int _radarKernel = -1;
         private int _radarCapacity;
-        private int _radarPointsPerTap = LowRadarPointsPerTap;
+        private int _radarPointsPerTap = MinQualityRadarPointsPerTap;
         private int _radarActivePoints;
         private int _damageHologramKernel = -1;
         private int _damageProxyVertexCount;
@@ -334,6 +329,7 @@ namespace Hecton8.UI
         private uint _damageHologramFlickerSeed;
         private float _lastRadarDispatchPower = -1f;
         private float _lastRadarDispatchFlicker = -1f;
+        private float _lastExternalFeedBlend = -1f;
         private float _screenUpdateAccumulator;
         private Texture _lastScreenTexture;
         private GraphicsBuffer _lastRadarMaterialBlipBuffer;
@@ -353,7 +349,7 @@ namespace Hecton8.UI
         public GraphicsBuffer ButtonMatrixBuffer => _buttonMatrixBuffer;
 
         /// <summary>
-        /// Number of currently drawable holographic radar points after tier clamping.
+        /// Number of currently drawable holographic radar points after quality-weight clamping.
         /// </summary>
         public int RadarActivePoints => _radarActivePoints;
 
@@ -393,7 +389,6 @@ namespace Hecton8.UI
             HectonSubmarineOsEvents.Register(this);
             PowerGridTelemetryEvents.Register(this);
             TryRegisterHotSwapListener();
-            TryRegisterScalabilityListener();
             TryRegisterRuntime();
             ApplyScreenMaterial();
             ApplyOffscreenUiCameraState();
@@ -404,7 +399,6 @@ namespace Hecton8.UI
             CompleteButtonJobForTeardown();
             HectonSubmarineOsEvents.Unregister(this);
             PowerGridTelemetryEvents.Unregister(this);
-            TryUnregisterScalabilityListener();
             TryUnregisterHotSwapListener();
             UnregisterRuntime();
             ReleaseExternalRenderTexture();
@@ -416,7 +410,6 @@ namespace Hecton8.UI
         private void OnDestroy()
         {
             CompleteButtonJobForTeardown();
-            TryUnregisterScalabilityListener();
             TryUnregisterHotSwapListener();
             ReleaseExternalRenderTexture();
             DisposeGraphicsResources();
@@ -450,6 +443,7 @@ namespace Hecton8.UI
         public void Tick(float deltaTime)
         {
             float safeDeltaTime = math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f;
+            RefreshQualityPolicy();
             if (!_resourcesReady)
             {
                 EnsureNativeResources();
@@ -643,24 +637,6 @@ namespace Hecton8.UI
             _hotSwapListenerRegistered = false;
         }
 
-        private void TryRegisterScalabilityListener()
-        {
-            if (_scalabilityListenerRegistered || !Application.isPlaying)
-                return;
-
-            ScalabilityEvents.Register(this);
-            _scalabilityListenerRegistered = true;
-        }
-
-        private void TryUnregisterScalabilityListener()
-        {
-            if (!_scalabilityListenerRegistered)
-                return;
-
-            ScalabilityEvents.Unregister(this);
-            _scalabilityListenerRegistered = false;
-        }
-
         private void ResolveColdAssetReferences()
         {
 #if UNITY_EDITOR
@@ -671,11 +647,6 @@ namespace Hecton8.UI
             if (damageHologramMaterial == null)
                 damageHologramMaterial = AssetDatabase.LoadAssetAtPath<Material>(DamageHologramMaterialAssetPath);
 #endif
-        }
-
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            RefreshQualityPolicy();
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -721,21 +692,22 @@ namespace Hecton8.UI
             float quality = math.saturate(HomeostasisBrain.GlobalQualityWeight);
             int capacity = ResolveRadarCapacity(quality);
             int pointsPerTap = ResolveRadarPointsPerTap(quality);
-            bool cheapVisualPath = ResolveCheapVisualWeight(quality) >= 0.5f;
+            float cheapVisualWeight = ResolveCheapVisualWeight(quality);
+            float externalFeedWeight = ResolveExternalFeedWeight(quality);
             RenderTextureFormat format = ResolveUiRenderTextureFormat(quality);
             if (math.abs(quality - _qualityWeight01) <= 0.0001f &&
                 capacity == _radarCapacity &&
                 pointsPerTap == _radarPointsPerTap &&
-                cheapVisualPath == _lowTier &&
+                math.abs(cheapVisualWeight - _cheapVisualWeight01) <= 0.0001f &&
+                math.abs(externalFeedWeight - _externalFeedWeight01) <= 0.0001f &&
                 format == _uiRenderTextureFormat)
             {
                 return;
             }
 
             _qualityWeight01 = quality;
-            _cheapVisualWeight01 = ResolveCheapVisualWeight(quality);
-            _externalFeedWeight01 = ResolveExternalFeedWeight(quality);
-            _lowTier = cheapVisualPath;
+            _cheapVisualWeight01 = cheapVisualWeight;
+            _externalFeedWeight01 = externalFeedWeight;
             _radarPointsPerTap = pointsPerTap;
             _uiRenderTextureFormat = format;
             _screenDirty = true;
@@ -754,17 +726,17 @@ namespace Hecton8.UI
         private static int ResolveRadarCapacity(float qualityWeight01)
         {
             float curve = SmoothQuality(qualityWeight01);
-            float continuous = math.lerp(LowRadarPoints, MaxRadarPoints, curve);
+            float continuous = math.lerp(MinQualityRadarPoints, MaxRadarPoints, curve);
             int quantized = (int)math.round(continuous * RadarCapacityQuantumInv) << 7;
-            return math.clamp(quantized, LowRadarPoints, MaxRadarPoints);
+            return math.clamp(quantized, MinQualityRadarPoints, MaxRadarPoints);
         }
 
         private static int ResolveRadarPointsPerTap(float qualityWeight01)
         {
             float curve = SmoothQuality(qualityWeight01);
-            float continuous = math.lerp(LowRadarPointsPerTap, HighRadarPointsPerTap, curve);
+            float continuous = math.lerp(MinQualityRadarPointsPerTap, MaxRadarPointsPerTap, curve);
             int quantized = (int)math.round(continuous * RadarPointTapQuantumInv) << 4;
-            return math.clamp(quantized, LowRadarPointsPerTap, HighRadarPointsPerTap);
+            return math.clamp(quantized, MinQualityRadarPointsPerTap, MaxRadarPointsPerTap);
         }
 
         private static float ResolveCheapVisualWeight(float qualityWeight01)
@@ -861,7 +833,7 @@ namespace Hecton8.UI
 
         private void EnsureGraphicsResources()
         {
-            _radarCapacity = math.clamp(_radarCapacity <= 0 ? (_lowTier ? LowRadarPoints : MaxRadarPoints) : _radarCapacity, LowRadarPoints, MaxRadarPoints);
+            _radarCapacity = math.clamp(_radarCapacity <= 0 ? ResolveRadarCapacity(_qualityWeight01) : _radarCapacity, MinQualityRadarPoints, MaxRadarPoints);
             if (_buttonMatrixBuffer == null)
                 _buttonMatrixBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4x4>(MaxButtons); // COLD ALLOC: GraphicsBuffer[32] - kinematic dashboard matrix bridge - owner: VehicleSubOsCockpitRuntime
             EnsureDamageHologramGraphicsResources();
@@ -923,8 +895,9 @@ namespace Hecton8.UI
             InvalidateRadarArgsCache();
             InvalidateRadarMaterialBinding();
             _damageHologramMaterialBufferBound = false;
-            _damageHologramLowTierPointUploaded = false;
-            _damageHologramLowTierWarningActive = false;
+            _damageHologramFallbackPointUploaded = false;
+            _damageHologramFallbackWarningActive = false;
+            _damageHologramUsingFallbackGlyph = false;
             _lastDamageProxyMesh = null;
             _lastDamageArgsMesh = null;
             _lastDamageArgsInstanceCount = int.MinValue;
@@ -948,8 +921,8 @@ namespace Hecton8.UI
                     MaxDamageHologramPoints,
                 16); // COLD ALLOC: GraphicsBuffer[512 float4] - GPU append hologram point cloud - owner: VehicleSubOsCockpitRuntime
                 _damageHologramMaterialBufferBound = false;
-                _damageHologramLowTierPointUploaded = false;
-                _damageHologramLowTierWarningActive = false;
+                _damageHologramFallbackPointUploaded = false;
+                _damageHologramFallbackWarningActive = false;
             }
 
             if (_damageArgsBuffer == null)
@@ -981,13 +954,11 @@ namespace Hecton8.UI
                     ? damageHologramCompute.FindKernel(DamageHologramKernelName)
                     : -1;
 
-            bool lowReady = _lowTier &&
-                            _damagePointBuffer != null &&
-                            _damageArgsBuffer != null &&
-                            _damageRuntimeMaterial != null &&
-                            ResolveDamagePointMesh() != null;
-            bool computeReady = !_lowTier &&
-                                _damagePointBuffer != null &&
+            bool fallbackReady = _damagePointBuffer != null &&
+                                 _damageArgsBuffer != null &&
+                                 _damageRuntimeMaterial != null &&
+                                 ResolveDamagePointMesh() != null;
+            bool computeReady = _damagePointBuffer != null &&
                                 _damageArgsBuffer != null &&
                                 _damageRuntimeMaterial != null &&
                                 _damageProxyVertexBuffer != null &&
@@ -996,7 +967,7 @@ namespace Hecton8.UI
                                 _damageHologramKernel >= 0 &&
                                 ResolveDamagePointMesh() != null &&
                                 _damageProxyVertexCount >= MinDamageProxyVertices;
-            _damageHologramResourcesReady = lowReady || computeReady;
+            _damageHologramResourcesReady = fallbackReady || computeReady;
         }
 
         private void EnsureDamageProxyVertexBuffer()
@@ -1111,36 +1082,36 @@ namespace Hecton8.UI
 
         private int ResolveUiWidth()
         {
-            int lowWidth = math.clamp(uiRenderTextureWidth, MinUiRenderTextureWidth, LowUiRenderTextureMaxWidth);
+            int minQualityWidth = math.clamp(uiRenderTextureWidth, MinUiRenderTextureWidth, MinQualityUiRenderTextureMaxWidth);
             int highWidth = math.max(MinUiRenderTextureWidth, uiRenderTextureWidth);
-            return ResolveQualityDimension(lowWidth, highWidth);
+            return ResolveQualityDimension(minQualityWidth, highWidth);
         }
 
         private int ResolveUiHeight()
         {
-            int lowHeight = math.clamp(uiRenderTextureHeight, MinUiRenderTextureHeight, LowUiRenderTextureMaxHeight);
+            int minQualityHeight = math.clamp(uiRenderTextureHeight, MinUiRenderTextureHeight, MinQualityUiRenderTextureMaxHeight);
             int highHeight = math.max(MinUiRenderTextureHeight, uiRenderTextureHeight);
-            return ResolveQualityDimension(lowHeight, highHeight);
+            return ResolveQualityDimension(minQualityHeight, highHeight);
         }
 
         private int ResolveExternalWidth()
         {
-            int lowWidth = math.max(MinExternalRenderTextureWidth, math.min(externalRenderTextureWidth, LowUiRenderTextureMaxWidth));
+            int minQualityWidth = math.max(MinExternalRenderTextureWidth, math.min(externalRenderTextureWidth, MinQualityUiRenderTextureMaxWidth));
             int highWidth = math.max(MinExternalRenderTextureWidth, externalRenderTextureWidth);
-            return ResolveQualityDimension(lowWidth, highWidth);
+            return ResolveQualityDimension(minQualityWidth, highWidth);
         }
 
         private int ResolveExternalHeight()
         {
-            int lowHeight = math.max(MinExternalRenderTextureHeight, math.min(externalRenderTextureHeight, LowUiRenderTextureMaxHeight));
+            int minQualityHeight = math.max(MinExternalRenderTextureHeight, math.min(externalRenderTextureHeight, MinQualityUiRenderTextureMaxHeight));
             int highHeight = math.max(MinExternalRenderTextureHeight, externalRenderTextureHeight);
-            return ResolveQualityDimension(lowHeight, highHeight);
+            return ResolveQualityDimension(minQualityHeight, highHeight);
         }
 
-        private int ResolveQualityDimension(int lowValue, int highValue)
+        private int ResolveQualityDimension(int minQualityValue, int highValue)
         {
             float curve = SmoothQuality(_qualityWeight01);
-            int resolved = (int)math.round(math.lerp(lowValue, highValue, curve));
+            int resolved = (int)math.round(math.lerp(minQualityValue, highValue, curve));
             return math.max(16, (resolved + 1) & ~1);
         }
 
@@ -1337,7 +1308,7 @@ namespace Hecton8.UI
         private int ResolveStatusDisplayMode()
         {
             if (_externalFeedWeight01 <= 0.0001f && _externalFeedRequested)
-                return staticExternalNoiseTexture != null ? StatusModeLowStatic : StatusModeLowLocked;
+                return staticExternalNoiseTexture != null ? StatusModeExternalStatic : StatusModeExternalLocked;
             if (_externalFeedActive)
                 return StatusModeExternalLive;
             return StatusModeInternalBus;
@@ -1398,11 +1369,11 @@ namespace Hecton8.UI
                 case StatusModeExternalLive:
                     ZeroGCFormatter.AppendToSpan("EXT CAM LIVE".AsSpan(), span, ref cursor);
                     break;
-                case StatusModeLowStatic:
-                    ZeroGCFormatter.AppendToSpan("EXT STATIC / LOW LOD".AsSpan(), span, ref cursor);
+                case StatusModeExternalStatic:
+                    ZeroGCFormatter.AppendToSpan("EXT STATIC".AsSpan(), span, ref cursor);
                     break;
-                case StatusModeLowLocked:
-                    ZeroGCFormatter.AppendToSpan("EXT LOCKED / LOW LOD".AsSpan(), span, ref cursor);
+                case StatusModeExternalLocked:
+                    ZeroGCFormatter.AppendToSpan("EXT LOCKED".AsSpan(), span, ref cursor);
                     break;
                 default:
                     ZeroGCFormatter.AppendToSpan("INTERNAL BUS".AsSpan(), span, ref cursor);
@@ -1758,10 +1729,10 @@ namespace Hecton8.UI
             if (!IsFinite(hologramLocalToWorld))
                 return;
 
-            if (_lowTier)
-                UploadLowTierDamageHologramGlyph();
-            else
+            if (CanDispatchDamageHologramCompute())
                 DispatchDamageHologramCompute();
+            else
+                UploadFallbackDamageHologramGlyph();
 
             BindDamageHologramMaterial(hologramLocalToWorld);
             Vector4 anchorColumn = hologramLocalToWorld.GetColumn(3);
@@ -1794,13 +1765,15 @@ namespace Hecton8.UI
                 return;
             }
 
+            _damageHologramUsingFallbackGlyph = false;
+            int pointBudget = ResolveDamageHologramPointBudget();
             _damagePointBuffer.SetCounterValue(0u);
             damageHologramCompute.SetBuffer(_damageHologramKernel, DamageProxyVerticesId, _damageProxyVertexBuffer);
             damageHologramCompute.SetBuffer(_damageHologramKernel, DamageHologramPointsId, _damagePointBuffer);
             damageHologramCompute.SetBuffer(_damageHologramKernel, DamageRoomWaterLevelsId, _damageRoomWaterBuffer);
             damageHologramCompute.SetVector(
                 DamageHologramParamsId,
-                new Vector4(Time.time, ResolveDamageHologramScanlineWidth(), MaxDamageHologramPoints, 0f));
+                new Vector4(Time.time, ResolveDamageHologramScanlineWidth(), pointBudget, _cheapVisualWeight01));
             damageHologramCompute.SetVector(DamageHologramBoundsId, _damageProxyBounds);
             damageHologramCompute.SetInt(DamageProxyVertexCountId, _damageProxyVertexCount);
             damageHologramCompute.SetInt(DamageRoomCountId, _damageRoomCount);
@@ -1808,55 +1781,72 @@ namespace Hecton8.UI
             UpdateDamageHologramArgs(0, false);
             GraphicsBuffer.CopyCount(_damagePointBuffer, _damageArgsBuffer, 4);
             _damageHologramEstimatedPoints = _damageKnownActiveDentCount > 0 || _damageHologramHadSignal
-                ? _damageProxyVertexCount
-                : math.max(1, _damageProxyVertexCount >> 3);
+                ? math.min(pointBudget, _damageProxyVertexCount)
+                : math.max(1, math.min(pointBudget, _damageProxyVertexCount) >> 3);
         }
 
-        private void UploadLowTierDamageHologramGlyph()
+        private bool CanDispatchDamageHologramCompute()
         {
-            bool warningActive = IsLowTierDamageWarningActive();
-            if (!_damageHologramLowTierPointUploaded || _damageHologramLowTierWarningActive != warningActive)
+            return damageHologramCompute != null &&
+                   _damageHologramKernel >= 0 &&
+                   _damageProxyVertexBuffer != null &&
+                   _damageProxyVertexCount >= MinDamageProxyVertices &&
+                   _damageRoomWaterBuffer != null;
+        }
+
+        private int ResolveDamageHologramPointBudget()
+        {
+            float curve = SmoothQuality(_qualityWeight01);
+            float continuous = math.lerp(FallbackDamageWarningPoints, MaxDamageHologramPoints, curve);
+            return math.clamp((int)math.round(continuous), FallbackDamageWarningPoints, MaxDamageHologramPoints);
+        }
+
+        private void UploadFallbackDamageHologramGlyph()
+        {
+            _damageHologramUsingFallbackGlyph = true;
+            bool warningActive = IsFallbackDamageWarningActive();
+            if (!_damageHologramFallbackPointUploaded || _damageHologramFallbackWarningActive != warningActive)
             {
                 if (warningActive)
-                    FillLowTierWarningGlyph();
+                    FillFallbackWarningGlyph();
                 else
-                    FillLowTierIdleGlyph();
-                _damagePointBuffer.SetData(_damageLowTierPoint, 0, 0, LowTierDamageWarningPoints);
-                _damageHologramLowTierPointUploaded = true;
-                _damageHologramLowTierWarningActive = warningActive;
+                    FillFallbackIdleGlyph();
+                _damagePointBuffer.SetData(_damageFallbackPoint, 0, 0, FallbackDamageWarningPoints);
+                _damageHologramFallbackPointUploaded = true;
+                _damageHologramFallbackWarningActive = warningActive;
             }
 
-            UpdateDamageHologramArgs(LowTierDamageWarningPoints, false);
-            _damageHologramEstimatedPoints = LowTierDamageWarningPoints;
+            UpdateDamageHologramArgs(FallbackDamageWarningPoints, false);
+            _damageHologramEstimatedPoints = FallbackDamageWarningPoints;
         }
 
-        private bool IsLowTierDamageWarningActive()
+        private bool IsFallbackDamageWarningActive()
         {
             return _damageKnownActiveDentCount > 0 ||
                    _damageHologramFlood01 > 0.01f ||
                    _damageHologramFlickerTimer > 0f;
         }
 
-        private void FillLowTierWarningGlyph()
+        private void FillFallbackWarningGlyph()
         {
-            _damageLowTierPoint[0] = new Vector4(0f, 0.24f, 0f, 0.72f);
-            _damageLowTierPoint[1] = new Vector4(0f, 0.16f, 0f, 0.72f);
-            _damageLowTierPoint[2] = new Vector4(0f, 0.08f, 0f, 0.72f);
-            _damageLowTierPoint[3] = new Vector4(0f, 0.0f, 0f, 0.72f);
-            _damageLowTierPoint[4] = new Vector4(-0.06f, -0.12f, 0f, 0.72f);
-            _damageLowTierPoint[5] = new Vector4(0f, -0.12f, 0f, 0.72f);
-            _damageLowTierPoint[6] = new Vector4(0.06f, -0.12f, 0f, 0.72f);
+            _damageFallbackPoint[0] = new Vector4(0f, 0.24f, 0f, 0.72f);
+            _damageFallbackPoint[1] = new Vector4(0f, 0.16f, 0f, 0.72f);
+            _damageFallbackPoint[2] = new Vector4(0f, 0.08f, 0f, 0.72f);
+            _damageFallbackPoint[3] = new Vector4(0f, 0.0f, 0f, 0.72f);
+            _damageFallbackPoint[4] = new Vector4(-0.06f, -0.12f, 0f, 0.72f);
+            _damageFallbackPoint[5] = new Vector4(0f, -0.12f, 0f, 0.72f);
+            _damageFallbackPoint[6] = new Vector4(0.06f, -0.12f, 0f, 0.72f);
         }
 
-        private void FillLowTierIdleGlyph()
+        private void FillFallbackIdleGlyph()
         {
-            _damageLowTierPoint[0] = new Vector4(-0.24f, 0f, 0f, -1f);
-            _damageLowTierPoint[1] = new Vector4(-0.16f, 0.03f, 0f, -1f);
-            _damageLowTierPoint[2] = new Vector4(-0.08f, 0f, 0f, -1f);
-            _damageLowTierPoint[3] = new Vector4(0f, -0.03f, 0f, -1f);
-            _damageLowTierPoint[4] = new Vector4(0.08f, 0f, 0f, -1f);
-            _damageLowTierPoint[5] = new Vector4(0.16f, 0.03f, 0f, -1f);
-            _damageLowTierPoint[6] = new Vector4(0.24f, 0f, 0f, -1f);
+            _damageFallbackPoint[0] = new Vector4(-0.24f, 0f, 0f, -1f);
+            _damageFallbackPoint[1] = new Vector4(-0.16f, 0.03f, 0f, -1f);
+            _damageFallbackPoint[2] = new Vector4(-0.08f, 0f, 0f, -1f);
+            _damageFallbackPoint[3] = new Vector4(0f, -0.03f, 0f, -1f);
+            _damageFallbackPoint[4] = new Vector4(0.08f, 0f, 0f, -1f);
+            _damageFallbackPoint[5] = new Vector4(0.16f, 0.03f, 0f, -1f);
+            _damageFallbackPoint[6] = new Vector4(0.24f, 0f, 0f, -1f);
         }
 
         private void BindDamageHologramMaterial(Matrix4x4 hologramLocalToWorld)
@@ -2105,9 +2095,10 @@ namespace Hecton8.UI
 
             Texture activeTexture = ResolveActiveScreenTexture();
             float power = SaturateFinite(_nodeVoltageSupplyRatio, 0f);
+            float externalFeedBlend = ResolveExternalFeedBlend();
             if (ReferenceEquals(activeTexture, _lastScreenTexture) &&
                 math.abs(power - _lastScreenPower) < 0.005f &&
-                _lastExternalFeedActive == _externalFeedActive)
+                math.abs(externalFeedBlend - _lastExternalFeedBlend) < 0.005f)
             {
                 return;
             }
@@ -2122,11 +2113,16 @@ namespace Hecton8.UI
             float dim = math.lerp(0.04f, 1f, power);
             _screenPropertyBlock.SetColor(BaseColorId, new Color(dim, dim, dim, 1f));
             _screenPropertyBlock.SetFloat(PanelPowerLevelId, power);
-            _screenPropertyBlock.SetFloat(ExternalFeedBlendId, _externalFeedActive ? 1f : 0f);
+            _screenPropertyBlock.SetFloat(ExternalFeedBlendId, externalFeedBlend);
             centralScreenRenderer.SetPropertyBlock(_screenPropertyBlock);
             _lastScreenTexture = activeTexture;
             _lastScreenPower = power;
-            _lastExternalFeedActive = _externalFeedActive;
+            _lastExternalFeedBlend = externalFeedBlend;
+        }
+
+        private float ResolveExternalFeedBlend()
+        {
+            return (_externalFeedRequested || _externalFeedActive) ? math.saturate(_externalFeedWeight01) : 0f;
         }
 
         private Texture ResolveActiveScreenTexture()
@@ -2198,7 +2194,7 @@ namespace Hecton8.UI
                 flags |= 1u;
             if (_externalFeedActive)
                 flags |= 2u;
-            if (_lowTier)
+            if (_cheapVisualWeight01 > 0.001f)
                 flags |= 4u;
             if (!finite)
                 flags |= 0x80000000u;
@@ -2210,7 +2206,7 @@ namespace Hecton8.UI
             uint flags = 0u;
             if (_damageHologramResourcesReady)
                 flags |= 1u;
-            if (_lowTier)
+            if (_cheapVisualWeight01 > 0.001f)
                 flags |= 2u;
             if (_damageKnownActiveDentCount > 0)
                 flags |= 4u;
@@ -2218,7 +2214,7 @@ namespace Hecton8.UI
                 flags |= 8u;
             if (_damageHologramFlood01 > 0.01f)
                 flags |= 16u;
-            if (_lowTier && IsLowTierDamageWarningActive())
+            if (_damageHologramUsingFallbackGlyph && IsFallbackDamageWarningActive())
                 flags |= 32u;
             return flags;
         }

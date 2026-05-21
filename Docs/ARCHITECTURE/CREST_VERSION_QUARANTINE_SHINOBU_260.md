@@ -53,7 +53,11 @@ Crest 4 asmdefs are leaf-import guarded with `autoReferenced=false`:
 - `Assets/Crest/Crest/Scripts/Crest.asmdef`
 - `Assets/Crest/Crest/Scripts/Editor/Crest.Editor.asmdef`
 
-Static proof: `Docs/Reports/ARCHITECTURE_OPTIMIZATION_REPORT.json` reports `breach_count=0`, `allowed_hit_count=40`, `reflection_string_hit_count=0`, `global_scripting_define_hit_count=1`, and non-failing `vocabulary_debt_hit_count=111`. The scanner now covers active serialized text in `Assets`, `ProjectSettings`, and `Packages` for Crest5/WaveHarmonic/direct UnderwaterRenderer/bare Crest assembly-list breaches, active `Packages/com.waveharmonic.crest` visibility, shader/HLSL/compute Crest includes outside the bridge, Unity `.asmref` sidecars, Unity `GUID:<asmdef-guid>` references to the active Crest 4 asmdefs, active backreferences to archived Crest5/recovery asset GUIDs, and non-bridge first-party `#if CREST_OCEAN` / `#if CREST_URP` branches.
+Static proof: `Docs/Reports/ARCHITECTURE_OPTIMIZATION_REPORT.json` reports `breach_count=0`, `allowed_hit_count=40`, `reflection_string_hit_count=0`, `global_scripting_define_hit_count=1`, `compliance_denylist_hit_count=6`, and non-failing `vocabulary_debt_hit_count=111`. The scanner now covers active serialized text in `Assets`, `ProjectSettings`, and `Packages` for Crest5/WaveHarmonic/direct UnderwaterRenderer/bare Crest assembly-list breaches, active `Packages/com.waveharmonic.crest` visibility, shader/HLSL/compute Crest includes outside the bridge, Unity `.asmref` sidecars, Unity `GUID:<asmdef-guid>` references to the active Crest 4 asmdefs, active backreferences to archived Crest5/recovery asset GUIDs, non-bridge first-party `#if CREST_OCEAN` / `#if CREST_URP` branches, and policy-only Crest denylist strings in the editor compliance validator.
+
+Loop 21 donor reference cleanup: `Assets/Crest/Crest/Scripts/Crest.asmdef` no longer references `Unity.RenderPipelines.HighDefinition.Runtime` or `Unity.Postprocessing.Runtime`, because the backing `com.unity.render-pipelines.high-definition` and `com.unity.postprocessing` packages are absent from `Packages/manifest.json`, `packages-lock.json`, and physical `Packages/`. The selected active Crest4 donor remains URP-scoped instead of adding unused packages.
+
+Loop 21 generated-report cleanup: stale `Assets/profilermarkers.csv(.meta)` moved to `Docs/Archive/Crest_Version_Quarantine/Assets/`. The archived CSV still preserves Crest profiler rows as forensic evidence, but it is no longer Unity-visible active project input.
 
 The scanner also fails if active Crest donor asmdefs or Crest bridge asmdefs become auto-referenced. This keeps Crest opt-in at the assembly importer level, not only at the direct-reference level.
 
@@ -132,18 +136,20 @@ Exact shader scan reports only bridge-owned Crest shader/HLSL references. Shared
 
 Known serialized vocabulary debt outside this agent's safe write boundary: `SargassumCrestDampingController` and `HectonPlayerMovement.useCrestOceanHeight` still carry Crest in serialized Player/World names. They do not create a direct Crest assembly reference and should be remapped only by the owning agents with Unity serialization validation.
 
-Loop 12 low-risk text polish removed donor names from non-serialized comments/tooltips in Visor, Atmosphere, Environment, Fluid, and Sargassum authoring code. Remaining vocabulary debt is tracked by `Crest_Dependency_Scanner.py` as non-failing `vocabulary_debt_hits`, not as compile-wall breaches.
+Loop 12 low-risk text polish removed donor names from non-serialized comments/tooltips in Visor, Atmosphere, Environment, Fluid, and Sargassum authoring code. Remaining vocabulary debt is tracked by `Crest_Dependency_Scanner.py` as non-failing `vocabulary_debt_hits`, not as compile-wall breaches. Loop 21 also tracks policy-only `Crest` / `WaveHarmonic.Crest*` strings in `HectonComplianceValidator.cs` as non-failing `compliance_denylist_hits`, preserving the editor gate while preventing false hidden-coupling reports.
 
 Task 12 status: blocked by dependency. Full suppression of Crest `OceanRenderer.OnEnable`/`Start` requires an invasive vendor-source lifecycle patch by a later Crest-internal agent. This pass does not edit donor lifecycle code.
 
 ## Static Verification
 
 - `python Tools/Crest_Baseline_Archiver.py --execute`: passed.
-- `python Tools/Crest_Dependency_Scanner.py`: passed with `breach_count=0`, `allowed_hit_count=40`, `reflection_string_hit_count=0`, `global_scripting_define_hit_count=1`, `vocabulary_debt_hit_count=111`.
+- `python Tools/Crest_Dependency_Scanner.py`: passed with `breach_count=0`, `allowed_hit_count=40`, `reflection_string_hit_count=0`, `global_scripting_define_hit_count=1`, `compliance_denylist_hit_count=6`, `vocabulary_debt_hit_count=111`.
 - `python Tools/Crest_Quarantine_Polish_Audit.py`: passed with `failed_count=0`, including `legacy_crest4_adapter_no_hot_component_repair`, `base_bridge_no_ocean_singleton_polling`, `base_bridge_underwater_reads_are_cache_only`, `depth_cache_bootstrap_no_ocean_singleton_fallback`, `legacy_crest4_read_accessors_do_not_log_or_poll_registry`, `legacy_crest4_tuning_is_cached_read_only`, `player_prefab_has_no_direct_underwater_renderer`, `crest5_migration_assets_outside_unity_visibility`, `crest_input_shaders_owned_by_bridge_folder`, `crest5_scene_outside_unity_visibility`, and `dependency_scanner_covers_asmref_and_crest_guid_references`.
 - `Tools/Crest_Quarantine_Polish_Audit.py` also gates `dependency_scanner_blocks_archived_asset_guid_references`, proving the normal scanner will fail active links to archived Crest5/recovery object GUIDs.
 - `Tools/Crest_Quarantine_Polish_Audit.py` also gates `crest_donor_asmdefs_not_auto_referenced`, `bridge_asmdef_not_auto_referenced`, and `dependency_scanner_blocks_auto_referenced_crest_assemblies`.
 - `Tools/Crest_Quarantine_Polish_Audit.py` also gates `dependency_scanner_tracks_crest_scripting_defines` and `dependency_scanner_blocks_non_bridge_crest_preprocessor_branches`.
+- `Tools/Crest_Quarantine_Polish_Audit.py` also gates `dependency_scanner_tracks_compliance_denylist_strings`, proving editor compliance denylist strings are visible non-failing evidence.
+- `Tools/Crest_Quarantine_Polish_Audit.py` also gates `crest_donor_no_absent_hdrp_postprocessing_references`, `stale_profiler_markers_outside_unity_visibility`, `dependency_scanner_blocks_absent_optional_donor_references`, and `dependency_scanner_blocks_stale_generated_report_crest_rows`.
 - `Tools/Crest_Quarantine_Polish_Audit.py` also gates `crest4_project_bindings_have_baseline_archives`, proving the latest baseline report includes project-side Crest4 settings, prefab, and scene binding archives.
 - `Tools/Crest_Quarantine_Polish_Audit.py` also gates `underwater_visuals_no_crest_reflection_fallback`, `underwater_visuals_vendor_neutral_pass_vocabulary`, `visual_bridge_contract_vendor_neutral`, `dry_volume_reads_vendor_texture_id_through_bridge`, `crest5_prefab_adapter_reference_removed`, `ocean_kinematics_base_vendor_neutral`, `low_risk_non_bridge_text_uses_ocean_vocabulary`, and `dependency_scanner_tracks_vocabulary_debt`.
 - `python Tools/BufferIDSovereigntyAudit.py --report-path Docs/Reports/SHINOBU_260_BufferIDSovereigntyAudit.md --json-path Docs/Reports/SHINOBU_260_BufferIDSovereigntyAudit.json`: passed as static evidence; global `duplicateValueCount=3` comes from unrelated `H8Memory.cs` values `70534..70536`, while `72960..72965` are local casts only in `OceanAdapterVaultRoute.cs`.
@@ -155,6 +161,8 @@ Task 12 status: blocked by dependency. Full suppression of Crest `OceanRenderer.
 - Archived asset GUID exact scan: no active references under `Assets`, `ProjectSettings`, or `Packages` to `ed12880d16f3f2f4e80ceee64594101d`, `149ebcba5c729ad49911b1ea4b8456fd`, `0ef7bde4d259c9d4abcc93f41b0903a0`, or `a73ab923bdc811242bdca5f288eb3877`.
 - Auto-reference exact check: active Crest donor runtime/editor asmdefs and Crest bridge runtime/editor asmdefs all retain `autoReferenced=false`.
 - Scripting define exact check: `CREST_OCEAN` and `CREST_URP` appear in Standalone PlayerSettings and active Crest donor code; no first-party non-bridge `.cs`, `.asmdef`, `.asmref`, or `.rsp` file uses those symbols.
+- Donor optional reference exact check: no active `Unity.RenderPipelines.HighDefinition.Runtime` or `Unity.Postprocessing.Runtime` reference remains in `Assets/Crest/Crest/Scripts/Crest.asmdef`.
+- Generated report exact check: no active `Assets/profilermarkers.csv(.meta)` remains; archived `Docs/Archive/Crest_Version_Quarantine/Assets/profilermarkers.csv` retains the stale Crest rows for forensic trace only.
 - Exact shader scan: Crest HLSL include hits exist only under `Assets/_Project/Scripts/Plugins/Crest/Shaders/`.
 - Exact scene/build scan: no active `03_HECTON_WORLD_CREST5` hits remain under `ProjectSettings` or `Assets/_Project/Scenes`.
 - asmdef JSON parse check: passed for touched asmdefs.

@@ -108,7 +108,17 @@ Loop 28 disk-state render-binding and constants clear-ownership correction:
 - Fresh source proof supersedes stale Loop 26/27 evidence. The active disk sources now bind wound atlas, crack, lens dirt, blue-noise, and VR comfort textures with `RasterCommandBuffer.SetGlobalTexture`.
 - `ReconstructionConstantsVaultId` requests `NativeArrayOptions.ClearMemory`; editor diagnostics cannot read undefined constants before the first dispatcher publish.
 - `ReconstructionCsvScratchVaultId` remains `UninitializedMemory` by design because it is cold scratch and the parser consumes only the file-read byte count.
-- Scanner PASS timestamp is 2026-05-21T23:25:17Z with 0 active GameObject/URP decal violations.
+- Scanner PASS timestamp is 2026-05-21T23:30:34Z with 0 active GameObject/URP decal violations.
+
+Loop 29 VR comfort smoothstep correction:
+- `HectonVisorUberPost.shader` no longer uses `step(0.42, edge01)` for low-tier comfort edge masks; both paths use `smoothstep(0.36, 0.48, edge01)`.
+- The concurrent C# render-binding overwrite was reasserted to command-buffer `SetGlobalTexture`.
+- Scanner PASS timestamp is 2026-05-21T23:33:01Z with 0 active GameObject/URP decal violations.
+
+Loop 30 mobile waterline smoothstep correction:
+- `HectonVisorUberPost.shader` mobile internal-waterline path no longer uses `cameraSubmerged = step(cameraPosition.y, waterlineY - 0.03)`.
+- It now uses the existing softness scalar as `smoothstep(-softness, softness, (waterlineY - 0.03) - cameraPosition.y)`.
+- Scanner PASS timestamp is 2026-05-21T23:37:35Z with 0 active GameObject/URP decal violations.
 
 GC proof required:
 - Unity Profiler / GCMonitor capture in Play Mode. Static source proof only exists now.

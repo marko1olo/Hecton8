@@ -3064,7 +3064,7 @@ namespace Hecton8.Gameplay
             return math.countbits((uint)value) + math.countbits((uint)(value >> 32));
         }
 
-        private void ResolveVoxelNoClipFailsafe()
+        private void ApplyVoxelNoClipFailsafe(bool suppressPhysicsMutation)
         {
             if (_rb == null)
                 return;
@@ -3073,6 +3073,12 @@ namespace Hecton8.Gameplay
             float3 position3 = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
             if (!math.all(math.isfinite(position3)))
             {
+                if (suppressPhysicsMutation)
+                {
+                    DumpPlayerKinematicsBlackBox(_playerKinematicsNaNHash);
+                    return;
+                }
+
                 RecoverPlayerKinematicsToLastValidAup(_playerKinematicsNaNHash);
                 return;
             }
@@ -3098,6 +3104,12 @@ namespace Hecton8.Gameplay
             }
 
             if (!IsFiniteVector(safeRuntimePosition))
+            {
+                DumpPlayerKinematicsBlackBox(_playerKinematicsNoClipHash);
+                return;
+            }
+
+            if (suppressPhysicsMutation)
             {
                 DumpPlayerKinematicsBlackBox(_playerKinematicsNoClipHash);
                 return;
@@ -5349,7 +5361,7 @@ namespace Hecton8.Gameplay
             return _cachedTransportPlatformBasisRotation;
         }
 
-        private void ApplyTransportPlatformCarrierMotion(float fixedDeltaTime)
+        private void ApplyTransportPlatformCarrierMotion(float fixedDeltaTime, bool suppressPhysicsMutation)
         {
             if (_activeTransportPlatform == null || fixedDeltaTime <= 0f || !_transportPlatformRotationInitialized)
                 return;
@@ -5357,6 +5369,12 @@ namespace Hecton8.Gameplay
             Vector3 platformTranslation = _currentTransportPlatformPosition - _lastTransportPlatformPosition;
             if (platformTranslation.sqrMagnitude <= 0.000001f && _transportPlatformDeltaRotation == Quaternion.identity)
                 return;
+
+            if (suppressPhysicsMutation)
+            {
+                ConsumeTransportPlatformCarrierFrame();
+                return;
+            }
 
             Vector3 bodyPosition = _useFixedFrameSpatialCache ? _fixedFrameBodyPosition : _rb.position;
             Vector3 bodyVelocity = HectonPlayerMotor.SafeVelocity(_rb.linearVelocity);
@@ -5378,6 +5396,14 @@ namespace Hecton8.Gameplay
             if (_activeTransportPlatform.InheritPlatformRotation)
                 MoveMotorRotation(ResolveInheritedTransportWorldRotation(_rb.rotation));
 
+            _lastTransportPlatformPosition = _currentTransportPlatformPosition;
+            _lastTransportPlatformAup = _currentTransportPlatformAup;
+            _lastTransportPlatformRotation = _currentTransportPlatformRotation;
+            _transportPlatformDeltaRotation = Quaternion.identity;
+        }
+
+        private void ConsumeTransportPlatformCarrierFrame()
+        {
             _lastTransportPlatformPosition = _currentTransportPlatformPosition;
             _lastTransportPlatformAup = _currentTransportPlatformAup;
             _lastTransportPlatformRotation = _currentTransportPlatformRotation;
@@ -8729,9 +8755,11 @@ namespace Hecton8.Gameplay
                     ExecuteTransportEvaHandoff(previousTransportPlatform, previousTransportPlatformTransform);
                 }
 
+                bool exosuitActive = IsExosuitTransportActive();
+                bool exosuitKinematicAuthority = exosuitActive && ExosuitKinematicAuthority.HasActiveAuthority();
                 SyncTransportPlatformRotation();
                 RefreshFixedFrameSpatialCache();
-                ApplyTransportPlatformCarrierMotion(fixedDeltaTime);
+                ApplyTransportPlatformCarrierMotion(fixedDeltaTime, exosuitKinematicAuthority);
                 RefreshFixedFrameSpatialCache();
                 RefreshSharedGroundSweepBuffer();
                 float previousWaterImmersionRatio = _waterImmersionRatio;
@@ -8774,7 +8802,7 @@ namespace Hecton8.Gameplay
 
             UpdateBrineLayerState(fixedDeltaTime);
 
-            ApplyLadderSplineSnapFromAsyncProbe();
+            ApplyLadderSplineSnapFromAsyncProbe(exosuitKinematicAuthority);
 
             if (_waterImmersionRatio > _smoothedImmersionRatio)
             {
@@ -8954,8 +8982,8 @@ namespace Hecton8.Gameplay
             bool hasShoreGroundSupport = hasImmediateShoreFooting || (_shoreGroundGraceTimer > 0f && isShallowEnoughForShore);
             bool groundedOnDryLand = hasDryGroundSupport && isDryLand;
             bool groundedOnShore = hasShoreGroundSupport && isShallowEnoughForShore;
-            bool exosuitActive = IsExosuitTransportActive();
-            bool exosuitKinematicAuthority = TrySubmitExosuitKinematicAuthority(exosuitActive);
+            exosuitActive = IsExosuitTransportActive();
+            exosuitKinematicAuthority = TrySubmitExosuitKinematicAuthority(exosuitActive);
             ToggleBuoyancy(!exosuitActive);
             RefreshSurfaceBreachLock(physicsImmersion);
             UpdateSurfaceDiveCommitTimer(fixedDeltaTime, activeTransportPreset);
@@ -9027,7 +9055,7 @@ namespace Hecton8.Gameplay
             ApplyHydrostaticExitWeighting(previousWaterImmersionRatio);
 
             SmoothDampingTransition(fixedDeltaTime, suit);
-            TryApplyKinematicWallKick();
+            TryApplyKinematicWallKick(exosuitKinematicAuthority);
 
             if (_jumpRequested)
             {
@@ -9107,7 +9135,7 @@ namespace Hecton8.Gameplay
             PublishMovementAcousticSignal(safeVelocity);
             SyncSwimVatSpeedScalar(safeVelocity, suit);
             PushMovementStaminaBurnInput();
-            ResolveVoxelNoClipFailsafe();
+            ApplyVoxelNoClipFailsafe(exosuitKinematicAuthority);
             CaptureFixedInterpolationState();
             UIStateStore.WriteValue(UIValueSlotId.MovementSpeed, ApproximateVectorMagnitude(safeVelocity), Time.unscaledTime);
             UpdateGroundDiagnostics();
@@ -9115,10 +9143,13 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private void ApplyLadderSplineSnapFromAsyncProbe()
+        private void ApplyLadderSplineSnapFromAsyncProbe(bool suppressPhysicsMutation)
         {
             _ladderSplineSnapActive = false;
             _ladderSplineSnapAxisWorld = Vector3.zero;
+            if (suppressPhysicsMutation)
+                return;
+
             if (_playerMotor == null ||
                 _rb == null ||
                 !_playerMotor.TryGetRecentBatchedLadderHit(BatchedLadderProbeMaxPhysicsFrameAge, out RaycastHit ladderHit))
@@ -11608,8 +11639,11 @@ namespace Hecton8.Gameplay
             _jumpBufferTimer = 0f;
         }
 
-        private void TryApplyKinematicWallKick()
+        private void TryApplyKinematicWallKick(bool suppressPhysicsMutation)
         {
+            if (suppressPhysicsMutation)
+                return;
+
             if (_playerMotor == null ||
                 _rb == null ||
                 _isWalking ||

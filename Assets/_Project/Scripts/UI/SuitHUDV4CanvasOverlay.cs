@@ -876,7 +876,7 @@ namespace Hecton8.UI
         private Mesh _scannerHologramFallbackMesh;
         private float _scannerHologramAnimationTime;
 
-        public Canvas TargetCanvas => ResolveTargetCanvas();
+        public Canvas TargetCanvas => targetCanvas;
         public Camera ProjectionCamera => projectionCamera;
         internal static SuitHUDV4CanvasOverlay ActiveRuntimeInstance { get; private set; }
 
@@ -2819,6 +2819,9 @@ namespace Hecton8.UI
             if (!Application.isPlaying)
                 return;
 
+            if (IsStencilRenderGraphSuppressedRuntime())
+                return;
+
             EnsureAcousticRadarRuntimeResources();
             if (_acousticRadarMaterial == null)
                 return;
@@ -3181,6 +3184,9 @@ namespace Hecton8.UI
 
         private void RenderThreatChevrons()
         {
+            if (IsStencilRenderGraphSuppressedRuntime())
+                return;
+
             if (!Application.isPlaying ||
                 renderPath != RenderPath.ProjectionSource ||
                 projectionCamera == null)
@@ -3425,6 +3431,9 @@ namespace Hecton8.UI
 
         private void ApplyAcousticRadarVisuals(Color primary, Color warning, float corruptionIntensity)
         {
+            if (IsStencilRenderGraphSuppressedRuntime())
+                return;
+
             if (_acousticRadarOverlay == null)
                 return;
 

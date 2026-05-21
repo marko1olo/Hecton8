@@ -1,11 +1,5 @@
 Shader "Hecton8/Visor/StencilMask"
 {
-    Properties
-    {
-        _StencilRef ("Stencil Ref", Float) = 1
-        _StencilWriteMask ("Stencil Write Mask", Float) = 1
-    }
-
     SubShader
     {
         Tags
@@ -28,10 +22,10 @@ Shader "Hecton8/Visor/StencilMask"
 
             Stencil
             {
-                Ref [_StencilRef]
+                Ref 1
                 Comp Always
                 Pass Replace
-                WriteMask [_StencilWriteMask]
+                WriteMask 1
             }
 
             HLSLPROGRAM

@@ -3,7 +3,7 @@
 Agent: SHINOBU_260
 Domain: CREST_VERSION_QUARANTINE_DIRECTOR / Echelon 9 Meta & Integration
 Task Count: 20
-Status: PENDING VERIFICATION / POLISH PASS LOOP 20 WITH TASK 12 BLOCKED BY DEPENDENCY / NO BUILD DUE COMPILER PROCESS GATE
+Status: PENDING VERIFICATION / POLISH PASS LOOP 21 WITH TASK 12 BLOCKED BY DEPENDENCY / NO BUILD DUE COMPILER PROCESS GATE
 Batch Source: Docs/Tasks/CURRENT_BATCH.md `<AGENT_PROMPT id="SHINOBU_260" role="CREST_VERSION_QUARANTINE_DIRECTOR">`
 
 ## Hygiene
@@ -415,3 +415,30 @@ Rule quote: `Hecton8.Core` and `Hecton8.Physics` must have zero direct assembly 
   - DOD practice: py_compile passed; polish audit reports `crest4_project_bindings_have_baseline_archives` and `failed_count=0`; dependency scanner remains `breach_count=0`.
   - Rejected alternative: Unity/dotnet rebuild was rejected because this loop changes Python tooling, docs, and archive payloads only.
   - Estimated saving: no frame claim; avoids needless compile-wall load.
+
+## Loop 21: Compliance, Donor Reference, And Generated Report Wall
+
+- [x] Editor compliance denylist Crest strings surfaced in scanner output.
+  - DOD practice: `Tools/Crest_Dependency_Scanner.py` now reports `compliance_denylist_hits` from `Assets/_Project/Scripts/Editor/HectonComplianceValidator.cs` as non-failing policy evidence.
+  - Rejected alternative: leaving `WaveHarmonic.Crest*` denylist strings visible only to ad hoc `rg` was rejected because future auditors would see unexplained non-bridge Crest text.
+  - Estimated saving: runtime 0 microseconds; prevents false breach triage and keeps policy-only strings separate from runtime coupling.
+- [x] Polish audit widened to gate the new scanner bucket.
+  - DOD practice: `Tools/Crest_Quarantine_Polish_Audit.py` now checks `dependency_scanner_tracks_compliance_denylist_strings`; latest audit reports `failed_count=0`.
+  - Rejected alternative: documenting the denylist exception without a machine gate was rejected because scanner schema regressions would hide the evidence again.
+  - Estimated saving: runtime 0 microseconds; reduces repeated manual proof work.
+- [x] Static proof rerun.
+  - DOD practice: py_compile passed; dependency scanner reports `breach_count=0`, `global_scripting_define_hit_count=1`, `compliance_denylist_hit_count=6`, and `vocabulary_debt_hit_count=111`; polish audit reports `failed_count=0`.
+  - Rejected alternative: Unity/dotnet rebuild remains rejected until compiler-process and CPU gates are clear.
+  - Estimated saving: no frame claim; avoids forbidden rebuild load while strengthening static proof.
+- [x] Active Crest4 donor asmdef absent-package references removed.
+  - DOD practice: removed `Unity.RenderPipelines.HighDefinition.Runtime` and `Unity.Postprocessing.Runtime` from `Assets/Crest/Crest/Scripts/Crest.asmdef` because neither backing package exists in `Packages/manifest.json`, `packages-lock.json`, or physical `Packages/`.
+  - Rejected alternative: adding HDRP/PostProcessing packages was rejected because the selected donor route is URP and package installation would widen compile/import scope.
+  - Estimated saving: editor compile/import correctness; no runtime frame claim.
+- [x] Stale Unity-visible profiler marker CSV quarantined.
+  - DOD practice: moved `Assets/profilermarkers.csv(.meta)` to `Docs/Archive/Crest_Version_Quarantine/Assets/` after static scan found stale Crest assembly/method profiler rows.
+  - Rejected alternative: editing the 2.7 MB generated CSV in place was rejected because it is a stale generated report, not authoritative runtime source.
+  - Estimated saving: runtime 0 microseconds; removes stale donor evidence from active Unity import visibility.
+- [x] Scanner and polish audit now gate both regressions.
+  - DOD practice: dependency scanner hard-fails reintroduced absent optional donor assembly references and Unity-visible generated profiler reports containing Crest rows; polish audit checks `crest_donor_no_absent_hdrp_postprocessing_references`, `stale_profiler_markers_outside_unity_visibility`, `dependency_scanner_blocks_absent_optional_donor_references`, and `dependency_scanner_blocks_stale_generated_report_crest_rows`.
+  - Rejected alternative: relying on sub-agent notes only was rejected because future regressions require machine-readable gates.
+  - Estimated saving: editor proof time; no runtime frame claim.

@@ -3311,3 +3311,36 @@ Verification:
     Targeted scan found no scalability listener/callback/registration, low-tier fallback flag usage, low-tier shader property name, or cached quality tier route in `ToolDiegeticDisplayController.cs`, `ModularEquipmentEngine.cs`, and `Hecton_ToolScreenDiegetic.shader`; `git diff --check` passed with line-ending warnings only. Build was not launched because CPU probe returned 82% with active `dotnet` and `VBCSCompiler` processes.
   </VERIFICATION>
 </SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="VehicleSubOsCockpitQualityPull">
+  <WHAT_WAS_WRONG>
+    `VehicleSubOsCockpitRuntime` retained scalability event/listener routing, cached `_lowTier`, low/mid endpoint names, `LOW LOD` status labels, binary damage hologram compute-vs-glyph selection, boolean external feed shader blend, and low-tier telemetry bits.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Removed `IScalabilityChangedEventListener`, `ScalabilityEvents` register/unregister, callback state, `_lowTier`, and stale endpoint names. Quality is pulled during `Tick` from continuous `HomeostasisBrain.GlobalQualityWeight`; radar capacity, points per tap, UI/external RT size, RT format, external feed blend, and damage hologram point budget use smooth curves. Fallback glyphs now mean missing compute/resource fallback only.
+  </WHAT_WAS_DONE>
+  <STRUCT_LAYOUT>
+    `CockpitTelemetryEntry` remains `[StructLayout(LayoutKind.Explicit, Size = 64)]`: 0 int Frame(4), 4 int RadarActivePoints(4), 8 int CockpitInteractions(4), 12 uint Flags(4), 16 float Power(4), 20 float Oxygen(4), 24 float Co2(4), 28 float SpeedKnots(4), 32 Vector3 AnchorPosition(12), 44 int HoloDamagePoints(4), 48 int HoloProxyVertices(4), 52 float HoloFlicker(4), 56 float HoloFlood01(4), 60 uint HoloFlags(4). Total = 64 bytes exactly, one cache line; no Pack=1 and no managed references.
+  </STRUCT_LAYOUT>
+  <SCALABILITY_CURVE>
+    Minimum-quality pressure no longer flips behavior through `_lowTier`. `SmoothQuality(weight)` lerps radar capacity 512..4096, sonar tap fanout 32..256, UI/external RT dimensions from minimum-quality caps to authored sizes, external feed blend from 0..1, and damage hologram point budget 7..512. Below 0.3, expensive presentation collapses by lower point budgets and smaller RTs; high/ultra spends budget on full point-cloud hologram and richer screen feeds without changing facts or DTO layout.
+  </SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>
+    No new native persistent container or Vault route was added in this pass. Existing cockpit native arrays remain pre-existing local UI state and telemetry; this pass did not expand them. No SignalBus DTO, BufferID, save identity, or authority route changed.
+  </H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+    Existing `ButtonKinematicJob` remains `[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]` and keeps `[NoAlias]` on `States`, `Targets`, `Progress`, `Offsets`, `BaseLocalPositions`, and `Matrices`. It consumes `_buttonJobHandle` only through existing scheduler/teardown sites and this pass added no `.Complete()` path.
+  </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>
+    No asmdef, namespace dependency, sibling runtime reference, DTO ABI, SignalBus lane, or GlobalRegistry surface was added. Build was skipped under AGENTS guard because the first guard found active `dotnet`/`csc` at 42 percent CPU, and the latest guard found active `dotnet` at 90 percent CPU.
+  </COMPILE_GUARD>
+  <CINEMATIC_CHEATS>
+    Damage state remains a Dear Lie point-cloud hologram over a coarse proxy, not CPU hull physics. Before: binary `_lowTier` could hard-switch to a 7-point glyph. After: compute path remains available and continuously reduces point budget; the 7-point glyph is only a resource-missing fallback. Theoretical visual route stays O(proxy vertices) for compute and O(7) for missing-resource glyph, never O(hull triangles * rooms) CPU simulation.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No measured speed claim. Removed one event listener route and binary branch keys; smaller RTs and lower point budgets need Unity GPU/Frame Debugger proof for timing.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted scan found no `_lowTier`, `LowTier`, `StatusModeLow`, `MidRadar`, `_lastExternalFeedActive`, low-tier damage glyph names, `ScalabilityEvents`, `IScalabilityChangedEventListener`, `ScalabilityChangedEvent`, `LOW LOD`, `LowRadar`, `LowUi`, `lowWidth`, `lowHeight`, or `tier clamping` in `VehicleSubOsCockpitRuntime.cs`. `git diff --check` passed with line-ending warning only. Build was not launched because active compiler processes were present.
+  </VERIFICATION>
+</SELF_AUDIT>

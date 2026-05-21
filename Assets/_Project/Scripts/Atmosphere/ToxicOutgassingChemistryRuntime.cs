@@ -449,7 +449,7 @@ namespace Hecton8.Atmosphere
             return math.isfinite(density);
         }
 
-        public bool TryGetGridReadback(out NativeArray<float> density, out int resolution, out double3 originAup, out float cellSize, out int version)
+        public bool TryGetGridReadback(out NativeArray<float>.ReadOnly density, out int resolution, out double3 originAup, out float cellSize, out int version)
         {
             if (!_nativeReady)
             {
@@ -461,12 +461,13 @@ namespace Hecton8.Atmosphere
                 return false;
             }
 
-            density = OpenBuffer(in _densityFront);
+            NativeArray<float> densityBuffer = OpenBuffer(in _densityFront);
+            density = densityBuffer.AsReadOnly();
             resolution = _activeResolution;
             originAup = _gridOriginAup;
             cellSize = _cellSizeMeters;
             version = _densityVersion;
-            return density.IsCreated;
+            return densityBuffer.IsCreated;
         }
 
         public bool TryGetGridHeader(out ToxicOutgassingGridHeaderDTO header)
@@ -487,7 +488,7 @@ namespace Hecton8.Atmosphere
             return true;
         }
 
-        public bool TryGetCellStates(out NativeArray<ToxicityStateDTO> states)
+        public bool TryGetCellStates(out NativeArray<ToxicityStateDTO>.ReadOnly states)
         {
             states = default;
             if (!_nativeReady || !IsHandleCreated(in _cellStatesFront))
@@ -495,8 +496,9 @@ namespace Hecton8.Atmosphere
                 return false;
             }
 
-            states = OpenBuffer(in _cellStatesFront);
-            return states.IsCreated;
+            NativeArray<ToxicityStateDTO> stateBuffer = OpenBuffer(in _cellStatesFront);
+            states = stateBuffer.AsReadOnly();
+            return stateBuffer.IsCreated;
         }
 
         public void GenerateEmergencyMockChemistry()

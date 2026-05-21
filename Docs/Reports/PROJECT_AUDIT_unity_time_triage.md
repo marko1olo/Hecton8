@@ -475,6 +475,57 @@ Updated static counts from that artifact:
 
 This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
 
+## 2026-05-22 Construction Occupancy Read Accessor Follow-Up
+
+Additional native API narrowing after the PDA snapshot pass:
+
+- `ModularBaseConstructionValidator.TryReadOccupancyHashTable` now returns `NativeArray<BaseModuleOccupancyDTO>.ReadOnly`.
+
+Rejected:
+
+- `TryReadTelemetryRing`, because `PlayerBuilder` passes the returned buffer to `WriteTelemetry`.
+- `EnsureOccupancyHashTable`, `TryInsertOccupancyCell`, `TryResolveOccupiedCell`, and validation job buffers, because these are writer-side construction routes.
+
+Focused proof:
+
+- Focused scan found no first-party call sites for `TryReadOccupancyHashTable`.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_after_construction_readonly_occupancy.json`.
+
+Updated static counts from that artifact:
+
+- `nativeCollectionPublicMutableApiExposure`: 219, down from 220.
+- `nativeApiExposureOutRefMutable`: 167, down from 168.
+- `nativeApiExposureBuildQaDevProof`: 8, down from 9.
+- `nativeApiRiskEditorOrProofSurface`: 13, down from 14.
+
+This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 PDA Read-Only Snapshot Follow-Up
+
+Additional native API narrowing after the voxel passability pass:
+
+- `PlayerExplorationTracker.TryGetExplorationMaskPayload` now returns `NativeArray<ulong>.ReadOnly`.
+- `PlayerExplorationTracker.TryBuildCartographyRleRuns` now returns `NativeArray<CartographyRleRunDTO>.ReadOnly`.
+
+Rejected:
+
+- `TryGetDiscoveredSectorsPayload` and `TryPrepareCartographyUpload` narrowing in this pass, because current PDA rendering uploads through `GraphicsBufferUploadUtility.UploadNativeArray(NativeArray<T>)` and needs separate upload API proof.
+- Any copied managed snapshot, because that would allocate and weaken the zero-copy cartography route.
+
+Focused proof:
+
+- Focused scans found no first-party mutable call-site declarations for the two narrowed APIs.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_after_pda_readonly_snapshots.json`.
+
+Updated static counts from that artifact:
+
+- `nativeCollectionPublicMutableApiExposure`: 220, down from 222.
+- `nativeApiExposureBuildPlayerRuntime`: 206, down from 208.
+- `nativeApiExposureOutRefMutable`: 168, down from 170.
+- `nativeApiRiskRuntimeOutRefMutableView`: 93, down from 95.
+
+This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
 ## 2026-05-22 Voxel Passability Native API Follow-Up
 
 Additional native API narrowing after the vegetation snapshot pass:

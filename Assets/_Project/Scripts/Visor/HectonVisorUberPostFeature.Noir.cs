@@ -1447,4 +1447,14 @@ namespace Hecton8.Visor
             return output;
         }
     }
+
+    internal static class RasterCommandBufferStaticTextureBridge
+    {
+        public static void SetGlobalTexture(this RasterCommandBuffer cmd, int nameId, Texture texture)
+        {
+            _ = cmd;
+            if (texture != null)
+                Shader.SetGlobalTexture(nameId, texture);
+        }
+    }
 }

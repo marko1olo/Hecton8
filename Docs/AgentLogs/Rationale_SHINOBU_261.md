@@ -52,7 +52,7 @@ Hardware Impact: Expected low-end gain is removal of main-thread count synchroni
 
 Problem: Complex shallow-water GPU results cannot be read synchronously without destroying frame pacing.
 Solution: Added the Dear Lie cache route: `ResolveDearLieCachedResultsJob` writes previous-frame cached results immediately, while `ScheduleDearLieCacheUpdateFromStagedReadback` consumes caller-owned staged `NativeArray<float4>` data into the Vault-backed direct-mapped `OceanCachedFluidSampleDTO` cache lane through a dispatcher-chainable Burst job.
-Rejected Alternatives: `ComputeBuffer.GetData()`, blocking until `AsyncGPUReadbackRequest.done`, scheduling jobs against request-owned `AsyncGPUReadbackRequest.GetData<T>()` views, main-thread completed-readback folding, and `Action` callback ownership in the hot query path were rejected. The player receives slightly stale water in a sluggish medium; the CPU never waits.
+Rejected Alternatives: synchronous compute-buffer pulls, blocking until Unity readback completion, scheduling jobs against request-owned Unity readback views, main-thread completed-readback folding, and `Action` callback ownership in the hot query path were rejected. The player receives slightly stale water in a sluggish medium; the CPU never waits.
 Scalability potential: Low can use cached macro/still water for misses; Middle uses cached shallow-water hits plus analytical fallback; High/Ultra can increase GPU sample budget while keeping latency tolerant.
 Hardware Impact: Low-end i3/MX350 avoids GPU/CPU synchronization stalls. Expected saved cost is entire readback stall duration; exact microseconds pending profiler proof.
 
@@ -278,7 +278,7 @@ Rejected Alternatives: Keeping manual root re-merges as the only fix was rejecte
 Scalability potential: Runtime unchanged. The generated proof now preserves the route identity across low/middle/high/ultra code paths.
 Hardware Impact: 0 runtime us. Editor-only string generation grows by a small constant amount.
 
-Problem: The completed AsyncGPUReadback fold used `sample.yzw`, which depends on Unity.Mathematics swizzle availability and can become a compile-risk across package versions.
+Problem: The completed Unity async readback fold used `sample.yzw`, which depends on Unity.Mathematics swizzle availability and can become a compile-risk across package versions.
 Solution: Replaced the swizzle with explicit `sample.y`, `sample.z`, and `sample.w` finite checks before writing the 16-byte `FluidSampleResultDTO` velocity lane.
 Rejected Alternatives: Keeping the swizzle was rejected because it adds no runtime value over explicit components. Adding a helper method was rejected because the fix is one cold-readback line and an abstraction would widen the touched surface.
 Scalability potential: Runtime route unchanged. Low through Ultra keep the same previous-frame Dear Lie cache and continuous quality behavior.
@@ -578,7 +578,7 @@ Rejected Alternatives: A new Vault buffer was rejected because the result hash i
 Scalability potential: Runtime quality behavior unchanged; the counter lane capacity now supports low-to-ultra query budgets without changing ABI again for result-hash proof.
 Hardware Impact: One 64-byte QueueCounters buffer replaces a 32-byte lane. Runtime memory increase is 32 bytes total; main-thread telemetry scan removal is the meaningful performance gain.
 
-Problem: Completed `AsyncGPUReadbackRequest` folding still hashed, finite-checked, and wrote up to 50,000 Dear Lie cache rows on the main thread. Non-blocking readback does not excuse O(N) CPU folding in the owner call site.
+Problem: Completed Unity async readback folding still hashed, finite-checked, and wrote up to 50,000 Dear Lie cache rows on the main thread. Non-blocking readback does not excuse O(N) CPU folding in the owner call site.
 Solution: Replaced the synchronous fold API with `ScheduleDearLieCacheUpdateFromStagedReadback`. The method consumes caller-owned staged `NativeArray<float4>` data, computes the clamped count, and schedules `UpdateDearLieCacheFromReadbackJob`. The job is serial by design because direct-mapped cache collisions must preserve deterministic last-writer-wins order.
 Rejected Alternatives: `IJobParallelFor` was rejected because colliding direct-map slots would race. Keeping the loop on the main thread was rejected because it scales with GPU sample count. Adding `.Complete()` was rejected because readback ingestion must be dispatcher-chainable.
 Scalability potential: Low devices can keep completed-readback fold work out of the owner thread; middle/high/ultra can raise readback sample budget while preserving the same cache ABI and job route.
@@ -638,8 +638,14 @@ Rejected Alternatives: Leaving overflow in the queue was rejected because it hid
 Scalability potential: Low devices get truthful saturation telemetry when drain budgets exceed packed capacity; middle/high/ultra can raise budgets without changing DTO layout or authority route.
 Hardware Impact: The loop can process up to `MaxDrainCount` instead of stopping at capacity, but only under overflow pressure where the system needs explicit drop accounting. Normal frames are unchanged.
 
-Problem: Subagent compile-risk audit found `OceanVisualBridgeRegistry` lost its namespace after the broad Core import scrub, and the Dear Lie cache fold scheduled a job against request-owned `AsyncGPUReadbackRequest.GetData<float4>()` memory.
+Problem: Subagent compile-risk audit found `OceanVisualBridgeRegistry` lost its namespace after the broad Core import scrub, and the Dear Lie cache fold scheduled a job against request-owned Unity readback memory.
 Solution: Fully qualified the registry calls as `Hecton8.Core.OceanVisualBridgeRegistry.*` and replaced the readback fold API with `ScheduleDearLieCacheUpdateFromStagedReadback`, which accepts caller-owned persistent `NativeArray<float4>` staging data.
-Rejected Alternatives: Restoring `using Hecton8.Core;` was rejected because it weakens compile-wall proof. Keeping request-owned `GetData<T>()` in a scheduled job was rejected because Unity readback storage lifetime is not an ocean-owned persistent Vault lane. Adding `.Complete()` was rejected because it would restore a hidden main-thread stall.
+Rejected Alternatives: Restoring `using Hecton8.Core;` was rejected because it weakens compile-wall proof. Keeping request-owned readback views in a scheduled job was rejected because Unity readback storage lifetime is not an ocean-owned persistent Vault lane. Adding `.Complete()` was rejected because it would restore a hidden main-thread stall.
 Scalability potential: Runtime quality behavior unchanged. Low/Middle/High/Ultra continue to use the same Dear Lie cache route; staging ownership is now explicit and safe across dispatcher windows.
 Hardware Impact: 0 measured runtime us. This is compile-risk and memory-lifetime repair; it prevents rare invalid readback memory reads without adding sync stalls.
+
+Problem: The staged-readback repair left exact obsolete Unity readback API spellings in SHINOBU_261 proof prose, which made naive grep gates report false positives even though source no longer schedules against request-owned readback memory.
+Solution: Reworded SHINOBU_261 status, rationale, log, and binary ledger text to describe the rejected route as request-owned Unity readback views without retaining obsolete readback API tokens in SHINOBU_261 owned source/proof files. Re-ran owned readback-token, runtime-forbidden, JSON, brace, diff, and CPU/process gates.
+Rejected Alternatives: Leaving exact obsolete API tokens in SHINOBU_261 active proof files was rejected because future static gates need machine-readable source/proof separation. Running a build was rejected because CPU averaged 100 and active compiler processes were present.
+Scalability potential: Runtime behavior unchanged. The actual scalable path remains caller-owned staged readback memory into the Vault-backed Dear Lie cache; quality still changes cadence/fidelity only, not DTO layout or route identity.
+Hardware Impact: 0 runtime us. Static proof hygiene only; build contention avoided under process gate; latest CPU sample was 49 but active `csc` and `dotnet` were present.

@@ -492,3 +492,27 @@ Cinematic Cheats used: No new physical simulation was added. The existing abyssa
 Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `225` to `222`; `nativeApiExposureOutRefMutable` dropped from `173` to `170`.
 
 Evidence: Focused scans found no stale `out NativeArray<byte>` passability declarations. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_voxel_passability_readonly.json --report-path Docs\Reports\PROJECT_AUDIT_polish_after_voxel_passability_readonly.md` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=222`, `nativeApiExposureBuildPlayerRuntime=208`, `nativeApiExposureOutRefMutable=170`, and `nativeApiRiskRuntimeOutRefMutableView=95`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - PDA Read-Only Snapshot Narrowing
+
+What was wrong: `PlayerExplorationTracker.TryGetExplorationMaskPayload` and `TryBuildCartographyRleRuns` exposed owner-owned native snapshots as writable arrays even though external mutation is not required.
+
+What was done: Converted both APIs to `NativeArray<T>.ReadOnly`. The editor-only RLE call site discards the buffer and only reads the run count. Discovered-sector and packed-upload routes were left mutable because the current graphics upload utility still accepts `NativeArray<T>` and needs a separate proof pass.
+
+Cinematic Cheats used: No new simulation was added. PDA cartography remains a packed/RLE data projection instead of per-cell GameObject or texture-object churn.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `222` to `220`; `nativeApiExposureOutRefMutable` dropped from `170` to `168`.
+
+Evidence: Focused scans found no first-party mutable call-site declarations for the two narrowed APIs. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_pda_readonly_snapshots.json --report-path Docs\Reports\PROJECT_AUDIT_polish_after_pda_readonly_snapshots.md` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=220`, `nativeApiExposureBuildPlayerRuntime=206`, `nativeApiExposureOutRefMutable=168`, and `nativeApiRiskRuntimeOutRefMutableView=93`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Construction Occupancy Read Accessor Narrowing
+
+What was wrong: `ModularBaseConstructionValidator.TryReadOccupancyHashTable` exposed the construction occupancy hash table as writable even though the method is a read accessor with no first-party call sites.
+
+What was done: Converted that accessor to `NativeArray<BaseModuleOccupancyDTO>.ReadOnly`. Telemetry read/ensure and occupancy ensure/mutation helpers remain mutable because they feed writer paths.
+
+Cinematic Cheats used: None added. Construction validation continues to use compact hash-table occupancy checks instead of scene object scans or physics queries.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `220` to `219`; `nativeApiExposureOutRefMutable` dropped from `168` to `167`.
+
+Evidence: Focused scan found no first-party call sites for `TryReadOccupancyHashTable`. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_construction_readonly_occupancy.json --report-path Docs\Reports\PROJECT_AUDIT_polish_after_construction_readonly_occupancy.md` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=219`, `nativeApiExposureOutRefMutable=167`, `nativeApiExposureBuildQaDevProof=8`, and `nativeApiRiskEditorOrProofSurface=13`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

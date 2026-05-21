@@ -10,8 +10,8 @@ Status: STATIC SOURCE / FILESYSTEM LEDGER, RUNTIME PENDING
 - BufferIDs unchanged: `73180` `VisorHudParamsDTO`, `73181` `ARWaypointOverlay.StencilTargetSourceDTO`, `73182` `VisorArTargetDTO`, `73183` `VisorHudDigitParamsDTO`, `73184` `VisorTelemetryEntry`, `73185` `VisorHudProfileDTO`, and `73186` CSV scratch bytes remain visual-only UI/SystemID presentation lanes excluded from rollback/Merkle hashing.
 - Lifecycle route delta: `HectonVisorARStencilRendererFeature` now releases all seven owned `VaultGenerationHandle<T>` descriptors through `IDataVault.ReleaseBuffer(in handle)` on renderer disposal, DataVault service replacement, and cold service rebind before tombstoning local handles. The previous descriptor-only clear helper was removed.
 - Upload route delta: AR target upload now matches HUD/digit upload discipline. The compacted `VisorArTargetDTO[16]` mapped buffer is copied with `UnsafeUtility.MemCpy`, and unused rows are cleared with `UnsafeUtility.MemClear` instead of per-row managed C# loops.
-- Binary payload impact: route-only. No DTO layout, BufferID, CBuffer stride, StructuredBuffer stride, shader property ID, telemetry dump ABI, CSV byte contract, stencil lane, rollback exclusion, or SignalBus ABI changed.
-- Verification: targeted SHINOBU_270 forbidden-token scan returned no `GlobalSignals`, `FromRuntimePosition`, shader global setters, `Canvas.ForceUpdateCanvases`, `TryGetLatestCreated`, Burst/job/tiny-run wrappers, `.Complete()`, persistent runtime `NativeArray`, or `_CameraDepthTexture`. Post-upload and post-watchdog scans returned the same clean result. `git diff --check` reports only Git LF-to-CRLF warnings. Build was not relaunched because active `dotnet.exe`/`csc.exe`/`VBCSCompiler.exe` processes and 100% CPU gate blocked it; generated `Hecton8.Core.csproj` remains stale until Unity regenerates/imports new visor scripts.
+- Binary payload impact: route-only. No DTO layout, BufferID, CBuffer stride, StructuredBuffer stride, telemetry dump ABI, CSV byte contract, rollback exclusion, or SignalBus ABI changed. The reserved stencil lane remains bit 0, but the stencil ref/mask shader property IDs were removed; visor shaders now hard-code `Ref 1`, `WriteMask 1`, and `ReadMask 1`.
+- Verification: targeted SHINOBU_270 forbidden-token scan returned no `GlobalSignals`, `FromRuntimePosition`, static `Shader.SetGlobal*` calls, runtime material stencil setters, `Canvas.ForceUpdateCanvases`, `TryGetLatestCreated`, Burst/job/tiny-run wrappers, `.Complete()`, persistent runtime `NativeArray`, or `_CameraDepthTexture`. RenderGraph `RasterCommandBuffer.SetGlobal*` bindings remain declared pass-resource bindings, not forbidden static shader-global mutation. Post-upload, post-watchdog, and fixed-stencil-lane scans returned the same clean result. `git diff --check` reports only Git LF-to-CRLF warnings. Build was not relaunched because active `dotnet.exe`/`csc.exe`/`VBCSCompiler.exe` processes and 100% CPU gate blocked it; generated `Hecton8.Core.csproj` remains stale until Unity regenerates/imports new visor scripts.
 
 ## 2026-05-21 - SHINOBU_278 Coop Input Prediction Descriptor Refresh And Scanner Widening
 
@@ -3782,6 +3782,18 @@ SHINOBU_260 now owns local numeric Vault BufferIDs:
 
 Static proof only: `Tools/Crest_Quarantine_Polish_Audit.py` reports `failed_count=0`; exact-number scan before this ledger insertion found `72960..72965` only in `OceanAdapterVaultRoute.cs`. No build/rebuild, Unity import, Burst Inspector, profiler, or player-build proof is claimed because CPU sampled at `100` under the explicit build gate.
 
+## 2026-05-22 SHINOBU_260 Crest Quarantine Donor Reference And Generated Report Wall
+
+Binary payload impact: none. Ocean adapter DTO layouts, Vault BufferIDs `72960..72965`, telemetry row size, CSV scratch lane, SignalBus routes, shader property IDs, and rollback exclusion are unchanged.
+
+Donor asmdef route delta: selected active Crest4 donor `Assets/Crest/Crest/Scripts/Crest.asmdef` no longer references `Unity.RenderPipelines.HighDefinition.Runtime` or `Unity.Postprocessing.Runtime`. The backing HDRP/PostProcessing packages are absent from `Packages/manifest.json`, `packages-lock.json`, and physical `Packages/`, so adding packages was rejected; the URP donor remains leaf-scoped.
+
+Generated artifact route delta: stale Unity-visible `Assets/profilermarkers.csv(.meta)` moved to `Docs/Archive/Crest_Version_Quarantine/Assets/`. The archived CSV preserves Crest profiler rows as forensic evidence, but active Unity visibility no longer includes that generated donor report.
+
+Tooling route delta: `Tools/Crest_Dependency_Scanner.py` now hard-fails selected donor references to absent optional Unity package assemblies, hard-fails Unity-visible generated profiler reports with Crest rows, and reports `HectonComplianceValidator` policy denylist Crest strings as non-failing `compliance_denylist_hits`. `Tools/Crest_Quarantine_Polish_Audit.py` gates all three surfaces.
+
+Verification: static scanner reports `breach_count=0`, `global_scripting_define_hit_count=1`, `compliance_denylist_hit_count=6`, and `vocabulary_debt_hit_count=111`; polish audit reports `failed_count=0`; py_compile passed for the two SHINOBU_260 Python tools. No Unity import, Play Mode, Burst Inspector, profiler, player-build, or rebuild proof is claimed under current command discipline and build-gate policy.
+
 ## 2026-05-21 SHINOBU_253 AUP Blit Payload Boundary Addendum
 
 This addendum supersedes the earlier SHINOBU_253 row-size notes for the stress-driven spawn director. AUP-bearing director DTOs now store AUP facts as `AbsoluteUniversePositionBlit128` rather than raw `double3` authority fields:
@@ -3870,7 +3882,7 @@ SHINOBU_261 owns local numeric Vault BufferIDs `72940..72950` after rejecting th
 
 Primary DTO layout proof: `FluidSampleResultDTO` is `[StructLayout(LayoutKind.Explicit, Size = 16)]` with `WaterHeight@0` (`float`, 4 bytes) and `SurfaceVelocity@4` (`float3`, 12 bytes). No C# properties are used in hot DTO rows.
 
-  Authority boundary: ocean kinematics transforms AUP requests into 16-byte result rows through dispatcher-scheduled Burst jobs. `GlobalQualityWeight` continuously changes active octave count and polynomial sine/cosine precision; it does not alter DTO layout, save identity, BufferID ownership, or authority route. Previous-frame Dear Lie GPU cache consumption is non-blocking; pending readbacks are never completed on the main thread, and cache ingestion requires caller-owned staged `NativeArray<float4>` data rather than scheduling against request-owned `AsyncGPUReadbackRequest.GetData<T>()` views.
+  Authority boundary: ocean kinematics transforms AUP requests into 16-byte result rows through dispatcher-scheduled Burst jobs. `GlobalQualityWeight` continuously changes active octave count and polynomial sine/cosine precision; it does not alter DTO layout, save identity, BufferID ownership, or authority route. Previous-frame Dear Lie GPU cache consumption is non-blocking; pending readbacks are never completed on the main thread, and cache ingestion requires caller-owned staged `NativeArray<float4>` data rather than scheduling against request-owned Unity readback views.
 
 Static source proof only: exact-number scan over active scripts/docs found `72940..72950` only in the SHINOBU_261 ocean kinematics source before this ledger insertion. No build/rebuild, Unity import, Burst Inspector, profiler, or player-build proof is claimed until the CPU gate permits compilation.
 
@@ -4877,6 +4889,13 @@ Fault route: `ExosuitTelemetryEntry[300]` dumps fixed 64-byte rows to `Docs/Agen
 - Authority impact: route naming now matches Global Systems Doctrine. Lock/open helpers visibly acquire or expose mutable/locked lanes; pure read facades remain on `TryReadHandle`.
 - Verification: targeted old-name scan is clean in SHINOBU runtime and `HectonPlayerMovement`; JSON/XML proof artifacts parse; build was not relaunched because the known external `IBuildPlacementRule.cs` compile wall is unchanged.
 
+## 2026-05-22 - SHINOBU_276 Exosuit Player Authority Leak Closure
+
+- `Assets/_Project/Scripts/HectonPlayerMovement.cs` now computes an early exosuit authority gate before transport carrier and ladder snap mutation, then passes the active-authority suppression bit into carrier, ladder, wall-kick, and voxel no-clip recovery routes.
+- Binary payload impact: none. SHINOBU DTO sizes, BufferIDs, signal payloads, save identity, and blackbox row layouts are unchanged.
+- Authority impact: active exosuit kinematic authority suppresses transport carrier motor writes, ladder snap motor writes, wall-kick motor/queued-force writes, and voxel no-clip recovery motor writes. No-clip still dumps black-box telemetry under suppression; carrier still consumes platform bookkeeping to avoid a later accumulated delta.
+- Verification: `Exosuit_Physics_Inquisition` route coverage now includes wall kick, voxel no-clip, transport carrier, and ladder snap sinks. Targeted source scan confirms suppression-parameter callsites. Build was not relaunched because the external compile wall is unchanged.
+
 ## 2026-05-22 - SHINOBU_SYSTEMIC_SURGEON Tool Diegetic Display Quality Pull Note
 
 - `Assets/_Project/Scripts/UI/Tools/ToolDiegeticDisplayController.cs` removed scalability-event listener routing, and `Assets/_Project/Scripts/ModularEquipmentEngine.cs` stopped setting the legacy low-tier fallback bit on `ToolStateChangedSignal`.
@@ -4884,9 +4903,30 @@ Fault route: `ExosuitTelemetryEntry[300]` dumps fixed 64-byte rows to `Docs/Agen
 - Shader route impact: `Assets/_Project/Art/Shaders/Hecton_ToolScreenDiegetic.shader` now exposes `_ToolFallback01` and `Fallback Tint` naming for the same scalar fallback behavior. No shader variants, DTOs, BufferIDs, or SignalBus payloads were added.
 - Verification: targeted binary/listener scan clean for `ToolDiegeticDisplayController.cs`, `ModularEquipmentEngine.cs`, and `Hecton_ToolScreenDiegetic.shader`; `git diff --check` passed with line-ending warnings only. Build was not launched because CPU probe returned 82% with active `dotnet` and `VBCSCompiler` processes.
 
+## 2026-05-22 - SHINOBU_SYSTEMIC_SURGEON Vehicle Sub OS Cockpit Quality Pull Note
+
+- `Assets/_Project/Scripts/UI/VehicleSubOsCockpitRuntime.cs` removed scalability-event listener routing, cached `_lowTier`, low-tier status labels, and binary damage hologram fallback selection.
+- Binary payload impact: none. `RadarBlipGpuData` remains 32 bytes. `CockpitTelemetryEntry` remains 64 bytes with explicit offsets 0/4/8/12/16/20/24/28/32/44/48/52/56/60. Telemetry flag bit positions are preserved; bit meanings now represent quality pressure/fallback glyph state instead of hardware tier.
+- Shader/render route impact: `_ExternalFeedBlend` now receives a continuous scalar from `GlobalQualityWeight` when external feed is requested or active. Damage hologram compute receives a continuous point budget and cheap-visual scalar; the 7-point glyph is a missing-resource fallback only.
+- Verification: targeted scan clean for scalability listener/callback/registration, `_lowTier`, low-tier glyph/status/radar/UI names, and `LOW LOD` text in `VehicleSubOsCockpitRuntime.cs`; `git diff --check` passed with line-ending warning only. Build was not launched because the first guard found active `dotnet`/`csc` at 42% CPU, and the latest guard found active `dotnet` at 90% CPU.
+
 ## 2026-05-22 - SHINOBU_275 Visor Wound Disk-State Texture Binding And Constants Clear Ownership
 
 - `Assets/_Project/Scripts/Visor/DeferredDecalPass.cs` and `Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs` now bind wound atlas, crack, lens dirt, blue-noise, and VR comfort textures through `RasterCommandBuffer.SetGlobalTexture` in the active disk source.
 - Binary payload impact: none. `VisorDecalDTO` remains 80 bytes, `DecalMaterialProfileDTO` remains 32 bytes, `UberNoirReconstructionConstantsDTO` remains 48 bytes, BufferIDs, shader property IDs, telemetry rows, atlas payload bits, and blackbox dump bytes are unchanged.
 - Authority impact: `ReconstructionConstantsVaultId` now requests `NativeArrayOptions.ClearMemory`, so the GraphicsScalability-owned constants mirror is deterministic before first dispatcher publish. CSV scratch remains an explicit-count cold parser scratch lane.
-- Verification: focused scans clean for owned `Material.Set*`, `.SetTexture(`, `.SetBuffer(`, stale texture-name constants, and source `ReconstructionConstantsVaultId` plus `UninitializedMemory` pattern; `Tools/Decal_Projector_Inquisition.py` PASS at `2026-05-21T23:25:17Z` with 0 active GameObject/URP decal violations; `git diff --check` passed with line-ending warnings only. Build was not launched because CPU sampled 80% with active `dotnet` and `csc` processes.
+- Verification: focused scans clean for owned `Material.Set*`, `.SetTexture(`, `.SetBuffer(`, stale texture-name constants, and source `ReconstructionConstantsVaultId` plus `UninitializedMemory` pattern; `Tools/Decal_Projector_Inquisition.py` PASS at `2026-05-21T23:30:34Z` with 0 active GameObject/URP decal violations; `git diff --check` passed with line-ending warnings only. Build was not launched because CPU sampled 100% with active `csc`, `dotnet`, and `VBCSCompiler` processes.
+
+## 2026-05-22 - SHINOBU_275 VR Comfort Mask Smoothstep Edge
+
+- `Assets/_Project/Art/Shaders/HectonVisorUberPost.shader` replaced both low-tier comfort edge `step(0.42, edge01)` sites with `smoothstep(0.36, 0.48, edge01)`.
+- Binary payload impact: none. No DTO, BufferID, shader property ID, SignalBus payload, telemetry row, atlas payload bit, or blackbox byte changed.
+- Authority impact: shader-only visual fake. The existing low-tier comfort blend remains continuous and does not change gameplay truth, save identity, rollback state, or C# route ownership.
+- Verification: focused scan clean for `comfortEdgeLowTier = step(0.42...)` and active owned `Material.SetTexture` target calls after final C# reapply; `Tools/Decal_Projector_Inquisition.py` PASS at `2026-05-21T23:33:01Z` with 0 active GameObject/URP decal violations; `git diff --check` passed with line-ending warnings only. Build was not launched because CPU sampled 29% but active `csc` and `dotnet` processes were still present.
+
+## 2026-05-22 - SHINOBU_275 Mobile Waterline Smoothstep
+
+- `Assets/_Project/Art/Shaders/HectonVisorUberPost.shader` replaced the mobile internal-waterline `cameraSubmerged` hard step with a smooth transition using the existing softness scalar.
+- Binary payload impact: none. No DTO, BufferID, shader property ID, SignalBus payload, telemetry row, atlas payload bit, or blackbox byte changed.
+- Authority impact: shader-only visual fake. The waterline remains presentation-owned screen-space math and does not change gameplay water/pressure truth.
+- Verification: focused scan clean for `cameraSubmerged = step`, `comfortEdgeLowTier = step(0.42...)`, and active owned `Material.SetTexture` target calls; `Tools/Decal_Projector_Inquisition.py` PASS at `2026-05-21T23:37:35Z` with 0 active GameObject/URP decal violations; `git diff --check` passed with line-ending warnings only. Build was not launched because CPU sampled 90% with active `dotnet`.

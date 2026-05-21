@@ -605,14 +605,15 @@ namespace Hecton8.Construction
 
         public static bool TryReadOccupancyHashTable(
             IDataVault vault,
-            out NativeArray<BaseModuleOccupancyDTO> occupancyTable)
+            out NativeArray<BaseModuleOccupancyDTO>.ReadOnly occupancyTable)
         {
             occupancyTable = default;
             if (vault == null ||
-                !TryResolveCachedValidationBuffer(vault, in s_OccupancyHandle, 1, out occupancyTable))
+                !TryResolveCachedValidationBuffer(vault, in s_OccupancyHandle, 1, out NativeArray<BaseModuleOccupancyDTO> mutableOccupancyTable))
                 return false;
 
-            return occupancyTable.IsCreated && occupancyTable.Length > 0;
+            occupancyTable = mutableOccupancyTable.AsReadOnly();
+            return mutableOccupancyTable.IsCreated && mutableOccupancyTable.Length > 0;
         }
 
         public static bool EnsureOccupancyHashTable(

@@ -193,7 +193,7 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 float3 cameraRay = farWorld - cameraPosition;
                 float waterlineY = HectonFiniteValue(_InternalWaterlineY, cameraPosition.y - 1.0);
                 float yDelta = waterlineY - cameraPosition.y;
-                float cameraSubmerged = step(cameraPosition.y, waterlineY - 0.03);
+                float cameraSubmerged = smoothstep(-softness, softness, (waterlineY - 0.03) - cameraPosition.y);
                 float planeInFront = smoothstep(-softness, softness, yDelta * cameraRay.y);
                 return active * saturate(max(cameraSubmerged, planeInFront));
             #else
@@ -275,7 +275,7 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 float branchVein = 1.0 - smoothstep(0.004, 0.019, branch);
                 float vein = saturate(max(primaryVein, branchVein * 0.62) * smoothstep(0.08, 0.96, radial));
                 float threshold = lerp(1.15, 0.18 + seed * 0.54, vein);
-                crackReveal = step(threshold, damage01) * vein;
+                crackReveal = smoothstep(threshold - 0.045, threshold + 0.045, damage01) * vein;
                 float2 gradient = float2(primaryVein - branchVein, branchVein - primaryVein * 0.38);
                 float2 normalSeed = gradient + centered * (0.15 + seed * 0.1);
                 crackNormal = normalSeed * rsqrt(max(dot(normalSeed, normalSeed), 0.0001));
@@ -319,7 +319,7 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 float lowTier = HectonFinite01(_HectonUberLowTier);
                 float comfortVignette01 = HectonFinite01(max(HectonFinite01(_VRComfortVignette01), comfortJerkState.x * comfortJerkState.w));
                 float comfortEdgeProcedural = smoothstep(0.16, 1.0, edge01);
-                float comfortEdgeLowTier = step(0.42, edge01);
+                float comfortEdgeLowTier = smoothstep(0.36, 0.48, edge01);
                 float comfortLowTier01 = smoothstep(0.25, 0.95, lowTier);
                 float comfortMaskTexture = SAMPLE_TEXTURE2D(_HectonVRComfortMaskTex, sampler_HectonVRComfortMaskTex, safeUv).r;
                 comfortEdgeLowTier = lerp(comfortEdgeLowTier, comfortMaskTexture, saturate(textureFlags.w));
@@ -497,7 +497,7 @@ Shader "Hidden/Hecton8/VisorUberPost"
                 if (textureFlags.x > 0.5)
                 {
                     float4 crackSample = SAMPLE_TEXTURE2D(_HectonVisorCrackTex, sampler_HectonVisorCrackTex, uv);
-                    crackReveal = step(crackSample.a, damage01);
+                    crackReveal = smoothstep(crackSample.a - 0.045, crackSample.a + 0.045, damage01);
                     crackNormal = crackSample.rg * 2.0 - 1.0;
                 }
                 else
@@ -586,7 +586,7 @@ Shader "Hidden/Hecton8/VisorUberPost"
 
                 float comfortVignette01 = HectonFinite01(max(HectonFinite01(_VRComfortVignette01), comfortJerkState.x * comfortJerkState.w));
                 float comfortEdgeProcedural = smoothstep(0.16, 1.0, edge01);
-                float comfortEdgeLowTier = step(0.42, edge01);
+                float comfortEdgeLowTier = smoothstep(0.36, 0.48, edge01);
                 float comfortLowTier01 = smoothstep(0.25, 0.95, lowTier01);
                 float comfortMaskTexture = SAMPLE_TEXTURE2D(_HectonVRComfortMaskTex, sampler_HectonVRComfortMaskTex, uv).r;
                 comfortEdgeLowTier = lerp(comfortEdgeLowTier, comfortMaskTexture, saturate(textureFlags.w));

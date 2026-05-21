@@ -194,6 +194,47 @@ Exact microseconds saved:
   <BINARY_GATE vocal_bank="H8VB_SCHEMA_VALIDATED" remaining_failure="STATIC_DATA_MISSING" remaining_owner="DataMonolith"/>
 </SELF_AUDIT_UPDATE>
 
+## 2026-05-22 Donor Reference And Generated Report Wall
+
+What was wrong:
+
+- `Assets/Crest/Crest/Scripts/Crest.asmdef` referenced `Unity.RenderPipelines.HighDefinition.Runtime` and `Unity.Postprocessing.Runtime` even though the backing HDRP/PostProcessing packages are absent from `Packages/manifest.json`, `packages-lock.json`, and physical `Packages/`.
+- `Assets/profilermarkers.csv` was Unity-visible and contained stale Crest assembly/method profiler rows.
+- `Assets/_Project/Scripts/Editor/HectonComplianceValidator.cs` intentionally keeps Crest denylist strings, but the dependency report did not classify those policy-only strings.
+
+What was done:
+
+- Removed absent HDRP/PostProcessing assembly references from the active Crest4 donor asmdef.
+- Moved `Assets/profilermarkers.csv` and `.meta` to `Docs/Archive/Crest_Version_Quarantine/Assets/`.
+- Added dependency scanner gates for absent optional donor references and Unity-visible generated profiler reports containing Crest rows.
+- Added non-failing `compliance_denylist_hits` for policy-only Crest denylist strings in the editor compliance validator.
+- Added polish audit gates for all three proof surfaces.
+
+Cinematic Cheats used:
+
+- No water/runtime simulation changed. This is compile/import proof hardening and generated-artifact quarantine; stale profiler evidence is preserved in the archive instead of patched into an active source path.
+
+Exact Microseconds saved:
+
+- Runtime saving: 0 us.
+- Editor/build saving: avoids missing-assembly import churn from optional donor references and prevents repeated manual triage of stale generated reports or policy-only denylist strings.
+
+Verification:
+
+- `python -m py_compile Tools\Crest_Dependency_Scanner.py Tools\Crest_Quarantine_Polish_Audit.py`: PASS.
+- `python Tools\Crest_Dependency_Scanner.py`: PASS, `breach_count=0`, `global_scripting_define_hit_count=1`, `compliance_denylist_hit_count=6`, `vocabulary_debt_hit_count=111`.
+- `python Tools\Crest_Quarantine_Polish_Audit.py`: PASS, `failed_count=0`, including absent optional donor reference and generated-report gates.
+- Exact active check: no `Assets/profilermarkers.csv(.meta)` remains; archived profiler CSV retains stale Crest rows only under `Docs/Archive/Crest_Version_Quarantine/Assets/`.
+- Exact donor check: no `Unity.RenderPipelines.HighDefinition.Runtime` or `Unity.Postprocessing.Runtime` reference remains in `Assets/Crest/Crest/Scripts/Crest.asmdef`.
+- No Unity/dotnet rebuild launched under current command discipline and build-gate policy.
+
+<SELF_AUDIT_UPDATE agent_id="SHINOBU_260" scope="DONOR_OPTIONAL_REFERENCE_AND_GENERATED_REPORT_WALL">
+  <TASK id="02" result="PASS">Unity-visible stale generated profiler report with Crest rows moved to archive with meta preserved.</TASK>
+  <TASK id="03" result="PASS">Selected Crest4 donor asmdef no longer references absent HDRP/PostProcessing assemblies.</TASK>
+  <TASK id="19" result="PASS">Dependency scanner gates absent optional donor references, stale generated report rows, and compliance denylist strings.</TASK>
+  <TASK id="20" result="PASS_WITH_BUILD_GATE">Static proof and disk logs updated; Unity compile remains gated by policy.</TASK>
+</SELF_AUDIT_UPDATE>
+
 ## 2026-05-21 Vocabulary Debt Scanner And Low-Risk Donor Text Polish
 
 What was wrong:

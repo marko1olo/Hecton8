@@ -158,7 +158,6 @@ namespace Hecton8.Visor
         private const uint TelemetryFlagMockData = 1u << 4;
         private const uint DumpMagic = 0x56534152u; // VSAR
         private const uint DumpVersion = 1u;
-        private const int DefaultStencilLaneMask = 1;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_270.bin";
 
 #if UNITY_EDITOR
@@ -187,12 +186,6 @@ namespace Hecton8.Visor
 
             [Tooltip("Local mask scale relative to the render camera.")]
             public Vector3 maskLocalScale = new Vector3(0.92f, 0.58f, 1f);
-
-            [Tooltip("Stencil reference consumed by the fullscreen visor AR shader.")]
-            [Range(1, 255)] public int stencilRef = 1;
-
-            [Tooltip("Dedicated visor stencil lane. Default lane is bit 0 to avoid overwriting unrelated stencil owners.")]
-            [Range(1, 255)] public int stencilWriteMask = DefaultStencilLaneMask;
 
             [Tooltip("Stencil injection. After opaques keeps helmet glass depth available.")]
             public RenderPassEvent stencilInjectionPoint = RenderPassEvent.AfterRenderingOpaques;
@@ -511,9 +504,6 @@ namespace Hecton8.Visor
 
         private static class ShaderConstants
         {
-            internal static readonly int StencilRefId = Shader.PropertyToID("_StencilRef");
-            internal static readonly int StencilWriteMaskId = Shader.PropertyToID("_StencilWriteMask");
-            internal static readonly int StencilReadMaskId = Shader.PropertyToID("_StencilReadMask");
             internal static readonly int BlitTextureId = Shader.PropertyToID("_BlitTexture");
             internal static readonly int HudParamsBufferId = Shader.PropertyToID("HectonVisorHudParams");
             internal static readonly int DigitParamsBufferId = Shader.PropertyToID("HectonVisorDigitParams");
@@ -540,8 +530,6 @@ namespace Hecton8.Visor
         private bool _hotSwapRegistered;
         private bool _telemetryDumped;
         private uint _telemetryDescriptorGeneration;
-        private int _lastAppliedStencilRef = int.MinValue;
-        private int _lastAppliedStencilWriteMask = int.MinValue;
         private int _lastStencilPresentationFrame = -1;
         private int _pendingStencilPresentationFrame = -1;
         private bool _renderWatchdogRegistered;
@@ -570,7 +558,6 @@ namespace Hecton8.Visor
             _arPass ??= new ArPass(this);
             RecreateMaterial(ref _stencilMaterial, settings != null ? settings.stencilShader : null);
             RecreateMaterial(ref _arMaterial, settings != null ? settings.arShader : null);
-            InvalidateStencilMaterialCache();
             _arPass.PrewarmBuffers();
             EnsureFallbackMaskMeshCold();
             TryRegisterHotSwapListener();
@@ -613,9 +600,6 @@ namespace Hecton8.Visor
             }
 
             Matrix4x4 maskMatrix = ResolveMaskMatrix(renderCamera, settings);
-            int stencilMask = ResolveStencilWriteMask(settings.stencilWriteMask);
-            int stencilRef = ResolveStencilRef(settings.stencilRef, stencilMask);
-            ApplyStencilMaterialState(stencilRef, stencilMask);
 
             if (!BuildAndUploadFrame(renderCamera, out uint telemetryFlags, out NativeArray<VisorTelemetryEntry> telemetry, out int telemetryLength))
             {
@@ -1413,38 +1397,6 @@ namespace Hecton8.Visor
 
             CoreUtils.Destroy(material);
             material = CoreUtils.CreateEngineMaterial(shader);
-        }
-
-        private void InvalidateStencilMaterialCache()
-        {
-            _lastAppliedStencilRef = int.MinValue;
-            _lastAppliedStencilWriteMask = int.MinValue;
-        }
-
-        private void ApplyStencilMaterialState(int stencilRef, int stencilWriteMask)
-        {
-            if (_lastAppliedStencilRef == stencilRef && _lastAppliedStencilWriteMask == stencilWriteMask)
-                return;
-
-            _stencilMaterial.SetInt(ShaderConstants.StencilRefId, stencilRef);
-            _stencilMaterial.SetInt(ShaderConstants.StencilWriteMaskId, stencilWriteMask);
-            _arMaterial.SetInt(ShaderConstants.StencilRefId, stencilRef);
-            _arMaterial.SetInt(ShaderConstants.StencilReadMaskId, stencilWriteMask);
-            _lastAppliedStencilRef = stencilRef;
-            _lastAppliedStencilWriteMask = stencilWriteMask;
-        }
-
-        private static int ResolveStencilWriteMask(int configuredMask)
-        {
-            int safeMask = math.clamp(configuredMask, 1, 255);
-            return safeMask == 255 ? DefaultStencilLaneMask : safeMask;
-        }
-
-        private static int ResolveStencilRef(int configuredRef, int writeMask)
-        {
-            int safeMask = math.clamp(writeMask, 1, 255);
-            int refBits = math.clamp(configuredRef, 1, 255) & safeMask;
-            return refBits != 0 ? refBits : safeMask;
         }
 
         private static unsafe void CopyHudParamsToMappedBuffer(

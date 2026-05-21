@@ -633,7 +633,7 @@ Build gate: CPU average 100 with active `csc` (`Id=31708`) and `dotnet` (`Id=107
 </SELF_AUDIT_REVISION>
 
 ## Runtime Patch: Dear Lie Readback Fold Scheduled
-What was wrong: completed `AsyncGPUReadbackRequest` data was folded into the Dear Lie cache with an O(N) main-thread loop.
+What was wrong: completed Unity async readback data was folded into the Dear Lie cache with an O(N) main-thread loop.
 What was done: replaced the synchronous fold with `ScheduleDearLieCacheUpdateFromStagedReadback` and `UpdateDearLieCacheFromReadbackJob`. The method consumes caller-owned staged readback data and returns a chained `JobHandle`; hashing, finite checks, and cache writes happen in Burst job space.
 Cinematic Cheats used: the Dear Lie remains the same previous-frame cache illusion; this patch moves its maintenance out of the owner thread.
 Exact Microseconds saved: no measured profiler claim. Caller complexity changes from O(N completed rows) to O(1) validation plus one scheduled serial Burst job.
@@ -749,7 +749,7 @@ Cinematic Cheats used: none. This is telemetry/queue truth repair.
 Exact Microseconds saved: no runtime us claimed. The value is forensic correctness under saturation; normal non-overflow frames are unchanged.
 
 ## Compile-Risk Patch: Registry Qualification And Staged Readback
-What was wrong: `OceanVisualBridgeRegistry` was unqualified after the broad Core import scrub, and the Dear Lie cache update API scheduled a job against Unity request-owned `AsyncGPUReadbackRequest.GetData<float4>()` storage.
+What was wrong: `OceanVisualBridgeRegistry` was unqualified after the broad Core import scrub, and the Dear Lie cache update API scheduled a job against Unity request-owned readback storage.
 What was done: registry calls are now explicitly `Hecton8.Core.OceanVisualBridgeRegistry.*`; the cache update API is now `ScheduleDearLieCacheUpdateFromStagedReadback`, taking caller-owned staged `NativeArray<float4>` data.
 Cinematic Cheats used: retained the Dear Lie previous-frame cache; changed only the staging ownership.
 Exact Microseconds saved: 0 measured runtime us. This prevents compile failure and readback lifetime faults without adding a main-thread wait.
@@ -782,3 +782,9 @@ Build gate: CPU average 29, but active `csc` (`Id=11936`) and active `dotnet` pr
   <cinematic_cheats_used>None. This is compile-wall proof hygiene.</cinematic_cheats_used>
   <microseconds_saved>0 runtime us. It prevents integration time loss from a false compile-wall report.</microseconds_saved>
 </SELF_AUDIT_REVISION>
+
+## Revision - post-staged-readback proof gate
+What was wrong: active SHINOBU_261 proof prose still contained exact obsolete Unity readback API spellings, causing source-clean stale-token scans to produce documentation false positives.
+What was done: reworded SHINOBU_261 status/rationale/log/ledger text to keep the architectural rejection while removing obsolete readback API tokens from owned source/proof files; verified `OWNED_READBACK_TOKENS_CLEAR`, `RUNTIME_FORBIDDEN_CLEAR`, `JSON_SHINOBU261_PROOF_OK`, `SCOPED_CS_BRACES_OK`, and scoped diff warnings limited to LF-to-CRLF.
+Cinematic Cheats used: unchanged Dear Lie route; previous-frame staged cache data feeds visual/kinematic belief without blocking the main thread for readback truth.
+Exact Microseconds saved: 0 runtime measured. Build not launched: latest CPU averaged 49, but active `csc` and `dotnet` processes were present.

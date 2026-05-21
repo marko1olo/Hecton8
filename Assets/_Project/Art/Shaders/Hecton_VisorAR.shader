@@ -1,11 +1,5 @@
 Shader "Hidden/Hecton8/VisorAR"
 {
-    Properties
-    {
-        _StencilRef ("Stencil Ref", Float) = 1
-        _StencilReadMask ("Stencil Read Mask", Float) = 1
-    }
-
     SubShader
     {
         Tags
@@ -87,10 +81,10 @@ Shader "Hidden/Hecton8/VisorAR"
 
             Stencil
             {
-                Ref [_StencilRef]
+                Ref 1
                 Comp Equal
                 Pass Keep
-                ReadMask [_StencilReadMask]
+                ReadMask 1
             }
 
             HLSLPROGRAM

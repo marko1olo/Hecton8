@@ -433,3 +433,15 @@ Verification: Targeted source scan finds the new helper names and no remaining o
 Cinematic Cheats used: None new. This protects the existing Dear Lie route by keeping acquire/open mutation gates visibly separate from pure read routes.
 
 Exact Microseconds saved: Solver cost unchanged. Diagnostics avoid repeated heavy-tow active helper calls in the same block; profiler proof pending.
+
+## 2026-05-22 Polish Pass: Player Authority Leak Closure
+
+What was wrong: Halley found active-authority leaks through player wall kick, voxel no-clip recovery, transport carrier motion, and ladder snap. These paths could still write motor position, motor velocity, motor rotation, or queued Rigidbody force beside the SHINOBU byte-SDF kinematic solver.
+
+What was done: Fixed tick now computes an early exosuit authority gate before carrier and ladder mutation, then still submits frame input later through the existing Core pending DTO route. Carrier and ladder routes receive the suppression flag; carrier consumes platform delta bookkeeping without moving the player. Wall kick receives the same gate and returns before velocity/force writes. Voxel no-clip was renamed to `ApplyVoxelNoClipFailsafe`; under authority it keeps black-box dumps but does not move or zero the player motor.
+
+Verification: `Exosuit_Physics_Inquisition` coverage was extended to wall kick, voxel no-clip, carrier motion, and ladder snap calls/scopes plus motor/force sinks. Targeted source scans confirm the new suppression parameters and no active `ResolveVoxelNoClipFailsafe` call remains. No rebuild was launched.
+
+Cinematic Cheats used: The exosuit still uses the visual/mechanical lie: Vault-owned byte-SDF kinematic depenetration owns movement truth, while legacy player physics corrections are suppressed during authority.
+
+Exact Microseconds saved: Profiler pending. Static removal covers wall-kick motor/force writes, no-clip recovery motor writes, carrier motor writes, and ladder snap motor writes in active exosuit frames; cost added is bounded boolean gates.

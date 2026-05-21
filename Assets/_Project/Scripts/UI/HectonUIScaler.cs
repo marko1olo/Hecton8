@@ -450,6 +450,9 @@ namespace Hecton8.UI
             if (!Application.isPlaying)
                 return;
 
+            if (_registeredToTickManager && _registeredToSlowTickManager)
+                return;
+
             if (!_registeredToTickManager && GlobalRegistry.Dispatcher != null)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);

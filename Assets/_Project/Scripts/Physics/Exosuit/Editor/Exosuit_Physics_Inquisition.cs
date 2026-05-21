@@ -240,7 +240,7 @@ namespace Hecton8.Physics.Exosuit.Editor
             AppendJson(json, "summary", summary, 1).Append(",\n");
             AppendJson(json, "verdict", verdict, 1).Append(",\n");
             AppendJson(json, "legacy_movement_hits_policy", "legacy ApplyExosuit* and indirect motor-force routes are warnings only when the same method scope has already passed ExosuitKinematicAuthority.HasActiveAuthority", 1).Append(",\n");
-            AppendJson(json, "authority_mutation_policy", "dynamic collision and heavy tow physics routes must carry exosuitKinematicAuthority or suppressPhysicsMutation before writing CapsuleCollider shape, Rigidbody centerOfMass, MovePosition, or MoveRotation", 1).Append(",\n");
+            AppendJson(json, "authority_mutation_policy", "dynamic collision, heavy tow, wall kick, voxel no-clip, transport carrier, and ladder snap routes must carry exosuitKinematicAuthority or suppressPhysicsMutation before writing CapsuleCollider shape, Rigidbody centerOfMass, motor position, motor velocity, motor rotation, or queued Rigidbody force", 1).Append(",\n");
             json.Append("  \"scan_utc_ticks\": ").Append(System.DateTime.UtcNow.Ticks).Append(",\n");
             json.Append("  \"source_hash\": ").Append(sourceHash).Append(",\n");
             json.Append("  \"layout_ok\": ").Append(layoutOk ? "true" : "false").Append(",\n");
@@ -439,19 +439,24 @@ namespace Hecton8.Physics.Exosuit.Editor
         private static bool IsAuthorityMutationMethodDefinition(string line)
         {
             return line.IndexOf("void UpdateDynamicCollisionProfile", System.StringComparison.Ordinal) >= 0 ||
-                   line.IndexOf("void UpdateHeavyTowRuntimeResponse", System.StringComparison.Ordinal) >= 0;
+                   line.IndexOf("void UpdateHeavyTowRuntimeResponse", System.StringComparison.Ordinal) >= 0 ||
+                   line.IndexOf("void TryApplyKinematicWallKick", System.StringComparison.Ordinal) >= 0 ||
+                   line.IndexOf("void ApplyVoxelNoClipFailsafe", System.StringComparison.Ordinal) >= 0 ||
+                   line.IndexOf("void ApplyTransportPlatformCarrierMotion", System.StringComparison.Ordinal) >= 0 ||
+                   line.IndexOf("void ApplyLadderSplineSnapFromAsyncProbe", System.StringComparison.Ordinal) >= 0;
         }
 
         private static bool IsAuthoritySensitiveMutationCall(string line)
         {
-            if (line.IndexOf("void UpdateDynamicCollisionProfile", System.StringComparison.Ordinal) >= 0 ||
-                line.IndexOf("void UpdateHeavyTowRuntimeResponse", System.StringComparison.Ordinal) >= 0)
-            {
+            if (IsAuthorityMutationMethodDefinition(line))
                 return false;
-            }
 
             return line.IndexOf("UpdateDynamicCollisionProfile(", System.StringComparison.Ordinal) >= 0 ||
-                   line.IndexOf("UpdateHeavyTowRuntimeResponse(", System.StringComparison.Ordinal) >= 0;
+                   line.IndexOf("UpdateHeavyTowRuntimeResponse(", System.StringComparison.Ordinal) >= 0 ||
+                   line.IndexOf("TryApplyKinematicWallKick(", System.StringComparison.Ordinal) >= 0 ||
+                   line.IndexOf("ApplyVoxelNoClipFailsafe(", System.StringComparison.Ordinal) >= 0 ||
+                   line.IndexOf("ApplyTransportPlatformCarrierMotion(", System.StringComparison.Ordinal) >= 0 ||
+                   line.IndexOf("ApplyLadderSplineSnapFromAsyncProbe(", System.StringComparison.Ordinal) >= 0;
         }
 
         private static bool IsAuthorityMutationGuardLine(string line)
@@ -465,6 +470,11 @@ namespace Hecton8.Physics.Exosuit.Editor
         {
             return line.IndexOf("ApplyResolvedCollisionProfile", System.StringComparison.Ordinal) >= 0 ||
                    line.IndexOf("ApplyCenterOfMassIfChanged", System.StringComparison.Ordinal) >= 0 ||
+                   line.IndexOf("PhysicsForceRouter.QueueForce", System.StringComparison.Ordinal) >= 0 ||
+                   line.IndexOf("_playerMotor.SetLinearVelocity", System.StringComparison.Ordinal) >= 0 ||
+                   line.IndexOf("MoveMotorPosition", System.StringComparison.Ordinal) >= 0 ||
+                   line.IndexOf("MoveMotorRotation", System.StringComparison.Ordinal) >= 0 ||
+                   line.IndexOf("ApplyMotorLinearVelocity", System.StringComparison.Ordinal) >= 0 ||
                    line.IndexOf(".centerOfMass", System.StringComparison.Ordinal) >= 0 ||
                    line.IndexOf(".MovePosition", System.StringComparison.Ordinal) >= 0 ||
                    line.IndexOf(".MoveRotation", System.StringComparison.Ordinal) >= 0 ||

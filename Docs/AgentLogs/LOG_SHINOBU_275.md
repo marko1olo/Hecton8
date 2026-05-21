@@ -1389,15 +1389,15 @@ Exact Microseconds saved:
 - No profiler claim. Static saving is removal of five material texture mutation paths and deterministic zeroing of one 48B constants row at cold allocation.
 
 Verification:
-- `python Tools\Decal_Projector_Inquisition.py`: PASS at `2026-05-21T23:25:17Z`; 5825 scanned assets, 336 candidates, 0 active GameObject decal violations, 0 active URP decal renderer feature violations.
+- `python Tools\Decal_Projector_Inquisition.py`: PASS at `2026-05-21T23:30:34Z`; 5825 scanned assets, 336 candidates, 0 active GameObject decal violations, 0 active URP decal renderer feature violations.
 - Focused owned scans found no `Material.Set*`, `.SetTexture(`, `.SetBuffer(`, stale texture-name constants, `TryGetLatestCreated`, `.SetData(`, `.Complete(`, `foreach`, direct Gameplay/Physics imports, Unity `Time.*`, `UnityEngine.Random`, or source `ReconstructionConstantsVaultId` plus `UninitializedMemory` pattern.
 - `git diff --check` passed for touched source with CRLF warnings only.
-- Compile not launched: CPU sampled at 80% with `dotnet` PID 39252 and `csc` PID 40964 active.
+- Compile not launched: CPU sampled at 100% with `csc` PID 1404, `dotnet` PID 41364, and `VBCSCompiler` PID 11008 active.
 
 <SELF_AUDIT agent_id="SHINOBU_275" loop="28_disk_state_render_binding_constants_clear">
   <TASK_RECONCILIATION>
     <TASK id="01" result="PASS_STATIC">Re-extracted active source state by CLI and corrected the disk contradiction.</TASK>
-    <TASK id="02" result="PASS_STATIC">Scanner PASS at 2026-05-21T23:25:17Z; no active object/URP decal route introduced.</TASK>
+    <TASK id="02" result="PASS_STATIC">Scanner PASS at 2026-05-21T23:30:34Z; no active object/URP decal route introduced.</TASK>
     <TASK id="03" result="PASS_STATIC">No unmanaged DTO properties or managed hot structs were added.</TASK>
     <TASK id="04" result="PASS_STATIC">No DTO layout changed; `VisorDecalDTO` remains explicit 80B.</TASK>
     <TASK id="05" result="PASS_STATIC">Mock wound generator unchanged.</TASK>
@@ -1414,13 +1414,118 @@ Verification:
     <TASK id="16" result="PASS_STATIC">Editor facade unchanged from Loop 24; editor reconstruction reads now see a zeroed constants row before first publish.</TASK>
     <TASK id="17" result="PASS_STATIC">CSV parser unchanged; CSV scratch remains explicit-count cold scratch.</TASK>
     <TASK id="18" result="PASS_STATIC">Editor-only matrix gizmo unchanged.</TASK>
-    <TASK id="19" result="PASS_STATIC">Metric validator rerun and report timestamp refreshed to 2026-05-21T23:25:17Z.</TASK>
-    <TASK id="20" result="PASS_STATIC_COMPILE_BLOCKED">Docs/logs synchronized; compile gate blocked by CPU 80% and active `dotnet`/`csc` processes.</TASK>
+    <TASK id="19" result="PASS_STATIC">Metric validator rerun and report timestamp refreshed to 2026-05-21T23:30:34Z.</TASK>
+    <TASK id="20" result="PASS_STATIC_COMPILE_BLOCKED">Docs/logs synchronized; compile gate blocked by CPU 100% and active `csc`/`dotnet`/`VBCSCompiler` processes.</TASK>
   </TASK_RECONCILIATION>
   <STRUCT_LAYOUT>`VisorDecalDTO`: `LocalToWorld@0` 64B, `DecalTypeHash@64` 4B, `Opacity01@68` 4B, `BirthTime@72` 4B, `Flags@76` 4B; total 80B, 80 % 16 = 0. Loop 28 changed no primary DTO bytes. Reconstruction constants mirror is `UberNoirReconstructionConstantsDTO` 48B and now clear-owned at Vault allocation.</STRUCT_LAYOUT>
   <SCALABILITY_CURVE>Loop 28 changes no quality truth. Low devices avoid material texture mutation and stale constant-row reads; middle/high/ultra keep the same wound atlas, crack, dirt, blue-noise, VR comfort, reconstruction grain, and overkill shader work through the existing continuous curves.</SCALABILITY_CURVE>
   <H_PHI_VAULT_STATUS>Vault lanes unchanged: 71490 instances, 71491 upload scratch, 71492 runtime state, 71493 telemetry ring, 71494 tuning, 71495 material profiles, 71496 CSV scratch, plus Noir reconstruction constants/telemetry/profile/csv/mock lanes under GraphicsScalability. No new persistent private native container was introduced.</H_PHI_VAULT_STATUS>
   <POINTER_ALIASING_DEPENDENCY_GRAPH>Job graph unchanged. Loop 28 adds no Burst job, no `[NoAlias]` surface, no `.Complete()`, and no same-frame schedule/readback loop.</POINTER_ALIASING_DEPENDENCY_GRAPH>
-  <COMPILE_GUARD>No direct sibling runtime dependency was added. Compile was not launched because CPU sampled at 80% with `dotnet` PID 39252 and `csc` PID 40964 active.</COMPILE_GUARD>
+  <COMPILE_GUARD>No direct sibling runtime dependency was added. Compile was not launched because CPU sampled at 100% with `csc` PID 1404, `dotnet` PID 41364, and `VBCSCompiler` PID 11008 active.</COMPILE_GUARD>
   <DEAR_LIE_CONFIRMATION>Before/after visual complexity remains O(N_visible capped at 128) in one screen-space pass and O(1) ring insertion. Loop 28 removes material mutation and clears the cold constants mirror; it does not add CPU decal simulation.</DEAR_LIE_CONFIRMATION>
+</SELF_AUDIT>
+
+## 2026-05-22T03:33+04:00 - Polish Loop 29 / VR Comfort Smoothstep And Render Binding Reassertion
+
+What was wrong:
+- `HectonVisorUberPost.shader` used `step(0.42, edge01)` for the low-tier VR comfort edge mask in two paths, creating a hard spatial cutoff in a comfort path.
+- During verification, another write restored five `Material.SetTexture` calls in the two owned C# render sources.
+
+What was done:
+- Replaced both low-tier comfort edge cutoffs with `smoothstep(0.36, 0.48, edge01)`.
+- Reapplied command-buffer texture binding in `DeferredDecalPass` and `HectonVisorUberPostFeature`.
+
+Cinematic Cheats used:
+- The route remains a screen-space mask/fake. No CPU decal simulation, object projector, material clone, or spawned geometry route was added.
+
+Exact Microseconds saved:
+- No profiler claim. Shader cost increases slightly at two comfort-mask sites; this buys smoother VR comfort behavior. Render binding reassertion removes five material mutation paths again.
+
+Verification:
+- `python Tools\Decal_Projector_Inquisition.py`: PASS at `2026-05-21T23:33:01Z`; 5825 scanned assets, 336 candidates, 0 active GameObject decal violations, 0 active URP decal renderer feature violations.
+- Focused source scan found no `comfortEdgeLowTier = step(0.42...)` and no active owned `Material.SetTexture` target calls after the final C# reapply.
+- `git diff --check` passed for touched source with CRLF warnings only.
+- Compile not launched: CPU sampled at 29% but `csc` PID 31876 and `dotnet` PID 31384 were active.
+
+<SELF_AUDIT agent_id="SHINOBU_275" loop="29_vr_comfort_smoothstep_render_binding_reassertion">
+  <TASK_RECONCILIATION>
+    <TASK id="01" result="PASS_STATIC">Re-read active disk state and found the shader edge cliff plus C# overwrite.</TASK>
+    <TASK id="02" result="PASS_STATIC">Scanner PASS at 2026-05-21T23:33:01Z; no active object/URP decal route introduced.</TASK>
+    <TASK id="03" result="PASS_STATIC">No unmanaged DTO properties or managed hot structs were added.</TASK>
+    <TASK id="04" result="PASS_STATIC">No DTO layout changed; `VisorDecalDTO` remains explicit 80B.</TASK>
+    <TASK id="05" result="PASS_STATIC">Mock wound generator unchanged.</TASK>
+    <TASK id="06" result="PASS_STATIC">Burst wound jobs unchanged.</TASK>
+    <TASK id="07" result="PASS_STATIC">Dear Lie route unchanged: VR comfort remains shader mask math.</TASK>
+    <TASK id="08" result="PASS_STATIC">Circular overwrite unchanged.</TASK>
+    <TASK id="09" result="PASS_STATIC">Deterministic decay unchanged.</TASK>
+    <TASK id="10" result="PASS_STATIC">GPU upload route unchanged; C# texture binding remains command-buffer global state after reapply.</TASK>
+    <TASK id="11" result="PASS_STATIC">Continuous quality curve preserved; low-tier mask blend remains `smoothstep(0.25, 0.95, lowTier)`.</TASK>
+    <TASK id="12" result="PASS_STATIC">Shader comfort edge now uses smoothstep rather than a hard cutoff.</TASK>
+    <TASK id="13" result="PASS_STATIC">AUP localization unchanged.</TASK>
+    <TASK id="14" result="PASS_STATIC">No gameplay authority, rollback, save, or Merkle route changed.</TASK>
+    <TASK id="15" result="PASS_STATIC">Black-box telemetry unchanged.</TASK>
+    <TASK id="16" result="PASS_STATIC">Editor facade unchanged.</TASK>
+    <TASK id="17" result="PASS_STATIC">CSV parser unchanged.</TASK>
+    <TASK id="18" result="PASS_STATIC">Editor-only matrix gizmo unchanged.</TASK>
+    <TASK id="19" result="PASS_STATIC">Metric validator rerun and report timestamp refreshed to 2026-05-21T23:33:01Z.</TASK>
+    <TASK id="20" result="PASS_STATIC_COMPILE_BLOCKED">Docs/logs synchronized; compile gate blocked by active `csc`/`dotnet` processes.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT>`VisorDecalDTO`: `LocalToWorld@0` 64B, `DecalTypeHash@64` 4B, `Opacity01@68` 4B, `BirthTime@72` 4B, `Flags@76` 4B; total 80B, 80 % 16 = 0. Loop 29 changed no DTO bytes.</STRUCT_LAYOUT>
+  <SCALABILITY_CURVE>Low devices use the same procedural comfort mask but with a 0.36..0.48 edge transition instead of a hard step. Middle/high/ultra keep the texture mask route and richer visor trauma visuals through unchanged continuous low-tier blending.</SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>Vault lanes unchanged. No persistent private native container was introduced.</H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_DEPENDENCY_GRAPH>Job graph unchanged. Loop 29 adds no Burst job, no `[NoAlias]` surface, no `.Complete()`, and no same-frame schedule/readback loop.</POINTER_ALIASING_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No direct sibling runtime dependency was added. Compile was not launched because CPU sampled at 29% but `csc` PID 31876 and `dotnet` PID 31384 were active.</COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>Before/after visual complexity remains screen-space shader mask math. The hard edge is replaced by a narrow smooth fake; no CPU geometry/decal simulation is added.</DEAR_LIE_CONFIRMATION>
+</SELF_AUDIT>
+
+## 2026-05-22T03:37+04:00 - Polish Loop 30 / Mobile Waterline Smoothstep
+
+What was wrong:
+- The mobile internal-waterline path in `HectonVisorUberPost.shader` used a hard `step(cameraPosition.y, waterlineY - 0.03)` when the camera crossed the waterline.
+
+What was done:
+- Replaced the hard submerge threshold with `smoothstep(-softness, softness, (waterlineY - 0.03) - cameraPosition.y)`.
+- Reused the existing sanitized waterline softness scalar; no shader keyword, DTO, BufferID, or CPU route changed.
+
+Cinematic Cheats used:
+- The waterline remains a screen-space Dear Lie. No volumetric water simulation, physics query, or object geometry route was added.
+
+Exact Microseconds saved:
+- No savings claimed. Cost is one smooth interpolation in the mobile path; the purpose is to remove a visible threshold pop without adding CPU work.
+
+Verification:
+- `python Tools\Decal_Projector_Inquisition.py`: PASS at `2026-05-21T23:37:35Z`; 5825 scanned assets, 336 candidates, 0 active GameObject decal violations, 0 active URP decal renderer feature violations.
+- Focused source scan found no `cameraSubmerged = step`, no `comfortEdgeLowTier = step(0.42...)`, and no active owned `Material.SetTexture` target calls.
+- `git diff --check` passed for touched source with CRLF warnings only.
+- Compile not launched: CPU sampled at 90% with active `dotnet` PID 13592.
+
+<SELF_AUDIT agent_id="SHINOBU_275" loop="30_mobile_waterline_smoothstep">
+  <TASK_RECONCILIATION>
+    <TASK id="01" result="PASS_STATIC">Re-read shader step sites and selected only the mobile waterline threshold as an actionable visual discontinuity.</TASK>
+    <TASK id="02" result="PASS_STATIC">Scanner PASS at 2026-05-21T23:37:35Z; no active object/URP decal route introduced.</TASK>
+    <TASK id="03" result="PASS_STATIC">No unmanaged DTO properties or managed hot structs were added.</TASK>
+    <TASK id="04" result="PASS_STATIC">No DTO layout changed; `VisorDecalDTO` remains explicit 80B.</TASK>
+    <TASK id="05" result="PASS_STATIC">Mock wound generator unchanged.</TASK>
+    <TASK id="06" result="PASS_STATIC">Burst wound jobs unchanged.</TASK>
+    <TASK id="07" result="PASS_STATIC">Dear Lie route preserved: waterline remains screen-space shader math.</TASK>
+    <TASK id="08" result="PASS_STATIC">Circular overwrite unchanged.</TASK>
+    <TASK id="09" result="PASS_STATIC">Deterministic decay unchanged.</TASK>
+    <TASK id="10" result="PASS_STATIC">GPU upload route unchanged.</TASK>
+    <TASK id="11" result="PASS_STATIC">Continuous quality route unchanged; this is a spatial smoothness fix, not a quality gate change.</TASK>
+    <TASK id="12" result="PASS_STATIC">Shader waterline submerge transition now uses `smoothstep` with existing softness.</TASK>
+    <TASK id="13" result="PASS_STATIC">AUP localization unchanged.</TASK>
+    <TASK id="14" result="PASS_STATIC">No gameplay authority, rollback, save, or Merkle route changed.</TASK>
+    <TASK id="15" result="PASS_STATIC">Black-box telemetry unchanged.</TASK>
+    <TASK id="16" result="PASS_STATIC">Editor facade unchanged.</TASK>
+    <TASK id="17" result="PASS_STATIC">CSV parser unchanged.</TASK>
+    <TASK id="18" result="PASS_STATIC">Editor-only matrix gizmo unchanged.</TASK>
+    <TASK id="19" result="PASS_STATIC">Metric validator rerun and report timestamp refreshed to 2026-05-21T23:37:35Z.</TASK>
+    <TASK id="20" result="PASS_STATIC_COMPILE_BLOCKED">Docs/logs synchronized; compile gate blocked by CPU 90% and active `dotnet`.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT>`VisorDecalDTO`: `LocalToWorld@0` 64B, `DecalTypeHash@64` 4B, `Opacity01@68` 4B, `BirthTime@72` 4B, `Flags@76` 4B; total 80B, 80 % 16 = 0. Loop 30 changed no DTO bytes.</STRUCT_LAYOUT>
+  <SCALABILITY_CURVE>Low/mobile devices keep the cheap waterline fake but use the existing softness window to avoid a hard camera-crossing pop. Middle/high/ultra keep the same shader route and unchanged quality weights.</SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>Vault lanes unchanged. No persistent private native container was introduced.</H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_DEPENDENCY_GRAPH>Job graph unchanged. Loop 30 adds no Burst job, no `[NoAlias]` surface, no `.Complete()`, and no same-frame schedule/readback loop.</POINTER_ALIASING_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No direct sibling runtime dependency was added. Compile was not launched because CPU sampled at 90% with active `dotnet` PID 13592.</COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>Before/after visual complexity remains O(1) per pixel in the existing screen-space waterline fake. The hard boolean threshold is replaced by a smooth polynomial band; no CPU fluid simulation is added.</DEAR_LIE_CONFIRMATION>
 </SELF_AUDIT>
