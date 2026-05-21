@@ -868,6 +868,7 @@ namespace Hecton8.Visor
             EnsureReconstructionConstantsBufferCold();
             EnsureReconstructionVaultHandles();
             _aestheticCsvLoadAttempted = false;
+            _aestheticProfileCacheCount = 0;
             if (settings != null && settings.loadAestheticCsv)
                 TryLoadAestheticCsvCold();
         }
@@ -1094,6 +1095,8 @@ namespace Hecton8.Visor
                     GraphicsBuffer.UsageFlags.LockBufferForWrite,
                     1,
                     UberNoirReconstructionConstantsDTO.SizeBytes); // COLD ALLOC: GraphicsBuffer[48B] - Uber Noir reconstruction CBuffer A - owner: HectonVisorUberPostFeature
+                _hasReconstructionConstants = false;
+                _activeReconstructionConstantsBuffer = null;
             }
 
             if (_reconstructionConstantsBufferB == null || !_reconstructionConstantsBufferB.IsValid())
@@ -1104,6 +1107,8 @@ namespace Hecton8.Visor
                     GraphicsBuffer.UsageFlags.LockBufferForWrite,
                     1,
                     UberNoirReconstructionConstantsDTO.SizeBytes); // COLD ALLOC: GraphicsBuffer[48B] - Uber Noir reconstruction CBuffer B - owner: HectonVisorUberPostFeature
+                _hasReconstructionConstants = false;
+                _activeReconstructionConstantsBuffer = null;
             }
 
             return IsReconstructionConstantsBufferReady();
@@ -1528,6 +1533,7 @@ namespace Hecton8.Visor
                     return false;
 
                 int parsed = ParseAestheticCsv(scratch, read, profiles);
+                CacheAestheticProfileSnapshot(profiles, parsed);
                 _aestheticCsvLoaded = parsed > 0;
                 return _aestheticCsvLoaded;
             }
@@ -1607,48 +1613,47 @@ namespace Hecton8.Visor
             return write;
         }
 
-        private bool TryLockAndSelectAestheticProfile(
+        private void CacheAestheticProfileSnapshot(NativeArray<NoirAestheticProfileDTO> profiles, int count)
+        {
+            int safeCount = math.min(
+                math.max(0, count),
+                math.min(profiles.IsCreated ? profiles.Length : 0, _aestheticProfileCache.Length));
+            for (int i = 0; i < safeCount; i++)
+                _aestheticProfileCache[i] = profiles[i];
+            for (int i = safeCount; i < _aestheticProfileCacheCount; i++)
+                _aestheticProfileCache[i] = default;
+            _aestheticProfileCacheCount = safeCount;
+        }
+
+        private bool TrySelectAestheticProfileSnapshot(
             Camera renderCamera,
             RuntimeState runtimeState,
             out NoirAestheticProfileDTO profile)
         {
             profile = default;
-            if (!_aestheticCsvLoaded || _dataVault == null || !_aestheticProfileHandle.IsCreated || renderCamera == null)
+            int count = _aestheticProfileCacheCount;
+            if (!_aestheticCsvLoaded || count <= 0 || renderCamera == null)
                 return false;
 
-            if (!_dataVault.TryLockBuffer(ReconstructionProfileVaultId, SystemID.GraphicsScalability))
-                return false;
-
-            try
+            float depthMeters = math.max(0f, -renderCamera.transform.position.y);
+            float sanity01 = math.saturate(1f - runtimeState.PlayerStress01);
+            for (int i = 0; i < count; i++)
             {
-                NativeArray<NoirAestheticProfileDTO> profiles = _aestheticProfileHandle.Resolve(_dataVault);
-                if (!profiles.IsCreated || profiles.Length <= 0)
-                    return false;
+                NoirAestheticProfileDTO candidate = _aestheticProfileCache[i];
+                if (candidate.ProfileHash == 0u || (candidate.Flags & 1u) == 0u)
+                    continue;
 
-                float depthMeters = math.max(0f, -renderCamera.transform.position.y);
-                float sanity01 = math.saturate(1f - runtimeState.PlayerStress01);
-                for (int i = 0; i < profiles.Length; i++)
+                if (depthMeters >= candidate.DepthMinMeters &&
+                    depthMeters <= candidate.DepthMaxMeters &&
+                    sanity01 >= candidate.SanityMin01 &&
+                    sanity01 <= candidate.SanityMax01)
                 {
-                    NoirAestheticProfileDTO candidate = profiles[i];
-                    if (candidate.ProfileHash == 0u || candidate.Flags == 0u)
-                        continue;
-
-                    if (depthMeters >= candidate.DepthMinMeters &&
-                        depthMeters <= candidate.DepthMaxMeters &&
-                        sanity01 >= candidate.SanityMin01 &&
-                        sanity01 <= candidate.SanityMax01)
-                    {
-                        profile = candidate;
-                        return true;
-                    }
+                    profile = candidate;
+                    return true;
                 }
+            }
 
-                return false;
-            }
-            finally
-            {
-                _dataVault.TryUnlockBuffer(ReconstructionProfileVaultId, SystemID.GraphicsScalability);
-            }
+            return false;
         }
 
         private static string ResolveAestheticCsvPath()
