@@ -1359,7 +1359,8 @@ float2 H8UberNoirResolveRustPomUv(
     rustPacked = SAMPLE_TEXTURE2D(_RustDetailMap, sampler_RustDetailMap, rustUv);
 
     float rustActive = H8UberNoirSmoothRange01(_UberNoirRustParams.y, _UberNoirRustParams.y + 0.08, rust01);
-    float decayAllowed = 1.0 - H8UberNoirSmoothRange01(0.45, 0.55, _HectonMaterialDecayRuntime.z);
+    float materialQualityPressure = H8UberNoirFiniteSaturate(_HectonMaterialDecayRuntime.z, 0.0);
+    float decayAllowed = 1.0 - H8UberNoirSmoothRange01(0.18, 0.72, materialQualityPressure);
     float pomQuality = H8UberNoirSmoothRange01(0.58, 0.92, quality);
     float pomEnabled = H8UberNoirFeatureScalar(_UberNoirFeatureFlags.x) * rustActive * decayAllowed * H8UberNoirHighCostAllowed() * pomQuality;
     [branch]

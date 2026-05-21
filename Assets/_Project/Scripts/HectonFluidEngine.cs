@@ -2840,7 +2840,7 @@ namespace Hecton8.Physics
                 time             = math.isfinite(weatherSnapshot.CurrentMeta.TimeAccumulator) &&
                                    weatherSnapshot.CurrentMeta.TimeAccumulator > 0f
                     ? weatherSnapshot.CurrentMeta.TimeAccumulator
-                    : Time.unscaledTime,
+                    : ResolveFluidFallbackClockSeconds(),
                 weatherStateMask = (uint)weatherSnapshot.StateMask,
                 weatherCurrentDirection = weatherSnapshot.CurrentMeta.GlobalBaseVector,
                 weatherCurrentScale = weatherSnapshot.CurrentMeta.GlobalScale,
@@ -5734,7 +5734,7 @@ namespace Hecton8.Physics
             Shader.SetGlobalFloat(_CurrentWaterLevelId, cinematicWaterLevel);
             Shader.SetGlobalFloat(_CurrentWaterLevelYId, cinematicWaterLevel);
             if (UIStateStore.IsInitialized)
-                UIStateStore.WriteValue(UIValueSlotId.WaterSurfaceY, cinematicWaterLevel, Time.unscaledTime);
+                UIStateStore.WriteValue(UIValueSlotId.WaterSurfaceY, cinematicWaterLevel, ResolveWaterLevelTimeSeconds());
             return cinematicWaterLevel;
         }
 

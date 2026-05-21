@@ -779,6 +779,7 @@ namespace Hecton8.World
         private const float WakeFollowSharpness = 9.5f;
         private const float WakeMinimumPublishedIntensity = 0.01f;
         private const float WakeFluidImpulseThreshold = 0.55f;
+        private const float FloraSimulationClockMaxSeconds = 16777215f;
         private const uint WakeBlackBoxInvalidInputFlag = 1u << 0;
         private const uint WakeBlackBoxNaNFlag = 1u << 1;
         private const uint WakeBlackBoxBudgetPressureFlag = 1u << 2;
@@ -2530,9 +2531,18 @@ namespace Hecton8.World
                 return Mathf.Max(0f, celestialEngine.GameTime);
 
             ISaveService saveService = _saveService;
-            return saveService != null
-                ? Mathf.Max(0f, saveService.CurrentPlayTimeSeconds)
-                : Time.realtimeSinceStartup;
+            if (saveService != null)
+                return Mathf.Max(0f, saveService.CurrentPlayTimeSeconds);
+
+            SystemDispatcher dispatcher = SystemDispatcher.ActiveRuntimeInstance;
+            if (dispatcher == null)
+                return 0f;
+
+            double timeSeconds = dispatcher.DilatedTimeSeconds;
+            if (!math.isfinite(timeSeconds) || timeSeconds <= 0d)
+                return 0f;
+
+            return (float)math.min(FloraSimulationClockMaxSeconds, timeSeconds);
         }
 
         private static int ResolveEncounterPhaseIndex()
@@ -7303,7 +7313,7 @@ namespace Hecton8.World
             _wakeTrailSimulationCompute.SetFloat(_WakeTrailWaveStrengthId, _wakeTrailWaveStrength);
             _wakeTrailSimulationCompute.SetFloat(_WakeTrailDampingId, _wakeTrailWaveDamping);
             _wakeTrailSimulationCompute.SetFloat(_WakeTrailCurlStrengthId, _wakeTrailCurlStrength);
-            _wakeTrailSimulationCompute.SetFloat(_WakeTrailSimulationTimeId, Time.unscaledTime);
+            _wakeTrailSimulationCompute.SetFloat(_WakeTrailSimulationTimeId, GetCurrentSimulationTimeSeconds());
             float wakeTrailInvResolution = math.rcp(Mathf.Max(_wakeTrailRuntimeResolution, 1));
             _wakeTrailSimulationCompute.SetVector(
                 _WakeTrailTexelSizeId,

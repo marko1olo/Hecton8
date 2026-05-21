@@ -3041,3 +3041,21 @@ Verification:
     Targeted `rg` found no `ScalabilityChangedEvent`, `IScalabilityChangedEventListener`, `ScalabilityEvents`, `GlobalRegistry.ScalabilityTier`, `GlobalRegistry.ScalabilityTierProfileByte`, `GlobalRegistry.H8_LOW_MEMORY_PROFILE`, `HectonQualityTier`, `_lowTier`, `_lowMemoryProfile`, `_qualityTier`, `QualityTierByte`, `PlasmaLowTier`, `FlagLowTier`, or `LowTier` in the reentry VFX controller and shader. `git diff --check` passed with line-ending warnings only. Guarded `dotnet build .\Assembly-CSharp.csproj --no-restore --nologo -m:1 -clp:ErrorsOnly` succeeded with 0 errors and 30 warnings after the unrelated Biolum handle wall cleared.
   </VERIFICATION>
 </SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="MaterialDecayQualityPressureContinuum">
+  <WHAT_WAS_WRONG>
+    `MaterialDecayRuntime` still consumed binary scalability events and tier registry state to set `_lowTier`, shader vector `z`, and a blackbox low-tier flag. CoreLit and UberNoir then used that scalar as a rust-POM branch key.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Removed the scalability listener/alias, event registration, `GlobalRegistry.ScalabilityTier` read, `_lowTier` cache, and `TelemetryFlagLowTier`. `_HectonMaterialDecayRuntime.z` now carries continuous quality pressure derived from `HomeostasisBrain.GlobalQualityWeight`; `MaterialDecayState` remains 32 bytes and stores `QualityWeightByte` at byte 23, `Flags` at byte 24, and `StateHash` at byte 28.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    Rust depth remains a shader fake: the durability/rust fact is one scalar, while parallax depth fades out by quality pressure. No corrosion physics, mesh deformation, or material instantiation was added.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. Removed one scalability listener/event route and one cold hardware-tier read; GPU POM cost now collapses by a smooth pressure curve, pending frame-debugger proof.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted `rg` found no `ScalabilityChangedEvent`, `IScalabilityChangedEventListener`, `ScalabilityEvents`, `GlobalRegistry.ScalabilityTier`, `HectonQualityTier`, `_lowTier`, `TelemetryFlagLowTier`, `IsLowTier`, `LowTier`, `lowTier`, or `QualityTier` in the material decay runtime and shader consumers. `git diff --check` passed with only a line-ending warning on UberNoir. Guarded `dotnet build .\Assembly-CSharp.csproj --no-restore --nologo -m:1 -clp:ErrorsOnly` succeeded with 0 errors and 161 warnings.
+  </VERIFICATION>
+</SELF_AUDIT>

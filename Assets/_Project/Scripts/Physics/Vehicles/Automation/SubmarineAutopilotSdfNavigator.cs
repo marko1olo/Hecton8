@@ -1394,7 +1394,7 @@ namespace Hecton8.Vehicles.Automation
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Physics/Vehicles/Submarine Autopilot SDF Navigator")]
-    public unsafe sealed class SubmarineAutopilotSdfNavigator : MonoBehaviour, IFixedTickable, IPostFixedTickable, ISlowTickable
+    public unsafe sealed class SubmarineAutopilotSdfNavigator : MonoBehaviour, IFixedTickable, IPostFixedTickable, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         private const string AgentDumpFileName = "Dump_SHINOBU_157.bin";
         private const string NavigationSurgeonDumpFileName = "Dump_NAVIGATION_SURGEON.bin";
@@ -1423,19 +1423,19 @@ namespace Hecton8.Vehicles.Automation
         [SerializeField] private bool drawFeelerGizmos = true;
 
         private IDataVault _dataVault;
-        private VaultBufferHandle<SubmarineKinematicState> _kinematicHandle;
-        private VaultBufferHandle<AutopilotStateDTO> _autopilotHandle;
-        private VaultBufferHandle<AutopilotAvoidanceDTO> _avoidanceHandle;
-        private VaultBufferHandle<AutopilotFeelerResultDTO> _feelerHandle;
-        private VaultBufferHandle<AutopilotWaypointDTO> _waypointHandle;
-        private VaultBufferHandle<AutopilotRouteRangeDTO> _routeHandle;
-        private VaultBufferHandle<AutopilotTuningDTO> _tuningHandle;
-        private VaultBufferHandle<AutopilotTelemetryEntry> _telemetryHandle;
-        private VaultBufferHandle<uint> _telemetryCursorHandle;
-        private VaultBufferHandle<byte> _mockSdfHandle;
-        private VaultBufferHandle<float3> _flowHandle;
-        private VaultBufferHandle<byte> _csvScratchHandle;
-        private VaultBufferHandle<AutopilotHandlingProfileDTO> _handlingProfileHandle;
+        private VaultGenerationHandle<SubmarineKinematicState> _kinematicHandle;
+        private VaultGenerationHandle<AutopilotStateDTO> _autopilotHandle;
+        private VaultGenerationHandle<AutopilotAvoidanceDTO> _avoidanceHandle;
+        private VaultGenerationHandle<AutopilotFeelerResultDTO> _feelerHandle;
+        private VaultGenerationHandle<AutopilotWaypointDTO> _waypointHandle;
+        private VaultGenerationHandle<AutopilotRouteRangeDTO> _routeHandle;
+        private VaultGenerationHandle<AutopilotTuningDTO> _tuningHandle;
+        private VaultGenerationHandle<AutopilotTelemetryEntry> _telemetryHandle;
+        private VaultGenerationHandle<uint> _telemetryCursorHandle;
+        private VaultGenerationHandle<byte> _mockSdfHandle;
+        private VaultGenerationHandle<float3> _flowHandle;
+        private VaultGenerationHandle<byte> _csvScratchHandle;
+        private VaultGenerationHandle<AutopilotHandlingProfileDTO> _handlingProfileHandle;
 
         private JobHandle _solverHandle;
         private JobHandle _initHandle;
@@ -1444,6 +1444,7 @@ namespace Hecton8.Vehicles.Automation
         private bool _registeredFixed;
         private bool _registeredPostFixed;
         private bool _registeredSlow;
+        private bool _registeredHotSwap;
         private bool _buffersReady;
         private bool _buffersLocked;
         private bool _initialized;
@@ -1476,6 +1477,7 @@ namespace Hecton8.Vehicles.Automation
             _registeredFixed = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
             _registeredPostFixed = GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Environment);
             _registeredSlow = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
         }
 
         private void OnDisable()
@@ -1483,17 +1485,39 @@ namespace Hecton8.Vehicles.Automation
             CompletePendingJobsForTeardown();
             UnlockBuffers();
             DumpBlackBoxIfFaulted();
+            ReleaseAutopilotVaultHandles(_dataVault);
             if (_registeredFixed)
                 GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
             if (_registeredPostFixed)
                 GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
             if (_registeredSlow)
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            if (_registeredHotSwap)
+                GlobalRegistry.TryUnregisterHotSwapListener(this);
             _registeredFixed = false;
             _registeredPostFixed = false;
             _registeredSlow = false;
+            _registeredHotSwap = false;
             if (ReferenceEquals(_latest, this))
                 _latest = null;
+        }
+
+        void IGlobalRegistryHotSwapListener.OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
+                return;
+
+            IDataVault previousVault = previousService as IDataVault;
+            CompletePendingJobsForTeardown();
+            UnlockBuffers();
+            DumpBlackBoxIfFaulted();
+            ReleaseAutopilotVaultHandles(previousVault ?? _dataVault);
+            _dataVault = currentService as IDataVault;
+            if (_dataVault != null)
+                EnsureVaultBuffers();
         }
 
         public void FixedTick(float fixedDeltaTime)
@@ -1549,14 +1573,19 @@ namespace Hecton8.Vehicles.Automation
 
             try
             {
-                AutopilotStateDTO* states = (AutopilotStateDTO*)_autopilotHandle.ResolvePointer(_dataVault);
-                if (states == null)
+                if (!TryResolveAutopilotVaultBuffer(
+                        _dataVault,
+                        in _autopilotHandle,
+                        SubmarineAutopilotVaultRoute.AutopilotStates,
+                        math.clamp(vehicleCapacity, 1, SubmarineAutopilotConstants.MaxVehicles),
+                        out NativeArray<AutopilotStateDTO> states))
                     return false;
 
-                ref AutopilotStateDTO state = ref AutopilotStateDTOAccess.ElementAt(states, submarineIndex);
+                AutopilotStateDTO state = states[submarineIndex];
                 state.TargetAUP = targetAup;
                 state.TargetSpeed = math.max(0f, math.isfinite(speed) && speed > 0f ? speed : state.TargetSpeed);
                 state.NavFlags |= SubmarineAutopilotConstants.NavFlagActive | SubmarineAutopilotConstants.NavFlagInitialized;
+                states[submarineIndex] = state;
                 return true;
             }
             finally
@@ -1578,13 +1607,18 @@ namespace Hecton8.Vehicles.Automation
 
             try
             {
-                AutopilotStateDTO* states = (AutopilotStateDTO*)_autopilotHandle.ResolvePointer(_dataVault);
-                if (states == null)
+                if (!TryResolveAutopilotVaultBuffer(
+                        _dataVault,
+                        in _autopilotHandle,
+                        SubmarineAutopilotVaultRoute.AutopilotStates,
+                        math.clamp(vehicleCapacity, 1, SubmarineAutopilotConstants.MaxVehicles),
+                        out NativeArray<AutopilotStateDTO> states))
                     return false;
 
-                ref AutopilotStateDTO state = ref AutopilotStateDTOAccess.ElementAt(states, submarineIndex);
+                AutopilotStateDTO state = states[submarineIndex];
                 state.SubmarineHashID = profileHash;
                 state.NavFlags |= SubmarineAutopilotConstants.NavFlagInitialized;
+                states[submarineIndex] = state;
                 return true;
             }
             finally
@@ -1634,10 +1668,9 @@ namespace Hecton8.Vehicles.Automation
                 if (!stateLocked)
                     return false;
 
-                AutopilotWaypointDTO* waypointPtr = (AutopilotWaypointDTO*)_waypointHandle.ResolvePointer(_dataVault);
-                AutopilotRouteRangeDTO* routePtr = (AutopilotRouteRangeDTO*)_routeHandle.ResolvePointer(_dataVault);
-                AutopilotStateDTO* statePtr = (AutopilotStateDTO*)_autopilotHandle.ResolvePointer(_dataVault);
-                if (waypointPtr == null || routePtr == null || statePtr == null)
+                if (!TryResolveAutopilotVaultBuffer(_dataVault, in _waypointHandle, SubmarineAutopilotVaultRoute.AutopilotWaypoints, SubmarineAutopilotConstants.WaypointCapacity, out NativeArray<AutopilotWaypointDTO> waypointBuffer) ||
+                    !TryResolveAutopilotVaultBuffer(_dataVault, in _routeHandle, SubmarineAutopilotVaultRoute.AutopilotRouteRanges, capacity, out NativeArray<AutopilotRouteRangeDTO> routeBuffer) ||
+                    !TryResolveAutopilotVaultBuffer(_dataVault, in _autopilotHandle, SubmarineAutopilotVaultRoute.AutopilotStates, capacity, out NativeArray<AutopilotStateDTO> stateBuffer))
                     return false;
 
                 uint resolvedHash = routeHash != 0u ? routeHash : HashRouteHeader(submarineIndex, count);
@@ -1646,10 +1679,10 @@ namespace Hecton8.Vehicles.Automation
                     AutopilotWaypointDTO waypoint = waypoints[i];
                     waypoint.AcceptanceRadius = math.max(0.1f, math.isfinite(waypoint.AcceptanceRadius) && waypoint.AcceptanceRadius > 0f ? waypoint.AcceptanceRadius : safeAcceptance);
                     waypoint.Flags |= SubmarineAutopilotConstants.WaypointFlagActive;
-                    waypointPtr[startIndex + i] = waypoint;
+                    waypointBuffer[startIndex + i] = waypoint;
                 }
 
-                routePtr[submarineIndex] = new AutopilotRouteRangeDTO
+                routeBuffer[submarineIndex] = new AutopilotRouteRangeDTO
                 {
                     StartIndex = startIndex,
                     Count = count,
@@ -1659,9 +1692,10 @@ namespace Hecton8.Vehicles.Automation
                     RouteHash = resolvedHash
                 };
 
-                ref AutopilotStateDTO state = ref AutopilotStateDTOAccess.ElementAt(statePtr, submarineIndex);
-                state.TargetAUP = waypointPtr[startIndex].TargetAUP;
+                AutopilotStateDTO state = stateBuffer[submarineIndex];
+                state.TargetAUP = waypointBuffer[startIndex].TargetAUP;
                 state.NavFlags |= SubmarineAutopilotConstants.NavFlagActive | SubmarineAutopilotConstants.NavFlagInitialized;
+                stateBuffer[submarineIndex] = state;
                 return true;
             }
             finally
@@ -1681,11 +1715,10 @@ namespace Hecton8.Vehicles.Automation
             if (!_buffersReady || _dataVault == null || _buffersLocked || _solverPending || _initPending)
                 return false;
 
-            AutopilotTuningDTO* ptr = (AutopilotTuningDTO*)_tuningHandle.ResolvePointer(_dataVault);
-            if (ptr == null)
+            if (!TryReadAutopilotVaultBuffer(_dataVault, in _tuningHandle, SubmarineAutopilotVaultRoute.AutopilotTuning, 1, out NativeArray<AutopilotTuningDTO> tuningBuffer))
                 return false;
 
-            tuning = SanitizeTuning(ptr[0]);
+            tuning = SanitizeTuning(tuningBuffer[0]);
             tuning.ResolvedQualityWeight = ResolveRuntimeQualityWeight(tuning.GlobalQualityWeight);
             return true;
         }
@@ -1696,11 +1729,15 @@ namespace Hecton8.Vehicles.Automation
             if (!_buffersReady || _dataVault == null || _buffersLocked || _solverPending || _initPending || (uint)index >= (uint)vehicleCapacity)
                 return false;
 
-            AutopilotStateDTO* ptr = (AutopilotStateDTO*)_autopilotHandle.ResolvePointer(_dataVault);
-            if (ptr == null)
+            if (!TryReadAutopilotVaultBuffer(
+                    _dataVault,
+                    in _autopilotHandle,
+                    SubmarineAutopilotVaultRoute.AutopilotStates,
+                    math.clamp(vehicleCapacity, 1, SubmarineAutopilotConstants.MaxVehicles),
+                    out NativeArray<AutopilotStateDTO> states))
                 return false;
 
-            state = ptr[index];
+            state = states[index];
             return true;
         }
 
@@ -1710,14 +1747,14 @@ namespace Hecton8.Vehicles.Automation
             if (!_buffersReady || _dataVault == null || _buffersLocked || _solverPending || _initPending)
                 return false;
 
-            AutopilotTelemetryEntry* ring = (AutopilotTelemetryEntry*)_telemetryHandle.ResolvePointer(_dataVault);
-            uint* cursor = (uint*)_telemetryCursorHandle.ResolvePointer(_dataVault);
-            if (ring == null || cursor == null)
+            if (!TryReadAutopilotVaultBuffer(_dataVault, in _telemetryHandle, SubmarineAutopilotVaultRoute.AutopilotTelemetryRing, SubmarineAutopilotConstants.BlackBoxFrames, out NativeArray<AutopilotTelemetryEntry> ring) ||
+                !TryReadAutopilotVaultBuffer(_dataVault, in _telemetryCursorHandle, SubmarineAutopilotVaultRoute.AutopilotTelemetryCursor, 1, out NativeArray<uint> cursor))
                 return false;
-            if (cursor[0] == 0u)
+            uint cursorValue = cursor[0];
+            if (cursorValue == 0u)
                 return false;
 
-            int latest = ((int)cursor[0] - 1 + SubmarineAutopilotConstants.BlackBoxFrames) % SubmarineAutopilotConstants.BlackBoxFrames;
+            int latest = ((int)cursorValue - 1 + SubmarineAutopilotConstants.BlackBoxFrames) % SubmarineAutopilotConstants.BlackBoxFrames;
             telemetry = ring[latest];
             return true;
         }
@@ -1732,13 +1769,12 @@ namespace Hecton8.Vehicles.Automation
 
             try
             {
-                AutopilotTuningDTO* ptr = (AutopilotTuningDTO*)_tuningHandle.ResolvePointer(_dataVault);
-                if (ptr == null)
+                if (!TryResolveAutopilotVaultBuffer(_dataVault, in _tuningHandle, SubmarineAutopilotVaultRoute.AutopilotTuning, 1, out NativeArray<AutopilotTuningDTO> tuningBuffer))
                     return false;
 
                 AutopilotTuningDTO sanitized = SanitizeTuning(tuning);
                 sanitized.ResolvedQualityWeight = ResolveRuntimeQualityWeight(sanitized.GlobalQualityWeight);
-                ptr[0] = sanitized;
+                tuningBuffer[0] = sanitized;
                 return true;
             }
             finally

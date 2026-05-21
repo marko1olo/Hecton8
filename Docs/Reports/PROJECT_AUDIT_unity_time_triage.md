@@ -382,3 +382,28 @@ Updated static counts from that artifact:
 - `unityTimeRiskGameplayDelta`: 1
 
 Residual gameplay-wall-clock examples now concentrate in `RenderTextureLifecycleTracker` diagnostics, `FaunaBrain` corpse-bloat shader timer, fixed/render interpolation in player camera/movement, `HectonFluidEngine` shader/presentation timing, footstep audio cadence, leak plume shader time, LOD cadence, micro-fauna hit flash, and scatter candidate acceptance time.
+
+## 2026-05-22 Shader/Presentation Residual Follow-Up
+
+Six residual rows were removed or made explicit:
+
+- `FaunaBrain`: corpse-bloat start time now uses `ResolveCorpseBloatShaderClockSeconds()` because `Hecton_LeviathanOrganic.shader` computes `_Time.y - _CorpseBloatStartTime`.
+- `SubmarineStructuralGrid`: leak plume compute now uses `_leakPlumeClockSeconds`, advanced from sanitized fixed-step delta.
+- `FloraInteractionManager`: parasite pulse and wake-trail simulation time now use `GetCurrentSimulationTimeSeconds()`; fallback no longer uses `Time.realtimeSinceStartup`.
+- `SargassumMicroFaunaBoids`: VAT hit flash start time now uses `ResolveHitFlashShaderClockSeconds()` because `BoidFishInstanced.shader` computes `_Time.y - _HitFlashStartTime`.
+- `HectonFluidEngine`: weather-missing water/force fallback now uses bounded dispatcher time, and UI water value timestamps reuse water-level time.
+- `ObserverRelativeCelestialBody`: runtime realtime mode now uses an explicit presentation clock helper.
+
+Focused proof:
+
+- Focused scan over these files shows no direct `Time.time`, `Time.unscaledTime`, `Time.deltaTime`, `Time.fixedDeltaTime`, or `Time.realtimeSinceStartup` rows in the patched paths.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_time_after_shader_presentation_owner_clock.json`.
+
+Updated static counts from that artifact:
+
+- `unityTimeCritical`: 877
+- `unityTimeWallClock`: 42
+- `unityTimeRiskGameplayWallClock`: 8
+- `unityTimeRiskGameplayDelta`: 1
+
+Residual gameplay-wall-clock examples are now: player fixed/render interpolation in `HectonPlayerCameraRig` and `HectonPlayerMovement`, `RenderTextureLifecycleTracker` diagnostics, `PlayerFootstepAudio` cadence, `LODSystemManager` cadence, and scatter candidate acceptance time. The single gameplay delta row remains `OceanSinglePass/ShorelineFoamGraftContracts.cs`.
