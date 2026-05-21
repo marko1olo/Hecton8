@@ -890,3 +890,11 @@ Solution: Replaced the binary branch with `ResolveLeakPresentationQuality01()` a
 Rejected Alternatives: Keeping low-memory/math precision switches was rejected because visual quality lanes must be continuous. Reducing `_activeBreachCount` itself was rejected because breach truth belongs to the structural/flooding authority route.
 Scalability potential: Low devices render fewer leak plumes but keep every breach in authority. Middle devices interpolate plume density. High/Ultra render all active breach plumes and can spend extra shader detail on the same facts.
 Hardware Impact: 0 us speed claim. Removed two hot registry flag reads from the presentation count resolver; shader draw density now degrades smoothly.
+
+## Voxel Biome SDF Modifier Authority Tier Removal
+
+Problem: `HectonVoxelEngine.ResolveBiomeSdfModifierEnabled` disabled biome SDF modifiers for Low/Mx350/Unknown hardware tiers. That mutates voxel density and generated chunk content by device, which can affect collision, navigation, resource visibility, and save identity.
+Solution: Removed the hardware-tier branch. The modifier remains disabled only for existing deterministic LOD >= 2, so the same seed/LOD produces the same density path across devices.
+Rejected Alternatives: Converting this to `GlobalQualityWeight` was rejected because voxel density/content is not a presentation budget. Moving biome modifiers into a visual-only shader overlay was out of scope for this static sanitation pass and would require a separate route card.
+Scalability potential: Low/Middle/High/Ultra share generated terrain content for the same LOD. Device savings must come from chunk scheduling cadence, mesh density LOD, shader material detail, vegetation draw density, or streaming budget, not from changing biome SDF truth.
+Hardware Impact: 0 us speed claim. Weak devices spend the same biome modifier work for near LOD chunks; removed one chunk-generation hardware tier read.

@@ -589,3 +589,15 @@ Route impact: Integrators running the menu or self-audit now see every SHINOBU_2
 Proof required: Static source/self-audit now; Unity Editor menu invocation remains pending.
 Parked work rejected: Build launch before it is useful, removing the compatibility overload, and hardcoded measured-size strings.
 Static verification: Runtime exposes both three-output and five-output validators; editor calls the five-output validator in the menu and self-audit; editor output contains measured `Flow=` and `Tuning=` lanes; owned scan reports no hardcoded `Flow=32`, `Tuning=32`, `Params=32`, `Telemetry=32`, or `Profile=32`; brace/preprocessor balances are zero; `git diff --check` reported no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 100%, dotnet=8, csc=1.
+
+## Polish Pass 53 Decisions
+Problem: P52 exposed Flow/Tuning measured sizes in editor output, but the self-audit pass condition did not require that evidence. A future edit could remove the proof text while the audit still passed. A naive `editor.Contains` check would be self-referential if the full token appeared inside the checker itself.
+Solution: Added `layoutProofOutput` to `FloraAmbientSwaySelfAudit`. The checker assembles the Flow/Tuning source tokens from split strings, then searches the editor source for the actual menu output and self-audit output lines. The result is included in the pass condition and failure log.
+Rejected Alternatives: Leaving P52 as status/log-only proof was rejected. Embedding the exact searched strings directly in the checker was rejected because it would allow the self-audit to satisfy itself. Adding runtime checks was rejected because this is editor evidence only.
+Scalability potential: No runtime tier behavior change. Continuous shader quality scaling remains unchanged.
+Hardware Impact: 0 player us. Editor self-audit string scan only.
+First 20 Minutes moment: World load and swim readability on the selected Copper Wire route biome.
+Route impact: The editor facade now enforces visibility of all binary DTO sizes when integrators run SHINOBU_267 self-audit.
+Proof required: Static source/self-audit now; Unity Editor menu invocation remains pending.
+Parked work rejected: Hot-path string work, exact-token self-reference, and build launch under active CPU/dotnet/csc pressure.
+Static verification: `layoutProofOutput` participates in the self-audit pass/fail log; generated tokens find the actual menu and self-audit output lines; owned forbidden scan is clean; runtime/editor/shader brace and preprocessor balances are zero.

@@ -67,6 +67,24 @@ Remaining blocked/pending:
   <QUALITY status="DRS shader uses continuous scale-deficit curve; no binary low-tier switch added" />
 </SELF_AUDIT>
 
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="VoxelBiomeSdfModifierAuthorityTierRemoval">
+  <WHAT_WAS_WRONG>
+    `HectonVoxelEngine` disabled biome SDF modifiers on Low/Mx350/Unknown tiers. That let hardware change voxel density and generated chunk content.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Removed the hardware-tier branch from `ResolveBiomeSdfModifierEnabled`. LOD >= 2 still disables the modifier through the existing deterministic LOD rule; hardware tier no longer participates.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    Terrain content remains authority. Presentation savings must be bought through mesh LOD, vegetation density, shader detail, or streaming cadence, not by deleting biome SDF facts.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. One chunk-generation tier read was removed; low devices now keep near-LOD biome modifier truth.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted `rg` found only `ResolveBiomeSdfModifierEnabled` and its call site; no `GlobalRegistry.ScalabilityTier` remains in the function. Targeted `git diff --check` passed with line-ending warnings only. Full build deferred due active compiler processes.
+  </VERIFICATION>
+</SELF_AUDIT>
+
 <SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="SubmarineLeakPlumePresentationContinuum">
   <WHAT_WAS_WRONG>
     `SubmarineStructuralGrid` used low-memory and math-precision globals as a binary switch for visible breach plume count. This was presentation-only, but it violated the continuous quality rule and hot-polled registry state.
