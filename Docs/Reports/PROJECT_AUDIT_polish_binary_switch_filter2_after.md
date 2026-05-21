@@ -10,7 +10,7 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 
 | Category | Matches | Files |
 |---|---:|---:|
-| `binaryHardwareSwitch` | 5 | 2 |
+| `binaryHardwareSwitch` | 4 | 1 |
 | `burstCompile` | 1380 | 330 |
 | `burstMissingCompileSynchronously` | 0 | 0 |
 | `burstMissingFloatMode` | 0 | 0 |
@@ -33,7 +33,6 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 | Path | Count |
 |---|---:|
 | `Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs` | 4 |
-| `Assets/_Project/Scripts/Core/GlobalRegistry.cs` | 1 |
 
 ### burstCompile
 

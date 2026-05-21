@@ -5121,3 +5121,26 @@ Exact microseconds saved:
 Static verification:
 - Focused scan on `SubmarineAutoLevelBallastController.cs` finds no executable legacy handle/direct-buffer/Vault resolve/byref/latest-created/generation-id/word-boundary `ResolveBuffer` hits. Descriptor scan confirms `VaultGenerationHandle<T>`, `GetGenerationHandle<T>`, `TryGetGenerationHandle<T>`, `TryResolveHandle`, `TryResolveVehiclesPhysicsVaultBuffer`, `ReleaseVehiclesPhysicsVaultHandle`, and `ReleaseBuffer(in handle)`. Brace count is `178/178`. `git diff --check` has CRLF warning only. Build was not relaunched.
 - Preexisting same-file diffs for deterministic math LOD, AUP signal construction, audio feedback, and drag tensor behavior are not claimed by this loop.
+
+## 2026-05-21 - Loop 218 - Diegetic Visor Descriptor Route
+
+What was wrong:
+- `Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs` retained ten VFX Vault lanes as pointer-era handles.
+- Visor state, tuning, mock physiology, mock environment, GPU globals, telemetry ring, telemetry cursor, CSV scratch, binary probe scratch, and NaN flags opened through `GetBufferHandle`, `.Resolve(vault)`, retained handle checks, and `GetElementAsRef`.
+- `TryGetPreview` looked like a read accessor but could initialize native state and allocate Vault lanes.
+
+What was done:
+- Converted all ten retained lanes to `VaultGenerationHandle<T>`.
+- Added VFX descriptor helpers that validate exact BufferID, `SystemID.Vfx`, nonzero generation, required length, `TryResolveHandle` or pure `TryReadHandle`, and `IsCreated`.
+- Runtime writes, CSV reload, simulation scheduling/finalization, telemetry, shader update timing patch, binary probe, dump, and preview reads now open phase-local native views through descriptors.
+- Disable and DataVault replacement complete scheduled visor work, release all ten VFX-owned descriptors through `ReleaseBuffer(in handle)`, and tombstone route state.
+
+Cinematic cheats used:
+- Existing visor behavior remains a shader/scalar fake: condensation, droplets, crack severity, dirt, dynamic droplet gravity, darkness/refraction, and corruption are packed into GPU globals for UberNoir/visor shaders instead of CPU simulating lens fluids or surface micro-geometry. This loop does not add physics, scene searches, shader variants, or new gameplay truth routes.
+
+Exact microseconds saved:
+- No measured runtime saving claimed. The loop removes stale pointer trust and read-accessor side effects. Visor DTO strides, BufferIDs, CBuffer stride, shader property IDs, CSV byte parser, fixed-binary probe contract, SignalBus payload, telemetry dump format, and job math are unchanged.
+
+Static verification:
+- Focused scan on `DiegeticVisorLensRuntime.cs` finds no executable legacy handle/direct-buffer/Vault resolve/byref/latest-created/generation-id/word-boundary `ResolveBuffer` hits. Descriptor scan confirms `VaultGenerationHandle<T>`, `GetGenerationHandle<T>`, `TryResolveHandle`, `TryReadHandle`, `OpenVaultArray`, `TryResolveVaultArray`, `TryReadVaultArray`, `ReleaseVisorVaultHandle`, and `ReleaseBuffer(in handle)`. Brace count is `155/155`. `git diff --check` has CRLF warning only. Build was not relaunched.
+- Preexisting same-file diffs in `DiegeticVisorLensRuntime.cs` are not claimed by this loop.

@@ -33,7 +33,6 @@ namespace Hecton8.AI.Ecosystem
         private const float ColdTickDeltaSeconds = HectonEcologyContract.ColdTickDeltaSeconds;
         private const float DefaultBiomassPerEntity = HectonEcologyContract.DefaultBiomassPerEntity;
         private const int DefaultMaxActivePreyPerSector = HectonEcologyContract.DefaultMaxActivePreyPerSector;
-        private const float StressCullThreshold01 = HectonEcologyContract.StressCullThreshold01;
         private const float DefaultStressCullFraction01 = HectonEcologyContract.DefaultStressCullFraction01;
         private const uint EcologySourceHash = 0x45434F4Cu; // ECOL
         private const byte EcologyDeathSignalFlag = 1;
@@ -558,7 +557,6 @@ namespace Hecton8.AI.Ecosystem
                 SystemStress01 = SignalBusRegistry.SystemStress01,
                 BiomassPerEntity = math.max(1f, biomassPerEntity),
                 MaxActivePreyPerSector = math.max(1, maxActivePreyPerSector),
-                StressCullFraction01 = math.saturate(stressCullFraction01),
                 EnableTier1FleeDown = enableTier1FleeDown ? 1 : 0,
                 RuntimeFlags = _runtimeFlags
             };
@@ -1083,7 +1081,6 @@ namespace Hecton8.AI.Ecosystem
             public float SystemStress01;
             public float BiomassPerEntity;
             public int MaxActivePreyPerSector;
-            public float StressCullFraction01;
             public int EnableTier1FleeDown;
             public uint RuntimeFlags;
 
@@ -1148,10 +1145,7 @@ namespace Hecton8.AI.Ecosystem
                         math.max(1, MaxActivePreyPerSector));
                     int currentPrey = math.max(0, state.ActivePreyCount);
                     int cullNeeded = math.max(0, currentPrey - desiredPrey);
-                    bool stressActive = SystemStress01 > StressCullThreshold01;
-                    int stressCullTarget = stressActive && currentPrey + state.ActivePredatorCount > 0
-                        ? math.max(1, (int)math.ceil((currentPrey + state.ActivePredatorCount) * math.saturate(StressCullFraction01)))
-                        : 0;
+                    const int stressCullTarget = 0;
 
                     int preyCull = CullTier2EntitiesInSector(
                         state.SectorHash,

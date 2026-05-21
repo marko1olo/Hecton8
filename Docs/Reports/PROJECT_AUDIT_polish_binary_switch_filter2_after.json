@@ -21,23 +21,14 @@
           "line": 3731,
           "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
           "text": "switch (hardwareProfile.QualityTier)"
-        },
-        {
-          "line": 2080,
-          "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
-          "text": "return overrideTier >= 0 ? (HectonQualityTier)overrideTier : QualityTier;"
         }
       ],
-      "files": 2,
-      "matches": 5,
+      "files": 1,
+      "matches": 4,
       "topFiles": [
         {
           "count": 4,
           "path": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs"
-        },
-        {
-          "count": 1,
-          "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs"
         }
       ]
     },

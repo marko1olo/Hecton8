@@ -742,3 +742,13 @@ The scan proves repo-wide debt, not successful consumer migration. A full rename
 - Disable and DataVault replacement complete pending publish work, release all seven nonzero GameplayLoot descriptors through `ReleaseBuffer(in handle)`, and tombstone route state before rebinding.
 - This entry claims only Scavenging Vault route cleanup. `LootTableEntryDTO`, `ScavengingHarvestRequestDTO`, `ScavengingResolvedYieldDTO`, `ScavengingBiomeModifierDTO`, `ScavengingTelemetryEntry`, BufferIDs, Data Monolith `LootCdf` ABI, CSV parser contract, SignalBus payloads, telemetry dump format, and GameplayLoot authority are unchanged by this loop.
 - Preexisting same-file diffs in `ScavengingLootOracle.cs` are not claimed by this descriptor-route entry.
+
+## 2026-05-21 Diegetic Visor Descriptor Route Update
+
+- `Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs` no longer has executable `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `GetBuffer<T>`, direct `TryGetBuffer`, `TryGetLatestCreated`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `TryGetBufferGeneration`, `VaultGenerationID`, retained handle `.IsCreated`, retained handle `.Length`, or word-boundary `ResolveBuffer` hits.
+- Visor state, tuning, physiology mock, environment mock, GPU globals, telemetry ring, telemetry cursor, CSV scratch, fixed-binary probe scratch, and NaN flag routes now use `VaultGenerationHandle<T>` descriptors.
+- Each route validates exact BufferID, Vfx SystemID, nonzero generation, required length, `TryResolveHandle` or pure `TryReadHandle`, and `IsCreated` before returning a native view.
+- Disable and DataVault replacement complete pending visor work, release all ten nonzero VFX descriptors through `ReleaseBuffer(in handle)`, and tombstone route state before rebinding.
+- Public `TryGetPreview` is now pure: it refuses to initialize native state, allocate/grow Vault buffers, publish signals, complete jobs, or mutate route state.
+- This entry claims only Diegetic Visor Vault route cleanup. `VisorStateDTO`, `VisorLensTuningDTO`, `MockPhysiologySignal`, `MockVisorEnvironmentSignal`, `DiegeticVisorLensGpuGlobalsDTO`, `VisorLensTelemetryEntry`, BufferIDs 71020-71029, CBuffer stride, shader property IDs, CSV parser contract, fixed-binary probe contract, SignalBus payload, dump format, and Vfx authority are unchanged by this loop.
+- Preexisting same-file diffs in `DiegeticVisorLensRuntime.cs` are not claimed by this descriptor-route entry.

@@ -3679,15 +3679,8 @@ namespace Hecton8.Bootstrap
 
         private static int ResolveMaximumLodLevel(in HectonHardwareProfile hardwareProfile)
         {
-            switch (hardwareProfile.QualityTier)
-            {
-                case HectonQualityTier.Low:
-                    return 2;
-                case HectonQualityTier.Mx350:
-                    return 1;
-                default:
-                    return 0;
-            }
+            float qualityWeight = ResolveBootQualityWeight01(in hardwareProfile);
+            return math.clamp(2 - (int)math.floor(qualityWeight * 4f + 0.0001f), 0, 2);
         }
 
         private static float ResolveStreamingMipBudgetMb(in HectonHardwareProfile hardwareProfile)
@@ -3697,47 +3690,62 @@ namespace Hecton8.Bootstrap
             if (HardwareTierDetector.IsSteamDeckLike)
                 return HardwareProfileCatalog.SteamDeckLcdTextureBudgetMegabytes;
 
-            switch (hardwareProfile.QualityTier)
-            {
-                case HectonQualityTier.Ultra:
-                    return 2048f;
-                case HectonQualityTier.High:
-                    return 1536f;
-                case HectonQualityTier.Mid:
-                    return 1024f;
-                case HectonQualityTier.Mx350:
-                    return 768f;
-                default:
-                    return 512f;
-            }
+            return ResolveBootQualityCurve(
+                ResolveBootQualityWeight01(in hardwareProfile),
+                512f,
+                768f,
+                1024f,
+                1536f,
+                2048f);
         }
 
         private static int ResolveAsyncUploadBufferSizeMb(in HectonHardwareProfile hardwareProfile)
         {
-            switch (hardwareProfile.QualityTier)
-            {
-                case HectonQualityTier.Low:
-                case HectonQualityTier.Mx350:
-                    return LowTierAsyncUploadBufferMb;
-                case HectonQualityTier.Mid:
-                    return MidTierAsyncUploadBufferMb;
-                default:
-                    return HighTierAsyncUploadBufferMb;
-            }
+            float budget = ResolveBootQualityCurve(
+                ResolveBootQualityWeight01(in hardwareProfile),
+                LowTierAsyncUploadBufferMb,
+                LowTierAsyncUploadBufferMb,
+                MidTierAsyncUploadBufferMb,
+                HighTierAsyncUploadBufferMb,
+                HighTierAsyncUploadBufferMb);
+            return math.max(1, (int)math.round(budget));
         }
 
         private static int ResolveAsyncUploadTimeSliceMs(in HectonHardwareProfile hardwareProfile)
         {
-            switch (hardwareProfile.QualityTier)
-            {
-                case HectonQualityTier.Low:
-                case HectonQualityTier.Mx350:
-                    return LowTierAsyncUploadTimeSliceMs;
-                case HectonQualityTier.Mid:
-                    return MidTierAsyncUploadTimeSliceMs;
-                default:
-                    return HighTierAsyncUploadTimeSliceMs;
-            }
+            float budget = ResolveBootQualityCurve(
+                ResolveBootQualityWeight01(in hardwareProfile),
+                LowTierAsyncUploadTimeSliceMs,
+                LowTierAsyncUploadTimeSliceMs,
+                MidTierAsyncUploadTimeSliceMs,
+                HighTierAsyncUploadTimeSliceMs,
+                HighTierAsyncUploadTimeSliceMs);
+            return math.max(1, (int)math.round(budget));
+        }
+
+        private static float ResolveBootQualityWeight01(in HectonHardwareProfile hardwareProfile)
+        {
+            if (hardwareProfile.HardwareScore > 0)
+                return math.saturate(hardwareProfile.HardwareScore * 0.01f);
+
+            int tierIndex = (int)hardwareProfile.QualityTier - (int)HectonQualityTier.Low;
+            return math.saturate(tierIndex * 0.25f);
+        }
+
+        private static float ResolveBootQualityCurve(
+            float qualityWeight,
+            float low,
+            float mx350,
+            float middle,
+            float high,
+            float ultra)
+        {
+            float q = math.saturate(math.isfinite(qualityWeight) ? qualityWeight : 0f);
+            return low +
+                (mx350 - low) * math.smoothstep(0f, 0.25f, q) +
+                (middle - mx350) * math.smoothstep(0.25f, 0.5f, q) +
+                (high - middle) * math.smoothstep(0.5f, 0.75f, q) +
+                (ultra - high) * math.smoothstep(0.75f, 1f, q);
         }
 
         private static void ConfigureJobWorkerThreads(in HectonHardwareProfile hardwareProfile)
