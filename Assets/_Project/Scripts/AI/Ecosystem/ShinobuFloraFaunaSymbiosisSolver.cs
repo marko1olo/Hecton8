@@ -255,8 +255,7 @@ namespace Hecton8.AI.Ecosystem
                 activeTuning.GlobalQualityWeight = AuthoritativeQualityWeight;
                 if (tuning.IsCreated && tuning.Length > 0)
                     tuning[0] = activeTuning;
-                float microExchangeWeight = ResolveMicroExchangeWeight(quality, activeTuning.MacroThreshold);
-                bool runMicroExchangeFrame = ResolveDitheredFrameGate(seed ^ 0x53504853u, microExchangeWeight);
+                const bool runMicroExchangeFrame = true;
 
                 JobHandle handle = default;
                 if (counters.Length > 0 && counters[0].Initialized == 0)
@@ -323,7 +322,6 @@ namespace Hecton8.AI.Ecosystem
                     CellSizeMeters = DefaultCellSizeMeters,
                     SectorSizeMeters = DefaultSectorSizeMeters,
                     SimulationTickDelta = DefaultSimulationTickDelta,
-                    GlobalQualityWeight = quality,
                     FloraCount = floraCount,
                     AmbientFishCount = ambientCount,
                     MockFishCount = mockFishCount,
@@ -1274,9 +1272,6 @@ namespace Hecton8.AI.Ecosystem
                     break;
                 case 0x17D802B1u:
                     tuning.OxygenRateScale = value;
-                    break;
-                case 0xB00FB719u:
-                    tuning.GlobalQualityWeight = value;
                     break;
                 case 0x4BA0F3B7u:
                     tuning.MacroThreshold = value;
@@ -2275,7 +2270,6 @@ namespace Hecton8.AI.Ecosystem
         public float CellSizeMeters;
         public float SectorSizeMeters;
         public float SimulationTickDelta;
-        public float GlobalQualityWeight;
         public int FloraCount;
         public int AmbientFishCount;
         public int MockFishCount;
@@ -2289,8 +2283,7 @@ namespace Hecton8.AI.Ecosystem
                 return;
 
             SymbiosisTuningDTO tuning = SymbiosisTuningDTO.Sanitize(Tuning[0]);
-            float quality = math.saturate(math.select(tuning.GlobalQualityWeight, GlobalQualityWeight, math.isfinite(GlobalQualityWeight)));
-            float qualityCurve = quality * quality * (3f - (2f * quality));
+            const float qualityCurve = 1f;
             int floraCount = math.min(FloraCount, math.min(Flora.Length, FloraAups.Length));
             int linkCount = math.min(tuning.ActiveLinkCount > 0 ? tuning.ActiveLinkCount : Links.Length, Links.Length);
             SymbiosisCounterDTO counter = default;

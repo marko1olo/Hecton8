@@ -906,14 +906,14 @@ namespace Hecton8.Visor
                 return;
             }
 
-            bool reconstructionBufferReady = IsReconstructionConstantsBufferReady();
+            bool reconstructionStorageReady = IsReconstructionConstantsBufferReady();
             if (!ReconstructionVaultHandlesReady())
             {
                 ClearRawColorHistoryRequest();
                 return;
             }
 
-            bool requestRawColorHistory = reconstructionBufferReady &&
+            bool requestRawColorHistory = reconstructionStorageReady &&
                                           ShouldRequestRawColorHistory(settings, runtimeState);
             UpdateRawColorHistoryRequest(renderCamera, requestRawColorHistory);
             bool rawColorHistoryAvailable = requestRawColorHistory &&
@@ -923,18 +923,16 @@ namespace Hecton8.Visor
                 runtimeState,
                 renderCamera,
                 rawColorHistoryAvailable);
-            UpdateReconstructionConstants(in reconstructionConstants);
-            RecordReconstructionTelemetry(in reconstructionConstants, runtimeState, reconstructionBufferReady);
-            if (settings.loadAestheticCsv && !_aestheticCsvLoaded && !_aestheticCsvLoadAttempted)
-                TryLoadAestheticCsvCold();
+            bool reconstructionConstantsReady = UpdateReconstructionConstants(in reconstructionConstants);
+            RecordReconstructionTelemetry(in reconstructionConstants, runtimeState, reconstructionConstantsReady);
 
-            bool temporalHookActive = reconstructionBufferReady &&
+            bool temporalHookActive = reconstructionConstantsReady &&
                                       reconstructionConstants.TemporalParams.z > 0.001f;
             _pass.Setup(
                 settings,
                 _material,
                 _reconstructionMaterial,
-                reconstructionBufferReady ? _reconstructionConstantsBuffer : null,
+                reconstructionConstantsReady ? _activeReconstructionConstantsBuffer : null,
                 runtimeState,
                 temporalHookActive,
                 requestRawColorHistory);
@@ -1003,8 +1001,11 @@ namespace Hecton8.Visor
             _noirConstantsBufferB?.Release();
             _noirConstantsBufferB = null;
             _activeNoirConstantsBuffer = null;
-            _reconstructionConstantsBuffer?.Release();
-            _reconstructionConstantsBuffer = null;
+            _reconstructionConstantsBufferA?.Release();
+            _reconstructionConstantsBufferA = null;
+            _reconstructionConstantsBufferB?.Release();
+            _reconstructionConstantsBufferB = null;
+            _activeReconstructionConstantsBuffer = null;
             _hasNoirConstants = false;
             _noirColorCsvLoaded = false;
             _noirColorCsvLoadAttempted = false;
@@ -1014,6 +1015,7 @@ namespace Hecton8.Visor
             _hasReconstructionConstants = false;
             _aestheticCsvLoaded = false;
             _aestheticCsvLoadAttempted = false;
+            _aestheticProfileCacheCount = 0;
         }
 
         private void UpdateRawColorHistoryRequest(Camera renderCamera, bool requestRawColorHistory)
@@ -1076,29 +1078,44 @@ namespace Hecton8.Visor
         {
             if (!SystemInfo.supportsSetConstantBuffer)
             {
-                _reconstructionConstantsBuffer?.Release();
-                _reconstructionConstantsBuffer = null;
+                _reconstructionConstantsBufferA?.Release();
+                _reconstructionConstantsBufferA = null;
+                _reconstructionConstantsBufferB?.Release();
+                _reconstructionConstantsBufferB = null;
+                _activeReconstructionConstantsBuffer = null;
                 return false;
             }
 
-            if (_reconstructionConstantsBuffer != null && _reconstructionConstantsBuffer.IsValid())
-                return true;
+            if (_reconstructionConstantsBufferA == null || !_reconstructionConstantsBufferA.IsValid())
+            {
+                _reconstructionConstantsBufferA?.Release();
+                _reconstructionConstantsBufferA = new GraphicsBuffer(
+                    GraphicsBuffer.Target.Constant,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    1,
+                    UberNoirReconstructionConstantsDTO.SizeBytes); // COLD ALLOC: GraphicsBuffer[48B] - Uber Noir reconstruction CBuffer A - owner: HectonVisorUberPostFeature
+            }
 
-            _reconstructionConstantsBuffer?.Release();
-            _reconstructionConstantsBuffer = new GraphicsBuffer(
-                GraphicsBuffer.Target.Constant,
-                GraphicsBuffer.UsageFlags.LockBufferForWrite,
-                1,
-                UberNoirReconstructionConstantsDTO.SizeBytes); // COLD ALLOC: GraphicsBuffer[48B] - Uber Noir reconstruction CBuffer - owner: HectonVisorUberPostFeature
-            _hasReconstructionConstants = false;
-            return _reconstructionConstantsBuffer != null && _reconstructionConstantsBuffer.IsValid();
+            if (_reconstructionConstantsBufferB == null || !_reconstructionConstantsBufferB.IsValid())
+            {
+                _reconstructionConstantsBufferB?.Release();
+                _reconstructionConstantsBufferB = new GraphicsBuffer(
+                    GraphicsBuffer.Target.Constant,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    1,
+                    UberNoirReconstructionConstantsDTO.SizeBytes); // COLD ALLOC: GraphicsBuffer[48B] - Uber Noir reconstruction CBuffer B - owner: HectonVisorUberPostFeature
+            }
+
+            return IsReconstructionConstantsBufferReady();
         }
 
         private bool IsReconstructionConstantsBufferReady()
         {
             return SystemInfo.supportsSetConstantBuffer &&
-                   _reconstructionConstantsBuffer != null &&
-                   _reconstructionConstantsBuffer.IsValid();
+                   _reconstructionConstantsBufferA != null &&
+                   _reconstructionConstantsBufferB != null &&
+                   _reconstructionConstantsBufferA.IsValid() &&
+                   _reconstructionConstantsBufferB.IsValid();
         }
 
         private bool EnsureReconstructionVaultHandles()
@@ -1226,7 +1243,7 @@ namespace Hecton8.Visor
 #endif
 
             NoirAestheticProfileDTO profile;
-            bool hasProfile = TryLockAndSelectAestheticProfile(renderCamera, runtimeState, out profile);
+            bool hasProfile = TrySelectAestheticProfileSnapshot(renderCamera, runtimeState, out profile);
             float scaleDeficit01 = math.saturate(1f - math.min(currentScale, 1f));
             float safeCurrentScale = math.max(0.3f, currentScale);
             float inverseScale = math.rcp(safeCurrentScale);
@@ -1301,19 +1318,19 @@ namespace Hecton8.Visor
             if (!IsReconstructionConstantsBufferReady())
                 return false;
 
-            float abSplit = ResolveAbSplit01(settings);
-            if (_reconstructionMaterial != null && math.abs(_lastReconstructionAbSplit - abSplit) > MaterialFloatEpsilon)
-            {
-                _lastReconstructionAbSplit = abSplit;
-                _reconstructionMaterial.SetFloat(ShaderConstants.ReconstructionAbSplitId, abSplit);
-            }
-
             if (_hasReconstructionConstants && ReconstructionConstantsEqual(in _lastReconstructionConstants, in constants))
-                return true;
+                return _activeReconstructionConstantsBuffer != null && _activeReconstructionConstantsBuffer.IsValid();
+
+            GraphicsBuffer target = (_reconstructionConstantsBufferIndex & 1) == 0
+                ? _reconstructionConstantsBufferA
+                : _reconstructionConstantsBufferB;
+            if (target == null || !target.IsValid())
+                return false;
+            _reconstructionConstantsBufferIndex++;
 
             UberNoirReconstructionConstantsDTO local = constants;
             NativeArray<UberNoirReconstructionConstantsDTO> mapped =
-                _reconstructionConstantsBuffer.LockBufferForWrite<UberNoirReconstructionConstantsDTO>(0, 1);
+                target.LockBufferForWrite<UberNoirReconstructionConstantsDTO>(0, 1);
             try
             {
                 UnsafeUtility.MemCpy(
@@ -1323,11 +1340,12 @@ namespace Hecton8.Visor
             }
             finally
             {
-                _reconstructionConstantsBuffer.UnlockBufferAfterWrite<UberNoirReconstructionConstantsDTO>(1);
+                target.UnlockBufferAfterWrite<UberNoirReconstructionConstantsDTO>(1);
             }
 
             _lastReconstructionConstants = constants;
             _hasReconstructionConstants = true;
+            _activeReconstructionConstantsBuffer = target;
             WriteReconstructionConstantsToVault(in constants);
             return true;
         }
@@ -1380,8 +1398,8 @@ namespace Hecton8.Visor
                     (byte*)pointer + index * UnsafeUtility.SizeOf<ReconstructionTelemetryEntry>());
                 bool reconstructionActive = reconstructionBufferReady &&
                                             _reconstructionMaterial != null &&
-                                            _reconstructionConstantsBuffer != null &&
-                                            _reconstructionConstantsBuffer.IsValid();
+                                            _activeReconstructionConstantsBuffer != null &&
+                                            _activeReconstructionConstantsBuffer.IsValid();
                 float scale = SanitizePositive(constants.RenderScaleParams.x, 1f);
                 uint modeHash = !reconstructionActive
                     ? ReconstructionModeFallbackHash
