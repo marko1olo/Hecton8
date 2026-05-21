@@ -1,7 +1,7 @@
 {
   "agent": "SHINOBU_260",
   "role": "CREST_VERSION_QUARANTINE_DIRECTOR",
-  "timestamp_utc": "20260521_234045",
+  "timestamp_utc": "20260521_234957",
   "allowed_bridge_prefixes": [
     "Assets/_Project/Scripts/Plugins/Crest"
   ],
@@ -10,6 +10,8 @@
   "quarantine_breaches_prevented": 40,
   "reflection_string_hit_count": 0,
   "global_scripting_define_hit_count": 1,
+  "generated_project_scripting_define_hit_count": 67,
+  "generated_project_prune_rule_hit_count": 6,
   "compliance_denylist_hit_count": 6,
   "vocabulary_debt_hit_count": 111,
   "breaches": [],
@@ -269,6 +271,649 @@
         "CREST_URP"
       ],
       "text": "Standalone: DOTWEEN;CREST_OCEAN;CREST_URP;__MICROSPLAT__;MAPMAGIC2;MM_NATIVE;UNITY_VISUAL_SCRIPTING;GPU_INSTANCER;ODIN_INSPECTOR;ODIN_INSPECTOR_3;ODIN_INSPECTOR_3_1;AMPLIFY_SHADER_EDITOR;SHAPES_URP;MOREMOUNTAINS_NICEVIBRATIONS_INSTALLED;BAKERY_INCLUDED;VLB_URP;ODIN_INSPECTOR_3_2;ODIN_INSPECTOR_3_3"
+    }
+  ],
+  "generated_project_scripting_define_hits": [
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "AIToASE.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "AmplifyImpostors.Editor.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "AmplifyImpostors.Runtime.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "AmplifyShaderEditor.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "Assembly-CSharp-Editor-firstpass.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "Assembly-CSharp-Editor.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "Assembly-CSharp-firstpass.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "Assembly-CSharp.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "AstarPathfindingProject.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "AstarPathfindingProjectEditor.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "BakeryEditorAssembly.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "BakeryRuntimeAssembly.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "Crest.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "Crest.Helpers.Editor.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "Den.Tools.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "Den.Tools.Editor.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "EasySave3.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "EasySave3Editor.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "GPUInstancer.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "GPUInstancer.Editor.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "Hecton8.Bootstrap.Contracts.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "Hecton8.Core.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "Hecton8.Editor.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "Hecton8.Input.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "Hecton8.Input.Generated.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "Hecton8.PlayModeTests.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "Hecton8.World.Contracts.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "Hecton8.World.Dots.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "JBooth.MicroSplat.Core.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "JBooth.MicroSplat.Core.Editor.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "Lofelt.NiceVibrations.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "Lofelt.NiceVibrations.Demo.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "Lofelt.NiceVibrations.Editor.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "MapMagic.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "MapMagic.Editor.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "MapMagic.MicroSplat.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "MapMagic.MicroSplat.Editor.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "MapMagic.Settings.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "MeshBakerCore.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "MeshBakerEditor.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "MoreMountains.Feedbacks.Authorizations.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "MoreMountains.Feedbacks.Cinemachine.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "MoreMountains.Feedbacks.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "MoreMountains.Feedbacks.Editor.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "MoreMountains.Feedbacks.HDRP.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "MoreMountains.Feedbacks.MMTools.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "MoreMountains.Feedbacks.NiceVibrations.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "MoreMountains.Feedbacks.PostProcessing.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "MoreMountains.Feedbacks.TextMeshPro.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "MoreMountains.Feedbacks.URP.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "MoreMountains.Tools.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "MoreMountains.Tools.Editor.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "PackageToolsEditor.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "ShapesEditor.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "ShapesRuntime.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "Sirenix.OdinInspector.Modules.UnityMathematics.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "Tayx.Graphy.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "Tayx.Graphy.Editor.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "Technie.PhysicsCreator.Updater.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "TechniePhysicsCreator.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "TechniePhysicsCreatorEditor.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "Unity.RenderPipelines.Core.Editor.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "Unity.RenderPipelines.Universal.Editor.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "Unity.RenderPipelines.Universal.Runtime.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "Unity.ShaderGraph.Editor.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "VolumetricLightBeam.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    },
+    {
+      "kind": "generated_project_crest_scripting_define",
+      "path": "VolumetricLightBeam.Editor.csproj",
+      "line": 27,
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ]
+    }
+  ],
+  "generated_project_prune_rule_hits": [
+    {
+      "kind": "generated_project_waveharmonic_prune_rule",
+      "path": "Directory.Build.targets",
+      "line": 332,
+      "text": "<Target Name=\"HectonPruneMissingWaveHarmonicCrestPackageItems\""
+    },
+    {
+      "kind": "generated_project_waveharmonic_prune_rule",
+      "path": "Directory.Build.targets",
+      "line": 334,
+      "text": "Condition=\"!Exists('$(MSBuildThisFileDirectory)Packages\\com.waveharmonic.crest')\">"
+    },
+    {
+      "kind": "generated_project_waveharmonic_prune_rule",
+      "path": "Directory.Build.targets",
+      "line": 337,
+      "text": "Condition=\"$([System.String]::Copy('%(Compile.Identity)').Contains('Packages\\com.waveharmonic.crest'))\" />"
+    },
+    {
+      "kind": "generated_project_waveharmonic_prune_rule",
+      "path": "Directory.Build.targets",
+      "line": 342,
+      "text": "Condition=\"$([System.String]::Copy('%(None.Identity)').Contains('Packages\\com.waveharmonic.crest'))\" />"
+    },
+    {
+      "kind": "generated_project_waveharmonic_prune_rule",
+      "path": "Directory.Build.targets",
+      "line": 347,
+      "text": "Condition=\"$([System.String]::Copy('%(Content.Identity)').Contains('Packages\\com.waveharmonic.crest'))\" />"
+    },
+    {
+      "kind": "generated_project_waveharmonic_prune_rule",
+      "path": "Directory.Build.targets",
+      "line": 352,
+      "text": "Condition=\"$([System.String]::Copy('%(ProjectReference.Identity)').Contains('WaveHarmonic.Crest'))\" />"
     }
   ],
   "compliance_denylist_hits": [

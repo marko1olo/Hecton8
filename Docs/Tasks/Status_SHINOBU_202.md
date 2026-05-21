@@ -4264,3 +4264,20 @@ Mandates read before coding:
 ## Compile Wall Note 233
 - [BLOCKED BY EXTERNAL VISOR DEPENDENCY] Current source still contains the Visor `SetGlobalTexture(int, Texture*)` RenderGraph binding regression in `Assets/_Project/Scripts/Visor/DeferredDecalPass.cs` and `Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs`. This SHINOBU_202 loop does not claim or edit the Visor render binding route.
 - Rebuild is currently prohibited again: `dotnet.exe` and `csc.exe` are active, so another build would violate the compiler-process gate.
+
+## Loop 239 - POI Topology Editor Facade Descriptor Route
+- [x] Replaced POI editor facade direct `GetBuffer` / `TryGetBuffer` routes.
+  DOD practice: `ShinobuPoiTopologyTunerWindow.cs` now acquires editor/bake buffers through `TryEnsurePoiVaultBuffer`, existing mutable views through `TryResolveExistingPoiVaultBuffer`, and read-only telemetry/gizmo/counter views through `TryReadPoiVaultBuffer`. Every helper validates exact BufferID, `SystemID.WorldStreaming`, nonzero generation, required length, compaction-fence state, and `TryResolveHandle` or pure `TryReadHandle`.
+  Rejected: using the existing direct editor calls because editor facades can still mark external views and train stale Vault usage. Rewriting POI runtime jobs, DTO layouts, BufferIDs, HZB culling, BRG/indirect args, or world-streaming ownership was rejected as outside this bounded facade pass.
+  Estimate: editor-only O(1) descriptor proof per sync/import/bake/gizmo read; no runtime gameplay frame cost.
+- [x] Preserved the existing bake job topology.
+  DOD practice: candidate AUPs, mock geology signals, transforms, visual anchors, counters, config, rules, bounds, and telemetry are still passed as phase-local `NativeArray<T>` views into the existing Burst jobs with their existing `[NoAlias]` fields and synchronous Burst flags.
+  Rejected: adding a new lock lifetime protocol around queued editor jobs in this loop because it would require a broader POI owner route card and scheduled-job release policy. The patch removes direct Vault API usage without changing job cadence or buffer identity.
+  Estimate: 0 DTO/ABI change.
+
+## Compile State Update 234
+- Focused direct/legacy route scan on `ShinobuPoiTopologyTunerWindow.cs` found zero `TryGetBuffer(`, `GetBuffer<`, `GetBufferHandle`, `TryGetBufferHandle`, `VaultBufferHandle<`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, or `.ptr` hits.
+- Descriptor route scan confirmed `TryEnsurePoiVaultBuffer`, `TryReadPoiVaultBuffer`, `TryResolveExistingPoiVaultBuffer`, `TryResolvePoiVaultBuffer`, `IsPoiVaultHandle`, `GetGenerationHandle`, `TryGetGenerationHandle`, `TryResolveHandle`, `TryReadHandle`, and `SystemID.WorldStreaming`.
+- Brace/preprocessor counts are balanced: `ShinobuPoiTopologyTunerWindow.cs` braces `95/95`, preprocessor `#if/#endif` `1/1`.
+- `git diff --check` passed for `ShinobuPoiTopologyTunerWindow.cs`; CRLF warning only.
+- Build not relaunched: no narrow `*ShinobuBiomimetic*.csproj` exists in the repository root, and full `Hecton8.slnx` is already blocked by the external Visor RenderGraph binding errors recorded in Compile State Update 232.

@@ -3431,7 +3431,7 @@ Verification:
     No job graph changed. Existing native state lifecycle and `_disposeHandle` remain unchanged; this pass added no `.Complete()` path.
   </POINTER_ALIASING_AND_DEPENDENCY_GRAPH>
   <COMPILE_GUARD>
-    No asmdef, sibling runtime reference, SignalBus lane, DTO ABI, or GlobalRegistry route changed. Build guard will be rechecked after documentation.
+    No asmdef, sibling runtime reference, SignalBus lane, DTO ABI, or GlobalRegistry route changed. Build was skipped because CPU probe returned 58 percent.
   </COMPILE_GUARD>
   <CINEMATIC_CHEATS>
     IK blend is a presentation fake over the authoritative lever angle/latch route. Quality affects hand target blend only; latch truth, haptics, and prologue signal remain hardware-invariant.
@@ -3440,6 +3440,6 @@ Verification:
     No measured speed claim. Removed one callback route and lifecycle registration pair.
   </MICROSECONDS_SAVED>
   <VERIFICATION>
-    Targeted scan found no active scalability listener/callback/registration, `QualityTier`, `ScalabilityTier`, `LowTier`, runtime `lowTier`, `LOW LOD`, or hard `<= 0.3f` telemetry cutoff in `OpenXRManualOverrideLever.cs`; only the `FormerlySerializedAs("lowTierIkBlend")` migration string remains. `git diff --check` passed with line-ending warning only.
+    Targeted scan found no active scalability listener/callback/registration, `QualityTier`, `ScalabilityTier`, `LowTier`, runtime `lowTier`, `LOW LOD`, or hard `<= 0.3f` telemetry cutoff in `OpenXRManualOverrideLever.cs`; only the `FormerlySerializedAs("lowTierIkBlend")` migration string remains. `git diff --check` passed with line-ending warning only. Build was not launched because CPU probe returned 58 percent.
   </VERIFICATION>
 </SELF_AUDIT>

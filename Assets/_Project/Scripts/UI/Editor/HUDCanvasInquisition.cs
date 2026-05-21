@@ -72,10 +72,11 @@ namespace Hecton8.UI.Editor
             bool previewGizmoInGeneratedProject)
         {
             bool generatedProjectStale = !rendererFeatureInGeneratedProject || !previewGizmoInGeneratedProject;
-            StringBuilder builder = new StringBuilder(1024);
+            StringBuilder builder = new StringBuilder(2048);
             builder.AppendLine("{");
             builder.AppendLine("  \"agent\": \"SHINOBU_270\",");
             builder.AppendLine("  \"domain\": \"ECHELON 8 Presentation & UX / Visor AR (HUD)\",");
+            builder.AppendLine("  \"evidenceClass\": \"STATIC_SOURCE_TARGETED_REFRESH\",");
             builder.Append("  \"hudPrefabCount\": ").Append(hudPrefabCount).AppendLine(",");
             builder.Append("  \"managedHudCanvasComponents\": ").Append(hudCanvasCount).AppendLine(",");
             builder.Append("  \"managedHudGraphicRaycasters\": ").Append(hudRaycasterCount).AppendLine(",");
@@ -85,6 +86,13 @@ namespace Hecton8.UI.Editor
             builder.Append("  \"generatedProjectIncludesRendererFeature\": ").Append(rendererFeatureInGeneratedProject ? "true" : "false").AppendLine(",");
             builder.Append("  \"generatedProjectIncludesStencilPreviewGizmo\": ").Append(previewGizmoInGeneratedProject ? "true" : "false").AppendLine(",");
             builder.Append("  \"generatedProjectStale\": ").Append(generatedProjectStale ? "true" : "false").AppendLine(",");
+            builder.AppendLine(generatedProjectStale
+                ? "  \"generatedProjectEvidence\": \"Current Hecton8.Core.csproj does not include both HectonVisorARStencilRendererFeature.cs and HectonVisorStencilPreviewGizmo.cs; Unity project regeneration/import is required before external dotnet build covers these scripts.\","
+                : "  \"generatedProjectEvidence\": \"Current Hecton8.Core.csproj includes HectonVisorARStencilRendererFeature.cs and HectonVisorStencilPreviewGizmo.cs.\",");
+            builder.AppendLine("  \"renderGraphSuppressionProof\": \"Canvas suppression flips true only after ArPass.RecordRenderGraph creates the resolve target, assigns resourceData.cameraColor, and marks the player-camera frame as resolved; endCameraRendering clears renderer-owned suppression on authorized player-camera frames without same-frame resolve proof.\",");
+            builder.AppendLine("  \"stencilLaneProof\": \"Hecton_VisorStencilMask and Hidden/Hecton8/VisorAR hard-code reserved stencil bit 0 (Ref 1, WriteMask 1, ReadMask 1); AddRenderPasses does not mutate Material stencil properties.\",");
+            builder.AppendLine("  \"vaultBufferIds\": \"73180..73186 visual-only UI lanes, rollback/Merkle/save excluded\",");
+            builder.AppendLine("  \"compileStatus\": \"PENDING_VERIFICATION: build not launched while CPU/compiler/project-file gates are closed.\",");
             builder.AppendLine("  \"takeoverPath\": \"HectonVisorARStencilRendererFeature + Hecton_VisorAR.shader\",");
             builder.AppendLine("  \"aggregatePolicy\": \"UPSERT_SECTION_PRESERVE_NEIGHBOR_REPORTS\"");
             builder.AppendLine("}");

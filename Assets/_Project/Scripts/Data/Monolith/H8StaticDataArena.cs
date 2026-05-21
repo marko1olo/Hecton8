@@ -602,20 +602,28 @@ namespace Hecton8.Data
         /// </summary>
         /// <param name="arena">Resident arena.</param>
         /// <returns>True when a blob is loaded.</returns>
-        public static bool TryGetArena(out NativeArray<byte> arena)
+        public static bool TryGetArena(out NativeArray<byte>.ReadOnly arena)
         {
             arena = default;
-            return IsLoaded && TryRefreshArenaView(out arena);
+            if (!IsLoaded || !TryRefreshArenaView(out NativeArray<byte> mutableArena))
+                return false;
+
+            arena = mutableArena.AsReadOnly();
+            return true;
         }
 
         /// <summary>
         /// Provides the resident blob and the valid byte count inside the larger static arena.
         /// </summary>
-        public static bool TryGetResidentBlob(out NativeArray<byte> arena, out int blobBytes)
+        public static bool TryGetResidentBlob(out NativeArray<byte>.ReadOnly arena, out int blobBytes)
         {
             arena = default;
             blobBytes = _residentBlobBytes;
-            return IsLoaded && TryRefreshArenaView(out arena) && _residentBlobBytes > 0;
+            if (!IsLoaded || !TryRefreshArenaView(out NativeArray<byte> mutableArena) || _residentBlobBytes <= 0)
+                return false;
+
+            arena = mutableArena.AsReadOnly();
+            return true;
         }
 
         /// <summary>

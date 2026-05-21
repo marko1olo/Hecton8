@@ -64,7 +64,7 @@
   </REGRESSION_MODEL>
 
   <HOT_PATH_IMPACT>
-    Static estimate: removing default hand PhysX proxy saves 30-120 microseconds on contact-heavy low-end frames; SDF solve target is 20-60 microseconds for two hands. Loop 13 dotnet solution proof is green in `Docs/AgentLogs/Build_SHINOBU_271_solution_loop13_08.log`, but Loop 14 changed source and needs a new build proof; no Unity Profiler or GCMonitor capture has been run.
+    Static estimate: removing default hand PhysX proxy saves 30-120 microseconds on contact-heavy low-end frames; SDF solve target is 20-60 microseconds for two hands. Loop 14 current-source dotnet proof is green in `Docs/AgentLogs/Build_SHINOBU_271_core_loop14_12.log` and `Docs/AgentLogs/Build_SHINOBU_271_solution_loop14_13.log`; no Unity Profiler or GCMonitor capture has been run.
   </HOT_PATH_IMPACT>
 
   <FAILURE_MODES>
@@ -78,6 +78,6 @@
     Post-subagent pass removed the residual pocket-pickup `Rigidbody.MovePosition`, removed Unity `Time.frameCount` from panel sample/suit damage event stamps, made finger pose jobs deterministic, deferred fault dump file IO out of fixed-step, and replaced shared-report raw string surgery with editor-only `JObject` mutation.
   </LOOP_13_HARDENING>
   <LOOP_14_HARDENING>
-    Post-subagent pass removed the fixed-step native allocation fallback from `ScheduleFingerPoseBatch()` and added continuous quality-driven visual finger spherecast cadence. Authoritative SDF hand truth remains quality-invariant by design.
+    Post-subagent pass removed the fixed-step native allocation fallback from `ScheduleFingerPoseBatch()` and added continuous quality-driven visual finger spherecast cadence. Authoritative SDF hand truth remains quality-invariant by design. Compile repair added `RasterCommandBufferStaticTextureBridge` for repeatedly restored Visor static texture call sites and verified the current source through narrow Core plus full solution builds.
   </LOOP_14_HARDENING>
 </SELF_AUDIT>

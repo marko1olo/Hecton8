@@ -534,9 +534,9 @@ namespace Hecton8.Atmosphere
         }
 
         public static bool TryGetVaultSnapshot(
-            out NativeArray<WaveParametersDTO> waves,
-            out NativeArray<WeatherStateDTO> weather,
-            out NativeArray<AtmosphereDTO> atmosphere)
+            out NativeArray<WaveParametersDTO>.ReadOnly waves,
+            out NativeArray<WeatherStateDTO>.ReadOnly weather,
+            out NativeArray<AtmosphereDTO>.ReadOnly atmosphere)
         {
             waves = default;
             weather = default;
@@ -551,9 +551,9 @@ namespace Hecton8.Atmosphere
         }
 
         public static bool TryGetReadbackDebugSnapshot(
-            out NativeArray<float4> completedQueries,
-            out NativeArray<float4> completedResults,
-            out NativeArray<OceanSurfaceTelemetryEntry> telemetry)
+            out NativeArray<float4>.ReadOnly completedQueries,
+            out NativeArray<float4>.ReadOnly completedResults,
+            out NativeArray<OceanSurfaceTelemetryEntry>.ReadOnly telemetry)
         {
             completedQueries = default;
             completedResults = default;
@@ -660,14 +660,20 @@ namespace Hecton8.Atmosphere
             return TryResolveRegisteredVault(out vault);
         }
 
-        private static bool TryReadExistingVaultView<T>(IDataVault vault, BufferID bufferId, out NativeArray<T> buffer)
+        private static bool TryReadExistingVaultView<T>(IDataVault vault, BufferID bufferId, out NativeArray<T>.ReadOnly buffer)
             where T : struct
         {
             buffer = default;
-            return vault != null &&
-                   vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) &&
-                   vault.TryReadHandle(in handle, out buffer) &&
-                   buffer.IsCreated;
+            if (vault == null ||
+                !vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) ||
+                !vault.TryReadHandle(in handle, out NativeArray<T> mutableBuffer) ||
+                !mutableBuffer.IsCreated)
+            {
+                return false;
+            }
+
+            buffer = mutableBuffer.AsReadOnly();
+            return true;
         }
 
         private static bool TryAcquireTunerWriteView<T>(
@@ -1594,7 +1600,7 @@ namespace Hecton8.Atmosphere
 
         private bool HasSeedShipQuestMask()
         {
-            if (_vault == null || !TryReadExistingVaultView(_vault, BufferID.QuestDagGlobalStateMasks, out NativeArray<ulong> masks))
+            if (_vault == null || !TryReadExistingVaultView(_vault, BufferID.QuestDagGlobalStateMasks, out NativeArray<ulong>.ReadOnly masks))
                 return false;
 
             for (int i = 0; i < masks.Length; i++)

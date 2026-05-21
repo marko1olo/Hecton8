@@ -552,3 +552,15 @@ Cinematic Cheats used: No new simulation. Construction still uses compact socket
 Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `217` to `215`, `nativeApiExposureOutRefMutable` from `165` to `164`, and `nativeApiExposureMutableReturn` from `52` to `51`.
 
 Evidence: Focused scans found read-only socket range declarations in `BaseModuleCatalogRuntime`, `HabitatConstructionManager`, `HabitatGraphManager`, and `BaseModuleCatalogEditorTools`, plus a read-only biomass accessor in `EcosystemDirector`. `python Tools\PolishMandateStaticAudit.py --source-root Assets/_Project/Scripts --report-path Docs/Reports/PROJECT_AUDIT_polish_after_catalog_ecosystem_readonly.md --json-path Docs/Reports/PROJECT_AUDIT_polish_after_catalog_ecosystem_readonly.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=215`, `nativeApiExposureBuildPlayerRuntime=202`, `nativeApiExposureOutRefMutable=164`, and `nativeApiExposureMutableReturn=51`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Data Monolith Resident Blob Read-Only Narrowing
+
+What was wrong: `H8StaticDataArena.TryGetArena` and `TryGetResidentBlob` exposed resident static data bytes as mutable native arrays despite being documented as read-only blob accessors.
+
+What was done: Converted both public accessors to `NativeArray<byte>.ReadOnly`. Left private `TryRefreshArenaView` mutable because boot load, validation, checksum, localization, and telemetry paths need owner-write or pointer access.
+
+Cinematic Cheats used: None added. This protects static-data ownership; runtime consumers still use direct section spans/pointers instead of copied managed blobs.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `215` to `213`, and `nativeApiExposureOutRefMutable` from `164` to `162`.
+
+Evidence: Focused scan shows only `TryGetArena(out NativeArray<byte>.ReadOnly ...)` and `TryGetResidentBlob(out NativeArray<byte>.ReadOnly ...)` as public resident blob accessors; remaining mutable arena views are private/internal owner paths. `python Tools\PolishMandateStaticAudit.py --source-root Assets/_Project/Scripts --report-path Docs/Reports/PROJECT_AUDIT_polish_after_datamonolith_readonly_blob.md --json-path Docs/Reports/PROJECT_AUDIT_polish_after_datamonolith_readonly_blob.json` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=213`, `nativeApiExposureBuildPlayerRuntime=200`, `nativeApiExposureOutRefMutable=162`, and `nativeApiRiskRuntimeOutRefMutableView=89`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

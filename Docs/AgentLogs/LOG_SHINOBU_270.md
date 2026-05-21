@@ -834,6 +834,40 @@ Build gate:
   <dear_lie note="The stencil shader documentation now matches source: stencil lane write only, no depth write, no color write."/>
 </SELF_AUDIT_ADDENDUM>
 
+## 2026-05-22 - Report Facade Retention Guard
+
+What was wrong:
+- `HUDCanvasInquisition` preserved neighboring report objects, but a future editor menu run would regenerate the SHINOBU_270 section without the fixed-stencil, fail-open, Vault-ID, generated-project, and compile-gate proof fields.
+- That would make the JSON valid while silently erasing the forensic evidence the CTO reads.
+
+What was done:
+- `HUDCanvasInquisition.BuildReportObject()` now emits `evidenceClass`, `generatedProjectEvidence`, `renderGraphSuppressionProof`, `stencilLaneProof`, `vaultBufferIds`, and `compileStatus`.
+- The editor report builder initial capacity was raised from 1024 to 2048 chars to avoid predictable editor-side `StringBuilder` growth after adding forensic fields.
+- `RENDERING_OPTIMIZATION_REPORT.json`, `VISOR_AR_STENCIL_RENDERER.md`, and `BINARY_PAYLOAD_INTEGRATION_LEDGER.md` now document the retention guard.
+
+Cinematic Cheats used:
+- No runtime visual route changed. The active Dear Lie remains stencil-gated fullscreen shader optics; this pass protects evidence for that route.
+
+Exact Microseconds saved:
+- Runtime: 0 us.
+- Editor menu refresh: avoids one predictable `StringBuilder` growth for the larger SHINOBU_270 report section; exact editor microseconds not profiled.
+
+Verification:
+- `Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json` parses after the patch.
+- `HUDCanvasInquisition.cs` now contains all forensic field emissions.
+- Targeted editor/renderer/shader scan found no static `Shader.SetGlobal*`, `_StencilRef`, `_StencilReadMask`, `_StencilWriteMask`, `SetInt`, `ApplyStencilMaterialState`, `ResolveStencilRef`, `ResolveStencilWriteMask`, `Canvas.ForceUpdateCanvases`, `TryGetLatestCreated`, `.Run()`, `.Complete()`, `new NativeArray`, or `_CameraDepthTexture` tokens in the scoped patch surface.
+- `git diff --check` reports only LF-to-CRLF warnings on patched text files.
+
+<SELF_AUDIT_ADDENDUM agent_id="SHINOBU_270" evidence="STATIC_SOURCE" verification="PENDING_UNITY_IMPORT_AND_BUILD">
+  <task_reconciliation note="Tasks 01-20 remain PASS. Iteration 26 tightens Task 19 report-facade proof and Task 20 self-audit durability."/>
+  <struct_layout note="No DTO layout changed."/>
+  <scalability note="No quality route changed; `GlobalQualityWeight` remains shader-side continuous math."/>
+  <h_phi note="No native ownership changed; Vault lanes 73180..73186 remain visual-only generation descriptors."/>
+  <dependency_graph note="No jobs, `.Run()`, or `.Complete()` added."/>
+  <compile_guard note="No assembly reference changed; build remains gated by active compiler/CPU/project-file staleness."/>
+  <dear_lie note="No runtime Canvas/TMP/physics route restored; this pass protects the report evidence for the shader fake."/>
+</SELF_AUDIT_ADDENDUM>
+
 ## 2026-05-22 - Fixed Stencil Lane / Legacy HUD Fence Proof
 
 What was wrong:

@@ -14,6 +14,7 @@ namespace Hecton8.EditorTools
         private const string ProximityKey = "H8.PropwashGpu.SiltProximity";
         private const string CurlKey = "H8.PropwashGpu.CurlNoiseFrequency";
         private const string QualityKey = "H8.PropwashGpu.QualityOverride";
+        private const SystemID OwnerSystem = SystemID.Vfx;
 
         private Slider _proximitySlider;
         private Slider _curlSlider;
@@ -87,31 +88,20 @@ namespace Hecton8.EditorTools
                 return;
             }
 
-            if (!vault.TryGetBufferHandle(BufferID.PropwashGpuTuning, out VaultBufferHandle<PropwashGpuTuningDTO> handle) ||
-                !handle.IsCreated)
-            {
-                handle = vault.GetBufferHandle<PropwashGpuTuningDTO>(
+            if (!TryAcquirePropwashWriteBuffer(
+                    vault,
                     BufferID.PropwashGpuTuning,
                     1,
-                    SystemID.Vfx,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            if (!vault.TryLockBuffer(BufferID.PropwashGpuTuning, SystemID.Vfx))
+                    NativeArrayOptions.ClearMemory,
+                    out VaultGenerationHandle<PropwashGpuTuningDTO> handle,
+                    out NativeArray<PropwashGpuTuningDTO> tuning))
             {
-                SetStatus("PropwashGpuTuning locked by owner.");
+                SetStatus("PropwashGpuTuning unavailable or write-locked.");
                 return;
             }
 
             try
             {
-                NativeArray<PropwashGpuTuningDTO> tuning = handle.Resolve(vault);
-                if (!tuning.IsCreated || tuning.Length <= 0)
-                {
-                    SetStatus("PropwashGpuTuning buffer unavailable.");
-                    return;
-                }
-
                 PropwashGpuTuningDTO dto = tuning[0];
                 if (dto.Version == 0u)
                     dto = PropwashGpuContracts.CreateDefaultTuning();
@@ -126,7 +116,7 @@ namespace Hecton8.EditorTools
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.PropwashGpuTuning, SystemID.Vfx);
+                vault.ReleaseWriteLock(in handle, OwnerSystem);
             }
         }
 
@@ -138,8 +128,12 @@ namespace Hecton8.EditorTools
 
             if (vault != null &&
                 !vault.IsCompactionFenceActive &&
-                vault.TryGetBufferHandle(BufferID.PropwashGpuTelemetryRing, out VaultBufferHandle<PropwashTelemetryEntry> handle) &&
-                handle.IsCreated)
+                TryReadPropwashVaultBuffer(
+                    vault,
+                    BufferID.PropwashGpuTelemetryRing,
+                    PropwashGpuContracts.TelemetryCapacity,
+                    out VaultGenerationHandle<PropwashTelemetryEntry> handle,
+                    out NativeArray<PropwashTelemetryEntry> _))
             {
                 _waterfall.Bind(vault, handle);
             }
@@ -157,12 +151,93 @@ namespace Hecton8.EditorTools
                 _statusLabel.text = value;
         }
 
+        private static bool TryAcquirePropwashWriteBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out VaultGenerationHandle<T> handle,
+            out NativeArray<T> buffer) where T : struct
+        {
+            handle = default;
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                vault.IsCompactionFenceActive)
+            {
+                return false;
+            }
+
+            if (!vault.TryGetGenerationHandle<T>(bufferId, out handle) ||
+                !IsPropwashVaultHandle(in handle, bufferId) ||
+                !vault.TryReadHandle(in handle, out NativeArray<T> existing) ||
+                !existing.IsCreated ||
+                existing.Length < requiredLength)
+            {
+                handle = vault.GetGenerationHandle<T>(
+                    bufferId,
+                    requiredLength,
+                    OwnerSystem,
+                    options);
+            }
+
+            if (!IsPropwashVaultHandle(in handle, bufferId) ||
+                !vault.TryAcquireWriteLock(in handle, OwnerSystem, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                if (IsPropwashVaultHandle(in handle, bufferId))
+                    vault.ReleaseWriteLock(in handle, OwnerSystem);
+
+                handle = default;
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryReadPropwashVaultBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            out VaultGenerationHandle<T> handle,
+            out NativeArray<T> buffer) where T : struct
+        {
+            handle = default;
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryGetGenerationHandle<T>(bufferId, out handle) ||
+                !IsPropwashVaultHandle(in handle, bufferId) ||
+                !vault.TryReadHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                handle = default;
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsPropwashVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == (uint)bufferId &&
+                   handle.SystemID == (uint)OwnerSystem &&
+                   handle.Generation != 0u;
+        }
+
         private sealed class TelemetryWaterfallElement : VisualElement
         {
             private const float GraphHeight = 96f;
             private const float MaxGpuMicroseconds = 1500f;
             private IDataVault _vault;
-            private VaultBufferHandle<PropwashTelemetryEntry> _handle;
+            private VaultGenerationHandle<PropwashTelemetryEntry> _handle;
 
             public TelemetryWaterfallElement()
             {
@@ -172,7 +247,7 @@ namespace Hecton8.EditorTools
                 generateVisualContent += OnGenerateVisualContent;
             }
 
-            public void Bind(IDataVault vault, VaultBufferHandle<PropwashTelemetryEntry> handle)
+            public void Bind(IDataVault vault, VaultGenerationHandle<PropwashTelemetryEntry> handle)
             {
                 _vault = vault;
                 _handle = handle;
@@ -194,12 +269,14 @@ namespace Hecton8.EditorTools
 
                 if (_vault == null ||
                     _vault.IsCompactionFenceActive ||
-                    !_handle.IsCreated ||
+                    !IsPropwashVaultHandle(in _handle, BufferID.PropwashGpuTelemetryRing) ||
                     rect.width <= 1f ||
                     rect.height <= 1f)
                     return;
 
-                NativeArray<PropwashTelemetryEntry> telemetry = _handle.Resolve(_vault);
+                if (!_vault.TryReadHandle(in _handle, out NativeArray<PropwashTelemetryEntry> telemetry))
+                    return;
+
                 if (!telemetry.IsCreated || telemetry.Length <= 0)
                     return;
 

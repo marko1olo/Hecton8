@@ -5640,3 +5640,26 @@ Cinematic cheats used:
 
 Exact microseconds saved:
 - No runtime speedup claimed. Avoided a cross-domain render binding edit from a memory-domain route pass.
+
+## 2026-05-22 - Loop 239 - POI Topology Editor Facade Descriptor Route
+
+What was wrong:
+- `Assets/_Project/Scripts/World/ShinobuBiomimetic/Editor/ShinobuPoiTopologyTunerWindow.cs` opened POI config, rules, bounds, CSV scratch, candidates, mock signals, transforms, anchors, counters, and telemetry through direct Vault `GetBuffer` / `TryGetBuffer`.
+- The facade is editor-only, but it still mutates/readbacks WorldStreaming Vault rows and therefore must not bypass generation/owner proof.
+
+What was done:
+- Added `TryEnsurePoiVaultBuffer`, `TryReadPoiVaultBuffer`, `TryResolveExistingPoiVaultBuffer`, `TryResolvePoiVaultBuffer`, and `IsPoiVaultHandle`.
+- All POI editor sync/import/bake/gizmo/dump/counter routes now validate exact BufferID, `SystemID.WorldStreaming`, nonzero generation, required length, compaction-fence state, and descriptor read/resolve before using phase-local `NativeArray<T>` views.
+- Existing POI Burst jobs, DTOs, BufferIDs, HZB/indirect draw logic, CSV parser, emergency mock generator, and asmdefs were left unchanged.
+
+Cinematic cheats used:
+- No new visual fake. Existing POI pipeline still uses mock geology signals and editor preview gizmos as authoring fakes rather than runtime GameObject instantiation.
+
+Exact microseconds saved:
+- No runtime speedup claimed; player cost is zero because this is an Editor facade. Editor overhead is one O(1) descriptor proof per facade operation.
+
+Static verification:
+- Focused scan found zero `TryGetBuffer(`, `GetBuffer<`, `GetBufferHandle`, `TryGetBufferHandle`, `VaultBufferHandle<`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, or `.ptr` hits in `ShinobuPoiTopologyTunerWindow.cs`.
+- Descriptor scan confirms `TryEnsurePoiVaultBuffer`, `TryReadPoiVaultBuffer`, `TryResolveExistingPoiVaultBuffer`, `TryResolvePoiVaultBuffer`, `IsPoiVaultHandle`, `GetGenerationHandle`, `TryGetGenerationHandle`, `TryResolveHandle`, `TryReadHandle`, and `SystemID.WorldStreaming`.
+- Brace/preprocessor counts are balanced: braces `95/95`, `#if/#endif` `1/1`. `git diff --check` passed with CRLF warning only.
+- Build was not relaunched because no narrow `*ShinobuBiomimetic*.csproj` exists and full `Hecton8.slnx` remains blocked by the external Visor RenderGraph texture-binding errors recorded after Loop 238.

@@ -44,6 +44,18 @@ COMPLIANCE_DENYLIST_PATH = Path("Assets/_Project/Scripts/Editor/HectonCompliance
 GENERATED_REPORT_PATHS = (
     Path("Assets/profilermarkers.csv"),
 )
+GENERATED_PROJECT_EXTENSIONS = {
+    ".csproj",
+    ".sln",
+    ".slnx",
+    ".props",
+    ".targets",
+    ".rsp",
+}
+GENERATED_PROJECT_DONOR_FILES = {
+    "Crest.csproj",
+    "Crest.Helpers.Editor.csproj",
+}
 CREST_DONOR_OPTIONAL_REFERENCE_PACKAGES = {
     "Unity.RenderPipelines.HighDefinition.Runtime": "com.unity.render-pipelines.high-definition",
     "Unity.Postprocessing.Runtime": "com.unity.postprocessing",
@@ -78,6 +90,12 @@ ACTIVE_ASSET_BREACH_RE = re.compile(
 )
 CREST_SHADER_INCLUDE_RE = re.compile(r'#include\s+"[^"\n]*Crest/Crest/Shaders/')
 CREST_SHADER_NAME_RE = re.compile(r'Shader\s+"Crest/')
+GENERATED_PROJECT_HARD_ROUTE_RE = re.compile(
+    r'(<ProjectReference\s+Include="(?:Crest|Crest\.Helpers\.Editor|WaveHarmonic\.Crest[^"]*)\.csproj"\s*/>|'
+    r'<Project\s+Path="WaveHarmonic\.Crest[^"]*\.csproj"\s*/>|'
+    r'<Reference\s+Include="(?:Crest|WaveHarmonic\.Crest[^"]*)"|'
+    r'<(?:Compile|None|Content)\s+Include="Packages[\\/]+com\.waveharmonic\.crest[^"]*"\s*/>)'
+)
 RG_ACTIVE_PATTERNS = (
     rf"WaveHarmonic\.Crest::|WaveHarmonic\.Crest|382a5d8b1147b4e78a31353c022b8e15|03aa24b56404b45a190a2cfc0c7cc100|{QUARANTINED_ASSET_GUID_RE}|Crest5KinematicsAdapter|com\.waveharmonic\.crest|Crest::Crest\.UnderwaterRenderer|^\s*-\s+Crest\s*$",
     r'#include\s+"[^"\n]*Crest/Crest/Shaders/',
@@ -583,6 +601,83 @@ def scan_generated_report_crest_rows() -> list[dict]:
     return breaches
 
 
+def collect_generated_project_paths() -> list[Path]:
+    paths: list[Path] = []
+    for path in PROJECT_ROOT.iterdir():
+        if path.is_file() and path.suffix.lower() in GENERATED_PROJECT_EXTENSIONS:
+            paths.append(path)
+    return sorted(paths)
+
+
+def scan_generated_project_crest_routes() -> tuple[list[dict], list[dict], list[dict]]:
+    """Fail generated IDE/MSBuild surfaces that keep first-party routes into Crest."""
+    breaches: list[dict] = []
+    define_hits: list[dict] = []
+    prune_rule_hits: list[dict] = []
+
+    for path in collect_generated_project_paths():
+        relative = rel(path)
+        if path.name.startswith("WaveHarmonic.Crest") and path.suffix.lower() == ".csproj":
+            breaches.append(
+                {
+                    "kind": "active_waveharmonic_generated_project_file",
+                    "path": str(relative),
+                    "detail": "Root generated WaveHarmonic Crest project is active while Packages/com.waveharmonic.crest is quarantined.",
+                }
+            )
+
+        try:
+            lines = path.read_text(encoding="utf-8-sig", errors="replace").splitlines()
+        except Exception as exc:  # noqa: BLE001
+            breaches.append({"kind": "generated_project_read_error", "path": str(relative), "detail": str(exc)})
+            continue
+
+        for line_number, line in enumerate(lines, start=1):
+            if "DefineConstants" in line:
+                symbols = [symbol for symbol in CREST_SCRIPTING_DEFINE_SYMBOLS if symbol in line]
+                if symbols:
+                    define_hits.append(
+                        {
+                            "kind": "generated_project_crest_scripting_define",
+                            "path": str(relative),
+                            "line": line_number,
+                            "symbols": symbols,
+                        }
+                    )
+
+            if path.name == "Directory.Build.targets" and (
+                "HectonPruneMissingWaveHarmonicCrestPackageItems" in line
+                or "com.waveharmonic.crest" in line
+                or "WaveHarmonic.Crest" in line
+            ):
+                prune_rule_hits.append(
+                    {
+                        "kind": "generated_project_waveharmonic_prune_rule",
+                        "path": str(relative),
+                        "line": line_number,
+                        "text": line.strip(),
+                    }
+                )
+                continue
+
+            if not GENERATED_PROJECT_HARD_ROUTE_RE.search(line):
+                continue
+
+            if path.name == "Crest.Helpers.Editor.csproj" and 'ProjectReference Include="Crest.csproj"' in line:
+                continue
+
+            breaches.append(
+                {
+                    "kind": "generated_project_crest_route",
+                    "path": str(relative),
+                    "line": line_number,
+                    "text": line.strip(),
+                }
+            )
+
+    return breaches, define_hits, prune_rule_hits
+
+
 def scan_global_scripting_defines() -> list[dict]:
     """Report global Crest scripting symbols; they are donor state, not a first-party route by themselves."""
     path = PROJECT_ROOT / "ProjectSettings" / "ProjectSettings.asset"
@@ -695,6 +790,7 @@ def main() -> int:
     donor_autoreference_breaches = scan_crest_donor_autoreference()
     donor_missing_reference_breaches = scan_crest_donor_missing_optional_references()
     generated_report_breaches = scan_generated_report_crest_rows()
+    generated_project_breaches, generated_project_define_hits, generated_project_prune_rule_hits = scan_generated_project_crest_routes()
     global_define_hits = scan_global_scripting_defines()
     compliance_denylist_hits = scan_compliance_denylist_strings()
     vocabulary_debt_hits = scan_vocabulary_debt()
@@ -707,6 +803,7 @@ def main() -> int:
         + donor_autoreference_breaches
         + donor_missing_reference_breaches
         + generated_report_breaches
+        + generated_project_breaches
     )
     allowed_hits = asmdef_allowed + csharp_allowed + define_allowed
 
@@ -721,12 +818,16 @@ def main() -> int:
         "quarantine_breaches_prevented": len(allowed_hits),
         "reflection_string_hit_count": len(reflection_hits),
         "global_scripting_define_hit_count": len(global_define_hits),
+        "generated_project_scripting_define_hit_count": len(generated_project_define_hits),
+        "generated_project_prune_rule_hit_count": len(generated_project_prune_rule_hits),
         "compliance_denylist_hit_count": len(compliance_denylist_hits),
         "vocabulary_debt_hit_count": len(vocabulary_debt_hits),
         "breaches": breaches,
         "allowed_hits": allowed_hits,
         "reflection_string_hits": reflection_hits,
         "global_scripting_define_hits": global_define_hits,
+        "generated_project_scripting_define_hits": generated_project_define_hits,
+        "generated_project_prune_rule_hits": generated_project_prune_rule_hits,
         "compliance_denylist_hits": compliance_denylist_hits,
         "vocabulary_debt_hits": vocabulary_debt_hits,
     }

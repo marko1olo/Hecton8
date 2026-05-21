@@ -1,7 +1,7 @@
 {
   "agent": "SHINOBU_271",
   "scanner": "VR_Physics_Inquisition static shell fallback",
-  "verdict": "SOURCE_CHANGED_COMPILE_PENDING_UNITY_EXECUTION_PENDING",
+  "verdict": "PASS_DOTNET_SOLUTION_UNITY_EXECUTION_PENDING",
   "summary": "Physics-Based VR Hands Purged by default kinematic SDF bridge; legacy ArticulationBody/Rigidbody hand proxy remains behind explicit useKinematicSdfHandBridge=false fallback only.",
   "generatedWithoutUnity": true,
   "unityMenuRoute": "HECTON-8/VR/Run Physics Inquisition",
@@ -39,11 +39,12 @@
     "Socket scan reads all active rows to keep interaction truth independent of GlobalQualityWeight.",
     "Finger spherecast visual buffers are warmed from cold lifecycle only; fixed-step fails closed instead of allocating missing native buffers.",
     "Visual finger spherecast cadence maps continuously from 6 fixed frames at minimum quality to every fixed frame at maximum quality.",
+    "RenderGraph static texture compatibility bridge resolves legacy RasterCommandBuffer.SetGlobalTexture(int, Texture) call sites without changing draw count.",
     "Over-budget frames are telemetry-flagged only; non-finite state dumps immediately through the fault-only black box."
   ],
   "blackBoxDump": "Docs/AgentLogs/Dump_SHINOBU_271.bin",
   "telemetryEntries": 600,
   "continuousQuality": "GlobalQualityWeight maps continuously to a 2..8 presentation/telemetry iteration hint and 6..1 fixed-frame visual finger spherecast cadence; authoritative SDF truth uses the deterministic 8-step fence so rollback state, DTO layout, and authority route remain invariant.",
-  "compileProof": "Loop 13 solution proof remains green for the previous source revision in Docs/AgentLogs/Build_SHINOBU_271_solution_loop13_08.log. Loop 14 source changed after that proof; rebuild pending after external csc.exe/VBCSCompiler.exe processes exit.",
+  "compileProof": "Loop 14 current-source proof: Docs/AgentLogs/Build_SHINOBU_271_core_loop14_12.log reports EXIT_CODE=0, 29 Warning(s), 0 Error(s); Docs/AgentLogs/Build_SHINOBU_271_solution_loop14_13.log reports EXIT_CODE=0, 175 Warning(s), 0 Error(s).",
   "verificationLimit": "Unity import, Unity Console, Play Mode GCMonitor, profiler captures, player-build, Quest/Steam Deck runtime, and live VR device proof remain pending."
 }

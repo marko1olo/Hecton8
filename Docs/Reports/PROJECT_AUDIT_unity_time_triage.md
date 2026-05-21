@@ -475,6 +475,33 @@ Updated static counts from that artifact:
 
 This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
 
+## 2026-05-22 Data Monolith Resident Blob Follow-Up
+
+Additional native API narrowing after catalog/ecosystem snapshots:
+
+- `H8StaticDataArena.TryGetArena` now returns `NativeArray<byte>.ReadOnly`.
+- `H8StaticDataArena.TryGetResidentBlob` now returns `NativeArray<byte>.ReadOnly`.
+
+Rejected:
+
+- Private `TryRefreshArenaView`, because boot load, validation, checksum, localization, and telemetry internals need mutable owner access.
+- Data Monolith load pipeline or Vault handle ownership changes.
+- Managed copies of resident static data.
+
+Focused proof:
+
+- Static search found no first-party call sites for the two public resident blob accessors.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_after_datamonolith_readonly_blob.json`.
+
+Updated static counts from that artifact:
+
+- `nativeCollectionPublicMutableApiExposure`: 213, down from 215.
+- `nativeApiExposureBuildPlayerRuntime`: 200, down from 202.
+- `nativeApiExposureOutRefMutable`: 162, down from 164.
+- `nativeApiRiskRuntimeOutRefMutableView`: 89, down from 91.
+
+This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
 ## 2026-05-22 Toxic Outgassing Readback Follow-Up
 
 Additional native API narrowing after the construction occupancy pass:
@@ -516,6 +543,37 @@ Rejected:
 - `TryResolveTuning` because editor tuning UI writes back into returned arrays.
 
 This is route classification only. No source edit, Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 Catalog Socket And Ecosystem Biomass Follow-Up
+
+Additional native API narrowing after toxic readbacks:
+
+- `BaseModuleCatalogRuntime.TryGetModuleSocketRangeFromVault` now returns `NativeArray<SocketDefinitionDTO>.ReadOnly`.
+- `BaseModuleCatalogRuntime.TryGetSocketRange` accepts `NativeArray<SocketDefinitionDTO>.ReadOnly`.
+- `HabitatConstructionManager`, `HabitatGraphManager`, and `BaseModuleCatalogEditorTools` consume read-only catalog socket ranges.
+- `EcosystemDirector.GetBiomassSaveSnapshotArray` now returns `NativeArray<EcosystemBiomassSaveRun>.ReadOnly`.
+
+Rejected:
+
+- `TryLoadCatalogBytes` and `TryStartCatalogByteLoad`, because they hydrate a writable Vault byte lane by design.
+- `EcosystemDirector.GetSaveSnapshotArray`, because narrowing it cascades into `SaveManager`, `SaveBinaryStorage`, and unsafe copy signatures.
+- Fauna simulation memory properties and Shinobu POI acquire methods, because read-only subagent triage classified them as writer/acquire routes.
+
+Focused proof:
+
+- Focused scans found no stale mutable socket range declarations in the touched construction/editor files.
+- Focused scan found no mutable `GetBiomassSaveSnapshotArray` accessor.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_after_catalog_ecosystem_readonly.json`.
+
+Updated static counts from that artifact:
+
+- `nativeCollectionPublicMutableApiExposure`: 215, down from 217.
+- `nativeApiExposureBuildPlayerRuntime`: 202, down from 204.
+- `nativeApiExposureOutRefMutable`: 164, down from 165.
+- `nativeApiExposureMutableReturn`: 51, down from 52.
+- `nativeApiRiskRuntimeOutRefMutableView`: 91, down from 92.
+
+This is static-source proof only. No Unity import, Console, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
 
 ## 2026-05-22 Construction Occupancy Read Accessor Follow-Up
 

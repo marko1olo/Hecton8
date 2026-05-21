@@ -5,7 +5,7 @@ Date: 2026-05-21
 Owner: `SHINOBU_271`
 Owner domain: Echelon 4 Player / Kinematics / VR Interaction Bridge
 Owning file/system: `PhysicalHandController`, `VRInteractionKinematicBridge`, `VRPhysicsInquisition`
-Status: `YELLOW / LOOP 14 SOURCE CHANGED; DOTNET REBUILD PENDING; PENDING UNITY IMPORT, PLAY MODE, PROFILER, AND DEVICE PROOF`
+Status: `YELLOW / LOOP 14 DOTNET SOLUTION GREEN; PENDING UNITY IMPORT, PLAY MODE, PROFILER, AND DEVICE PROOF`
 
 Problem: VR hands must stop using SpringJoint/ConfigurableJoint/Rigidbody hand truth and resolve controller motion through deterministic AUP, Voxel SDF, and socket math.
 
@@ -69,8 +69,9 @@ Profiler marker:
 - pending. Static CPU timing uses `Stopwatch.GetTimestamp()` in the controller bridge and writes microseconds into telemetry.
 
 Compile proof:
-- `dotnet build Hecton8.slnx --no-restore -nologo -v:minimal -maxcpucount:1 /nr:false /p:UseSharedCompilation=false /p:GenerateFullPaths=true` returned `EXIT_CODE=0` in `Docs/AgentLogs/Build_SHINOBU_271_solution_loop13_08.log` with `7 Warning(s)`, `0 Error(s)` for the Loop 13 source revision.
-- Loop 14 changed `PhysicalHandController.cs`; new dotnet proof is pending while external `csc.exe`/`VBCSCompiler.exe` processes are active.
+- `dotnet build Hecton8.Core.csproj --no-restore -nologo -v:minimal -maxcpucount:1 /nr:false /p:UseSharedCompilation=false /p:GenerateFullPaths=true` returned `EXIT_CODE=0` in `Docs/AgentLogs/Build_SHINOBU_271_core_loop14_12.log` with `29 Warning(s)`, `0 Error(s)`.
+- `dotnet build Hecton8.slnx --no-restore -nologo -v:minimal -maxcpucount:1 /nr:false /p:UseSharedCompilation=false /p:GenerateFullPaths=true` returned `EXIT_CODE=0` in `Docs/AgentLogs/Build_SHINOBU_271_solution_loop14_13.log` with `175 Warning(s)`, `0 Error(s)`.
+- Loop 14 compile repair added `RasterCommandBufferStaticTextureBridge` for Visor static texture call sites that were repeatedly restored by concurrent/stale build churn.
 
 GC proof required:
 - Unity Profiler / GCMonitor capture in Play Mode. Static source proof only exists now.

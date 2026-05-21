@@ -936,3 +936,10 @@ The scan proves repo-wide debt, not successful consumer migration. A full rename
 - Tuning mutation uses `TryAcquireWriteLock` and releases the owner write lock in `finally`.
 - This entry does not change `RadiationTuningDTO`, `RadiationTelemetryEntry`, BufferIDs `Shinobu274RadiationTuning`, `Shinobu274RadiationTelemetryRing`, `Shinobu274RadiationTelemetryCursor`, shader preview globals, or GameplayRadiation authority.
 - Build note: guarded solution build after this editor patch failed in external Visor RenderGraph binding code (`DeferredDecalPass.cs:245`, `HectonVisorUberPostFeature.cs:584-587`) and reported no errors in `RadiationShieldingTunerWindow.cs`. SHINOBU_202 does not claim the Visor render-binding route.
+
+## 2026-05-22 POI Topology Editor Facade Descriptor Route
+
+- `Assets/_Project/Scripts/World/ShinobuBiomimetic/Editor/ShinobuPoiTopologyTunerWindow.cs` no longer has direct `TryGetBuffer(`, `GetBuffer<`, `GetBufferHandle`, `TryGetBufferHandle`, `VaultBufferHandle<`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, or `.ptr` routes.
+- Editor sync/import/bake/gizmo/dump/counter paths use `VaultGenerationHandle<T>` descriptors validated against exact BufferID, `SystemID.WorldStreaming`, nonzero generation, required length, and compaction-fence state.
+- Mutable editor/bake setup views resolve through `TryResolveHandle`; telemetry, gizmo, config/rules/bounds, and counter readbacks use pure `TryReadHandle` where the facade does not write.
+- This entry does not change `PoiTransformDTO`, `PoiPlacementRuleDTO`, `StructuralBoundsDTO`, `PoiOfflineBakeConfigDTO`, `MockGeologySignal`, `PoiPlacementTelemetryEntry`, `VisualAnchorSampleDTO`, BufferIDs `70420..70438`, CSV parser bytes, emergency mock rules, HZB/indirect draw route, or WorldStreaming authority.

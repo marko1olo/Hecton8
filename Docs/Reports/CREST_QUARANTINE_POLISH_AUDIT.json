@@ -47,6 +47,21 @@
       "status": "PASS"
     },
     {
+      "detail": "Root generated WaveHarmonic Crest projects are archived outside active MSBuild visibility.",
+      "name": "waveharmonic_generated_projects_outside_root",
+      "status": "PASS"
+    },
+    {
+      "detail": "Root first-party/generated projects no longer carry direct Crest or archived WaveHarmonic project/package routes.",
+      "name": "generated_first_party_projects_have_no_direct_crest_references",
+      "status": "PASS"
+    },
+    {
+      "detail": "Directory.Build.targets no longer injects Crest into Hecton8.Core; only the missing-package prune target remains.",
+      "name": "directory_build_no_core_crest_reference_shim",
+      "status": "PASS"
+    },
+    {
       "detail": "Crest baseline archiver captured project-side Crest4 settings, prefab, and 02_HECTON_WORLD ocean scene bindings in Docs/Archive.",
       "name": "crest4_project_bindings_have_baseline_archives",
       "status": "PASS"
@@ -254,6 +269,16 @@
     {
       "detail": "Dependency scanner hard-fails Unity-visible generated profiler reports that retain Crest rows.",
       "name": "dependency_scanner_blocks_stale_generated_report_crest_rows",
+      "status": "PASS"
+    },
+    {
+      "detail": "Dependency scanner hard-fails active generated project and MSBuild routes into Crest/WaveHarmonic outside the donor/helper boundary.",
+      "name": "dependency_scanner_blocks_generated_project_crest_routes",
+      "status": "PASS"
+    },
+    {
+      "detail": "Dependency scanner reports generated-project Crest scripting defines and allowed WaveHarmonic prune rules as evidence.",
+      "name": "dependency_scanner_reports_generated_project_define_symbols",
       "status": "PASS"
     },
     {

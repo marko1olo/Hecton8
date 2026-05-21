@@ -478,13 +478,13 @@ What was wrong:
 - `Build_SHINOBU_271_core_loop14_06.log` exposed ten RenderGraph API errors in Visor passes. Static `Texture`/`Texture2DArray` assets were routed through `RasterCommandBuffer.SetGlobalTexture(int, ...)`, while that raster command path is valid for RenderGraph texture handles, not static asset instances.
 
 What was done:
-- `DeferredDecalPass` now binds the decal atlas through `Material.SetTexture(...)` before the fullscreen draw.
-- `HectonVisorUberPostFeature` now binds crack, lens dirt, blue noise, and VR comfort mask textures through the pass material.
-- The post pass now returns before binding/drawing if its material is absent.
+- Initial material-local binding patch fixed the source locally, but repeated external solution builds restored the five original static texture call sites before Csc saw them.
+- Added `RasterCommandBufferStaticTextureBridge` in `HectonVisorUberPostFeature.Noir.cs` so legacy `RasterCommandBuffer.SetGlobalTexture(int, Texture)` call sites compile and route static texture assets through `Shader.SetGlobalTexture(...)`.
+- The post pass still fails closed if its material is absent.
 
 Cinematic cheats used:
 - None added. This is a compile/API binding repair; SHINOBU_271's cinematic cheat path remains SDF projection plus arm clamp/socket snap instead of physical hand joints.
 
 Exact microseconds saved:
 - Runtime savings claimed: 0 microseconds. Draw count, shader work, and visual quality route are unchanged.
-- Integration savings: ten C# API errors removed from the current source path; rebuild proof still pending because an already-running stale `dotnet build Hecton8.slnx` began before this patch.
+- Integration savings: ten C# API errors removed from the current source path. `Build_SHINOBU_271_core_loop14_12.log` reports `EXIT_CODE=0`, `29 Warning(s)`, `0 Error(s)`; `Build_SHINOBU_271_solution_loop14_13.log` reports `EXIT_CODE=0`, `175 Warning(s)`, `0 Error(s)`.

@@ -134,6 +134,41 @@ def main() -> int:
         and (ROOT / "Docs/Archive/Crest_Version_Quarantine/Assets/profilermarkers.csv.meta").exists(),
         "Stale Unity profiler marker CSV with Crest assembly rows is archived outside active Assets with its meta.",
     )
+    active_waveharmonic_projects = sorted(path.name for path in ROOT.glob("WaveHarmonic.Crest*.csproj"))
+    archived_waveharmonic_projects = sorted(
+        path.name
+        for path in (ROOT / "Docs/Archive/Crest_Version_Quarantine/GeneratedProject").glob("WaveHarmonic.Crest*.csproj")
+    )
+    add_check(
+        checks,
+        "waveharmonic_generated_projects_outside_root",
+        not active_waveharmonic_projects and len(archived_waveharmonic_projects) >= 7,
+        "Root generated WaveHarmonic Crest projects are archived outside active MSBuild visibility.",
+    )
+    generated_project_text = "\n".join(
+        path.read_text(encoding="utf-8-sig", errors="replace")
+        for path in sorted(ROOT.glob("*.csproj"))
+        if path.name not in {"Crest.csproj", "Crest.Helpers.Editor.csproj"}
+    )
+    add_check(
+        checks,
+        "generated_first_party_projects_have_no_direct_crest_references",
+        'ProjectReference Include="Crest.csproj"' not in generated_project_text
+        and 'ProjectReference Include="Crest.Helpers.Editor.csproj"' not in generated_project_text
+        and "WaveHarmonic.Crest" not in generated_project_text
+        and "Packages\\com.waveharmonic.crest" not in generated_project_text
+        and "Packages/com.waveharmonic.crest" not in generated_project_text,
+        "Root first-party/generated projects no longer carry direct Crest or archived WaveHarmonic project/package routes.",
+    )
+    directory_build_targets = read_text("Directory.Build.targets")
+    add_check(
+        checks,
+        "directory_build_no_core_crest_reference_shim",
+        '<Reference Include="Crest"' not in directory_build_targets
+        and '<Reference Include="WaveHarmonic.Crest' not in directory_build_targets
+        and "HectonPruneMissingWaveHarmonicCrestPackageItems" in directory_build_targets,
+        "Directory.Build.targets no longer injects Crest into Hecton8.Core; only the missing-package prune target remains.",
+    )
     quarantine_report_path = ROOT / "Docs/Reports/CREST_QUARANTINE_REPORT.json"
     quarantine_report = {}
     if quarantine_report_path.exists():
@@ -574,6 +609,21 @@ def main() -> int:
         and "Assets/profilermarkers.csv" in dependency_scanner_source
         and "generated_report_crest_reference" in dependency_scanner_source,
         "Dependency scanner hard-fails Unity-visible generated profiler reports that retain Crest rows.",
+    )
+    add_check(
+        checks,
+        "dependency_scanner_blocks_generated_project_crest_routes",
+        "scan_generated_project_crest_routes" in dependency_scanner_source
+        and "generated_project_crest_route" in dependency_scanner_source
+        and "active_waveharmonic_generated_project_file" in dependency_scanner_source,
+        "Dependency scanner hard-fails active generated project and MSBuild routes into Crest/WaveHarmonic outside the donor/helper boundary.",
+    )
+    add_check(
+        checks,
+        "dependency_scanner_reports_generated_project_define_symbols",
+        "generated_project_scripting_define_hits" in dependency_scanner_source
+        and "generated_project_prune_rule_hits" in dependency_scanner_source,
+        "Dependency scanner reports generated-project Crest scripting defines and allowed WaveHarmonic prune rules as evidence.",
     )
     add_check(
         checks,
