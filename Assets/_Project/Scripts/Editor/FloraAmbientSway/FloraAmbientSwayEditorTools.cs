@@ -500,6 +500,12 @@ namespace Hecton8.Editor.FloraAmbientSway
             string shader = ReadProjectFile("Assets/_Project/Art/Shaders/Hecton_IndirectVegetation.shader");
             string runtimeAsmdef = ReadProjectFile("Assets/_Project/Scripts/World/FloraAmbientSway/Hecton8.World.FloraAmbientSway.asmdef");
             string editorAsmdef = ReadProjectFile("Assets/_Project/Scripts/Editor/FloraAmbientSway/Hecton8.World.FloraAmbientSway.Editor.asmdef");
+            string forbiddenLayoutOffsetApi = "Marshal." + "OffsetOf";
+            bool layoutOffsetApi =
+                runtime.Contains("GetFieldOffset<FloraSwayParamsDTO>(nameof(FloraSwayParamsDTO.GlobalFlowVector))") &&
+                runtime.Contains("GetFieldOffset<FloraSwayParamsDTO>(nameof(FloraSwayParamsDTO.SwayMathParams))") &&
+                runtime.Contains("UnsafeUtility.GetFieldOffset(field)") &&
+                !runtime.Contains(forbiddenLayoutOffsetApi);
             bool dispatcher = runtime.Contains("DispatcherPhase.PreSimulation") && runtime.Contains("DispatcherPhase.VisualSync");
             bool fmod = runtime.Contains("math.fmod") && runtime.Contains("1000f");
             string forbiddenVectorUploadApi = "SetGlobal" + "Vector";
@@ -613,11 +619,12 @@ namespace Hecton8.Editor.FloraAmbientSway
                 HasProjectFile("Assets/_Project/Scripts/Editor/FloraAmbientSway.meta") &&
                 HasProjectFile("Assets/_Project/Scripts/Editor/FloraAmbientSway/FloraAmbientSwayEditorTools.cs.meta") &&
                 HasProjectFile("Assets/_Project/Scripts/Editor/FloraAmbientSway/Hecton8.World.FloraAmbientSway.Editor.asmdef.meta");
-            bool pass = layout && dispatcher && fmod && upload && shaderQuality && telemetry && vertexColorDebug && littleEndianDump && readAccessorPurity && runtimeQualityFailClosed && unsafeDtoMutation && hotOwnerMutationAndMath && hotValueNewHygiene && burstFloatMode && burstFunctionPointers && aotFunctionPointerAbi && asmdefBoundary && metaIdentity;
+            bool pass = layout && layoutOffsetApi && dispatcher && fmod && upload && shaderQuality && telemetry && vertexColorDebug && littleEndianDump && readAccessorPurity && runtimeQualityFailClosed && unsafeDtoMutation && hotOwnerMutationAndMath && hotValueNewHygiene && burstFloatMode && burstFunctionPointers && aotFunctionPointerAbi && asmdefBoundary && metaIdentity;
             if (!pass)
             {
                 Debug.LogError(
                     "SHINOBU_267 self-audit failed. layout=" + layout +
+                    " layoutOffsetApi=" + layoutOffsetApi +
                     " params=" + paramsSize +
                     " telemetry=" + telemetrySize +
                     " profile=" + profileSize +
@@ -641,7 +648,7 @@ namespace Hecton8.Editor.FloraAmbientSway
                 return;
             }
 
-            Debug.Log("SHINOBU_267 self-audit passed. 0 hot managed allocations by static route; Params=" + paramsSize + ", Telemetry=" + telemetrySize + ", Profile=" + profileSize + ", asmdef/meta route locked.");
+            Debug.Log("SHINOBU_267 self-audit passed. 0 hot managed allocations by static route; Params=" + paramsSize + ", Telemetry=" + telemetrySize + ", Profile=" + profileSize + ", asmdef/meta/layout-offset route locked.");
         }
 
         private static string ReadProjectFile(string path)

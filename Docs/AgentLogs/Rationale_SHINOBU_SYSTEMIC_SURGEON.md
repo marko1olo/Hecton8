@@ -850,3 +850,11 @@ Solution: The terrain IK kernel now pins authority quality to 1.0, uses `Request
 Rejected Alternatives: Trusting the runtime to always pass quality 1.0 was rejected because the kernel is a shared Burst contract and must be self-defending. Keeping low-tier telemetry was rejected because it no longer corresponds to a real authority state.
 Scalability potential: Low/Middle/High/Ultra share terrain pose, collision proxy, SDF hug, and tail-follow topology. Device savings must be purchased through visual-only bone upload density, material VFX, debug draw, or optional telemetry cadence.
 Hardware Impact: 0 us speed claim. Weak devices retain full authority IK topology; stale segment/iteration/SDF quality clamps were removed.
+
+## Fauna Retinal Biolum Continuous Presentation
+
+Problem: `FaunaBrain` cached `GlobalRegistry.ScalabilityTierProfileByte` and used a hard `< 2` gate to suppress retinal-blind biolum feedback. This was visual-only, but it still produced a binary quality pop and a stale tier cache.
+Solution: Removed the cached profile byte. Retinal-blind signals are consumed on all tiers, and strobe intensity now scales by a smooth polynomial of `HomeostasisBrain.GlobalQualityWeight` with a low-end visible floor.
+Rejected Alternatives: Keeping the binary tier gate was rejected because visual lanes must degrade continuously. Dropping the effect entirely at low quality was rejected because the player feedback becomes inconsistent; scaling intensity preserves the cue with lower presentation cost.
+Scalability potential: Low devices get a reduced but visible strobe; middle devices get partial intensity; high/ultra get full strobe. The gameplay blind state remains unchanged.
+Hardware Impact: 0 us speed claim. One cold registry tier field was removed; the route is presentation only.

@@ -67,6 +67,24 @@ Remaining blocked/pending:
   <QUALITY status="DRS shader uses continuous scale-deficit curve; no binary low-tier switch added" />
 </SELF_AUDIT>
 
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="FaunaRetinalBiolumPresentation">
+  <WHAT_WAS_WRONG>
+    `FaunaBrain` used `ScalabilityTierProfileByte` to hard-disable retinal-blind biolum presentation below tier 2. The blind state stayed authoritative, but the visual cue popped by hardware tier.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Removed the cached tier byte and replaced the binary gate with smooth `HomeostasisBrain.GlobalQualityWeight` intensity scaling. Signal consumption now runs on all tiers and only the strobe amplitude changes continuously.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    Retinal strobe intensity is now a presentation fake driven by a continuous curve. No cognition, blind state, or gameplay fact is changed by the quality weight.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. This is a presentation-continuity fix; it removes one cached tier field.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted `rg` found no `_scalabilityTierProfileByte` or `ScalabilityTierProfileByte` in `FaunaBrain.cs`. `git diff --check` passed with line-ending warnings only. Build skipped because CPU was 63% with active `dotnet` and `csc`.
+  </VERIFICATION>
+</SELF_AUDIT>
+
 <SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="LeviathanTerrainIkKernelAuthority">
   <WHAT_WAS_WRONG>
     `LeviathanTerrainIkJob` internally collapsed segment count, iteration count, SDF hugging, and telemetry state from `GlobalQualityWeight`. A future caller could reintroduce hardware-dependent terrain contact even after runtime pinning.
