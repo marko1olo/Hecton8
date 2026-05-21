@@ -17,7 +17,7 @@ namespace Hecton8.AI
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(FaunaBrain))]
-    internal sealed class FaunaKinematicsRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IOriginShiftListener, IDisposable, ILeviathanProceduralTunerSource, IScalabilityChangedEventListener
+    internal sealed class FaunaKinematicsRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IOriginShiftListener, IDisposable, ILeviathanProceduralTunerSource
     {
         private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_LEVIATHAN_RIGGER.bin";
         private const string BiteTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_FAUNA_BITE_IK_SOLVER.bin";
@@ -28,6 +28,7 @@ namespace Hecton8.AI
         private const float ConstraintIterationHysteresisSeconds = 2.5f;
         private const int MaxSegments = LeviathanTerrainIkConstants.MaxSegments;
         private const int LowTierSegments = LeviathanTerrainIkConstants.LowTierSegments;
+        private const float AuthoritativeQualityWeight = 1f;
         private const float MinVectorMagnitudeSq = 0.0001f;
         private const float BiteFeedbackCooldownSeconds = 0.18f;
         private const float BiteAudioCooldownSeconds = 0.24f;
@@ -141,7 +142,6 @@ namespace Hecton8.AI
         private bool _registeredUpdate;
         private bool _registeredLateFrame;
         private bool _registeredOriginShiftListener;
-        private bool _registeredScalabilityListener;
         private bool _disposed;
         private bool _telemetryDumped;
         private bool _biteTelemetryDumped;
@@ -170,7 +170,6 @@ namespace Hecton8.AI
         private float3 _motionIntentHeadTarget;
         private float3 _headLookTargetWorldPosition;
         private float3 _strikeTargetWorldPosition;
-        private HectonQualityTier _qualityTier = HectonQualityTier.Unknown;
         private Transform _strikeTarget;
         private Rigidbody _strikeTargetRigidbody;
         private Collider _strikeTargetCollider;
@@ -249,7 +248,6 @@ namespace Hecton8.AI
             EnsurePersistentBuffers();
             HydrateRigDefinitionsOrMockCold();
             ResetConstraintIterationHysteresis();
-            TryRegisterScalabilityListener();
             TryRegister();
             TryRegisterOriginShiftListener();
         }
@@ -260,7 +258,6 @@ namespace Hecton8.AI
                 return;
 
             TryUnregisterOriginShiftListener();
-            TryUnregisterScalabilityListener();
             TryUnregister();
             CompleteScheduledSolverForLifecycle();
             ClearGpuSkinningBinding();
@@ -278,7 +275,6 @@ namespace Hecton8.AI
 
             _disposed = true;
             TryUnregisterOriginShiftListener();
-            TryUnregisterScalabilityListener();
             TryUnregister();
             ClearGpuSkinningBinding();
             DisposePersistentBuffers();
@@ -305,17 +301,16 @@ namespace Hecton8.AI
                 return;
             }
 
-            HectonQualityTier qualityTier = _qualityTier;
             float qualityWeight = ResolveGlobalQualityWeight();
+            const float authorityQualityWeight = AuthoritativeQualityWeight;
             float safeDeltaTime = math.min(math.max(0f, deltaTime), 0.05f);
-            _qualityTier = qualityTier;
             _globalQualityWeight = qualityWeight;
             ApplyPendingOriginShiftRebase();
-            RefreshQualityState(safeDeltaTime, qualityWeight);
+            RefreshQualityState(safeDeltaTime, authorityQualityWeight);
             CaptureFallbackMotionIntent();
             ApplyPresentationIntentTargets();
             ResolveTerrainPayload(
-                qualityWeight,
+                authorityQualityWeight,
                 out NativeArray<byte> sdfTexture3D,
                 out int3 sdfDimensions,
                 out float3 sdfOrigin,
@@ -335,7 +330,7 @@ namespace Hecton8.AI
 
             ConsumeStrikeSignals();
             float systemStress01 = ResolveSystemStress01();
-            uint runtimeFlags = ResolveRuntimeFlags(qualityWeight);
+            uint runtimeFlags = ResolveRuntimeFlags();
             TryResolveProceduralAuxVaultBuffers(
                 out NativeArray<LeviathanBoneConstraintsDTO> boneConstraints,
                 out NativeArray<LeviathanCapsuleColliderDTO> colliderProxies,
@@ -374,7 +369,7 @@ namespace Hecton8.AI
                 TailWhipSecondsRemaining = safeTailWhipSecondsRemaining,
                 TailWhipDurationSeconds = _tailWhipDurationSeconds,
                 TailWhipAmplitudeMeters = _tailWhipAmplitudeMeters,
-                GlobalQualityWeight = qualityWeight,
+                GlobalQualityWeight = authorityQualityWeight,
                 HeadTargetPosition = _motionIntentHeadTarget,
                 IntendedVelocity = _motionIntentVelocity,
                 OwnerForward = ResolveOwnerForward(),
@@ -416,7 +411,7 @@ namespace Hecton8.AI
                     LowerJawBoneIndex = ProceduralBiteIkConstants.DefaultLowerJawBoneIndex,
                     FirstTentacleBoneIndex = ProceduralBiteIkConstants.DefaultFirstTentacleBoneIndex,
                     TentacleBoneCount = ProceduralBiteIkConstants.MaxTentacleBones,
-                    RuntimeFlags = ResolveBiteRuntimeFlags(qualityWeight, systemStress01)
+                    RuntimeFlags = ResolveBiteRuntimeFlags()
                 };
                 scheduledHandle = biteJob.Schedule(scheduledHandle);
             }

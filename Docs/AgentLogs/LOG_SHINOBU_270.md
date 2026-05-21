@@ -523,3 +523,31 @@ Verification state:
 - Static recheck after this patch is clean for the targeted scans.
 - The edited `00_BOOTSTRAP.unity` component script GUID matches `BootstrapController.cs.meta`; the SVC guid is under `shaderVariantCollections`.
 - Legal build gate remains closed: no compiler process, but the final resample returned `100%` CIM and `100%,100%,100%` counter samples.
+
+## 2026-05-21 - Static API Recheck / Active Compiler Gate
+
+What was wrong:
+- Context had been compacted and the previous dirty-state memory no longer matched the current git index; source truth needed to be taken from disk.
+- Static forbidden-token scans do not prove RenderGraph command overloads, CBUFFER names, or SVC scene routing.
+- Compile proof is still blocked by workstation policy.
+
+What was done:
+- Confirmed SHINOBU_270 owned files are tracked and clean; current dirty files are unrelated agent domains and were not touched.
+- Rechecked local SRP APIs: `RasterCommandBuffer.SetGlobalTexture(int, TextureHandle)`, `SetGlobalBuffer(int, GraphicsBuffer)`, `SetGlobalConstantBuffer(GraphicsBuffer, int, int, int)`, and `CoreUtils.DrawFullScreen(RasterCommandBuffer, ...)` exist and match the renderer feature.
+- Rechecked C# to shader ABI: `HectonVisorHudParams`, `HectonVisorDigitParams`, and `_HectonVisorArTargets` names align with shader CBUFFER/StructuredBuffer declarations.
+- Rechecked bootstrap/SVC route: `00_BOOTSTRAP.unity` points at `BootstrapController` GUID `37290befeffd3d94796e62b9097c7db9` and SVC GUID `27027027027027027027027027027027`.
+- Re-ran JSON parse and diff whitespace check.
+- Reused subagent Locke for a read-only scoped import/RenderGraph/SVC audit; returned no P0/P1/P2 findings.
+
+Cinematic Cheats used:
+- No Canvas/TMP renderer was restored. Active visual path remains one stencil mask draw plus shader-side seven-segment digits, scanlines, fog, and AR brackets.
+
+Exact Microseconds saved:
+- Runtime: 0 us from this audit pass.
+- Protected savings: prevents an import/API mismatch from forcing Canvas fallback or blanking the HUD; preserves earlier 250-750 us Canvas rebuild/overdraw avoidance only when the stencil renderer proves readiness.
+
+Build gate:
+- Build not launched.
+- Active compiler processes found: `dotnet` PID 10784 and `csc` PID 25392.
+- CPU gate stayed closed: CIM CPU 100%; processor counter samples 86.74%, 94.06%, 96.76%.
+- Compile remains PENDING VERIFICATION until CPU is below 50% and no compiler process is active.

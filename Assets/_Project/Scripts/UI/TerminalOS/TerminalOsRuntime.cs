@@ -3348,10 +3348,11 @@ namespace Hecton8.UI
             if (!TryOpenVaultBuffer(ref _telemetryRingHandle, out NativeArray<TerminalTelemetryEntry> telemetryRing))
                 return;
 
+            int terminalCountSnapshot = math.min(_terminalCount, TerminalOsConstants.TerminalCapacity);
             TerminalTelemetryEntry entry = new TerminalTelemetryEntry
             {
                 Frame = frame,
-                TerminalCount = _terminalCount,
+                TerminalCount = terminalCountSnapshot,
                 DirtyCount = dirtyCount,
                 DispatchedCount = dispatchedCount,
                 FormatMainThreadMilliseconds = _lastFormatMainThreadMilliseconds,

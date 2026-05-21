@@ -1032,3 +1032,59 @@ Verification:
   <COMPILE_GUARD>No direct sibling runtime dependency was added. Compile was not launched because CPU sampled 100%/83% with `VBCSCompiler` PID 32428 active, then 73% with no compiler process returned.</COMPILE_GUARD>
   <DEAR_LIE_CONFIRMATION>Before/after visual complexity is unchanged: screen-space wound projection remains O(N_visible capped at 128), not object decals or physical fracture simulation. Loop 21 only hardens the forensic output format.</DEAR_LIE_CONFIRMATION>
 </SELF_AUDIT>
+
+## 2026-05-21T23:58+04:00 - Polish Loop 22 / RenderGraph Texture Binding And Non-Throwing State Row
+
+What was wrong:
+- `DeferredDecalPass` still called `Material.SetTexture` for the wound atlas inside the RenderGraph raster render function.
+- `HectonVisorUberPostFeature.BindPostShaderParameters()` still called `Material.SetTexture` for crack, lens dirt, blue noise, and VR comfort textures.
+- `DynamicDecalVaultRuntime` still had a managed `InvalidOperationException` path for runtime state row access.
+
+What was done:
+- Wound atlas binding now uses `RasterCommandBuffer.SetGlobalTexture`.
+- Visor post texture bindings now use `RasterCommandBuffer.SetGlobalTexture`.
+- Runtime state row access now uses a non-throwing pointer guard and marks the existing layout fault path on invalid state access.
+- Architecture note, route card, binary ledger, status, and rationale were updated.
+
+Cinematic Cheats used:
+- No physical simulation was added. The route remains screen-space projection, procedural crack masks, UV refraction, and Noir reconstruction fakes.
+
+Exact Microseconds saved:
+- No profiler claim. Expected low-end gain is render-state risk reduction, not measured frame time. Failure-path exception allocation is removed.
+
+Verification:
+- Focused `rg` found no `Material.Set*`, `.SetBuffer`, or `Shader.SetGlobal*` hit in `DeferredDecalPass.cs` / `HectonVisorUberPostFeature.cs`.
+- Focused `rg` found no `throw new`, `InvalidOperationException`, or old `GetDynamicDecalElementRef` in `DynamicDecalVaultRuntime.cs`.
+- Broad owned-route forbidden scan found no `BinaryWriter`, LINQ/list materialization, `TryGetLatestCreated`, new local native arrays/lists/hashmaps, `DecalProjector`, `UnityEngine.Random`, `math.normalize`, `UsePass`, `AddBlitPass`, `RenderGraphUtils`, `Graphics.Blit`, or `CommandBuffer.Blit`.
+- Scanner/report/diff/build-gate verification is still pending for this loop.
+
+<SELF_AUDIT agent_id="SHINOBU_275" loop="22_rendergraph_texture_binding_state_guard">
+  <TASK_RECONCILIATION>
+    <TASK id="01" result="PASS_STATIC">Re-audited owned visor wound/post render binding surfaces.</TASK>
+    <TASK id="02" result="PASS_STATIC_PENDING_SCANNER">No object decal route was introduced; scanner rerun pending after docs patch.</TASK>
+    <TASK id="03" result="PASS_STATIC">No DTO properties or managed wrappers were added.</TASK>
+    <TASK id="04" result="PASS_STATIC">No DTO layout changed; `VisorDecalDTO` remains explicit 80B.</TASK>
+    <TASK id="05" result="PASS_STATIC">Mock lane unchanged.</TASK>
+    <TASK id="06" result="PASS_STATIC">Burst wound jobs unchanged.</TASK>
+    <TASK id="07" result="PASS_STATIC">Dear Lie route unchanged: one bounded screen-space wound pass and shader fakes.</TASK>
+    <TASK id="08" result="PASS_STATIC">Circular overwrite unchanged.</TASK>
+    <TASK id="09" result="PASS_STATIC">Deterministic decay unchanged.</TASK>
+    <TASK id="10" result="PASS_STATIC">GPU upload remains double-buffered; texture globals no longer dirty materials.</TASK>
+    <TASK id="11" result="PASS_STATIC">Continuous quality curve unchanged.</TASK>
+    <TASK id="12" result="PASS_STATIC">Shader refraction/normal perturbation unchanged.</TASK>
+    <TASK id="13" result="PASS_STATIC">AUP localization unchanged.</TASK>
+    <TASK id="14" result="PASS_STATIC">No gameplay authority, rollback, save, or Merkle route changed.</TASK>
+    <TASK id="15" result="PASS_STATIC">Telemetry fault path now receives invalid state-row faults without throwing.</TASK>
+    <TASK id="16" result="PASS_STATIC">Editor facade unchanged.</TASK>
+    <TASK id="17" result="PASS_STATIC">CSV profile ingestion unchanged.</TASK>
+    <TASK id="18" result="PASS_STATIC">Gizmo route unchanged.</TASK>
+    <TASK id="19" result="PENDING">Metric validator rerun pending after code/docs patch.</TASK>
+    <TASK id="20" result="PENDING">Compile gate sample pending after static verification.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT>`VisorDecalDTO`: `LocalToWorld@0` 64B, `DecalTypeHash@64` 4B, `Opacity01@68` 4B, `BirthTime@72` 4B, `Flags@76` 4B; total 80B, 80 % 16 = 0. Loop 22 changed no primary DTO bytes.</STRUCT_LAYOUT>
+  <SCALABILITY_CURVE>Loop 22 changes no quality math. `GlobalQualityWeight` still controls wound count, fade pressure, shader refraction, reconstruction/noir richness, and optional telemetry continuously, while texture binding route stays invariant across low/middle/high/ultra tiers.</SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>Vault lanes unchanged: 71490 instances, 71491 upload scratch, 71492 runtime state, 71493 telemetry ring, 71494 tuning, 71495 material profiles, 71496 CSV scratch. No new persistent private native container was introduced.</H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_DEPENDENCY_GRAPH>Job graph unchanged. Existing Burst jobs keep `[NoAlias]` pointer fields; Loop 22 added no new job, no same-frame `.Complete()`, and no new aliasing surface.</POINTER_ALIASING_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No direct sibling runtime dependency was added. Compile gate not sampled yet after Loop 22 patch.</COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>Before/after complexity remains O(N_visible capped at 128) in the shader and O(1) ring insertion on CPU. No fracture mesh, object decal, particle truth, or physical fluid route was introduced.</DEAR_LIE_CONFIRMATION>
+</SELF_AUDIT>
