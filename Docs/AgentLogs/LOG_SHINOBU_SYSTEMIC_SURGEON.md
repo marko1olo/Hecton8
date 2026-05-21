@@ -3113,3 +3113,39 @@ Verification:
     Targeted `rg` found no `ScalabilityChangedEvent`, `IScalabilityChangedEventListener`, `ScalabilityEvents`, or `_scalabilityListenerRegistered` in the radar/visor UI cluster. `git diff --check` passed with line-ending warnings only. Build was not launched because `VBCSCompiler` was active under the AGENTS.md build guard.
   </VERIFICATION>
 </SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="BabelSubtitleCueCapacityUnification">
+  <WHAT_WAS_WRONG>
+    `BabelSubtitleSyncRuntime` configured `SubtitleCueSignal` with `lowTierFrameSignals: 8`, allowing binary hardware profile capacity shedding to drop subtitle cue events.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Unified the subtitle cue SignalBus lane at `lowTierFrameSignals: 64`, matching `maxFrameSignals`. `SubtitleCueSignal` remains 16 bytes, `SubtitleCueDTO` remains 32 bytes, `LocalizationTelemetryEntry` remains 64 bytes, and `GlobalQualityWeight` remains telemetry/proof data only.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    Subtitle visual polish may still use quality elsewhere, but cue event admission is not a cinematic fake. The authored token/timing facts now preserve one route on every device class.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. This is route correctness, not performance optimization.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted `rg` found `SignalBus<SubtitleCueSignal>.Configure(32, maxFrameSignals: 64, lowTierFrameSignals: 64, laneHash: SubtitleCueLaneHash)`. `git diff --check` passed with line-ending warning only. Build was not launched because `VBCSCompiler` remained active.
+  </VERIFICATION>
+</SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="DiegeticVisorLensQualityPull">
+  <WHAT_WAS_WRONG>
+    `DiegeticVisorLensRuntime` retained scalability listener plumbing and used the callback to bump tuning version, while its actual simulation already samples continuous `GlobalQualityWeight`. `VisorBreachSignal` also used a reduced low-tier capacity of 2 against an 8-signal maximum.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Removed the scalability listener interface, register/unregister calls, callback, pending tuning-version flag, and callback-only version increment helper. `VisorBreachSignal` now configures `lowTierFrameSignals: 8`, matching its maximum. Existing Vault handles, DTO layouts, shader globals, and tick-time quality cadence remain unchanged.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    Condensation, refraction, cracks, dirt, silt, and water smear remain scalar-driven visor shader fakes. Quality scales simulation cadence continuously; breach facts are not a fake and now keep full signal capacity on every device.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. Removed one stale listener route and one callback-only mutation path.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted `rg` found no `IScalabilityChangedEventListener`, `ScalabilityChangedEvent`, `ScalabilityEvents`, `_pendingTuningVersionIncrement`, `IncrementTuningVersionUnsafe`, or `ApplyPendingTuningVersionIfNeeded` in `DiegeticVisorLensRuntime.cs`; it found `SignalBus<VisorBreachSignal>.Configure(8, maxFrameSignals: 8, lowTierFrameSignals: 8, laneHash: VisorBreachLaneHash)`. `git diff --check` passed with line-ending warning only. Build was not launched because `VBCSCompiler` remained active.
+  </VERIFICATION>
+</SELF_AUDIT>

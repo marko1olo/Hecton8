@@ -248,7 +248,7 @@ namespace Hecton8.UI
         private const BufferID TelemetryRingBufferId = (BufferID)70912;
         private const BufferID TelemetryCursorBufferId = (BufferID)70913;
         private const BufferID CsvScratchBufferId = (BufferID)70914;
-        private const BufferID TerminalOsStateBridgeBufferId = (BufferID)70520;
+        private const BufferID TerminalOsStateBridgeBufferId = (BufferID)71360;
 
         private static readonly int _terminalDamageGlitchId = Shader.PropertyToID("_TerminalDamageGlitch");
         private static readonly int _diegeticGlitchIntensityId = Shader.PropertyToID("_HectonDiegeticGlitchIntensity");
@@ -290,22 +290,21 @@ namespace Hecton8.UI
         private uint deterministicSectorHash = 0x5348494Eu;
 
         private IDataVault _vault;
-        private VaultBufferHandle<GlitchStateDTO> _stateHandle;
-        private VaultBufferHandle<byte> _glitchTableHandle;
-        private VaultBufferHandle<ushort> _originalTextHandle;
-        private VaultBufferHandle<ushort> _workTextHandle;
-        private VaultBufferHandle<MockTextSpan> _textSpanHandle;
-        private VaultBufferHandle<MockCorruptionLevelSignal> _corruptionSignalHandle;
-        private VaultBufferHandle<MockDepthSignal> _depthSignalHandle;
-        private VaultBufferHandle<MockModuleBreachSignal> _breachSignalHandle;
-        private VaultBufferHandle<GlitchTuningDTO> _tuningHandle;
-        private VaultBufferHandle<GlitchQuadTransformDTO> _quadHandle;
-        private VaultBufferHandle<RadarBlipDTO> _radarBlipHandle;
-        private VaultBufferHandle<GlitchSynthParametersDTO> _synthHandle;
-        private VaultBufferHandle<DiegeticGlitchTelemetryEntry> _telemetryHandle;
-        private VaultBufferHandle<uint> _telemetryCursorHandle;
-        private VaultBufferHandle<byte> _csvScratchHandle;
-        private VaultBufferHandle<TerminalStateDTO> _terminalStateBridgeHandle;
+        private VaultGenerationHandle<GlitchStateDTO> _stateHandle;
+        private VaultGenerationHandle<byte> _glitchTableHandle;
+        private VaultGenerationHandle<ushort> _originalTextHandle;
+        private VaultGenerationHandle<ushort> _workTextHandle;
+        private VaultGenerationHandle<MockTextSpan> _textSpanHandle;
+        private VaultGenerationHandle<MockCorruptionLevelSignal> _corruptionSignalHandle;
+        private VaultGenerationHandle<MockDepthSignal> _depthSignalHandle;
+        private VaultGenerationHandle<MockModuleBreachSignal> _breachSignalHandle;
+        private VaultGenerationHandle<GlitchTuningDTO> _tuningHandle;
+        private VaultGenerationHandle<GlitchQuadTransformDTO> _quadHandle;
+        private VaultGenerationHandle<RadarBlipDTO> _radarBlipHandle;
+        private VaultGenerationHandle<GlitchSynthParametersDTO> _synthHandle;
+        private VaultGenerationHandle<DiegeticGlitchTelemetryEntry> _telemetryHandle;
+        private VaultGenerationHandle<uint> _telemetryCursorHandle;
+        private VaultGenerationHandle<byte> _csvScratchHandle;
         private JobHandle _activeHandle;
         private string _projectRoot;
         private string _glitchTableFullPath;
@@ -555,10 +554,13 @@ namespace Hecton8.UI
 
         private void WriteTuningToVault(float master, float textRate, float matrixStrength, float ghostCount)
         {
-            if (!_nativeReady || _vault == null || !_tuningHandle.IsCreated)
+            if (!_nativeReady ||
+                !TryResolveGlitchVaultBuffer(_vault, in _tuningHandle, TuningBufferId, 1, out NativeArray<GlitchTuningDTO> tuningBuffer))
+            {
                 return;
+            }
 
-            ref GlitchTuningDTO tuning = ref _tuningHandle.GetElementAsRef(_vault, 0);
+            ref GlitchTuningDTO tuning = ref ElementRef(tuningBuffer, 0);
             tuning.MasterIntensity = master;
             tuning.TextScrambleRate = textRate;
             tuning.MatrixShatterStrength = matrixStrength;
@@ -569,29 +571,40 @@ namespace Hecton8.UI
         public void ApplyDeterministicSectorHash(uint sectorHash)
         {
             deterministicSectorHash = sectorHash == 0u ? 0x5348494Eu : sectorHash;
-            if (!_nativeReady || _vault == null || !_tuningHandle.IsCreated)
+            if (!_nativeReady ||
+                !TryResolveGlitchVaultBuffer(_vault, in _tuningHandle, TuningBufferId, 1, out NativeArray<GlitchTuningDTO> tuningBuffer))
+            {
                 return;
+            }
 
-            ref GlitchTuningDTO tuning = ref _tuningHandle.GetElementAsRef(_vault, 0);
+            ref GlitchTuningDTO tuning = ref ElementRef(tuningBuffer, 0);
             tuning.FrameSeed = deterministicSectorHash;
         }
 
         /// <summary>Returns a mutable ref to the vault state DTO for editor/debug tools.</summary>
         public ref GlitchStateDTO GetGlitchStateRef()
         {
-            if (!_nativeReady || _jobScheduled || _vault == null || !_stateHandle.IsCreated)
+            if (!_nativeReady ||
+                _jobScheduled ||
+                !TryResolveGlitchVaultBuffer(_vault, in _stateHandle, StateBufferId, 1, out NativeArray<GlitchStateDTO> stateBuffer))
+            {
                 return ref s_dummyState;
+            }
 
-            return ref _stateHandle.GetElementAsRef(_vault, 0);
+            return ref ElementRef(stateBuffer, 0);
         }
 
         /// <summary>Returns a mutable ref to the vault tuning DTO for editor/debug tools.</summary>
         public ref GlitchTuningDTO GetTuningRef()
         {
-            if (!_nativeReady || _jobScheduled || _vault == null || !_tuningHandle.IsCreated)
+            if (!_nativeReady ||
+                _jobScheduled ||
+                !TryResolveGlitchVaultBuffer(_vault, in _tuningHandle, TuningBufferId, 1, out NativeArray<GlitchTuningDTO> tuningBuffer))
+            {
                 return ref s_dummyTuning;
+            }
 
-            return ref _tuningHandle.GetElementAsRef(_vault, 0);
+            return ref ElementRef(tuningBuffer, 0);
         }
 
         /// <summary>
@@ -608,7 +621,7 @@ namespace Hecton8.UI
             tableBytes = null;
             tableLength = 0;
             tableHash = _lastTableHash;
-            if (!_nativeReady || _vault == null || !_glitchTableHandle.IsCreated)
+            if (!_nativeReady || _vault == null || !IsGlitchVaultHandle(in _glitchTableHandle, GlitchTableBufferId))
                 return false;
 
             if (!_vault.TryLockBuffer(GlitchTableBufferId, SystemID.UI))
@@ -631,10 +644,13 @@ namespace Hecton8.UI
             tableBytes = null;
             tableLength = 0;
             tableHash = _lastTableHash;
-            if (!_nativeReady || _vault == null || !_glitchTableHandle.IsCreated)
+            if (!_nativeReady ||
+                !TryResolveGlitchVaultBuffer(_vault, in _glitchTableHandle, GlitchTableBufferId, GlitchTableCapacity, out NativeArray<byte> tableBuffer))
+            {
                 return false;
+            }
 
-            tableBytes = (byte*)_glitchTableHandle.ResolvePointer(_vault);
+            tableBytes = (byte*)tableBuffer.GetUnsafePtr();
             if (tableBytes == null)
                 return false;
 
@@ -862,7 +878,10 @@ namespace Hecton8.UI
 
             try
             {
-                ushort* text = (ushort*)_workTextHandle.ResolvePointer(_vault);
+                if (!TryResolveGlitchVaultBuffer(_vault, in _workTextHandle, WorkTextBufferId, MockTextCapacity, out NativeArray<ushort> textBuffer))
+                    return 0;
+
+                ushort* text = (ushort*)textBuffer.GetUnsafePtr();
                 if (text == null)
                     return 0;
 
@@ -891,7 +910,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (!_nativeReady || _vault == null || !_glitchTableHandle.IsCreated)
+            if (!_nativeReady || _vault == null || !IsGlitchVaultHandle(in _glitchTableHandle, GlitchTableBufferId))
                 return;
 
             if (!_vault.TryLockBuffer(GlitchTableBufferId, SystemID.UI))
@@ -899,7 +918,10 @@ namespace Hecton8.UI
 
             try
             {
-                byte* table = (byte*)_glitchTableHandle.ResolvePointer(_vault);
+                if (!TryResolveGlitchVaultBuffer(_vault, in _glitchTableHandle, GlitchTableBufferId, GlitchTableCapacity, out NativeArray<byte> tableBuffer))
+                    return;
+
+                byte* table = (byte*)tableBuffer.GetUnsafePtr();
                 if (table == null)
                     return;
 
@@ -923,7 +945,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (!_nativeReady || _vault == null || !_csvScratchHandle.IsCreated)
+            if (!_nativeReady || _vault == null || !IsGlitchVaultHandle(in _csvScratchHandle, CsvScratchBufferId))
                 return;
 
             if (!TryApplyCsvOverride(out bool retryCsv) && retryCsv)
@@ -1041,6 +1063,8 @@ namespace Hecton8.UI
             }
 
             _nativeReady = false;
+            UnlockScheduledBuffers();
+            ReleaseGlitchVaultHandles(_vault);
             _vault = currentService as IDataVault;
             EnsureNativeResources();
         }
@@ -1073,24 +1097,34 @@ namespace Hecton8.UI
                 return;
             }
 
-            _stateHandle = _vault.GetBufferHandle<GlitchStateDTO>(StateBufferId, 1, SystemID.UI, NativeArrayOptions.UninitializedMemory);
-            _glitchTableHandle = _vault.GetBufferHandle<byte>(GlitchTableBufferId, GlitchTableCapacity, SystemID.UI, NativeArrayOptions.UninitializedMemory);
-            _originalTextHandle = _vault.GetBufferHandle<ushort>(OriginalTextBufferId, MockTextCapacity, SystemID.UI, NativeArrayOptions.UninitializedMemory);
-            _workTextHandle = _vault.GetBufferHandle<ushort>(WorkTextBufferId, MockTextCapacity, SystemID.UI, NativeArrayOptions.UninitializedMemory);
-            _textSpanHandle = _vault.GetBufferHandle<MockTextSpan>(TextSpanBufferId, 1, SystemID.UI, NativeArrayOptions.UninitializedMemory);
-            _corruptionSignalHandle = _vault.GetBufferHandle<MockCorruptionLevelSignal>(CorruptionSignalBufferId, 1, SystemID.UI, NativeArrayOptions.UninitializedMemory);
-            _depthSignalHandle = _vault.GetBufferHandle<MockDepthSignal>(DepthSignalBufferId, 1, SystemID.UI, NativeArrayOptions.UninitializedMemory);
-            _breachSignalHandle = _vault.GetBufferHandle<MockModuleBreachSignal>(BreachSignalBufferId, 1, SystemID.UI, NativeArrayOptions.UninitializedMemory);
-            _tuningHandle = _vault.GetBufferHandle<GlitchTuningDTO>(TuningBufferId, 1, SystemID.UI, NativeArrayOptions.UninitializedMemory);
-            _quadHandle = _vault.GetBufferHandle<GlitchQuadTransformDTO>(MockQuadBufferId, MockQuadCapacity, SystemID.UI, NativeArrayOptions.UninitializedMemory);
-            _radarBlipHandle = _vault.GetBufferHandle<RadarBlipDTO>(RadarBlipBufferId, RadarBlipCapacity, SystemID.UI, NativeArrayOptions.UninitializedMemory);
-            _synthHandle = _vault.GetBufferHandle<GlitchSynthParametersDTO>(SynthParameterBufferId, SynthParameterCapacity, SystemID.UI, NativeArrayOptions.UninitializedMemory);
-            _telemetryHandle = _vault.GetBufferHandle<DiegeticGlitchTelemetryEntry>(TelemetryRingBufferId, TelemetryFrameCount, SystemID.UI, NativeArrayOptions.ClearMemory);
-            _telemetryCursorHandle = _vault.GetBufferHandle<uint>(TelemetryCursorBufferId, 1, SystemID.UI, NativeArrayOptions.ClearMemory);
-            _csvScratchHandle = _vault.GetBufferHandle<byte>(CsvScratchBufferId, CsvScratchCapacity, SystemID.UI, NativeArrayOptions.UninitializedMemory);
+            if (_vault.IsAllocationLocked || _vault.IsCompactionFenceActive)
+            {
+                _lastFaultFlags |= FaultVaultUnavailable;
+                return;
+            }
+
+            _stateHandle = _vault.GetGenerationHandle<GlitchStateDTO>(StateBufferId, 1, SystemID.UI, NativeArrayOptions.UninitializedMemory);
+            _glitchTableHandle = _vault.GetGenerationHandle<byte>(GlitchTableBufferId, GlitchTableCapacity, SystemID.UI, NativeArrayOptions.UninitializedMemory);
+            _originalTextHandle = _vault.GetGenerationHandle<ushort>(OriginalTextBufferId, MockTextCapacity, SystemID.UI, NativeArrayOptions.UninitializedMemory);
+            _workTextHandle = _vault.GetGenerationHandle<ushort>(WorkTextBufferId, MockTextCapacity, SystemID.UI, NativeArrayOptions.UninitializedMemory);
+            _textSpanHandle = _vault.GetGenerationHandle<MockTextSpan>(TextSpanBufferId, 1, SystemID.UI, NativeArrayOptions.UninitializedMemory);
+            _corruptionSignalHandle = _vault.GetGenerationHandle<MockCorruptionLevelSignal>(CorruptionSignalBufferId, 1, SystemID.UI, NativeArrayOptions.UninitializedMemory);
+            _depthSignalHandle = _vault.GetGenerationHandle<MockDepthSignal>(DepthSignalBufferId, 1, SystemID.UI, NativeArrayOptions.UninitializedMemory);
+            _breachSignalHandle = _vault.GetGenerationHandle<MockModuleBreachSignal>(BreachSignalBufferId, 1, SystemID.UI, NativeArrayOptions.UninitializedMemory);
+            _tuningHandle = _vault.GetGenerationHandle<GlitchTuningDTO>(TuningBufferId, 1, SystemID.UI, NativeArrayOptions.UninitializedMemory);
+            _quadHandle = _vault.GetGenerationHandle<GlitchQuadTransformDTO>(MockQuadBufferId, MockQuadCapacity, SystemID.UI, NativeArrayOptions.UninitializedMemory);
+            _radarBlipHandle = _vault.GetGenerationHandle<RadarBlipDTO>(RadarBlipBufferId, RadarBlipCapacity, SystemID.UI, NativeArrayOptions.UninitializedMemory);
+            _synthHandle = _vault.GetGenerationHandle<GlitchSynthParametersDTO>(SynthParameterBufferId, SynthParameterCapacity, SystemID.UI, NativeArrayOptions.UninitializedMemory);
+            _telemetryHandle = _vault.GetGenerationHandle<DiegeticGlitchTelemetryEntry>(TelemetryRingBufferId, TelemetryFrameCount, SystemID.UI, NativeArrayOptions.ClearMemory);
+            _telemetryCursorHandle = _vault.GetGenerationHandle<uint>(TelemetryCursorBufferId, 1, SystemID.UI, NativeArrayOptions.ClearMemory);
+            _csvScratchHandle = _vault.GetGenerationHandle<byte>(CsvScratchBufferId, CsvScratchCapacity, SystemID.UI, NativeArrayOptions.UninitializedMemory);
 
             if (!ValidateStructLayouts() || !ValidateHandles())
+            {
+                ReleaseGlitchVaultHandles(_vault);
+                _lastFaultFlags |= FaultVaultUnavailable;
                 return;
+            }
 
             InitializeVaultDefaults();
             _nativeReady = true;
@@ -1116,32 +1150,136 @@ namespace Hecton8.UI
 
         private bool ValidateHandles()
         {
-            return _stateHandle.IsCreated &&
-                   _glitchTableHandle.IsCreated &&
-                   _originalTextHandle.IsCreated &&
-                   _workTextHandle.IsCreated &&
-                   _textSpanHandle.IsCreated &&
-                   _corruptionSignalHandle.IsCreated &&
-                   _depthSignalHandle.IsCreated &&
-                   _breachSignalHandle.IsCreated &&
-                   _tuningHandle.IsCreated &&
-                   _quadHandle.IsCreated &&
-                   _radarBlipHandle.IsCreated &&
-                   _synthHandle.IsCreated &&
-                   _telemetryHandle.IsCreated &&
-                   _telemetryCursorHandle.IsCreated &&
-                   _csvScratchHandle.IsCreated;
+            return TryReadGlitchVaultBuffer(_vault, in _stateHandle, StateBufferId, 1, out NativeArray<GlitchStateDTO> _) &&
+                   TryReadGlitchVaultBuffer(_vault, in _glitchTableHandle, GlitchTableBufferId, GlitchTableCapacity, out NativeArray<byte> _) &&
+                   TryReadGlitchVaultBuffer(_vault, in _originalTextHandle, OriginalTextBufferId, MockTextCapacity, out NativeArray<ushort> _) &&
+                   TryReadGlitchVaultBuffer(_vault, in _workTextHandle, WorkTextBufferId, MockTextCapacity, out NativeArray<ushort> _) &&
+                   TryReadGlitchVaultBuffer(_vault, in _textSpanHandle, TextSpanBufferId, 1, out NativeArray<MockTextSpan> _) &&
+                   TryReadGlitchVaultBuffer(_vault, in _corruptionSignalHandle, CorruptionSignalBufferId, 1, out NativeArray<MockCorruptionLevelSignal> _) &&
+                   TryReadGlitchVaultBuffer(_vault, in _depthSignalHandle, DepthSignalBufferId, 1, out NativeArray<MockDepthSignal> _) &&
+                   TryReadGlitchVaultBuffer(_vault, in _breachSignalHandle, BreachSignalBufferId, 1, out NativeArray<MockModuleBreachSignal> _) &&
+                   TryReadGlitchVaultBuffer(_vault, in _tuningHandle, TuningBufferId, 1, out NativeArray<GlitchTuningDTO> _) &&
+                   TryReadGlitchVaultBuffer(_vault, in _quadHandle, MockQuadBufferId, MockQuadCapacity, out NativeArray<GlitchQuadTransformDTO> _) &&
+                   TryReadGlitchVaultBuffer(_vault, in _radarBlipHandle, RadarBlipBufferId, RadarBlipCapacity, out NativeArray<RadarBlipDTO> _) &&
+                   TryReadGlitchVaultBuffer(_vault, in _synthHandle, SynthParameterBufferId, SynthParameterCapacity, out NativeArray<GlitchSynthParametersDTO> _) &&
+                   TryReadGlitchVaultBuffer(_vault, in _telemetryHandle, TelemetryRingBufferId, TelemetryFrameCount, out NativeArray<DiegeticGlitchTelemetryEntry> _) &&
+                   TryReadGlitchVaultBuffer(_vault, in _telemetryCursorHandle, TelemetryCursorBufferId, 1, out NativeArray<uint> _) &&
+                   TryReadGlitchVaultBuffer(_vault, in _csvScratchHandle, CsvScratchBufferId, CsvScratchCapacity, out NativeArray<byte> _);
+        }
+
+        private void ReleaseGlitchVaultHandles(IDataVault vault)
+        {
+            ReleaseGlitchVaultHandle(vault, ref _stateHandle, StateBufferId);
+            ReleaseGlitchVaultHandle(vault, ref _glitchTableHandle, GlitchTableBufferId);
+            ReleaseGlitchVaultHandle(vault, ref _originalTextHandle, OriginalTextBufferId);
+            ReleaseGlitchVaultHandle(vault, ref _workTextHandle, WorkTextBufferId);
+            ReleaseGlitchVaultHandle(vault, ref _textSpanHandle, TextSpanBufferId);
+            ReleaseGlitchVaultHandle(vault, ref _corruptionSignalHandle, CorruptionSignalBufferId);
+            ReleaseGlitchVaultHandle(vault, ref _depthSignalHandle, DepthSignalBufferId);
+            ReleaseGlitchVaultHandle(vault, ref _breachSignalHandle, BreachSignalBufferId);
+            ReleaseGlitchVaultHandle(vault, ref _tuningHandle, TuningBufferId);
+            ReleaseGlitchVaultHandle(vault, ref _quadHandle, MockQuadBufferId);
+            ReleaseGlitchVaultHandle(vault, ref _radarBlipHandle, RadarBlipBufferId);
+            ReleaseGlitchVaultHandle(vault, ref _synthHandle, SynthParameterBufferId);
+            ReleaseGlitchVaultHandle(vault, ref _telemetryHandle, TelemetryRingBufferId);
+            ReleaseGlitchVaultHandle(vault, ref _telemetryCursorHandle, TelemetryCursorBufferId);
+            ReleaseGlitchVaultHandle(vault, ref _csvScratchHandle, CsvScratchBufferId);
+        }
+
+        private static void ReleaseGlitchVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId)
+            where T : struct
+        {
+            if (vault != null && IsGlitchVaultHandle(in handle, bufferId))
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
+        private static bool TryResolveGlitchVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            return TryOpenGlitchVaultBuffer(vault, in handle, bufferId, requiredLength, readOnly: false, out buffer);
+        }
+
+        private static bool TryReadGlitchVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            return TryOpenGlitchVaultBuffer(vault, in handle, bufferId, requiredLength, readOnly: true, out buffer);
+        }
+
+        private static bool TryOpenGlitchVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            bool readOnly,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                requiredLength < 0 ||
+                !IsGlitchVaultHandle(in handle, bufferId))
+            {
+                return false;
+            }
+
+            bool opened = readOnly
+                ? vault.TryReadHandle(in handle, out buffer)
+                : vault.TryResolveHandle(in handle, out buffer);
+
+            return opened &&
+                   buffer.IsCreated &&
+                   (requiredLength == 0 || buffer.Length >= requiredLength);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsGlitchVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId)
+            where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == (uint)SystemID.UI &&
+                   handle.Generation != 0u;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static ref T ElementRef<T>(NativeArray<T> buffer, int index)
+            where T : struct
+        {
+            return ref UnsafeUtility.AsRef<T>((byte*)buffer.GetUnsafePtr() + (index * UnsafeUtility.SizeOf<T>()));
         }
 
         private void InitializeVaultDefaults()
         {
-            ref GlitchStateDTO state = ref _stateHandle.GetElementAsRef(_vault, 0);
+            if (!TryResolveGlitchVaultBuffer(_vault, in _stateHandle, StateBufferId, 1, out NativeArray<GlitchStateDTO> stateBuffer) ||
+                !TryResolveGlitchVaultBuffer(_vault, in _tuningHandle, TuningBufferId, 1, out NativeArray<GlitchTuningDTO> tuningBuffer) ||
+                !TryResolveGlitchVaultBuffer(_vault, in _glitchTableHandle, GlitchTableBufferId, GlitchTableCapacity, out NativeArray<byte> glitchTableBuffer))
+            {
+                _lastFaultFlags |= FaultVaultUnavailable;
+                return;
+            }
+
+            ref GlitchStateDTO state = ref ElementRef(stateBuffer, 0);
             state.GlobalIntensity = 0f;
             state.Seed = math.asfloat(0x3F800000u);
             state.GlitchTableOffset = 0u;
             state._pad0 = 0u;
 
-            ref GlitchTuningDTO tuning = ref _tuningHandle.GetElementAsRef(_vault, 0);
+            ref GlitchTuningDTO tuning = ref ElementRef(tuningBuffer, 0);
             tuning.MasterIntensity = math.saturate(masterIntensity);
             tuning.TextScrambleRate = math.saturate(textScrambleRate);
             tuning.MatrixShatterStrength = math.saturate(matrixShatterStrength);
@@ -1151,7 +1289,7 @@ namespace Hecton8.UI
             tuning.GlobalQualityWeight = ResolveGlobalQualityWeight();
             tuning.FrameSeed = deterministicSectorHash == 0u ? 0x5348494Eu : deterministicSectorHash;
 
-            LoadGlitchTableCold((byte*)_glitchTableHandle.ResolvePointer(_vault), GlitchTableCapacity);
+            LoadGlitchTableCold((byte*)glitchTableBuffer.GetUnsafePtr(), GlitchTableCapacity);
             SeedMockText();
             SeedMockQuads();
             SeedSynthParameters();
@@ -1159,11 +1297,14 @@ namespace Hecton8.UI
 
         private void SeedMockText()
         {
-            ushort* original = (ushort*)_originalTextHandle.ResolvePointer(_vault);
-            ushort* work = (ushort*)_workTextHandle.ResolvePointer(_vault);
-            if (original == null || work == null)
+            if (!TryResolveGlitchVaultBuffer(_vault, in _originalTextHandle, OriginalTextBufferId, MockTextCapacity, out NativeArray<ushort> originalBuffer) ||
+                !TryResolveGlitchVaultBuffer(_vault, in _workTextHandle, WorkTextBufferId, MockTextCapacity, out NativeArray<ushort> workBuffer))
+            {
                 return;
+            }
 
+            ushort* original = (ushort*)originalBuffer.GetUnsafePtr();
+            ushort* work = (ushort*)workBuffer.GetUnsafePtr();
             const string Source = "O2 98%  DEPTH 1024M  SIGNAL CLEAN";
             _mockTextLength = math.min(Source.Length, MockTextCapacity);
             for (int i = 0; i < MockTextCapacity; i++)
@@ -1176,10 +1317,12 @@ namespace Hecton8.UI
 
         private void SeedMockQuads()
         {
-            GlitchQuadTransformDTO* quads = (GlitchQuadTransformDTO*)_quadHandle.ResolvePointer(_vault);
-            if (quads == null)
+            if (!TryResolveGlitchVaultBuffer(_vault, in _quadHandle, MockQuadBufferId, MockQuadCapacity, out NativeArray<GlitchQuadTransformDTO> quadBuffer))
+            {
                 return;
+            }
 
+            GlitchQuadTransformDTO* quads = (GlitchQuadTransformDTO*)quadBuffer.GetUnsafePtr();
             for (int i = 0; i < MockQuadCapacity; i++)
             {
                 quads[i] = new GlitchQuadTransformDTO
@@ -1197,10 +1340,12 @@ namespace Hecton8.UI
 
         private void SeedSynthParameters()
         {
-            GlitchSynthParametersDTO* synth = (GlitchSynthParametersDTO*)_synthHandle.ResolvePointer(_vault);
-            if (synth == null)
+            if (!TryResolveGlitchVaultBuffer(_vault, in _synthHandle, SynthParameterBufferId, SynthParameterCapacity, out NativeArray<GlitchSynthParametersDTO> synthBuffer))
+            {
                 return;
+            }
 
+            GlitchSynthParametersDTO* synth = (GlitchSynthParametersDTO*)synthBuffer.GetUnsafePtr();
             for (int i = 0; i < SynthParameterCapacity; i++)
             {
                 synth[i] = new GlitchSynthParametersDTO
@@ -1281,8 +1426,14 @@ namespace Hecton8.UI
 
             try
             {
-                byte* scratch = (byte*)_csvScratchHandle.ResolvePointer(_vault);
-                byte* table = (byte*)_glitchTableHandle.ResolvePointer(_vault);
+                if (!TryResolveGlitchVaultBuffer(_vault, in _csvScratchHandle, CsvScratchBufferId, CsvScratchCapacity, out NativeArray<byte> scratchBuffer) ||
+                    !TryResolveGlitchVaultBuffer(_vault, in _glitchTableHandle, GlitchTableBufferId, GlitchTableCapacity, out NativeArray<byte> tableBuffer))
+                {
+                    return false;
+                }
+
+                byte* scratch = (byte*)scratchBuffer.GetUnsafePtr();
+                byte* table = (byte*)tableBuffer.GetUnsafePtr();
                 if (scratch == null || table == null)
                     return false;
 
@@ -1345,7 +1496,7 @@ namespace Hecton8.UI
         private bool TryReadTuningSnapshot(out GlitchTuningDTO tuning)
         {
             tuning = default;
-            if (!_nativeReady || _vault == null || !_tuningHandle.IsCreated)
+            if (!_nativeReady || _vault == null || !IsGlitchVaultHandle(in _tuningHandle, TuningBufferId))
                 return false;
 
             if (!_vault.TryLockBuffer(TuningBufferId, SystemID.UI))
@@ -1353,7 +1504,10 @@ namespace Hecton8.UI
 
             try
             {
-                GlitchTuningDTO* source = (GlitchTuningDTO*)_tuningHandle.ResolvePointer(_vault);
+                if (!TryReadGlitchVaultBuffer(_vault, in _tuningHandle, TuningBufferId, 1, out NativeArray<GlitchTuningDTO> tuningBuffer))
+                    return false;
+
+                GlitchTuningDTO* source = (GlitchTuningDTO*)tuningBuffer.GetUnsafeReadOnlyPtr();
                 if (source == null)
                     return false;
 
@@ -1382,20 +1536,52 @@ namespace Hecton8.UI
             out DiegeticGlitchTelemetryEntry* telemetry,
             out uint* cursor)
         {
-            state = (GlitchStateDTO*)_stateHandle.ResolvePointer(_vault);
-            table = (byte*)_glitchTableHandle.ResolvePointer(_vault);
-            originalText = (ushort*)_originalTextHandle.ResolvePointer(_vault);
-            workText = (ushort*)_workTextHandle.ResolvePointer(_vault);
-            textSpan = (MockTextSpan*)_textSpanHandle.ResolvePointer(_vault);
-            corruption = (MockCorruptionLevelSignal*)_corruptionSignalHandle.ResolvePointer(_vault);
-            depth = (MockDepthSignal*)_depthSignalHandle.ResolvePointer(_vault);
-            breach = (MockModuleBreachSignal*)_breachSignalHandle.ResolvePointer(_vault);
-            tuning = (GlitchTuningDTO*)_tuningHandle.ResolvePointer(_vault);
-            quads = (GlitchQuadTransformDTO*)_quadHandle.ResolvePointer(_vault);
-            radar = (RadarBlipDTO*)_radarBlipHandle.ResolvePointer(_vault);
-            synth = (GlitchSynthParametersDTO*)_synthHandle.ResolvePointer(_vault);
-            telemetry = (DiegeticGlitchTelemetryEntry*)_telemetryHandle.ResolvePointer(_vault);
-            cursor = (uint*)_telemetryCursorHandle.ResolvePointer(_vault);
+            if (!TryResolveGlitchVaultBuffer(_vault, in _stateHandle, StateBufferId, 1, out NativeArray<GlitchStateDTO> stateBuffer) ||
+                !TryResolveGlitchVaultBuffer(_vault, in _glitchTableHandle, GlitchTableBufferId, GlitchTableCapacity, out NativeArray<byte> tableBuffer) ||
+                !TryResolveGlitchVaultBuffer(_vault, in _originalTextHandle, OriginalTextBufferId, MockTextCapacity, out NativeArray<ushort> originalTextBuffer) ||
+                !TryResolveGlitchVaultBuffer(_vault, in _workTextHandle, WorkTextBufferId, MockTextCapacity, out NativeArray<ushort> workTextBuffer) ||
+                !TryResolveGlitchVaultBuffer(_vault, in _textSpanHandle, TextSpanBufferId, 1, out NativeArray<MockTextSpan> textSpanBuffer) ||
+                !TryResolveGlitchVaultBuffer(_vault, in _corruptionSignalHandle, CorruptionSignalBufferId, 1, out NativeArray<MockCorruptionLevelSignal> corruptionBuffer) ||
+                !TryResolveGlitchVaultBuffer(_vault, in _depthSignalHandle, DepthSignalBufferId, 1, out NativeArray<MockDepthSignal> depthBuffer) ||
+                !TryResolveGlitchVaultBuffer(_vault, in _breachSignalHandle, BreachSignalBufferId, 1, out NativeArray<MockModuleBreachSignal> breachBuffer) ||
+                !TryResolveGlitchVaultBuffer(_vault, in _tuningHandle, TuningBufferId, 1, out NativeArray<GlitchTuningDTO> tuningBuffer) ||
+                !TryResolveGlitchVaultBuffer(_vault, in _quadHandle, MockQuadBufferId, MockQuadCapacity, out NativeArray<GlitchQuadTransformDTO> quadBuffer) ||
+                !TryResolveGlitchVaultBuffer(_vault, in _radarBlipHandle, RadarBlipBufferId, RadarBlipCapacity, out NativeArray<RadarBlipDTO> radarBuffer) ||
+                !TryResolveGlitchVaultBuffer(_vault, in _synthHandle, SynthParameterBufferId, SynthParameterCapacity, out NativeArray<GlitchSynthParametersDTO> synthBuffer) ||
+                !TryResolveGlitchVaultBuffer(_vault, in _telemetryHandle, TelemetryRingBufferId, TelemetryFrameCount, out NativeArray<DiegeticGlitchTelemetryEntry> telemetryBuffer) ||
+                !TryResolveGlitchVaultBuffer(_vault, in _telemetryCursorHandle, TelemetryCursorBufferId, 1, out NativeArray<uint> cursorBuffer))
+            {
+                state = null;
+                table = null;
+                originalText = null;
+                workText = null;
+                textSpan = null;
+                corruption = null;
+                depth = null;
+                breach = null;
+                tuning = null;
+                quads = null;
+                radar = null;
+                synth = null;
+                telemetry = null;
+                cursor = null;
+                return false;
+            }
+
+            state = (GlitchStateDTO*)stateBuffer.GetUnsafePtr();
+            table = (byte*)tableBuffer.GetUnsafePtr();
+            originalText = (ushort*)originalTextBuffer.GetUnsafePtr();
+            workText = (ushort*)workTextBuffer.GetUnsafePtr();
+            textSpan = (MockTextSpan*)textSpanBuffer.GetUnsafePtr();
+            corruption = (MockCorruptionLevelSignal*)corruptionBuffer.GetUnsafePtr();
+            depth = (MockDepthSignal*)depthBuffer.GetUnsafePtr();
+            breach = (MockModuleBreachSignal*)breachBuffer.GetUnsafePtr();
+            tuning = (GlitchTuningDTO*)tuningBuffer.GetUnsafePtr();
+            quads = (GlitchQuadTransformDTO*)quadBuffer.GetUnsafePtr();
+            radar = (RadarBlipDTO*)radarBuffer.GetUnsafePtr();
+            synth = (GlitchSynthParametersDTO*)synthBuffer.GetUnsafePtr();
+            telemetry = (DiegeticGlitchTelemetryEntry*)telemetryBuffer.GetUnsafePtr();
+            cursor = (uint*)cursorBuffer.GetUnsafePtr();
 
             return state != null &&
                    table != null &&
@@ -1501,6 +1687,7 @@ namespace Hecton8.UI
         private void FinishDisableTeardown()
         {
             UnlockScheduledBuffers();
+            ReleaseGlitchVaultHandles(_vault);
             _pendingDisableTeardown = false;
             _pendingVaultSwap = false;
             _pendingVaultAfterSwap = null;
@@ -1521,6 +1708,8 @@ namespace Hecton8.UI
         {
             _pendingVaultSwap = false;
             _nativeReady = false;
+            UnlockScheduledBuffers();
+            ReleaseGlitchVaultHandles(_vault);
             _vault = _pendingVaultAfterSwap;
             _pendingVaultAfterSwap = null;
             EnsureNativeResources();
@@ -1536,10 +1725,14 @@ namespace Hecton8.UI
 
         private void PushShaderGlobals()
         {
-            if (!_nativeReady || _vault == null || !_stateHandle.IsCreated || !_tuningHandle.IsCreated)
+            if (!_nativeReady ||
+                !TryReadGlitchVaultBuffer(_vault, in _stateHandle, StateBufferId, 1, out NativeArray<GlitchStateDTO> stateBuffer) ||
+                !TryReadGlitchVaultBuffer(_vault, in _tuningHandle, TuningBufferId, 1, out NativeArray<GlitchTuningDTO> tuningBuffer))
+            {
                 return;
+            }
 
-            ref GlitchStateDTO state = ref _stateHandle.GetElementAsRef(_vault, 0);
+            ref GlitchStateDTO state = ref ElementRef(stateBuffer, 0);
             float intensity = math.saturate(math.isfinite(state.GlobalIntensity) ? state.GlobalIntensity : 0f);
             float seed01 = math.asuint(state.Seed) * (1f / 4294967295f);
             if (math.abs(intensity - _lastShaderIntensity) > 0.0005f)
@@ -1555,7 +1748,7 @@ namespace Hecton8.UI
                 _lastShaderSeed01 = seed01;
             }
 
-            ref GlitchTuningDTO tuning = ref _tuningHandle.GetElementAsRef(_vault, 0);
+            ref GlitchTuningDTO tuning = ref ElementRef(tuningBuffer, 0);
             float quality = math.saturate(math.isfinite(tuning.GlobalQualityWeight) ? tuning.GlobalQualityWeight : 1f);
             if (math.abs(quality - _lastShaderQualityWeight) > 0.0005f)
             {
@@ -1583,19 +1776,26 @@ namespace Hecton8.UI
 
         private bool TryPushTerminalStateGlitch(float intensity, float previousIntensity)
         {
-            if (_vault == null || !_vault.TryGetBufferHandle(TerminalOsStateBridgeBufferId, out _terminalStateBridgeHandle))
+            if (_vault == null ||
+                _vault.IsCompactionFenceActive ||
+                !_vault.TryGetGenerationHandle<TerminalStateDTO>(TerminalOsStateBridgeBufferId, out VaultGenerationHandle<TerminalStateDTO> terminalStateHandle))
+            {
                 return false;
+            }
 
             if (!_vault.TryLockBuffer(TerminalOsStateBridgeBufferId, SystemID.UI))
                 return false;
 
             try
             {
-                TerminalStateDTO* states = (TerminalStateDTO*)_terminalStateBridgeHandle.ResolvePointer(_vault);
+                if (!TryReadGlitchVaultBuffer(_vault, in terminalStateHandle, TerminalOsStateBridgeBufferId, TerminalOsConstants.TerminalCapacity, out NativeArray<TerminalStateDTO> terminalStates))
+                    return false;
+
+                TerminalStateDTO* states = (TerminalStateDTO*)terminalStates.GetUnsafePtr();
                 if (states == null)
                     return false;
 
-                int count = math.min(_terminalStateBridgeHandle.Length, TerminalOsConstants.TerminalCapacity);
+                int count = math.min(terminalStates.Length, TerminalOsConstants.TerminalCapacity);
                 for (int i = 0; i < count; i++)
                     ApplyTerminalUvTearing(ref states[i], intensity, previousIntensity);
             }
@@ -1640,7 +1840,10 @@ namespace Hecton8.UI
             if (!_nativeReady || _vault == null)
                 return;
 
-            ref GlitchStateDTO state = ref _stateHandle.GetElementAsRef(_vault, 0);
+            if (!TryReadGlitchVaultBuffer(_vault, in _stateHandle, StateBufferId, 1, out NativeArray<GlitchStateDTO> stateBuffer))
+                return;
+
+            ref GlitchStateDTO state = ref ElementRef(stateBuffer, 0);
             uint faultFlags = _lastFaultFlags;
             if (!math.isfinite(state.GlobalIntensity) || !math.isfinite(state.Seed))
                 faultFlags |= FaultNonFinite;
@@ -1680,8 +1883,14 @@ namespace Hecton8.UI
 
         private void DumpBlackBox(uint faultFlags)
         {
-            DiegeticGlitchTelemetryEntry* telemetry = (DiegeticGlitchTelemetryEntry*)_telemetryHandle.ResolvePointer(_vault);
-            uint* cursor = (uint*)_telemetryCursorHandle.ResolvePointer(_vault);
+            if (!TryReadGlitchVaultBuffer(_vault, in _telemetryHandle, TelemetryRingBufferId, TelemetryFrameCount, out NativeArray<DiegeticGlitchTelemetryEntry> telemetryBuffer) ||
+                !TryReadGlitchVaultBuffer(_vault, in _telemetryCursorHandle, TelemetryCursorBufferId, 1, out NativeArray<uint> cursorBuffer))
+            {
+                return;
+            }
+
+            DiegeticGlitchTelemetryEntry* telemetry = (DiegeticGlitchTelemetryEntry*)telemetryBuffer.GetUnsafeReadOnlyPtr();
+            uint* cursor = (uint*)cursorBuffer.GetUnsafeReadOnlyPtr();
             if (telemetry == null || cursor == null)
                 return;
 

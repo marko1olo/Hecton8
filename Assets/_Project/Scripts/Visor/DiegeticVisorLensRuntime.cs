@@ -14,7 +14,7 @@ using UnityEngine;
 namespace Hecton8.Visor
 {
     [DisallowMultipleComponent]
-    public unsafe sealed class DiegeticVisorLensRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IScalabilityChangedEventListener, IGlobalRegistryHotSwapListener
+    public unsafe sealed class DiegeticVisorLensRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int TelemetryCapacity = 300;
         private const int CsvBufferBytes = 4096;
@@ -96,7 +96,6 @@ namespace Hecton8.Visor
         private bool _hasPendingExternalPressure;
         private bool _hasPendingEnvironment;
         private bool _pendingMockReset;
-        private bool _pendingTuningVersionIncrement;
         private bool _registeredHotSwapListener;
 
         private ref VisorStateDTO GetStateRefUnsafe()
@@ -178,14 +177,12 @@ namespace Hecton8.Visor
             TryRegisterHotSwapListener();
             GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
             GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
-            ScalabilityEvents.Register(this);
         }
 
         private void OnDisable()
         {
             CompleteScheduledWorkForTeardown();
             UploadGpuGlobals();
-            ScalabilityEvents.Unregister(this);
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             TryUnregisterHotSwapListener();
@@ -212,7 +209,6 @@ namespace Hecton8.Visor
             }
 
             ApplyPendingMockResetIfNeeded();
-            ApplyPendingTuningVersionIfNeeded();
             IngestCoreSignals(safeDelta);
             UpdateHeadAngularVelocity(safeDelta);
             float qualityWeight = ResolveQualityWeight();
@@ -231,24 +227,6 @@ namespace Hecton8.Visor
         {
             TryFinalizeScheduledWorkNoWait();
             UploadGpuGlobals();
-        }
-
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            if (!_nativeReady)
-            {
-                EnsureNativeState();
-            }
-
-            if (_hasScheduledWork)
-            {
-                _pendingTuningVersionIncrement = true;
-                _forceImmediateSimulation = true;
-                return;
-            }
-
-            IncrementTuningVersionUnsafe();
-            _forceImmediateSimulation = true;
         }
 
         public void GenerateEmergencyMockVisorData()
@@ -917,21 +895,6 @@ namespace Hecton8.Visor
             ApplyEmergencyMockVisorData();
         }
 
-        private void ApplyPendingTuningVersionIfNeeded()
-        {
-            if (!_pendingTuningVersionIncrement)
-                return;
-
-            _pendingTuningVersionIncrement = false;
-            IncrementTuningVersionUnsafe();
-        }
-
-        private void IncrementTuningVersionUnsafe()
-        {
-            ref VisorLensTuningDTO tuning = ref GetVaultElementRef(ref _tuningHandle, TuningBufferId, 1, 0);
-            tuning.Version++;
-        }
-
         private void ApplyPendingExternalInputs(ref MockPhysiologySignal physiology, ref MockVisorEnvironmentSignal environment)
         {
             bool applied = false;
@@ -999,7 +962,6 @@ namespace Hecton8.Visor
             _hasPendingExternalPressure = false;
             _hasPendingEnvironment = false;
             _pendingMockReset = false;
-            _pendingTuningVersionIncrement = false;
         }
 
         private void UpdateHeadAngularVelocity(float deltaTime)
@@ -1328,7 +1290,7 @@ namespace Hecton8.Visor
 
         private static void PrewarmSignalLanes()
         {
-            SignalBus<VisorBreachSignal>.Configure(8, maxFrameSignals: 8, lowTierFrameSignals: 2, laneHash: VisorBreachLaneHash);
+            SignalBus<VisorBreachSignal>.Configure(8, maxFrameSignals: 8, lowTierFrameSignals: 8, laneHash: VisorBreachLaneHash);
             SignalBus<VisorBreachSignal>.EnsureInitialized();
             SignalBus<PlayerExhaleSignal>.EnsureInitialized();
             SignalBus<PlayerWaterSplashSignal>.EnsureInitialized();

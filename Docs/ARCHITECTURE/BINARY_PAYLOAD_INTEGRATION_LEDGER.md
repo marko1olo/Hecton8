@@ -4731,6 +4731,20 @@ Fault route: `ExosuitTelemetryEntry[300]` dumps fixed 64-byte rows to `Docs/Agen
 - Policy impact: radar blip/matrix capacities scale from 16 to 64 via `SmoothStep01(GlobalQualityWeight)`, thermal ghost count scales from 0 to its maximum via the same curve, and visor mesh topology scales from 4x2 to 64x32 by continuous segment resolution. Visor rebuild is gated by resolved topology, not arbitrary quality thousandths.
 - Verification: targeted listener/tier scan clean for the three UI files; `git diff --check` passed with line-ending warnings only. Build was not relaunched because `VBCSCompiler.exe` was already active.
 
+## 2026-05-22 - SHINOBU_SYSTEMIC_SURGEON Babel Subtitle Cue Capacity Note
+
+- `Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs` now configures `SubtitleCueSignal` with `lowTierFrameSignals: 64`, matching `maxFrameSignals: 64`.
+- Binary payload impact: none. `SubtitleCueSignal` remains 16 bytes, `SubtitleCueDTO` remains 32 bytes, `LocalizationTelemetryEntry` remains 64 bytes, BufferIDs `15070550` and `15070551` are unchanged, and dump paths remain unchanged.
+- Policy impact: subtitle cue event admission no longer drops by binary hardware profile. `GlobalQualityWeight` remains recorded in telemetry for proof and optional presentation polish.
+- Verification: targeted signal-capacity scan clean for the reduced subtitle cue lane; `git diff --check` passed with line-ending warning only. Build was not relaunched because `VBCSCompiler.exe` was active.
+
+## 2026-05-22 - SHINOBU_SYSTEMIC_SURGEON Diegetic Visor Lens Quality Pull Note
+
+- `Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs` removed the scalability listener route and now relies only on its existing tick-time `HomeostasisBrain.GlobalQualityWeight` sampling for visor simulation cadence and shader DTO quality.
+- Binary payload impact: none. `VisorStateDTO`, `VisorLensTuningDTO`, `MockPhysiologySignal`, `MockVisorEnvironmentSignal`, `DiegeticVisorLensGpuGlobalsDTO`, `VisorLensTelemetryEntry`, BufferIDs `71020..71029`, dump magic/version, CSV byte buffer, and shader property IDs are unchanged.
+- Policy impact: `VisorBreachSignal` admission now uses full `lowTierFrameSignals: 8` capacity. Visor simulation cadence still scales continuously from 5 Hz to 60 Hz through `ResolveSimulationInterval(GlobalQualityWeight)`.
+- Verification: targeted listener/tuning-version scan clean for `DiegeticVisorLensRuntime.cs`; `git diff --check` passed with line-ending warning only. Build was not relaunched because `VBCSCompiler.exe` was active.
+
 ## 2026-05-22 - SHINOBU_202 Save Pager Descriptor Route Update
 
 - `Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs` migrated retained pager Vault lanes from pointer-era handles to `VaultGenerationHandle<T>` descriptors.

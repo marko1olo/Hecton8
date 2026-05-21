@@ -166,7 +166,7 @@ namespace Hecton8.UI
             if (!s_layoutValid)
                 return false;
 
-            SignalBus<SubtitleCueSignal>.Configure(32, maxFrameSignals: 64, lowTierFrameSignals: 8, laneHash: SubtitleCueLaneHash);
+            SignalBus<SubtitleCueSignal>.Configure(32, maxFrameSignals: 64, lowTierFrameSignals: 64, laneHash: SubtitleCueLaneHash);
             SignalBus<SubtitleCueSignal>.EnsureInitialized();
 
             IDataVault vault = GlobalRegistry.DataVault;

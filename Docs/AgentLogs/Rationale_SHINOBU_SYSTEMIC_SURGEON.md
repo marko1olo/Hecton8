@@ -1042,3 +1042,19 @@ Solution: Removed the scalability listener route. The existing tick now samples 
 Rejected Alternatives: Rebuilding every tick was rejected because it churns retained arrays and mesh upload work without a visual topology change. Keeping callback rebuilds was rejected because presentation quality should be pulled from the canonical scalar and not a stale tier signal.
 Scalability potential: Low devices collapse the visor projection surface toward the 4x2 minimum, middle devices interpolate segment density, and high/ultra can use up to 64x32 curved HUD geometry.
 Hardware Impact: 0 us speed claim. Removed one event listener path and avoids mesh rebuilds for quality changes that do not alter topology. Build deferred because `VBCSCompiler` was active.
+
+## Babel Subtitle Cue Capacity Unification
+
+Problem: `BabelSubtitleSyncRuntime.EnsureInitialized` configured `SubtitleCueSignal` with `lowTierFrameSignals: 8` while the lane maximum is 64. That allowed binary hardware profile capacity shedding to drop subtitle cue events, a player-facing comprehension route that must not lose facts by device class.
+Solution: Set `lowTierFrameSignals` to 64, matching `maxFrameSignals`. The runtime still records `GlobalQualityWeight` in `LocalizationTelemetryEntry`, but quality no longer changes subtitle cue signal admission.
+Rejected Alternatives: Keeping the 8-event minimum lane was rejected because subtitle loss is not an acceptable visual scalability knob. Scaling decoded character count or active cue truth by quality was rejected because localization presentation must preserve authored timing and priority.
+Scalability potential: Low, middle, high, and ultra devices now admit the same cue event budget. Weak devices can still reduce optional visual polish through existing quality fields, while high/ultra can render richer typography without changing the event route.
+Hardware Impact: 0 us speed claim. No new hot work beyond preserving up to 64 existing signal slots; targeted scan and `git diff --check` passed. Build deferred because `VBCSCompiler` remained active.
+
+## Diegetic Visor Lens Quality Pull
+
+Problem: `DiegeticVisorLensRuntime` still implemented `IScalabilityChangedEventListener`, registered with `ScalabilityEvents`, and bumped tuning version from scalability callbacks even though the simulation already samples continuous `HomeostasisBrain.GlobalQualityWeight` every tick. Its `VisorBreachSignal` lane also shed breach events to 2 per frame on low-tier profiles.
+Solution: Removed the scalability listener interface, register/unregister calls, callback, pending tuning-version flag, and callback-only version increment helper. `PrewarmSignalLanes` now configures `VisorBreachSignal` with `lowTierFrameSignals: 8`, matching the lane maximum. Continuous quality still drives `ResolveSimulationInterval` and the Burst job DTO.
+Rejected Alternatives: Keeping callback-based tuning invalidation was rejected because quality is already an input scalar to scheduled simulation. Keeping a 2-event breach lane was rejected because visor breach facts are player-facing hazard feedback and must not be dropped by device class.
+Scalability potential: Low devices still reduce visor simulation cadence continuously toward 5 Hz, middle devices interpolate, and high/ultra reach 60 Hz condensation/refraction updates. Breach event admission stays invariant so visual richness scales without hiding hazards.
+Hardware Impact: 0 us speed claim. Removed one event listener route and one callback-only mutation path; no DTO size, BufferID, shader property ID, or Vault owner changed. Build deferred because `VBCSCompiler` remained active.
