@@ -4,7 +4,6 @@ using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
-using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -20,7 +19,7 @@ namespace Hecton8.Prologue.VFX
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-6910)]
     [AddComponentMenu("Hecton/Prologue/VFX/Orbital Drop Reentry VFX Controller")]
-    public sealed class OrbitalDropReentryVfxController : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
+    public sealed class OrbitalDropReentryVfxController : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int TelemetryCapacity = 300;
         private const int TelemetryEntrySizeBytes = 48;
@@ -42,7 +41,7 @@ namespace Hecton8.Prologue.VFX
         private static readonly int _PlasmaOpacityId = Shader.PropertyToID("_PlasmaOpacity");
         private static readonly int _PlasmaVelocityId = Shader.PropertyToID("_PlasmaVelocity");
         private static readonly int _PlasmaAltitudeId = Shader.PropertyToID("_PlasmaAltitude01");
-        private static readonly int _PlasmaLowTierId = Shader.PropertyToID("_PlasmaLowTier");
+        private static readonly int _PlasmaQualityPressureId = Shader.PropertyToID("_PlasmaQualityPressure");
         private static readonly int _PlasmaPhaseId = Shader.PropertyToID("_HectonReentryPhase");
         private static readonly int _HectonReentryAmbientId = Shader.PropertyToID("_HectonReentryAmbient");
         private static readonly Color _defaultOceanAmbientColor = new Color(0.02f, 0.52f, 0.62f, 1f);
@@ -69,7 +68,7 @@ namespace Hecton8.Prologue.VFX
             [FieldOffset(24)] public float AmbientBlend01;
             [FieldOffset(28)] public float OverlayDistanceMeters;
             [FieldOffset(32)] public byte Phase;
-            [FieldOffset(33)] public byte QualityTier;
+            [FieldOffset(33)] public byte QualityWeightByte;
             [FieldOffset(34)] public byte Flags;
             [FieldOffset(35)] public byte Reserved;
             [FieldOffset(36)] public uint StateHash;
@@ -124,23 +123,19 @@ namespace Hecton8.Prologue.VFX
         private float _lastUploadedOpacity = float.PositiveInfinity;
         private float _lastUploadedVelocity = float.PositiveInfinity;
         private float _lastUploadedAltitude = float.PositiveInfinity;
-        private float _lastUploadedLowTier = float.PositiveInfinity;
+        private float _lastUploadedQualityPressure = float.PositiveInfinity;
         private float _lastUploadedPhase = float.PositiveInfinity;
         private float _lastGlobalHeat = float.PositiveInfinity;
         private float _lastGlobalOpacity = float.PositiveInfinity;
-        private float _lastGlobalLowTier = float.PositiveInfinity;
+        private float _lastGlobalQualityPressure = float.PositiveInfinity;
         private float _lastAppliedAmbientBlend = float.PositiveInfinity;
         private float _whiteoutHoldSecondsRemaining;
         private float _audioCrossfadeElapsedSeconds;
         private float _audioCrossfadeTimer;
         private float _qualityWeight = 1f;
-        private HectonQualityTier _qualityTier = HectonQualityTier.Unknown;
-        private byte _qualityTierByte;
-        private bool _lowTier = true;
-        private bool _lowMemoryProfile;
+        private byte _qualityWeightByte = byte.MaxValue;
         private bool _registeredLateFrame;
         private bool _hotSwapRegistered;
-        private bool _scalabilityEventsRegistered;
         private bool _blackBoxDumped;
         private bool _plasmaRoarPublished;
         private bool _oceanWavesPublished;
@@ -158,14 +153,11 @@ namespace Hecton8.Prologue.VFX
             RefreshQualityPolicyCold();
             RegisterLateFrame();
             TryRegisterHotSwap();
-            TryRegisterScalabilityEvents();
             PublishShaderState(force: true);
         }
 
         private void OnDisable()
         {
-            TryUnregisterScalabilityEvents();
-
             if (_registeredLateFrame)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
@@ -178,12 +170,6 @@ namespace Hecton8.Prologue.VFX
             ApplyAmbientBlend();
             PublishShaderState(force: true);
             _tickDispatcher = null;
-        }
-
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            _qualityRefreshFrame = Time.frameCount;
-            CacheQualityPolicy(payload.CurrentQualityTier, payload.CurrentTier, _lowMemoryProfile, ResolveGlobalQualityWeight());
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -309,24 +295,6 @@ namespace Hecton8.Prologue.VFX
             _hotSwapRegistered = false;
         }
 
-        private void TryRegisterScalabilityEvents()
-        {
-            if (_scalabilityEventsRegistered || !Application.isPlaying)
-                return;
-
-            ScalabilityEvents.Register(this);
-            _scalabilityEventsRegistered = true;
-        }
-
-        private void TryUnregisterScalabilityEvents()
-        {
-            if (!_scalabilityEventsRegistered)
-                return;
-
-            ScalabilityEvents.Unregister(this);
-            _scalabilityEventsRegistered = false;
-        }
-
         private void ApplyConfiguredMaterial()
         {
             if (!assignMaterialOnEnable || plasmaMaterial == null)
@@ -342,32 +310,19 @@ namespace Hecton8.Prologue.VFX
         {
             int frame = Time.frameCount;
             _qualityRefreshFrame = frame;
-            CacheQualityPolicy(
-                GlobalRegistry.ScalabilityTier,
-                GlobalRegistry.ScalabilityTierProfileByte,
-                GlobalRegistry.H8_LOW_MEMORY_PROFILE,
-                ResolveGlobalQualityWeight());
+            CacheQualityPolicy(ResolveGlobalQualityWeight());
         }
 
-        private void CacheQualityPolicy(HectonQualityTier tier, byte profileByte, bool lowMemoryProfile, float qualityWeight)
+        private void CacheQualityPolicy(float qualityWeight)
         {
-            bool lowTier = tier == HectonQualityTier.Unknown ||
-                           tier == HectonQualityTier.Low ||
-                           tier == HectonQualityTier.Mx350 ||
-                           lowMemoryProfile;
             float safeQualityWeight = math.saturate(math.isfinite(qualityWeight) ? qualityWeight : 1f);
+            byte qualityWeightByte = (byte)math.clamp((int)math.round(safeQualityWeight * 255f), 0, 255);
 
-            if (tier == _qualityTier &&
-                profileByte == _qualityTierByte &&
-                lowTier == _lowTier &&
-                lowMemoryProfile == _lowMemoryProfile &&
+            if (qualityWeightByte == _qualityWeightByte &&
                 math.abs(_qualityWeight - safeQualityWeight) <= ShaderEpsilon)
                 return;
 
-            _qualityTier = tier;
-            _qualityTierByte = profileByte;
-            _lowTier = lowTier;
-            _lowMemoryProfile = lowMemoryProfile;
+            _qualityWeightByte = qualityWeightByte;
             _qualityWeight = safeQualityWeight;
         }
 
@@ -587,7 +542,7 @@ namespace Hecton8.Prologue.VFX
             float velocityScale = PositiveFiniteOrMinimum(fullHeatVelocityMetersPerSecond, 1f);
             float velocity01 = math.saturate(_velocityMetersPerSecond * math.rcp(velocityScale));
             float altitude01 = 1f - ResolveAltitudeOpacity01(_altitudeMeters);
-            float lowTier01 = ResolveSurvivalPressure01();
+            float qualityPressure01 = ResolveSurvivalPressure01();
             float phase = (float)_phase;
 
             if (material != null)
@@ -596,13 +551,13 @@ namespace Hecton8.Prologue.VFX
                 SetMaterialFloatIfChanged(material, _PlasmaOpacityId, _opacity01, ref _lastUploadedOpacity, force);
                 SetMaterialFloatIfChanged(material, _PlasmaVelocityId, velocity01, ref _lastUploadedVelocity, force);
                 SetMaterialFloatIfChanged(material, _PlasmaAltitudeId, altitude01, ref _lastUploadedAltitude, force);
-                SetMaterialFloatIfChanged(material, _PlasmaLowTierId, lowTier01, ref _lastUploadedLowTier, force);
+                SetMaterialFloatIfChanged(material, _PlasmaQualityPressureId, qualityPressure01, ref _lastUploadedQualityPressure, force);
                 SetMaterialFloatIfChanged(material, _PlasmaPhaseId, phase, ref _lastUploadedPhase, force);
             }
 
             SetGlobalFloatIfChanged(_PlasmaHeatId, _heat01, ref _lastGlobalHeat, force);
             SetGlobalFloatIfChanged(_PlasmaOpacityId, _opacity01, ref _lastGlobalOpacity, force);
-            SetGlobalFloatIfChanged(_PlasmaLowTierId, lowTier01, ref _lastGlobalLowTier, force);
+            SetGlobalFloatIfChanged(_PlasmaQualityPressureId, qualityPressure01, ref _lastGlobalQualityPressure, force);
         }
 
         private void ApplyAmbientBlend()
@@ -762,8 +717,6 @@ namespace Hecton8.Prologue.VFX
         {
             _stateSequence++;
             byte flags = 0;
-            if (_lowTier)
-                flags |= ReentryVfxStateSignal.FlagLowTier;
             if (_opacity01 >= 0.995f)
                 flags |= ReentryVfxStateSignal.FlagWhiteout;
             if (_phase == ReentryPhase.HydratedFade || _phase == ReentryPhase.Complete)
@@ -780,7 +733,7 @@ namespace Hecton8.Prologue.VFX
                 HydrationSequence = _hydrationSequence,
                 Phase = (byte)_phase,
                 Flags = flags,
-                QualityTier = _qualityTierByte,
+                QualityTier = _qualityWeightByte,
                 Reserved = 0
             };
             SignalBus<ReentryVfxStateSignal>.Push(in signal);
@@ -792,8 +745,6 @@ namespace Hecton8.Prologue.VFX
                 return;
 
             byte flags = extraFlags;
-            if (_lowTier)
-                flags |= ReentryVfxStateSignal.FlagLowTier;
             if (_opacity01 >= 0.995f)
                 flags |= ReentryVfxStateSignal.FlagWhiteout;
             if (_phase == ReentryPhase.HydratedFade || _phase == ReentryPhase.Complete)
@@ -813,7 +764,7 @@ namespace Hecton8.Prologue.VFX
                 AmbientBlend01 = _ambientBlend01,
                 OverlayDistanceMeters = ResolveOverlayLocalDistanceMeters(),
                 Phase = (byte)_phase,
-                QualityTier = _qualityTierByte,
+                QualityWeightByte = _qualityWeightByte,
                 Flags = flags,
                 Reserved = 0,
                 StateHash = ResolveStateHash(),
@@ -856,7 +807,7 @@ namespace Hecton8.Prologue.VFX
                         writer.Write(entry.AmbientBlend01);
                         writer.Write(entry.OverlayDistanceMeters);
                         writer.Write(entry.Phase);
-                        writer.Write(entry.QualityTier);
+                        writer.Write(entry.QualityWeightByte);
                         writer.Write(entry.Flags);
                         writer.Write(entry.Reserved);
                         writer.Write(entry.StateHash);
@@ -948,8 +899,7 @@ namespace Hecton8.Prologue.VFX
         private float ResolveSurvivalPressure01()
         {
             float qualityPressure = 1f - ResolveQualityCurve01();
-            float profilePressure = _lowTier ? 0.85f : 0f;
-            return math.saturate(math.max(qualityPressure, profilePressure));
+            return math.saturate(qualityPressure);
         }
 
         private ushort ResolveSplashDebrisQuantity()
@@ -1068,7 +1018,7 @@ namespace Hecton8.Prologue.VFX
             hash = (hash ^ math.asuint(_altitudeMeters)) * 16777619u;
             hash = (hash ^ math.asuint(_velocityMetersPerSecond)) * 16777619u;
             hash = (hash ^ (uint)_phase) * 16777619u;
-            hash = (hash ^ (uint)_qualityTierByte) * 16777619u;
+            hash = (hash ^ (uint)_qualityWeightByte) * 16777619u;
             hash = (hash ^ (uint)_hydrationSequence) * 16777619u;
             return hash;
         }

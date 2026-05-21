@@ -21,6 +21,7 @@ namespace Hecton8.Physics
         private const float SharedAmbientStrength = 0.9f;
         private const float SharedAmbientVerticalFactor = 0.08f;
         private const int ActiveVolumeCapacity = 32;
+        private const float CurrentSampleClockMaxSeconds = 16777215f;
         private const float LargeVolumeAupCullThresholdMeters = 50f;
         private const float LargeVolumeAupCullThresholdSq = LargeVolumeAupCullThresholdMeters * LargeVolumeAupCullThresholdMeters;
         private const float TwoPi = 6.28318530718f;
@@ -446,11 +447,24 @@ namespace Hecton8.Physics
             int frame = Time.frameCount;
             if (_sharedSampleTimeFrame != frame)
             {
-                _sharedSampleTime = Time.time;
+                _sharedSampleTime = ResolveCurrentSampleClockSeconds();
                 _sharedSampleTimeFrame = frame;
             }
 
             return _sharedSampleTime;
+        }
+
+        private static float ResolveCurrentSampleClockSeconds()
+        {
+            SystemDispatcher dispatcher = SystemDispatcher.ActiveRuntimeInstance;
+            if (dispatcher == null)
+                return 0f;
+
+            double timeSeconds = dispatcher.DilatedTimeSeconds;
+            if (!math.isfinite(timeSeconds) || timeSeconds <= 0d)
+                return 0f;
+
+            return (float)math.min(CurrentSampleClockMaxSeconds, timeSeconds);
         }
 
         private static float FastTriangleSigned(float phase)

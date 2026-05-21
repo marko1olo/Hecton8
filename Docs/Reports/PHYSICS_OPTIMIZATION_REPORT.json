@@ -173,7 +173,7 @@
     "sdfRoute": "IVoxelSonarSdfReadModel.TryReadNearestSonarSdf -> VRHandStateDTO -> resolved float4x4 matrix",
     "hotPathAmendments": "cached IDataVault TryResolveExisting in fixed-step; live VRControllerMatrixDTO ingestion; all-active socket scan; mutation guard; over-budget telemetry-only flag",
     "blackBoxDump": "Docs/AgentLogs/Dump_SHINOBU_271.bin",
-    "compileProof": "dotnet build Hecton8.slnx --no-restore -nologo -v:minimal -maxcpucount:1 /nr:false /p:UseSharedCompilation=false /p:GenerateFullPaths=true returned EXIT_CODE=0 in Docs/AgentLogs/Build_SHINOBU_271_solution_loop13_06.log with 100 Warning(s), 0 Error(s).",
+    "compileProof": "dotnet build Hecton8.slnx --no-restore -nologo -v:minimal -maxcpucount:1 /nr:false /p:UseSharedCompilation=false /p:GenerateFullPaths=true returned EXIT_CODE=0 in Docs/AgentLogs/Build_SHINOBU_271_solution_loop13_08.log with 7 Warning(s), 0 Error(s).",
     "verificationLimit": "Unity import, Unity Console, Play Mode GCMonitor, profiler captures, player-build, Quest/Steam Deck runtime, and live VR device proof remain pending."
   }
 }

@@ -447,4 +447,4 @@ Verification:
 - Focused scans found no residual `MovePosition(`, `Time.frameCount`, `FloatMode.Fast`, implicit-origin `TryResolveRuntimePosition`, stale `IBuildPlacementRule` compile proof, or shared-report string-surgery helpers in SHINOBU_271 touched files.
 - `Docs/AgentLogs/Build_SHINOBU_271_core_loop13_04.log`: `Build succeeded`, `29 Warning(s)`, `0 Error(s)`, `EXIT_CODE=0`.
 - `Docs/AgentLogs/Build_SHINOBU_271_editor_loop13_05.log`: `Build succeeded`, `46 Warning(s)`, `0 Error(s)`, `EXIT_CODE=0`.
-- `Docs/AgentLogs/Build_SHINOBU_271_solution_loop13_06.log`: `Build succeeded`, `100 Warning(s)`, `0 Error(s)`, `EXIT_CODE=0`.
+- `Docs/AgentLogs/Build_SHINOBU_271_solution_loop13_08.log`: `Build succeeded`, `7 Warning(s)`, `0 Error(s)`, `EXIT_CODE=0`.

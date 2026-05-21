@@ -3774,12 +3774,21 @@ namespace Hecton8.Caves
                 runtimeHitPoint.y,
                 runtimeHitPoint.z,
                 shaderRadius);
-            s_recentCutHeatStrengthTime[slot] = new Vector4(LaserCutHeatStrength, Time.time, LaserCutHeatLifetimeSeconds, 0f);
+            s_recentCutHeatStrengthTime[slot] = new Vector4(
+                LaserCutHeatStrength,
+                ResolveLaserCutHeatShaderClockSeconds(),
+                LaserCutHeatLifetimeSeconds,
+                0f);
             Shader.SetGlobalVector(_laserHitAupId, s_recentCutHeatPositionRadius[slot]);
             Shader.SetGlobalVector(_laserHitHeatId, s_recentCutHeatStrengthTime[slot]);
             Shader.SetGlobalVectorArray(_recentCutHeatPositionRadiusId, s_recentCutHeatPositionRadius);
             Shader.SetGlobalVectorArray(_recentCutHeatStrengthTimeId, s_recentCutHeatStrengthTime);
             Shader.SetGlobalInt(_recentCutHeatCountId, s_recentCutHeatCount);
+        }
+
+        private static float ResolveLaserCutHeatShaderClockSeconds()
+        {
+            return Time.timeSinceLevelLoad;
         }
 
         private void DisposeScheduledCompactionBuffers()

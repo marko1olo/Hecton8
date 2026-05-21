@@ -42,6 +42,6 @@
   "blackBoxDump": "Docs/AgentLogs/Dump_SHINOBU_271.bin",
   "telemetryEntries": 600,
   "continuousQuality": "GlobalQualityWeight maps continuously to a 2..8 presentation/telemetry iteration hint; authoritative SDF truth uses the deterministic 8-step fence so rollback state, DTO layout, and authority route remain invariant.",
-  "compileProof": "dotnet build Hecton8.slnx --no-restore -nologo -v:minimal -maxcpucount:1 /nr:false /p:UseSharedCompilation=false /p:GenerateFullPaths=true returned EXIT_CODE=0 in Docs/AgentLogs/Build_SHINOBU_271_solution_loop13_06.log with 100 Warning(s), 0 Error(s).",
+  "compileProof": "dotnet build Hecton8.slnx --no-restore -nologo -v:minimal -maxcpucount:1 /nr:false /p:UseSharedCompilation=false /p:GenerateFullPaths=true returned EXIT_CODE=0 in Docs/AgentLogs/Build_SHINOBU_271_solution_loop13_08.log with 7 Warning(s), 0 Error(s).",
   "verificationLimit": "Unity import, Unity Console, Play Mode GCMonitor, profiler captures, player-build, Quest/Steam Deck runtime, and live VR device proof remain pending."
 }

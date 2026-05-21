@@ -22,6 +22,7 @@ namespace Hecton8.World
         private const string BuiltinQuadMeshName = "Quad.fbx";
         private const byte FluidDecalDriftModeCurrent = 0;
         private const byte FluidDecalDriftModeCinematic = 1;
+        private const float FluidDecalClockMaxSeconds = 16777215f;
 
         private struct FluidDecalState
         {
@@ -159,6 +160,7 @@ namespace Hecton8.World
         private Material _runtimeMaterial;
         private MaterialPropertyBlock _drawPropertyBlock;
         private Vector3 _previousGlobalDriftOffset;
+        private float _fluidDecalClockSeconds;
         private SargassumGlobalDragManager _sargassumDrag;
         private IPlayerRuntimeContext _playerContext;
         private bool _serviceRegistered;
@@ -174,6 +176,7 @@ namespace Hecton8.World
             EnsureRenderingResources(false);
             _drawPropertyBlock = MaterialPropertyBlockRegistry.GetOrCreateLegacyBlock(this);
             _previousGlobalDriftOffset = ResolveGlobalDriftOffset();
+            _fluidDecalClockSeconds = 0f;
         }
 
         private void OnEnable()
@@ -398,7 +401,8 @@ namespace Hecton8.World
             if (_decalStates == null || _runtimeMaterial == null || _quadMesh == null)
                 return;
 
-            float deltaTime = Mathf.Max(0f, dt);
+            float deltaTime = math.isfinite(dt) ? math.max(0f, dt) : 0f;
+            AdvanceFluidDecalClock(deltaTime);
             Vector3 currentDriftOffset = ResolveGlobalDriftOffset();
             Vector3 driftDelta = (currentDriftOffset - _previousGlobalDriftOffset) * driftOffsetInfluence;
             _previousGlobalDriftOffset = currentDriftOffset;
@@ -880,7 +884,7 @@ namespace Hecton8.World
 
         private Vector3 ResolveCurrentVelocity(Vector3 positionWS)
         {
-            float time = Time.time;
+            float time = ResolveFluidDecalClockSeconds();
             float3 sampledCurrent = CurrentManager.SampleCurrent(
                 new float3(positionWS.x, positionWS.y, positionWS.z),
                 time,
@@ -892,6 +896,19 @@ namespace Hecton8.World
             Vector3 resolvedCurrent = new Vector3(sampledCurrent.x, sampledCurrent.y, sampledCurrent.z) + authoredCurrent;
             resolvedCurrent.y *= currentVerticalFactor;
             return resolvedCurrent;
+        }
+
+        private void AdvanceFluidDecalClock(float deltaTime)
+        {
+            if (deltaTime <= 0f)
+                return;
+
+            _fluidDecalClockSeconds = math.min(FluidDecalClockMaxSeconds, _fluidDecalClockSeconds + deltaTime);
+        }
+
+        private float ResolveFluidDecalClockSeconds()
+        {
+            return _fluidDecalClockSeconds;
         }
 
         private void TryRegister()

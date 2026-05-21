@@ -744,6 +744,7 @@ namespace Hecton8.Atmosphere
         private float _atmosphereTimelineAccumulator;
         private int _nextAtmosphereTimelineWarningFrame;
         private const float AtmosphereTimelineStepSeconds = 0.1f;
+        private const float AtmosphereTimelineClockMaxSeconds = 16777215f;
         private const int AtmosphereTimelineMaxStepsPerSlowTick = 5;
         private static readonly uint _AtmosphereTimelineBudgetWarningHash = unchecked((uint)LocHash.Compute("HectonAtmosphereManager.AtmosphereTimelineBudget"));
         private static readonly uint _AtmosphereTimelineContextHash = unchecked((uint)LocHash.Compute("HectonAtmosphereManager.SlowTick"));
@@ -1273,7 +1274,7 @@ namespace Hecton8.Atmosphere
         public void SlowTick()
         {
             long timelineStartTicks = System.Diagnostics.Stopwatch.GetTimestamp();
-            float now = Time.time;
+            float now = ResolveAtmosphereTimelineClockSeconds();
             float elapsed = _lastAtmosphereSlowTickTime > 0f
                 ? math.clamp(now - _lastAtmosphereSlowTickTime, AtmosphereTimelineStepSeconds, AtmosphereTimelineStepSeconds * AtmosphereTimelineMaxStepsPerSlowTick)
                 : AtmosphereTimelineStepSeconds;
@@ -1292,6 +1293,19 @@ namespace Hecton8.Atmosphere
             }
 
             PublishAtmosphereTimelineBudgetWarningIfNeeded(timelineStartTicks);
+        }
+
+        private static float ResolveAtmosphereTimelineClockSeconds()
+        {
+            SystemDispatcher dispatcher = SystemDispatcher.ActiveRuntimeInstance;
+            if (dispatcher == null)
+                return 0f;
+
+            double timeSeconds = dispatcher.DilatedTimeSeconds;
+            if (!math.isfinite(timeSeconds) || timeSeconds <= 0d)
+                return 0f;
+
+            return (float)math.min(AtmosphereTimelineClockMaxSeconds, timeSeconds);
         }
 
         private void PublishAtmosphereTimelineBudgetWarningIfNeeded(long timelineStartTicks)
@@ -1774,7 +1788,7 @@ namespace Hecton8.Atmosphere
 
         private void RefreshProceduralBiomeInfluenceSnapshotIfNeeded()
         {
-            float now = Time.unscaledTime;
+            float now = ResolveAtmosphereTimelineClockSeconds();
             if (now < _nextBiomeInfluenceRefreshTime)
                 return;
 

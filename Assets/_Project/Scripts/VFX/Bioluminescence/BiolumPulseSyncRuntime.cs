@@ -519,28 +519,15 @@ namespace Hecton8.VFX.Bioluminescence
             if (vault == null || vault.IsCompactionFenceActive || index < 0)
                 return false;
 
-            if (!vault.TryGetBufferHandle(BufferID.BiolumSpeciesTuning, out VaultBufferHandle<BiolumSpeciesTuningDTO> handle) ||
-                index >= handle.Length)
+            if (!vault.TryGetGenerationHandle(BufferID.BiolumSpeciesTuning, out VaultGenerationHandle<BiolumSpeciesTuningDTO> handle) ||
+                !TryReadBiolumVaultBuffer(vault, in handle, BufferID.BiolumSpeciesTuning, MaxSpeciesTuningCount, out NativeArray<BiolumSpeciesTuningDTO> species) ||
+                index >= species.Length)
             {
                 return false;
             }
 
-            if (!vault.TryLockBuffer(BufferID.BiolumSpeciesTuning, SystemID.Vfx))
-                return false;
-
-            try
-            {
-                NativeArray<BiolumSpeciesTuningDTO> species = handle.Resolve(vault);
-                if (!species.IsCreated || index >= species.Length)
-                    return false;
-
-                tuning = species[index];
-                return true;
-            }
-            finally
-            {
-                vault.TryUnlockBuffer(BufferID.BiolumSpeciesTuning, SystemID.Vfx);
-            }
+            tuning = species[index];
+            return true;
         }
 
         /// <summary>
@@ -552,31 +539,32 @@ namespace Hecton8.VFX.Bioluminescence
             if (vault == null || vault.IsCompactionFenceActive || index < 0)
                 return false;
 
-            if (!vault.TryGetBufferHandle(BufferID.BiolumSpeciesTuning, out VaultBufferHandle<BiolumSpeciesTuningDTO> handle) ||
-                index >= handle.Length)
+            if (!vault.TryGetGenerationHandle(BufferID.BiolumSpeciesTuning, out VaultGenerationHandle<BiolumSpeciesTuningDTO> speciesHandle) ||
+                !IsBiolumVaultHandle(in speciesHandle, BufferID.BiolumSpeciesTuning))
             {
                 return false;
             }
 
-            vault.TryGetBufferHandle(BufferID.BiolumGlowStates, out VaultBufferHandle<GlowStateDTO> glowHandle);
+            vault.TryGetGenerationHandle(BufferID.BiolumGlowStates, out VaultGenerationHandle<GlowStateDTO> glowHandle);
 
             bool lockedGlowStates = false;
             bool lockedSpecies = false;
+            NativeArray<GlowStateDTO> glowStates = default;
+            NativeArray<BiolumSpeciesTuningDTO> species = default;
             try
             {
-                lockedGlowStates = glowHandle.Length > 0 && vault.TryLockBuffer(BufferID.BiolumGlowStates, SystemID.Vfx);
-                lockedSpecies = vault.TryLockBuffer(BufferID.BiolumSpeciesTuning, SystemID.Vfx);
+                lockedGlowStates = IsBiolumVaultHandle(in glowHandle, BufferID.BiolumGlowStates) &&
+                                   vault.TryAcquireWriteLock(in glowHandle, SystemID.Vfx, out glowStates);
+                lockedSpecies = vault.TryAcquireWriteLock(in speciesHandle, SystemID.Vfx, out species);
                 if (!lockedSpecies)
                     return false;
 
-                NativeArray<BiolumSpeciesTuningDTO> species = handle.Resolve(vault);
                 if (!species.IsCreated || index >= species.Length)
                     return false;
 
                 species[index] = tuning;
                 if (lockedGlowStates)
                 {
-                    NativeArray<GlowStateDTO> glowStates = glowHandle.Resolve(vault);
                     ApplySpeciesTuningToGlowStates(glowStates, tuning);
                 }
 
@@ -585,9 +573,9 @@ namespace Hecton8.VFX.Bioluminescence
             finally
             {
                 if (lockedSpecies)
-                    vault.TryUnlockBuffer(BufferID.BiolumSpeciesTuning, SystemID.Vfx);
+                    vault.ReleaseWriteLock(in speciesHandle, SystemID.Vfx);
                 if (lockedGlowStates)
-                    vault.TryUnlockBuffer(BufferID.BiolumGlowStates, SystemID.Vfx);
+                    vault.ReleaseWriteLock(in glowHandle, SystemID.Vfx);
             }
         }
 
@@ -601,28 +589,14 @@ namespace Hecton8.VFX.Bioluminescence
             if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
-            if (!vault.TryGetBufferHandle(BufferID.BiolumMockWeatherSignal, out VaultBufferHandle<MockWeatherSignal> handle) ||
-                handle.Length <= 0)
+            if (!vault.TryGetGenerationHandle(BufferID.BiolumMockWeatherSignal, out VaultGenerationHandle<MockWeatherSignal> handle) ||
+                !TryReadBiolumVaultBuffer(vault, in handle, BufferID.BiolumMockWeatherSignal, 1, out NativeArray<MockWeatherSignal> weather))
             {
                 return false;
             }
 
-            if (!vault.TryLockBuffer(BufferID.BiolumMockWeatherSignal, SystemID.Vfx))
-                return false;
-
-            try
-            {
-                NativeArray<MockWeatherSignal> weather = handle.Resolve(vault);
-                if (!weather.IsCreated || weather.Length <= 0)
-                    return false;
-
-                signal = weather[0];
-                return true;
-            }
-            finally
-            {
-                vault.TryUnlockBuffer(BufferID.BiolumMockWeatherSignal, SystemID.Vfx);
-            }
+            signal = weather[0];
+            return true;
         }
 
         /// <summary>
@@ -634,18 +608,17 @@ namespace Hecton8.VFX.Bioluminescence
             if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
-            if (!vault.TryGetBufferHandle(BufferID.BiolumMockWeatherSignal, out VaultBufferHandle<MockWeatherSignal> handle) ||
-                handle.Length <= 0)
+            if (!vault.TryGetGenerationHandle(BufferID.BiolumMockWeatherSignal, out VaultGenerationHandle<MockWeatherSignal> handle) ||
+                !IsBiolumVaultHandle(in handle, BufferID.BiolumMockWeatherSignal))
             {
                 return false;
             }
 
-            if (!vault.TryLockBuffer(BufferID.BiolumMockWeatherSignal, SystemID.Vfx))
+            if (!vault.TryAcquireWriteLock(in handle, SystemID.Vfx, out NativeArray<MockWeatherSignal> weather))
                 return false;
 
             try
             {
-                NativeArray<MockWeatherSignal> weather = handle.Resolve(vault);
                 if (!weather.IsCreated || weather.Length <= 0)
                     return false;
 
@@ -654,7 +627,7 @@ namespace Hecton8.VFX.Bioluminescence
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.BiolumMockWeatherSignal, SystemID.Vfx);
+                vault.ReleaseWriteLock(in handle, SystemID.Vfx);
             }
         }
 
@@ -668,28 +641,14 @@ namespace Hecton8.VFX.Bioluminescence
             if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
-            if (!vault.TryGetBufferHandle(BiolumPulseStateBufferId, out VaultBufferHandle<BiolumPulseStateDTO> handle) ||
-                handle.Length <= 0)
+            if (!vault.TryGetGenerationHandle(BiolumPulseStateBufferId, out VaultGenerationHandle<BiolumPulseStateDTO> handle) ||
+                !TryReadBiolumVaultBuffer(vault, in handle, BiolumPulseStateBufferId, 1, out NativeArray<BiolumPulseStateDTO> pulse))
             {
                 return false;
             }
 
-            if (!vault.TryLockBuffer(BiolumPulseStateBufferId, SystemID.Vfx))
-                return false;
-
-            try
-            {
-                NativeArray<BiolumPulseStateDTO> pulse = handle.Resolve(vault);
-                if (!pulse.IsCreated || pulse.Length <= 0)
-                    return false;
-
-                pulseState = pulse[0];
-                return true;
-            }
-            finally
-            {
-                vault.TryUnlockBuffer(BiolumPulseStateBufferId, SystemID.Vfx);
-            }
+            pulseState = pulse[0];
+            return true;
         }
 
         /// <summary>
@@ -705,40 +664,26 @@ namespace Hecton8.VFX.Bioluminescence
             if (vault == null || runtime == null || vault.IsCompactionFenceActive)
                 return 0;
 
-            if (!vault.TryGetBufferHandle(BufferID.BiolumBlackBox, out VaultBufferHandle<BiolumPulseTelemetryEntry> handle) ||
-                handle.Length < BlackBoxFrameCount)
+            if (!vault.TryGetGenerationHandle(BufferID.BiolumBlackBox, out VaultGenerationHandle<BiolumPulseTelemetryEntry> handle) ||
+                !TryReadBiolumVaultBuffer(vault, in handle, BufferID.BiolumBlackBox, BlackBoxFrameCount, out NativeArray<BiolumPulseTelemetryEntry> blackBox))
             {
                 return 0;
             }
 
-            if (!vault.TryLockBuffer(BufferID.BiolumBlackBox, SystemID.Vfx))
-                return 0;
-
-            try
+            int sourceCount = blackBox.Length;
+            int ringCount = math.min(sourceCount, BlackBoxFrameCount);
+            int copyCount = math.min(destination.Length, ringCount);
+            int cursor = math.clamp(runtime._blackBoxCursor, 0, sourceCount - 1);
+            for (int i = 0; i < copyCount; i++)
             {
-                NativeArray<BiolumPulseTelemetryEntry> blackBox = handle.Resolve(vault);
-                if (!blackBox.IsCreated || blackBox.Length <= 0)
-                    return 0;
+                int index = cursor - i - 1;
+                if (index < 0)
+                    index += sourceCount;
 
-                int sourceCount = blackBox.Length;
-                int ringCount = math.min(sourceCount, BlackBoxFrameCount);
-                int copyCount = math.min(destination.Length, ringCount);
-                int cursor = math.clamp(runtime._blackBoxCursor, 0, sourceCount - 1);
-                for (int i = 0; i < copyCount; i++)
-                {
-                    int index = cursor - i - 1;
-                    if (index < 0)
-                        index += sourceCount;
-
-                    destination[i] = blackBox[index];
-                }
-
-                return copyCount;
+                destination[i] = blackBox[index];
             }
-            finally
-            {
-                vault.TryUnlockBuffer(BufferID.BiolumBlackBox, SystemID.Vfx);
-            }
+
+            return copyCount;
         }
 
         /// <summary>
@@ -750,18 +695,17 @@ namespace Hecton8.VFX.Bioluminescence
             if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
-            if (!vault.TryGetBufferHandle(BiolumPulseStateBufferId, out VaultBufferHandle<BiolumPulseStateDTO> handle) ||
-                handle.Length <= 0)
+            if (!vault.TryGetGenerationHandle(BiolumPulseStateBufferId, out VaultGenerationHandle<BiolumPulseStateDTO> handle) ||
+                !IsBiolumVaultHandle(in handle, BiolumPulseStateBufferId))
             {
                 return false;
             }
 
-            if (!vault.TryLockBuffer(BiolumPulseStateBufferId, SystemID.Vfx))
+            if (!vault.TryAcquireWriteLock(in handle, SystemID.Vfx, out NativeArray<BiolumPulseStateDTO> pulse))
                 return false;
 
             try
             {
-                NativeArray<BiolumPulseStateDTO> pulse = handle.Resolve(vault);
                 if (!pulse.IsCreated || pulse.Length <= 0)
                     return false;
 
@@ -770,7 +714,7 @@ namespace Hecton8.VFX.Bioluminescence
             }
             finally
             {
-                vault.TryUnlockBuffer(BiolumPulseStateBufferId, SystemID.Vfx);
+                vault.ReleaseWriteLock(in handle, SystemID.Vfx);
             }
         }
 
@@ -792,32 +736,18 @@ namespace Hecton8.VFX.Bioluminescence
             if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
-            if (!vault.TryGetBufferHandle(BufferID.BiolumProfileFloats, out VaultBufferHandle<float> handle) ||
-                handle.Length < ProfileFloatCount)
+            if (!vault.TryGetGenerationHandle(BufferID.BiolumProfileFloats, out VaultGenerationHandle<float> handle) ||
+                !TryReadBiolumVaultBuffer(vault, in handle, BufferID.BiolumProfileFloats, ProfileFloatCount, out NativeArray<float> profileFloats))
             {
                 return false;
             }
 
-            if (!vault.TryLockBuffer(BufferID.BiolumProfileFloats, SystemID.Vfx))
-                return false;
-
-            try
-            {
-                NativeArray<float> profileFloats = handle.Resolve(vault);
-                if (!profileFloats.IsCreated || profileFloats.Length < ProfileFloatCount)
-                    return false;
-
-                baseFrequency = math.clamp(profileFloats[1], 0.0025f, 8f);
-                float baseOffset = math.max(0.0001f, 0.18f);
-                spatialOffsetMultiplier = math.clamp(profileFloats[3] / baseOffset, 0f, 8f);
-                darknessActivationThreshold = ResolveDarknessActivationThreshold(profileFloats);
-                predatorPanicSpeed = ResolvePredatorPanicSpeed(profileFloats);
-                return true;
-            }
-            finally
-            {
-                vault.TryUnlockBuffer(BufferID.BiolumProfileFloats, SystemID.Vfx);
-            }
+            baseFrequency = math.clamp(profileFloats[1], 0.0025f, 8f);
+            float baseOffset = math.max(0.0001f, 0.18f);
+            spatialOffsetMultiplier = math.clamp(profileFloats[3] / baseOffset, 0f, 8f);
+            darknessActivationThreshold = ResolveDarknessActivationThreshold(profileFloats);
+            predatorPanicSpeed = ResolvePredatorPanicSpeed(profileFloats);
+            return true;
         }
 
         /// <summary>
@@ -833,28 +763,28 @@ namespace Hecton8.VFX.Bioluminescence
             if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
-            if (!vault.TryGetBufferHandle(BufferID.BiolumProfileFloats, out VaultBufferHandle<float> profileHandle) ||
-                profileHandle.Length < ProfileFloatCount ||
-                !vault.TryGetBufferHandle(BiolumPulseStateBufferId, out VaultBufferHandle<BiolumPulseStateDTO> pulseHandle) ||
-                pulseHandle.Length <= 0)
+            if (!vault.TryGetGenerationHandle(BufferID.BiolumProfileFloats, out VaultGenerationHandle<float> profileHandle) ||
+                !IsBiolumVaultHandle(in profileHandle, BufferID.BiolumProfileFloats) ||
+                !vault.TryGetGenerationHandle(BiolumPulseStateBufferId, out VaultGenerationHandle<BiolumPulseStateDTO> pulseHandle) ||
+                !IsBiolumVaultHandle(in pulseHandle, BiolumPulseStateBufferId))
             {
                 return false;
             }
 
             bool lockedProfile = false;
             bool lockedPulse = false;
+            NativeArray<float> profileFloats = default;
+            NativeArray<BiolumPulseStateDTO> pulseState = default;
             try
             {
-                lockedProfile = vault.TryLockBuffer(BufferID.BiolumProfileFloats, SystemID.Vfx);
+                lockedProfile = vault.TryAcquireWriteLock(in profileHandle, SystemID.Vfx, out profileFloats);
                 if (!lockedProfile)
                     return false;
 
-                lockedPulse = vault.TryLockBuffer(BiolumPulseStateBufferId, SystemID.Vfx);
+                lockedPulse = vault.TryAcquireWriteLock(in pulseHandle, SystemID.Vfx, out pulseState);
                 if (!lockedPulse)
                     return false;
 
-                NativeArray<float> profileFloats = profileHandle.Resolve(vault);
-                NativeArray<BiolumPulseStateDTO> pulseState = pulseHandle.Resolve(vault);
                 if (!profileFloats.IsCreated ||
                     profileFloats.Length < ProfileFloatCount ||
                     !pulseState.IsCreated ||
@@ -890,9 +820,9 @@ namespace Hecton8.VFX.Bioluminescence
             finally
             {
                 if (lockedPulse)
-                    vault.TryUnlockBuffer(BiolumPulseStateBufferId, SystemID.Vfx);
+                    vault.ReleaseWriteLock(in pulseHandle, SystemID.Vfx);
                 if (lockedProfile)
-                    vault.TryUnlockBuffer(BufferID.BiolumProfileFloats, SystemID.Vfx);
+                    vault.ReleaseWriteLock(in profileHandle, SystemID.Vfx);
             }
         }
 
@@ -909,28 +839,28 @@ namespace Hecton8.VFX.Bioluminescence
             if (runtime == null)
                 return false;
 
-            if (!vault.TryGetBufferHandle(BiolumPulseStateBufferId, out VaultBufferHandle<BiolumPulseStateDTO> pulseHandle) ||
-                pulseHandle.Length <= 0 ||
-                !vault.TryGetBufferHandle(BufferID.BiolumProfileFloats, out VaultBufferHandle<float> profileHandle) ||
-                profileHandle.Length < ProfileFloatCount)
+            if (!vault.TryGetGenerationHandle(BiolumPulseStateBufferId, out VaultGenerationHandle<BiolumPulseStateDTO> pulseHandle) ||
+                !IsBiolumVaultHandle(in pulseHandle, BiolumPulseStateBufferId) ||
+                !vault.TryGetGenerationHandle(BufferID.BiolumProfileFloats, out VaultGenerationHandle<float> profileHandle) ||
+                !IsBiolumVaultHandle(in profileHandle, BufferID.BiolumProfileFloats))
             {
                 return false;
             }
 
             bool lockedPulse = false;
             bool lockedProfile = false;
+            NativeArray<BiolumPulseStateDTO> pulseState = default;
+            NativeArray<float> profileFloats = default;
             try
             {
-                lockedPulse = vault.TryLockBuffer(BiolumPulseStateBufferId, SystemID.Vfx);
+                lockedPulse = vault.TryAcquireWriteLock(in pulseHandle, SystemID.Vfx, out pulseState);
                 if (!lockedPulse)
                     return false;
 
-                lockedProfile = vault.TryLockBuffer(BufferID.BiolumProfileFloats, SystemID.Vfx);
+                lockedProfile = vault.TryAcquireWriteLock(in profileHandle, SystemID.Vfx, out profileFloats);
                 if (!lockedProfile)
                     return false;
 
-                NativeArray<BiolumPulseStateDTO> pulseState = pulseHandle.Resolve(vault);
-                NativeArray<float> profileFloats = profileHandle.Resolve(vault);
                 if (!pulseState.IsCreated || pulseState.Length <= 0 || !profileFloats.IsCreated || profileFloats.Length < ProfileFloatCount)
                     return false;
 
@@ -975,9 +905,9 @@ namespace Hecton8.VFX.Bioluminescence
             finally
             {
                 if (lockedProfile)
-                    vault.TryUnlockBuffer(BufferID.BiolumProfileFloats, SystemID.Vfx);
+                    vault.ReleaseWriteLock(in profileHandle, SystemID.Vfx);
                 if (lockedPulse)
-                    vault.TryUnlockBuffer(BiolumPulseStateBufferId, SystemID.Vfx);
+                    vault.ReleaseWriteLock(in pulseHandle, SystemID.Vfx);
             }
         }
 #endif
@@ -1470,23 +1400,14 @@ namespace Hecton8.VFX.Bioluminescence
                 if (!lockedPulseAges)
                     return;
 
-                NativeArray<GlowStateDTO> glowStates = _glowStatesHandle.Resolve(vault);
-                NativeArray<double3> aupOrigins = _glowAupOriginsHandle.Resolve(vault);
-                NativeArray<BiolumSpeciesTuningDTO> speciesTuning = _speciesTuningHandle.Resolve(vault);
-                NativeArray<MockWeatherSignal> weatherSignal = _mockWeatherSignalHandle.Resolve(vault);
-                NativeArray<MockPredatorProximitySignal> predatorSignal = _mockPredatorSignalHandle.Resolve(vault);
-                NativeArray<MockCombatDamageSignal> damageSignal = _mockDamageSignalHandle.Resolve(vault);
-                NativeArray<SyncPulseDTO> pulses = _syncPulsesHandle.Resolve(vault);
-                NativeArray<float> pulseAges = _syncPulseAgesHandle.Resolve(vault);
-
-                if (!glowStates.IsCreated ||
-                    !aupOrigins.IsCreated ||
-                    !speciesTuning.IsCreated ||
-                    !weatherSignal.IsCreated ||
-                    !predatorSignal.IsCreated ||
-                    !damageSignal.IsCreated ||
-                    !pulses.IsCreated ||
-                    !pulseAges.IsCreated)
+                if (!TryResolveBiolumVaultBuffer(vault, in _glowStatesHandle, BufferID.BiolumGlowStates, MaxGlowInstances, out NativeArray<GlowStateDTO> glowStates) ||
+                    !TryResolveBiolumVaultBuffer(vault, in _glowAupOriginsHandle, BufferID.BiolumGlowAupOrigins, MaxGlowInstances, out NativeArray<double3> aupOrigins) ||
+                    !TryResolveBiolumVaultBuffer(vault, in _speciesTuningHandle, BufferID.BiolumSpeciesTuning, MaxSpeciesTuningCount, out NativeArray<BiolumSpeciesTuningDTO> speciesTuning) ||
+                    !TryResolveBiolumVaultBuffer(vault, in _mockWeatherSignalHandle, BufferID.BiolumMockWeatherSignal, 1, out NativeArray<MockWeatherSignal> weatherSignal) ||
+                    !TryResolveBiolumVaultBuffer(vault, in _mockPredatorSignalHandle, BufferID.BiolumMockPredatorSignal, 1, out NativeArray<MockPredatorProximitySignal> predatorSignal) ||
+                    !TryResolveBiolumVaultBuffer(vault, in _mockDamageSignalHandle, BufferID.BiolumMockDamageSignal, 1, out NativeArray<MockCombatDamageSignal> damageSignal) ||
+                    !TryResolveBiolumVaultBuffer(vault, in _syncPulsesHandle, BufferID.BiolumSyncPulses, SyncPulseCapacity, out NativeArray<SyncPulseDTO> pulses) ||
+                    !TryResolveBiolumVaultBuffer(vault, in _syncPulseAgesHandle, BufferID.BiolumSyncPulseAges, SyncPulseCapacity, out NativeArray<float> pulseAges))
                 {
                     return;
                 }
@@ -1584,14 +1505,10 @@ namespace Hecton8.VFX.Bioluminescence
                 if (!lockedPredator)
                     return;
 
-                NativeArray<BiolumPulseStateDTO> pulseState = _pulseStateHandle.Resolve(vault);
-                NativeArray<float> profileFloats = _profileFloatsHandle.Resolve(vault);
-                NativeArray<MockWeatherSignal> weather = _mockWeatherSignalHandle.Resolve(vault);
-                NativeArray<MockPredatorProximitySignal> predator = _mockPredatorSignalHandle.Resolve(vault);
-                if (!pulseState.IsCreated ||
-                    !profileFloats.IsCreated ||
-                    !weather.IsCreated ||
-                    !predator.IsCreated)
+                if (!TryResolveBiolumVaultBuffer(vault, in _pulseStateHandle, BiolumPulseStateBufferId, 1, out NativeArray<BiolumPulseStateDTO> pulseState) ||
+                    !TryResolveBiolumVaultBuffer(vault, in _profileFloatsHandle, BufferID.BiolumProfileFloats, ProfileFloatCount, out NativeArray<float> profileFloats) ||
+                    !TryResolveBiolumVaultBuffer(vault, in _mockWeatherSignalHandle, BufferID.BiolumMockWeatherSignal, 1, out NativeArray<MockWeatherSignal> weather) ||
+                    !TryResolveBiolumVaultBuffer(vault, in _mockPredatorSignalHandle, BufferID.BiolumMockPredatorSignal, 1, out NativeArray<MockPredatorProximitySignal> predator))
                 {
                     return;
                 }
@@ -1816,8 +1733,7 @@ namespace Hecton8.VFX.Bioluminescence
             if (!vault.TryLockBuffer(BufferID.BiolumProfileFloats, SystemID.Vfx))
                 return false;
 
-            profileFloats = _profileFloatsHandle.Resolve(vault);
-            if (profileFloats.IsCreated && profileFloats.Length >= ProfileFloatCount)
+            if (TryResolveBiolumVaultBuffer(vault, in _profileFloatsHandle, BufferID.BiolumProfileFloats, ProfileFloatCount, out profileFloats))
                 return true;
 
             vault.TryUnlockBuffer(BufferID.BiolumProfileFloats, SystemID.Vfx);
@@ -1835,8 +1751,7 @@ namespace Hecton8.VFX.Bioluminescence
             if (!vault.TryLockBuffer(BufferID.BiolumBlackBox, SystemID.Vfx))
                 return false;
 
-            blackBox = _blackBoxHandle.Resolve(vault);
-            if (blackBox.IsCreated && blackBox.Length >= BlackBoxFrameCount)
+            if (TryResolveBiolumVaultBuffer(vault, in _blackBoxHandle, BufferID.BiolumBlackBox, BlackBoxFrameCount, out blackBox))
                 return true;
 
             vault.TryUnlockBuffer(BufferID.BiolumBlackBox, SystemID.Vfx);
@@ -1963,8 +1878,7 @@ namespace Hecton8.VFX.Bioluminescence
 
             try
             {
-                NativeArray<MockWeatherSignal> weatherSignal = _mockWeatherSignalHandle.Resolve(vault);
-                if (!weatherSignal.IsCreated || weatherSignal.Length <= 0)
+                if (!TryResolveBiolumVaultBuffer(vault, in _mockWeatherSignalHandle, BufferID.BiolumMockWeatherSignal, 1, out NativeArray<MockWeatherSignal> weatherSignal))
                     return;
 
                 MockWeatherSignal weather = weatherSignal[0];
@@ -1993,8 +1907,7 @@ namespace Hecton8.VFX.Bioluminescence
 
             try
             {
-                NativeArray<MockCombatDamageSignal> damageSignal = _mockDamageSignalHandle.Resolve(vault);
-                if (!damageSignal.IsCreated || damageSignal.Length <= 0)
+                if (!TryResolveBiolumVaultBuffer(vault, in _mockDamageSignalHandle, BufferID.BiolumMockDamageSignal, 1, out NativeArray<MockCombatDamageSignal> damageSignal))
                     return;
 
                 float magnitude = math.max(signal.Magnitude, 0f);
@@ -2105,8 +2018,7 @@ namespace Hecton8.VFX.Bioluminescence
 
             try
             {
-                NativeArray<MockWeatherSignal> weather = _mockWeatherSignalHandle.Resolve(vault);
-                if (!weather.IsCreated || weather.Length <= 0)
+                if (!TryResolveBiolumVaultBuffer(vault, in _mockWeatherSignalHandle, BufferID.BiolumMockWeatherSignal, 1, out NativeArray<MockWeatherSignal> weather))
                     return;
 
                 uint biomeHash = weather[0].CurrentBiomeHash;
@@ -2158,8 +2070,7 @@ namespace Hecton8.VFX.Bioluminescence
 
             try
             {
-                NativeArray<MockPredatorProximitySignal> predatorSignal = _mockPredatorSignalHandle.Resolve(vault);
-                if (!predatorSignal.IsCreated || predatorSignal.Length <= 0)
+                if (!TryResolveBiolumVaultBuffer(vault, in _mockPredatorSignalHandle, BufferID.BiolumMockPredatorSignal, 1, out NativeArray<MockPredatorProximitySignal> predatorSignal))
                     return;
 
                 predator = predatorSignal[0];
@@ -2184,9 +2095,8 @@ namespace Hecton8.VFX.Bioluminescence
                 if (!lockedAges)
                     return;
 
-                NativeArray<SyncPulseDTO> pulses = _syncPulsesHandle.Resolve(vault);
-                NativeArray<float> ages = _syncPulseAgesHandle.Resolve(vault);
-                if (!pulses.IsCreated || !ages.IsCreated)
+                if (!TryResolveBiolumVaultBuffer(vault, in _syncPulsesHandle, BufferID.BiolumSyncPulses, SyncPulseCapacity, out NativeArray<SyncPulseDTO> pulses) ||
+                    !TryResolveBiolumVaultBuffer(vault, in _syncPulseAgesHandle, BufferID.BiolumSyncPulseAges, SyncPulseCapacity, out NativeArray<float> ages))
                     return;
 
                 float waveSpeed = ResolveMockPredatorWaveSpeed(in predator);
@@ -2234,8 +2144,7 @@ namespace Hecton8.VFX.Bioluminescence
 
             try
             {
-                NativeArray<MockPredatorProximitySignal> predatorSignal = _mockPredatorSignalHandle.Resolve(vault);
-                if (!predatorSignal.IsCreated || predatorSignal.Length <= 0)
+                if (!TryResolveBiolumVaultBuffer(vault, in _mockPredatorSignalHandle, BufferID.BiolumMockPredatorSignal, 1, out NativeArray<MockPredatorProximitySignal> predatorSignal))
                     return;
 
                 MockPredatorProximitySignal signal = predatorSignal[0];
@@ -2280,8 +2189,7 @@ namespace Hecton8.VFX.Bioluminescence
 
             try
             {
-                NativeArray<BiolumSpeciesTuningDTO> species = _speciesTuningHandle.Resolve(vault);
-                if (!species.IsCreated)
+                if (!TryResolveBiolumVaultBuffer(vault, in _speciesTuningHandle, BufferID.BiolumSpeciesTuning, MaxSpeciesTuningCount, out NativeArray<BiolumSpeciesTuningDTO> species))
                     return fallback;
 
                 uint mask = predator.SpeciesMask;
@@ -2328,9 +2236,8 @@ namespace Hecton8.VFX.Bioluminescence
                 if (!lockedAges)
                     return;
 
-                NativeArray<SyncPulseDTO> pulses = _syncPulsesHandle.Resolve(vault);
-                NativeArray<float> ages = _syncPulseAgesHandle.Resolve(vault);
-                if (!pulses.IsCreated || !ages.IsCreated)
+                if (!TryResolveBiolumVaultBuffer(vault, in _syncPulsesHandle, BufferID.BiolumSyncPulses, SyncPulseCapacity, out NativeArray<SyncPulseDTO> pulses) ||
+                    !TryResolveBiolumVaultBuffer(vault, in _syncPulseAgesHandle, BufferID.BiolumSyncPulseAges, SyncPulseCapacity, out NativeArray<float> ages))
                     return;
 
                 int active = 0;
@@ -2370,8 +2277,7 @@ namespace Hecton8.VFX.Bioluminescence
 
             try
             {
-                NativeArray<MockCombatDamageSignal> damage = _mockDamageSignalHandle.Resolve(vault);
-                if (!damage.IsCreated || damage.Length <= 0)
+                if (!TryResolveBiolumVaultBuffer(vault, in _mockDamageSignalHandle, BufferID.BiolumMockDamageSignal, 1, out NativeArray<MockCombatDamageSignal> damage))
                     return;
 
                 MockCombatDamageSignal signal = damage[0];
@@ -2494,11 +2400,22 @@ namespace Hecton8.VFX.Bioluminescence
                     return;
                 }
 
-                NativeArray<byte> scratch = _csvScratchHandle.Resolve(vault);
-                NativeArray<GlowStateDTO> glowStates = lockedGlowStates ? _glowStatesHandle.Resolve(vault) : default;
-                NativeArray<BiolumSpeciesTuningDTO> species = _speciesTuningHandle.Resolve(vault);
-                NativeArray<float> profileFloats = lockedProfile ? _profileFloatsHandle.Resolve(vault) : default;
-                NativeArray<BiolumPulseStateDTO> pulseState = lockedPulse ? _pulseStateHandle.Resolve(vault) : default;
+                if (!TryResolveBiolumVaultBuffer(vault, in _csvScratchHandle, BufferID.BiolumCsvScratch, CsvScratchByteCount, out NativeArray<byte> scratch) ||
+                    !TryResolveBiolumVaultBuffer(vault, in _speciesTuningHandle, BufferID.BiolumSpeciesTuning, MaxSpeciesTuningCount, out NativeArray<BiolumSpeciesTuningDTO> species) ||
+                    !TryResolveBiolumVaultBuffer(vault, in _profileFloatsHandle, BufferID.BiolumProfileFloats, ProfileFloatCount, out NativeArray<float> profileFloats) ||
+                    !TryResolveBiolumVaultBuffer(vault, in _pulseStateHandle, BiolumPulseStateBufferId, 1, out NativeArray<BiolumPulseStateDTO> pulseState))
+                {
+                    retryWhenVaultUnlocks = true;
+                    return;
+                }
+
+                NativeArray<GlowStateDTO> glowStates = default;
+                if (lockedGlowStates &&
+                    !TryResolveBiolumVaultBuffer(vault, in _glowStatesHandle, BufferID.BiolumGlowStates, MaxGlowInstances, out glowStates))
+                {
+                    retryWhenVaultUnlocks = true;
+                    return;
+                }
                 int bytesRead = TryReadCsvOverrideIntoScratch(scratch, out long writeTicks);
                 if (!scratch.IsCreated || !species.IsCreated || bytesRead <= 0)
                     return;
@@ -2914,18 +2831,12 @@ namespace Hecton8.VFX.Bioluminescence
                 if (!lockedPulseAges)
                     return;
 
-                NativeArray<BiolumPulseStateDTO> pulseState = _pulseStateHandle.Resolve(vault);
-                NativeArray<float> profileFloats = _profileFloatsHandle.Resolve(vault);
-                NativeArray<MockWeatherSignal> weather = _mockWeatherSignalHandle.Resolve(vault);
-                NativeArray<MockPredatorProximitySignal> predator = _mockPredatorSignalHandle.Resolve(vault);
-                NativeArray<SyncPulseDTO> syncPulses = _syncPulsesHandle.Resolve(vault);
-                NativeArray<float> syncPulseAges = _syncPulseAgesHandle.Resolve(vault);
-                if (!pulseState.IsCreated ||
-                    !profileFloats.IsCreated ||
-                    !weather.IsCreated ||
-                    !predator.IsCreated ||
-                    !syncPulses.IsCreated ||
-                    !syncPulseAges.IsCreated)
+                if (!TryResolveBiolumVaultBuffer(vault, in _pulseStateHandle, BiolumPulseStateBufferId, 1, out NativeArray<BiolumPulseStateDTO> pulseState) ||
+                    !TryResolveBiolumVaultBuffer(vault, in _profileFloatsHandle, BufferID.BiolumProfileFloats, ProfileFloatCount, out NativeArray<float> profileFloats) ||
+                    !TryResolveBiolumVaultBuffer(vault, in _mockWeatherSignalHandle, BufferID.BiolumMockWeatherSignal, 1, out NativeArray<MockWeatherSignal> weather) ||
+                    !TryResolveBiolumVaultBuffer(vault, in _mockPredatorSignalHandle, BufferID.BiolumMockPredatorSignal, 1, out NativeArray<MockPredatorProximitySignal> predator) ||
+                    !TryResolveBiolumVaultBuffer(vault, in _syncPulsesHandle, BufferID.BiolumSyncPulses, SyncPulseCapacity, out NativeArray<SyncPulseDTO> syncPulses) ||
+                    !TryResolveBiolumVaultBuffer(vault, in _syncPulseAgesHandle, BufferID.BiolumSyncPulseAges, SyncPulseCapacity, out NativeArray<float> syncPulseAges))
                 {
                     return;
                 }
@@ -3055,8 +2966,7 @@ namespace Hecton8.VFX.Bioluminescence
             float strongest = -1f;
             int strongestProfile = 0;
             IDataVault vault = _dataVault;
-            NativeArray<BiolumPulseStateDTO> pulseState = vault != null ? _pulseStateHandle.Resolve(vault) : default;
-            if (!pulseState.IsCreated || pulseState.Length <= 0)
+            if (!TryResolveBiolumVaultBuffer(vault, in _pulseStateHandle, BiolumPulseStateBufferId, 1, out NativeArray<BiolumPulseStateDTO> pulseState))
                 return false;
 
             BiolumPulseStateDTO stateDto = pulseState[0];
@@ -3238,7 +3148,7 @@ namespace Hecton8.VFX.Bioluminescence
         private bool CopyBlackBoxDumpSnapshot(byte reason, NativeArray<BiolumPulseTelemetryEntry> blackBox)
         {
             IDataVault vault = _dataVault;
-            if (vault == null || !blackBox.IsCreated || !_blackBoxDumpScratchHandle.IsCreated)
+            if (vault == null || !blackBox.IsCreated || !HasBiolumVaultBuffer(vault, in _blackBoxDumpScratchHandle, BiolumBlackBoxDumpScratchBufferId, BlackBoxDumpByteCount))
                 return false;
 
             if (!vault.TryLockBuffer(BiolumBlackBoxDumpScratchBufferId, SystemID.Vfx))
@@ -3246,8 +3156,7 @@ namespace Hecton8.VFX.Bioluminescence
 
             try
             {
-                NativeArray<byte> bytes = _blackBoxDumpScratchHandle.Resolve(vault);
-                if (!bytes.IsCreated || bytes.Length < BlackBoxDumpByteCount)
+                if (!TryResolveBiolumVaultBuffer(vault, in _blackBoxDumpScratchHandle, BiolumBlackBoxDumpScratchBufferId, BlackBoxDumpByteCount, out NativeArray<byte> bytes))
                     return false;
 
                 int sourceCount = blackBox.Length;
@@ -3318,7 +3227,7 @@ namespace Hecton8.VFX.Bioluminescence
 
             try
             {
-                if (!_blackBoxDumpScratchHandle.IsCreated || _blackBoxDumpScratchHandle.Length < BlackBoxDumpByteCount)
+                if (!HasBiolumVaultBuffer(_dataVault, in _blackBoxDumpScratchHandle, BiolumBlackBoxDumpScratchBufferId, BlackBoxDumpByteCount))
                 {
                     Volatile.Write(ref _blackBoxDumpState, BlackBoxDumpStateFailed);
                     return;
@@ -3412,7 +3321,7 @@ namespace Hecton8.VFX.Bioluminescence
         {
             int count = Volatile.Read(ref _blackBoxDumpByteCount);
             IDataVault vault = _dataVault;
-            if (vault == null || count <= 0 || !_blackBoxDumpScratchHandle.IsCreated)
+            if (vault == null || count <= 0 || !HasBiolumVaultBuffer(vault, in _blackBoxDumpScratchHandle, BiolumBlackBoxDumpScratchBufferId, BlackBoxDumpByteCount))
                 return false;
 
             if (!vault.TryLockBuffer(BiolumBlackBoxDumpScratchBufferId, SystemID.Vfx))
@@ -3420,8 +3329,8 @@ namespace Hecton8.VFX.Bioluminescence
 
             try
             {
-                NativeArray<byte> bytes = _blackBoxDumpScratchHandle.Resolve(vault);
-                if (!bytes.IsCreated || count > bytes.Length)
+                if (!TryResolveBiolumVaultBuffer(vault, in _blackBoxDumpScratchHandle, BiolumBlackBoxDumpScratchBufferId, BlackBoxDumpByteCount, out NativeArray<byte> bytes) ||
+                    count > bytes.Length)
                     return false;
 
                 bool wrotePrimary = WriteBlackBoxDumpBytes(_blackBoxDumpPath, bytes, count);

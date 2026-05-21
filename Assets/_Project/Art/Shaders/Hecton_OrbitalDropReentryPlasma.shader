@@ -6,7 +6,7 @@ Shader "HECTON/Prologue/OrbitalDropReentryPlasma"
         _PlasmaOpacity ("Plasma Opacity", Range(0, 1)) = 0
         _PlasmaVelocity ("Plasma Velocity", Range(0, 1)) = 0
         _PlasmaAltitude01 ("Altitude Scalar", Range(0, 1)) = 1
-        _PlasmaLowTier ("Low Tier Solid Fade", Range(0, 1)) = 1
+        _PlasmaQualityPressure ("Quality Pressure Blend", Range(0, 1)) = 1
         _HectonReentryPhase ("Reentry Phase", Float) = 0
         [HDR]_PlasmaCoreColor ("Core Plasma", Color) = (5.2, 1.35, 0.22, 1)
         [HDR]_PlasmaEdgeColor ("Edge Plasma", Color) = (2.6, 0.12, 1.75, 1)
@@ -53,7 +53,7 @@ Shader "HECTON/Prologue/OrbitalDropReentryPlasma"
                 half _PlasmaOpacity;
                 half _PlasmaVelocity;
                 half _PlasmaAltitude01;
-                half _PlasmaLowTier;
+                half _PlasmaQualityPressure;
                 half _HectonReentryPhase;
                 half4 _PlasmaCoreColor;
                 half4 _PlasmaEdgeColor;
@@ -126,10 +126,8 @@ Shader "HECTON/Prologue/OrbitalDropReentryPlasma"
                 half heat = saturate(_PlasmaHeat);
                 half whiteout = smoothstep(0.82h, 1.0h, opacity);
                 half3 whiteHot = half3(1.0h, 0.72h, 0.36h) * 4.5h;
-                half3 lowTierColor = lerp(_PlasmaCoreColor.rgb * (0.35h + heat), whiteHot, whiteout);
-
-                if (_PlasmaLowTier > 0.5h)
-                    return half4(lowTierColor, opacity);
+                half qualityPressure = saturate(_PlasmaQualityPressure);
+                half3 minimumQualityColor = lerp(_PlasmaCoreColor.rgb * (0.35h + heat), whiteHot, whiteout);
 
                 float2 centered = input.uv * 2.0 - 1.0;
                 half radial = (half)saturate(dot(centered, centered));
@@ -156,6 +154,7 @@ Shader "HECTON/Prologue/OrbitalDropReentryPlasma"
                 plasmaColor += _RayleighColor.rgb * cloud * opacity;
                 plasmaColor += _PlasmaEdgeColor.rgb * edge * shock * heat;
                 plasmaColor = lerp(plasmaColor, whiteHot, whiteout);
+                plasmaColor = lerp(plasmaColor, minimumQualityColor, qualityPressure);
 
                 half alpha = saturate(opacity * (0.72h + plasma * 0.28h + edge * 0.18h));
                 alpha = lerp(alpha, 1.0h, whiteout);

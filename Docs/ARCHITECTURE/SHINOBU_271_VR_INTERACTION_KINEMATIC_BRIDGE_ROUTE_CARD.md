@@ -68,7 +68,7 @@ Profiler marker:
 - pending. Static CPU timing uses `Stopwatch.GetTimestamp()` in the controller bridge and writes microseconds into telemetry.
 
 Compile proof:
-- `dotnet build Hecton8.slnx --no-restore -nologo -v:minimal -maxcpucount:1 /nr:false /p:UseSharedCompilation=false /p:GenerateFullPaths=true` returned `EXIT_CODE=0` in `Docs/AgentLogs/Build_SHINOBU_271_solution_loop13_06.log` with `100 Warning(s)`, `0 Error(s)`.
+- `dotnet build Hecton8.slnx --no-restore -nologo -v:minimal -maxcpucount:1 /nr:false /p:UseSharedCompilation=false /p:GenerateFullPaths=true` returned `EXIT_CODE=0` in `Docs/AgentLogs/Build_SHINOBU_271_solution_loop13_08.log` with `7 Warning(s)`, `0 Error(s)`.
 
 GC proof required:
 - Unity Profiler / GCMonitor capture in Play Mode. Static source proof only exists now.

@@ -1738,7 +1738,16 @@ namespace Hecton8.Gameplay
                 new Vector4(impactPosition.x, impactPosition.y, impactPosition.z, math.saturate(intensity)));
             Shader.SetGlobalVector(
                 _ShaderMeteorWaterImpactParams,
-                new Vector4(math.max(0f, radius), math.max(0f, duration), Time.time, math.saturate(intensity)));
+                new Vector4(
+                    math.max(0f, radius),
+                    math.max(0f, duration),
+                    ResolveMeteorWaterImpactShaderClockSeconds(),
+                    math.saturate(intensity)));
+        }
+
+        private static float ResolveMeteorWaterImpactShaderClockSeconds()
+        {
+            return Time.timeSinceLevelLoad;
         }
 
         private bool TryResolveSeismicContext(

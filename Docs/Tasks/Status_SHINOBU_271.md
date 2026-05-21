@@ -35,7 +35,7 @@ Load-shed fallback: continuous GlobalQualityWeight now drives a 2..8 presentatio
 - [x] Removed Unity frame counter authority from physical panel sampling and suit damage events. Panel samples use an owner-local monotonic index; suit damage uses the controller fixed-step frame.
 - [x] Deferred SHINOBU fault dump file IO out of fixed-step. Fixed-step only marks a pending dump; `LateFrameTick`/teardown flushes the black-box writer.
 - [x] Changed finger spherecast jobs to deterministic Burst float mode because they sit in the VR kinematics/haptic presentation route.
-- [x] Repaired proof artifacts: dedicated and shared physics reports now carry the Loop 12 solution compile proof and explicit Unity/profiler/device proof limits.
+- [x] Repaired proof artifacts: dedicated and shared physics reports now carry the Loop 13 solution compile proof and explicit Unity/profiler/device proof limits.
 - [x] Replaced fragile shared-report string surgery in `VRPhysicsInquisition` with `Newtonsoft.Json.Linq.JObject` mutation in the editor-only path.
 - [x] Loop 13 compile proof: narrow `Hecton8.Core.csproj` and `Hecton8.Editor.csproj` builds passed, then current-source `Hecton8.slnx` passed in `Docs/AgentLogs/Build_SHINOBU_271_solution_loop13_08.log` with `EXIT_CODE=0`.
 
@@ -48,9 +48,9 @@ Load-shed fallback: continuous GlobalQualityWeight now drives a 2..8 presentatio
 - [x] Subagent B finding fixed: unnecessary `NativeDisableParallelForRestriction` attributes were removed from bridge jobs; `[NoAlias]` and `[ReadOnly]` remain.
 - [x] Subagent B ownership risk mitigated: live same-frame Vault writes now acquire `IDataVault.TryAcquireMutationGuard(1UL << 46)` for the bridge mutation window and release it in `finally`.
 - [x] Live controller DTO route hardened: `VRControllerMatrixDTO.PlayerRootAUP` now carries `tuning.PlayerRootAUP`, and matrix translation is controller-local-to-root instead of relying on runtime-origin coincidence.
-- [x] Build metadata amended for owned files: `Hecton8.Core.csproj` now includes `Interaction/VRInteractionKinematicBridge.cs`, and `Hecton8.Editor.csproj` now includes `Editor/VRPhysicsInquisition.cs`. The unrelated missing `IBuildPlacementRule.cs` reference remains untouched.
+- [x] Build metadata amended for owned files: `Hecton8.Core.csproj` now includes `Interaction/VRInteractionKinematicBridge.cs`, and `Hecton8.Editor.csproj` now includes `Editor/VRPhysicsInquisition.cs`. Historical external project metadata blocker was later superseded by the Loop 13 solution proof.
 - [x] Verification: runtime joint scan is zero; runtime bridge/controller scan is zero for `MovePosition`, `GlobalSignals.CurrentRuntimeOriginAup`, `NativeDisableParallelForRestriction`, `new byte[]`, `File.WriteAllBytes`, `_kinematicOverBudgetDumped`, and raw `math.hash(state...)`.
-- [x] Compile proof: blocked by external stale/missing project source `Assets/_Project/Scripts/IBuildPlacementRule.cs`; SHINOBU_271 files were not reached by the compiler.
+- [x] Historical compile gate: early stale/missing project-source blocker was later superseded by Loop 13 current-source solution build green.
 
 ## Loop 8 Route Proof Tightening
 
@@ -60,13 +60,13 @@ Load-shed fallback: continuous GlobalQualityWeight now drives a 2..8 presentatio
 - [x] Verification: braces balanced for `PhysicalHandController.cs` (`216/216`), `VRInteractionKinematicBridge.cs` (`107/107`), and `VRPhysicsInquisition.cs` (`68/68`).
 - [x] Verification: JSON proof files still parse through `ConvertFrom-Json`; `git diff --check` has no whitespace errors, only CRLF normalization warnings.
 - [x] Verification: runtime joint scan excluding editor-only scripts remains zero for `SpringJoint`, `ConfigurableJoint`, and `FixedJoint`.
-- [x] Build gate: latest CPU sample `73.9%`, `csc=0`, `dotnet=0`; no build launched. Existing external blocker remains `Hecton8.Core.csproj:766` missing `Assets/_Project/Scripts/IBuildPlacementRule.cs`.
+- [x] Historical build gate: this early no-build state was superseded by Loop 13 current-source solution build green.
 
 ## Loop 9 Compile-Rebuild Repair Pass
 
-- [x] Fixed hot `CombatDamageSignal` determinism defect: SHINOBU_271 velocity signal now uses `_kinematicBridgeFrameIndex` instead of `Time.frameCount`.
+- [x] Fixed hot `CombatDamageSignal` determinism defect: SHINOBU_271 velocity signal now uses `_kinematicBridgeFrameIndex` instead of Unity's frame counter.
 - [x] Fixed signal payload purity: `IntegrityDelta` now derives from deterministic speed versus `VelocitySignalThreshold`; measured `elapsedMicros` remains telemetry-only and no longer changes the signal payload.
-- [x] Verification: remaining `Time.frameCount` references in `PhysicalHandController.cs` are legacy suit damage cold frame/latch routes and the SHINOBU_271 fault dump throttle, not the kinematic velocity signal.
+- [x] Verification: `PhysicalHandController.cs` no longer contains Unity frame-count reads after Loop 13; suit damage and fault dump throttling now use owner-local state.
 - [x] Compile wall triage: subagent review confirmed `Hecton8.Core` was mixing nested asmdef source files with sibling DLL references; the prior sibling-DLL strip was removed because it made Core own contracts/memory facts it should consume.
 - [x] MSBuild boundary repair: `Directory.Build.targets` now prunes nested asmdef and editor sources from `Hecton8.Core` immediately before `CoreCompile`, preserving sibling assembly references instead of compiling duplicate source ownership.
 - [x] Verification: `Directory.Build.targets` parses as XML after the boundary repair.

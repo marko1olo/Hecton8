@@ -1070,6 +1070,7 @@ namespace Hecton8.Celestial
         private const float FirmamentStarBakeThreadsInv = 0.015625f;
         private const float HorizonDensityQuarter = 0.25f;
         private const float CelestialTimelineStepSeconds = 0.1f;
+        private const float CelestialTimelineClockMaxSeconds = 16777215f;
         private const int CelestialSnapshotFrameIntervalHigh = 60;
         private const int CelestialSnapshotFrameIntervalLow = 300;
         private const float OrbitDegreesToTurns = 0.0027777778f;
@@ -1716,7 +1717,7 @@ namespace Hecton8.Celestial
             }
 
             long timelineStartTicks = System.Diagnostics.Stopwatch.GetTimestamp();
-            float now = Time.time;
+            float now = ResolveCelestialTimelineClockSeconds();
             float elapsed = _lastCelestialSlowTickTime > 0f
                 ? math.clamp(now - _lastCelestialSlowTickTime, CelestialTimelineStepSeconds, CelestialTimelineStepSeconds * CelestialTimelineMaxStepsPerSlowTick)
                 : CelestialTimelineStepSeconds;
@@ -1735,6 +1736,19 @@ namespace Hecton8.Celestial
             }
 
             PublishCelestialTimelineBudgetWarningIfNeeded(timelineStartTicks);
+        }
+
+        private static float ResolveCelestialTimelineClockSeconds()
+        {
+            SystemDispatcher dispatcher = SystemDispatcher.ActiveRuntimeInstance;
+            if (dispatcher == null)
+                return 0f;
+
+            double timeSeconds = dispatcher.DilatedTimeSeconds;
+            if (!math.isfinite(timeSeconds) || timeSeconds <= 0d)
+                return 0f;
+
+            return (float)math.min(CelestialTimelineClockMaxSeconds, timeSeconds);
         }
 
         private void PublishCelestialTimelineBudgetWarningIfNeeded(long timelineStartTicks)
