@@ -380,3 +380,19 @@ Solution: Active `dotnet` PID 30716 and `csc` PID 14152 were present; CPU was 73
 Rejected Alternatives: Starting a competing compiler, killing unrelated build work, or treating a borderline 50.23% sample as permission while an active compiler process exists.
 Scalability potential: No runtime route change.
 Hardware Impact: Protects shared workstation CPU/IO. Compile remains PENDING VERIFICATION.
+
+### D047 Visor Vault Descriptor Release Route
+
+Problem: `HectonVisorARStencilRendererFeature` requested visual-only `VaultGenerationHandle<T>` lanes from `GlobalDataVault`, then dropped local descriptors through `ClearVaultHandles()` on DataVault replacement and feature disposal. Clearing a descriptor is not ownership release; it can leave Vault reference counts alive, block compaction, and make hot-swap state ambiguous.
+Solution: Added `ReleaseVaultHandles(IDataVault)` and a typed `ReleaseVaultHandle<T>()` helper. Dispose, DataVault service replacement, and cold service rebind now call `IDataVault.ReleaseBuffer(in handle)` for all seven owned SHINOBU_270 descriptors before tombstoning them. Removed the clear-only helper so the local pattern is release-first.
+Rejected Alternatives: Broad `ReleaseOwnerBuffers(SystemID.UI)` was rejected because UI owns neighboring lanes. Keeping descriptor-only clear was rejected because it hides native ownership. Manual generated `.csproj` edits were rejected because the compile project is Unity-generated and stale.
+Scalability potential: Low/Middle/High/Ultra render behavior is unchanged. This protects the same continuous `GlobalQualityWeight` shader route by preventing cold lifecycle leaks during renderer reloads and DataVault hot-swap.
+Hardware Impact: Steady-frame impact 0 us. On i3/MX350-class hardware this prevents accumulated native buffer residency and compaction pressure during repeated renderer reloads; exact memory delta requires Unity Memory Profiler proof.
+
+### D048 Build Gate After Vault Lifecycle Patch
+
+Problem: Compile proof is still pending after the Vault lifecycle patch, but AGENTS.md forbids starting `dotnet build` while another compiler is active or CPU exceeds 50%.
+Solution: Re-ran targeted forbidden-token scan and diff check, then sampled build gates. The scan returned no hits for SHINOBU_270 risk tokens. `git diff --check` reported only Git LF-to-CRLF warning. Active `dotnet` PID 34832 and `csc` PID 15644 were present; CPU was 100% by CIM and 90.05%, 82.47%, 86.72% by processor counter samples. Build was not launched.
+Rejected Alternatives: Launching a competing compiler, killing unrelated compiler work, building against stale generated project files, or claiming compile proof from static scans.
+Scalability potential: No runtime route change.
+Hardware Impact: Protects shared workstation CPU/IO. Compile remains PENDING VERIFICATION until project files regenerate/import SHINOBU_270 scripts and the build gate is legally open.
