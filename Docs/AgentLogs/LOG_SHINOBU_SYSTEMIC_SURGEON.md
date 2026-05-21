@@ -2987,3 +2987,21 @@ Verification:
     Targeted `rg` found no remaining `ScalabilityChangedEvent`, `ResolveQualityTierFallbackWeight`, `CurrentQualityTier`, `GlobalRegistry.ScalabilityTier`, `GlobalRegistry.MathPrecisionLowBlend01`, `H8_LOW_MEMORY_PROFILE`, or `lowTierFrameSignals: 8` in `AdaptiveStemAudioMixer.cs`. `AdvancedAcousticsSmokeTester` now reads the mixer source and asserts the continuous vault route plus 64-frame minimum signal capacity. `git diff --check` passed with line-ending warnings only. Compile Check 100 was skipped because `VBCSCompiler` was active while CPU was 0%.
   </VERIFICATION>
 </SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="DynamicMusicScalarLaneCapacityUnification">
+  <WHAT_WAS_WRONG>
+    `HectonMusicDirector` and `DynamicMusicGranularSynthesizer` still configured `DynamicMusicScalarSignal` with `lowTierFrameSignals: 8`, so the shared lane could silently revert to binary event shedding even after `AdaptiveStemAudioMixer` was fixed.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Set all touched dynamic-music scalar lane owners to full 64-frame minimum-quality capacity and extended `AdvancedAcousticsSmokeTester` to check adaptive stem, music director, and granular synth configuration.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    Dynamic music remains a scalar-driven illusion: tension, depth, damage impulse, stinger impulse, and pitch kick feed one procedural synth lane; hardware pressure now affects continuous synthesis quality and cadence, not signal drop.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. This preserves route fidelity and removes a binary capacity branch from the shared music-scalar setup.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted `rg` found no `lowTierFrameSignals: 8`, `ScalabilityChangedEvent`, `ResolveQualityTierFallbackWeight`, `CurrentQualityTier`, `GlobalRegistry.ScalabilityTier`, `GlobalRegistry.MathPrecisionLowBlend01`, or `H8_LOW_MEMORY_PROFILE` in `AdaptiveStemAudioMixer.cs`, `HectonMusicDirector.cs`, or `DynamicMusicGranularSynthesizer.cs`. `git diff --check` passed with line-ending warnings only. Compile Check 101 was skipped because active `dotnet` and `csc` processes were present while CPU was 18%.
+  </VERIFICATION>
+</SELF_AUDIT>

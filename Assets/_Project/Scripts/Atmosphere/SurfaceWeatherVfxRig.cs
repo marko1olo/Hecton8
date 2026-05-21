@@ -170,9 +170,14 @@ namespace Hecton8.Atmosphere
             Vector4 impulse;
             impulse.x = centerPosition.x;
             impulse.y = centerPosition.z;
-            impulse.z = Time.time;
+            impulse.z = ResolveWeatherShaderClockSeconds();
             impulse.w = clampedIntensity;
             Shader.SetGlobalVector(_SurfaceSplashImpulseId, impulse);
+        }
+
+        private static float ResolveWeatherShaderClockSeconds()
+        {
+            return Time.timeSinceLevelLoad;
         }
 
         /// <summary>

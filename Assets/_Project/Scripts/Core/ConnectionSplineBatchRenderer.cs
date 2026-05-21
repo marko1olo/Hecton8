@@ -510,7 +510,7 @@ namespace Hecton8.Core
             {
                 descriptor.Flags |= PipeRenderFlags.MaskRuptured;
                 if (descriptor.RuptureStartTimeSeconds <= 0f)
-                    descriptor.RuptureStartTimeSeconds = math.max(0.001f, Time.time);
+                    descriptor.RuptureStartTimeSeconds = math.max(0.001f, ResolvePipeShaderClockSeconds());
             }
             else
             {
@@ -528,6 +528,11 @@ namespace Hecton8.Core
         private float ResolvePipeNodeFlow(uint nodeId)
         {
             return _pipeNodeFlow01.TryGetValue(nodeId, out float flow01) ? flow01 : 0f;
+        }
+
+        private static float ResolvePipeShaderClockSeconds()
+        {
+            return Time.timeSinceLevelLoad;
         }
 
         private static bool PipeLinkContainsNode(long linkId, uint nodeId)

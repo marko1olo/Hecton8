@@ -639,6 +639,7 @@ namespace Hecton8.Environment
         private const int TectonicDustBiomeIdA = 7;
         private const int TectonicDustBiomeIdB = 9;
         private const int TectonicDustBiomeIdC = 11;
+        private const float BiomeMatrixClockMaxSeconds = 16777215f;
 
         [Header("References")]
         [SerializeField] private Transform playerTransform;
@@ -1040,7 +1041,7 @@ namespace Hecton8.Environment
             if (profile == null || !ShouldEmitSeismicDust(profile))
                 return;
 
-            float now = Time.time;
+            float now = ResolveBiomeMatrixClockSeconds();
             if (now - _lastSeismicDustTime < Mathf.Max(1f, seismicDustCooldownSeconds))
                 return;
 
@@ -1063,6 +1064,19 @@ namespace Hecton8.Environment
             fluidDecals.RegisterSeismicDust(dustPosition, profile.seismicDustRadiusScale);
             _lastSeismicDustTime = now;
             _debugLastSeismicDustBiomeId = profile.matrixIndex;
+        }
+
+        private static float ResolveBiomeMatrixClockSeconds()
+        {
+            SystemDispatcher dispatcher = SystemDispatcher.ActiveRuntimeInstance;
+            if (dispatcher == null)
+                return 0f;
+
+            double timeSeconds = dispatcher.DilatedTimeSeconds;
+            if (!math.isfinite(timeSeconds) || timeSeconds <= 0d)
+                return 0f;
+
+            return (float)math.min(BiomeMatrixClockMaxSeconds, timeSeconds);
         }
 
         private static bool ShouldEmitSeismicDust(HectonBiomeMatrixProfile profile)

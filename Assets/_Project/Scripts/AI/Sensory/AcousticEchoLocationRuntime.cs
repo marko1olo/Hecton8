@@ -674,7 +674,6 @@ namespace Hecton8.AI.Sensory
             }
 
             _cachedQualityWeightByte = ResolveQualityWeightByte();
-            ConsumeScalabilityChangedSignals();
             int tapCount = DrainEchoTapQueue(frameTaps, frame, currentTime);
             tapCount = AppendMovementSignals(frameTaps, tapCount, frame, currentTime);
             tapCount = AppendAcousticPingSignals(frameTaps, tapCount, frame, currentTime);
@@ -887,13 +886,6 @@ namespace Hecton8.AI.Sensory
             x = math.select(x, -Pi - x, x < -HalfPi);
             float x2 = x * x;
             return x * (1f + x2 * (-0.16666667f + x2 * (0.008333331f + x2 * -0.000198409f)));
-        }
-
-        private static void ConsumeScalabilityChangedSignals()
-        {
-            ReadOnlySpan<ScalabilityChangedEvent> signals = SignalBus<ScalabilityChangedEvent>.GetFrameSnapshot();
-            if (signals.Length > 0)
-                _cachedQualityWeightByte = ResolveQualityWeightByte();
         }
 
         private static AbsoluteUniversePosition ToAbsoluteUniversePosition(in AcousticAup aup)

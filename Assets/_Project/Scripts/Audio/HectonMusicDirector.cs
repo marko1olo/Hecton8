@@ -1266,7 +1266,7 @@ namespace Hecton8.Audio
             SignalBus<DynamicMusicScalarSignal>.Configure(
                 expectedCapacity: 32,
                 maxFrameSignals: 64,
-                lowTierFrameSignals: 8,
+                lowTierFrameSignals: 64,
                 laneHash: DynamicMusicScalarSignal.LaneHash);
             SignalBus<DynamicMusicScalarSignal>.EnsureInitialized();
         }

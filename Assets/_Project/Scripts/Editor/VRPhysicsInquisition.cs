@@ -29,7 +29,7 @@ namespace Hecton8.Editor
         private const string RootPath = "Assets/_Project/Scripts";
         private const string SharedReportKey = "shinobu271VRKinematicBridgeScanner";
         private const string CompileProof =
-            "dotnet build Hecton8.slnx --no-restore -nologo -v:minimal -maxcpucount:1 /nr:false /p:UseSharedCompilation=false /p:GenerateFullPaths=true returned EXIT_CODE=0 in Docs/AgentLogs/Build_SHINOBU_271_solution_loop12_23.log with 14 Warning(s), 0 Error(s).";
+            "dotnet build Hecton8.slnx --no-restore -nologo -v:minimal -maxcpucount:1 /nr:false /p:UseSharedCompilation=false /p:GenerateFullPaths=true returned EXIT_CODE=0 in Docs/AgentLogs/Build_SHINOBU_271_solution_loop13_06.log with 100 Warning(s), 0 Error(s).";
         private const string RuntimeProofLimit =
             "Unity import, Unity Console, Play Mode GCMonitor, profiler captures, player-build, Quest/Steam Deck runtime, and live VR device proof remain pending.";
 

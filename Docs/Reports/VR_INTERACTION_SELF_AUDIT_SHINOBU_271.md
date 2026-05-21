@@ -64,7 +64,7 @@
   </REGRESSION_MODEL>
 
   <HOT_PATH_IMPACT>
-    Static estimate: removing default hand PhysX proxy saves 30-120 microseconds on contact-heavy low-end frames; SDF solve target is 20-60 microseconds for two hands. Dotnet solution compile proof is green in `Docs/AgentLogs/Build_SHINOBU_271_solution_loop12_23.log`; no Unity Profiler or GCMonitor capture has been run.
+    Static estimate: removing default hand PhysX proxy saves 30-120 microseconds on contact-heavy low-end frames; SDF solve target is 20-60 microseconds for two hands. Dotnet solution compile proof is green in `Docs/AgentLogs/Build_SHINOBU_271_solution_loop13_06.log`; no Unity Profiler or GCMonitor capture has been run.
   </HOT_PATH_IMPACT>
 
   <FAILURE_MODES>

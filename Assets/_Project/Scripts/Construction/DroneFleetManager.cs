@@ -568,6 +568,7 @@ namespace Hecton8.Construction
         private const float PhantomDroneScaleMeters = 0.18f;
         private const float PhantomDroneBoundsDiameterMeters = 64f;
         private const float PhantomDronePhaseWrapSeconds = 60f;
+        private const float HeadlessSimulationClockMaxSeconds = 16777215f;
         private const float DroneRelaySubmarineDistanceMeters = 100f;
         private const float DroneRelayScanRadiusMeters = 160f;
         private const float DroneRelayPingRadiusMeters = 220f;
@@ -836,6 +837,7 @@ namespace Hecton8.Construction
         private static int s_DroneRenderLayer;
         private static float s_HeadlessTaskRebuildTimer;
         private static float s_LastHeadlessDeltaTime;
+        private static float s_HeadlessSimulationClockSeconds;
         private static float s_PhantomDronePhaseSeconds;
         private static int s_PhantomDroneLastDrawCount;
         private static int s_DroneMatrixUploadBufferIndex;
@@ -970,6 +972,7 @@ namespace Hecton8.Construction
             s_DroneRenderLayer = 0;
             s_HeadlessTaskRebuildTimer = 0f;
             s_LastHeadlessDeltaTime = 0f;
+            s_HeadlessSimulationClockSeconds = 0f;
             s_PhantomDronePhaseSeconds = 0f;
             s_PhantomDroneLastDrawCount = -1;
             s_DroneMatrixUploadBufferIndex = 0;
@@ -1721,8 +1724,9 @@ namespace Hecton8.Construction
             if (s_HeadlessJobScheduled || CountManagedHeadlessDrones() <= 0)
                 return;
 
-            s_LastHeadlessDeltaTime = Mathf.Max(0f, deltaTime);
-            BuildHeadlessTaskMap(deltaTime);
+            s_LastHeadlessDeltaTime = SanitizeHeadlessDeltaTime(deltaTime);
+            AdvanceHeadlessSimulationClock(s_LastHeadlessDeltaTime);
+            BuildHeadlessTaskMap(s_LastHeadlessDeltaTime);
             BuildHeadlessSpatialHash();
             ClearHeadlessTaskClaims();
             ClearFleetTelemetryAccumulator();
@@ -1820,7 +1824,7 @@ namespace Hecton8.Construction
             job.AbyssalFlowWaterLevel = abyssalFlowSurfaceY;
             job.AbyssalFlowDepthMeters = abyssalFlowDepthMeters;
             job.BaseFlowVelocity = ToFloat3(baseFlowVelocity);
-            job.PhantomFlowTime = Time.time;
+            job.PhantomFlowTime = ResolveHeadlessSimulationClockSeconds();
             job.PhantomFlowNoiseScale = phantomFlowNoiseScale;
             job.PhantomFlowTimeScale = phantomFlowTimeScale;
             job.PhantomFlowStrength = phantomFlowStrength;
@@ -1866,6 +1870,26 @@ namespace Hecton8.Construction
                 s_HeadlessJobHandle = matrixHandle;
             }
             s_HeadlessJobScheduled = true;
+        }
+
+        private static float SanitizeHeadlessDeltaTime(float deltaTime)
+        {
+            return math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f;
+        }
+
+        private static void AdvanceHeadlessSimulationClock(float deltaTime)
+        {
+            if (deltaTime <= 0f)
+                return;
+
+            s_HeadlessSimulationClockSeconds = math.min(
+                HeadlessSimulationClockMaxSeconds,
+                s_HeadlessSimulationClockSeconds + deltaTime);
+        }
+
+        private static float ResolveHeadlessSimulationClockSeconds()
+        {
+            return s_HeadlessSimulationClockSeconds;
         }
 
         private static JobHandle ScheduleDroneMacroAStar(

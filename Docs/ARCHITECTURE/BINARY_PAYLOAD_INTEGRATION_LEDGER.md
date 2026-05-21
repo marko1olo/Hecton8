@@ -101,7 +101,7 @@ Evidence class: STATIC_SOURCE / FILESYSTEM path check. These anchors prove curre
 
 ## 2026-05-21 SHINOBU_271 VR Interaction Kinematic Bridge Payload Boundary
 
-- Owner: `SHINOBU_271 / VR_INTERACTION_KINEMATIC_BRIDGE`, Echelon 4 Player/Kinematics VR hand route. Route card: `Docs/ARCHITECTURE/SHINOBU_271_VR_INTERACTION_KINEMATIC_BRIDGE_ROUTE_CARD.md` (`YELLOW`). Evidence class: STATIC_SOURCE / STATIC_DOC / STATIC_SCANNER / DOTNET_SOLUTION_COMPILE. `Docs/AgentLogs/Build_SHINOBU_271_solution_loop12_23.log` reports `EXIT_CODE=0`, `14 Warning(s)`, `0 Error(s)`. Unity import, Unity Console, Play Mode, profiler/GCMonitor, Quest/Steam Deck runtime, and player-build proof remain pending.
+- Owner: `SHINOBU_271 / VR_INTERACTION_KINEMATIC_BRIDGE`, Echelon 4 Player/Kinematics VR hand route. Route card: `Docs/ARCHITECTURE/SHINOBU_271_VR_INTERACTION_KINEMATIC_BRIDGE_ROUTE_CARD.md` (`YELLOW`). Evidence class: STATIC_SOURCE / STATIC_DOC / STATIC_SCANNER / DOTNET_SOLUTION_COMPILE. `Docs/AgentLogs/Build_SHINOBU_271_solution_loop13_06.log` reports `EXIT_CODE=0`, `100 Warning(s)`, `0 Error(s)`. Unity import, Unity Console, Play Mode, profiler/GCMonitor, Quest/Steam Deck runtime, and player-build proof remain pending.
 - BufferIDs: local numeric `73680..73687`, owned by `SystemID.GameplayPlayer`. `73680` `VRHandStateDTO[2]`, `73681` previous `VRHandStateDTO[2]`, `73682` `VRControllerMatrixDTO[2]`, `73683` `VRInteractionSocketDTO[128]`, `73684` `VRInteractionTuningDTO[1]`, `73685` `VRInteractionTelemetryEntry[600]`, `73686` telemetry cursor, and `73687` resolved `float4x4[2]` hand matrices.
 - Primary DTO anchors: `VRHandStateDTO=64` (`RawControllerAUP double3@0`, `ResolvedHandAUP double3@24`, `Velocity float3@48`, `InteractionFlags uint@60`); `VRControllerMatrixDTO=128`; `VRInteractionSocketDTO=128`; `VRInteractionTuningDTO=128`; `VRInteractionTelemetryEntry=128`. All are explicit layout, unmanaged, no `Pack=1`, no C# properties, no managed fields, and no Unity object references.
 - Runtime route: existing `PhysicalInteractionHandler.FixedTick()` remains the input owner; `PhysicalHandController` writes `VRControllerMatrixDTO`, maps runtime pose to AUP through cached floating-origin delta, resolves hand collision against `IVoxelSonarSdfReadModel` payloads, scans active sockets, writes `VRHandStateDTO` plus resolved hand matrices, and keeps default runtime proxy transform-only. Legacy `ArticulationBody` and `Rigidbody` hand shells are guarded behind `useKinematicSdfHandBridge=false`.
@@ -1797,6 +1797,11 @@ The static echo queue drains pending taps into a phase-local frame tap view befo
 Blackbox rows and dump serialization resolve a fresh generation-checked view per write/dump path. Dispose and DataVault
 replacement release only the descriptors owned by this runtime; active tracking fences are completed before old
 descriptors are released so Vault relocation never races a scheduled tap scan.
+
+2026-05-22 SHINOBU_SYSTEMIC_SURGEON note: `AcousticEchoLocationRuntime` no longer drains
+`ScalabilityChangedEvent` for its quality byte. Acoustic trail facts, pending tap routing, and Vault descriptors stay
+unchanged; the optional `QualityWeightByte` now refreshes directly from continuous `HomeostasisBrain.GlobalQualityWeight`
+once per frame.
 
 ## 2026-05-20 SHINOBU_202 Path Funnel Navmesh Vault Descriptor Addendum
 

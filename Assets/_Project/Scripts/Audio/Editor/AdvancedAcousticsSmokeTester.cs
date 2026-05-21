@@ -40,6 +40,7 @@ namespace Hecton8.Audio.Editor
         private const string DeepPsychosisPath = "Assets/_Project/Scripts/Audio/DeepPsychosisController.cs";
         private const string HectonMusicDirectorPath = "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs";
         private const string AdaptiveStemMixerPath = "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs";
+        private const string DynamicMusicGranularSynthPath = "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs";
         private const string DirectorAIPath = "Assets/_Project/Scripts/HectonDirectorAI.cs";
         private const string PrologueAcousticOrchestratorPath = "Assets/_Project/Scripts/Audio/Prologue/PrologueAcousticOrchestrator.cs";
         private const string VocalWarningSystemPath = "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs";
@@ -89,6 +90,7 @@ namespace Hecton8.Audio.Editor
             string deepPsychosis = ReadAssetText(DeepPsychosisPath, builder, ref failureCount);
             string musicDirector = ReadAssetText(HectonMusicDirectorPath, builder, ref failureCount);
             string adaptiveStemMixer = ReadAssetText(AdaptiveStemMixerPath, builder, ref failureCount);
+            string dynamicMusicSynth = ReadAssetText(DynamicMusicGranularSynthPath, builder, ref failureCount);
             string directorAI = ReadAssetText(DirectorAIPath, builder, ref failureCount);
             string prologueAcoustic = ReadAssetText(PrologueAcousticOrchestratorPath, builder, ref failureCount);
             string vocalWarning = ReadAssetText(VocalWarningSystemPath, builder, ref failureCount);
@@ -343,6 +345,13 @@ namespace Hecton8.Audio.Editor
                 AssertContains(adaptiveLaneConfig, "lowTierFrameSignals: 64", "Dynamic music scalar signal lane keeps full minimum-quality frame capacity", builder, ref failureCount);
             }
 
+            if (dynamicMusicSynth.Length > 0)
+            {
+                string dynamicLaneConfig = ExtractMethodBody(dynamicMusicSynth, "private static void EnsureDynamicMusicSignalLaneCold()");
+                AssertContains(dynamicLaneConfig, "lowTierFrameSignals: 64", "Dynamic music granular synth keeps full minimum-quality scalar lane capacity", builder, ref failureCount);
+                AssertContains(dynamicMusicSynth, "ResolveGlobalQualityWeightFromSnapshot()", "Dynamic music granular synth derives quality from the continuous quality snapshot", builder, ref failureCount);
+            }
+
             if (deepPsychosis.Length > 0)
             {
                 string psychosisSlowTick = ExtractMethodBody(deepPsychosis, "public void SlowTick()");
@@ -406,6 +415,7 @@ namespace Hecton8.Audio.Editor
                 string musicFirstHourResolver = ExtractMethodBody(musicDirector, "private FirstHourDirector ResolveFirstHourDirector()");
                 string musicReboundRuntime = ExtractMethodBody(musicDirector, "private void CacheReboundRuntimeService(");
                 string musicAcousticDrain = ExtractMethodBody(musicDirector, "private void DrainAcousticZoneSignal()");
+                string musicSynthRuntime = ExtractMethodBody(musicDirector, "private void EnsureProceduralSynthRuntime()");
                 AssertContains(musicDirector, "ResolvePlayerRuntimeContext()", "Music director player context uses a bounded cached resolver", builder, ref failureCount);
                 AssertContains(musicDirector, "ResolveAudioService()", "Music director mixer routing uses cached audio-service resolution", builder, ref failureCount);
                 AssertContains(musicDirector, "ResolveAcousticZone()", "Music director base context uses cached acoustic-zone resolution", builder, ref failureCount);
@@ -459,6 +469,7 @@ namespace Hecton8.Audio.Editor
                 AssertNotContains(musicRareDiscovery, "GlobalRegistry.FirstHour", "Music director rare-discovery gate does not poll first-hour registry directly", builder, ref failureCount);
                 AssertNotContains(musicShouldDepthDiscovery, "GlobalRegistry.FirstHour", "Music director depth discovery gate does not poll first-hour registry directly", builder, ref failureCount);
                 AssertNotContains(musicFirstHourBoost, "GlobalRegistry.FirstHour", "Music director first-hour pressure boost does not poll first-hour registry directly", builder, ref failureCount);
+                AssertContains(musicSynthRuntime, "lowTierFrameSignals: 64", "Music director keeps full minimum-quality dynamic music scalar lane capacity", builder, ref failureCount);
             }
 
             if (prologueAcoustic.Length > 0)

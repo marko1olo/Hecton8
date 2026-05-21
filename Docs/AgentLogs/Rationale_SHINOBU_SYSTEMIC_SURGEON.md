@@ -970,3 +970,11 @@ Solution: Removed the scalability-event drain and `ResolveQualityTierFallbackWei
 Rejected Alternatives: Keeping the tier fallback was rejected because quality-tier payloads are binary hardware identity, not the continuous global weight. Keeping the 8-signal low-tier capacity was rejected because dropped audio scalar events can alter musical presentation discontinuously.
 Scalability potential: Low devices stretch the Burst audio-kernel cadence continuously toward 5 Hz and fade decorative depth/boss layers through polynomial quality; middle devices interpolate; high/ultra run near 60 Hz and full decorative layer weight. Stem identity, beat phase, biome transition, and tension facts stay on the same route.
 Hardware Impact: 0 us speed claim. Removed one per-frame typed scalability snapshot scan and one tier-to-weight helper. Build not launched because `VBCSCompiler` remained active; targeted scan and `git diff --check` passed.
+
+## Dynamic Music Scalar Lane Capacity Unification
+
+Problem: After the adaptive stem mixer was corrected, `HectonMusicDirector` and `DynamicMusicGranularSynthesizer` could still reconfigure the same `DynamicMusicScalarSignal` lane with `lowTierFrameSignals: 8`. Whichever owner initialized last could restore binary event shedding for the shared music scalar route.
+Solution: Set the music director and granular synth signal configuration to `lowTierFrameSignals: 64`, matching the full `maxFrameSignals` budget and the adaptive stem owner. The smoke tester now reads all three files and asserts full minimum-quality capacity.
+Rejected Alternatives: Leaving only the adaptive owner patched was rejected because SignalBus configuration is shared by type, not by producer. Reducing all owners to 8 was rejected because music scalar event loss is a binary hardware behavior.
+Scalability potential: Low/Middle/High/Ultra keep the same scalar-event route capacity. Weak devices still shed cost through continuous synth quality and kernel cadence; high/ultra can use all scalar updates for richer stingers and granular motion.
+Hardware Impact: 0 us speed claim. No new hot-path work beyond preserving signal capacity. Build not launched because `dotnet` and `csc` were active; targeted scan and `git diff --check` passed.
