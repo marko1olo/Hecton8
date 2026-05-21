@@ -407,3 +407,33 @@ Updated static counts from that artifact:
 - `unityTimeRiskGameplayDelta`: 1
 
 Residual gameplay-wall-clock examples are now: player fixed/render interpolation in `HectonPlayerCameraRig` and `HectonPlayerMovement`, `RenderTextureLifecycleTracker` diagnostics, `PlayerFootstepAudio` cadence, `LODSystemManager` cadence, and scatter candidate acceptance time. The single gameplay delta row remains `OceanSinglePass/ShorelineFoamGraftContracts.cs`.
+
+## 2026-05-22 Residual Tick/Delta/Lifecycle Follow-Up
+
+The residual gameplay-time bucket is now empty in the broad static audit.
+
+Verified or current source routes:
+
+- `HectonPlayerCameraRig`: late-frame KCC offset uses `HectonFloatingOrigin.CurrentFixedInterpolationAlpha`, not `Time.time - Time.fixedTime`.
+- `HectonPlayerMovement`: render interpolation uses `HectonFloatingOrigin.CurrentFixedInterpolationAlpha`; sargassum entanglement audio cooldown uses `_sargassumInfluenceClockSeconds`, advanced by fixed-step delta.
+- `PlayerFootstepAudio`: step cooldown uses `_footstepClockSeconds`, advanced by dispatcher update delta.
+- `LODSystemManager`: null-registration cleanup cadence uses `_lodRuntimeClockSeconds`, advanced by tick delta.
+- `WorldProceduralScatterDirectorCandidateAcceptance`: rescue placement registration uses `_samplingNow` with dispatcher `DilatedTimeSeconds` fallback.
+- `ShorelineFoamGraftRuntime`: foam decay/mock generation delta comes from `OceanSinglePassRuntime.VisualSyncTick` `timing.FrameDelta`.
+- `RenderTextureLifecycleTracker`: RT allocation/leak age now uses dispatcher `UnscaledTimeSeconds` through `ResolveLifecycleClockSeconds()`.
+
+Focused proof:
+
+- Focused scan over the residual files found no direct `Time.time`, `Time.fixedTime`, `Time.deltaTime`, `Time.fixedDeltaTime`, or `Time.realtimeSinceStartup`.
+- `git diff --check -- Assets/_Project/Scripts/Optimization/RenderTextureLifecycleTracker.cs` reports only LF-to-CRLF warning.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_time_after_render_texture_lifecycle_clock.json`.
+
+Updated static counts from that artifact:
+
+- `unityTimeCritical`: 868
+- `unityTimeWallClock`: 34
+- `unityTimeRiskGameplayWallClock`: 0
+- `unityTimeRiskGameplayDelta`: 0
+- `unityTimeDelta`: 1 (`Assets/_Project/Scripts/Dev/CelestialTimeLapseDebugger.cs:30`)
+
+Residual time debt is now mostly frame stamps/telemetry/log throttles and one dev debugger `Time.fixedDeltaTime` accessor. This is not runtime/profiler proof; it is static-source proof only.

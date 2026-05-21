@@ -4699,3 +4699,20 @@ Fault route: `ExosuitTelemetryEntry[300]` dumps fixed 64-byte rows to `Docs/Agen
 - Binary payload impact: blackbox dump row order changed to include `QualityWeightByte` between `Reason` and `Flags`; no save identity, SignalBus ABI, shader property ID, BufferID, rust/wetness/blood scalar ownership, or durability signal route changed.
 - Shader impact: `Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl` and `Assets/_Project/Art/Shaders/Hecton8_UberNoir.hlsl` now fade rust POM via continuous quality pressure. The old `z=low tier` / `z > 0.5` binary branch route is removed.
 - Verification: targeted tier/low-memory scan clean for material decay runtime and shader consumers; `git diff --check` passed with line-ending warning only; guarded `dotnet build .\Assembly-CSharp.csproj --no-restore --nologo -m:1 -clp:ErrorsOnly` succeeded with 0 errors and 161 warnings.
+
+## 2026-05-22 - SHINOBU_202 Submarine Autopilot SDF Navigator Descriptor Route
+
+- Hardened `Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs` descriptor gates for VehiclesPhysics autopilot Vault lanes.
+- Borrowed binary route: `BufferID.SubmarineKinematicStates` remains owned by submarine dynamics and is only borrowed through `TryGetGenerationHandle` plus read/resolve descriptor proof.
+- Owned binary route: `SubmarineAutopilotVaultRoute.AutopilotStates`, `AutopilotAvoidance`, `AutopilotFeelerResults`, `AutopilotWaypoints`, `AutopilotRouteRanges`, `AutopilotTuning`, `AutopilotTelemetryRing`, `AutopilotTelemetryCursor`, `AutopilotMockSdf`, `AutopilotFlowSamples`, `AutopilotCsvScratch`, and `AutopilotHandlingProfiles` release through `ReleaseBuffer(in handle)` after active jobs are fenced.
+- Descriptor proof requires exact BufferID, `SystemID.VehiclesPhysics`, nonzero generation, positive required length, no active compaction fence, successful `TryResolveHandle` or pure `TryReadHandle`, and `IsCreated`.
+- Allocation/compaction impact: `EnsureVaultBuffers` refuses cold reacquire during Vault allocation lock or compaction fence, and releases partially reacquired owned descriptors when readiness proof fails.
+- Binary payload impact: route-only. No DTO layout, BufferID, save identity, `AutopilotStateDTO` 64-byte stride, `AutopilotAvoidanceDTO` 64-byte stride, `AutopilotFeelerResultDTO` 64-byte stride, `AutopilotWaypointDTO` 32-byte stride, `AutopilotRouteRangeDTO` 32-byte stride, `AutopilotTuningDTO` 128-byte stride, `AutopilotTelemetryEntry` 64-byte stride, `AutopilotHandlingProfileDTO` 32-byte stride, CSV byte contract, blackbox dump format, SDF/flow fake math, or VehiclesPhysics authority changed.
+- Verification: focused legacy/direct-pointer scan clean; descriptor scan confirmed generation descriptors, compaction/allocation gates, release route, and pure read/resolve helpers; brace/preprocessor counts `244/244` and `1/1`; `git diff --check` passed with CRLF warning only. Build was not relaunched because `VBCSCompiler.exe` was already active.
+
+## 2026-05-22 - SHINOBU_SYSTEMIC_SURGEON Foveated Render Quality Relief Note
+
+- `Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs` removed the scalability-event/tier route and now resolves fixed foveation relief from continuous `HomeostasisBrain.GlobalQualityWeight`.
+- Binary payload impact: route-only. `FoveatedRenderTelemetryEntry` remains `StructLayout(LayoutKind.Explicit, Size = 64)` with the existing field map and `FlagQualityReliefActive` reusing the former private bit position 10; no BufferID, telemetry row size, dump magic/version, save identity, SignalBus ABI, or XR runtime state ABI changed.
+- Policy impact: target foveation level is now `lerp(requestedLevel, 0, smoothQualityRelief * (1 - smoothPolicyPressure))`. Policy pressure blends system stress, health pressure tiers, GPU utilization, fresh GPU frame time, and thermal severity; Quest 2 lock remains an explicit XR compatibility gate.
+- Verification: targeted tier/listener scan clean for `FoveatedRenderCommander.cs`; `git diff --check` passed with line-ending warning only. Build was not launched because `VBCSCompiler` was active while CPU probe returned 2%.

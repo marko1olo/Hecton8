@@ -3059,3 +3059,21 @@ Verification:
     Targeted `rg` found no `ScalabilityChangedEvent`, `IScalabilityChangedEventListener`, `ScalabilityEvents`, `GlobalRegistry.ScalabilityTier`, `HectonQualityTier`, `_lowTier`, `TelemetryFlagLowTier`, `IsLowTier`, `LowTier`, `lowTier`, or `QualityTier` in the material decay runtime and shader consumers. `git diff --check` passed with only a line-ending warning on UberNoir. Guarded `dotnet build .\Assembly-CSharp.csproj --no-restore --nologo -m:1 -clp:ErrorsOnly` succeeded with 0 errors and 161 warnings.
   </VERIFICATION>
 </SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="FoveatedRenderQualityReliefContinuum">
+  <WHAT_WAS_WRONG>
+    `FoveatedRenderCommander` still listened for binary scalability events, cached `HectonQualityTier`, and used `IsHighEndTier` to disable fixed foveation on High/Ultra devices without pressure. That made XR presentation policy branch on hardware quality identity instead of the continuous global quality scalar.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Removed the scalability event alias, listener interface, event register/unregister calls, `_qualityTier`, `GlobalRegistry.ScalabilityTier`, `IsHighEndTier`, and the high-end fixed-disable flag. Added `_globalQualityWeight01`, `RefreshGlobalQualityWeight01`, `ResolvePolicyPressure01`, and `ResolveQualityRelief01`; target foveation now lerps continuously toward zero from `HomeostasisBrain.GlobalQualityWeight` and smooth policy pressure.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    The Dear Lie is presentation-only shading-rate relief: central clarity and foveation level are shifted by a scalar policy curve, not by simulating eye optics or mutating gameplay truth. Capability checks remain hard because Unity/XR runtime support is binary API fact.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. Removed one scalability listener route and one binary tier registry dependency; actual GPU cost depends on XR runtime support and must be proven with Frame Debugger/player capture.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted `rg` found no `ScalabilityChangedEvent`, `IScalabilityChangedEventListener`, `ScalabilityEvents`, `GlobalRegistry.ScalabilityTier`, `HectonQualityTier`, `_qualityTier`, `IsHighEndTier`, `HighEndFixed`, `HighEnd`, `LowTier`, `lowTier`, or `QualityTier` in `FoveatedRenderCommander.cs`. `git diff --check` passed with line-ending warning only. Build was not launched because `VBCSCompiler` was active while CPU probe returned 2%.
+  </VERIFICATION>
+</SELF_AUDIT>

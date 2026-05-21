@@ -1802,6 +1802,9 @@ namespace Hecton8.Vehicles.Automation
             if (_buffersReady && _resolvedVehicleCapacity == capacity && AreVaultHandlesReady(capacity))
                 return true;
 
+            if (_dataVault.IsCompactionFenceActive || _dataVault.IsAllocationLocked)
+                return false;
+
             if (_initialized && _resolvedVehicleCapacity != 0 && _resolvedVehicleCapacity != capacity)
                 _initialized = false;
 
@@ -1883,9 +1886,11 @@ namespace Hecton8.Vehicles.Automation
                 _resolvedVehicleCapacity = capacity;
                 if (!_initialized)
                     WriteColdDefaults();
+                return true;
             }
 
-            return _buffersReady;
+            ReleaseAutopilotVaultHandles(_dataVault);
+            return false;
         }
 
         private bool AreVaultHandlesReady(int capacity)
@@ -1926,6 +1931,8 @@ namespace Hecton8.Vehicles.Automation
         {
             buffer = default;
             return vault != null &&
+                   !vault.IsCompactionFenceActive &&
+                   requiredLength > 0 &&
                    IsAutopilotVaultHandle(in handle, bufferId) &&
                    vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
@@ -1942,6 +1949,8 @@ namespace Hecton8.Vehicles.Automation
         {
             buffer = default;
             return vault != null &&
+                   !vault.IsCompactionFenceActive &&
+                   requiredLength > 0 &&
                    IsAutopilotVaultHandle(in handle, bufferId) &&
                    vault.TryReadHandle(in handle, out buffer) &&
                    buffer.IsCreated &&

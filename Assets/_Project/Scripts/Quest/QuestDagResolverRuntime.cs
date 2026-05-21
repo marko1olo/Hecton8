@@ -550,12 +550,12 @@ namespace Hecton8.Quest
         {
             if (!_disposed && _hasScheduled)
             {
-                _scheduledHandle.Complete();
+                DispatcherJobFence.TryComplete(ref _scheduledHandle, forceComplete: true);
                 _hasScheduled = false;
             }
 
             JobHandle disposeHandle = Dispose(default);
-            disposeHandle.Complete();
+            DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
         }
 
         /// <summary>

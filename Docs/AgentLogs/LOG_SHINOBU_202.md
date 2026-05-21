@@ -5436,3 +5436,27 @@ Static verification:
 - Focused scan found no `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, direct `GetBuffer<T>`, direct `TryGetBuffer(...)`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `TryGetLatestCreated`, `TryGetBufferGeneration`, `VaultGenerationID`, or `.ptr` hits in `BiolumPulseSyncRuntime.cs`.
 - Descriptor scan confirms `VaultGenerationHandle<T>`, `TryGetGenerationHandle`, `GetGenerationHandle`, `TryResolveBiolumVaultBuffer`, `TryReadBiolumVaultBuffer`, `TryAcquireWriteLock`, `ReleaseWriteLock`, `ReleaseBiolumVaultHandle`, `ReleaseVaultHandlesOnly`, and `ReleaseBuffer(in handle)`.
 - Brace/preprocessor counts are balanced: braces `348/348`, `#if/#endif` `10/10`. `git diff --check` passed. Build was not relaunched because CPU was 100 percent and `dotnet.exe`/`csc.exe` were already active.
+
+## 2026-05-22 - Loop 231 - Submarine Autopilot SDF Navigator Descriptor Route
+
+What was wrong:
+- `Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs` has a VehiclesPhysics autopilot route that crosses fixed-tick jobs, SDF/flow mock generation, public route writes, tuning writes, CSV handling-profile reloads, gizmo reads, telemetry scans, blackbox dumps, and DataVault hot-swap.
+- The file has a mixed ownership route: `BufferID.SubmarineKinematicStates` is borrowed from submarine dynamics, while the 12 `SubmarineAutopilotVaultRoute.*` lanes are autopilot-owned.
+- The missing hardening was compaction/allocation gating and failed-acquire cleanup around descriptor reacquire; without it, a partial cold reacquire could retain owned descriptor refcounts until a later tick or disable.
+
+What was done:
+- Verified the executable route uses `VaultGenerationHandle<T>` descriptors rather than retained pointer handles.
+- Hardened descriptor helpers to reject active compaction fences and zero-length proofs.
+- Hardened `EnsureVaultBuffers` to reject reacquire during allocation lock or compaction fence and to release partially reacquired owned descriptors when readiness proof fails.
+- Verified `ReleaseAutopilotVaultHandles` releases only the 12 autopilot-owned descriptors through `ReleaseBuffer(in handle)` and tombstones the borrowed kinematic descriptor without release.
+
+Cinematic cheats used:
+- The autopilot keeps the existing Dear Lie: encoded mock obstacle SDF plus mock flow samples replace expensive mesh colliders, broad terrain raycasts, and fluid simulation. Quality weight controls solver cadence and fidelity pressure continuously rather than switching hardware tiers.
+
+Exact microseconds saved:
+- No measured runtime speedup claimed. The useful result is ownership/provenance safety with O(1) descriptor checks at bounded phase edges. Avoided work remains architectural: SDF/flow fake keeps collision/flow steering out of heavy CPU physics and leaves per-vehicle Burst jobs data-local.
+
+Static verification:
+- Focused scan found no `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `.ptr`, retained handle `.Length`, or retained handle `.IsCreated` hits in `SubmarineAutopilotSdfNavigator.cs`.
+- Descriptor scan confirms `VaultGenerationHandle<T>`, `TryGetGenerationHandle`, `GetGenerationHandle`, `TryResolveAutopilotVaultBuffer`, `TryReadAutopilotVaultBuffer`, `ReleaseAutopilotVaultHandles`, `ReleaseBuffer(in handle)`, `IsCompactionFenceActive`, and `IsAllocationLocked`.
+- Brace/preprocessor counts are balanced: braces `244/244`, `#if/#endif` `1/1`. `git diff --check` passed with CRLF warning only. Build was not relaunched because `VBCSCompiler.exe` was already active.

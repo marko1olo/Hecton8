@@ -1,5 +1,4 @@
 using Hecton8.Core;
-using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
@@ -16,14 +15,14 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Submarine Sonar Holo Map Renderer")]
-    public sealed class SubmarineSonarHoloMapRenderer : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
+    public sealed class SubmarineSonarHoloMapRenderer : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int MaxGridCells = 18;
         private const int MaxGridVerticesPerAxis = MaxGridCells + 1;
         private const int MaxVertexCount = MaxGridVerticesPerAxis * MaxGridVerticesPerAxis;
         private const int MaxLineIndexCount = MaxGridCells * MaxGridVerticesPerAxis * 4;
-        private const float LowTierUpdateIntervalSeconds = 0.1f;
-        private const float HighTierUpdateIntervalSeconds = 0.03333334f;
+        private const float MinimumQualityUpdateIntervalSeconds = 0.1f;
+        private const float MaximumQualityUpdateIntervalSeconds = 0.03333334f;
         private const float VisibilityDotThreshold = 0.035f;
         private const float MinimumDirectionLengthSq = 0.0001f;
         private const string RuntimeMeshName = "Runtime_SubmarineSonarHoloMap";
@@ -50,11 +49,11 @@ namespace Hecton8.UI
         [SerializeField] private Color sonarColor = new Color(0.10f, 0.92f, 0.76f, 1f);
         [SerializeField] private int renderLayer = 0;
 
-        // COLD ALLOC: Vector3[361] - sonar map previous vertex buffer for high-tier interpolation - owner: SubmarineSonarHoloMapRenderer
+        // COLD ALLOC: Vector3[361] - sonar map previous vertex buffer for quality interpolation - owner: SubmarineSonarHoloMapRenderer
         private readonly Vector3[] _previousVertices = new Vector3[MaxVertexCount];
         // COLD ALLOC: Vector3[361] - sonar map current sampled vertex buffer - owner: SubmarineSonarHoloMapRenderer
         private readonly Vector3[] _currentVertices = new Vector3[MaxVertexCount];
-        // COLD ALLOC: Vector3[361] - high-tier render interpolation vertex buffer - owner: SubmarineSonarHoloMapRenderer
+        // COLD ALLOC: Vector3[361] - render interpolation vertex buffer - owner: SubmarineSonarHoloMapRenderer
         private readonly Vector3[] _renderVertices = new Vector3[MaxVertexCount];
         // COLD ALLOC: int[1368] - sonar map line indices, rewritten only when the active LOD changes - owner: SubmarineSonarHoloMapRenderer
         private readonly int[] _lineIndices = new int[MaxLineIndexCount];
@@ -65,7 +64,6 @@ namespace Hecton8.UI
         private IPlayerRuntimeContext _cachedPlayerContext;
         private bool _registeredLateFrame;
         private bool _hotSwapListenerRegistered;
-        private bool _scalabilityListenerRegistered;
         private bool _hasCurrentSample;
         private bool _hasPreviousSample;
         private bool _visibleToPlayer;
@@ -73,7 +71,7 @@ namespace Hecton8.UI
         private float _interpolationAgeSeconds;
         private float _interpolationBlendWeight;
         private float _cachedQualityWeight01 = 1f;
-        private float _activeUpdateIntervalSeconds = LowTierUpdateIntervalSeconds;
+        private float _activeUpdateIntervalSeconds = MinimumQualityUpdateIntervalSeconds;
         private int _activeGridCells = -1;
         private int _activeIndexCount;
 
@@ -81,7 +79,6 @@ namespace Hecton8.UI
         {
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
-            TryRegisterScalabilityListener();
             EnsureResources();
             TryRegisterTick();
         }
@@ -90,7 +87,6 @@ namespace Hecton8.UI
         {
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
-            TryRegisterScalabilityListener();
             EnsureResources();
             TryRegisterTick();
         }
@@ -99,20 +95,19 @@ namespace Hecton8.UI
         {
             _visibleToPlayer = false;
             TryUnregisterHotSwapListener();
-            TryUnregisterScalabilityListener();
             TryUnregister();
         }
 
         private void OnDestroy()
         {
             TryUnregisterHotSwapListener();
-            TryUnregisterScalabilityListener();
             TryUnregister();
             DestroyRuntimeResources();
         }
 
         private void RunVisualSync(float deltaTime)
         {
+            RefreshQualityPolicy();
             EnsureResources();
             ResolveViewCamera();
             _visibleToPlayer = ResolveVisibleToPlayer();
@@ -309,7 +304,7 @@ namespace Hecton8.UI
         {
             float quality = math.saturate(qualityWeight01);
             float curve = quality * quality * (3f - (2f * quality));
-            return math.max(0.01666667f, math.lerp(LowTierUpdateIntervalSeconds, HighTierUpdateIntervalSeconds, curve));
+            return math.max(0.01666667f, math.lerp(MinimumQualityUpdateIntervalSeconds, MaximumQualityUpdateIntervalSeconds, curve));
         }
 
         private static float ResolveInterpolationBlendWeight(float qualityWeight01)
@@ -385,11 +380,6 @@ namespace Hecton8.UI
                 _viewCamera = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerCamera : null;
         }
 
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            RefreshQualityPolicy();
-        }
-
         private void CacheRegistryServicesCold()
         {
             _cachedPlayerContext = GlobalRegistry.Player;
@@ -398,7 +388,8 @@ namespace Hecton8.UI
 
         private void RefreshQualityPolicy()
         {
-            _cachedQualityWeight01 = math.saturate(HomeostasisBrain.GlobalQualityWeight);
+            float value = HomeostasisBrain.GlobalQualityWeight;
+            _cachedQualityWeight01 = math.saturate(math.select(_cachedQualityWeight01, value, math.isfinite(value)));
         }
 
         private void EnsureResources()
@@ -467,24 +458,6 @@ namespace Hecton8.UI
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapListenerRegistered = false;
-        }
-
-        private void TryRegisterScalabilityListener()
-        {
-            if (_scalabilityListenerRegistered || !Application.isPlaying)
-                return;
-
-            ScalabilityEvents.Register(this);
-            _scalabilityListenerRegistered = true;
-        }
-
-        private void TryUnregisterScalabilityListener()
-        {
-            if (!_scalabilityListenerRegistered)
-                return;
-
-            ScalabilityEvents.Unregister(this);
-            _scalabilityListenerRegistered = false;
         }
 
         private void TryUnregister()

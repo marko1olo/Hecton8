@@ -138,7 +138,7 @@ namespace Hecton8.Optimization
                 var existing = _allocations[instanceID];
                 existing.Owner = owner;
                 existing.OwnerCategory = ClassifyOwner(owner);
-                existing.AllocationTime = Time.time;
+                existing.AllocationTime = ResolveLifecycleClockSeconds();
                 existing.AllocationStackTrace = allocationStackTrace;
                 existing.IsDisposed = false;
                 _allocations[instanceID] = existing;
@@ -153,7 +153,7 @@ namespace Hecton8.Optimization
                 Width = rt.width,
                 Height = rt.height,
                 Format = rt.format,
-                AllocationTime = Time.time,
+                AllocationTime = ResolveLifecycleClockSeconds(),
                 AllocationStackTrace = allocationStackTrace,
                 IsDisposed = false
             };
@@ -238,12 +238,13 @@ namespace Hecton8.Optimization
         public void GetLeakedRenderTextures(List<RenderTextureAllocationRecord> results)
         {
             results.Clear();
+            float now = ResolveLifecycleClockSeconds();
             
             Dictionary<EntityId, RenderTextureAllocationRecord>.Enumerator enumerator = _allocations.GetEnumerator();
             while (enumerator.MoveNext())
             {
                 RenderTextureAllocationRecord record = enumerator.Current.Value;
-                if (record.Owner == null && !record.IsDisposed && Time.time - record.AllocationTime > 10f)
+                if (record.Owner == null && !record.IsDisposed && now - record.AllocationTime > 10f)
                 {
                     results.Add(record);
                 }
@@ -347,6 +348,22 @@ namespace Hecton8.Optimization
                 }
 #endif
             }
+        }
+
+        private static float ResolveLifecycleClockSeconds()
+        {
+            if (!Application.isPlaying)
+                return 0f;
+
+            SystemDispatcher dispatcher = SystemDispatcher.ActiveRuntimeInstance;
+            if (dispatcher == null)
+                return 0f;
+
+            double timeSeconds = dispatcher.UnscaledTimeSeconds;
+            if (!Unity.Mathematics.math.isfinite(timeSeconds) || timeSeconds <= 0d)
+                return 0f;
+
+            return (float)Unity.Mathematics.math.min(timeSeconds, 86400d);
         }
 
         private void ClearReportBuckets()

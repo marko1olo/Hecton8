@@ -4126,3 +4126,20 @@ Mandates read before coding:
 - Brace/preprocessor counts are balanced: `BiolumPulseSyncRuntime.cs` braces `348/348`, preprocessor `#if/#endif` `10/10`.
 - `git diff --check` passed for `BiolumPulseSyncRuntime.cs`.
 - Build not relaunched: CPU sampled at 100 percent and `dotnet.exe`/`csc.exe` were already running, so the explicit no-rebuild and CPU gate blocked a new build.
+
+## Loop 231 - Submarine Autopilot SDF Navigator Descriptor Route
+- [x] Hardened `SubmarineAutopilotSdfNavigator.cs` Vault routes against stale pointer/refcount loss.
+  DOD practice: retained routes use `VaultGenerationHandle<T>` and open only through exact BufferID, `SystemID.VehiclesPhysics`, nonzero generation, required length, `TryResolveHandle` or pure `TryReadHandle`, `IsCreated`, and compaction-fence rejection. The borrowed `SubmarineKinematicStates` descriptor is never released by the autopilot; the 12 autopilot-owned descriptors release through `ReleaseBuffer(in handle)`.
+  Rejected: reacquiring owned descriptors during Vault allocation locks or compaction fences because that can create release ambiguity while the arena is explicitly unstable. Releasing the borrowed kinematic descriptor was rejected because `SubmarineDynamicsRuntime` owns that fact.
+  Estimate: descriptor proof runs at cold ensure, public route writes, tuning read/write, job setup, CSV profile ingest, gizmo readback, telemetry scan, blackbox dump, and DataVault hot-swap boundaries only; no per-feeler or per-vehicle inner-loop descriptor validation is added.
+- [x] Added failed-acquire cleanup and route gates.
+  DOD practice: `EnsureVaultBuffers` now returns early during allocation lock/compaction fence and releases partially reacquired owned descriptors if final readiness proof fails. Descriptor helpers reject compaction-fence reads/resolves and zero-length proofs.
+  Rejected: leaving partially acquired descriptors until the next FixedTick because a disabled component might never receive that next tick before teardown.
+  Estimate: cold failure path only; no DTO layout, BufferID, solver math, SignalBus route, shader route, job chain, or authority ownership changed.
+
+## Compile State Update 225
+- Focused legacy/direct route scan on `SubmarineAutopilotSdfNavigator.cs` found no `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `.ptr`, retained handle `.Length`, or retained handle `.IsCreated` hits.
+- Descriptor route scan confirmed expected `VaultGenerationHandle<T>`, `TryGetGenerationHandle`, `GetGenerationHandle`, `TryResolveAutopilotVaultBuffer`, `TryReadAutopilotVaultBuffer`, `ReleaseAutopilotVaultHandles`, `ReleaseBuffer(in handle)`, `IsCompactionFenceActive`, and `IsAllocationLocked` hits.
+- Brace/preprocessor counts are balanced: `SubmarineAutopilotSdfNavigator.cs` braces `244/244`, preprocessor `#if/#endif` `1/1`.
+- `git diff --check` passed for `SubmarineAutopilotSdfNavigator.cs`; CRLF warning only.
+- Build not relaunched: CPU sampled at 15 percent, but `VBCSCompiler.exe` was already active, so the explicit compiler-process gate blocked a new `dotnet build`.

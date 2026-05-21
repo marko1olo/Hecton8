@@ -5,7 +5,6 @@ using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
-using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -19,7 +18,7 @@ namespace Hecton8.Graphics.VR
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9946)]
     [AddComponentMenu("Hecton8/Graphics/VR/Foveated Render Commander")]
-    internal sealed class FoveatedRenderCommander : MonoBehaviour, IUpdatable, IRenderable, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener, IDisposable
+    internal sealed class FoveatedRenderCommander : MonoBehaviour, IUpdatable, IRenderable, IGlobalRegistryHotSwapListener, IDisposable
     {
         private const int TelemetryCapacity = 300;
         private const int TelemetryRecordSizeBytes = 64;
@@ -34,6 +33,10 @@ namespace Hecton8.Graphics.VR
         private const float StressHighThreshold = 0.70f;
         private const float GpuPressureHighThreshold = 0.78f;
         private const float GpuTimeHighPressureMs = 10.75f;
+        private const float GpuTimeReliefStartMs = 8.25f;
+        private const float GpuUtilReliefStart = 0.55f;
+        private const float QualityReliefStart = 0.58f;
+        private const float QualityReliefEnd = 0.96f;
         private const float SecondsToMilliseconds = 1000f;
         private const float LevelDowngradeHoldSeconds = 2.5f;
         private const float GazeLossHoldSeconds = 0.75f;
@@ -53,7 +56,7 @@ namespace Hecton8.Graphics.VR
         private const ushort FlagSystemPressure = 1 << 7;
         private const ushort FlagApplied = 1 << 8;
         private const ushort FlagNonFinite = 1 << 9;
-        private const ushort FlagHighEndFixedDisabled = 1 << 10;
+        private const ushort FlagQualityReliefActive = 1 << 10;
         private const ushort FlagHysteresisHold = 1 << 11;
         private const ushort FlagGazeGraceHold = 1 << 12;
         private const ushort FlagQuestClassificationPending = 1 << 13;
@@ -107,9 +110,9 @@ namespace Hecton8.Graphics.VR
         private float _systemStress01;
         private float _gpuUtil01;
         private float _latestGpuTimeMs;
+        private float _globalQualityWeight01 = 1f;
         private float _downgradeHoldSecondsRemaining;
         private float _gazeLossHoldSecondsRemaining;
-        private HectonQualityTier _qualityTier = HectonQualityTier.Unknown;
         private float _targetLevel01;
         private float _appliedLevel01 = -1f;
         private byte _pressureLevel;
@@ -226,8 +229,7 @@ namespace Hecton8.Graphics.VR
 
             _disposed = false;
             _dataVault = GlobalRegistry.DataVault;
-            _qualityTier = GlobalRegistry.ScalabilityTier;
-            ScalabilityEvents.Register(this);
+            RefreshGlobalQualityWeight01();
             EnsureTelemetry();
             _hardwareThermal = GlobalRegistry.HardwareThermal;
             TryRegisterTick();
@@ -253,7 +255,6 @@ namespace Hecton8.Graphics.VR
             TryUnregisterRenderable();
             TryUnregisterHotSwap();
             TryUnregisterTick();
-            ScalabilityEvents.Unregister(this);
             if (ownsRuntimeState)
                 ClearHardwareFoveation();
             _hardwareThermal = null;
@@ -278,7 +279,6 @@ namespace Hecton8.Graphics.VR
             TryUnregisterRenderable();
             TryUnregisterHotSwap();
             TryUnregisterTick();
-            ScalabilityEvents.Unregister(this);
             if (ownsRuntimeState)
                 ClearHardwareFoveation();
             ReleaseTelemetryBuffer();
@@ -399,14 +399,6 @@ namespace Hecton8.Graphics.VR
             }
         }
 
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            if (TryDetachIfInactiveCommander())
-                return;
-
-            _qualityTier = payload.CurrentQualityTier;
-        }
-
         internal void RequestBlackBoxDump()
         {
             if (!ReferenceEquals(s_activeCommander, this) || _disposed)
@@ -473,12 +465,19 @@ namespace Hecton8.Graphics.VR
             FoveatedRenderingCaps caps = SystemInfo.foveatedRenderingCaps;
             bool capsSupported = caps != FoveatedRenderingCaps.None;
             bool quest2Runtime = IsQuest2Runtime(out bool questClassificationPending);
-            HectonQualityTier qualityTier = _qualityTier;
+            float qualityWeight01 = RefreshGlobalQualityWeight01();
             bool thermalPressure =
                 _thermalSeverity >= (byte)HardwareThermalSeverity.Throttling ||
                 _gpuUtil01 >= GpuPressureHighThreshold ||
                 IsGpuTimePressureActive(_latestGpuTimeMs);
             bool systemPressure = _systemStress01 >= StressMediumThreshold || _pressureLevel >= 2 || _foveatedPressureTier >= 2;
+            float policyPressure01 = ResolvePolicyPressure01(
+                _systemStress01,
+                _gpuUtil01,
+                _latestGpuTimeMs,
+                _pressureLevel,
+                _foveatedPressureTier,
+                _thermalSeverity);
             ushort flags = 0;
 
             if (xrActive)
@@ -534,6 +533,13 @@ namespace Hecton8.Graphics.VR
             if (hysteresisHeld)
                 flags |= FlagHysteresisHold;
             float targetLevel = ResolveLevel01(levelCode);
+            float qualityRelief01 = ResolveQualityRelief01(
+                qualityWeight01,
+                policyPressure01,
+                quest2Runtime && lockQuest2HighFoveation);
+            targetLevel = math.lerp(targetLevel, 0f, qualityRelief01);
+            if (qualityRelief01 > ApplyEpsilon)
+                flags |= FlagQualityReliefActive;
             bool gazeTracked = ShouldUseGazeTrackedVrs(xrActive, caps, quest2Runtime, out bool gazeGraceHeld);
             XRDisplaySubsystem.FoveatedRenderingFlags targetFlags = gazeTracked
                 ? XRDisplaySubsystem.FoveatedRenderingFlags.GazeAllowed
@@ -544,11 +550,7 @@ namespace Hecton8.Graphics.VR
             if (gazeGraceHeld)
                 flags |= FlagGazeGraceHold;
 
-            if (!quest2Runtime &&
-                !gazeTracked &&
-                IsHighEndTier(qualityTier) &&
-                !thermalPressure &&
-                !systemPressure)
+            if (!gazeTracked && targetLevel <= ApplyEpsilon)
             {
                 levelCode = 0;
                 targetLevel = 0f;
@@ -557,7 +559,6 @@ namespace Hecton8.Graphics.VR
                 _gazeLossHoldSecondsRemaining = 0f;
                 flags = (ushort)(flags & ~FlagHysteresisHold);
                 flags = (ushort)(flags & ~FlagGazeGraceHold);
-                flags |= FlagHighEndFixedDisabled;
             }
 
             _targetLevelCode = levelCode;
@@ -569,7 +570,7 @@ namespace Hecton8.Graphics.VR
             if (!thermalPressure && IsGpuTimePressureActive(_latestGpuTimeMs))
             {
                 thermalPressure = true;
-                flags = (ushort)(flags & ~(FlagApplied | FlagNonFinite | FlagHighEndFixedDisabled | FlagHysteresisHold));
+                flags = (ushort)(flags & ~(FlagApplied | FlagNonFinite | FlagQualityReliefActive | FlagHysteresisHold));
                 flags |= FlagThermalPressure;
                 flags |= FlagFreshGpuTimeEscalation;
 
@@ -586,6 +587,13 @@ namespace Hecton8.Graphics.VR
                     flags |= FlagHysteresisHold;
 
                 targetLevel = ResolveLevel01(levelCode);
+                qualityRelief01 = ResolveQualityRelief01(
+                    qualityWeight01,
+                    1f,
+                    quest2Runtime && lockQuest2HighFoveation);
+                targetLevel = math.lerp(targetLevel, 0f, qualityRelief01);
+                if (qualityRelief01 > ApplyEpsilon)
+                    flags |= FlagQualityReliefActive;
                 mode = gazeTracked ? FoveatedRenderMode.GazeTracked : FoveatedRenderMode.Fixed;
                 targetFlags = gazeTracked
                     ? XRDisplaySubsystem.FoveatedRenderingFlags.GazeAllowed
@@ -771,7 +779,6 @@ namespace Hecton8.Graphics.VR
             TryUnregisterRenderable();
             TryUnregisterHotSwap();
             TryUnregisterTick();
-            ScalabilityEvents.Unregister(this);
             _hardwareThermal = null;
             return true;
         }
@@ -1229,6 +1236,43 @@ namespace Hecton8.Graphics.VR
             }
         }
 
+        private float RefreshGlobalQualityWeight01()
+        {
+            float value = HomeostasisBrain.GlobalQualityWeight;
+            _globalQualityWeight01 = math.saturate(math.select(_globalQualityWeight01, value, math.isfinite(value)));
+            return _globalQualityWeight01;
+        }
+
+        private static float ResolvePolicyPressure01(
+            float systemStress01,
+            float gpuUtil01,
+            float gpuTimeMs,
+            byte pressureLevel,
+            byte foveatedPressureTier,
+            byte thermalSeverity)
+        {
+            float stressPressure = math.smoothstep(StressMediumThreshold, StressHighThreshold, Sanitize01(systemStress01));
+            float systemPressure = math.saturate(math.max(pressureLevel, foveatedPressureTier) * (1f / 3f));
+            float gpuPressure = math.smoothstep(GpuUtilReliefStart, GpuPressureHighThreshold, Sanitize01(gpuUtil01));
+            float gpuTimePressure = math.smoothstep(GpuTimeReliefStartMs, GpuTimeHighPressureMs, math.max(0f, gpuTimeMs));
+            float thermalPressure = math.saturate(((float)thermalSeverity - (float)HardwareThermalSeverity.Warm) * 0.5f);
+            return math.saturate(math.max(math.max(stressPressure, systemPressure), math.max(math.max(gpuPressure, gpuTimePressure), thermalPressure)));
+        }
+
+        private static float ResolveQualityRelief01(float qualityWeight01, float policyPressure01, bool lockedHighFoveation)
+        {
+            float quality = Sanitize01(qualityWeight01);
+            float pressure = Smooth01(policyPressure01);
+            float relief = math.smoothstep(QualityReliefStart, QualityReliefEnd, quality);
+            return math.select(math.saturate(relief * (1f - pressure)), 0f, lockedHighFoveation);
+        }
+
+        private static float Smooth01(float value)
+        {
+            float t = Sanitize01(value);
+            return t * t * (3f - 2f * t);
+        }
+
         private static bool HasEyeTrackedGaze(bool xrActive, FoveatedRenderingCaps caps, bool questRuntime)
         {
             if (!xrActive || questRuntime || !IsStandaloneLikeRuntime())
@@ -1372,11 +1416,6 @@ namespace Hecton8.Graphics.VR
         private static bool HasCap(FoveatedRenderingCaps caps, FoveatedRenderingCaps flag)
         {
             return (caps & flag) != 0;
-        }
-
-        private static bool IsHighEndTier(HectonQualityTier tier)
-        {
-            return tier == HectonQualityTier.High || tier == HectonQualityTier.Ultra;
         }
 
         private static float Sanitize01(float value)

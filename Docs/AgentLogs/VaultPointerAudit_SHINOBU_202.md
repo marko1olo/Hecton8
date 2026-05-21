@@ -871,3 +871,13 @@ The scan proves repo-wide debt, not successful consumer migration. A full rename
 - Editor `Copy*` facades use pure descriptor readback. Editor `TryWrite*` and pulse-trigger facades use descriptor write locks and release them in `finally`.
 - Compile-wall guard: `Hecton8.VFX.Bioluminescence.Runtime.asmdef` references `Hecton8.Core.Contracts`, `Hecton8.Core`, `Hecton8.Core.Memory`, and Unity packages only; no sibling runtime assembly dependency was introduced.
 - This entry does not change `GlowStateDTO`, `SyncPulseDTO`, `MockWeatherSignal`, `BiolumPulseStateDTO`, `BiolumSpeciesTuningDTO`, `MockPredatorProximitySignal`, `MockCombatDamageSignal`, `BiolumPulseTelemetryEntry`, BufferIDs, CSV parser contract, shader property IDs, SignalBus payloads, blackbox dump format, pulse math, or VFX authority.
+
+## 2026-05-22 Submarine Autopilot SDF Navigator Descriptor Route Update
+
+- `Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs` has no executable `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `.ptr`, retained handle `.Length`, or retained handle `.IsCreated` hits.
+- Borrowed route: `BufferID.SubmarineKinematicStates` is opened through `TryGetGenerationHandle` plus descriptor read/resolve proof and is never released by the autopilot route.
+- Owned route: autopilot states, avoidance, feeler results, waypoints, route ranges, tuning, telemetry ring, telemetry cursor, mock SDF, flow samples, CSV scratch, and handling profiles use `VaultGenerationHandle<T>` descriptors.
+- Each route validates exact BufferID, `SystemID.VehiclesPhysics`, nonzero generation, positive required length, no active compaction fence, `TryResolveHandle` or pure `TryReadHandle`, and `IsCreated` before returning a native view.
+- `EnsureVaultBuffers` refuses reacquire during Vault allocation lock or compaction fence and releases partially reacquired owned descriptors when readiness proof fails.
+- Disable and DataVault hot-swap complete pending jobs, unlock buffers, dump faulted telemetry, release all 12 owned descriptors through `ReleaseBuffer(in handle)`, and tombstone local descriptor state.
+- This entry does not change `AutopilotStateDTO`, `AutopilotAvoidanceDTO`, `AutopilotFeelerResultDTO`, `AutopilotWaypointDTO`, `AutopilotRouteRangeDTO`, `AutopilotTuningDTO`, `AutopilotTelemetryEntry`, `AutopilotHandlingProfileDTO`, BufferIDs `71592..71603`, `BufferID.SubmarineKinematicStates`, CSV parser contract, blackbox dump format, SDF/flow fake math, job topology, or VehiclesPhysics authority.

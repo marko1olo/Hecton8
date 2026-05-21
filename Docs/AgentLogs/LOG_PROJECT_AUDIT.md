@@ -432,3 +432,27 @@ Cinematic Cheats used: Corpse bloat and hit flash remain shader VAT/material fak
 Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped from `unityTimeCritical=883` to `877`, from `unityTimeWallClock=48` to `42`, and from `unityTimeRiskGameplayWallClock=14` to `8`.
 
 Evidence: Focused scan over the touched files shows no direct `Time.time`, `Time.unscaledTime`, `Time.deltaTime`, `Time.fixedDeltaTime`, or `Time.realtimeSinceStartup` in the patched paths; `Time.timeSinceLevelLoad` remains only in explicit presentation helpers. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_time_after_shader_presentation_owner_clock.json --report-path Docs\Reports\PROJECT_AUDIT_polish_time_after_shader_presentation_owner_clock.md` returned `PASS_WITH_WARNINGS` with `unityTimeCritical=877`, `unityTimeWallClock=42`, and `unityTimeRiskGameplayWallClock=8`. `git diff --check --` on touched files reports only LF-to-CRLF warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Residual Gameplay Time Bucket Cleared
+
+What was wrong: The broad static audit still showed `unityTimeRiskGameplayWallClock=8` and `unityTimeRiskGameplayDelta=1` after the shader/presentation pass. Residual rows covered player fixed/render interpolation, footstep cadence, LOD cleanup cadence, scatter candidate acceptance, shoreline foam delta, sargassum entanglement audio cooldown, and RenderTexture leak-age diagnostics.
+
+What was done: Verified current source routes for player interpolation through `HectonFloatingOrigin.CurrentFixedInterpolationAlpha`, footstep/LOD/scatter through owner or sampling clocks, shoreline foam through `VisualSyncTick` `timing.FrameDelta`, and sargassum audio through fixed-step influence time. Patched the remaining net diff in `RenderTextureLifecycleTracker`: allocation timestamps and leak-age checks now use dispatcher-owned unscaled lifecycle seconds through `ResolveLifecycleClockSeconds()`.
+
+Cinematic Cheats used: Shoreline foam stays a bounded 64-entry shader/compute fake; LOD cleanup and footstep audio stay tick-local cadence state; RenderTexture leak detection stays cold diagnostics, not gameplay simulation.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped from `unityTimeCritical=877` to `868`, from `unityTimeWallClock=42` to `34`, from `unityTimeRiskGameplayWallClock=8` to `0`, and from `unityTimeRiskGameplayDelta=1` to `0`.
+
+Evidence: Focused scan over the residual files finds no direct `Time.time`, `Time.fixedTime`, `Time.deltaTime`, `Time.fixedDeltaTime`, or `Time.realtimeSinceStartup`. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_time_after_render_texture_lifecycle_clock.json --report-path Docs\Reports\PROJECT_AUDIT_polish_time_after_render_texture_lifecycle_clock.md` returned `PASS_WITH_WARNINGS` with `unityTimeRiskGameplayWallClock=0`, `unityTimeRiskGameplayDelta=0`, `unityTimeCritical=868`, and `unityTimeWallClock=34`. Remaining `unityTimeDelta=1` is `Assets/_Project/Scripts/Dev/CelestialTimeLapseDebugger.cs:30`. `git diff --check -- Assets/_Project/Scripts/Optimization/RenderTextureLifecycleTracker.cs` reports only LF-to-CRLF warning. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Quest DAG Teardown Fence Cleanup
+
+What was wrong: `QuestDagResolverRuntime.Dispose()` directly called `.Complete()` on the scheduled resolver handle and the native disposal handle. This is a cold teardown path, but it still bypassed the Core-owned job fence policy.
+
+What was done: Replaced both direct completions with `DispatcherJobFence.TryComplete(..., forceComplete: true)`. DAG scheduling, black-box telemetry, Vault buffer handles, and `Dispose(JobHandle)` dependency chaining were left unchanged.
+
+Cinematic Cheats used: None added. The existing quest DAG remains bitmask state resolution and trigger spatial hashing, not per-quest object polling.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `jobHandleComplete` from `114 files=32` to `112 files=31`.
+
+Evidence: Focused `rg -n "\.Complete\(\)|DispatcherJobFence\.TryComplete|Dispose\(" Assets/_Project/Scripts/Quest/QuestDagResolverRuntime.cs` shows only the two `DispatcherJobFence.TryComplete` calls and no direct `.Complete()`. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_quest_dag_fence_cleanup.json --report-path Docs\Reports\PROJECT_AUDIT_polish_after_quest_dag_fence_cleanup.md` returned `PASS_WITH_WARNINGS` with `jobHandleComplete=112 files=31`. `git diff --check -- Assets/_Project/Scripts/Quest/QuestDagResolverRuntime.cs` reports only LF-to-CRLF warning. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
