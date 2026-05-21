@@ -187,6 +187,32 @@ Exact Microseconds saved:
   <STATIC_VERIFICATION>Re-extracted SHINOBU_267 XML from `CURRENT_BATCH.md` with `task_count=20`; owned forbidden scan clean; runtime old `Resolve*`/indexer scan clean; shader `_QUALITY_*` scan clean; shader early alpha-mask clip order passes; runtime/editor/shader brace and preprocessor balances are zero; asmdef/report JSON parse passed; `git diff --check` found no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 92.3%, dotnet=0, csc=0.</STATIC_VERIFICATION>
 </SELF_AUDIT_DELTA>
 
+## 2026-05-22 - Polish Pass 57
+
+What was wrong:
+- The current SHINOBU_267 report section had zero findings, but the Unity editor scanner would rewrite it with a thinner findings-only section and drop proof fields.
+
+What was done:
+- `FloraAnimationScanner` now writes timestamp, active violation count, finding count, scanned flora prefab/scene counts, eradication boolean, evidence class, and notes.
+- `FloraAmbientSwaySelfAudit` now includes `reportProofArtifact`, slicing the scanner class and requiring those report fields.
+- `RENDERING_OPTIMIZATION_REPORT.json` SHINOBU_267 section now also carries `summary`, `reportSchema`, `rule`, and `findingCount=0`.
+
+Cinematic Cheats used:
+- No new simulation. This protects the scanner artifact that prevents CPU-bone flora regressions from entering the shader-side visual fake route.
+
+Exact Microseconds saved:
+- 0 player us. Editor/report proof only.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_267" revision="2026-05-22-P57_REPORT_ARTIFACT_WRITER_HARDENING">
+  <TASK id="19" status="PASS">The scanner-generated report section now preserves active violation count, finding count, timestamp, evidence class, scan counts, and eradication boolean.</TASK>
+  <TASK id="20" status="PASS">`reportProofArtifact` joins self-audit pass/fail and rejects scanner report-field regressions.</TASK>
+  <FIRST_20_MINUTES_MOMENT>World load and swim readability on the selected Copper Wire route biome.</FIRST_20_MINUTES_MOMENT>
+  <ROUTE_IMPACT>Future editor scanner runs preserve integration-proof fields instead of downgrading SHINOBU_267 report evidence.</ROUTE_IMPACT>
+  <PROOF_REQUIRED>Static source/report parse now; Unity editor menu invocation remains pending.</PROOF_REQUIRED>
+  <PARKED_WORK_REJECTED>Whole-project build, unrelated report rewrites, and runtime scanner/report generation.</PARKED_WORK_REJECTED>
+  <STATIC_VERIFICATION>Report JSON parses; SHINOBU_267 has `activeViolationCount=0`, `findingCount=0`, `summary=OOP Flora Animations Eradicated`, `reportSchema=1`, and the no-SkinnedMeshRenderer/Animator rule. Scanner slice contains timestamp, active/finding counts, scan counts, evidence class, and eradication boolean. Owned forbidden scan is clean; runtime/editor/shader brace and preprocessor balances are zero; focused `git diff --check` reports no whitespace errors.</STATIC_VERIFICATION>
+</SELF_AUDIT_DELTA>
+
 ## 2026-05-21 - Polish Pass 9
 
 What was wrong:

@@ -471,3 +471,20 @@ Exact microseconds saved:
 Verification:
 - Focused source scan after patch found no `MovePosition(`, `MoveRotation(`, `AddForce(`, `AddTorque(`, Unity frame/delta time, LINQ, `string.Format`, `TryGetLatestCreated`, or scene search hits in SHINOBU_271 touched files.
 - Build not yet relaunched after this source change because an external `csc.exe` and `VBCSCompiler.exe` were active at 2026-05-22 03:11:20 +04:00.
+
+## 2026-05-22 Loop 14 Visor Compile Repair
+
+What was wrong:
+- `Build_SHINOBU_271_core_loop14_06.log` exposed ten RenderGraph API errors in Visor passes. Static `Texture`/`Texture2DArray` assets were routed through `RasterCommandBuffer.SetGlobalTexture(int, ...)`, while that raster command path is valid for RenderGraph texture handles, not static asset instances.
+
+What was done:
+- `DeferredDecalPass` now binds the decal atlas through `Material.SetTexture(...)` before the fullscreen draw.
+- `HectonVisorUberPostFeature` now binds crack, lens dirt, blue noise, and VR comfort mask textures through the pass material.
+- The post pass now returns before binding/drawing if its material is absent.
+
+Cinematic cheats used:
+- None added. This is a compile/API binding repair; SHINOBU_271's cinematic cheat path remains SDF projection plus arm clamp/socket snap instead of physical hand joints.
+
+Exact microseconds saved:
+- Runtime savings claimed: 0 microseconds. Draw count, shader work, and visual quality route are unchanged.
+- Integration savings: ten C# API errors removed from the current source path; rebuild proof still pending because an already-running stale `dotnet build Hecton8.slnx` began before this patch.

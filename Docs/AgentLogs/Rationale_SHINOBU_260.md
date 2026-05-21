@@ -1,6 +1,6 @@
 # Rationale_SHINOBU_260
 
-Status: PENDING VERIFICATION / POLISH PASS LOOP 19 WITH TASK 12 BLOCKED BY DEPENDENCY / NO BUILD DUE COMPILER PROCESS GATE
+Status: PENDING VERIFICATION / POLISH PASS LOOP 20 WITH TASK 12 BLOCKED BY DEPENDENCY / NO BUILD DUE COMPILER PROCESS GATE
 
 ## Decision 001: Resolve Duplicate SHINOBU_260 Prompt By ID And Role
 
@@ -178,3 +178,11 @@ Solution: Extend `Tools/Crest_Dependency_Scanner.py` with `scan_first_party_scri
 Rejected Alternatives: Deleting `CREST_URP` immediately was rejected because active Crest 4 donor C# and HLSL under `Assets/Crest` uses the symbol for URP-specific code. Treating the PlayerSettings line as a hard breach was rejected because it would fail the wall while the selected donor still requires it. Ignoring the line was rejected because global defines can activate future non-bridge conditional code silently.
 Scalability potential: Low/Middle/High/Ultra runtime behavior is unchanged. Developer scalability improves because future Crest-symbol branches outside `Assets/_Project/Scripts/Plugins/Crest` fail in the scanner instead of becoming hidden compile-wall dependencies.
 Hardware Impact: Runtime frame saving is 0 microseconds. Editor/build impact is avoided future compile fanout from donor preprocessor symbols leaking into first-party assemblies; no steady-state frame claim.
+
+## Decision 023: Archive Project-Side Crest4 Bindings, Not Only The Vendor Folder
+
+Problem: `Assets/Crest` was backed up, but active project-side selected-donor bindings also exist in `Assets/_Project/Data/Ocean`, `Assets/_Project/crest`, `Assets/_Project/Prefabs/Ocean_Crest.prefab`, and binary `Assets/_Project/Scenes/02_HECTON_WORLD.unity`. Those assets contain Crest4 settings, prefab components, and `Crest.OceanDepthCache` scene bindings. Restoring only the vendor folder would not reconstruct a damaged ocean prefab/settings/scene graft.
+Solution: Extend `Tools/Crest_Baseline_Archiver.py` so the normal baseline command also zips those project-side Crest4 binding assets and metas into `Docs/Archive/Crest_Baseline_Backup/`. Add a polish audit gate requiring the latest quarantine report to include those archive records with file counts.
+Rejected Alternatives: Moving selected Crest4 settings out of `Assets` was rejected because Crest4 is the active donor and the scene/prefab still needs those ScriptableObject bindings. Creating a Unity-visible quarantine copy was rejected because backups must stay outside Unity import visibility. Leaving this as documentation-only was rejected because the restore claim depends on actual archive payloads.
+Scalability potential: Low/Middle/High/Ultra runtime behavior is unchanged. Recovery scalability improves: low-end developer machines avoid manual scene/prefab reconstruction after a failed Crest experiment.
+Hardware Impact: Runtime frame saving is 0 microseconds. Editor recovery impact is avoided minutes to hours of manual binding reconstruction; the archive write itself is cold tooling.

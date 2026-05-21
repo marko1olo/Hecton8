@@ -5600,4 +5600,4 @@ Static verification:
 - Focused direct/legacy route scan found no `TryGetBuffer`, `GetBuffer<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `VaultBufferHandle<T>`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, or `.ptr` hits in `SaveStateMerkleTree.cs`.
 - Descriptor scan confirms `TryEnsureSaveMerkleVaultBuffer`, `VaultGenerationHandle<T>`, `GetGenerationHandle`, `TryResolveHandle`, and `SystemID.SavePersistence`.
 - Brace/preprocessor counts are balanced: braces `269/269`, `#if/#endif` `2/2`. `git diff --check` passed with CRLF warning only.
-- Build verification is inconclusive: the guarded build was launched after a clean CPU/process gate but timed out in the tool after 120s while still running; the process later cleared without a captured exit code. Rerun was blocked by the next CPU/compiler gate.
+- Build verification: first guarded `-clp:ErrorsOnly` attempt timed out after 120s while the process was still alive, so that result was discarded. After the CPU/process gate cleared again, `dotnet build Hecton8.slnx -nologo -v:minimal -maxcpucount:1` returned 0 errors, 175 warnings, elapsed 00:02:55.98.

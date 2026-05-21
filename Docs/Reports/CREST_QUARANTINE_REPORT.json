@@ -2,7 +2,7 @@
   "agent": "SHINOBU_260",
   "role": "CREST_VERSION_QUARANTINE_DIRECTOR",
   "executed": true,
-  "timestamp_utc": "20260521_104429",
+  "timestamp_utc": "20260521_232038",
   "project_root": "C:\\hades\\Hecton8",
   "backup_dir": "Docs\\Archive\\Crest_Baseline_Backup",
   "quarantine_dir": "Docs\\Archive\\Crest_Version_Quarantine",
@@ -11,9 +11,57 @@
       "label": "crest4_assets_crest",
       "source": "Assets\\Crest",
       "exists": true,
-      "zip": "Docs\\Archive\\Crest_Baseline_Backup\\crest4_assets_crest_20260521_104429.zip",
+      "zip": "Docs\\Archive\\Crest_Baseline_Backup\\crest4_assets_crest_20260521_232038.zip",
       "file_count": 642,
-      "bytes": 8514554
+      "bytes": 8505250
+    },
+    {
+      "label": "crest4_project_ocean_settings",
+      "source": "Assets\\_Project\\Data\\Ocean",
+      "exists": true,
+      "zip": "Docs\\Archive\\Crest_Baseline_Backup\\crest4_project_ocean_settings_20260521_232038.zip",
+      "file_count": 10,
+      "bytes": 4423
+    },
+    {
+      "label": "crest4_project_legacy_crest_settings",
+      "source": "Assets\\_Project\\crest",
+      "exists": true,
+      "zip": "Docs\\Archive\\Crest_Baseline_Backup\\crest4_project_legacy_crest_settings_20260521_232038.zip",
+      "file_count": 6,
+      "bytes": 1745
+    },
+    {
+      "label": "crest4_project_ocean_prefab",
+      "source": "Assets\\_Project\\Prefabs\\Ocean_Crest.prefab",
+      "exists": true,
+      "zip": "Docs\\Archive\\Crest_Baseline_Backup\\crest4_project_ocean_prefab_20260521_232038.zip",
+      "file_count": 1,
+      "bytes": 22374
+    },
+    {
+      "label": "crest4_project_ocean_prefab_meta",
+      "source": "Assets\\_Project\\Prefabs\\Ocean_Crest.prefab.meta",
+      "exists": true,
+      "zip": "Docs\\Archive\\Crest_Baseline_Backup\\crest4_project_ocean_prefab_meta_20260521_232038.zip",
+      "file_count": 1,
+      "bytes": 161
+    },
+    {
+      "label": "crest4_project_world_ocean_scene",
+      "source": "Assets\\_Project\\Scenes\\02_HECTON_WORLD.unity",
+      "exists": true,
+      "zip": "Docs\\Archive\\Crest_Baseline_Backup\\crest4_project_world_ocean_scene_20260521_232038.zip",
+      "file_count": 1,
+      "bytes": 33756552
+    },
+    {
+      "label": "crest4_project_world_ocean_scene_meta",
+      "source": "Assets\\_Project\\Scenes\\02_HECTON_WORLD.unity.meta",
+      "exists": true,
+      "zip": "Docs\\Archive\\Crest_Baseline_Backup\\crest4_project_world_ocean_scene_meta_20260521_232038.zip",
+      "file_count": 1,
+      "bytes": 162
     },
     {
       "label": "crest4_plugins_crest4",
@@ -34,71 +82,71 @@
     {
       "label": "crest5_embedded_package",
       "source": "Packages\\com.waveharmonic.crest",
-      "exists": true,
-      "zip": "Docs\\Archive\\Crest_Baseline_Backup\\crest5_embedded_package_20260521_104429.zip",
-      "file_count": 750,
-      "bytes": 15946158
+      "exists": false,
+      "zip": null,
+      "file_count": 0,
+      "bytes": 0
     }
   ],
   "package_move": {
     "source": "Packages\\com.waveharmonic.crest",
-    "destination": "Docs\\Archive\\Crest_Version_Quarantine\\Packages\\com.waveharmonic.crest",
-    "exists": true,
-    "moved": true
+    "destination": "Docs\\Archive\\Crest_Version_Quarantine\\Packages\\com.waveharmonic.crest_20260521_232101",
+    "exists": false,
+    "moved": false
   },
   "first_party_moves": [
     {
       "source": "Assets\\_Project\\Scripts\\Plugins\\Crest\\Crest5KinematicsAdapter.cs",
-      "destination": "Docs\\Archive\\Crest_Version_Quarantine\\first_party_crest5_tools\\Assets\\_Project\\Scripts\\Plugins\\Crest\\Crest5KinematicsAdapter.cs",
-      "exists": true,
-      "moved": true
+      "destination": "Docs\\Archive\\Crest_Version_Quarantine\\first_party_crest5_tools\\Assets\\_Project\\Scripts\\Plugins\\Crest\\Crest5KinematicsAdapter.cs_20260521_232101",
+      "exists": false,
+      "moved": false
     },
     {
       "source": "Assets\\_Project\\Scripts\\Plugins\\Crest\\Crest5KinematicsAdapter.cs.meta",
-      "destination": "Docs\\Archive\\Crest_Version_Quarantine\\first_party_crest5_tools\\Assets\\_Project\\Scripts\\Plugins\\Crest\\Crest5KinematicsAdapter.cs.meta",
-      "exists": true,
-      "moved": true
+      "destination": "Docs\\Archive\\Crest_Version_Quarantine\\first_party_crest5_tools\\Assets\\_Project\\Scripts\\Plugins\\Crest\\Crest5KinematicsAdapter.cs.meta_20260521_232101",
+      "exists": false,
+      "moved": false
     },
     {
       "source": "Assets\\_Project\\Scripts\\Editor\\CrestMigrationTool.cs",
-      "destination": "Docs\\Archive\\Crest_Version_Quarantine\\first_party_crest5_tools\\Assets\\_Project\\Scripts\\Editor\\CrestMigrationTool.cs",
-      "exists": true,
-      "moved": true
+      "destination": "Docs\\Archive\\Crest_Version_Quarantine\\first_party_crest5_tools\\Assets\\_Project\\Scripts\\Editor\\CrestMigrationTool.cs_20260521_232101",
+      "exists": false,
+      "moved": false
     },
     {
       "source": "Assets\\_Project\\Scripts\\Editor\\CrestMigrationTool.cs.meta",
-      "destination": "Docs\\Archive\\Crest_Version_Quarantine\\first_party_crest5_tools\\Assets\\_Project\\Scripts\\Editor\\CrestMigrationTool.cs.meta",
-      "exists": true,
-      "moved": true
+      "destination": "Docs\\Archive\\Crest_Version_Quarantine\\first_party_crest5_tools\\Assets\\_Project\\Scripts\\Editor\\CrestMigrationTool.cs.meta_20260521_232101",
+      "exists": false,
+      "moved": false
     },
     {
       "source": "Assets\\_Project\\Scripts\\Editor\\CrestMigrationBatch.cs",
-      "destination": "Docs\\Archive\\Crest_Version_Quarantine\\first_party_crest5_tools\\Assets\\_Project\\Scripts\\Editor\\CrestMigrationBatch.cs",
-      "exists": true,
-      "moved": true
+      "destination": "Docs\\Archive\\Crest_Version_Quarantine\\first_party_crest5_tools\\Assets\\_Project\\Scripts\\Editor\\CrestMigrationBatch.cs_20260521_232101",
+      "exists": false,
+      "moved": false
     },
     {
       "source": "Assets\\_Project\\Scripts\\Editor\\CrestMigrationBatch.cs.meta",
-      "destination": "Docs\\Archive\\Crest_Version_Quarantine\\first_party_crest5_tools\\Assets\\_Project\\Scripts\\Editor\\CrestMigrationBatch.cs.meta",
-      "exists": true,
-      "moved": true
+      "destination": "Docs\\Archive\\Crest_Version_Quarantine\\first_party_crest5_tools\\Assets\\_Project\\Scripts\\Editor\\CrestMigrationBatch.cs.meta_20260521_232101",
+      "exists": false,
+      "moved": false
     },
     {
       "source": "Assets\\_Project\\Scripts\\Editor\\CrestParityRunner.cs",
-      "destination": "Docs\\Archive\\Crest_Version_Quarantine\\first_party_crest5_tools\\Assets\\_Project\\Scripts\\Editor\\CrestParityRunner.cs",
-      "exists": true,
-      "moved": true
+      "destination": "Docs\\Archive\\Crest_Version_Quarantine\\first_party_crest5_tools\\Assets\\_Project\\Scripts\\Editor\\CrestParityRunner.cs_20260521_232101",
+      "exists": false,
+      "moved": false
     },
     {
       "source": "Assets\\_Project\\Scripts\\Editor\\CrestParityRunner.cs.meta",
-      "destination": "Docs\\Archive\\Crest_Version_Quarantine\\first_party_crest5_tools\\Assets\\_Project\\Scripts\\Editor\\CrestParityRunner.cs.meta",
-      "exists": true,
-      "moved": true
+      "destination": "Docs\\Archive\\Crest_Version_Quarantine\\first_party_crest5_tools\\Assets\\_Project\\Scripts\\Editor\\CrestParityRunner.cs.meta_20260521_232101",
+      "exists": false,
+      "moved": false
     }
   ],
   "packages_lock_cleanup": {
     "path": "Packages\\packages-lock.json",
     "exists": true,
-    "removed": true
+    "removed": false
   }
 }

@@ -42,6 +42,11 @@
       "status": "PASS"
     },
     {
+      "detail": "Crest baseline archiver captured project-side Crest4 settings, prefab, and 02_HECTON_WORLD ocean scene bindings in Docs/Archive.",
+      "name": "crest4_project_bindings_have_baseline_archives",
+      "status": "PASS"
+    },
+    {
       "detail": "Easy Save global assembly scan defaults no longer list Crest or WaveHarmonic assemblies outside the bridge.",
       "name": "easy_save_defaults_no_crest_assemblies",
       "status": "PASS"

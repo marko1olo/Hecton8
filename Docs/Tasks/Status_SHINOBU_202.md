@@ -4241,4 +4241,5 @@ Mandates read before coding:
 - Descriptor route scan confirmed `TryEnsureSaveMerkleVaultBuffer`, `VaultGenerationHandle<T>`, `GetGenerationHandle`, `TryResolveHandle`, and `SystemID.SavePersistence`.
 - Brace/preprocessor counts are balanced: `SaveStateMerkleTree.cs` braces `269/269`, preprocessor `#if/#endif` `2/2`.
 - `git diff --check` passed for `SaveStateMerkleTree.cs`; CRLF warning only.
-- Guarded `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1` was launched only after CPU/process gate passed, but the tool timed out after 120s while the build process was still alive. The process later cleared, but no trustworthy exit code or compiler error stream was captured. A rerun was not launched because the next gate sample showed CPU saturation/active compiler state.
+- First guarded build attempt with `-clp:ErrorsOnly` timed out after 120s while the build process was still alive; process later cleared without a trustworthy exit code.
+- After CPU/process gate cleared again, `dotnet build Hecton8.slnx -nologo -v:minimal -maxcpucount:1` returned 0 errors, 175 warnings, elapsed 00:02:55.98.

@@ -3,7 +3,7 @@
 Agent: SHINOBU_260
 Domain: CREST_VERSION_QUARANTINE_DIRECTOR / Echelon 9 Meta & Integration
 Task Count: 20
-Status: PENDING VERIFICATION / POLISH PASS LOOP 19 WITH TASK 12 BLOCKED BY DEPENDENCY / NO BUILD DUE COMPILER PROCESS GATE
+Status: PENDING VERIFICATION / POLISH PASS LOOP 20 WITH TASK 12 BLOCKED BY DEPENDENCY / NO BUILD DUE COMPILER PROCESS GATE
 Batch Source: Docs/Tasks/CURRENT_BATCH.md `<AGENT_PROMPT id="SHINOBU_260" role="CREST_VERSION_QUARANTINE_DIRECTOR">`
 
 ## Hygiene
@@ -400,3 +400,18 @@ Rule quote: `Hecton8.Core` and `Hecton8.Physics` must have zero direct assembly 
   - DOD practice: py_compile passed; dependency scanner reports `breach_count=0`, `global_scripting_define_hit_count=1`, `reflection_string_hit_count=0`, `vocabulary_debt_hit_count=111`; polish audit reports `failed_count=0`.
   - Rejected alternative: Unity/dotnet rebuild was rejected because the gate found active `VBCSCompiler` even though sampled CPU was 45.3 percent.
   - Estimated saving: no frame claim; avoids violating the compile gate while preserving scanner proof.
+
+## Loop 20: Project-Side Crest4 Binding Backup
+
+- [x] Active Crest4 project bindings explicitly archived.
+  - DOD practice: widened `Tools/Crest_Baseline_Archiver.py` to back up `Assets/_Project/Data/Ocean`, `Assets/_Project/crest`, `Ocean_Crest.prefab(.meta)`, and `02_HECTON_WORLD.unity(.meta)` because these Unity-visible project assets contain selected Crest4 donor bindings.
+  - Rejected alternative: assuming `Assets/Crest` zip alone was enough was rejected because restore after an ocean shader/prefab graft also needs project-side Crest settings and scene bindings.
+  - Estimated saving: runtime 0 microseconds; prevents minutes to hours of manual scene/prefab/settings reconstruction after donor restore.
+- [x] New baseline archive run executed.
+  - DOD practice: `python Tools\Crest_Baseline_Archiver.py --execute` produced project-side donor zips under `Docs/Archive/Crest_Baseline_Backup/`; latest report lists 10 ocean settings files, 6 legacy `_Project/crest` files, `Ocean_Crest.prefab`, `Ocean_Crest.prefab.meta`, `02_HECTON_WORLD.unity`, and its meta.
+  - Rejected alternative: copying into `Assets/~Quarantine` was rejected because the archive must remain outside Unity visibility.
+  - Estimated saving: editor/runtime 0 microseconds; recovery speed is the gain.
+- [x] Static proof rerun.
+  - DOD practice: py_compile passed; polish audit reports `crest4_project_bindings_have_baseline_archives` and `failed_count=0`; dependency scanner remains `breach_count=0`.
+  - Rejected alternative: Unity/dotnet rebuild was rejected because this loop changes Python tooling, docs, and archive payloads only.
+  - Estimated saving: no frame claim; avoids needless compile-wall load.

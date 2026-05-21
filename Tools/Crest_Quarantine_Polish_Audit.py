@@ -125,6 +125,34 @@ def main() -> int:
         and (ROOT / "Docs/Archive/Crest_Version_Quarantine/Assets/_Project/Scenes/03_HECTON_WORLD_CREST5.unity.meta").exists(),
         "Binary Crest5 sandbox scene and meta are archived outside Unity visibility.",
     )
+    quarantine_report_path = ROOT / "Docs/Reports/CREST_QUARANTINE_REPORT.json"
+    quarantine_report = {}
+    if quarantine_report_path.exists():
+        quarantine_report = json.loads(quarantine_report_path.read_text(encoding="utf-8"))
+    archive_records = {
+        record.get("label"): record
+        for record in quarantine_report.get("archives", [])
+        if isinstance(record, dict)
+    }
+    project_binding_labels = (
+        "crest4_project_ocean_settings",
+        "crest4_project_legacy_crest_settings",
+        "crest4_project_ocean_prefab",
+        "crest4_project_ocean_prefab_meta",
+        "crest4_project_world_ocean_scene",
+        "crest4_project_world_ocean_scene_meta",
+    )
+    add_check(
+        checks,
+        "crest4_project_bindings_have_baseline_archives",
+        all(
+            bool(archive_records.get(label, {}).get("exists"))
+            and bool(archive_records.get(label, {}).get("zip"))
+            and int(archive_records.get(label, {}).get("file_count", 0)) > 0
+            for label in project_binding_labels
+        ),
+        "Crest baseline archiver captured project-side Crest4 settings, prefab, and 02_HECTON_WORLD ocean scene bindings in Docs/Archive.",
+    )
     es3_defaults = read_text("Assets/Plugins/Easy Save 3/Resources/ES3/ES3Defaults.asset")
     init_test_scene_texts = [
         path.read_text(encoding="utf-8", errors="replace")

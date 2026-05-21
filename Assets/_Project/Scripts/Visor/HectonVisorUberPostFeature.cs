@@ -485,6 +485,9 @@ namespace Hecton8.Visor
 
                     builder.SetRenderFunc(static (PostPassData data, RasterGraphContext context) =>
                     {
+                        if (data.Material == null)
+                            return;
+
                         context.cmd.SetGlobalTexture(ShaderConstants.BlitTextureId, data.Source);
                         if (data.HasDepth)
                             context.cmd.SetGlobalTexture(ShaderConstants.CameraDepthTextureId, data.Depth);
@@ -578,10 +581,10 @@ namespace Hecton8.Visor
 
             private static void BindPostShaderParameters(RasterCommandBuffer cmd, PostPassData data)
             {
-                cmd.SetGlobalTexture(ShaderConstants.CrackTextureId, data.CrackTexture);
-                cmd.SetGlobalTexture(ShaderConstants.LensDirtTextureId, data.LensDirtTexture);
-                cmd.SetGlobalTexture(ShaderConstants.BlueNoiseTextureId, data.BlueNoiseTexture);
-                cmd.SetGlobalTexture(ShaderConstants.VrComfortMaskTextureId, data.VrComfortMaskTexture);
+                data.Material.SetTexture(ShaderConstants.CrackTextureId, data.CrackTexture);
+                data.Material.SetTexture(ShaderConstants.LensDirtTextureId, data.LensDirtTexture);
+                data.Material.SetTexture(ShaderConstants.BlueNoiseTextureId, data.BlueNoiseTexture);
+                data.Material.SetTexture(ShaderConstants.VrComfortMaskTextureId, data.VrComfortMaskTexture);
 
                 cmd.SetGlobalFloat(ShaderConstants.HealthFractionId, data.HealthFraction);
                 cmd.SetGlobalFloat(ShaderConstants.LocalTemperatureId, data.LocalTemperature);

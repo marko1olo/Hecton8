@@ -445,3 +445,9 @@ Solution: Keep `ResolveIterationCount()` as the deterministic 8-step gameplay fe
 Rejected Alternatives: Quality-dependent SDF iteration count, socket prefix budgets, or binary low/high hand paths. Those alternatives mutate gameplay truth or introduce visible/predictability cliffs.
 Scalability potential: Low quality sheds four to five out of six visual finger spherecast batches; middle tiers interpolate cadence; ultra runs every fixed frame. SDF hand truth, socket truth, DTO layout, BufferIDs, and signal authority remain invariant.
 Hardware Impact: Five spherecast commands plus two small jobs are skipped on low-quality frames. Static expected saving is workload-dependent and pending profiler proof; worst low-quality cadence removes roughly 83 percent of this visual-only batch work.
+
+Problem: Loop 14 narrow Core build exposed Visor RenderGraph API breakage: static `Texture` and `Texture2DArray` assets were bound through `RasterCommandBuffer.SetGlobalTexture(int, ...)`, but that raster path accepts RenderGraph `TextureHandle` resources for those overloads.
+Solution: Kept RenderGraph source/depth bindings on `RasterCommandBuffer.SetGlobalTexture(...)` and moved static decal/post-process texture assets to material-local `Material.SetTexture(...)` before the fullscreen draw.
+Rejected Alternatives: Wrapping static assets as transient RenderGraph handles, reverting to legacy command buffers, or changing shader property IDs. Transient wrappers add lifetime ambiguity; legacy buffers regress the render route; shader IDs were not the fault.
+Scalability potential: Low through Ultra tiers keep identical shader input semantics. The repair preserves the existing continuous visual quality path and removes only the compile-time binding mismatch.
+Hardware Impact: Runtime draw count and shader ALU are unchanged; claimed frame gain is 0 microseconds. Integration gain is removing ten C# API errors without touching SHINOBU authority data.

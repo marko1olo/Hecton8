@@ -3275,3 +3275,21 @@ Verification:
     Targeted `rg` found no `IScalabilityChangedEventListener`, `ScalabilityEvents`, `OnScalabilityChanged`, `ScalabilityChangedEvent`, cached scalability tier, low-tier names, `HectonQualityTier`, `GlobalRegistry.ScalabilityTier`, or `QualitySettings.GetQualityLevel` in `CameraJuiceSystem.cs`; `git diff --check` passed. Build was not launched because CPU probe returned 68% with an active `dotnet` process.
   </VERIFICATION>
 </SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="BiolumPulseSyncQualityTelemetryPull">
+  <WHAT_WAS_WRONG>
+    `BiolumPulseSyncRuntime` retained `IScalabilityChangedEventListener`, `ScalabilityEvents` lifecycle registration, a cached `HectonQualityTier`, and tier refresh helpers only to write the blackbox telemetry quality byte. The active oscillator jobs already use continuous `GlobalQualityWeight`.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Removed the binary scalability event route and cached tier field. `RecordTelemetry` now encodes continuous `_globalQualityWeight` into the existing telemetry byte through `EncodeQualityWeightByte`; no DTO field offsets, BufferIDs, shader property IDs, vault handles, or SignalBus payloads changed.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    Biolum pulse sync remains a Dear Lie shader heartbeat: CPU jobs update compact oscillator rows, while the shader expands them into perceived flora/fauna glow waves. Minimum quality keeps cadence and amplitude reduced through scalar curves; high/ultra spends saved budget on stronger pulse intensity and shader response.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. The route removes one event listener and cached tier write. Theoretical visual work remains O(groups + fixed pulse slots), not O(glow instances) CPU simulation.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted scan found no `IScalabilityChangedEventListener`, `ScalabilityEvents`, `OnScalabilityChanged`, cached scalability state, `HectonQualityTier`, `GlobalRegistry.ScalabilityTier`, or low-tier route in `BiolumPulseSyncRuntime.cs`; `git diff --check` passed with line-ending warning only. Build guard still pending for Compile Check 115.
+  </VERIFICATION>
+</SELF_AUDIT>

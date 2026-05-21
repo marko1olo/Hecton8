@@ -16,6 +16,15 @@ Backup zips produced by `Tools/Crest_Baseline_Archiver.py --execute`:
 - `crest4_assets_crest_20260521_104429.zip`: 642 files, 8,514,554 source bytes.
 - `crest5_embedded_package_20260521_104429.zip`: 750 files, 15,946,158 source bytes.
 
+Loop 20 widened the baseline command to archive project-side Crest4 bindings that are not part of the vendor folder but are required for restore:
+
+- `crest4_project_ocean_settings_20260521_232038.zip`: `Assets/_Project/Data/Ocean`, 10 files, 4,423 source bytes.
+- `crest4_project_legacy_crest_settings_20260521_232038.zip`: `Assets/_Project/crest`, 6 files, 1,745 source bytes.
+- `crest4_project_ocean_prefab_20260521_232038.zip`: `Assets/_Project/Prefabs/Ocean_Crest.prefab`, 1 file, 22,374 source bytes.
+- `crest4_project_ocean_prefab_meta_20260521_232038.zip`: prefab meta, 1 file, 161 source bytes.
+- `crest4_project_world_ocean_scene_20260521_232038.zip`: `Assets/_Project/Scenes/02_HECTON_WORLD.unity`, 1 file, 33,756,552 source bytes.
+- `crest4_project_world_ocean_scene_meta_20260521_232038.zip`: scene meta, 1 file, 162 source bytes.
+
 `Packages/packages-lock.json` no longer contains `com.waveharmonic.crest`.
 
 Additional Loop 13 active-asset quarantine artifacts:
@@ -135,6 +144,7 @@ Task 12 status: blocked by dependency. Full suppression of Crest `OceanRenderer.
 - `Tools/Crest_Quarantine_Polish_Audit.py` also gates `dependency_scanner_blocks_archived_asset_guid_references`, proving the normal scanner will fail active links to archived Crest5/recovery object GUIDs.
 - `Tools/Crest_Quarantine_Polish_Audit.py` also gates `crest_donor_asmdefs_not_auto_referenced`, `bridge_asmdef_not_auto_referenced`, and `dependency_scanner_blocks_auto_referenced_crest_assemblies`.
 - `Tools/Crest_Quarantine_Polish_Audit.py` also gates `dependency_scanner_tracks_crest_scripting_defines` and `dependency_scanner_blocks_non_bridge_crest_preprocessor_branches`.
+- `Tools/Crest_Quarantine_Polish_Audit.py` also gates `crest4_project_bindings_have_baseline_archives`, proving the latest baseline report includes project-side Crest4 settings, prefab, and scene binding archives.
 - `Tools/Crest_Quarantine_Polish_Audit.py` also gates `underwater_visuals_no_crest_reflection_fallback`, `underwater_visuals_vendor_neutral_pass_vocabulary`, `visual_bridge_contract_vendor_neutral`, `dry_volume_reads_vendor_texture_id_through_bridge`, `crest5_prefab_adapter_reference_removed`, `ocean_kinematics_base_vendor_neutral`, `low_risk_non_bridge_text_uses_ocean_vocabulary`, and `dependency_scanner_tracks_vocabulary_debt`.
 - `python Tools/BufferIDSovereigntyAudit.py --report-path Docs/Reports/SHINOBU_260_BufferIDSovereigntyAudit.md --json-path Docs/Reports/SHINOBU_260_BufferIDSovereigntyAudit.json`: passed as static evidence; global `duplicateValueCount=3` comes from unrelated `H8Memory.cs` values `70534..70536`, while `72960..72965` are local casts only in `OceanAdapterVaultRoute.cs`.
 - `python -m py_compile Tools/Crest_Baseline_Archiver.py Tools/Crest_Dependency_Scanner.py Tools/Crest_Quarantine_Polish_Audit.py Tools/BufferIDSovereigntyAudit.py`: passed.

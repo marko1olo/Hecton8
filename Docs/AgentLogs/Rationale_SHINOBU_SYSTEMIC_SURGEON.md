@@ -1114,3 +1114,11 @@ Solution: Removed the alias and binary `QualitySettings` gates. Procedural camer
 Rejected Alternatives: Keeping Unity quality level as a shortcut was rejected because it is a discrete presentation tier. Forcing DoF or motion blur always on was rejected because authored toggles and adaptive post-fx pressure must remain respected.
 Scalability potential: Low devices reduce camera-noise resampling and post-fx pressure smoothly; middle devices interpolate; high/ultra keep full procedural noise and post-fx budget if authored settings allow.
 Hardware Impact: 0 us speed claim. Removes branch-key residue and keeps quality as a continuous scalar; frame impact requires runtime capture.
+
+## Biolum Pulse Sync Quality Telemetry Pull
+
+Problem: `BiolumPulseSyncRuntime` retained scalability event/listener plumbing and a cached `HectonQualityTier` only to stamp blackbox telemetry. The active Burst jobs already consume continuous `GlobalQualityWeight`, so the event route was stale binary metadata.
+Solution: Removed `IScalabilityChangedEventListener`, `ScalabilityEvents` registration/unregistration, callback state, tier cache, and tier refresh helpers. `RecordTelemetry` now writes a quality byte from finite-guarded continuous `_globalQualityWeight` through `EncodeQualityWeightByte`.
+Rejected Alternatives: Keeping the listener as a "documentation" path was rejected because it still creates a binary route and lifecycle dependency. Renaming the telemetry field was rejected because changing the dump ABI is outside this sanitation pass.
+Scalability potential: Low devices keep the existing 5 Hz visual update floor and slightly lower amplitude gain; middle devices interpolate; high/ultra keep stronger pulse amplitude and full shader heartbeat. Species tuning, sync pulse truth, AUP-local pulse projection, and DataVault BufferIDs remain unchanged.
+Hardware Impact: 0 us speed claim. Removes one event listener route and one cached tier field. Active jobs remain amortized, `[NoAlias]`, vault-backed, and dispatcher-fenced through `_stateJobHandle`.

@@ -89,50 +89,6 @@ Verification:
   <CompileStatus>BLOCKED_BY_CPU_GATE_100_PERCENT</CompileStatus>
 </SELF_AUDIT>
 
-## 2026-05-22 - Stale Watchdog / Hot-Poll Closure
-
-What was wrong:
-- The same-frame RenderGraph watchdog closed the pending-frame abort path, but it did not cover a later authorized player-camera frame where the feature was absent or not invoked. That could keep renderer-owned Canvas suppression true from the last successful resolve.
-- `SuitHUDV4CanvasOverlay.TryRegisterRuntimeTick()` still reached `GlobalRegistry.Dispatcher` from `SlowTick()` after late-frame and slow-tick registration were already complete.
-- `CopyActiveOverlaysTo()` could grow the caller-owned `List<T>` if active overlays exceeded the scratch list capacity.
-- `VISOR_AR_STENCIL_RENDERER.md` claimed the mask shader wrote depth/stencil, while `Hecton_VisorStencilMask.shader` has `ZWrite Off`.
-
-What was done:
-- `MarkStencilResolveRecorded()` now clears `_pendingStencilPresentationFrame` after proven resolve record.
-- `OnEndCameraRendering()` now clears renderer-owned suppression on any authorized player-camera frame that ends without a same-frame resolve record.
-- `TryRegisterRuntimeTick()` now exits before `GlobalRegistry.Dispatcher` when local registration state already proves late-frame and slow-tick registration.
-- `CopyActiveOverlaysTo()` now treats caller list capacity as a hard limit and returns instead of triggering managed growth.
-- Architecture wording now matches the shader: ColorMask 0, Cull Off, ZWrite Off, stencil lane write only, depth attachment used for test/order.
-
-Cinematic Cheats used:
-- Runtime presentation remains the same optical fake: stencil-gated fullscreen shader digits, brackets, scanlines, and breath fog. No Canvas/TMP text, CPU particle fog, per-waypoint GameObject renderer, or physical visor simulation was restored.
-
-Exact Microseconds saved:
-- Stale watchdog patch: 0 us steady successful frame claimed; correctness guard against blind HUD.
-- Hot-poll guard: estimated 1-3 us CPU variance reduction on i3/MX350-class CPUs after registration, pending profiler proof.
-- Overlay capacity guard: removes rare managed allocation risk; time saved depends on overlay count and previous `List<T>` growth path.
-
-Verification:
-- Case-sensitive targeted forbidden-token scan returned no hits for `GlobalSignals`, `FromRuntimePosition`, `Shader.SetGlobal*`, `Canvas.ForceUpdateCanvases`, `TryGetLatestCreated`, `.Run()`, `.Complete()`, `new NativeArray`, `_CameraDepthTexture`, `foreach`, LINQ `.Select(` / `.Where(`, or `string.Format` in SHINOBU_270 target files.
-- `Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json` parses.
-- `git diff --check` on patched SHINOBU_270 files reports only Git LF-to-CRLF warning for `VISOR_AR_STENCIL_RENDERER.md`.
-
-Build gate:
-- Build not launched.
-- Active compiler processes found: `csc` PID 24148 and `dotnet` PID 15396.
-- CPU gate stayed closed: CIM CPU 84%; processor counter samples 100%, 100%, 100%.
-- Compile remains PENDING VERIFICATION because generated `Hecton8.Core.csproj` is still stale for the new SHINOBU_270 renderer/gizmo scripts and the active-compiler/CPU gates are closed.
-
-<SELF_AUDIT_ADDENDUM agent_id="SHINOBU_270" evidence="STATIC_SOURCE" verification="PENDING_UNITY_IMPORT_AND_BUILD">
-  <task_reconciliation note="Tasks 01-20 remain PASS from previous audit; Iteration 24 tightens Task 02 fail-open ownership, Task 19 proof accuracy, and Task 20 self-audit honesty without changing authority routes or DTO identity."/>
-  <struct_layout note="No DTO layout changed. Primary 64-byte DTO offsets recorded in the prior SELF_AUDIT remain valid."/>
-  <scalability note="No binary hardware route was added. `GlobalQualityWeight` shader math remains continuous; watchdog only controls presentation fail-open when resolve proof is absent."/>
-  <h_phi note="No new persistent native container or private array ownership added. Overlay copy now respects caller capacity instead of growing managed storage."/>
-  <dependency_graph note="No new jobs and no `.Complete()` added. Renderer still consumes RenderGraph camera resources and outputs the AR resolve only after record proof."/>
-  <compile_guard note="No sibling assembly dependency added. Build not run because active compiler and CPU gates are closed, and generated project coverage remains stale."/>
-  <dear_lie note="The stencil shader documentation now matches source: stencil lane write only, no depth write, no color write."/>
-</SELF_AUDIT_ADDENDUM>
-
 ## SHINOBU_270 POLISH ADDENDUM - REPORT ARTIFACT REVERIFICATION
 
 What was wrong:
@@ -453,6 +409,50 @@ Verification:
   </DearLieConfirmation>
   <CompileStatus>BLOCKED_BY_CPU_GATE_CIM_88_PERCENT_COUNTER_83_7_TO_100_PERCENT</CompileStatus>
 </SELF_AUDIT>
+
+## 2026-05-22 - Stale Watchdog / Hot-Poll Closure
+
+What was wrong:
+- The same-frame RenderGraph watchdog closed the pending-frame abort path, but it did not cover a later authorized player-camera frame where the feature was absent or not invoked. That could keep renderer-owned Canvas suppression true from the last successful resolve.
+- `SuitHUDV4CanvasOverlay.TryRegisterRuntimeTick()` still reached `GlobalRegistry.Dispatcher` from `SlowTick()` after late-frame and slow-tick registration were already complete.
+- `CopyActiveOverlaysTo()` could grow the caller-owned `List<T>` if active overlays exceeded the scratch list capacity.
+- `VISOR_AR_STENCIL_RENDERER.md` claimed the mask shader wrote depth/stencil, while `Hecton_VisorStencilMask.shader` has `ZWrite Off`.
+
+What was done:
+- `MarkStencilResolveRecorded()` now clears `_pendingStencilPresentationFrame` after proven resolve record.
+- `OnEndCameraRendering()` now clears renderer-owned suppression on any authorized player-camera frame that ends without a same-frame resolve record.
+- `TryRegisterRuntimeTick()` now exits before `GlobalRegistry.Dispatcher` when local registration state already proves late-frame and slow-tick registration.
+- `CopyActiveOverlaysTo()` now treats caller list capacity as a hard limit and returns instead of triggering managed growth.
+- Architecture wording now matches the shader: ColorMask 0, Cull Off, ZWrite Off, stencil lane write only, depth attachment used for test/order.
+
+Cinematic Cheats used:
+- Runtime presentation remains the same optical fake: stencil-gated fullscreen shader digits, brackets, scanlines, and breath fog. No Canvas/TMP text, CPU particle fog, per-waypoint GameObject renderer, or physical visor simulation was restored.
+
+Exact Microseconds saved:
+- Stale watchdog patch: 0 us steady successful frame claimed; correctness guard against blind HUD.
+- Hot-poll guard: estimated 1-3 us CPU variance reduction on i3/MX350-class CPUs after registration, pending profiler proof.
+- Overlay capacity guard: removes rare managed allocation risk; time saved depends on overlay count and previous `List<T>` growth path.
+
+Verification:
+- Case-sensitive targeted forbidden-token scan returned no hits for `GlobalSignals`, `FromRuntimePosition`, `Shader.SetGlobal*`, `Canvas.ForceUpdateCanvases`, `TryGetLatestCreated`, `.Run()`, `.Complete()`, `new NativeArray`, `_CameraDepthTexture`, `foreach`, LINQ `.Select(` / `.Where(`, or `string.Format` in SHINOBU_270 target files.
+- `Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json` parses.
+- `git diff --check` on patched SHINOBU_270 files reports only Git LF-to-CRLF warning for `VISOR_AR_STENCIL_RENDERER.md`.
+
+Build gate:
+- Build not launched.
+- Active compiler processes found: `csc` PID 24148 and `dotnet` PID 15396.
+- CPU gate stayed closed: CIM CPU 84%; processor counter samples 100%, 100%, 100%.
+- Compile remains PENDING VERIFICATION because generated `Hecton8.Core.csproj` is still stale for the new SHINOBU_270 renderer/gizmo scripts and the active-compiler/CPU gates are closed.
+
+<SELF_AUDIT_ADDENDUM agent_id="SHINOBU_270" evidence="STATIC_SOURCE" verification="PENDING_UNITY_IMPORT_AND_BUILD">
+  <task_reconciliation note="Tasks 01-20 remain PASS from previous audit; Iteration 24 tightens Task 02 fail-open ownership, Task 19 proof accuracy, and Task 20 self-audit honesty without changing authority routes or DTO identity."/>
+  <struct_layout note="No DTO layout changed. Primary 64-byte DTO offsets recorded in the prior SELF_AUDIT remain valid."/>
+  <scalability note="No binary hardware route was added. `GlobalQualityWeight` shader math remains continuous; watchdog only controls presentation fail-open when resolve proof is absent."/>
+  <h_phi note="No new persistent native container or private array ownership added. Overlay copy now respects caller capacity instead of growing managed storage."/>
+  <dependency_graph note="No new jobs and no `.Complete()` added. Renderer still consumes RenderGraph camera resources and outputs the AR resolve only after record proof."/>
+  <compile_guard note="No sibling assembly dependency added. Build not run because active compiler and CPU gates are closed, and generated project coverage remains stale."/>
+  <dear_lie note="The stencil shader documentation now matches source: stencil lane write only, no depth write, no color write."/>
+</SELF_AUDIT_ADDENDUM>
 
 ## SHINOBU_270 POLISH ADDENDUM - BUILD GATE WATCH
 
