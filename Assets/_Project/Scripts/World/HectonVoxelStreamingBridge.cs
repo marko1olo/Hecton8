@@ -214,7 +214,7 @@ namespace Hecton8.World
             if (vegetationBridge == null || voxelEngine == null)
                 return;
 
-            if (!vegetationBridge.TryGetTerrainHoleStreamingPayload(out var holes, out int holeCount) || !holes.IsCreated || holeCount <= 0)
+            if (!vegetationBridge.TryGetTerrainHoleStreamingPayload(out NativeArray<TerrainHoleStreamingRecord>.ReadOnly holes, out int holeCount) || holes.Length <= 0 || holeCount <= 0)
                 return;
 
             if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))

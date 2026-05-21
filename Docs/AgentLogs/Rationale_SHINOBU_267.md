@@ -625,3 +625,15 @@ Route impact: Future changes cannot add hot managed allocation, hot file IO, hot
 Proof required: Static source/self-audit now; Unity Editor self-audit invocation remains pending.
 Parked work rejected: Build launch at 100% CPU, runtime profiling instrumentation, and unrelated hot-phase audits in sibling domains.
 Static verification: Extracted hot method slices report `preForbidden=0`, `visForbidden=0`, kernels present, upload present; owned broad forbidden scan is clean after split `.Run`/`.Complete` audit tokens; `git diff --check` reported no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 100%, dotnet=1, csc=0.
+
+## Polish Pass 56 Decisions
+Problem: The central route card and binary payload ledger still described the older SHINOBU_267 proof surface. The current source now has full five-DTO layout validation, direct-memory CSV hydration, MemClear clearing, and owner-phase slice auditing; leaving that only in agent logs forces integrators to search the wrong artifact.
+Solution: Updated `Docs/ARCHITECTURE/FLORA_PROCEDURAL_SWAY_FIELD.md` and `Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md` to name the five-DTO `ValidateFloraSwayLayouts()` matrix, measured Params/Flow/Tuning/Telemetry/Profile editor proof, pointer-offset `UnsafeUtility.AsRef<FloraBiomeSwayProfileDTO>` profile writes, `UnsafeUtility.MemClear` cold clears, and `ownerPhasePurity` hot owner-method audit.
+Rejected Alternatives: Leaving architecture docs stale was rejected because central route docs are the compile-wall/integration contract. Rewriting unrelated SHINOBU_124 field sections was rejected because this pass is the ambient overlay route only. Launching a whole-project build was rejected because current dirty C# files are sibling-domain edits and there is no generated SHINOBU_267-specific csproj to target.
+Scalability potential: No runtime tier behavior change. This documents the current continuous quality route and proof surface.
+Hardware Impact: Documentation-only, 0 runtime us.
+First 20 Minutes moment: World load and swim readability on the selected Copper Wire route biome.
+Route impact: Integrators now see the current ambient overlay ABI and hot-phase purity proof in the route card and binary ledger.
+Proof required: Static doc/source scan now; Unity import/Console, editor self-audit invocation, selected route run, profiler/GC, Frame Debugger, screenshot/clip, save/load diff, and dump-read smoke test remain pending.
+Parked work rejected: Whole-project compile against unrelated dirty C# edits, unrelated sibling route-card rewrites, and claiming Unity runtime proof from static docs.
+Static verification: Architecture docs now contain `ownerPhasePurity`, direct-memory profile writes, `UnsafeUtility.MemClear`, and `ValidateFloraSwayLayouts()` five-DTO proof references; owned forbidden scan remains clean; SHINOBU_267 XML extraction remains 20 tasks / 15929 chars; `git diff --check` reported no whitespace errors beyond LF/CRLF warnings. Build not launched because current dirty C# files are unrelated sibling-domain edits and no SHINOBU_267-specific csproj exists.

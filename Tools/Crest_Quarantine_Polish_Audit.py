@@ -460,6 +460,13 @@ def main() -> int:
         and isinstance(dependency_report.get("vocabulary_debt_hits"), list),
         "Dependency scanner reports non-failing Crest vocabulary debt separately from asmdef/direct-reference breaches.",
     )
+    add_check(
+        checks,
+        "dependency_scanner_tracks_crest_scripting_defines",
+        isinstance(dependency_report.get("global_scripting_define_hit_count"), int)
+        and isinstance(dependency_report.get("global_scripting_define_hits"), list),
+        "Dependency scanner reports global Crest scripting symbols and hard-fails first-party Crest preprocessor branches outside the bridge.",
+    )
     dependency_scanner_source = read_text("Tools/Crest_Dependency_Scanner.py")
     add_check(
         checks,
@@ -498,6 +505,15 @@ def main() -> int:
         and "crest_donor_asmdef_auto_referenced" in dependency_scanner_source
         and "bridge_crest_asmdef_auto_referenced" in dependency_scanner_source,
         "Dependency scanner hard-fails Crest donor or bridge asmdefs if autoReferenced is re-enabled.",
+    )
+    add_check(
+        checks,
+        "dependency_scanner_blocks_non_bridge_crest_preprocessor_branches",
+        "CREST_SCRIPTING_DEFINE_SYMBOLS" in dependency_scanner_source
+        and "scan_first_party_scripting_define_usage" in dependency_scanner_source
+        and "crest_scripting_define_usage" in dependency_scanner_source
+        and "scan_global_scripting_defines" in dependency_scanner_source,
+        "Dependency scanner fails non-bridge #if CREST_OCEAN/CREST_URP usage while keeping current ProjectSettings donor symbols as non-failing evidence.",
     )
 
     failed = [check for check in checks if check["status"] != "PASS"]

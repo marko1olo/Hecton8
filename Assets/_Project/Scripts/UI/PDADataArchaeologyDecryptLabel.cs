@@ -1,7 +1,6 @@
 using System;
 using Hecton.Localization;
 using Hecton8.Core;
-using Hecton8.Core.Contracts.Signals;
 using TMPro;
 using Unity.Mathematics;
 using UnityEngine;
@@ -12,7 +11,7 @@ namespace Hecton8.UI
     /// Hash-bound PDA label for scanner archaeology names. Writes TMP text from pooled char buffers only.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class PDADataArchaeologyDecryptLabel : MonoBehaviour, ILateFrameTickable, IScalabilityChangedEventListener, IGlobalRegistryHotSwapListener
+    public sealed class PDADataArchaeologyDecryptLabel : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int RevealBucketCount = 64;
         private const float ScrambleSpeed = 37f;
@@ -29,7 +28,6 @@ namespace Hecton8.UI
         private int _lastProgressBucket = -1;
         private bool _registered;
         private bool _hotSwapRegistered;
-        private bool _registeredScalabilityListener;
         private bool _dirty;
         private float _scrambleIntensity01 = 1f;
 
@@ -66,14 +64,12 @@ namespace Hecton8.UI
         {
             RefreshCachedQualityWeight();
             TryRegisterHotSwapListener();
-            TryRegisterScalabilityListener();
             TryRegister();
             _dirty = true;
         }
 
         private void OnDisable()
         {
-            TryUnregisterScalabilityListener();
             TryUnregisterHotSwapListener();
             Unregister();
         }
@@ -84,6 +80,7 @@ namespace Hecton8.UI
             if (targetText == null || _entityHash == 0u)
                 return;
 
+            RefreshCachedQualityWeight();
             float deltaTime = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
             float scrambleIntensity01 = ShouldScramble(_progress01) ? _scrambleIntensity01 : 0f;
             _scramblePhase += deltaTime * ScrambleSpeed * scrambleIntensity01;
@@ -156,11 +153,6 @@ namespace Hecton8.UI
             return progress01 < 0.999f;
         }
 
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            RefreshCachedQualityWeight();
-        }
-
         public void OnGlobalRegistryServiceReplaced(
             GlobalRegistryServiceSlot serviceSlot,
             object previousService,
@@ -170,13 +162,18 @@ namespace Hecton8.UI
                 TryRegister();
         }
 
-        private void RefreshCachedQualityWeight()
+        private bool RefreshCachedQualityWeight()
         {
             float quality = HomeostasisBrain.GlobalQualityWeight;
             quality = math.saturate(math.isfinite(quality) ? quality : 1f);
             float scaled = math.saturate((quality - 0.2f) * 1.25f);
-            _scrambleIntensity01 = SmoothStep01(scaled);
+            float nextScrambleIntensity01 = SmoothStep01(scaled);
+            if (math.abs(nextScrambleIntensity01 - _scrambleIntensity01) <= 0.001f)
+                return false;
+
+            _scrambleIntensity01 = nextScrambleIntensity01;
             _dirty = true;
+            return true;
         }
 
         private static float SmoothStep01(float value)
@@ -188,24 +185,6 @@ namespace Hecton8.UI
         private static float Sanitize01(float value)
         {
             return math.isfinite(value) ? math.saturate(value) : 0f;
-        }
-
-        private void TryRegisterScalabilityListener()
-        {
-            if (_registeredScalabilityListener || !Application.isPlaying)
-                return;
-
-            ScalabilityEvents.Register(this);
-            _registeredScalabilityListener = true;
-        }
-
-        private void TryUnregisterScalabilityListener()
-        {
-            if (!_registeredScalabilityListener)
-                return;
-
-            ScalabilityEvents.Unregister(this);
-            _registeredScalabilityListener = false;
         }
 
         private void TryRegister()

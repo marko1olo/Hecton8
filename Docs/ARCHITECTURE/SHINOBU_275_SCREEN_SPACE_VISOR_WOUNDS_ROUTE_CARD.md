@@ -97,10 +97,11 @@ Loop 24 editor-facade addendum:
 - `ScreenSpaceDecalTunerWindow` now surfaces source CSV, schema id/hash, runtime Vault route, DataMonolith bake caveat, last validation state, row count, selected header hash, and explicit DTO byte-layout summaries.
 - CSV load rejects schema-header hash mismatches before calling the cold `TryLoadMaterialProfilesCsv` Vault path. This is editor-only validation; it does not claim `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` exists or changes runtime payload authority.
 
-Loop 25 render-binding correction:
+Loop 26 disk-state render-binding correction:
 - `DeferredDecalPass` binds `_GlobalVisorWoundAtlas` with `RasterCommandBuffer.SetGlobalTexture`.
 - `HectonVisorUberPostFeature` binds crack, lens dirt, blue-noise, and VR comfort textures with `RasterCommandBuffer.SetGlobalTexture`.
-- Focused scan confirms no `Material.SetTexture` / `.SetTexture(` / `.SetBuffer(` remains in those owned RenderGraph sources.
+- The stale string-name texture constants are removed from those owned sources.
+- Focused scan confirms no `Material.Set*` / `.SetTexture(` / `.SetBuffer(` / stale texture-name constant remains in those owned RenderGraph sources.
 
 GC proof required:
 - Unity Profiler / GCMonitor capture in Play Mode. Static source proof only exists now.

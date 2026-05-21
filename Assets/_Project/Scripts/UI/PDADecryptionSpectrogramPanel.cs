@@ -24,7 +24,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Decryption Spectrogram Panel")]
-    public sealed class PDADecryptionSpectrogramPanel : MonoBehaviour, IUpdatable, ILateFrameTickable, IDisposable, IGlobalRegistryHotSwapListener, IScalabilityChangedEventListener
+    public sealed class PDADecryptionSpectrogramPanel : MonoBehaviour, IUpdatable, ILateFrameTickable, IDisposable, IGlobalRegistryHotSwapListener
     {
         internal const string WaveShaderPath = "Assets/_Project/Art/Shaders/Hecton_PDA_FrequencyTuningWave.shader";
         private const int HighPointCount = 128;
@@ -120,7 +120,6 @@ namespace Hecton8.UI
         private bool _disposed;
         private bool _materialBufferBound;
         private bool _registeredHotSwapListener;
-        private bool _registeredScalabilityListener;
         private float _cachedQualityWeight01 = 1f;
 
         private void Awake()
@@ -139,7 +138,6 @@ namespace Hecton8.UI
             _disposed = false;
             RefreshCachedRegistryServices();
             TryRegisterHotSwapListener();
-            TryRegisterScalabilityListener();
             EnsureNativeResources();
             EnsureGraphicsResources();
             ResetRuntimeState(_artifactHash, _blueprintHash);
@@ -149,7 +147,6 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             TryUnregisterTickHandlers();
-            TryUnregisterScalabilityListener();
             TryUnregisterHotSwapListener();
             CompleteWaveJobForTeardown();
             ClearPresentationFeedback();
@@ -168,7 +165,6 @@ namespace Hecton8.UI
 
             _disposed = true;
             TryUnregisterTickHandlers();
-            TryUnregisterScalabilityListener();
             TryUnregisterHotSwapListener();
             CompleteWaveJobForTeardown();
             DisposeNativeResources();
@@ -177,6 +173,8 @@ namespace Hecton8.UI
 
         public void Tick(float deltaTime)
         {
+            RefreshCachedQualityPolicy(rebuildResourcesOnPointChange: true);
+
             if (!_nativeReady)
                 EnsureNativeResources();
             if (!_graphicsReady)
@@ -866,7 +864,7 @@ namespace Hecton8.UI
                 return;
 
             if (_waveJobScheduled)
-                CompleteWaveJobForTeardown();
+                return;
 
             _nativeReady = false;
             _graphicsReady = false;
@@ -908,11 +906,6 @@ namespace Hecton8.UI
             }
         }
 
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            RefreshCachedQualityPolicy(rebuildResourcesOnPointChange: true);
-        }
-
         private void RefreshCachedRegistryServices()
         {
             _cachedDataVault = GlobalRegistry.DataVault;
@@ -935,24 +928,6 @@ namespace Hecton8.UI
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _registeredHotSwapListener = false;
-        }
-
-        private void TryRegisterScalabilityListener()
-        {
-            if (_registeredScalabilityListener || !Application.isPlaying)
-                return;
-
-            ScalabilityEvents.Register(this);
-            _registeredScalabilityListener = true;
-        }
-
-        private void TryUnregisterScalabilityListener()
-        {
-            if (!_registeredScalabilityListener)
-                return;
-
-            ScalabilityEvents.Unregister(this);
-            _registeredScalabilityListener = false;
         }
 
         private void TryRegisterTickHandlers()

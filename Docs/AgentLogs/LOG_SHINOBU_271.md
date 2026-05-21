@@ -448,3 +448,26 @@ Verification:
 - `Docs/AgentLogs/Build_SHINOBU_271_core_loop13_04.log`: `Build succeeded`, `29 Warning(s)`, `0 Error(s)`, `EXIT_CODE=0`.
 - `Docs/AgentLogs/Build_SHINOBU_271_editor_loop13_05.log`: `Build succeeded`, `46 Warning(s)`, `0 Error(s)`, `EXIT_CODE=0`.
 - `Docs/AgentLogs/Build_SHINOBU_271_solution_loop13_08.log`: `Build succeeded`, `7 Warning(s)`, `0 Error(s)`, `EXIT_CODE=0`.
+
+## 2026-05-22 Ultra-Polish Loop 14 Subagent Runtime Hardening
+
+What was wrong:
+- `ScheduleFingerPoseBatch()` could allocate five persistent native finger-pose buffers from fixed-step if the cold lifecycle allocation had not happened.
+- A read-only audit flagged SDF iterations as not quality-scaled, but changing those iterations would mutate rollback hand truth.
+
+What was done:
+- Moved finger-pose buffer allocation to cold lifecycle only by renaming the route to `AllocatePersistentBuffersCold()` and calling it from `Awake`/`OnEnable` unconditionally.
+- Made fixed-step `ScheduleFingerPoseBatch()` fail closed when finger-pose buffers are absent; no allocation is attempted from fixed-step.
+- Added continuous quality-driven visual finger spherecast cadence: minimum quality schedules every 6 fixed frames, maximum quality schedules every fixed frame, using a smooth polynomial curve.
+- Kept authoritative SDF depenetration at the deterministic 8-step fence to preserve rollback AUP and combat signal identity.
+
+Cinematic cheats used:
+- Finger curl/contact polish remains a visual spherecast batch, not gameplay collision truth. Low quality drops visual sample cadence instead of weakening the authoritative hand SDF projection.
+
+Exact microseconds saved:
+- Fixed-step allocation spike removed: unbounded native allocation risk reduced to 0 in `ScheduleFingerPoseBatch()`.
+- Low-quality finger-pose work skips roughly 5 of 6 visual spherecast batches; exact microseconds require Unity Profiler/GCMonitor proof.
+
+Verification:
+- Focused source scan after patch found no `MovePosition(`, `MoveRotation(`, `AddForce(`, `AddTorque(`, Unity frame/delta time, LINQ, `string.Format`, `TryGetLatestCreated`, or scene search hits in SHINOBU_271 touched files.
+- Build not yet relaunched after this source change because an external `csc.exe` and `VBCSCompiler.exe` were active at 2026-05-22 03:11:20 +04:00.

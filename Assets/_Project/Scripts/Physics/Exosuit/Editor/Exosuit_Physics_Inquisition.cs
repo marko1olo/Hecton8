@@ -24,6 +24,8 @@ namespace Hecton8.Physics.Exosuit.Editor
             int legacyMovementHits = 0;
             int guardedLegacyRigidbodyHits = 0;
             int unguardedLegacyMovementHits = 0;
+            int guardedAuthorityMutationRouteHits = 0;
+            int unguardedAuthorityMutationRouteHits = 0;
             uint sourceHash = 2166136261u;
 
             StringBuilder violations = new StringBuilder(4096);
@@ -55,6 +57,13 @@ namespace Hecton8.Physics.Exosuit.Editor
                 bool legacyMethodGuardSeen = false;
                 int legacyMethodStartLine = 0;
                 string legacyMethodSource = string.Empty;
+                bool inAuthorityMutationMethod = false;
+                bool authorityMutationBraceSeen = false;
+                int authorityMutationBraceDepth = 0;
+                bool authorityMutationGuardSeen = false;
+                bool authorityMutationSinkSeen = false;
+                int authorityMutationStartLine = 0;
+                string authorityMutationSource = string.Empty;
                 for (int lineIndex = 0; lineIndex < lines.Length; lineIndex++)
                 {
                     string line = lines[lineIndex];
@@ -75,10 +84,42 @@ namespace Hecton8.Physics.Exosuit.Editor
                         legacyMethodSource = line.Trim();
                     }
 
+                    if (IsAuthorityMutationMethodDefinition(line))
+                    {
+                        inAuthorityMutationMethod = true;
+                        authorityMutationBraceSeen = false;
+                        authorityMutationBraceDepth = 0;
+                        authorityMutationGuardSeen = IsAuthorityMutationGuardLine(line);
+                        authorityMutationSinkSeen = false;
+                        authorityMutationStartLine = lineIndex + 1;
+                        authorityMutationSource = line.Trim();
+                    }
+
                     if (inLegacyExosuitMethod &&
                         line.IndexOf("ExosuitKinematicAuthority.HasActiveAuthority", System.StringComparison.Ordinal) >= 0)
                     {
                         legacyMethodGuardSeen = true;
+                    }
+
+                    if (inAuthorityMutationMethod)
+                    {
+                        if (IsAuthorityMutationGuardLine(line))
+                            authorityMutationGuardSeen = true;
+                        if (IsAuthorityMutationSink(line))
+                            authorityMutationSinkSeen = true;
+                    }
+
+                    if (IsAuthoritySensitiveMutationCall(line))
+                    {
+                        if (IsAuthorityMutationGuardLine(line))
+                        {
+                            guardedAuthorityMutationRouteHits++;
+                        }
+                        else
+                        {
+                            unguardedAuthorityMutationRouteHits++;
+                            AppendViolation(violations, projectRoot, path, lineIndex + 1, "unguarded_authority_mutation_call", line);
+                        }
                     }
 
                     bool exosuitRelevantLine = inLegacyExosuitMethod || ContainsExosuitToken(line);
@@ -126,6 +167,34 @@ namespace Hecton8.Physics.Exosuit.Editor
                         legacyMethodStartLine = 0;
                         legacyMethodSource = string.Empty;
                     }
+
+                    bool authorityScopeEnded = UpdateLegacyScope(line, ref inAuthorityMutationMethod, ref authorityMutationBraceSeen, ref authorityMutationBraceDepth);
+                    if (authorityScopeEnded)
+                    {
+                        if (authorityMutationSinkSeen)
+                        {
+                            if (authorityMutationGuardSeen)
+                            {
+                                guardedAuthorityMutationRouteHits++;
+                            }
+                            else
+                            {
+                                unguardedAuthorityMutationRouteHits++;
+                                AppendViolation(
+                                    violations,
+                                    projectRoot,
+                                    path,
+                                    authorityMutationStartLine > 0 ? authorityMutationStartLine : lineIndex + 1,
+                                    "unguarded_authority_mutation_scope",
+                                    string.IsNullOrEmpty(authorityMutationSource) ? line : authorityMutationSource);
+                            }
+                        }
+
+                        authorityMutationGuardSeen = false;
+                        authorityMutationSinkSeen = false;
+                        authorityMutationStartLine = 0;
+                        authorityMutationSource = string.Empty;
+                    }
                 }
 
                 if (inLegacyExosuitMethod && !legacyMethodGuardSeen)
@@ -139,10 +208,25 @@ namespace Hecton8.Physics.Exosuit.Editor
                         "unterminated_unguarded_legacy_method_scope",
                         legacyMethodSource);
                 }
+
+                if (inAuthorityMutationMethod && authorityMutationSinkSeen && !authorityMutationGuardSeen)
+                {
+                    unguardedAuthorityMutationRouteHits++;
+                    AppendViolation(
+                        violations,
+                        projectRoot,
+                        path,
+                        authorityMutationStartLine > 0 ? authorityMutationStartLine : lines.Length,
+                        "unterminated_unguarded_authority_mutation_scope",
+                        authorityMutationSource);
+                }
             }
 
             bool layoutOk = ExosuitLayoutVerifier.ValidateRuntimeLayouts();
-            bool forbiddenHits = rigidbodyHits != 0 || jointHits != 0 || unguardedLegacyMovementHits != 0;
+            bool forbiddenHits = rigidbodyHits != 0 ||
+                                 jointHits != 0 ||
+                                 unguardedLegacyMovementHits != 0 ||
+                                 unguardedAuthorityMutationRouteHits != 0;
             string summary = layoutOk && !forbiddenHits
                 ? "No Unguarded Physics-Based Mech Movement Found"
                 : "Forbidden Physics-Based Mech Movement Still Present";
@@ -156,6 +240,7 @@ namespace Hecton8.Physics.Exosuit.Editor
             AppendJson(json, "summary", summary, 1).Append(",\n");
             AppendJson(json, "verdict", verdict, 1).Append(",\n");
             AppendJson(json, "legacy_movement_hits_policy", "legacy ApplyExosuit* and indirect motor-force routes are warnings only when the same method scope has already passed ExosuitKinematicAuthority.HasActiveAuthority", 1).Append(",\n");
+            AppendJson(json, "authority_mutation_policy", "dynamic collision and heavy tow physics routes must carry exosuitKinematicAuthority or suppressPhysicsMutation before writing CapsuleCollider shape, Rigidbody centerOfMass, MovePosition, or MoveRotation", 1).Append(",\n");
             json.Append("  \"scan_utc_ticks\": ").Append(System.DateTime.UtcNow.Ticks).Append(",\n");
             json.Append("  \"source_hash\": ").Append(sourceHash).Append(",\n");
             json.Append("  \"layout_ok\": ").Append(layoutOk ? "true" : "false").Append(",\n");
@@ -166,6 +251,8 @@ namespace Hecton8.Physics.Exosuit.Editor
             json.Append("  \"legacy_movement_hits\": ").Append(legacyMovementHits).Append(",\n");
             json.Append("  \"guarded_legacy_rigidbody_hits\": ").Append(guardedLegacyRigidbodyHits).Append(",\n");
             json.Append("  \"unguarded_legacy_movement_hits\": ").Append(unguardedLegacyMovementHits).Append(",\n");
+            json.Append("  \"guarded_authority_mutation_route_hits\": ").Append(guardedAuthorityMutationRouteHits).Append(",\n");
+            json.Append("  \"unguarded_authority_mutation_route_hits\": ").Append(unguardedAuthorityMutationRouteHits).Append(",\n");
             json.Append("  \"violations\": [\n");
             json.Append(violations);
             json.Append("\n  ]\n");
@@ -347,6 +434,43 @@ namespace Hecton8.Physics.Exosuit.Editor
         {
             return line.IndexOf("void ApplyExosuitGrapplePhysics", System.StringComparison.Ordinal) >= 0 ||
                    line.IndexOf("void ApplyExosuitJumpJets", System.StringComparison.Ordinal) >= 0;
+        }
+
+        private static bool IsAuthorityMutationMethodDefinition(string line)
+        {
+            return line.IndexOf("void UpdateDynamicCollisionProfile", System.StringComparison.Ordinal) >= 0 ||
+                   line.IndexOf("void UpdateHeavyTowRuntimeResponse", System.StringComparison.Ordinal) >= 0;
+        }
+
+        private static bool IsAuthoritySensitiveMutationCall(string line)
+        {
+            if (line.IndexOf("void UpdateDynamicCollisionProfile", System.StringComparison.Ordinal) >= 0 ||
+                line.IndexOf("void UpdateHeavyTowRuntimeResponse", System.StringComparison.Ordinal) >= 0)
+            {
+                return false;
+            }
+
+            return line.IndexOf("UpdateDynamicCollisionProfile(", System.StringComparison.Ordinal) >= 0 ||
+                   line.IndexOf("UpdateHeavyTowRuntimeResponse(", System.StringComparison.Ordinal) >= 0;
+        }
+
+        private static bool IsAuthorityMutationGuardLine(string line)
+        {
+            return line.IndexOf("exosuitKinematicAuthority", System.StringComparison.Ordinal) >= 0 ||
+                   line.IndexOf("suppressPhysicsMutation", System.StringComparison.Ordinal) >= 0 ||
+                   line.IndexOf("ExosuitKinematicAuthority.HasActiveAuthority", System.StringComparison.Ordinal) >= 0;
+        }
+
+        private static bool IsAuthorityMutationSink(string line)
+        {
+            return line.IndexOf("ApplyResolvedCollisionProfile", System.StringComparison.Ordinal) >= 0 ||
+                   line.IndexOf("ApplyCenterOfMassIfChanged", System.StringComparison.Ordinal) >= 0 ||
+                   line.IndexOf(".centerOfMass", System.StringComparison.Ordinal) >= 0 ||
+                   line.IndexOf(".MovePosition", System.StringComparison.Ordinal) >= 0 ||
+                   line.IndexOf(".MoveRotation", System.StringComparison.Ordinal) >= 0 ||
+                   line.IndexOf(".radius =", System.StringComparison.Ordinal) >= 0 ||
+                   line.IndexOf(".height =", System.StringComparison.Ordinal) >= 0 ||
+                   line.IndexOf(".center =", System.StringComparison.Ordinal) >= 0;
         }
 
         private static bool IsForbiddenPhysicsRoute(string line)

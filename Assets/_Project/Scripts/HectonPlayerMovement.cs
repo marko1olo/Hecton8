@@ -5776,7 +5776,7 @@ namespace Hecton8.Gameplay
             return _heavyTowWinch != null;
         }
 
-        private void UpdateHeavyTowRuntimeResponse(float fixedDeltaTime)
+        private void UpdateHeavyTowRuntimeResponse(float fixedDeltaTime, bool suppressPhysicsMutation)
         {
             float targetPitchOffset = 0f;
             float targetRollOffset = 0f;
@@ -5807,7 +5807,7 @@ namespace Hecton8.Gameplay
             _heavyTowCameraLocalOffset += (targetCameraOffset - _heavyTowCameraLocalOffset) * blendT;
             _heavyTowCenterOfMassOffset += (targetCenterOfMassOffset - _heavyTowCenterOfMassOffset) * blendT;
 
-            if (_rb != null)
+            if (!suppressPhysicsMutation && _rb != null)
                 ApplyCenterOfMassIfChanged(_baseCenterOfMass + _heavyTowCenterOfMassOffset);
         }
 
@@ -9015,8 +9015,8 @@ namespace Hecton8.Gameplay
             ApplyHighSpeedWipeoutSweep(fixedDeltaTime, !exosuitKinematicAuthority);
             UpdateSurfaceLockState(fixedDeltaTime);
             UpdateWaterPresentationPose(fixedDeltaTime);
-            UpdateDynamicCollisionProfile(fixedDeltaTime);
-            UpdateHeavyTowRuntimeResponse(fixedDeltaTime);
+            UpdateDynamicCollisionProfile(fixedDeltaTime, exosuitKinematicAuthority);
+            UpdateHeavyTowRuntimeResponse(fixedDeltaTime, exosuitKinematicAuthority);
             UpdateWetLensSignal(fixedDeltaTime);
             UpdateHeadSurfaceRecovery(fixedDeltaTime);
             UpdateTransportCriticalBailout();
@@ -9502,7 +9502,7 @@ namespace Hecton8.Gameplay
             _surfaceWavePoseRotation = FastLerpQuaternion(_surfaceWavePoseRotation, targetSurfacePose, surfaceBlendT);
         }
 
-        private void UpdateDynamicCollisionProfile(float fixedDeltaTime)
+        private void UpdateDynamicCollisionProfile(float fixedDeltaTime, bool suppressPhysicsMutation)
         {
             float targetTuck = 0f;
             if (_isSurfaceSwimming && _crestSamplingSucceeded && _surfaceLockBlend > 0.001f)
@@ -9537,6 +9537,9 @@ namespace Hecton8.Gameplay
             float collisionHeightScale = waveCollisionHeightScale * traumaCollisionHeightScale;
             float collisionRadiusScale = waveCollisionRadiusScale * traumaCollisionRadiusScale;
             float collisionCenterYOffset = waveCollisionCenterYOffset + traumaCollisionCenterYOffset;
+            if (suppressPhysicsMutation)
+                return;
+
             ApplyResolvedCollisionProfile(collisionRadiusScale, collisionHeightScale, collisionCenterYOffset);
         }
 

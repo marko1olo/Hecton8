@@ -3,8 +3,8 @@
 Agent: SHINOBU_271
 Domain: VR_INTERACTION_KINEMATIC_BRIDGE
 Task count: 20
-Current loop: 13 / 5 strict loops complete; post-subagent proof/code hardening applied and rebuilt.
-Verification state: LOOP 13 SOLUTION BUILD GREEN. `dotnet build Hecton8.slnx --no-restore -nologo -v:minimal -maxcpucount:1 /nr:false /p:UseSharedCompilation=false /p:GenerateFullPaths=true` returned `EXIT_CODE=0` in `Docs/AgentLogs/Build_SHINOBU_271_solution_loop13_08.log` with `7 Warning(s)`, `0 Error(s)`. Remaining warnings are existing third-party/editor obsolete API warnings; no C# errors remain.
+Current loop: 14 / 5 strict loops complete; post-subagent source hardening applied, dotnet verification pending behind active external compiler processes.
+Verification state: LOOP 14 SOURCE CHANGED AFTER LOOP 13 GREEN. `Docs/AgentLogs/Build_SHINOBU_271_solution_loop13_08.log` remains the last accepted compile proof for the previous source revision. Current working tree requires a new build after `csc.exe`/`VBCSCompiler.exe` from another active compile window exits.
 
 ## Mandates Read
 
@@ -26,7 +26,14 @@ DataVault buffers written: VRHandStateDTO[2], previous states[2], VRControllerMa
 SignalBus lanes consumed: none in hot solver; cached IVoxelSonarSdfReadModel read model supplies immutable SDF payload.
 SignalBus lanes published: CombatDamageSignal only when resolved hand velocity crosses configured threshold.
 MX350/i3 budget: 100 microseconds suspicious threshold; target 20-60 microseconds for two hands.
-Load-shed fallback: continuous GlobalQualityWeight now drives a 2..8 presentation/telemetry iteration hint; authoritative SDF collision uses the deterministic 8-step fence so rollback hand truth does not vary with local quality.
+Load-shed fallback: continuous GlobalQualityWeight drives a 2..8 presentation/telemetry iteration hint and a 6..1 frame visual finger-spherecast cadence. Authoritative SDF collision uses the deterministic 8-step fence so rollback hand truth does not vary with local quality.
+
+## Loop 14 Subagent Finding Closure
+
+- [x] Subagent runtime finding fixed: `ScheduleFingerPoseBatch()` no longer allocates missing persistent native buffers from fixed-step. Finger spherecast buffers are warmed only from `Awake`/`OnEnable`; fixed-step fails closed if those buffers are unavailable.
+- [x] Continuous quality hardening added without changing gameplay truth: visual finger spherecast scheduling now maps `GlobalQualityWeight` through a smooth polynomial curve from 6-frame cadence at minimum quality to every-frame cadence at maximum quality.
+- [x] Subagent SDF iteration finding reconciled against Global Systems Doctrine: authoritative SDF depenetration remains the deterministic 8-step fence because local thermal quality must not change rollback hand AUP, combat velocity, socket truth, DTO layout, or authority route.
+- [ ] Loop 14 compile verification pending. Current blockers: external `csc.exe`/`VBCSCompiler.exe` processes are active; no SHINOBU_271 rebuild launched yet.
 
 ## Loop 13 Subagent Finding Closure
 

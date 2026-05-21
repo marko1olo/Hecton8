@@ -5,8 +5,8 @@ Role: RADIATION_DOSE_ACCUMULATOR
 Domain: Radiation Scrubber
 Batch source: Docs/Tasks/CURRENT_BATCH.md
 Task count: 20
-State: POLISH_LOOP_15_PUBLICATION_FENCE_SIGNAL_INGRESS_AND_DUMP_ABI_COMPILE_BLOCKED_BY_CPU
-Compile gate: BLOCKED_BY_CPU_100_PERCENT_AND_EXTERNAL_DEPENDENCIES
+State: POLISH_LOOP_16_SOURCE_ZERO_INTENSITY_REMOVE_FACADE_COMPILE_BLOCKED_BY_ACTIVE_COMPILER
+Compile gate: BLOCKED_BY_ACTIVE_VBCSCOMPILER_AND_EXTERNAL_DEPENDENCY_WALL
 
 ## Mandates Selected Before Coding
 
@@ -18,6 +18,16 @@ Compile gate: BLOCKED_BY_CPU_100_PERCENT_AND_EXTERNAL_DEPENDENCIES
 - ARCH_Global_Registry_ServiceLocator_DI_Init.txt
 - ARCH_Signal_Lane_Segregation.txt
 - VOX_Voxel_SDF_Geometry_MarchingCubes_Pipeline.txt
+
+## Loop 16 Mandates Re-Read
+
+- DATA_Runtime_Struct_Layout_ARM64.txt
+- OPT_Native_Memory_Collections_JobSystem_Protocol.txt
+- OPT_Zero_GC_Policy_AllocFree_Mandate.txt
+- MATH_Coordinate_Precision_AUP_FloatingOrigin.txt
+- ARCH_Signal_Lane_Segregation.txt
+- DBG_Telemetry_Crash_Reporting_PostMortem.txt
+- OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt
 
 ## Batch Checklist
 
@@ -120,6 +130,7 @@ Compile gate: BLOCKED_BY_CPU_100_PERCENT_AND_EXTERNAL_DEPENDENCIES
 - Loop 13: Runtime race and tooling drift audit. `RadiationHazardGrid` dose math now sanitizes non-finite tuning/source/SDF/bulkhead values before inverse-square and SDF sampling. `HazardZoneManager` defers DataVault handle release/rebind while its generic exposure job is active and force-completes only during native teardown. `HectonHazardManager` now tracks untyped radiation facade IDs in a fixed cold table so legacy untyped unregister can remove its own radiation source without deleting unrelated IDs. The editor scanner shares one path owner, writes the dedicated SHINOBU_274 report, preserves the shared pointer, masks comments/strings before domain filtering, and emits microsecond estimate fields.
 - Loop 14: Subagent-aided fail-closed audit. `RadiationHazardGrid` now sanitizes save/load dose and grid cell size, rejects non-finite radiation source AUPs, clamps read-only sampler grid/source values, renames the stale FrostTick serialized field with `FormerlySerializedAs`, and finite-guards health/shader dose scalars. `HazardZoneManager` generic exposure job is deterministic and no longer calls the GlobalRegistry fallback from its step loop. Scanner/report policy text and stale rationale report route were aligned.
 - Loop 15: Subagent-aided publication/dump ABI audit. `RadiationHazardGrid` now publishes completed dose, pending damage, geiger, dose signal, and telemetry before deferred structural mutation can block on diffusion; Simulation pauses new radiation evaluation and preserves snapshots while deferred load/hot-swap waits. Public source/dose SignalBus ingress is finite-safe, grid-cell indexing rejects out-of-range AUP offsets before int casts, and `Dump_SHINOBU_274.bin` write order now matches the 64-byte `RadiationTelemetryEntry` explicit layout. Generic `HazardZoneManager` private native scratch is documented as a non-radiation compatibility exception, not SHINOBU_274 payload ownership.
+- Loop 16: Source lifecycle facade audit. Public `RadiationHazardGrid.RegisterSource` now routes zero or invalid normalized intensity to `UnregisterSource(sourceId)` and uses the same default radius fallback as the internal owner drain, preventing stale or artificially tiny radiation sources after bad facade input.
 
 ## Verification
 
@@ -161,3 +172,6 @@ Compile gate: BLOCKED_BY_CPU_100_PERCENT_AND_EXTERNAL_DEPENDENCIES
 - Loop 15 blackbox ABI scan: PASS. `DumpBlackBox` writes telemetry tail fields in explicit layout order (`Frame`, `ShiftSequence`, `SourceCount`, `SourceVersion`, `Flags`), and `RadiationStateLayoutGuard` validates `RadiationTelemetryEntry` offsets.
 - Loop 15 route-card scan: PASS. `SHINOBU_274_RADIATION_DOSE_ROUTE_CARD.md` documents deferred publication ordering, finite-safe ingress, dump row order, and the non-radiation `HazardZoneManager` scratch exception.
 - Loop 15 JSON/dependency/build gate scan: PASS/BLOCKED. Both physics reports parsed through `ConvertFrom-Json`; known external dependency files remain missing (`LodDataMgrAnimWaves.cs`, `GroundRadarContracts.cs`, `DecryptionBlackBoxDumpWriter.cs`); `Get-Process` found active `csc.exe` and `dotnet.exe`; CPU sampled at `84.675630`, so no dotnet rebuild was launched.
+- Loop 16 source facade scan: PASS. Public `RegisterSource` now emits the same remove route used by `RegisterSourceInternal` when normalized intensity is zero, and invalid radius falls back to `DefaultSourceRadiusMeters`.
+- Loop 16 diff scan: PASS. `git diff --check -- Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs` returned no errors, only the repository CRLF warning.
+- Loop 16 build gate: BLOCKED. CPU sampled at `45`, but `VBCSCompiler` was active, so the no-rebuild protocol blocks dotnet/csc launch.

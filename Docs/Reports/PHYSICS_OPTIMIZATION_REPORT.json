@@ -134,22 +134,22 @@
     "findings": [
       {
         "path": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
-        "line": 6924,
+        "line": 6944,
         "pattern": ".GetWaterHeight("
       },
       {
         "path": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
-        "line": 6932,
+        "line": 6952,
         "pattern": ".GetWaveNormal("
       },
       {
         "path": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
-        "line": 6984,
+        "line": 7004,
         "pattern": ".GetSurfaceFlow("
       },
       {
         "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
-        "line": 7014,
+        "line": 7024,
         "pattern": ".GetSurfaceFlow("
       }
     ],
@@ -159,7 +159,7 @@
   "shinobu271VRKinematicBridgeScanner": {
     "agent": "SHINOBU_271",
     "scanner": "VR_Physics_Inquisition static/editor hybrid",
-    "verdict": "PASS_STATIC_COMPILE_GREEN_UNITY_EXECUTION_PENDING",
+    "verdict": "SOURCE_CHANGED_COMPILE_PENDING_UNITY_EXECUTION_PENDING",
     "summary": "Physics-Based Hands Purged by default transform-only kinematic SDF bridge; legacy PhysX hand proxy remains behind explicit fallback only.",
     "dedicatedReport": "Docs/Reports/PHYSICS_OPTIMIZATION_REPORT_SHINOBU_271.json",
     "routeCard": "Docs/ARCHITECTURE/SHINOBU_271_VR_INTERACTION_KINEMATIC_BRIDGE_ROUTE_CARD.md",
@@ -172,9 +172,9 @@
     "physicalHandAddComponentArticulationHits": 2,
     "physicalHandAddComponentRigidbodyHits": 1,
     "sdfRoute": "IVoxelSonarSdfReadModel.TryReadNearestSonarSdf -> VRHandStateDTO -> resolved float4x4 matrix",
-    "hotPathAmendments": "cached IDataVault TryResolveExisting in fixed-step; live VRControllerMatrixDTO ingestion; all-active socket scan; mutation guard; over-budget telemetry-only flag",
+    "hotPathAmendments": "cached IDataVault TryResolveExisting in fixed-step; live VRControllerMatrixDTO ingestion; all-active socket scan; mutation guard; fixed-step no longer allocates finger native buffers; visual finger spherecast cadence scales 6..1 frames by quality; over-budget telemetry-only flag",
     "blackBoxDump": "Docs/AgentLogs/Dump_SHINOBU_271.bin",
-    "compileProof": "dotnet build Hecton8.slnx --no-restore -nologo -v:minimal -maxcpucount:1 /nr:false /p:UseSharedCompilation=false /p:GenerateFullPaths=true returned EXIT_CODE=0 in Docs/AgentLogs/Build_SHINOBU_271_solution_loop13_08.log with 7 Warning(s), 0 Error(s).",
+    "compileProof": "Loop 13 solution proof remains green for the previous source revision in Docs/AgentLogs/Build_SHINOBU_271_solution_loop13_08.log. Loop 14 source changed after that proof; rebuild pending after external csc.exe/VBCSCompiler.exe processes exit.",
     "verificationLimit": "Unity import, Unity Console, Play Mode GCMonitor, profiler captures, player-build, Quest/Steam Deck runtime, and live VR device proof remain pending."
   }
 }

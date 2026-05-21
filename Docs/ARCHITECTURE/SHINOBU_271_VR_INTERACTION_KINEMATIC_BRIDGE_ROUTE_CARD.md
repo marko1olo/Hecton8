@@ -5,7 +5,7 @@ Date: 2026-05-21
 Owner: `SHINOBU_271`
 Owner domain: Echelon 4 Player / Kinematics / VR Interaction Bridge
 Owning file/system: `PhysicalHandController`, `VRInteractionKinematicBridge`, `VRPhysicsInquisition`
-Status: `YELLOW / STATIC DOTNET COMPILE GREEN; PENDING UNITY IMPORT, PLAY MODE, PROFILER, AND DEVICE PROOF`
+Status: `YELLOW / LOOP 14 SOURCE CHANGED; DOTNET REBUILD PENDING; PENDING UNITY IMPORT, PLAY MODE, PROFILER, AND DEVICE PROOF`
 
 Problem: VR hands must stop using SpringJoint/ConfigurableJoint/Rigidbody hand truth and resolve controller motion through deterministic AUP, Voxel SDF, and socket math.
 
@@ -38,7 +38,8 @@ Expected max events/reads per frame:
 GlobalQualityWeight behavior:
 - `ResolveQualityIterationHint()` maps `GlobalQualityWeight` continuously from 2 to 8 as a presentation/telemetry hint.
 - `ResolveIterationCount()` for authoritative SDF hand truth returns the deterministic 8-step fence so local thermal state cannot fork rollback hand AUPs.
-- Low quality consumers may collapse visual hand polish, optional haptic cadence, or telemetry interpretation to the 2-4 step hint while preserving DTO layout, BufferIDs, authority route, socket truth, and rollback state.
+- Visual finger spherecast polish maps quality through a smooth polynomial cadence from every 6 fixed frames at minimum quality to every fixed frame at maximum quality.
+- Low quality consumers may collapse visual hand polish, optional haptic cadence, or telemetry interpretation while preserving DTO layout, BufferIDs, authority route, socket truth, and rollback state.
 
 Accessor purity:
 - `CacheKinematicBridgeCold()` is the only route that can call `GlobalRegistry` and create/grow Vault lanes.
@@ -68,14 +69,15 @@ Profiler marker:
 - pending. Static CPU timing uses `Stopwatch.GetTimestamp()` in the controller bridge and writes microseconds into telemetry.
 
 Compile proof:
-- `dotnet build Hecton8.slnx --no-restore -nologo -v:minimal -maxcpucount:1 /nr:false /p:UseSharedCompilation=false /p:GenerateFullPaths=true` returned `EXIT_CODE=0` in `Docs/AgentLogs/Build_SHINOBU_271_solution_loop13_08.log` with `7 Warning(s)`, `0 Error(s)`.
+- `dotnet build Hecton8.slnx --no-restore -nologo -v:minimal -maxcpucount:1 /nr:false /p:UseSharedCompilation=false /p:GenerateFullPaths=true` returned `EXIT_CODE=0` in `Docs/AgentLogs/Build_SHINOBU_271_solution_loop13_08.log` with `7 Warning(s)`, `0 Error(s)` for the Loop 13 source revision.
+- Loop 14 changed `PhysicalHandController.cs`; new dotnet proof is pending while external `csc.exe`/`VBCSCompiler.exe` processes are active.
 
 GC proof required:
 - Unity Profiler / GCMonitor capture in Play Mode. Static source proof only exists now.
 
 Shutdown/disposal:
 - Bridge persistent runtime lanes are owned by `GlobalDataVault`.
-- `PhysicalHandController` disposes only its pre-existing finger spherecast native buffers; it does not own or dispose Vault lanes.
+- `PhysicalHandController` disposes only its pre-existing finger spherecast native buffers; they are warmed from cold lifecycle only and fixed-step does not allocate them. It does not own or dispose Vault lanes.
 
 Scene unload behavior:
 - controller clears cached Vault/SDF references on destroy; Vault owner controls lane lifetime.

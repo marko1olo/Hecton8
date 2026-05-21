@@ -675,8 +675,8 @@ namespace Hecton8.UI
             }
 
             if (_vegetationBridge != null &&
-                _vegetationBridge.TryGetActiveAbyssalAnchorAupPayload(out NativeArray<AbsoluteUniversePosition> anchorAups, out int anchorAupCount) &&
-                anchorAups.IsCreated &&
+                _vegetationBridge.TryGetActiveAbyssalAnchorAupPayload(out NativeArray<AbsoluteUniversePosition>.ReadOnly anchorAups, out int anchorAupCount) &&
+                anchorAups.Length > 0 &&
                 anchorAupCount > 0)
             {
                 int visibleAnchors = math.min(MaxAnchorWaypoints, math.min(anchorAupCount, anchorAups.Length));

@@ -181,9 +181,14 @@ namespace Hecton8.Gameplay
                 return;
 
             float safeIntensity = NormalizeSourceIntensity(intensity);
-            float safeRadius = math.isfinite(radiusMeters) ? math.max(0.5f, radiusMeters) : 0.5f;
+            float safeRadius = math.isfinite(radiusMeters) && radiusMeters > 0f
+                ? math.max(0.5f, radiusMeters)
+                : DefaultSourceRadiusMeters;
             if (safeIntensity <= 0f)
+            {
+                UnregisterSource(sourceId);
                 return;
+            }
 
             RadiationSourceSignal signal = new RadiationSourceSignal
             {

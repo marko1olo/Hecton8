@@ -1257,3 +1257,60 @@ Verification:
   <COMPILE_GUARD>No direct sibling runtime dependency was added. Compile was not launched because CPU sampled at 100% with 10 compiler processes active.</COMPILE_GUARD>
   <DEAR_LIE_CONFIRMATION>Before/after visual complexity remains O(N_visible capped at 128) in one screen-space pass and O(1) ring insertion. Loop 25 only moves texture binding from material mutation to command-buffer globals.</DEAR_LIE_CONFIRMATION>
 </SELF_AUDIT>
+
+## 2026-05-22T03:09+04:00 - Polish Loop 26 / Disk-State Render Binding Correction
+
+What was wrong:
+- Fresh prompt-driven source verification contradicted the prior Loop 25 report.
+- `DeferredDecalPass` still mutated `_GlobalVisorWoundAtlas` through `Material.SetTexture`.
+- `HectonVisorUberPostFeature` still mutated crack, lens dirt, blue-noise, and VR comfort texture slots through `Material.SetTexture`.
+- The string-name constants for those texture slots were still present, leaving a compile-valid route back to material mutation.
+
+What was done:
+- Replaced the five actual disk calls with `RasterCommandBuffer.SetGlobalTexture` using the existing integer shader property IDs.
+- Deleted `DecalAtlasName`, `CrackTextureName`, `LensDirtTextureName`, `BlueNoiseTextureName`, and `VrComfortMaskTextureName`.
+- Re-extracted the `SHINOBU_275` prompt from `CURRENT_BATCH.md` before patching and re-ran the owned render-binding scan after patching.
+
+Cinematic Cheats used:
+- No physics, mesh decals, object projectors, particles, or material clones were added.
+- The route remains the Dear Lie: one screen-space shader pass plus texture/procedural trauma masks.
+
+Exact Microseconds saved:
+- No profiler claim. Static expected effect is removal of render-state dirtiness and future regression surface; measured CPU/GPU proof remains pending Play Mode profiler capture.
+
+Verification:
+- `python Tools\Decal_Projector_Inquisition.py`: PASS at `2026-05-21T23:09:36Z`; 5825 scanned assets, 336 candidates, 0 active GameObject decal violations, 0 active URP decal renderer feature violations.
+- Focused render-binding scan found no `Material.Set*`, `.SetTexture(`, `.SetBuffer(`, or stale texture-name constants in `DeferredDecalPass.cs` and `HectonVisorUberPostFeature.cs`.
+- `git diff --check` reports only LF-to-CRLF normalization warnings for touched files.
+- Compile not launched: CPU sampled at 52.75% with `dotnet` PID 13796 and `VBCSCompiler` PID 41344 active.
+
+<SELF_AUDIT agent_id="SHINOBU_275" loop="26_disk_state_render_binding_correction">
+  <TASK_RECONCILIATION>
+    <TASK id="01" result="PASS_STATIC">Re-extracted the owned XML prompt and re-audited active visor render-binding sources from disk.</TASK>
+    <TASK id="02" result="PASS_STATIC">Scanner PASS at 2026-05-21T23:09:36Z; no active GameObject or URP DecalRendererFeature route was introduced.</TASK>
+    <TASK id="03" result="PASS_STATIC">No unmanaged DTO properties or managed hot structs were added.</TASK>
+    <TASK id="04" result="PASS_STATIC">No DTO layout changed; `VisorDecalDTO` remains explicit 80B.</TASK>
+    <TASK id="05" result="PASS_STATIC">Mock wound generator unchanged.</TASK>
+    <TASK id="06" result="PASS_STATIC">Burst wound jobs unchanged; no tiny job or synchronous readback was added.</TASK>
+    <TASK id="07" result="PASS_STATIC">Dear Lie route unchanged: texture publication now uses command-buffer globals, still one screen-space fake.</TASK>
+    <TASK id="08" result="PASS_STATIC">Circular overwrite unchanged.</TASK>
+    <TASK id="09" result="PASS_STATIC">Deterministic decay unchanged.</TASK>
+    <TASK id="10" result="PASS_STATIC">GPU upload route unchanged; RenderGraph texture binding now avoids material mutation on disk.</TASK>
+    <TASK id="11" result="PASS_STATIC">Continuous quality curve unchanged; no binary quality switch was added.</TASK>
+    <TASK id="12" result="PASS_STATIC">Shader refraction/normal perturbation unchanged.</TASK>
+    <TASK id="13" result="PASS_STATIC">AUP localization unchanged.</TASK>
+    <TASK id="14" result="PASS_STATIC">No gameplay authority, rollback, save, or Merkle route changed.</TASK>
+    <TASK id="15" result="PASS_STATIC">Black-box telemetry unchanged.</TASK>
+    <TASK id="16" result="PASS_STATIC">Editor facade unchanged from Loop 24.</TASK>
+    <TASK id="17" result="PASS_STATIC">CSV parser unchanged.</TASK>
+    <TASK id="18" result="PASS_STATIC">Editor-only matrix gizmo unchanged.</TASK>
+    <TASK id="19" result="PASS_STATIC">Metric validator rerun and report timestamp refreshed to 2026-05-21T23:09:36Z.</TASK>
+    <TASK id="20" result="PASS_STATIC_COMPILE_BLOCKED">Docs/logs synchronized; compile gate blocked by CPU 52.75% and active `dotnet`/`VBCSCompiler` processes.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT>`VisorDecalDTO`: `LocalToWorld@0` 64B, `DecalTypeHash@64` 4B, `Opacity01@68` 4B, `BirthTime@72` 4B, `Flags@76` 4B; total 80B, 80 % 16 = 0. Loop 26 changed no primary DTO bytes.</STRUCT_LAYOUT>
+  <SCALABILITY_CURVE>Loop 26 changes no quality math. Low devices avoid material-state mutation in the owned render path. Middle/high/ultra keep the same crack, dirt, blue-noise, VR comfort, and wound-atlas visuals through the existing continuous quality gates.</SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>Vault lanes unchanged: 71490 instances, 71491 upload scratch, 71492 runtime state, 71493 telemetry ring, 71494 tuning, 71495 material profiles, 71496 CSV scratch. No new persistent private native container was introduced.</H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_DEPENDENCY_GRAPH>Job graph unchanged. Loop 26 adds no Burst job, no `[NoAlias]` surface, no `.Complete()`, and no same-frame schedule/readback loop.</POINTER_ALIASING_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No direct sibling runtime dependency was added. Compile was not launched because CPU sampled at 52.75% with `dotnet` PID 13796 and `VBCSCompiler` PID 41344 active.</COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>Before/after visual complexity remains O(N_visible capped at 128) in one screen-space pass and O(1) ring insertion. Loop 26 removes material mutation and stale string-name texture constants only.</DEAR_LIE_CONFIRMATION>
+</SELF_AUDIT>

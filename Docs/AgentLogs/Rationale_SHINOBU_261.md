@@ -591,7 +591,7 @@ Scalability potential: Low devices avoid empty-frame scratch-map clear cost and 
 Hardware Impact: Empty-frame coalescing clear cost is removed. Under saturation, duplicate filtering degrades gracefully to packed evaluation rather than data loss.
 
 Problem: The SHINOBU_261 scanner sidecar still carried stale line numbers and `scannedScripts=null` after Player/Flora source drift.
-Solution: Recounted `Assets/_Project/Scripts` excluding `Plugins/Crest` at 2178 C# scripts and refreshed the four legacy managed water query line numbers to `HectonPlayerMovement.cs:6924`, `:6932`, `:6984`, and `FloraInteractionManager.cs:7014`.
+Solution: Recounted `Assets/_Project/Scripts` excluding `Plugins/Crest` at 2178 C# scripts and refreshed the four legacy managed water query line numbers to `HectonPlayerMovement.cs:6944`, `:6952`, `:7004`, and `FloraInteractionManager.cs:7024`.
 Rejected Alternatives: Leaving stale line proof was rejected because Task 19 is proof-artifact driven. Running Unity menu scanner was rejected while CPU/build gate is closed.
 Scalability potential: Runtime unchanged; this is audit correctness only.
 Hardware Impact: 0 runtime us.
@@ -613,3 +613,21 @@ Solution: Patched the scanner generator and both report artifacts to carry `comp
 Rejected Alternatives: Removing `Hecton8.Core` from `Hecton8.Crest.Bridge.asmdef` was rejected because adjacent Crest bridge files still require it and this lane does not own the full assembly migration. Claiming contracts-only was rejected because the asmdef evidence contradicts it.
 Scalability potential: Runtime unchanged. Low/Middle/High/Ultra quality behavior still comes from continuous `GlobalQualityWeight`; the caveat only prevents proof overclaiming.
 Hardware Impact: 0 runtime us.
+
+Problem: Subagent audit found Task 19 proof line numbers had drifted again after adjacent Player/Flora source movement, while the reports/status/rationale/log still called the old numbers current.
+Solution: Re-ran exact `Select-String` over the two legacy caller files and refreshed all SHINOBU_261 proof surfaces to `HectonPlayerMovement.cs:6944`, `:6952`, `:7004`, and `FloraInteractionManager.cs:7024`.
+Rejected Alternatives: Leaving stale line proof was rejected because Task 19 is blocked by those concrete caller locations. Editing Player/Flora code remains rejected without owner/integrator authorization.
+Scalability potential: Runtime unchanged. This preserves proof integrity for the same scalable Vault/Burst kinematics route.
+Hardware Impact: 0 runtime us.
+
+Problem: The line-proof refresh changed CTO-facing reports and logs after a subagent finding, so it needed an explicit post-patch gate.
+Solution: Scanned SHINOBU_261 proof files for the stale line-number set and found no active hits; rechecked source call sites and JSON finding lines against `6944/6952/7004/7024`; parsed both JSON reports; ran scoped diff whitespace.
+Rejected Alternatives: Trusting the patch by inspection was rejected because the stale proof had already survived one pass. Running a build was rejected because CPU average was 91 with active `csc`.
+Scalability potential: Runtime unchanged.
+Hardware Impact: 0 runtime us.
+
+Problem: The CPU/process gate briefly opened, but a narrow dotnet compile target for SHINOBU_261 does not exist in the current generated project files.
+Solution: Recursively scanned `.csproj` files for `Crest4KinematicsAdapter`, `OceanKinematicsJobs`, `OceanKinematicsSelfAudit`, `Water_Interface_Scanner`, and the SHINOBU_261 `Plugins/Crest` path. No generated project includes the SHINOBU_261 source set; only unrelated Crest debugger files appear in `Hecton8.Core.csproj`.
+Rejected Alternatives: Running `dotnet build Hecton8.Core.csproj` was rejected because it does not cover the changed files. Re-running the full solution build was rejected because it is already known to fail outside SHINOBU_261 and the latest CPU sample was 67.
+Scalability potential: Runtime unchanged.
+Hardware Impact: 0 runtime us. Compile proof remains unavailable until Unity regenerates project files or integrator fixes the known full-solution compile wall.

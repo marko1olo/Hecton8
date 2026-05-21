@@ -431,3 +431,17 @@ Solution: Treated it as invalid proof, built the touched `Hecton8.Core.csproj` a
 Rejected Alternatives: Claiming failure from a diagnostic-empty `-1`, editing code blindly, or stopping after narrow builds. The source changes needed solution proof after the editor Newtonsoft route changed.
 Scalability potential: Runtime unchanged. Build proof now covers the current source graph.
 Hardware Impact: Runtime 0 microseconds. `Docs/AgentLogs/Build_SHINOBU_271_solution_loop13_08.log` reports `EXIT_CODE=0`, `7 Warning(s)`, `0 Error(s)`.
+
+## Loop 14 Subagent Finding Closure Decisions
+
+Problem: `ScheduleFingerPoseBatch()` could allocate five `Allocator.Persistent` finger-pose native buffers from the fixed-step grab path if the buffers were absent.
+Solution: Warm the finger spherecast buffers only from cold lifecycle (`Awake`/`OnEnable`) and make fixed-step fail closed when the buffers are unavailable. `ScheduleFingerPoseBatch()` now only checks `HasFingerPoseBuffers()` and returns without allocating.
+Rejected Alternatives: Allocating from fixed-step, moving finger scratch buffers into the SHINOBU_271 hand truth Vault lanes, or completing/disposal synchronously to force immediate reallocation. Fixed-step allocation violates hot-path discipline; Vault ownership is inappropriate for five controller-local visual scratch rows; synchronous disposal would create a hidden stall.
+Scalability potential: Weak devices avoid surprise native allocation in grab frames. Middle/high/ultra devices keep the same finger-pose feature when cold buffers exist.
+Hardware Impact: Removes a rare but severe fixed-step allocation spike. Steady-state frame cost is unchanged.
+
+Problem: The prompt asks for continuous `GlobalQualityWeight` scalability, but making authoritative SDF depenetration iterations quality-dependent would fork rollback hand AUP and downstream combat velocity across hardware.
+Solution: Keep `ResolveIterationCount()` as the deterministic 8-step gameplay fence and spend quality scaling on non-authoritative presentation work: finger spherecast solve cadence now maps quality through a smooth polynomial from 6-frame cadence at minimum quality to every-frame cadence at maximum quality.
+Rejected Alternatives: Quality-dependent SDF iteration count, socket prefix budgets, or binary low/high hand paths. Those alternatives mutate gameplay truth or introduce visible/predictability cliffs.
+Scalability potential: Low quality sheds four to five out of six visual finger spherecast batches; middle tiers interpolate cadence; ultra runs every fixed frame. SDF hand truth, socket truth, DTO layout, BufferIDs, and signal authority remain invariant.
+Hardware Impact: Five spherecast commands plus two small jobs are skipped on low-quality frames. Static expected saving is workload-dependent and pending profiler proof; worst low-quality cadence removes roughly 83 percent of this visual-only batch work.

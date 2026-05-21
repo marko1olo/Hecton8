@@ -11,7 +11,7 @@
     <TASK id="07" status="PASS">`ResolveSdfHandCollisionJob` and shared resolver sample encoded Voxel SDF and depenetrate by gradient.</TASK>
     <TASK id="08" status="PASS">The Dear Lie arm clamp limits resolved hand AUP from the shoulder/root without physical joints.</TASK>
     <TASK id="09" status="PASS">`EvaluateInteractionSnappingJob` and shared socket pass snap to unmanaged active sockets using double AUP subtraction before float distance checks.</TASK>
-    <TASK id="10" status="PASS">`GlobalQualityWeight` maps continuously to a 2..8 presentation/telemetry iteration hint. Authoritative SDF projection uses the deterministic 8-step fence so rollback hand truth is not quality-dependent.</TASK>
+    <TASK id="10" status="PASS">`GlobalQualityWeight` maps continuously to a 2..8 presentation/telemetry iteration hint and 6..1 frame visual finger-spherecast cadence. Authoritative SDF projection uses the deterministic 8-step fence so rollback hand truth is not quality-dependent.</TASK>
     <TASK id="11" status="PASS">Geometric velocity is computed from resolved AUP deltas and routed as `SignalBus&lt;CombatDamageSignal&gt;` when thresholded.</TASK>
     <TASK id="12" status="PASS">SDF, socket, stretch, velocity, and matrix paths subtract double3 AUP before float3 cast.</TASK>
     <TASK id="13" status="PASS">Burst jobs use deterministic float mode; `VRHandStateDTO` is blittable 64B for blind snapshot copy.</TASK>
@@ -39,11 +39,11 @@
   </STRUCT_LAYOUT_VERIFICATION>
 
   <SCALABILITY_CURVE_EXPLANATION>
-    `GlobalQualityWeight` is sanitized and mapped through `math.lerp(2, 8, q)` as a continuous presentation/telemetry hint. The authoritative SDF hand truth now always executes the deterministic 8-step fence, preventing local thermal state from changing rollback hand positions. Below 0.3, consumers may collapse visual-only hand polish, optional haptic cadence, and telemetry interpretation to the 2-4 step hint while the gameplay DTO remains fixed. Socket scans are no longer quality-budgeted because nearest-socket selection is gameplay truth; quality may scale visual presentation, not interaction ownership.
+    `GlobalQualityWeight` is sanitized and mapped through `math.lerp(2, 8, q)` as a continuous presentation/telemetry hint. The authoritative SDF hand truth now always executes the deterministic 8-step fence, preventing local thermal state from changing rollback hand positions. Below 0.3, visual finger spherecast polish schedules at a reduced cadence approaching once every 6 fixed frames; at 1.0 it schedules every fixed frame. Socket scans are no longer quality-budgeted because nearest-socket selection is gameplay truth; quality may scale visual presentation, not interaction ownership.
   </SCALABILITY_CURVE_EXPLANATION>
 
   <H_PHI_VAULT_STATUS>
-    Runtime bridge persistent lanes are Vault-owned: `73680` HandStates, `73681` PreviousHandStates, `73682` ControllerMatrixInputs, `73683` InteractionSockets, `73684` Tuning, `73685` TelemetryRing, `73686` TelemetryCursor, `73687` ResolvedHandMatrices. The bridge declares no private persistent NativeArray for authoritative hand truth. Existing finger spherecast buffers in `PhysicalHandController` are pre-existing local presentation/pose support, not SHINOBU_271 authority lanes.
+    Runtime bridge persistent lanes are Vault-owned: `73680` HandStates, `73681` PreviousHandStates, `73682` ControllerMatrixInputs, `73683` InteractionSockets, `73684` Tuning, `73685` TelemetryRing, `73686` TelemetryCursor, `73687` ResolvedHandMatrices. The bridge declares no private persistent NativeArray for authoritative hand truth. Existing finger spherecast buffers in `PhysicalHandController` are pre-existing local presentation/pose support, warmed from cold lifecycle only; fixed-step no longer allocates them.
   </H_PHI_VAULT_STATUS>
 
   <POINTER_ALIASING_DEPENDENCY_GRAPH>
@@ -64,7 +64,7 @@
   </REGRESSION_MODEL>
 
   <HOT_PATH_IMPACT>
-    Static estimate: removing default hand PhysX proxy saves 30-120 microseconds on contact-heavy low-end frames; SDF solve target is 20-60 microseconds for two hands. Dotnet solution compile proof is green in `Docs/AgentLogs/Build_SHINOBU_271_solution_loop13_08.log`; no Unity Profiler or GCMonitor capture has been run.
+    Static estimate: removing default hand PhysX proxy saves 30-120 microseconds on contact-heavy low-end frames; SDF solve target is 20-60 microseconds for two hands. Loop 13 dotnet solution proof is green in `Docs/AgentLogs/Build_SHINOBU_271_solution_loop13_08.log`, but Loop 14 changed source and needs a new build proof; no Unity Profiler or GCMonitor capture has been run.
   </HOT_PATH_IMPACT>
 
   <FAILURE_MODES>
@@ -77,4 +77,7 @@
   <LOOP_13_HARDENING>
     Post-subagent pass removed the residual pocket-pickup `Rigidbody.MovePosition`, removed Unity `Time.frameCount` from panel sample/suit damage event stamps, made finger pose jobs deterministic, deferred fault dump file IO out of fixed-step, and replaced shared-report raw string surgery with editor-only `JObject` mutation.
   </LOOP_13_HARDENING>
+  <LOOP_14_HARDENING>
+    Post-subagent pass removed the fixed-step native allocation fallback from `ScheduleFingerPoseBatch()` and added continuous quality-driven visual finger spherecast cadence. Authoritative SDF hand truth remains quality-invariant by design.
+  </LOOP_14_HARDENING>
 </SELF_AUDIT>

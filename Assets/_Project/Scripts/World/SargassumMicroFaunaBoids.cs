@@ -2877,7 +2877,7 @@ namespace Hecton8.World
         {
             if (_mapMagicVegetationBridge == null ||
                 !_mapMagicVegetationBridge.TryGetCompressedEcosystemThreatGridPayload(
-                    out NativeArray<byte> threatGrid,
+                    out NativeArray<byte>.ReadOnly threatGrid,
                     out int gridResolution,
                     out Vector3 gridCenter,
                     out float cellSize))
@@ -2887,7 +2887,7 @@ namespace Hecton8.World
             }
 
             long cellCountLong = (long)gridResolution * gridResolution;
-            if (!threatGrid.IsCreated ||
+            if (threatGrid.Length <= 0 ||
                 gridResolution <= 0 ||
                 cellCountLong <= 0L ||
                 cellCountLong > int.MaxValue ||
@@ -6587,7 +6587,7 @@ namespace Hecton8.World
 
             var anchors = _mapMagicVegetationBridge.ActiveAbyssalAnchorsNative;
             int anchorCount = _mapMagicVegetationBridge.ActiveAbyssalAnchorCount;
-            if (!anchors.IsCreated || anchorCount <= 0)
+            if (anchors.Length <= 0 || anchorCount <= 0)
                 return false;
 
             if (!TryResolveAupFromRuntimeOrigin(origin, out AbsoluteUniversePosition originAup))

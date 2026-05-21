@@ -115,6 +115,25 @@ Verification:
 - `Hecton8.Core.csproj` still includes `HectonVisorFluidDistortionFeature.cs` and still omits `HectonVisorARStencilRendererFeature.cs` / `HectonVisorStencilPreviewGizmo.cs`.
 - Build not launched: no compiler rows were visible in the latest process sample, but CPU was 87% by CIM and 91.87%, 67.06%, 79.33% by processor counter samples.
 
+## SHINOBU_270 POLISH ADDENDUM - SHADER MATH-LOD TAP SHEDDING
+
+What was wrong:
+- `Hecton_VisorAR.shader` used `quality` to visually blend chromatic aberration, but still paid the two red/blue offset texture samples at `GlobalQualityWeight=0`.
+- The AR target loop was `[unroll]` over all 16 rows even when the uploaded active target count was lower.
+
+What was done:
+- Added `chromaWeight = smoothstep(0.06, 1.0, quality)` and a branch that skips the two aberration taps when the continuous admission weight is effectively zero.
+- Replaced the fixed unrolled target loop with a loop bounded by `_HectonVisorQualityAndTime.z`, the active target count uploaded by `BuildAndUploadFrame`.
+- Updated `Docs/ARCHITECTURE/VISOR_AR_STENCIL_RENDERER.md` to document the low-quality chroma tap admission and active-target loop bound.
+
+Cinematic Cheats used:
+- Still no Canvas/TMP text, no CPU projector objects, and no physics simulation. Visual richness remains shader-side: procedural digits, scanlines, bracket linework, fog, and chroma.
+
+Exact Microseconds saved:
+- GPU: avoids up to two fullscreen color texture taps per visor AR pixel on survival-tier quality and avoids inactive target-row reads/bracket math when target count is below 16.
+- CPU: 0 us changed in this pass.
+- Exact GPU us remains PENDING VERIFICATION until Unity Frame Debugger/GPU capture.
+
 ## 2026-05-22 - RenderGraph Suppression Fail-Open Watchdog
 
 What was wrong:

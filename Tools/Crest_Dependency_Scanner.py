@@ -36,6 +36,10 @@ CREST_ASMDEF_GUID_REFERENCES = {
     "GUID:59cd48da98d9e4a80917b613abe9416e",  # Assets/Crest/Crest/Scripts/Editor/Crest.Editor.asmdef.meta
 }
 CREST_ASSEMBLY_REFERENCES = CREST_ASSEMBLIES | CREST_ASMDEF_GUID_REFERENCES
+CREST_SCRIPTING_DEFINE_SYMBOLS = (
+    "CREST_OCEAN",
+    "CREST_URP",
+)
 QUARANTINED_ASSET_GUIDS = {
     "ed12880d16f3f2f4e80ceee64594101d",  # archived Crest5_WaveSpectrum.asset
     "149ebcba5c729ad49911b1ea4b8456fd",  # archived Crest5_FoamSettings.asset
@@ -53,6 +57,8 @@ DIRECT_RE = re.compile(
     r"\b(Crest\.OceanRenderer|Crest\.UnderwaterRenderer|WaveHarmonic\.Crest|"
     r"OceanRenderer\.Instance|UnderwaterRenderer\.Instance|WaterRenderer\.Instance)\b"
 )
+CREST_DEFINE_RE = re.compile(r"\b(?:" + "|".join(CREST_SCRIPTING_DEFINE_SYMBOLS) + r")\b")
+CREST_PREPROCESSOR_DEFINE_RE = re.compile(r"^\s*#\s*(?:if|elif)\b.*\b(?:" + "|".join(CREST_SCRIPTING_DEFINE_SYMBOLS) + r")\b")
 REFLECTION_STRING_RE = re.compile(r'"[^"\n]*(?:Crest\.OceanRenderer|Crest\.UnderwaterRenderer|WaveHarmonic\.Crest)[^"\n]*"')
 ACTIVE_ASSET_BREACH_RE = re.compile(
     r"(WaveHarmonic\.Crest::|WaveHarmonic\.Crest|"
@@ -146,7 +152,36 @@ def scan_assembly_definitions() -> tuple[list[dict], list[dict]]:
 
         references = data.get("references", [])
         if not isinstance(references, list):
-            continue
+            references = []
+
+        define_hits: list[str] = []
+        define_constraints = data.get("defineConstraints", [])
+        if isinstance(define_constraints, list):
+            define_hits.extend(
+                constraint
+                for constraint in define_constraints
+                if isinstance(constraint, str) and CREST_DEFINE_RE.search(constraint)
+            )
+        version_defines = data.get("versionDefines", [])
+        if isinstance(version_defines, list):
+            for version_define in version_defines:
+                if not isinstance(version_define, dict):
+                    continue
+                define = version_define.get("define")
+                expression = version_define.get("expression")
+                if isinstance(define, str) and CREST_DEFINE_RE.search(define):
+                    define_hits.append(define)
+                if isinstance(expression, str) and CREST_DEFINE_RE.search(expression):
+                    define_hits.append(expression)
+
+        if define_hits:
+            record = {
+                "kind": "asmdef_crest_define_constraint",
+                "path": str(rel(path)),
+                "defines": sorted(set(define_hits)),
+            }
+            classify_assembly_reference_record(path, record, breaches, allowed_hits)
+
         crest_refs = [reference for reference in references if isinstance(reference, str) and reference in CREST_ASSEMBLY_REFERENCES]
         if not crest_refs:
             continue
@@ -220,6 +255,35 @@ def scan_csharp() -> tuple[list[dict], list[dict]]:
             if not (USING_RE.search(stripped) or DIRECT_RE.search(stripped)):
                 continue
             record = {"kind": "csharp_direct_reference", "path": str(rel(path)), "line": line_number, "text": stripped.strip()}
+            if is_prefixed(path, ALLOWED_RELATIVE_PREFIXES):
+                allowed_hits.append(record)
+            else:
+                breaches.append(record)
+    return breaches, allowed_hits
+
+
+def scan_first_party_scripting_define_usage() -> tuple[list[dict], list[dict]]:
+    """Fail on first-party Crest scripting-symbol branches outside the bridge."""
+    breaches: list[dict] = []
+    allowed_hits: list[dict] = []
+    for path in sorted((PROJECT_ROOT / "Assets" / "_Project").rglob("*.cs")):
+        if is_prefixed(path, THIRD_PARTY_PREFIXES):
+            continue
+        try:
+            lines = path.read_text(encoding="utf-8-sig", errors="replace").splitlines()
+        except Exception as exc:  # noqa: BLE001
+            breaches.append({"kind": "cs_read_error", "path": str(rel(path)), "detail": str(exc)})
+            continue
+
+        for line_number, line in enumerate(lines, start=1):
+            if not CREST_PREPROCESSOR_DEFINE_RE.search(line):
+                continue
+            record = {
+                "kind": "crest_scripting_define_usage",
+                "path": str(rel(path)),
+                "line": line_number,
+                "text": line.strip(),
+            }
             if is_prefixed(path, ALLOWED_RELATIVE_PREFIXES):
                 allowed_hits.append(record)
             else:
@@ -435,6 +499,41 @@ def scan_active_package_visibility() -> list[dict]:
     ]
 
 
+def scan_global_scripting_defines() -> list[dict]:
+    """Report global Crest scripting symbols; they are donor state, not a first-party route by themselves."""
+    path = PROJECT_ROOT / "ProjectSettings" / "ProjectSettings.asset"
+    if not path.exists():
+        return []
+    hits: list[dict] = []
+    try:
+        lines = path.read_text(encoding="utf-8-sig", errors="replace").splitlines()
+    except Exception as exc:  # noqa: BLE001
+        return [
+            {
+                "kind": "project_settings_read_error",
+                "path": "ProjectSettings/ProjectSettings.asset",
+                "detail": str(exc),
+            }
+        ]
+
+    for line_number, line in enumerate(lines, start=1):
+        symbols = [symbol for symbol in CREST_SCRIPTING_DEFINE_SYMBOLS if symbol in line]
+        if not symbols:
+            continue
+        platform = line.split(":", 1)[0].strip()
+        hits.append(
+            {
+                "kind": "global_crest_scripting_define",
+                "path": str(rel(path)),
+                "line": line_number,
+                "platform": platform,
+                "symbols": symbols,
+                "text": line.strip(),
+            }
+        )
+    return hits
+
+
 def scan_vocabulary_debt() -> list[dict]:
     """Report non-failing donor vocabulary outside the bridge so serialized ABI debt stays visible."""
     hits: list[dict] = []
@@ -470,13 +569,22 @@ def main() -> int:
 
     asmdef_breaches, asmdef_allowed = scan_assembly_definitions()
     csharp_breaches, csharp_allowed = scan_csharp()
+    define_breaches, define_allowed = scan_first_party_scripting_define_usage()
     reflection_hits = scan_reflection_strings()
     active_asset_breaches = scan_active_assets()
     active_package_breaches = scan_active_package_visibility()
     donor_autoreference_breaches = scan_crest_donor_autoreference()
+    global_define_hits = scan_global_scripting_defines()
     vocabulary_debt_hits = scan_vocabulary_debt()
-    breaches = asmdef_breaches + csharp_breaches + active_asset_breaches + active_package_breaches + donor_autoreference_breaches
-    allowed_hits = asmdef_allowed + csharp_allowed
+    breaches = (
+        asmdef_breaches
+        + csharp_breaches
+        + define_breaches
+        + active_asset_breaches
+        + active_package_breaches
+        + donor_autoreference_breaches
+    )
+    allowed_hits = asmdef_allowed + csharp_allowed + define_allowed
 
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
     report = {
@@ -488,10 +596,12 @@ def main() -> int:
         "allowed_hit_count": len(allowed_hits),
         "quarantine_breaches_prevented": len(allowed_hits),
         "reflection_string_hit_count": len(reflection_hits),
+        "global_scripting_define_hit_count": len(global_define_hits),
         "vocabulary_debt_hit_count": len(vocabulary_debt_hits),
         "breaches": breaches,
         "allowed_hits": allowed_hits,
         "reflection_string_hits": reflection_hits,
+        "global_scripting_define_hits": global_define_hits,
         "vocabulary_debt_hits": vocabulary_debt_hits,
     }
     REPORT_PATH.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

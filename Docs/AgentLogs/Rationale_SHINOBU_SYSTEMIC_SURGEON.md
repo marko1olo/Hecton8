@@ -1090,3 +1090,19 @@ Solution: Set minimum-quality capacities to the maximum declared capacities in `
 Rejected Alternatives: Leaving small low-tier capacities was rejected because route admission is not optional visual polish. Replacing the lanes with polling was rejected because SignalBus is the first-party hot broadcast path.
 Scalability potential: Low devices keep the same event admission and can scale downstream rendering/audio cadence; middle through ultra devices receive identical facts and may spend more presentation work on them.
 Hardware Impact: 0 us speed claim. This reserves existing max lane slots and removes binary shedding; no new allocation route or hot `GlobalRegistry` poll was added.
+
+## PDA Archaeology Decrypt Label Quality Pull
+
+Problem: `PDADataArchaeologyDecryptLabel` implemented `IScalabilityChangedEventListener` only to refresh a scramble-intensity scalar. That preserved lifecycle registration to the binary scalability event route for a UI text effect.
+Solution: Removed the listener interface, `ScalabilityEvents` register/unregister, callback, and unused signal namespace. The label now pulls finite-guarded `HomeostasisBrain.GlobalQualityWeight` during its existing late-frame tick and only marks the TMP output dirty when the resolved scramble intensity changes by more than 0.001.
+Rejected Alternatives: Refreshing quality every frame and forcing `_dirty` was rejected because it would create avoidable `TMP_Text.SetCharArray` churn. Keeping the callback was rejected because one UI scalar does not justify a binary event dependency.
+Scalability potential: Low devices can reduce scramble intensity smoothly; middle devices interpolate; high/ultra keep the full archaeology decryption effect. Text identity, localization hash lookup, and char-pool routing remain unchanged.
+Hardware Impact: 0 us speed claim. Removed one event listener route and avoided per-frame text rewrites from stable quality values.
+
+## PDA Spectrogram Panel Quality Pull
+
+Problem: `PDADecryptionSpectrogramPanel` implemented `IScalabilityChangedEventListener` to update waveform point-count quality. The callback could call `CompleteWaveJobForTeardown` when point count changed, creating a hidden completion path from a presentation-quality event.
+Solution: Removed the scalability listener route. The panel now samples continuous `HomeostasisBrain.GlobalQualityWeight` during its normal update tick before native/graphics resource validation. When point count changes while a wave job is still scheduled, the rebuild is deferred until a later tick instead of completing the job inside quality refresh.
+Rejected Alternatives: Keeping callback-driven rebuild was rejected because it couples binary events to job lifecycle and can block outside the dispatcher-owned completion window. Rebuilding resources every tick was rejected because stable quality should not churn vault/gpu buffers.
+Scalability potential: Low devices use fewer wave points, middle devices interpolate, high/ultra get the full 128-point spectrogram. Puzzle target truth, input, error computation, telemetry ring, and DataVault buffer IDs stay unchanged.
+Hardware Impact: 0 us speed claim. Removed one scalability listener route and one callback-triggered job completion path; exact frame impact requires Unity profiler proof.

@@ -444,3 +444,11 @@ Solution: Added a preserved top-level `shinobu_270_visor_ar_stencil` object to t
 Rejected Alternatives: Running Unity editor menu work without an editor session, overwriting the shared report root, editing generated `.csproj`, or claiming stale `dotnet build` coverage.
 Scalability potential: Runtime Low/Middle/High/Ultra route unchanged. This is evidence hygiene: the continuous `GlobalQualityWeight` shader path and fail-open Canvas suppression proof remain the same.
 Hardware Impact: Runtime 0 us. Prevents false build/report evidence from consuming review time or masking missing Unity project-file import.
+
+### D055 Shader Math-LOD Tap Shedding
+
+Problem: The AR shader visually blended chromatic aberration by `quality`, but still sampled the red and blue offset taps when `GlobalQualityWeight` was zero. It also unrolled all 16 AR target rows every pixel even when the CPU had uploaded fewer active target DTOs.
+Solution: Added a continuous `smoothstep(0.06, 1.0, quality)` chroma admission weight. When that weight is effectively zero, the shader skips the two aberration texture samples; once admitted, the visible aberration still ramps by the smooth weight. Replaced the fixed unrolled 16-row loop with a loop bounded by `_HectonVisorQualityAndTime.z`, the uploaded active target count.
+Rejected Alternatives: Keeping dead low-quality taps, adding shader variants, using a hardware-tier keyword, or tying target loop count to a binary low/high route.
+Scalability potential: Low survival quality pays one camera-color sample and active-target rows only. Middle gradually admits chroma and richer target animation. High/Ultra spend the saved Canvas cost on full chroma, scanlines, fog, and all active bracket rows without changing DTO layout or authority.
+Hardware Impact: Low quality can avoid two fullscreen texture samples per visor AR pixel plus up to sixteen inactive target row reads/bracket evaluations. Exact GPU microseconds remain PENDING VERIFICATION until Frame Debugger/GPU capture.

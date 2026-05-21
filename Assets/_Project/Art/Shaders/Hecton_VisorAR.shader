@@ -279,12 +279,16 @@ Shader "Hidden/Hecton8/VisorAR"
                 float2 centered = uv * 2.0 - 1.0;
                 float radial = dot(centered, centered);
                 float2 curvedUv = uv + centered * radial * curvature * lerp(0.002, 0.024, quality);
-                float chroma = lerp(0.0, 0.0025, quality) * (0.25 + stress);
+                float chromaWeight = smoothstep(0.06, 1.0, quality);
+                float chroma = lerp(0.0002, 0.0025, chromaWeight) * (0.25 + stress);
                 half3 source = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(curvedUv)).rgb;
-                half red = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(curvedUv + float2(chroma, 0.0))).r;
-                half blue = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(curvedUv - float2(chroma, 0.0))).b;
-                half3 chromaSource = half3(red, source.g, blue);
-                source = lerp(source, chromaSource, quality);
+                [branch]
+                if (chromaWeight > 0.0001)
+                {
+                    half red = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(curvedUv + float2(chroma, 0.0))).r;
+                    half blue = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(curvedUv - float2(chroma, 0.0))).b;
+                    source = lerp(source, half3(red, source.g, blue), chromaWeight);
+                }
 
                 float3 hudColor = float3(0.42, 0.94, 0.98);
                 float3 warnColor = float3(1.0, 0.33, 0.18);
@@ -304,8 +308,9 @@ Shader "Hidden/Hecton8/VisorAR"
                 frameLine += LineBox(uv, float2(0.88, 0.5), float2(0.0018, 0.22), 0.004);
                 lineEnergy += frameLine * lerp(0.22, 0.55, quality);
 
-                [unroll]
-                for (int i = 0; i < HECTON_VISOR_MAX_TARGETS; i++)
+                int targetCount = min(HECTON_VISOR_MAX_TARGETS, max(0, (int)floor(_HectonVisorQualityAndTime.z + 0.5)));
+                [loop]
+                for (int i = 0; i < targetCount; i++)
                 {
                     VisorArTargetDTO target = _HectonVisorArTargets[i];
                     float active = saturate(target.ScreenAndFlags.w);

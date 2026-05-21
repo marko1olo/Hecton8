@@ -596,10 +596,10 @@ Build gate: CPU average 100 with active `csc` (`Id=26488`) and `dotnet` (`Id=201
   <json_reports root="PASS" sidecar="PASS" />
   <csharp_brace_scan scope="Crest4/OceanKinematics/Water_Interface_Scanner" result="PASS" />
   <legacy_oop_callers result="BLOCKED_BY_DEPENDENCY">
-    <caller file="Assets/_Project/Scripts/HectonPlayerMovement.cs" line="6924" api="GetWaterHeight" />
-    <caller file="Assets/_Project/Scripts/HectonPlayerMovement.cs" line="6932" api="GetWaveNormal" />
-    <caller file="Assets/_Project/Scripts/HectonPlayerMovement.cs" line="6984" api="GetSurfaceFlow" />
-    <caller file="Assets/_Project/Scripts/World/FloraInteractionManager.cs" line="7014" api="GetSurfaceFlow" />
+    <caller file="Assets/_Project/Scripts/HectonPlayerMovement.cs" line="6944" api="GetWaterHeight" />
+    <caller file="Assets/_Project/Scripts/HectonPlayerMovement.cs" line="6952" api="GetWaveNormal" />
+    <caller file="Assets/_Project/Scripts/HectonPlayerMovement.cs" line="7004" api="GetSurfaceFlow" />
+    <caller file="Assets/_Project/Scripts/World/FloraInteractionManager.cs" line="7024" api="GetSurfaceFlow" />
   </legacy_oop_callers>
   <compile_gate result="NOT_RUN" reason="CPU=100 active csc/dotnet" />
 </SELF_AUDIT_REVISION>
@@ -646,7 +646,7 @@ Exact Microseconds saved: no measured profiler claim. Empty queue frames avoid a
 
 ## Proof Patch: Scanner Sidecar Refresh
 What was wrong: `PHYSICS_OPTIMIZATION_REPORT_SHINOBU_261.json` carried stale Player/Flora line numbers and `scannedScripts=null`.
-What was done: refreshed line numbers to `6924`, `6932`, `6984`, `7014` and recorded `2178` scanned scripts from the shell fallback scope.
+What was done: refreshed line numbers to `6944`, `6952`, `7004`, `7024` and recorded `2178` scanned scripts from the shell fallback scope.
 Cinematic Cheats used: none.
 Exact Microseconds saved: 0 runtime us.
 
@@ -698,7 +698,7 @@ Exact Microseconds saved: Runtime 0 us. This removes false evidence and expands 
   <supersedes block="initial SELF_AUDIT pass-class Task 01/10/19 language" reason="newer scanner/queue evidence is stricter than the early audit block" />
   <task id="01" status="[PARTIAL_BLOCKED_BY_OWNER_BOUNDARY]">SHINOBU_261 owns the flat Vault/Burst batch route; four Player/Flora legacy managed water-query callers still block whole-project eradication.</task>
   <task id="10" status="[PARTIAL_DISPATCHER_PRODUCER_FENCE_PENDING]">Current MPSC facade uses caller-owned `NativeQueue&lt;OceanKinematicsSampleRequestDTO&gt;`; global producer-fence ownership remains dispatcher/integrator work.</task>
-  <task id="19" status="[FAIL_BLOCKED_BY_DEPENDENCY]">Current scanner proof remains `oopWaterQueriesEradicated=false` with callers at `HectonPlayerMovement.cs:6924`, `:6932`, `:6984`, and `FloraInteractionManager.cs:7014`.</task>
+  <task id="19" status="[FAIL_BLOCKED_BY_DEPENDENCY]">Current scanner proof remains `oopWaterQueriesEradicated=false` with callers at `HectonPlayerMovement.cs:6944`, `:6952`, `:7004`, and `FloraInteractionManager.cs:7024`.</task>
   <scanner_proof status="[CORRECTED]">`Water_Interface_Scanner` measures external callers only; owned Crest/OceanKinematics runtime proof remains the scoped forbidden-pattern gate, not the scanner.</scanner_proof>
   <self_audit_layout name="OceanKinematicsSelfAuditReport" size="128">QueueCounters audit fields: `QueueCountersSize@36`, `PackedOffset@40`, `ResultHashOffset@44`, `ResultNonFiniteOffset@48`, `QueueCountersPadBytes@52`; static proof flag is explicit.</self_audit_layout>
 </SELF_AUDIT_SUPERSESSION>
@@ -718,6 +718,28 @@ Errors:
   <compile command="dotnet build .\Hecton8.slnx --no-restore" result="FAIL_OUTSIDE_SHINOBU_261" />
   <scope status="[PRESERVED]">No non-ocean editor/core files were patched from the SHINOBU_261 lane.</scope>
   <next_gate status="[PENDING]">Targeted SHINOBU_261 compile/static gates remain required after this proof patch, subject to CPU/process guard.</next_gate>
+</SELF_AUDIT_REVISION>
+
+<SELF_AUDIT_REVISION id="SHINOBU_261_TASK19_LINE_PROOF_REFRESH_2026_05_22">
+  <what_was_wrong>Subagent audit found Task 19 proof line numbers were stale after adjacent Player/Flora source movement.</what_was_wrong>
+  <what_was_done>Refreshed SHINOBU_261 sidecar/root reports, status, rationale, and log to the current managed water-query callers: `HectonPlayerMovement.cs:6944`, `:6952`, `:7004`, and `FloraInteractionManager.cs:7024`.</what_was_done>
+  <cinematic_cheats_used>None. Proof refresh only.</cinematic_cheats_used>
+  <microseconds_saved>0 runtime us. Prevents integrator time loss from stale file/line evidence.</microseconds_saved>
+</SELF_AUDIT_REVISION>
+
+<SELF_AUDIT_REVISION id="SHINOBU_261_POST_TASK19_LINE_PROOF_STATIC_GATE_2026_05_22">
+  <old_line_scan result="PASS">No SHINOBU_261 report/status/rationale/log hits remain for the stale line-number set found by the subagent.</old_line_scan>
+  <source_match result="PASS">Current source and report findings match `HectonPlayerMovement.cs:6944`, `:6952`, `:7004`, and `FloraInteractionManager.cs:7024`.</source_match>
+  <json root="PASS" sidecar="PASS" />
+  <diff_check result="PASS_WARNINGS_ONLY" warning="LF will be replaced by CRLF" />
+  <compile_gate result="NOT_RUN" reason="CPU 91 with active csc Id=18520" />
+</SELF_AUDIT_REVISION>
+
+<SELF_AUDIT_REVISION id="SHINOBU_261_TARGETED_DOTNET_COMPILE_TARGET_AUDIT_2026_05_22">
+  <what_was_wrong>No current generated `.csproj` covers the SHINOBU_261 source files, so a narrow dotnet compile could give a false sense of coverage.</what_was_wrong>
+  <what_was_done>Scanned all generated project files for `Crest4KinematicsAdapter`, `OceanKinematics*`, `Water_Interface_Scanner`, and the SHINOBU_261 `Plugins/Crest` path. No target includes the changed files; `Hecton8.Core.csproj` only contains unrelated Crest debugger files.</what_was_done>
+  <rejected>Rejected `dotnet build Hecton8.Core.csproj` because it does not compile the changed files. Rejected full solution rebuild because the earlier full build failed outside SHINOBU_261 and the latest CPU sample was 67.</rejected>
+  <compile_gate result="NOT_RUN" reason="stale generated project coverage plus CPU above threshold" />
 </SELF_AUDIT_REVISION>
 
 ## Verification: Post Scanner/Self-Audit Repair Static Gate

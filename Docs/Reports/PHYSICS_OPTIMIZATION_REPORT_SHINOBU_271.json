@@ -1,7 +1,7 @@
 {
   "agent": "SHINOBU_271",
   "scanner": "VR_Physics_Inquisition static shell fallback",
-  "verdict": "PASS_STATIC_COMPILE_GREEN_UNITY_EXECUTION_PENDING",
+  "verdict": "SOURCE_CHANGED_COMPILE_PENDING_UNITY_EXECUTION_PENDING",
   "summary": "Physics-Based VR Hands Purged by default kinematic SDF bridge; legacy ArticulationBody/Rigidbody hand proxy remains behind explicit useKinematicSdfHandBridge=false fallback only.",
   "generatedWithoutUnity": true,
   "unityMenuRoute": "HECTON-8/VR/Run Physics Inquisition",
@@ -37,11 +37,13 @@
     "Fixed-step fallback uses cached IDataVault plus TryResolveExisting only; no hot GlobalRegistry polling or Vault lane creation.",
     "Live controller pose is written into VRControllerMatrixDTO before shared ingestion math creates VRHandStateDTO.",
     "Socket scan reads all active rows to keep interaction truth independent of GlobalQualityWeight.",
+    "Finger spherecast visual buffers are warmed from cold lifecycle only; fixed-step fails closed instead of allocating missing native buffers.",
+    "Visual finger spherecast cadence maps continuously from 6 fixed frames at minimum quality to every fixed frame at maximum quality.",
     "Over-budget frames are telemetry-flagged only; non-finite state dumps immediately through the fault-only black box."
   ],
   "blackBoxDump": "Docs/AgentLogs/Dump_SHINOBU_271.bin",
   "telemetryEntries": 600,
-  "continuousQuality": "GlobalQualityWeight maps continuously to a 2..8 presentation/telemetry iteration hint; authoritative SDF truth uses the deterministic 8-step fence so rollback state, DTO layout, and authority route remain invariant.",
-  "compileProof": "dotnet build Hecton8.slnx --no-restore -nologo -v:minimal -maxcpucount:1 /nr:false /p:UseSharedCompilation=false /p:GenerateFullPaths=true returned EXIT_CODE=0 in Docs/AgentLogs/Build_SHINOBU_271_solution_loop13_08.log with 7 Warning(s), 0 Error(s).",
+  "continuousQuality": "GlobalQualityWeight maps continuously to a 2..8 presentation/telemetry iteration hint and 6..1 fixed-frame visual finger spherecast cadence; authoritative SDF truth uses the deterministic 8-step fence so rollback state, DTO layout, and authority route remain invariant.",
+  "compileProof": "Loop 13 solution proof remains green for the previous source revision in Docs/AgentLogs/Build_SHINOBU_271_solution_loop13_08.log. Loop 14 source changed after that proof; rebuild pending after external csc.exe/VBCSCompiler.exe processes exit.",
   "verificationLimit": "Unity import, Unity Console, Play Mode GCMonitor, profiler captures, player-build, Quest/Steam Deck runtime, and live VR device proof remain pending."
 }

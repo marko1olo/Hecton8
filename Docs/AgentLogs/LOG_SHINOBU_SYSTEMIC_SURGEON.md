@@ -3221,3 +3221,39 @@ Verification:
     Targeted scan found `lowTierFrameSignals: 8` for `WaterlineBreachSignal`, `ConstructionPreviewSignal`, and `FloraExclusionSignal`, plus `lowTierFrameSignals: 32` for `BaseStructuralWarningSignal`. `git diff --check` passed with line-ending warnings only. Build was not launched because CPU probe returned 100% with active `dotnet` and `VBCSCompiler` processes.
   </VERIFICATION>
 </SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="PDAArchaeologyDecryptLabelQualityPull">
+  <WHAT_WAS_WRONG>
+    `PDADataArchaeologyDecryptLabel` registered for scalability events solely to update a UI scramble scalar, preserving a binary event dependency in a hash-bound TMP presentation component.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Removed `IScalabilityChangedEventListener`, `ScalabilityEvents` register/unregister, the callback, and the unused signal namespace. The label now samples continuous `HomeostasisBrain.GlobalQualityWeight` during its existing late-frame tick and dirties the char-buffer output only when scramble intensity changes by more than 0.001.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    The scramble is a presentation fake over localization text. Quality scales the visual scramble curve only; entity hash identity, reveal progress, localization buffers, and char-pool routing remain unchanged.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. Removed one lifecycle event route and avoided stable-quality per-frame `TMP_Text.SetCharArray` churn.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted `rg` found no `IScalabilityChangedEventListener`, `ScalabilityEvents`, `OnScalabilityChanged`, `ScalabilityChangedEvent`, registered scalability state, `HectonQualityTier`, or `ScalabilityTier` in `PDADataArchaeologyDecryptLabel.cs`; `git diff --check` passed with line-ending warning only. Build was not launched because `VBCSCompiler` remained active even though CPU probe returned 49%.
+  </VERIFICATION>
+</SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="PDASpectrogramPanelQualityPull">
+  <WHAT_WAS_WRONG>
+    `PDADecryptionSpectrogramPanel` registered for scalability events to update waveform point count. That callback could call `CompleteWaveJobForTeardown` when point count changed, creating a hidden quality-event path that blocks scheduled jobs outside the normal dispatcher window.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Removed `IScalabilityChangedEventListener`, event registration, callback, and registered state. The panel now refreshes continuous `HomeostasisBrain.GlobalQualityWeight` during `Tick` before native/graphics validation. If point count changes while a wave job is scheduled, resource rebuild is deferred instead of completing the job from quality refresh.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    The spectrogram is a diegetic mesh/line visualization fake. Quality changes the number of visual wave points, not puzzle truth, stage target values, input state, or unlock authority.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. Removed one event route and one callback-triggered completion path; profiler proof required for timing.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted `rg` found no `IScalabilityChangedEventListener`, `ScalabilityEvents`, `OnScalabilityChanged`, `ScalabilityChangedEvent`, registered scalability state, `GlobalRegistry.ScalabilityTier`, or `HectonQualityTier` in `PDADecryptionSpectrogramPanel.cs`; `git diff --check` passed with line-ending warning only. Build was not launched because `VBCSCompiler` remained active while CPU probe returned 40%.
+  </VERIFICATION>
+</SELF_AUDIT>

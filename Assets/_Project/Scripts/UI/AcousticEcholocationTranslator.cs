@@ -564,15 +564,15 @@ namespace Hecton8.UI
             if (!TryResolveClassificationOriginAup(out AbsoluteUniversePosition originAup))
                 return false;
 
-            if (_vegetationBridge.TryGetActiveAbyssalAnchorAupPayload(out NativeArray<AbsoluteUniversePosition> anchorAups, out int aupCount) &&
-                anchorAups.IsCreated &&
+            if (_vegetationBridge.TryGetActiveAbyssalAnchorAupPayload(out NativeArray<AbsoluteUniversePosition>.ReadOnly anchorAups, out int aupCount) &&
+                anchorAups.Length > 0 &&
                 aupCount > 0)
             {
                 return TryResolveNearestAbyssalAnchorDistance(anchorAups, aupCount, in originAup, out distanceMeters);
             }
 
-            if (!_vegetationBridge.TryGetActiveAbyssalAnchorPayload(out NativeArray<Vector3> anchors, out int count) ||
-                !anchors.IsCreated ||
+            if (!_vegetationBridge.TryGetActiveAbyssalAnchorPayload(out NativeArray<Vector3>.ReadOnly anchors, out int count) ||
+                anchors.Length <= 0 ||
                 count <= 0)
             {
                 return false;
@@ -603,7 +603,7 @@ namespace Hecton8.UI
         }
 
         private static bool TryResolveNearestAbyssalAnchorDistance(
-            NativeArray<AbsoluteUniversePosition> anchorAups,
+            NativeArray<AbsoluteUniversePosition>.ReadOnly anchorAups,
             int count,
             in AbsoluteUniversePosition originAup,
             out int distanceMeters)

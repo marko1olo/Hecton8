@@ -2941,21 +2941,23 @@ namespace Hecton8.World
         /// <summary>
         /// Returns the current resident abyssal-anchor positions as native memory for sonar/acoustic consumers.
         /// </summary>
-        public bool TryGetActiveAbyssalAnchorPayload(out NativeArray<Vector3> anchors, out int count)
+        public bool TryGetActiveAbyssalAnchorPayload(out NativeArray<Vector3>.ReadOnly anchors, out int count)
         {
-            anchors = GetAbyssalAnchorNativeView();
+            NativeArray<Vector3> anchorView = GetAbyssalAnchorNativeView();
+            anchors = anchorView.IsCreated ? anchorView.AsReadOnly() : default;
             count = ResolveAbyssalAnchorViewCount();
-            return count > 0 && anchors.IsCreated;
+            return count > 0 && anchorView.IsCreated;
         }
 
         /// <summary>
         /// Returns the current resident abyssal-anchor positions as AUP native memory for sonar/acoustic consumers.
         /// </summary>
-        public bool TryGetActiveAbyssalAnchorAupPayload(out NativeArray<AbsoluteUniversePosition> anchors, out int count)
+        public bool TryGetActiveAbyssalAnchorAupPayload(out NativeArray<AbsoluteUniversePosition>.ReadOnly anchors, out int count)
         {
-            anchors = GetAbyssalAnchorAupNativeView();
+            NativeArray<AbsoluteUniversePosition> anchorView = GetAbyssalAnchorAupNativeView();
+            anchors = anchorView.IsCreated ? anchorView.AsReadOnly() : default;
             count = ResolveAbyssalAnchorAupViewCount();
-            return count > 0 && anchors.IsCreated;
+            return count > 0 && anchorView.IsCreated;
         }
 
         /// <summary>
@@ -3020,18 +3022,19 @@ namespace Hecton8.World
         /// Returns the current ecosystem threat grid payload and metadata for external consumers.
         /// </summary>
         public bool TryGetEcosystemThreatGridPayload(
-            out NativeArray<float> threatLevels,
+            out NativeArray<float>.ReadOnly threatLevels,
             out int gridResolution,
             out Vector3 gridCenter,
             out float cellSize)
         {
-            threatLevels = GetThreatGridFloatView();
+            NativeArray<float> threatView = GetThreatGridFloatView();
+            threatLevels = threatView.IsCreated ? threatView.AsReadOnly() : default;
             gridResolution = _ecosystemThreatGridResolution;
             gridCenter = _ecosystemThreatGridCenter;
             cellSize = threatGridCellSize;
             return _threatGridInitialized &&
-                   threatLevels.IsCreated &&
-                   HasCompleteEcosystemSquareGridState(threatLevels.Length) &&
+                   threatView.IsCreated &&
+                   HasCompleteEcosystemSquareGridState(threatView.Length) &&
                    cellSize > 0f &&
                    math.isfinite(cellSize) &&
                    IsFinite(gridCenter);
@@ -3041,18 +3044,19 @@ namespace Hecton8.World
         /// Returns the compressed ecosystem threat grid payload and metadata for low-cost AI consumers.
         /// </summary>
         public bool TryGetCompressedEcosystemThreatGridPayload(
-            out NativeArray<byte> threatLevels,
+            out NativeArray<byte>.ReadOnly threatLevels,
             out int gridResolution,
             out Vector3 gridCenter,
             out float cellSize)
         {
-            threatLevels = GetThreatGridByteView(_nativeMemory.EcosystemThreatGridCompressedCurrentNative);
+            NativeArray<byte> threatView = GetThreatGridByteView(_nativeMemory.EcosystemThreatGridCompressedCurrentNative);
+            threatLevels = threatView.IsCreated ? threatView.AsReadOnly() : default;
             gridResolution = _ecosystemThreatGridResolution;
             gridCenter = _ecosystemThreatGridCenter;
             cellSize = threatGridCellSize;
             return _threatGridInitialized &&
-                   threatLevels.IsCreated &&
-                   HasCompleteEcosystemSquareGridState(threatLevels.Length) &&
+                   threatView.IsCreated &&
+                   HasCompleteEcosystemSquareGridState(threatView.Length) &&
                    cellSize > 0f &&
                    math.isfinite(cellSize) &&
                    IsFinite(gridCenter);
@@ -3116,11 +3120,12 @@ namespace Hecton8.World
         /// <summary>
         /// Returns the current HLOD registry payload for large persistent structures and mega-wreck silhouettes.
         /// </summary>
-        public bool TryGetTerrainHoleStreamingPayload(out NativeArray<TerrainHoleStreamingRecord> holes, out int count)
+        public bool TryGetTerrainHoleStreamingPayload(out NativeArray<TerrainHoleStreamingRecord>.ReadOnly holes, out int count)
         {
-            holes = _nativeMemory.TerrainHoleStreamingRecordsNative;
+            NativeArray<TerrainHoleStreamingRecord> holeView = _nativeMemory.TerrainHoleStreamingRecordsNative;
+            holes = holeView.IsCreated ? holeView.AsReadOnly() : default;
             count = _terrainHoleCount;
-            return count > 0 && holes.IsCreated;
+            return count > 0 && holeView.IsCreated;
         }
 
         /// <summary>

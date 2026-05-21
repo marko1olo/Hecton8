@@ -2923,7 +2923,7 @@ namespace Hecton8.UI
 
             if (_vegetationBridge == null ||
                 !_vegetationBridge.TryGetEcosystemThreatGridPayload(
-                    out NativeArray<float> threatLevels,
+                    out NativeArray<float>.ReadOnly threatLevels,
                     out int gridResolution,
                     out Vector3 gridCenter,
                     out float cellSize))

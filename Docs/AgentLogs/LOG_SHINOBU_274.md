@@ -96,6 +96,37 @@ Verification:
   <Compile status="not_run" reason="CPU load 100 percent; protocol forbids dotnet/csc above 50 percent" />
 </SELF_AUDIT>
 
+## 2026-05-22 Loop 16 - Public Source Facade Zero-Intensity Removal
+
+What was wrong:
+- Public `RadiationHazardGrid.RegisterSource` returned when normalized intensity was zero. That diverged from the internal owner drain, which removes a source when intensity is zero, and could leave stale radiation source truth alive.
+
+What was done:
+- Public zero-intensity source registration now routes to `UnregisterSource(sourceId)` and publishes the existing typed remove payload through `SignalBus<RadiationSourceSignal>`.
+- Route card and status/rationale artifacts were updated with the facade lifecycle proof.
+
+Cinematic Cheats used:
+- None added. This preserves the existing source/SDF math and GPU scalar hand mutation fake; no collider, raycast, mesh deformation, decal, or trigger-volume route was introduced.
+
+Exact microseconds saved:
+- 0 us steady-state. Cold update/remove path only.
+- Worst-case stale-source prevention avoids unnecessary source loop work over up to 64 retained sources, estimated 1-4 us on low-end CPU when a faded source would otherwise remain active.
+
+Verification:
+- `git diff --check -- Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs`: PASS with CRLF warning only.
+- Source lifecycle scan confirmed public zero-intensity facade and internal owner drain both remove by source id.
+- Build not launched because `VBCSCompiler` was active even though CPU sampled at 45 percent.
+
+<SELF_AUDIT agent="SHINOBU_274" domain="Radiation Scrubber" date="2026-05-22" pass="loop_16_source_facade">
+  <TaskReconciliation>Tasks 01-19 remain PASS. Task 20 remains PARTIAL because compile/import/profiler proof is still blocked by active compiler/dependency gates.</TaskReconciliation>
+  <StructLayout>RadiationStateDTO unchanged: explicit 32 bytes. RadiationSourceSignal unchanged: explicit 64 bytes.</StructLayout>
+  <ScalabilityCurve>Source removal identity is independent of GlobalQualityWeight. Quality still only scales cadence, SDF/bulkhead sample budgets, and GPU presentation scalars.</ScalabilityCurve>
+  <HphiVaultStatus>No new private NativeArray ownership. Source storage remains in Vault lane 72741 and source count in 72742.</HphiVaultStatus>
+  <DependencyGraph>No hot `.Complete()` added. Public facade publishes the existing typed remove signal; owner phase drains it under the existing Simulation/PostSimulation fence.</DependencyGraph>
+  <CompileGuard>No asmdef edge or sibling runtime dependency added. Build not launched under active `VBCSCompiler` gate.</CompileGuard>
+  <DearLie>No physical simulation added. Source removal fix preserves the existing mathematical dose path and GPU mutation fake.</DearLie>
+</SELF_AUDIT>
+
 ## 2026-05-21 Loop 15 - Publication Fence, Signal Ingress, and Dump ABI Audit
 
 What was wrong:

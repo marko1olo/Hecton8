@@ -289,3 +289,16 @@ Solution: Aligned `finding_list_policy` text across generator, dedicated report,
 Rejected Alternatives: Allowing the next scanner run to rewrite evidence text again. Deterministic proof artifacts must be reproducible.
 Scalability potential: Editor-only; no runtime tier effect.
 Hardware Impact: Editor-only.
+
+## 2026-05-22 Loop 16 - Public Source Facade Zero-Intensity Removal
+
+Problem: Public `RadiationHazardGrid.RegisterSource` sanitized non-finite or non-positive intensity to zero and then returned. The internal owner drain already treats zero intensity as `UnregisterSourceInternal(sourceId)`, so the public facade could leave a previously registered reactor/anomaly source alive after a caller faded it to zero. The same facade also collapsed invalid radius to `0.5m`, while the internal owner path uses `DefaultSourceRadiusMeters`.
+Solution: Public `RegisterSource` now calls `UnregisterSource(sourceId)` when `NormalizeSourceIntensity(intensity)` returns zero. Invalid or non-positive radius now falls back to `DefaultSourceRadiusMeters`, matching `RegisterSourceInternal`. This keeps one route: a zero-intensity source becomes a typed `SignalBus<RadiationSourceSignal>` remove payload and is drained by the owner phase.
+Rejected Alternatives: Leaving the return branch was rejected because it silently preserves stale gameplay truth. Keeping the `0.5m` facade radius fallback was rejected because it creates a source shape that the owner path would not have chosen. Mutating `_sources` directly from the public static facade was rejected because it bypasses the owner phase, live-job preservation path, and SignalBus snapshot route. Adding a separate "inactive upsert" operation was rejected because it expands the binary lane without need.
+Scalability potential: Low, middle, high, and ultra quality tiers retain identical source identity and removal behavior. Quality only scales cadence/sample budgets and shader presentation, not whether a source exists.
+Hardware Impact: 0 steady-state frame cost. The remove signal is emitted only on cold/facade source updates with zero intensity; it prevents false exposure work over up to 64 stale sources, bounded worst-case saving about 1-4 us on low-end CPU when a stale source would otherwise remain active.
+
+Verification:
+- `git diff --check -- Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs`: PASS with CRLF warning only.
+- Source lifecycle scan: public zero-intensity facade and internal owner drain now both remove by source id; invalid radius falls back to `DefaultSourceRadiusMeters`.
+- Build not launched: CPU sampled at 45 percent, but `VBCSCompiler` was active.

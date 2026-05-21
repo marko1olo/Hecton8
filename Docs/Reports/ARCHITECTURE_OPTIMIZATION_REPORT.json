@@ -1,7 +1,7 @@
 {
   "agent": "SHINOBU_260",
   "role": "CREST_VERSION_QUARANTINE_DIRECTOR",
-  "timestamp_utc": "20260521_193253",
+  "timestamp_utc": "20260521_231422",
   "allowed_bridge_prefixes": [
     "Assets/_Project/Scripts/Plugins/Crest"
   ],
@@ -9,6 +9,7 @@
   "allowed_hit_count": 40,
   "quarantine_breaches_prevented": 40,
   "reflection_string_hit_count": 0,
+  "global_scripting_define_hit_count": 1,
   "vocabulary_debt_hit_count": 111,
   "breaches": [],
   "allowed_hits": [
@@ -65,43 +66,43 @@
     {
       "kind": "csharp_direct_reference",
       "path": "Assets\\_Project\\Scripts\\Plugins\\Crest\\Crest4KinematicsAdapter.cs",
-      "line": 599,
+      "line": 594,
       "text": "Crest.OceanRenderer oceanRenderer = TryReadBoundOceanRenderer();"
     },
     {
       "kind": "csharp_direct_reference",
       "path": "Assets\\_Project\\Scripts\\Plugins\\Crest\\Crest4KinematicsAdapter.cs",
-      "line": 708,
+      "line": 703,
       "text": "Crest.OceanRenderer oceanRenderer = TryReadBoundOceanRenderer();"
     },
     {
       "kind": "csharp_direct_reference",
       "path": "Assets\\_Project\\Scripts\\Plugins\\Crest\\Crest4KinematicsAdapter.cs",
-      "line": 719,
+      "line": 714,
       "text": "protected override Crest.OceanRenderer ReadBoundOceanRenderer()"
     },
     {
       "kind": "csharp_direct_reference",
       "path": "Assets\\_Project\\Scripts\\Plugins\\Crest\\Crest4KinematicsAdapter.cs",
-      "line": 724,
+      "line": 719,
       "text": "private Crest.OceanRenderer TryReadBoundOceanRenderer()"
     },
     {
       "kind": "csharp_direct_reference",
       "path": "Assets\\_Project\\Scripts\\Plugins\\Crest\\Crest4KinematicsAdapter.cs",
-      "line": 729,
+      "line": 724,
       "text": "private Crest.OceanRenderer ResolveOceanRenderer()"
     },
     {
       "kind": "csharp_direct_reference",
       "path": "Assets\\_Project\\Scripts\\Plugins\\Crest\\Crest4KinematicsAdapter.cs",
-      "line": 734,
+      "line": 729,
       "text": "private static double3 ResolveOceanRootAUP(Crest.OceanRenderer oceanRenderer)"
     },
     {
       "kind": "csharp_direct_reference",
       "path": "Assets\\_Project\\Scripts\\Plugins\\Crest\\Crest4KinematicsAdapter.cs",
-      "line": 746,
+      "line": 741,
       "text": "private static float ResolveSeaLevel(Crest.OceanRenderer oceanRenderer)"
     },
     {
@@ -256,6 +257,19 @@
     }
   ],
   "reflection_string_hits": [],
+  "global_scripting_define_hits": [
+    {
+      "kind": "global_crest_scripting_define",
+      "path": "ProjectSettings\\ProjectSettings.asset",
+      "line": 850,
+      "platform": "Standalone",
+      "symbols": [
+        "CREST_OCEAN",
+        "CREST_URP"
+      ],
+      "text": "Standalone: DOTWEEN;CREST_OCEAN;CREST_URP;__MICROSPLAT__;MAPMAGIC2;MM_NATIVE;UNITY_VISUAL_SCRIPTING;GPU_INSTANCER;ODIN_INSPECTOR;ODIN_INSPECTOR_3;ODIN_INSPECTOR_3_1;AMPLIFY_SHADER_EDITOR;SHAPES_URP;MOREMOUNTAINS_NICEVIBRATIONS_INSTALLED;BAKERY_INCLUDED;VLB_URP;ODIN_INSPECTOR_3_2;ODIN_INSPECTOR_3_3"
+    }
+  ],
   "vocabulary_debt_hits": [
     {
       "kind": "crest_vocabulary_debt",
@@ -272,19 +286,19 @@
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonCelestialEngine.cs",
-      "line": 1416,
+      "line": 1417,
       "text": "SyncCrestPrimaryLight();"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonCelestialEngine.cs",
-      "line": 1821,
+      "line": 1835,
       "text": "SyncCrestPrimaryLight();"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonCelestialEngine.cs",
-      "line": 1942,
+      "line": 1956,
       "text": "private void SyncCrestPrimaryLight()"
     },
     {
@@ -500,116 +514,98 @@
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 1265,
+      "line": 1266,
       "text": "private readonly Vector3[] _crestQueryPoints = new Vector3[CrestBodySampleCount]; // COLD ALLOC: Vector3[5] — batched Crest body-query points (center/head/feet/left/right) — owner: HectonPlayerMovement"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 1266,
+      "line": 1267,
       "text": "private readonly float[] _crestQueryHeights = new float[CrestBodySampleCount]; // COLD ALLOC: float[5] — batched Crest sampled water heights — owner: HectonPlayerMovement"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 1267,
+      "line": 1268,
       "text": "private readonly Vector3[] _crestQueryNormals = new Vector3[CrestBodySampleCount]; // COLD ALLOC: Vector3[5] — batched Crest sampled normals — owner: HectonPlayerMovement"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 1268,
+      "line": 1269,
       "text": "private readonly Vector3[] _crestQueryVelocities = new Vector3[CrestBodySampleCount]; // COLD ALLOC: Vector3[5] — batched Crest sampled water velocities — owner: HectonPlayerMovement"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 1269,
+      "line": 1270,
       "text": "private readonly Vector3[] _crestQueryDisplacements = new Vector3[CrestBodySampleCount]; // COLD ALLOC: Vector3[5] — batched Crest sampled displacements — owner: HectonPlayerMovement"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 1270,
+      "line": 1271,
       "text": "private readonly Vector3[] _crestQueryFlows = new Vector3[CrestBodySampleCount]; // COLD ALLOC: Vector3[5] — batched Crest flow samples — owner: HectonPlayerMovement"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 1628,
+      "line": 1629,
       "text": "//  EFFECTIVE WATER SURFACE Ã¢â‚¬â€ Crest or fallback"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 1631,
+      "line": 1632,
       "text": "private float EffectiveWaterSurfaceY => (_crestAvailable && useCrestOceanHeight)"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 1635,
+      "line": 1636,
       "text": "private Vector3 EffectiveWaterSurfaceNormal => (_crestAvailable && useCrestOceanHeight)"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 1639,
+      "line": 1640,
       "text": "private Vector3 EffectiveWaterSurfaceVelocity => (_crestAvailable && useCrestOceanHeight)"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 1643,
+      "line": 1644,
       "text": "private Vector3 EffectiveWaterFlowVelocity => (_crestFlowSamplingSucceeded && useCrestOceanHeight)"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 1869,
+      "line": 1870,
       "text": "/// <summary>Effective water surface Y from Crest or the serialized fallback.</summary>"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 1879,
+      "line": 1880,
       "text": "/// <summary>Local-space rotation contributed by Crest surface wave alignment while surface swimming.</summary>"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 2107,
+      "line": 2108,
       "text": "/// Returns the current local wave slope derived from the batched Crest body samples."
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 4335,
+      "line": 4341,
       "text": "// Ã¢â€â‚¬Ã¢â€â‚¬ Crest integration Ã¢â€â‚¬Ã¢â€â‚¬"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 4566,
+      "line": 4572,
       "text": "if (useCrestOceanHeight && !_crestAvailable)"
-    },
-    {
-      "kind": "crest_vocabulary_debt",
-      "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 6874,
-      "text": "if (!useCrestOceanHeight)"
-    },
-    {
-      "kind": "crest_vocabulary_debt",
-      "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 6876,
-      "text": "UpdateCrestDiagnostics();"
-    },
-    {
-      "kind": "crest_vocabulary_debt",
-      "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 6887,
-      "text": "UpdateCrestDiagnostics();"
     },
     {
       "kind": "crest_vocabulary_debt",
@@ -620,188 +616,200 @@
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 6902,
+      "line": 6896,
       "text": "UpdateCrestDiagnostics();"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 6915,
+      "line": 6907,
       "text": "UpdateCrestDiagnostics();"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 6919,
-      "text": "float forwardSampleDistance = ResolveCrestForwardSampleDistance();"
-    },
-    {
-      "kind": "crest_vocabulary_debt",
-      "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 6920,
-      "text": "float lateralSampleDistance = ResolveCrestLateralSampleDistance();"
-    },
-    {
-      "kind": "crest_vocabulary_debt",
-      "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 6921,
-      "text": "float minSpatialLength = ResolveCrestBodySampleMinLength(forwardSampleDistance, lateralSampleDistance);"
+      "line": 6914,
+      "text": "if (!useCrestOceanHeight)"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
       "line": 6922,
-      "text": "UpdateCrestQueryPoints(forwardSampleDistance, lateralSampleDistance);"
-    },
-    {
-      "kind": "crest_vocabulary_debt",
-      "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 6926,
-      "text": "CrestBodySampleCount,"
-    },
-    {
-      "kind": "crest_vocabulary_debt",
-      "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 6934,
-      "text": "CrestBodySampleCount,"
-    },
-    {
-      "kind": "crest_vocabulary_debt",
-      "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 6941,
-      "text": "for (int i = 0; i < CrestBodySampleCount; i++)"
-    },
-    {
-      "kind": "crest_vocabulary_debt",
-      "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 6958,
       "text": "UpdateCrestDiagnostics();"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 6986,
+      "line": 6935,
+      "text": "UpdateCrestDiagnostics();"
+    },
+    {
+      "kind": "crest_vocabulary_debt",
+      "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
+      "line": 6939,
+      "text": "float forwardSampleDistance = ResolveCrestForwardSampleDistance();"
+    },
+    {
+      "kind": "crest_vocabulary_debt",
+      "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
+      "line": 6940,
+      "text": "float lateralSampleDistance = ResolveCrestLateralSampleDistance();"
+    },
+    {
+      "kind": "crest_vocabulary_debt",
+      "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
+      "line": 6941,
+      "text": "float minSpatialLength = ResolveCrestBodySampleMinLength(forwardSampleDistance, lateralSampleDistance);"
+    },
+    {
+      "kind": "crest_vocabulary_debt",
+      "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
+      "line": 6942,
+      "text": "UpdateCrestQueryPoints(forwardSampleDistance, lateralSampleDistance);"
+    },
+    {
+      "kind": "crest_vocabulary_debt",
+      "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
+      "line": 6946,
       "text": "CrestBodySampleCount,"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 6992,
+      "line": 6954,
+      "text": "CrestBodySampleCount,"
+    },
+    {
+      "kind": "crest_vocabulary_debt",
+      "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
+      "line": 6961,
       "text": "for (int i = 0; i < CrestBodySampleCount; i++)"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 6995,
+      "line": 6978,
+      "text": "UpdateCrestDiagnostics();"
+    },
+    {
+      "kind": "crest_vocabulary_debt",
+      "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
+      "line": 7006,
+      "text": "CrestBodySampleCount,"
+    },
+    {
+      "kind": "crest_vocabulary_debt",
+      "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
+      "line": 7012,
+      "text": "for (int i = 0; i < CrestBodySampleCount; i++)"
+    },
+    {
+      "kind": "crest_vocabulary_debt",
+      "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
+      "line": 7015,
       "text": "_dynamicWaterFlowVelocity = averageFlow / CrestBodySampleCount;"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 7019,
+      "line": 7039,
       "text": "private float ResolveCrestForwardSampleDistance()"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 7024,
+      "line": 7044,
       "text": "private float ResolveCrestLateralSampleDistance()"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 7030,
+      "line": 7050,
       "text": "private float ResolveCrestBodySampleMinLength(float forwardDistance, float lateralDistance)"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 7035,
+      "line": 7055,
       "text": "private void UpdateCrestQueryPoints(float forwardDistance, float lateralDistance)"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 7042,
+      "line": 7062,
       "text": "_crestQueryPoints[CrestSampleCenter] = center;"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 7043,
+      "line": 7063,
       "text": "_crestQueryPoints[CrestSampleHead] = center + bodyForward * forwardDistance;"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 7044,
+      "line": 7064,
       "text": "_crestQueryPoints[CrestSampleFeet] = center - bodyForward * forwardDistance;"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 7045,
+      "line": 7065,
       "text": "_crestQueryPoints[CrestSampleLeft] = center - bodyRight * lateralDistance;"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 7046,
+      "line": 7066,
       "text": "_crestQueryPoints[CrestSampleRight] = center + bodyRight * lateralDistance;"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 7051,
+      "line": 7071,
       "text": "Vector3 headPoint = _crestQueryPoints[CrestSampleHead];"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 7052,
+      "line": 7072,
       "text": "headPoint.y = _crestQueryHeights[CrestSampleHead];"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 7053,
+      "line": 7073,
       "text": "Vector3 feetPoint = _crestQueryPoints[CrestSampleFeet];"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 7054,
+      "line": 7074,
       "text": "feetPoint.y = _crestQueryHeights[CrestSampleFeet];"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 7055,
+      "line": 7075,
       "text": "Vector3 leftPoint = _crestQueryPoints[CrestSampleLeft];"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 7056,
+      "line": 7076,
       "text": "leftPoint.y = _crestQueryHeights[CrestSampleLeft];"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 7057,
+      "line": 7077,
       "text": "Vector3 rightPoint = _crestQueryPoints[CrestSampleRight];"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 7058,
-      "text": "rightPoint.y = _crestQueryHeights[CrestSampleRight];"
-    },
-    {
-      "kind": "crest_vocabulary_debt",
-      "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
       "line": 7078,
-      "text": "for (int i = 0; i < CrestBodySampleCount; i++)"
+      "text": "rightPoint.y = _crestQueryHeights[CrestSampleRight];"
     },
     {
       "kind": "crest_vocabulary_debt",
@@ -812,85 +820,91 @@
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 7104,
+      "line": 7118,
+      "text": "for (int i = 0; i < CrestBodySampleCount; i++)"
+    },
+    {
+      "kind": "crest_vocabulary_debt",
+      "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
+      "line": 7124,
       "text": "averageVelocity /= CrestBodySampleCount;"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 7105,
+      "line": 7125,
       "text": "averageDisplacement /= CrestBodySampleCount;"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 7107,
+      "line": 7127,
       "text": "_dynamicWaterSurfaceY = _crestQueryHeights[CrestSampleCenter];"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 7109,
+      "line": 7129,
       "text": "_dynamicWaterSurfaceVelocity = _crestQueryVelocities[CrestSampleCenter];"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 7110,
+      "line": 7130,
       "text": "_dynamicWaterDisplacement = _crestQueryDisplacements[CrestSampleCenter];"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 7114,
+      "line": 7134,
       "text": "math.abs(_crestQueryHeights[CrestSampleHead] - _crestQueryHeights[CrestSampleFeet]),"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 7115,
+      "line": 7135,
       "text": "math.abs(_crestQueryHeights[CrestSampleRight] - _crestQueryHeights[CrestSampleLeft]));"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 13000,
+      "line": 13023,
       "text": "float inputDriftScale = ResolveCrestFlowInputAttenuation(fixedDeltaTime);"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 13063,
+      "line": 13086,
       "text": "private float ResolveCrestFlowInputAttenuation(float fixedDeltaTime)"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 13248,
+      "line": 13271,
       "text": "private void UpdateCrestDiagnostics()"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 13250,
+      "line": 13273,
       "text": "_debugCrestAvailable = _crestAvailable;"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 13252,
+      "line": 13275,
       "text": "_debugCrestSampling = _crestSamplingSucceeded;"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 13287,
+      "line": 13310,
       "text": "_debugCrestAvailable = _crestAvailable;"
     },
     {
       "kind": "crest_vocabulary_debt",
       "path": "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
-      "line": 13288,
+      "line": 13311,
       "text": "_debugCrestSampling = _crestSamplingSucceeded;"
     },
     {

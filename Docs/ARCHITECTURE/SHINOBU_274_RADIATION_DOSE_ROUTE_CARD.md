@@ -40,6 +40,7 @@ Owner: SHINOBU_274 / Radiation Scrubber
 - Iodine reductions consume pending external dose before accumulated dose to prevent same-frame hidden radiation debt.
 - Diffusion read/write parity is tracked by `_gridBuffersSwapped`; `RefreshVaultViews` maps the current front/back buffers without copying the whole grid.
 - Public `RegisterSource` and `ReportExternalDose` scalar ingress is explicit finite-safe before SignalBus payload construction. Non-finite source intensity is rejected; non-finite external intensity fails closed to zero.
+- Public `RegisterSource` zero or invalid normalized intensity emits `UnregisterSource(sourceId)`, matching the internal owner drain and preventing stale source truth when a reactor/anomaly fades out.
 - `Dump_SHINOBU_274.bin` row order now matches `RadiationTelemetryEntry` explicit layout: AUP, depth, exposure, cumulative dose, shield, degradation, burst microseconds, frame, shift sequence, source count, source version, flags.
 
 ## Generic HazardZoneManager Exception

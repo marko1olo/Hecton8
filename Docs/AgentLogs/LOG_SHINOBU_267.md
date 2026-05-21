@@ -1298,3 +1298,30 @@ Exact Microseconds saved:
   <PARKED_WORK_REJECTED>Build launch at 100% CPU, runtime profiling instrumentation, and unrelated hot-phase audits in sibling domains.</PARKED_WORK_REJECTED>
   <STATIC_VERIFICATION>Extracted hot method slices report `preForbidden=0`, `visForbidden=0`, kernels present, upload present; owned broad forbidden scan is clean after split `.Run`/`.Complete` audit tokens; `git diff --check` found no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 100%, dotnet=1, csc=0.</STATIC_VERIFICATION>
 </SELF_AUDIT_DELTA>
+
+## 2026-05-22 - Polish Pass 56
+
+What was wrong:
+- Central architecture docs lagged behind the current SHINOBU_267 source/audit contract.
+
+What was done:
+- Updated `FLORA_PROCEDURAL_SWAY_FIELD.md` and `BINARY_PAYLOAD_INTEGRATION_LEDGER.md`.
+- Documented the five-DTO layout matrix, measured five-size editor proof, direct-memory CSV profile hydration, MemClear Vault clearing, and owner-phase slice purity audit.
+
+Cinematic Cheats used:
+- No runtime simulation changed. Documentation now reflects the shader-side visual fake route.
+
+Exact Microseconds saved:
+- 0 runtime us. Documentation-only contract refresh.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_267" revision="2026-05-22-P56_CENTRAL_ROUTE_DOC_REFRESH">
+  <TASK id="04" status="PASS">Central docs now name the five-DTO layout verifier and measured size output.</TASK>
+  <TASK id="16" status="PASS">Central docs now name direct-memory profile/tuning authoring evidence.</TASK>
+  <TASK id="17" status="PASS">Central docs now name pointer-offset CSV profile writes and MemClear cold clears.</TASK>
+  <TASK id="20" status="PASS">Central docs now name `ownerPhasePurity`, `coldVaultMutation`, and the current self-audit proof surface.</TASK>
+  <FIRST_20_MINUTES_MOMENT>World load and swim readability on the selected Copper Wire route biome.</FIRST_20_MINUTES_MOMENT>
+  <ROUTE_IMPACT>Integrators can read the current ambient overlay ABI and hot-phase purity proof from the route card and binary ledger.</ROUTE_IMPACT>
+  <PROOF_REQUIRED>Static doc/source scan now; Unity import/Console, editor self-audit invocation, selected route run, profiler/GC, Frame Debugger, screenshot/clip, save/load diff, and dump-read smoke test remain pending.</PROOF_REQUIRED>
+  <PARKED_WORK_REJECTED>Whole-project compile against unrelated dirty C# edits, unrelated sibling route-card rewrites, and claiming Unity runtime proof from static docs.</PARKED_WORK_REJECTED>
+  <STATIC_VERIFICATION>Architecture docs now contain `ownerPhasePurity`, direct-memory profile writes, `UnsafeUtility.MemClear`, and `ValidateFloraSwayLayouts()` five-DTO proof references; owned forbidden scan remains clean; SHINOBU_267 XML extraction remains 20 tasks / 15929 chars; `git diff --check` found no whitespace errors beyond LF/CRLF warnings. Build not launched because current dirty C# files are unrelated sibling-domain edits and no SHINOBU_267-specific csproj exists.</STATIC_VERIFICATION>
+</SELF_AUDIT_DELTA>
