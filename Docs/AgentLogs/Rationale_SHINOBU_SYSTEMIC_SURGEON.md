@@ -1058,3 +1058,19 @@ Solution: Removed the scalability listener interface, register/unregister calls,
 Rejected Alternatives: Keeping callback-based tuning invalidation was rejected because quality is already an input scalar to scheduled simulation. Keeping a 2-event breach lane was rejected because visor breach facts are player-facing hazard feedback and must not be dropped by device class.
 Scalability potential: Low devices still reduce visor simulation cadence continuously toward 5 Hz, middle devices interpolate, and high/ultra reach 60 Hz condensation/refraction updates. Breach event admission stays invariant so visual richness scales without hiding hazards.
 Hardware Impact: 0 us speed claim. Removed one event listener route and one callback-only mutation path; no DTO size, BufferID, shader property ID, or Vault owner changed. Build deferred because `VBCSCompiler` remained active.
+
+## External Diegetic Glitch Compile Wall
+
+Problem: The guarded build for the UI/visor route changes failed in `DiegeticGlitchSurgeonRuntime.cs`, a dirty file outside this pass. Compiler diagnostics reported missing local helper methods, but immediate source inspection found `TryResolveGlitchVaultBuffer`, `TryReadGlitchVaultBuffer`, `IsGlitchVaultHandle`, `ElementRef`, and `ReleaseGlitchVaultHandles` present in the current file.
+Solution: Did not revert the external file. Recorded the failure as dependency-blocked and preserved the exact diagnostics for the integrator. The current dirty diff in that file is a one-line external `TryRead` to `TryResolve` change near terminal bridge readback.
+Rejected Alternatives: Reverting the dirty file was rejected because it is not in my authored write set. Adding duplicate helper methods was rejected because the helpers already exist and duplicate definitions would create a different compile wall if the snapshot issue clears.
+Scalability potential: None. This is compile hygiene only.
+Hardware Impact: 0 us runtime. Build wall blocks final validation of the already-scanned UI/visor changes until the external file stabilizes and the build guard clears again.
+
+## Habitat Flood Acoustic Muffle Lane Unification
+
+Problem: `AcousticZoneEvents.EnsureFloodMuffleInitialized` configured `HabitatFloodAcousticMuffleSignal` with a 32-frame maximum but only 8 low-tier frame signals. Habitat flooding muffle is environmental feedback, not decorative clutter, so binary hardware shedding can hide active flood state.
+Solution: Changed the low-tier capacity argument to `FloodMuffleSignalCapacity`, keeping the lane at 32 signals for every profile. Existing `AcousticZoneChangedEvent` routing and mixer snapshot behavior are untouched.
+Rejected Alternatives: Keeping 8 as a "survival" profile was rejected because dropped flood muffle payloads create a discontinuity in audio feedback. Moving flood muffle into a per-frame poll was rejected because the existing SignalBus lane is the first-party route.
+Scalability potential: Low devices still scale audio processing elsewhere; the flood muffle fact keeps invariant admission. High/ultra can render richer mixer/material response without route divergence.
+Hardware Impact: 0 us speed claim. The lane reserves existing declared capacity; no new allocation or hot polling was added.

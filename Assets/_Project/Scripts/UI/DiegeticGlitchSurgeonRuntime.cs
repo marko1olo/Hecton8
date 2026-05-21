@@ -1788,7 +1788,7 @@ namespace Hecton8.UI
 
             try
             {
-                if (!TryReadGlitchVaultBuffer(_vault, in terminalStateHandle, TerminalOsStateBridgeBufferId, TerminalOsConstants.TerminalCapacity, out NativeArray<TerminalStateDTO> terminalStates))
+                if (!TryResolveGlitchVaultBuffer(_vault, in terminalStateHandle, TerminalOsStateBridgeBufferId, TerminalOsConstants.TerminalCapacity, out NativeArray<TerminalStateDTO> terminalStates))
                     return false;
 
                 TerminalStateDTO* states = (TerminalStateDTO*)terminalStates.GetUnsafePtr();

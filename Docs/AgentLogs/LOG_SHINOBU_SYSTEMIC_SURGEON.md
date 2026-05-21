@@ -3149,3 +3149,39 @@ Verification:
     Targeted `rg` found no `IScalabilityChangedEventListener`, `ScalabilityChangedEvent`, `ScalabilityEvents`, `_pendingTuningVersionIncrement`, `IncrementTuningVersionUnsafe`, or `ApplyPendingTuningVersionIfNeeded` in `DiegeticVisorLensRuntime.cs`; it found `SignalBus<VisorBreachSignal>.Configure(8, maxFrameSignals: 8, lowTierFrameSignals: 8, laneHash: VisorBreachLaneHash)`. `git diff --check` passed with line-ending warning only. Build was not launched because `VBCSCompiler` remained active.
   </VERIFICATION>
 </SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="ExternalDiegeticGlitchCompileWall">
+  <WHAT_WAS_WRONG>
+    Guarded build after the UI/visor pass failed in dirty external `DiegeticGlitchSurgeonRuntime.cs`, reporting missing helper methods that are present in the current source file.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Preserved the external dirty file, inspected helper definitions and the one-line diff, and logged the wall as dependency-blocked. No authored UI/visor changes were reverted.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    None. Compile wall only.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No runtime impact.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Build command `dotnet build .\Assembly-CSharp.csproj --no-restore --nologo -m:1 -clp:ErrorsOnly` failed with 91 errors in `DiegeticGlitchSurgeonRuntime.cs`. Current source inspection found the reported helpers at lines 1170 through 1264, brace count `211/211`, and `git diff --stat` showed only a one-line external edit in that file.
+  </VERIFICATION>
+</SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="HabitatFloodAcousticMuffleLaneUnification">
+  <WHAT_WAS_WRONG>
+    `HabitatFloodAcousticMuffleSignal` used a 32-signal maximum but an 8-signal low-tier lane, allowing binary hardware profile capacity shedding for active habitat flood audio feedback.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Set the low-tier capacity to `FloodMuffleSignalCapacity`, matching the 32-signal maximum. No DTO layout, SignalBus type, lane hash, mixer snapshot, or acoustic-zone transition route changed.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    Audio muffle remains a presentation scalar, but flood feedback admission is not a quality fake. Weak devices should reduce effect polish elsewhere, not drop flood facts.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. This preserves route capacity.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted `rg` found `lowTierFrameSignals: FloodMuffleSignalCapacity` for `HabitatFloodAcousticMuffleSignal`; `git diff --check` passed with line-ending warning only. Build remains blocked by the external `DiegeticGlitchSurgeonRuntime.cs` compile wall and active `VBCSCompiler`.
+  </VERIFICATION>
+</SELF_AUDIT>

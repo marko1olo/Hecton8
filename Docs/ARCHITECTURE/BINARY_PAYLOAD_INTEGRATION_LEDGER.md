@@ -4745,6 +4745,13 @@ Fault route: `ExosuitTelemetryEntry[300]` dumps fixed 64-byte rows to `Docs/Agen
 - Policy impact: `VisorBreachSignal` admission now uses full `lowTierFrameSignals: 8` capacity. Visor simulation cadence still scales continuously from 5 Hz to 60 Hz through `ResolveSimulationInterval(GlobalQualityWeight)`.
 - Verification: targeted listener/tuning-version scan clean for `DiegeticVisorLensRuntime.cs`; `git diff --check` passed with line-ending warning only. Build was not relaunched because `VBCSCompiler.exe` was active.
 
+## 2026-05-22 - SHINOBU_SYSTEMIC_SURGEON Habitat Flood Acoustic Muffle Lane Note
+
+- `Assets/_Project/Scripts/AcousticZoneController.cs` now configures `HabitatFloodAcousticMuffleSignal` with `lowTierFrameSignals: FloodMuffleSignalCapacity`, matching the 32-signal maximum.
+- Binary payload impact: none. `HabitatFloodAcousticMuffleSignal` DTO layout, lane hash `0x464C4D46`, `AcousticZoneChangedEvent`, mixer snapshot transition route, and audio service API are unchanged.
+- Policy impact: habitat flood muffle feedback is no longer dropped by binary low-tier signal capacity. Presentation quality can still scale downstream without changing the event route.
+- Verification: targeted signal-capacity scan clean for the reduced flood muffle lane; `git diff --check` passed with line-ending warning only. Build was not relaunched because the external DiegeticGlitch compile wall is active.
+
 ## 2026-05-22 - SHINOBU_202 Save Pager Descriptor Route Update
 
 - `Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs` migrated retained pager Vault lanes from pointer-era handles to `VaultGenerationHandle<T>` descriptors.
@@ -4752,3 +4759,10 @@ Fault route: `ExosuitTelemetryEntry[300]` dumps fixed 64-byte rows to `Docs/Agen
 - Authority impact: `SystemID.SavePersistence` still owns write commands, read commands, read results, write/read arenas, read slot states, compression scratch, hot-state arena, read staging, and telemetry ring. DataVault replacement now releases descriptors only after the pager worker is fenced; an unfenced worker path fails closed and leaves descriptors unreleased until explicit teardown.
 - Compatibility impact: the public `TryReadPageIntoVaultSlice(... out VaultBufferSlice<byte> ...)` API remains because public signature mutation is forbidden mid-batch. It now uses cached `_vault` and rejects DataVault compaction/allocation fences instead of polling `GlobalRegistry.DataVault`.
 - Verification: focused legacy route scan clean for pointer-era retained handles in `H8BinaryWorldPager.cs`; the only `GlobalRegistry.DataVault` hit is cold `AllocateNativeState()`. Descriptor scan confirmed `VaultGenerationHandle<T>`, `GetGenerationHandle`, `TryResolveHandle`, `TryReadHandle`, `ReleasePagerVaultHandles`, `ReleaseBuffer(in handle)`, `IGlobalRegistryHotSwapListener`, `IsCompactionFenceActive`, and `IsAllocationLocked`. Brace/preprocessor counts are `295/295` and `2/2`; `git diff --check` passed with line-ending warning only. Build was not relaunched because `VBCSCompiler.exe` was active.
+
+## 2026-05-22 - SHINOBU_202 Diegetic Glitch Terminal Bridge Mutable Resolve
+
+- `Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs` changed the Terminal OS state bridge open from pure descriptor read to mutable descriptor resolve under the existing UI write lock.
+- Binary payload impact: route-only. `TerminalStateDTO`, `DiegeticGlitchTelemetryEntry`, `GlitchSurgeonStateDTO`, BufferIDs, shader property IDs, SignalBus payloads, blackbox dump bytes, CSV bytes, and UI authority are unchanged.
+- Authority impact: `TerminalOsRuntime` remains the owner of BufferID `71360`. `DiegeticGlitchSurgeonRuntime` borrows the generation descriptor for a late-frame UV-tear state write and does not release the Terminal OS lane.
+- Verification: focused legacy route scan clean for `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `.ptr`, `TryGetLatestCreated`, `TryGetBufferGeneration`, and `VaultGenerationID` in `DiegeticGlitchSurgeonRuntime.cs`. Descriptor scan confirmed `VaultGenerationHandle<T>`, `GetGenerationHandle`, `TryGetGenerationHandle`, `TryResolveGlitchVaultBuffer`, `TryReadGlitchVaultBuffer`, `ReleaseGlitchVaultHandles`, `ReleaseBuffer(in handle)`, `IsCompactionFenceActive`, and `IsAllocationLocked`. Brace/preprocessor counts are `211/211` and `3/3`; `git diff --check` passed with line-ending warning only. Build was not relaunched under the explicit no-rebuild command discipline.

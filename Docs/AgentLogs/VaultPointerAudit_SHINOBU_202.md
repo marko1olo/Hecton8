@@ -892,3 +892,10 @@ The scan proves repo-wide debt, not successful consumer migration. A full rename
 - DataVault hot-swap fail-closes without descriptor release if the worker thread does not stop. The release path runs only after the worker is fenced, then dumps telemetry, clears transient queues, releases old-vault descriptors, and tombstones `_vault`.
 - `TryReadPageIntoVaultSlice` no longer polls `GlobalRegistry.DataVault`; it uses cached `_vault` and rejects compaction/allocation fences. The public `VaultBufferSlice<byte>` signature remains compatibility debt because public API mutation is forbidden mid-batch without a route card.
 - This entry does not change `PageWriteCommand`, `PageReadCommand`, `PageReadResult`, `PagerTelemetryEntry`, BufferIDs `70200..70209`, page header layout, WAL header layout, RLE compression bytes, dump header layout, file paths, worker queue ABI, or SavePersistence authority.
+
+## 2026-05-22 Diegetic Glitch Terminal Bridge Mutable Resolve
+
+- `Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs` has no `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `.ptr`, `TryGetLatestCreated`, `TryGetBufferGeneration`, or `VaultGenerationID` hits.
+- Terminal state bridge mutation now opens `TerminalOsStateBridgeBufferId` through `TryResolveGlitchVaultBuffer` under the existing UI write lock, not through the pure `TryReadGlitchVaultBuffer` route.
+- Borrowed ownership remains unchanged: `TerminalOsRuntime` owns BufferID `71360`; `DiegeticGlitchSurgeonRuntime` borrows a generation descriptor and does not release Terminal OS owned memory.
+- This entry does not change `TerminalStateDTO`, `DiegeticGlitchTelemetryEntry`, `GlitchSurgeonStateDTO`, BufferIDs, shader property IDs, blackbox dump format, terminal rendering, CSV parser contract, or UI authority.

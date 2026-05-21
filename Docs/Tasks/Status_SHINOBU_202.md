@@ -4160,3 +4160,18 @@ Mandates read before coding:
 - Brace/preprocessor counts are balanced: `H8BinaryWorldPager.cs` braces `295/295`, preprocessor `#if/#endif` `2/2`.
 - `git diff --check` passed for `H8BinaryWorldPager.cs`; CRLF warning only.
 - Build not relaunched: CPU sampled at 6 percent, but `VBCSCompiler.exe` was already active, so the explicit compiler-process gate blocked a new `dotnet build`.
+
+## Loop 233 - Diegetic Glitch Terminal Bridge Mutable Resolve
+- [x] Corrected Terminal OS state bridge open mode in `DiegeticGlitchSurgeonRuntime.cs`.
+  DOD practice: `TryPushTerminalStateGlitch` already holds the UI write lock on `TerminalOsStateBridgeBufferId`; the buffer is now opened through `TryResolveGlitchVaultBuffer` instead of the pure `TryReadGlitchVaultBuffer` before mutating `TerminalStateDTO.Value2` and `IsDirty`.
+  Rejected: leaving a write under a read accessor because read accessors must not mutate global state. Rewriting terminal rendering, glitch jobs, DTO layout, or Terminal OS owner constants was rejected as outside this route bug.
+  Estimate: no measured speedup; this is access-mode correctness. Descriptor proof remains O(1) at the late-frame bridge boundary.
+- [x] Verified diegetic glitch retained route remains descriptor-clean.
+  DOD practice: focused scan found no `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `.ptr`, `TryGetLatestCreated`, `TryGetBufferGeneration`, or `VaultGenerationID` hits.
+  Rejected: claiming a full migration in this loop because current `HEAD` already contained the generation-descriptor migration; only the mutable read/resolve mismatch changed.
+  Estimate: 0 DTO/ABI change.
+
+## Compile State Update 227
+- Brace/preprocessor counts are balanced: `DiegeticGlitchSurgeonRuntime.cs` braces `211/211`, preprocessor `#if/#endif` `3/3`.
+- `git diff --check` passed for `DiegeticGlitchSurgeonRuntime.cs`; CRLF warning only.
+- Build not relaunched under the explicit no-rebuild command discipline; only one access-mode line changed and compiler-process gate still must be checked before any build.

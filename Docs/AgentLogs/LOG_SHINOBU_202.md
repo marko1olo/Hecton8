@@ -5488,3 +5488,25 @@ Static verification:
 - The only `GlobalRegistry.DataVault` hit is cold `AllocateNativeState()`. The public `VaultBufferSlice<byte>` API remains for compatibility; it now uses cached `_vault` and allocation/compaction fencing.
 - Descriptor scan confirms `VaultGenerationHandle<T>`, `GetGenerationHandle`, `TryResolveHandle`, `TryReadHandle`, `ReleasePagerVaultHandles`, `ReleaseBuffer(in handle)`, `IGlobalRegistryHotSwapListener`, `IsCompactionFenceActive`, and `IsAllocationLocked`.
 - Brace/preprocessor counts are balanced: braces `295/295`, `#if/#endif` `2/2`. `git diff --check` passed with CRLF warning only. Build was not relaunched because `VBCSCompiler.exe` was active.
+
+## 2026-05-22 - Loop 233 - Diegetic Glitch Terminal Bridge Mutable Resolve
+
+What was wrong:
+- `Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs` already held the UI write lock for the borrowed Terminal OS state bridge, but opened the buffer through the pure read helper.
+- The route then mutated `TerminalStateDTO.Value2` and `IsDirty`, so the accessor semantics were wrong even though the descriptor migration was otherwise present.
+
+What was done:
+- Changed the terminal-state bridge open from `TryReadGlitchVaultBuffer` to `TryResolveGlitchVaultBuffer`.
+- Kept the borrowed ownership rule: `TerminalOsRuntime` owns `TerminalOsStateBridgeBufferId`; the glitch surgeon borrows the descriptor and never releases it.
+- Verified the target file remains free of pointer-era Vault routes.
+
+Cinematic cheats used:
+- The terminal glitch remains a UI/shader state fake: one scalar `Value2` drives UV tear instead of simulating terminal panel damage, text mesh rebuild, or gameplay physics.
+
+Exact microseconds saved:
+- No measured speedup claimed. This is access-mode correctness. The bridge remains O(1) descriptor resolve at the late-frame boundary.
+
+Static verification:
+- Focused scan found no `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `.ptr`, `TryGetLatestCreated`, `TryGetBufferGeneration`, or `VaultGenerationID` hits in `DiegeticGlitchSurgeonRuntime.cs`.
+- Descriptor scan confirms `VaultGenerationHandle<T>`, `GetGenerationHandle`, `TryGetGenerationHandle`, `TryResolveGlitchVaultBuffer`, `TryReadGlitchVaultBuffer`, `ReleaseGlitchVaultHandles`, `ReleaseBuffer(in handle)`, `IsCompactionFenceActive`, and `IsAllocationLocked`.
+- Brace/preprocessor counts are balanced: braces `211/211`, `#if/#endif` `3/3`. `git diff --check` passed with CRLF warning only. Build was not relaunched under the explicit no-rebuild command discipline.

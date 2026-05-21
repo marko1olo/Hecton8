@@ -127,7 +127,7 @@ namespace Hecton8.Audio
             SignalBus<HabitatFloodAcousticMuffleSignal>.Configure(
                 FloodMuffleSignalCapacity,
                 maxFrameSignals: FloodMuffleSignalCapacity,
-                lowTierFrameSignals: 8,
+                lowTierFrameSignals: FloodMuffleSignalCapacity,
                 laneHash: FloodMuffleLaneHash);
             SignalBus<HabitatFloodAcousticMuffleSignal>.EnsureInitialized();
             _floodMuffleInitialized = true;
