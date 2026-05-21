@@ -254,6 +254,7 @@ namespace Hecton8.Visor
                 internal TextureHandle History;
                 internal Material Material;
                 internal BufferHandle ConstantsBuffer;
+                internal float AbSplit;
                 internal bool HasDepth;
                 internal bool HasMotion;
                 internal bool HasHistory;
@@ -403,6 +404,7 @@ namespace Hecton8.Visor
                         passData.History = activeHistoryTexture;
                         passData.Material = _reconstructionMaterial;
                         passData.ConstantsBuffer = constantsBuffer;
+                        passData.AbSplit = _settings != null ? ResolveAbSplit01(_settings) : 0f;
                         passData.HasDepth = activeDepthTexture.IsValid();
                         passData.HasMotion = bindTemporalInputs && activeMotionTexture.IsValid();
                         passData.HasHistory = bindTemporalInputs && activeHistoryTexture.IsValid();
@@ -431,6 +433,7 @@ namespace Hecton8.Visor
                             if (constants == null)
                                 return;
 
+                            context.cmd.SetGlobalFloat(ShaderConstants.ReconstructionAbSplitId, data.AbSplit);
                             context.cmd.SetGlobalConstantBuffer(
                                 constants,
                                 ShaderConstants.ReconstructionConstantsBufferId,
@@ -793,7 +796,9 @@ namespace Hecton8.Visor
         private VisorUberPostPass _pass;
         private Material _material;
         private Material _reconstructionMaterial;
-        private GraphicsBuffer _reconstructionConstantsBuffer;
+        private GraphicsBuffer _reconstructionConstantsBufferA;
+        private GraphicsBuffer _reconstructionConstantsBufferB;
+        private GraphicsBuffer _activeReconstructionConstantsBuffer;
         private IDataVault _dataVault;
         private VaultBufferHandle<UberNoirReconstructionConstantsDTO> _reconstructionConstantsHandle;
         private VaultBufferHandle<ReconstructionTelemetryEntry> _reconstructionTelemetryHandle;
@@ -801,7 +806,9 @@ namespace Hecton8.Visor
         private VaultBufferHandle<byte> _csvScratchHandle;
         private VaultBufferHandle<MockReconstructionInputSignal> _mockSignalHandle;
         private UberNoirReconstructionConstantsDTO _lastReconstructionConstants;
-        private float _lastReconstructionAbSplit = float.PositiveInfinity;
+        private readonly NoirAestheticProfileDTO[] _aestheticProfileCache = new NoirAestheticProfileDTO[AestheticProfileCapacity]; // COLD ALLOC: NoirAestheticProfileDTO[32] - reconstruction CSV profile snapshot for render-frame lock-free selection - owner: HectonVisorUberPostFeature
+        private int _aestheticProfileCacheCount;
+        private int _reconstructionConstantsBufferIndex;
         private int _reconstructionTelemetryCursor;
         private bool _hasReconstructionConstants;
         private bool _reconstructionDumpWritten;
