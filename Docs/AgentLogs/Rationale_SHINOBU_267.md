@@ -433,3 +433,14 @@ Route impact: Keeps the early-route flora presentation fake compatible with IL2C
 Proof required: Static self-audit now; Unity import, route run, Burst/import evidence, profiler/GC, Frame Debugger, screenshot/clip, and save/load diff remain pending.
 Parked work rejected: Runtime AOT probing, build launch under CPU gate, and flora gameplay expansion.
 Static verification: Runtime contains Cdecl delegate and both MonoPInvokeCallback attributes; editor self-audit contains `aotFunctionPointerAbi`; runtime/editor/shader brace and preprocessor balances are zero; `git diff --check` reports no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 66%, dotnet=0, csc=0.
+
+## Polish Pass 40 Decisions
+Problem: The broad owned forbidden scan matched the editor self-audit's exact forbidden `mockFlowJob.Execute()` and `parametersJob.Execute()` strings, not runtime residue.
+Solution: Split those literals inside `FloraAmbientSwaySelfAudit` while preserving the runtime-source rejection check.
+Rejected Alternatives: Ignoring the false positives was rejected because scanner noise can hide a real direct managed kernel regression. Removing the validator was rejected because P36 needs a runnable proof hook.
+Scalability potential: No runtime behavior change. Low/Middle/High/Ultra use the same CBuffer and shader quality curves.
+Hardware Impact: Editor audit hygiene only, 0 runtime us.
+First 20 Minutes moment: World load and swim readability on the selected Copper Wire route biome.
+Route impact: Keeps direct-managed-kernel regression scans meaningful for early-route flora presentation.
+Proof required: Static scan now; Unity import, route run, Burst/import evidence, profiler/GC, Frame Debugger, screenshot/clip, and save/load diff remain pending.
+Parked work rejected: Removing self-audit coverage, runtime behavior changes, and build launch under CPU gate.
