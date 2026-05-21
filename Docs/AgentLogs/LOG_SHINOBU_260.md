@@ -950,3 +950,41 @@ Verification:
   <TASK id="19" result="PASS">Dependency scanner remains breach_count=0 after adding autoReferenced checks.</TASK>
   <TASK id="20" result="PASS_WITH_BUILD_GATE">Static proof and disk logs updated; Unity compile remains gated by explicit no-rebuild instruction and build policy.</TASK>
 </SELF_AUDIT_UPDATE>
+
+## 2026-05-22 Global Crest Scripting Define Evidence Wall
+
+What was wrong:
+
+- The previous prompt re-read command used an exact opening tag and produced a false negative even though the active batch still contains `<AGENT_PROMPT id="SHINOBU_260" role="CREST_VERSION_QUARANTINE_DIRECTOR" ...>`.
+- `ProjectSettings/ProjectSettings.asset` contains Standalone `CREST_OCEAN` and `CREST_URP` scripting defines. These do not directly reference a Crest assembly, but they can become hidden donor routes if non-bridge first-party code starts using them.
+
+What was done:
+
+- Re-extracted the active Crest XML with an attribute-aware CLI regex and recounted 20 task entries.
+- Added `CREST_SCRIPTING_DEFINE_SYMBOLS`, `scan_first_party_scripting_define_usage()`, and `scan_global_scripting_defines()` to `Tools/Crest_Dependency_Scanner.py`.
+- Non-bridge first-party `#if CREST_OCEAN` / `#if CREST_URP` branches are now hard breaches. Current global PlayerSettings Crest symbols are reported as non-failing `global_scripting_define_hits`.
+- Added polish audit gates `dependency_scanner_tracks_crest_scripting_defines` and `dependency_scanner_blocks_non_bridge_crest_preprocessor_branches`.
+
+Cinematic Cheats used:
+
+- No runtime water simulation changed. This is compile-wall evidence hardening: detect hidden preprocessor routes statically instead of adding runtime donor guards.
+
+Exact Microseconds saved:
+
+- Runtime saving: 0 us.
+- Editor/build saving: prevents future non-bridge donor-symbol branches from silently widening compile scope. No steady-state frame claim.
+
+Verification:
+
+- Attribute-aware XML extraction: PASS, `TASK_COUNT=20`.
+- `python -m py_compile Tools\Crest_Dependency_Scanner.py Tools\Crest_Quarantine_Polish_Audit.py`: PASS.
+- `python Tools\Crest_Dependency_Scanner.py`: PASS, `breach_count=0`, `allowed_hit_count=40`, `global_scripting_define_hit_count=1`, `reflection_string_hit_count=0`, `vocabulary_debt_hit_count=111`.
+- `python Tools\Crest_Quarantine_Polish_Audit.py`: PASS, `failed_count=0`.
+- Exact non-bridge symbol scan: no first-party non-bridge `.cs`, `.asmdef`, `.asmref`, or `.rsp` file uses `CREST_OCEAN` / `CREST_URP`.
+- No Unity/dotnet rebuild launched; gate found active `VBCSCompiler` with sampled CPU at 45.3 percent.
+
+<SELF_AUDIT_UPDATE agent_id="SHINOBU_260" scope="GLOBAL_CREST_SCRIPTING_DEFINE_EVIDENCE_WALL">
+  <TASK id="03" result="PASS">Global Crest scripting symbols are now visible evidence, and non-bridge first-party preprocessor branches are hard breaches.</TASK>
+  <TASK id="19" result="PASS">Dependency scanner remains breach_count=0 and now reports global_scripting_define_hit_count=1.</TASK>
+  <TASK id="20" result="PASS_WITH_BUILD_GATE">Static proof and disk logs updated; Unity compile remains gated by active VBCSCompiler.</TASK>
+</SELF_AUDIT_UPDATE>

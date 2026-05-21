@@ -331,3 +331,27 @@ Solution: Track legacy method start line/source, detect scope closure through `U
 Rejected Alternatives: Counting every legacy method reference as a hard failure was rejected because guarded legacy code is explicitly warning-only while the kinematic authority exists. Ignoring method-level guard absence was rejected because it leaves scanner verdicts weaker than the policy text.
 Scalability potential: Editor-only scanner. It protects the movement authority route that lets quality scale SDF work instead of letting legacy PhysX routes fight the solver.
 Hardware Impact: Editor-only string scan. No runtime frame cost.
+
+## Decision 41: Borrowed Voxel SDF Generation Owner Fence
+
+Problem: `TryResolveVoxelSdfPayload` validated `descriptor.OwnerSystemId == WorldStreaming`, but it did not prove that the descriptor or byte SDF generation handles themselves were WorldStreaming-owned. A stale or foreign-owned same-BufferID handle could expose data if the payload row claimed the right owner.
+Solution: Require the descriptor handle to prove exact `BufferID.VoxelSdfPayloadDescriptor` and `SystemID.WorldStreaming`, and require the byte SDF handle to prove exact `BufferID.VoxelSdfTexture3D`, `SystemID.WorldStreaming`, nonzero generation, and equality to `descriptor.BufferGeneration` before the SDF array reaches the scheduled Burst job.
+Rejected Alternatives: Trusting payload fields alone was rejected because owner proof must be attached to the route, not only to mutable data. Acquiring SHINOBU ownership of the SDF payload was rejected because WorldStreaming remains the single owner and SHINOBU is a read-only consumer.
+Scalability potential: Low, Middle, High, and Ultra quality math is unchanged. The low nearest-SDF path and high trilinear/finite-difference path consume the same borrowed payload after stronger owner proof.
+Hardware Impact: Admission-only integer compares. No per-sample SDF cost and no managed allocation.
+
+## Decision 42: Player Collider And Center-Of-Mass Authority Gate
+
+Problem: `HectonPlayerMovement` computed `exosuitKinematicAuthority`, but `UpdateDynamicCollisionProfile` still wrote `CapsuleCollider.radius/height/center` and `UpdateHeavyTowRuntimeResponse` still wrote `Rigidbody.centerOfMass` in the same active-authority fixed tick. That violated the one-authority route even though force, KCC, damping, clamp, and foot probes were already gated.
+Solution: Pass `exosuitKinematicAuthority` into both methods. Dynamic collision continues to update blend/timer state but returns before `ApplyResolvedCollisionProfile` while authority is active. Heavy tow continues presentation camera pitch/roll/offset blending but skips `ApplyCenterOfMassIfChanged` while authority is active.
+Rejected Alternatives: Disabling the whole methods was rejected because camera/presentation blending is not movement truth and should not pop. Letting Rigidbody/collider writes remain as "small corrections" was rejected because small Unity physics mutations still create a second movement authority beside the Vault SDF solver.
+Scalability potential: Low through Ultra movement truth stays identical. Quality remains a continuous SDF solver/presentation scalar; this gate prevents unrelated player physics code from changing the authority route at any quality.
+Hardware Impact: One branch per method in the player fixed path. It removes active-authority collider/center-of-mass mutation work and avoids downstream PhysX broadphase/center-of-mass churn; profiler proof remains pending.
+
+## Decision 43: Authority Mutation Scanner Route
+
+Problem: The editor scanner could catch unguarded legacy `ApplyExosuit*` scopes, but it did not detect dynamic collision and heavy-tow mutation routes that write `CapsuleCollider`/`Rigidbody` state while exosuit authority is active.
+Solution: Add authority mutation route tracking for `UpdateDynamicCollisionProfile` and `UpdateHeavyTowRuntimeResponse` call/scope evidence. Unguarded call lines or method scopes with physics mutation sinks now fail the scanner; guarded routes are counted separately.
+Rejected Alternatives: Relying on this manual audit was rejected because the proof artifact must catch regressions. Scanning every collider/Rigidbody use globally as a hard failure was rejected because non-exosuit and lifecycle routes exist outside SHINOBU authority.
+Scalability potential: Editor-only. It protects the continuous-quality SDF route by preventing silent reintroduction of Unity physics mutation during kinematic authority.
+Hardware Impact: Editor-only string scan. No runtime cost.

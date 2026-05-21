@@ -275,8 +275,8 @@
           "text": "writer.Write(entry.GlobalQualityWeight);"
         }
       ],
-      "files": 427,
-      "matches": 1903,
+      "files": 428,
+      "matches": 1904,
       "topFiles": [
         {
           "count": 27,

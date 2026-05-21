@@ -174,4 +174,4 @@ Compile gate: BLOCKED_BY_ACTIVE_VBCSCOMPILER_AND_EXTERNAL_DEPENDENCY_WALL
 - Loop 15 JSON/dependency/build gate scan: PASS/BLOCKED. Both physics reports parsed through `ConvertFrom-Json`; known external dependency files remain missing (`LodDataMgrAnimWaves.cs`, `GroundRadarContracts.cs`, `DecryptionBlackBoxDumpWriter.cs`); `Get-Process` found active `csc.exe` and `dotnet.exe`; CPU sampled at `84.675630`, so no dotnet rebuild was launched.
 - Loop 16 source facade scan: PASS. Public `RegisterSource` now emits the same remove route used by `RegisterSourceInternal` when normalized intensity is zero, and invalid radius falls back to `DefaultSourceRadiusMeters`.
 - Loop 16 diff scan: PASS. `git diff --check -- Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs` returned no errors, only the repository CRLF warning.
-- Loop 16 build gate: BLOCKED. CPU sampled at `45`, but `VBCSCompiler` was active, so the no-rebuild protocol blocks dotnet/csc launch.
+- Loop 16 build gate: BLOCKED. Latest probe sampled CPU at `100` and found active `dotnet`, `dotnet`, and `VBCSCompiler`, so the no-rebuild protocol blocks dotnet/csc launch.

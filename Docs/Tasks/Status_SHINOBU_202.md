@@ -4225,3 +4225,20 @@ Mandates read before coding:
 - Brace/preprocessor counts are balanced: `VaultMemoryContracts.cs` braces `86/86`, preprocessor `#if/#endif` `0/0`.
 - `git diff --check` passed for `VaultMemoryContracts.cs`; CRLF warning only.
 - Build not relaunched: CPU sampled at 100 percent. The explicit CPU gate forbids `dotnet build` while the machine is saturated.
+
+## Loop 237 - Save Merkle Vault Buffer Descriptor Route
+- [x] Replaced SavePersistence Merkle `GetBuffer` opens in `SaveStateMerkleTree.TryResolveVaultBuffers`.
+  DOD practice: Merkle node front/back, leaf descriptors, delta records, delta/pruned/compressed byte arenas, LZ4 block headers, telemetry ring, counters, and LZ4 hash table now acquire through `GetGenerationHandle` and resolve phase-local views only after exact BufferID, `SystemID.SavePersistence`, nonzero generation, required length, allocation-lock absence, and compaction-fence absence.
+  Rejected: keeping direct `GetBuffer` for save-owned buffers because direct opens mark external views and weaken Vault relocation. Rewriting Merkle DTO layout, WAL bytes, LZ4 routines, job topology, or `SaveMerkleVaultBufferSet` ABI was rejected as outside this route patch.
+  Estimate: one O(1) descriptor proof per Merkle buffer acquisition; no per-node or per-byte inner-loop validation added.
+- [x] Kept binary payload identity unchanged.
+  DOD practice: only the Vault route changed; `MerkleNodeDTO`, `StateLeafDescriptor`, `StateDeltaRecordDTO`, `Lz4SubBlockHeader`, `SaveMerkleTelemetryEntry`, and BufferIDs `70270..70283` remain unchanged.
+  Rejected: introducing a retained handle set because current callers consume phase-local `NativeArray<T>` views and public/internal ABI mutation would expand the compile surface.
+  Estimate: 0 save-format byte change.
+
+## Compile State Update 231
+- Focused direct/legacy route scan on `SaveStateMerkleTree.cs` found no `TryGetBuffer`, `GetBuffer<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `VaultBufferHandle<T>`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, or `.ptr` hits.
+- Descriptor route scan confirmed `TryEnsureSaveMerkleVaultBuffer`, `VaultGenerationHandle<T>`, `GetGenerationHandle`, `TryResolveHandle`, and `SystemID.SavePersistence`.
+- Brace/preprocessor counts are balanced: `SaveStateMerkleTree.cs` braces `269/269`, preprocessor `#if/#endif` `2/2`.
+- `git diff --check` passed for `SaveStateMerkleTree.cs`; CRLF warning only.
+- Guarded `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1` was launched only after CPU/process gate passed, but the tool timed out after 120s while the build process was still alive. The process later cleared, but no trustworthy exit code or compiler error stream was captured. A rerun was not launched because the next gate sample showed CPU saturation/active compiler state.

@@ -1559,6 +1559,15 @@ namespace Hecton8.Visor
             uint maxCombatDamageFrame = _lastIngestedCombatDamageFrame;
             bool highSpeedAccepted = false;
             bool combatDamageAccepted = false;
+            DecalTuningDTO tuning = ResolveLiveTuning();
+            NativeArray<DecalMaterialProfileDTO> materialProfiles = default;
+            int materialProfileCapacity = 0;
+            if (_materialProfileCount > 0 &&
+                TryResolveDynamicDecalVaultBuffer(ref _materialProfileHandle, DynamicDecalVaultBufferIds.MaterialProfiles, MaxMaterialProfiles, out materialProfiles))
+            {
+                materialProfileCapacity = materialProfiles.IsCreated ? materialProfiles.Length : 0;
+            }
+
             ReadOnlySpan<HighSpeedImpactSignal> highSpeed = SignalBus<HighSpeedImpactSignal>.GetFrameSnapshot();
             for (int i = 0; i < highSpeed.Length; i++)
             {
@@ -1584,6 +1593,9 @@ namespace Hecton8.Visor
                     signal.Normal,
                     materialHash,
                     signal.SourceHash ^ signal.TargetHash,
+                    tuning,
+                    materialProfiles,
+                    materialProfileCapacity,
                     energy * 0.0125f,
                     speed,
                     frame,
@@ -1612,6 +1624,9 @@ namespace Hecton8.Visor
                     normal,
                     materialHash,
                     signal.SourceHash,
+                    tuning,
+                    materialProfiles,
+                    materialProfileCapacity,
                     signal.Magnitude,
                     signal.Magnitude,
                     frame,
@@ -1640,16 +1655,22 @@ namespace Hecton8.Visor
             float3 normal,
             uint materialHash,
             uint profileHash,
+            DecalTuningDTO tuning,
+            NativeArray<DecalMaterialProfileDTO> materialProfiles,
+            int materialProfileCapacity,
             float damage,
             float velocity,
             uint frame,
             uint flags)
         {
-            DecalTuningDTO tuning = ResolveLiveTuning();
             DecalRequestSignal request = default;
             request.ImpactAup = impactAup;
             request.Normal = SanitizeNormal(normal, new float3(0f, 1f, 0f));
-            if (TryResolveMaterialProfile(profileHash != 0u ? profileHash : materialHash, out DecalMaterialProfileDTO profile))
+            if (TryResolveMaterialProfile(
+                    profileHash != 0u ? profileHash : materialHash,
+                    materialProfiles,
+                    materialProfileCapacity,
+                    out DecalMaterialProfileDTO profile))
             {
                 request.RadiusMeters = profile.RadiusMeters;
                 request.ProjectionDepthMeters = profile.ProjectionDepthMeters;
@@ -1858,14 +1879,17 @@ namespace Hecton8.Visor
             return math.clamp(math.lerp(baseLifetime * 0.366f, (baseLifetime * 1.333f) + materialBoost, Smooth01(severity)), 0.1f, 60f);
         }
 
-        private static bool TryResolveMaterialProfile(uint sourceHash, out DecalMaterialProfileDTO profile)
+        private static bool TryResolveMaterialProfile(
+            uint sourceHash,
+            NativeArray<DecalMaterialProfileDTO> profiles,
+            int profileCapacity,
+            out DecalMaterialProfileDTO profile)
         {
             profile = default;
-            if (sourceHash == 0u || _materialProfileCount <= 0)
+            if (sourceHash == 0u || _materialProfileCount <= 0 || !profiles.IsCreated)
                 return false;
 
-            TryResolveDynamicDecalVaultBuffer(ref _materialProfileHandle, DynamicDecalVaultBufferIds.MaterialProfiles, MaxMaterialProfiles, out NativeArray<DecalMaterialProfileDTO> profiles);
-            int capacity = profiles.IsCreated ? profiles.Length : 0;
+            int capacity = math.min(math.max(0, profileCapacity), profiles.Length);
             if (capacity <= 0)
                 return false;
 

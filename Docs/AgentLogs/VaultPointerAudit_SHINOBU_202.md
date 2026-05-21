@@ -921,3 +921,10 @@ The scan proves repo-wide debt, not successful consumer migration. A full rename
 - `VaultSovereigntyMaintenance` now opens CoreDataVault rows through `VaultGenerationHandle<T>` descriptors with exact BufferID, `SystemID.CoreDataVault`, nonzero generation, required length, and compaction-fence rejection.
 - Owner-created rows use `GetGenerationHandle` plus phase-local `TryResolveHandle`; existing read-only rows use `TryGetGenerationHandle` plus pure `TryReadHandle`.
 - This entry does not change `VaultAup64`, `VaultAupSectorLocal32`, `VaultHotEntityData`, `VaultMemoryAddressShiftRecord`, BufferIDs `551`, `553`, `637`, `638`, `640`, `641`, memory-layout CSV bytes, sweep-budget math, or CoreDataVault authority.
+
+## 2026-05-22 Save Merkle Vault Buffer Descriptor Route
+
+- `Assets/_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs` no longer has direct `TryGetBuffer`, `GetBuffer<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `VaultBufferHandle<T>`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, or `.ptr` routes.
+- `SaveStateMerkleTree.TryResolveVaultBuffers` now opens SavePersistence rows through `VaultGenerationHandle<T>` descriptors with exact BufferID, `SystemID.SavePersistence`, nonzero generation, required length, allocation-lock rejection, and compaction-fence rejection.
+- `SaveMerkleVaultBufferSet` remains a phase-local native view set; no retained raw pointer or handle export was added.
+- This entry does not change `MerkleNodeDTO`, `StateLeafDescriptor`, `StateDeltaRecordDTO`, `Lz4SubBlockHeader`, `SaveMerkleTelemetryEntry`, BufferIDs `70270..70283`, WAL bytes, LZ4 block bytes, save identity, or SavePersistence authority.

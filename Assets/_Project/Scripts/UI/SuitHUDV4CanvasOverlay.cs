@@ -886,11 +886,20 @@ namespace Hecton8.UI
                 return;
 
             results.Clear();
+            int resultCapacity = results.Capacity;
+            if (resultCapacity <= 0)
+                return;
+
             for (int i = 0; i < s_activeOverlays.Count; i++)
             {
                 SuitHUDV4CanvasOverlay overlay = s_activeOverlays[i];
                 if (overlay != null && overlay.isActiveAndEnabled)
+                {
+                    if (results.Count >= resultCapacity)
+                        return;
+
                     results.Add(overlay);
+                }
             }
         }
 
@@ -7349,6 +7358,9 @@ namespace Hecton8.UI
                 ApplyStencilRenderGraphSuppressionIfNeeded();
                 return;
             }
+
+            if (!_tickRegistered && _lateFrameTickRegistered && _slowTickRegistered)
+                return;
 
             if (GlobalRegistry.Dispatcher == null)
                 return;

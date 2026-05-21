@@ -675,7 +675,7 @@ namespace Hecton8.Visor
         {
             int frame = Time.frameCount;
             _lastStencilPresentationFrame = frame;
-            _pendingStencilPresentationFrame = frame;
+            _pendingStencilPresentationFrame = -1;
             SetStencilPresentationActive(true);
         }
 
@@ -699,13 +699,12 @@ namespace Hecton8.Visor
 
         private void OnEndCameraRendering(ScriptableRenderContext context, Camera camera)
         {
+            if (!IsAuthorizedPlayerRenderCamera(camera))
+                return;
+
             int frame = Time.frameCount;
-            if (_pendingStencilPresentationFrame == frame &&
-                _lastStencilPresentationFrame != frame &&
-                IsAuthorizedPlayerRenderCamera(camera))
-            {
+            if (_lastStencilPresentationFrame != frame)
                 ClearStencilPresentationForRenderGraphAbort();
-            }
         }
 
         public void OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)

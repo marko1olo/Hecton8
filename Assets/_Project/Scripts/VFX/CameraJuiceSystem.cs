@@ -12,7 +12,6 @@ using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using CameraJuiceImpactSignal = Hecton8.Core.Contracts.Signals.CameraJuiceImpactSignal;
-using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
@@ -449,12 +448,6 @@ namespace Hecton8.VFX
             EnsureCameraJuiceTelemetry();
             EnsureCameraSpeedLineParticles();
 
-            // Performance mode degradation
-            if (QualitySettings.GetQualityLevel() == 0)
-            {
-                _depthOfFieldEnabled = false;
-                _motionBlurEnabled = false;
-            }
         }
 
         private void OnEnable()
@@ -1421,10 +1414,15 @@ namespace Hecton8.VFX
 
         private static float ResolveProceduralNoiseSampleInterval()
         {
-            float quality = HomeostasisBrain.GlobalQualityWeight;
-            quality = math.saturate(math.isfinite(quality) ? quality : 1f);
+            float quality = ResolveCameraJuiceQualityWeight01();
             float exactNoiseWeight = EvaluateSmoothStep01(quality);
             return PROCEDURAL_MIN_QUALITY_SAMPLE_INTERVAL * (1f - exactNoiseWeight);
+        }
+
+        private static float ResolveCameraJuiceQualityWeight01()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.isfinite(quality) ? quality : 1f);
         }
 
         private static void EvaluateProceduralNoise(float time, out float3 translation, out float3 rotation)
@@ -2514,6 +2512,9 @@ namespace Hecton8.VFX
             _adaptiveFOVScale = math.lerp(_adaptiveFOVFloor, 1f, normalized);
             _adaptivePostFxScale = math.lerp(_adaptivePostFxFloor, 1f, normalized);
             _adaptiveMaxActiveShakes = MAX_ACTIVE_SHAKES;
+            float qualityWeight01 = ResolveCameraJuiceQualityWeight01();
+            float qualityPostFxScale = math.lerp(0.35f, 1f, EvaluateSmoothStep01(qualityWeight01));
+            _adaptivePostFxScale *= qualityPostFxScale;
 
             switch (pressureState)
             {
@@ -2531,7 +2532,6 @@ namespace Hecton8.VFX
             }
 
             _adaptiveDisableInteractionDoF =
-                QualitySettings.GetQualityLevel() == 0 ||
                 !_depthOfFieldEnabled ||
                 _adaptivePostFxScale <= _adaptiveDoFDisableThreshold;
 

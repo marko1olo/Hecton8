@@ -15,7 +15,7 @@ Evidence class: STATIC_SOURCE. No Unity import, compile, Play Mode, profiler, GC
 | `burstMissingCompileSynchronously` | 0 | 0 |
 | `burstMissingFloatMode` | 0 | 0 |
 | `burstMissingFloatPrecision` | 0 | 0 |
-| `globalQualityWeight` | 1903 | 427 |
+| `globalQualityWeight` | 1904 | 428 |
 | `jobHandleComplete` | 112 | 31 |
 | `linqSurface` | 0 | 0 |
 | `nativeApiExposureAmbiguousMutable` | 0 | 0 |

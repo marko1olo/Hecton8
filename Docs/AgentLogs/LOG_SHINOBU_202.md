@@ -5578,3 +5578,26 @@ Static verification:
 - Focused direct/legacy route scan found no `vault.TryGetBuffer`, `vault.GetBuffer<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `VaultBufferHandle<T>`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, or `.ptr` hits in `VaultMemoryContracts.cs`.
 - Descriptor scan confirms `TryEnsureCoreVaultBuffer`, `TryResolveCoreVaultBuffer`, `TryReadCoreVaultBuffer`, `IsCoreVaultHandle`, `VaultGenerationHandle<T>`, `GetGenerationHandle`, `TryGetGenerationHandle`, `TryResolveHandle`, and `TryReadHandle`.
 - Brace/preprocessor counts are balanced: braces `86/86`, `#if/#endif` `0/0`. `git diff --check` passed with CRLF warning only. Build was not relaunched because CPU was 100 percent.
+
+## 2026-05-22 - Loop 237 - Save Merkle Vault Buffer Descriptor Route
+
+What was wrong:
+- `Assets/_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs` opened eleven Merkle/WAL buffers through direct `vault.GetBuffer`.
+- Direct opens mark external views in GlobalDataVault; this is unnecessary for phase-local save jobs and can block relocation.
+
+What was done:
+- Added `TryEnsureSaveMerkleVaultBuffer<T>`.
+- Converted Merkle front/back trees, leaf descriptors, delta records, delta/pruned/compressed bytes, LZ4 block headers, telemetry ring, counters, and LZ4 hash table to `VaultGenerationHandle<T>` acquisition plus `TryResolveHandle`.
+- Kept `SaveMerkleVaultBufferSet` as native views so the existing Merkle and compression jobs remain unchanged.
+
+Cinematic cheats used:
+- No new visual fake. This is save-memory route work. The existing bounded delta/pruned arena strategy remains the cheap substitute for retaining full unbounded per-frame save history.
+
+Exact microseconds saved:
+- No measured speedup claimed. Added work is one O(1) descriptor validation per buffer acquisition. Inner Merkle/LZ4 loops are unchanged.
+
+Static verification:
+- Focused direct/legacy route scan found no `TryGetBuffer`, `GetBuffer<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `VaultBufferHandle<T>`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, or `.ptr` hits in `SaveStateMerkleTree.cs`.
+- Descriptor scan confirms `TryEnsureSaveMerkleVaultBuffer`, `VaultGenerationHandle<T>`, `GetGenerationHandle`, `TryResolveHandle`, and `SystemID.SavePersistence`.
+- Brace/preprocessor counts are balanced: braces `269/269`, `#if/#endif` `2/2`. `git diff --check` passed with CRLF warning only.
+- Build verification is inconclusive: the guarded build was launched after a clean CPU/process gate but timed out in the tool after 120s while still running; the process later cleared without a captured exit code. Rerun was blocked by the next CPU/compiler gate.

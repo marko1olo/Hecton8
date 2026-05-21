@@ -409,3 +409,15 @@ Verification: Targeted scan finds `legacyScopeEnded`, `unguarded_legacy_method_s
 Cinematic Cheats used: None new. It strengthens the scanner that rejects legacy PhysX movement routes when the byte-SDF kinematic authority should own movement.
 
 Exact Microseconds saved: Editor-only scanner. Runtime cost is zero.
+
+## 2026-05-22 Polish Pass: External SDF Owner Handles And Player Physics Mutation Gate
+
+What was wrong: Dalton's read-only audit found two remaining route holes. `TryResolveVoxelSdfPayload` checked the descriptor payload owner but not the descriptor/SDF generation-handle owners. `HectonPlayerMovement` also still ran dynamic collision and heavy-tow response in authority frames, allowing `CapsuleCollider` shape and `Rigidbody.centerOfMass` writes beside the Vault kinematic solver.
+
+What was done: Added exact BufferID plus `SystemID.WorldStreaming` checks for borrowed voxel descriptor/SDF handles, including nonzero SDF generation equality to the descriptor. Passed `exosuitKinematicAuthority` into dynamic collision and heavy-tow response; active authority now skips collider profile application and center-of-mass writes while preserving blend/presentation state. Extended `Exosuit_Physics_Inquisition` to fail unguarded authority-sensitive mutation calls/scopes and count guarded routes separately.
+
+Verification: Targeted scans show `descriptorHandle.SystemID == WorldStreaming`, `sdfHandle.SystemID == WorldStreaming`, nonzero generation, authority-parameterized player calls, and scanner `authority_mutation_policy` counters. XML/JSON/doc proof artifacts were updated. No rebuild was launched; the prior external `CS2001` missing `Assets/_Project/Scripts/IBuildPlacementRule.cs` remains outside SHINOBU_276.
+
+Cinematic Cheats used: The movement truth remains the Dear Lie: one byte-SDF kinematic solver row instead of Rigidbody/joint/collider authority. The new gate prevents generic player physics mutations from leaking back into that fake.
+
+Exact Microseconds saved: Profiler pending. Static change removes active-authority collider shape writes and center-of-mass writes; SDF owner checks add only admission-time integer comparisons.
