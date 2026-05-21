@@ -1369,3 +1369,58 @@ Verification:
   <COMPILE_GUARD>No direct sibling runtime dependency was added. Compile was not launched because CPU sampled at 92.18% with `VBCSCompiler` PID 7372 active.</COMPILE_GUARD>
   <DEAR_LIE_CONFIRMATION>Before/after visual complexity remains O(N_visible capped at 128) in one screen-space pass and O(1) ring insertion. CPU ingress profile lookup now has O(1) descriptor resolve per snapshot instead of O(N_signals) descriptor resolves.</DEAR_LIE_CONFIRMATION>
 </SELF_AUDIT>
+
+## 2026-05-22T03:25+04:00 - Polish Loop 28 / Disk-State Render Binding And Constants Clear Ownership
+
+What was wrong:
+- Fresh source reads contradicted the prior SHINOBU_275 reports again. Active disk files still had `Material.SetTexture` for the wound atlas in `DeferredDecalPass` and for crack, lens dirt, blue-noise, and VR comfort textures in `HectonVisorUberPostFeature`.
+- `ReconstructionConstantsVaultId` requested `NativeArrayOptions.UninitializedMemory`, leaving a persistent one-row reconstruction CBuffer mirror with undefined bytes before the first dispatcher publish.
+
+What was done:
+- Converted all five active texture bindings to `RasterCommandBuffer.SetGlobalTexture` inside the RenderGraph raster functions.
+- Changed the reconstruction constants Vault lane to `NativeArrayOptions.ClearMemory`.
+- Left CSV scratch as `UninitializedMemory` because it is cold scratch and the parser reads only the explicit byte count written by the file read.
+
+Cinematic Cheats used:
+- No object decal, URP DecalProjector, particle decal, mesh fracture, or physics route was introduced.
+- The route remains one screen-space wound/visor fake with command-buffer global bindings and Vault-backed DTO mirrors.
+
+Exact Microseconds saved:
+- No profiler claim. Static saving is removal of five material texture mutation paths and deterministic zeroing of one 48B constants row at cold allocation.
+
+Verification:
+- `python Tools\Decal_Projector_Inquisition.py`: PASS at `2026-05-21T23:25:17Z`; 5825 scanned assets, 336 candidates, 0 active GameObject decal violations, 0 active URP decal renderer feature violations.
+- Focused owned scans found no `Material.Set*`, `.SetTexture(`, `.SetBuffer(`, stale texture-name constants, `TryGetLatestCreated`, `.SetData(`, `.Complete(`, `foreach`, direct Gameplay/Physics imports, Unity `Time.*`, `UnityEngine.Random`, or source `ReconstructionConstantsVaultId` plus `UninitializedMemory` pattern.
+- `git diff --check` passed for touched source with CRLF warnings only.
+- Compile not launched: CPU sampled at 80% with `dotnet` PID 39252 and `csc` PID 40964 active.
+
+<SELF_AUDIT agent_id="SHINOBU_275" loop="28_disk_state_render_binding_constants_clear">
+  <TASK_RECONCILIATION>
+    <TASK id="01" result="PASS_STATIC">Re-extracted active source state by CLI and corrected the disk contradiction.</TASK>
+    <TASK id="02" result="PASS_STATIC">Scanner PASS at 2026-05-21T23:25:17Z; no active object/URP decal route introduced.</TASK>
+    <TASK id="03" result="PASS_STATIC">No unmanaged DTO properties or managed hot structs were added.</TASK>
+    <TASK id="04" result="PASS_STATIC">No DTO layout changed; `VisorDecalDTO` remains explicit 80B.</TASK>
+    <TASK id="05" result="PASS_STATIC">Mock wound generator unchanged.</TASK>
+    <TASK id="06" result="PASS_STATIC">Burst wound jobs unchanged; no tiny job or synchronous readback was added.</TASK>
+    <TASK id="07" result="PASS_STATIC">Dear Lie route unchanged: texture publication now uses command-buffer globals in the active disk source.</TASK>
+    <TASK id="08" result="PASS_STATIC">Circular overwrite unchanged.</TASK>
+    <TASK id="09" result="PASS_STATIC">Deterministic decay unchanged.</TASK>
+    <TASK id="10" result="PASS_STATIC">GPU upload route unchanged; RenderGraph texture binding now avoids material mutation on disk.</TASK>
+    <TASK id="11" result="PASS_STATIC">Continuous quality curve unchanged; no binary quality switch was added.</TASK>
+    <TASK id="12" result="PASS_STATIC">Shader refraction/normal perturbation unchanged.</TASK>
+    <TASK id="13" result="PASS_STATIC">AUP localization unchanged.</TASK>
+    <TASK id="14" result="PASS_STATIC">No gameplay authority, rollback, save, or Merkle route changed.</TASK>
+    <TASK id="15" result="PASS_STATIC">Black-box telemetry unchanged.</TASK>
+    <TASK id="16" result="PASS_STATIC">Editor facade unchanged from Loop 24; editor reconstruction reads now see a zeroed constants row before first publish.</TASK>
+    <TASK id="17" result="PASS_STATIC">CSV parser unchanged; CSV scratch remains explicit-count cold scratch.</TASK>
+    <TASK id="18" result="PASS_STATIC">Editor-only matrix gizmo unchanged.</TASK>
+    <TASK id="19" result="PASS_STATIC">Metric validator rerun and report timestamp refreshed to 2026-05-21T23:25:17Z.</TASK>
+    <TASK id="20" result="PASS_STATIC_COMPILE_BLOCKED">Docs/logs synchronized; compile gate blocked by CPU 80% and active `dotnet`/`csc` processes.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT>`VisorDecalDTO`: `LocalToWorld@0` 64B, `DecalTypeHash@64` 4B, `Opacity01@68` 4B, `BirthTime@72` 4B, `Flags@76` 4B; total 80B, 80 % 16 = 0. Loop 28 changed no primary DTO bytes. Reconstruction constants mirror is `UberNoirReconstructionConstantsDTO` 48B and now clear-owned at Vault allocation.</STRUCT_LAYOUT>
+  <SCALABILITY_CURVE>Loop 28 changes no quality truth. Low devices avoid material texture mutation and stale constant-row reads; middle/high/ultra keep the same wound atlas, crack, dirt, blue-noise, VR comfort, reconstruction grain, and overkill shader work through the existing continuous curves.</SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>Vault lanes unchanged: 71490 instances, 71491 upload scratch, 71492 runtime state, 71493 telemetry ring, 71494 tuning, 71495 material profiles, 71496 CSV scratch, plus Noir reconstruction constants/telemetry/profile/csv/mock lanes under GraphicsScalability. No new persistent private native container was introduced.</H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_DEPENDENCY_GRAPH>Job graph unchanged. Loop 28 adds no Burst job, no `[NoAlias]` surface, no `.Complete()`, and no same-frame schedule/readback loop.</POINTER_ALIASING_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No direct sibling runtime dependency was added. Compile was not launched because CPU sampled at 80% with `dotnet` PID 39252 and `csc` PID 40964 active.</COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>Before/after visual complexity remains O(N_visible capped at 128) in one screen-space pass and O(1) ring insertion. Loop 28 removes material mutation and clears the cold constants mirror; it does not add CPU decal simulation.</DEAR_LIE_CONFIRMATION>
+</SELF_AUDIT>

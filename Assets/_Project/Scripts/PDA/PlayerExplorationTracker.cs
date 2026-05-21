@@ -630,17 +630,18 @@ namespace Hecton8.PDA
         /// Exposes the dense Morton exploration mask for headless PDA cartography jobs.
         /// </summary>
         public bool TryGetExplorationMaskPayload(
-            out NativeArray<ulong> maskWords,
+            out NativeArray<ulong>.ReadOnly maskWords,
             out int axisLength,
             out int originOffset,
             out int chunkSizeMeters)
         {
             InitializeExplorationMask();
-            maskWords = _exploredChunkMask.AsNativeArray<ulong>();
+            NativeArray<ulong> ownerMaskWords = _exploredChunkMask.AsNativeArray<ulong>();
+            maskWords = ownerMaskWords.IsCreated ? ownerMaskWords.AsReadOnly() : default;
             axisLength = MaskAxisLength;
             originOffset = MaskOriginOffset;
             chunkSizeMeters = ExplorationChunkSizeMeters;
-            return maskWords.IsCreated;
+            return ownerMaskWords.IsCreated;
         }
 
         public bool TryGetDiscoveredSectorsPayload(
@@ -1691,7 +1692,7 @@ namespace Hecton8.PDA
             return TryFinalizeCartographyUpload(buffers, out packedR8, out revision, out framesBetweenUploads);
         }
 
-        public bool TryBuildCartographyRleRuns(out NativeArray<CartographyRleRunDTO> runs, out int runCount)
+        public bool TryBuildCartographyRleRuns(out NativeArray<CartographyRleRunDTO>.ReadOnly runs, out int runCount)
         {
             InitializeExplorationMask();
             runs = default;
@@ -1709,11 +1710,11 @@ namespace Hecton8.PDA
             };
             rleJob.Execute();
 
-            runs = buffers.RleRuns;
+            runs = buffers.RleRuns.IsCreated ? buffers.RleRuns.AsReadOnly() : default;
             runCount = buffers.Counters.IsCreated && buffers.Counters.Length > 0
                 ? math.clamp(buffers.Counters[0].DiscoveredDelta, 0, buffers.RleRuns.Length)
                 : 0;
-            return runs.IsCreated;
+            return buffers.RleRuns.IsCreated;
         }
 
         public bool TryGetCartographyTuning(out CartographyTuningDTO tuning)

@@ -20,7 +20,7 @@ Route:
 - Active Noir constant generation/upload is dispatcher-owned through `HectonVisorUberPostFeature.LateFrameTick`; `AddRenderPasses()` only checks the last valid `GraphicsBuffer` and enqueues the RenderGraph pass. The one-row mock/parameter math is direct scalar code, not tiny `IJob.Run()`.
 - Reconstruction constant publication uses A/B `GraphicsBuffer.Target.Constant` targets and a published active buffer. `AddRenderPasses()` only stages camera/runtime inputs and consumes the last active buffer; dispatcher `LateFrameTick()` writes changed constants into the next mapped buffer, mirrors constants into Vault, records telemetry, and owns any black-box dump.
 - Visor post scalar/vector/texture state and wound atlas state are carried by RenderGraph pass data and bound inside raster render functions with `RasterCommandBuffer.SetGlobal*`. Loop 22 verified texture binding also uses command-buffer globals (`SetGlobalTexture`) instead of `Material.SetTexture`; the owned visor post shaders no longer rely on `UnityPerMaterial` or material mutation for trauma constants.
-- Loop 26 corrected the active disk state: wound atlas, crack, lens dirt, blue noise, and VR comfort textures are all bound with `RasterCommandBuffer.SetGlobalTexture`; no owned `Material.SetTexture` call or stale string-name texture binding constant remains in `DeferredDecalPass` or `HectonVisorUberPostFeature`.
+- Loop 28 corrected the active disk state: wound atlas, crack, lens dirt, blue noise, and VR comfort textures are all bound with `RasterCommandBuffer.SetGlobalTexture`; no owned `Material.SetTexture` call or stale string-name texture binding constant remains in `DeferredDecalPass` or `HectonVisorUberPostFeature`.
 - `HectonVisorUberPost.shader` and `Hecton_BilateralUpsample.shader` consume dispatcher-published visual time globals (`_HectonUberVisualTime`, `_H8UberNoirVisualTime`) instead of engine `_Time`.
 - Reconstruction aesthetic CSV rows are loaded only from cold create/DataVault hot-swap lanes, then copied into a fixed 32-row cold cache. Render enqueue selects profiles from that snapshot and does not lock the profile Vault buffer or retry file IO.
 - Noir color CSV rows are also copied into a fixed cold 32-row snapshot; LateFrame profile selection does not resolve the Noir profile Vault array on cache misses.
@@ -32,6 +32,7 @@ Route:
 - `TryAcquireDecalBufferRead` / `ReleaseDecalBufferRead` is also compiled only under `UNITY_EDITOR`; it is an explicit acquire/release debug lane for SceneView gizmos and is not available to player runtime callers.
 - Runtime state pointer access in `ExecuteVisualSync()` is fail-closed. A stale or invalid one-row Vault state buffer marks the existing layout/fault telemetry bit and returns false instead of throwing a managed gameplay exception.
 - Cold initialization seeds the one-row runtime state before VISUAL_SYNC and requests visual/profile Vault buffers with clear memory. The first normal visual-sync frame does not run a direct `ClearDecalsJob.Execute(i)` loop; the fallback path uses `UnsafeUtility.MemClear` only when cold state is missing.
+- Reconstruction constants Vault mirror is clear-owned at allocation. CSV scratch remains the only reconstruction `UninitializedMemory` lane because it is cold parser scratch and parsing reads only the explicit byte count written before parse.
 
 Constraints:
 - No `DecalProjector` GameObjects, Canvas blood overlays, material clones, or per-wound GameObject hierarchy.
@@ -46,7 +47,7 @@ Constraints:
 - Gameplay authority and rollback state are not mutated by the renderer; wounds are presentation-only signal consumers.
 
 Proof:
-- `Tools/Decal_Projector_Inquisition.py` latest SHINOBU_275 run 2026-05-21T23:17:46Z reports 0 active GameObject/URP decal violations.
+- `Tools/Decal_Projector_Inquisition.py` latest SHINOBU_275 run 2026-05-21T23:25:17Z reports 0 active GameObject/URP decal violations.
 - Binary payload ledger and route card are synchronized with the active C#/HLSL ABI: offset 72 is `BirthTime`; lifetime is packed inside `DecalTypeHash` bits 8..23, shader branch reads low 4 type bits, and atlas sampling reads bits 4..7.
 - Black-box telemetry uses 300 `VisorWoundTelemetryEntry` records and dumps to `Docs/AgentLogs/Dump_SHINOBU_275.bin` on layout/non-finite/upload faults. Loop 21 format is a fixed 16-byte little-endian header followed by 300 fixed 64-byte telemetry rows written through stack spans; no `BinaryWriter` is used.
 - Shader binding proof: `Hecton_VisorGlitchACES.shader.meta` GUID `2b2a9f18d90f4b35b8b4f9d1a8e23501`; `Hecton_VisorWounds.shader.meta` GUID `0a2df57d7a4e4d44a95b1b4c4bfb2750`.

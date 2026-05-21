@@ -232,7 +232,7 @@ Exact Microseconds saved -> Runtime: 0 us. Expected benefit is preventing a cont
 
 What was wrong -> The Dear Lie cached water route accepted a caller-owned `NativeParallelHashMap<uint, FluidSampleResultDTO>` even though SHINOBU_261 already reserves Vault buffer `72947` as `OceanCachedFluidSampleDTO[50000]`.
 
-What was done -> `ResolveDearLieCachedResultsJob` now reads `NativeArray<OceanCachedFluidSampleDTO>` directly. `ScheduleDearLieCacheUpdateFromReadback` schedules completed GPU row folds into slot `RequestHash % cacheLength`; hash mismatches are treated as cache misses and fall back to still-water rows.
+What was done -> `ResolveDearLieCachedResultsJob` now reads `NativeArray<OceanCachedFluidSampleDTO>` directly. `ScheduleDearLieCacheUpdateFromStagedReadback` schedules caller-owned staged GPU row folds into slot `RequestHash % cacheLength`; hash mismatches are treated as cache misses and fall back to still-water rows.
 
 Cinematic Cheats used -> Previous-frame cached shallow-water data remains the visual fake; collisions in the direct-mapped cache intentionally degrade to cheap macro/still water instead of forcing GPU synchronization.
 
@@ -634,7 +634,7 @@ Build gate: CPU average 100 with active `csc` (`Id=31708`) and `dotnet` (`Id=107
 
 ## Runtime Patch: Dear Lie Readback Fold Scheduled
 What was wrong: completed `AsyncGPUReadbackRequest` data was folded into the Dear Lie cache with an O(N) main-thread loop.
-What was done: replaced the synchronous fold with `ScheduleDearLieCacheUpdateFromReadback` and `UpdateDearLieCacheFromReadbackJob`. The method validates a completed readback and returns a chained `JobHandle`; hashing, finite checks, and cache writes happen in Burst job space.
+What was done: replaced the synchronous fold with `ScheduleDearLieCacheUpdateFromStagedReadback` and `UpdateDearLieCacheFromReadbackJob`. The method consumes caller-owned staged readback data and returns a chained `JobHandle`; hashing, finite checks, and cache writes happen in Burst job space.
 Cinematic Cheats used: the Dear Lie remains the same previous-frame cache illusion; this patch moves its maintenance out of the owner thread.
 Exact Microseconds saved: no measured profiler claim. Caller complexity changes from O(N completed rows) to O(1) validation plus one scheduled serial Burst job.
 
@@ -747,6 +747,12 @@ What was wrong: `DrainOceanSampleRequestQueueJob` stopped draining when `packed 
 What was done: the drain job now continues through `MaxDrainCount`, classifies duplicates first, increments `DroppedCount` for unique overflow rows, and keeps `PackedRequests` writes bounded by capacity.
 Cinematic Cheats used: none. This is telemetry/queue truth repair.
 Exact Microseconds saved: no runtime us claimed. The value is forensic correctness under saturation; normal non-overflow frames are unchanged.
+
+## Compile-Risk Patch: Registry Qualification And Staged Readback
+What was wrong: `OceanVisualBridgeRegistry` was unqualified after the broad Core import scrub, and the Dear Lie cache update API scheduled a job against Unity request-owned `AsyncGPUReadbackRequest.GetData<float4>()` storage.
+What was done: registry calls are now explicitly `Hecton8.Core.OceanVisualBridgeRegistry.*`; the cache update API is now `ScheduleDearLieCacheUpdateFromStagedReadback`, taking caller-owned staged `NativeArray<float4>` data.
+Cinematic Cheats used: retained the Dear Lie previous-frame cache; changed only the staging ownership.
+Exact Microseconds saved: 0 measured runtime us. This prevents compile failure and readback lifetime faults without adding a main-thread wait.
 
 ## Verification: Post Scanner/Self-Audit Repair Static Gate
 What was wrong: the proof repair touched scanner C#, self-audit C#, root/sidecar JSON, and SHINOBU_261 logs/status.

@@ -242,7 +242,7 @@ namespace Hecton8.Visor
                         context.cmd.SetGlobalTexture(ShaderConstants.BlitTextureId, data.Source);
                         context.cmd.SetGlobalTexture(ShaderConstants.CameraDepthTextureId, data.Depth);
                         if (data.DecalAtlas != null)
-                            context.cmd.SetGlobalTexture(ShaderConstants.DecalAtlasId, data.DecalAtlas);
+                            data.Material.SetTexture(ShaderConstants.DecalAtlasId, data.DecalAtlas);
                         context.cmd.SetGlobalBuffer(ShaderConstants.DecalBufferId, decalBuffer);
                         context.cmd.SetGlobalInt(ShaderConstants.DecalCountId, data.DecalCount);
                         context.cmd.SetGlobalVector(ShaderConstants.DecalAtlasParamsId, data.DecalAtlasParams);

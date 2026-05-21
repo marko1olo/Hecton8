@@ -3293,3 +3293,21 @@ Verification:
     Targeted scan found no `IScalabilityChangedEventListener`, `ScalabilityEvents`, `OnScalabilityChanged`, cached scalability state, `HectonQualityTier`, `GlobalRegistry.ScalabilityTier`, or low-tier route in `BiolumPulseSyncRuntime.cs`; `git diff --check` passed for the Biolum/docs set with line-ending warnings only. Build was not launched because CPU probe returned 97% with active `dotnet` and `csc` processes.
   </VERIFICATION>
 </SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="ToolDiegeticDisplayQualityPull">
+  <WHAT_WAS_WRONG>
+    `ToolDiegeticDisplayController` used `IScalabilityChangedEventListener` and `ScalabilityEvents` for local fallback policy. `ModularEquipmentEngine` also stamped `ToolStateChangedSignal.FlagLowTierFallback` from a discrete quality threshold, so a tool-state fact lane carried binary presentation metadata.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Removed the UI scalability listener route, stopped the tool-state producer from setting the legacy fallback bit, and made fallback naming generic in the diegetic tool-screen shader/C# property path. `ToolStateChangedSignal` remains 32 bytes with unchanged offsets and lane identity; the legacy flag constant remains only as inert ABI residue in core contracts.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    The held-tool screen is a presentation fake: at minimum quality it can use a fallback emissive texture instead of an offscreen camera render pass; middle quality uses hysteresis to transition; high/ultra keep the render texture and visual-overkill shader scalars.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. The theoretical saved work is one local render-texture camera pass when the continuous quality curve elects fallback, but profiler proof is still required.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted scan found no scalability listener/callback/registration, low-tier fallback flag usage, low-tier shader property name, or cached quality tier route in `ToolDiegeticDisplayController.cs`, `ModularEquipmentEngine.cs`, and `Hecton_ToolScreenDiegetic.shader`; `git diff --check` passed with line-ending warnings only. Build was not launched because CPU probe returned 82% with active `dotnet` and `VBCSCompiler` processes.
+  </VERIFICATION>
+</SELF_AUDIT>

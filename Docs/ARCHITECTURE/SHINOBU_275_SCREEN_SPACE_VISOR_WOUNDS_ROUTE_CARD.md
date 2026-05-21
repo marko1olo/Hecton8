@@ -104,6 +104,12 @@ Loop 26 disk-state render-binding correction:
 - The stale string-name texture constants are removed from those owned sources.
 - Focused scan confirms no `Material.Set*` / `.SetTexture(` / `.SetBuffer(` / stale texture-name constant remains in those owned RenderGraph sources.
 
+Loop 28 disk-state render-binding and constants clear-ownership correction:
+- Fresh source proof supersedes stale Loop 26/27 evidence. The active disk sources now bind wound atlas, crack, lens dirt, blue-noise, and VR comfort textures with `RasterCommandBuffer.SetGlobalTexture`.
+- `ReconstructionConstantsVaultId` requests `NativeArrayOptions.ClearMemory`; editor diagnostics cannot read undefined constants before the first dispatcher publish.
+- `ReconstructionCsvScratchVaultId` remains `UninitializedMemory` by design because it is cold scratch and the parser consumes only the file-read byte count.
+- Scanner PASS timestamp is 2026-05-21T23:25:17Z with 0 active GameObject/URP decal violations.
+
 GC proof required:
 - Unity Profiler / GCMonitor capture in Play Mode. Static source proof only exists now.
 
