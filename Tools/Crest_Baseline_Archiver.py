@@ -19,6 +19,12 @@ REPORT_PATH = PROJECT_ROOT / "Docs" / "Reports" / "CREST_QUARANTINE_REPORT.json"
 
 CREST_ROOTS = (
     ("crest4_assets_crest", PROJECT_ROOT / "Assets" / "Crest"),
+    ("crest4_project_ocean_settings", PROJECT_ROOT / "Assets" / "_Project" / "Data" / "Ocean"),
+    ("crest4_project_legacy_crest_settings", PROJECT_ROOT / "Assets" / "_Project" / "crest"),
+    ("crest4_project_ocean_prefab", PROJECT_ROOT / "Assets" / "_Project" / "Prefabs" / "Ocean_Crest.prefab"),
+    ("crest4_project_ocean_prefab_meta", PROJECT_ROOT / "Assets" / "_Project" / "Prefabs" / "Ocean_Crest.prefab.meta"),
+    ("crest4_project_world_ocean_scene", PROJECT_ROOT / "Assets" / "_Project" / "Scenes" / "02_HECTON_WORLD.unity"),
+    ("crest4_project_world_ocean_scene_meta", PROJECT_ROOT / "Assets" / "_Project" / "Scenes" / "02_HECTON_WORLD.unity.meta"),
     ("crest4_plugins_crest4", PROJECT_ROOT / "Assets" / "Plugins" / "Crest4"),
     ("crest5_plugins_crest5", PROJECT_ROOT / "Assets" / "Plugins" / "Crest5"),
     ("crest5_embedded_package", PROJECT_ROOT / "Packages" / "com.waveharmonic.crest"),

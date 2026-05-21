@@ -468,3 +468,15 @@ Cinematic Cheats used: No new physical simulation was added. Existing terrain-ho
 Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `268` at the start of the native-exposure pass to `236`; `nativeApiExposureOutRefMutable` dropped from `189` to `184`.
 
 Evidence: Focused scans found no stale mutable call-site declarations for `TryGetActiveAbyssalAnchorPayload`, `TryGetActiveAbyssalAnchorAupPayload`, `TryGetEcosystemThreatGridPayload`, `TryGetCompressedEcosystemThreatGridPayload`, or `TryGetTerrainHoleStreamingPayload`, and no read-only `.IsCreated` leftovers in the touched call sites. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_vegetation_readonly_payloads.json --report-path Docs\Reports\PROJECT_AUDIT_polish_after_vegetation_readonly_payloads.md` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=236`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Vegetation No-Call-Site Snapshot Narrowing
+
+What was wrong: The vegetation bridge still had public mutable native snapshot APIs with no first-party call sites in static search. These were unnecessary writable seams into owner-owned front buffers.
+
+What was done: Converted no-call-site flow, abyssal nav-node, current-conduit, nav-graph node array, threat-echo, mega-wreck, canopy, and nav-node-type payload outputs to `NativeArray<T>.ReadOnly`. Left primary active surface/underwater payload methods and the nav-graph spatial hash unchanged because their write/mutation assumptions need separate call-site or container proof.
+
+Cinematic Cheats used: None added. This is API surface hardening for existing vegetation snapshots and presentation/proxy consumers.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped `nativeCollectionPublicMutableApiExposure` from `236` to `225`; `nativeApiExposureOutRefMutable` dropped from `184` to `173`.
+
+Evidence: Focused search for the converted method names found declarations only, with no first-party call sites. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_after_vegetation_readonly_nocallsite_payloads.json --report-path Docs\Reports\PROJECT_AUDIT_polish_after_vegetation_readonly_nocallsite_payloads.md` returned `PASS_WITH_WARNINGS` with `nativeCollectionPublicMutableApiExposure=225`, `nativeApiExposureBuildPlayerRuntime=211`, and `nativeApiExposureOutRefMutable=173`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

@@ -2773,11 +2773,12 @@ namespace Hecton8.World
         /// <summary>
         /// Returns the current surface flow payload as native memory ready for ocean/renderer consumption.
         /// </summary>
-        public bool TryGetActiveSurfaceFlowPayload(out NativeArray<Vector2> flowDirections, out int count)
+        public bool TryGetActiveSurfaceFlowPayload(out NativeArray<Vector2>.ReadOnly flowDirections, out int count)
         {
-            flowDirections = _surfaceAggregateFrontBuffers.FlowDirections;
+            NativeArray<Vector2> flowView = _surfaceAggregateFrontBuffers.FlowDirections;
+            flowDirections = flowView.IsCreated ? flowView.AsReadOnly() : default;
             count = _surfaceFrontCount;
-            return count > 0 && flowDirections.IsCreated;
+            return count > 0 && flowView.IsCreated;
         }
 
         /// <summary>
@@ -2878,11 +2879,12 @@ namespace Hecton8.World
         /// <summary>
         /// Returns the current surface 3D flow-vector payload as native memory for ocean-current consumers.
         /// </summary>
-        public bool TryGetActiveSurfaceFlowVectorPayload(out NativeArray<Vector3> flowVectors, out int count)
+        public bool TryGetActiveSurfaceFlowVectorPayload(out NativeArray<Vector3>.ReadOnly flowVectors, out int count)
         {
-            flowVectors = _surfaceAggregateFrontBuffers.FlowVectors;
+            NativeArray<Vector3> flowView = _surfaceAggregateFrontBuffers.FlowVectors;
+            flowVectors = flowView.IsCreated ? flowView.AsReadOnly() : default;
             count = _surfaceFrontCount;
-            return count > 0 && flowVectors.IsCreated;
+            return count > 0 && flowView.IsCreated;
         }
 
         /// <summary>
@@ -2907,11 +2909,12 @@ namespace Hecton8.World
         /// <summary>
         /// Returns the current underwater flow payload as native memory ready for ocean/renderer consumption.
         /// </summary>
-        public bool TryGetActiveUnderwaterFlowPayload(out NativeArray<Vector2> flowDirections, out int count)
+        public bool TryGetActiveUnderwaterFlowPayload(out NativeArray<Vector2>.ReadOnly flowDirections, out int count)
         {
-            flowDirections = _underwaterAggregateFrontBuffers.FlowDirections;
+            NativeArray<Vector2> flowView = _underwaterAggregateFrontBuffers.FlowDirections;
+            flowDirections = flowView.IsCreated ? flowView.AsReadOnly() : default;
             count = _underwaterFrontCount;
-            return count > 0 && flowDirections.IsCreated;
+            return count > 0 && flowView.IsCreated;
         }
 
         /// <summary>
@@ -2931,11 +2934,12 @@ namespace Hecton8.World
         /// <summary>
         /// Returns the current underwater 3D flow-vector payload as native memory for ocean-current consumers.
         /// </summary>
-        public bool TryGetActiveUnderwaterFlowVectorPayload(out NativeArray<Vector3> flowVectors, out int count)
+        public bool TryGetActiveUnderwaterFlowVectorPayload(out NativeArray<Vector3>.ReadOnly flowVectors, out int count)
         {
-            flowVectors = _underwaterAggregateFrontBuffers.FlowVectors;
+            NativeArray<Vector3> flowView = _underwaterAggregateFrontBuffers.FlowVectors;
+            flowVectors = flowView.IsCreated ? flowView.AsReadOnly() : default;
             count = _underwaterFrontCount;
-            return count > 0 && flowVectors.IsCreated;
+            return count > 0 && flowView.IsCreated;
         }
 
         /// <summary>
@@ -2963,55 +2967,62 @@ namespace Hecton8.World
         /// <summary>
         /// Returns the current immutable abyssal-nav-node snapshot as native memory for pathfinding consumers.
         /// </summary>
-        public bool TryGetActiveAbyssalNavNodePayload(out NativeArray<Vector3> nodes, out int count)
+        public bool TryGetActiveAbyssalNavNodePayload(out NativeArray<Vector3>.ReadOnly nodes, out int count)
         {
-            nodes = GetAbyssalNavNodeSnapshotNativeView();
+            NativeArray<Vector3> nodeView = GetAbyssalNavNodeSnapshotNativeView();
+            nodes = nodeView.IsCreated ? nodeView.AsReadOnly() : default;
             count = ResolveAbyssalNavNodeViewCount();
-            return count > 0 && nodes.IsCreated;
+            return count > 0 && nodeView.IsCreated;
         }
 
         /// <summary>
         /// Returns the immutable current-conductor metadata aligned to the abyssal nav-node snapshot.
         /// </summary>
         public bool TryGetAbyssalCurrentConduitPayload(
-            out NativeArray<Vector3> conduitVectors,
-            out NativeArray<float> conduitStrengths,
+            out NativeArray<Vector3>.ReadOnly conduitVectors,
+            out NativeArray<float>.ReadOnly conduitStrengths,
             out int count)
         {
-            conduitVectors = _nativeMemory.AbyssalNavConduitVectorsSnapshotNative;
-            conduitStrengths = _nativeMemory.AbyssalNavConduitStrengthSnapshotNative;
+            NativeArray<Vector3> conduitVectorView = _nativeMemory.AbyssalNavConduitVectorsSnapshotNative;
+            NativeArray<float> conduitStrengthView = _nativeMemory.AbyssalNavConduitStrengthSnapshotNative;
+            conduitVectors = conduitVectorView.IsCreated ? conduitVectorView.AsReadOnly() : default;
+            conduitStrengths = conduitStrengthView.IsCreated ? conduitStrengthView.AsReadOnly() : default;
             count = ResolveAbyssalConduitViewCount();
             return count > 0 &&
-                   conduitVectors.IsCreated &&
-                   conduitStrengths.IsCreated;
+                   conduitVectorView.IsCreated &&
+                   conduitStrengthView.IsCreated;
         }
 
         /// <summary>
         /// Returns the current native abyssal nav-graph payload, including immutable node snapshots and a spatial hash for fast nearest-node lookup.
         /// </summary>
         public bool TryGetNativeAbyssalNavGraph(
-            out NativeArray<Vector3> nodes,
-            out NativeArray<byte> nodeTypes,
-            out NativeArray<Vector3> conduitVectors,
-            out NativeArray<float> conduitStrengths,
+            out NativeArray<Vector3>.ReadOnly nodes,
+            out NativeArray<byte>.ReadOnly nodeTypes,
+            out NativeArray<Vector3>.ReadOnly conduitVectors,
+            out NativeArray<float>.ReadOnly conduitStrengths,
             out NativeParallelMultiHashMap<int, int> spatialHash,
             out int count,
             out float cellSize,
             out Vector3 origin)
         {
-            nodes = _nativeMemory.AbyssalNavNodeSnapshotNative;
-            nodeTypes = _nativeMemory.AbyssalNavNodeTypesSnapshotNative;
-            conduitVectors = _nativeMemory.AbyssalNavConduitVectorsSnapshotNative;
-            conduitStrengths = _nativeMemory.AbyssalNavConduitStrengthSnapshotNative;
+            NativeArray<Vector3> nodeView = _nativeMemory.AbyssalNavNodeSnapshotNative;
+            NativeArray<byte> nodeTypeView = _nativeMemory.AbyssalNavNodeTypesSnapshotNative;
+            NativeArray<Vector3> conduitVectorView = _nativeMemory.AbyssalNavConduitVectorsSnapshotNative;
+            NativeArray<float> conduitStrengthView = _nativeMemory.AbyssalNavConduitStrengthSnapshotNative;
+            nodes = nodeView.IsCreated ? nodeView.AsReadOnly() : default;
+            nodeTypes = nodeTypeView.IsCreated ? nodeTypeView.AsReadOnly() : default;
+            conduitVectors = conduitVectorView.IsCreated ? conduitVectorView.AsReadOnly() : default;
+            conduitStrengths = conduitStrengthView.IsCreated ? conduitStrengthView.AsReadOnly() : default;
             spatialHash = _nativeMemory.AbyssalNavGraphHashNative;
             count = ResolveAbyssalNavGraphViewCount();
             cellSize = abyssalNavGraphCellSize;
             origin = _abyssalNavGraphOrigin;
             return count > 0 &&
-                   nodes.IsCreated &&
-                   nodeTypes.IsCreated &&
-                   conduitVectors.IsCreated &&
-                   conduitStrengths.IsCreated &&
+                   nodeView.IsCreated &&
+                   nodeTypeView.IsCreated &&
+                   conduitVectorView.IsCreated &&
+                   conduitStrengthView.IsCreated &&
                    spatialHash.IsCreated &&
                    cellSize > 0f &&
                    math.isfinite(cellSize) &&
@@ -3091,18 +3102,19 @@ namespace Hecton8.World
         /// Returns the permanent threat-echo flags aligned to the compressed ecosystem threat grid.
         /// </summary>
         public bool TryGetEcosystemThreatEchoPayload(
-            out NativeArray<byte> echoFlags,
+            out NativeArray<byte>.ReadOnly echoFlags,
             out int gridResolution,
             out Vector3 gridCenter,
             out float cellSize)
         {
-            echoFlags = GetThreatGridByteView(_nativeMemory.EcosystemThreatEchoCurrentNative);
+            NativeArray<byte> echoView = GetThreatGridByteView(_nativeMemory.EcosystemThreatEchoCurrentNative);
+            echoFlags = echoView.IsCreated ? echoView.AsReadOnly() : default;
             gridResolution = _ecosystemThreatGridResolution;
             gridCenter = _ecosystemThreatGridCenter;
             cellSize = threatGridCellSize;
             return _threatGridInitialized &&
-                   echoFlags.IsCreated &&
-                   HasCompleteEcosystemSquareGridState(echoFlags.Length) &&
+                   echoView.IsCreated &&
+                   HasCompleteEcosystemSquareGridState(echoView.Length) &&
                    cellSize > 0f &&
                    math.isfinite(cellSize) &&
                    IsFinite(gridCenter);
@@ -3110,11 +3122,12 @@ namespace Hecton8.World
 
         /// Returns the current abyssal flow-field payload and metadata for external consumers.
         /// </summary>
-        public bool TryGetMegaWreckStreamPayload(out NativeArray<MegaWreckStreamSection> sections, out int count)
+        public bool TryGetMegaWreckStreamPayload(out NativeArray<MegaWreckStreamSection>.ReadOnly sections, out int count)
         {
-            sections = _nativeMemory.MegaWreckStreamSnapshotNative;
+            NativeArray<MegaWreckStreamSection> sectionView = _nativeMemory.MegaWreckStreamSnapshotNative;
+            sections = sectionView.IsCreated ? sectionView.AsReadOnly() : default;
             count = _megaWreckStreamCount;
-            return count > 0 && sections.IsCreated;
+            return count > 0 && sectionView.IsCreated;
         }
 
         /// <summary>
@@ -3131,14 +3144,15 @@ namespace Hecton8.World
         /// <summary>
         /// Returns the current global canopy-height grid for audio and light-occlusion consumers.
         /// </summary>
-        public bool TryGetCanopyHeightGridPayload(out NativeArray<float> canopyHeights, out int gridResolution, out Vector3 gridCenter, out float cellSize)
+        public bool TryGetCanopyHeightGridPayload(out NativeArray<float>.ReadOnly canopyHeights, out int gridResolution, out Vector3 gridCenter, out float cellSize)
         {
-            canopyHeights = _nativeMemory.CanopyHeightGridNative;
+            NativeArray<float> canopyView = _nativeMemory.CanopyHeightGridNative;
+            canopyHeights = canopyView.IsCreated ? canopyView.AsReadOnly() : default;
             gridResolution = _canopyGridResolution;
             gridCenter = _canopyGridCenter;
             cellSize = canopyGridCellSize;
             return _canopyGridInitialized &&
-                   canopyHeights.IsCreated &&
+                   canopyView.IsCreated &&
                    gridResolution > 0 &&
                    cellSize > 0f;
         }
@@ -3146,11 +3160,12 @@ namespace Hecton8.World
         /// <summary>
         /// Returns the immutable abyssal-nav node classifications aligned to the active node snapshot.
         /// </summary>
-        public bool TryGetActiveAbyssalNavNodeTypePayload(out NativeArray<byte> nodeTypes, out int count)
+        public bool TryGetActiveAbyssalNavNodeTypePayload(out NativeArray<byte>.ReadOnly nodeTypes, out int count)
         {
-            nodeTypes = _nativeMemory.AbyssalNavNodeTypesSnapshotNative;
+            NativeArray<byte> nodeTypeView = _nativeMemory.AbyssalNavNodeTypesSnapshotNative;
+            nodeTypes = nodeTypeView.IsCreated ? nodeTypeView.AsReadOnly() : default;
             count = ResolveAbyssalNavNodeTypeViewCount();
-            return count > 0 && nodeTypes.IsCreated;
+            return count > 0 && nodeTypeView.IsCreated;
         }
 
         /// <summary>

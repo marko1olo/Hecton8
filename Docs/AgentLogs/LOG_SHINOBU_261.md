@@ -742,6 +742,12 @@ Errors:
   <compile_gate result="NOT_RUN" reason="stale generated project coverage plus CPU above threshold" />
 </SELF_AUDIT_REVISION>
 
+## Runtime Patch: Queue Overflow Drop Accounting
+What was wrong: `DrainOceanSampleRequestQueueJob` stopped draining when `packed == capacity`, so `DroppedCount` was never incremented under saturated queues.
+What was done: the drain job now continues through `MaxDrainCount`, classifies duplicates first, increments `DroppedCount` for unique overflow rows, and keeps `PackedRequests` writes bounded by capacity.
+Cinematic Cheats used: none. This is telemetry/queue truth repair.
+Exact Microseconds saved: no runtime us claimed. The value is forensic correctness under saturation; normal non-overflow frames are unchanged.
+
 ## Verification: Post Scanner/Self-Audit Repair Static Gate
 What was wrong: the proof repair touched scanner C#, self-audit C#, root/sidecar JSON, and SHINOBU_261 logs/status.
 What was done: parsed root and sidecar JSON; verified the SHINOBU_261 root block has `ownedPathScanPerformed=false`, `scannedScripts=2178`, and four findings; ran scoped C# brace balance over the patched C# files; ran runtime forbidden-pattern scan over `Crest4KinematicsAdapter.cs` plus `OceanKinematics`; ran scoped diff whitespace.

@@ -34,6 +34,7 @@ Cadence/capacity:
 Expected max events/reads per frame:
 - Matrix job processes at most current `MaxActiveDecals`.
 - Shader reads at most `_GlobalVisorWoundCount`, clamped by the quality-scaled upload count.
+- Signal ingress resolves material profile rows and live tuning once per visual-sync snapshot; accepted signal count no longer multiplies profile descriptor resolves.
 
 GlobalQualityWeight behavior:
 - `ResolveMaxActiveDecals()` uses smoothed `GlobalQualityWeight` to lerp 8..128.

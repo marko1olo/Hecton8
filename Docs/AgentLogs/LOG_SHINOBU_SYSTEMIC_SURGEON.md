@@ -3272,6 +3272,6 @@ Verification:
     No speed claim. Removed discrete quality branch residue; runtime impact requires profiler capture.
   </MICROSECONDS_SAVED>
   <VERIFICATION>
-    Targeted `rg` found no `IScalabilityChangedEventListener`, `ScalabilityEvents`, `OnScalabilityChanged`, `ScalabilityChangedEvent`, cached scalability tier, low-tier names, `HectonQualityTier`, `GlobalRegistry.ScalabilityTier`, or `QualitySettings.GetQualityLevel` in `CameraJuiceSystem.cs`; `git diff --check` passed with line-ending warning only. Build pending under CPU/compiler guard.
+    Targeted `rg` found no `IScalabilityChangedEventListener`, `ScalabilityEvents`, `OnScalabilityChanged`, `ScalabilityChangedEvent`, cached scalability tier, low-tier names, `HectonQualityTier`, `GlobalRegistry.ScalabilityTier`, or `QualitySettings.GetQualityLevel` in `CameraJuiceSystem.cs`; `git diff --check` passed. Build was not launched because CPU probe returned 68% with an active `dotnet` process.
   </VERIFICATION>
 </SELF_AUDIT>

@@ -14,6 +14,7 @@ Route:
 - `RecordRenderGraph()` imports the published `GraphicsBuffer` as a RenderGraph `BufferHandle`, declares `UseBuffer(Read)`, declares source/depth texture reads, and binds globals inside a raster render func.
 - Runtime public wound ingress (`TryEnqueueRuntimeImpact` / `TryEnqueueAupImpact`) fails closed unless cold storage is already created by feature `Create()` or DataVault hot-swap rebind. It cannot poll `GlobalRegistry`, allocate/prewarm the request queue, or request Vault handles from a damage producer call.
 - Public/mock wound ingress fails closed while a visual-sync job is pending, increments dropped-ingress telemetry, and does not query or enqueue into the `NativeQueue` during the scheduled dequeue window.
+- Signal-snapshot ingestion resolves the material-profile Vault array and live tuning DTO once per owner visual-sync pass, then reuses those immutable snapshot values for all high-speed and combat signals in that pass.
 - Existing visor noir postprocessing consumes the same visual language through `Hecton_VisorGlitchACES.shader`: torn-edge serration and procedural crack masks are active in the serialized PC renderer route.
 - Noir integration is pre-tonemap. URP Volume Tonemapping owns final ACES; the active Noir shader performs grade/glitch/crack shaping without a local fragment tonemap curve or `saturate(color)` HDR clamp.
 - Active Noir constant generation/upload is dispatcher-owned through `HectonVisorUberPostFeature.LateFrameTick`; `AddRenderPasses()` only checks the last valid `GraphicsBuffer` and enqueues the RenderGraph pass. The one-row mock/parameter math is direct scalar code, not tiny `IJob.Run()`.
@@ -45,7 +46,7 @@ Constraints:
 - Gameplay authority and rollback state are not mutated by the renderer; wounds are presentation-only signal consumers.
 
 Proof:
-- `Tools/Decal_Projector_Inquisition.py` latest SHINOBU_275 run 2026-05-21T23:09:36Z reports 0 active GameObject/URP decal violations.
+- `Tools/Decal_Projector_Inquisition.py` latest SHINOBU_275 run 2026-05-21T23:17:46Z reports 0 active GameObject/URP decal violations.
 - Binary payload ledger and route card are synchronized with the active C#/HLSL ABI: offset 72 is `BirthTime`; lifetime is packed inside `DecalTypeHash` bits 8..23, shader branch reads low 4 type bits, and atlas sampling reads bits 4..7.
 - Black-box telemetry uses 300 `VisorWoundTelemetryEntry` records and dumps to `Docs/AgentLogs/Dump_SHINOBU_275.bin` on layout/non-finite/upload faults. Loop 21 format is a fixed 16-byte little-endian header followed by 300 fixed 64-byte telemetry rows written through stack spans; no `BinaryWriter` is used.
 - Shader binding proof: `Hecton_VisorGlitchACES.shader.meta` GUID `2b2a9f18d90f4b35b8b4f9d1a8e23501`; `Hecton_VisorWounds.shader.meta` GUID `0a2df57d7a4e4d44a95b1b4c4bfb2750`.

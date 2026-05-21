@@ -101,8 +101,11 @@
   "shinobu_267_flora_ambient_sway": {
     "agentId": "SHINOBU_267",
     "scanner": "Flora_Animation_Scanner",
+    "summary": "OOP Flora Animations Eradicated",
+    "reportSchema": 1,
     "timestampUtc": "2026-05-21T12:22:12Z",
     "evidenceClass": "STATIC_SOURCE_TARGETED",
+    "rule": "No SkinnedMeshRenderer or Animator on flora prefabs/scenes",
     "scannedPaths": [
       "Assets/_Project/Scripts/Environment/Flora",
       "Assets/_Project/Prefabs/Nature/Flora"
@@ -115,6 +118,7 @@
     "skinnedMeshRendererFindings": 0,
     "animatorFindings": 0,
     "activeViolationCount": 0,
+    "findingCount": 0,
     "oopFloraAnimationsEradicated": true,
     "findings": [],
     "notes": "Targeted CLI scan found no active flora CPU sway scripts, SkinnedMeshRenderer, or Animator violations. One README policy-token hit under Prefabs/Nature/Flora/Baked is documentation text, not an active prefab or scene component."

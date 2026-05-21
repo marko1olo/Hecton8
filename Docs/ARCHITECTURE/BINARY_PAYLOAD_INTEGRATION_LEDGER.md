@@ -4788,7 +4788,7 @@ Fault route: `ExosuitTelemetryEntry[300]` dumps fixed 64-byte rows to `Docs/Agen
 - `Assets/_Project/Scripts/VFX/CameraJuiceSystem.cs` removed the stale `ScalabilityChangedEvent` alias and binary `QualitySettings.GetQualityLevel()==0` presentation gates.
 - Binary payload impact: none. `CameraJuiceTelemetryEntry` remains 64 bytes, the 300-row telemetry ring BufferID/owner route is unchanged, and no SignalBus payload ABI changed.
 - Policy impact: camera procedural noise cadence and post-fx pressure now resolve from continuous `HomeostasisBrain.GlobalQualityWeight`; authored enable flags still control whether DoF/motion blur features are allowed.
-- Verification: targeted binary/listener scan clean for `CameraJuiceSystem.cs`; `git diff --check` passed with line-ending warning only. Build pending under compiler guard.
+- Verification: targeted binary/listener scan clean for `CameraJuiceSystem.cs`; `git diff --check` passed. Build was not launched because CPU probe returned 68% with an active `dotnet` process.
 
 ## 2026-05-22 - SHINOBU_202 Save Pager Descriptor Route Update
 
@@ -4839,6 +4839,13 @@ Fault route: `ExosuitTelemetryEntry[300]` dumps fixed 64-byte rows to `Docs/Agen
 - Binary payload impact: none. `VisorDecalDTO` remains 80 bytes, `DecalMaterialProfileDTO` remains 32 bytes, BufferIDs `71490..71496`, shader property names, atlas payload bits, telemetry rows, and blackbox dump bytes are unchanged.
 - Authority impact: texture publication stays inside owned RenderGraph raster functions and uses command-buffer globals. Stale string-name texture binding constants were removed, so the owned route no longer keeps a compile-valid `Material.SetTexture` helper path.
 - Verification: focused render-binding scan clean for `Material.Set*`, `.SetTexture(`, `.SetBuffer(`, and stale texture-name constants in both owned render sources; `Tools/Decal_Projector_Inquisition.py` PASS at `2026-05-21T23:09:36Z` with 0 active GameObject/URP decal violations; `git diff --check` passed with line-ending warnings only. Build was not launched because CPU sampled 52.75% with active `dotnet` and `VBCSCompiler` processes.
+
+## 2026-05-22 - SHINOBU_275 Visor Wound Signal Ingress Snapshot Amortization
+
+- `Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs` now resolves material-profile rows and live tuning once per signal-snapshot pass before iterating high-speed and combat damage signals.
+- Binary payload impact: none. `VisorDecalDTO`, `DecalMaterialProfileDTO`, `DecalTuningDTO`, SignalBus payloads, BufferIDs `71490..71496`, telemetry rows, atlas payload bits, and blackbox dump bytes are unchanged.
+- Authority impact: profile/tuning reads remain inside the owner visual-sync lock. The change removes repeated descriptor/tuning reads per accepted signal and does not add a private native container, new signal, or sibling assembly dependency.
+- Verification: focused hot-path scan clean for owned `Material.Set*`, `.SetTexture(`, `.SetBuffer(`, `TryGetLatestCreated`, `.SetData(`, `.Complete(`, `foreach`, and old same-line profile helper route; `Tools/Decal_Projector_Inquisition.py` PASS at `2026-05-21T23:17:46Z` with 0 active GameObject/URP decal violations; `git diff --check` passed for touched source. Build was not launched because CPU sampled 92.18% with `VBCSCompiler` active.
 
 ## 2026-05-22 - SHINOBU_274 Radiation Source Zero-Intensity Remove Facade
 

@@ -1314,3 +1314,58 @@ Verification:
   <COMPILE_GUARD>No direct sibling runtime dependency was added. Compile was not launched because CPU sampled at 52.75% with `dotnet` PID 13796 and `VBCSCompiler` PID 41344 active.</COMPILE_GUARD>
   <DEAR_LIE_CONFIRMATION>Before/after visual complexity remains O(N_visible capped at 128) in one screen-space pass and O(1) ring insertion. Loop 26 removes material mutation and stale string-name texture constants only.</DEAR_LIE_CONFIRMATION>
 </SELF_AUDIT>
+
+## 2026-05-22T03:17+04:00 - Polish Loop 27 / Signal Ingress Profile Resolve Amortization
+
+What was wrong:
+- `TryIngestGlobalImpactSignals()` already runs inside the owner visual-sync lock, but each accepted signal still caused `TryResolveMaterialProfile()` to resolve the material-profile Vault buffer again.
+- `EnqueueSignalImpact()` also copied the live tuning DTO per signal even though tuning is immutable for one signal-snapshot pass.
+
+What was done:
+- Resolved the material-profile `NativeArray<DecalMaterialProfileDTO>` once per signal-snapshot pass and passed the array/capacity into both high-speed and combat signal ingestion.
+- Copied `DecalTuningDTO` once per signal-snapshot pass and passed it into `EnqueueSignalImpact()`.
+- Kept BufferIDs, DTO layout, SignalBus payloads, CSV profile storage, and authority route unchanged.
+
+Cinematic Cheats used:
+- No object decals, particle decals, physics fracture, or material clone route was added.
+- Dense combat still feeds the same screen-space Dear Lie pass; this loop only reduces repeated CPU descriptor work before that fake.
+
+Exact Microseconds saved:
+- No profiler claim. Static saving is one material-profile Vault descriptor resolve per signal avoided and one 32B tuning DTO copy per signal avoided after the first snapshot copy.
+
+Verification:
+- `python Tools\Decal_Projector_Inquisition.py`: PASS at `2026-05-21T23:17:46Z`; 5825 scanned assets, 336 candidates, 0 active GameObject decal violations, 0 active URP decal renderer feature violations.
+- Focused hot-path scan found no owned `Material.Set*`, `.SetTexture(`, `.SetBuffer(`, `TryGetLatestCreated`, `.SetData(`, `.Complete(`, `foreach`, or old same-line profile helper route.
+- `git diff --check` passed for `DynamicDecalVaultRuntime.cs`.
+- Compile not launched: CPU sampled at 92.18% with `VBCSCompiler` PID 7372 active.
+
+<SELF_AUDIT agent_id="SHINOBU_275" loop="27_signal_ingress_profile_resolve_amortization">
+  <TASK_RECONCILIATION>
+    <TASK id="01" result="PASS_STATIC">Re-audited owned signal ingress and render-binding surfaces.</TASK>
+    <TASK id="02" result="PASS_STATIC">Scanner PASS at 2026-05-21T23:17:46Z; no active object/URP decal route introduced.</TASK>
+    <TASK id="03" result="PASS_STATIC">No unmanaged DTO properties or managed hot structs were added.</TASK>
+    <TASK id="04" result="PASS_STATIC">No DTO layout changed; `VisorDecalDTO` remains explicit 80B.</TASK>
+    <TASK id="05" result="PASS_STATIC">Mock wound generator unchanged.</TASK>
+    <TASK id="06" result="PASS_STATIC">Burst wound jobs unchanged; `[NoAlias]` job surfaces remain unchanged.</TASK>
+    <TASK id="07" result="PASS_STATIC">Dear Lie route unchanged: screen-space wound pass only.</TASK>
+    <TASK id="08" result="PASS_STATIC">Circular overwrite unchanged.</TASK>
+    <TASK id="09" result="PASS_STATIC">Deterministic decay unchanged.</TASK>
+    <TASK id="10" result="PASS_STATIC">GPU upload route unchanged.</TASK>
+    <TASK id="11" result="PASS_STATIC">Continuous quality curve unchanged; ingress amortization does not change quality ownership.</TASK>
+    <TASK id="12" result="PASS_STATIC">Shader refraction/normal perturbation unchanged.</TASK>
+    <TASK id="13" result="PASS_STATIC">AUP localization unchanged.</TASK>
+    <TASK id="14" result="PASS_STATIC">No gameplay authority, rollback, save, or Merkle route changed.</TASK>
+    <TASK id="15" result="PASS_STATIC">Black-box telemetry unchanged.</TASK>
+    <TASK id="16" result="PASS_STATIC">Editor facade unchanged from Loop 24.</TASK>
+    <TASK id="17" result="PASS_STATIC">CSV parser unchanged; profile rows are now resolved once per snapshot instead of per signal.</TASK>
+    <TASK id="18" result="PASS_STATIC">Editor-only matrix gizmo unchanged.</TASK>
+    <TASK id="19" result="PASS_STATIC">Metric validator rerun and report timestamp refreshed to 2026-05-21T23:17:46Z.</TASK>
+    <TASK id="20" result="PASS_STATIC_COMPILE_BLOCKED">Docs/logs synchronized; compile gate blocked by CPU 92.18% and active `VBCSCompiler`.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT>`VisorDecalDTO`: `LocalToWorld@0` 64B, `DecalTypeHash@64` 4B, `Opacity01@68` 4B, `BirthTime@72` 4B, `Flags@76` 4B; total 80B, 80 % 16 = 0. Loop 27 changed no primary DTO bytes.</STRUCT_LAYOUT>
+  <SCALABILITY_CURVE>Loop 27 changes no quality math. Low devices avoid repeated profile descriptor reads under dense impact spam; middle/high/ultra keep the same CSV atlas profile variety and 8..128 quality-scaled capacity.</SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>Vault lanes unchanged: 71490 instances, 71491 upload scratch, 71492 runtime state, 71493 telemetry ring, 71494 tuning, 71495 material profiles, 71496 CSV scratch. No new persistent private native container was introduced.</H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_DEPENDENCY_GRAPH>Job graph unchanged. Loop 27 adds no Burst job, no `[NoAlias]` surface, no `.Complete()`, and no same-frame schedule/readback loop. Material profile read array is resolved once under the existing owner lock before signal loops.</POINTER_ALIASING_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No direct sibling runtime dependency was added. Compile was not launched because CPU sampled at 92.18% with `VBCSCompiler` PID 7372 active.</COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>Before/after visual complexity remains O(N_visible capped at 128) in one screen-space pass and O(1) ring insertion. CPU ingress profile lookup now has O(1) descriptor resolve per snapshot instead of O(N_signals) descriptor resolves.</DEAR_LIE_CONFIRMATION>
+</SELF_AUDIT>

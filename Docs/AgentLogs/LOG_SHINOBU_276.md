@@ -416,7 +416,7 @@ What was wrong: Dalton's read-only audit found two remaining route holes. `TryRe
 
 What was done: Added exact BufferID plus `SystemID.WorldStreaming` checks for borrowed voxel descriptor/SDF handles, including nonzero SDF generation equality to the descriptor. Passed `exosuitKinematicAuthority` into dynamic collision and heavy-tow response; active authority now skips collider profile application and center-of-mass writes while preserving blend/presentation state. Extended `Exosuit_Physics_Inquisition` to fail unguarded authority-sensitive mutation calls/scopes and count guarded routes separately.
 
-Verification: Targeted scans show `descriptorHandle.SystemID == WorldStreaming`, `sdfHandle.SystemID == WorldStreaming`, nonzero generation, authority-parameterized player calls, and scanner `authority_mutation_policy` counters. XML/JSON/doc proof artifacts were updated. No rebuild was launched; the prior external `CS2001` missing `Assets/_Project/Scripts/IBuildPlacementRule.cs` remains outside SHINOBU_276.
+Verification: Targeted scans show fail-closed WorldStreaming owner checks for descriptor/SDF handles, nonzero SDF generation, authority-parameterized player calls, and scanner `authority_mutation_policy` counters. XML/JSON/doc proof artifacts were updated. No rebuild was launched; the prior external `CS2001` missing `Assets/_Project/Scripts/IBuildPlacementRule.cs` remains outside SHINOBU_276.
 
 Cinematic Cheats used: The movement truth remains the Dear Lie: one byte-SDF kinematic solver row instead of Rigidbody/joint/collider authority. The new gate prevents generic player physics mutations from leaking back into that fake.
 

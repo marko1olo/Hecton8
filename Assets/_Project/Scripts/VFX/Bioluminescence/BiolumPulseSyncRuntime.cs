@@ -6,7 +6,6 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
-using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -181,7 +180,6 @@ namespace Hecton8.VFX.Bioluminescence
     public sealed class BiolumPulseSyncRuntime : MonoBehaviour,
         IUpdatable,
         ILateFrameTickable,
-        IScalabilityChangedEventListener,
         IGlobalRegistryHotSwapListener,
         IGlobalRegistryHotSwapRefListener,
         IDisposable
@@ -274,7 +272,6 @@ namespace Hecton8.VFX.Bioluminescence
         private FileSystemWatcher _csvWatcher;
 #endif
         private JobHandle _stateJobHandle;
-        private HectonQualityTier _qualityTier = HectonQualityTier.Unknown;
         private float3 _aupOriginOffset;
         private Matrix4x4 _dearLieGroupMatrix = Matrix4x4.zero;
         private double _localTimeSeconds;
@@ -310,7 +307,6 @@ namespace Hecton8.VFX.Bioluminescence
         private byte _pendingTelemetryFlags;
         private bool _registeredUpdate;
         private bool _registeredLateFrame;
-        private bool _registeredScalability;
         private bool _registeredHotSwap;
         private bool _stateJobScheduled;
         private bool _jobLocksHeld;
@@ -372,7 +368,6 @@ namespace Hecton8.VFX.Bioluminescence
 
             TryRegisterHotSwapListener();
             s_activeRuntime = this;
-            RefreshQualityTier(GlobalRegistry.ScalabilityTier);
             EnsureVaultBuffers();
             EnsureBlackBoxDumpWorker();
 #if UNITY_EDITOR
@@ -383,7 +378,6 @@ namespace Hecton8.VFX.Bioluminescence
             if (!_mockGlowsInitialized)
                 GenerateEmergencyMockGlows();
             GenerateMockLightingState();
-            TryRegisterScalabilityEvents();
             TryRegisterUpdate();
             TryRegisterLateFrame();
             EvaluateColdStartStates();
@@ -395,12 +389,6 @@ namespace Hecton8.VFX.Bioluminescence
         {
             TryUnregisterUpdate();
             TryUnregisterLateFrame();
-
-            if (_registeredScalability)
-            {
-                ScalabilityEvents.Unregister(this);
-                _registeredScalability = false;
-            }
 
             TryUnregisterHotSwapListener();
             CompleteScheduledJobForTeardown();
@@ -470,12 +458,6 @@ namespace Hecton8.VFX.Bioluminescence
                 if (!CompleteScheduledJobAndPublish())
                     UploadShaderGlobals(forceStateArray: false);
             }
-        }
-
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            RefreshQualityTier(payload.CurrentQualityTier);
-            _forceSchedule = true;
         }
 
         public void Dispose()
@@ -1020,15 +1002,6 @@ namespace Hecton8.VFX.Bioluminescence
             _registeredLateFrame = false;
         }
 
-        private void TryRegisterScalabilityEvents()
-        {
-            if (_registeredScalability)
-                return;
-
-            ScalabilityEvents.Register(this);
-            _registeredScalability = true;
-        }
-
         private void TryRegisterHotSwapListener()
         {
             if (!_registeredHotSwap)
@@ -1090,11 +1063,6 @@ namespace Hecton8.VFX.Bioluminescence
                     BindDataVault(currentService as IDataVault);
                     break;
             }
-        }
-
-        private void RefreshQualityTier(HectonQualityTier tier)
-        {
-            _qualityTier = tier;
         }
 
         private void BindDataVault(IDataVault currentVault)
@@ -2005,6 +1973,11 @@ namespace Hecton8.VFX.Bioluminescence
         {
             float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
             _globalQualityWeight = math.saturate(math.isfinite(qualityWeight) ? qualityWeight : 1f);
+        }
+
+        private static byte EncodeQualityWeightByte(float qualityWeight01)
+        {
+            return (byte)math.clamp((int)math.round(math.saturate(qualityWeight01) * 255f), 0, 255);
         }
 
         private void UpdateBiomeBlendState(float dt)
@@ -3102,7 +3075,7 @@ namespace Hecton8.VFX.Bioluminescence
                     Frame = _frameCounter,
                     ActiveGlowingInstances = (uint)math.clamp(_activeGlowingInstanceCount, 0, MaxGlowInstances),
                     WavePulsesActive = (ushort)math.clamp(_activeSyncPulseCount, 0, SyncPulseCapacity),
-                    QualityTier = (byte)_qualityTier,
+                    QualityTier = EncodeQualityWeightByte(_globalQualityWeight),
                     Flags = flags,
                     OscillatorComputeTimeMs = math.max(0f, _lastOscillatorComputeTimeMs),
                     GlobalDarknessScalar = ResolveDarknessScalarFromMatrix(),

@@ -1,6 +1,6 @@
 # Rationale_SHINOBU_270
 
-Status: RENDERGRAPH FAIL-OPEN WATCHDOG PATCHED / STATIC API RECHECK CLEAN / GENERATED CSPROJ STALE / COMPILE BLOCKED BY ACTIVE COMPILER AND CPU GATE
+Status: RENDERGRAPH FAIL-OPEN WATCHDOG PATCHED / STALE SUPPRESSION WINDOW CLOSED / HOT REGISTRY RETRY GUARDED / GENERATED CSPROJ STALE / COMPILE BLOCKED BY ACTIVE COMPILER AND CPU GATE
 Domain: ECHELON 8 Presentation & UX / Visor AR (HUD)
 
 ## Mandate Selection
@@ -452,3 +452,11 @@ Solution: Added a continuous `smoothstep(0.06, 1.0, quality)` chroma admission w
 Rejected Alternatives: Keeping dead low-quality taps, adding shader variants, using a hardware-tier keyword, or tying target loop count to a binary low/high route.
 Scalability potential: Low survival quality pays one camera-color sample and active-target rows only. Middle gradually admits chroma and richer target animation. High/Ultra spend the saved Canvas cost on full chroma, scanlines, fog, and all active bracket rows without changing DTO layout or authority.
 Hardware Impact: Low quality can avoid two fullscreen texture samples per visor AR pixel plus up to sixteen inactive target row reads/bracket evaluations. Exact GPU microseconds remain PENDING VERIFICATION until Frame Debugger/GPU capture.
+
+### D056 Maxwell Audit Closure: Stale Suppression and Hot Poll
+
+Problem: A read-only subagent found three remaining proof holes: renderer suppression could stay active if the next authorized player camera frame did not invoke/record the feature, `SuitHUDV4CanvasOverlay.SlowTick()` could still reach `GlobalRegistry.Dispatcher` after tick registration was already complete, and active overlay snapshot copy could grow the caller-owned `List<T>` if more overlays existed than its preallocated capacity. The architecture doc also overstated stencil mask depth writes while the shader uses `ZWrite Off`.
+Solution: `MarkStencilResolveRecorded()` now clears `_pendingStencilPresentationFrame` after same-frame resolve proof, and `OnEndCameraRendering` clears suppression whenever an authorized player camera ends without `_lastStencilPresentationFrame == Time.frameCount`. `TryRegisterRuntimeTick()` now returns before `GlobalRegistry.Dispatcher` when late-frame and slow-tick registrations are already established and no stale updatable registration remains. `CopyActiveOverlaysTo()` respects caller list capacity and truncates rather than allocating. `VISOR_AR_STENCIL_RENDERER.md` now states stencil-only writes with depth used only for `ZTest LEqual`.
+Rejected Alternatives: Same-frame-only watchdog cleanup was rejected because it misses feature-absent next-frame failure. Per-frame registry polling was rejected because registration state is already local truth after boot. Growing the caller list was rejected because overlay resolution is a bounded snapshot path. Claiming depth writes in docs was rejected because it contradicts shader source.
+Scalability potential: Low devices fail open to legacy HUD only when the stencil resolve lacks proof; Middle/High/Ultra keep the same stencil route after proof. No DTO layout, save identity, authority route, or `GlobalQualityWeight` ownership changes. The visual curve remains continuous from flat survival HUD to high/ultra shader overkill.
+Hardware Impact: Successful renderer frames add no new steady cost beyond the existing end-camera delegate. The hot registration guard removes repeated registry dispatcher reads after registration, estimated 1-3 us variance reduction on i3/MX350-class CPUs pending profiler proof. The bounded overlay copy removes a rare managed allocation risk.

@@ -631,3 +631,9 @@ Solution: Recursively scanned `.csproj` files for `Crest4KinematicsAdapter`, `Oc
 Rejected Alternatives: Running `dotnet build Hecton8.Core.csproj` was rejected because it does not cover the changed files. Re-running the full solution build was rejected because it is already known to fail outside SHINOBU_261 and the latest CPU sample was 67.
 Scalability potential: Runtime unchanged.
 Hardware Impact: 0 runtime us. Compile proof remains unavailable until Unity regenerates project files or integrator fixes the known full-solution compile wall.
+
+Problem: `DrainOceanSampleRequestQueueJob` declared `dropped` but its loop stopped when `packed == capacity`, so saturated queues could leave `DroppedCount` at zero and hide overflow from telemetry/rollback proof.
+Solution: Removed the `packed < capacity` loop guard. The job now drains up to `MaxDrainCount`, resolves the deterministic request hash, classifies duplicates while the coalescing map is valid, increments `DroppedCount` for unique overflow rows, and writes only when `packed < capacity`.
+Rejected Alternatives: Leaving overflow in the queue was rejected because it hides saturation and can create persistent backlog. Growing the packed buffer at runtime was rejected because Vault capacity is fixed by the SHINOBU_261 ABI. Treating all overflow as duplicate was rejected because unique requests need an explicit drop counter.
+Scalability potential: Low devices get truthful saturation telemetry when drain budgets exceed packed capacity; middle/high/ultra can raise budgets without changing DTO layout or authority route.
+Hardware Impact: The loop can process up to `MaxDrainCount` instead of stopping at capacity, but only under overflow pressure where the system needs explicit drop accounting. Normal frames are unchanged.

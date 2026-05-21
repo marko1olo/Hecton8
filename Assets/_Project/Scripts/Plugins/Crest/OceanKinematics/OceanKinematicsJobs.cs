@@ -482,7 +482,7 @@ namespace Hecton8.Physics
             bool coalescingCleared = false;
             bool coalescingSaturated = false;
 
-            while (drained < drainBudget && packed < capacity && PendingRequests.TryDequeue(out OceanKinematicsSampleRequestDTO request))
+            while (drained < drainBudget && PendingRequests.TryDequeue(out OceanKinematicsSampleRequestDTO request))
             {
                 drained++;
                 uint hash = OceanKinematicsHashUtility.ResolveRequestHash(in request);
@@ -501,7 +501,16 @@ namespace Hecton8.Physics
                         duplicate++;
                         continue;
                     }
+                }
 
+                if (packed >= capacity)
+                {
+                    dropped++;
+                    continue;
+                }
+
+                if (CoalescingHashToIndex.IsCreated && !coalescingSaturated)
+                {
                     if (!CoalescingHashToIndex.TryAdd(hash, packed))
                         coalescingSaturated = true;
                 }
