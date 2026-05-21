@@ -2984,6 +2984,14 @@ namespace Hecton8.Gameplay
             DispatcherJobSwap.TryComplete(ref _headCollisionHandle, true);
             DispatcherJobSwap.TryComplete(ref _rootSyncHandle, true);
             DispatcherJobSwap.TryComplete(ref _handKinematicsHandle, true);
+            _headCollisionCommands.Release();
+            _headCollisionHits.Release();
+            _headCollisionSamples.Release();
+            _rootSyncInput.Release();
+            _rootSyncOutput.Release();
+            HandTargets.Release();
+            HandPhysicalPositions.Release();
+            _blackBox.Release();
             _headCollisionCommands = default;
             _headCollisionHits = default;
             _headCollisionSamples = default;

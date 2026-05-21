@@ -96,6 +96,79 @@ Verification:
   <Compile status="not_run" reason="CPU load 100 percent; protocol forbids dotnet/csc above 50 percent" />
 </SELF_AUDIT>
 
+## 2026-05-21 Loop 15 - Publication Fence, Signal Ingress, and Dump ABI Audit
+
+What was wrong:
+- Completed `RadiationStateDTO` publication could be blocked by deferred load/DataVault swap waiting for a diffusion job. That let a pending `CombatDamageSignal` sit in the lane until the next evaluation cleared it.
+- Public `RegisterSource` and `ReportExternalDose` ingress could publish corrupt scalar payloads before the owner drain path sanitized them.
+- `Dump_SHINOBU_274.bin` wrote `SourceCount`/`SourceVersion` before `Frame`/`ShiftSequence`, diverging from the explicit 64-byte `RadiationTelemetryEntry` layout.
+- Generic `HazardZoneManager` still owns non-radiation private native scratch; this is outside the radiation payload but needed explicit documentation.
+
+What was done:
+- `PostSimulationRadiation` now publishes completed dose, health context, pending damage, dose signal, geiger signal, and telemetry even when structural mutation is deferred behind diffusion. Structural mutation applies only when no radiation/diffusion job is active.
+- `ScheduleRadiationSimulation` now pauses new radiation evaluation while deferred load/hot-swap waits for diffusion and preserves source, exact-dose, and iodine snapshots.
+- Public source/dose SignalBus ingress, health/geiger/telemetry presentation, iodine quantity, pending external dose accumulation, mock source injection, SDF range, and grid-cell AUP indexing now use explicit finite-safe guards.
+- Blackbox dump tail field order now matches `RadiationTelemetryEntry`; `RadiationStateLayoutGuard` validates telemetry offsets.
+- `SHINOBU_274_RADIATION_DOSE_ROUTE_CARD.md` records the non-radiation `HazardZoneManager` scratch exception and confirms radiation is excluded from those buffers.
+
+Cinematic Cheats used:
+- No CPU mesh deformation, decal spawning, collider shielding, raycast shielding, or trigger-zone dose was added. Hand mutation remains UberNoir scalar vertex noise; shielding remains direct SDF/bulkhead math.
+
+Exact microseconds saved, estimate lane pending Unity profiler:
+- Publication fence prevents a damage/signal loss class without adding `Complete()`; no steady-state frame wait added.
+- Signal ingress finite guards are bounded scalar checks, estimated under 1 us in ingress-heavy frames.
+- Dump ABI and route-card corrections are dump/doc-only, 0 us steady-state.
+
+Verification:
+- `git diff --check` on `RadiationHazardGrid.cs`: PASS with line-ending warning only.
+- Publication fence static scan: PASS. `PostSimulationRadiation` no longer returns on blocked structural mutation before publication; Simulation preserves snapshots while waiting.
+- Signal ingress static scan: PASS. Public source/external-dose payloads use explicit finite guards.
+- Blackbox ABI static scan: PASS. Dump writer order matches telemetry explicit offsets and layout guard validates telemetry offsets.
+- Build not relaunched yet under this Loop 15 patch; CPU/compiler gate still must be checked before any dotnet attempt.
+
+<SELF_AUDIT agent="SHINOBU_274" domain="Radiation Scrubber" date="2026-05-21" pass="loop_15_incremental">
+  <TaskReconciliation>
+    <Task id="01" status="PASS">No trigger-zone dose route reintroduced.</Task>
+    <Task id="02" status="PASS">No PhysX shielding added; SDF/bulkhead math route unchanged.</Task>
+    <Task id="03" status="PASS">No hot DTO properties added.</Task>
+    <Task id="04" status="PASS">Primary DTO layouts unchanged; telemetry offset validation expanded.</Task>
+    <Task id="05" status="PASS">Mock source job now finite-guards AUP, offset, intensity, and radius.</Task>
+    <Task id="06" status="PASS">Completed Burst state publication no longer blocked by structural deferral.</Task>
+    <Task id="07" status="PASS">SDF range and grid-cell AUP indexing fail closed on invalid values.</Task>
+    <Task id="08" status="PASS">Health route remains through `HectonPlayerHealth` after radiation owner integration.</Task>
+    <Task id="09" status="PASS">Hand mutation remains GPU scalar fake.</Task>
+    <Task id="10" status="PASS">Continuous quality cadence unchanged; deferred mutation pauses only structural conflict windows.</Task>
+    <Task id="11" status="PASS">Pending damage signal is now published before any deferred structural wait can skip it.</Task>
+    <Task id="12" status="PASS">Shader scalar route finite-guards degradation/dose before VisualSync globals.</Task>
+    <Task id="13" status="PASS">AUP grid indexing rejects non-finite and out-of-grid offsets before int casts.</Task>
+    <Task id="14" status="PASS">Rollback DTO layout unchanged.</Task>
+    <Task id="15" status="PASS">Blackbox dump order now matches the fixed telemetry DTO.</Task>
+    <Task id="16" status="PASS">Editor facade unchanged; route card proof updated.</Task>
+    <Task id="17" status="PASS">CSV/profile layout unchanged; runtime finite guards remain downstream.</Task>
+    <Task id="18" status="PASS">Gizmo route unchanged.</Task>
+    <Task id="19" status="PASS">Proof artifacts updated at EOF; scanner/report route unchanged.</Task>
+    <Task id="20" status="PARTIAL">Static proof updated; Unity import/build/profiler proof still pending gate.</Task>
+  </TaskReconciliation>
+  <StructLayout name="RadiationTelemetryEntry" sizeBytes="64" alignment="64-byte">
+    <Field offset="0" size="24" name="PlayerAup" />
+    <Field offset="24" size="4" name="PlayerDepthMeters" />
+    <Field offset="28" size="4" name="CurrentExposureRate" />
+    <Field offset="32" size="4" name="CumulativeDoseRad" />
+    <Field offset="36" size="4" name="ShieldingFactor01" />
+    <Field offset="40" size="4" name="CellularDegradation01" />
+    <Field offset="44" size="4" name="BurstExecutionMicroseconds" />
+    <Field offset="48" size="4" name="Frame" />
+    <Field offset="52" size="4" name="ShiftSequence" />
+    <Field offset="56" size="2" name="SourceCount" />
+    <Field offset="58" size="2" name="SourceVersion" />
+    <Field offset="60" size="4" name="Flags" />
+  </StructLayout>
+  <HphiVaultStatus>SHINOBU_274 runtime remains Vault-backed through BufferID 72740..72751. Generic `HazardZoneManager` private scratch is documented as non-radiation compatibility debt and is not radiation payload ownership.</HphiVaultStatus>
+  <DependencyGraph>Consumes dispatcher `dependsOn`, active diffusion/radiation fences, typed SignalBus snapshots, Voxel SDF snapshot, and bulkhead read lanes. Outputs radiation job handle, diffusion job handle, damage SignalBus bridge, dose SignalBus bridge, geiger SignalBus bridge, shader scalars, and telemetry ring rows. No hot `.Complete()` added.</DependencyGraph>
+  <CompileGuard>No asmdef edge added. Build/profiler proof remains gated by CPU/dependency protocol.</CompileGuard>
+  <DearLie>Visual mutation remains GPU vertex scalar/noise; CPU work stays O(active sources * bounded SDF/bulkhead samples), not collider/raycast/mesh deformation.</DearLie>
+</SELF_AUDIT>
+
 ## 2026-05-21 Loop 14 - Fail-Closed Sampler and Compatibility Audit
 
 What was wrong:

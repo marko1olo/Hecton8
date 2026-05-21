@@ -190,10 +190,10 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            NativeArray<SomaticMockSicknessSampleDTO> samples = _somaticMockSicknessSamples.Resolve();
-            NativeArray<SomaticComfortStateDTO> write = _somaticComfortWrite.Resolve();
-            NativeArray<SomaticDerivativeDTO> derivatives = _somaticDerivatives.Resolve();
-            NativeArray<VrComfortProfileDTO> profiles = _somaticProfiles.Resolve();
+            NativeArray<SomaticMockSicknessSampleDTO> samples = _somaticMockSicknessSamples.AsNativeArray();
+            NativeArray<SomaticComfortStateDTO> write = _somaticComfortWrite.AsNativeArray();
+            NativeArray<SomaticDerivativeDTO> derivatives = _somaticDerivatives.AsNativeArray();
+            NativeArray<VrComfortProfileDTO> profiles = _somaticProfiles.AsNativeArray();
             if (samples.Length == 0 || write.Length == 0 || derivatives.Length == 0 || profiles.Length == 0)
                 return;
 
@@ -307,31 +307,49 @@ namespace Hecton8.Gameplay
             {
                 _somaticComfortWrite = VaultNativeArray<SomaticComfortStateDTO>.Create(
                     vault,
-                    vault.GetBufferHandle<SomaticComfortStateDTO>(BufferID.ShinobuVRSomaticComfortWrite, 1, SystemID.GameplayPlayer, NativeArrayOptions.UninitializedMemory));
+                    BufferID.ShinobuVRSomaticComfortWrite,
+                    1,
+                    NativeArrayOptions.UninitializedMemory);
                 _somaticComfortRead = VaultNativeArray<SomaticComfortStateDTO>.Create(
                     vault,
-                    vault.GetBufferHandle<SomaticComfortStateDTO>(BufferID.ShinobuVRSomaticComfortRead, 1, SystemID.GameplayPlayer, NativeArrayOptions.UninitializedMemory));
+                    BufferID.ShinobuVRSomaticComfortRead,
+                    1,
+                    NativeArrayOptions.UninitializedMemory);
                 _somaticDerivatives = VaultNativeArray<SomaticDerivativeDTO>.Create(
                     vault,
-                    vault.GetBufferHandle<SomaticDerivativeDTO>(BufferID.ShinobuVRSomaticDerivatives, 1, SystemID.GameplayPlayer, NativeArrayOptions.UninitializedMemory));
+                    BufferID.ShinobuVRSomaticDerivatives,
+                    1,
+                    NativeArrayOptions.UninitializedMemory);
                 _somaticHistory = VaultNativeArray<SomaticKinematicHistoryDTO>.Create(
                     vault,
-                    vault.GetBufferHandle<SomaticKinematicHistoryDTO>(BufferID.ShinobuVRSomaticHistory, 1, SystemID.GameplayPlayer, NativeArrayOptions.UninitializedMemory));
+                    BufferID.ShinobuVRSomaticHistory,
+                    1,
+                    NativeArrayOptions.UninitializedMemory);
                 _somaticProfiles = VaultNativeArray<VrComfortProfileDTO>.Create(
                     vault,
-                    vault.GetBufferHandle<VrComfortProfileDTO>(BufferID.ShinobuVRSomaticProfile, SomaticComfortProfileCapacity, SystemID.GameplayPlayer, NativeArrayOptions.UninitializedMemory));
+                    BufferID.ShinobuVRSomaticProfile,
+                    SomaticComfortProfileCapacity,
+                    NativeArrayOptions.UninitializedMemory);
                 _somaticProfileLookup = VaultNativeArray<VrComfortProfileLookupSlotDTO>.Create(
                     vault,
-                    vault.GetBufferHandle<VrComfortProfileLookupSlotDTO>(BufferID.ShinobuVRSomaticProfileLookup, SomaticComfortProfileLookupCapacity, SystemID.GameplayPlayer, NativeArrayOptions.UninitializedMemory));
+                    BufferID.ShinobuVRSomaticProfileLookup,
+                    SomaticComfortProfileLookupCapacity,
+                    NativeArrayOptions.UninitializedMemory);
                 _somaticComfortTelemetry = VaultNativeArray<ComfortTelemetryEntry>.Create(
                     vault,
-                    vault.GetBufferHandle<ComfortTelemetryEntry>(BufferID.ShinobuVRSomaticComfortTelemetry, BlackBoxFrameCapacity, SystemID.GameplayPlayer, NativeArrayOptions.UninitializedMemory));
+                    BufferID.ShinobuVRSomaticComfortTelemetry,
+                    BlackBoxFrameCapacity,
+                    NativeArrayOptions.UninitializedMemory);
                 _somaticMockSicknessSamples = VaultNativeArray<SomaticMockSicknessSampleDTO>.Create(
                     vault,
-                    vault.GetBufferHandle<SomaticMockSicknessSampleDTO>(BufferID.ShinobuVRSomaticMockSickness, SomaticMockSicknessSampleCapacity, SystemID.GameplayPlayer, NativeArrayOptions.UninitializedMemory));
+                    BufferID.ShinobuVRSomaticMockSickness,
+                    SomaticMockSicknessSampleCapacity,
+                    NativeArrayOptions.UninitializedMemory);
                 _somaticCsvScratch = VaultNativeArray<byte>.Create(
                     vault,
-                    vault.GetBufferHandle<byte>(BufferID.ShinobuVRSomaticCsvScratch, SomaticCsvScratchBytes, SystemID.GameplayPlayer, NativeArrayOptions.UninitializedMemory));
+                    BufferID.ShinobuVRSomaticCsvScratch,
+                    SomaticCsvScratchBytes,
+                    NativeArrayOptions.UninitializedMemory);
             }
 
             if (_somaticComfortBuffersSeeded ||
@@ -348,14 +366,14 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            NativeArray<SomaticComfortStateDTO> write = _somaticComfortWrite.Resolve();
-            NativeArray<SomaticComfortStateDTO> read = _somaticComfortRead.Resolve();
-            NativeArray<SomaticDerivativeDTO> derivatives = _somaticDerivatives.Resolve();
-            NativeArray<SomaticKinematicHistoryDTO> history = _somaticHistory.Resolve();
-            NativeArray<VrComfortProfileDTO> profiles = _somaticProfiles.Resolve();
-            NativeArray<VrComfortProfileLookupSlotDTO> lookup = _somaticProfileLookup.Resolve();
-            NativeArray<ComfortTelemetryEntry> telemetry = _somaticComfortTelemetry.Resolve();
-            NativeArray<SomaticMockSicknessSampleDTO> mock = _somaticMockSicknessSamples.Resolve();
+            NativeArray<SomaticComfortStateDTO> write = _somaticComfortWrite.AsNativeArray();
+            NativeArray<SomaticComfortStateDTO> read = _somaticComfortRead.AsNativeArray();
+            NativeArray<SomaticDerivativeDTO> derivatives = _somaticDerivatives.AsNativeArray();
+            NativeArray<SomaticKinematicHistoryDTO> history = _somaticHistory.AsNativeArray();
+            NativeArray<VrComfortProfileDTO> profiles = _somaticProfiles.AsNativeArray();
+            NativeArray<VrComfortProfileLookupSlotDTO> lookup = _somaticProfileLookup.AsNativeArray();
+            NativeArray<ComfortTelemetryEntry> telemetry = _somaticComfortTelemetry.AsNativeArray();
+            NativeArray<SomaticMockSicknessSampleDTO> mock = _somaticMockSicknessSamples.AsNativeArray();
 
             SeedSomaticComfortBuffersJob seedJob = new SeedSomaticComfortBuffersJob
             {
@@ -436,6 +454,15 @@ namespace Hecton8.Gameplay
         private void ResetSomaticComfortBuffers()
         {
             CompleteSomaticComfortForBarrier();
+            _somaticComfortWrite.Release();
+            _somaticComfortRead.Release();
+            _somaticDerivatives.Release();
+            _somaticHistory.Release();
+            _somaticProfiles.Release();
+            _somaticProfileLookup.Release();
+            _somaticComfortTelemetry.Release();
+            _somaticMockSicknessSamples.Release();
+            _somaticCsvScratch.Release();
             _somaticComfortWrite = default;
             _somaticComfortRead = default;
             _somaticDerivatives = default;
@@ -502,10 +529,10 @@ namespace Hecton8.Gameplay
                 sourceRotation = quaternion.RotateY(math.atan2(kccDirection.x, kccDirection.y));
             }
 
-            NativeArray<SomaticComfortStateDTO> write = _somaticComfortWrite.Resolve();
-            NativeArray<SomaticDerivativeDTO> derivatives = _somaticDerivatives.Resolve();
-            NativeArray<SomaticKinematicHistoryDTO> history = _somaticHistory.Resolve();
-            NativeArray<VrComfortProfileDTO> profiles = _somaticProfiles.Resolve();
+            NativeArray<SomaticComfortStateDTO> write = _somaticComfortWrite.AsNativeArray();
+            NativeArray<SomaticDerivativeDTO> derivatives = _somaticDerivatives.AsNativeArray();
+            NativeArray<SomaticKinematicHistoryDTO> history = _somaticHistory.AsNativeArray();
+            NativeArray<VrComfortProfileDTO> profiles = _somaticProfiles.AsNativeArray();
             if (write.Length == 0 || derivatives.Length == 0 || history.Length == 0 || profiles.Length == 0)
                 return;
 
@@ -665,8 +692,8 @@ namespace Hecton8.Gameplay
             if (!_somaticComfortWrite.IsCreated || !_somaticComfortRead.IsCreated)
                 return;
 
-            NativeArray<SomaticComfortStateDTO> write = _somaticComfortWrite.Resolve();
-            NativeArray<SomaticComfortStateDTO> read = _somaticComfortRead.Resolve();
+            NativeArray<SomaticComfortStateDTO> write = _somaticComfortWrite.AsNativeArray();
+            NativeArray<SomaticComfortStateDTO> read = _somaticComfortRead.AsNativeArray();
             if (write.Length == 0 || read.Length == 0)
                 return;
 
@@ -687,8 +714,8 @@ namespace Hecton8.Gameplay
             if (!_somaticComfortTelemetry.IsCreated || !_somaticDerivatives.IsCreated)
                 return;
 
-            NativeArray<ComfortTelemetryEntry> telemetry = _somaticComfortTelemetry.Resolve();
-            NativeArray<SomaticDerivativeDTO> derivatives = _somaticDerivatives.Resolve();
+            NativeArray<ComfortTelemetryEntry> telemetry = _somaticComfortTelemetry.AsNativeArray();
+            NativeArray<SomaticDerivativeDTO> derivatives = _somaticDerivatives.AsNativeArray();
             if (telemetry.Length == 0 || derivatives.Length == 0)
                 return;
 
@@ -714,7 +741,7 @@ namespace Hecton8.Gameplay
             uint aupHash = 0u;
             if (_somaticHistory.IsCreated)
             {
-                NativeArray<SomaticKinematicHistoryDTO> history = _somaticHistory.Resolve();
+                NativeArray<SomaticKinematicHistoryDTO> history = _somaticHistory.AsNativeArray();
                 if (history.IsCreated && history.Length > 0)
                 {
                     SomaticKinematicHistoryDTO historyRow = history[0];
@@ -762,7 +789,7 @@ namespace Hecton8.Gameplay
             _somaticComfortTelemetryDumped = true;
             try
             {
-                NativeArray<ComfortTelemetryEntry> telemetry = _somaticComfortTelemetry.Resolve();
+                NativeArray<ComfortTelemetryEntry> telemetry = _somaticComfortTelemetry.AsNativeArray();
                 if (!telemetry.IsCreated || telemetry.Length == 0)
                     return;
 
@@ -842,7 +869,7 @@ namespace Hecton8.Gameplay
             if (!_somaticComfortTelemetry.IsCreated)
                 return;
 
-            NativeArray<ComfortTelemetryEntry> telemetry = _somaticComfortTelemetry.Resolve();
+            NativeArray<ComfortTelemetryEntry> telemetry = _somaticComfortTelemetry.AsNativeArray();
             if (!telemetry.IsCreated || telemetry.Length < 2)
                 return;
 

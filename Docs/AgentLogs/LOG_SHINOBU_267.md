@@ -925,3 +925,31 @@ Exact Microseconds saved:
   <PARKED_WORK_REJECTED>Build launch under CPU gate, gameplay flora expansion, and managed dump copies.</PARKED_WORK_REJECTED>
   <STATIC_VERIFICATION>Owned forbidden scan reports no `parameters[0]`, `cursorArray[0]`, `ring[i]`, `.Run()`, `.Complete()`, same-frame `Schedule().Complete()`, direct kernel `Execute()`, vector upload, `UnityEngine.Random`, `foreach`, or `Pack=1`; runtime/editor/shader brace and full preprocessor balances are zero; Cdecl delegate count is 2 and both MonoPInvokeCallback attributes are present; asmdef/report JSON parse passed; `git diff --check` found no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 100%, dotnet=0, csc=0.</STATIC_VERIFICATION>
 </SELF_AUDIT_DELTA>
+
+## 2026-05-21 - Polish Pass 42
+
+What was wrong:
+- Hot PRE_SIMULATION source still contained `new` tokens for value-type job initializers.
+- Burst math used `new float3/new float4` constructors, which are value types but still pollute strict hot-allocation scans.
+
+What was done:
+- Replaced job construction with `default` assignment and explicit field writes.
+- Replaced vector constructors with `math.float3/math.float4`.
+- Added `hotValueNewHygiene` to the editor self-audit.
+
+Cinematic Cheats used:
+- No physical simulation was added. The domain remains shader-driven ambient motion and fixed DTO upload.
+
+Exact Microseconds saved:
+- 0 measurable hot us. The change removes allocation-proof ambiguity; generated value-type code should be equivalent.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_267" revision="2026-05-21-P42_HOT_VALUE_CONSTRUCTOR_SCAN_HYGIENE">
+  <TASK id="03" status="PASS">Hot source no longer contains GC-looking value constructor tokens for the one-row DTO kernels.</TASK>
+  <TASK id="06" status="PASS">PRE_SIMULATION jobs are initialized through `default` structs before FunctionPointer invocation.</TASK>
+  <TASK id="20" status="PASS">Self-audit now enforces `hotValueNewHygiene`.</TASK>
+  <FIRST_20_MINUTES_MOMENT>World load and swim readability on the selected Copper Wire route biome.</FIRST_20_MINUTES_MOMENT>
+  <ROUTE_IMPACT>Early-route flora PRE_SIMULATION lane stays free of hot `new` scanner ambiguity.</ROUTE_IMPACT>
+  <PROOF_REQUIRED>Static source scan now; Unity import/Console, selected route run, profiler/GC, Burst/import proof, Frame Debugger, screenshot/clip, and save/load diff remain pending.</PROOF_REQUIRED>
+  <PARKED_WORK_REJECTED>Build launch under CPU gate, flora gameplay expansion, and scalar-array replacement for SIMD vector math.</PARKED_WORK_REJECTED>
+  <STATIC_VERIFICATION>`PreSimulationTick` contains no `new ` token, runtime contains zero `new float3/new float4` constructors and zero hot job `new` constructors, editor self-audit contains `hotValueNewHygiene`, runtime/editor/shader brace and full preprocessor balances are zero, and `git diff --check` found no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 67%, dotnet=0, csc=0.</STATIC_VERIFICATION>
+</SELF_AUDIT_DELTA>

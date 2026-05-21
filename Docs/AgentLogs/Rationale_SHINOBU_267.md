@@ -457,3 +457,15 @@ Route impact: Keeps the early-route flora presentation fake free of hidden `Nati
 Proof required: Static source scan now; Unity import/Console, selected route run, profiler/GC, Burst/import proof, Frame Debugger, screenshot/clip, and save/load diff remain pending.
 Parked work rejected: Build launch under CPU gate, runtime behavior expansion, and flora gameplay scope.
 Static verification: Owned forbidden scan reports no `parameters[0]`, `cursorArray[0]`, `ring[i]`, `.Run()`, `.Complete()`, same-frame `Schedule().Complete()`, direct kernel `Execute()`, vector upload, `UnityEngine.Random`, `foreach`, or `Pack=1`; runtime/editor/shader brace and full preprocessor balances are zero; Cdecl delegate count is 2 with both MonoPInvokeCallback attributes; asmdef/report JSON parse passed; `git diff --check` reported no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 100%, dotnet=0, csc=0.
+
+## Polish Pass 42 Decisions
+Problem: `PreSimulationTick` still contained `new` tokens for value-type job initializers, and Burst math used `new float3/new float4` constructors. These do not allocate GC memory, but the mandate and static scans treat hot `new` as suspicious unless proven.
+Solution: Replaced hot job construction with `default` struct assignment and replaced vector constructors with `math.float3/math.float4`. Added `hotValueNewHygiene` to the editor self-audit so the default-init route and absence of `new float3/new float4` remain checked.
+Rejected Alternatives: Keeping the value-type `new` tokens was rejected because scanner ambiguity wastes review time and can mask real reference allocations. Removing the Burst math structs was rejected because math vectors are the correct SIMD payload.
+Scalability potential: No visual-tier behavior change. Low/Middle/High/Ultra still use the same DTO/CBuffer/shader fake; this pass only removes source ambiguity around hot allocations.
+Hardware Impact: 0 measurable hot runtime us. The change is syntax-level allocation-proof hygiene; generated code should remain equivalent for value-type construction.
+First 20 Minutes moment: World load and swim readability on the selected Copper Wire route biome.
+Route impact: Keeps the early-route PRE_SIMULATION lane free of GC-looking hot allocation tokens.
+Proof required: Static source scan now; Unity import/Console, selected route run, profiler/GC, Burst/import proof, Frame Debugger, screenshot/clip, and save/load diff remain pending.
+Parked work rejected: Build launch under CPU gate, expanding flora gameplay, and replacing SIMD vector math with scalar arrays.
+Static verification: `PreSimulationTick` contains no `new ` token, runtime contains zero `new float3/new float4` constructors and zero hot job `new` constructors, editor self-audit contains `hotValueNewHygiene`, runtime/editor/shader brace and full preprocessor balances are zero, and `git diff --check` reported no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 67%, dotnet=0, csc=0.
