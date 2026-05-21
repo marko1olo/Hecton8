@@ -529,3 +529,15 @@ Route impact: Route fault dumps now advertise a row size tied to the same valida
 Proof required: Static source/self-audit now; Unity import/Console, selected route run, profiler/GC, Burst/import proof, Frame Debugger, screenshot/clip, save/load diff, and dump-read smoke test remain pending.
 Parked work rejected: Build launch while dotnet/csc are active, telemetry DTO size changes, and runtime file parsing.
 Static verification: Validator source compares params size to `FloraSwayParamsSizeBytes` and telemetry size to `(int)SwayTelemetryEntrySizeBytes`; owned forbidden scan is clean; runtime/editor/shader brace and preprocessor balances are zero; `git diff --check` reported no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 46.3%, dotnet=1, csc=1.
+
+## Polish Pass 48 Decisions
+Problem: Task 18's live vertex-color debug path existed, but `FloraAmbientSwaySelfAudit` did not explicitly require it. That left a documentation-only proof gap for technical-artist validation.
+Solution: Added `vertexColorDebug` to the self-audit. It now checks the editor toggle, `Shader.SetGlobalFloat(DebugId...)`, `SceneView.RepaintAll()`, shader `_HectonFloraVertexColorDebug`, the vertex-color payload assignment, and the raw debug fragment return.
+Rejected Alternatives: Leaving Task 18 in status/log only was rejected because Task 20 requires a rigorous proof hook. Adding runtime replacement materials was rejected because the debug lane must be editor-only and non-invasive.
+Scalability potential: No player visual-tier behavior change. The debug path is editor-only; Low/Middle/High/Ultra runtime rendering remains the same continuous shader route.
+Hardware Impact: 0 player us. Editor-only self-audit and toggle proof.
+First 20 Minutes moment: World load and swim readability on the selected Copper Wire route biome.
+Route impact: Technical artists can prove Vertex Color red stiffness authoring without adding CPU animation or replacement runtime materials.
+Proof required: Static source/self-audit now; Unity import/Console and actual SceneView toggle proof remain pending under Unity execution.
+Parked work rejected: Runtime material swapping, replacement shader instantiation, build launch under CPU/dotnet/csc gate.
+Static verification: Static scan shows `Toggle Vertex Color Debug`, `Shader.SetGlobalFloat(DebugId...)`, `_HectonFloraVertexColorDebug`, `half4(input.color)`, and `return half4(input.biolumColor.rgb, 1.0h)` are present; owned forbidden scan is clean; runtime/editor/shader brace and preprocessor balances are zero; `git diff --check` reported no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 70.1%, dotnet=1, csc=1.

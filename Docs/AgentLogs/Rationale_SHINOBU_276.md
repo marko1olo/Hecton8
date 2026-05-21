@@ -307,3 +307,27 @@ Solution: Add a lock-file guarded aggregate read/modify/write path and temp-file
 Rejected Alternatives: Leaving only the dedicated JSON was rejected because the shared aggregate remains an editor scanner contract. Locking only the final write was rejected because it still allows stale read/modify/write clobber.
 Scalability potential: No runtime quality effect. This improves proof reliability under the 20+ agent concurrency model.
 Hardware Impact: Editor-only file IO. No frame-time or Burst solver cost.
+
+## Decision 38: Quality Sanitizer Select Order
+
+Problem: A read-only audit found the live quality route could still be destroyed if `SanitizeQualityWeight` selected fallback when the input value was finite. That would make low and middle quality unreachable while the runtime and docs claimed continuous `GlobalQualityWeight`.
+Solution: Prove the sanitizer route preserves finite input values and falls back only for non-finite values. The active source uses `math.select(safeFallback, value, math.isfinite(value))`; scalar CLI proof verifies `0`, `0.25`, `0.62`, `1`, and `NaN`.
+Rejected Alternatives: Leaving a fallback-first route was rejected because it pins fidelity. Replacing it with hardware-tier branches was rejected because HECTON quality must stay continuous and cannot alter authority or DTO layout.
+Scalability potential: Low devices can now reach nearest-only SDF, widened epsilon, and reduced substeps; middle devices blend toward trilinear and secondary probes; high/ultra spend the same state layout on tighter SDF and richer presentation.
+Hardware Impact: No measured profiler claim. Static path proof restores the low-quality branch that avoids high-tap voxel SDF work on weak devices.
+
+## Decision 39: Telemetry Elapsed Patch Write Gate
+
+Problem: `PatchLastTelemetryElapsed` mutates the latest telemetry row after job completion, but a generic `TryResolveBuffer` call looked like a read-shaped access path even though the scheduled job writer locks are still held.
+Solution: Gate this mutation through `TryResolveHeldJobWriteBuffer`, which requires `_jobBuffersLocked`, a Physics-owned handle, exact telemetry/cursor BufferIDs, and a valid non-empty view before the elapsed time and budget flag are patched.
+Rejected Alternatives: Taking a second writer lock inside the completed job window was rejected because the first scheduled writer lock is intentionally still held. Leaving the generic helper was rejected because it weakens the proof boundary for a mutation.
+Scalability potential: No quality behavior changes. The telemetry proof remains identical for Low, Middle, High, and Ultra; only the mutation gate is clearer.
+Hardware Impact: One bounded branch path during completed job readback. No Burst solver math cost and no frame-time claim.
+
+## Decision 40: Live Unguarded Legacy Scope Counter
+
+Problem: The editor scanner emitted `unguardedLegacyMovementHits` in its JSON verdict but never incremented it, so a legacy `ApplyExosuit*` method without `ExosuitKinematicAuthority.HasActiveAuthority` could appear clean unless a direct Rigidbody line was separately classified.
+Solution: Track legacy method start line/source, detect scope closure through `UpdateLegacyScope`, increment `unguardedLegacyMovementHits` when the scope closes without the authority guard, and fail closed for unterminated unguarded scopes.
+Rejected Alternatives: Counting every legacy method reference as a hard failure was rejected because guarded legacy code is explicitly warning-only while the kinematic authority exists. Ignoring method-level guard absence was rejected because it leaves scanner verdicts weaker than the policy text.
+Scalability potential: Editor-only scanner. It protects the movement authority route that lets quality scale SDF work instead of letting legacy PhysX routes fight the solver.
+Hardware Impact: Editor-only string scan. No runtime frame cost.

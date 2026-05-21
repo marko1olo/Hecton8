@@ -89,6 +89,10 @@ Loop 22 render/fault addendum:
 - Wound atlas and visor post texture bindings now use `RasterCommandBuffer.SetGlobalTexture` inside RenderGraph raster functions. No owned wound/noir raster binding path mutates `Material.SetTexture`.
 - `DynamicDecalVaultRuntime` no longer throws from the runtime state ref helper; invalid Vault state access marks the existing layout fault route and fails closed.
 
+Loop 23 cold-state addendum:
+- Cold storage seeds `DecalRuntimeStateDTO` before visual sync with `RuntimeInitializedFlag`, continuous quality, thermal pressure, max-active count, and normal refraction intensity.
+- Instance/upload/profile Vault buffers are requested with clear memory. The former first-frame main-thread `ClearDecalsJob.Execute(i)` loop is removed from normal visual sync; cold fallback clearing uses bounded `UnsafeUtility.MemClear`.
+
 GC proof required:
 - Unity Profiler / GCMonitor capture in Play Mode. Static source proof only exists now.
 

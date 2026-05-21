@@ -5263,3 +5263,28 @@ Exact microseconds saved:
 Static verification:
 - Focused scan on `WorldChunkResidencyManager.cs` finds no executable legacy handle/Vault handle/byref/latest-created/generation-id/word-boundary `ResolveBuffer` hits. Descriptor scan confirms `VaultGenerationHandle<T>`, `GetGenerationHandle<T>`, `TryResolveHandle`, `ReleaseStreamingLedgerBuffers`, `EnsureWorldStreamingVaultBuffer`, `TryResolveWorldStreamingVaultBuffer`, `ReleaseBuffer(in handle)`, and `[NoAlias]`. Brace count is `487/487`; EOF check passed. `git diff --check` passed with CRLF warning only. Build was not relaunched.
 - Residual debt is explicit: the same file still has the preexisting `AcquireWorldStreamingArray<T>` direct `GetBuffer<T>` route and 17 persistent `NativeArray<T>` fields. This loop claims only the five retained ledger handle routes and job alias metadata.
+
+## 2026-05-21 - Loop 224 - Quest DAG Descriptor Route
+
+What was wrong:
+- `Assets/_Project/Scripts/Quest/QuestDagRuntimeTypes.cs` and `QuestDagResolverRuntime.cs` retained sixteen QuestDag lanes as pointer-era handles.
+- State masks, node DTOs, runtime DTOs, trigger volumes, required/player item SOA lanes, faction standings, telemetry, counters, trigger index buffers, and CSV monitor opened through `GetBufferHandle`, `.Resolve(vault)`, `ResolvePointer`, and retained handle checks.
+- The route crossed scheduled Burst resolver jobs, save-copy bridges, editor force-complete, OSHINO/mock data hydration, CSV overrides, and blackbox dumps.
+
+What was done:
+- Converted all retained QuestDag lanes to `VaultGenerationHandle<T>` and stored capacity proof fields in `QuestDagBufferHandles`.
+- `QuestDagVault.TryResolveBuffers` now validates exact BufferID, `SystemID.QuestDag`, nonzero generation, required capacity, `TryResolveHandle`, and `IsCreated` before returning frame-local `NativeArray<T>` views.
+- Removed the state-mask `ResolvePointer` byref path; `GetStateMaskRef` now resolves a local native view and derives the ref through `UnsafeUtility.ArrayElementAsRef`.
+- Added `QuestDagVault.ReleaseBuffers` for all sixteen QuestDag-owned descriptors. Synchronous `Dispose()` completes active resolver work before release; nonblocking `Dispose(JobHandle)` releases only when no resolver job is pending.
+- Added `[NoAlias]` to spatial-hash and graph resolver job native lanes.
+
+Cinematic cheats used:
+- Existing Quest DAG remains fake-first: packed bitmasks, fixed-point node resolution, AUP trigger cells, and bounded no-trigger passes replace scene graph searches, per-node GameObjects, and heavyweight quest-object simulation. This loop does not add physics, shaders, scene searches, or new truth routes.
+
+Exact microseconds saved:
+- No measured runtime saving claimed. The loop removes stale pointer trust and release ambiguity. Resolver complexity, DTO strides, OSHINO binary schema, SignalBus payloads, save-copy format, CSV parser contract, and QuestDag authority are unchanged.
+
+Static verification:
+- Focused scan finds no executable `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `ResolvePointer`, `.Resolve(...)`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `TryGetLatestCreated`, `TryGetBufferGeneration`, `VaultGenerationID`, or `.ptr` hits in the Quest DAG runtime/type/editor files. Descriptor scan confirms `VaultGenerationHandle<T>`, `GetGenerationHandle<T>`, `TryResolveHandle`, `ReleaseBuffers`, `ReleaseQuestDagVaultHandle`, `ReleaseBuffer(in handle)`, and `[NoAlias]`.
+- Brace counts: `QuestDagRuntimeTypes.cs` `18/18`, `QuestDagResolverRuntime.cs` `114/114`, `NarrativeDagInspectorWindow.cs` `29/29`. `git diff --check` passed with CRLF warnings only. Build was not relaunched.
+- Residual debt is explicit: the dependency-returning dispose overload cannot release descriptors while a resolver job is still pending without risking UAF; the synchronous teardown path handles that release after completion.

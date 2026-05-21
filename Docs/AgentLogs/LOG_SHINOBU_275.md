@@ -117,6 +117,62 @@ Verification:
   <DEAR_LIE_CONFIRMATION>Before: object decals would be O(N) GameObject/renderer submissions plus material/transform churn per wound. After: O(1) fullscreen pass plus O(min(N, qualityCap)) shader record checks; CPU ingestion is bounded by fixed queue/capacity. Physical fracture meshes, particles, Canvas overlays, and DecalProjector components are rejected.</DEAR_LIE_CONFIRMATION>
 </SELF_AUDIT>
 
+## 2026-05-22T00:11+04:00 - Polish Loop 23 / Cold-State Seed And Clear-Memory Vault Entry
+
+What was wrong:
+- `DynamicDecalVaultRuntime` still acquired decal instance/upload/profile lanes with `UninitializedMemory`.
+- Missing runtime state was corrected from VISUAL_SYNC by directly executing `ClearDecalsJob.Execute(i)` on the main thread for up to 128 records.
+
+What was done:
+- Instance, upload scratch, tuning, telemetry, and material profile Vault lanes now request `NativeArrayOptions.ClearMemory`; CSV scratch remains the byte scratch exception.
+- `EnsureInitialized()` seeds `DecalRuntimeStateDTO[1]` before VISUAL_SYNC with `RuntimeInitializedFlag`, continuous quality, thermal pressure, max-active count, and normal refraction intensity.
+- Normal visual sync no longer runs the direct `ClearDecalsJob.Execute(i)` loop; fallback clearing uses bounded `UnsafeUtility.MemClear` against the existing instance/upload Vault rows.
+- Updated status, rationale, architecture note, route card, and binary payload ledger.
+
+Cinematic Cheats used:
+- No physical simulation was added. The route still buys visor trauma with screen-space projection, shader crack/refraction masks, and bounded GPU upload, not object decals or fracture meshes.
+
+Exact Microseconds saved:
+- No profiler claim. First normal cold entry avoids up to 128 direct job-body calls on the main thread; steady-frame timing still requires Unity profiler capture.
+
+Verification:
+- `python Tools\Decal_Projector_Inquisition.py`: PASS at `2026-05-21T20:11:44Z`; 5825 scanned assets, 336 candidates, 0 active GameObject decal violations, 0 active URP decal renderer feature violations.
+- JSON report validates and contains SHINOBU_275 `PASS` at `2026-05-21T20:11:44Z`.
+- Focused scans confirm no `ClearDecalsJob clearJob`, no `clearJob.Execute`, no owned forbidden hot-route tokens, and only CSV scratch remains `UninitializedMemory`.
+- `git diff --check` reports only LF-to-CRLF normalization warnings for touched files.
+- Compile not launched: CPU sampled at 97% and compiler-process count returned 2.
+
+<SELF_AUDIT agent_id="SHINOBU_275" loop="23_cold_state_seed_clear_memory">
+  <TASK_RECONCILIATION>
+    <TASK id="01" result="PASS_STATIC">Re-audited owned wound cold-start and visor visual sync route.</TASK>
+    <TASK id="02" result="PASS_STATIC">Scanner PASS at 2026-05-21T20:11:44Z; no active object/URP decal route introduced.</TASK>
+    <TASK id="03" result="PASS_STATIC">No hot DTO properties added; cold seed mutates raw explicit state fields.</TASK>
+    <TASK id="04" result="PASS_STATIC">No DTO layout changed; `VisorDecalDTO` remains explicit 80B.</TASK>
+    <TASK id="05" result="PASS_STATIC">Mock lane still cold/editor; normal cold state no longer relies on visual-sync clear loop.</TASK>
+    <TASK id="06" result="PASS_STATIC">Burst jobs unchanged; direct main-thread `ClearDecalsJob.Execute(i)` was removed from normal visual sync.</TASK>
+    <TASK id="07" result="PASS_STATIC">Dear Lie route unchanged: one bounded screen-space wound pass and shader fakes.</TASK>
+    <TASK id="08" result="PASS_STATIC">Ring overwrite unchanged; cold state starts with zeroed ring rows.</TASK>
+    <TASK id="09" result="PASS_STATIC">Deterministic decay unchanged and no longer sees uninitialized active flags on cold entry.</TASK>
+    <TASK id="10" result="PASS_STATIC">GPU upload route unchanged; upload scratch is clear-memory on acquisition.</TASK>
+    <TASK id="11" result="PASS_STATIC">Cold seed records continuous quality and max-active count, preserving the 8..128 curve.</TASK>
+    <TASK id="12" result="PASS_STATIC">Shader crack/refraction route unchanged.</TASK>
+    <TASK id="13" result="PASS_STATIC">AUP localization unchanged.</TASK>
+    <TASK id="14" result="PASS_STATIC">No gameplay authority, rollback, save, or Merkle route changed.</TASK>
+    <TASK id="15" result="PASS_STATIC">Telemetry ring route unchanged; fault dump format unchanged.</TASK>
+    <TASK id="16" result="PASS_STATIC">Editor facade unchanged.</TASK>
+    <TASK id="17" result="PASS_STATIC">CSV profile parser unchanged; profile Vault lane now starts clear-memory.</TASK>
+    <TASK id="18" result="PASS_STATIC">Gizmo route unchanged.</TASK>
+    <TASK id="19" result="PASS_STATIC">Metric validator rerun and report timestamp refreshed to 2026-05-21T20:11:44Z.</TASK>
+    <TASK id="20" result="PASS_STATIC_COMPILE_BLOCKED">Docs/logs synchronized; compile gate blocked by CPU 97% and compiler-process count 2.</TASK>
+  </TASK_RECONCILIATION>
+  <STRUCT_LAYOUT>`VisorDecalDTO`: `LocalToWorld@0` 64B, `DecalTypeHash@64` 4B, `Opacity01@68` 4B, `BirthTime@72` 4B, `Flags@76` 4B; total 80B, 80 % 16 = 0. Loop 23 changed no primary DTO bytes.</STRUCT_LAYOUT>
+  <SCALABILITY_CURVE>Cold state now seeds `GlobalQualityWeight` and derived max-active count before visual sync. Low devices enter with zeroed rows and low active capacity; middle/high/ultra keep the same continuous capacity/refraction/fade curve without a DTO or authority-route fork.</SCALABILITY_CURVE>
+  <H_PHI_VAULT_STATUS>Vault lanes unchanged: 71490 instances, 71491 upload scratch, 71492 runtime state, 71493 telemetry ring, 71494 tuning, 71495 material profiles, 71496 CSV scratch. Persistent ownership remains Vault-backed; CSV scratch is the only uninitialized cold byte scratch lane.</H_PHI_VAULT_STATUS>
+  <POINTER_ALIASING_DEPENDENCY_GRAPH>Job graph unchanged. Loop 23 adds no job, no new aliasing surface, and no same-frame `.Complete()`; fallback clearing uses bounded `UnsafeUtility.MemClear` on owner Vault rows only.</POINTER_ALIASING_DEPENDENCY_GRAPH>
+  <COMPILE_GUARD>No direct sibling runtime dependency was added. Compile was not launched because CPU sampled at 97% and compiler-process count returned 2.</COMPILE_GUARD>
+  <DEAR_LIE_CONFIRMATION>Before/after rendering complexity remains O(N_visible capped at 128) in one screen-space pass and O(1) ring insertion. Loop 23 only removes first-entry corrective CPU clearing from the visual route.</DEAR_LIE_CONFIRMATION>
+</SELF_AUDIT>
+
 ## 2026-05-21T15:46Z - Polish Loop 9 / NativeQueue Pending Fence And Route Proof
 
 What was wrong:

@@ -458,6 +458,12 @@ Rejected Alternatives: Pretending to have applied a missing polish document was 
 Scalability potential: Runtime behavior unchanged.
 Hardware Impact: 0 runtime us.
 
+Problem: The readback/coalescing patches and stale-token status scrub changed both runtime and proof artifacts after the previous gate. A verifier bug also caused the first brace scan attempt to fail before source inspection.
+Solution: Re-ran strict stale-token scan, runtime forbidden-pattern scan, root/sidecar JSON parsing, scoped comment/string-aware C# brace scan, scoped diff whitespace, and CPU/process gate. The source/proof gates passed; the brace checker was corrected and returned `SCOPED_CS_BRACES_OK`.
+Rejected Alternatives: Treating the PowerShell checker parse error as a source failure was rejected. Launching a build was rejected because CPU average was 51 and active `csc`/`dotnet` processes were present.
+Scalability potential: Runtime behavior unchanged from the prior patches. The verified path keeps main-thread readback maintenance O(1), empty coalescing frames free of scratch-map clear cost, and proof artifacts synchronized for low/mid/high/ultra review.
+Hardware Impact: 0 runtime us for verification itself. Build contention avoided under the project CPU/process gate.
+
 Problem: Final compile gate needed one more sample after status/rationale/log updates.
 Solution: Revalidated JSON reports and scoped diff whitespace. CPU average is 88, and no `dotnet`/`csc`/`MSBuild`/`Unity` process is active. Build was not launched because CPU remains above the 50% project threshold.
 Rejected Alternatives: Running a build on an 88% loaded host was rejected. Calling the static gate a compile result was rejected.

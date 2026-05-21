@@ -28,6 +28,7 @@ Route:
 - Diagnostic `TryGetTuning`, `TryGetRuntimeState`, and `TryGetLatestTelemetry` calls return immutable owner-phase snapshots. They do not lock Vault buffers, resolve native arrays, complete jobs, allocate, or mutate global lock state.
 - `TryAcquireDecalBufferRead` / `ReleaseDecalBufferRead` is also compiled only under `UNITY_EDITOR`; it is an explicit acquire/release debug lane for SceneView gizmos and is not available to player runtime callers.
 - Runtime state pointer access in `ExecuteVisualSync()` is fail-closed. A stale or invalid one-row Vault state buffer marks the existing layout/fault telemetry bit and returns false instead of throwing a managed gameplay exception.
+- Cold initialization seeds the one-row runtime state before VISUAL_SYNC and requests visual/profile Vault buffers with clear memory. The first normal visual-sync frame does not run a direct `ClearDecalsJob.Execute(i)` loop; the fallback path uses `UnsafeUtility.MemClear` only when cold state is missing.
 
 Constraints:
 - No `DecalProjector` GameObjects, Canvas blood overlays, material clones, or per-wound GameObject hierarchy.
@@ -42,7 +43,7 @@ Constraints:
 - Gameplay authority and rollback state are not mutated by the renderer; wounds are presentation-only signal consumers.
 
 Proof:
-- `Tools/Decal_Projector_Inquisition.py` writes `Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json`; latest SHINOBU_275 run 2026-05-21T20:02:57Z reports 0 active GameObject/URP decal violations.
+- `Tools/Decal_Projector_Inquisition.py` writes `Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json`; latest SHINOBU_275 run 2026-05-21T20:11:44Z reports 0 active GameObject/URP decal violations.
 - Binary payload ledger and route card are synchronized with the active C#/HLSL ABI: offset 72 is `BirthTime`; lifetime is packed inside `DecalTypeHash` bits 8..23, shader branch reads low 4 type bits, and atlas sampling reads bits 4..7.
 - Black-box telemetry uses 300 `VisorWoundTelemetryEntry` records and dumps to `Docs/AgentLogs/Dump_SHINOBU_275.bin` on layout/non-finite/upload faults. Loop 21 format is a fixed 16-byte little-endian header followed by 300 fixed 64-byte telemetry rows written through stack spans; no `BinaryWriter` is used.
 - Shader binding proof: `Hecton_VisorGlitchACES.shader.meta` GUID `2b2a9f18d90f4b35b8b4f9d1a8e23501`; `Hecton_VisorWounds.shader.meta` GUID `0a2df57d7a4e4d44a95b1b4c4bfb2750`.

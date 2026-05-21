@@ -48,85 +48,92 @@ namespace Hecton8.Quest
             playerItemCapacity = math.max(1, playerItemCapacity);
             factionCapacity = math.max(1, factionCapacity);
 
-            handles.GlobalStateMasks = vault.GetBufferHandle<ulong>(
+            handles.NodeCapacity = nodeCapacity;
+            handles.TriggerCapacity = triggerCapacity;
+            handles.StateChunkCount = stateChunkCount;
+            handles.ItemLinkCapacity = itemLinkCapacity;
+            handles.PlayerItemCapacity = playerItemCapacity;
+            handles.FactionCapacity = factionCapacity;
+
+            handles.GlobalStateMasks = vault.GetGenerationHandle<ulong>(
                 BufferID.QuestDagGlobalStateMasks,
                 stateChunkCount,
-                SystemID.QuestDag,
+                VaultOwnerSystem,
                 NativeArrayOptions.ClearMemory);
-            handles.OldStateMasks = vault.GetBufferHandle<ulong>(
+            handles.OldStateMasks = vault.GetGenerationHandle<ulong>(
                 BufferID.QuestDagOldStateMasks,
                 stateChunkCount,
-                SystemID.QuestDag,
+                VaultOwnerSystem,
                 NativeArrayOptions.ClearMemory);
-            handles.Nodes = vault.GetBufferHandle<QuestNodeDTO>(
+            handles.Nodes = vault.GetGenerationHandle<QuestNodeDTO>(
                 BufferID.QuestDagNodes,
                 nodeCapacity,
-                SystemID.QuestDag,
+                VaultOwnerSystem,
                 NativeArrayOptions.ClearMemory);
-            handles.NodeRuntime = vault.GetBufferHandle<QuestNodeRuntimeDTO>(
+            handles.NodeRuntime = vault.GetGenerationHandle<QuestNodeRuntimeDTO>(
                 BufferID.QuestDagNodeRuntime,
                 nodeCapacity,
-                SystemID.QuestDag,
+                VaultOwnerSystem,
                 NativeArrayOptions.ClearMemory);
-            handles.TriggerVolumes = vault.GetBufferHandle<TriggerVolumeDTO>(
+            handles.TriggerVolumes = vault.GetGenerationHandle<TriggerVolumeDTO>(
                 BufferID.QuestDagTriggerVolumes,
                 triggerCapacity,
-                SystemID.QuestDag,
+                VaultOwnerSystem,
                 NativeArrayOptions.ClearMemory);
-            handles.RequiredItemHashes = vault.GetBufferHandle<uint>(
+            handles.RequiredItemHashes = vault.GetGenerationHandle<uint>(
                 BufferID.QuestDagRequiredItemHashes,
                 itemLinkCapacity,
-                SystemID.QuestDag,
+                VaultOwnerSystem,
                 NativeArrayOptions.ClearMemory);
-            handles.RequiredItemQuantities = vault.GetBufferHandle<int>(
+            handles.RequiredItemQuantities = vault.GetGenerationHandle<int>(
                 BufferID.QuestDagRequiredItemQuantities,
                 itemLinkCapacity,
-                SystemID.QuestDag,
+                VaultOwnerSystem,
                 NativeArrayOptions.ClearMemory);
-            handles.PlayerItemHashes = vault.GetBufferHandle<uint>(
+            handles.PlayerItemHashes = vault.GetGenerationHandle<uint>(
                 BufferID.QuestDagPlayerItemHashes,
                 playerItemCapacity,
-                SystemID.QuestDag,
+                VaultOwnerSystem,
                 NativeArrayOptions.ClearMemory);
-            handles.PlayerItemQuantities = vault.GetBufferHandle<int>(
+            handles.PlayerItemQuantities = vault.GetGenerationHandle<int>(
                 BufferID.QuestDagPlayerItemQuantities,
                 playerItemCapacity,
-                SystemID.QuestDag,
+                VaultOwnerSystem,
                 NativeArrayOptions.ClearMemory);
-            handles.FactionStandings = vault.GetBufferHandle<float>(
+            handles.FactionStandings = vault.GetGenerationHandle<float>(
                 BufferID.QuestDagFactionStandings,
                 factionCapacity,
-                SystemID.QuestDag,
+                VaultOwnerSystem,
                 NativeArrayOptions.ClearMemory);
-            handles.TelemetryRing = vault.GetBufferHandle<QuestDagTelemetryEntry>(
+            handles.TelemetryRing = vault.GetGenerationHandle<QuestDagTelemetryEntry>(
                 BufferID.QuestDagTelemetryRing,
                 QuestDagRuntimeConstants.TelemetryCapacity,
-                SystemID.QuestDag,
+                VaultOwnerSystem,
                 NativeArrayOptions.ClearMemory);
-            handles.TelemetryCursor = vault.GetBufferHandle<int>(
+            handles.TelemetryCursor = vault.GetGenerationHandle<int>(
                 BufferID.QuestDagTelemetryCursor,
                 1,
-                SystemID.QuestDag,
+                VaultOwnerSystem,
                 NativeArrayOptions.ClearMemory);
-            handles.Counters = vault.GetBufferHandle<int>(
+            handles.Counters = vault.GetGenerationHandle<int>(
                 BufferID.QuestDagCounters,
                 QuestDagRuntimeConstants.CounterCount,
-                SystemID.QuestDag,
+                VaultOwnerSystem,
                 NativeArrayOptions.ClearMemory);
-            handles.TriggerNodeIndices = vault.GetBufferHandle<int>(
+            handles.TriggerNodeIndices = vault.GetGenerationHandle<int>(
                 BufferID.QuestDagTriggerNodeIndices,
                 triggerCapacity,
-                SystemID.QuestDag,
+                VaultOwnerSystem,
                 NativeArrayOptions.ClearMemory);
-            handles.NoTriggerNodeIndices = vault.GetBufferHandle<int>(
+            handles.NoTriggerNodeIndices = vault.GetGenerationHandle<int>(
                 BufferID.QuestDagNoTriggerNodeIndices,
                 nodeCapacity,
-                SystemID.QuestDag,
+                VaultOwnerSystem,
                 NativeArrayOptions.ClearMemory);
-            handles.CsvMonitor = vault.GetBufferHandle<long>(
+            handles.CsvMonitor = vault.GetGenerationHandle<long>(
                 BufferID.QuestDagCsvMonitor,
                 2,
-                SystemID.QuestDag,
+                VaultOwnerSystem,
                 NativeArrayOptions.ClearMemory);
 
             if (TryResolveBuffers(vault, ref handles, out QuestDagBuffers buffers))
@@ -144,42 +151,31 @@ namespace Hecton8.Quest
             out QuestDagBuffers buffers)
         {
             buffers = default;
-            if (vault == null)
+            if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
-            buffers.GlobalStateMasks = handles.GlobalStateMasks.Resolve(vault);
-            buffers.OldStateMasks = handles.OldStateMasks.Resolve(vault);
-            buffers.Nodes = handles.Nodes.Resolve(vault);
-            buffers.NodeRuntime = handles.NodeRuntime.Resolve(vault);
-            buffers.TriggerVolumes = handles.TriggerVolumes.Resolve(vault);
-            buffers.RequiredItemHashes = handles.RequiredItemHashes.Resolve(vault);
-            buffers.RequiredItemQuantities = handles.RequiredItemQuantities.Resolve(vault);
-            buffers.PlayerItemHashes = handles.PlayerItemHashes.Resolve(vault);
-            buffers.PlayerItemQuantities = handles.PlayerItemQuantities.Resolve(vault);
-            buffers.FactionStandings = handles.FactionStandings.Resolve(vault);
-            buffers.TelemetryRing = handles.TelemetryRing.Resolve(vault);
-            buffers.TelemetryCursor = handles.TelemetryCursor.Resolve(vault);
-            buffers.Counters = handles.Counters.Resolve(vault);
-            buffers.TriggerNodeIndices = handles.TriggerNodeIndices.Resolve(vault);
-            buffers.NoTriggerNodeIndices = handles.NoTriggerNodeIndices.Resolve(vault);
-            buffers.CsvMonitor = handles.CsvMonitor.Resolve(vault);
+            if (!TryResolveQuestDagBuffer(vault, in handles.GlobalStateMasks, BufferID.QuestDagGlobalStateMasks, handles.StateChunkCount, out buffers.GlobalStateMasks) ||
+                !TryResolveQuestDagBuffer(vault, in handles.OldStateMasks, BufferID.QuestDagOldStateMasks, handles.StateChunkCount, out buffers.OldStateMasks) ||
+                !TryResolveQuestDagBuffer(vault, in handles.Nodes, BufferID.QuestDagNodes, handles.NodeCapacity, out buffers.Nodes) ||
+                !TryResolveQuestDagBuffer(vault, in handles.NodeRuntime, BufferID.QuestDagNodeRuntime, handles.NodeCapacity, out buffers.NodeRuntime) ||
+                !TryResolveQuestDagBuffer(vault, in handles.TriggerVolumes, BufferID.QuestDagTriggerVolumes, handles.TriggerCapacity, out buffers.TriggerVolumes) ||
+                !TryResolveQuestDagBuffer(vault, in handles.RequiredItemHashes, BufferID.QuestDagRequiredItemHashes, handles.ItemLinkCapacity, out buffers.RequiredItemHashes) ||
+                !TryResolveQuestDagBuffer(vault, in handles.RequiredItemQuantities, BufferID.QuestDagRequiredItemQuantities, handles.ItemLinkCapacity, out buffers.RequiredItemQuantities) ||
+                !TryResolveQuestDagBuffer(vault, in handles.PlayerItemHashes, BufferID.QuestDagPlayerItemHashes, handles.PlayerItemCapacity, out buffers.PlayerItemHashes) ||
+                !TryResolveQuestDagBuffer(vault, in handles.PlayerItemQuantities, BufferID.QuestDagPlayerItemQuantities, handles.PlayerItemCapacity, out buffers.PlayerItemQuantities) ||
+                !TryResolveQuestDagBuffer(vault, in handles.FactionStandings, BufferID.QuestDagFactionStandings, handles.FactionCapacity, out buffers.FactionStandings) ||
+                !TryResolveQuestDagBuffer(vault, in handles.TelemetryRing, BufferID.QuestDagTelemetryRing, QuestDagRuntimeConstants.TelemetryCapacity, out buffers.TelemetryRing) ||
+                !TryResolveQuestDagBuffer(vault, in handles.TelemetryCursor, BufferID.QuestDagTelemetryCursor, 1, out buffers.TelemetryCursor) ||
+                !TryResolveQuestDagBuffer(vault, in handles.Counters, BufferID.QuestDagCounters, QuestDagRuntimeConstants.CounterCount, out buffers.Counters) ||
+                !TryResolveQuestDagBuffer(vault, in handles.TriggerNodeIndices, BufferID.QuestDagTriggerNodeIndices, handles.TriggerCapacity, out buffers.TriggerNodeIndices) ||
+                !TryResolveQuestDagBuffer(vault, in handles.NoTriggerNodeIndices, BufferID.QuestDagNoTriggerNodeIndices, handles.NodeCapacity, out buffers.NoTriggerNodeIndices) ||
+                !TryResolveQuestDagBuffer(vault, in handles.CsvMonitor, BufferID.QuestDagCsvMonitor, 2, out buffers.CsvMonitor))
+            {
+                buffers = default;
+                return false;
+            }
 
-            return buffers.GlobalStateMasks.IsCreated &&
-                   buffers.OldStateMasks.IsCreated &&
-                   buffers.Nodes.IsCreated &&
-                   buffers.NodeRuntime.IsCreated &&
-                   buffers.TriggerVolumes.IsCreated &&
-                   buffers.RequiredItemHashes.IsCreated &&
-                   buffers.RequiredItemQuantities.IsCreated &&
-                   buffers.PlayerItemHashes.IsCreated &&
-                   buffers.PlayerItemQuantities.IsCreated &&
-                   buffers.FactionStandings.IsCreated &&
-                   buffers.TelemetryRing.IsCreated &&
-                   buffers.TelemetryCursor.IsCreated &&
-                   buffers.Counters.IsCreated &&
-                   buffers.TriggerNodeIndices.IsCreated &&
-                   buffers.NoTriggerNodeIndices.IsCreated &&
-                   buffers.CsvMonitor.IsCreated;
+            return true;
         }
 
         /// <summary>
@@ -187,11 +183,13 @@ namespace Hecton8.Quest
         /// </summary>
         public static ref ulong GetStateMaskRef(IDataVault vault, ref QuestDagBufferHandles handles, int chunkIndex)
         {
-            void* ptr = handles.GlobalStateMasks.ResolvePointer(vault);
-            if (ptr == null || (uint)chunkIndex >= (uint)handles.GlobalStateMasks.Length)
+            if (!TryResolveQuestDagBuffer(vault, in handles.GlobalStateMasks, BufferID.QuestDagGlobalStateMasks, handles.StateChunkCount, out NativeArray<ulong> masks) ||
+                (uint)chunkIndex >= (uint)masks.Length)
+            {
                 FatalMemoryException.ThrowStaleVaultHandle();
+            }
 
-            return ref UnsafeUtility.ArrayElementAsRef<ulong>(ptr, chunkIndex);
+            return ref UnsafeUtility.ArrayElementAsRef<ulong>(masks.GetUnsafePtr(), chunkIndex);
         }
 
         /// <summary>
@@ -218,6 +216,73 @@ namespace Hecton8.Quest
                 buffers.GlobalStateMasks.GetUnsafeReadOnlyPtr(),
                 (long)count * UnsafeUtility.SizeOf<ulong>());
             return true;
+        }
+
+        /// <summary>
+        /// Releases QuestDag-owned descriptors. Call only after resolver jobs using these views are complete.
+        /// </summary>
+        public static void ReleaseBuffers(IDataVault vault, ref QuestDagBufferHandles handles)
+        {
+            ReleaseQuestDagVaultHandle(vault, ref handles.GlobalStateMasks, BufferID.QuestDagGlobalStateMasks);
+            ReleaseQuestDagVaultHandle(vault, ref handles.OldStateMasks, BufferID.QuestDagOldStateMasks);
+            ReleaseQuestDagVaultHandle(vault, ref handles.Nodes, BufferID.QuestDagNodes);
+            ReleaseQuestDagVaultHandle(vault, ref handles.NodeRuntime, BufferID.QuestDagNodeRuntime);
+            ReleaseQuestDagVaultHandle(vault, ref handles.TriggerVolumes, BufferID.QuestDagTriggerVolumes);
+            ReleaseQuestDagVaultHandle(vault, ref handles.RequiredItemHashes, BufferID.QuestDagRequiredItemHashes);
+            ReleaseQuestDagVaultHandle(vault, ref handles.RequiredItemQuantities, BufferID.QuestDagRequiredItemQuantities);
+            ReleaseQuestDagVaultHandle(vault, ref handles.PlayerItemHashes, BufferID.QuestDagPlayerItemHashes);
+            ReleaseQuestDagVaultHandle(vault, ref handles.PlayerItemQuantities, BufferID.QuestDagPlayerItemQuantities);
+            ReleaseQuestDagVaultHandle(vault, ref handles.FactionStandings, BufferID.QuestDagFactionStandings);
+            ReleaseQuestDagVaultHandle(vault, ref handles.TelemetryRing, BufferID.QuestDagTelemetryRing);
+            ReleaseQuestDagVaultHandle(vault, ref handles.TelemetryCursor, BufferID.QuestDagTelemetryCursor);
+            ReleaseQuestDagVaultHandle(vault, ref handles.Counters, BufferID.QuestDagCounters);
+            ReleaseQuestDagVaultHandle(vault, ref handles.TriggerNodeIndices, BufferID.QuestDagTriggerNodeIndices);
+            ReleaseQuestDagVaultHandle(vault, ref handles.NoTriggerNodeIndices, BufferID.QuestDagNoTriggerNodeIndices);
+            ReleaseQuestDagVaultHandle(vault, ref handles.CsvMonitor, BufferID.QuestDagCsvMonitor);
+            handles = default;
+        }
+
+        private static bool TryResolveQuestDagBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null || vault.IsCompactionFenceActive || requiredLength <= 0)
+                return false;
+
+            if (!IsQuestDagVaultHandle(in handle, bufferId) ||
+                !vault.TryResolveHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsQuestDagVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == (uint)VaultOwnerSystem &&
+                   handle.Generation != 0u;
+        }
+
+        private static void ReleaseQuestDagVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            if (vault != null && IsQuestDagVaultHandle(in handle, bufferId))
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
     }
 
@@ -483,7 +548,14 @@ namespace Hecton8.Quest
         /// <inheritdoc />
         public void Dispose()
         {
-            Dispose(default);
+            if (!_disposed && _hasScheduled)
+            {
+                _scheduledHandle.Complete();
+                _hasScheduled = false;
+            }
+
+            JobHandle disposeHandle = Dispose(default);
+            disposeHandle.Complete();
         }
 
         /// <summary>
@@ -495,6 +567,7 @@ namespace Hecton8.Quest
                 return dependency;
 
             JobHandle disposeDependency = dependency;
+            bool canReleaseVaultBuffers = !_hasScheduled;
             if (_hasScheduled)
             {
                 disposeDependency = JobHandle.CombineDependencies(disposeDependency, _scheduledHandle);
@@ -507,6 +580,9 @@ namespace Hecton8.Quest
                 disposeDependency = _triggerSpatialHash.Dispose(disposeDependency);
                 _triggerSpatialHash = default;
             }
+
+            if (canReleaseVaultBuffers)
+                QuestDagVault.ReleaseBuffers(_vault, ref _handles);
 
             _disposed = true;
             return disposeDependency;
@@ -587,9 +663,9 @@ namespace Hecton8.Quest
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct BuildQuestDagSpatialHashJob : IJob
     {
-        [ReadOnly] public NativeArray<TriggerVolumeDTO> TriggerVolumes;
-        [ReadOnly] public NativeArray<int> TriggerNodeIndices;
-        public NativeParallelMultiHashMap<int, int>.ParallelWriter SpatialHash;
+        [ReadOnly] [NoAlias] public NativeArray<TriggerVolumeDTO> TriggerVolumes;
+        [ReadOnly] [NoAlias] public NativeArray<int> TriggerNodeIndices;
+        [NoAlias] public NativeParallelMultiHashMap<int, int>.ParallelWriter SpatialHash;
         public int TriggerCount;
 
         public void Execute()
@@ -634,22 +710,22 @@ namespace Hecton8.Quest
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct GraphResolverJob : IJob
     {
-        public NativeArray<ulong> GlobalStateMasks;
-        public NativeArray<ulong> OldStateMasks;
-        [ReadOnly] public NativeArray<QuestNodeDTO> Nodes;
-        [ReadOnly] public NativeArray<QuestNodeRuntimeDTO> NodeRuntime;
-        [ReadOnly] public NativeArray<TriggerVolumeDTO> TriggerVolumes;
-        [ReadOnly] public NativeArray<uint> RequiredItemHashes;
-        [ReadOnly] public NativeArray<int> RequiredItemQuantities;
-        [ReadOnly] public NativeArray<uint> PlayerItemHashes;
-        [ReadOnly] public NativeArray<int> PlayerItemQuantities;
-        public NativeArray<float> FactionStandings;
-        public NativeArray<QuestDagTelemetryEntry> TelemetryRing;
-        public NativeArray<int> TelemetryCursor;
-        public NativeArray<int> Counters;
-        [ReadOnly] public NativeArray<int> NoTriggerNodeIndices;
-        [ReadOnly] public NativeParallelMultiHashMap<int, int> SpatialHash;
-        public NativeQueue<StateChangedSignal>.ParallelWriter StateChangedWriter;
+        [NoAlias] public NativeArray<ulong> GlobalStateMasks;
+        [NoAlias] public NativeArray<ulong> OldStateMasks;
+        [ReadOnly] [NoAlias] public NativeArray<QuestNodeDTO> Nodes;
+        [ReadOnly] [NoAlias] public NativeArray<QuestNodeRuntimeDTO> NodeRuntime;
+        [ReadOnly] [NoAlias] public NativeArray<TriggerVolumeDTO> TriggerVolumes;
+        [ReadOnly] [NoAlias] public NativeArray<uint> RequiredItemHashes;
+        [ReadOnly] [NoAlias] public NativeArray<int> RequiredItemQuantities;
+        [ReadOnly] [NoAlias] public NativeArray<uint> PlayerItemHashes;
+        [ReadOnly] [NoAlias] public NativeArray<int> PlayerItemQuantities;
+        [NoAlias] public NativeArray<float> FactionStandings;
+        [NoAlias] public NativeArray<QuestDagTelemetryEntry> TelemetryRing;
+        [NoAlias] public NativeArray<int> TelemetryCursor;
+        [NoAlias] public NativeArray<int> Counters;
+        [ReadOnly] [NoAlias] public NativeArray<int> NoTriggerNodeIndices;
+        [ReadOnly] [NoAlias] public NativeParallelMultiHashMap<int, int> SpatialHash;
+        [NoAlias] public NativeQueue<StateChangedSignal>.ParallelWriter StateChangedWriter;
         public double3 PlayerAUP;
         public ulong CurrentTimestamp;
         public uint Frame;

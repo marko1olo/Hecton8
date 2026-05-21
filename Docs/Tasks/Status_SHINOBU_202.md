@@ -4007,3 +4007,20 @@ Mandates read before coding:
 - `git diff --check` passed for `WorldChunkResidencyManager.cs`; CRLF warning only.
 - Residual debt: the same file still contains the preexisting `AcquireWorldStreamingArray<T>` direct `GetBuffer<T>` route and 17 persistent `NativeArray<T>` fields. This loop does not claim those larger resident-state aliases as migrated.
 - Build not relaunched under the explicit no-rebuild command discipline.
+
+## Loop 224 - Quest DAG Descriptor Route
+- [x] Replaced Quest DAG retained Vault handles with generation descriptors.
+  DOD practice: global/old state masks, node DTOs, node runtime DTOs, trigger volumes, required item SOA, player item SOA, faction standings, telemetry ring/cursor, counters, trigger/no-trigger index buffers, and CSV monitor now retain `VaultGenerationHandle<T>` descriptors and open through exact BufferID, `SystemID.QuestDag`, nonzero generation, stored capacity proof, `TryResolveHandle`, and `IsCreated` proof.
+  Rejected: keeping `VaultBufferHandle<T>`, `GetBufferHandle`, `.Resolve(vault)`, `ResolvePointer`, retained handle `.IsCreated`, and retained handle `.Length` because the resolver spans scheduled Burst jobs, save-copy bridges, editor force-complete routes, CSV overrides, emergency mock data, and blackbox dumps.
+  Estimate: descriptor proof runs at buffer ensure, DAG load/mock generation, schedule, save copy, editor facade, CSV override, telemetry dump, and mutable state-ref boundaries; DTO strides, BufferIDs, OSHINO binary schema, SignalBus payloads, and QuestDag authority are unchanged.
+- [x] Added QuestDag-owned release and Burst aliasing proof.
+  DOD practice: synchronous `Dispose()` completes active resolver work before releasing all sixteen nonzero QuestDag descriptors through `ReleaseBuffer(in handle)` and tombstoning local route state. The nonblocking `Dispose(JobHandle)` path releases only when no resolver job is pending, preserving the returned dependency fence instead of freeing buffers under an active job. Spatial-hash and graph resolver jobs now mark non-overlapping native lanes with `[NoAlias]`.
+  Rejected: releasing buffers under an active nonblocking dispose dependency because the jobs hold frame-local `NativeArray` views. Rewriting DAG fixed-point logic, AUP trigger math, binary endianness policy, CSV parser, emergency mock generation, or SignalBus emission was rejected as outside this stale pointer route loop.
+  Estimate: cold lifecycle and phase-boundary only; no DTO layout, save identity, binary payload format, signal ABI, or gameplay authority change.
+
+## Compile State Update 218
+- Focused legacy route scan on `QuestDagRuntimeTypes.cs`, `QuestDagResolverRuntime.cs`, and `NarrativeDagInspectorWindow.cs` found no executable `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `ResolvePointer`, `.Resolve(...)`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `TryGetLatestCreated`, `TryGetBufferGeneration`, `VaultGenerationID`, or `.ptr` hits.
+- Descriptor route scan confirmed expected `VaultGenerationHandle<T>`, `GetGenerationHandle<T>`, `TryResolveHandle`, `ReleaseBuffers`, `ReleaseQuestDagVaultHandle`, `ReleaseBuffer(in handle)`, and `[NoAlias]`.
+- Brace counts are balanced: `QuestDagRuntimeTypes.cs` `18/18`, `QuestDagResolverRuntime.cs` `114/114`, `NarrativeDagInspectorWindow.cs` `29/29`.
+- `git diff --check` passed for the Quest DAG files; CRLF warnings only.
+- Build not relaunched under the explicit no-rebuild command discipline.

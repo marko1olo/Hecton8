@@ -337,6 +337,9 @@ namespace Hecton8.Physics
         private const float MaelstromEventHorizonRadiusFactor = 0.12f;
         internal const float MaelstromMaxVelocityMetersPerSecond = 18f;
         internal const float MaelstromLowTierMaxVelocityMetersPerSecond = 10f;
+        private const HectonQualityTier AuthorityFluidWaveTier = HectonQualityTier.Ultra;
+        private const byte AuthorityFluidHighMathTier = 1;
+        private const byte AuthorityFluidLowMathTier = 0;
         private const float MaelstromAudioIntervalSeconds = 0.45f;
         private const float MaelstromDamageIntervalSeconds = 0.35f;
         private const float MaelstromDamageMagnitude = 18f;
@@ -990,7 +993,7 @@ namespace Hecton8.Physics
                 : default;
             int vectorNoiseLength = _prebakedVectorNoiseField.IsCreated ? _prebakedVectorNoiseField.Length : 0;
             double3 aupOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
-            byte highScalabilityTier = ResolveCachedHighScalabilityTierByte();
+            byte highScalabilityTier = AuthorityFluidHighMathTier;
             float3 flow = HectonAnalyticalFlowField.SampleBaseFlow(
                 position,
                 depthBelowSurface,
@@ -1023,17 +1026,8 @@ namespace Hecton8.Physics
             for (int i = 0; i < MaxAnalyticalThrusterCount; i++)
                 HectonAnalyticalFlowField.ApplyThrusterFlow(ref flow, position, _thrusterFlowBuffer[i]);
 
-            byte lowMaelstromTier = IsLowMaelstromTier() ? (byte)1 : (byte)0;
-            if (lowMaelstromTier != 0)
-            {
-                if (TryResolveStrongestWhirlpool(out WhirlpoolFlow strongestWhirlpool))
-                    HectonAnalyticalFlowField.ApplyWhirlpoolFlow(ref flow, position, strongestWhirlpool, lowMaelstromTier);
-            }
-            else
-            {
-                for (int i = 0; i < MaxAnalyticalWhirlpoolCount; i++)
-                    HectonAnalyticalFlowField.ApplyWhirlpoolFlow(ref flow, position, _whirlpoolFlowBuffer[i], lowMaelstromTier);
-            }
+            for (int i = 0; i < MaxAnalyticalWhirlpoolCount; i++)
+                HectonAnalyticalFlowField.ApplyWhirlpoolFlow(ref flow, position, _whirlpoolFlowBuffer[i], AuthorityFluidLowMathTier);
 
             return HectonAnalyticalFlowField.ResolveFiniteFloat3OrZero(flow);
         }
@@ -1053,7 +1047,7 @@ namespace Hecton8.Physics
             float waveOffset = SampleWeatherGerstnerHeight(
                 absoluteXZ,
                 in weatherSnapshot,
-                ResolveGerstnerWaveBudget(ResolveCachedScalabilityTier()));
+                ResolveAuthorityGerstnerWaveBudget());
             return ResolveCinematicWaterLevelY() + waveOffset;
         }
 
@@ -1209,15 +1203,6 @@ namespace Hecton8.Physics
                 return false;
 
             float3 sample = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
-            if (IsLowMaelstromTier())
-            {
-                if (TryResolveStrongestWhirlpool(out WhirlpoolFlow strongestWhirlpool))
-                    warp01 = SampleMaelstromWarp01(strongestWhirlpool, sample);
-
-                warp01 = math.saturate(warp01);
-                return warp01 > 0.0001f;
-            }
-
             for (int i = 0; i < MaxAnalyticalWhirlpoolCount; i++)
             {
                 WhirlpoolFlow whirlpool = _whirlpoolFlowBuffer[i];
@@ -1579,8 +1564,6 @@ namespace Hecton8.Physics
         private HectonQualityTier _cachedScalabilityTier = HectonQualityTier.Unknown;
         private int _cachedScalabilityTierFrame = int.MinValue;
         private byte _cachedHighScalabilityTier;
-        private byte _cachedLowMaelstromTier = 1;
-        private bool _cachedLowMemoryProfile;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -2245,7 +2228,7 @@ namespace Hecton8.Physics
             out int activeWaveCount,
             out float maxWaveEnvelope)
         {
-            activeWaveCount = ResolveGerstnerWaveBudget(ResolveCachedScalabilityTier());
+            activeWaveCount = ResolveAuthorityGerstnerWaveBudget();
             maxWaveEnvelope = 0f;
             _activeGerstnerWaveCount = 0;
 
@@ -2377,7 +2360,7 @@ namespace Hecton8.Physics
                 out GerstnerWaveComponent wave1,
                 out GerstnerWaveComponent wave2);
             int activeWaveCount = math.min(
-                math.max(1, ResolveGerstnerWaveBudget(ResolveCachedScalabilityTier())),
+                math.max(1, ResolveAuthorityGerstnerWaveBudget()),
                 MaxGerstnerWaveCount);
             PublishOceanSurfaceWaveUniforms(
                 activeWaveCount,
@@ -2495,6 +2478,11 @@ namespace Hecton8.Physics
                 default:
                     return 1;
             }
+        }
+
+        private static int ResolveAuthorityGerstnerWaveBudget()
+        {
+            return ResolveGerstnerWaveBudget(AuthorityFluidWaveTier);
         }
 
         private static GerstnerWaveComponent SanitizeWave(
@@ -2762,7 +2750,7 @@ namespace Hecton8.Physics
             int vectorNoiseLength = _prebakedVectorNoiseField.IsCreated ? _prebakedVectorNoiseField.Length : 0;
             double3 vectorNoiseAupOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
             double2 waveAupOffsetXZ = new double2(vectorNoiseAupOffset.x, vectorNoiseAupOffset.z);
-            byte highScalabilityTier = ResolveCachedHighScalabilityTierByte();
+            byte highScalabilityTier = AuthorityFluidHighMathTier;
 
             JobHandle waveHandle = default;
             bool useGpuBuoyancy = gpuSurfaceParityEnabled &&
@@ -2970,8 +2958,9 @@ namespace Hecton8.Physics
                 sdfActive = 1f;
             }
 
-            bool lowTier = ResolveFluidAdvectionLowTier();
+            float advectionQualityWeight = ResolveFluidAdvectionQualityWeight();
             TryGetDynamicWakeGpuPayload(
+                advectionQualityWeight,
                 out GraphicsBuffer dynamicWakeBuffer,
                 out GraphicsBuffer dynamicWakeVectorBuffer,
                 out Vector4 dynamicWakeParams);
@@ -3006,7 +2995,7 @@ namespace Hecton8.Physics
                 Counts = new Vector4(_activeAdvectedSiltCount, _activeAdvectedBubbleCount, _activeAdvectedDebrisCount, maxCount),
                 Params = new Vector4(
                     math.max(SystemDispatcher.CurrentFrameDeltaTime, 0.0001f),
-                    lowTier ? 1f : 0f,
+                    1f - SmoothFluidAdvectionQuality(advectionQualityWeight),
                     (hasFlowTexture || hasFlowBuffer) ? 1f : 0f,
                     sdfActive),
                 Buoyancy = new Vector4(
@@ -3197,7 +3186,7 @@ namespace Hecton8.Physics
             }
 
             runtimePosition.y = math.min(runtimePosition.y, cinematicWaterLevel - 0.25f);
-            bool lowTier = IsLowFluidMathTier();
+            bool lowTier = ResolveAuthorityLowFluidMathTier();
             int queuedBubbles = QueueSplashdownBubbleRing(runtimePosition, lowTier);
             uint flags = lowTier ? SplashdownImpulseLowTierFlag : 0u;
 
@@ -3235,15 +3224,6 @@ namespace Hecton8.Physics
             return true;
         }
 
-        private bool IsLowFluidMathTier()
-        {
-            HectonQualityTier tier = ResolveCachedScalabilityTier();
-            return tier == HectonQualityTier.Unknown ||
-                   tier == HectonQualityTier.Low ||
-                   tier == HectonQualityTier.Mx350 ||
-                   _cachedLowMemoryProfile;
-        }
-
         private static bool IsSplashdownInsideFlowVolume(float3 runtimePosition, float3 flowCenter)
         {
             if (!math.all(math.isfinite(runtimePosition)) || !math.all(math.isfinite(flowCenter)))
@@ -3254,6 +3234,11 @@ namespace Hecton8.Physics
             return delta.x <= activeExtent &&
                    delta.y <= activeExtent &&
                    delta.z <= activeExtent;
+        }
+
+        private static bool ResolveAuthorityLowFluidMathTier()
+        {
+            return AuthorityFluidLowMathTier != 0;
         }
 
         private int QueueSplashdownBubbleRing(float3 runtimePosition, bool lowTier)
@@ -3376,21 +3361,6 @@ namespace Hecton8.Physics
                 ? SplashdownImpulseJobInvalidFlag
                 : 0u;
 
-            if (IsLowFluidMathTier())
-            {
-                flags |= SplashdownImpulseLowTierFlag;
-                _lastSplashdownFluidImpulseCount = 0;
-                _splashdownImpulseRemainingSeconds = 0f;
-                _splashdownImpulseDurationSeconds = 0f;
-                _splashdownImpulseUploaded = false;
-                ReleaseGraphicsBuffer(ref _gpuSplashdownImpulseBuffer);
-                _splashdownImpulseFlags |= flags;
-                PublishSplashdownFluidImpulseTelemetry(0, _splashdownImpulseFlags);
-                if ((flags & SplashdownImpulseJobInvalidFlag) != 0u)
-                    DumpAbyssalFlowTelemetryOnce(_splashdownImpulseFlags);
-                return;
-            }
-
             if (affectedCount <= 0)
             {
                 flags |= SplashdownImpulseNoAffectedCellsFlag;
@@ -3466,7 +3436,6 @@ namespace Hecton8.Physics
         private Vector4 ResolveSplashdownImpulseParams()
         {
             if (!_splashdownImpulseUploaded ||
-                IsLowFluidMathTier() ||
                 _splashdownImpulseRemainingSeconds <= 0f ||
                 _lastSplashdownFluidImpulseCount <= 0)
             {
@@ -3527,27 +3496,31 @@ namespace Hecton8.Physics
             }
         }
 
-        private bool ResolveFluidAdvectionLowTier()
+        private static float ResolveFluidAdvectionQualityWeight()
         {
-            HectonQualityTier tier = ResolveCachedScalabilityTier();
-            return tier == HectonQualityTier.Unknown ||
-                   tier == HectonQualityTier.Low ||
-                   tier == HectonQualityTier.Mx350 ||
-                   _cachedLowMemoryProfile;
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.isfinite(quality) ? math.saturate(quality) : 0f;
         }
 
-        private static Vector4 ResolveGlobalWakeParamsForFluidAdvection(bool lowTier)
+        private static float SmoothFluidAdvectionQuality(float qualityWeight)
+        {
+            float quality = math.isfinite(qualityWeight) ? math.saturate(qualityWeight) : 0f;
+            return quality * quality * (3f - 2f * quality);
+        }
+
+        private static Vector4 ResolveGlobalWakeParamsForFluidAdvection(float qualityWeight)
         {
             Vector4 wakeParams = Shader.GetGlobalVector(_GlobalWakeParamsId);
             if (!IsFiniteVector(wakeParams))
-                return lowTier ? new Vector4(0f, 1f, 0f, 0f) : Vector4.zero;
+                return Vector4.zero;
 
-            float maxSlotLimit = lowTier ? DynamicWakeLowTierGpuCapacity : DynamicWakeGpuCapacity;
+            float quality = SmoothFluidAdvectionQuality(qualityWeight);
+            float maxSlotLimit = math.lerp(DynamicWakeLowTierGpuCapacity, DynamicWakeGpuCapacity, quality);
             float slotLimit = math.clamp(wakeParams.x, 0f, maxSlotLimit);
             float activeCount = math.clamp(wakeParams.z, 0f, slotLimit);
             return new Vector4(
                 slotLimit,
-                lowTier ? 1f : 0f,
+                1f - quality,
                 activeCount,
                 math.saturate(wakeParams.w));
         }
@@ -3557,14 +3530,27 @@ namespace Hecton8.Physics
             out GraphicsBuffer dynamicWakeVectorBuffer,
             out Vector4 dynamicWakeParams)
         {
+            return TryGetDynamicWakeGpuPayload(
+                ResolveFluidAdvectionQualityWeight(),
+                out dynamicWakeBuffer,
+                out dynamicWakeVectorBuffer,
+                out dynamicWakeParams);
+        }
+
+        private bool TryGetDynamicWakeGpuPayload(
+            float qualityWeight,
+            out GraphicsBuffer dynamicWakeBuffer,
+            out GraphicsBuffer dynamicWakeVectorBuffer,
+            out Vector4 dynamicWakeParams)
+        {
             dynamicWakeBuffer = _emptyAbyssalFlowBuffer;
             dynamicWakeVectorBuffer = _emptyAbyssalFlowBuffer;
 
-            bool lowTier = ResolveFluidAdvectionLowTier();
-            dynamicWakeParams = ResolveGlobalWakeParamsForFluidAdvection(lowTier);
+            float quality = SmoothFluidAdvectionQuality(qualityWeight);
+            dynamicWakeParams = ResolveGlobalWakeParamsForFluidAdvection(qualityWeight);
             if (dynamicWakeParams.z <= 0.5f)
             {
-                dynamicWakeParams = lowTier ? new Vector4(0f, 1f, 0f, 0f) : Vector4.zero;
+                dynamicWakeParams = Vector4.zero;
                 return false;
             }
 
@@ -3573,23 +3559,26 @@ namespace Hecton8.Physics
                     out NativeArray<float4> dynamicWakes,
                     out NativeArray<float4> dynamicWakeVectors))
             {
-                dynamicWakeParams = lowTier ? new Vector4(0f, 1f, 0f, 0f) : Vector4.zero;
+                dynamicWakeParams = Vector4.zero;
                 return false;
             }
 
             int uploadCount = math.min(DynamicWakeGpuCapacity, math.min(dynamicWakes.Length, dynamicWakeVectors.Length));
             if (uploadCount <= 0)
             {
-                dynamicWakeParams = lowTier ? new Vector4(0f, 1f, 0f, 0f) : Vector4.zero;
+                dynamicWakeParams = Vector4.zero;
                 return false;
             }
 
             GraphicsBufferUploadUtility.UploadNativeArray(_dynamicWakeBuffer, dynamicWakes, uploadCount);
             GraphicsBufferUploadUtility.UploadNativeArray(_dynamicWakeVectorBuffer, dynamicWakeVectors, uploadCount);
 
-            float slotLimit = math.clamp(dynamicWakeParams.x, 0f, math.min(uploadCount, lowTier ? DynamicWakeLowTierGpuCapacity : DynamicWakeGpuCapacity));
+            float slotLimit = math.clamp(
+                dynamicWakeParams.x,
+                0f,
+                math.min(uploadCount, math.lerp(DynamicWakeLowTierGpuCapacity, DynamicWakeGpuCapacity, quality)));
             float activeCount = math.clamp(dynamicWakeParams.z, 0f, slotLimit);
-            dynamicWakeParams = new Vector4(slotLimit, lowTier ? 1f : 0f, activeCount, math.saturate(dynamicWakeParams.w));
+            dynamicWakeParams = new Vector4(slotLimit, 1f - quality, activeCount, math.saturate(dynamicWakeParams.w));
             dynamicWakeBuffer = _dynamicWakeBuffer;
             dynamicWakeVectorBuffer = _dynamicWakeVectorBuffer;
             return dynamicWakeBuffer != null &&
@@ -3977,7 +3966,7 @@ namespace Hecton8.Physics
 
             _lastFluidAdvectionTelemetryFrame = frame;
             int activeCount = _activeAdvectedSiltCount + _activeAdvectedBubbleCount + _activeAdvectedDebrisCount;
-            int activeWakeCount = math.max(0, (int)ResolveGlobalWakeParamsForFluidAdvection(ResolveFluidAdvectionLowTier()).z);
+            int activeWakeCount = math.max(0, (int)ResolveGlobalWakeParamsForFluidAdvection(ResolveFluidAdvectionQualityWeight()).z);
             int index = _fluidAdvectionTelemetryCursor;
             uint flags = _fluidAdvectionRenderGraphQueued ? 1u : 0u;
             flags |= math.lengthsq(_pendingFluidAdvectionRuntimeShift) > 0.000001f ? 2u : 0u;
@@ -5249,22 +5238,13 @@ namespace Hecton8.Physics
             _activeThrusterFlowCount = thrusterWriteIndex;
 
             int whirlpoolWriteIndex = 0;
-            bool lowTier = IsLowMaelstromTier();
-            if (lowTier)
+            for (int i = 0; i < MaxAnalyticalWhirlpoolCount; i++)
             {
-                if (TryResolveStrongestWhirlpool(out WhirlpoolFlow strongestWhirlpool))
-                    _activeWhirlpools[whirlpoolWriteIndex++] = strongestWhirlpool;
-            }
-            else
-            {
-                for (int i = 0; i < MaxAnalyticalWhirlpoolCount; i++)
-                {
-                    WhirlpoolFlow whirlpool = _whirlpoolFlowBuffer[i];
-                    if (!IsValidWhirlpool(whirlpool))
-                        continue;
+                WhirlpoolFlow whirlpool = _whirlpoolFlowBuffer[i];
+                if (!IsValidWhirlpool(whirlpool))
+                    continue;
 
-                    _activeWhirlpools[whirlpoolWriteIndex++] = whirlpool;
-                }
+                _activeWhirlpools[whirlpoolWriteIndex++] = whirlpool;
             }
 
             for (int i = whirlpoolWriteIndex; i < MaxAnalyticalWhirlpoolCount; i++)
@@ -5293,51 +5273,26 @@ namespace Hecton8.Physics
             int writeIndex = 0;
             float maxRadius = 0f;
             float maxIntensity = 0f;
-            bool lowTier = IsLowMaelstromTier();
-
-            if (lowTier)
+            for (int i = 0; i < MaxAnalyticalWhirlpoolCount; i++)
             {
-                if (TryResolveStrongestWhirlpool(out WhirlpoolFlow strongestWhirlpool))
+                WhirlpoolFlow whirlpool = _whirlpoolFlowBuffer[i];
+                if (!IsValidWhirlpool(whirlpool))
+                    continue;
+
+                float radius = math.max(MaelstromMinimumRadiusMeters, whirlpool.Padding1);
+                float intensityOverRadius = math.max(0f, whirlpool.Padding0);
+                if (_activeMaelstroms.IsCreated && writeIndex < _activeMaelstroms.Length)
                 {
-                    float radius = math.max(MaelstromMinimumRadiusMeters, strongestWhirlpool.Padding1);
-                    float intensityOverRadius = math.max(0f, strongestWhirlpool.Padding0);
-                    if (_activeMaelstroms.IsCreated && _activeMaelstroms.Length > 0)
-                    {
-                        _activeMaelstroms[0] = new float4(
-                            strongestWhirlpool.CenterWS.x,
-                            strongestWhirlpool.CenterWS.y,
-                            strongestWhirlpool.CenterWS.z,
-                            intensityOverRadius);
-                    }
-
-                    maxRadius = radius;
-                    maxIntensity = intensityOverRadius * radius;
-                    writeIndex = 1;
+                    _activeMaelstroms[writeIndex] = new float4(
+                        whirlpool.CenterWS.x,
+                        whirlpool.CenterWS.y,
+                        whirlpool.CenterWS.z,
+                        intensityOverRadius);
                 }
-            }
-            else
-            {
-                for (int i = 0; i < MaxAnalyticalWhirlpoolCount; i++)
-                {
-                    WhirlpoolFlow whirlpool = _whirlpoolFlowBuffer[i];
-                    if (!IsValidWhirlpool(whirlpool))
-                        continue;
 
-                    float radius = math.max(MaelstromMinimumRadiusMeters, whirlpool.Padding1);
-                    float intensityOverRadius = math.max(0f, whirlpool.Padding0);
-                    if (_activeMaelstroms.IsCreated && writeIndex < _activeMaelstroms.Length)
-                    {
-                        _activeMaelstroms[writeIndex] = new float4(
-                            whirlpool.CenterWS.x,
-                            whirlpool.CenterWS.y,
-                            whirlpool.CenterWS.z,
-                            intensityOverRadius);
-                    }
-
-                    maxRadius = math.max(maxRadius, radius);
-                    maxIntensity = math.max(maxIntensity, intensityOverRadius * radius);
-                    writeIndex++;
-                }
+                maxRadius = math.max(maxRadius, radius);
+                maxIntensity = math.max(maxIntensity, intensityOverRadius * radius);
+                writeIndex++;
             }
 
             if (_activeMaelstroms.IsCreated)
@@ -5351,7 +5306,7 @@ namespace Hecton8.Physics
                 writeIndex,
                 maxRadius,
                 maxIntensity,
-                lowTier ? 1f : 0f);
+                0f);
         }
 
         private static bool IsValidWhirlpool(WhirlpoolFlow whirlpool)
@@ -5407,12 +5362,6 @@ namespace Hecton8.Physics
             float inside01 = 1f - math.saturate(distanceSq * whirlpool.InvRadiusSq);
             float intensity01 = math.saturate(whirlpool.Padding0 * 0.08f);
             return inside01 * intensity01;
-        }
-
-        private bool IsLowMaelstromTier()
-        {
-            ResolveCachedScalabilityTier();
-            return _cachedLowMaelstromTier != 0;
         }
 
         private static float ResolveMaelstromIntensity(float tangentialStrength, float centripetalStrength, float verticalPull)
@@ -5592,9 +5541,7 @@ namespace Hecton8.Physics
                 ActiveCount = _activeMaelstromCount,
                 Flags = flags,
                 StateHash = BuildMaelstromTelemetryHash(primary, compactPrimary, flags),
-                EscapeVelocityClamp = IsLowMaelstromTier()
-                    ? MaelstromLowTierMaxVelocityMetersPerSecond
-                    : MaelstromMaxVelocityMetersPerSecond,
+                EscapeVelocityClamp = MaelstromMaxVelocityMetersPerSecond,
                 EventHorizonRadius = eventHorizonRadius
             };
             _maelstromTelemetryCursor = (index + 1) % _maelstromTelemetry.Length;
@@ -6903,19 +6850,7 @@ namespace Hecton8.Physics
             _cachedScalabilityTier = tier;
             _cachedScalabilityTierFrame = frame;
             _cachedHighScalabilityTier = DistanceMath.IsHighQualityTier(tier) ? (byte)1 : (byte)0;
-            _cachedLowMaelstromTier = tier == HectonQualityTier.Unknown ||
-                                      tier == HectonQualityTier.Low ||
-                                      tier == HectonQualityTier.Mx350
-                ? (byte)1
-                : (byte)0;
-            _cachedLowMemoryProfile = GlobalRegistry.H8_LOW_MEMORY_PROFILE;
             return tier;
-        }
-
-        private byte ResolveCachedHighScalabilityTierByte()
-        {
-            ResolveCachedScalabilityTier();
-            return _cachedHighScalabilityTier;
         }
 
         private bool ResolveCachedHighScalabilityTier()

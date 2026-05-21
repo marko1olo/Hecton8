@@ -48,6 +48,7 @@ namespace Hecton8.Ecosystem
         private const ushort MigrationCellFlagNoPopulationSaturated = unchecked((ushort)~MigrationCellFlagPopulationSaturated);
         private const SystemID NativeMemorySystemId = SystemID.AIEcology;
         private const float AuthoritativeQualityWeight = 1f;
+        private const float MigrationFallbackTimelineMaxSeconds = 16777215f;
 
         private bool _registeredToTick;
         private bool _registeredLateFrameTick;
@@ -55,6 +56,7 @@ namespace Hecton8.Ecosystem
         private int3 _migrationGridResolution;
         private int _migrationGridCellCount;
         private float _coldTickAccumulator;
+        private float _fallbackTimelineGameSeconds;
         private float _lastColdTickRuntimeSeconds = -1f;
         private float _debugLastSeasonalPhase;
         private float _debugLastMigrationGridMagnitude;
@@ -692,7 +694,9 @@ namespace Hecton8.Ecosystem
                 return;
 
             float qualityScaledIntervalSeconds = ResolveMigrationFieldColdTickIntervalSeconds();
-            _coldTickAccumulator += ResolveColdTickDeltaSeconds(Time.unscaledTime, qualityScaledIntervalSeconds);
+            float coldDeltaSeconds = ResolveColdTickDeltaSeconds(Time.unscaledTime, qualityScaledIntervalSeconds);
+            AdvanceFallbackTimeline(coldDeltaSeconds);
+            _coldTickAccumulator += coldDeltaSeconds;
             if (_coldTickAccumulator < qualityScaledIntervalSeconds)
                 return;
 
@@ -705,7 +709,7 @@ namespace Hecton8.Ecosystem
             if (!RefreshMigrationNativeViews() || !_migrationGridBack.IsCreated || _migrationGridCellCount <= 0)
                 return;
 
-            float timelineSeconds = ResolveTimelineGameSeconds(Time.time);
+            float timelineSeconds = ResolveTimelineGameSeconds(0f);
             FlushPendingBloodCloudPoiWrites(timelineSeconds);
             PruneExpiredMigrationSwarmStates(timelineSeconds);
             float seasonalPhase = ResolveSeasonalPhase(timelineSeconds);
@@ -753,7 +757,7 @@ namespace Hecton8.Ecosystem
                 MigrationGridCell firstCell = _migrationGridFront[0];
                 _debugLastMigrationGridDirection = new Vector3(firstCell.Direction.x, firstCell.Direction.y, firstCell.Direction.z);
             }
-            float gameTimeSeconds = ResolveTimelineGameSeconds(Time.time);
+            float gameTimeSeconds = ResolveTimelineGameSeconds(0f);
             PruneExpiredMigrationSwarmStates(gameTimeSeconds);
             ApplyMigrationSwarmPopulationCountsToFrontGrid();
             if (FlushPendingBloodCloudPoiWrites(gameTimeSeconds))
@@ -900,7 +904,7 @@ namespace Hecton8.Ecosystem
             if (!RefreshMigrationNativeViews() || !_migrationSwarmStates.IsCreated || _migrationSwarmStates.Length == 0)
                 return;
 
-            float gameTimeSeconds = ResolveTimelineGameSeconds(Time.time);
+            float gameTimeSeconds = ResolveTimelineGameSeconds(0f);
             PruneExpiredMigrationSwarmStates(gameTimeSeconds);
             int3 aupCell = ResolveMigrationAupCell(origin);
             uint hash = Hash((uint)speciesId ^ HashInt3(aupCell));
@@ -1232,7 +1236,17 @@ namespace Hecton8.Ecosystem
             if (celestialEngine != null)
                 return celestialEngine.GameTime;
 
-            return fallbackRuntimeSeconds > 0f ? fallbackRuntimeSeconds : Time.time;
+            return fallbackRuntimeSeconds > 0f ? fallbackRuntimeSeconds : _fallbackTimelineGameSeconds;
+        }
+
+        private void AdvanceFallbackTimeline(float deltaSeconds)
+        {
+            if (!math.isfinite(deltaSeconds) || deltaSeconds <= 0f)
+                return;
+
+            _fallbackTimelineGameSeconds = math.min(
+                MigrationFallbackTimelineMaxSeconds,
+                math.max(0f, _fallbackTimelineGameSeconds + deltaSeconds));
         }
 
         private float ResolveSeasonalPhase(float gameTimeSeconds)

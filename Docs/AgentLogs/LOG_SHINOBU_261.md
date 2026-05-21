@@ -649,3 +649,9 @@ What was wrong: `PHYSICS_OPTIMIZATION_REPORT_SHINOBU_261.json` carried stale Pla
 What was done: refreshed line numbers to `6924`, `6932`, `6984`, `7014` and recorded `2178` scanned scripts from the shell fallback scope.
 Cinematic Cheats used: none.
 Exact Microseconds saved: 0 runtime us.
+
+## Verification: Post Readback/Coalescing Static Gate
+What was wrong: runtime and proof files changed after the last gate, and one historical status line still contained a stale removed API token.
+What was done: scrubbed the stale token from `Status_SHINOBU_261.md`; strict stale-token scan returned `STALE_TOKENS_CLEAR`, runtime forbidden-pattern scan returned `RUNTIME_FORBIDDEN_CLEAR`, JSON reports parsed, scoped comment/string-aware brace scan returned `SCOPED_CS_BRACES_OK`, and scoped `git diff --check` reported only LF-to-CRLF repository warnings.
+Cinematic Cheats used: none; this is proof verification for the Dear Lie cache-maintenance patch.
+Exact Microseconds saved: 0 runtime us. Build not launched: CPU average 51 with active `csc` (`Id=16044`) and `dotnet` (`Id=34832`).

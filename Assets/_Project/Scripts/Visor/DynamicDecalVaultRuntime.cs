@@ -561,24 +561,15 @@ namespace Hecton8.Visor
 
                     ref DecalRuntimeStateDTO state = ref UnsafeUtility.AsRef<DecalRuntimeStateDTO>(statePtr);
                     state.NormalRefractionIntensity = tuning.NormalRefractionIntensity;
+                    float targetQuality = ResolveGlobalQualityWeight();
+                    float thermalPressure = ResolveThermalPressure01();
                     bool hadRuntimeState = (state.Flags & RuntimeInitializedFlag) != 0u;
                     if (!hadRuntimeState)
                     {
-                        ClearDecalsJob clearJob = new ClearDecalsJob
-                        {
-                            Decals = (VisorDecalDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(instances),
-                            Capacity = math.min(instances.Length, MaxCapacity)
-                        };
-                        int clearCount = math.min(instances.Length, MaxCapacity);
-                        for (int i = 0; i < clearCount; i++)
-                            clearJob.Execute(i);
-
-                        state = default;
-                        state.Flags = RuntimeInitializedFlag;
+                        ClearColdVisualBuffers();
+                        state = CreateInitializedRuntimeState(targetQuality, thermalPressure, tuning);
                     }
 
-                    float targetQuality = ResolveGlobalQualityWeight();
-                    float thermalPressure = ResolveThermalPressure01();
                     float quality = ResolveEffectiveQualityWeight(targetQuality, state.GlobalQualityWeight, deltaTime, thermalPressure, hadRuntimeState);
                     int maxActive = ResolveMaxActiveDecals(quality, tuning);
                     float decayRate = ResolveDecayRate(deltaTime, quality, thermalPressure, tuning);
@@ -1069,6 +1060,8 @@ namespace Hecton8.Visor
                 HasDynamicDecalVaultBuffer(_vault, in _materialProfileHandle, DynamicDecalVaultBufferIds.MaterialProfiles, MaxMaterialProfiles) &&
                 HasDynamicDecalVaultBuffer(_vault, in _csvScratchHandle, DynamicDecalVaultBufferIds.CsvScratch, CsvScratchBytes))
             {
+                SeedDefaultTuning();
+                SeedColdRuntimeState();
                 return true;
             }
 
@@ -1079,13 +1072,13 @@ namespace Hecton8.Visor
                     ref _instancesHandle,
                     DynamicDecalVaultBufferIds.Instances,
                     MaxCapacity,
-                    NativeArrayOptions.UninitializedMemory,
+                    NativeArrayOptions.ClearMemory,
                     out _) &&
                 EnsureDynamicDecalVaultBuffer(
                     ref _uploadHandle,
                     DynamicDecalVaultBufferIds.UploadScratch,
                     MaxCapacity,
-                    NativeArrayOptions.UninitializedMemory,
+                    NativeArrayOptions.ClearMemory,
                     out _) &&
                 EnsureDynamicDecalVaultBuffer(
                     ref _stateHandle,
@@ -1109,7 +1102,7 @@ namespace Hecton8.Visor
                     ref _materialProfileHandle,
                     DynamicDecalVaultBufferIds.MaterialProfiles,
                     MaxMaterialProfiles,
-                    NativeArrayOptions.UninitializedMemory,
+                    NativeArrayOptions.ClearMemory,
                     out _) &&
                 EnsureDynamicDecalVaultBuffer(
                     ref _csvScratchHandle,
@@ -1125,6 +1118,7 @@ namespace Hecton8.Visor
             }
 
             SeedDefaultTuning();
+            SeedColdRuntimeState();
             return true;
         }
 
@@ -1260,6 +1254,70 @@ namespace Hecton8.Visor
             tuningArray[0] = tuning;
             _lastTuningSnapshot = tuning;
             _hasTuningSnapshot = true;
+        }
+
+        private static void SeedColdRuntimeState()
+        {
+            if (!TryResolveDynamicDecalVaultBuffer(ref _stateHandle, DynamicDecalVaultBufferIds.RuntimeState, 1, out NativeArray<DecalRuntimeStateDTO> stateArray))
+                return;
+
+            DecalRuntimeStateDTO state = stateArray[0];
+            if ((state.Flags & RuntimeInitializedFlag) != 0u)
+            {
+                _lastRuntimeStateSnapshot = state;
+                _hasRuntimeStateSnapshot = true;
+                return;
+            }
+
+            ClearColdVisualBuffers();
+            state = CreateInitializedRuntimeState(
+                ResolveGlobalQualityWeight(),
+                ResolveThermalPressure01(),
+                ResolveLiveTuning());
+            stateArray[0] = state;
+            _lastRuntimeStateSnapshot = state;
+            _hasRuntimeStateSnapshot = true;
+        }
+
+        private static DecalRuntimeStateDTO CreateInitializedRuntimeState(
+            float quality,
+            float thermalPressure,
+            DecalTuningDTO tuning)
+        {
+            float safeQuality = math.saturate(math.isfinite(quality) ? quality : 0f);
+            float safeThermal = math.saturate(math.isfinite(thermalPressure) ? thermalPressure : 0f);
+            DecalRuntimeStateDTO state = default;
+            state.Flags = RuntimeInitializedFlag;
+            state.GlobalQualityWeight = safeQuality;
+            state.ThermalPressure01 = safeThermal;
+            state.MaxActiveThisFrame = ResolveMaxActiveDecals(safeQuality, tuning);
+            state.NormalRefractionIntensity = math.clamp(
+                math.isfinite(tuning.NormalRefractionIntensity) ? tuning.NormalRefractionIntensity : ResolveDefaultTuning().NormalRefractionIntensity,
+                0f,
+                2.5f);
+            return state;
+        }
+
+        private static void ClearColdVisualBuffers()
+        {
+            ClearColdVaultBuffer(ref _instancesHandle, DynamicDecalVaultBufferIds.Instances, MaxCapacity);
+            ClearColdVaultBuffer(ref _uploadHandle, DynamicDecalVaultBufferIds.UploadScratch, MaxCapacity);
+        }
+
+        private static void ClearColdVaultBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength) where T : struct
+        {
+            if (!TryResolveDynamicDecalVaultBuffer(ref handle, bufferId, requiredLength, out NativeArray<T> buffer))
+                return;
+
+            int safeLength = math.min(buffer.Length, requiredLength);
+            if (safeLength <= 0)
+                return;
+
+            void* ptr = NativeArrayUnsafeUtility.GetUnsafePtr(buffer);
+            UnsafeUtility.MemClear(ptr, (long)UnsafeUtility.SizeOf<T>() * safeLength);
         }
 
         private static DecalTuningDTO ResolveDefaultTuning()

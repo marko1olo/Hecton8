@@ -228,3 +228,15 @@ Cinematic Cheats used: Existing predator lunge CCD remains the Dear Lie: a sweep
 Exact Microseconds saved: 0 us measured. Static outcome: `unityTimeCritical` dropped from `964` to `962`; `unityTimeRiskGameplayDelta` dropped from `3` to `1`. Remaining buckets: `806` frame stamp/telemetry rows, `80` gameplay wall-clock rows, `38` cooldown/perf-log rows, `37` editor/proof rows, and one gameplay delta row in shoreline foam presentation.
 
 Evidence: `python Tools\test_polish_mandate_static_audit.py` ran 11 tests OK. `python -X faulthandler Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_time_risk_buckets.json --report-path Docs\Reports\PROJECT_AUDIT_polish_time_risk_buckets.md` returned `PASS_WITH_WARNINGS` with `unityTimeRiskGameplayDelta=1 files=1`. Focused `rg -n "Time\.(deltaTime|fixedDeltaTime)"` over the three inspected files now leaves only `ShorelineFoamGraftContracts.cs:616`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Destructible Organic Owner Clock
+
+What was wrong: `DestructibleOrganicManager` used `Time.time` as authority time for organic gameplay facts: corpse resource expiry, decomposition start, partial damage metadata, wilt suppression, untouched overgrowth, mature spore acoustic cadence, tool-hit touch time, regrowth finalization, and Dear Lie regeneration restore windows. This was the top wall-clock file in the time triage and not safe to dismiss as telemetry.
+
+What was done: Added `_organicClockSeconds`, advanced only from dispatcher `Tick(float deltaTime)`, and routed all owner-state timing through `ResolveOrganicClockSeconds()`. `Time.frameCount` remains only for frame-stamp telemetry and scheduling windows. `Time.realtimeSinceStartupAsDouble` remains only for Dear Lie job microsecond telemetry, not gameplay state.
+
+Cinematic Cheats used: Existing Dear Lie flora destruction remains intact: spatial hash + Burst lane resolution + visual regen queue instead of GameObject/physics destruction simulation. This patch makes that fake use owner time rather than Unity wall clock.
+
+Exact Microseconds saved: 0 us measured. Static outcome: `unityTimeCritical` dropped from `962` to `940`; `unityTimeRiskGameplayWallClock` dropped from `80` to `60`.
+
+Evidence: Focused `rg` finds no `Time.time`, `Time.deltaTime`, or `Time.fixedDeltaTime` in `Assets/_Project/Scripts/World/DestructibleOrganicManager.cs`. `python -X faulthandler Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_time_after_organic_clock.json --report-path Docs\Reports\PROJECT_AUDIT_polish_time_after_organic_clock.md` returned `PASS_WITH_WARNINGS` with `unityTimeCritical=940`, `unityTimeWallClock=97`, and `unityTimeRiskGameplayDelta=1`. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

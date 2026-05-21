@@ -51,13 +51,14 @@ namespace Hecton8.Quest
                 return;
             }
 
-            if (!_handles.GlobalStateMasks.IsCreated)
-                _handles = QuestDagVault.EnsureBuffers(vault);
-
             if (!QuestDagVault.TryResolveBuffers(vault, ref _handles, out QuestDagBuffers buffers))
             {
-                EditorGUILayout.HelpBox("Quest DAG buffers are unavailable.", MessageType.Error);
-                return;
+                _handles = QuestDagVault.EnsureBuffers(vault);
+                if (!QuestDagVault.TryResolveBuffers(vault, ref _handles, out buffers))
+                {
+                    EditorGUILayout.HelpBox("Quest DAG buffers are unavailable.", MessageType.Error);
+                    return;
+                }
             }
 
             DrawToolbar(vault, buffers);

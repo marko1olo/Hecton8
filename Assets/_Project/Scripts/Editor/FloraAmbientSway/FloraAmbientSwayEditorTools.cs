@@ -27,7 +27,7 @@ namespace Hecton8.Editor.FloraAmbientSway
                 return;
             }
 
-            Debug.Log("SHINOBU_267 flora ambient sway layouts valid. Params=32 Telemetry=32 Profile=32.");
+            Debug.Log("SHINOBU_267 flora ambient sway layouts valid. Params=" + paramsSize + " Telemetry=" + telemetrySize + " Profile=" + profileSize + ".");
         }
 
         private static void ValidateOnLoad()
@@ -496,6 +496,7 @@ namespace Hecton8.Editor.FloraAmbientSway
         {
             bool layout = FloraAmbientSwayRuntime.ValidateFloraSwayLayouts(out int paramsSize, out int telemetrySize, out int profileSize);
             string runtime = ReadProjectFile("Assets/_Project/Scripts/World/FloraAmbientSway/FloraAmbientSwayRuntime.cs");
+            string editor = ReadProjectFile("Assets/_Project/Scripts/Editor/FloraAmbientSway/FloraAmbientSwayEditorTools.cs");
             string shader = ReadProjectFile("Assets/_Project/Art/Shaders/Hecton_IndirectVegetation.shader");
             string runtimeAsmdef = ReadProjectFile("Assets/_Project/Scripts/World/FloraAmbientSway/Hecton8.World.FloraAmbientSway.asmdef");
             string editorAsmdef = ReadProjectFile("Assets/_Project/Scripts/Editor/FloraAmbientSway/Hecton8.World.FloraAmbientSway.Editor.asmdef");
@@ -522,6 +523,13 @@ namespace Hecton8.Editor.FloraAmbientSway
                 !shader.Contains(forbiddenMx350Keyword) &&
                 !shader.Contains(forbiddenHighKeyword);
             bool telemetry = runtime.Contains("SwayTelemetryCapacity = 300") && runtime.Contains("Dump_SHINOBU_267.bin");
+            bool vertexColorDebug =
+                editor.Contains("Toggle Vertex Color Debug") &&
+                editor.Contains("Shader.SetGlobalFloat(DebugId") &&
+                editor.Contains("SceneView.RepaintAll()") &&
+                shader.Contains("_HectonFloraVertexColorDebug") &&
+                shader.Contains("_HectonFloraVertexColorDebug > 0.5 ? half4(input.color)") &&
+                shader.Contains("return half4(input.biolumColor.rgb, 1.0h)");
             string forbiddenManagedDumpWriter = "Binary" + "Writer";
             bool littleEndianDump =
                 runtime.Contains("WriteUInt32LittleEndian(stream, TelemetryDumpMagic)") &&
@@ -605,7 +613,7 @@ namespace Hecton8.Editor.FloraAmbientSway
                 HasProjectFile("Assets/_Project/Scripts/Editor/FloraAmbientSway.meta") &&
                 HasProjectFile("Assets/_Project/Scripts/Editor/FloraAmbientSway/FloraAmbientSwayEditorTools.cs.meta") &&
                 HasProjectFile("Assets/_Project/Scripts/Editor/FloraAmbientSway/Hecton8.World.FloraAmbientSway.Editor.asmdef.meta");
-            bool pass = layout && dispatcher && fmod && upload && shaderQuality && telemetry && littleEndianDump && readAccessorPurity && runtimeQualityFailClosed && unsafeDtoMutation && hotOwnerMutationAndMath && hotValueNewHygiene && burstFloatMode && burstFunctionPointers && aotFunctionPointerAbi && asmdefBoundary && metaIdentity;
+            bool pass = layout && dispatcher && fmod && upload && shaderQuality && telemetry && vertexColorDebug && littleEndianDump && readAccessorPurity && runtimeQualityFailClosed && unsafeDtoMutation && hotOwnerMutationAndMath && hotValueNewHygiene && burstFloatMode && burstFunctionPointers && aotFunctionPointerAbi && asmdefBoundary && metaIdentity;
             if (!pass)
             {
                 Debug.LogError(
@@ -618,6 +626,7 @@ namespace Hecton8.Editor.FloraAmbientSway
                     " upload=" + upload +
                     " shaderQuality=" + shaderQuality +
                     " blackBox=" + telemetry +
+                    " vertexColorDebug=" + vertexColorDebug +
                     " littleEndianDump=" + littleEndianDump +
                     " readAccessorPurity=" + readAccessorPurity +
                     " runtimeQualityFailClosed=" + runtimeQualityFailClosed +
@@ -632,7 +641,7 @@ namespace Hecton8.Editor.FloraAmbientSway
                 return;
             }
 
-            Debug.Log("SHINOBU_267 self-audit passed. 0 hot managed allocations by static route; Params=32, Telemetry=32, Profile=32, asmdef/meta route locked.");
+            Debug.Log("SHINOBU_267 self-audit passed. 0 hot managed allocations by static route; Params=" + paramsSize + ", Telemetry=" + telemetrySize + ", Profile=" + profileSize + ", asmdef/meta route locked.");
         }
 
         private static string ReadProjectFile(string path)

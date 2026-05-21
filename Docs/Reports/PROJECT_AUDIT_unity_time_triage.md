@@ -70,3 +70,22 @@ The remaining high-volume risk is not `deltaTime`; it is player-runtime wall-clo
 2. Convert remaining `Time.deltaTime` only when the caller has a dispatcher `dt` route. For presentation-only VFX, document it as non-authoritative or route through visual frame timing.
 3. For `Time.time`, split presentation cooldowns from gameplay truth. Gameplay timers should use owner-local accumulated dispatcher seconds or lockstep tick counters.
 4. `DestructibleOrganicManager` is the next real wall-clock owner to inspect because it owns destruction/regrowth facts and also appears in private-native ownership debt.
+
+## 2026-05-22 Organic Clock Follow-Up
+
+`DestructibleOrganicManager` has now been migrated off `Time.time` for owner-state timing. It uses a local organic clock advanced through dispatcher `Tick(float deltaTime)` and feeds that value into corpse expiry, decomposition, wilt, touch, overgrowth, mature spore cadence, damage visuals, and Dear Lie regeneration.
+
+Focused proof:
+
+- `rg -n "Time\.time" Assets/_Project/Scripts/World/DestructibleOrganicManager.cs` returns no rows.
+- `rg -n "Time\.fixedDeltaTime|Time\.deltaTime" Assets/_Project/Scripts/World/DestructibleOrganicManager.cs` returns no rows.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_time_after_organic_clock.json`.
+
+Updated static counts from that artifact:
+
+- `unityTimeCritical`: 940
+- `unityTimeWallClock`: 97
+- `unityTimeRiskGameplayWallClock`: 60
+- `unityTimeRiskGameplayDelta`: 1
+
+Interpretation: the highest-priority wall-clock owner from the first time triage is no longer on Unity wall clock. Remaining wall-clock work should move to `MigrationDirector`, `FaunaBrain`, `SpectrumSystem`, and `HectonBoidController` after local owner-route inspection.

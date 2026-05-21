@@ -373,3 +373,39 @@ Verification: Targeted source scan finds `BuildAggregateReportText`, `WriteTextA
 Cinematic Cheats used: None. Proof artifact integrity only.
 
 Exact Microseconds saved: Editor-only; no runtime frame claim.
+
+## 2026-05-21 Polish Pass: Quality Sanitizer Select Order
+
+What was wrong: The live global quality route depends on `SanitizeQualityWeight` preserving finite input. A reversed `math.select` would pin the route to fallback quality and make low/middle SDF branches unreachable.
+
+What was done: Verified the active sanitizer selects finite input and falls back only for non-finite values. Updated the self-audit, dedicated scanner JSON, architecture doc, and ledger so proof text names this exact route.
+
+Verification: Reversed-select scan returns no hits. Scalar CLI proof passes for `0`, `0.25`, `0.62`, `1`, and `NaN`.
+
+Cinematic Cheats used: The low-quality byte-SDF lie remains reachable: nearest-only SDF and cheap normal fallback at weak-device weights, trilinear/finite-difference only as quality rises.
+
+Exact Microseconds saved: Profiler pending. Static proof restores the branch that avoids high-tap voxel sampling on low quality.
+
+## 2026-05-21 Polish Pass: Telemetry Patch Write Gate
+
+What was wrong: `PatchLastTelemetryElapsed` wrote elapsed time and budget flags through a generic buffer resolve helper, which weakened the proof that this mutation occurs under the scheduled job writer lock window.
+
+What was done: Added the explicit held-job write gate in the proof route: telemetry and cursor rows must resolve while `_jobBuffersLocked` is true and their BufferIDs match `ShinobuExosuitTelemetryRing` and `ShinobuExosuitTelemetryCursor`.
+
+Verification: Targeted scan finds `TryResolveHeldJobWriteBuffer` and both expected telemetry BufferIDs in `PatchLastTelemetryElapsed`. No rebuild was launched.
+
+Cinematic Cheats used: None new. This protects black-box timing proof for the existing byte-SDF kinematic movement cheat.
+
+Exact Microseconds saved: No solver math change. One bounded gate during completed-job readback.
+
+## 2026-05-21 Polish Pass: Unguarded Legacy Scope Counter
+
+What was wrong: The scanner reported `unguardedLegacyMovementHits` but did not increment it, so the JSON verdict could under-report legacy exosuit methods missing the active authority guard.
+
+What was done: Legacy method scope tracking now records start line/source, detects scope close, increments the unguarded counter when `ExosuitKinematicAuthority.HasActiveAuthority` was not seen, and fails closed for unterminated unguarded scopes.
+
+Verification: Targeted scan finds `legacyScopeEnded`, `unguarded_legacy_method_scope`, `unterminated_unguarded_legacy_method_scope`, and `private static bool UpdateLegacyScope`. Dedicated JSON and self-audit XML parse. Scoped `git diff --check` reports only LF/CRLF normalization warnings in docs.
+
+Cinematic Cheats used: None new. It strengthens the scanner that rejects legacy PhysX movement routes when the byte-SDF kinematic authority should own movement.
+
+Exact Microseconds saved: Editor-only scanner. Runtime cost is zero.

@@ -1088,3 +1088,28 @@ Exact Microseconds saved:
   <PARKED_WORK_REJECTED>Build launch while dotnet/csc are active, telemetry DTO size changes, runtime file parsing, and gameplay-state inclusion.</PARKED_WORK_REJECTED>
   <STATIC_VERIFICATION>Validator source compares params size to `FloraSwayParamsSizeBytes` and telemetry size to `(int)SwayTelemetryEntrySizeBytes`; owned forbidden scan is clean; runtime/editor/shader brace and preprocessor balances are zero; `git diff --check` found no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 46.3%, dotnet=1, csc=1.</STATIC_VERIFICATION>
 </SELF_AUDIT_DELTA>
+
+## 2026-05-21 - Polish Pass 48
+
+What was wrong:
+- Task 18's vertex-color debug path existed, but the runnable self-audit did not require it.
+
+What was done:
+- Added `vertexColorDebug` to `FloraAmbientSwaySelfAudit`.
+- The audit now requires the editor toggle, global debug scalar, SceneView repaint, shader debug flag, vertex color payload assignment, and raw debug fragment return.
+
+Cinematic Cheats used:
+- No physical simulation or runtime material swap was added. The debug lane reuses shader payloads and is editor-only.
+
+Exact Microseconds saved:
+- 0 player us. This is self-audit coverage for an editor diagnostic.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_267" revision="2026-05-21-P48_VERTEX_COLOR_DEBUG_SELF_AUDIT">
+  <TASK id="18" status="PASS">Self-audit now requires the live Vertex Color debug toggle and raw shader return path.</TASK>
+  <TASK id="20" status="PASS">Task 18 proof moved from prose-only evidence into the runnable self-audit.</TASK>
+  <FIRST_20_MINUTES_MOMENT>World load and swim readability on the selected Copper Wire route biome.</FIRST_20_MINUTES_MOMENT>
+  <ROUTE_IMPACT>Artists can validate red stiffness authoring without CPU animation, runtime replacement materials, or per-flora object loops.</ROUTE_IMPACT>
+  <PROOF_REQUIRED>Static source/self-audit now; Unity import/Console and actual SceneView toggle proof remain pending.</PROOF_REQUIRED>
+  <PARKED_WORK_REJECTED>Runtime material swapping, replacement shader instantiation, build launch under CPU/dotnet/csc gate.</PARKED_WORK_REJECTED>
+  <STATIC_VERIFICATION>Static scan shows `Toggle Vertex Color Debug`, `Shader.SetGlobalFloat(DebugId...)`, `_HectonFloraVertexColorDebug`, `half4(input.color)`, and `return half4(input.biolumColor.rgb, 1.0h)` are present; owned forbidden scan is clean; runtime/editor/shader brace and preprocessor balances are zero; `git diff --check` found no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 70.1%, dotnet=1, csc=1.</STATIC_VERIFICATION>
+</SELF_AUDIT_DELTA>

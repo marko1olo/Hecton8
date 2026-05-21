@@ -642,6 +642,8 @@ namespace Hecton8.Visor
                 CoreUtils.Destroy(_fallbackMaskMesh);
             _fallbackMaskMesh = null;
             _ownsFallbackMaskMesh = false;
+            ReleaseVaultHandles(_dataVault);
+            _dataVault = null;
             TryUnregisterHotSwapListener();
             SetStencilPresentationActive(false);
         }
@@ -674,8 +676,11 @@ namespace Hecton8.Visor
 
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
+                IDataVault previousVault = _dataVault != null ? _dataVault : previousService as IDataVault;
+                if (!ReferenceEquals(previousVault, currentService))
+                    ReleaseVaultHandles(previousVault);
+
                 _dataVault = currentService as IDataVault;
-                ClearVaultHandles();
                 TryEnsureVaultBuffers();
                 LoadCsvProfilesCold();
             }
@@ -1301,21 +1306,29 @@ namespace Hecton8.Visor
             _playerContext = playerContext;
             if (!ReferenceEquals(_dataVault, vault))
             {
+                ReleaseVaultHandles(_dataVault);
                 _dataVault = vault;
-                ClearVaultHandles();
             }
         }
 
-        private void ClearVaultHandles()
+        private void ReleaseVaultHandles(IDataVault vault)
         {
-            _hudParamsHandle = default;
-            _targetSourceHandle = default;
-            _projectedTargetHandle = default;
-            _digitParamsHandle = default;
-            _telemetryHandle = default;
-            _profileHandle = default;
-            _csvScratchHandle = default;
+            ReleaseVaultHandle(vault, ref _hudParamsHandle);
+            ReleaseVaultHandle(vault, ref _targetSourceHandle);
+            ReleaseVaultHandle(vault, ref _projectedTargetHandle);
+            ReleaseVaultHandle(vault, ref _digitParamsHandle);
+            ReleaseVaultHandle(vault, ref _telemetryHandle);
+            ReleaseVaultHandle(vault, ref _profileHandle);
+            ReleaseVaultHandle(vault, ref _csvScratchHandle);
             _telemetryDescriptorGeneration = 0u;
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (vault != null && IsHandleCreated(in handle))
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         private void TryRegisterHotSwapListener()
