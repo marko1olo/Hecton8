@@ -1062,3 +1062,29 @@ Exact Microseconds saved:
   <PARKED_WORK_REJECTED>Build launch under CPU/dotnet/csc gate, telemetry DTO size changes, raw struct dumps, and gameplay-state inclusion.</PARKED_WORK_REJECTED>
   <STATIC_VERIFICATION>Runtime header constants and writer calls for magic/version/source/row-size are present; runtime `BinaryWriter` count remains 0; editor self-audit requires the 24-byte header route through `littleEndianDump`; owned forbidden scan is clean; runtime/editor/shader brace and preprocessor balances are zero; asmdef/report JSON parse passed; `git diff --check` found no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 95.7%, dotnet=1, csc=1.</STATIC_VERIFICATION>
 </SELF_AUDIT_DELTA>
+
+## 2026-05-21 - Polish Pass 47
+
+What was wrong:
+- The dump header advertised a telemetry row size, but `ValidateFloraSwayLayouts()` still used an independent `32` literal.
+
+What was done:
+- Bound `paramsSize` validation to `FloraSwayParamsSizeBytes`.
+- Bound `telemetrySize` validation to `(int)SwayTelemetryEntrySizeBytes`.
+
+Cinematic Cheats used:
+- No physical simulation was added. The visual route remains one shader-side sine fake over the global flora CBuffer.
+
+Exact Microseconds saved:
+- 0 hot us. This is validation/ABI hardening.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_267" revision="2026-05-21-P47_DUMP_ROW_SIZE_LAYOUT_LOCK">
+  <TASK id="04" status="PASS">DTO layout proof now ties `FloraSwayParamsDTO` size validation to the same CBuffer-size constant used for upload.</TASK>
+  <TASK id="15" status="PASS">Telemetry row-size validation now uses the same `SwayTelemetryEntrySizeBytes` constant written into `Dump_SHINOBU_267.bin`.</TASK>
+  <TASK id="20" status="PASS">The existing self-audit calls `ValidateFloraSwayLayouts()`, so header/layout drift fails the audit.</TASK>
+  <FIRST_20_MINUTES_MOMENT>World load and swim readability on the selected Copper Wire route biome.</FIRST_20_MINUTES_MOMENT>
+  <ROUTE_IMPACT>Fault dump row size can no longer drift independently from the telemetry DTO layout proof.</ROUTE_IMPACT>
+  <PROOF_REQUIRED>Static source/self-audit now; Unity import/Console, selected route run, profiler/GC, Burst/import proof, Frame Debugger, screenshot/clip, save/load diff, and actual dump-read smoke test remain pending.</PROOF_REQUIRED>
+  <PARKED_WORK_REJECTED>Build launch while dotnet/csc are active, telemetry DTO size changes, runtime file parsing, and gameplay-state inclusion.</PARKED_WORK_REJECTED>
+  <STATIC_VERIFICATION>Validator source compares params size to `FloraSwayParamsSizeBytes` and telemetry size to `(int)SwayTelemetryEntrySizeBytes`; owned forbidden scan is clean; runtime/editor/shader brace and preprocessor balances are zero; `git diff --check` found no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 46.3%, dotnet=1, csc=1.</STATIC_VERIFICATION>
+</SELF_AUDIT_DELTA>
