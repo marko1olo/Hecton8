@@ -5510,3 +5510,27 @@ Static verification:
 - Focused scan found no `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `.ptr`, `TryGetLatestCreated`, `TryGetBufferGeneration`, or `VaultGenerationID` hits in `DiegeticGlitchSurgeonRuntime.cs`.
 - Descriptor scan confirms `VaultGenerationHandle<T>`, `GetGenerationHandle`, `TryGetGenerationHandle`, `TryResolveGlitchVaultBuffer`, `TryReadGlitchVaultBuffer`, `ReleaseGlitchVaultHandles`, `ReleaseBuffer(in handle)`, `IsCompactionFenceActive`, and `IsAllocationLocked`.
 - Brace/preprocessor counts are balanced: braces `211/211`, `#if/#endif` `3/3`. `git diff --check` passed with CRLF warning only. Build was not relaunched under the explicit no-rebuild command discipline.
+
+## 2026-05-22 - Loop 234 - System Dispatcher Direct Vault Probe Closure
+
+What was wrong:
+- `Assets/_Project/Scripts/Core/SystemDispatcher.cs` directly opened rollback runtime state and Vault address-shift rows through `TryGetBuffer`.
+- The rollback probe uses BufferID `70752`, which currently has unrelated symbolic names elsewhere in source. Direct buffer access could return a native view without proving the owner system.
+- The Vault address-shift count row is mutated after publish, so it needs mutable descriptor resolve rather than a generic direct read route.
+
+What was done:
+- Added dispatcher-local existing-buffer descriptor helpers for pure read and mutable resolve.
+- Converted rollback visual-sync fence read to `TryReadExistingDispatcherVaultBuffer` with `SystemID.CoreDeterminism`.
+- Converted Vault address-shift count reset to `TryResolveExistingDispatcherVaultBuffer` with `SystemID.CoreDataVault`.
+- Converted Vault address-shift record publication to pure descriptor read with `SystemID.CoreDataVault`.
+
+Cinematic cheats used:
+- No new visual fake. This is a memory authority patch. Existing dispatcher behavior still uses rollback presentation suppression rather than simulating visual/audio/particle state during an unsafe rollback frame.
+
+Exact microseconds saved:
+- No measured speedup claimed. The useful result is preventing stale or wrong-owner buffer interpretation. Added work is one O(1) descriptor proof at phase/telemetry boundaries.
+
+Static verification:
+- Focused scan found no `TryGetBuffer(...)`, `GetBuffer<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `VaultBufferHandle<T>`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, or `.ptr` hits in `SystemDispatcher.cs`.
+- Descriptor scan confirms `VaultGenerationHandle<T>`, `TryGetGenerationHandle`, `TryReadHandle`, `TryResolveHandle`, `TryReadExistingDispatcherVaultBuffer`, and `TryResolveExistingDispatcherVaultBuffer`.
+- Brace/preprocessor counts are balanced: braces `641/641`, `#if/#endif` `33/33`. `git diff --check` passed with CRLF warning only. Build was not relaunched under the explicit no-rebuild command discipline.

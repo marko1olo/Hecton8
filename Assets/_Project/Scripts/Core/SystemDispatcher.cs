@@ -3247,8 +3247,11 @@ namespace Hecton8.Core
         {
             IDataVault dataVault = _dataVault;
             if (dataVault == null ||
-                !dataVault.TryGetBuffer(
+                !TryReadExistingDispatcherVaultBuffer(
+                    dataVault,
                     MasterRollbackRuntimeStateBuffer,
+                    SystemID.CoreDeterminism,
+                    1,
                     out NativeArray<MasterRollbackRuntimeStateProbeDTO> rollbackStateBuffer) ||
                 !rollbackStateBuffer.IsCreated ||
                 rollbackStateBuffer.Length <= 0)
@@ -4029,6 +4032,58 @@ namespace Hecton8.Core
             return true;
         }
 
+        private static bool TryReadExistingDispatcherVaultBuffer<T>(
+            IDataVault dataVault,
+            BufferID bufferId,
+            SystemID ownerSystem,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (dataVault == null ||
+                requiredLength <= 0 ||
+                dataVault.IsCompactionFenceActive ||
+                !dataVault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) ||
+                handle.BufferID != (uint)bufferId ||
+                handle.SystemID != (uint)ownerSystem ||
+                handle.Generation == 0u ||
+                !dataVault.TryReadHandle(in handle, out NativeArray<T> resolved) ||
+                !resolved.IsCreated ||
+                resolved.Length < requiredLength)
+            {
+                return false;
+            }
+
+            buffer = resolved;
+            return true;
+        }
+
+        private static bool TryResolveExistingDispatcherVaultBuffer<T>(
+            IDataVault dataVault,
+            BufferID bufferId,
+            SystemID ownerSystem,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (dataVault == null ||
+                requiredLength <= 0 ||
+                dataVault.IsCompactionFenceActive ||
+                !dataVault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) ||
+                handle.BufferID != (uint)bufferId ||
+                handle.SystemID != (uint)ownerSystem ||
+                handle.Generation == 0u ||
+                !dataVault.TryResolveHandle(in handle, out NativeArray<T> resolved) ||
+                !resolved.IsCreated ||
+                resolved.Length < requiredLength)
+            {
+                return false;
+            }
+
+            buffer = resolved;
+            return true;
+        }
+
         private static bool TryEnsureDispatcherVaultBuffer<T>(
             IDataVault dataVault,
             ref VaultGenerationHandle<T> handle,
@@ -4597,10 +4652,20 @@ namespace Hecton8.Core
 
         private static void PublishVaultSovereigntyAddressShiftRecords(IDataVault dataVault)
         {
-            if (!dataVault.TryGetBuffer(BufferID.VaultMemoryAddressShiftCount, out NativeArray<int> shiftCount) ||
+            if (!TryResolveExistingDispatcherVaultBuffer(
+                    dataVault,
+                    BufferID.VaultMemoryAddressShiftCount,
+                    SystemID.CoreDataVault,
+                    1,
+                    out NativeArray<int> shiftCount) ||
                 !shiftCount.IsCreated ||
                 shiftCount.Length == 0 ||
-                !dataVault.TryGetBuffer(BufferID.VaultMemoryAddressShiftRecords, out NativeArray<VaultMemoryAddressShiftRecord> records) ||
+                !TryReadExistingDispatcherVaultBuffer(
+                    dataVault,
+                    BufferID.VaultMemoryAddressShiftRecords,
+                    SystemID.CoreDataVault,
+                    1,
+                    out NativeArray<VaultMemoryAddressShiftRecord> records) ||
                 !records.IsCreated)
             {
                 return;

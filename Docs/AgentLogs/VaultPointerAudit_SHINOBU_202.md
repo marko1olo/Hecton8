@@ -899,3 +899,11 @@ The scan proves repo-wide debt, not successful consumer migration. A full rename
 - Terminal state bridge mutation now opens `TerminalOsStateBridgeBufferId` through `TryResolveGlitchVaultBuffer` under the existing UI write lock, not through the pure `TryReadGlitchVaultBuffer` route.
 - Borrowed ownership remains unchanged: `TerminalOsRuntime` owns BufferID `71360`; `DiegeticGlitchSurgeonRuntime` borrows a generation descriptor and does not release Terminal OS owned memory.
 - This entry does not change `TerminalStateDTO`, `DiegeticGlitchTelemetryEntry`, `GlitchSurgeonStateDTO`, BufferIDs, shader property IDs, blackbox dump format, terminal rendering, CSV parser contract, or UI authority.
+
+## 2026-05-22 System Dispatcher Direct Vault Probe Closure
+
+- `Assets/_Project/Scripts/Core/SystemDispatcher.cs` has no `TryGetBuffer(...)`, `GetBuffer<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `VaultBufferHandle<T>`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, or `.ptr` hits.
+- Rollback runtime fence read now requires an existing `VaultGenerationHandle<MasterRollbackRuntimeStateProbeDTO>` with BufferID `70752`, `SystemID.CoreDeterminism`, nonzero generation, required length, and pure `TryReadHandle`.
+- Vault address-shift count reset now requires mutable descriptor resolve for BufferID `VaultMemoryAddressShiftCount`, `SystemID.CoreDataVault`.
+- Vault address-shift record publication now requires pure descriptor read for BufferID `VaultMemoryAddressShiftRecords`, `SystemID.CoreDataVault`.
+- This entry does not change `MasterRollbackRuntimeStateProbeDTO`, `VaultMemoryAddressShiftRecord`, `MemoryAddressShiftSignal`, BufferIDs, SignalBus payloads, dispatcher blackbox bytes, rollback truth ownership, or CoreDataVault relocation-record format.

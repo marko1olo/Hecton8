@@ -4175,3 +4175,20 @@ Mandates read before coding:
 - Brace/preprocessor counts are balanced: `DiegeticGlitchSurgeonRuntime.cs` braces `211/211`, preprocessor `#if/#endif` `3/3`.
 - `git diff --check` passed for `DiegeticGlitchSurgeonRuntime.cs`; CRLF warning only.
 - Build not relaunched under the explicit no-rebuild command discipline; only one access-mode line changed and compiler-process gate still must be checked before any build.
+
+## Loop 234 - System Dispatcher Direct Vault Probe Closure
+- [x] Replaced direct dispatcher `TryGetBuffer` probes with descriptor-proven existing-buffer routes.
+  DOD practice: rollback runtime fence read now opens through `TryReadExistingDispatcherVaultBuffer` and validates exact BufferID `70752`, `SystemID.CoreDeterminism`, nonzero generation, required length, compaction-fence absence, and pure `TryReadHandle` before reading `MasterRollbackRuntimeStateProbeDTO`.
+  Rejected: keeping direct `TryGetBuffer` because BufferID `70752` is also named by unrelated systems in current source; silent DTO reinterpretation is worse than a clean false return.
+  Estimate: one transient descriptor lookup and generation validation at visual-sync fence boundary only; no inner-loop cost.
+- [x] Replaced direct Vault address-shift publish/reset opens.
+  DOD practice: address-shift count opens through mutable descriptor resolve because the dispatcher resets `shiftCount[0]`; records open through pure descriptor read because records are only published. Both require `SystemID.CoreDataVault`, exact BufferID, nonzero generation, required length, and no compaction fence.
+  Rejected: direct buffer read/grow access from the dispatcher because address-shift publication is a bridge route, not a Vault allocation owner.
+  Estimate: O(1) descriptor proof at post-defrag publish boundary; no DTO layout, SignalBus payload, or relocation-record format change.
+
+## Compile State Update 228
+- Focused direct/legacy route scan on `SystemDispatcher.cs` found no `TryGetBuffer(...)`, `GetBuffer<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `VaultBufferHandle<T>`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, or `.ptr` hits.
+- Descriptor route scan confirmed expected `VaultGenerationHandle<T>`, `TryGetGenerationHandle`, `TryReadHandle`, `TryResolveHandle`, `TryReadExistingDispatcherVaultBuffer`, and `TryResolveExistingDispatcherVaultBuffer` hits.
+- Brace/preprocessor counts are balanced: `SystemDispatcher.cs` braces `641/641`, preprocessor `#if/#endif` `33/33`.
+- `git diff --check` passed for `SystemDispatcher.cs`; CRLF warning only.
+- Build not relaunched under the explicit no-rebuild command discipline.
