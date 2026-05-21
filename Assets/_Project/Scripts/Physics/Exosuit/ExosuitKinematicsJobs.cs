@@ -28,7 +28,7 @@ namespace Hecton8.Physics.Exosuit
         public static float SanitizeQualityWeight(float value, float fallback)
         {
             float safeFallback = math.saturate(math.select(DefaultQualityWeight, fallback, math.isfinite(fallback)));
-            return math.saturate(math.select(value, safeFallback, math.isfinite(value)));
+            return math.saturate(math.select(safeFallback, value, math.isfinite(value)));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -187,35 +187,6 @@ Exact Microseconds saved:
   <STATIC_VERIFICATION>Re-extracted SHINOBU_267 XML from `CURRENT_BATCH.md` with `task_count=20`; owned forbidden scan clean; runtime old `Resolve*`/indexer scan clean; shader `_QUALITY_*` scan clean; shader early alpha-mask clip order passes; runtime/editor/shader brace and preprocessor balances are zero; asmdef/report JSON parse passed; `git diff --check` found no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 92.3%, dotnet=0, csc=0.</STATIC_VERIFICATION>
 </SELF_AUDIT_DELTA>
 
-## 2026-05-21 - Polish Pass 45
-
-What was wrong:
-- `DumpTelemetryOnce()` still wrote black-box telemetry through `BinaryWriter`.
-- That made the forensic dump depend on framework writer behavior instead of a documented little-endian ABI.
-
-What was done:
-- Replaced the dump path with `FileStream` plus explicit little-endian `WriteByte` scalar helpers.
-- Serialized float lanes through `math.asuint`.
-- Added `littleEndianDump` to the editor self-audit.
-- Updated `FLORA_PROCEDURAL_SWAY_FIELD.md` and `BINARY_PAYLOAD_INTEGRATION_LEDGER.md`.
-
-Cinematic Cheats used:
-- No physical simulation was added. The route remains shader-side global sine displacement; the dump change only hardens fault evidence.
-
-Exact Microseconds saved:
-- 0 hot us. This is fault-path ABI hardening; active gameplay still pays no disk write.
-
-<SELF_AUDIT_DELTA agent_id="SHINOBU_267" revision="2026-05-21-P45_EXPLICIT_DUMP_ENDIANNESS">
-  <TASK id="15" status="PASS">`Dump_SHINOBU_267.bin` now writes a fixed 12-byte little-endian header plus 300 fixed 32-byte telemetry rows.</TASK>
-  <TASK id="16" status="PASS">Telemetry float lanes are serialized through `math.asuint` before explicit byte emission.</TASK>
-  <TASK id="20" status="PASS">Self-audit now enforces `littleEndianDump` and rejects runtime `BinaryWriter` residue.</TASK>
-  <FIRST_20_MINUTES_MOMENT>World load and swim readability on the selected Copper Wire route biome.</FIRST_20_MINUTES_MOMENT>
-  <ROUTE_IMPACT>Invalid flora math on the route exports a cross-platform forensic ring instead of platform-default writer bytes.</ROUTE_IMPACT>
-  <PROOF_REQUIRED>Static source/self-audit now; Unity import/Console, selected route run, profiler/GC, Burst/import proof, Frame Debugger, screenshot/clip, save/load diff, and actual dump-read smoke test remain pending.</PROOF_REQUIRED>
-  <PARKED_WORK_REJECTED>Build launch under CPU/dotnet/csc gate, changing telemetry DTO size, and raw struct dump coupling.</PARKED_WORK_REJECTED>
-  <STATIC_VERIFICATION>Runtime `BinaryWriter` count is 0; little-endian helpers and `math.asuint` float serialization are present; editor self-audit contains `littleEndianDump`; owned forbidden scan is clean; runtime/editor/shader brace and preprocessor balances are zero; asmdef/report JSON parse passed; `git diff --check` found no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 97.3%, dotnet=1, csc=1.</STATIC_VERIFICATION>
-</SELF_AUDIT_DELTA>
-
 ## 2026-05-21 - Polish Pass 9
 
 What was wrong:
@@ -1034,4 +1005,60 @@ Exact Microseconds saved:
   <PROOF_REQUIRED>Static doc/source scan now; Unity import/Console, selected route run, profiler/GC, Burst/import proof, Frame Debugger, screenshot/clip, and save/load diff remain pending.</PROOF_REQUIRED>
   <PARKED_WORK_REJECTED>Unrelated ledger edits, build launch under CPU gate, DTO/shader ABI changes.</PARKED_WORK_REJECTED>
   <STATIC_VERIFICATION>Doc scan shows both central SHINOBU_267 docs contain `CompileSynchronously=true`, `FloatMode.Deterministic`, and `FloatPrecision.Standard` on the flora route; asmdef/report JSON parse passed; focused `git diff --check` found no whitespace errors. Build not launched because CPU preflight reported 100%, dotnet=0, csc=0.</STATIC_VERIFICATION>
+</SELF_AUDIT_DELTA>
+
+## 2026-05-21 - Polish Pass 45
+
+What was wrong:
+- `DumpTelemetryOnce()` still wrote black-box telemetry through `BinaryWriter`.
+- That made the forensic dump depend on framework writer behavior instead of a documented little-endian ABI.
+
+What was done:
+- Replaced the dump path with `FileStream` plus explicit little-endian `WriteByte` scalar helpers.
+- Serialized float lanes through `math.asuint`.
+- Added `littleEndianDump` to the editor self-audit.
+- Updated `FLORA_PROCEDURAL_SWAY_FIELD.md` and `BINARY_PAYLOAD_INTEGRATION_LEDGER.md`.
+
+Cinematic Cheats used:
+- No physical simulation was added. The route remains shader-side global sine displacement; the dump change only hardens fault evidence.
+
+Exact Microseconds saved:
+- 0 hot us. This is fault-path ABI hardening; active gameplay still pays no disk write.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_267" revision="2026-05-21-P45_EXPLICIT_DUMP_ENDIANNESS_RESTATED_AT_BOTTOM">
+  <TASK id="15" status="PASS">`Dump_SHINOBU_267.bin` now writes a fixed 12-byte little-endian header plus 300 fixed 32-byte telemetry rows.</TASK>
+  <TASK id="16" status="PASS">Telemetry float lanes are serialized through `math.asuint` before explicit byte emission.</TASK>
+  <TASK id="20" status="PASS">Self-audit now enforces `littleEndianDump` and rejects runtime `BinaryWriter` residue.</TASK>
+  <FIRST_20_MINUTES_MOMENT>World load and swim readability on the selected Copper Wire route biome.</FIRST_20_MINUTES_MOMENT>
+  <ROUTE_IMPACT>Invalid flora math on the route exports a cross-platform forensic ring instead of platform-default writer bytes.</ROUTE_IMPACT>
+  <PROOF_REQUIRED>Static source/self-audit now; Unity import/Console, selected route run, profiler/GC, Burst/import proof, Frame Debugger, screenshot/clip, save/load diff, and actual dump-read smoke test remain pending.</PROOF_REQUIRED>
+  <PARKED_WORK_REJECTED>Build launch under CPU/dotnet/csc gate, changing telemetry DTO size, and raw struct dump coupling.</PARKED_WORK_REJECTED>
+  <STATIC_VERIFICATION>Runtime `BinaryWriter` count is 0; little-endian helpers and `math.asuint` float serialization are present; editor self-audit contains `littleEndianDump`; owned forbidden scan is clean; runtime/editor/shader brace and preprocessor balances are zero; asmdef/report JSON parse passed; `git diff --check` found no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 97.3%, dotnet=1, csc=1.</STATIC_VERIFICATION>
+</SELF_AUDIT_DELTA>
+
+## 2026-05-21 - Polish Pass 46
+
+What was wrong:
+- The P45 dump format was little-endian, but its 12-byte header had no magic, version, or row-size guard.
+- A future reader could silently parse the wrong file shape.
+
+What was done:
+- Added `"S267"` magic, version `1`, source hash, row size, row count, and cursor to the dump header.
+- Updated the self-audit and central docs to require the 24-byte header route.
+
+Cinematic Cheats used:
+- No physical simulation was added. The flora motion remains the existing vertex-shader fake; this pass only hardens black-box evidence.
+
+Exact Microseconds saved:
+- 0 hot us. The added scalar writes happen only on fault export.
+
+<SELF_AUDIT_DELTA agent_id="SHINOBU_267" revision="2026-05-21-P46_DUMP_HEADER_MAGIC_VERSION">
+  <TASK id="15" status="PASS">`Dump_SHINOBU_267.bin` now starts with a fixed 24-byte little-endian header: magic, version, source hash, row size, row count, cursor.</TASK>
+  <TASK id="16" status="PASS">Telemetry rows remain fixed 32-byte records and floats still serialize through `math.asuint`.</TASK>
+  <TASK id="20" status="PASS">Self-audit requires magic/version/source/row-size writer calls and still rejects runtime `BinaryWriter` residue.</TASK>
+  <FIRST_20_MINUTES_MOMENT>World load and swim readability on the selected Copper Wire route biome.</FIRST_20_MINUTES_MOMENT>
+  <ROUTE_IMPACT>Postmortem tooling can validate route dump shape before reading row payloads.</ROUTE_IMPACT>
+  <PROOF_REQUIRED>Static source/self-audit now; Unity import/Console, selected route run, profiler/GC, Burst/import proof, Frame Debugger, screenshot/clip, save/load diff, and actual dump-read smoke test remain pending.</PROOF_REQUIRED>
+  <PARKED_WORK_REJECTED>Build launch under CPU/dotnet/csc gate, telemetry DTO size changes, raw struct dumps, and gameplay-state inclusion.</PARKED_WORK_REJECTED>
+  <STATIC_VERIFICATION>Runtime header constants and writer calls for magic/version/source/row-size are present; runtime `BinaryWriter` count remains 0; editor self-audit requires the 24-byte header route through `littleEndianDump`; owned forbidden scan is clean; runtime/editor/shader brace and preprocessor balances are zero; asmdef/report JSON parse passed; `git diff --check` found no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 95.7%, dotnet=1, csc=1.</STATIC_VERIFICATION>
 </SELF_AUDIT_DELTA>

@@ -459,15 +459,14 @@ namespace Hecton8.Physics
 
             ResetCounters();
 
-            if (CoalescingHashToIndex.IsCreated)
-                CoalescingHashToIndex.Clear();
-
             int capacity = PackedRequests.Length;
             int drainBudget = math.max(0, MaxDrainCount);
             int packed = 0;
             int dropped = 0;
             int duplicate = 0;
             int drained = 0;
+            bool coalescingCleared = false;
+            bool coalescingSaturated = false;
 
             while (drained < drainBudget && packed < capacity && PendingRequests.TryDequeue(out OceanKinematicsSampleRequestDTO request))
             {
@@ -475,15 +474,22 @@ namespace Hecton8.Physics
                 uint hash = OceanKinematicsHashUtility.ResolveRequestHash(in request);
                 request.RequestHash = hash;
 
-                if (CoalescingHashToIndex.IsCreated)
+                if (CoalescingHashToIndex.IsCreated && !coalescingSaturated)
                 {
+                    if (!coalescingCleared)
+                    {
+                        CoalescingHashToIndex.Clear();
+                        coalescingCleared = true;
+                    }
+
                     if (CoalescingHashToIndex.ContainsKey(hash))
                     {
                         duplicate++;
                         continue;
                     }
 
-                    CoalescingHashToIndex.TryAdd(hash, packed);
+                    if (!CoalescingHashToIndex.TryAdd(hash, packed))
+                        coalescingSaturated = true;
                 }
 
                 request.ResultIndex = packed;
@@ -597,6 +603,62 @@ namespace Hecton8.Physics
         private static float SanitizeFinite(float value, float fallback)
         {
             return math.select(fallback, value, math.isfinite(value));
+        }
+    }
+
+    /// <summary>
+    /// Folds a completed GPU readback into the direct-mapped Dear Lie cache off the main thread.
+    /// </summary>
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct UpdateDearLieCacheFromReadbackJob : IJob
+    {
+        [ReadOnly, NoAlias] public NativeArray<OceanKinematicsSampleRequestDTO> CompletedRequests;
+        [ReadOnly, NoAlias] public NativeArray<float4> ReadbackSamples;
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // CachedResults is the only written lane and is distinct from CompletedRequests and ReadbackSamples.
+        // The job is serial because direct-mapped hash slots can collide; preserving request order avoids
+        // parallel write races and matches the old last-writer-wins cache semantics.
+        //
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // The main thread only checks AsyncGPUReadback completion and schedules this job. Hashing, finite
+        // sanitation, and cache writes are moved into the dispatcher-owned job window.
+        //
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The count is clamped against all three buffers before the loop. Rejected IJobParallelFor because
+        // direct-mapped cache collisions would create nondeterministic writes to the same slot.
+        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<OceanCachedFluidSampleDTO> CachedResults;
+        public int CompletedCount;
+
+        public void Execute()
+        {
+            if (!CompletedRequests.IsCreated ||
+                !ReadbackSamples.IsCreated ||
+                !CachedResults.IsCreated ||
+                CachedResults.Length == 0 ||
+                CompletedCount <= 0)
+            {
+                return;
+            }
+
+            int count = math.min(CompletedCount, math.min(CompletedRequests.Length, ReadbackSamples.Length));
+            for (int i = 0; i < count; i++)
+            {
+                OceanKinematicsSampleRequestDTO request = CompletedRequests[i];
+                uint hash = OceanKinematicsHashUtility.ResolveRequestHash(in request);
+                float4 sample = ReadbackSamples[i];
+
+                FluidSampleResultDTO result = default;
+                result.WaterHeight = math.select(0f, sample.x, math.isfinite(sample.x));
+                bool velocityFinite = math.isfinite(sample.y) && math.isfinite(sample.z) && math.isfinite(sample.w);
+                result.SurfaceVelocity = math.select(float3.zero, new float3(sample.y, sample.z, sample.w), velocityFinite);
+
+                uint slot = hash % unchecked((uint)CachedResults.Length);
+                OceanCachedFluidSampleDTO cached = default;
+                cached.RequestHash = hash;
+                cached.Result = result;
+                cached.Flags = OceanKinematicsConstants.FlagActive | OceanKinematicsConstants.FlagAsyncCached;
+                CachedResults[unchecked((int)slot)] = cached;
+            }
         }
     }
 

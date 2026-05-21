@@ -329,7 +329,6 @@ namespace Hecton8.AI
             }
 
             ConsumeStrikeSignals();
-            float systemStress01 = ResolveSystemStress01();
             uint runtimeFlags = ResolveRuntimeFlags();
             TryResolveProceduralAuxVaultBuffers(
                 out NativeArray<LeviathanBoneConstraintsDTO> boneConstraints,
@@ -403,7 +402,7 @@ namespace Hecton8.AI
                     SegmentLength = _segmentLength,
                     JawReachMeters = _biteJawReachMeters,
                     JawOpenMeters = _biteJawOpenMeters,
-                    SystemStress01 = systemStress01,
+                    SystemStress01 = 0f,
                     TargetIndex = 0,
                     FrameIndex = _frameIndex,
                     HeadBoneIndex = ProceduralBiteIkConstants.DefaultHeadBoneIndex,
@@ -559,12 +558,6 @@ namespace Hecton8.AI
         {
             _dataVault = GlobalRegistry.DataVault;
             _mapMagic = GlobalRegistry.MapMagic;
-            _qualityTier = GlobalRegistry.ScalabilityTier;
-        }
-
-        public void OnScalabilityChanged(in ScalabilityChangedEvent payload)
-        {
-            _qualityTier = payload.CurrentQualityTier;
         }
 
         private void EnsurePersistentBuffers()
@@ -1123,7 +1116,7 @@ namespace Hecton8.AI
                     constraint.ChainId = 0;
                     constraint.Flags = (ushort)(i < LeviathanTerrainIkConstants.FallbackMockBoneCount ? 1 : 0);
                     constraint.SegmentLengthMeters = segmentLength;
-                    constraint.MaxBendRadians = math.radians(math.lerp(18f, 70f, ResolveGlobalQualityWeight()));
+                    constraint.MaxBendRadians = math.radians(math.lerp(18f, 70f, AuthoritativeQualityWeight));
                     boneConstraints[i] = constraint;
                 }
 
@@ -1427,29 +1420,13 @@ namespace Hecton8.AI
             }
         }
 
-        private float ResolveSystemStress01()
-        {
-            float stress01 = 0f;
-            ReadOnlySpan<SystemHealthIndexSignal> signals = SignalBus<SystemHealthIndexSignal>.GetFrameSnapshot();
-            for (int i = 0; i < signals.Length; i++)
-                stress01 = math.max(stress01, math.saturate(signals[i].Pressure01));
-            return stress01;
-        }
-
-        private uint ResolveBiteRuntimeFlags(float qualityWeight, float systemStress01)
+        private uint ResolveBiteRuntimeFlags()
         {
             uint flags = 0u;
-            float quality = SanitizeQualityWeight01(qualityWeight);
             if (_strikeActive || _strikeSignalActive)
                 flags |= ProceduralBiteIkConstants.RuntimeFlagStrikeActive;
-            if (math.step(0.3f, quality) <= 0f)
-                flags |= ProceduralBiteIkConstants.RuntimeFlagLowTier;
-            if (math.step(0.6f, quality) > 0f)
-                flags |= ProceduralBiteIkConstants.RuntimeFlagHighTier;
-            if (math.step(0.85f, quality) > 0f)
-                flags |= ProceduralBiteIkConstants.RuntimeFlagUltraTier;
-            if (systemStress01 > ProceduralBiteIkConstants.StressFallbackThreshold01)
-                flags |= ProceduralBiteIkConstants.RuntimeFlagSystemStressFallback;
+            flags |= ProceduralBiteIkConstants.RuntimeFlagHighTier;
+            flags |= ProceduralBiteIkConstants.RuntimeFlagUltraTier;
             return flags;
         }
 
@@ -1948,24 +1925,6 @@ namespace Hecton8.AI
             _registeredLateFrame = false;
         }
 
-        private void TryRegisterScalabilityListener()
-        {
-            if (_registeredScalabilityListener)
-                return;
-
-            ScalabilityEvents.Register(this);
-            _registeredScalabilityListener = true;
-        }
-
-        private void TryUnregisterScalabilityListener()
-        {
-            if (!_registeredScalabilityListener)
-                return;
-
-            ScalabilityEvents.Unregister(this);
-            _registeredScalabilityListener = false;
-        }
-
         private void TryRegisterOriginShiftListener()
         {
             if (_registeredOriginShiftListener)
@@ -2268,7 +2227,7 @@ namespace Hecton8.AI
         private void ResetConstraintIterationHysteresis()
         {
             _globalQualityWeight = ResolveGlobalQualityWeight();
-            float curve = SmoothQualityCurve(_globalQualityWeight);
+            float curve = SmoothQualityCurve(AuthoritativeQualityWeight);
             _activeSegmentCount = math.clamp(
                 (int)math.round(math.lerp(LowTierSegments, math.clamp(_highTierSegmentCount, LowTierSegments, MaxSegments), curve)),
                 LowTierSegments,
@@ -2337,15 +2296,13 @@ namespace Hecton8.AI
             return velocitySq > MinVectorMagnitudeSq ? velocitySq * math.rsqrt(velocitySq) : 0f;
         }
 
-        private uint ResolveRuntimeFlags(float qualityWeight)
+        private uint ResolveRuntimeFlags()
         {
             uint flags = 0u;
             if (_enableSdfHugging)
                 flags |= LeviathanTerrainIkConstants.RuntimeFlagSdfHugging;
             if (_enableMapMagicFallback)
                 flags |= LeviathanTerrainIkConstants.RuntimeFlagTerrainFallback;
-            if (math.step(0.3f, SanitizeQualityWeight01(qualityWeight)) <= 0f)
-                flags |= LeviathanTerrainIkConstants.RuntimeFlagLowTier;
             return flags;
         }
 

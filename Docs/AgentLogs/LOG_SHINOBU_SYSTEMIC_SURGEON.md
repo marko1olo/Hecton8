@@ -67,6 +67,24 @@ Remaining blocked/pending:
   <QUALITY status="DRS shader uses continuous scale-deficit curve; no binary low-tier switch added" />
 </SELF_AUDIT>
 
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="FaunaLeviathanIkAuthority">
+  <WHAT_WAS_WRONG>
+    `FaunaKinematicsRuntime` allowed hardware quality and system stress to alter leviathan terrain and bite IK authority. Real quality selected active segment count, constraint iterations, SDF payload availability, and terrain job quality. Stress/quality flags could degrade bite mandible/tentacle solve behavior.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Terrain and bite IK now use canonical authority quality. The runtime no longer implements scalability-change listening, no longer caches `GlobalRegistry.ScalabilityTier`, no longer resolves stress for bite authority, and no longer emits the low-tier terrain runtime flag. Real quality is retained only for presentation outputs such as debris quantity, hull dent visual quality byte, material/upload metadata, and telemetry.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    Bite debris density, dent visual intensity, shader response, and optional gizmo/telemetry density remain valid Dear Lie lanes. Jaw reach, SDF hug, terrain clearance, and strike contact are not faked from hardware tier.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No runtime speed claim. The pass deliberately spends canonical IK work on weak devices; removed cold scalability listener/tier cache and a dead stress resolver.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted `rg` found no `_qualityTier`, `_registeredScalabilityListener`, scalability listener methods, `GlobalRegistry.ScalabilityTier`, terrain `RuntimeFlagLowTier`, or stress resolver in `FaunaKinematicsRuntime.cs`. `git diff --check` passed with line-ending warnings only. Build skipped because CPU was 100% with active `dotnet` and `csc`.
+  </VERIFICATION>
+</SELF_AUDIT>
+
 <SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="SubmarineFloodStateMathLod">
   <WHAT_WAS_WRONG>
     Submarine flood-state signal `MathLod` was derived from `HomeostasisBrain.GlobalQualityWeight`, allowing downstream flood/mass consumers to see different fidelity by hardware.

@@ -397,6 +397,22 @@ namespace Hecton8.Physics.Exosuit
                    buffer.Length > 0;
         }
 
+        private bool TryResolveHeldJobWriteBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            return _jobBuffersLocked &&
+                   _dataVault != null &&
+                   IsHandleCreated(in handle) &&
+                   handle.BufferID == (uint)expectedBufferId &&
+                   _dataVault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length > 0;
+        }
+
         private bool TryAcquireWriteBuffer<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer)
             where T : struct
         {
@@ -797,8 +813,8 @@ namespace Hecton8.Physics.Exosuit
 
         private void PatchLastTelemetryElapsed(float elapsedMs, bool budgetExceeded)
         {
-            if (!TryResolveBuffer(in _telemetryHandle, out NativeArray<ExosuitTelemetryEntry> telemetry) ||
-                !TryResolveBuffer(in _telemetryCursorHandle, out NativeArray<int> cursorBuffer))
+            if (!TryResolveHeldJobWriteBuffer(in _telemetryHandle, BufferID.ShinobuExosuitTelemetryRing, out NativeArray<ExosuitTelemetryEntry> telemetry) ||
+                !TryResolveHeldJobWriteBuffer(in _telemetryCursorHandle, BufferID.ShinobuExosuitTelemetryCursor, out NativeArray<int> cursorBuffer))
                 return;
 
             int index = cursorBuffer[0] - 1;

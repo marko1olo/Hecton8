@@ -53,6 +53,8 @@ namespace Hecton8.Physics.Exosuit.Editor
                 bool legacyBraceSeen = false;
                 int legacyBraceDepth = 0;
                 bool legacyMethodGuardSeen = false;
+                int legacyMethodStartLine = 0;
+                string legacyMethodSource = string.Empty;
                 for (int lineIndex = 0; lineIndex < lines.Length; lineIndex++)
                 {
                     string line = lines[lineIndex];
@@ -69,6 +71,8 @@ namespace Hecton8.Physics.Exosuit.Editor
                         legacyBraceSeen = false;
                         legacyBraceDepth = 0;
                         legacyMethodGuardSeen = false;
+                        legacyMethodStartLine = lineIndex + 1;
+                        legacyMethodSource = line.Trim();
                     }
 
                     if (inLegacyExosuitMethod &&
@@ -103,9 +107,37 @@ namespace Hecton8.Physics.Exosuit.Editor
                         }
                     }
 
-                    UpdateLegacyScope(line, ref inLegacyExosuitMethod, ref legacyBraceSeen, ref legacyBraceDepth);
-                    if (!inLegacyExosuitMethod)
+                    bool legacyScopeEnded = UpdateLegacyScope(line, ref inLegacyExosuitMethod, ref legacyBraceSeen, ref legacyBraceDepth);
+                    if (legacyScopeEnded)
+                    {
+                        if (!legacyMethodGuardSeen)
+                        {
+                            unguardedLegacyMovementHits++;
+                            AppendViolation(
+                                violations,
+                                projectRoot,
+                                path,
+                                legacyMethodStartLine > 0 ? legacyMethodStartLine : lineIndex + 1,
+                                "unguarded_legacy_method_scope",
+                                string.IsNullOrEmpty(legacyMethodSource) ? line : legacyMethodSource);
+                        }
+
                         legacyMethodGuardSeen = false;
+                        legacyMethodStartLine = 0;
+                        legacyMethodSource = string.Empty;
+                    }
+                }
+
+                if (inLegacyExosuitMethod && !legacyMethodGuardSeen)
+                {
+                    unguardedLegacyMovementHits++;
+                    AppendViolation(
+                        violations,
+                        projectRoot,
+                        path,
+                        legacyMethodStartLine > 0 ? legacyMethodStartLine : lines.Length,
+                        "unterminated_unguarded_legacy_method_scope",
+                        legacyMethodSource);
                 }
             }
 
@@ -331,10 +363,10 @@ namespace Hecton8.Physics.Exosuit.Editor
                    line.IndexOf("QueueSubsystemExternalAcceleration", System.StringComparison.Ordinal) >= 0;
         }
 
-        private static void UpdateLegacyScope(string line, ref bool inLegacyExosuitMethod, ref bool braceSeen, ref int braceDepth)
+        private static bool UpdateLegacyScope(string line, ref bool inLegacyExosuitMethod, ref bool braceSeen, ref int braceDepth)
         {
             if (!inLegacyExosuitMethod)
-                return;
+                return false;
 
             for (int i = 0; i < line.Length; i++)
             {
@@ -351,7 +383,12 @@ namespace Hecton8.Physics.Exosuit.Editor
             }
 
             if (braceSeen && braceDepth <= 0)
+            {
                 inLegacyExosuitMethod = false;
+                return true;
+            }
+
+            return false;
         }
 
         private static uint MixHash(uint hash, string value)

@@ -4,7 +4,7 @@ Agent: SHINOBU_270
 Domain: ECHELON 8 Presentation & UX / Visor AR (HUD)
 Prompt role: VISOR_AR_STENCIL_RENDERER
 Task count: 20
-Status: STATIC API RECHECK CLEAN / COMPILE BLOCKED BY ACTIVE COMPILER AND CPU GATE
+Status: STATIC API RECHECK CLEAN / GENERATED CSPROJ STALE / COMPILE BLOCKED BY ACTIVE COMPILER AND CPU GATE
 
 ## Mandates Read
 
@@ -142,3 +142,12 @@ Status: STATIC API RECHECK CLEAN / COMPILE BLOCKED BY ACTIVE COMPILER AND CPU GA
 - [x] Shader/DTO binding ABI rechecked | Justification: C# constant-buffer names `HectonVisorHudParams` and `HectonVisorDigitParams` match shader `CBUFFER_START` names; `_HectonVisorArTargets` structured buffer name matches the C# global buffer id; DTO field order remains 4x `float4` per 64-byte payload | Alternatives Rejected: string-renaming shader buffers without C# proof | Estimated impact: prevents silent blank AR resolve; runtime 0 us
 - [x] Subagent static audit rerun | Justification: Locke returned no P0/P1/P2 findings after checking scoped source/import/RenderGraph/scene/SVC risks without edits or builds | Alternatives Rejected: relying only on primary-agent scan | Estimated impact: proof only
 - [x] Build gate blocked by another compiler | Justification: active `dotnet` PID 10784 and `csc` PID 25392 were present; CPU was 100% by CIM and 86.74%, 94.06%, 96.76% by processor counter samples, so SHINOBU_270 did not launch `dotnet build` | Alternatives Rejected: launching a competing compiler, killing another agent's build, or claiming compile proof from static scans | Estimated impact: protects shared workstation and IO; compile remains PENDING VERIFICATION
+
+## Iteration 17: Generated Project Verification Limitation
+
+- [x] Generated csproj inclusion checked | Justification: current `Hecton8.Core.csproj` is an explicit Unity-generated compile list and contains existing `HectonVisorFluidDistortionFeature.cs`, but no `HectonVisorARStencilRendererFeature.cs` or `HectonVisorStencilPreviewGizmo.cs` entries; Unity AssetDatabase/project-file regeneration is required before a `dotnet build Hecton8.Core.csproj` can prove SHINOBU_270 new script compilation | Alternatives Rejected: editing the generated `.csproj`, claiming a stale generated project proves new scripts, or widening compile-wall surface through manual project-file surgery | Estimated impact: proof only; prevents false compile evidence
+- [x] Build gate resampled after csproj audit | Justification: active `dotnet` PID 12844 and `csc` PID 29340 were present; CPU was 93% by CIM and 65.84%, 86.14%, 34.97%, 38.23%, 46.6% by processor counter samples, so SHINOBU_270 did not launch a competing build | Alternatives Rejected: launching a second compiler, killing another agent's compiler, or using mixed CPU samples to bypass the active-compiler gate | Estimated impact: protects shared workstation and IO; compile remains PENDING VERIFICATION
+
+## Iteration 18: Build Gate Watch / Active Compiler Window
+
+- [x] Active compiler gate resampled | Justification: active `dotnet` PID 30716 and `csc` PID 14152 were present; CPU was 73% by CIM and 60.81%, 67.67%, 50.23% by processor counter samples, so SHINOBU_270 did not launch `dotnet build` | Alternatives Rejected: starting a competing compiler while another C# compilation is active or treating a borderline 50.23% sample as legal clearance | Estimated impact: protects shared workstation and IO; compile remains PENDING VERIFICATION

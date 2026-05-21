@@ -51,15 +51,15 @@ Scalability potential: Low evaluates one base swell; Middle evaluates partial oc
 Hardware Impact: Expected low-end gain is removal of main-thread count synchronization and virtual per-sample Crest work. Microseconds are structural estimates only until compile/profiler gates clear.
 
 Problem: Complex shallow-water GPU results cannot be read synchronously without destroying frame pacing.
-Solution: Added the Dear Lie cache route: `ResolveDearLieCachedResultsJob` writes previous-frame cached results immediately, while `TryUpdateDearLieCacheFromReadback` consumes only already-completed `AsyncGPUReadbackRequest` data into the Vault-backed direct-mapped `OceanCachedFluidSampleDTO` cache lane.
-Rejected Alternatives: `ComputeBuffer.GetData()`, blocking until `AsyncGPUReadbackRequest.done`, and `Action` callback ownership in the hot query path were rejected. The player receives slightly stale water in a sluggish medium; the CPU never waits.
+Solution: Added the Dear Lie cache route: `ResolveDearLieCachedResultsJob` writes previous-frame cached results immediately, while `ScheduleDearLieCacheUpdateFromReadback` consumes only already-completed `AsyncGPUReadbackRequest` data into the Vault-backed direct-mapped `OceanCachedFluidSampleDTO` cache lane through a dispatcher-chainable Burst job.
+Rejected Alternatives: `ComputeBuffer.GetData()`, blocking until `AsyncGPUReadbackRequest.done`, main-thread completed-readback folding, and `Action` callback ownership in the hot query path were rejected. The player receives slightly stale water in a sluggish medium; the CPU never waits.
 Scalability potential: Low can use cached macro/still water for misses; Middle uses cached shallow-water hits plus analytical fallback; High/Ultra can increase GPU sample budget while keeping latency tolerant.
 Hardware Impact: Low-end i3/MX350 avoids GPU/CPU synchronization stalls. Expected saved cost is entire readback stall duration; exact microseconds pending profiler proof.
 
 Problem: Queue producers from KCC, submarine, and flora cannot be serialized through direct adapter calls.
 Solution: Added `NativeQueue<OceanKinematicsSampleRequestDTO>.ParallelWriter` exposure and `DrainOceanSampleRequestQueueJob` as the single PRE_SIMULATION consumer. The drain coalesces exact duplicate AUP hashes, packs requests linearly, and writes queue counters for dependent jobs.
 Rejected Alternatives: Managed `Queue<T>`, `ConcurrentQueue<T>`, per-system callbacks, and main-thread de-dup dictionaries were rejected for GC and cache locality.
-Scalability potential: Low processes only the bounded drain budget and uses duplicate coalescing aggressively; Middle/High/Ultra preserve the same SPSC route and spend extra budget on wave fidelity, not dispatch overhead.
+Scalability potential: Low processes only the bounded drain budget and uses duplicate coalescing aggressively; Middle/High/Ultra preserve the same multi-producer/single-consumer route and spend extra budget on wave fidelity, not dispatch overhead.
 Hardware Impact: Reduces redundant sample evaluations and turns scattered producers into one linear `NativeArray` walk; estimated savings depend on duplicate rate.
 
 Problem: Batch protocol requires compile after tasks 6-10, but local CPU load remains above the allowed threshold.
@@ -261,7 +261,7 @@ Scalability potential: Runtime behavior unchanged. Iteration scalability improve
 Hardware Impact: No frame-time cost; compile-risk containment only.
 
 Problem: The Dear Lie cache path still accepted a caller-owned `NativeParallelHashMap<uint, FluidSampleResultDTO>`, even though SHINOBU_261 already owns Vault buffer `72947` for previous-frame cached water rows.
-Solution: Replaced the cached-readback map route with direct-mapped `NativeArray<OceanCachedFluidSampleDTO>` access. `TryUpdateDearLieCacheFromReadback` writes slot `hash % cacheLength`; `ResolveDearLieCachedResultsJob` reads the same slot and treats hash mismatch as a cheap cache miss.
+Solution: Replaced the cached-readback map route with direct-mapped `NativeArray<OceanCachedFluidSampleDTO>` access. `ScheduleDearLieCacheUpdateFromReadback` schedules slot writes to `hash % cacheLength`; `ResolveDearLieCachedResultsJob` reads the same slot and treats hash mismatch as a cheap cache miss.
 Rejected Alternatives: Keeping an external persistent hash map was rejected because it moves cache ownership outside the Vault lane. Linear scanning `OceanCachedFluidSampleDTO[50000]` was rejected because it turns N requests into O(N^2) cache work under dense probes.
 Scalability potential: Low devices get O(1) stale-water lookup with a cheap miss fallback; Middle/High/Ultra can increase GPU readback coverage while keeping cache identity and DTO layout invariant.
 Hardware Impact: Removes a native hash-map owner from the cached water route and replaces it with one modulo, one 32-byte row load, and one hash compare per request.
@@ -345,8 +345,8 @@ Scalability potential: Runtime behavior unchanged beyond deterministic empty-spe
 Hardware Impact: Build contention avoided.
 
 Problem: `DrainOceanSampleRequestQueueJob` treated `NativeParallelHashMap.TryAdd(hash, packed) == false` as a duplicate request. `TryAdd` can also fail when the coalescing scratch map is full, which would drop a unique water sample while there is still packed-output capacity.
-Solution: The drain now calls `ContainsKey(hash)` to classify true duplicates first. If the key is not present, `TryAdd` is attempted only as an optional coalescing insert; failure preserves the unique request and packs it into the output buffer.
-Rejected Alternatives: Dropping the request on `TryAdd` failure was rejected because scratch-map capacity is not gameplay authority. Growing the map at runtime was rejected because the queue drain must remain fixed-capacity and allocation-free.
+Solution: The drain now calls `ContainsKey(hash)` to classify true duplicates first. If the key is not present, `TryAdd` is attempted only as an optional coalescing insert; failure switches the pass into saturated-coalescing mode and continues packing unique requests without relying on the full scratch map.
+Rejected Alternatives: Dropping the request on `TryAdd` failure was rejected because scratch-map capacity is not gameplay authority. Growing or clearing replacement maps at runtime was rejected because the queue drain must remain fixed-capacity and allocation-free.
 Scalability potential: Low devices can use smaller coalescing scratch without losing unique samples; Middle/High/Ultra can raise scratch capacity or drain budget continuously while preserving the same DTO layout and queue route.
 Hardware Impact: Adds one hash lookup per coalesced request when the map is enabled. It prevents false loss of unique requests under capacity pressure; no profiler microseconds claimed under CPU gate.
 
@@ -511,3 +511,21 @@ Solution: Widened `OceanKinematicsQueueCountersDTO` to explicit 64 bytes: counte
 Rejected Alternatives: A new Vault buffer was rejected because the result hash is a counter/fence proof owned by the existing queue-counter pass. A 40-byte DTO was rejected because a 64-byte lane is cleaner for false-sharing paranoia and future fixed counters.
 Scalability potential: Runtime quality behavior unchanged; the counter lane capacity now supports low-to-ultra query budgets without changing ABI again for result-hash proof.
 Hardware Impact: One 64-byte QueueCounters buffer replaces a 32-byte lane. Runtime memory increase is 32 bytes total; main-thread telemetry scan removal is the meaningful performance gain.
+
+Problem: Completed `AsyncGPUReadbackRequest` folding still hashed, finite-checked, and wrote up to 50,000 Dear Lie cache rows on the main thread. Non-blocking readback does not excuse O(N) CPU folding in the owner call site.
+Solution: Replaced the synchronous fold API with `ScheduleDearLieCacheUpdateFromReadback`. The method only validates that the readback is done, obtains the `NativeArray<float4>` view, computes the clamped count, and schedules `UpdateDearLieCacheFromReadbackJob`. The job is serial by design because direct-mapped cache collisions must preserve deterministic last-writer-wins order.
+Rejected Alternatives: `IJobParallelFor` was rejected because colliding direct-map slots would race. Keeping the loop on the main thread was rejected because it scales with GPU sample count. Adding `.Complete()` was rejected because readback ingestion must be dispatcher-chainable.
+Scalability potential: Low devices can keep completed-readback fold work out of the owner thread; middle/high/ultra can raise readback sample budget while preserving the same cache ABI and job route.
+Hardware Impact: Main-thread completed-readback fold changes from O(N rows) to O(1) validation plus one job schedule. The row loop remains O(N) but runs in a Burst job in the dispatcher completion window. No measured microseconds claimed yet.
+
+Problem: Empty queued drains cleared `CoalescingHashToIndex` before knowing whether any request existed, which can turn an empty water-query frame into an O(hash capacity) scratch-map clear. `TryAdd` saturation also needed explicit semantics after the earlier duplicate-classification patch.
+Solution: `DrainOceanSampleRequestQueueJob` now clears the coalescing map lazily after the first successful dequeue. If `TryAdd` fails for a non-duplicate hash, the job marks `coalescingSaturated` and continues packing unique requests while disabling duplicate lookup for the remainder of that drain.
+Rejected Alternatives: Reading `NativeQueue.Count` on the main thread before producer dependencies complete was rejected as unsafe. Growing the hash map at runtime was rejected. Dropping unique rows under coalescing scratch saturation was rejected because scratch capacity is not gameplay authority.
+Scalability potential: Low devices avoid empty-frame scratch-map clear cost and can use smaller coalescing scratch without losing unique samples. Higher tiers can raise scratch capacity and drain budget without changing request/result DTOs.
+Hardware Impact: Empty-frame coalescing clear cost is removed. Under saturation, duplicate filtering degrades gracefully to packed evaluation rather than data loss.
+
+Problem: The SHINOBU_261 scanner sidecar still carried stale line numbers and `scannedScripts=null` after Player/Flora source drift.
+Solution: Recounted `Assets/_Project/Scripts` excluding `Plugins/Crest` at 2178 C# scripts and refreshed the four legacy managed water query line numbers to `HectonPlayerMovement.cs:6924`, `:6932`, `:6984`, and `FloraInteractionManager.cs:7014`.
+Rejected Alternatives: Leaving stale line proof was rejected because Task 19 is proof-artifact driven. Running Unity menu scanner was rejected while CPU/build gate is closed.
+Scalability potential: Runtime unchanged; this is audit correctness only.
+Hardware Impact: 0 runtime us.

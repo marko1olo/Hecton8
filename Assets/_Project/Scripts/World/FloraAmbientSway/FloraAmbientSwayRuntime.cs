@@ -220,6 +220,9 @@ namespace Hecton8.World.FloraAmbientSway
         private const uint TelemetryFlagUploadSkipped = 1u << 3;
         private const uint TelemetryFlagBurstKernelUnavailable = 1u << 4;
         private const uint TelemetrySourceHash = 0x53465759u;
+        private const uint TelemetryDumpMagic = 0x37363253u; // "S267" little-endian bytes.
+        private const uint TelemetryDumpVersion = 1u;
+        private const uint SwayTelemetryEntrySizeBytes = 32u;
 
         private static int s_runtimeClaimed;
         private static FunctionPointer<GenerateMockAmbientFlowKernelDelegate> s_generateMockKernel;
@@ -576,9 +579,9 @@ namespace Hecton8.World.FloraAmbientSway
             paramsSize = UnsafeUtility.SizeOf<FloraSwayParamsDTO>();
             telemetrySize = UnsafeUtility.SizeOf<SwayTelemetryEntry>();
             profileSize = UnsafeUtility.SizeOf<FloraBiomeSwayProfileDTO>();
-            return paramsSize == 32 &&
+            return paramsSize == FloraSwayParamsSizeBytes &&
                    UnsafeUtility.AlignOf<FloraSwayParamsDTO>() >= 4 &&
-                   telemetrySize == 32 &&
+                   telemetrySize == (int)SwayTelemetryEntrySizeBytes &&
                    profileSize == 32 &&
                    Marshal.OffsetOf(typeof(FloraSwayParamsDTO), nameof(FloraSwayParamsDTO.GlobalFlowVector)).ToInt32() == 0 &&
                    Marshal.OffsetOf(typeof(FloraSwayParamsDTO), nameof(FloraSwayParamsDTO.SwayMathParams)).ToInt32() == 16;
@@ -906,7 +909,10 @@ namespace Hecton8.World.FloraAmbientSway
                 string path = Path.Combine(directory, "Dump_SHINOBU_267.bin");
                 using (FileStream stream = File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read))
                 {
+                    WriteUInt32LittleEndian(stream, TelemetryDumpMagic);
+                    WriteUInt32LittleEndian(stream, TelemetryDumpVersion);
                     WriteUInt32LittleEndian(stream, TelemetrySourceHash);
+                    WriteUInt32LittleEndian(stream, SwayTelemetryEntrySizeBytes);
                     WriteInt32LittleEndian(stream, ring.Length);
                     WriteInt32LittleEndian(stream, ReadTelemetryCursor(cursorArray));
                     for (int i = 0; i < ring.Length; i++)

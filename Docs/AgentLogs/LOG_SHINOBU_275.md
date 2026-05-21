@@ -1056,12 +1056,15 @@ Verification:
 - Focused `rg` found no `Material.Set*`, `.SetBuffer`, or `Shader.SetGlobal*` hit in `DeferredDecalPass.cs` / `HectonVisorUberPostFeature.cs`.
 - Focused `rg` found no `throw new`, `InvalidOperationException`, or old `GetDynamicDecalElementRef` in `DynamicDecalVaultRuntime.cs`.
 - Broad owned-route forbidden scan found no `BinaryWriter`, LINQ/list materialization, `TryGetLatestCreated`, new local native arrays/lists/hashmaps, `DecalProjector`, `UnityEngine.Random`, `math.normalize`, `UsePass`, `AddBlitPass`, `RenderGraphUtils`, `Graphics.Blit`, or `CommandBuffer.Blit`.
-- Scanner/report/diff/build-gate verification is still pending for this loop.
+- `python Tools\Decal_Projector_Inquisition.py`: PASS at `2026-05-21T20:02:57Z`; 5825 scanned assets, 336 candidates, 0 active GameObject decal violations, 0 active URP decal renderer feature violations.
+- `Docs\Reports\RENDERING_OPTIMIZATION_REPORT.json` contains the SHINOBU_275 timestamp `2026-05-21T20:02:57Z` and validates as JSON.
+- `git diff --check` reports only LF-to-CRLF normalization warnings for touched docs.
+- Compile not launched: CPU sampled at 51% and compiler-process count returned 2, which violates the AGENTS build gate.
 
 <SELF_AUDIT agent_id="SHINOBU_275" loop="22_rendergraph_texture_binding_state_guard">
   <TASK_RECONCILIATION>
     <TASK id="01" result="PASS_STATIC">Re-audited owned visor wound/post render binding surfaces.</TASK>
-    <TASK id="02" result="PASS_STATIC_PENDING_SCANNER">No object decal route was introduced; scanner rerun pending after docs patch.</TASK>
+    <TASK id="02" result="PASS_STATIC">Scanner PASS at 2026-05-21T20:02:57Z; no active object/URP decal route was introduced.</TASK>
     <TASK id="03" result="PASS_STATIC">No DTO properties or managed wrappers were added.</TASK>
     <TASK id="04" result="PASS_STATIC">No DTO layout changed; `VisorDecalDTO` remains explicit 80B.</TASK>
     <TASK id="05" result="PASS_STATIC">Mock lane unchanged.</TASK>
@@ -1078,13 +1081,13 @@ Verification:
     <TASK id="16" result="PASS_STATIC">Editor facade unchanged.</TASK>
     <TASK id="17" result="PASS_STATIC">CSV profile ingestion unchanged.</TASK>
     <TASK id="18" result="PASS_STATIC">Gizmo route unchanged.</TASK>
-    <TASK id="19" result="PENDING">Metric validator rerun pending after code/docs patch.</TASK>
-    <TASK id="20" result="PENDING">Compile gate sample pending after static verification.</TASK>
+    <TASK id="19" result="PASS_STATIC">Metric validator rerun and report timestamp refreshed to 2026-05-21T20:02:57Z.</TASK>
+    <TASK id="20" result="PASS_STATIC_COMPILE_BLOCKED">Docs/logs synchronized; compile gate blocked by CPU 51% and compiler-process count 2.</TASK>
   </TASK_RECONCILIATION>
   <STRUCT_LAYOUT>`VisorDecalDTO`: `LocalToWorld@0` 64B, `DecalTypeHash@64` 4B, `Opacity01@68` 4B, `BirthTime@72` 4B, `Flags@76` 4B; total 80B, 80 % 16 = 0. Loop 22 changed no primary DTO bytes.</STRUCT_LAYOUT>
   <SCALABILITY_CURVE>Loop 22 changes no quality math. `GlobalQualityWeight` still controls wound count, fade pressure, shader refraction, reconstruction/noir richness, and optional telemetry continuously, while texture binding route stays invariant across low/middle/high/ultra tiers.</SCALABILITY_CURVE>
   <H_PHI_VAULT_STATUS>Vault lanes unchanged: 71490 instances, 71491 upload scratch, 71492 runtime state, 71493 telemetry ring, 71494 tuning, 71495 material profiles, 71496 CSV scratch. No new persistent private native container was introduced.</H_PHI_VAULT_STATUS>
   <POINTER_ALIASING_DEPENDENCY_GRAPH>Job graph unchanged. Existing Burst jobs keep `[NoAlias]` pointer fields; Loop 22 added no new job, no same-frame `.Complete()`, and no new aliasing surface.</POINTER_ALIASING_DEPENDENCY_GRAPH>
-  <COMPILE_GUARD>No direct sibling runtime dependency was added. Compile gate not sampled yet after Loop 22 patch.</COMPILE_GUARD>
+  <COMPILE_GUARD>No direct sibling runtime dependency was added. Compile was not launched because CPU sampled at 51% and compiler-process count returned 2.</COMPILE_GUARD>
   <DEAR_LIE_CONFIRMATION>Before/after complexity remains O(N_visible capped at 128) in the shader and O(1) ring insertion on CPU. No fracture mesh, object decal, particle truth, or physical fluid route was introduced.</DEAR_LIE_CONFIRMATION>
 </SELF_AUDIT>

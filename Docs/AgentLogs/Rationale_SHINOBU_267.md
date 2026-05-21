@@ -505,3 +505,27 @@ Route impact: If the route hits invalid flora math, the exported 300-frame ring 
 Proof required: Static source/self-audit now; Unity import/Console, selected route run, profiler/GC, Burst/import proof, Frame Debugger, screenshot/clip, save/load diff, and actual dump-read smoke test remain pending.
 Parked work rejected: Launching build under CPU/dotnet/csc gate, moving disk I/O into the hot owner frame beyond existing fault-only trigger, and changing telemetry DTO size.
 Static verification: Runtime `BinaryWriter` count is 0; explicit little-endian helpers and `math.asuint` float serialization are present; editor self-audit contains `littleEndianDump`; owned forbidden scan is clean; runtime/editor/shader brace and preprocessor balances are zero; asmdef/report JSON parse passed; `git diff --check` reported no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 97.3%, dotnet=1, csc=1.
+
+## Polish Pass 46 Decisions
+Problem: P45 removed `BinaryWriter`, but the dump header still depended on out-of-band knowledge of field order. A forensic reader needs a magic/version/row-size guard before trusting telemetry bytes.
+Solution: Added a fixed 24-byte little-endian header: `"S267"` magic (`0x37363253`), version `1`, `TelemetrySourceHash`, row size `32`, row count, and cursor. The row payload remains 300 fixed `SwayTelemetryEntry` records, field-by-field little-endian.
+Rejected Alternatives: Keeping the 12-byte P45 header was rejected because it lacked magic/version/row-size. Dumping raw DTO bytes was rejected because it would couple forensic files to platform endian and struct-copy assumptions.
+Scalability potential: No visual-tier behavior change. Low/Middle/High/Ultra remain one 32B CBuffer plus continuous shader gates; this change affects fault evidence only.
+Hardware Impact: 0 hot runtime us. The added header is six scalar writes on a fault-only file path.
+First 20 Minutes moment: World load and swim readability on the selected Copper Wire route biome.
+Route impact: Route fault dumps can be rejected or parsed deterministically by tooling before reading rows, avoiding silent postmortem misreads.
+Proof required: Static source/self-audit now; Unity import/Console, selected route run, profiler/GC, Burst/import proof, Frame Debugger, screenshot/clip, save/load diff, and actual dump-read smoke test remain pending.
+Parked work rejected: Build launch under CPU/dotnet/csc gate, telemetry DTO size changes, and gameplay-state inclusion.
+Static verification: Runtime header constants and writer calls for magic/version/source/row-size are present; runtime `BinaryWriter` count remains 0; editor self-audit requires the header through `littleEndianDump`; owned forbidden scan is clean; runtime/editor/shader brace and preprocessor balances are zero; asmdef/report JSON parse passed; `git diff --check` reported no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 95.7%, dotnet=1, csc=1.
+
+## Polish Pass 47 Decisions
+Problem: P46 added `SwayTelemetryEntrySizeBytes` to the dump header, but `ValidateFloraSwayLayouts()` still used independent `32` literals. That left a possible future drift between advertised dump row size and actual DTO validation.
+Solution: Changed the validator to compare `paramsSize` against `FloraSwayParamsSizeBytes` and `telemetrySize` against `(int)SwayTelemetryEntrySizeBytes`. The existing editor self-audit already calls this validator, so row-size/header drift now fails the audit.
+Rejected Alternatives: Leaving the numeric literals was rejected because forensic row-size is now part of the file ABI. Adding a separate duplicate editor check was rejected because the runtime validator is the single owner of DTO size proof.
+Scalability potential: No visual-tier behavior change. Low/Middle/High/Ultra remain shader-quality curves and one CBuffer; this is ABI proof only.
+Hardware Impact: 0 hot runtime us. Validator-only source hardening.
+First 20 Minutes moment: World load and swim readability on the selected Copper Wire route biome.
+Route impact: Route fault dumps now advertise a row size tied to the same validator that protects the actual telemetry DTO.
+Proof required: Static source/self-audit now; Unity import/Console, selected route run, profiler/GC, Burst/import proof, Frame Debugger, screenshot/clip, save/load diff, and dump-read smoke test remain pending.
+Parked work rejected: Build launch while dotnet/csc are active, telemetry DTO size changes, and runtime file parsing.
+Static verification: Validator source compares params size to `FloraSwayParamsSizeBytes` and telemetry size to `(int)SwayTelemetryEntrySizeBytes`; owned forbidden scan is clean; runtime/editor/shader brace and preprocessor balances are zero; `git diff --check` reported no whitespace errors beyond LF/CRLF warnings. Build not launched because CPU preflight reported 46.3%, dotnet=1, csc=1.

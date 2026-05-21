@@ -134,6 +134,7 @@ namespace Hecton8.World
         private const float DearLieSpatialCellSizeMeters = 3f;
         private const float DearLieRegenerationDelaySeconds = 300f;
         private const float DearLieMinimumMagnitude = 0.001f;
+        private const double OrganicClockMaxSeconds = 16777215d;
         private const uint DearLieSignalHashFlora = 0x464C4F52u; // FLOR
         private const uint DearLieSignalHashOrganic = 0x4F524741u; // ORGA
         private const byte DearLieFloraDamageFlag = 1 << 6;
@@ -579,6 +580,7 @@ namespace Hecton8.World
         private int _dearLieLastVfxCount;
         private float _dearLieLastQualityWeight;
         private float _dearLieFallbackQualityWeight = 0.25f;
+        private double _organicClockSeconds;
         private Vector3 _dearLieLastImpactRuntimePosition;
         private Vector3 _dearLieLastTargetRuntimePosition;
         private byte _dearLieHasLastDebugHit;
@@ -736,6 +738,7 @@ namespace Hecton8.World
                 return false;
 
             float initialUnits = Mathf.Max(0.25f, capacityUnits);
+            float currentTime = ResolveOrganicClockSeconds();
             CorpseResourceNodeRecord record = new CorpseResourceNodeRecord
             {
                 NodeId = (uint)(PersistentWorldRegistry.ComputeResourceNodeTombstoneId(in positionAup) & uint.MaxValue),
@@ -746,8 +749,8 @@ namespace Hecton8.World
                 InitialUnits = initialUnits,
                 RemainingUnits = initialUnits,
                 BloodIntensity = DefaultCorpseBloodIntensity,
-                SpawnTime = Time.time,
-                ExpireTime = Time.time + OrganicDecompositionDurationSeconds,
+                SpawnTime = currentTime,
+                ExpireTime = currentTime + OrganicDecompositionDurationSeconds,
                 Active = 1
             };
             _corpseResourceNodes[writeIndex] = record;
@@ -1047,7 +1050,7 @@ namespace Hecton8.World
                 _lateFrameTickRegistered = false;
             }
 
-            CompleteDearLieJobIfNeeded(Time.time);
+            CompleteDearLieJobIfNeeded(ResolveOrganicClockSeconds());
             CompleteYieldJobIfNeeded();
             UnregisterOriginShiftListener();
             TryUnregisterHotSwapListener();
@@ -1061,7 +1064,7 @@ namespace Hecton8.World
             if (_activeRuntimeInstance == this)
                 _activeRuntimeInstance = null;
 
-            CompleteDearLieJobIfNeeded(Time.time);
+            CompleteDearLieJobIfNeeded(ResolveOrganicClockSeconds());
             CompleteYieldJobIfNeeded();
             UnregisterOriginShiftListener();
             TryUnregisterHotSwapListener();
@@ -1445,7 +1448,7 @@ namespace Hecton8.World
         private void ReleaseDearLieVaultBuffers(IDataVault vault)
         {
             if (_dearLieJobScheduled)
-                CompleteDearLieJobIfNeeded(Time.time, force: true);
+                CompleteDearLieJobIfNeeded(ResolveOrganicClockSeconds(), force: true);
 
             if (_dearLieVaultJobLocksHeld)
                 UnlockDearLieVaultJobBuffers();
@@ -1510,12 +1513,35 @@ namespace Hecton8.World
             _spatialAudioManager = null;
         }
 
+        private void AdvanceOrganicClock(float deltaTime)
+        {
+            if (!math.isfinite(deltaTime) || deltaTime <= 0f)
+                return;
+
+            double nextTime = _organicClockSeconds + deltaTime;
+            _organicClockSeconds = nextTime >= 0d && nextTime < OrganicClockMaxSeconds
+                ? nextTime
+                : OrganicClockMaxSeconds;
+        }
+
+        private float ResolveOrganicClockSeconds()
+        {
+            double currentTime = _organicClockSeconds;
+            if (!(currentTime > 0d))
+                return 0f;
+
+            return currentTime < OrganicClockMaxSeconds
+                ? (float)currentTime
+                : (float)OrganicClockMaxSeconds;
+        }
+
         /// <summary>
         /// Processes pending entropy jobs and drop routing.
         /// </summary>
         public void Tick(float deltaTime)
         {
-            float currentTime = Time.time;
+            AdvanceOrganicClock(deltaTime);
+            float currentTime = ResolveOrganicClockSeconds();
             if (_dearLieJobScheduled)
                 return;
 
@@ -1542,7 +1568,7 @@ namespace Hecton8.World
             DispatcherJobSwap.BeginLateFrameSwapWindow();
             try
             {
-                CompleteDearLieJobIfNeeded(Time.time, force: false);
+                CompleteDearLieJobIfNeeded(ResolveOrganicClockSeconds(), force: false);
                 CompleteYieldJobIfNeeded(force: false);
             }
             finally
@@ -1575,9 +1601,10 @@ namespace Hecton8.World
             SyncDestroyedFloraFromPersistence();
             SyncFloraStateOverridesFromPersistence();
             RefreshActiveCachesIfNeeded(force: true);
-            RefreshCorpseResourceNodes(Time.time);
+            float currentTime = ResolveOrganicClockSeconds();
+            RefreshCorpseResourceNodes(currentTime);
             EvaluateAllelopathicRelease();
-            EvaluateAggressiveOvergrowth(Time.time);
+            EvaluateAggressiveOvergrowth(currentTime);
         }
 
         private void ProcessDearLieDestructionSignals(float currentTime)

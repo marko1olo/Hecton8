@@ -322,7 +322,7 @@ namespace Hecton8.Physics
         }
 
         /// <summary>
-        /// Exposes the SPSC producer lane expected by KCC, submarine, and flora dispatchers.
+        /// Exposes the multi-producer/single-consumer lane expected by KCC, submarine, and flora dispatchers.
         /// </summary>
         public static bool TryGetRequestParallelWriter(
             NativeQueue<OceanKinematicsSampleRequestDTO> pendingRequests,
@@ -492,16 +492,17 @@ namespace Hecton8.Physics
         }
 
         /// <summary>
-        /// Consumes a completed GPU readback into the previous-frame Dear Lie cache. Never blocks on pending requests.
+        /// Schedules a completed GPU readback fold into the previous-frame Dear Lie cache. Never blocks on pending requests.
         /// </summary>
-        public static bool TryUpdateDearLieCacheFromReadback(
+        public static JobHandle ScheduleDearLieCacheUpdateFromReadback(
             in AsyncGPUReadbackRequest readbackRequest,
             NativeArray<OceanKinematicsSampleRequestDTO> completedRequests,
             NativeArray<OceanCachedFluidSampleDTO> cachedReadbackResults,
             int completedCount,
-            out int writtenCount)
+            out int scheduledCount,
+            JobHandle inputDeps)
         {
-            writtenCount = 0;
+            scheduledCount = 0;
             if (!readbackRequest.done ||
                 readbackRequest.hasError ||
                 !completedRequests.IsCreated ||
@@ -509,32 +510,23 @@ namespace Hecton8.Physics
                 cachedReadbackResults.Length == 0 ||
                 completedCount <= 0)
             {
-                return false;
+                return inputDeps;
             }
 
             NativeArray<float4> readbackData = readbackRequest.GetData<float4>();
             int count = math.min(completedCount, math.min(completedRequests.Length, readbackData.Length));
-            for (int i = 0; i < count; i++)
+            if (count <= 0)
+                return inputDeps;
+
+            scheduledCount = count;
+            UpdateDearLieCacheFromReadbackJob job = new UpdateDearLieCacheFromReadbackJob
             {
-                OceanKinematicsSampleRequestDTO request = completedRequests[i];
-                uint hash = OceanKinematicsHashUtility.ResolveRequestHash(in request);
-                float4 sample = readbackData[i];
-                FluidSampleResultDTO result = default;
-                result.WaterHeight = math.select(0f, sample.x, math.isfinite(sample.x));
-                bool velocityFinite = math.isfinite(sample.y) && math.isfinite(sample.z) && math.isfinite(sample.w);
-                result.SurfaceVelocity = math.select(float3.zero, new float3(sample.y, sample.z, sample.w), velocityFinite);
-
-                uint slot = hash % unchecked((uint)cachedReadbackResults.Length);
-                OceanCachedFluidSampleDTO cached = default;
-                cached.RequestHash = hash;
-                cached.Result = result;
-                cached.Flags = OceanKinematicsConstants.FlagActive | OceanKinematicsConstants.FlagAsyncCached;
-                cachedReadbackResults[unchecked((int)slot)] = cached;
-
-                writtenCount++;
-            }
-
-            return writtenCount > 0;
+                CompletedRequests = completedRequests,
+                ReadbackSamples = readbackData,
+                CachedResults = cachedReadbackResults,
+                CompletedCount = count
+            };
+            return job.Schedule(inputDeps);
         }
 
         private void Awake()

@@ -42,7 +42,7 @@ Constraints:
 - Gameplay authority and rollback state are not mutated by the renderer; wounds are presentation-only signal consumers.
 
 Proof:
-- `Tools/Decal_Projector_Inquisition.py` writes `Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json`; latest run 2026-05-21T19:41:50Z reports 0 active GameObject/URP decal violations.
+- `Tools/Decal_Projector_Inquisition.py` writes `Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json`; latest SHINOBU_275 run 2026-05-21T20:02:57Z reports 0 active GameObject/URP decal violations.
 - Binary payload ledger and route card are synchronized with the active C#/HLSL ABI: offset 72 is `BirthTime`; lifetime is packed inside `DecalTypeHash` bits 8..23, shader branch reads low 4 type bits, and atlas sampling reads bits 4..7.
 - Black-box telemetry uses 300 `VisorWoundTelemetryEntry` records and dumps to `Docs/AgentLogs/Dump_SHINOBU_275.bin` on layout/non-finite/upload faults. Loop 21 format is a fixed 16-byte little-endian header followed by 300 fixed 64-byte telemetry rows written through stack spans; no `BinaryWriter` is used.
 - Shader binding proof: `Hecton_VisorGlitchACES.shader.meta` GUID `2b2a9f18d90f4b35b8b4f9d1a8e23501`; `Hecton_VisorWounds.shader.meta` GUID `0a2df57d7a4e4d44a95b1b4c4bfb2750`.

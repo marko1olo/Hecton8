@@ -1,6 +1,6 @@
 # Rationale_SHINOBU_270
 
-Status: STATIC API RECHECK CLEAN / COMPILE BLOCKED BY ACTIVE COMPILER AND CPU GATE
+Status: STATIC API RECHECK CLEAN / GENERATED CSPROJ STALE / COMPILE BLOCKED BY ACTIVE COMPILER AND CPU GATE
 Domain: ECHELON 8 Presentation & UX / Visor AR (HUD)
 
 ## Mandate Selection
@@ -356,3 +356,27 @@ Solution: Sampled the gate after static API recheck. Active `dotnet` PID 10784 a
 Rejected Alternatives: Launching a competing compiler, killing another agent's compiler, or claiming compile proof from static scans.
 Scalability potential: No runtime route change.
 Hardware Impact: Protects shared workstation CPU/IO. Compile remains PENDING VERIFICATION until no compiler process is active and CPU is below 50%.
+
+### D044 Generated C# Project Staleness
+
+Problem: The current generated `Hecton8.Core.csproj` is an explicit compile list and does not include `Assets/_Project/Scripts/Visor/HectonVisorARStencilRendererFeature.cs` or `Assets/_Project/Scripts/Visor/HectonVisorStencilPreviewGizmo.cs`, while it does include older visor files such as `HectonVisorFluidDistortionFeature.cs`. A `dotnet build Hecton8.Core.csproj` against this stale project would not compile the new SHINOBU_270 scripts and would be false evidence.
+Solution: Marked the compile proof as requiring Unity AssetDatabase/project-file regeneration or an equivalent Unity import path before the generated project can verify the new files. The generated `.csproj` is left untouched because its header says it is overwritten by Unity generation.
+Rejected Alternatives: Manually editing the generated `.csproj`, claiming stale `dotnet` proof, or adding a separate project-file dependency edge for one agent's files.
+Scalability potential: Runtime Low/Middle/High/Ultra route unchanged. This is verification hygiene: the single stencil RenderGraph route remains the only intended renderer, but proof must come from the actual Unity import graph.
+Hardware Impact: Runtime 0 us. Prevents a false compile report that could ship uncompiled or editor-unimported scripts.
+
+### D045 Active Compiler Gate After Csproj Audit
+
+Problem: A build gate resample was needed after discovering stale project-file coverage, but AGENTS.md still forbids launching a compiler beside another active compiler.
+Solution: Resampled compiler and CPU gates. Active `dotnet` PID 12844 and `csc` PID 29340 were present; CPU was 93% by CIM and 65.84%, 86.14%, 34.97%, 38.23%, 46.6% by processor counter samples. Build was not launched.
+Rejected Alternatives: Launching a competing compiler, killing another agent's compiler, or bypassing the active-compiler gate because some CPU counter samples fell below 50%.
+Scalability potential: No runtime route change.
+Hardware Impact: Protects shared workstation CPU/IO. Compile remains PENDING VERIFICATION until project files regenerate/import the new scripts and the build gate is legally open.
+
+### D046 Active Compiler Gate Watch
+
+Problem: The build gate was resampled again after documentation was updated, but the workstation was still inside another active C# compilation window.
+Solution: Active `dotnet` PID 30716 and `csc` PID 14152 were present; CPU was 73% by CIM and 60.81%, 67.67%, 50.23% by processor counter samples. Build was not launched.
+Rejected Alternatives: Starting a competing compiler, killing unrelated build work, or treating a borderline 50.23% sample as permission while an active compiler process exists.
+Scalability potential: No runtime route change.
+Hardware Impact: Protects shared workstation CPU/IO. Compile remains PENDING VERIFICATION.

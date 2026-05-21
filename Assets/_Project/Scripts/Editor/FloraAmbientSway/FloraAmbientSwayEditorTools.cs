@@ -524,7 +524,10 @@ namespace Hecton8.Editor.FloraAmbientSway
             bool telemetry = runtime.Contains("SwayTelemetryCapacity = 300") && runtime.Contains("Dump_SHINOBU_267.bin");
             string forbiddenManagedDumpWriter = "Binary" + "Writer";
             bool littleEndianDump =
+                runtime.Contains("WriteUInt32LittleEndian(stream, TelemetryDumpMagic)") &&
+                runtime.Contains("WriteUInt32LittleEndian(stream, TelemetryDumpVersion)") &&
                 runtime.Contains("WriteUInt32LittleEndian(stream, TelemetrySourceHash)") &&
+                runtime.Contains("WriteUInt32LittleEndian(stream, SwayTelemetryEntrySizeBytes)") &&
                 runtime.Contains("WriteSingleLittleEndian(stream, entry.WrappedTime)") &&
                 runtime.Contains("WriteUInt32LittleEndian(stream, math.asuint(value))") &&
                 runtime.Contains("stream.WriteByte((byte)(value >> 24))") &&

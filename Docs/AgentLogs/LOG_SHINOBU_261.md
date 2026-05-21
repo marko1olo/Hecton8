@@ -5,13 +5,13 @@
 What was wrong:
 - `Crest4KinematicsAdapter` only exposed legacy one-sample/5-sample managed Crest bridge APIs. That path forces virtual/OOP sampling pressure onto high-density physics callers.
 - No 16-byte `FluidSampleResultDTO` existed for SHINOBU_261 AUP water sampling.
-- No dispatcher-owned Burst job path existed for analytical Gerstner/mock water samples, SPSC queue drain, async cached readback response, or black-box telemetry.
+- No dispatcher-owned Burst job path existed for analytical Gerstner/mock water samples, multi-producer/single-consumer queue drain, async cached readback response, or black-box telemetry.
 - The first local BufferID candidate `71648..71660` was invalid; it collided with Vehicle Damage, Flora Sway, and Seaglide Hydrodynamics lanes.
 - New Unity scripts initially had no stable `.meta` files and were outside the Crest Bridge asmdef boundary used by `Crest4KinematicsAdapter`.
 
 What was done:
 - Added explicit DTOs and layout validator: `FluidSampleResultDTO=16`, `OceanKinematicsSampleRequestDTO=40`, `GerstnerWaveDTO=40`, `OceanKinematicsTuningDTO=64`, `OceanKinematicsTelemetryEntry=64`, rollback fence `32`.
-- Added deterministic Burst jobs: mock waves, analytical Gerstner waves, SPSC queue drain/coalescing, previous-frame Dear Lie cache resolve, and depth-cull/nonfinite counter pass.
+- Added deterministic Burst jobs: mock waves, analytical Gerstner waves, multi-producer/single-consumer queue drain/coalescing, previous-frame Dear Lie cache resolve, and depth-cull/nonfinite counter pass.
 - Added Vault-backed owner route using generation handles only; buffers now live on local numeric IDs `72940..72950`.
 - Added O(1) macro ocean state and rollback hash fence.
 - Added 300-frame telemetry ring and binary dump route to `Docs/AgentLogs/Dump_SHINOBU_261.bin`.
@@ -206,7 +206,7 @@ Exact Microseconds saved -> Runtime: 0 us. Verification signal improved: scoped 
 
 <SELF_AUDIT_REVISION agent="SHINOBU_261" revision="post_report_hygiene_2026_05_21">
   <xml_prompt status="[PASS]">Fresh CLI extraction of the `SHINOBU_261` XML block returned length 19125 and 20 tasks.</xml_prompt>
-  <hot_path_scan status="[PASS]">Scoped SHINOBU_261 runtime/editor scan returned no hits for sync GPU readback, hidden `.Complete()`, MemClear, Unity random, LINQ, `foreach`, `Pack=1`, raw `math.sin/cos`, stale `TryResolveLocalOceanRendererBinding`, unbounded queue tail dequeue, full-capacity schedule, or stale request DTO names.</hot_path_scan>
+  <hot_path_scan status="[PASS_WITH_RESIDUAL_SCHEDULE_BUDGET]">Scoped SHINOBU_261 runtime/editor scan returned no hits for sync GPU readback, hidden `.Complete()`, MemClear, Unity random, LINQ, `foreach`, `Pack=1`, raw `math.sin/cos`, stale `TryResolveLocalOceanRendererBinding`, unbounded queue tail dequeue, or stale request DTO names. Queued evaluator scheduling is still budget-count based because actual packed count is produced inside the drain job.</hot_path_scan>
   <dto_property_scan status="[PASS_WITH_SCOPE]">OceanKinematics DTO/job/vault/csv files contain no public get/expression-bodied DTO properties. Crest4 inherited `Priority` and `SeaLevel` properties remain legacy adapter contract surface, not sampling DTOs.</dto_property_scan>
   <report_artifacts status="[PASS]">Root and SHINOBU_261 sidecar reports parse as JSON. Comment/string/char-aware scanner brace scan reports balanced braces.</report_artifacts>
   <diff_check status="[PASS_WITH_REPO_EOL_WARNINGS]">Scoped diff check reports only LF-to-CRLF normalization warnings for existing repository files.</diff_check>
@@ -232,7 +232,7 @@ Exact Microseconds saved -> Runtime: 0 us. Expected benefit is preventing a cont
 
 What was wrong -> The Dear Lie cached water route accepted a caller-owned `NativeParallelHashMap<uint, FluidSampleResultDTO>` even though SHINOBU_261 already reserves Vault buffer `72947` as `OceanCachedFluidSampleDTO[50000]`.
 
-What was done -> `ResolveDearLieCachedResultsJob` now reads `NativeArray<OceanCachedFluidSampleDTO>` directly. `TryUpdateDearLieCacheFromReadback` writes completed GPU rows into slot `RequestHash % cacheLength`; hash mismatches are treated as cache misses and fall back to still-water rows.
+What was done -> `ResolveDearLieCachedResultsJob` now reads `NativeArray<OceanCachedFluidSampleDTO>` directly. `ScheduleDearLieCacheUpdateFromReadback` schedules completed GPU row folds into slot `RequestHash % cacheLength`; hash mismatches are treated as cache misses and fall back to still-water rows.
 
 Cinematic Cheats used -> Previous-frame cached shallow-water data remains the visual fake; collisions in the direct-mapped cache intentionally degrade to cheap macro/still water instead of forcing GPU synchronization.
 
@@ -274,7 +274,7 @@ Exact Microseconds saved -> Runtime: 0 us. It prevents forensic proof degradatio
 
 ## Polish Pass: Dear Lie Readback Swizzle Hardening
 
-What was wrong -> `TryUpdateDearLieCacheFromReadback` used `sample.yzw` while folding completed GPU rows into the Vault-backed Dear Lie cache. That swizzle is not needed and creates avoidable Unity.Mathematics version sensitivity.
+What was wrong -> the old completed-readback fold used `sample.yzw` while folding GPU rows into the Vault-backed Dear Lie cache. That swizzle is not needed and creates avoidable Unity.Mathematics version sensitivity.
 
 What was done -> Replaced the swizzle with explicit `sample.y`, `sample.z`, and `sample.w` finite checks before writing `FluidSampleResultDTO.SurfaceVelocity`.
 
@@ -631,3 +631,21 @@ Build gate: CPU average 100 with active `csc` (`Id=31708`) and `dotnet` (`Id=107
   <main_thread_scan result="REMOVED">`ComputeResultHash` no longer exists in `OceanKinematicsVaultRuntime`.</main_thread_scan>
   <compile_gate result="NOT_RUN" reason="CPU=100 active csc/dotnet" />
 </SELF_AUDIT_REVISION>
+
+## Runtime Patch: Dear Lie Readback Fold Scheduled
+What was wrong: completed `AsyncGPUReadbackRequest` data was folded into the Dear Lie cache with an O(N) main-thread loop.
+What was done: replaced the synchronous fold with `ScheduleDearLieCacheUpdateFromReadback` and `UpdateDearLieCacheFromReadbackJob`. The method validates a completed readback and returns a chained `JobHandle`; hashing, finite checks, and cache writes happen in Burst job space.
+Cinematic Cheats used: the Dear Lie remains the same previous-frame cache illusion; this patch moves its maintenance out of the owner thread.
+Exact Microseconds saved: no measured profiler claim. Caller complexity changes from O(N completed rows) to O(1) validation plus one scheduled serial Burst job.
+
+## Runtime Patch: Queue Coalescing Lazy Clear
+What was wrong: `CoalescingHashToIndex.Clear()` ran before knowing whether a drain had any work, and scratch saturation could still blur duplicate-proof semantics.
+What was done: coalescing clear is now lazy on first dequeue. `TryAdd` saturation disables coalescing for the rest of the drain and preserves unique packed rows.
+Cinematic Cheats used: coordinate-hash coalescing remains the redundant-water-sample fake.
+Exact Microseconds saved: no measured profiler claim. Empty queue frames avoid an O(hash-map-capacity) clear.
+
+## Proof Patch: Scanner Sidecar Refresh
+What was wrong: `PHYSICS_OPTIMIZATION_REPORT_SHINOBU_261.json` carried stale Player/Flora line numbers and `scannedScripts=null`.
+What was done: refreshed line numbers to `6924`, `6932`, `6984`, `7014` and recorded `2178` scanned scripts from the shell fallback scope.
+Cinematic Cheats used: none.
+Exact Microseconds saved: 0 runtime us.

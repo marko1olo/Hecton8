@@ -4,7 +4,7 @@
   "generatedWithoutUnity": true,
   "unityMenuRoute": "Hecton/Physics/Water Interface Scanner",
   "scanScope": "Assets/_Project/Scripts excluding Plugins/Crest",
-  "scannedScripts": null,
+  "scannedScripts": 2178,
   "directOceanRendererLookups": 0,
   "managedWaterQueries": 4,
   "oopWaterQueriesEradicated": false,
@@ -17,22 +17,22 @@
   "findings": [
     {
       "path": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
-      "line": 6865,
+      "line": 6924,
       "pattern": ".GetWaterHeight("
     },
     {
       "path": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
-      "line": 6873,
+      "line": 6932,
       "pattern": ".GetWaveNormal("
     },
     {
       "path": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
-      "line": 6925,
+      "line": 6984,
       "pattern": ".GetSurfaceFlow("
     },
     {
       "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
-      "line": 7003,
+      "line": 7014,
       "pattern": ".GetSurfaceFlow("
     }
   ],

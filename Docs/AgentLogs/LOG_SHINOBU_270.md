@@ -551,3 +551,50 @@ Build gate:
 - Active compiler processes found: `dotnet` PID 10784 and `csc` PID 25392.
 - CPU gate stayed closed: CIM CPU 100%; processor counter samples 86.74%, 94.06%, 96.76%.
 - Compile remains PENDING VERIFICATION until CPU is below 50% and no compiler process is active.
+
+## 2026-05-21 - Generated Project Verification Limitation
+
+What was wrong:
+- The generated `Hecton8.Core.csproj` is an explicit Unity compile list and is currently stale for SHINOBU_270.
+- It contains `Assets\_Project\Scripts\Visor\HectonVisorFluidDistortionFeature.cs`, but does not contain `HectonVisorARStencilRendererFeature.cs` or `HectonVisorStencilPreviewGizmo.cs`.
+- A `dotnet build Hecton8.Core.csproj` against this state would not compile the new SHINOBU_270 scripts and would be false verification.
+
+What was done:
+- Recorded the project-file staleness in status and rationale.
+- Left `Hecton8.Core.csproj` untouched because it is generated and says not to modify it directly.
+- Resampled the build gate after the audit.
+
+Cinematic Cheats used:
+- Runtime route unchanged: stencil mask draw plus shader-side seven-segment digits, scanlines, fog, and AR brackets. No Canvas/TMP renderer was restored.
+
+Exact Microseconds saved:
+- Runtime: 0 us from this verification pass.
+- Proof protection: prevents a stale-project build from hiding import/compile defects in the actual Unity script graph.
+
+Build gate:
+- Build not launched.
+- Active compiler processes found: `dotnet` PID 12844 and `csc` PID 29340.
+- CPU gate stayed closed by CIM CPU 93%; processor counter samples were 65.84%, 86.14%, 34.97%, 38.23%, 46.6%.
+- Compile remains PENDING VERIFICATION until Unity regenerates/imports the new script project entries and no compiler process is active under the CPU gate.
+
+## 2026-05-21 - Build Gate Watch / Active Compiler Window
+
+What was wrong:
+- Compile proof is still pending, but another C# compilation window remained active after the generated-project audit.
+
+What was done:
+- Resampled compiler and CPU gates.
+- Did not launch `dotnet build`.
+
+Cinematic Cheats used:
+- Runtime route unchanged: stencil mask draw plus shader-side procedural digits/fog/brackets.
+
+Exact Microseconds saved:
+- Runtime: 0 us from this gate watch.
+- Workstation protection: avoids competing compiler CPU/IO contention.
+
+Build gate:
+- Build not launched.
+- Active compiler processes found: `dotnet` PID 30716 and `csc` PID 14152.
+- CPU gate stayed closed: CIM CPU 73%; processor counter samples 60.81%, 67.67%, 50.23%.
+- Compile remains PENDING VERIFICATION.
