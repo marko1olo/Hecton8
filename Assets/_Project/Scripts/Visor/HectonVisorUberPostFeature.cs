@@ -696,17 +696,22 @@ namespace Hecton8.Visor
         {
             IDataVault vault = GlobalRegistry.DataVault;
             if (vault != null &&
-                vault.TryGetBufferHandle<UberNoirReconstructionConstantsDTO>(
+                vault.TryGetGenerationHandle<UberNoirReconstructionConstantsDTO>(
                     ReconstructionConstantsVaultId,
-                    out VaultBufferHandle<UberNoirReconstructionConstantsDTO> handle) &&
+                    out VaultGenerationHandle<UberNoirReconstructionConstantsDTO> handle) &&
+                IsReconstructionVaultHandle(in handle, ReconstructionConstantsVaultId) &&
                 vault.TryLockBuffer(ReconstructionConstantsVaultId, SystemID.GraphicsScalability))
             {
                 try
                 {
-                    void* pointer = handle.ResolvePointer(vault);
-                    if (pointer != null)
+                    if (TryReadReconstructionVaultBuffer(
+                            vault,
+                            in handle,
+                            ReconstructionConstantsVaultId,
+                            1,
+                            out NativeArray<UberNoirReconstructionConstantsDTO> buffer))
                     {
-                        constants = UnsafeUtility.AsRef<UberNoirReconstructionConstantsDTO>(pointer);
+                        constants = buffer[0];
                         return true;
                     }
                 }
@@ -726,38 +731,37 @@ namespace Hecton8.Visor
             if (vault == null)
                 return false;
 
-            VaultBufferHandle<MockReconstructionInputSignal> handle;
-            if (!vault.TryGetBufferHandle<MockReconstructionInputSignal>(ReconstructionMockSignalVaultId, out handle))
+            VaultGenerationHandle<MockReconstructionInputSignal> handle;
+            if (!vault.TryGetGenerationHandle<MockReconstructionInputSignal>(ReconstructionMockSignalVaultId, out handle) ||
+                !IsReconstructionVaultHandle(in handle, ReconstructionMockSignalVaultId))
             {
                 if (vault.IsAllocationLocked)
                     return false;
 
-                handle = vault.GetBufferHandle<MockReconstructionInputSignal>(
+                handle = vault.GetGenerationHandle<MockReconstructionInputSignal>(
                     ReconstructionMockSignalVaultId,
                     1,
                     SystemID.GraphicsScalability,
                     NativeArrayOptions.ClearMemory);
             }
 
-            if (!handle.IsCreated ||
-                handle.Length <= 0 ||
-                !vault.TryLockBuffer(ReconstructionMockSignalVaultId, SystemID.GraphicsScalability))
+            if (!IsReconstructionVaultHandle(in handle, ReconstructionMockSignalVaultId) ||
+                !vault.TryAcquireWriteLock(in handle, SystemID.GraphicsScalability, out NativeArray<MockReconstructionInputSignal> mockBuffer))
             {
                 return false;
             }
 
             try
             {
-                void* pointer = handle.ResolvePointer(vault);
-                if (pointer == null)
+                if (!mockBuffer.IsCreated || mockBuffer.Length <= 0)
                     return false;
 
-                UnsafeUtility.AsRef<MockReconstructionInputSignal>(pointer) = signal;
+                mockBuffer[0] = signal;
                 return true;
             }
             finally
             {
-                vault.TryUnlockBuffer(ReconstructionMockSignalVaultId, SystemID.GraphicsScalability);
+                vault.ReleaseWriteLock(in handle, SystemID.GraphicsScalability);
             }
         }
 #endif
@@ -771,11 +775,11 @@ namespace Hecton8.Visor
         private GraphicsBuffer _reconstructionConstantsBufferB;
         private GraphicsBuffer _activeReconstructionConstantsBuffer;
         private IDataVault _dataVault;
-        private VaultBufferHandle<UberNoirReconstructionConstantsDTO> _reconstructionConstantsHandle;
-        private VaultBufferHandle<ReconstructionTelemetryEntry> _reconstructionTelemetryHandle;
-        private VaultBufferHandle<NoirAestheticProfileDTO> _aestheticProfileHandle;
-        private VaultBufferHandle<byte> _csvScratchHandle;
-        private VaultBufferHandle<MockReconstructionInputSignal> _mockSignalHandle;
+        private VaultGenerationHandle<UberNoirReconstructionConstantsDTO> _reconstructionConstantsHandle;
+        private VaultGenerationHandle<ReconstructionTelemetryEntry> _reconstructionTelemetryHandle;
+        private VaultGenerationHandle<NoirAestheticProfileDTO> _aestheticProfileHandle;
+        private VaultGenerationHandle<byte> _csvScratchHandle;
+        private VaultGenerationHandle<MockReconstructionInputSignal> _mockSignalHandle;
         private UberNoirReconstructionConstantsDTO _lastReconstructionConstants;
         private readonly NoirAestheticProfileDTO[] _aestheticProfileCache = new NoirAestheticProfileDTO[AestheticProfileCapacity]; // COLD ALLOC: NoirAestheticProfileDTO[32] - reconstruction CSV profile snapshot for render-frame lock-free selection - owner: HectonVisorUberPostFeature
         private int _aestheticProfileCacheCount;
@@ -1019,6 +1023,7 @@ namespace Hecton8.Visor
             ClearRawColorHistoryRequest();
             ClearPendingReconstructionInput();
             ReleaseNoirVaultHandles(_dataVault);
+            ReleaseReconstructionVaultHandles(_dataVault);
             CoreUtils.Destroy(_material);
             _material = null;
             CoreUtils.Destroy(_reconstructionMaterial);
@@ -1158,66 +1163,166 @@ namespace Hecton8.Visor
             if (_dataVault == null)
                 return false;
 
-            if (!_reconstructionConstantsHandle.IsCreated)
-            {
-                _reconstructionConstantsHandle = _dataVault.GetBufferHandle<UberNoirReconstructionConstantsDTO>(
-                    ReconstructionConstantsVaultId,
-                    1,
-                    SystemID.GraphicsScalability,
-                    NativeArrayOptions.UninitializedMemory);
-            }
+            _ = EnsureReconstructionVaultHandle(
+                ref _reconstructionConstantsHandle,
+                ReconstructionConstantsVaultId,
+                1,
+                NativeArrayOptions.UninitializedMemory);
+            _ = EnsureReconstructionVaultHandle(
+                ref _reconstructionTelemetryHandle,
+                ReconstructionTelemetryVaultId,
+                ReconstructionTelemetryCapacity,
+                NativeArrayOptions.ClearMemory);
+            _ = EnsureReconstructionVaultHandle(
+                ref _aestheticProfileHandle,
+                ReconstructionProfileVaultId,
+                AestheticProfileCapacity,
+                NativeArrayOptions.ClearMemory);
+            _ = EnsureReconstructionVaultHandle(
+                ref _csvScratchHandle,
+                ReconstructionCsvScratchVaultId,
+                CsvScratchBytes,
+                NativeArrayOptions.UninitializedMemory);
+            _ = EnsureReconstructionVaultHandle(
+                ref _mockSignalHandle,
+                ReconstructionMockSignalVaultId,
+                1,
+                NativeArrayOptions.ClearMemory);
 
-            if (!_reconstructionTelemetryHandle.IsCreated)
-            {
-                _reconstructionTelemetryHandle = _dataVault.GetBufferHandle<ReconstructionTelemetryEntry>(
-                    ReconstructionTelemetryVaultId,
-                    ReconstructionTelemetryCapacity,
-                    SystemID.GraphicsScalability,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            if (!_aestheticProfileHandle.IsCreated)
-            {
-                _aestheticProfileHandle = _dataVault.GetBufferHandle<NoirAestheticProfileDTO>(
-                    ReconstructionProfileVaultId,
-                    AestheticProfileCapacity,
-                    SystemID.GraphicsScalability,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            if (!_csvScratchHandle.IsCreated)
-            {
-                _csvScratchHandle = _dataVault.GetBufferHandle<byte>(
-                    ReconstructionCsvScratchVaultId,
-                    CsvScratchBytes,
-                    SystemID.GraphicsScalability,
-                    NativeArrayOptions.UninitializedMemory);
-            }
-
-            if (!_mockSignalHandle.IsCreated)
-            {
-                _mockSignalHandle = _dataVault.GetBufferHandle<MockReconstructionInputSignal>(
-                    ReconstructionMockSignalVaultId,
-                    1,
-                    SystemID.GraphicsScalability,
-                    NativeArrayOptions.ClearMemory);
-            }
-
-            return _reconstructionConstantsHandle.IsCreated &&
-                   _reconstructionTelemetryHandle.IsCreated &&
-                   _aestheticProfileHandle.IsCreated &&
-                   _csvScratchHandle.IsCreated &&
-                   _mockSignalHandle.IsCreated;
+            return ReconstructionVaultHandlesReady();
         }
 
         private bool ReconstructionVaultHandlesReady()
         {
             return _dataVault != null &&
-                   _reconstructionConstantsHandle.IsCreated &&
-                   _reconstructionTelemetryHandle.IsCreated &&
-                   _aestheticProfileHandle.IsCreated &&
-                   _csvScratchHandle.IsCreated &&
-                   _mockSignalHandle.IsCreated;
+                   IsReconstructionVaultHandle(in _reconstructionConstantsHandle, ReconstructionConstantsVaultId) &&
+                   IsReconstructionVaultHandle(in _reconstructionTelemetryHandle, ReconstructionTelemetryVaultId) &&
+                   IsReconstructionVaultHandle(in _aestheticProfileHandle, ReconstructionProfileVaultId) &&
+                   IsReconstructionVaultHandle(in _csvScratchHandle, ReconstructionCsvScratchVaultId) &&
+                   IsReconstructionVaultHandle(in _mockSignalHandle, ReconstructionMockSignalVaultId);
+        }
+
+        private void ClearReconstructionVaultHandles()
+        {
+            _reconstructionConstantsHandle = default;
+            _reconstructionTelemetryHandle = default;
+            _aestheticProfileHandle = default;
+            _csvScratchHandle = default;
+            _mockSignalHandle = default;
+            _aestheticCsvLoaded = false;
+            _aestheticCsvLoadAttempted = false;
+            _aestheticProfileCacheCount = 0;
+            _reconstructionTelemetryCursor = 0;
+            _hasReconstructionConstants = false;
+            _activeReconstructionConstantsBuffer = null;
+        }
+
+        private void ReleaseReconstructionVaultHandles(IDataVault vault)
+        {
+            ReleaseReconstructionVaultHandle(vault, ref _reconstructionConstantsHandle, ReconstructionConstantsVaultId);
+            ReleaseReconstructionVaultHandle(vault, ref _reconstructionTelemetryHandle, ReconstructionTelemetryVaultId);
+            ReleaseReconstructionVaultHandle(vault, ref _aestheticProfileHandle, ReconstructionProfileVaultId);
+            ReleaseReconstructionVaultHandle(vault, ref _csvScratchHandle, ReconstructionCsvScratchVaultId);
+            ReleaseReconstructionVaultHandle(vault, ref _mockSignalHandle, ReconstructionMockSignalVaultId);
+
+            ClearReconstructionVaultHandles();
+        }
+
+        private bool EnsureReconstructionVaultHandle<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options)
+            where T : struct
+        {
+            if (_dataVault == null || requiredLength <= 0)
+            {
+                handle = default;
+                return false;
+            }
+
+            if (TryReadReconstructionVaultBuffer(_dataVault, in handle, bufferId, requiredLength, out NativeArray<T> _))
+                return true;
+
+            handle = _dataVault.GetGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                SystemID.GraphicsScalability,
+                options);
+
+            if (TryReadReconstructionVaultBuffer(_dataVault, in handle, bufferId, requiredLength, out NativeArray<T> _))
+                return true;
+
+            ReleaseReconstructionVaultHandle(_dataVault, ref handle, bufferId);
+            return false;
+        }
+
+        private static void ReleaseReconstructionVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId)
+            where T : struct
+        {
+            if (vault != null && IsReconstructionVaultHandle(in handle, bufferId))
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
+        private static bool TryResolveReconstructionVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            return TryOpenReconstructionVaultBuffer(vault, in handle, bufferId, requiredLength, readOnly: false, out buffer);
+        }
+
+        private static bool TryReadReconstructionVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            return TryOpenReconstructionVaultBuffer(vault, in handle, bufferId, requiredLength, readOnly: true, out buffer);
+        }
+
+        private static bool TryOpenReconstructionVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            bool readOnly,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength < 0 ||
+                !IsReconstructionVaultHandle(in handle, bufferId))
+            {
+                return false;
+            }
+
+            bool opened = readOnly
+                ? vault.TryReadHandle(in handle, out buffer)
+                : vault.TryResolveHandle(in handle, out buffer);
+
+            return opened &&
+                   buffer.IsCreated &&
+                   (requiredLength == 0 || buffer.Length >= requiredLength);
+        }
+
+        private static bool IsReconstructionVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId)
+            where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == (uint)SystemID.GraphicsScalability &&
+                   handle.Generation != 0u;
         }
 
         private UberNoirReconstructionConstantsDTO BuildReconstructionConstants(
@@ -1385,7 +1490,7 @@ namespace Hecton8.Visor
         private unsafe void WriteReconstructionConstantsToVault(in UberNoirReconstructionConstantsDTO constants)
         {
             if (_dataVault == null ||
-                !_reconstructionConstantsHandle.IsCreated ||
+                !IsReconstructionVaultHandle(in _reconstructionConstantsHandle, ReconstructionConstantsVaultId) ||
                 !_dataVault.TryLockBuffer(ReconstructionConstantsVaultId, SystemID.GraphicsScalability))
             {
                 return;
@@ -1393,9 +1498,15 @@ namespace Hecton8.Visor
 
             try
             {
-                void* pointer = _reconstructionConstantsHandle.ResolvePointer(_dataVault);
-                if (pointer != null && _reconstructionConstantsHandle.Length > 0)
-                    UnsafeUtility.AsRef<UberNoirReconstructionConstantsDTO>(pointer) = constants;
+                if (TryResolveReconstructionVaultBuffer(
+                        _dataVault,
+                        in _reconstructionConstantsHandle,
+                        ReconstructionConstantsVaultId,
+                        1,
+                        out NativeArray<UberNoirReconstructionConstantsDTO> buffer))
+                {
+                    buffer[0] = constants;
+                }
             }
             finally
             {
@@ -1410,7 +1521,6 @@ namespace Hecton8.Visor
         {
             if (!ReconstructionVaultHandlesReady() ||
                 _dataVault == null ||
-                !_reconstructionTelemetryHandle.IsCreated ||
                 !_dataVault.TryLockBuffer(ReconstructionTelemetryVaultId, SystemID.GraphicsScalability))
             {
                 return;
@@ -1418,16 +1528,21 @@ namespace Hecton8.Visor
 
             try
             {
-                void* pointer = _reconstructionTelemetryHandle.ResolvePointer(_dataVault);
-                if (pointer == null || _reconstructionTelemetryHandle.Length <= 0)
+                if (!TryResolveReconstructionVaultBuffer(
+                        _dataVault,
+                        in _reconstructionTelemetryHandle,
+                        ReconstructionTelemetryVaultId,
+                        ReconstructionTelemetryCapacity,
+                        out NativeArray<ReconstructionTelemetryEntry> telemetry))
+                {
                     return;
+                }
 
                 int index = _reconstructionTelemetryCursor;
-                if ((uint)index >= (uint)_reconstructionTelemetryHandle.Length)
+                if ((uint)index >= (uint)telemetry.Length)
                     index = 0;
 
-                ref ReconstructionTelemetryEntry entry = ref UnsafeUtility.AsRef<ReconstructionTelemetryEntry>(
-                    (byte*)pointer + index * UnsafeUtility.SizeOf<ReconstructionTelemetryEntry>());
+                ReconstructionTelemetryEntry entry = default;
                 bool reconstructionActive = reconstructionBufferReady &&
                                             _reconstructionMaterial != null &&
                                             _activeReconstructionConstantsBuffer != null &&
@@ -1472,9 +1587,10 @@ namespace Hecton8.Visor
                 entry.JitterPixels = math.max(0f, constants.TemporalParams.y);
                 entry._pad0 = 0u;
                 entry._pad1 = 0u;
+                telemetry[index] = entry;
 
                 index++;
-                _reconstructionTelemetryCursor = index >= _reconstructionTelemetryHandle.Length ? 0 : index;
+                _reconstructionTelemetryCursor = index >= telemetry.Length ? 0 : index;
                 if (scale < 0.4f && !_reconstructionDumpWritten)
                     _reconstructionDumpWritten = TryDumpReconstructionTelemetry();
             }
@@ -1486,12 +1602,16 @@ namespace Hecton8.Visor
 
         private unsafe bool TryDumpReconstructionTelemetry()
         {
-            if (_dataVault == null || !_reconstructionTelemetryHandle.IsCreated)
+            if (_dataVault == null ||
+                !TryReadReconstructionVaultBuffer(
+                    _dataVault,
+                    in _reconstructionTelemetryHandle,
+                    ReconstructionTelemetryVaultId,
+                    ReconstructionTelemetryCapacity,
+                    out NativeArray<ReconstructionTelemetryEntry> telemetry))
+            {
                 return false;
-
-            NativeArray<ReconstructionTelemetryEntry> telemetry = _reconstructionTelemetryHandle.Resolve(_dataVault);
-            if (!telemetry.IsCreated || telemetry.Length <= 0)
-                return false;
+            }
 
             string directory = Path.Combine(Directory.GetCurrentDirectory(), "Docs", "AgentLogs");
             Directory.CreateDirectory(directory);
@@ -1543,10 +1663,21 @@ namespace Hecton8.Visor
                 }
                 profileLocked = true;
 
-                NativeArray<byte> scratch = _csvScratchHandle.Resolve(_dataVault);
-                NativeArray<NoirAestheticProfileDTO> profiles = _aestheticProfileHandle.Resolve(_dataVault);
-                if (!scratch.IsCreated || !profiles.IsCreated || scratch.Length <= 0 || profiles.Length <= 0)
+                if (!TryResolveReconstructionVaultBuffer(
+                        _dataVault,
+                        in _csvScratchHandle,
+                        ReconstructionCsvScratchVaultId,
+                        CsvScratchBytes,
+                        out NativeArray<byte> scratch) ||
+                    !TryResolveReconstructionVaultBuffer(
+                        _dataVault,
+                        in _aestheticProfileHandle,
+                        ReconstructionProfileVaultId,
+                        AestheticProfileCapacity,
+                        out NativeArray<NoirAestheticProfileDTO> profiles))
+                {
                     return false;
+                }
 
                 int read;
                 using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, FileOptions.SequentialScan))
@@ -1701,7 +1832,8 @@ namespace Hecton8.Visor
         private bool TryLockAndCopyMockReconstructionSignal(out MockReconstructionInputSignal signal)
         {
             signal = default;
-            if (_dataVault == null || !_mockSignalHandle.IsCreated)
+            if (_dataVault == null ||
+                !IsReconstructionVaultHandle(in _mockSignalHandle, ReconstructionMockSignalVaultId))
                 return false;
 
             if (!_dataVault.TryLockBuffer(ReconstructionMockSignalVaultId, SystemID.GraphicsScalability))
@@ -1709,9 +1841,15 @@ namespace Hecton8.Visor
 
             try
             {
-                NativeArray<MockReconstructionInputSignal> mock = _mockSignalHandle.Resolve(_dataVault);
-                if (!mock.IsCreated || mock.Length <= 0)
+                if (!TryReadReconstructionVaultBuffer(
+                        _dataVault,
+                        in _mockSignalHandle,
+                        ReconstructionMockSignalVaultId,
+                        1,
+                        out NativeArray<MockReconstructionInputSignal> mock))
+                {
                     return false;
+                }
 
                 signal = mock[0];
                 return signal.Flags != 0u &&

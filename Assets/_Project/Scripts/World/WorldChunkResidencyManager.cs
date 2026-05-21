@@ -619,6 +619,7 @@ namespace Hecton8.World
         private const float HighTierUnloadRadiusMeters = 800f;
         private const float UltraTierUnloadRadiusMeters = 1000f;
         private const float ActiveImpostorFadeOutSeconds = 1.5f;
+        private const float ChunkResidencyRuntimeClockMaxSeconds = 16777215f;
         private const long PredictiveVramAbortBytes = 1600L * 1024L * 1024L;
         private const long PredictiveVramResumeBytes = 1400L * 1024L * 1024L;
         private const float StreamerStressSpeedSqRcp = 0.00111111112f;
@@ -905,6 +906,7 @@ namespace Hecton8.World
         private uint _lastAdrenalineSignalFrame;
         private ulong _worldStreamingVaultArrayMask;
         private bool _stateDiagnosticsDirty;
+        private float _chunkResidencyRuntimeSeconds;
         private float _fadeTimer;
         private float _lastPredictionDistanceMeters;
         private float _loadQueueCapacityRcp;
@@ -1204,6 +1206,7 @@ namespace Hecton8.World
 
         private void Awake()
         {
+            _chunkResidencyRuntimeSeconds = 0f;
             RefreshColdServiceCache();
             _coldStartTuning = ResolveInitialStreamingTuning();
             ApplyColdStartTuningToFields(in _coldStartTuning);
@@ -1267,6 +1270,7 @@ namespace Hecton8.World
         {
             using (_tickMarker.Auto())
             {
+                AdvanceChunkResidencyRuntimeClock(deltaTime);
                 TickPredictiveSuspension();
                 DrainMetabolismSignals();
                 DetectAndHandleTeleport();
@@ -4045,6 +4049,19 @@ namespace Hecton8.World
             Shader.SetGlobalFloat(_chunkFadeMaskId, 0f);
         }
 
+        private void AdvanceChunkResidencyRuntimeClock(float deltaTime)
+        {
+            if (!math.isfinite(deltaTime) || deltaTime <= 0f)
+                return;
+
+            _chunkResidencyRuntimeSeconds = math.min(ChunkResidencyRuntimeClockMaxSeconds, _chunkResidencyRuntimeSeconds + deltaTime);
+        }
+
+        private float ResolveChunkResidencyRuntimeSeconds()
+        {
+            return _chunkResidencyRuntimeSeconds;
+        }
+
         private void ApplyAsyncUploadBudgetForTier(ChunkStreamingScalabilityTier tier)
         {
             if (!applyAsyncUploadBudget || _activeTier == tier)
@@ -4856,7 +4873,7 @@ namespace Hecton8.World
                 ChunkId = chunkId,
                 Center = center,
                 Size = size,
-                SpawnTimeSeconds = Time.time,
+                SpawnTimeSeconds = ResolveChunkResidencyRuntimeSeconds(),
                 ImpostorType = type,
                 ImpostorFlags = flags,
                 FadeOutFlag = ActiveImpostorFadeOutFlag,
@@ -4905,7 +4922,7 @@ namespace Hecton8.World
                 CartographyPoints = _activeImpostorCartographyPoints,
                 ActiveCount = _activeImpostorCountRef,
                 FadeOutCount = _activeImpostorFadeOutCountRef,
-                NowSeconds = Time.time,
+                NowSeconds = ResolveChunkResidencyRuntimeSeconds(),
                 FadeOutSeconds = ActiveImpostorFadeOutSeconds,
                 FadeOutFlag = ActiveImpostorFadeOutFlag
             };

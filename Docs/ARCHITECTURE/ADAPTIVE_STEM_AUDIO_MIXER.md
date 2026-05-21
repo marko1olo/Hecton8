@@ -59,7 +59,8 @@ Owner: SHINOBU_46 / Hecton8.Audio
 - Runtime frame labels use the dispatcher's local simulation counter, not `Time.frameCount`.
 - The depth dread fake is a scalar LPF cutoff: `22000 Hz -> 800 Hz`.
 - `GlobalQualityWeight` is a continuous tier/precision/health-pressure scalar; severe pressure moves the full audio kernel batch toward 5 Hz instead of flipping a binary mode.
-- Runtime quality authority is the Homeostasis-owned vault lane `BufferID.ShinobuScalabilityState` (`ScalabilityStateDTO.GlobalQualityWeight`). `ScalabilityChangedEvent` is only a fallback when the vault lane is absent; the steady-state audio path does not poll `GlobalRegistry.ScalabilityTier` or `GlobalRegistry.MathPrecisionLowBlend01`.
+- Runtime quality authority is the Homeostasis-owned vault lane `BufferID.ShinobuScalabilityState` (`ScalabilityStateDTO.GlobalQualityWeight`). The runtime no longer drains `ScalabilityChangedEvent` as a fallback quality mapper; if the vault lane is temporarily absent it preserves the last sanitized continuous weight. The steady-state audio path does not poll `GlobalRegistry.ScalabilityTier` or `GlobalRegistry.MathPrecisionLowBlend01`.
+- Dynamic music scalar publication keeps `lowTierFrameSignals` equal to the full 64-frame lane budget so the signal route does not shed events through a binary hardware profile.
 - Crossfade alpha is polynomial (`x * (2 - x)`) over the accumulated cadence delta; no exponential fade math remains in the solver.
 
 ## Tuning

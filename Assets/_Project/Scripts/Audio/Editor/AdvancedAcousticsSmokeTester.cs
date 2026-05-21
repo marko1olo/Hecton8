@@ -39,6 +39,7 @@ namespace Hecton8.Audio.Editor
         private const string PlayerStressVfxPath = "Assets/_Project/Scripts/Visor/PlayerStressVFX.cs";
         private const string DeepPsychosisPath = "Assets/_Project/Scripts/Audio/DeepPsychosisController.cs";
         private const string HectonMusicDirectorPath = "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs";
+        private const string AdaptiveStemMixerPath = "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs";
         private const string DirectorAIPath = "Assets/_Project/Scripts/HectonDirectorAI.cs";
         private const string PrologueAcousticOrchestratorPath = "Assets/_Project/Scripts/Audio/Prologue/PrologueAcousticOrchestrator.cs";
         private const string VocalWarningSystemPath = "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs";
@@ -87,6 +88,7 @@ namespace Hecton8.Audio.Editor
             string playerStressVfx = ReadAssetText(PlayerStressVfxPath, builder, ref failureCount);
             string deepPsychosis = ReadAssetText(DeepPsychosisPath, builder, ref failureCount);
             string musicDirector = ReadAssetText(HectonMusicDirectorPath, builder, ref failureCount);
+            string adaptiveStemMixer = ReadAssetText(AdaptiveStemMixerPath, builder, ref failureCount);
             string directorAI = ReadAssetText(DirectorAIPath, builder, ref failureCount);
             string prologueAcoustic = ReadAssetText(PrologueAcousticOrchestratorPath, builder, ref failureCount);
             string vocalWarning = ReadAssetText(VocalWarningSystemPath, builder, ref failureCount);
@@ -327,6 +329,18 @@ namespace Hecton8.Audio.Editor
                 AssertContains(synthesis, "CompileSynchronously = true", "Kinetic impact oscillator has synchronous Burst compile coverage", builder, ref failureCount);
                 AssertContains(synthesis, "DepthStressGranularMath.FiniteOrDefault(StartHertz, 150f)", "Burst oscillator default starts at 150 Hz", builder, ref failureCount);
                 AssertContains(synthesis, "DepthStressGranularMath.FiniteOrDefault(EndHertz, 40f)", "Burst oscillator default ends at 40 Hz", builder, ref failureCount);
+            }
+
+            if (adaptiveStemMixer.Length > 0)
+            {
+                string adaptiveDrain = ExtractMethodBody(adaptiveStemMixer, "private void DrainSignalInputs()");
+                string adaptiveQuality = ExtractMethodBody(adaptiveStemMixer, "private float ResolveGlobalQualityWeightFromSnapshot()");
+                string adaptiveLaneConfig = ExtractMethodBody(adaptiveStemMixer, "private static void EnsureDynamicMusicSignalLaneCold()");
+                AssertContains(adaptiveStemMixer, "BufferID.ShinobuScalabilityState", "Adaptive stem mixer reads continuous quality from the vault-owned scalability state", builder, ref failureCount);
+                AssertContains(adaptiveQuality, "state.GlobalQualityWeight", "Adaptive stem quality resolver consumes the continuous global quality weight", builder, ref failureCount);
+                AssertNotContains(adaptiveDrain, "SignalBus<ScalabilityChangedEvent>.GetFrameSnapshot()", "Adaptive stem mixer does not drain binary scalability events for quality", builder, ref failureCount);
+                AssertNotContains(adaptiveStemMixer, "ResolveQualityTierFallbackWeight", "Adaptive stem mixer has no quality-tier fallback mapper", builder, ref failureCount);
+                AssertContains(adaptiveLaneConfig, "lowTierFrameSignals: 64", "Dynamic music scalar signal lane keeps full minimum-quality frame capacity", builder, ref failureCount);
             }
 
             if (deepPsychosis.Length > 0)

@@ -2951,3 +2951,39 @@ Verification:
     Targeted `rg` found no `ResolvePhysicsCullingGlobalQualityWeight`, `LowTierSleepDistanceMeters`, `LowTierWakeDistanceMeters`, or `HomeostasisBrain` hits in the patched culling route. `git diff --check` passed with line-ending warnings only. Build skipped because CPU was 97%.
   </VERIFICATION>
 </SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="PrologueProxyTelemetryConsumerRemoval">
+  <WHAT_WAS_WRONG>
+    `PlayerCriticalProceduralAudioRenderer.RecordPrologueTransitionTelemetry` still read `AudioTransitionState.FlagLowTierProxy` and wrote DSP telemetry bit 2 after the Prologue audio owner stopped publishing that binary hardware proxy.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Removed the stale low-tier proxy telemetry branch from the player-critical consumer. Portal proximity, granular stress, splashdown, and nonfinite bits remain intact.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    Prologue and player-critical audio presentation now degrade through continuous quality curves and minimum-quality layers, not a binary low-tier proxy bit.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. One dead telemetry branch was removed; the value is architectural hygiene and proof-lane cleanup.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted `rg` found no remaining `FlagLowTierProxy`, scalability signal drain, cached tier/profile field, low-tier kinetic fallback, or direct scalability/low-memory registry read in `PlayerCriticalProceduralAudioRenderer.cs`. `git diff --check` passed with line-ending warning only. Compile Check 99 was skipped because `VBCSCompiler` was active while CPU was 35%.
+  </VERIFICATION>
+</SELF_AUDIT>
+
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="AdaptiveStemBinaryQualityFallbackRemoval">
+  <WHAT_WAS_WRONG>
+    `AdaptiveStemAudioMixer` consumed `ScalabilityChangedEvent.CurrentQualityTier` as a fallback quality source and configured `DynamicMusicScalarSignal` with an 8-frame low-tier cap. That left binary hardware identity in the music presentation path.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Removed the scalability-event drain and tier-to-weight fallback helper. Runtime quality now comes from `BufferID.ShinobuScalabilityState` / `ScalabilityStateDTO.GlobalQualityWeight`; when the vault lane is absent, the mixer preserves the last sanitized continuous weight. The dynamic music scalar signal lane now keeps `lowTierFrameSignals: 64`, matching full frame capacity.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    The Dear Lie remains the adaptive music illusion itself: depth dread is a scalar low-pass cutoff, predator pressure is deterministic mock stimulus, and decorative layer weight/cadence breathe through a continuous quality curve rather than a hardware tier switch.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. One per-frame scalability snapshot scan and one tier-to-weight helper were removed; signal capacity now favors route correctness over binary event shedding.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted `rg` found no remaining `ScalabilityChangedEvent`, `ResolveQualityTierFallbackWeight`, `CurrentQualityTier`, `GlobalRegistry.ScalabilityTier`, `GlobalRegistry.MathPrecisionLowBlend01`, `H8_LOW_MEMORY_PROFILE`, or `lowTierFrameSignals: 8` in `AdaptiveStemAudioMixer.cs`. `AdvancedAcousticsSmokeTester` now reads the mixer source and asserts the continuous vault route plus 64-frame minimum signal capacity. `git diff --check` passed with line-ending warnings only. Compile Check 100 was skipped because `VBCSCompiler` was active while CPU was 0%.
+  </VERIFICATION>
+</SELF_AUDIT>

@@ -4092,3 +4092,20 @@ Mandates read before coding:
 - Brace/preprocessor counts are balanced: `HectonVisorUberPostFeature.Noir.cs` braces `123/123`, preprocessor `#if/#endif` `7/7`.
 - `git diff --check` passed for `HectonVisorUberPostFeature.Noir.cs`; CRLF warning only.
 - Build not relaunched under the explicit no-rebuild command discipline.
+
+## Loop 229 - Uber Noir Reconstruction Descriptor Route
+- [x] Replaced shared reconstruction retained Vault handles with generation descriptors.
+  DOD practice: reconstruction constants, telemetry ring, aesthetic profiles, CSV scratch, and mock signal lanes in `HectonVisorUberPostFeature.cs` now retain `VaultGenerationHandle<T>` descriptors and open through exact BufferID, `SystemID.GraphicsScalability`, nonzero generation, required length, `TryResolveHandle` or pure `TryReadHandle`, and `IsCreated` proof.
+  Rejected: keeping `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `.Resolve(vault)`, `ResolvePointer`, retained handle `.IsCreated`, retained handle `.Length`, and byref pointer writes because reconstruction crosses RenderGraph CBuffer uploads, editor mock injection, CSV loading, telemetry blackbox, and DataVault hot-swap.
+  Estimate: descriptor proof is paid at reconstruction handle ensure, constants writeback, telemetry record/dump, editor constants/mock routes, CSV profile load, mock-signal read, dispose, and DataVault hot-swap boundaries only; no RenderGraph shader ABI, DTO layout, BufferID, CSV schema, or GraphicsScalability authority changed.
+- [x] Added owned reconstruction release on teardown and DataVault hot-swap.
+  DOD practice: `Dispose` and `OnGlobalRegistryServiceReplaced(DataVault)` now release the five owned GraphicsScalability reconstruction descriptors through `ReleaseBuffer(in handle)` and tombstone local route state. The GraphicsBuffer A/B constant upload path stays unchanged because it is GPU upload storage, not a Vault ownership route.
+  Rejected: rewriting the bilateral upsample pass, history request route, shader property names, DRS policy math, or visual fake curve because this loop targets stale Vault provenance only.
+  Estimate: cold lifecycle and phase-boundary only; no managed hot-path allocation, new job, same-frame readback loop, hidden job completion, shader variant, DTO stride change, save identity change, or hot GlobalRegistry polling was introduced.
+
+## Compile State Update 223
+- Focused legacy/direct route scan on `HectonVisorUberPostFeature.cs` and `HectonVisorUberPostFeature.Noir.cs` found no `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `GetBuffer<T>`, direct `TryGetBuffer(...)`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `TryGetLatestCreated`, `TryGetBufferGeneration`, `VaultGenerationID`, or `.ptr` hits.
+- Descriptor route scan confirmed expected `VaultGenerationHandle<T>`, `TryGetGenerationHandle<T>`, `GetGenerationHandle<T>`, `TryResolveHandle`, `TryReadHandle`, `TryResolveReconstructionVaultBuffer`, `TryReadReconstructionVaultBuffer`, `ReleaseReconstructionVaultHandle`, `ReleaseReconstructionVaultHandles`, `ReleaseNoirVaultHandles`, and `ReleaseBuffer(in handle)` hits.
+- Brace/preprocessor counts are balanced: `HectonVisorUberPostFeature.cs` braces `166/166`, preprocessor `#if/#endif` `10/10`; `HectonVisorUberPostFeature.Noir.cs` braces `123/123`, preprocessor `#if/#endif` `7/7`.
+- `git diff --check` passed for both visor partials; CRLF warnings only.
+- Build not relaunched under the explicit no-rebuild command discipline.

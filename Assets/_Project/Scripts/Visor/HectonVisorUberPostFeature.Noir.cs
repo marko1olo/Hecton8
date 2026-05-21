@@ -412,16 +412,8 @@ namespace Hecton8.Visor
             {
                 case GlobalRegistryServiceSlot.DataVault:
                     ReleaseNoirVaultHandles(_dataVault);
+                    ReleaseReconstructionVaultHandles(_dataVault);
                     _dataVault = currentService as IDataVault;
-                    _reconstructionConstantsHandle = default;
-                    _reconstructionTelemetryHandle = default;
-                    _aestheticProfileHandle = default;
-                    _csvScratchHandle = default;
-                    _mockSignalHandle = default;
-                    _aestheticCsvLoaded = false;
-                    _aestheticCsvLoadAttempted = false;
-                    _aestheticProfileCacheCount = 0;
-                    _reconstructionTelemetryCursor = 0;
                     if (_dataVault != null)
                     {
                         if (settings != null && settings.deepSeaNoirUnifiedPass)

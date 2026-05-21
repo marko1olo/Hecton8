@@ -5388,3 +5388,27 @@ Static verification:
 - Descriptor scan confirms `VaultGenerationHandle<T>`, `TryGetGenerationHandle<T>`, `GetGenerationHandle<T>`, `TryResolveHandle`, `TryReadHandle`, `TryResolveNoirVaultBuffer`, `TryReadNoirVaultBuffer`, `ReleaseNoirVaultHandle`, and `ReleaseBuffer(in handle)`.
 - Brace/preprocessor counts are balanced: braces `123/123`, `#if/#endif` `7/7`. `git diff --check` passed with CRLF warning only. Build was not relaunched.
 - Residual debt is explicit: this entry claims only `.Noir.cs`; the broader `HectonVisorUberPostFeature.cs` reconstruction partial still needs its own route pass.
+
+## 2026-05-22 - Loop 229 - Uber Noir Reconstruction Descriptor Route
+
+What was wrong:
+- `Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs` retained five pointer-era reconstruction Vault handles.
+- Reconstruction constants, telemetry ring, aesthetic profiles, CSV scratch, and mock signal routes used direct handle acquisition, pointer resolves, retained created/length checks, and byref pointer writes.
+- DataVault hot-swap defaulted reconstruction handles without release, and renderer-feature dispose released Noir descriptors but not reconstruction descriptors.
+
+What was done:
+- Converted the five reconstruction lanes to `VaultGenerationHandle<T>`.
+- Added reconstruction-local helpers requiring exact BufferID, `SystemID.GraphicsScalability`, nonzero generation, required length, descriptor read/resolve, and `IsCreated`.
+- Replaced editor constants readback, editor mock writes, runtime constants writeback, telemetry record/dump, CSV profile load, and mock signal reads with descriptor routes.
+- Added `ReleaseReconstructionVaultHandles` and invoked it during `Dispose` and DataVault hot-swap.
+
+Cinematic cheats used:
+- Reconstruction remains the intended Dear Lie: low-scale or low-quality frames are covered with bilateral reconstruction, jitter, temporal hook, grain, vignette, and chroma scalars instead of rendering the full native image on weak hardware.
+
+Exact microseconds saved:
+- No measured runtime speedup claimed. The useful result is release/provenance correctness for shader and telemetry routes. Descriptor validation is paid at bounded phase edges, not inside the RenderGraph shader loop.
+
+Static verification:
+- Focused scan found no `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `GetBuffer<T>`, direct `TryGetBuffer(...)`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `TryGetLatestCreated`, `TryGetBufferGeneration`, `VaultGenerationID`, or `.ptr` hits in the two visor partials.
+- Descriptor scan confirms `VaultGenerationHandle<T>`, `TryGetGenerationHandle<T>`, `GetGenerationHandle<T>`, `TryResolveHandle`, `TryReadHandle`, reconstruction read/resolve helpers, Noir read/resolve helpers, and both release paths.
+- Brace/preprocessor counts: `HectonVisorUberPostFeature.cs` `166/166`, `#if/#endif` `10/10`; `HectonVisorUberPostFeature.Noir.cs` `123/123`, `#if/#endif` `7/7`. `git diff --check` passed with CRLF warnings only. Build was not relaunched.

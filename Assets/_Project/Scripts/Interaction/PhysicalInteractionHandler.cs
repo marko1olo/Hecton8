@@ -200,6 +200,7 @@ namespace Hecton8.Interaction
         private bool _activeColliderWasEnabled;
         private float _activeHeavyCarryMass;
         private int _resolvedPanelButtonLayerMask;
+        private int _panelSampleFrameIndex;
 
         /// <summary>
         /// True while the player is actively dragging a heavy rigidbody object.
@@ -590,7 +591,7 @@ namespace Hecton8.Interaction
 
             if (bestButton != null)
             {
-                int sampleFrame = Time.frameCount;
+                int sampleFrame = unchecked(++_panelSampleFrameIndex & 0x3fffffff);
                 bestButton.TryQueueHandPress(handPosition, handForward, interactionSignals, handSourceCollider, handSide, sampleFrame);
             }
         }

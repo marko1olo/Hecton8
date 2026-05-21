@@ -894,9 +894,6 @@ namespace Hecton8.Audio
             for (int i = 0; i < narrativeSignals.Length; i++)
                 _narrativeStateMask = narrativeSignals[i].StateMask;
 
-            ReadOnlySpan<ScalabilityChangedEvent> scalabilitySignals = SignalBus<ScalabilityChangedEvent>.GetFrameSnapshot();
-            for (int i = 0; i < scalabilitySignals.Length; i++)
-                _cachedGlobalQualityWeight = ResolveQualityTierFallbackWeight(scalabilitySignals[i].CurrentQualityTier);
         }
 
         private void UpdateBeatAndBiomeState(ref AdaptiveStemVaultViews views, float deltaTime)
@@ -1084,7 +1081,7 @@ namespace Hecton8.Audio
             SignalBus<DynamicMusicScalarSignal>.Configure(
                 expectedCapacity: 32,
                 maxFrameSignals: 64,
-                lowTierFrameSignals: 8,
+                lowTierFrameSignals: 64,
                 laneHash: DynamicMusicScalarSignal.LaneHash);
             SignalBus<DynamicMusicScalarSignal>.EnsureInitialized();
         }
@@ -1529,13 +1526,6 @@ namespace Hecton8.Audio
                    _scalabilityStateHandle.BufferID != 0u &&
                    vault.TryResolveHandle(in _scalabilityStateHandle, out scalabilityState) &&
                    scalabilityState.IsCreated;
-        }
-
-        private static float ResolveQualityTierFallbackWeight(HectonQualityTier qualityTier)
-        {
-            int tierIndex = (int)qualityTier - (int)HectonQualityTier.Low;
-            float tier01 = math.saturate(tierIndex * 0.25f);
-            return math.lerp(0.1f, 1f, Smooth01(tier01));
         }
 
         private static float ResolveElapsedMicroseconds(long startTicks)

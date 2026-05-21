@@ -851,3 +851,13 @@ The scan proves repo-wide debt, not successful consumer migration. A full rename
 - Compile-wall guard: `Hecton8.Graphics.Scalability.asmdef` references `Hecton8.Core`, `Hecton8.Core.Contracts`, `Hecton8.Core.Memory`, `Hecton8.Bootstrap.Contracts`, and Unity packages only; no sibling runtime assembly dependency was introduced.
 - This entry claims only the Noir partial. `HectonVisorUberPostFeature.cs` still has separate reconstruction legacy Vault routes and remains explicit residual debt for a later bounded pass.
 - This entry does not change `NoirPostProcessDTO`, `NoirPostProcessInputDTO`, `NoirPostProcessTuningDTO`, `NoirTelemetryEntry`, `NoirColorProfileDTO`, BufferIDs, CSV parser contract, shader property IDs, RenderGraph pass ABI, constant-buffer stride, telemetry dump format, or GraphicsScalability authority.
+
+## 2026-05-22 Uber Noir Reconstruction Descriptor Route Update
+
+- `Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs` no longer has `VaultBufferHandle<T>`, `GetBufferHandle`, `TryGetBufferHandle`, direct `GetBuffer<T>`, direct `TryGetBuffer(...)`, `.Resolve(...)`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `TryGetLatestCreated`, `TryGetBufferGeneration`, `VaultGenerationID`, or `.ptr` hits.
+- Reconstruction constants, reconstruction telemetry ring, aesthetic profile table, CSV scratch, and mock reconstruction signal routes use `VaultGenerationHandle<T>` descriptors.
+- Each route validates exact BufferID, `SystemID.GraphicsScalability`, nonzero generation, required length, `TryResolveHandle` or pure `TryReadHandle`, and `IsCreated` before returning a native view.
+- Editor constants readback now uses pure descriptor read proof. Editor mock-signal writes use descriptor write locks.
+- `Dispose` and `OnGlobalRegistryServiceReplaced(DataVault)` release the five owned GraphicsScalability reconstruction descriptors through `ReleaseBuffer(in handle)` and tombstone local route state.
+- The GraphicsBuffer A/B constant upload path remains renderer-owned GPU state and is intentionally unchanged.
+- This entry does not change `UberNoirReconstructionConstantsDTO`, `MockReconstructionInputSignal`, `ReconstructionTelemetryEntry`, `NoirAestheticProfileDTO`, BufferIDs `71030..71034`, CSV parser contract, shader property IDs, RenderGraph pass ABI, constant-buffer stride, telemetry dump format, or GraphicsScalability authority.

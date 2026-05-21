@@ -64,6 +64,8 @@ namespace Hecton8.World
         private const int ActiveCaveKeyCapacity = 32;
         private const int EntranceMarkerNameCapacity = 32;
         private const int ThermalGeyserNameCapacity = 32;
+        private const float CaveEvaluationIntervalSeconds = 2f;
+        private const float CaveEvaluationClockMaxSeconds = 16777215f;
         private const float ThermalGeyserFloorOffset = 0.35f;
         private static readonly string[] _EntranceMarkerNames = CreateIndexedNameCache("Marker_", EntranceMarkerNameCapacity); // COLD ALLOC: string[32] — bounded entrance marker names — owner: WorldCaveDirector
         private static readonly string[] _ThermalGeyserNames = CreateTwoDigitNameCache("_ThermalGeyser_", ThermalGeyserNameCapacity); // COLD ALLOC: string[32] — bounded thermal geyser names — owner: WorldCaveDirector
@@ -278,11 +280,11 @@ namespace Hecton8.World
             if (!ResolveReferences())
                 return;
 
-            // Throttle evaluations
-            if (Time.time - _lastEvaluationTime < 2f)
+            float evaluationTime = ResolveCaveEvaluationTimeSeconds();
+            if (evaluationTime - _lastEvaluationTime < CaveEvaluationIntervalSeconds)
                 return;
 
-            _lastEvaluationTime = Time.time;
+            _lastEvaluationTime = evaluationTime;
 
             HectonBiomeFamilyProfile biomeFamily = biomeMatrixDirector.CurrentFamilyProfile;
             WorldZoneAnchor currentZone = worldZoneDirector != null ? worldZoneDirector.CurrentZone : null;
@@ -307,6 +309,19 @@ namespace Hecton8.World
                 TryQueueCaveSpawn(candidates[i], biomeFamily);
 
             UpdateDiagnostics();
+        }
+
+        private static float ResolveCaveEvaluationTimeSeconds()
+        {
+            SystemDispatcher dispatcher = SystemDispatcher.ActiveRuntimeInstance;
+            if (dispatcher == null)
+                return 0f;
+
+            double timeSeconds = dispatcher.DilatedTimeSeconds;
+            if (!math.isfinite(timeSeconds) || timeSeconds <= 0d)
+                return 0f;
+
+            return (float)math.min(CaveEvaluationClockMaxSeconds, timeSeconds);
         }
 
         private static bool EvaluateBiomeCaveSupport(string biomeId)

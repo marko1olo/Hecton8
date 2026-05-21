@@ -1,7 +1,7 @@
 {
   "agent": "SHINOBU_271",
   "scanner": "VR_Physics_Inquisition static shell fallback",
-  "verdict": "PASS_STATIC_UNITY_EXECUTION_PENDING",
+  "verdict": "PASS_STATIC_COMPILE_GREEN_UNITY_EXECUTION_PENDING",
   "summary": "Physics-Based VR Hands Purged by default kinematic SDF bridge; legacy ArticulationBody/Rigidbody hand proxy remains behind explicit useKinematicSdfHandBridge=false fallback only.",
   "generatedWithoutUnity": true,
   "unityMenuRoute": "HECTON-8/VR/Run Physics Inquisition",
@@ -42,5 +42,6 @@
   "blackBoxDump": "Docs/AgentLogs/Dump_SHINOBU_271.bin",
   "telemetryEntries": 600,
   "continuousQuality": "GlobalQualityWeight maps continuously to a 2..8 presentation/telemetry iteration hint; authoritative SDF truth uses the deterministic 8-step fence so rollback state, DTO layout, and authority route remain invariant.",
-  "verificationLimit": "Narrow dotnet restore of Hecton8.Core.csproj succeeded. A later narrow dotnet build was launched only after CPU sampled 35.2 percent and csc/dotnet were absent. It reached CSC and failed on external missing source Assets/_Project/Scripts/IBuildPlacementRule.cs referenced by Hecton8.Core.csproj; no file by that name exists in the repo scan, and the compiler did not reach SHINOBU_271 source."
+  "compileProof": "dotnet build Hecton8.slnx --no-restore -nologo -v:minimal -maxcpucount:1 /nr:false /p:UseSharedCompilation=false /p:GenerateFullPaths=true returned EXIT_CODE=0 in Docs/AgentLogs/Build_SHINOBU_271_solution_loop12_23.log with 14 Warning(s), 0 Error(s).",
+  "verificationLimit": "Unity import, Unity Console, Play Mode GCMonitor, profiler captures, player-build, Quest/Steam Deck runtime, and live VR device proof remain pending."
 }

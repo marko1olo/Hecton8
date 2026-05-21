@@ -154,5 +154,26 @@
     ],
     "verificationLimit": "Unity AssetDatabase scanner was not executed because CPU load is above the project build/editor gate; shell rg fallback confirms zero direct OceanRenderer lookups and four legacy managed water-query call sites.",
     "compileProof": "not run by Water_Interface_Scanner; SHINOBU_261 compile gate samples are recorded in Docs/Tasks/Status_SHINOBU_261.md and remain subject to CPU <=50 with no active dotnet/csc/MSBuild/Unity process"
+  },
+  "shinobu271VRKinematicBridgeScanner": {
+    "agent": "SHINOBU_271",
+    "scanner": "VR_Physics_Inquisition static/editor hybrid",
+    "verdict": "PASS_STATIC_COMPILE_GREEN_UNITY_EXECUTION_PENDING",
+    "summary": "Physics-Based Hands Purged by default transform-only kinematic SDF bridge; legacy PhysX hand proxy remains behind explicit fallback only.",
+    "dedicatedReport": "Docs/Reports/PHYSICS_OPTIMIZATION_REPORT_SHINOBU_271.json",
+    "routeCard": "Docs/ARCHITECTURE/SHINOBU_271_VR_INTERACTION_KINEMATIC_BRIDGE_ROUTE_CARD.md",
+    "binaryLedger": "Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md#2026-05-21-shinobu_271-vr-interaction-kinematic-bridge-payload-boundary",
+    "layoutValid": true,
+    "runtimeSpringJointHits": 0,
+    "runtimeConfigurableJointHits": 0,
+    "runtimeFixedJointHits": 0,
+    "physicalHandMovePositionHits": 0,
+    "physicalHandAddComponentArticulationHits": 2,
+    "physicalHandAddComponentRigidbodyHits": 1,
+    "sdfRoute": "IVoxelSonarSdfReadModel.TryReadNearestSonarSdf -> VRHandStateDTO -> resolved float4x4 matrix",
+    "hotPathAmendments": "cached IDataVault TryResolveExisting in fixed-step; live VRControllerMatrixDTO ingestion; all-active socket scan; mutation guard; over-budget telemetry-only flag",
+    "blackBoxDump": "Docs/AgentLogs/Dump_SHINOBU_271.bin",
+    "compileProof": "dotnet build Hecton8.slnx --no-restore -nologo -v:minimal -maxcpucount:1 /nr:false /p:UseSharedCompilation=false /p:GenerateFullPaths=true returned EXIT_CODE=0 in Docs/AgentLogs/Build_SHINOBU_271_solution_loop12_23.log with 14 Warning(s), 0 Error(s).",
+    "verificationLimit": "Unity import, Unity Console, Play Mode GCMonitor, profiler captures, player-build, Quest/Steam Deck runtime, and live VR device proof remain pending."
   }
 }

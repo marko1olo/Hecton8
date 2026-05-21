@@ -413,3 +413,34 @@ Verification:
 - `Docs/AgentLogs/Build_SHINOBU_271_solution_loop12_23.log`: `Build succeeded`, `14 Warning(s)`, `0 Error(s)`, `EXIT_CODE=0`, elapsed `00:00:28.55`.
 - Remaining warnings are obsolete API/migration warnings in `Assembly-CSharp-Editor.csproj` and `MapMagic.Settings.csproj`; they are not compile errors.
 - `git diff --check` returned no whitespace errors, only CRLF normalization warnings.
+
+## 2026-05-22 Ultra-Polish Loop 13 Subagent Finding Closure
+
+What was wrong:
+- `VRInteractionKinematicBridgeMath.TryResolveRuntimePosition(aup, out ...)` hid a floating-origin global read behind a pure-looking helper.
+- `PhysicalInteractionHandler.FixedTickPocketPickup` still used `Rigidbody.MovePosition` in a VR interaction path.
+- Suit damage and panel button samples used `Time.frameCount`; finger pose jobs used `FloatMode.Fast`.
+- Fault dumps could execute managed file IO directly from fixed-step fault handling.
+- SHINOBU_271 physics reports still carried stale missing-source compile proof, and the shared report did not actually contain the SHINOBU_271 block.
+
+What was done:
+- Removed the implicit-origin runtime-position overload and updated the editor gizmo to pass a snapped origin explicitly.
+- Replaced the kinematic pocket pickup `MovePosition` with transform-only visual movement while the body is kinematic and collision-disabled.
+- Added owner-local frame counters for hand fixed steps and panel sample stamps; suit damage events now use the fixed-step counter.
+- Changed finger pose jobs to deterministic Burst float mode.
+- Deferred black-box file IO out of fixed-step by marking a pending dump and flushing in late-frame/teardown.
+- Updated dedicated/shared reports to Loop 12 solution compile green and changed editor shared-report mutation to `JObject`.
+
+Cinematic cheats used:
+- Pocket pickup is treated as a transform-only pull before inventory insertion, not a Rigidbody motion solve.
+- VR hand wall response remains bounded SDF depenetration plus arm clamp/socket snap.
+
+Exact microseconds saved:
+- Pocket pickup fixed frames: estimated 1-5 us on weak CPUs by removing `Rigidbody.MovePosition`.
+- Panel/suit frame stamping: one Unity frame property read removed per accepted sample/damage event.
+- Fault frames: fixed-step no longer pays file IO; normal-frame added cost is one pending-dump branch.
+
+Verification:
+- JSON reports parse.
+- Focused scans found no residual `MovePosition(`, `Time.frameCount`, `FloatMode.Fast`, implicit-origin `TryResolveRuntimePosition`, stale `IBuildPlacementRule` compile proof, or shared-report string-surgery helpers in SHINOBU_271 touched files.
+- New dotnet compile proof is pending after Loop 13 C# source changes.

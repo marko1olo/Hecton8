@@ -60,11 +60,11 @@
   </DEAR_LIE_CONFIRMATION>
 
   <REGRESSION_MODEL>
-    Regressions to watch: missing late Vault bootstrap now fails closed instead of hot-polling `GlobalRegistry`; SDF payload absence disables depenetration but still writes transform-only hand targets; socket scan is fixed 128 max rows and must be spatially partitioned only if profiler proves budget breach; Unity compile/profiler proof is still pending under CPU guard.
+    Regressions to watch: missing late Vault bootstrap now fails closed instead of hot-polling `GlobalRegistry`; SDF payload absence disables depenetration but still writes transform-only hand targets; socket scan is fixed 128 max rows and must be spatially partitioned only if profiler proves budget breach; Unity import, Play Mode GCMonitor, profiler captures, player-build, Quest/Steam Deck runtime, and live VR device proof remain pending.
   </REGRESSION_MODEL>
 
   <HOT_PATH_IMPACT>
-    Static estimate: removing default hand PhysX proxy saves 30-120 microseconds on contact-heavy low-end frames; SDF solve target is 20-60 microseconds for two hands. The current proof is source/static only; no Unity Profiler or GCMonitor capture has been run.
+    Static estimate: removing default hand PhysX proxy saves 30-120 microseconds on contact-heavy low-end frames; SDF solve target is 20-60 microseconds for two hands. Dotnet solution compile proof is green in `Docs/AgentLogs/Build_SHINOBU_271_solution_loop12_23.log`; no Unity Profiler or GCMonitor capture has been run.
   </HOT_PATH_IMPACT>
 
   <FAILURE_MODES>
@@ -74,4 +74,7 @@
   <WHY_KEPT_REJECTED>
     Kept: existing `PhysicalInteractionHandler` and `PhysicalHandController` input ownership, because rewriting input would create a duplicate hand truth. Rejected: SpringJoint/ConfigurableJoint, Rigidbody hand MovePosition/AddForce, trigger sockets, scene-search accessors, hot registry polling, and same-frame tiny jobs.
   </WHY_KEPT_REJECTED>
+  <LOOP_13_HARDENING>
+    Post-subagent pass removed the residual pocket-pickup `Rigidbody.MovePosition`, removed Unity `Time.frameCount` from panel sample/suit damage event stamps, made finger pose jobs deterministic, deferred fault dump file IO out of fixed-step, and replaced shared-report raw string surgery with editor-only `JObject` mutation.
+  </LOOP_13_HARDENING>
 </SELF_AUDIT>

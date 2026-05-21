@@ -5,7 +5,7 @@ Date: 2026-05-21
 Owner: `SHINOBU_271`
 Owner domain: Echelon 4 Player / Kinematics / VR Interaction Bridge
 Owning file/system: `PhysicalHandController`, `VRInteractionKinematicBridge`, `VRPhysicsInquisition`
-Status: `YELLOW / PENDING UNITY COMPILE AND PROFILER PROOF`
+Status: `YELLOW / STATIC DOTNET COMPILE GREEN; PENDING UNITY IMPORT, PLAY MODE, PROFILER, AND DEVICE PROOF`
 
 Problem: VR hands must stop using SpringJoint/ConfigurableJoint/Rigidbody hand truth and resolve controller motion through deterministic AUP, Voxel SDF, and socket math.
 
@@ -55,7 +55,7 @@ Payload/data shape:
 Overflow/failure:
 - SDF dimensions are validated with 64-bit product math before byte indexing.
 - Non-finite origin, state, velocity, SDF values, or telemetry fault dumps fail closed.
-- Over-budget frames are telemetry-flagged only; NaN/non-finite state dumps immediately through the fault-only black box.
+- Over-budget frames are telemetry-flagged only; NaN/non-finite state marks a pending fault-only black-box dump, flushed from late-frame/teardown instead of fixed-step.
 - Missing Vault/SDF fails closed to transform-only hand target with no hot GlobalRegistry polling.
 
 Telemetry fields:
@@ -66,6 +66,9 @@ Black-box fields:
 
 Profiler marker:
 - pending. Static CPU timing uses `Stopwatch.GetTimestamp()` in the controller bridge and writes microseconds into telemetry.
+
+Compile proof:
+- `dotnet build Hecton8.slnx --no-restore -nologo -v:minimal -maxcpucount:1 /nr:false /p:UseSharedCompilation=false /p:GenerateFullPaths=true` returned `EXIT_CODE=0` in `Docs/AgentLogs/Build_SHINOBU_271_solution_loop12_23.log` with `14 Warning(s)`, `0 Error(s)`.
 
 GC proof required:
 - Unity Profiler / GCMonitor capture in Play Mode. Static source proof only exists now.
@@ -101,7 +104,6 @@ H-Phi impact expected:
 - lower PhysX hand authority and object hierarchy pressure; local numeric BufferID debt remains documented until central enum migration is authorized.
 
 Proof required before GREEN:
-- guarded C# compile.
 - Unity import and Console clear.
 - Play Mode GCMonitor 0 B/frame capture under active VR hand motion.
 - profiler proof under low/mid/high/ultra quality.

@@ -297,3 +297,39 @@ Updated static counts from that artifact:
 - `unityTimeRiskGameplayDelta`: 1
 
 Residual note: `HectonMapMagicVegetationBridge.cs` still has `Time.unscaledTime` for native-pool fragmentation log cadence and camera-resolve retry cadence. Those are cooldown/diagnostic routes and were not mixed into flow-field simulation timing.
+
+## 2026-05-22 WorldChunkResidencyManager Follow-Up
+
+`WorldChunkResidencyManager` no longer uses direct `Time.time` for HLOD impostor spawn/fade timestamps. It owns `_chunkResidencyRuntimeSeconds`, advances it from dispatcher `Tick(float deltaTime)`, and routes HLOD swap/fade cull jobs through `ResolveChunkResidencyRuntimeSeconds()`.
+
+Focused proof:
+
+- `rg -n "Time\.time\b|Time\.unscaledTime\b|Time\.fixedDeltaTime\b|Time\.deltaTime\b" Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs` leaves only adrenaline purge `Time.unscaledTime` rows.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_time_after_chunk_residency_clock.json`.
+
+Updated static counts from that artifact:
+
+- `unityTimeCritical`: 898
+- `unityTimeWallClock`: 60
+- `unityTimeRiskGameplayWallClock`: 26
+- `unityTimeRiskGameplayDelta`: 1
+
+Residual note: memory-pressure adrenaline purge remains on `Time.unscaledTime`. That path is load-shed/backpressure scheduling; it needs an explicit unscaled scheduler clock before migration.
+
+## 2026-05-22 WorldCaveDirector Follow-Up
+
+`WorldCaveDirector` no longer uses direct Unity wall-clock time for cave spawn evaluation throttle. It now reads bounded dispatcher `DilatedTimeSeconds` through `ResolveCaveEvaluationTimeSeconds()`.
+
+Focused proof:
+
+- `rg -n "Time\.time\b|Time\.unscaledTime\b|Time\.fixedDeltaTime\b|Time\.deltaTime\b" Assets/_Project/Scripts/WorldCaveDirector.cs` returns no rows.
+- Broad artifact: `Docs/Reports/PROJECT_AUDIT_polish_time_after_world_cave_dispatcher_clock.json`.
+
+Updated static counts from that artifact:
+
+- `unityTimeCritical`: 894
+- `unityTimeWallClock`: 58
+- `unityTimeRiskGameplayWallClock`: 24
+- `unityTimeRiskGameplayDelta`: 1
+
+Residual note: `WorldCaveDirector` still has larger non-time debt: managed dictionaries/lists and async cave spawn lifecycle remain owner-local managed state. This pass only removed direct wall-clock authority.

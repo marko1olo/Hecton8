@@ -372,3 +372,27 @@ Cinematic Cheats used: Existing abyssal flow remains a field approximation: grid
 Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped from `unityTimeCritical=906` to `902`, from `unityTimeWallClock=64` to `62`, and from `unityTimeRiskGameplayWallClock=30` to `28`.
 
 Evidence: Focused `rg -n "Time\.time\b|Time\.unscaledTime\b|Time\.fixedDeltaTime\b|Time\.deltaTime\b" Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs` returns no rows. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_time_after_vegetation_flow_clock.json --report-path Docs\Reports\PROJECT_AUDIT_polish_time_after_vegetation_flow_clock.md` returned `PASS_WITH_WARNINGS` with `unityTimeCritical=902`, `unityTimeWallClock=62`, and `unityTimeRiskGameplayWallClock=28`. `git diff --check -- Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs` reports only LF-to-CRLF warnings. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - Chunk Residency HLOD Visual Clock
+
+What was wrong: `WorldChunkResidencyManager` used `Time.time` to timestamp HLOD impostor spawn/fade and to cull expired fade-outs. The same file's `Time.unscaledTime` rows are memory-pressure purge timing and were intentionally left alone.
+
+What was done: Added `_chunkResidencyRuntimeSeconds`, advanced from dispatcher `Tick(float deltaTime)`, and routed HLOD spawn/fade jobs through `ResolveChunkResidencyRuntimeSeconds()`.
+
+Cinematic Cheats used: Existing HLOD impostors remain the streaming visual fake: lightweight impostor matrices and fade-outs stand in for fully resident chunk geometry.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped from `unityTimeCritical=902` to `898`, from `unityTimeWallClock=62` to `60`, and from `unityTimeRiskGameplayWallClock=28` to `26`.
+
+Evidence: Focused `rg -n "Time\.time\b|Time\.unscaledTime\b|Time\.fixedDeltaTime\b|Time\.deltaTime\b" Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs` leaves only the two adrenaline purge `Time.unscaledTime` rows. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_time_after_chunk_residency_clock.json --report-path Docs\Reports\PROJECT_AUDIT_polish_time_after_chunk_residency_clock.md` returned `PASS_WITH_WARNINGS` with `unityTimeCritical=898`, `unityTimeWallClock=60`, and `unityTimeRiskGameplayWallClock=26`. `git diff --check -- Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs` reports only LF-to-CRLF warning. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.
+
+## 2026-05-22 - WorldCaveDirector Dispatcher Time
+
+What was wrong: `WorldCaveDirector` throttled cave spawn evaluation with `Time.time`, affecting world-generation cadence.
+
+What was done: Replaced the wall-clock throttle with `ResolveCaveEvaluationTimeSeconds()`, reading bounded dispatcher `DilatedTimeSeconds` when the runtime dispatcher exists.
+
+Cinematic Cheats used: Existing cave spawn remains a strategic candidate fake: biome/zone rules and deterministic candidates feed cave generation instead of scanning every terrain point or running expensive continuous cave discovery.
+
+Exact Microseconds saved: 0 us measured. Static outcome: broad audit dropped from `unityTimeCritical=898` to `894`, from `unityTimeWallClock=60` to `58`, and from `unityTimeRiskGameplayWallClock=26` to `24`.
+
+Evidence: Focused `rg -n "Time\.time\b|Time\.unscaledTime\b|Time\.fixedDeltaTime\b|Time\.deltaTime\b" Assets/_Project/Scripts/WorldCaveDirector.cs` returns no rows. `python Tools\PolishMandateStaticAudit.py --json-path Docs\Reports\PROJECT_AUDIT_polish_time_after_world_cave_dispatcher_clock.json --report-path Docs\Reports\PROJECT_AUDIT_polish_time_after_world_cave_dispatcher_clock.md` returned `PASS_WITH_WARNINGS` with `unityTimeCritical=894`, `unityTimeWallClock=58`, and `unityTimeRiskGameplayWallClock=24`. `git diff --check -- Assets/_Project/Scripts/WorldCaveDirector.cs` reports only LF-to-CRLF warning. No Unity import, Play Mode, profiler, GCMonitor, player build, dotnet build, or dotnet rebuild was run.

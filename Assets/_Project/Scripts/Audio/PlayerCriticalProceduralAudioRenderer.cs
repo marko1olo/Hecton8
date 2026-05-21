@@ -10501,8 +10501,6 @@ namespace Hecton8.Audio
             uint dspFlags = 0u;
             if (invalid)
                 dspFlags |= 1u;
-            if ((state.Flags & AudioTransitionState.FlagLowTierProxy) != 0)
-                dspFlags |= 2u;
             if ((state.Flags & AudioTransitionState.FlagPortalActive) != 0)
                 dspFlags |= 4u;
             if ((state.Flags & AudioTransitionState.FlagGranularEnabled) != 0)

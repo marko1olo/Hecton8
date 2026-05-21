@@ -954,3 +954,19 @@ Solution: Removed the scalability event alias, snapshot drain, handler, cached t
 Rejected Alternatives: Keeping low-memory/tier clamps as a separate survival profile was rejected because virtual voice count is presentation budget and should follow the global quality continuum. Deleting the smoke coverage was rejected; the editor proof now asserts the continuous spatial-quality route.
 Scalability potential: Low devices receive fewer active physical voices through the same continuous resolver, middle devices interpolate, and high/ultra get full physical voice budget. Listener AUP, source routing, and acoustic impulse facts remain unchanged.
 Hardware Impact: 0 us speed claim. Removed one per-frame scalability snapshot scan and two hardware profile fields from the spatial audio presentation route. Build returned 0 errors and 161 warnings.
+
+## Prologue Proxy Telemetry Consumer Removal
+
+Problem: `PlayerCriticalProceduralAudioRenderer.RecordPrologueTransitionTelemetry` still consumed `AudioTransitionState.FlagLowTierProxy` and encoded it into DSP telemetry bit 2 after the Prologue producer stopped emitting that binary hardware proxy. A stale ABI flag in a downstream proof lane can be reinterpreted later as an active hardware branch.
+Solution: Removed the `FlagLowTierProxy` telemetry branch from the player-critical consumer. Portal proximity, granular stress, splashdown, and nonfinite guard bits remain unchanged, so the telemetry route still proves the meaningful prologue audio facts.
+Rejected Alternatives: Keeping the stale consumer was rejected because unused binary hardware identity must not survive in forensic output. Renaming the bit to "minimum quality" was rejected because the producer no longer owns or publishes that fact.
+Scalability potential: Low/Middle/High/Ultra all publish the same prologue transition identity bits; presentation degradation remains in continuous quality curves already logged in Prologue and Player Critical audio passes.
+Hardware Impact: 0 us speed claim. One dead branch was removed from telemetry recording. Build not launched because `VBCSCompiler` was active; targeted scan and `git diff --check` passed.
+
+## Adaptive Stem Mixer Binary Quality Fallback Removal
+
+Problem: `AdaptiveStemAudioMixer.DrainSignalInputs` still read `SignalBus<ScalabilityChangedEvent>.GetFrameSnapshot()` and converted `CurrentQualityTier` into a fallback quality weight. The same file configured `DynamicMusicScalarSignal` with `lowTierFrameSignals: 8`, allowing a binary hardware profile to reduce scalar audio event capacity.
+Solution: Removed the scalability-event drain and `ResolveQualityTierFallbackWeight`. The mixer now uses only the Homeostasis-owned vault lane `ScalabilityStateDTO.GlobalQualityWeight`, preserving the last sanitized continuous value when the handle is temporarily unavailable. Dynamic music scalar lane minimum capacity now equals the full 64-frame budget, and `AdvancedAcousticsSmokeTester` asserts the continuous route.
+Rejected Alternatives: Keeping the tier fallback was rejected because quality-tier payloads are binary hardware identity, not the continuous global weight. Keeping the 8-signal low-tier capacity was rejected because dropped audio scalar events can alter musical presentation discontinuously.
+Scalability potential: Low devices stretch the Burst audio-kernel cadence continuously toward 5 Hz and fade decorative depth/boss layers through polynomial quality; middle devices interpolate; high/ultra run near 60 Hz and full decorative layer weight. Stem identity, beat phase, biome transition, and tension facts stay on the same route.
+Hardware Impact: 0 us speed claim. Removed one per-frame typed scalability snapshot scan and one tier-to-weight helper. Build not launched because `VBCSCompiler` remained active; targeted scan and `git diff --check` passed.

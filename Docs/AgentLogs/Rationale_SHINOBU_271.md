@@ -393,3 +393,35 @@ Solution: Ran targeted project builds first, then `dotnet build Hecton8.slnx --n
 Rejected Alternatives: Stopping after narrow project builds, claiming success from earlier ambiguous logs, or fixing obsolete warnings outside the active error path. Narrow builds do not prove solution graph closure; ambiguous logs are invalid proof; warning cleanup would expand scope after the requested compile errors were removed.
 Scalability potential: Runtime unchanged. Build scalability is improved by keeping the repair set to exact compiler blockers and avoiding broad refactors.
 Hardware Impact: Runtime microseconds saved: 0. Integration impact: solution now compiles from the current generated graph with remaining warnings only.
+
+## Loop 13 Subagent Finding Closure Decisions
+
+Problem: Editor gizmo code used `TryResolveRuntimePosition(aup, out Vector3)`, a helper that looked pure but internally read `HectonFloatingOrigin.CurrentTotalOffsetDouble`.
+Solution: Removed the implicit-origin overload and made the editor gizmo snapshot origin once, then call `TryResolveRuntimePosition(aup, runtimeOriginAup, out Vector3)`.
+Rejected Alternatives: Keeping the hidden global read because it was editor-only. Hidden origin reads tend to migrate into runtime helpers and undermine AUP proof clarity.
+Scalability potential: Runtime unchanged. Weak through ultra tiers keep identical hand truth; editor diagnostics now mirror the explicit AUP route.
+Hardware Impact: Runtime 0 microseconds. Editor gizmo removes duplicate origin reads per hand draw.
+
+Problem: `PhysicalInteractionHandler.FixedTickPocketPickup` still used `_activeBody.MovePosition(nextPosition)` for pocket pulls.
+Solution: Because the pocket body is already kinematic and collisions are disabled during the pull, moved the target transform directly and treated the pull as a visual Dear Lie before inventory insertion.
+Rejected Alternatives: ForceRouter, PhysX MovePosition, or leaving the Rigidbody motion path. ForceRouter is disproportionate for a short visual pickup; MovePosition keeps a PhysX authority surface in the VR interaction path.
+Scalability potential: Low-tier devices avoid a kinematic Rigidbody move call; high-tier devices can still polish the pull visually without changing gameplay ownership.
+Hardware Impact: Estimated 1-5 microseconds saved during active pocket-pull fixed frames on weak CPUs; main gain is removing PhysX path ambiguity.
+
+Problem: Suit damage and panel button sampling used `Time.frameCount`, and finger pose jobs used `FloatMode.Fast` inside the VR kinematics/haptic route.
+Solution: Added owner-local monotonic frame indices for hand fixed steps and panel samples, routed suit damage frame stamps through the fixed-step counter, and changed finger jobs to `FloatMode.Deterministic`.
+Rejected Alternatives: Treating these as harmless legacy/presentation details. Suit damage is an event payload and finger results can feed haptics/presentation, so deterministic kinematic surfaces should not rely on Unity frame or fast floats.
+Scalability potential: All quality tiers publish the same event identity for identical owner ticks. Ultra presentation remains free to use richer visuals, but event truth does not drift.
+Hardware Impact: Runtime cost is one integer increment per relevant owner tick/sample. Deterministic finger Burst may cost a tiny ALU margin over Fast for five rays, accepted for rollback/route hygiene.
+
+Problem: SHINOBU fault dumps could perform managed path/directory/file IO immediately from fixed-step fault handling.
+Solution: Fixed-step now only marks `_kinematicFaultDumpPending`; `LateFrameTick` and teardown flush `DumpTelemetryFaultOnly` outside the fixed-step budget window.
+Rejected Alternatives: Suppressing dumps or keeping synchronous IO in fixed-step. Suppressing violates Black Box; fixed-step IO violates phase discipline.
+Scalability potential: Weak devices avoid fixed-step IO stalls on fault frames; high-tier devices preserve the same forensic dump.
+Hardware Impact: Normal-frame cost is one boolean branch in LateFrame. Fault-frame IO is moved out of fixed-step, not eliminated.
+
+Problem: The dedicated/shared physics reports still carried stale compile-failure proof, and `VRPhysicsInquisition` upserted shared JSON through fragile string/brace surgery.
+Solution: Updated both reports to the Loop 12 solution green proof and replaced the editor upsert route with `Newtonsoft.Json.Linq.JObject` mutation.
+Rejected Alternatives: Leaving stale report artifacts or continuing manual JSON splicing. Stale proof contradicts build logs; string surgery created a missing shared SHINOBU_271 block.
+Scalability potential: No runtime effect. Proof artifacts now match actual compile state while still naming Unity/profiler/device gaps.
+Hardware Impact: Runtime 0 microseconds; editor-only report write cost is irrelevant to frame budget.

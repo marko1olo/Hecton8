@@ -12,6 +12,8 @@ namespace Hecton8.Editor
     using Hecton8.Core;
     using Hecton8.Core.Memory;
     using Hecton8.Interaction;
+    using Newtonsoft.Json;
+    using Newtonsoft.Json.Linq;
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
     using Unity.Mathematics;
@@ -255,106 +257,17 @@ namespace Hecton8.Editor
                 return;
 
             Directory.CreateDirectory("Docs/Reports");
-            if (!File.Exists(SharedReportPath))
+            JObject root = new JObject();
+            if (File.Exists(SharedReportPath))
             {
-                File.WriteAllText(SharedReportPath, "{\n" + block + "\n}\n");
-                return;
+                string existing = File.ReadAllText(SharedReportPath);
+                if (!string.IsNullOrWhiteSpace(existing))
+                    root = JObject.Parse(existing);
             }
 
-            string text = RemoveSharedReportBlock(File.ReadAllText(SharedReportPath), SharedReportKey);
-
-            int lastBrace = text.LastIndexOf('}');
-            if (lastBrace < 0)
-            {
-                File.WriteAllText(SharedReportPath, "{\n" + block + "\n}\n");
-                return;
-            }
-
-            string prefix = text.Substring(0, lastBrace).TrimEnd();
-            bool hasExistingEntries = prefix.Length > 0 && prefix[prefix.Length - 1] != '{';
-            string separator = hasExistingEntries ? ",\n" : "\n";
-            File.WriteAllText(SharedReportPath, prefix + separator + block + "\n}\n");
-        }
-
-        private static string RemoveSharedReportBlock(string text, string key)
-        {
-            if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(key))
-                return text;
-
-            int keyIndex = text.IndexOf("\"" + key + "\"", StringComparison.Ordinal);
-            if (keyIndex < 0)
-                return text;
-
-            int colon = text.IndexOf(':', keyIndex);
-            if (colon < 0)
-                return text;
-
-            int valueStart = text.IndexOf('{', colon);
-            if (valueStart < 0)
-                return text;
-
-            int valueEnd = FindMatchingBrace(text, valueStart);
-            if (valueEnd < 0)
-                return text;
-
-            int start = keyIndex;
-            while (start > 0 && char.IsWhiteSpace(text[start - 1]))
-                start--;
-            if (start > 0 && text[start - 1] == ',')
-                start--;
-
-            int end = valueEnd + 1;
-            while (end < text.Length && char.IsWhiteSpace(text[end]))
-                end++;
-            if (end < text.Length && text[end] == ',')
-                end++;
-
-            return text.Remove(start, end - start);
-        }
-
-        private static int FindMatchingBrace(string text, int openBraceIndex)
-        {
-            bool inString = false;
-            bool escaped = false;
-            int depth = 0;
-            for (int i = openBraceIndex; i < text.Length; i++)
-            {
-                char c = text[i];
-                if (inString)
-                {
-                    if (escaped)
-                    {
-                        escaped = false;
-                    }
-                    else if (c == '\\')
-                    {
-                        escaped = true;
-                    }
-                    else if (c == '"')
-                    {
-                        inString = false;
-                    }
-
-                    continue;
-                }
-
-                if (c == '"')
-                {
-                    inString = true;
-                    continue;
-                }
-
-                if (c == '{')
-                    depth++;
-                else if (c == '}')
-                {
-                    depth--;
-                    if (depth == 0)
-                        return i;
-                }
-            }
-
-            return -1;
+            JObject wrapper = JObject.Parse("{\n" + block + "\n}");
+            root[SharedReportKey] = wrapper[SharedReportKey];
+            File.WriteAllText(SharedReportPath, root.ToString(Formatting.Indented) + "\n");
         }
 
         private static void AppendOffset(StringBuilder builder, string field, int offset)

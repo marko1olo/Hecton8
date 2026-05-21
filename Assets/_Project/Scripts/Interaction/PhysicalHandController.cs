@@ -228,7 +228,8 @@ namespace Hecton8.Interaction
         private float _lastFingerPoseDeltaTime = MinimumDeltaTime;
         private float _handContactHapticCooldownTimer;
         private float _handDamageHapticCooldownTimer;
-        private int _lastSuitDamageFrame = -1;
+        private uint _handFixedFrameIndex;
+        private uint _lastSuitDamageFrame = uint.MaxValue;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private bool _suitOverlapSaturationLogged;
 #endif
@@ -262,11 +263,13 @@ namespace Hecton8.Interaction
         private bool _harvestSnapActive;
         private int _terminalSnapSourceId;
         private uint _lastKinematicVelocitySignalFrame = uint.MaxValue;
-        private int _lastKinematicDumpFrame = -1;
-        private int _lastKinematicBridgeCacheFrame = -KinematicBridgeColdRetryIntervalFrames;
+        private uint _lastKinematicDumpFrame = uint.MaxValue;
+        private int _lastKinematicBridgeCacheAttempt = -KinematicBridgeColdRetryIntervalFrames;
+        private int _kinematicBridgeCacheAttempt;
         private uint _kinematicBridgeFrameIndex;
         private uint _lastKinematicSocketId;
         private bool _kinematicBridgeReady;
+        private bool _kinematicFaultDumpPending;
 
         /// <summary>True while a heavy rigidbody is actively being held by the physical hand proxy.</summary>
         public bool IsGrabbing => _isGrabbing && _activeBody != null;
@@ -594,6 +597,7 @@ namespace Hecton8.Interaction
             }
 
             _lastFingerPoseDeltaTime = dt;
+            _handFixedFrameIndex++;
             AdvanceHandHapticCooldowns(dt);
             AdvanceHarvestSnap(dt);
             if (ShouldBypassXRHandKinematicUpdate())
@@ -652,6 +656,7 @@ namespace Hecton8.Interaction
 
         internal void LateFrameTick()
         {
+            FlushKinematicBridgeFaultDump();
             CompleteScheduledFingerPose(_lastFingerPoseDeltaTime);
         }
 
@@ -750,6 +755,7 @@ namespace Hecton8.Interaction
 
         private void OnDisable()
         {
+            FlushKinematicBridgeFaultDump();
             CancelHarvestSnap();
             _cachedInteractionProbeColliderSource = null;
             _cachedInteractionProbeCollider = null;
@@ -764,6 +770,7 @@ namespace Hecton8.Interaction
 
         private void OnDestroy()
         {
+            FlushKinematicBridgeFaultDump();
             DisposePersistentBuffers();
             DisableSuitCollisionShell();
             if (_suitHandTransform != null)
@@ -1080,7 +1087,7 @@ namespace Hecton8.Interaction
                 _handContactHapticCooldownTimer = HandContactHapticCooldownSeconds;
             }
 
-            int frame = Time.frameCount;
+            uint frame = _handFixedFrameIndex;
             if (pressure01 < 1f ||
                 frame == _lastSuitDamageFrame ||
                 _handDamageHapticCooldownTimer > 0f)
@@ -1097,7 +1104,7 @@ namespace Hecton8.Interaction
                 contactNormal,
                 pressure01,
                 sourceColliderInstanceId,
-                (uint)frame);
+                frame);
             SuitDamageEvents.Publish(in damageEvent);
             PhysicsEventBus.NotifyAcousticImpulse(new AcousticImpulseEvent(
                 contactPoint,
@@ -1116,11 +1123,11 @@ namespace Hecton8.Interaction
             if (!useKinematicSdfHandBridge)
                 return;
 
-            int frame = Time.frameCount;
-            if (!force && frame - _lastKinematicBridgeCacheFrame < KinematicBridgeColdRetryIntervalFrames)
+            int attempt = force ? _kinematicBridgeCacheAttempt : ++_kinematicBridgeCacheAttempt;
+            if (!force && attempt - _lastKinematicBridgeCacheAttempt < KinematicBridgeColdRetryIntervalFrames)
                 return;
 
-            _lastKinematicBridgeCacheFrame = frame;
+            _lastKinematicBridgeCacheAttempt = attempt;
             if (_kinematicBridgeVault == null)
                 _kinematicBridgeVault = GlobalRegistry.DataVault;
             if (_kinematicSdfReadModel == null)
@@ -1482,13 +1489,22 @@ namespace Hecton8.Interaction
 
         private void DumpKinematicBridgeOnFault()
         {
-            int frame = Time.frameCount;
+            uint frame = _handFixedFrameIndex;
             if (_lastKinematicDumpFrame == frame)
                 return;
 
+            _kinematicFaultDumpPending = true;
+            _lastKinematicDumpFrame = frame;
+        }
+
+        private void FlushKinematicBridgeFaultDump()
+        {
+            if (!_kinematicFaultDumpPending)
+                return;
+
+            _kinematicFaultDumpPending = false;
             if (_kinematicBridgeVault != null)
                 VRInteractionKinematicBridgeVault.DumpTelemetryFaultOnly(_kinematicBridgeVault);
-            _lastKinematicDumpFrame = frame;
         }
 
         private static uint ResolveElapsedMicros(long startTicks)
@@ -2610,7 +2626,7 @@ namespace Hecton8.Interaction
 #endif
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildFingerSpherecastCommandsJob : IJobParallelFor
         {
             public float3 HandPosition;
@@ -2651,7 +2667,7 @@ namespace Hecton8.Interaction
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct ProcessFingerHitsJob : IJobParallelFor
         {
             public float CastLength;

@@ -3,8 +3,8 @@
 Agent: SHINOBU_271
 Domain: VR_INTERACTION_KINEMATIC_BRIDGE
 Task count: 20
-Current loop: 12 / 5 strict loops complete; user-authorized project-wide rebuild repair reached solution green.
-Verification state: LOOP 12 SOLUTION BUILD GREEN. `dotnet build Hecton8.slnx --no-restore -nologo -v:minimal -maxcpucount:1 /nr:false /p:UseSharedCompilation=false /p:GenerateFullPaths=true` returned `EXIT_CODE=0` in `Docs/AgentLogs/Build_SHINOBU_271_solution_loop12_23.log` with `14 Warning(s)`, `0 Error(s)`. Remaining warnings are existing obsolete API/migration warnings in `Assembly-CSharp-Editor.csproj` and `MapMagic.Settings.csproj`.
+Current loop: 13 / 5 strict loops complete; post-subagent proof/code hardening applied after Loop 12 green.
+Verification state: LOOP 12 SOLUTION BUILD GREEN BEFORE LOOP 13 SOURCE CHANGES. `dotnet build Hecton8.slnx --no-restore -nologo -v:minimal -maxcpucount:1 /nr:false /p:UseSharedCompilation=false /p:GenerateFullPaths=true` returned `EXIT_CODE=0` in `Docs/AgentLogs/Build_SHINOBU_271_solution_loop12_23.log` with `14 Warning(s)`, `0 Error(s)`. Loop 13 changed C# sources and therefore requires a new compile proof.
 
 ## Mandates Read
 
@@ -27,6 +27,17 @@ SignalBus lanes consumed: none in hot solver; cached IVoxelSonarSdfReadModel rea
 SignalBus lanes published: CombatDamageSignal only when resolved hand velocity crosses configured threshold.
 MX350/i3 budget: 100 microseconds suspicious threshold; target 20-60 microseconds for two hands.
 Load-shed fallback: continuous GlobalQualityWeight now drives a 2..8 presentation/telemetry iteration hint; authoritative SDF collision uses the deterministic 8-step fence so rollback hand truth does not vary with local quality.
+
+## Loop 13 Subagent Finding Closure
+
+- [x] Removed the implicit-origin runtime-position helper. `VRPhysicsInquisition` now snapshots `HectonFloatingOrigin.CurrentTotalOffsetDouble` once in the editor gizmo and calls the explicit-origin overload.
+- [x] Removed residual VR interaction `Rigidbody.MovePosition` from pocket pickup. The kinematic/collider-disabled pickup path now moves the target transform directly as a Dear Lie visual pull.
+- [x] Removed Unity frame counter authority from physical panel sampling and suit damage events. Panel samples use an owner-local monotonic index; suit damage uses the controller fixed-step frame.
+- [x] Deferred SHINOBU fault dump file IO out of fixed-step. Fixed-step only marks a pending dump; `LateFrameTick`/teardown flushes the black-box writer.
+- [x] Changed finger spherecast jobs to deterministic Burst float mode because they sit in the VR kinematics/haptic presentation route.
+- [x] Repaired proof artifacts: dedicated and shared physics reports now carry the Loop 12 solution compile proof and explicit Unity/profiler/device proof limits.
+- [x] Replaced fragile shared-report string surgery in `VRPhysicsInquisition` with `Newtonsoft.Json.Linq.JObject` mutation in the editor-only path.
+- [ ] Loop 13 compile proof pending after source changes.
 
 ## Loop 7 Subagent Audit Hardening
 
@@ -59,7 +70,7 @@ Load-shed fallback: continuous GlobalQualityWeight now drives a 2..8 presentatio
 - [x] Compile wall triage: subagent review confirmed `Hecton8.Core` was mixing nested asmdef source files with sibling DLL references; the prior sibling-DLL strip was removed because it made Core own contracts/memory facts it should consume.
 - [x] MSBuild boundary repair: `Directory.Build.targets` now prunes nested asmdef and editor sources from `Hecton8.Core` immediately before `CoreCompile`, preserving sibling assembly references instead of compiling duplicate source ownership.
 - [x] Verification: `Directory.Build.targets` parses as XML after the boundary repair.
-- [ ] Build gate pending: user authorized dotnet rebuild/error repair; latest CPU sample was 100%, `csc=0`, `dotnet=0`, so the next narrow build is deferred until CPU <=50%.
+- [x] Build gate resolved by Loop 12: solution build returned `EXIT_CODE=0` in `Docs/AgentLogs/Build_SHINOBU_271_solution_loop12_23.log`.
 
 ## Loop 5 Audit Pass
 
