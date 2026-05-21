@@ -67,6 +67,24 @@ Remaining blocked/pending:
   <QUALITY status="DRS shader uses continuous scale-deficit curve; no binary low-tier switch added" />
 </SELF_AUDIT>
 
+<SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="LadderClimbIkHardwareTierDetachment">
+  <WHAT_WAS_WRONG>
+    Ladder climb runtime used `GlobalRegistry.ScalabilityTierProfileByte` to force the fake camera-slide/elbow path on tier 0, including VR grip mode. That made climb IK feedback hardware-dependent.
+  </WHAT_WAS_WRONG>
+  <WHAT_WAS_DONE>
+    Removed the cached quality tier, made camera-slide fake depend only on non-VR input mode, and renamed the IK job flag to `FlagCameraSlideFake`. VR grip mode now keeps the full elbow solution on every hardware tier.
+  </WHAT_WAS_DONE>
+  <CINEMATIC_CHEATS>
+    The camera-slide fake remains as a non-VR Dear Lie because no tracked grip authority exists there. It no longer activates from hardware weakness.
+  </CINEMATIC_CHEATS>
+  <MICROSECONDS_SAVED estimate="0">
+    No speed claim. One cold registry tier read was removed, but weak VR devices intentionally keep full IK feedback.
+  </MICROSECONDS_SAVED>
+  <VERIFICATION>
+    Targeted scans found no remaining ladder `ScalabilityTierProfileByte`, `_qualityTier`, `_lowTierCameraSlide`, or `FlagLowTier` route. `git diff --check` passed with line-ending warnings only.
+  </VERIFICATION>
+</SELF_AUDIT>
+
 <SELF_AUDIT id="SHINOBU_SYSTEMIC_SURGEON" pass="ThermodynamicsAuthoritySolver">
   <WHAT_WAS_WRONG>
     Abyssal thermodynamics changed simulation cadence, active cell count, Jacobi iterations, solver omega, residual tolerance/sampling, and temperature interpolation through quality. That makes heat hazards and thermal damage depend on hardware.
