@@ -907,3 +907,10 @@ The scan proves repo-wide debt, not successful consumer migration. A full rename
 - Vault address-shift count reset now requires mutable descriptor resolve for BufferID `VaultMemoryAddressShiftCount`, `SystemID.CoreDataVault`.
 - Vault address-shift record publication now requires pure descriptor read for BufferID `VaultMemoryAddressShiftRecords`, `SystemID.CoreDataVault`.
 - This entry does not change `MasterRollbackRuntimeStateProbeDTO`, `VaultMemoryAddressShiftRecord`, `MemoryAddressShiftSignal`, BufferIDs, SignalBus payloads, dispatcher blackbox bytes, rollback truth ownership, or CoreDataVault relocation-record format.
+
+## 2026-05-22 Headless Stress Fracture Rigidbody AUP Descriptor Read
+
+- `Assets/_Project/Scripts/QA/Headless/HeadlessStressFractureBot.cs` no longer has executable direct `vault.TryGetBuffer`, `vault.GetBuffer`, `VaultBufferHandle<T>`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `.ptr`, or `VaultGenerationID` routes.
+- Rigidbody AUP scan now borrows `BufferID.RigidbodyAUPs` through `TryGetGenerationHandle<double3>` and pure `TryReadHandle` with expected owner `SystemID.GlobalPhysicsStateManager`.
+- Remaining `GetBuffer<` / `GetBufferHandle<` hits are source-audit string literals used by the bot to count debt in other files.
+- This entry does not change `double3` AUP storage, `BufferID.RigidbodyAUPs`, physics ownership, rollback Merkle descriptors, blackbox dump format, or QA result JSON schema.

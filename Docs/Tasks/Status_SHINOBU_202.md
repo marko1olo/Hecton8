@@ -4191,4 +4191,20 @@ Mandates read before coding:
 - Descriptor route scan confirmed expected `VaultGenerationHandle<T>`, `TryGetGenerationHandle`, `TryReadHandle`, `TryResolveHandle`, `TryReadExistingDispatcherVaultBuffer`, and `TryResolveExistingDispatcherVaultBuffer` hits.
 - Brace/preprocessor counts are balanced: `SystemDispatcher.cs` braces `641/641`, preprocessor `#if/#endif` `33/33`.
 - `git diff --check` passed for `SystemDispatcher.cs`; CRLF warning only.
-- Build not relaunched under the explicit no-rebuild command discipline.
+- Guarded `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1` ran after CPU/process gate passed and returned 0 errors, 175 warnings.
+
+## Loop 235 - Headless Stress Fracture Rigidbody AUP Descriptor Read
+- [x] Replaced the headless fracture bot direct Rigidbody AUP Vault read.
+  DOD practice: `ScanRigidbodyAups` now uses `TryReadRigidbodyAupBuffer`, which borrows `BufferID.RigidbodyAUPs` through `TryGetGenerationHandle<double3>`, validates exact BufferID, `SystemID.GlobalPhysicsStateManager`, nonzero generation, compaction-fence absence, and pure `TryReadHandle` before scanning for non-finite AUPs.
+  Rejected: direct `vault.TryGetBuffer<double3>` because the bot is a QA diagnostic consumer, not the physics owner or allocator.
+  Estimate: one descriptor proof per QA scan; no per-body extra validation inside the loop.
+- [x] Kept the bot's source-audit string literals intact.
+  DOD practice: the remaining `GetBuffer<` / `GetBufferHandle<` hits are inside `CountOrdinal(text, "Try" + "...")` self-audit strings, not executable Vault access.
+  Rejected: deleting the audit strings because that would weaken the bot's own static source detector.
+  Estimate: 0 runtime scan change outside the existing source-audit path.
+
+## Compile State Update 229
+- Focused executable route scan on `HeadlessStressFractureBot.cs` found no direct `vault.TryGetBuffer`, `vault.GetBuffer`, `VaultBufferHandle<T>`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `.ptr`, or `VaultGenerationID` hits. Source-audit string-literal hits for `GetBuffer<` / `GetBufferHandle<` remain by design.
+- Descriptor route scan confirmed `TryReadRigidbodyAupBuffer`, `TryGetGenerationHandle`, `VaultGenerationHandle<double3>`, and `TryReadHandle`.
+- `git diff --check` passed for `HeadlessStressFractureBot.cs`; CRLF warning only.
+- Build not relaunched after this QA patch: CPU sampled at 1 percent, but `VBCSCompiler.exe` was active, so the compiler-process gate blocked a new `dotnet build`.

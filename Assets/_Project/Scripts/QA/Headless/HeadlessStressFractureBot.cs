@@ -682,7 +682,7 @@ namespace Hecton8.QA.Headless
                 return;
             }
 
-            if (!vault.TryGetBuffer<double3>(BufferID.RigidbodyAUPs, out NativeArray<double3> rigidbodyAups) || !rigidbodyAups.IsCreated)
+            if (!TryReadRigidbodyAupBuffer(vault, out NativeArray<double3> rigidbodyAups))
             {
                 _rigidbodyScanMissCount++;
                 return;
@@ -699,6 +699,26 @@ namespace Hecton8.QA.Headless
                 FailAndQuit(1, NanHash, NanPoisoningToken);
                 return;
             }
+        }
+
+        private static bool TryReadRigidbodyAupBuffer(IDataVault vault, out NativeArray<double3> rigidbodyAups)
+        {
+            rigidbodyAups = default;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryGetGenerationHandle<double3>(BufferID.RigidbodyAUPs, out VaultGenerationHandle<double3> handle) ||
+                handle.BufferID != (uint)BufferID.RigidbodyAUPs ||
+                handle.SystemID != (uint)SystemID.GlobalPhysicsStateManager ||
+                handle.Generation == 0u ||
+                !vault.TryReadHandle(in handle, out NativeArray<double3> resolved) ||
+                !resolved.IsCreated ||
+                resolved.Length <= 0)
+            {
+                return false;
+            }
+
+            rigidbodyAups = resolved;
+            return true;
         }
 
         private void CompleteAndQuit()

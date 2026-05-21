@@ -5533,4 +5533,26 @@ Exact microseconds saved:
 Static verification:
 - Focused scan found no `TryGetBuffer(...)`, `GetBuffer<T>`, `GetBufferHandle`, `TryGetBufferHandle`, `VaultBufferHandle<T>`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, or `.ptr` hits in `SystemDispatcher.cs`.
 - Descriptor scan confirms `VaultGenerationHandle<T>`, `TryGetGenerationHandle`, `TryReadHandle`, `TryResolveHandle`, `TryReadExistingDispatcherVaultBuffer`, and `TryResolveExistingDispatcherVaultBuffer`.
-- Brace/preprocessor counts are balanced: braces `641/641`, `#if/#endif` `33/33`. `git diff --check` passed with CRLF warning only. Build was not relaunched under the explicit no-rebuild command discipline.
+- Brace/preprocessor counts are balanced: braces `641/641`, `#if/#endif` `33/33`. `git diff --check` passed with CRLF warning only. Guarded `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1` returned 0 errors, 175 warnings.
+
+## 2026-05-22 - Loop 235 - Headless Stress Fracture Rigidbody AUP Descriptor Read
+
+What was wrong:
+- `Assets/_Project/Scripts/QA/Headless/HeadlessStressFractureBot.cs` used direct `vault.TryGetBuffer<double3>` to scan `BufferID.RigidbodyAUPs`.
+- The bot is a diagnostic consumer, so direct buffer access bypassed owner proof and allocator authority.
+
+What was done:
+- Added `TryReadRigidbodyAupBuffer`.
+- The helper validates exact BufferID, `SystemID.GlobalPhysicsStateManager`, nonzero generation, compaction-fence absence, pure `TryReadHandle`, created buffer, and nonzero length before scan.
+- The existing NaN scan remains a contiguous index-based loop over the phase-local `NativeArray<double3>`.
+
+Cinematic cheats used:
+- No new visual fake. This is a QA memory-route patch. The bot still detects AUP NaN poisoning directly rather than adding gameplay simulation.
+
+Exact microseconds saved:
+- No measured speedup claimed. The useful result is authority-safe diagnostic readback. Cost is one O(1) descriptor proof per QA scan.
+
+Static verification:
+- Focused executable scan found no direct `vault.TryGetBuffer`, `vault.GetBuffer`, `VaultBufferHandle<T>`, `ResolvePointer`, `GetElementAsRef`, `GetElementAsReadOnlyRef`, `.ptr`, or `VaultGenerationID` hits in `HeadlessStressFractureBot.cs`.
+- Remaining `GetBuffer<` / `GetBufferHandle<` hits are source-audit string literals in `CountOrdinal`, retained intentionally.
+- Descriptor scan confirms `TryReadRigidbodyAupBuffer`, `TryGetGenerationHandle`, `VaultGenerationHandle<double3>`, and `TryReadHandle`. `git diff --check` passed with CRLF warning only. Build was not relaunched because `VBCSCompiler.exe` was active.
